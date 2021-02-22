@@ -2,7 +2,43 @@ import { CstChildrenDictionary, CstElement, CstNode, IToken } from "chevrotain";
 import { Action, Alternative, Assignment, AssignType, Cardinality, CrossReference, Grammar, Group, Keyword, ParenthesizedGroup, Rule } from "./ast";
 
 export function linkGrammar(grammar: Grammar) {
-    
+    grammar.rules?.forEach(r => {
+        r.alternatives?.forEach(a => {
+            linkAlterative(grammar, a);
+        })
+    })
+}
+
+function linkAlterative(grammar: Grammar, alternative: Alternative) {
+    alternative.groups?.forEach(g => {
+        linkGroup(grammar, g);
+    })
+}
+
+function linkGroup(grammar: Grammar, group: Group) {
+    group.items?.forEach(e => {
+        // assignments
+        if ("name" in e && "type" in e && "value" in e && e.value) {
+            const v = e.value;
+            // direct rule call
+            if (typeof(v) === "string") {
+                e.value = findRule(grammar, v);
+            // cross references
+            } else if ("target" in v && typeof(v.target) === "string") {
+                v.target = findRule(grammar, v.target);
+            } else if ("type" in v && typeof(v.type) === "string") {
+                v.type = findRule(grammar, v.type);
+            }
+        } else if ("alternatives" in e) {
+            e.alternatives?.forEach(a => {
+                linkAlterative(grammar, a);
+            });
+        }
+    });
+}
+
+function findRule(grammar: Grammar, name: string): Rule | undefined {
+    return grammar.rules?.find(e => e.name === name);
 }
 
 export function buildGrammar(node: CstNode): Grammar {
