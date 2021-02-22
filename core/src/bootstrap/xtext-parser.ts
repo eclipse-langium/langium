@@ -67,9 +67,7 @@ export class XtextParser extends CstParser {
             this.CONSUME2(Id, { LABEL: 'returnType' });
         });
         this.CONSUME(Colon);
-        this.MANY(() => {
-            this.SUBRULE(this.alternatives);
-        });
+        this.SUBRULE(this.alternatives);
         this.CONSUME(Semicolon);
     });
 

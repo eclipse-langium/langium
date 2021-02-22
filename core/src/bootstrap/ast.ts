@@ -9,7 +9,11 @@ export interface Grammar {
 export interface Rule {
     name?: string;
     returnType?: string;
-    alternatives?: Group[];
+    alternatives?: Alternative[];
+}
+
+export interface Alternative {
+    groups?: Group[];
 }
 
 export interface Group {
@@ -29,15 +33,16 @@ export interface Keyword {
 export interface Assignment {
     name?: string;
     type?: AssignType;
-    value?: Keyword | Rule | CrossReference;
+    value?: Keyword | Rule | CrossReference | string;
+    cardinality?: Cardinality;
 }
 
 export interface CrossReference {
-    target?: Rule;
-    type?: Rule;
+    target?: Rule | string;
+    type?: Rule | string;
 }
 
 export interface ParenthesizedGroup {
-    alternatives?: Group[];
+    alternatives?: Alternative[];
     cardinality?: Cardinality;
 }
