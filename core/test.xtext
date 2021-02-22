@@ -1,0 +1,61 @@
+grammar xtext
+
+Grammar:
+	'grammar' name=GrammarID ('with' usedGrammars+=[Grammar|GrammarID] (',' usedGrammars+=[Grammar|GrammarID])*)?
+	(definesHiddenTokens?='hidden' '(' (hiddenTokens+=[AbstractRule|RuleID] (',' hiddenTokens+=[AbstractRule|RuleID])*)? ')')?
+	metamodelDeclarations+=AbstractMetamodelDeclaration*
+	(rules+=AbstractRule)+
+;
+
+AbstractRule : ParserRule | TerminalRule | EnumRule;
+
+AbstractMetamodelDeclaration :
+	GeneratedMetamodel | ReferencedMetamodel;
+
+Group returns AbstractElement:
+	AbstractToken ({Group.elements+=current} (elements+=AbstractToken)+)?
+;
+
+Annotation returns Annotation:
+	'@' name = ID
+;
+
+ParserRule :
+	(annotations += Annotation)*
+	(
+	  ^fragment?='fragment' RuleNameAndParams (wildcard?='*' | ('returns' type=TypeRef)?)
+	| RuleNameAndParams ('returns' type=TypeRef)?
+	)
+	(definesHiddenTokens?='hidden' '(' (hiddenTokens+=[AbstractRule|RuleID] (',' hiddenTokens+=[AbstractRule|RuleID])*)? ')')? ':'
+		alternatives=Alternatives
+	';'
+;
+
+Parameter:
+	name=ID
+;
+
+TypeRef :
+	(metamodel=[AbstractMetamodelDeclaration] '::')? classifier=[EClassifier]
+;
+
+Alternatives returns AbstractElement:
+	ConditionalBranch ({Alternatives.elements+=current} ('|' elements+=ConditionalBranch)+)?
+;
+
+ConditionalBranch returns AbstractElement:
+	  UnorderedGroup
+	| {Group} '<' guardCondition=Disjunction '>' (elements+=AbstractToken)+
+;
+
+UnorderedGroup returns AbstractElement:
+	Group ({UnorderedGroup.elements+=current} ('&' elements+=Group)+)?
+;
+
+Group returns AbstractElement:
+	AbstractToken ({Group.elements+=current} (elements+=AbstractToken)+)?
+;
+
+AbstractToken returns AbstractElement:
+	AbstractTokenWithCardinality |
+	Action
