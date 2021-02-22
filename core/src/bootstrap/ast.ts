@@ -33,7 +33,7 @@ export interface Keyword {
 export interface Assignment {
     name?: string;
     type?: AssignType;
-    value?: Keyword | Rule | CrossReference | string;
+    value?: Keyword[] | Rule | CrossReference | string;
     cardinality?: Cardinality;
 }
 

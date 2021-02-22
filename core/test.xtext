@@ -7,14 +7,20 @@ Grammar:
 	(rules+=AbstractRule)+
 ;
 
+GrammarID returns EString:
+	ValidID ('.' ValidID)*;
+
 AbstractRule : ParserRule | TerminalRule | EnumRule;
 
 AbstractMetamodelDeclaration :
 	GeneratedMetamodel | ReferencedMetamodel;
 
-Group returns AbstractElement:
-	AbstractToken ({Group.elements+=current} (elements+=AbstractToken)+)?
-;
+GeneratedMetamodel :
+	'generate' name=ValidID ePackage=[EPackage|STRING] ('as' alias=ValidID)?;
+
+ReferencedMetamodel :
+	'import' ePackage=[EPackage|STRING] ('as' alias=ValidID)?;
+
 
 Annotation returns Annotation:
 	'@' name = ID
@@ -29,6 +35,10 @@ ParserRule :
 	(definesHiddenTokens?='hidden' '(' (hiddenTokens+=[AbstractRule|RuleID] (',' hiddenTokens+=[AbstractRule|RuleID])*)? ')')? ':'
 		alternatives=Alternatives
 	';'
+;
+
+RuleNameAndParams returns ParserRule:
+	name=ValidID ('<' (parameters+=Parameter (',' parameters+=Parameter)*)? '>')?
 ;
 
 Parameter:
@@ -59,3 +69,180 @@ Group returns AbstractElement:
 AbstractToken returns AbstractElement:
 	AbstractTokenWithCardinality |
 	Action
+;
+
+AbstractTokenWithCardinality returns AbstractElement:
+	(Assignment | AbstractTerminal) cardinality=('?'|'*'|'+')?
+;
+
+Action returns Action:
+	'{' type=TypeRef ('.' feature=ValidID operator=('='|'+=') 'current')? '}'
+;
+
+AbstractTerminal returns AbstractElement:
+	Keyword |
+	RuleCall |
+	ParenthesizedElement |
+	PredicatedKeyword |
+	PredicatedRuleCall |
+	PredicatedGroup
+;
+
+Keyword :
+	value=STRING
+;
+
+RuleCall :
+	rule=[AbstractRule|RuleID] ('<' arguments+=NamedArgument (',' arguments+=NamedArgument)* '>')?
+;
+
+NamedArgument:
+	( parameter=[Parameter|ID] calledByName?= '=')?
+	( value=Disjunction )
+;
+
+LiteralCondition:
+	{LiteralCondition} (true?='true' | 'false')
+;
+
+Disjunction returns Condition:
+	Conjunction ({Disjunction.left=current} '|' right=Conjunction)*
+;
+
+Conjunction returns Condition:
+	Negation ({Conjunction.left=current} '&' right=Negation)*
+;
+
+Negation returns Condition:
+	Atom | {Negation} '!' value=Negation
+;
+
+Atom returns Condition:
+	ParameterReference | ParenthesizedCondition | LiteralCondition
+;
+
+ParenthesizedCondition returns Condition:
+	'(' Disjunction ')'
+;
+
+ParameterReference:
+	parameter=[Parameter|ID]
+;
+
+TerminalRuleCall returns RuleCall:
+	rule=[AbstractRule|RuleID]
+;
+
+RuleID returns EString:
+	ValidID ('::' ValidID)*
+;
+
+ValidID returns EString:
+	ID | 'true' | 'false'
+;
+
+PredicatedKeyword returns Keyword:
+	(predicated?='=>' | firstSetPredicated?='->') value=STRING
+;
+
+PredicatedRuleCall returns RuleCall:
+	(predicated?='=>' | firstSetPredicated?='->') rule=[AbstractRule|RuleID] ('<' arguments+=NamedArgument (',' arguments+=NamedArgument)* '>')?
+;
+
+Assignment returns Assignment:
+	(predicated?='=>' | firstSetPredicated?='->')? feature=ValidID operator=('+='|'='|'?=') ^terminal=AssignableTerminal
+;
+
+AssignableTerminal returns AbstractElement:
+	Keyword | RuleCall | ParenthesizedAssignableElement | CrossReference
+;
+
+ParenthesizedAssignableElement returns AbstractElement:
+	'(' AssignableAlternatives ')'
+;
+
+AssignableAlternatives returns AbstractElement:
+	AssignableTerminal ({Alternatives.elements+=current} ('|' elements+=AssignableTerminal)+)?
+;
+
+CrossReference :
+	'[' type=TypeRef ('|' ^terminal=CrossReferenceableTerminal )? ']'
+;
+
+CrossReferenceableTerminal returns AbstractElement:
+	Keyword | RuleCall
+;
+
+ParenthesizedElement returns AbstractElement:
+	'(' Alternatives ')'
+;
+
+PredicatedGroup returns Group:
+	(predicated?='=>' | firstSetPredicated?='->') '(' elements+=Alternatives ')'
+;
+
+TerminalRule :
+	(annotations += Annotation)*
+	'terminal' (^fragment?='fragment' name=ValidID | name=ValidID ('returns' type=TypeRef)?) ':'
+		alternatives=TerminalAlternatives
+	';'
+;
+
+TerminalAlternatives returns AbstractElement:
+	TerminalGroup ({Alternatives.elements+=current} ('|' elements+=TerminalGroup)+)?
+;
+
+TerminalGroup returns AbstractElement:
+	TerminalToken ({Group.elements+=current} (elements+=TerminalToken)+)?
+;
+
+TerminalToken returns AbstractElement:
+	TerminalTokenElement cardinality=('?'|'*'|'+')?
+;
+
+TerminalTokenElement returns AbstractElement:
+	CharacterRange | TerminalRuleCall | ParenthesizedTerminalElement | AbstractNegatedToken | Wildcard | ^EOF
+;
+
+ParenthesizedTerminalElement returns AbstractElement:
+	'(' TerminalAlternatives ')'
+;
+
+AbstractNegatedToken:
+	NegatedToken | UntilToken
+;
+
+NegatedToken:
+	'!' ^terminal=TerminalTokenElement
+;
+
+UntilToken:
+	'->' ^terminal=TerminalTokenElement
+;
+
+Wildcard:
+	{Wildcard} '.'
+;
+
+^EOF:
+	{^EOF} 'EOF'
+;
+
+CharacterRange returns AbstractElement:
+	Keyword ( {CharacterRange.left=current} '..' right=Keyword)?
+;
+
+EnumRule:
+	(annotations += Annotation)*
+	'enum' name=ValidID ('returns' type=TypeRef)? ':'
+		alternatives=EnumLiterals
+	';'
+;
+
+EnumLiterals returns AbstractElement:
+	EnumLiteralDeclaration ({Alternatives.elements+=current} ('|' elements+=EnumLiteralDeclaration)+)?
+;
+
+EnumLiteralDeclaration:
+	enumLiteral=[EEnumLiteral|ValidID] ('=' literal=Keyword)?
+;

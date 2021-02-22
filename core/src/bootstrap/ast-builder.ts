@@ -1,6 +1,10 @@
 import { CstChildrenDictionary, CstElement, CstNode, IToken } from "chevrotain";
 import { Action, Alternative, Assignment, AssignType, Cardinality, CrossReference, Grammar, Group, Keyword, ParenthesizedGroup, Rule } from "./ast";
 
+export function linkGrammar(grammar: Grammar) {
+    
+}
+
 export function buildGrammar(node: CstNode): Grammar {
 
     const children = node.children;
@@ -80,7 +84,18 @@ function buildGroupItem(element: CstElement): Keyword | Assignment | Action | Pa
 }
 
 function buildAction(node: CstNode): Action {
-    return {};
+    const children = node.children;
+    const nameNode = <IToken>children["name"]![0];
+    const name = nameNode.image;
+
+    if (children["variable"]) {
+        const variableNode = <IToken>children["variable"]![0];
+        const assignNode = <IToken>children["assign"]![0];
+        const assignType = <AssignType>assignNode.image;
+        return { name, type: assignType, variable: variableNode.image };
+    }
+    
+    return { name };
 }
 
 function buildParenthesizedGroup(node: CstNode): ParenthesizedGroup {
@@ -112,8 +127,11 @@ function buildAssignment(node: CstNode): Assignment {
     const keywordChild = children["keyword"];
     const crossReferenceChild = children["crossReference"];
     if (keywordChild) {
-        const keywordToken = <IToken>keywordChild[0];
-        assignment.value = buildKeyword(keywordToken);
+        const keywords: Keyword[] = [];
+        keywordChild.forEach(element => {
+            keywords.push(buildKeyword(<IToken>element));
+        });
+        assignment.value = keywords;
     } else {
         assignment.value = buildAssignmentValue((valueChild ?? crossReferenceChild)![0]);
     }

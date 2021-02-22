@@ -116,7 +116,17 @@ export class XtextParser extends CstParser {
         this.OR([
             { ALT: () => this.CONSUME2(Id, { LABEL: 'value' }) },
             { ALT: () => this.SUBRULE(this.crossReference) },
-            { ALT: () => this.CONSUME(StringLiteral, { LABEL: 'keyword' }) }
+            { ALT: () => this.CONSUME(StringLiteral, { LABEL: 'keyword' }) },
+            { ALT: () => {
+                this.CONSUME(ParenthesesOpen);
+                this.MANY_SEP({
+                    SEP: Alt,
+                    DEF: () => {
+                        this.CONSUME2(StringLiteral, { LABEL: 'keyword' });
+                    }
+                });
+                this.CONSUME(ParenthesesClose);
+            }}
         ]);
         this.OPTION(() => this.CONSUME(Cardinality, { LABEL: "card" }));
     });
