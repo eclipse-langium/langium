@@ -54,6 +54,7 @@ class Context {
     }
 
     addNewLine() {
+        this.pendingIndent = true;
         this.lines.push([]);
     }
 }

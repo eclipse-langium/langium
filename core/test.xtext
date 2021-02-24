@@ -235,10 +235,6 @@ Wildcard:
 	{Wildcard} '.'
 ;
 
-^EOF:
-	{^EOF} 'EOF'
-;
-
 CharacterRange returns AbstractElement:
 	Keyword ( {CharacterRange.left=current} '..' right=Keyword)?
 ;
