@@ -1,49 +1,76 @@
-/* eslint-disable */
+import { AstNode } from "../generator/ast-node";
+
 export type Cardinality = "*" | "+" | "?";
 export type AssignType = "+=" | "?=" | "=";
 
-export interface Grammar {
+export type Grammar = AstNode & {
+    kind: "grammar",
     name?: string;
-    rules?: Rule[];
+    rules?: (Rule | Terminal)[];
 }
 
-export interface Rule {
+export type Rule = AstNode & {
+    kind: "rule",
     name?: string;
     returnType?: string;
     alternatives?: Alternative[];
 }
 
-export interface Alternative {
+export type Alternative = AstNode & {
+    kind: "alternative",
     groups?: Group[];
 }
 
-export interface Group {
-    items?: (Keyword | Assignment | Action | ParenthesizedGroup)[];
+export type Group = AstNode & {
+    kind: "group",
+    items?: (Keyword | RuleCall | Assignment | Action | ParenthesizedGroup)[];
 }
 
-export interface Action {
+export type RuleCall = AstNode & {
+    kind: "rule-call",
+    name?: string;
+    rule?: Rule | Terminal;
+}
+
+export type Terminal = AstNode & {
+    kind: "terminal",
+    name?: string;
+    regex?: string;
+}
+
+export type Action = AstNode & {
+    kind: "action",
     name?: string;
     variable?: string;
     type?: AssignType;
 }
 
-export interface Keyword {
+export type Keyword = AstNode & {
+    kind: "keyword",
     value?: string;
 }
 
-export interface Assignment {
+export type Assignment = AstNode & {
+    kind: "assignment",
     name?: string;
     type?: AssignType;
-    value?: Keyword[] | Rule | CrossReference | string;
+    value?: Keyword | ParenthesizedAssignableElement | RuleCall | CrossReference;
     cardinality?: Cardinality;
 }
 
-export interface CrossReference {
-    target?: Rule | string;
-    type?: Rule | string;
+export type CrossReference = AstNode & {
+    kind: "cross-reference",
+    target?: RuleCall;
+    type?: RuleCall;
 }
 
-export interface ParenthesizedGroup {
+export type ParenthesizedAssignableElement = AstNode & {
+    kind: "parenthesized-assignable-element",
+    items: (Keyword | RuleCall | ParenthesizedAssignableElement | CrossReference)[];
+}
+
+export type ParenthesizedGroup = AstNode & {
+    kind: "parenthesized-group",
     alternatives?: Alternative[];
     cardinality?: Cardinality;
 }

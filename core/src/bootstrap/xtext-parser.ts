@@ -18,6 +18,7 @@ const Option = createToken({ name: "Option", pattern: /\?/, categories: Cardinal
 const Asterisk = createToken({ name: "Asterisk", pattern: /\*/, categories: Cardinality });
 const AtLeastOne = createToken({ name: "AtLeastOne", pattern: /\+/, categories: Cardinality });
 const Current = createToken({ name: "Current", pattern: /current/ });
+const Terminal = createToken({ name: "Terminal", pattern: /terminal/ });
 
 const ParenthesesOpen = createToken({ name: "ParenthesesOpen", pattern: /\(/ });
 const ParenthesesClose = createToken({ name: "ParenthesesClose", pattern: /\)/ });
@@ -25,6 +26,10 @@ const CurlyOpen = createToken({ name: "CurlyOpen", pattern: /\{/ });
 const CurlyClose = createToken({ name: "CurlyClose", pattern: /\}/ });
 const BracketOpen = createToken({ name: "BracketOpen", pattern: /\[/ });
 const BracketClose = createToken({ name: "BracketClose", pattern: /\]/ });
+
+const RegexLiteral = createToken({
+    name: "Regex", pattern: /\/(?![*+?])(?:[^\r\n\[/\\]|\\.|\[(?:[^\r\n\]\\]|\\.)*\])+\//
+});
 
 const StringLiteral = createToken({
     name: "Keyword", pattern: /"[^"]*"|'[^']*'/
@@ -36,7 +41,7 @@ const WhiteSpace = createToken({
     group: Lexer.SKIPPED
 });
 
-const xtextTokens = [WhiteSpace, StringLiteral, Grammar, Returns, Current, Id, Cardinality, AssignType,
+const xtextTokens = [WhiteSpace, StringLiteral, RegexLiteral, Grammar, Returns, Current, Terminal, Id, Cardinality, AssignType,
     OptionEquals, ListEquals, Option, Asterisk, AtLeastOne, Colon, Semicolon,
     Equals, Alt, ParenthesesOpen, ParenthesesClose, CurlyOpen, CurlyClose,
     BracketOpen, BracketClose, Dot];
@@ -57,7 +62,10 @@ export class XtextParser extends CstParser {
         this.CONSUME(Grammar);
         this.CONSUME(Id, { LABEL: "name" });
         this.MANY(() => {
-            this.SUBRULE(this.rule);
+            this.OR([
+                { ALT: () => this.SUBRULE(this.rule) },
+                { ALT: () => this.SUBRULE(this.terminal) },
+            ]);
         });
     });
 
@@ -69,6 +77,14 @@ export class XtextParser extends CstParser {
         });
         this.CONSUME(Colon);
         this.SUBRULE(this.alternatives);
+        this.CONSUME(Semicolon);
+    });
+
+    private terminal = this.RULE("terminal", () => {
+        this.CONSUME(Terminal);
+        this.CONSUME(Id, { LABEL: "name" });
+        this.CONSUME(Colon);
+        this.CONSUME(RegexLiteral, { LABEL: "regex" });
         this.CONSUME(Semicolon);
     });
 

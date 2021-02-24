@@ -1,9 +1,9 @@
 /* eslint-disable */
 import { CstChildrenDictionary, CstElement, CstNode, IToken } from "chevrotain";
-import { Action, Alternative, Assignment, AssignType, Cardinality, CrossReference, Grammar, Group, Keyword, ParenthesizedGroup, Rule } from "./ast";
+import { Action, Alternative, Assignment, AssignType, Cardinality, CrossReference, Grammar, Group, Keyword, ParenthesizedGroup, Rule, RuleCall, Terminal } from "./ast";
 
 export function linkGrammar(grammar: Grammar) {
-    grammar.rules?.forEach(r => {
+    grammar.rules?.filter(e => e.kind == "rule").map(e => e as Rule).forEach(r => {
         r.alternatives?.forEach(a => {
             linkAlterative(grammar, a);
         })
@@ -22,13 +22,13 @@ function linkGroup(grammar: Grammar, group: Group) {
         if ("name" in e && "type" in e && "value" in e && e.value) {
             const v = e.value;
             // direct rule call
-            if (typeof(v) === "string") {
-                e.value = findRule(grammar, v);
+            if (v.kind === "rule-call") {
+                e.value = findRule(grammar, v.name!);
             // cross references
-            } else if ("target" in v && typeof(v.target) === "string") {
-                v.target = findRule(grammar, v.target);
-            } else if ("type" in v && typeof(v.type) === "string") {
-                v.type = findRule(grammar, v.type);
+            } else if ("target" in v) {
+                v.target = findRule(grammar, v.target?.name!);
+            } else if ("type" in v) {
+                v.type = findRule(grammar, v.type?.name!);
             }
         } else if ("alternatives" in e) {
             e.alternatives?.forEach(a => {
@@ -38,18 +38,22 @@ function linkGroup(grammar: Grammar, group: Group) {
     });
 }
 
-function findRule(grammar: Grammar, name: string): Rule | undefined {
-    return grammar.rules?.find(e => e.name === name);
+function findRule(grammar: Grammar, name: string): RuleCall | undefined {
+    const rule = grammar.rules?.find(e => e.name === name);
+    if (!rule) {
+        throw new Error("Could not find rule " + name);
+    }
+    return { kind: "rule-call", rule, name };
 }
 
 export function buildGrammar(node: CstNode): Grammar {
 
     const children = node.children;
-    const grammar: Grammar = {};
+    const grammar: Grammar = { kind: "grammar" };
     const nameNode = <IToken>children["name"]![0];
     grammar.name = nameNode.image;
 
-    const rules: Rule[] = [];
+    const rules: (Rule | Terminal)[] = [];
 
     const ruleNodes = <CstNode[]>children["rule"];
 
@@ -57,14 +61,30 @@ export function buildGrammar(node: CstNode): Grammar {
         rules.push(buildRule(e));
     });
 
+    const terminalNodes = <CstNode[]>children["terminal"];
+
+    terminalNodes.forEach(e => {
+        rules.push(buildTerminal(e));
+    })
+
     grammar.rules = rules;
 
     return grammar;
 
 }
 
+function buildTerminal(node: CstNode): Terminal {
+    const terminal: Terminal = { kind: "terminal" };
+    const children = node.children;
+    const nameNode = <IToken>children["name"]![0];
+    terminal.name = nameNode.image;
+    const regexNode = <IToken>children["regex"]![0];
+    terminal.regex = regexNode.image;
+    return terminal;
+}
+
 function buildRule(node: CstNode): Rule {
-    const rule: Rule = {};
+    const rule: Rule = { kind: "rule" };
     const children = node.children;
     const nameNode = <IToken>children["name"]![0];
     rule.name = nameNode.image;
@@ -78,19 +98,19 @@ function buildRule(node: CstNode): Rule {
 }
 
 function buildAlternative(node: CstNode): Alternative {
-    const alternative: Alternative = { groups: [] };
+    const alternative: Alternative = { kind: "alternative", groups: [] };
     const children = node.children;
     const groupNodes = <CstNode[]>children["group"];
 
     groupNodes.forEach(e => {
         alternative.groups!.push(buildGroup(e));
-    })
+    });
 
     return alternative;
 }
 
 function buildGroup(node: CstNode): Group {
-    const groups: Group = { items: [] };
+    const groups: Group = { kind: "group", items: [] };
 
     const children = collectChildren(node.children);
 
@@ -101,10 +121,14 @@ function buildGroup(node: CstNode): Group {
     return groups;
 }
 
-function buildGroupItem(element: CstElement): Keyword | Assignment | Action | ParenthesizedGroup {
+function buildGroupItem(element: CstElement): Keyword | RuleCall | Assignment | Action | ParenthesizedGroup {
     
     if ("image" in element) {
-        return buildKeyword(element);
+        if (element.tokenType.name == "Id") {
+            return { kind: "rule-call", name: element.image };
+        } else {
+            return buildKeyword(element);
+        }
     }
     const node = element as CstNode;
     if (node.name === "assignment") {
@@ -116,8 +140,7 @@ function buildGroupItem(element: CstElement): Keyword | Assignment | Action | Pa
     if (node.name === "parenthesizedGroup") {
         return buildParenthesizedGroup(node);
     }
-    
-    return {};
+    throw new Error();
 }
 
 function buildAction(node: CstNode): Action {
@@ -129,10 +152,10 @@ function buildAction(node: CstNode): Action {
         const variableNode = <IToken>children["variable"]![0];
         const assignNode = <IToken>children["assign"]![0];
         const assignType = <AssignType>assignNode.image;
-        return { name, type: assignType, variable: variableNode.image };
+        return { kind: "action", name, type: assignType, variable: variableNode.image };
     }
     
-    return { name };
+    return { kind: "action", name };
 }
 
 function buildParenthesizedGroup(node: CstNode): ParenthesizedGroup {
@@ -146,15 +169,15 @@ function buildParenthesizedGroup(node: CstNode): ParenthesizedGroup {
     if (cardTokens) {
         cardinality = <Cardinality>(cardTokens![0] as IToken).image;
     }
-    return { alternatives, cardinality };
+    return { kind: "parenthesized-group", alternatives, cardinality };
 }
 
 function buildKeyword(token: IToken): Keyword {
-    return { value: token.image };
+    return { kind: "keyword", value: token.image.substring(1, token.image.length - 1) };
 }
 
 function buildAssignment(node: CstNode): Assignment {
-    const assignment: Assignment = {};
+    const assignment: Assignment = { kind: "assignment" };
     const children = node.children;
     const nameNode = children["name"]![0] as IToken;
     assignment.name = nameNode.image;
@@ -168,7 +191,10 @@ function buildAssignment(node: CstNode): Assignment {
         keywordChild.forEach(element => {
             keywords.push(buildKeyword(<IToken>element));
         });
-        assignment.value = keywords;
+        assignment.value = {
+            kind: "parenthesized-assignable-element",
+            items: keywords
+        };
     } else {
         assignment.value = buildAssignmentValue((valueChild ?? crossReferenceChild)![0]);
     }
@@ -179,9 +205,12 @@ function buildAssignment(node: CstNode): Assignment {
     return assignment;
 }
 
-function buildAssignmentValue(element: CstElement): CrossReference | string {
+function buildAssignmentValue(element: CstElement): CrossReference | RuleCall {
     if ("image" in element) {
-        return element.image;
+        return {
+            kind: "rule-call",
+            name: element.image
+        };
     }
     const node = element as CstNode;
     return buildCrossReference(node);
@@ -194,7 +223,17 @@ function buildCrossReference(node: CstNode): CrossReference {
     if (children["type"]) {
         type = (<IToken>children["type"]![0]).image;
     }
-    return { target, type };
+    return { 
+        kind: "cross-reference", 
+        target: {
+            kind: "rule-call",
+            name: target
+        }, 
+        type: {
+            kind: "rule-call",
+            name: type
+        } 
+    };
 }
 
 function collectChildren(children: CstChildrenDictionary): CstElement[] {

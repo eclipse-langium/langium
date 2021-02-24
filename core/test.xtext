@@ -1,5 +1,14 @@
 grammar xtext
 
+terminal WS         : /\s+/;
+terminal ID: /\^?[_a-zA-Z][\w_]*/;
+terminal INT: /[0-9]+/;
+terminal STRING: /"[^"]*"|'[^']*'/;
+terminal ML_COMMENT : /NOT_IMPLEMENTED/;
+terminal SL_COMMENT : /\/\/.*/;
+
+
+
 Grammar:
 	'grammar' name=GrammarID ('with' usedGrammars+=[Grammar|GrammarID] (',' usedGrammars+=[Grammar|GrammarID])*)?
 	(definesHiddenTokens?='hidden' '(' (hiddenTokens+=[AbstractRule|RuleID] (',' hiddenTokens+=[AbstractRule|RuleID])*)? ')')?
@@ -8,7 +17,7 @@ Grammar:
 ;
 
 GrammarID returns EString:
-	ValidID ('.' ValidID)*;
+	ID ('.' ID)*;
 
 AbstractRule : ParserRule | TerminalRule | EnumRule;
 
@@ -16,10 +25,10 @@ AbstractMetamodelDeclaration :
 	GeneratedMetamodel | ReferencedMetamodel;
 
 GeneratedMetamodel :
-	'generate' name=ValidID ePackage=[EPackage|STRING] ('as' alias=ValidID)?;
+	'generate' name=ID ePackage=[AbstractMetamodelDeclaration|STRING] ('as' alias=ID)?;
 
 ReferencedMetamodel :
-	'import' ePackage=[EPackage|STRING] ('as' alias=ValidID)?;
+	'import' ePackage=[AbstractMetamodelDeclaration|STRING] ('as' alias=ID)?;
 
 
 Annotation returns Annotation:
@@ -38,7 +47,7 @@ ParserRule :
 ;
 
 RuleNameAndParams returns ParserRule:
-	name=ValidID ('<' (parameters+=Parameter (',' parameters+=Parameter)*)? '>')?
+	name=ID ('<' (parameters+=Parameter (',' parameters+=Parameter)*)? '>')?
 ;
 
 Parameter:
@@ -46,7 +55,7 @@ Parameter:
 ;
 
 TypeRef :
-	(metamodel=[AbstractMetamodelDeclaration] '::')? classifier=[EClassifier]
+	(metamodel=[AbstractMetamodelDeclaration] '::')? classifier=[STRING]
 ;
 
 Alternatives returns AbstractElement:
@@ -76,7 +85,7 @@ AbstractTokenWithCardinality returns AbstractElement:
 ;
 
 Action returns Action:
-	'{' type=TypeRef ('.' feature=ValidID operator=('='|'+=') 'current')? '}'
+	'{' type=TypeRef ('.' feature=ID operator=('='|'+=') 'current')? '}'
 ;
 
 AbstractTerminal returns AbstractElement:
@@ -134,10 +143,10 @@ TerminalRuleCall returns RuleCall:
 ;
 
 RuleID returns EString:
-	ValidID ('::' ValidID)*
+	ID ('::' ID)*
 ;
 
-ValidID returns EString:
+ID returns EString:
 	ID | 'true' | 'false'
 ;
 
@@ -150,7 +159,7 @@ PredicatedRuleCall returns RuleCall:
 ;
 
 Assignment returns Assignment:
-	(predicated?='=>' | firstSetPredicated?='->')? feature=ValidID operator=('+='|'='|'?=') ^terminal=AssignableTerminal
+	(predicated?='=>' | firstSetPredicated?='->')? feature=ID operator=('+='|'='|'?=') ^terminal=AssignableTerminal
 ;
 
 AssignableTerminal returns AbstractElement:
@@ -183,10 +192,12 @@ PredicatedGroup returns Group:
 
 TerminalRule :
 	(annotations += Annotation)*
-	'terminal' (^fragment?='fragment' name=ValidID | name=ValidID ('returns' type=TypeRef)?) ':'
-		alternatives=TerminalAlternatives
+	'terminal' (^fragment?='fragment' name=ID | name=ID ('returns' type=TypeRef)?) ':'
+		regex=Regex
 	';'
 ;
+
+terminal Regex: /\/(?![*+?])(?:[^\r\n\[/\\]|\\.|\[(?:[^\r\n\]\\]|\\.)*\])+\//;
 
 TerminalAlternatives returns AbstractElement:
 	TerminalGroup ({Alternatives.elements+=current} ('|' elements+=TerminalGroup)+)?
@@ -234,7 +245,7 @@ CharacterRange returns AbstractElement:
 
 EnumRule:
 	(annotations += Annotation)*
-	'enum' name=ValidID ('returns' type=TypeRef)? ':'
+	'enum' name=ID ('returns' type=TypeRef)? ':'
 		alternatives=EnumLiterals
 	';'
 ;
@@ -244,5 +255,5 @@ EnumLiterals returns AbstractElement:
 ;
 
 EnumLiteralDeclaration:
-	enumLiteral=[EEnumLiteral|ValidID] ('=' literal=Keyword)?
+	enumLiteral=[EnumLiterals|ID] ('=' literal=Keyword)?
 ;
