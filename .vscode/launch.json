@@ -12,6 +12,7 @@
                 "<node_internals>/**"
             ],
             "program": "${workspaceFolder}/core/src/bootstrap/index.ts",
+            "cwd": "${workspaceFolder}/core",
             "outFiles": [
                 "${workspaceFolder}/**/*.js"
             ]
