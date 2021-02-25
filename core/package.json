@@ -7,8 +7,9 @@
   "types": "lib/types/index.d.ts",
   "scripts": {
     "clean": "rimraf lib/*",
-    "build": "npm run clean ; npm run lint && microbundle -f cjs,es --tsconfig tsconfig.build.json",
+    "build": "microbundle -f cjs,es --tsconfig tsconfig.build.json",
     "lint": "eslint ./src --ext .js,.ts",
+    "prepare": "npm run clean && npm run lint && npm test && npm run build",
     "test": "jest --coverage"
   },
   "author": "",
