@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { createToken, Lexer, CstParser } from "chevrotain"
 
 const Cardinality = createToken({ name: "Cardinality", pattern: Lexer.NA });

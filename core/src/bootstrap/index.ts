@@ -1,3 +1,4 @@
+/* eslint-disable */
 import * as fs from "fs-extra";
 import { parseXtext } from "./xtext-parser";
 import { buildGrammar, linkGrammar } from "./ast-builder";
