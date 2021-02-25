@@ -1,3 +1,4 @@
+/* eslint-disable */
 export type Cardinality = "*" | "+" | "?";
 export type AssignType = "+=" | "?=" | "=";
 

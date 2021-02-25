@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { CstChildrenDictionary, CstElement, CstNode, IToken } from "chevrotain";
 import { Action, Alternative, Assignment, AssignType, Cardinality, CrossReference, Grammar, Group, Keyword, ParenthesizedGroup, Rule } from "./ast";
 

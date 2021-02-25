@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "lint": "eslint ./src --ext .js,.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
@@ -14,6 +15,9 @@
   },
   "devDependencies": {
     "@types/fs-extra": "^9.0.7",
+    "@typescript-eslint/eslint-plugin": "^4.15.2",
+    "@typescript-eslint/parser": "^4.15.2",
+    "eslint": "^7.20.0",
     "typescript": "^4.1.5"
   }
 }
