@@ -10,11 +10,9 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "chevrotain": "^7.1.1",
-    "fs-extra": "^9.1.0"
+    "chevrotain": "^7.1.1"
   },
   "devDependencies": {
-    "@types/fs-extra": "^9.0.7",
     "@types/jest": "^26.0.20",
     "@typescript-eslint/eslint-plugin": "^4.15.2",
     "@typescript-eslint/parser": "^4.15.2",
