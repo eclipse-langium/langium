@@ -1,1 +1,1 @@
-export { s } from './generator/template-string'
+export { s } from './generator/template-string';
