@@ -1,4 +1,8 @@
 .DS_Store
+.vscode-test/
 coverage/
+dist/
 lib/
+out/
 node_modules/
+*.vsix
