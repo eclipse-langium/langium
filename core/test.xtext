@@ -8,9 +8,9 @@ terminal string: /"[^"]*"|'[^']*'/;
 
 
 Grammar:
-	'grammar' name=GrammarID ('with' usedGrammars+=[Grammar|GrammarID] (',' usedGrammars+=[Grammar|GrammarID])*)?
-	(definesHiddenTokens?='hidden' '(' (hiddenTokens+=[AbstractRule|RuleID] (',' hiddenTokens+=[AbstractRule|RuleID])*)? ')')?
-	metamodelDeclarations+=AbstractMetamodelDeclaration*
+	'grammar' Name=GrammarID ('with' UsedGrammars+=[Grammar|GrammarID] (',' UsedGrammars+=[Grammar|GrammarID])*)?
+	(definesHiddenTokens?='hidden' '(' (HiddenTokens+=[AbstractRule|RuleID] (',' HiddenTokens+=[AbstractRule|RuleID])*)? ')')?
+	MetamodelDeclarations+=AbstractMetamodelDeclaration*
 	(rules+=AbstractRule)+
 ;
 
@@ -23,53 +23,53 @@ AbstractMetamodelDeclaration :
 	GeneratedMetamodel | ReferencedMetamodel;
 
 GeneratedMetamodel :
-	'generate' name=ID ePackage=[string] ('as' alias=ID)?;
+	'generate' Name=ID EPackage=[string] ('as' Alias=ID)?;
 
 ReferencedMetamodel :
-	'import' ePackage=[string] ('as' alias=ID)?;
+	'import' EPackage=[string] ('as' Alias=ID)?;
 
 
 Annotation:
-	'@' name = ID
+	'@' Name = ID
 ;
 
 ParserRule :
 	(
-	  ^fragment?='fragment' RuleNameAndParams (wildcard?='*' | ('returns' type=TypeRef)?)
-	| RuleNameAndParams ('returns' type=TypeRef)?
+	  ^fragment?='fragment' RuleNameAndParams (wildcard?='*' | ('returns' Type=TypeRef)?)
+	| RuleNameAndParams ('returns' Type=TypeRef)?
 	)
-	(definesHiddenTokens?='hidden' '(' (hiddenTokens+=[AbstractRule|RuleID] (',' hiddenTokens+=[AbstractRule|RuleID])*)? ')')? ':'
-		alternatives=Alternatives
+	(DefinesHiddenTokens?='hidden' '(' (HiddenTokens+=[AbstractRule|RuleID] (',' HiddenTokens+=[AbstractRule|RuleID])*)? ')')? ':'
+		Alternatives=Alternatives
 	';'
 ;
 
 RuleNameAndParams:
-	name=ID ('<' (parameters+=Parameter (',' parameters+=Parameter)*)? '>')?
+	Name=ID ('<' (Parameters+=Parameter (',' Parameters+=Parameter)*)? '>')?
 ;
 
 Parameter:
-	name=ID
+	Name=ID
 ;
 
 TypeRef :
-	(metamodel=[AbstractMetamodelDeclaration] '::')? classifier=[string]
+	(Metamodel=[AbstractMetamodelDeclaration] '::')? Classifier=[string]
 ;
 
 Alternatives:
-	ConditionalBranch ({Alternatives.elements+=current} ('|' elements+=ConditionalBranch)+)?
+	ConditionalBranch ({Alternatives.Elements+=current} ('|' Elements+=ConditionalBranch)+)?
 ;
 
 ConditionalBranch:
 	  UnorderedGroup
-	| {Group} '<' guardCondition=Disjunction '>' (elements+=AbstractToken)+
+	| {Group} '<' GuardCondition=Disjunction '>' (Elements+=AbstractToken)+
 ;
 
 UnorderedGroup:
-	Group ({UnorderedGroup.elements+=current} ('&' elements+=Group)+)?
+	Group ({UnorderedGroup.Elements+=current} ('&' Elements+=Group)+)?
 ;
 
 Group:
-	AbstractToken ({Group.elements+=current} (elements+=AbstractToken)+)?
+	AbstractToken ({Group.Elements+=current} (Elements+=AbstractToken)+)?
 ;
 
 AbstractToken:
@@ -78,11 +78,11 @@ AbstractToken:
 ;
 
 AbstractTokenWithCardinality:
-	(Assignment | AbstractTerminal) cardinality=('?'|'*'|'+')?
+	(Assignment | AbstractTerminal) Cardinality=('?'|'*'|'+')?
 ;
 
 Action:
-	'{' type=TypeRef ('.' feature=ID operator=('='|'+=') 'current')? '}'
+	'{' Type=TypeRef ('.' Feature=ID Operator=('='|'+=') 'current')? '}'
 ;
 
 AbstractTerminal:
@@ -95,32 +95,32 @@ AbstractTerminal:
 ;
 
 Keyword :
-	value=string
+	Value=string
 ;
 
 RuleCall :
-	rule=[AbstractRule|RuleID] ('<' arguments+=NamedArgument (',' arguments+=NamedArgument)* '>')?
+	Rule=[AbstractRule|RuleID] ('<' Arguments+=NamedArgument (',' Arguments+=NamedArgument)* '>')?
 ;
 
 NamedArgument:
-	( parameter=[Parameter|ID] calledByName?= '=')?
-	( value=Disjunction )
+	( Parameter=[Parameter|ID] CalledByName?= '=')?
+	( Value=Disjunction )
 ;
 
 LiteralCondition:
-	{LiteralCondition} (true?='true' | 'false')
+	{LiteralCondition} (True?='true' | 'false')
 ;
 
 Disjunction:
-	Conjunction ({Disjunction.left=current} '|' right=Conjunction)*
+	Conjunction ({Disjunction.Left=current} '|' Right=Conjunction)*
 ;
 
 Conjunction:
-	Negation ({Conjunction.left=current} '&' right=Negation)*
+	Negation ({Conjunction.Left=current} '&' Right=Negation)*
 ;
 
 Negation:
-	Atom | {Negation} '!' value=Negation
+	Atom | {Negation} '!' Value=Negation
 ;
 
 Atom:
@@ -132,11 +132,11 @@ ParenthesizedCondition:
 ;
 
 ParameterReference:
-	parameter=[Parameter|ID]
+	Parameter=[Parameter|ID]
 ;
 
 TerminalRuleCall:
-	rule=[AbstractRule|RuleID]
+	Rule=[AbstractRule|RuleID]
 ;
 
 RuleID returns string:
@@ -144,15 +144,15 @@ RuleID returns string:
 ;
 
 PredicatedKeyword:
-	(predicated?='=>' | firstSetPredicated?='->') value=string
+	(Predicated?='=>' | FirstSetPredicated?='->') Value=string
 ;
 
 PredicatedRuleCall:
-	(predicated?='=>' | firstSetPredicated?='->') rule=[AbstractRule|RuleID] ('<' arguments+=NamedArgument (',' arguments+=NamedArgument)* '>')?
+	(Predicated?='=>' | FirstSetPredicated?='->') Rule=[AbstractRule|RuleID] ('<' Arguments+=NamedArgument (',' Arguments+=NamedArgument)* '>')?
 ;
 
 Assignment:
-	(predicated?='=>' | firstSetPredicated?='->')? feature=ID operator=('+='|'='|'?=') ^terminal=AssignableTerminal
+	(Predicated?='=>' | FirstSetPredicated?='->')? Feature=ID Operator=('+='|'='|'?=') ^Terminal=AssignableTerminal
 ;
 
 AssignableTerminal:
@@ -164,11 +164,11 @@ ParenthesizedAssignableElement:
 ;
 
 AssignableAlternatives:
-	AssignableTerminal ({Alternatives.elements+=current} ('|' elements+=AssignableTerminal)+)?
+	AssignableTerminal ({Alternatives.Elements+=current} ('|' Elements+=AssignableTerminal)+)?
 ;
 
 CrossReference :
-	'[' type=TypeRef ('|' ^terminal=CrossReferenceableTerminal )? ']'
+	'[' Type=TypeRef ('|' ^Terminal=CrossReferenceableTerminal )? ']'
 ;
 
 CrossReferenceableTerminal:
@@ -180,27 +180,27 @@ ParenthesizedElement:
 ;
 
 PredicatedGroup:
-	(predicated?='=>' | firstSetPredicated?='->') '(' elements+=Alternatives ')'
+	(Predicated?='=>' | FirstSetPredicated?='->') '(' Elements+=Alternatives ')'
 ;
 
 TerminalRule :
-	'terminal' (^fragment?='fragment' name=ID | name=ID ('returns' type=TypeRef)?) ':'
-		regex=Regex
+	'terminal' (^Fragment?='fragment' Name=ID | Name=ID ('returns' Type=TypeRef)?) ':'
+		Regex=Regex
 	';'
 ;
 
 terminal Regex returns string: /\/(?![*+?])(?:[^\r\n\[/\\]|\\.|\[(?:[^\r\n\]\\]|\\.)*\])+\//;
 
 TerminalAlternatives:
-	TerminalGroup ({Alternatives.elements+=current} ('|' elements+=TerminalGroup)+)?
+	TerminalGroup ({Alternatives.Elements+=current} ('|' Elements+=TerminalGroup)+)?
 ;
 
 TerminalGroup:
-	TerminalToken ({Group.elements+=current} (elements+=TerminalToken)+)?
+	TerminalToken ({Group.Elements+=current} (Elements+=TerminalToken)+)?
 ;
 
 TerminalToken:
-	TerminalTokenElement cardinality=('?'|'*'|'+')?
+	TerminalTokenElement Cardinality=('?'|'*'|'+')?
 ;
 
 TerminalTokenElement:
@@ -216,11 +216,11 @@ AbstractNegatedToken:
 ;
 
 NegatedToken:
-	'!' ^terminal=TerminalTokenElement
+	'!' ^Terminal=TerminalTokenElement
 ;
 
 UntilToken:
-	'->' ^terminal=TerminalTokenElement
+	'->' ^Terminal=TerminalTokenElement
 ;
 
 Wildcard:
@@ -228,19 +228,19 @@ Wildcard:
 ;
 
 CharacterRange:
-	Keyword ( {CharacterRange.left=current} '..' right=Keyword)?
+	Keyword ( {CharacterRange.Left=current} '..' Right=Keyword)?
 ;
 
 EnumRule:
-	'enum' name=ID ('returns' type=TypeRef)? ':'
-		alternatives=EnumLiterals
+	'enum' Name=ID ('returns' Type=TypeRef)? ':'
+		Alternatives=EnumLiterals
 	';'
 ;
 
 EnumLiterals:
-	EnumLiteralDeclaration ({Alternatives.elements+=current} ('|' elements+=EnumLiteralDeclaration)+)?
+	EnumLiteralDeclaration ({Alternatives.Elements+=current} ('|' Elements+=EnumLiteralDeclaration)+)?
 ;
 
 EnumLiteralDeclaration:
-	enumLiteral=[EnumLiterals|ID] ('=' literal=Keyword)?
+	EnumLiteral=[EnumLiterals|ID] ('=' Literal=Keyword)?
 ;
