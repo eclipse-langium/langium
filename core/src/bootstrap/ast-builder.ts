@@ -11,9 +11,7 @@ export function linkGrammar(grammar: Grammar) {
 }
 
 function linkAlterative(grammar: Grammar, alternative: Alternative) {
-    alternative.groups?.forEach(g => {
-        linkGroup(grammar, g);
-    })
+    linkGroup(grammar, alternative.group!);
 }
 
 function linkGroup(grammar: Grammar, group: Group) {
@@ -21,7 +19,7 @@ function linkGroup(grammar: Grammar, group: Group) {
         // assignments
         if ("name" in e && "type" in e && "value" in e && e.value) {
             const v = e.value;
-            // direct rule call
+            // assignment rule call
             if (v.kind === "rule-call") {
                 e.value = findRule(grammar, v.name!);
             // cross references
@@ -30,6 +28,9 @@ function linkGroup(grammar: Grammar, group: Group) {
             } else if ("type" in v) {
                 v.type = findRule(grammar, v.type?.name!);
             }
+        // direct rule call
+        } else if (e.kind == "rule-call") {
+            e.rule = findRule(grammar, e.name!)?.rule;
         } else if ("alternatives" in e) {
             e.alternatives?.forEach(a => {
                 linkAlterative(grammar, a);
@@ -78,6 +79,10 @@ function buildTerminal(node: CstNode): Terminal {
     const children = node.children;
     const nameNode = <IToken>children["name"]![0];
     terminal.name = nameNode.image;
+    const returnNodes = children["returnType"];
+    if (returnNodes) {
+        terminal.returnType = (<IToken>returnNodes[0]).image;
+    }
     const regexNode = <IToken>children["regex"]![0];
     terminal.regex = regexNode.image;
     return terminal;
@@ -88,9 +93,14 @@ function buildRule(node: CstNode): Rule {
     const children = node.children;
     const nameNode = <IToken>children["name"]![0];
     rule.name = nameNode.image;
-    const alternativesNodes = <CstNode[]>children["alternatives"];
+    const returnNodes = children["returnType"];
+    if (returnNodes) {
+        rule.returnType = (<IToken>returnNodes[0]).image;
+    }
+    const alternativesNode = <CstNode>children["alternatives"]![0];
+    const groupNodes = <CstNode[]>alternativesNode.children["group"];
     const alternatives: Alternative[] = [];
-    alternativesNodes.forEach(e => {
+    groupNodes.forEach(e => {
         alternatives.push(buildAlternative(e));
     });
     rule.alternatives = alternatives;
@@ -98,14 +108,8 @@ function buildRule(node: CstNode): Rule {
 }
 
 function buildAlternative(node: CstNode): Alternative {
-    const alternative: Alternative = { kind: "alternative", groups: [] };
-    const children = node.children;
-    const groupNodes = <CstNode[]>children["group"];
-
-    groupNodes.forEach(e => {
-        alternative.groups!.push(buildGroup(e));
-    });
-
+    const alternative: Alternative = { kind: "alternative" };
+    alternative.group = buildGroup(node);
     return alternative;
 }
 
@@ -159,9 +163,10 @@ function buildAction(node: CstNode): Action {
 }
 
 function buildParenthesizedGroup(node: CstNode): ParenthesizedGroup {
-    const alternativesNodes = <CstNode[]>node.children["alternatives"];
+    const alternativesNode = <CstNode>node.children["alternatives"]![0];
+    const groupNodes = <CstNode[]>alternativesNode.children["group"];
     const alternatives: Alternative[] = [];
-    alternativesNodes.forEach(e => {
+    groupNodes.forEach(e => {
         alternatives.push(buildAlternative(e));
     });
     const cardTokens = node.children["card"];

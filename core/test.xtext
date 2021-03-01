@@ -1,9 +1,9 @@
 grammar xtext
 
 terminal WS         : /\s+/;
-terminal ID: /\^?[_a-zA-Z][\w_]*/;
-terminal INT: /[0-9]+/;
-terminal STRING: /"[^"]*"|'[^']*'/;
+terminal ID returns string: /\^?[_a-zA-Z][\w_]*/;
+terminal INT returns number: /[0-9]+/;
+terminal string: /"[^"]*"|'[^']*'/;
 terminal ML_COMMENT : /NOT_IMPLEMENTED/;
 terminal SL_COMMENT : /\/\/.*/;
 
@@ -16,7 +16,7 @@ Grammar:
 	(rules+=AbstractRule)+
 ;
 
-GrammarID returns EString:
+GrammarID returns string:
 	ID ('.' ID)*;
 
 AbstractRule : ParserRule | TerminalRule | EnumRule;
@@ -25,13 +25,13 @@ AbstractMetamodelDeclaration :
 	GeneratedMetamodel | ReferencedMetamodel;
 
 GeneratedMetamodel :
-	'generate' name=ID ePackage=[AbstractMetamodelDeclaration|STRING] ('as' alias=ID)?;
+	'generate' name=ID ePackage=[string] ('as' alias=ID)?;
 
 ReferencedMetamodel :
-	'import' ePackage=[AbstractMetamodelDeclaration|STRING] ('as' alias=ID)?;
+	'import' ePackage=[string] ('as' alias=ID)?;
 
 
-Annotation returns Annotation:
+Annotation:
 	'@' name = ID
 ;
 
@@ -46,7 +46,7 @@ ParserRule :
 	';'
 ;
 
-RuleNameAndParams returns ParserRule:
+RuleNameAndParams:
 	name=ID ('<' (parameters+=Parameter (',' parameters+=Parameter)*)? '>')?
 ;
 
@@ -55,40 +55,40 @@ Parameter:
 ;
 
 TypeRef :
-	(metamodel=[AbstractMetamodelDeclaration] '::')? classifier=[STRING]
+	(metamodel=[AbstractMetamodelDeclaration] '::')? classifier=[string]
 ;
 
-Alternatives returns AbstractElement:
+Alternatives:
 	ConditionalBranch ({Alternatives.elements+=current} ('|' elements+=ConditionalBranch)+)?
 ;
 
-ConditionalBranch returns AbstractElement:
+ConditionalBranch:
 	  UnorderedGroup
 	| {Group} '<' guardCondition=Disjunction '>' (elements+=AbstractToken)+
 ;
 
-UnorderedGroup returns AbstractElement:
+UnorderedGroup:
 	Group ({UnorderedGroup.elements+=current} ('&' elements+=Group)+)?
 ;
 
-Group returns AbstractElement:
+Group:
 	AbstractToken ({Group.elements+=current} (elements+=AbstractToken)+)?
 ;
 
-AbstractToken returns AbstractElement:
+AbstractToken:
 	AbstractTokenWithCardinality |
 	Action
 ;
 
-AbstractTokenWithCardinality returns AbstractElement:
+AbstractTokenWithCardinality:
 	(Assignment | AbstractTerminal) cardinality=('?'|'*'|'+')?
 ;
 
-Action returns Action:
+Action:
 	'{' type=TypeRef ('.' feature=ID operator=('='|'+=') 'current')? '}'
 ;
 
-AbstractTerminal returns AbstractElement:
+AbstractTerminal:
 	Keyword |
 	RuleCall |
 	ParenthesizedElement |
@@ -98,7 +98,7 @@ AbstractTerminal returns AbstractElement:
 ;
 
 Keyword :
-	value=STRING
+	value=string
 ;
 
 RuleCall :
@@ -114,23 +114,23 @@ LiteralCondition:
 	{LiteralCondition} (true?='true' | 'false')
 ;
 
-Disjunction returns Condition:
+Disjunction:
 	Conjunction ({Disjunction.left=current} '|' right=Conjunction)*
 ;
 
-Conjunction returns Condition:
+Conjunction:
 	Negation ({Conjunction.left=current} '&' right=Negation)*
 ;
 
-Negation returns Condition:
+Negation:
 	Atom | {Negation} '!' value=Negation
 ;
 
-Atom returns Condition:
+Atom:
 	ParameterReference | ParenthesizedCondition | LiteralCondition
 ;
 
-ParenthesizedCondition returns Condition:
+ParenthesizedCondition:
 	'(' Disjunction ')'
 ;
 
@@ -138,39 +138,39 @@ ParameterReference:
 	parameter=[Parameter|ID]
 ;
 
-TerminalRuleCall returns RuleCall:
+TerminalRuleCall:
 	rule=[AbstractRule|RuleID]
 ;
 
-RuleID returns EString:
+RuleID returns string:
 	ID ('::' ID)*
 ;
 
-ID returns EString:
+ID returns string:
 	ID | 'true' | 'false'
 ;
 
-PredicatedKeyword returns Keyword:
-	(predicated?='=>' | firstSetPredicated?='->') value=STRING
+PredicatedKeyword:
+	(predicated?='=>' | firstSetPredicated?='->') value=string
 ;
 
-PredicatedRuleCall returns RuleCall:
+PredicatedRuleCall:
 	(predicated?='=>' | firstSetPredicated?='->') rule=[AbstractRule|RuleID] ('<' arguments+=NamedArgument (',' arguments+=NamedArgument)* '>')?
 ;
 
-Assignment returns Assignment:
+Assignment:
 	(predicated?='=>' | firstSetPredicated?='->')? feature=ID operator=('+='|'='|'?=') ^terminal=AssignableTerminal
 ;
 
-AssignableTerminal returns AbstractElement:
+AssignableTerminal:
 	Keyword | RuleCall | ParenthesizedAssignableElement | CrossReference
 ;
 
-ParenthesizedAssignableElement returns AbstractElement:
+ParenthesizedAssignableElement:
 	'(' AssignableAlternatives ')'
 ;
 
-AssignableAlternatives returns AbstractElement:
+AssignableAlternatives:
 	AssignableTerminal ({Alternatives.elements+=current} ('|' elements+=AssignableTerminal)+)?
 ;
 
@@ -178,15 +178,15 @@ CrossReference :
 	'[' type=TypeRef ('|' ^terminal=CrossReferenceableTerminal )? ']'
 ;
 
-CrossReferenceableTerminal returns AbstractElement:
+CrossReferenceableTerminal:
 	Keyword | RuleCall
 ;
 
-ParenthesizedElement returns AbstractElement:
+ParenthesizedElement:
 	'(' Alternatives ')'
 ;
 
-PredicatedGroup returns Group:
+PredicatedGroup:
 	(predicated?='=>' | firstSetPredicated?='->') '(' elements+=Alternatives ')'
 ;
 
@@ -197,25 +197,25 @@ TerminalRule :
 	';'
 ;
 
-terminal Regex: /\/(?![*+?])(?:[^\r\n\[/\\]|\\.|\[(?:[^\r\n\]\\]|\\.)*\])+\//;
+terminal Regex returns string: /\/(?![*+?])(?:[^\r\n\[/\\]|\\.|\[(?:[^\r\n\]\\]|\\.)*\])+\//;
 
-TerminalAlternatives returns AbstractElement:
+TerminalAlternatives:
 	TerminalGroup ({Alternatives.elements+=current} ('|' elements+=TerminalGroup)+)?
 ;
 
-TerminalGroup returns AbstractElement:
+TerminalGroup:
 	TerminalToken ({Group.elements+=current} (elements+=TerminalToken)+)?
 ;
 
-TerminalToken returns AbstractElement:
+TerminalToken:
 	TerminalTokenElement cardinality=('?'|'*'|'+')?
 ;
 
-TerminalTokenElement returns AbstractElement:
-	CharacterRange | TerminalRuleCall | ParenthesizedTerminalElement | AbstractNegatedToken | Wildcard | ^EOF
+TerminalTokenElement:
+	CharacterRange | TerminalRuleCall | ParenthesizedTerminalElement | AbstractNegatedToken | Wildcard
 ;
 
-ParenthesizedTerminalElement returns AbstractElement:
+ParenthesizedTerminalElement:
 	'(' TerminalAlternatives ')'
 ;
 
@@ -235,7 +235,7 @@ Wildcard:
 	{Wildcard} '.'
 ;
 
-CharacterRange returns AbstractElement:
+CharacterRange:
 	Keyword ( {CharacterRange.left=current} '..' right=Keyword)?
 ;
 
@@ -246,7 +246,7 @@ EnumRule:
 	';'
 ;
 
-EnumLiterals returns AbstractElement:
+EnumLiterals:
 	EnumLiteralDeclaration ({Alternatives.elements+=current} ('|' elements+=EnumLiteralDeclaration)+)?
 ;
 

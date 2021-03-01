@@ -83,6 +83,10 @@ export class XtextParser extends CstParser {
     private terminal = this.RULE("terminal", () => {
         this.CONSUME(Terminal);
         this.CONSUME(Id, { LABEL: "name" });
+        this.OPTION(() => {
+            this.CONSUME(Returns);
+            this.CONSUME2(Id, { LABEL: 'returnType' });
+        });
         this.CONSUME(Colon);
         this.CONSUME(RegexLiteral, { LABEL: "regex" });
         this.CONSUME(Semicolon);

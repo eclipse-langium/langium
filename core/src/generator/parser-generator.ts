@@ -1,4 +1,4 @@
-import { Alternative, Grammar, Group, Rule, Terminal } from "../bootstrap/ast";
+import { Alternative, CrossReference, Grammar, Group, Keyword, ParenthesizedAssignableElement, Rule, RuleCall, Terminal } from "../bootstrap/ast";
 import { CompositeGeneratorNode, IndentNode, NewLineNode, TextNode } from "./node/node";
 import { process } from "./node/node-processor";
 import { replaceTokens } from "./token-replacer";
@@ -15,12 +15,12 @@ export function generateParser(grammar: Grammar): string {
 
     const tokens: { name: string, node: CompositeGeneratorNode }[] = [];
 
-    grammar.rules?.filter(e => e.kind == "terminal").map(e => e as Terminal).forEach(e => {
-        tokens.push(buildTerminalToken(e));
-    });
-
     keywords.forEach(e => {
         tokens.push(buildKeywordToken(e));
+    });
+
+    grammar.rules?.filter(e => e.kind == "terminal").map(e => e as Terminal).forEach(e => {
+        tokens.push(buildTerminalToken(e));
     });
 
     tokens.forEach(e => {
@@ -198,20 +198,18 @@ function collectRuleKeywords(rule: Rule, keywords: Set<string>) {
 }
 
 function collectAlternativeKeywords(alternative: Alternative, keywords: Set<string>) {
-    alternative.groups?.forEach(g => {
-        collectGroupKeywords(g, keywords);
-    });
+    collectGroupKeywords(alternative.group!, keywords);
 }
 
 function collectGroupKeywords(group: Group, keywords: Set<string>) {
     group.items?.forEach(element => {
-        if ("value" in element) {
+
+        if ("value" in element && element.value) {
+
             if (typeof(element.value) === "string") {
                 keywords.add(element.value);
-            } else if (Array.isArray(element.value)) {
-                element.value.forEach(e => {
-                    keywords.add(e.value!);
-                })
+            } else if ("kind" in element.value) {
+                collectValueKeywords(element.value, keywords);
             }
         } else if ("alternatives" in element) {
             element.alternatives?.forEach(a => {
@@ -219,4 +217,17 @@ function collectGroupKeywords(group: Group, keywords: Set<string>) {
             });
         }
     });
+}
+
+function collectValueKeywords(value: Keyword | ParenthesizedAssignableElement | RuleCall | CrossReference, keywords: Set<string>) {
+    switch (value.kind) {
+        case "keyword": {
+            keywords.add(value.value!);
+            break;
+        } case "parenthesized-assignable-element": {
+            value.items.forEach(e => {
+                collectValueKeywords(e, keywords);
+            })
+        }
+    }
 }

@@ -18,7 +18,7 @@ export type Rule = AstNode & {
 
 export type Alternative = AstNode & {
     kind: "alternative",
-    groups?: Group[];
+    group?: Group;
 }
 
 export type Group = AstNode & {
@@ -35,6 +35,7 @@ export type RuleCall = AstNode & {
 export type Terminal = AstNode & {
     kind: "terminal",
     name?: string;
+    returnType?: string;
     regex?: string;
 }
 
