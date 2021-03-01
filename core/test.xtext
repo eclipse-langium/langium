@@ -4,8 +4,6 @@ terminal WS         : /\s+/;
 terminal ID returns string: /\^?[_a-zA-Z][\w_]*/;
 terminal INT returns number: /[0-9]+/;
 terminal string: /"[^"]*"|'[^']*'/;
-terminal ML_COMMENT : /NOT_IMPLEMENTED/;
-terminal SL_COMMENT : /\/\/.*/;
 
 
 
@@ -36,7 +34,6 @@ Annotation:
 ;
 
 ParserRule :
-	(annotations += Annotation)*
 	(
 	  ^fragment?='fragment' RuleNameAndParams (wildcard?='*' | ('returns' type=TypeRef)?)
 	| RuleNameAndParams ('returns' type=TypeRef)?
@@ -146,10 +143,6 @@ RuleID returns string:
 	ID ('::' ID)*
 ;
 
-ID returns string:
-	ID | 'true' | 'false'
-;
-
 PredicatedKeyword:
 	(predicated?='=>' | firstSetPredicated?='->') value=string
 ;
@@ -191,7 +184,6 @@ PredicatedGroup:
 ;
 
 TerminalRule :
-	(annotations += Annotation)*
 	'terminal' (^fragment?='fragment' name=ID | name=ID ('returns' type=TypeRef)?) ':'
 		regex=Regex
 	';'
@@ -240,7 +232,6 @@ CharacterRange:
 ;
 
 EnumRule:
-	(annotations += Annotation)*
 	'enum' name=ID ('returns' type=TypeRef)? ':'
 		alternatives=EnumLiterals
 	';'

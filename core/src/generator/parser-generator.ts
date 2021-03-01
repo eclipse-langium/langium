@@ -1,7 +1,15 @@
-import { Alternative, CrossReference, Grammar, Group, Keyword, ParenthesizedAssignableElement, Rule, RuleCall, Terminal } from "../bootstrap/ast";
-import { CompositeGeneratorNode, IndentNode, NewLineNode, TextNode } from "./node/node";
+import { Alternative, Assignment, Cardinality, CrossReference, Grammar, Group, Keyword, ParenthesizedAssignableElement, ParenthesizedGroup, Rule, RuleCall, Terminal } from "../bootstrap/ast";
+import { CompositeGeneratorNode, IGeneratorNode, IndentNode, NewLineNode, TextNode } from "./node/node";
 import { process } from "./node/node-processor";
 import { replaceTokens } from "./token-replacer";
+
+type RuleContext = {
+    option: number,
+    consume: number,
+    subrule: number,
+    many: number,
+    or: number
+}
 
 export function generateParser(grammar: Grammar): string {
     const keywords = collectKeywords(grammar);
@@ -13,11 +21,13 @@ export function generateParser(grammar: Grammar): string {
         new NewLineNode()
     );
 
-    const tokens: { name: string, node: CompositeGeneratorNode }[] = [];
+    let tokens: { name: string, length: number, node: CompositeGeneratorNode }[] = [];
 
     keywords.forEach(e => {
         tokens.push(buildKeywordToken(e));
     });
+
+    tokens = tokens.sort((a, b) => b.length - a.length);
 
     grammar.rules?.filter(e => e.kind == "terminal").map(e => e as Terminal).forEach(e => {
         tokens.push(buildTerminalToken(e));
@@ -110,7 +120,14 @@ function buildParser(grammar: Grammar): CompositeGeneratorNode {
 
     let first = true;
     grammar.rules?.filter(e => e.kind === "rule").map(e => e as Rule).forEach(e => {
-        classBody.children.push(buildRule(e, first));
+        const ctx: RuleContext = {
+            consume: 1,
+            option: 1,
+            subrule: 1,
+            many: 1,
+            or: 1
+        };
+        classBody.children.push(buildRule(ctx, e, first));
         first = false;
     });
 
@@ -119,7 +136,7 @@ function buildParser(grammar: Grammar): CompositeGeneratorNode {
     return parserNode;
 }
 
-function buildRule(rule: Rule, first: boolean): CompositeGeneratorNode {
+function buildRule(ctx: RuleContext, rule: Rule, first: boolean): CompositeGeneratorNode {
     const ruleNode = new CompositeGeneratorNode();
     ruleNode.children.push(
         new TextNode(first ? "public " : "private "), 
@@ -130,20 +147,150 @@ function buildRule(rule: Rule, first: boolean): CompositeGeneratorNode {
         new NewLineNode()
     );
 
-    const bodyNode = new IndentNode("    ");
     ruleNode.children.push(
-        bodyNode, 
-        new NewLineNode(), 
+        buildAlternatives(ctx, rule.alternatives!),
         new TextNode("});"), 
         new NewLineNode(), 
         new NewLineNode()
     );
-    bodyNode.children.push();
 
     return ruleNode;
 }
 
-function buildTerminalToken(terminal: Terminal): { name: string, node: CompositeGeneratorNode } {
+function buildAlternatives(ctx: RuleContext, alternatives: Alternative[]): CompositeGeneratorNode {
+    const altNode = new IndentNode("    ");
+
+    if (alternatives.length > 1) {
+        altNode.children.push(new TextNode("this.or(" + ctx.or++ + ", ["), new NewLineNode());
+        const altIndentNode = new IndentNode("    ");
+        altNode.children.push(altIndentNode);
+
+        alternatives.forEach(e => {
+            altIndentNode.children.push(new TextNode("{"), new NewLineNode());
+            const chevAltNode = new IndentNode("    ");
+            chevAltNode.children.push(new TextNode("ALT: () => {"), new NewLineNode());
+            const indGroup = new IndentNode("    ");
+            indGroup.children.push(buildGroup(ctx, e.group!));
+            chevAltNode.children.push(indGroup);
+            chevAltNode.children.push(new TextNode("}"), new NewLineNode());
+            altIndentNode.children.push(chevAltNode, new TextNode("},"), new NewLineNode());
+        });
+
+        altNode.children.push(new TextNode("]);"), new NewLineNode());
+    } else {
+        altNode.children.push(buildGroup(ctx, alternatives[0].group!));
+    }
+    return altNode;
+}
+
+function buildGroup(ctx: RuleContext, group: Group): CompositeGeneratorNode {
+    const groupNode = new CompositeGeneratorNode();
+
+    group.items?.forEach(e => {
+        switch (e.kind) {
+            case "rule-call": {
+                groupNode.children.push(buildRuleCall(ctx, e), new NewLineNode());
+                break;
+            }
+            case "parenthesized-group": {
+                groupNode.children.push(buildParenthesizedGroup(ctx, e), new NewLineNode());
+                break;
+            }
+            case "keyword": {
+                groupNode.children.push(buildKeyword(ctx, e), new NewLineNode());  
+                break;              
+            }
+            case "assignment": {
+                groupNode.children.push(buildAssignment(ctx, e), new NewLineNode());
+                break;
+            }
+        }
+    });
+
+    return groupNode;
+}
+
+function buildAssignment(ctx: RuleContext, assignment: Assignment): CompositeGeneratorNode {
+    const assignNode = new CompositeGeneratorNode();
+
+    assignNode.children.push(buildAssignableElement(ctx, assignment.value!));
+
+    return wrap(ctx, assignNode, assignment.cardinality);
+}
+
+function buildAssignableElement(ctx: RuleContext, v: Keyword | RuleCall | ParenthesizedAssignableElement | CrossReference): IGeneratorNode {
+    switch (v.kind) {
+        case "keyword": {
+            return buildKeyword(ctx, v);
+        } case "cross-reference": {
+            return new TextNode("this.consume(" + ctx.consume++ + ", ID);");
+        } case "rule-call": {
+            return buildRuleCall(ctx, v);
+        } case "parenthesized-assignable-element": {
+            return buildParenthesizedElement(ctx, v);
+        }
+    }
+}
+
+function buildParenthesizedElement(ctx: RuleContext, element: ParenthesizedAssignableElement): IGeneratorNode {
+    if (element.items.length == 1) {
+        return buildAssignableElement(ctx, element.items[0]);
+    } else {
+        const wrapper = new CompositeGeneratorNode();
+        wrapper.children.push(new TextNode("this.or(" + ctx.or++ + ", ["), new NewLineNode());
+
+        element.items.forEach(e => {
+            wrapper.children.push(new TextNode("{ ALT: () => {"), new NewLineNode());
+            wrapper.children.push(buildAssignableElement(ctx, e), new NewLineNode());
+            wrapper.children.push(new TextNode("}},"), new NewLineNode());
+        });
+
+        wrapper.children.push(new TextNode("]);"));
+
+        return wrapper;
+    }
+}
+
+function wrap<T extends IGeneratorNode>(ctx: RuleContext, node: T, cardinality: Cardinality | undefined): T | CompositeGeneratorNode {
+    if (!cardinality) {
+        return node;
+    } else {
+        const wrapper = new CompositeGeneratorNode();
+        if (cardinality == "*" || cardinality == "+") {
+            wrapper.children.push(new TextNode("this.many(" + ctx.many++ + ", () => {"), new NewLineNode());
+        } else if (cardinality == "?") {
+            wrapper.children.push(new TextNode("this.option(" + ctx.option++ + ", () => {"), new NewLineNode());
+        }
+
+        const indent = new IndentNode("    ");
+        indent.children.push(node);
+        wrapper.children.push(indent, new TextNode("});"));
+
+        return wrapper;
+    }
+}
+
+function buildParenthesizedGroup(ctx: RuleContext, group: ParenthesizedGroup): CompositeGeneratorNode {
+    return wrap(ctx, buildAlternatives(ctx, group.alternatives!), group.cardinality);
+}
+
+function buildRuleCall(ctx: RuleContext, ruleCall: RuleCall): TextNode {
+    if (ruleCall.rule!.kind == "rule") {
+        return new TextNode("this.subrule(" + ctx.subrule++ + ", this." + ruleCall.rule!.name! + ");");
+    } else if (ruleCall.rule!.kind == "terminal") {
+        return new TextNode("this.consume(" + ctx.consume++ + ", " + ruleCall.rule!.name! + ");");
+    }
+    
+    return new TextNode("");
+}
+
+function buildKeyword(ctx: RuleContext, keyword: Keyword): TextNode {
+    const validName = replaceTokens(keyword.value!) + "Keyword";
+    const node = new TextNode("this.consume(" + ctx.consume++ + ", " + validName + ");");
+    return node;
+}
+
+function buildTerminalToken(terminal: Terminal): { name: string, length: number, node: CompositeGeneratorNode } {
     const terminalNode = new CompositeGeneratorNode();
     terminalNode.children.push(
         new TextNode("const "),
@@ -160,12 +307,12 @@ function buildTerminalToken(terminal: Terminal): { name: string, node: Composite
     terminalNode.children.push(
         new TextNode(" });"));
     
-    return { name: terminal.name!, node: terminalNode };
+    return { name: terminal.name!, length: terminal.regex!.length, node: terminalNode };
 }
 
-function buildKeywordToken(keyword: string): { name: string, node: CompositeGeneratorNode } {
+function buildKeywordToken(keyword: string): { name: string, length: number, node: CompositeGeneratorNode } {
     const keywordNode = new CompositeGeneratorNode();
-    const validName = replaceTokens(keyword);
+    const validName = replaceTokens(keyword) + "Keyword";
     keywordNode.children.push(
         new TextNode("const "), 
         new TextNode(validName),
@@ -174,7 +321,7 @@ function buildKeywordToken(keyword: string): { name: string, node: CompositeGene
         new TextNode("', pattern: /"),
         new TextNode(escapeRegExp(keyword)),
         new TextNode("/ });"));
-    return { name: validName, node: keywordNode };
+    return { name: validName, length: keyword.length, node: keywordNode };
 }
 
 function escapeRegExp(text: string): string {
