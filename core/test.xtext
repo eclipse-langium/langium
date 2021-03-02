@@ -8,8 +8,8 @@ terminal string: /"[^"]*"|'[^']*'/;
 
 
 Grammar:
-	'grammar' Name=GrammarID ('with' UsedGrammars+=[Grammar|GrammarID] (',' UsedGrammars+=[Grammar|GrammarID])*)?
-	(definesHiddenTokens?='hidden' '(' (HiddenTokens+=[AbstractRule|RuleID] (',' HiddenTokens+=[AbstractRule|RuleID])*)? ')')?
+	'grammar' Name=ID ('with' UsedGrammars+=[Grammar|ID] (',' UsedGrammars+=[Grammar|ID])*)?
+	(definesHiddenTokens?='hidden' '(' (HiddenTokens+=[AbstractRule|ID] (',' HiddenTokens+=[AbstractRule|ID])*)? ')')?
 	MetamodelDeclarations+=AbstractMetamodelDeclaration*
 	(rules+=AbstractRule)+
 ;
@@ -38,7 +38,7 @@ ParserRule :
 	  ^fragment?='fragment' RuleNameAndParams (wildcard?='*' | ('returns' Type=TypeRef)?)
 	| RuleNameAndParams ('returns' Type=TypeRef)?
 	)
-	(DefinesHiddenTokens?='hidden' '(' (HiddenTokens+=[AbstractRule|RuleID] (',' HiddenTokens+=[AbstractRule|RuleID])*)? ')')? ':'
+	(DefinesHiddenTokens?='hidden' '(' (HiddenTokens+=[AbstractRule|ID] (',' HiddenTokens+=[AbstractRule|ID])*)? ')')? ':'
 		Alternatives=Alternatives
 	';'
 ;

@@ -20,7 +20,9 @@ export function generateParser(grammar: Grammar): string {
         new TextNode('import { createToken, Lexer, EmbeddedActionsParser } from "chevrotain";'),
         new NewLineNode(),
         new TextNode('import { PartialDeep } from "type-fest";'),
-        new NewLineNode()
+        new NewLineNode(),
+        new TextNode('import { RuleResult } from "../generator/ast-node";'),
+        new NewLineNode(),
     );
 
     fileNode.children.push(new TextNode("import {"));
@@ -146,20 +148,28 @@ function buildParser(grammar: Grammar): CompositeGeneratorNode {
 
 function buildRule(ctx: RuleContext, rule: Rule, first: boolean): CompositeGeneratorNode {
     const ruleNode = new CompositeGeneratorNode();
+    const { fields } = collectRule(rule);
     ruleNode.children.push(
         new TextNode(first ? "public " : "private "), 
-        new TextNode(rule.name!),
+        new TextNode(rule.name)
+    );
+
+    if (fields.length > 0) {
+        ruleNode.children.push(new TextNode(': RuleResult<' + rule.name + '>'));
+    }
+
+    ruleNode.children.push(
         new TextNode(' = this.RULE("'),
         new TextNode(rule.name),
         new TextNode('", () => {'),
         new NewLineNode()
-    );
+    )
 
     ruleNode.children.push(
         buildPropertyInitializers(rule),
-        buildAlternatives(ctx, rule.alternatives!),
+        buildAlternatives(ctx, true, rule.alternatives!),
         buildRuleReturnStatement(rule),
-        new TextNode("});"), 
+        new TextNode("})"), 
         new NewLineNode(), 
         new NewLineNode()
     );
@@ -181,9 +191,10 @@ function buildPropertyInitializers(rule: Rule): CompositeGeneratorNode {
         } else {
             suffix = " | undefined";
         }
-
         node.children.push(new TextNode("let " + e.name + ": " + prefix + e.type.map(e => partialType(e)).join(" | ") + suffix), new NewLineNode());
     })
+
+    node.children.push(new TextNode("let refs = new Map<string, string>()"), new NewLineNode());
 
     return node;
 }
@@ -206,21 +217,24 @@ function buildRuleReturnStatement(rule: Rule) : CompositeGeneratorNode {
         
         const indent = new IndentNode("    ");
         indent.children.push(new TextNode('kind: "' + rule.name! + '",'), new NewLineNode());
-
+        indent.children.push(new TextNode("'.references': refs,"), new NewLineNode());
         fields.forEach(e => {
             indent.children.push(new TextNode(e.name + ","), new NewLineNode());
         });
 
-        node.children.push(indent, new TextNode("};"), new NewLineNode());
+        node.children.push(indent, new TextNode("}"), new NewLineNode());
     }
 
     return node;
 }
 
-function buildAlternatives(ctx: RuleContext, alternatives: Alternative[]): CompositeGeneratorNode {
+function buildAlternatives(ctx: RuleContext, root: boolean, alternatives: Alternative[]): CompositeGeneratorNode {
     const altNode = new IndentNode("    ");
 
     if (alternatives.length > 1) {
+        if (root) {
+            altNode.children.push(new TextNode("return "));
+        }
         altNode.children.push(new TextNode("this.or(" + ctx.or++ + ", ["), new NewLineNode());
         const altIndentNode = new IndentNode("    ");
         altNode.children.push(altIndentNode);
@@ -230,25 +244,28 @@ function buildAlternatives(ctx: RuleContext, alternatives: Alternative[]): Compo
             const chevAltNode = new IndentNode("    ");
             chevAltNode.children.push(new TextNode("ALT: () => {"), new NewLineNode());
             const indGroup = new IndentNode("    ");
-            indGroup.children.push(buildGroup(ctx, e.group!));
+            indGroup.children.push(buildGroup(ctx, true, e.group!));
             chevAltNode.children.push(indGroup);
             chevAltNode.children.push(new TextNode("}"), new NewLineNode());
             altIndentNode.children.push(chevAltNode, new TextNode("},"), new NewLineNode());
         });
 
-        altNode.children.push(new TextNode("]);"), new NewLineNode());
+        altNode.children.push(new TextNode("])"), new NewLineNode());
     } else {
-        altNode.children.push(buildGroup(ctx, alternatives[0].group!));
+        altNode.children.push(buildGroup(ctx, false, alternatives[0].group!));
     }
     return altNode;
 }
 
-function buildGroup(ctx: RuleContext, group: Group): CompositeGeneratorNode {
+function buildGroup(ctx: RuleContext, root: boolean, group: Group): CompositeGeneratorNode {
     const groupNode = new CompositeGeneratorNode();
 
     group.items?.forEach(e => {
         switch (e.kind) {
             case "rule-call": {
+                if (root) {
+                    groupNode.children.push(new TextNode("return "));
+                }
                 groupNode.children.push(buildRuleCall(ctx, e), new NewLineNode());
                 break;
             }
@@ -272,12 +289,31 @@ function buildGroup(ctx: RuleContext, group: Group): CompositeGeneratorNode {
 
 function buildAssignment(ctx: RuleContext, assignment: Assignment): CompositeGeneratorNode {
     const assignNode = new CompositeGeneratorNode();
+    const crossRef = assignment.value!.kind == "cross-reference";
+    let prefix = ""
+    let suffix = ""
 
     if (assignment.type == "=") {
-        assignNode.children.push(new TextNode(assignment.name! + " = "));
+        if (crossRef) {
+            prefix = 'refs.set("' + assignment.name! + '", ';
+            suffix = ")";
+        } else {
+            prefix = assignment.name! + " = ";
+        }
+    } else if (assignment.type == "?=") {
+        prefix = assignment.name! + " = true;";
+    } else if (assignment.type == "+=") {
+        if (crossRef) {
+            // ignore this for now
+        } else {
+            prefix = assignment.name! + ".push(";
+            suffix = ")";
+        }
     }
 
+    assignNode.children.push(new TextNode(prefix));
     assignNode.children.push(buildAssignableElement(ctx, assignment.value!));
+    assignNode.children.push(new TextNode(suffix));
 
     return wrap(ctx, assignNode, assignment.cardinality);
 }
@@ -287,7 +323,7 @@ function buildAssignableElement(ctx: RuleContext, v: Keyword | RuleCall | Parent
         case "keyword": {
             return buildKeyword(ctx, v);
         } case "cross-reference": {
-            return new TextNode("this.consume(" + ctx.consume++ + ", ID).image;");
+            return new TextNode("this.consume(" + ctx.consume++ + ", ID).image");
         } case "rule-call": {
             return buildRuleCall(ctx, v);
         } case "parenthesized-assignable-element": {
@@ -309,7 +345,7 @@ function buildParenthesizedElement(ctx: RuleContext, element: ParenthesizedAssig
             wrapper.children.push(new TextNode("}},"), new NewLineNode());
         });
 
-        wrapper.children.push(new TextNode("]);"));
+        wrapper.children.push(new TextNode("])"));
 
         return wrapper;
     }
@@ -328,21 +364,21 @@ function wrap<T extends IGeneratorNode>(ctx: RuleContext, node: T, cardinality: 
 
         const indent = new IndentNode("    ");
         indent.children.push(node);
-        wrapper.children.push(indent, new TextNode("});"));
+        wrapper.children.push(indent, new TextNode("})"));
 
         return wrapper;
     }
 }
 
 function buildParenthesizedGroup(ctx: RuleContext, group: ParenthesizedGroup): CompositeGeneratorNode {
-    return wrap(ctx, buildAlternatives(ctx, group.alternatives!), group.cardinality);
+    return wrap(ctx, buildAlternatives(ctx, false, group.alternatives!), group.cardinality);
 }
 
 function buildRuleCall(ctx: RuleContext, ruleCall: RuleCall): TextNode {
     if (ruleCall.rule!.kind == "rule") {
-        return new TextNode("this.subrule(" + ctx.subrule++ + ", this." + ruleCall.rule!.name! + ");");
+        return new TextNode("this.subrule(" + ctx.subrule++ + ", this." + ruleCall.rule!.name! + ")");
     } else if (ruleCall.rule!.kind == "terminal") {
-        return new TextNode("this.consume(" + ctx.consume++ + ", " + ruleCall.rule!.name! + ").image;");
+        return new TextNode("this.consume(" + ctx.consume++ + ", " + ruleCall.rule!.name! + ").image");
     }
     
     return new TextNode("");
@@ -350,7 +386,7 @@ function buildRuleCall(ctx: RuleContext, ruleCall: RuleCall): TextNode {
 
 function buildKeyword(ctx: RuleContext, keyword: Keyword): TextNode {
     const validName = replaceTokens(keyword.value!) + "Keyword";
-    const node = new TextNode("this.consume(" + ctx.consume++ + ", " + validName + ").image;");
+    const node = new TextNode("this.consume(" + ctx.consume++ + ", " + validName + ").image");
     return node;
 }
 

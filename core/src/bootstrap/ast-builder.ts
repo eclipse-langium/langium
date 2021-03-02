@@ -186,6 +186,9 @@ function buildAssignment(node: CstNode): Assignment {
     const children = node.children;
     const nameNode = children["name"]![0] as IToken;
     assignment.name = nameNode.image;
+    if (assignment.name!.startsWith("^")) {
+        assignment.name = assignment.name.substring(1);
+    }
     const assignNode = children["assign"]![0] as IToken;
     assignment.type = <AssignType>assignNode.image;
     const valueChild = children["value"];

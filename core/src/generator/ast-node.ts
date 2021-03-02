@@ -1,3 +1,5 @@
+import { PartialDeep } from "type-fest"
+
 export type AstNode = {
     kind: string,
     '.references'?: Map<string, string | undefined>,
@@ -10,3 +12,5 @@ export type ModelNode = {
     children?: ModelNode[],
     parent?: ModelNode
 }
+
+export type RuleResult<T> = (idxInCallingRule?: number, ...args: any[]) => PartialDeep<T>
