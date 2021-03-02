@@ -185,11 +185,11 @@ PredicatedGroup:
 
 TerminalRule :
 	'terminal' (^Fragment?='fragment' Name=ID | Name=ID ('returns' Type=TypeRef)?) ':'
-		Regex=Regex
+		Regex=RegexLiteral
 	';'
 ;
 
-terminal Regex returns string: /\/(?![*+?])(?:[^\r\n\[/\\]|\\.|\[(?:[^\r\n\]\\]|\\.)*\])+\//;
+terminal RegexLiteral returns string: /\/(?![*+?])(?:[^\r\n\[/\\]|\\.|\[(?:[^\r\n\]\\]|\\.)*\])+\//;
 
 TerminalAlternatives:
 	TerminalGroup ({Alternatives.Elements+=current} ('|' Elements+=TerminalGroup)+)?

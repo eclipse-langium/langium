@@ -1,35 +1,51 @@
-import { EmbeddedActionsParser } from "chevrotain";
 import { Action, Alternative, Assignment, Grammar, Group, ParenthesizedGroup, Rule, RuleCall } from "../bootstrap/ast";
 import { CompositeGeneratorNode, IGeneratorNode, IndentNode, NewLineNode, TextNode } from "./node/node";
 import { process } from "./node/node-processor";
+import { collectRule } from "./utils";
 
 export function generateAst(grammar: Grammar): string {
     const node = new CompositeGeneratorNode();
 
+    node.children.push(new TextNode('import { AstNode } from "../generator/ast-node"'), new NewLineNode(), new NewLineNode());
+
     grammar.rules?.filter(e => e.kind == "rule").map(e => e as Rule).forEach(e => {
         node.children.push(generateRuleType(e));
-    })
+    });
 
     return process(node);
 }
 
-function generateRuleType(rule: Rule): CompositeGeneratorNode {
+function generateRuleType(rule: Rule): IGeneratorNode {
     const typeNode = new CompositeGeneratorNode();
-    const kindField: Field = {
-        name: "kind",
-        array: false,
-        optional: false,
-        type: '"' + rule.name! + '"'
-    }
+    const { fields, rules } = collectRule(rule, true);
 
     typeNode.children.push(new TextNode("export type "), new TextNode(rule.name!), new TextNode(" = "));
 
-    rule.alternatives?.forEach(e => {
-        typeNode.children.push(generateAlternative(e, false, true, [kindField]), new TextNode(" |"), new NewLineNode());
+    if (fields.length == 0 && rules.length == 0) {
+        typeNode.children.push(new TextNode('{ kind: "' + rule.name! + '" }'));
+    }
+
+    rules.forEach(e => {
+        typeNode.children.push(new TextNode(e), new TextNode(" | "));
     });
 
-    typeNode.children.pop();
-    typeNode.children.pop();
+    if (fields.length > 0) {
+        typeNode.children.push(new TextNode("AstNode & {"), new NewLineNode());
+
+        const indent = new IndentNode("    ");
+        typeNode.children.push(indent);
+        fields.forEach((e, i) => {
+            const option = e.optional && !e.array ? "?" : "";
+            const array = e.array ? "[]" : "";
+            const comma = i < fields.length - 1 ? "," : "";
+            indent.children.push(new TextNode(e.name + option + ": " + e.type + array + comma), new NewLineNode());
+        });
+
+        typeNode.children.push(new TextNode("}"));
+    } else if (rules.length > 0) {
+        typeNode.children.pop();
+    }
+
     typeNode.children.push(new NewLineNode(), new NewLineNode());
 
     return typeNode;
@@ -50,7 +66,7 @@ function generateGroup(group: Group, optional: boolean, wrap: boolean, fields: F
         return new TextNode(getRuleTarget(group.items![0]));
     } else {
         if (wrap) {
-            node.children.push(new TextNode("{"), new NewLineNode());
+            node.children.push(new TextNode("AstNode & {"), new NewLineNode());
         }
         
         group.items?.filter(e => e.kind == "assignment").map(e => e as Assignment).forEach(e => {
@@ -73,7 +89,7 @@ function generateGroup(group: Group, optional: boolean, wrap: boolean, fields: F
             fields.forEach((e, i) => {
                 if (!set.has(e.name)) {
                     set.add(e.name);
-                    const option = e.optional ? "?" : "";
+                    const option = e.optional && !e.array && e.type !== "boolean" ? "?" : "";
                     const array = e.array ? "[]" : "";
                     const comma = i < fields.length - 1 ? "," : "";
                     indent.children.push(new TextNode(e.name + option + ": " + e.type + array + comma), new NewLineNode());

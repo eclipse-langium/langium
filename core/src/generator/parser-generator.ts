@@ -2,6 +2,7 @@ import { Alternative, Assignment, Cardinality, CrossReference, Grammar, Group, K
 import { CompositeGeneratorNode, IGeneratorNode, IndentNode, NewLineNode, TextNode } from "./node/node";
 import { process } from "./node/node-processor";
 import { replaceTokens } from "./token-replacer";
+import { collectRule } from "./utils";
 
 type RuleContext = {
     option: number,
@@ -16,10 +17,17 @@ export function generateParser(grammar: Grammar): string {
 
     const fileNode = new CompositeGeneratorNode();
     fileNode.children.push(
-        new TextNode('import { createToken, Lexer, CstParser } from "chevrotain";'),
+        new TextNode('import { createToken, Lexer, EmbeddedActionsParser } from "chevrotain";'),
         new NewLineNode(),
+        new TextNode('import { PartialDeep } from "type-fest";'),
         new NewLineNode()
     );
+
+    fileNode.children.push(new TextNode("import {"));
+    grammar.rules?.filter(e => e.kind == "rule").map(e => e as Rule).forEach(e => {
+        fileNode.children.push(new TextNode(" " + e.name! + ","));
+    });
+    fileNode.children.push(new TextNode(' } from "./ast";'), new NewLineNode(), new NewLineNode());
 
     let tokens: { name: string, length: number, node: CompositeGeneratorNode }[] = [];
 
@@ -98,14 +106,14 @@ function buildParseFunction(grammar: Grammar): CompositeGeneratorNode {
 function buildParser(grammar: Grammar): CompositeGeneratorNode {
     const parserNode = new CompositeGeneratorNode();
 
-    parserNode.children.push(new TextNode("export class Parser extends CstParser {"), new NewLineNode());
+    parserNode.children.push(new TextNode("export class Parser extends EmbeddedActionsParser {"), new NewLineNode());
 
     const classBody = new IndentNode("    ");
     classBody.children.push(new TextNode("constructor() {"), new NewLineNode());
 
     const constructorBody = new IndentNode("    ");
     constructorBody.children.push(
-        new TextNode('super(tokens, { recoveryEnabled: true, nodeLocationTracking: "onlyOffset" });'),
+        new TextNode('super(tokens, { recoveryEnabled: true });'),
         new NewLineNode(),
         new TextNode("this.performSelfAnalysis();"),
         new NewLineNode()
@@ -148,13 +156,65 @@ function buildRule(ctx: RuleContext, rule: Rule, first: boolean): CompositeGener
     );
 
     ruleNode.children.push(
+        buildPropertyInitializers(rule),
         buildAlternatives(ctx, rule.alternatives!),
+        buildRuleReturnStatement(rule),
         new TextNode("});"), 
         new NewLineNode(), 
         new NewLineNode()
     );
 
     return ruleNode;
+}
+
+function buildPropertyInitializers(rule: Rule): CompositeGeneratorNode {
+    const node = new IndentNode("    ");
+
+    const { fields } = collectRule(rule);
+
+    fields.forEach(e => {
+        let prefix = "";
+        let suffix = "";
+        if (e.array) {
+            prefix = "(";
+            suffix = ")[] = []";
+        } else {
+            suffix = " | undefined";
+        }
+
+        node.children.push(new TextNode("let " + e.name + ": " + prefix + e.type.map(e => partialType(e)).join(" | ") + suffix), new NewLineNode());
+    })
+
+    return node;
+}
+
+function partialType(type: string): string {
+    if (type !== "string" && type != "boolean" && type != "number") {
+        return "PartialDeep<" + type + ">";
+    } else{
+        return type;
+    }
+}
+
+function buildRuleReturnStatement(rule: Rule) : CompositeGeneratorNode {
+    const node = new IndentNode("    ");
+
+    const { fields } = collectRule(rule);
+
+    if (fields.length > 0) {
+        node.children.push(new TextNode("return <PartialDeep<" + rule.name! + ">> {"), new NewLineNode());
+        
+        const indent = new IndentNode("    ");
+        indent.children.push(new TextNode('kind: "' + rule.name! + '",'), new NewLineNode());
+
+        fields.forEach(e => {
+            indent.children.push(new TextNode(e.name + ","), new NewLineNode());
+        });
+
+        node.children.push(indent, new TextNode("};"), new NewLineNode());
+    }
+
+    return node;
 }
 
 function buildAlternatives(ctx: RuleContext, alternatives: Alternative[]): CompositeGeneratorNode {
@@ -213,6 +273,10 @@ function buildGroup(ctx: RuleContext, group: Group): CompositeGeneratorNode {
 function buildAssignment(ctx: RuleContext, assignment: Assignment): CompositeGeneratorNode {
     const assignNode = new CompositeGeneratorNode();
 
+    if (assignment.type == "=") {
+        assignNode.children.push(new TextNode(assignment.name! + " = "));
+    }
+
     assignNode.children.push(buildAssignableElement(ctx, assignment.value!));
 
     return wrap(ctx, assignNode, assignment.cardinality);
@@ -223,7 +287,7 @@ function buildAssignableElement(ctx: RuleContext, v: Keyword | RuleCall | Parent
         case "keyword": {
             return buildKeyword(ctx, v);
         } case "cross-reference": {
-            return new TextNode("this.consume(" + ctx.consume++ + ", ID);");
+            return new TextNode("this.consume(" + ctx.consume++ + ", ID).image;");
         } case "rule-call": {
             return buildRuleCall(ctx, v);
         } case "parenthesized-assignable-element": {
@@ -278,7 +342,7 @@ function buildRuleCall(ctx: RuleContext, ruleCall: RuleCall): TextNode {
     if (ruleCall.rule!.kind == "rule") {
         return new TextNode("this.subrule(" + ctx.subrule++ + ", this." + ruleCall.rule!.name! + ");");
     } else if (ruleCall.rule!.kind == "terminal") {
-        return new TextNode("this.consume(" + ctx.consume++ + ", " + ruleCall.rule!.name! + ");");
+        return new TextNode("this.consume(" + ctx.consume++ + ", " + ruleCall.rule!.name! + ").image;");
     }
     
     return new TextNode("");
@@ -286,7 +350,7 @@ function buildRuleCall(ctx: RuleContext, ruleCall: RuleCall): TextNode {
 
 function buildKeyword(ctx: RuleContext, keyword: Keyword): TextNode {
     const validName = replaceTokens(keyword.value!) + "Keyword";
-    const node = new TextNode("this.consume(" + ctx.consume++ + ", " + validName + ");");
+    const node = new TextNode("this.consume(" + ctx.consume++ + ", " + validName + ").image;");
     return node;
 }
 

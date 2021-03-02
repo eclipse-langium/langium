@@ -14,7 +14,9 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "chevrotain": "^7.1.2"
+    "chevrotain": "^7.1.2",
+    "fs-extra": "^9.1.0",
+    "type-fest": "^0.21.2"
   },
   "devDependencies": {
     "@types/jest": "^26.0.20",
