@@ -56,20 +56,15 @@ TypeRef :
 ;
 
 Alternatives:
-	ConditionalBranch ({Alternatives.Elements+=current} ('|' Elements+=ConditionalBranch)+)?
-;
-
-ConditionalBranch:
-	  UnorderedGroup
-	| {Group} '<' GuardCondition=Disjunction '>' (Elements+=AbstractToken)+
+	Elements+=UnorderedGroup ('|' Elements+=UnorderedGroup)*
 ;
 
 UnorderedGroup:
-	Group ({UnorderedGroup.Elements+=current} ('&' Elements+=Group)+)?
+	Elements+=Group ('&' Elements+=Group)*
 ;
 
 Group:
-	AbstractToken ({Group.Elements+=current} (Elements+=AbstractToken)+)?
+	Elements+=AbstractToken*
 ;
 
 AbstractToken:
@@ -78,7 +73,7 @@ AbstractToken:
 ;
 
 AbstractTokenWithCardinality:
-	(Assignment | AbstractTerminal) Cardinality=('?'|'*'|'+')?
+	(Assignment=Assignment | ^Terminal=AbstractTerminal) Cardinality=('?'|'*'|'+')?
 ;
 
 Action:
@@ -112,11 +107,11 @@ LiteralCondition:
 ;
 
 Disjunction:
-	Conjunction ({Disjunction.Left=current} '|' Right=Conjunction)*
+	Left=Conjunction ('|' Right=Conjunction)?
 ;
 
 Conjunction:
-	Negation ({Conjunction.Left=current} '&' Right=Negation)*
+	Left=Negation ('&' Right=Negation)?
 ;
 
 Negation:
@@ -164,7 +159,7 @@ ParenthesizedAssignableElement:
 ;
 
 AssignableAlternatives:
-	AssignableTerminal ({Alternatives.Elements+=current} ('|' Elements+=AssignableTerminal)+)?
+	Elements+=AssignableTerminal ('|' Elements+=AssignableTerminal)*
 ;
 
 CrossReference :
@@ -176,7 +171,7 @@ CrossReferenceableTerminal:
 ;
 
 ParenthesizedElement:
-	'(' Alternatives ')'
+	'(' Alternatives=Alternatives ')'
 ;
 
 PredicatedGroup:
@@ -192,11 +187,11 @@ TerminalRule :
 terminal RegexLiteral returns string: /\/(?![*+?])(?:[^\r\n\[/\\]|\\.|\[(?:[^\r\n\]\\]|\\.)*\])+\//;
 
 TerminalAlternatives:
-	TerminalGroup ({Alternatives.Elements+=current} ('|' Elements+=TerminalGroup)+)?
+	Elements+=TerminalGroup ('|' Elements+=TerminalGroup)*
 ;
 
 TerminalGroup:
-	TerminalToken ({Group.Elements+=current} (Elements+=TerminalToken)+)?
+	Elements+=TerminalToken*
 ;
 
 TerminalToken:
@@ -228,7 +223,7 @@ Wildcard:
 ;
 
 CharacterRange:
-	Keyword ( {CharacterRange.Left=current} '..' Right=Keyword)?
+	Left=Keyword ('..' Right=Keyword)?
 ;
 
 EnumRule:
@@ -238,7 +233,7 @@ EnumRule:
 ;
 
 EnumLiterals:
-	EnumLiteralDeclaration ({Alternatives.Elements+=current} ('|' Elements+=EnumLiteralDeclaration)+)?
+	Elements+=EnumLiteralDeclaration ('|' Elements+=EnumLiteralDeclaration)*
 ;
 
 EnumLiteralDeclaration:

@@ -2,7 +2,7 @@ import { Alternative, Assignment, Cardinality, CrossReference, Grammar, Group, K
 import { CompositeGeneratorNode, IGeneratorNode, IndentNode, NewLineNode, TextNode } from "./node/node";
 import { process } from "./node/node-processor";
 import { replaceTokens } from "./token-replacer";
-import { collectRule } from "./utils";
+import { collectRule as collectRuleFields } from "./utils";
 
 type RuleContext = {
     option: number,
@@ -146,9 +146,31 @@ function buildParser(grammar: Grammar): CompositeGeneratorNode {
     return parserNode;
 }
 
+type RuleAlternative = {
+    rule?: Rule,
+    index?: number,
+    group: Group,
+    subrule: boolean
+}
+
+function collectRuleAlternatives(rule: Rule): RuleAlternative[] {
+    const alts: RuleAlternative[] = [];
+    rule.alternatives?.forEach((e, i) => {
+        const group = e.group!;
+        let subrule = false;
+        if (group.items!.length == 1) {
+            const item = group.items![0];
+            subrule = item.kind == "rule-call";
+        }
+        alts.push({ rule, index: i, group, subrule });
+    });
+    return alts;
+}
+
 function buildRule(ctx: RuleContext, rule: Rule, first: boolean): CompositeGeneratorNode {
     const ruleNode = new CompositeGeneratorNode();
-    const { fields } = collectRule(rule);
+    const { fields } = collectRuleFields(rule);
+    const alternatives = collectRuleAlternatives(rule);
     ruleNode.children.push(
         new TextNode(first ? "public " : "private "), 
         new TextNode(rule.name)
@@ -165,9 +187,39 @@ function buildRule(ctx: RuleContext, rule: Rule, first: boolean): CompositeGener
         new NewLineNode()
     )
 
+    if (alternatives.length < 2) {
+        ruleNode.children.push(buildPropertyInitializers(rule));
+    }
+    ruleNode.children.push(buildAlternatives(ctx, true, alternatives));
+    if (alternatives.length < 2) {
+        ruleNode.children.push(buildRuleReturnStatement(rule));
+    }
+
+    ruleNode.children.push(
+        new TextNode("})"), 
+        new NewLineNode(), 
+        new NewLineNode()
+    )
+
+    if (alternatives.length > 1) {
+        alternatives.filter(e => !e.subrule).forEach(e => {
+            ruleNode.children.push(buildRuleAlternative(ctx, e));
+        });
+    } 
+    
+
+    return ruleNode;
+}
+
+function buildRuleAlternative(ctx: RuleContext, alt: RuleAlternative): CompositeGeneratorNode {
+    const ruleNode = new CompositeGeneratorNode();
+    const rule = alt.rule!;
+
+    ruleNode.children.push(new TextNode("private " + rule.name + "_" + alt.index + ": RuleResult<" + rule.name + '> = this.RULE("' + rule.name + "_" + alt.index + '", () => {'), new NewLineNode());
+
     ruleNode.children.push(
         buildPropertyInitializers(rule),
-        buildAlternatives(ctx, true, rule.alternatives!),
+        buildGroup(ctx, true, alt.group),
         buildRuleReturnStatement(rule),
         new TextNode("})"), 
         new NewLineNode(), 
@@ -180,7 +232,7 @@ function buildRule(ctx: RuleContext, rule: Rule, first: boolean): CompositeGener
 function buildPropertyInitializers(rule: Rule): CompositeGeneratorNode {
     const node = new IndentNode("    ");
 
-    const { fields } = collectRule(rule);
+    const { fields } = collectRuleFields(rule);
 
     fields.forEach(e => {
         let prefix = "";
@@ -210,7 +262,7 @@ function partialType(type: string): string {
 function buildRuleReturnStatement(rule: Rule) : CompositeGeneratorNode {
     const node = new IndentNode("    ");
 
-    const { fields } = collectRule(rule);
+    const { fields } = collectRuleFields(rule);
 
     if (fields.length > 0) {
         node.children.push(new TextNode("return <PartialDeep<" + rule.name! + ">> {"), new NewLineNode());
@@ -228,7 +280,7 @@ function buildRuleReturnStatement(rule: Rule) : CompositeGeneratorNode {
     return node;
 }
 
-function buildAlternatives(ctx: RuleContext, root: boolean, alternatives: Alternative[]): CompositeGeneratorNode {
+function buildAlternatives(ctx: RuleContext, root: boolean, alternatives: RuleAlternative[]): CompositeGeneratorNode {
     const altNode = new IndentNode("    ");
 
     if (alternatives.length > 1) {
@@ -244,7 +296,11 @@ function buildAlternatives(ctx: RuleContext, root: boolean, alternatives: Altern
             const chevAltNode = new IndentNode("    ");
             chevAltNode.children.push(new TextNode("ALT: () => {"), new NewLineNode());
             const indGroup = new IndentNode("    ");
-            indGroup.children.push(buildGroup(ctx, true, e.group!));
+            if (!e.subrule) {
+                indGroup.children.push(new TextNode("return this.subrule(" + ctx.subrule++ + ", this." + e.rule!.name! + "_" + e.index! + ")"));
+            } else {
+                indGroup.children.push(buildGroup(ctx, root, e.group!));
+            }
             chevAltNode.children.push(indGroup);
             chevAltNode.children.push(new TextNode("}"), new NewLineNode());
             altIndentNode.children.push(chevAltNode, new TextNode("},"), new NewLineNode());
@@ -256,6 +312,8 @@ function buildAlternatives(ctx: RuleContext, root: boolean, alternatives: Altern
     }
     return altNode;
 }
+
+
 
 function buildGroup(ctx: RuleContext, root: boolean, group: Group): CompositeGeneratorNode {
     const groupNode = new CompositeGeneratorNode();
@@ -371,7 +429,7 @@ function wrap<T extends IGeneratorNode>(ctx: RuleContext, node: T, cardinality: 
 }
 
 function buildParenthesizedGroup(ctx: RuleContext, group: ParenthesizedGroup): CompositeGeneratorNode {
-    return wrap(ctx, buildAlternatives(ctx, false, group.alternatives!), group.cardinality);
+    return wrap(ctx, buildAlternatives(ctx, false, group.alternatives!.map(e => <RuleAlternative>{ group: e.group, subrule: true })), group.cardinality);
 }
 
 function buildRuleCall(ctx: RuleContext, ruleCall: RuleCall): TextNode {
