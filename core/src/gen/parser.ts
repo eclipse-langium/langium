@@ -97,12 +97,12 @@ export class Parser extends EmbeddedActionsParser {
     }
 
     public Grammar: RuleResult<Grammar> = this.RULE("Grammar", () => {
-        let Name: string | undefined
-        let MetamodelDeclarations: (PartialDeep<AbstractMetamodelDeclaration>)[] = []
-        let UsedGrammars: (PartialDeep<Grammar>)[] = []
         let definesHiddenTokens: boolean | undefined
         let HiddenTokens: (PartialDeep<AbstractRule>)[] = []
+        let MetamodelDeclarations: (PartialDeep<AbstractMetamodelDeclaration>)[] = []
+        let Name: string | undefined
         let rules: (PartialDeep<AbstractRule>)[] = []
+        let UsedGrammars: (PartialDeep<Grammar>)[] = []
         let refs = new Map<string, string>()
         this.consume(1, GrammarKeyword).image
         Name = this.consume(2, ID).image
@@ -134,12 +134,12 @@ export class Parser extends EmbeddedActionsParser {
         return <PartialDeep<Grammar>> {
             kind: "Grammar",
             '.references': refs,
-            Name,
-            MetamodelDeclarations,
-            UsedGrammars,
             definesHiddenTokens,
             HiddenTokens,
+            MetamodelDeclarations,
+            Name,
             rules,
+            UsedGrammars,
         }
     })
 
@@ -188,9 +188,9 @@ export class Parser extends EmbeddedActionsParser {
     })
 
     private GeneratedMetamodel: RuleResult<GeneratedMetamodel> = this.RULE("GeneratedMetamodel", () => {
-        let Name: string | undefined
-        let EPackage: string | undefined
         let Alias: string | undefined
+        let EPackage: string | undefined
+        let Name: string | undefined
         let refs = new Map<string, string>()
         this.consume(1, GenerateKeyword).image
         Name = this.consume(2, ID).image
@@ -202,15 +202,15 @@ export class Parser extends EmbeddedActionsParser {
         return <PartialDeep<GeneratedMetamodel>> {
             kind: "GeneratedMetamodel",
             '.references': refs,
-            Name,
-            EPackage,
             Alias,
+            EPackage,
+            Name,
         }
     })
 
     private ReferencedMetamodel: RuleResult<ReferencedMetamodel> = this.RULE("ReferencedMetamodel", () => {
-        let EPackage: string | undefined
         let Alias: string | undefined
+        let EPackage: string | undefined
         let refs = new Map<string, string>()
         this.consume(1, ImportKeyword).image
         refs.set("EPackage", this.consume(2, ID).image)
@@ -221,8 +221,8 @@ export class Parser extends EmbeddedActionsParser {
         return <PartialDeep<ReferencedMetamodel>> {
             kind: "ReferencedMetamodel",
             '.references': refs,
-            EPackage,
             Alias,
+            EPackage,
         }
     })
 
@@ -240,13 +240,13 @@ export class Parser extends EmbeddedActionsParser {
 
     private ParserRule: RuleResult<ParserRule> = this.RULE("ParserRule", () => {
         let Alternatives: PartialDeep<Alternatives> | undefined
+        let DefinesHiddenTokens: boolean | undefined
         let fragment: boolean | undefined
+        let HiddenTokens: (PartialDeep<AbstractRule>)[] = []
         let Name: string | undefined
         let Parameters: (PartialDeep<Parameter>)[] = []
-        let wildcard: boolean | undefined
         let Type: string | undefined
-        let DefinesHiddenTokens: boolean | undefined
-        let HiddenTokens: (PartialDeep<AbstractRule>)[] = []
+        let wildcard: boolean | undefined
         let refs = new Map<string, string>()
             this.or(1, [
                 {
@@ -323,13 +323,13 @@ export class Parser extends EmbeddedActionsParser {
             kind: "ParserRule",
             '.references': refs,
             Alternatives,
+            DefinesHiddenTokens,
             fragment,
+            HiddenTokens,
             Name,
             Parameters,
-            wildcard,
             Type,
-            DefinesHiddenTokens,
-            HiddenTokens,
+            wildcard,
         }
     })
 
@@ -426,8 +426,8 @@ export class Parser extends EmbeddedActionsParser {
     })
 
     private AbstractTokenWithCardinality: RuleResult<AbstractTokenWithCardinality> = this.RULE("AbstractTokenWithCardinality", () => {
-        let Cardinality: string | undefined
         let Assignment: PartialDeep<Assignment> | undefined
+        let Cardinality: string | undefined
         let Terminal: PartialDeep<AbstractTerminal> | undefined
         let refs = new Map<string, string>()
             this.or(1, [
@@ -458,16 +458,16 @@ export class Parser extends EmbeddedActionsParser {
         return <PartialDeep<AbstractTokenWithCardinality>> {
             kind: "AbstractTokenWithCardinality",
             '.references': refs,
-            Cardinality,
             Assignment,
+            Cardinality,
             Terminal,
         }
     })
 
     private Action: RuleResult<Action> = this.RULE("Action", () => {
-        let Type: PartialDeep<ParserRule> | undefined
         let Feature: string | undefined
         let Operator: string | undefined
+        let Type: PartialDeep<ParserRule> | undefined
         let refs = new Map<string, string>()
         this.consume(1, CurlyOpenKeyword).image
         refs.set("Type", this.consume(2, ID).image)
@@ -488,9 +488,9 @@ export class Parser extends EmbeddedActionsParser {
         return <PartialDeep<Action>> {
             kind: "Action",
             '.references': refs,
-            Type,
             Feature,
             Operator,
+            Type,
         }
     })
 
@@ -541,8 +541,8 @@ export class Parser extends EmbeddedActionsParser {
     })
 
     private RuleCall: RuleResult<RuleCall> = this.RULE("RuleCall", () => {
-        let Rule: PartialDeep<AbstractRule> | undefined
         let Arguments: (PartialDeep<NamedArgument>)[] = []
+        let Rule: PartialDeep<AbstractRule> | undefined
         let refs = new Map<string, string>()
         refs.set("Rule", this.consume(1, ID).image)
         this.option(1, () => {
@@ -557,14 +557,14 @@ export class Parser extends EmbeddedActionsParser {
         return <PartialDeep<RuleCall>> {
             kind: "RuleCall",
             '.references': refs,
-            Rule,
             Arguments,
+            Rule,
         }
     })
 
     private NamedArgument: RuleResult<NamedArgument> = this.RULE("NamedArgument", () => {
-        let Parameter: PartialDeep<Parameter> | undefined
         let CalledByName: boolean | undefined
+        let Parameter: PartialDeep<Parameter> | undefined
         let Value: PartialDeep<Disjunction> | undefined
         let refs = new Map<string, string>()
         this.option(1, () => {
@@ -576,8 +576,8 @@ export class Parser extends EmbeddedActionsParser {
         return <PartialDeep<NamedArgument>> {
             kind: "NamedArgument",
             '.references': refs,
-            Parameter,
             CalledByName,
+            Parameter,
             Value,
         }
     })
@@ -724,9 +724,9 @@ export class Parser extends EmbeddedActionsParser {
     })
 
     private PredicatedKeyword: RuleResult<PredicatedKeyword> = this.RULE("PredicatedKeyword", () => {
-        let Value: string | undefined
-        let Predicated: boolean | undefined
         let FirstSetPredicated: boolean | undefined
+        let Predicated: boolean | undefined
+        let Value: string | undefined
         let refs = new Map<string, string>()
             this.or(1, [
                 {
@@ -745,17 +745,17 @@ export class Parser extends EmbeddedActionsParser {
         return <PartialDeep<PredicatedKeyword>> {
             kind: "PredicatedKeyword",
             '.references': refs,
-            Value,
-            Predicated,
             FirstSetPredicated,
+            Predicated,
+            Value,
         }
     })
 
     private PredicatedRuleCall: RuleResult<PredicatedRuleCall> = this.RULE("PredicatedRuleCall", () => {
-        let Rule: PartialDeep<AbstractRule> | undefined
-        let Predicated: boolean | undefined
-        let FirstSetPredicated: boolean | undefined
         let Arguments: (PartialDeep<NamedArgument>)[] = []
+        let FirstSetPredicated: boolean | undefined
+        let Predicated: boolean | undefined
+        let Rule: PartialDeep<AbstractRule> | undefined
         let refs = new Map<string, string>()
             this.or(1, [
                 {
@@ -783,19 +783,19 @@ export class Parser extends EmbeddedActionsParser {
         return <PartialDeep<PredicatedRuleCall>> {
             kind: "PredicatedRuleCall",
             '.references': refs,
-            Rule,
-            Predicated,
-            FirstSetPredicated,
             Arguments,
+            FirstSetPredicated,
+            Predicated,
+            Rule,
         }
     })
 
     private Assignment: RuleResult<Assignment> = this.RULE("Assignment", () => {
         let Feature: string | undefined
-        let Operator: string | undefined
-        let Terminal: PartialDeep<AssignableTerminal> | undefined
-        let Predicated: boolean | undefined
         let FirstSetPredicated: boolean | undefined
+        let Operator: string | undefined
+        let Predicated: boolean | undefined
+        let Terminal: PartialDeep<AssignableTerminal> | undefined
         let refs = new Map<string, string>()
         this.option(1, () => {
                 this.or(1, [
@@ -828,10 +828,10 @@ export class Parser extends EmbeddedActionsParser {
             kind: "Assignment",
             '.references': refs,
             Feature,
-            Operator,
-            Terminal,
-            Predicated,
             FirstSetPredicated,
+            Operator,
+            Predicated,
+            Terminal,
         }
     })
 
@@ -889,8 +889,8 @@ export class Parser extends EmbeddedActionsParser {
     })
 
     private CrossReference: RuleResult<CrossReference> = this.RULE("CrossReference", () => {
-        let Type: PartialDeep<ParserRule> | undefined
         let Terminal: PartialDeep<CrossReferenceableTerminal> | undefined
+        let Type: PartialDeep<ParserRule> | undefined
         let refs = new Map<string, string>()
         this.consume(1, BracketOpenKeyword).image
         refs.set("Type", this.consume(2, ID).image)
@@ -902,8 +902,8 @@ export class Parser extends EmbeddedActionsParser {
         return <PartialDeep<CrossReference>> {
             kind: "CrossReference",
             '.references': refs,
-            Type,
             Terminal,
+            Type,
         }
     })
 
@@ -937,8 +937,8 @@ export class Parser extends EmbeddedActionsParser {
 
     private PredicatedGroup: RuleResult<PredicatedGroup> = this.RULE("PredicatedGroup", () => {
         let Elements: (PartialDeep<Alternatives>)[] = []
-        let Predicated: boolean | undefined
         let FirstSetPredicated: boolean | undefined
+        let Predicated: boolean | undefined
         let refs = new Map<string, string>()
             this.or(1, [
                 {
@@ -960,15 +960,15 @@ export class Parser extends EmbeddedActionsParser {
             kind: "PredicatedGroup",
             '.references': refs,
             Elements,
-            Predicated,
             FirstSetPredicated,
+            Predicated,
         }
     })
 
     private TerminalRule: RuleResult<TerminalRule> = this.RULE("TerminalRule", () => {
-        let Regex: string | undefined
         let Fragment: boolean | undefined
         let Name: string | undefined
+        let Regex: string | undefined
         let Type: string | undefined
         let refs = new Map<string, string>()
         this.consume(1, TerminalKeyword).image
@@ -996,9 +996,9 @@ export class Parser extends EmbeddedActionsParser {
         return <PartialDeep<TerminalRule>> {
             kind: "TerminalRule",
             '.references': refs,
-            Regex,
             Fragment,
             Name,
+            Regex,
             Type,
         }
     })
@@ -1152,8 +1152,8 @@ export class Parser extends EmbeddedActionsParser {
     })
 
     private EnumRule: RuleResult<EnumRule> = this.RULE("EnumRule", () => {
-        let Name: string | undefined
         let Alternatives: PartialDeep<EnumLiterals> | undefined
+        let Name: string | undefined
         let Type: string | undefined
         let refs = new Map<string, string>()
         this.consume(1, EnumKeyword).image
@@ -1168,8 +1168,8 @@ export class Parser extends EmbeddedActionsParser {
         return <PartialDeep<EnumRule>> {
             kind: "EnumRule",
             '.references': refs,
-            Name,
             Alternatives,
+            Name,
             Type,
         }
     })

@@ -24,6 +24,8 @@ function linkGroup(grammar: Grammar, group: Group) {
             } else if (e.Terminal) {
                 linkTerminal(grammar, e.Terminal);
             }
+        } else if (e.kind == "Action") {
+            findReferences(grammar, e);
         }
     });
 }
@@ -45,7 +47,7 @@ function linkTerminal(grammar: Grammar, terminal: AbstractTerminal) {
 function linkAssignment(grammar: Grammar, assignment: Assignment) {
     const terminal = assignment.Terminal;
     if (terminal.kind == "CrossReference") {
-        findReferences(grammar, terminal.Type);
+        findReferences(grammar, terminal);
         if (terminal.Terminal && terminal.Terminal.kind == "RuleCall") {
             findReferences(grammar, terminal.Terminal);
         }

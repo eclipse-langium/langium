@@ -1,5 +1,5 @@
 export function replaceTokens(input: string): string {
-    let result = input;
+    let result = input.substring(1, input.length - 1);
     result = result.replace(/:/g, "Colon");
     result = result.replace(/\./g, "Dot");
     result = result.replace(/\//g, "Slash");

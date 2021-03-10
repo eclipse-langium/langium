@@ -1,15 +1,15 @@
-import { Action, Alternative, Assignment, Group, ParenthesizedGroup, Rule, RuleCall } from "../bootstrap/ast";
+import { AbstractTerminal, Action, Assignment, Group, ParenthesizedElement, ParserRule, RuleCall, UnorderedGroup } from "../gen/ast";
 
-export function collectRule(rule: Rule, withKind: boolean = false): { fields: Field[], rules: string[] } {
+export function collectRule(rule: ParserRule, withKind: boolean = false): { fields: Field[], rules: string[] } {
     const kindField: Field = {
         name: "kind",
         array: false,
         optional: false,
-        type: ['"' + rule.name! + '"']
+        type: ['"' + rule.Name! + '"']
     }
     const fields: Field[][] = [];
     const rules: string[] = [];
-    rule.alternatives?.forEach(e => {
+    rule.Alternatives.Elements.forEach(e => {
         const altFields: Field[] = [];
         collectAlternative(e, false, altFields, rules);
         fields.push(altFields);
@@ -34,56 +34,80 @@ function consolidateFields(kindField: Field | undefined, fields: Field[][]): Fie
         if (kindField) {
             items.push(kindField);
         }
-        items.push(...Array.from(map.values()).sort());
+        items.push(...Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name)));
         return items;
     } else {
         return [];
     }
 }
 
-function collectAlternative(alternative: Alternative, optional: boolean, fields: Field[], rules: string[]) {
-    collectGroup(alternative.group!, optional, fields, rules)
+function collectAlternative(unorderedGroup: UnorderedGroup, optional: boolean, fields: Field[], rules: string[]) {
+    unorderedGroup.Elements.forEach(e => {
+        collectGroup(e, optional, fields, rules);
+    });
 }
 
 function collectGroup(group: Group, optional: boolean, fields: Field[], rules: string[]) {
-    if (group.items!.length == 1 && group.items![0].kind == "rule-call") {
-        rules.push(getRuleTarget(group.items![0]));
+    const singleRule = singleRuleCall(group);
+    if (singleRule) {
+        rules.push(singleRule);
     } else {
-        group.items?.filter(e => e.kind == "assignment").map(e => e as Assignment).forEach(e => {
-            collectAssignment(e, optional, fields);
-        });
-        group.items?.filter(e => e.kind == "parenthesized-group").map(e => e as ParenthesizedGroup).forEach(e => {
-            collectParenthesizedGroup(e, optional, fields, rules);
-        });
-        group.items?.filter(e => e.kind == "action").map(e => e as Action).forEach(e => {
-            collectAction(e, optional, fields);
-        });
+        group.Elements.forEach(e => {
+            if (e.kind == "AbstractTokenWithCardinality") {
+                if (e.Assignment) {
+                    collectAssignment(e.Assignment, optional || isOptional(e.Cardinality), fields);
+                }
+                if (e.Terminal) {
+                    collectTerminal(e.Terminal, optional || isOptional(e.Cardinality), fields, rules);
+                }
+            } else if (e.kind == "Action") {
+                collectAction(e, optional, fields);
+            }
+        })
     }
+}
+
+function singleRuleCall(group: Group): string | undefined {
+    if (group.Elements.length == 1 && group.Elements[0].kind == "AbstractTokenWithCardinality") {
+        const e = group.Elements[0];
+        if (e.Terminal && e.Terminal.kind == "RuleCall") {
+            return e.Terminal.Rule.Name;
+        }
+    }
+    return undefined;
 }
 
 function collectAction(action: Action, optional: boolean, fields: Field[]) {
-    if (action.variable) {
+    if (action.Feature) {
         fields.push({
-            name: action.variable!,
-            array: action.type == "+=",
+            name: action.Feature!,
+            array: action.Operator == "+=",
             optional: optional,
-            type: [action.name!]
+            type: [action.Type.Name]
         });
     }
 }
 
-function collectParenthesizedGroup(group: ParenthesizedGroup, optional: boolean, fields: Field[], rules: string[]) {
-    const isOptional = optional || group.cardinality == "?" || group.cardinality == "*";
-    group.alternatives?.forEach(e => {
-        collectAlternative(e, isOptional, fields, rules);
+function collectTerminal(terminal: AbstractTerminal, optional: boolean, fields: Field[], rules: string[]) {
+    if (terminal.kind == "ParenthesizedElement") {
+        collectParenthesizedGroup(terminal, optional, fields, rules);
+    }
+}
+
+function isOptional(cardinality: string | undefined) {
+    return cardinality && cardinality == "?" || cardinality == "*";
+}
+
+function collectParenthesizedGroup(group: ParenthesizedElement, optional: boolean, fields: Field[], rules: string[]) {
+    group.Alternatives.Elements.forEach(e => {
+        collectAlternative(e, optional, fields, rules);
     })
 }
 
 function collectAssignment(assignment: Assignment, optional: boolean, fields: Field[]) {
-    const array = assignment.type == "+=";
-    const isBoolean = assignment.type == "?=";
-    const isOptional = optional || assignment.cardinality == "?";
-    let name = assignment.name!;
+    const array = assignment.Operator == "+=";
+    const isBoolean = assignment.Operator == "?=";
+    let name = assignment.Feature;
     if (name.startsWith("^")) {
         name = name.substring(1);
     }
@@ -91,19 +115,19 @@ function collectAssignment(assignment: Assignment, optional: boolean, fields: Fi
         fields.push({
             name: name,
             array: false,
-            optional: isOptional,
+            optional,
             type: ["boolean"]
         });
     } else {
         let targetType: string = "";
-        let v = assignment.value!;
-        if (v.kind == "keyword") {
-            targetType = v.value!;
-        } else if (v.kind == "cross-reference") {
-            targetType = getRuleTarget(v.target!);
-        } else if (v.kind == "rule-call") {
+        let v = assignment.Terminal;
+        if (v.kind == "Keyword") {
+            targetType = v.Value;
+        } else if (v.kind == "RuleCall") {
             targetType = getRuleTarget(v);
-        } else if (v.kind == "parenthesized-assignable-element") {
+        } else if (v.kind == "CrossReference") {
+            targetType = v.Type.Name;
+        } else if (v.kind == "ParenthesizedAssignableElement") {
             targetType = "string";
         }
         fields.push({
@@ -116,11 +140,11 @@ function collectAssignment(assignment: Assignment, optional: boolean, fields: Fi
 }
 
 function getRuleTarget(ruleCall: RuleCall): string {
-    const rule = ruleCall.rule;
+    const rule = ruleCall.Rule;
     if (!rule) {
         return "undefined";
     }
-    return rule.returnType ?? rule.name!;
+    return rule.Type ?? rule.Name;
 }
 
 export type Field = {
