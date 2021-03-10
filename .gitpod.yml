@@ -1,3 +1,2 @@
 tasks:
-  - init: yarn --cwd core
-    command: yarn --cwd core watch
+  - init: cd core && npm install
