@@ -1,7 +1,8 @@
+/* eslint-disable */
 import { AbstractRule, AbstractTerminal, Alternatives, Assignment, Grammar, Group, ParserRule, UnorderedGroup } from "../gen/ast";
 
-export function linkGrammar(grammar: Grammar) {
-    grammar.rules?.filter(e => e.kind == "ParserRule").map(e => e as ParserRule).forEach(r => {
+export function linkGrammar(grammar: Grammar): void {
+    grammar.rules?.filter(e => e.kind === "ParserRule").map(e => e as ParserRule).forEach(r => {
         linkAlteratives(grammar, r.Alternatives);
     });
 }
@@ -18,26 +19,26 @@ function linkUnorderedGroup(grammar: Grammar, group: UnorderedGroup) {
 
 function linkGroup(grammar: Grammar, group: Group) {
     group.Elements?.forEach(e => {
-        if (e.kind == "AbstractTokenWithCardinality") {
+        if (e.kind === "AbstractTokenWithCardinality") {
             if (e.Assignment) {
                 linkAssignment(grammar, e.Assignment);
             } else if (e.Terminal) {
                 linkTerminal(grammar, e.Terminal);
             }
-        } else if (e.kind == "Action") {
+        } else if (e.kind === "Action") {
             findReferences(grammar, e);
         }
     });
 }
 
 function linkTerminal(grammar: Grammar, terminal: AbstractTerminal) {
-    if (terminal.kind == "RuleCall") {
+    if (terminal.kind === "RuleCall") {
         findReferences(grammar, terminal);
-    } else if (terminal.kind == "ParenthesizedElement") {
+    } else if (terminal.kind === "ParenthesizedElement") {
         linkAlteratives(grammar, terminal.Alternatives);
-    } else if (terminal.kind == "PredicatedRuleCall") {
+    } else if (terminal.kind === "PredicatedRuleCall") {
         findReferences(grammar, terminal);
-    } else if (terminal.kind == "PredicatedGroup") {
+    } else if (terminal.kind === "PredicatedGroup") {
         terminal.Elements.forEach(e => {
             linkAlteratives(grammar, e);
         });
@@ -46,14 +47,14 @@ function linkTerminal(grammar: Grammar, terminal: AbstractTerminal) {
 
 function linkAssignment(grammar: Grammar, assignment: Assignment) {
     const terminal = assignment.Terminal;
-    if (terminal.kind == "CrossReference") {
+    if (terminal.kind === "CrossReference") {
         findReferences(grammar, terminal);
-        if (terminal.Terminal && terminal.Terminal.kind == "RuleCall") {
+        if (terminal.Terminal && terminal.Terminal.kind === "RuleCall") {
             findReferences(grammar, terminal.Terminal);
         }
-    } else if (terminal.kind == "RuleCall") {
+    } else if (terminal.kind === "RuleCall") {
         findReferences(grammar, terminal);
-    } else if (terminal.kind == "ParenthesizedAssignableElement") {
+    } else if (terminal.kind === "ParenthesizedAssignableElement") {
         // todo
     }
 }

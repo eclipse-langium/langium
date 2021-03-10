@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { AbstractTerminal, Alternatives, AssignableTerminal, Assignment, Grammar, Group, Keyword, ParenthesizedAssignableElement, ParenthesizedElement, ParserRule, RuleCall, TerminalRule, UnorderedGroup } from "../gen/ast";
 import { CompositeGeneratorNode, IGeneratorNode, IndentNode, NewLineNode, TextNode } from "./node/node";
 import { process } from "./node/node-processor";
@@ -17,6 +18,10 @@ export function generateParser(grammar: Grammar): string {
 
     const fileNode = new CompositeGeneratorNode();
     fileNode.children.push(
+        new TextNode("/* eslint-disable */"),
+        new NewLineNode(),
+        new TextNode("// @ts-nocheck"),
+        new NewLineNode(),
         new TextNode('import { createToken, Lexer, EmbeddedActionsParser } from "chevrotain";'),
         new NewLineNode(),
         new TextNode('import { PartialDeep } from "type-fest";'),

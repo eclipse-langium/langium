@@ -9,7 +9,8 @@
     "build": "tsc --build tsconfig.build.json",
     "lint": "eslint ./src --ext .js,.ts",
     "prepare": "npm run clean && npm run lint && npm test && npm run build",
-    "test": "jest --coverage"
+    "test": "jest --coverage",
+    "bootstrap": "node ./lib/bootstrap/bootstrapper.js"
   },
   "author": "",
   "license": "MIT",

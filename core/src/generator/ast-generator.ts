@@ -6,9 +6,17 @@ import { collectRule } from "./utils";
 export function generateAst(grammar: Grammar): string {
     const node = new CompositeGeneratorNode();
 
-    node.children.push(new TextNode('import { AstNode } from "../generator/ast-node"'), new NewLineNode(), new NewLineNode());
+    node.children.push(
+        new TextNode("/* eslint-disable */"),
+        new NewLineNode(),
+        new TextNode("// @ts-nocheck"),
+        new NewLineNode(),
+        new TextNode('import { AstNode } from "../generator/ast-node"'),
+        new NewLineNode(),
+        new NewLineNode()
+    );
 
-    grammar.rules?.filter(e => e.kind == "ParserRule").map(e => e as ParserRule).forEach(e => {
+    grammar.rules?.filter(e => e.kind === "ParserRule").map(e => e as ParserRule).forEach(e => {
         node.children.push(generateRuleType(e));
     });
 
@@ -21,7 +29,7 @@ function generateRuleType(rule: ParserRule): IGeneratorNode {
 
     typeNode.children.push(new TextNode("export type "), new TextNode(rule.Name), new TextNode(" = "));
 
-    if (fields.length == 0 && rules.length == 0) {
+    if (fields.length === 0 && rules.length === 0) {
         typeNode.children.push(new TextNode('{ kind: "' + rule.Name + '" }'));
     }
 

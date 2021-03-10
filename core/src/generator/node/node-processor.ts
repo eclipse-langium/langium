@@ -3,9 +3,8 @@ import { CompositeGeneratorNode, IGeneratorNode, IndentNode, NewLineNode, TextNo
 class Context {
 
     private lines: string[][] = [[]];
-    private _pendingIndent: boolean = true;
+    private _pendingIndent = true;
     private _currentIndents: IndentNode[] = [];
-    private indentLength: number = 0;
 
     public get pendingIndent(): boolean {
         return this._pendingIndent;
@@ -39,14 +38,10 @@ class Context {
 
     increaseIndent(node: IndentNode) {
         this._currentIndents.push(node);
-        this.indentLength += node.indentation.length;
     }
 
     decreaseIndent() {
-        const lastNode = this._currentIndents.pop();
-        if (lastNode) {
-            this.indentLength -= lastNode.indentation.length;
-        }
+        this._currentIndents.pop();
     }
 
     resetCurrentLine() {
@@ -83,7 +78,7 @@ function hasContent(node: IGeneratorNode, ctx: Context): boolean {
     } else if (node instanceof IndentNode || node instanceof CompositeGeneratorNode) {
         return node.children.some(e => hasContent(e, ctx));
     } else if (node instanceof NewLineNode) {
-        return !(node.ifNotEmpty && ctx.currentLineContent.length == 0);
+        return !(node.ifNotEmpty && ctx.currentLineContent.length === 0);
     } else {
         return false;
     }

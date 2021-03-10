@@ -1,3 +1,5 @@
+/* eslint-disable */
+// @ts-nocheck
 import { AstNode } from "../generator/ast-node"
 
 export type Grammar = AstNode & {

@@ -13,14 +13,14 @@ export function replaceTokens(input: string): string {
     result = result.replace(/\+/g, "Plus");
     result = result.replace(/\*/g, "Asterisk");
     result = result.replace(/\?/g, "QuestionMark");
-    result = result.replace(/\!/g, "ExclamationMark");
+    result = result.replace(/!/g, "ExclamationMark");
     result = result.replace(/\^/g, "Caret");
     result = result.replace(/</g, "LessThan");
     result = result.replace(/>/g, "MoreThan");
     result = result.replace(/&/g, "Ampersand");
     result = result.replace(/\|/g, "Pipe");
     result = result.replace(/=/g, "Equals");
-    result = result.replace(/\-/g, "Dash");
+    result = result.replace(/-/g, "Dash");
     result = result.replace(/;/g, "Semicolon");
     result = result.replace(/@/g, "At");
     result = result[0].toUpperCase() + result.substring(1);

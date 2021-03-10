@@ -1,3 +1,5 @@
+/* eslint-disable */
+// @ts-nocheck
 import { createToken, Lexer, EmbeddedActionsParser } from "chevrotain";
 import { PartialDeep } from "type-fest";
 import { RuleResult } from "../generator/ast-node";

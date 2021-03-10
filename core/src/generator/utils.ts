@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { AbstractTerminal, Action, Assignment, Group, ParenthesizedElement, ParserRule, RuleCall, UnorderedGroup } from "../gen/ast";
 
 export function collectRule(rule: ParserRule, withKind: boolean = false): { fields: Field[], rules: string[] } {
@@ -19,7 +20,6 @@ export function collectRule(rule: ParserRule, withKind: boolean = false): { fiel
 }
 
 function consolidateFields(kindField: Field | undefined, fields: Field[][]): Field[] {
-    let first = true;
     const map = new Map<string, Field>();
     for (const fieldArray of fields) {
         for (const field of fieldArray) {
@@ -27,7 +27,6 @@ function consolidateFields(kindField: Field | undefined, fields: Field[][]): Fie
                 map.set(field.name, field);
             }
         }
-        first = false;
     }
     if (map.size > 0) {
         const items: Field[] = [];

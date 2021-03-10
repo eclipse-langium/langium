@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { PartialDeep } from "type-fest"
 
 export type AstNode = {
