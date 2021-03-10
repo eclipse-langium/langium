@@ -2,7 +2,7 @@ import { PartialDeep } from "type-fest"
 
 export type AstNode = {
     kind: string,
-    '.references'?: Map<string, string | undefined>,
+    '.references': Map<string, string | undefined>,
     '.node'?: ModelNode
 }
 

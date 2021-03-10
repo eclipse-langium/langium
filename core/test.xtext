@@ -35,8 +35,8 @@ Annotation:
 
 ParserRule :
 	(
-	  ^fragment?='fragment' RuleNameAndParams (wildcard?='*' | ('returns' Type=TypeRef)?)
-	| RuleNameAndParams ('returns' Type=TypeRef)?
+	  ^fragment?='fragment' Name=ID ('<' (Parameters+=Parameter (',' Parameters+=Parameter)*)? '>')? (wildcard?='*' | ('returns' Type=ID)?)
+	| Name=ID ('<' (Parameters+=Parameter (',' Parameters+=Parameter)*)? '>')? ('returns' Type=ID)?
 	)
 	(DefinesHiddenTokens?='hidden' '(' (HiddenTokens+=[AbstractRule|ID] (',' HiddenTokens+=[AbstractRule|ID])*)? ')')? ':'
 		Alternatives=Alternatives
@@ -49,10 +49,6 @@ RuleNameAndParams:
 
 Parameter:
 	Name=ID
-;
-
-TypeRef :
-	(Metamodel=[AbstractMetamodelDeclaration] '::')? Classifier=[string]
 ;
 
 Alternatives:
@@ -77,7 +73,7 @@ AbstractTokenWithCardinality:
 ;
 
 Action:
-	'{' Type=TypeRef ('.' Feature=ID Operator=('='|'+=') 'current')? '}'
+	'{' Type=[ParserRule|ID] ('.' Feature=ID Operator=('='|'+=') 'current')? '}'
 ;
 
 AbstractTerminal:
@@ -155,7 +151,7 @@ AssignableTerminal:
 ;
 
 ParenthesizedAssignableElement:
-	'(' AssignableAlternatives ')'
+	'(' Alternatives=AssignableAlternatives ')'
 ;
 
 AssignableAlternatives:
@@ -163,7 +159,7 @@ AssignableAlternatives:
 ;
 
 CrossReference :
-	'[' Type=TypeRef ('|' ^Terminal=CrossReferenceableTerminal )? ']'
+	'[' Type=[ParserRule|ID] ('|' ^Terminal=CrossReferenceableTerminal )? ']'
 ;
 
 CrossReferenceableTerminal:
@@ -179,7 +175,7 @@ PredicatedGroup:
 ;
 
 TerminalRule :
-	'terminal' (^Fragment?='fragment' Name=ID | Name=ID ('returns' Type=TypeRef)?) ':'
+	'terminal' (^Fragment?='fragment' Name=ID | Name=ID ('returns' Type=ID)?) ':'
 		Regex=RegexLiteral
 	';'
 ;
@@ -227,7 +223,7 @@ CharacterRange:
 ;
 
 EnumRule:
-	'enum' Name=ID ('returns' Type=TypeRef)? ':'
+	'enum' Name=ID ('returns' Type=ID)? ':'
 		Alternatives=EnumLiterals
 	';'
 ;

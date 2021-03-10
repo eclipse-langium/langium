@@ -399,7 +399,7 @@ function buildParenthesizedElement(ctx: RuleContext, element: ParenthesizedAssig
 
         element.items.forEach(e => {
             wrapper.children.push(new TextNode("{ ALT: () => {"), new NewLineNode());
-            wrapper.children.push(buildAssignableElement(ctx, e), new NewLineNode());
+            wrapper.children.push(new TextNode("return "), buildAssignableElement(ctx, e), new NewLineNode());
             wrapper.children.push(new TextNode("}},"), new NewLineNode());
         });
 
