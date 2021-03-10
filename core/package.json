@@ -20,6 +20,7 @@
     "type-fest": "^0.21.2"
   },
   "devDependencies": {
+    "@types/fs-extra": "^9.0.8",
     "@types/jest": "^26.0.20",
     "@types/node": "^14.14.31",
     "@typescript-eslint/eslint-plugin": "^4.15.2",
