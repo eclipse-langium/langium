@@ -3,26 +3,35 @@ import { AbstractRule, AbstractTerminal, Alternatives, Assignment, Grammar, Grou
 
 export function linkGrammar(grammar: Grammar): void {
     grammar.rules?.filter(e => e.kind === "ParserRule").map(e => e as ParserRule).forEach(r => {
+        r.container = grammar;
+        r.Alternatives.container = r;
         linkAlteratives(grammar, r.Alternatives);
     });
 }
 
 function linkAlteratives(grammar: Grammar, alternatives: Alternatives) {
     alternatives.Elements.forEach(e => {
+        e.container = alternatives;
         linkUnorderedGroup(grammar, e);
     });
 }
 
 function linkUnorderedGroup(grammar: Grammar, group: UnorderedGroup) {
-    group.Elements.forEach(e => linkGroup(grammar, e));
+    group.Elements.forEach(e => {
+        e.container = group;
+        linkGroup(grammar, e)
+    });
 }
 
 function linkGroup(grammar: Grammar, group: Group) {
     group.Elements?.forEach(e => {
+        e.container = group;
         if (e.kind === "AbstractTokenWithCardinality") {
             if (e.Assignment) {
+                e.Assignment.container = e;
                 linkAssignment(grammar, e.Assignment);
             } else if (e.Terminal) {
+                e.Terminal.container = e;
                 linkTerminal(grammar, e.Terminal);
             }
         } else if (e.kind === "Action") {
@@ -47,6 +56,7 @@ function linkTerminal(grammar: Grammar, terminal: AbstractTerminal) {
 
 function linkAssignment(grammar: Grammar, assignment: Assignment) {
     const terminal = assignment.Terminal;
+    terminal.container = assignment;
     if (terminal.kind === "CrossReference") {
         findReferences(grammar, terminal);
         if (terminal.Terminal && terminal.Terminal.kind === "RuleCall") {

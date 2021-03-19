@@ -1,5 +1,87 @@
 /* eslint-disable */
-import { AbstractTerminal, Action, Assignment, Group, ParenthesizedElement, ParserRule, RuleCall, UnorderedGroup } from "../gen/ast";
+import { AbstractTerminal, Action, Assignment, CrossReference, Group, Keyword, ParenthesizedAssignableElement, ParenthesizedElement, ParserRule, RuleCall, UnorderedGroup } from "../gen/ast";
+import { replaceTokens } from "./token-replacer";
+
+export type Feature = Keyword | RuleCall | Assignment | CrossReference | ParenthesizedAssignableElement | Group;
+type FeatureValue = {
+    getter: () => Feature;
+    kind: "Keyword" | "RuleCall" | "Assignment" | "CrossReference";
+}
+
+export function findAllFeatures(rule: ParserRule) : { byName: Map<string, FeatureValue>, byFeature: Map<Feature, string> } {
+    const map = new Map<string, FeatureValue>();
+    const featureMap = new Map<Feature, string>();
+    rule.Alternatives.Elements.forEach((e, i) => {
+        e.Elements.forEach((f, j) => {
+            putFeature(f, j, undefined, () => rule.Alternatives.Elements[i].Elements[j], map, featureMap);
+        });
+    });
+    const newMap = new Map<string, FeatureValue>();
+    for (const [key, value] of Array.from(map.entries())) {
+        newMap.set(key.replace(/\^/g, ""), value);
+    }
+    const newFeatureMap = new Map<Feature, string>();
+    for (const [key, value] of Array.from(featureMap.entries())) {
+        newFeatureMap.set(key, value.replace(/\^/g, ""));
+    }
+    return { byName: newMap, byFeature: newFeatureMap };
+}
+
+function putFeature(feature: Feature, index: number, previous: string | undefined, getter: () => Feature, byName: Map<string, FeatureValue>, byFeature: Map<Feature, string>) {
+    if (feature.kind === "Assignment") {
+        const fullName = (previous ?? "") + feature.Feature;
+        byName.set(fullName, { getter, kind: "Assignment" });
+        byFeature.set(feature, fullName);
+        const next = () => {
+            const assignment = <Assignment>getter();
+            return assignment.Terminal;
+        };
+        putFeature(feature.Terminal, 0, fullName, next, byName, byFeature);
+    } else if (feature.kind == "RuleCall") {
+        const name = (previous ?? "") + feature.Rule.Name + "RuleCall";
+        byName.set(name, { getter, kind: "RuleCall" });
+        byFeature.set(feature, name);
+    } else if (feature.kind == "CrossReference") {
+        const name = (previous ?? "") + feature.Type.Name + "CrossReference";
+        byName.set(name, { getter, kind: "CrossReference" });
+        byFeature.set(feature, name);
+    } else if (feature.kind == "Keyword") {
+        const validName = replaceTokens(feature.Value) + "Keyword";
+        byName.set(validName, { getter, kind: "Keyword" });
+        byFeature.set(feature, validName);
+    } else if (feature.kind == "ParenthesizedAssignableElement") {
+        // todo this one
+        feature.Alternatives.Elements.forEach((e, i) => {
+            putFeature(e, i, previous, () => e, byName, byFeature);
+        });
+    } else if (feature.kind == "Group") {
+        feature.Elements.forEach((e, i) => {
+            if (e.kind == "AbstractTokenWithCardinality") {
+                if (e.Assignment) {
+                    putFeature(e.Assignment, 0, previous, () => {
+                        return e.Assignment;
+                    }, byName, byFeature);
+                } else if (e.Terminal) {
+                    if (e.Terminal.kind == "Keyword") {
+                        const keyword = e.Terminal;
+                        putFeature(keyword, 0, previous, () => keyword, byName, byFeature);
+                    } else if (e.Terminal.kind == "RuleCall") {
+                        const ruleCall = e.Terminal;
+                        putFeature(ruleCall, 0, previous, () => ruleCall, byName, byFeature);
+                    } else if (e.Terminal.kind == "ParenthesizedElement") {
+                        const element = e.Terminal;
+                        element.Alternatives.Elements.forEach((e) => {
+                            e.Elements.forEach((f, j) => {
+                                putFeature(f, j, previous, () => f, byName, byFeature);
+                            });
+                        });
+                    }
+                }
+            }
+        })
+    }
+}
+
 
 export function collectRule(rule: ParserRule, withKind: boolean = false): { fields: Field[], rules: string[] } {
     const kindField: Field = {

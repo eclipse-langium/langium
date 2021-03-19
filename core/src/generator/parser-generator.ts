@@ -1,16 +1,18 @@
 /* eslint-disable */
 import { AbstractTerminal, Alternatives, AssignableTerminal, Assignment, Grammar, Group, Keyword, ParenthesizedAssignableElement, ParenthesizedElement, ParserRule, RuleCall, TerminalRule, UnorderedGroup } from "../gen/ast";
-import { CompositeGeneratorNode, IGeneratorNode, IndentNode, NewLineNode, TextNode } from "./node/node";
+import { CompositeGeneratorNode, GeneratorNode, IndentNode, NewLineNode, TextNode } from "./node/node";
 import { process } from "./node/node-processor";
 import { replaceTokens } from "./token-replacer";
-import { collectRule as collectRuleFields } from "./utils";
+import { collectRule as collectRuleFields, Feature, findAllFeatures } from "./utils";
 
 type RuleContext = {
+    name: string,
     option: number,
     consume: number,
     subrule: number,
     many: number,
-    or: number
+    or: number,
+    featureMap: Map<Feature, string>
 }
 
 export function generateParser(grammar: Grammar): string {
@@ -22,11 +24,15 @@ export function generateParser(grammar: Grammar): string {
         new NewLineNode(),
         new TextNode("// @ts-nocheck"),
         new NewLineNode(),
-        new TextNode('import { createToken, Lexer, EmbeddedActionsParser } from "chevrotain";'),
+        new TextNode('import { createToken, Lexer } from "chevrotain";'),
         new NewLineNode(),
         new TextNode('import { PartialDeep } from "type-fest";'),
         new NewLineNode(),
-        new TextNode('import { RuleResult } from "../generator/ast-node";'),
+        new TextNode('import { RootNode, RuleResult } from "../generator/ast-node";'),
+        new NewLineNode(),
+        new TextNode('import { LangiumParser } from "../parser/langium-parser";'),
+        new NewLineNode(),
+        new TextNode('import { ' + grammar.Name + 'GrammarAccess } from "./grammar-access";'),
         new NewLineNode(),
     );
 
@@ -79,7 +85,7 @@ export function generateParser(grammar: Grammar): string {
 
     fileNode.children.push(buildParser(grammar), new NewLineNode(), new NewLineNode());
 
-    fileNode.children.push(new TextNode("const parser = new Parser();"), new NewLineNode(), new NewLineNode());
+    fileNode.children.push(new TextNode("let parser: Parser | undefined;"), new NewLineNode(), new NewLineNode());
 
     fileNode.children.push(buildParseFunction(grammar));
     return process(fileNode);
@@ -89,12 +95,15 @@ function buildParseFunction(grammar: Grammar): CompositeGeneratorNode {
     const firstRule = grammar.rules?.find(e => e.kind == "ParserRule") as ParserRule;
     const parseFunction = new CompositeGeneratorNode();
     parseFunction.children.push(
-        new TextNode("export function parse(text: string) {"), new NewLineNode());
+        new TextNode("export function parse(grammar: Grammar, text: string) {"), new NewLineNode());
     const parseBody = new IndentNode("    ");
     parseBody.children.push(
+        "if (!parser) {", new NewLineNode(),
+        "    parser = new Parser(grammar);" , new NewLineNode(), "}", new NewLineNode(),
         new TextNode("const lexResult = lexer.tokenize(text);"), new NewLineNode(),
         new TextNode("parser.input = lexResult.tokens;"), new NewLineNode(),
         new TextNode("const ast = parser."), new TextNode(firstRule.Name), new TextNode("();"), new NewLineNode(),
+        "(ast['.node'] as RootNode).setText(text);", new NewLineNode(),
         new TextNode("return {"), new NewLineNode()
     );
 
@@ -113,14 +122,17 @@ function buildParseFunction(grammar: Grammar): CompositeGeneratorNode {
 function buildParser(grammar: Grammar): CompositeGeneratorNode {
     const parserNode = new CompositeGeneratorNode();
 
-    parserNode.children.push(new TextNode("export class Parser extends EmbeddedActionsParser {"), new NewLineNode());
+    parserNode.children.push("export class Parser extends LangiumParser {", new NewLineNode());
 
     const classBody = new IndentNode("    ");
-    classBody.children.push(new TextNode("constructor() {"), new NewLineNode());
+    classBody.children.push("grammarAccess: " + grammar.Name + "GrammarAccess;", new NewLineNode());
+    classBody.children.push("constructor(grammar: Grammar) {", new NewLineNode());
 
     const constructorBody = new IndentNode("    ");
     constructorBody.children.push(
-        new TextNode('super(tokens, { recoveryEnabled: true });'),
+        new TextNode('super(grammar, tokens);'), 
+        new NewLineNode(),
+        new TextNode("this.grammarAccess = new " + grammar.Name + "GrammarAccess(grammar);"),
         new NewLineNode(),
         new TextNode("this.performSelfAnalysis();"),
         new NewLineNode()
@@ -136,11 +148,13 @@ function buildParser(grammar: Grammar): CompositeGeneratorNode {
     let first = true;
     grammar.rules?.filter(e => e.kind === "ParserRule").map(e => e as ParserRule).forEach(e => {
         const ctx: RuleContext = {
+            name: e.Name,
             consume: 1,
             option: 1,
             subrule: 1,
             many: 1,
-            or: 1
+            or: 1,
+            featureMap: findAllFeatures(e).byFeature
         };
         classBody.children.push(buildRule(ctx, e, first));
         first = false;
@@ -201,13 +215,10 @@ function buildRule(ctx: RuleContext, rule: ParserRule, first: boolean): Composit
         new NewLineNode()
     )
 
-    if (alternatives.length < 2) {
-        ruleNode.children.push(buildPropertyInitializers(rule));
-    }
-    ruleNode.children.push(buildAlternatives(ctx, true, alternatives));
-    if (alternatives.length < 2) {
-        ruleNode.children.push(buildRuleReturnStatement(rule));
-    }
+    const ruleContent = new IndentNode(4);
+    ruleNode.children.push(ruleContent);
+    ruleContent.children.push(buildAlternatives(ctx, true, alternatives));
+    ruleContent.children.push(buildRuleReturnStatement(rule, first));
 
     ruleNode.children.push(
         new TextNode("})"), 
@@ -215,82 +226,41 @@ function buildRule(ctx: RuleContext, rule: ParserRule, first: boolean): Composit
         new NewLineNode()
     )
 
-    if (alternatives.length > 1) {
-        alternatives.filter(e => !e.subrule).forEach(e => {
-            ruleNode.children.push(buildRuleAlternative(ctx, e));
-        });
-    } 
+    // if (alternatives.length > 1) {
+    //     alternatives.filter(e => !e.subrule).forEach(e => {
+    //         ruleNode.children.push(buildRuleAlternative(ctx, e));
+    //     });
+    // } 
     
 
     return ruleNode;
 }
 
-function buildRuleAlternative(ctx: RuleContext, alt: RuleAlternative): CompositeGeneratorNode {
-    const ruleNode = new CompositeGeneratorNode();
-    const rule = alt.rule!;
+// function buildRuleAlternative(ctx: RuleContext, alt: RuleAlternative): CompositeGeneratorNode {
+//     const ruleNode = new CompositeGeneratorNode();
+//     const rule = alt.rule!;
 
-    ruleNode.children.push(new TextNode("private " + rule.Name + "_" + alt.index + ": RuleResult<" + rule.Name + '> = this.RULE("' + rule.Name + "_" + alt.index + '", () => {'), new NewLineNode());
+//     ruleNode.children.push(new TextNode("private " + rule.Name + "_" + alt.index + ": RuleResult<" + rule.Name + '> = this.RULE("' + rule.Name + "_" + alt.index + '", () => {'), new NewLineNode());
 
-    ruleNode.children.push(
-        buildPropertyInitializers(rule),
-        buildUnorderedGroup(ctx, true, alt.group),
-        buildRuleReturnStatement(rule),
-        new TextNode("})"), 
-        new NewLineNode(), 
-        new NewLineNode()
-    );
+//     ruleNode.children.push(
+//         buildPropertyInitializers(rule),
+//         buildUnorderedGroup(ctx, true, alt.group),
+//         buildRuleReturnStatement(rule),
+//         new TextNode("})"), 
+//         new NewLineNode(), 
+//         new NewLineNode()
+//     );
 
-    return ruleNode;
-}
+//     return ruleNode;
+// }
 
-function buildPropertyInitializers(rule: ParserRule): CompositeGeneratorNode {
-    const node = new IndentNode("    ");
-
-    const { fields } = collectRuleFields(rule);
-
-    fields.forEach(e => {
-        let prefix = "";
-        let suffix = "";
-        if (e.array) {
-            prefix = "(";
-            suffix = ")[] = []";
-        } else {
-            suffix = " | undefined";
-        }
-        node.children.push(new TextNode("let " + e.name + ": " + prefix + e.type.map(e => partialType(e)).join(" | ") + suffix), new NewLineNode());
-    })
-
-    node.children.push(new TextNode("let refs = new Map<string, string>()"), new NewLineNode());
-
-    return node;
-}
-
-function partialType(type: string): string {
-    if (type !== "string" && type != "boolean" && type != "number") {
-        return "PartialDeep<" + type + ">";
-    } else{
-        return type;
+function buildRuleReturnStatement(rule: ParserRule, first: boolean) : CompositeGeneratorNode {
+    const node = new CompositeGeneratorNode();
+    node.children.push("return this.construct<" + rule.Name + ">('", rule.Name, "'");
+    if (first) {
+        node.children.push(", true");
     }
-}
-
-function buildRuleReturnStatement(rule: ParserRule) : CompositeGeneratorNode {
-    const node = new IndentNode("    ");
-
-    const { fields } = collectRuleFields(rule);
-
-    if (fields.length > 0) {
-        node.children.push(new TextNode("return <PartialDeep<" + rule.Name + ">> {"), new NewLineNode());
-        
-        const indent = new IndentNode("    ");
-        indent.children.push(new TextNode('kind: "' + rule.Name + '",'), new NewLineNode());
-        indent.children.push(new TextNode("'.references': refs,"), new NewLineNode());
-        fields.forEach(e => {
-            indent.children.push(new TextNode(e.name + ","), new NewLineNode());
-        });
-
-        node.children.push(indent, new TextNode("}"), new NewLineNode());
-    }
-
+    node.children.push(");", new NewLineNode());
     return node;
 }
 
@@ -298,9 +268,6 @@ function buildAlternatives(ctx: RuleContext, root: boolean, alternatives: RuleAl
     const altNode = new IndentNode("    ");
 
     if (alternatives.length > 1) {
-        if (root) {
-            altNode.children.push(new TextNode("return "));
-        }
         altNode.children.push(new TextNode("this.or(" + ctx.or++ + ", ["), new NewLineNode());
         const altIndentNode = new IndentNode("    ");
         altNode.children.push(altIndentNode);
@@ -311,7 +278,11 @@ function buildAlternatives(ctx: RuleContext, root: boolean, alternatives: RuleAl
             chevAltNode.children.push(new TextNode("ALT: () => {"), new NewLineNode());
             const indGroup = new IndentNode("    ");
             if (!e.subrule) {
-                indGroup.children.push(new TextNode("return this.subrule(" + ctx.subrule++ + ", this." + e.rule!.Name + "_" + e.index! + ")"));
+                //indGroup.children.push(new TextNode("return this.subrule(" + ctx.subrule++ + ", this." + e.rule!.Name + "_" + e.index! + ")"));
+                indGroup.children.push(
+                    buildUnorderedGroup(ctx, true, e.group),
+                    buildRuleReturnStatement(e.rule!, false),
+                );
             } else {
                 indGroup.children.push(buildUnorderedGroup(ctx, root, e.group));
             }
@@ -345,9 +316,6 @@ function buildGroup(ctx: RuleContext, root: boolean, group: Group): CompositeGen
                     groupNode.children.push(wrap(ctx, assignmentNode, e.Cardinality), new NewLineNode());
                 }
                 if (e.Terminal) {
-                    if (root && e.Terminal.kind == "RuleCall") {
-                        groupNode.children.push(new TextNode("return "));
-                    }
                     const terminalNode = buildTerminal(ctx, e.Terminal);
                     groupNode.children.push(wrap(ctx, terminalNode, e.Cardinality), new NewLineNode());
                 }
@@ -361,7 +329,7 @@ function buildGroup(ctx: RuleContext, root: boolean, group: Group): CompositeGen
     return groupNode;
 }
 
-function buildTerminal(ctx: RuleContext, terminal: AbstractTerminal): IGeneratorNode {
+function buildTerminal(ctx: RuleContext, terminal: AbstractTerminal): GeneratorNode {
     switch (terminal.kind) {
         case "Keyword": {
             return buildKeyword(ctx, terminal);
@@ -373,64 +341,37 @@ function buildTerminal(ctx: RuleContext, terminal: AbstractTerminal): IGenerator
             return buildParenthesizedGroup(ctx, terminal);
         }
     }
-    return {};
+    return "";
 }
 
-function buildAssignment(ctx: RuleContext, assignment: Assignment): CompositeGeneratorNode {
-    const assignNode = new CompositeGeneratorNode();
-    const crossRef = assignment.Terminal.kind == "CrossReference";
-    let prefix = ""
-    let suffix = ""
-
-    if (assignment.Operator == "=") {
-        if (crossRef) {
-            prefix = 'refs.set("' + fixFeature(assignment.Feature) + '", ';
-            suffix = ")";
-        } else {
-            prefix = fixFeature(assignment.Feature) + " = ";
-        }
-    } else if (assignment.Operator == "?=") {
-        prefix = fixFeature(assignment.Feature) + " = true;";
-    } else if (assignment.Operator == "+=") {
-        if (crossRef) {
-            // ignore this for now
-        } else {
-            prefix = fixFeature(assignment.Feature) + ".push(";
-            suffix = ")";
-        }
-    }
-
-    assignNode.children.push(new TextNode(prefix));
-    assignNode.children.push(buildAssignableElement(ctx, assignment.Terminal));
-    assignNode.children.push(new TextNode(suffix));
-
-    return assignNode;
+function buildAssignment(ctx: RuleContext, assignment: Assignment): GeneratorNode {
+    return buildAssignableElement(ctx, assignment.Terminal, assignment)
 }
 
-function buildAssignableElement(ctx: RuleContext, v: AssignableTerminal): IGeneratorNode {
+function buildAssignableElement(ctx: RuleContext, v: AssignableTerminal, assignment?: Assignment): GeneratorNode {
     switch (v.kind) {
         case "Keyword": {
-            return buildKeyword(ctx, v);
+            return buildKeyword(ctx, v, assignment);
         } case "CrossReference": {
-            return new TextNode("this.consume(" + ctx.consume++ + ", ID).image");
+            return new TextNode("this.consumeLeaf(" + ctx.consume++ + ", ID, " + getGrammarAccess(ctx, assignment ?? v) + ")");
         } case "RuleCall": {
-            return buildRuleCall(ctx, v);
+            return buildRuleCall(ctx, v, assignment);
         } case "ParenthesizedAssignableElement": {
-            return buildParenthesizedElement(ctx, v);
+            return buildParenthesizedElement(ctx, v, assignment);
         }
     }
 }
 
-function buildParenthesizedElement(ctx: RuleContext, element: ParenthesizedAssignableElement): IGeneratorNode {
+function buildParenthesizedElement(ctx: RuleContext, element: ParenthesizedAssignableElement, assignment?: Assignment): GeneratorNode {
     if (element.Alternatives.Elements.length == 1) {
-        return buildAssignableElement(ctx, element.Alternatives.Elements[0]);
+        return buildAssignableElement(ctx, element.Alternatives.Elements[0], assignment);
     } else {
         const wrapper = new CompositeGeneratorNode();
         wrapper.children.push(new TextNode("this.or(" + ctx.or++ + ", ["), new NewLineNode());
 
         element.Alternatives.Elements.forEach(e => {
             wrapper.children.push(new TextNode("{ ALT: () => {"), new NewLineNode());
-            wrapper.children.push(new TextNode("return "), buildAssignableElement(ctx, e), new NewLineNode());
+            wrapper.children.push(buildAssignableElement(ctx, e, assignment), new NewLineNode());
             wrapper.children.push(new TextNode("}},"), new NewLineNode());
         });
 
@@ -440,7 +381,7 @@ function buildParenthesizedElement(ctx: RuleContext, element: ParenthesizedAssig
     }
 }
 
-function wrap<T extends IGeneratorNode>(ctx: RuleContext, node: T, cardinality: string | undefined): T | CompositeGeneratorNode {
+function wrap<T extends GeneratorNode>(ctx: RuleContext, node: T, cardinality: string | undefined): T | CompositeGeneratorNode {
     if (!cardinality) {
         return node;
     } else {
@@ -463,20 +404,28 @@ function buildParenthesizedGroup(ctx: RuleContext, group: ParenthesizedElement):
     return buildAlternatives(ctx, false, group.Alternatives.Elements.map(e => <RuleAlternative>{ group: e, subrule: true }));
 }
 
-function buildRuleCall(ctx: RuleContext, ruleCall: RuleCall): TextNode {
+function buildRuleCall(ctx: RuleContext, ruleCall: RuleCall, assignment?: Assignment): string {
     if (ruleCall.Rule.kind == "ParserRule") {
-        return new TextNode("this.subrule(" + ctx.subrule++ + ", this." + ruleCall.Rule.Name + ")");
+        if (assignment) {
+            return "this.subruleLeaf(" + ctx.subrule++ + ", this." + ruleCall.Rule.Name + ", " + getGrammarAccess(ctx, assignment) + ")";
+        } else {
+            return "this.unassignedSubrule(" + ctx.subrule++ + ", this." + ruleCall.Rule.Name + ", " + getGrammarAccess(ctx, ruleCall) + ")";
+        }
     } else if (ruleCall.Rule.kind == "TerminalRule") {
-        return new TextNode("this.consume(" + ctx.consume++ + ", " + ruleCall.Rule.Name + ").image");
+        return "this.consumeLeaf(" + ctx.consume++  + ", " + ruleCall.Rule.Name + ", " + getGrammarAccess(ctx, assignment ?? ruleCall) + ")";
     }
     
-    return new TextNode("");
+    return "";
 }
 
-function buildKeyword(ctx: RuleContext, keyword: Keyword): TextNode {
+function buildKeyword(ctx: RuleContext, keyword: Keyword, assignment?: Assignment): TextNode {
     const validName = replaceTokens(keyword.Value) + "Keyword";
-    const node = new TextNode("this.consume(" + ctx.consume++ + ", " + validName + ").image");
+    const node = new TextNode("this.consumeLeaf(" + ctx.consume++ + ", " + validName + ", " + getGrammarAccess(ctx, assignment ?? keyword) + ")");
     return node;
+}
+
+function getGrammarAccess(ctx: RuleContext, feature: Feature): string {
+    return "this.grammarAccess." + ctx.name + "." + ctx.featureMap.get(feature);
 }
 
 function buildTerminalToken(terminal: TerminalRule): { name: string, length: number, node: CompositeGeneratorNode } {
@@ -586,11 +535,4 @@ function collectGroupKeywords(group: Group, keywords: Set<string>) {
             }
         }
     });
-}
-
-function fixFeature(feature: string): string {
-    if (feature.startsWith('^')) {
-        return feature.substring(1);
-    }
-    return feature;
 }

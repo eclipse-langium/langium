@@ -14,9 +14,6 @@ Grammar:
 	(rules+=AbstractRule)+
 ;
 
-GrammarID returns string:
-	ID ('.' ID)*;
-
 AbstractRule : ParserRule | TerminalRule | EnumRule;
 
 AbstractMetamodelDeclaration :
@@ -90,7 +87,7 @@ Keyword :
 ;
 
 RuleCall :
-	Rule=[AbstractRule|RuleID] ('<' Arguments+=NamedArgument (',' Arguments+=NamedArgument)* '>')?
+	Rule=[AbstractRule|ID] ('<' Arguments+=NamedArgument (',' Arguments+=NamedArgument)* '>')?
 ;
 
 NamedArgument:
@@ -127,11 +124,7 @@ ParameterReference:
 ;
 
 TerminalRuleCall:
-	Rule=[AbstractRule|RuleID]
-;
-
-RuleID returns string:
-	ID ('::' ID)*
+	Rule=[AbstractRule|ID]
 ;
 
 PredicatedKeyword:
@@ -139,7 +132,7 @@ PredicatedKeyword:
 ;
 
 PredicatedRuleCall:
-	(Predicated?='=>' | FirstSetPredicated?='->') Rule=[AbstractRule|RuleID] ('<' Arguments+=NamedArgument (',' Arguments+=NamedArgument)* '>')?
+	(Predicated?='=>' | FirstSetPredicated?='->') Rule=[AbstractRule|ID] ('<' Arguments+=NamedArgument (',' Arguments+=NamedArgument)* '>')?
 ;
 
 Assignment:

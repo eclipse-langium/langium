@@ -7,6 +7,7 @@
   "scripts": {
     "clean": "rimraf lib/*",
     "build": "tsc --build tsconfig.build.json",
+    "watch": "tsc -w --build tsconfig.build.json",
     "lint": "eslint ./src --ext .js,.ts",
     "prepare": "npm run clean && npm run lint && npm test && npm run build",
     "test": "jest --coverage",

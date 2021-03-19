@@ -2,6 +2,8 @@
 // @ts-nocheck
 import { AstNode } from "../generator/ast-node"
 
+export type Any = Grammar | AbstractRule | AbstractMetamodelDeclaration | GeneratedMetamodel | ReferencedMetamodel | Annotation | ParserRule | RuleNameAndParams | Parameter | Alternatives | UnorderedGroup | Group | AbstractToken | AbstractTokenWithCardinality | Action | AbstractTerminal | Keyword | RuleCall | NamedArgument | LiteralCondition | Disjunction | Conjunction | Negation | Atom | ParenthesizedCondition | ParameterReference | TerminalRuleCall | PredicatedKeyword | PredicatedRuleCall | Assignment | AssignableTerminal | ParenthesizedAssignableElement | AssignableAlternatives | CrossReference | CrossReferenceableTerminal | ParenthesizedElement | PredicatedGroup | TerminalRule | TerminalAlternatives | TerminalGroup | TerminalToken | TerminalTokenElement | ParenthesizedTerminalElement | AbstractNegatedToken | NegatedToken | UntilToken | Wildcard | CharacterRange | EnumRule | EnumLiterals | EnumLiteralDeclaration;
+
 export type Grammar = AstNode & {
     kind: "Grammar",
     definesHiddenTokens?: boolean,
@@ -9,10 +11,9 @@ export type Grammar = AstNode & {
     MetamodelDeclarations: AbstractMetamodelDeclaration[],
     Name: string,
     rules: AbstractRule[],
-    UsedGrammars: Grammar[]
+    UsedGrammars: Grammar[],
+    container: Any
 }
-
-export type GrammarID = { kind: "GrammarID" }
 
 export type AbstractRule = ParserRule | TerminalRule | EnumRule
 
@@ -22,18 +23,21 @@ export type GeneratedMetamodel = AstNode & {
     kind: "GeneratedMetamodel",
     Alias?: string,
     EPackage: string,
-    Name: string
+    Name: string,
+    container: Any
 }
 
 export type ReferencedMetamodel = AstNode & {
     kind: "ReferencedMetamodel",
     Alias?: string,
-    EPackage: string
+    EPackage: string,
+    container: Any
 }
 
 export type Annotation = AstNode & {
     kind: "Annotation",
-    Name: string
+    Name: string,
+    container: Any
 }
 
 export type ParserRule = AstNode & {
@@ -45,33 +49,39 @@ export type ParserRule = AstNode & {
     Name: string,
     Parameters: Parameter[],
     Type?: string,
-    wildcard: boolean
+    wildcard: boolean,
+    container: Any
 }
 
 export type RuleNameAndParams = AstNode & {
     kind: "RuleNameAndParams",
     Name: string,
-    Parameters: Parameter[]
+    Parameters: Parameter[],
+    container: Any
 }
 
 export type Parameter = AstNode & {
     kind: "Parameter",
-    Name: string
+    Name: string,
+    container: Any
 }
 
 export type Alternatives = AstNode & {
     kind: "Alternatives",
-    Elements: UnorderedGroup[]
+    Elements: UnorderedGroup[],
+    container: Any
 }
 
 export type UnorderedGroup = AstNode & {
     kind: "UnorderedGroup",
-    Elements: Group[]
+    Elements: Group[],
+    container: Any
 }
 
 export type Group = AstNode & {
     kind: "Group",
-    Elements: AbstractToken[]
+    Elements: AbstractToken[],
+    container: Any
 }
 
 export type AbstractToken = AbstractTokenWithCardinality | Action
@@ -80,79 +90,89 @@ export type AbstractTokenWithCardinality = AstNode & {
     kind: "AbstractTokenWithCardinality",
     Assignment: Assignment,
     Cardinality?: string,
-    Terminal: AbstractTerminal
+    Terminal: AbstractTerminal,
+    container: Any
 }
 
 export type Action = AstNode & {
     kind: "Action",
     Feature?: string,
     Operator?: string,
-    Type: ParserRule
+    Type: ParserRule,
+    container: Any
 }
 
 export type AbstractTerminal = Keyword | RuleCall | ParenthesizedElement | PredicatedKeyword | PredicatedRuleCall | PredicatedGroup
 
 export type Keyword = AstNode & {
     kind: "Keyword",
-    Value: string
+    Value: string,
+    container: Any
 }
 
 export type RuleCall = AstNode & {
     kind: "RuleCall",
     Arguments: NamedArgument[],
-    Rule: AbstractRule
+    Rule: AbstractRule,
+    container: Any
 }
 
 export type NamedArgument = AstNode & {
     kind: "NamedArgument",
     CalledByName?: boolean,
     Parameter?: Parameter,
-    Value: Disjunction
+    Value: Disjunction,
+    container: Any
 }
 
 export type LiteralCondition = AstNode & {
     kind: "LiteralCondition",
-    True: boolean
+    True: boolean,
+    container: Any
 }
 
 export type Disjunction = AstNode & {
     kind: "Disjunction",
     Left: Conjunction,
-    Right?: Conjunction
+    Right?: Conjunction,
+    container: Any
 }
 
 export type Conjunction = AstNode & {
     kind: "Conjunction",
     Left: Negation,
-    Right?: Negation
+    Right?: Negation,
+    container: Any
 }
 
 export type Negation = Atom | AstNode & {
     kind: "Negation",
-    Value: Negation
+    Value: Negation,
+    container: Any
 }
 
 export type Atom = ParameterReference | ParenthesizedCondition | LiteralCondition
 
-export type ParenthesizedCondition = { kind: "ParenthesizedCondition" }
+export type ParenthesizedCondition = AstNode & { kind: "ParenthesizedCondition" }
 
 export type ParameterReference = AstNode & {
     kind: "ParameterReference",
-    Parameter: Parameter
+    Parameter: Parameter,
+    container: Any
 }
 
 export type TerminalRuleCall = AstNode & {
     kind: "TerminalRuleCall",
-    Rule: AbstractRule
+    Rule: AbstractRule,
+    container: Any
 }
-
-export type RuleID = { kind: "RuleID" }
 
 export type PredicatedKeyword = AstNode & {
     kind: "PredicatedKeyword",
     FirstSetPredicated: boolean,
     Predicated: boolean,
-    Value: string
+    Value: string,
+    container: Any
 }
 
 export type PredicatedRuleCall = AstNode & {
@@ -160,7 +180,8 @@ export type PredicatedRuleCall = AstNode & {
     Arguments: NamedArgument[],
     FirstSetPredicated: boolean,
     Predicated: boolean,
-    Rule: AbstractRule
+    Rule: AbstractRule,
+    container: Any
 }
 
 export type Assignment = AstNode & {
@@ -169,39 +190,45 @@ export type Assignment = AstNode & {
     FirstSetPredicated?: boolean,
     Operator: string,
     Predicated?: boolean,
-    Terminal: AssignableTerminal
+    Terminal: AssignableTerminal,
+    container: Any
 }
 
 export type AssignableTerminal = Keyword | RuleCall | ParenthesizedAssignableElement | CrossReference
 
 export type ParenthesizedAssignableElement = AstNode & {
     kind: "ParenthesizedAssignableElement",
-    Alternatives: AssignableAlternatives
+    Alternatives: AssignableAlternatives,
+    container: Any
 }
 
 export type AssignableAlternatives = AstNode & {
     kind: "AssignableAlternatives",
-    Elements: AssignableTerminal[]
+    Elements: AssignableTerminal[],
+    container: Any
 }
 
 export type CrossReference = AstNode & {
     kind: "CrossReference",
     Terminal?: CrossReferenceableTerminal,
-    Type: ParserRule
+    Type: ParserRule,
+    container: Any
 }
 
 export type CrossReferenceableTerminal = Keyword | RuleCall
 
 export type ParenthesizedElement = AstNode & {
     kind: "ParenthesizedElement",
-    Alternatives: Alternatives
+    Alternatives: Alternatives,
+    container: Any
 }
 
 export type PredicatedGroup = AstNode & {
     kind: "PredicatedGroup",
     Elements: Alternatives[],
     FirstSetPredicated: boolean,
-    Predicated: boolean
+    Predicated: boolean,
+    container: Any
 }
 
 export type TerminalRule = AstNode & {
@@ -209,63 +236,73 @@ export type TerminalRule = AstNode & {
     Fragment: boolean,
     Name: string,
     Regex: string,
-    Type?: string
+    Type?: string,
+    container: Any
 }
 
 export type TerminalAlternatives = AstNode & {
     kind: "TerminalAlternatives",
-    Elements: TerminalGroup[]
+    Elements: TerminalGroup[],
+    container: Any
 }
 
 export type TerminalGroup = AstNode & {
     kind: "TerminalGroup",
-    Elements: TerminalToken[]
+    Elements: TerminalToken[],
+    container: Any
 }
 
 export type TerminalToken = AstNode & {
     kind: "TerminalToken",
-    Cardinality?: string
+    Cardinality?: string,
+    container: Any
 }
 
 export type TerminalTokenElement = CharacterRange | TerminalRuleCall | ParenthesizedTerminalElement | AbstractNegatedToken | Wildcard
 
-export type ParenthesizedTerminalElement = { kind: "ParenthesizedTerminalElement" }
+export type ParenthesizedTerminalElement = AstNode & { kind: "ParenthesizedTerminalElement" }
 
 export type AbstractNegatedToken = NegatedToken | UntilToken
 
 export type NegatedToken = AstNode & {
     kind: "NegatedToken",
-    Terminal: TerminalTokenElement
+    Terminal: TerminalTokenElement,
+    container: Any
 }
 
 export type UntilToken = AstNode & {
     kind: "UntilToken",
-    Terminal: TerminalTokenElement
+    Terminal: TerminalTokenElement,
+    container: Any
 }
 
-export type Wildcard = { kind: "Wildcard" }
+export type Wildcard = AstNode & { kind: "Wildcard" }
 
 export type CharacterRange = AstNode & {
     kind: "CharacterRange",
     Left: Keyword,
-    Right?: Keyword
+    Right?: Keyword,
+    container: Any
 }
 
 export type EnumRule = AstNode & {
     kind: "EnumRule",
     Alternatives: EnumLiterals,
     Name: string,
-    Type?: string
+    Type?: string,
+    container: Any
 }
 
 export type EnumLiterals = AstNode & {
     kind: "EnumLiterals",
-    Elements: EnumLiteralDeclaration[]
+    Elements: EnumLiteralDeclaration[],
+    container: Any
 }
 
 export type EnumLiteralDeclaration = AstNode & {
     kind: "EnumLiteralDeclaration",
     EnumLiteral: EnumLiterals,
-    Literal?: Keyword
+    Literal?: Keyword,
+    container: Any
 }
 

@@ -7,14 +7,14 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "Launch Program",
+            "name": "Bootstrap",
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "program": "${workspaceFolder}/core/src/bootstrap/index.ts",
+            "program": "${workspaceFolder}/core/src/bootstrap/bootstrapper.ts",
             "cwd": "${workspaceFolder}/core",
             "outFiles": [
-                "${workspaceFolder}/**/*.js"
+                "${workspaceFolder}/core/lib/**/*.js"
             ]
         }
     ]

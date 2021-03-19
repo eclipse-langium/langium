@@ -1,4 +1,4 @@
-import { CompositeGeneratorNode, IGeneratorNode, IndentNode, NewLineNode, TextNode } from "./node";
+import { CompositeGeneratorNode, GeneratorNode, IndentNode, NewLineNode, TextNode } from "./node";
 
 class Context {
 
@@ -54,14 +54,16 @@ class Context {
     }
 }
 
-export function process(node: IGeneratorNode): string {
+export function process(node: GeneratorNode): string {
     const context = new Context();
     processNode(node, context);
     return context.content;
 }
 
-function processNode(node: IGeneratorNode, context: Context) {
-    if (node instanceof TextNode) {
+function processNode(node: GeneratorNode, context: Context) {
+    if (typeof(node) === 'string') {
+        processTextNode(new TextNode(node), context);
+    } else if (node instanceof TextNode) {
         processTextNode(node, context);
     } else if (node instanceof IndentNode) {
         processIndentNode(node, context);
@@ -72,8 +74,10 @@ function processNode(node: IGeneratorNode, context: Context) {
     }
 }
 
-function hasContent(node: IGeneratorNode, ctx: Context): boolean {
-    if (node instanceof TextNode) {
+function hasContent(node: GeneratorNode, ctx: Context): boolean {
+    if (typeof(node) === "string") {
+        return hasNonWhitespace(node);
+    } else if (node instanceof TextNode) {
         return !!node.text && hasNonWhitespace(node.text);
     } else if (node instanceof IndentNode || node instanceof CompositeGeneratorNode) {
         return node.children.some(e => hasContent(e, ctx));
