@@ -28,7 +28,7 @@ export function generateParser(grammar: Grammar): string {
         new NewLineNode(),
         new TextNode('import { PartialDeep } from "type-fest";'),
         new NewLineNode(),
-        new TextNode('import { RootNode, RuleResult } from "../generator/ast-node";'),
+        new TextNode('import { AstNode, RootNode, RuleResult } from "../generator/ast-node";'),
         new NewLineNode(),
         new TextNode('import { LangiumParser } from "../parser/langium-parser";'),
         new NewLineNode(),
@@ -103,7 +103,7 @@ function buildParseFunction(grammar: Grammar): CompositeGeneratorNode {
         new TextNode("const lexResult = lexer.tokenize(text);"), new NewLineNode(),
         new TextNode("parser.input = lexResult.tokens;"), new NewLineNode(),
         new TextNode("const ast = parser."), new TextNode(firstRule.Name), new TextNode("();"), new NewLineNode(),
-        "(ast['.node'] as RootNode).setText(text);", new NewLineNode(),
+        "(ast[AstNode.node] as RootNode).setText(text);", new NewLineNode(),
         new TextNode("return {"), new NewLineNode()
     );
 

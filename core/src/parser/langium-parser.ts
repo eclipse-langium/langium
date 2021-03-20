@@ -58,21 +58,15 @@ export class LangiumParser extends EmbeddedActionsParser {
     unassignedSubrule<T extends AstNode>(idx: number, rule: RuleResult<T>, feature: Feature): void {
         const result = this.subruleLeaf(idx, rule, feature);
         this.objStack.pop();
-        if (Object.isExtensible(result)) {
-            result.container = this.currentObject;
-        }
         this.objStack.push(result);
     }
 
     subruleLeaf<T extends AstNode>(idx: number, rule: RuleResult<T>, feature: Feature): PartialDeep<T> {
         const subruleResult = this.subrule(idx, rule);
-        if (Object.isExtensible(subruleResult)) {
-            subruleResult.container = this.currentObject;
-        }
-        const node = subruleResult[".node"];
-        if (node) {
-            node.element = feature;
-            this.currentNodes.push(<INode>node);
+        const resultNode = subruleResult[AstNode.node];
+        if (resultNode) {
+            resultNode.element = feature;
+            this.currentNodes.push(<INode>resultNode);
         }
         if (feature.kind === "Assignment") {
             this.assign({ operator: feature.Operator, feature: feature.Feature }, subruleResult);
@@ -91,11 +85,24 @@ export class LangiumParser extends EmbeddedActionsParser {
 
     construct<T extends AstNode>(kind: string, root?: boolean): PartialDeep<T> {
         const node = root ? new RootNode() : new CompositeNode();
-        const obj = { kind, '.node': node, ...this.currentObject };
-        this.currentNodes.forEach(e => {
-            e.parent = node;
-        });
-        node.children.push(...this.currentNodes);
+        const obj = { kind, [AstNode.node]: node, ...this.currentObject };
+        if (!this.RECORDING_PHASE) {
+            for (const value of Object.values(obj)) {
+                if (Array.isArray(value)) {
+                    for (const item of value) {
+                        if (typeof (item) === "object") {
+                            item.container = obj;
+                        }
+                    }
+                } else if (typeof (value) === "object") {
+                    (<AstNode>value).container = obj;
+                }
+            }
+            this.currentNodes.forEach(e => {
+                e.parent = node;
+            });
+            node.children.push(...this.currentNodes);
+        }
         return <PartialDeep<T>>obj;
     }
 

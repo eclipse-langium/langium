@@ -1,11 +1,16 @@
 import { PartialDeep } from "type-fest"
 import { Any } from "../gen/ast";
 
+// eslint-disable-next-line @typescript-eslint/no-namespace
+export namespace AstNode {
+    export const node = Symbol("node");
+}
+
 export type AstNode = {
     kind: string,
     container: AstNode,
+    [AstNode.node]: INode,
     '.references': Map<string, string | undefined>,
-    '.node'?: INode
 }
 
 export interface INode {
