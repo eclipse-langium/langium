@@ -1,6 +1,6 @@
 import { EmbeddedActionsParser, IRuleConfig, TokenType } from "chevrotain";
 import { PartialDeep } from "type-fest";
-import { Action, Grammar } from "../gen/ast";
+import { Action } from "../gen/ast";
 import { AstNode, CompositeNode, INode, LeafNode, RootNode, RuleResult } from "../generator/ast-node";
 import { Feature } from "../generator/utils";
 
@@ -9,6 +9,7 @@ export class LangiumParser extends EmbeddedActionsParser {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     private objStack: any[] = [];
     private nodeStack: INode[][] = [];
+    private actionStack: boolean[] = [];
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     private get currentObject(): any {
@@ -19,11 +20,16 @@ export class LangiumParser extends EmbeddedActionsParser {
         return this.nodeStack[this.nodeStack.length - 1];
     }
 
-    grammar: Grammar;
+    private get actionExecuted(): boolean {
+        return this.actionStack[this.actionStack.length -1];
+    }
 
-    constructor(grammar: Grammar, tokens: TokenType[]) {
+    private set actionExecuted(value: boolean) {
+        this.actionStack[this.actionStack.length -1] = value;
+    }
+
+    constructor(tokens: TokenType[]) {
         super(tokens, { recoveryEnabled: true, nodeLocationTracking: 'onlyOffset' });
-        this.grammar = grammar;
     }
 
     RULE<T>(
@@ -38,9 +44,11 @@ export class LangiumParser extends EmbeddedActionsParser {
         return (implArgs: unknown[]): T => {
             this.objStack.push({});
             this.nodeStack.push([]);
+            this.actionStack.push(false);
             const result = implementation(implArgs);
             this.objStack.pop();
             this.nodeStack.pop();
+            this.actionStack.pop();
             return result;
         }
     }
@@ -75,11 +83,14 @@ export class LangiumParser extends EmbeddedActionsParser {
     }
 
     executeAction(action: Action): void {
-        const current = this.objStack.pop();
-        const newItem = {};
-        this.objStack.push(newItem);
-        if (action.Feature && action.Operator) {
-            this.assign({ operator: action.Operator, feature: action.Feature }, current);
+        if (!this.actionExecuted) {
+            const current = this.objStack.pop();
+            const newItem = {};
+            this.objStack.push(newItem);
+            if (action.Feature && action.Operator) {
+                this.assign({ operator: action.Operator, feature: action.Feature }, current);
+            }
+            this.actionExecuted = true;
         }
     }
 

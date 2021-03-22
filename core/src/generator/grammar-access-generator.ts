@@ -3,10 +3,10 @@ import { CompositeGeneratorNode, IndentNode, NewLineNode } from "./node/node";
 import { process } from "./node/node-processor";
 import { findAllFeatures } from "./utils";
 
-export function generate(grammar: Grammar): string {
+export function generateGrammarAccess(grammar: Grammar): string {
     const node = new CompositeGeneratorNode();
 
-    node.children.push("import { GrammarAccess } from '../grammar/grammar-access'", new NewLineNode(), "import { Assignment, CrossReference, Keyword, RuleCall } from './ast'", new NewLineNode(), new NewLineNode());
+    node.children.push("import { GrammarAccess } from '../grammar/grammar-access'", new NewLineNode(), "import { Action, Assignment, CrossReference, Keyword, RuleCall } from './ast'", new NewLineNode(), new NewLineNode());
 
     grammar.rules.filter(e => e.kind === "ParserRule").map(e => e as ParserRule).forEach(e => {
         node.children.push(generateRuleAccess(e), new NewLineNode(), new NewLineNode());

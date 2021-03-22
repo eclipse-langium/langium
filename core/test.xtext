@@ -49,11 +49,11 @@ Parameter:
 ;
 
 Alternatives:
-	Elements+=UnorderedGroup ('|' Elements+=UnorderedGroup)*
+	UnorderedGroup ({Alternatives.Elements+=current} '|' Elements+=UnorderedGroup)*
 ;
 
 UnorderedGroup:
-	Elements+=Group ('&' Elements+=Group)*
+	Group ({UnorderedGroup.Elements+=current} '&' Elements+=Group)*
 ;
 
 Group:
@@ -66,7 +66,7 @@ AbstractToken:
 ;
 
 AbstractTokenWithCardinality:
-	(Assignment=Assignment | ^Terminal=AbstractTerminal) Cardinality=('?'|'*'|'+')?
+	(Assignment | AbstractTerminal) Cardinality=('?'|'*'|'+')?
 ;
 
 Action:

@@ -1,5 +1,5 @@
 /* eslint-disable */
-import { AbstractRule, AbstractTerminal, Alternatives, Assignment, Grammar, Group, ParserRule, UnorderedGroup } from "../gen/ast";
+import { AbstractRule, AbstractTerminal, Alternatives, Assignment, Grammar, Group, ParserRule, UnorderedGroup } from "../gen2/ast";
 import { AstNode, CompositeNode, INode, LeafNode } from "../generator/ast-node";
 
 export function linkGrammar(grammar: Grammar): void {
@@ -9,27 +9,33 @@ export function linkGrammar(grammar: Grammar): void {
 }
 
 function linkAlteratives(grammar: Grammar, alternatives: Alternatives) {
-    alternatives.Elements.forEach(e => {
-        linkUnorderedGroup(grammar, e);
-    });
+    if (alternatives.kind === "Alternatives") {
+        alternatives.Elements.forEach(e => {
+            linkUnorderedGroup(grammar, e);
+        });
+    } else {
+        linkUnorderedGroup(grammar, alternatives);
+    }
 }
 
 function linkUnorderedGroup(grammar: Grammar, group: UnorderedGroup) {
-    group.Elements.forEach(e => {
-        linkGroup(grammar, e)
-    });
+    if (group.kind === "UnorderedGroup") {
+        group.Elements.forEach(e => {
+            linkGroup(grammar, e)
+        });
+    } else {
+        linkGroup(grammar, group);
+    }
 }
 
 function linkGroup(grammar: Grammar, group: Group) {
     group.Elements?.forEach(e => {
-        if (e.kind === "AbstractTokenWithCardinality") {
-            if (e.Assignment) {
-                linkAssignment(grammar, e.Assignment);
-            } else if (e.Terminal) {
-                linkTerminal(grammar, e.Terminal);
-            }
+        if (e.kind === "Assignment") {
+            linkAssignment(grammar, e);
         } else if (e.kind === "Action") {
             findReferences(grammar, e);
+        } else {
+            linkTerminal(grammar, e);
         }
     });
 }

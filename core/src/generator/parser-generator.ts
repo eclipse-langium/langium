@@ -1,9 +1,9 @@
 /* eslint-disable */
-import { AbstractTerminal, Alternatives, AssignableTerminal, Assignment, Grammar, Group, Keyword, ParenthesizedAssignableElement, ParenthesizedElement, ParserRule, RuleCall, TerminalRule, UnorderedGroup } from "../gen/ast";
+import { AbstractTerminal, Action, Alternatives, AssignableTerminal, Assignment, Grammar, Group, Keyword, ParenthesizedAssignableElement, ParenthesizedElement, ParserRule, RuleCall, TerminalRule, UnorderedGroup } from "../gen/ast";
 import { CompositeGeneratorNode, GeneratorNode, IndentNode, NewLineNode, TextNode } from "./node/node";
 import { process } from "./node/node-processor";
 import { replaceTokens } from "./token-replacer";
-import { collectRule as collectRuleFields, Feature, findAllFeatures } from "./utils";
+import { Feature, findAllFeatures } from "./utils";
 
 type RuleContext = {
     name: string,
@@ -168,45 +168,30 @@ function buildParser(grammar: Grammar): CompositeGeneratorNode {
 type RuleAlternative = {
     rule?: ParserRule,
     index?: number,
-    group: UnorderedGroup,
-    subrule: boolean
+    group: UnorderedGroup
 }
 
 function collectRuleAlternatives(rule: ParserRule): RuleAlternative[] {
     const alts: RuleAlternative[] = [];
-    rule.Alternatives.Elements.forEach((e, i) => {
-        const group = e;
-        const subrule = isSubrule(e);
-        alts.push({ rule, index: i, group, subrule });
-    });
-    return alts;
-}
-
-function isSubrule(group: UnorderedGroup): boolean {
-    if (group.Elements.length == 1) {
-        const g = group.Elements[0];
-        if (g.Elements.length == 1) {
-            const e = g.Elements[0];
-            if (e.kind == "AbstractTokenWithCardinality") {
-                return e.Terminal && e.Terminal.kind == "RuleCall";
-            }
-        }
+    if (rule.Alternatives.kind === "Alternatives") {
+        rule.Alternatives.Elements.forEach((e, i) => {
+            const group = e;
+            alts.push({ rule, index: i, group });
+        });
+    } else {
+        alts.push({ rule, index: 0, group: rule.Alternatives });
     }
-    return false;
+    
+    return alts;
 }
 
 function buildRule(ctx: RuleContext, rule: ParserRule, first: boolean): CompositeGeneratorNode {
     const ruleNode = new CompositeGeneratorNode();
-    const { fields } = collectRuleFields(rule);
     const alternatives = collectRuleAlternatives(rule);
     ruleNode.children.push(
         new TextNode(first ? "public " : "private "), 
         new TextNode(rule.Name)
     );
-
-    if (fields.length > 0) {
-        ruleNode.children.push(new TextNode(': RuleResult<' + rule.Name + '>'));
-    }
 
     ruleNode.children.push(
         new TextNode(' = this.RULE("'),
@@ -225,34 +210,10 @@ function buildRule(ctx: RuleContext, rule: ParserRule, first: boolean): Composit
         new NewLineNode(), 
         new NewLineNode()
     )
-
-    // if (alternatives.length > 1) {
-    //     alternatives.filter(e => !e.subrule).forEach(e => {
-    //         ruleNode.children.push(buildRuleAlternative(ctx, e));
-    //     });
-    // } 
     
 
     return ruleNode;
 }
-
-// function buildRuleAlternative(ctx: RuleContext, alt: RuleAlternative): CompositeGeneratorNode {
-//     const ruleNode = new CompositeGeneratorNode();
-//     const rule = alt.rule!;
-
-//     ruleNode.children.push(new TextNode("private " + rule.Name + "_" + alt.index + ": RuleResult<" + rule.Name + '> = this.RULE("' + rule.Name + "_" + alt.index + '", () => {'), new NewLineNode());
-
-//     ruleNode.children.push(
-//         buildPropertyInitializers(rule),
-//         buildUnorderedGroup(ctx, true, alt.group),
-//         buildRuleReturnStatement(rule),
-//         new TextNode("})"), 
-//         new NewLineNode(), 
-//         new NewLineNode()
-//     );
-
-//     return ruleNode;
-// }
 
 function buildRuleReturnStatement(rule: ParserRule, first: boolean) : CompositeGeneratorNode {
     const node = new CompositeGeneratorNode();
@@ -265,7 +226,7 @@ function buildRuleReturnStatement(rule: ParserRule, first: boolean) : CompositeG
 }
 
 function buildAlternatives(ctx: RuleContext, root: boolean, alternatives: RuleAlternative[]): CompositeGeneratorNode {
-    const altNode = new IndentNode("    ");
+    const altNode = new CompositeGeneratorNode();
 
     if (alternatives.length > 1) {
         altNode.children.push(new TextNode("this.or(" + ctx.or++ + ", ["), new NewLineNode());
@@ -277,15 +238,7 @@ function buildAlternatives(ctx: RuleContext, root: boolean, alternatives: RuleAl
             const chevAltNode = new IndentNode("    ");
             chevAltNode.children.push(new TextNode("ALT: () => {"), new NewLineNode());
             const indGroup = new IndentNode("    ");
-            if (!e.subrule) {
-                //indGroup.children.push(new TextNode("return this.subrule(" + ctx.subrule++ + ", this." + e.rule!.Name + "_" + e.index! + ")"));
-                indGroup.children.push(
-                    buildUnorderedGroup(ctx, true, e.group),
-                    buildRuleReturnStatement(e.rule!, false),
-                );
-            } else {
-                indGroup.children.push(buildUnorderedGroup(ctx, root, e.group));
-            }
+            indGroup.children.push(buildUnorderedGroup(ctx, root, e.group));
             chevAltNode.children.push(indGroup);
             chevAltNode.children.push(new TextNode("}"), new NewLineNode());
             altIndentNode.children.push(chevAltNode, new TextNode("},"), new NewLineNode());
@@ -302,31 +255,34 @@ function buildUnorderedGroup(ctx: RuleContext, root: boolean, group: UnorderedGr
     if (group.Elements.length > 1) {
         throw new Error("Unordered groups are not supported (yet)");
     }
-    return buildGroup(ctx, root, group.Elements[0]);
+    if (group.kind === "Group") {
+        return buildGroup(ctx, root, group);
+    } else {
+        throw new Error("Unordered groups are not supported (yet)");
+    }
+    
 }
 
 function buildGroup(ctx: RuleContext, root: boolean, group: Group): CompositeGeneratorNode {
     const groupNode = new CompositeGeneratorNode();
 
     group.Elements.forEach(e => {
-        switch (e.kind) {
-            case "AbstractTokenWithCardinality": {
-                if (e.Assignment) {
-                    const assignmentNode = buildAssignment(ctx, e.Assignment);
-                    groupNode.children.push(wrap(ctx, assignmentNode, e.Cardinality), new NewLineNode());
-                }
-                if (e.Terminal) {
-                    const terminalNode = buildTerminal(ctx, e.Terminal);
-                    groupNode.children.push(wrap(ctx, terminalNode, e.Cardinality), new NewLineNode());
-                }
-            }
-            case "Action": {
-                // todo: build action
-            }
+        if (e.kind === "Action") {
+            groupNode.children.push(buildAction(ctx, e), new NewLineNode());
+        } else if (e.kind === "Assignment") {
+            const assignmentNode = buildAssignment(ctx, e);
+            groupNode.children.push(wrap(ctx, assignmentNode, e.Cardinality), new NewLineNode());
+        } else {
+            const terminalNode = buildTerminal(ctx, e);
+            groupNode.children.push(wrap(ctx, terminalNode, e.Cardinality), new NewLineNode());
         }
     });
 
     return groupNode;
+}
+
+function buildAction(ctx: RuleContext, action: Action): GeneratorNode {
+    return "this.executeAction(" + getGrammarAccess(ctx, action) + ")";
 }
 
 function buildTerminal(ctx: RuleContext, terminal: AbstractTerminal): GeneratorNode {
@@ -401,7 +357,13 @@ function wrap<T extends GeneratorNode>(ctx: RuleContext, node: T, cardinality: s
 }
 
 function buildParenthesizedGroup(ctx: RuleContext, group: ParenthesizedElement): CompositeGeneratorNode {
-    return buildAlternatives(ctx, false, group.Alternatives.Elements.map(e => <RuleAlternative>{ group: e, subrule: true }));
+    const ruleAlternatives: RuleAlternative[] = [];
+    if (group.Alternatives.kind === "Alternatives") {
+        ruleAlternatives.push(...group.Alternatives.Elements.map(e => <RuleAlternative>{ group: e }));
+    } else {
+        ruleAlternatives.push(<RuleAlternative>{group: group.Alternatives});
+    }
+    return buildAlternatives(ctx, false, ruleAlternatives);
 }
 
 function buildRuleCall(ctx: RuleContext, ruleCall: RuleCall, assignment?: Assignment): string {
@@ -481,11 +443,23 @@ function collectRuleKeywords(rule: ParserRule, keywords: Set<string>) {
 }
 
 function collectAlternativeKeywords(alternatives: Alternatives, keywords: Set<string>) {
-    alternatives.Elements.forEach(e => {
-        e.Elements.forEach(g => {
+    if (alternatives.kind === "Alternatives") {
+        alternatives.Elements.forEach(e => {
+            collectUnorderedGroupKeywords(e, keywords);
+        });
+    } else {
+        collectUnorderedGroupKeywords(alternatives, keywords);
+    }
+}
+
+function collectUnorderedGroupKeywords(group: UnorderedGroup, keywords: Set<string>) {
+    if (group.kind === "UnorderedGroup") {
+        group.Elements.forEach(g => {
             collectGroupKeywords(g, keywords);
         });
-    });
+    } else {
+        collectGroupKeywords(group, keywords);
+    }
 }
 
 function collectAssignableTerminal(terminal: AssignableTerminal, keywords: Set<string>) {
@@ -505,34 +479,30 @@ function collectAssignableTerminal(terminal: AssignableTerminal, keywords: Set<s
 function collectGroupKeywords(group: Group, keywords: Set<string>) {
     group.Elements.forEach(element => {
 
-        if (element.kind == "AbstractTokenWithCardinality") {
-            if (element.Assignment) {
-                const assignment = element.Assignment;
+        if (element.kind == "Assignment") {
+            const assignment = element;
                 const terminal = assignment.Terminal;
                 collectAssignableTerminal(terminal, keywords);
-            }
-            if (element.Terminal) {
-                const terminal = element.Terminal;
-                switch (terminal.kind) {
+        } else if (element.kind !== "Action") {
+                switch (element.kind) {
                     case "Keyword": {
-                        keywords.add(terminal.Value);
+                        keywords.add(element.Value);
                         break;
                     }
                     case "ParenthesizedElement": {
-                        collectAlternativeKeywords(terminal.Alternatives, keywords);
+                        collectAlternativeKeywords(element.Alternatives, keywords);
                         break;
                     }
                     case "PredicatedGroup": {
-                        terminal.Elements.forEach(e => {
+                        element.Elements.forEach(e => {
                             collectAlternativeKeywords(e, keywords);
                         });
                         break;
                     }
                     case "PredicatedKeyword": {
-                        keywords.add(terminal.Value);
+                        keywords.add(element.Value);
                     }
                 }
-            }
         }
     });
 }

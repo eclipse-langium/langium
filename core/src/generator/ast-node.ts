@@ -84,7 +84,7 @@ export class CompositeNode extends AbstractNode implements ICompositeNode {
     getLength(): number {
         if (this.children.length > 0) {
             const last = this.children[this.children.length - 1];
-            return last.getOffset() + last.getLength();
+            return last.getOffset() + last.getLength() - this.getOffset();
         } else {
             return 0;
         }

@@ -66,13 +66,13 @@ export type Parameter = AstNode & {
     container: Any
 }
 
-export type Alternatives = AstNode & {
+export type Alternatives = UnorderedGroup | AstNode & {
     kind: "Alternatives",
     Elements: UnorderedGroup[],
     container: Any
 }
 
-export type UnorderedGroup = AstNode & {
+export type UnorderedGroup = Group | AstNode & {
     kind: "UnorderedGroup",
     Elements: Group[],
     container: Any
@@ -86,12 +86,8 @@ export type Group = AstNode & {
 
 export type AbstractToken = AbstractTokenWithCardinality | Action
 
-export type AbstractTokenWithCardinality = AstNode & {
-    kind: "AbstractTokenWithCardinality",
-    Assignment: Assignment,
-    Cardinality?: string,
-    Terminal: AbstractTerminal,
-    container: Any
+export type AbstractTokenWithCardinality = (Assignment | AbstractTerminal) & {
+    Cardinality?: string
 }
 
 export type Action = AstNode & {
@@ -125,7 +121,7 @@ export type NamedArgument = AstNode & {
     container: Any
 }
 
-export type LiteralCondition = AstNode & {
+export type LiteralCondition =  | AstNode & {
     kind: "LiteralCondition",
     True: boolean,
     container: Any
@@ -153,7 +149,7 @@ export type Negation = Atom | AstNode & {
 
 export type Atom = ParameterReference | ParenthesizedCondition | LiteralCondition
 
-export type ParenthesizedCondition = AstNode & { kind: "ParenthesizedCondition" }
+export type ParenthesizedCondition = Disjunction
 
 export type ParameterReference = AstNode & {
     kind: "ParameterReference",
@@ -252,15 +248,13 @@ export type TerminalGroup = AstNode & {
     container: Any
 }
 
-export type TerminalToken = AstNode & {
-    kind: "TerminalToken",
-    Cardinality?: string,
-    container: Any
+export type TerminalToken = (TerminalTokenElement) & {
+    Cardinality?: string
 }
 
 export type TerminalTokenElement = CharacterRange | TerminalRuleCall | ParenthesizedTerminalElement | AbstractNegatedToken | Wildcard
 
-export type ParenthesizedTerminalElement = AstNode & { kind: "ParenthesizedTerminalElement" }
+export type ParenthesizedTerminalElement = TerminalAlternatives
 
 export type AbstractNegatedToken = NegatedToken | UntilToken
 

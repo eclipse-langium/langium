@@ -1,5 +1,5 @@
 import { GrammarAccess } from '../grammar/grammar-access'
-import { Assignment, CrossReference, Keyword, RuleCall } from './ast'
+import { Action, Assignment, CrossReference, Keyword, RuleCall } from './ast'
 
 type GrammarRuleAccess = {
     GrammarKeyword: Keyword;
@@ -101,15 +101,19 @@ type ParameterRuleAccess = {
 }
 
 type AlternativesRuleAccess = {
+    UnorderedGroupRuleCall: RuleCall;
+    ElementsAction: Action;
+    PipeKeyword: Keyword;
     Elements: Assignment;
     ElementsUnorderedGroupRuleCall: RuleCall;
-    PipeKeyword: Keyword;
 }
 
 type UnorderedGroupRuleAccess = {
+    GroupRuleCall: RuleCall;
+    ElementsAction: Action;
+    AmpersandKeyword: Keyword;
     Elements: Assignment;
     ElementsGroupRuleCall: RuleCall;
-    AmpersandKeyword: Keyword;
 }
 
 type GroupRuleAccess = {
@@ -123,10 +127,8 @@ type AbstractTokenRuleAccess = {
 }
 
 type AbstractTokenWithCardinalityRuleAccess = {
-    Assignment: Assignment;
-    AssignmentAssignmentRuleCall: RuleCall;
-    Terminal: Assignment;
-    TerminalAbstractTerminalRuleCall: RuleCall;
+    AssignmentRuleCall: RuleCall;
+    AbstractTerminalRuleCall: RuleCall;
     Cardinality: Assignment;
     QuestionMarkKeyword: Keyword;
     AsteriskKeyword: Keyword;
@@ -181,6 +183,7 @@ type NamedArgumentRuleAccess = {
 }
 
 type LiteralConditionRuleAccess = {
+    undefinedAction: Action;
     True: Assignment;
     TrueKeyword: Keyword;
     FalseKeyword: Keyword;
@@ -204,6 +207,7 @@ type ConjunctionRuleAccess = {
 
 type NegationRuleAccess = {
     AtomRuleCall: RuleCall;
+    undefinedAction: Action;
     ExclamationMarkKeyword: Keyword;
     Value: Assignment;
     ValueNegationRuleCall: RuleCall;
@@ -388,6 +392,7 @@ type UntilTokenRuleAccess = {
 }
 
 type WildcardRuleAccess = {
+    undefinedAction: Action;
     DotKeyword: Keyword;
 }
 

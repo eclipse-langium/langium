@@ -27,29 +27,42 @@ export function generateAst(grammar: Grammar): string {
 
 function generateRuleType(rule: ParserRule): GeneratorNode {
     const typeNode = new CompositeGeneratorNode();
-    const { fields, rules } = collectRule(rule, true);
+    const { fields, rules, hasAction } = collectRule(rule);
 
-    typeNode.children.push(new TextNode("export type "), new TextNode(rule.Name), new TextNode(" = "));
+    typeNode.children.push("export type ", rule.Name, " = ");
 
     if (fields.length === 0 && rules.length === 0) {
-        typeNode.children.push(new TextNode('AstNode & { kind: "' + rule.Name + '" }'));
+        typeNode.children.push('AstNode & { kind: "' + rule.Name + '" }');
     }
 
-    rules.forEach(e => {
-        typeNode.children.push(new TextNode(e), new TextNode(" | "));
-    });
+    if (rules.length > 0 && fields.length > 0 && !hasAction) {
+        typeNode.children.push("(");
+    }
+
+    typeNode.children.push(rules.join(" | "));
+
+    if (rules.length > 0 && fields.length > 0 && !hasAction) {
+        typeNode.children.push(")");
+    }
 
     if (fields.length > 0) {
-        typeNode.children.push(new TextNode("AstNode & {"), new NewLineNode());
+        if (hasAction) {
+            typeNode.children.push(" | AstNode");
+        } else if (rules.length === 0) {
+            typeNode.children.push("AstNode");
+        }
+        typeNode.children.push(new TextNode(" & {"), new NewLineNode());
 
         const indent = new IndentNode("    ");
         typeNode.children.push(indent);
-        fields.push({
-            name: "container",
-            array: false,
-            optional: false,
-            type: ["Any"]
-        });
+        if (rules.length === 0 || hasAction) {
+            fields.push({
+                name: "container",
+                array: false,
+                optional: false,
+                type: ["Any"]
+            });
+        }
         fields.forEach((e, i) => {
             const option = e.optional && !e.array ? "?" : "";
             const array = e.array ? "[]" : "";
@@ -58,8 +71,6 @@ function generateRuleType(rule: ParserRule): GeneratorNode {
         });
 
         typeNode.children.push(new TextNode("}"));
-    } else if (rules.length > 0) {
-        typeNode.children.pop();
     }
 
     typeNode.children.push(new NewLineNode(), new NewLineNode());
