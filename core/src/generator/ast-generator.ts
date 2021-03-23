@@ -3,9 +3,9 @@ import { CompositeGeneratorNode, GeneratorNode, IndentNode, NewLineNode, TextNod
 import { process } from "./node/node-processor";
 import { collectRule } from "./utils";
 
-export function generateAst(grammar: Grammar): string {
+export function generateAst(grammar: Grammar, bootstrap = false): string {
     const node = new CompositeGeneratorNode();
-
+    bootstrap.toString();
     node.children.push(
         new TextNode("/* eslint-disable */"),
         new NewLineNode(),

@@ -1,5 +1,5 @@
 /* eslint-disable */
-import { AbstractTerminal, AbstractToken, Action, Assignment, CrossReference, Group, ParenthesizedAssignableElement, ParenthesizedElement, ParserRule, RuleCall, UnorderedGroup } from "../gen/ast";
+import { AbstractTerminal, AbstractToken, Action, AssignableAlternatives, Assignment, CrossReference, Group, ParenthesizedAssignableElement, ParenthesizedElement, ParserRule, RuleCall, UnorderedGroup } from "../gen/ast";
 import { replaceTokens } from "./token-replacer";
 
 export type Feature = AbstractToken | CrossReference | ParenthesizedAssignableElement | Group;
@@ -14,7 +14,6 @@ export function findAllFeatures(rule: ParserRule) : { byName: Map<string, Featur
     if (rule.Alternatives.kind === "Alternatives") {
         rule.Alternatives.Elements.forEach((e, i) => {
             putFeatureInGroup(e, map, featureMap);
-
         });
     } else {
         putFeatureInGroup(rule.Alternatives, map, featureMap);
@@ -69,25 +68,23 @@ function putFeature(feature: Feature, index: number, previous: string | undefine
         const name = (previous ?? "") + feature.Feature! + "Action";
         byName.set(name, { getter, kind: "Action" });
         byFeature.set(feature, name);
-    } else if (feature.kind == "ParenthesizedAssignableElement") {
+    } else if (feature.kind == "AssignableAlternatives") {
         // todo this one
-        feature.Alternatives.Elements.forEach((e, i) => {
+        feature.Elements.forEach((e, i) => {
             putFeature(e, i, previous, () => e, byName, byFeature);
         });
+    } else if (feature.kind == "Alternatives") {
+        feature.Elements.forEach((f) => {
+            putFeatureInGroup(f, byName, byFeature);
+        });
+    } else if (feature.kind == "UnorderedGroup") {
+        feature.Elements.forEach((f) => {
+            putFeatureInGroup(f, byName, byFeature);
+        });
     } else if (feature.kind == "Group") {
-        feature.Elements.forEach((e, i) => {
-            if (e.kind == "ParenthesizedElement") {
-                if (e.Alternatives.kind === "Alternatives") {
-                    e.Alternatives.Elements.forEach((f, j) => {
-                        putFeatureInGroup(f, byName, byFeature);
-                    });
-                } else {
-                    putFeatureInGroup(e.Alternatives, byName, byFeature);
-                }
-            } else {
-                putFeature(e, 0, previous, () => e, byName, byFeature);
-            }
-        })
+        feature.Elements.forEach((f) => {
+            putFeature(f, 0, previous, () => f, byName, byFeature);
+        });
     }
 }
 
@@ -189,7 +186,7 @@ function collectAction(action: Action, optional: boolean, fields: Field[]) {
 }
 
 function collectTerminal(terminal: AbstractTerminal, optional: boolean, ruleType: RuleType) {
-    if (terminal.kind == "ParenthesizedElement") {
+    if (terminal.kind == "Alternatives" || terminal.kind == "UnorderedGroup" || terminal.kind == "Group") {
         collectParenthesizedGroup(terminal, optional, ruleType);
     } else if (terminal.kind == "RuleCall") {
         lastRuleCall = terminal;
@@ -202,12 +199,12 @@ function isOptional(cardinality: string | undefined) {
 }
 
 function collectParenthesizedGroup(group: ParenthesizedElement, optional: boolean, ruleType: RuleType) {
-    if (group.Alternatives.kind === "Alternatives") {
-        group.Alternatives.Elements.forEach(e => {
+    if (group.kind === "Alternatives") {
+        group.Elements.forEach(e => {
             collectAlternative(e, optional, ruleType);
         })
     } else {
-        collectAlternative(group.Alternatives, optional, ruleType);
+        collectAlternative(group, optional, ruleType);
     }
 }
 
@@ -234,8 +231,8 @@ function collectAssignment(assignment: Assignment, optional: boolean, fields: Fi
             targetType = getRuleTarget(v);
         } else if (v.kind == "CrossReference") {
             targetType = v.Type.Name;
-        } else if (v.kind == "ParenthesizedAssignableElement") {
-            targetType = "string";
+        } else if (v.kind == "AssignableAlternatives") {
+            targetType = getAssignableAlternativesTypes(v);
         }
         fields.push({
             name: name,
@@ -244,6 +241,24 @@ function collectAssignment(assignment: Assignment, optional: boolean, fields: Fi
             type: [targetType]
         })
     }
+}
+
+function getAssignableAlternativesTypes(alternatives: AssignableAlternatives): string {
+    const types = new Set<string>();
+
+    alternatives.Elements.forEach(e => {
+        if (e.kind == "Keyword") {
+            types.add(e.Value);
+        } else if (e.kind == "RuleCall") {
+            types.add(e.Rule.Name);
+        } else if (e.kind == "CrossReference") {
+            types.add(e.Type.Name);
+        } else if (e.kind == "AssignableAlternatives") {
+            types.add(getAssignableAlternativesTypes(e));
+        }
+    })
+
+    return Array.from(types).join(" | ");
 }
 
 function getRuleTarget(ruleCall: RuleCall): string {

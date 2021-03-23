@@ -1,9 +1,9 @@
 import { Grammar, ParserRule } from "../gen/ast";
-import { CompositeGeneratorNode, IndentNode, NewLineNode } from "./node/node";
+import { CompositeGeneratorNode, GeneratorNode, IndentNode, NewLineNode } from "./node/node";
 import { process } from "./node/node-processor";
-import { findAllFeatures } from "./utils";
+import { Feature, findAllFeatures } from "./utils";
 
-export function generateGrammarAccess(grammar: Grammar): string {
+export function generateGrammarAccess(grammar: Grammar, bootstrap = false): string {
     const node = new CompositeGeneratorNode();
 
     node.children.push("import { GrammarAccess } from '../grammar/grammar-access'", new NewLineNode(), "import { Action, Assignment, CrossReference, Keyword, RuleCall } from './ast'", new NewLineNode(), new NewLineNode());
@@ -17,12 +17,50 @@ export function generateGrammarAccess(grammar: Grammar): string {
     const content = new IndentNode(4);
 
     grammar.rules.filter(e => e.kind === "ParserRule").map(e => e as ParserRule).forEach(e => {
-        content.children.push(e.Name, " = this.buildAccess<", e.Name, "RuleAccess>('", e.Name, "');", new NewLineNode());
+        if (bootstrap) {
+            content.children.push(e.Name, generateBootstrapRuleAccess(e), new NewLineNode());
+        } else {
+            content.children.push(e.Name, " = this.buildAccess<", e.Name, "RuleAccess>('", e.Name, "');", new NewLineNode());
+        }
     });
 
     node.children.push(content, "}");
 
     return process(node);
+}
+
+function generateBootstrapRuleAccess(rule: ParserRule): GeneratorNode {
+    const { byName } = findAllFeatures(rule);
+
+    const node = new CompositeGeneratorNode();
+    node.children.push(" = {", new NewLineNode());
+    const indent = new IndentNode(4);
+    node.children.push(indent);
+    Array.from(byName.entries()).forEach(e => {
+        const [name, feature] = e;
+        indent.children.push(name, ": ", generateFeature(feature.getter()), new NewLineNode());
+    });
+
+    node.children.push("}");
+    return node;
+}
+
+function generateFeature(feature: Feature): GeneratorNode {
+    const node = new CompositeGeneratorNode();
+    node.children.push("{", new NewLineNode());
+
+    const indent = new IndentNode(4);
+    node.children.push(indent);
+    if (feature.kind === "Assignment") {
+        indent.children.push("kind: 'Assignment',", new NewLineNode());
+        indent.children.push("Feature: '", feature.Feature ,"',", new NewLineNode());
+        indent.children.push("Operator: '" + feature.Operator, "'", new NewLineNode());
+    } else {
+        indent.children.push("kind: 'unknown'" , new NewLineNode());
+    }
+
+    node.children.push("},");
+    return node;
 }
 
 function generateRuleAccess(rule: ParserRule): CompositeGeneratorNode {
@@ -31,7 +69,7 @@ function generateRuleAccess(rule: ParserRule): CompositeGeneratorNode {
 
     const node = new CompositeGeneratorNode();
 
-    node.children.push("type ", rule.Name + "RuleAccess = {", new NewLineNode());
+    node.children.push("export type ", rule.Name + "RuleAccess = {", new NewLineNode());
 
     const indent = new IndentNode(4);
     Array.from(byName.entries()).forEach(e => {

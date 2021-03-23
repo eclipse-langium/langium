@@ -1,5 +1,5 @@
 /* eslint-disable */
-import { AbstractRule, AbstractTerminal, Alternatives, Assignment, Grammar, Group, ParserRule, UnorderedGroup } from "../gen2/ast";
+import { AbstractRule, AbstractTerminal, Alternatives, Assignment, Grammar, Group, ParserRule, UnorderedGroup } from "../gen/ast";
 import { AstNode, CompositeNode, INode, LeafNode } from "../generator/ast-node";
 
 export function linkGrammar(grammar: Grammar): void {
@@ -43,8 +43,8 @@ function linkGroup(grammar: Grammar, group: Group) {
 function linkTerminal(grammar: Grammar, terminal: AbstractTerminal) {
     if (terminal.kind === "RuleCall") {
         findReferences(grammar, terminal);
-    } else if (terminal.kind === "ParenthesizedElement") {
-        linkAlteratives(grammar, terminal.Alternatives);
+    } else if (terminal.kind === "Alternatives" || terminal.kind == "UnorderedGroup" || terminal.kind == "Group") {
+        linkAlteratives(grammar, terminal);
     } else if (terminal.kind === "PredicatedRuleCall") {
         findReferences(grammar, terminal);
     } else if (terminal.kind === "PredicatedGroup") {
@@ -63,7 +63,7 @@ function linkAssignment(grammar: Grammar, assignment: Assignment) {
         }
     } else if (terminal.kind === "RuleCall") {
         findReferences(grammar, terminal);
-    } else if (terminal.kind === "ParenthesizedAssignableElement") {
+    } else if (terminal.kind === "AssignableAlternatives") {
         // todo
     }
 }

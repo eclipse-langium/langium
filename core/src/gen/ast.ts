@@ -121,30 +121,28 @@ export type NamedArgument = AstNode & {
     container: Any
 }
 
-export type LiteralCondition =  | AstNode & {
+export type LiteralCondition = AstNode & {
     kind: "LiteralCondition",
     True: boolean,
     container: Any
 }
 
-export type Disjunction = AstNode & {
+export type Disjunction = Conjunction | AstNode & {
     kind: "Disjunction",
-    Left: Conjunction,
+    Left?: Conjunction,
     Right?: Conjunction,
     container: Any
 }
 
-export type Conjunction = AstNode & {
+export type Conjunction = Negation | AstNode & {
     kind: "Conjunction",
-    Left: Negation,
+    Left?: Negation,
     Right?: Negation,
     container: Any
 }
 
-export type Negation = Atom | AstNode & {
-    kind: "Negation",
-    Value: Negation,
-    container: Any
+export type Negation = (Atom) & {
+    Value: Negation
 }
 
 export type Atom = ParameterReference | ParenthesizedCondition | LiteralCondition
@@ -192,11 +190,7 @@ export type Assignment = AstNode & {
 
 export type AssignableTerminal = Keyword | RuleCall | ParenthesizedAssignableElement | CrossReference
 
-export type ParenthesizedAssignableElement = AstNode & {
-    kind: "ParenthesizedAssignableElement",
-    Alternatives: AssignableAlternatives,
-    container: Any
-}
+export type ParenthesizedAssignableElement = AssignableAlternatives
 
 export type AssignableAlternatives = AstNode & {
     kind: "AssignableAlternatives",
@@ -213,11 +207,7 @@ export type CrossReference = AstNode & {
 
 export type CrossReferenceableTerminal = Keyword | RuleCall
 
-export type ParenthesizedElement = AstNode & {
-    kind: "ParenthesizedElement",
-    Alternatives: Alternatives,
-    container: Any
-}
+export type ParenthesizedElement = Alternatives
 
 export type PredicatedGroup = AstNode & {
     kind: "PredicatedGroup",
@@ -287,7 +277,7 @@ export type EnumRule = AstNode & {
     container: Any
 }
 
-export type EnumLiterals = AstNode & {
+export type EnumLiterals = EnumLiteralDeclaration | AstNode & {
     kind: "EnumLiterals",
     Elements: EnumLiteralDeclaration[],
     container: Any

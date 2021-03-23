@@ -96,19 +96,19 @@ NamedArgument:
 ;
 
 LiteralCondition:
-	{LiteralCondition} (True?='true' | 'false')
+	True?='true' | 'false'
 ;
 
 Disjunction:
-	Left=Conjunction ('|' Right=Conjunction)?
+	Conjunction ({Disjunction.Left=current} '|' Right=Conjunction)?
 ;
 
 Conjunction:
-	Left=Negation ('&' Right=Negation)?
+	Negation ({Conjunction.Left=current} '&' Right=Negation)?
 ;
 
 Negation:
-	Atom | {Negation} '!' Value=Negation
+	Atom | '!' Value=Negation
 ;
 
 Atom:
@@ -144,7 +144,7 @@ AssignableTerminal:
 ;
 
 ParenthesizedAssignableElement:
-	'(' Alternatives=AssignableAlternatives ')'
+	'(' AssignableAlternatives ')'
 ;
 
 AssignableAlternatives:
@@ -160,7 +160,7 @@ CrossReferenceableTerminal:
 ;
 
 ParenthesizedElement:
-	'(' Alternatives=Alternatives ')'
+	'(' Alternatives ')'
 ;
 
 PredicatedGroup:
@@ -222,7 +222,7 @@ EnumRule:
 ;
 
 EnumLiterals:
-	Elements+=EnumLiteralDeclaration ('|' Elements+=EnumLiteralDeclaration)*
+	EnumLiteralDeclaration ({EnumLiterals.Elements+=current} '|' Elements+=EnumLiteralDeclaration)*
 ;
 
 EnumLiteralDeclaration:

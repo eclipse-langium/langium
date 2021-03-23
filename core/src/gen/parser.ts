@@ -448,7 +448,6 @@ export class Parser extends LangiumParser {
     })
 
     private LiteralCondition = this.RULE("LiteralCondition", () => {
-        this.executeAction(this.grammarAccess.LiteralCondition.undefinedAction)
         this.or(1, [
             {
                 ALT: () => {
@@ -461,13 +460,13 @@ export class Parser extends LangiumParser {
                 }
             },
         ])
-
         return this.construct<LiteralCondition>('LiteralCondition');
     })
 
     private Disjunction = this.RULE("Disjunction", () => {
-        this.subruleLeaf(1, this.Conjunction, this.grammarAccess.Disjunction.Left)
+        this.unassignedSubrule(1, this.Conjunction, this.grammarAccess.Disjunction.ConjunctionRuleCall)
         this.option(1, () => {
+            this.executeAction(this.grammarAccess.Disjunction.LeftAction)
             this.consumeLeaf(1, PipeKeyword, this.grammarAccess.Disjunction.PipeKeyword)
             this.subruleLeaf(2, this.Conjunction, this.grammarAccess.Disjunction.Right)
         })
@@ -475,8 +474,9 @@ export class Parser extends LangiumParser {
     })
 
     private Conjunction = this.RULE("Conjunction", () => {
-        this.subruleLeaf(1, this.Negation, this.grammarAccess.Conjunction.Left)
+        this.unassignedSubrule(1, this.Negation, this.grammarAccess.Conjunction.NegationRuleCall)
         this.option(1, () => {
+            this.executeAction(this.grammarAccess.Conjunction.LeftAction)
             this.consumeLeaf(1, AmpersandKeyword, this.grammarAccess.Conjunction.AmpersandKeyword)
             this.subruleLeaf(2, this.Negation, this.grammarAccess.Conjunction.Right)
         })
@@ -492,7 +492,6 @@ export class Parser extends LangiumParser {
             },
             {
                 ALT: () => {
-                    this.executeAction(this.grammarAccess.Negation.undefinedAction)
                     this.consumeLeaf(1, ExclamationMarkKeyword, this.grammarAccess.Negation.ExclamationMarkKeyword)
                     this.subruleLeaf(2, this.Negation, this.grammarAccess.Negation.Value)
                 }
@@ -643,7 +642,7 @@ export class Parser extends LangiumParser {
 
     private ParenthesizedAssignableElement = this.RULE("ParenthesizedAssignableElement", () => {
         this.consumeLeaf(1, ParenthesisOpenKeyword, this.grammarAccess.ParenthesizedAssignableElement.ParenthesisOpenKeyword)
-        this.subruleLeaf(1, this.AssignableAlternatives, this.grammarAccess.ParenthesizedAssignableElement.Alternatives)
+        this.unassignedSubrule(1, this.AssignableAlternatives, this.grammarAccess.ParenthesizedAssignableElement.AssignableAlternativesRuleCall)
         this.consumeLeaf(2, ParenthesisCloseKeyword, this.grammarAccess.ParenthesizedAssignableElement.ParenthesisCloseKeyword)
         return this.construct<ParenthesizedAssignableElement>('ParenthesizedAssignableElement');
     })
@@ -686,7 +685,7 @@ export class Parser extends LangiumParser {
 
     private ParenthesizedElement = this.RULE("ParenthesizedElement", () => {
         this.consumeLeaf(1, ParenthesisOpenKeyword, this.grammarAccess.ParenthesizedElement.ParenthesisOpenKeyword)
-        this.subruleLeaf(1, this.Alternatives, this.grammarAccess.ParenthesizedElement.Alternatives)
+        this.unassignedSubrule(1, this.Alternatives, this.grammarAccess.ParenthesizedElement.AlternativesRuleCall)
         this.consumeLeaf(2, ParenthesisCloseKeyword, this.grammarAccess.ParenthesizedElement.ParenthesisCloseKeyword)
         return this.construct<ParenthesizedElement>('ParenthesizedElement');
     })
@@ -864,8 +863,9 @@ export class Parser extends LangiumParser {
     })
 
     private EnumLiterals = this.RULE("EnumLiterals", () => {
-        this.subruleLeaf(1, this.EnumLiteralDeclaration, this.grammarAccess.EnumLiterals.Elements)
+        this.unassignedSubrule(1, this.EnumLiteralDeclaration, this.grammarAccess.EnumLiterals.EnumLiteralDeclarationRuleCall)
         this.many(1, () => {
+            this.executeAction(this.grammarAccess.EnumLiterals.ElementsAction)
             this.consumeLeaf(1, PipeKeyword, this.grammarAccess.EnumLiterals.PipeKeyword)
             this.subruleLeaf(2, this.EnumLiteralDeclaration, this.grammarAccess.EnumLiterals.Elements)
         })

@@ -15,9 +15,9 @@ type RuleContext = {
     featureMap: Map<Feature, string>
 }
 
-export function generateParser(grammar: Grammar): string {
+export function generateParser(grammar: Grammar, bootstrap = false): string {
     const keywords = collectKeywords(grammar);
-
+    
     const fileNode = new CompositeGeneratorNode();
     fileNode.children.push(
         new TextNode("/* eslint-disable */"),
@@ -95,11 +95,11 @@ function buildParseFunction(grammar: Grammar): CompositeGeneratorNode {
     const firstRule = grammar.rules?.find(e => e.kind == "ParserRule") as ParserRule;
     const parseFunction = new CompositeGeneratorNode();
     parseFunction.children.push(
-        new TextNode("export function parse(grammar: Grammar, text: string) {"), new NewLineNode());
+        new TextNode("export function parse(grammarAccess: " + grammar.Name + "GrammarAccess, text: string) {"), new NewLineNode());
     const parseBody = new IndentNode("    ");
     parseBody.children.push(
         "if (!parser) {", new NewLineNode(),
-        "    parser = new Parser(grammar);" , new NewLineNode(), "}", new NewLineNode(),
+        "    parser = new Parser(grammarAccess);" , new NewLineNode(), "}", new NewLineNode(),
         new TextNode("const lexResult = lexer.tokenize(text);"), new NewLineNode(),
         new TextNode("parser.input = lexResult.tokens;"), new NewLineNode(),
         new TextNode("const ast = parser."), new TextNode(firstRule.Name), new TextNode("();"), new NewLineNode(),
@@ -126,13 +126,13 @@ function buildParser(grammar: Grammar): CompositeGeneratorNode {
 
     const classBody = new IndentNode("    ");
     classBody.children.push("grammarAccess: " + grammar.Name + "GrammarAccess;", new NewLineNode());
-    classBody.children.push("constructor(grammar: Grammar) {", new NewLineNode());
+    classBody.children.push("constructor(grammarAccess: " + grammar.Name + "GrammarAccess) {", new NewLineNode());
 
     const constructorBody = new IndentNode("    ");
     constructorBody.children.push(
-        new TextNode('super(grammar, tokens);'), 
+        new TextNode('super(tokens);'), 
         new NewLineNode(),
-        new TextNode("this.grammarAccess = new " + grammar.Name + "GrammarAccess(grammar);"),
+        new TextNode("this.grammarAccess = grammarAccess;"),
         new NewLineNode(),
         new TextNode("this.performSelfAnalysis();"),
         new NewLineNode()
@@ -252,15 +252,11 @@ function buildAlternatives(ctx: RuleContext, root: boolean, alternatives: RuleAl
 }
 
 function buildUnorderedGroup(ctx: RuleContext, root: boolean, group: UnorderedGroup): CompositeGeneratorNode {
-    if (group.Elements.length > 1) {
-        throw new Error("Unordered groups are not supported (yet)");
-    }
     if (group.kind === "Group") {
         return buildGroup(ctx, root, group);
     } else {
         throw new Error("Unordered groups are not supported (yet)");
     }
-    
 }
 
 function buildGroup(ctx: RuleContext, root: boolean, group: Group): CompositeGeneratorNode {
@@ -293,7 +289,9 @@ function buildTerminal(ctx: RuleContext, terminal: AbstractTerminal): GeneratorN
         case "RuleCall": {
             return buildRuleCall(ctx, terminal);
         }
-        case "ParenthesizedElement": {
+        case "UnorderedGroup":
+        case "Group":
+        case "Alternatives": {
             return buildParenthesizedGroup(ctx, terminal);
         }
     }
@@ -312,20 +310,20 @@ function buildAssignableElement(ctx: RuleContext, v: AssignableTerminal, assignm
             return new TextNode("this.consumeLeaf(" + ctx.consume++ + ", ID, " + getGrammarAccess(ctx, assignment ?? v) + ")");
         } case "RuleCall": {
             return buildRuleCall(ctx, v, assignment);
-        } case "ParenthesizedAssignableElement": {
+        } case "AssignableAlternatives": {
             return buildParenthesizedElement(ctx, v, assignment);
         }
     }
 }
 
 function buildParenthesizedElement(ctx: RuleContext, element: ParenthesizedAssignableElement, assignment?: Assignment): GeneratorNode {
-    if (element.Alternatives.Elements.length == 1) {
-        return buildAssignableElement(ctx, element.Alternatives.Elements[0], assignment);
+    if (element.Elements.length == 1) {
+        return buildAssignableElement(ctx, element.Elements[0], assignment);
     } else {
         const wrapper = new CompositeGeneratorNode();
         wrapper.children.push(new TextNode("this.or(" + ctx.or++ + ", ["), new NewLineNode());
 
-        element.Alternatives.Elements.forEach(e => {
+        element.Elements.forEach(e => {
             wrapper.children.push(new TextNode("{ ALT: () => {"), new NewLineNode());
             wrapper.children.push(buildAssignableElement(ctx, e, assignment), new NewLineNode());
             wrapper.children.push(new TextNode("}},"), new NewLineNode());
@@ -358,10 +356,10 @@ function wrap<T extends GeneratorNode>(ctx: RuleContext, node: T, cardinality: s
 
 function buildParenthesizedGroup(ctx: RuleContext, group: ParenthesizedElement): CompositeGeneratorNode {
     const ruleAlternatives: RuleAlternative[] = [];
-    if (group.Alternatives.kind === "Alternatives") {
-        ruleAlternatives.push(...group.Alternatives.Elements.map(e => <RuleAlternative>{ group: e }));
+    if (group.kind === "Alternatives") {
+        ruleAlternatives.push(...group.Elements.map(e => <RuleAlternative>{ group: e }));
     } else {
-        ruleAlternatives.push(<RuleAlternative>{group: group.Alternatives});
+        ruleAlternatives.push(<RuleAlternative>{ group });
     }
     return buildAlternatives(ctx, false, ruleAlternatives);
 }
@@ -468,8 +466,8 @@ function collectAssignableTerminal(terminal: AssignableTerminal, keywords: Set<s
             keywords.add(terminal.Value);
             break;
         }
-        case "ParenthesizedAssignableElement": {
-            terminal.Alternatives.Elements.forEach(e => {
+        case "AssignableAlternatives": {
+            terminal.Elements.forEach(e => {
                 collectAssignableTerminal(e, keywords);
             })
         }
@@ -489,8 +487,10 @@ function collectGroupKeywords(group: Group, keywords: Set<string>) {
                         keywords.add(element.Value);
                         break;
                     }
-                    case "ParenthesizedElement": {
-                        collectAlternativeKeywords(element.Alternatives, keywords);
+                    case "Alternatives":
+                    case "UnorderedGroup":
+                    case "Group": {
+                        collectAlternativeKeywords(element, keywords);
                         break;
                     }
                     case "PredicatedGroup": {
