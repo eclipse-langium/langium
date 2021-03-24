@@ -1,7 +1,7 @@
-import { GrammarAccess } from '../grammar/grammar-access'
+import { GrammarAccess } from '../index'
 import { Action, Assignment, CrossReference, Keyword, RuleCall } from './ast'
 
-type GrammarRuleAccess = {
+export type GrammarRuleAccess = {
     GrammarKeyword: Keyword;
     Name: Assignment;
     NameIDRuleCall: RuleCall;
@@ -21,18 +21,18 @@ type GrammarRuleAccess = {
     rulesAbstractRuleRuleCall: RuleCall;
 }
 
-type AbstractRuleRuleAccess = {
+export type AbstractRuleRuleAccess = {
     ParserRuleRuleCall: RuleCall;
     TerminalRuleRuleCall: RuleCall;
     EnumRuleRuleCall: RuleCall;
 }
 
-type AbstractMetamodelDeclarationRuleAccess = {
+export type AbstractMetamodelDeclarationRuleAccess = {
     GeneratedMetamodelRuleCall: RuleCall;
     ReferencedMetamodelRuleCall: RuleCall;
 }
 
-type GeneratedMetamodelRuleAccess = {
+export type GeneratedMetamodelRuleAccess = {
     GenerateKeyword: Keyword;
     Name: Assignment;
     NameIDRuleCall: RuleCall;
@@ -43,7 +43,7 @@ type GeneratedMetamodelRuleAccess = {
     AliasIDRuleCall: RuleCall;
 }
 
-type ReferencedMetamodelRuleAccess = {
+export type ReferencedMetamodelRuleAccess = {
     ImportKeyword: Keyword;
     EPackage: Assignment;
     EPackagestringCrossReference: CrossReference;
@@ -52,13 +52,13 @@ type ReferencedMetamodelRuleAccess = {
     AliasIDRuleCall: RuleCall;
 }
 
-type AnnotationRuleAccess = {
+export type AnnotationRuleAccess = {
     AtKeyword: Keyword;
     Name: Assignment;
     NameIDRuleCall: RuleCall;
 }
 
-type ParserRuleRuleAccess = {
+export type ParserRuleRuleAccess = {
     fragment: Assignment;
     FragmentKeyword: Keyword;
     Name: Assignment;
@@ -85,7 +85,7 @@ type ParserRuleRuleAccess = {
     SemicolonKeyword: Keyword;
 }
 
-type RuleNameAndParamsRuleAccess = {
+export type RuleNameAndParamsRuleAccess = {
     Name: Assignment;
     NameIDRuleCall: RuleCall;
     LessThanKeyword: Keyword;
@@ -95,12 +95,12 @@ type RuleNameAndParamsRuleAccess = {
     MoreThanKeyword: Keyword;
 }
 
-type ParameterRuleAccess = {
+export type ParameterRuleAccess = {
     Name: Assignment;
     NameIDRuleCall: RuleCall;
 }
 
-type AlternativesRuleAccess = {
+export type AlternativesRuleAccess = {
     UnorderedGroupRuleCall: RuleCall;
     ElementsAction: Action;
     PipeKeyword: Keyword;
@@ -108,7 +108,7 @@ type AlternativesRuleAccess = {
     ElementsUnorderedGroupRuleCall: RuleCall;
 }
 
-type UnorderedGroupRuleAccess = {
+export type UnorderedGroupRuleAccess = {
     GroupRuleCall: RuleCall;
     ElementsAction: Action;
     AmpersandKeyword: Keyword;
@@ -116,17 +116,17 @@ type UnorderedGroupRuleAccess = {
     ElementsGroupRuleCall: RuleCall;
 }
 
-type GroupRuleAccess = {
+export type GroupRuleAccess = {
     Elements: Assignment;
     ElementsAbstractTokenRuleCall: RuleCall;
 }
 
-type AbstractTokenRuleAccess = {
+export type AbstractTokenRuleAccess = {
     AbstractTokenWithCardinalityRuleCall: RuleCall;
     ActionRuleCall: RuleCall;
 }
 
-type AbstractTokenWithCardinalityRuleAccess = {
+export type AbstractTokenWithCardinalityRuleAccess = {
     AssignmentRuleCall: RuleCall;
     AbstractTerminalRuleCall: RuleCall;
     Cardinality: Assignment;
@@ -135,7 +135,7 @@ type AbstractTokenWithCardinalityRuleAccess = {
     PlusKeyword: Keyword;
 }
 
-type ActionRuleAccess = {
+export type ActionRuleAccess = {
     CurlyOpenKeyword: Keyword;
     Type: Assignment;
     TypeParserRuleCrossReference: CrossReference;
@@ -149,7 +149,7 @@ type ActionRuleAccess = {
     CurlyCloseKeyword: Keyword;
 }
 
-type AbstractTerminalRuleAccess = {
+export type AbstractTerminalRuleAccess = {
     KeywordRuleCall: RuleCall;
     RuleCallRuleCall: RuleCall;
     ParenthesizedElementRuleCall: RuleCall;
@@ -158,12 +158,12 @@ type AbstractTerminalRuleAccess = {
     PredicatedGroupRuleCall: RuleCall;
 }
 
-type KeywordRuleAccess = {
+export type KeywordRuleAccess = {
     Value: Assignment;
     ValuestringRuleCall: RuleCall;
 }
 
-type RuleCallRuleAccess = {
+export type RuleCallRuleAccess = {
     Rule: Assignment;
     RuleAbstractRuleCrossReference: CrossReference;
     LessThanKeyword: Keyword;
@@ -173,7 +173,7 @@ type RuleCallRuleAccess = {
     MoreThanKeyword: Keyword;
 }
 
-type NamedArgumentRuleAccess = {
+export type NamedArgumentRuleAccess = {
     Parameter: Assignment;
     ParameterParameterCrossReference: CrossReference;
     CalledByName: Assignment;
@@ -182,60 +182,59 @@ type NamedArgumentRuleAccess = {
     ValueDisjunctionRuleCall: RuleCall;
 }
 
-type LiteralConditionRuleAccess = {
-    undefinedAction: Action;
+export type LiteralConditionRuleAccess = {
     True: Assignment;
     TrueKeyword: Keyword;
     FalseKeyword: Keyword;
 }
 
-type DisjunctionRuleAccess = {
-    Left: Assignment;
-    LeftConjunctionRuleCall: RuleCall;
+export type DisjunctionRuleAccess = {
+    ConjunctionRuleCall: RuleCall;
+    LeftAction: Action;
     PipeKeyword: Keyword;
     Right: Assignment;
     RightConjunctionRuleCall: RuleCall;
 }
 
-type ConjunctionRuleAccess = {
-    Left: Assignment;
-    LeftNegationRuleCall: RuleCall;
+export type ConjunctionRuleAccess = {
+    NegationRuleCall: RuleCall;
+    LeftAction: Action;
     AmpersandKeyword: Keyword;
     Right: Assignment;
     RightNegationRuleCall: RuleCall;
 }
 
-type NegationRuleAccess = {
+export type NegationRuleAccess = {
     AtomRuleCall: RuleCall;
-    undefinedAction: Action;
     ExclamationMarkKeyword: Keyword;
     Value: Assignment;
     ValueNegationRuleCall: RuleCall;
 }
 
-type AtomRuleAccess = {
+export type AtomRuleAccess = {
     ParameterReferenceRuleCall: RuleCall;
     ParenthesizedConditionRuleCall: RuleCall;
     LiteralConditionRuleCall: RuleCall;
 }
 
-type ParenthesizedConditionRuleAccess = {
+export type ParenthesizedConditionRuleAccess = {
     ParenthesisOpenKeyword: Keyword;
-    DisjunctionRuleCall: RuleCall;
+    Value: Assignment;
+    ValueDisjunctionRuleCall: RuleCall;
     ParenthesisCloseKeyword: Keyword;
 }
 
-type ParameterReferenceRuleAccess = {
+export type ParameterReferenceRuleAccess = {
     Parameter: Assignment;
     ParameterParameterCrossReference: CrossReference;
 }
 
-type TerminalRuleCallRuleAccess = {
+export type TerminalRuleCallRuleAccess = {
     Rule: Assignment;
     RuleAbstractRuleCrossReference: CrossReference;
 }
 
-type PredicatedKeywordRuleAccess = {
+export type PredicatedKeywordRuleAccess = {
     Predicated: Assignment;
     EqualsMoreThanKeyword: Keyword;
     FirstSetPredicated: Assignment;
@@ -244,7 +243,7 @@ type PredicatedKeywordRuleAccess = {
     ValuestringRuleCall: RuleCall;
 }
 
-type PredicatedRuleCallRuleAccess = {
+export type PredicatedRuleCallRuleAccess = {
     Predicated: Assignment;
     EqualsMoreThanKeyword: Keyword;
     FirstSetPredicated: Assignment;
@@ -258,7 +257,7 @@ type PredicatedRuleCallRuleAccess = {
     MoreThanKeyword: Keyword;
 }
 
-type AssignmentRuleAccess = {
+export type AssignmentRuleAccess = {
     Predicated: Assignment;
     EqualsMoreThanKeyword: Keyword;
     FirstSetPredicated: Assignment;
@@ -273,27 +272,26 @@ type AssignmentRuleAccess = {
     TerminalAssignableTerminalRuleCall: RuleCall;
 }
 
-type AssignableTerminalRuleAccess = {
+export type AssignableTerminalRuleAccess = {
     KeywordRuleCall: RuleCall;
     RuleCallRuleCall: RuleCall;
     ParenthesizedAssignableElementRuleCall: RuleCall;
     CrossReferenceRuleCall: RuleCall;
 }
 
-type ParenthesizedAssignableElementRuleAccess = {
+export type ParenthesizedAssignableElementRuleAccess = {
     ParenthesisOpenKeyword: Keyword;
-    Alternatives: Assignment;
-    AlternativesAssignableAlternativesRuleCall: RuleCall;
+    AssignableAlternativesRuleCall: RuleCall;
     ParenthesisCloseKeyword: Keyword;
 }
 
-type AssignableAlternativesRuleAccess = {
+export type AssignableAlternativesRuleAccess = {
     Elements: Assignment;
     ElementsAssignableTerminalRuleCall: RuleCall;
     PipeKeyword: Keyword;
 }
 
-type CrossReferenceRuleAccess = {
+export type CrossReferenceRuleAccess = {
     BracketOpenKeyword: Keyword;
     Type: Assignment;
     TypeParserRuleCrossReference: CrossReference;
@@ -303,19 +301,18 @@ type CrossReferenceRuleAccess = {
     BracketCloseKeyword: Keyword;
 }
 
-type CrossReferenceableTerminalRuleAccess = {
+export type CrossReferenceableTerminalRuleAccess = {
     KeywordRuleCall: RuleCall;
     RuleCallRuleCall: RuleCall;
 }
 
-type ParenthesizedElementRuleAccess = {
+export type ParenthesizedElementRuleAccess = {
     ParenthesisOpenKeyword: Keyword;
-    Alternatives: Assignment;
-    AlternativesAlternativesRuleCall: RuleCall;
+    AlternativesRuleCall: RuleCall;
     ParenthesisCloseKeyword: Keyword;
 }
 
-type PredicatedGroupRuleAccess = {
+export type PredicatedGroupRuleAccess = {
     Predicated: Assignment;
     EqualsMoreThanKeyword: Keyword;
     FirstSetPredicated: Assignment;
@@ -326,7 +323,7 @@ type PredicatedGroupRuleAccess = {
     ParenthesisCloseKeyword: Keyword;
 }
 
-type TerminalRuleRuleAccess = {
+export type TerminalRuleRuleAccess = {
     TerminalKeyword: Keyword;
     Fragment: Assignment;
     FragmentKeyword: Keyword;
@@ -341,18 +338,20 @@ type TerminalRuleRuleAccess = {
     SemicolonKeyword: Keyword;
 }
 
-type TerminalAlternativesRuleAccess = {
+export type TerminalAlternativesRuleAccess = {
+    TerminalGroupRuleCall: RuleCall;
+    ElementsAction: Action;
+    PipeKeyword: Keyword;
     Elements: Assignment;
     ElementsTerminalGroupRuleCall: RuleCall;
-    PipeKeyword: Keyword;
 }
 
-type TerminalGroupRuleAccess = {
+export type TerminalGroupRuleAccess = {
     Elements: Assignment;
     ElementsTerminalTokenRuleCall: RuleCall;
 }
 
-type TerminalTokenRuleAccess = {
+export type TerminalTokenRuleAccess = {
     TerminalTokenElementRuleCall: RuleCall;
     Cardinality: Assignment;
     QuestionMarkKeyword: Keyword;
@@ -360,7 +359,7 @@ type TerminalTokenRuleAccess = {
     PlusKeyword: Keyword;
 }
 
-type TerminalTokenElementRuleAccess = {
+export type TerminalTokenElementRuleAccess = {
     CharacterRangeRuleCall: RuleCall;
     TerminalRuleCallRuleCall: RuleCall;
     ParenthesizedTerminalElementRuleCall: RuleCall;
@@ -368,35 +367,35 @@ type TerminalTokenElementRuleAccess = {
     WildcardRuleCall: RuleCall;
 }
 
-type ParenthesizedTerminalElementRuleAccess = {
+export type ParenthesizedTerminalElementRuleAccess = {
     ParenthesisOpenKeyword: Keyword;
     TerminalAlternativesRuleCall: RuleCall;
     ParenthesisCloseKeyword: Keyword;
 }
 
-type AbstractNegatedTokenRuleAccess = {
+export type AbstractNegatedTokenRuleAccess = {
     NegatedTokenRuleCall: RuleCall;
     UntilTokenRuleCall: RuleCall;
 }
 
-type NegatedTokenRuleAccess = {
+export type NegatedTokenRuleAccess = {
     ExclamationMarkKeyword: Keyword;
     Terminal: Assignment;
     TerminalTerminalTokenElementRuleCall: RuleCall;
 }
 
-type UntilTokenRuleAccess = {
+export type UntilTokenRuleAccess = {
     DashMoreThanKeyword: Keyword;
     Terminal: Assignment;
     TerminalTerminalTokenElementRuleCall: RuleCall;
 }
 
-type WildcardRuleAccess = {
+export type WildcardRuleAccess = {
     undefinedAction: Action;
     DotKeyword: Keyword;
 }
 
-type CharacterRangeRuleAccess = {
+export type CharacterRangeRuleAccess = {
     Left: Assignment;
     LeftKeywordRuleCall: RuleCall;
     DotDotKeyword: Keyword;
@@ -404,7 +403,7 @@ type CharacterRangeRuleAccess = {
     RightKeywordRuleCall: RuleCall;
 }
 
-type EnumRuleRuleAccess = {
+export type EnumRuleRuleAccess = {
     EnumKeyword: Keyword;
     Name: Assignment;
     NameIDRuleCall: RuleCall;
@@ -417,13 +416,15 @@ type EnumRuleRuleAccess = {
     SemicolonKeyword: Keyword;
 }
 
-type EnumLiteralsRuleAccess = {
+export type EnumLiteralsRuleAccess = {
+    EnumLiteralDeclarationRuleCall: RuleCall;
+    ElementsAction: Action;
+    PipeKeyword: Keyword;
     Elements: Assignment;
     ElementsEnumLiteralDeclarationRuleCall: RuleCall;
-    PipeKeyword: Keyword;
 }
 
-type EnumLiteralDeclarationRuleAccess = {
+export type EnumLiteralDeclarationRuleAccess = {
     EnumLiteral: Assignment;
     EnumLiteralEnumLiteralsCrossReference: CrossReference;
     EqualsKeyword: Keyword;

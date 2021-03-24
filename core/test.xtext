@@ -116,7 +116,7 @@ Atom:
 ;
 
 ParenthesizedCondition:
-	'(' Disjunction ')'
+	'(' Value=Disjunction ')'
 ;
 
 ParameterReference:
@@ -176,7 +176,7 @@ TerminalRule :
 terminal RegexLiteral returns string: /\/(?![*+?])(?:[^\r\n\[/\\]|\\.|\[(?:[^\r\n\]\\]|\\.)*\])+\//;
 
 TerminalAlternatives:
-	Elements+=TerminalGroup ('|' Elements+=TerminalGroup)*
+	TerminalGroup ({TerminalAlternatives.Elements+=current} '|' Elements+=TerminalGroup)*
 ;
 
 TerminalGroup:

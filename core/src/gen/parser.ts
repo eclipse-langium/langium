@@ -2,8 +2,7 @@
 // @ts-nocheck
 import { createToken, Lexer } from "chevrotain";
 import { PartialDeep } from "type-fest";
-import { AstNode, RootNode, RuleResult } from "../generator/ast-node";
-import { LangiumParser } from "../parser/langium-parser";
+import { AstNode, RootNode, RuleResult, LangiumParser } from '../index';
 import { xtextGrammarAccess } from "./grammar-access";
 import { Grammar, AbstractRule, AbstractMetamodelDeclaration, GeneratedMetamodel, ReferencedMetamodel, Annotation, ParserRule, RuleNameAndParams, Parameter, Alternatives, UnorderedGroup, Group, AbstractToken, AbstractTokenWithCardinality, Action, AbstractTerminal, Keyword, RuleCall, NamedArgument, LiteralCondition, Disjunction, Conjunction, Negation, Atom, ParenthesizedCondition, ParameterReference, TerminalRuleCall, PredicatedKeyword, PredicatedRuleCall, Assignment, AssignableTerminal, ParenthesizedAssignableElement, AssignableAlternatives, CrossReference, CrossReferenceableTerminal, ParenthesizedElement, PredicatedGroup, TerminalRule, TerminalAlternatives, TerminalGroup, TerminalToken, TerminalTokenElement, ParenthesizedTerminalElement, AbstractNegatedToken, NegatedToken, UntilToken, Wildcard, CharacterRange, EnumRule, EnumLiterals, EnumLiteralDeclaration, } from "./ast";
 
@@ -349,16 +348,23 @@ export class Parser extends LangiumParser {
 
         this.option(1, () => {
             this.or(2, [
-            { ALT: () => {
-            this.consumeLeaf(1, QuestionMarkKeyword, this.grammarAccess.AbstractTokenWithCardinality.Cardinality)
-            }},
-            { ALT: () => {
-            this.consumeLeaf(2, AsteriskKeyword, this.grammarAccess.AbstractTokenWithCardinality.Cardinality)
-            }},
-            { ALT: () => {
-            this.consumeLeaf(3, PlusKeyword, this.grammarAccess.AbstractTokenWithCardinality.Cardinality)
-            }},
-            ])})
+                {
+                    ALT: () => {
+                        this.consumeLeaf(1, QuestionMarkKeyword, this.grammarAccess.AbstractTokenWithCardinality.Cardinality)
+                    }
+                },
+                {
+                    ALT: () => {
+                        this.consumeLeaf(2, AsteriskKeyword, this.grammarAccess.AbstractTokenWithCardinality.Cardinality)
+                    }
+                },
+                {
+                    ALT: () => {
+                        this.consumeLeaf(3, PlusKeyword, this.grammarAccess.AbstractTokenWithCardinality.Cardinality)
+                    }
+                },
+            ])
+        })
         return this.construct<AbstractTokenWithCardinality>('AbstractTokenWithCardinality');
     })
 
@@ -369,13 +375,18 @@ export class Parser extends LangiumParser {
             this.consumeLeaf(3, DotKeyword, this.grammarAccess.Action.DotKeyword)
             this.consumeLeaf(4, ID, this.grammarAccess.Action.Feature)
             this.or(1, [
-            { ALT: () => {
-            this.consumeLeaf(5, EqualsKeyword, this.grammarAccess.Action.Operator)
-            }},
-            { ALT: () => {
-            this.consumeLeaf(6, PlusEqualsKeyword, this.grammarAccess.Action.Operator)
-            }},
+                {
+                    ALT: () => {
+                        this.consumeLeaf(5, EqualsKeyword, this.grammarAccess.Action.Operator)
+                    }
+                },
+                {
+                    ALT: () => {
+                        this.consumeLeaf(6, PlusEqualsKeyword, this.grammarAccess.Action.Operator)
+                    }
+                },
             ])
+
             this.consumeLeaf(7, CurrentKeyword, this.grammarAccess.Action.CurrentKeyword)
         })
         this.consumeLeaf(8, CurlyCloseKeyword, this.grammarAccess.Action.CurlyCloseKeyword)
@@ -523,7 +534,7 @@ export class Parser extends LangiumParser {
 
     private ParenthesizedCondition = this.RULE("ParenthesizedCondition", () => {
         this.consumeLeaf(1, ParenthesisOpenKeyword, this.grammarAccess.ParenthesizedCondition.ParenthesisOpenKeyword)
-        this.unassignedSubrule(1, this.Disjunction, this.grammarAccess.ParenthesizedCondition.DisjunctionRuleCall)
+        this.subruleLeaf(1, this.Disjunction, this.grammarAccess.ParenthesizedCondition.Value)
         this.consumeLeaf(2, ParenthesisCloseKeyword, this.grammarAccess.ParenthesizedCondition.ParenthesisCloseKeyword)
         return this.construct<ParenthesizedCondition>('ParenthesizedCondition');
     })
@@ -600,16 +611,23 @@ export class Parser extends LangiumParser {
         })
         this.consumeLeaf(3, ID, this.grammarAccess.Assignment.Feature)
         this.or(2, [
-        { ALT: () => {
-        this.consumeLeaf(4, PlusEqualsKeyword, this.grammarAccess.Assignment.Operator)
-        }},
-        { ALT: () => {
-        this.consumeLeaf(5, EqualsKeyword, this.grammarAccess.Assignment.Operator)
-        }},
-        { ALT: () => {
-        this.consumeLeaf(6, QuestionMarkEqualsKeyword, this.grammarAccess.Assignment.Operator)
-        }},
+            {
+                ALT: () => {
+                    this.consumeLeaf(4, PlusEqualsKeyword, this.grammarAccess.Assignment.Operator)
+                }
+            },
+            {
+                ALT: () => {
+                    this.consumeLeaf(5, EqualsKeyword, this.grammarAccess.Assignment.Operator)
+                }
+            },
+            {
+                ALT: () => {
+                    this.consumeLeaf(6, QuestionMarkEqualsKeyword, this.grammarAccess.Assignment.Operator)
+                }
+            },
         ])
+
         this.subruleLeaf(1, this.AssignableTerminal, this.grammarAccess.Assignment.Terminal)
         return this.construct<Assignment>('Assignment');
     })
@@ -737,8 +755,9 @@ export class Parser extends LangiumParser {
     })
 
     private TerminalAlternatives = this.RULE("TerminalAlternatives", () => {
-        this.subruleLeaf(1, this.TerminalGroup, this.grammarAccess.TerminalAlternatives.Elements)
+        this.unassignedSubrule(1, this.TerminalGroup, this.grammarAccess.TerminalAlternatives.TerminalGroupRuleCall)
         this.many(1, () => {
+            this.executeAction(this.grammarAccess.TerminalAlternatives.ElementsAction)
             this.consumeLeaf(1, PipeKeyword, this.grammarAccess.TerminalAlternatives.PipeKeyword)
             this.subruleLeaf(2, this.TerminalGroup, this.grammarAccess.TerminalAlternatives.Elements)
         })
@@ -755,16 +774,23 @@ export class Parser extends LangiumParser {
         this.unassignedSubrule(1, this.TerminalTokenElement, this.grammarAccess.TerminalToken.TerminalTokenElementRuleCall)
         this.option(1, () => {
             this.or(1, [
-            { ALT: () => {
-            this.consumeLeaf(1, QuestionMarkKeyword, this.grammarAccess.TerminalToken.Cardinality)
-            }},
-            { ALT: () => {
-            this.consumeLeaf(2, AsteriskKeyword, this.grammarAccess.TerminalToken.Cardinality)
-            }},
-            { ALT: () => {
-            this.consumeLeaf(3, PlusKeyword, this.grammarAccess.TerminalToken.Cardinality)
-            }},
-            ])})
+                {
+                    ALT: () => {
+                        this.consumeLeaf(1, QuestionMarkKeyword, this.grammarAccess.TerminalToken.Cardinality)
+                    }
+                },
+                {
+                    ALT: () => {
+                        this.consumeLeaf(2, AsteriskKeyword, this.grammarAccess.TerminalToken.Cardinality)
+                    }
+                },
+                {
+                    ALT: () => {
+                        this.consumeLeaf(3, PlusKeyword, this.grammarAccess.TerminalToken.Cardinality)
+                    }
+                },
+            ])
+        })
         return this.construct<TerminalToken>('TerminalToken');
     })
 

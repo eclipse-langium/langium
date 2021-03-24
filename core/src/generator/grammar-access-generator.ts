@@ -3,10 +3,11 @@ import { CompositeGeneratorNode, GeneratorNode, IndentNode, NewLineNode } from "
 import { process } from "./node/node-processor";
 import { Feature, findAllFeatures } from "./utils";
 
-export function generateGrammarAccess(grammar: Grammar, bootstrap = false): string {
+export function generateGrammarAccess(grammar: Grammar, path?: string, bootstrap = false): string {
     const node = new CompositeGeneratorNode();
 
-    node.children.push("import { GrammarAccess } from '../grammar/grammar-access'", new NewLineNode(), "import { Action, Assignment, CrossReference, Keyword, RuleCall } from './ast'", new NewLineNode(), new NewLineNode());
+    const langiumPath = "'" + (path ?? "langium") + "'";
+    node.children.push("import { GrammarAccess } from ", langiumPath, new NewLineNode(), "import { Action, Assignment, CrossReference, Keyword, RuleCall } from './ast'", new NewLineNode(), new NewLineNode());
 
     grammar.rules.filter(e => e.kind === "ParserRule").map(e => e as ParserRule).forEach(e => {
         node.children.push(generateRuleAccess(e), new NewLineNode(), new NewLineNode());
@@ -33,7 +34,7 @@ function generateBootstrapRuleAccess(rule: ParserRule): GeneratorNode {
     const { byName } = findAllFeatures(rule);
 
     const node = new CompositeGeneratorNode();
-    node.children.push(" = {", new NewLineNode());
+    node.children.push(": ", rule.Name, "RuleAccess = <", rule.Name, "RuleAccess><unknown>{", new NewLineNode());
     const indent = new IndentNode(4);
     node.children.push(indent);
     Array.from(byName.entries()).forEach(e => {
@@ -54,7 +55,19 @@ function generateFeature(feature: Feature): GeneratorNode {
     if (feature.kind === "Assignment") {
         indent.children.push("kind: 'Assignment',", new NewLineNode());
         indent.children.push("Feature: '", feature.Feature ,"',", new NewLineNode());
-        indent.children.push("Operator: '" + feature.Operator, "'", new NewLineNode());
+        indent.children.push("Operator: '", feature.Operator, "',", new NewLineNode());
+        indent.children.push("Terminal: {", new NewLineNode());
+        const terminal = new IndentNode(4);
+        if (feature.Terminal.kind === "CrossReference") {
+            terminal.children.push("kind: 'CrossReference'");
+        } else {
+            terminal.children.push("kind: 'unknown'");
+        }
+        indent.children.push(terminal, new NewLineNode(), "}", new NewLineNode());
+    } else if (feature.kind === "Action") {
+        indent.children.push("kind: 'Action',", new NewLineNode());
+        indent.children.push("Feature: '" + feature.Feature + "',", new NewLineNode());
+        indent.children.push("Operator: '" + feature.Operator + "'", new NewLineNode());
     } else {
         indent.children.push("kind: 'unknown'" , new NewLineNode());
     }

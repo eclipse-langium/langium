@@ -3,15 +3,15 @@ import { CompositeGeneratorNode, GeneratorNode, IndentNode, NewLineNode, TextNod
 import { process } from "./node/node-processor";
 import { collectRule } from "./utils";
 
-export function generateAst(grammar: Grammar, bootstrap = false): string {
+export function generateAst(grammar: Grammar, path?: string): string {
     const node = new CompositeGeneratorNode();
-    bootstrap.toString();
+    const langiumPath = "'" + (path ?? "langium") + "'"
     node.children.push(
         new TextNode("/* eslint-disable */"),
         new NewLineNode(),
         new TextNode("// @ts-nocheck"),
         new NewLineNode(),
-        new TextNode('import { AstNode } from "../generator/ast-node"'),
+        new TextNode('import { AstNode } from '), langiumPath, ';',
         new NewLineNode(),
         new NewLineNode()
     );

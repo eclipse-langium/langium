@@ -1,4 +1,3 @@
-/* eslint-disable */
 import { AbstractRule, AbstractTerminal, Alternatives, Assignment, Grammar, Group, ParserRule, UnorderedGroup } from "../gen/ast";
 import { AstNode, CompositeNode, INode, LeafNode } from "../generator/ast-node";
 
@@ -43,7 +42,7 @@ function linkGroup(grammar: Grammar, group: Group) {
 function linkTerminal(grammar: Grammar, terminal: AbstractTerminal) {
     if (terminal.kind === "RuleCall") {
         findReferences(grammar, terminal);
-    } else if (terminal.kind === "Alternatives" || terminal.kind == "UnorderedGroup" || terminal.kind == "Group") {
+    } else if (terminal.kind === "Alternatives" || terminal.kind === "UnorderedGroup" || terminal.kind === "Group") {
         linkAlteratives(grammar, terminal);
     } else if (terminal.kind === "PredicatedRuleCall") {
         findReferences(grammar, terminal);
@@ -68,19 +67,21 @@ function linkAssignment(grammar: Grammar, assignment: Assignment) {
     }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function findReferences(grammar: Grammar, ref: any) {
     if (AstNode.node in ref) {
         iterateNodes(grammar, ref, ref[AstNode.node]);
     }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function iterateNodes(grammar: Grammar, item: any, node: INode) {
     if (node instanceof CompositeNode) {
         node.children.forEach(e => {
             iterateNodes(grammar, item, e);
         })
     } else if (node instanceof LeafNode) {
-        if (node.element.kind == "Assignment" && node.element.Terminal.kind == "CrossReference") {
+        if (node.element.kind === "Assignment" && node.element.Terminal.kind === "CrossReference") {
             const text = node.getText();
             const assignment = node.element;
             switch (assignment.Operator) {

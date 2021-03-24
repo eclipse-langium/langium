@@ -1,6 +1,6 @@
 /* eslint-disable */
 // @ts-nocheck
-import { AstNode } from "../generator/ast-node"
+import { AstNode } from '../index';
 
 export type Any = Grammar | AbstractRule | AbstractMetamodelDeclaration | GeneratedMetamodel | ReferencedMetamodel | Annotation | ParserRule | RuleNameAndParams | Parameter | Alternatives | UnorderedGroup | Group | AbstractToken | AbstractTokenWithCardinality | Action | AbstractTerminal | Keyword | RuleCall | NamedArgument | LiteralCondition | Disjunction | Conjunction | Negation | Atom | ParenthesizedCondition | ParameterReference | TerminalRuleCall | PredicatedKeyword | PredicatedRuleCall | Assignment | AssignableTerminal | ParenthesizedAssignableElement | AssignableAlternatives | CrossReference | CrossReferenceableTerminal | ParenthesizedElement | PredicatedGroup | TerminalRule | TerminalAlternatives | TerminalGroup | TerminalToken | TerminalTokenElement | ParenthesizedTerminalElement | AbstractNegatedToken | NegatedToken | UntilToken | Wildcard | CharacterRange | EnumRule | EnumLiterals | EnumLiteralDeclaration;
 
@@ -87,13 +87,13 @@ export type Group = AstNode & {
 export type AbstractToken = AbstractTokenWithCardinality | Action
 
 export type AbstractTokenWithCardinality = (Assignment | AbstractTerminal) & {
-    Cardinality?: string
+    Cardinality?: '?' | '*' | '+'
 }
 
 export type Action = AstNode & {
     kind: "Action",
     Feature?: string,
-    Operator?: string,
+    Operator?: '=' | '+=',
     Type: ParserRule,
     container: Any
 }
@@ -147,7 +147,11 @@ export type Negation = (Atom) & {
 
 export type Atom = ParameterReference | ParenthesizedCondition | LiteralCondition
 
-export type ParenthesizedCondition = Disjunction
+export type ParenthesizedCondition = AstNode & {
+    kind: "ParenthesizedCondition",
+    Value: Disjunction,
+    container: Any
+}
 
 export type ParameterReference = AstNode & {
     kind: "ParameterReference",
@@ -182,7 +186,7 @@ export type Assignment = AstNode & {
     kind: "Assignment",
     Feature: string,
     FirstSetPredicated?: boolean,
-    Operator: string,
+    Operator: '+=' | '=' | '?=',
     Predicated?: boolean,
     Terminal: AssignableTerminal,
     container: Any
@@ -226,7 +230,7 @@ export type TerminalRule = AstNode & {
     container: Any
 }
 
-export type TerminalAlternatives = AstNode & {
+export type TerminalAlternatives = TerminalGroup | AstNode & {
     kind: "TerminalAlternatives",
     Elements: TerminalGroup[],
     container: Any
@@ -239,7 +243,7 @@ export type TerminalGroup = AstNode & {
 }
 
 export type TerminalToken = (TerminalTokenElement) & {
-    Cardinality?: string
+    Cardinality?: '?' | '*' | '+'
 }
 
 export type TerminalTokenElement = CharacterRange | TerminalRuleCall | ParenthesizedTerminalElement | AbstractNegatedToken | Wildcard

@@ -15,8 +15,9 @@ type RuleContext = {
     featureMap: Map<Feature, string>
 }
 
-export function generateParser(grammar: Grammar, bootstrap = false): string {
+export function generateParser(grammar: Grammar, path?: string): string {
     const keywords = collectKeywords(grammar);
+    const langiumPath = "'" + (path ?? "langium") + "'";
     
     const fileNode = new CompositeGeneratorNode();
     fileNode.children.push(
@@ -28,9 +29,7 @@ export function generateParser(grammar: Grammar, bootstrap = false): string {
         new NewLineNode(),
         new TextNode('import { PartialDeep } from "type-fest";'),
         new NewLineNode(),
-        new TextNode('import { AstNode, RootNode, RuleResult } from "../generator/ast-node";'),
-        new NewLineNode(),
-        new TextNode('import { LangiumParser } from "../parser/langium-parser";'),
+        new TextNode('import { AstNode, RootNode, RuleResult, LangiumParser } from '), langiumPath, ';',
         new NewLineNode(),
         new TextNode('import { ' + grammar.Name + 'GrammarAccess } from "./grammar-access";'),
         new NewLineNode(),
@@ -202,7 +201,7 @@ function buildRule(ctx: RuleContext, rule: ParserRule, first: boolean): Composit
 
     const ruleContent = new IndentNode(4);
     ruleNode.children.push(ruleContent);
-    ruleContent.children.push(buildAlternatives(ctx, true, alternatives));
+    ruleContent.children.push(buildAlternatives(ctx, alternatives));
     ruleContent.children.push(buildRuleReturnStatement(rule, first));
 
     ruleNode.children.push(
@@ -225,7 +224,7 @@ function buildRuleReturnStatement(rule: ParserRule, first: boolean) : CompositeG
     return node;
 }
 
-function buildAlternatives(ctx: RuleContext, root: boolean, alternatives: RuleAlternative[]): CompositeGeneratorNode {
+function buildAlternatives(ctx: RuleContext, alternatives: RuleAlternative[]): CompositeGeneratorNode {
     const altNode = new CompositeGeneratorNode();
 
     if (alternatives.length > 1) {
@@ -238,7 +237,7 @@ function buildAlternatives(ctx: RuleContext, root: boolean, alternatives: RuleAl
             const chevAltNode = new IndentNode("    ");
             chevAltNode.children.push(new TextNode("ALT: () => {"), new NewLineNode());
             const indGroup = new IndentNode("    ");
-            indGroup.children.push(buildUnorderedGroup(ctx, root, e.group));
+            indGroup.children.push(buildUnorderedGroup(ctx, e.group));
             chevAltNode.children.push(indGroup);
             chevAltNode.children.push(new TextNode("}"), new NewLineNode());
             altIndentNode.children.push(chevAltNode, new TextNode("},"), new NewLineNode());
@@ -246,20 +245,20 @@ function buildAlternatives(ctx: RuleContext, root: boolean, alternatives: RuleAl
 
         altNode.children.push(new TextNode("])"), new NewLineNode());
     } else {
-        altNode.children.push(buildUnorderedGroup(ctx, false, alternatives[0].group));
+        altNode.children.push(buildUnorderedGroup(ctx, alternatives[0].group));
     }
     return altNode;
 }
 
-function buildUnorderedGroup(ctx: RuleContext, root: boolean, group: UnorderedGroup): CompositeGeneratorNode {
+function buildUnorderedGroup(ctx: RuleContext, group: UnorderedGroup): CompositeGeneratorNode {
     if (group.kind === "Group") {
-        return buildGroup(ctx, root, group);
+        return buildGroup(ctx, group);
     } else {
         throw new Error("Unordered groups are not supported (yet)");
     }
 }
 
-function buildGroup(ctx: RuleContext, root: boolean, group: Group): CompositeGeneratorNode {
+function buildGroup(ctx: RuleContext, group: Group): CompositeGeneratorNode {
     const groupNode = new CompositeGeneratorNode();
 
     group.Elements.forEach(e => {
@@ -322,14 +321,18 @@ function buildParenthesizedElement(ctx: RuleContext, element: ParenthesizedAssig
     } else {
         const wrapper = new CompositeGeneratorNode();
         wrapper.children.push(new TextNode("this.or(" + ctx.or++ + ", ["), new NewLineNode());
-
+        const altWrapper = new IndentNode(4);
+        wrapper.children.push(altWrapper);
         element.Elements.forEach(e => {
-            wrapper.children.push(new TextNode("{ ALT: () => {"), new NewLineNode());
-            wrapper.children.push(buildAssignableElement(ctx, e, assignment), new NewLineNode());
-            wrapper.children.push(new TextNode("}},"), new NewLineNode());
+            altWrapper.children.push(new TextNode("{"), new NewLineNode());
+            const altIndent = new IndentNode(4);
+            const contentIndent = new IndentNode(4);
+            altIndent.children.push("ALT: () => {", new NewLineNode(), contentIndent, "}", new NewLineNode());
+            contentIndent.children.push(buildAssignableElement(ctx, e, assignment), new NewLineNode());
+            altWrapper.children.push(altIndent, new TextNode("},"), new NewLineNode());
         });
 
-        wrapper.children.push(new TextNode("])"));
+        wrapper.children.push(new TextNode("])"), new NewLineNode());
 
         return wrapper;
     }
@@ -361,7 +364,7 @@ function buildParenthesizedGroup(ctx: RuleContext, group: ParenthesizedElement):
     } else {
         ruleAlternatives.push(<RuleAlternative>{ group });
     }
-    return buildAlternatives(ctx, false, ruleAlternatives);
+    return buildAlternatives(ctx, ruleAlternatives);
 }
 
 function buildRuleCall(ctx: RuleContext, ruleCall: RuleCall, assignment?: Assignment): string {

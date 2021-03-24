@@ -58,7 +58,7 @@ export class LangiumParser extends EmbeddedActionsParser {
         const node = new LeafNode(token.startOffset, token.image.length, false);
         node.element = feature;
         this.currentNodes.push(node);
-        if (feature.kind === "Assignment") {
+        if (!this.RECORDING_PHASE && feature.kind === "Assignment") {
             this.assign({ operator: feature.Operator, feature: feature.Feature }, token.image);
         }
     }
@@ -76,14 +76,14 @@ export class LangiumParser extends EmbeddedActionsParser {
             resultNode.element = feature;
             this.currentNodes.push(<INode>resultNode);
         }
-        if (feature.kind === "Assignment") {
+        if (!this.RECORDING_PHASE && feature.kind === "Assignment") {
             this.assign({ operator: feature.Operator, feature: feature.Feature }, subruleResult);
         }
         return subruleResult;
     }
 
     executeAction(action: Action): void {
-        if (!this.actionExecuted) {
+        if (!this.RECORDING_PHASE && !this.actionExecuted) {
             const current = this.objStack.pop();
             const newItem = {};
             this.objStack.push(newItem);
@@ -120,22 +120,20 @@ export class LangiumParser extends EmbeddedActionsParser {
     assign(assignment: { operator: string, feature: string }, value: unknown): void {
         const obj = this.currentObject;
         const feature = assignment.feature.replace(/\^/g, "");
-        if (Object.isExtensible(obj)) {
-            switch (assignment.operator) {
-                case "=": {
-                    this.currentObject[feature] = value;
-                    break;
+        switch (assignment.operator) {
+            case "=": {
+                obj[feature] = value;
+                break;
+            }
+            case "?=": {
+                obj[feature] = true;
+                break;
+            }
+            case "+=": {
+                if (!Array.isArray(obj[feature])) {
+                    obj[feature] = [];
                 }
-                case "?=": {
-                    this.currentObject[feature] = true;
-                    break;
-                }
-                case "+=": {
-                    if (!Array.isArray(this.currentObject[feature])) {
-                        this.currentObject[feature] = [];
-                    }
-                    this.currentObject[feature].push(value);
-                }
+                obj[feature].push(value);
             }
         }
     }
