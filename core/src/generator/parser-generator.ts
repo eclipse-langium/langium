@@ -1,5 +1,6 @@
 /* eslint-disable */
 import { AbstractTerminal, Action, Alternatives, AssignableTerminal, Assignment, Grammar, Group, Keyword, ParenthesizedAssignableElement, ParenthesizedElement, ParserRule, RuleCall, TerminalRule, UnorderedGroup } from "../gen/ast";
+import { getTypeName } from "../grammar/grammar-utils";
 import { CompositeGeneratorNode, GeneratorNode, IndentNode, NewLineNode, TextNode } from "./node/node";
 import { process } from "./node/node-processor";
 import { replaceTokens } from "./token-replacer";
@@ -91,7 +92,6 @@ export function generateParser(grammar: Grammar, path?: string): string {
 }
 
 function buildParseFunction(grammar: Grammar): CompositeGeneratorNode {
-    const firstRule = grammar.rules?.find(e => e.kind == "ParserRule") as ParserRule;
     const parseFunction = new CompositeGeneratorNode();
     parseFunction.children.push(
         new TextNode("export function parse(grammarAccess: " + grammar.Name + "GrammarAccess, text: string) {"), new NewLineNode());
@@ -101,7 +101,7 @@ function buildParseFunction(grammar: Grammar): CompositeGeneratorNode {
         "    parser = new Parser(grammarAccess);" , new NewLineNode(), "}", new NewLineNode(),
         new TextNode("const lexResult = lexer.tokenize(text);"), new NewLineNode(),
         new TextNode("parser.input = lexResult.tokens;"), new NewLineNode(),
-        new TextNode("const ast = parser."), new TextNode(firstRule.Name), new TextNode("();"), new NewLineNode(),
+        new TextNode("const ast = parser.parse();"), new NewLineNode(),
         "(ast[AstNode.node] as RootNode).setText(text);", new NewLineNode(),
         new TextNode("return {"), new NewLineNode()
     );
@@ -159,7 +159,7 @@ function buildParser(grammar: Grammar): CompositeGeneratorNode {
         first = false;
     });
 
-    parserNode.children.push(classBody, new NewLineNode(), new TextNode("}"));
+    parserNode.children.push(classBody, new TextNode("}"));
 
     return parserNode;
 }
@@ -188,21 +188,21 @@ function buildRule(ctx: RuleContext, rule: ParserRule, first: boolean): Composit
     const ruleNode = new CompositeGeneratorNode();
     const alternatives = collectRuleAlternatives(rule);
     ruleNode.children.push(
-        new TextNode(first ? "public " : "private "), 
+        new TextNode("private "), 
         new TextNode(rule.Name)
     );
 
     ruleNode.children.push(
-        new TextNode(' = this.RULE("'),
-        new TextNode(rule.Name),
-        new TextNode('", () => {'),
+        ' = this.', first ? 'MAIN_RULE("' : 'DEFINE_RULE("',
+        rule.Name, '", "', getTypeName(rule),
+        '", () => {',
         new NewLineNode()
     )
 
     const ruleContent = new IndentNode(4);
     ruleNode.children.push(ruleContent);
     ruleContent.children.push(buildAlternatives(ctx, alternatives));
-    ruleContent.children.push(buildRuleReturnStatement(rule, first));
+    ruleContent.children.push(buildRuleReturnStatement(rule));
 
     ruleNode.children.push(
         new TextNode("})"), 
@@ -214,12 +214,9 @@ function buildRule(ctx: RuleContext, rule: ParserRule, first: boolean): Composit
     return ruleNode;
 }
 
-function buildRuleReturnStatement(rule: ParserRule, first: boolean) : CompositeGeneratorNode {
+function buildRuleReturnStatement(rule: ParserRule) : CompositeGeneratorNode {
     const node = new CompositeGeneratorNode();
-    node.children.push("return this.construct<" + rule.Name + ">('", rule.Name, "'");
-    if (first) {
-        node.children.push(", true");
-    }
+    node.children.push("return this.construct<" + getTypeName(rule) + ">(");
     node.children.push(");", new NewLineNode());
     return node;
 }
@@ -314,6 +311,12 @@ function buildAssignableElement(ctx: RuleContext, v: AssignableTerminal, assignm
         }
     }
 }
+
+// function findCrossRefTerminal(crossRef: CrossReference) {
+//     if (crossRef.Terminal) {
+//         return 
+//     }
+// }
 
 function buildParenthesizedElement(ctx: RuleContext, element: ParenthesizedAssignableElement, assignment?: Assignment): GeneratorNode {
     if (element.Elements.length == 1) {

@@ -13,16 +13,10 @@ const input = fs.readFileSync("test.xtext").toString();
 const jsonInput = fs.readFileSync("src/gen/grammar.json").toString();
 const jsonGrammar = deserialize(jsonInput);
 const jsonAccess = new xtextGrammarAccess(jsonGrammar);
-// const access = <xtextGrammarAccess2><any>jsonAccess;
-// transformAccess(jsonGrammar, access);
 const output = parse(jsonAccess, input);
-// const g = <Grammar>output.ast;
-// linkGrammar(g);
 
 const grammar = <Grammar>output.ast;
 linkGrammar(grammar);
-
-// contentAssist(grammar, grammar, 60);
 
 const json = serialize(grammar);
 const grammarAccess = generateGrammarAccess(grammar, "../index");

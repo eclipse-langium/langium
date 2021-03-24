@@ -105,5 +105,5 @@ function findRule(grammar: Grammar, name: string): AbstractRule {
     if (!rule) {
         throw new Error("Could not find rule " + name);
     }
-    return <AbstractRule>rule;
+    return rule;
 }
