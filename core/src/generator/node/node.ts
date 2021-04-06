@@ -1,0 +1,92 @@
+export type GeneratorNode = CompositeGeneratorNode | IndentNode | TextNode | NewLineNode | string;
+
+export class CompositeGeneratorNode {
+
+    private _children: GeneratorNode[] = [];
+
+    public get children(): GeneratorNode[] {
+        return this._children;
+    }
+}
+
+export class IndentNode extends CompositeGeneratorNode {
+
+    private _indentation  = "";
+
+    public get indentation(): string {
+        return this._indentation;
+    }
+    public set indentation(v: string) {
+        this._indentation = v;
+    }
+
+    private _indentImmediately  = true;
+
+    public get indentImmediately(): boolean {
+        return this._indentImmediately;
+    }
+    public set indentImmediately(v: boolean) {
+        this._indentImmediately = v;
+    }
+
+    private _indentEmptyLines  = false;
+
+    public get indentEmptyLines(): boolean {
+        return this._indentEmptyLines;
+    }
+    public set indentEmptyLines(v: boolean) {
+        this._indentEmptyLines = v;
+    }
+
+    constructor(indentation: string | number, indentImmediately = true, indentEmptyLines = false) {
+        super();
+        if (typeof(indentation) === "string") {
+            this._indentation = indentation;
+        } else if (typeof(indentation) === "number") {
+            this._indentation = "".padStart(indentation);
+        }
+        this._indentImmediately = indentImmediately;
+        this._indentEmptyLines = indentEmptyLines;
+    }
+}
+
+export class TextNode {
+
+    private _text?: string;
+    public get text(): string | undefined {
+        return this._text;
+    }
+    public set text(v: string | undefined) {
+        this._text = v;
+    }
+
+    constructor(text: string | undefined) {
+        this._text = text;
+    }
+}
+
+export class NewLineNode {
+
+    private _lineDelimiter  = '\n';
+
+    public get lineDelimiter(): string {
+        return this._lineDelimiter;
+    }
+    public set lineDelimiter(v: string) {
+        this._lineDelimiter = v;
+    }
+
+    private _ifNotEmpty  = false;
+
+    public get ifNotEmpty(): boolean {
+        return this._ifNotEmpty;
+    }
+    public set ifNotEmpty(v: boolean) {
+        this._ifNotEmpty = v;
+    }
+
+    constructor(lineDelimiter = '\n', ifNotEmpty = false) {
+        this._lineDelimiter = lineDelimiter;
+        this._ifNotEmpty = ifNotEmpty;
+    }
+}
