@@ -94,7 +94,7 @@ export type Action = AstNode & {
     kind: "Action",
     Feature?: string,
     Operator?: '=' | '+=',
-    Type: ParserRule,
+    Type: string,
     container: Any
 }
 

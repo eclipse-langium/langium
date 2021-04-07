@@ -2,7 +2,7 @@
 // @ts-nocheck
 import { createToken, Lexer } from "chevrotain";
 import { PartialDeep } from "type-fest";
-import { AstNode, RootNode, RuleResult, LangiumParser } from '../index';
+import { AstNode, RootCstNode, RuleResult, LangiumParser } from '../index';
 import { xtextGrammarAccess } from "./grammar-access";
 import { Grammar, AbstractRule, AbstractMetamodelDeclaration, GeneratedMetamodel, ReferencedMetamodel, Annotation, ParserRule, RuleNameAndParams, Parameter, Alternatives, UnorderedGroup, Group, AbstractToken, AbstractTokenWithCardinality, Action, AbstractTerminal, Keyword, RuleCall, NamedArgument, LiteralCondition, Disjunction, Conjunction, Negation, Atom, ParenthesizedCondition, ParameterReference, TerminalRuleCall, PredicatedKeyword, PredicatedRuleCall, Assignment, AssignableTerminal, ParenthesizedAssignableElement, AssignableAlternatives, CrossReference, CrossReferenceableTerminal, ParenthesizedElement, PredicatedGroup, TerminalRule, TerminalAlternatives, TerminalGroup, TerminalToken, TerminalTokenElement, ParenthesizedTerminalElement, AbstractNegatedToken, NegatedToken, UntilToken, Wildcard, CharacterRange, EnumRule, EnumLiterals, EnumLiteralDeclaration, } from "./ast";
 
@@ -918,7 +918,7 @@ export function parse(grammarAccess: xtextGrammarAccess, text: string) {
     const lexResult = lexer.tokenize(text);
     parser.input = lexResult.tokens;
     const ast = parser.parse();
-    (ast[AstNode.node] as RootNode).setText(text);
+    (ast[AstNode.cstNode] as RootCstNode).text = text;
     return {
         ast,
         lexErrors: lexResult.errors,

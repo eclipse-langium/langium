@@ -70,7 +70,7 @@ AbstractTokenWithCardinality:
 ;
 
 Action:
-	'{' Type=[ParserRule|ID] ('.' Feature=ID Operator=('='|'+=') 'current')? '}'
+	'{' Type=ID ('.' Feature=ID Operator=('='|'+=') 'current')? '}'
 ;
 
 AbstractTerminal:

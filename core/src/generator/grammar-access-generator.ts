@@ -66,6 +66,7 @@ function generateFeature(feature: Feature): GeneratorNode {
         indent.children.push(terminal, new NewLineNode(), "}", new NewLineNode());
     } else if (feature.kind === "Action") {
         indent.children.push("kind: 'Action',", new NewLineNode());
+        indent.children.push("Type: '" + feature.Type + "',", new NewLineNode());
         indent.children.push("Feature: '" + feature.Feature + "',", new NewLineNode());
         indent.children.push("Operator: '" + feature.Operator + "'", new NewLineNode());
     } else {

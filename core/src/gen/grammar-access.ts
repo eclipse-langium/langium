@@ -138,7 +138,7 @@ export type AbstractTokenWithCardinalityRuleAccess = {
 export type ActionRuleAccess = {
     CurlyOpenKeyword: Keyword;
     Type: Assignment;
-    TypeParserRuleCrossReference: CrossReference;
+    TypeIDRuleCall: RuleCall;
     DotKeyword: Keyword;
     Feature: Assignment;
     FeatureIDRuleCall: RuleCall;

@@ -1,5 +1,5 @@
 import { AbstractRule, AbstractTerminal, Alternatives, Assignment, Grammar, Group, ParserRule, UnorderedGroup } from "../gen/ast";
-import { AstNode, CompositeNode, INode, LeafNode } from "../generator/ast-node";
+import { AstNode, CompositeCstNode, CstNode, LeafCstNode } from "../generator/ast-node";
 
 export function linkGrammar(grammar: Grammar): void {
     grammar.rules?.filter(e => e.kind === "ParserRule").map(e => e as ParserRule).forEach(r => {
@@ -69,20 +69,20 @@ function linkAssignment(grammar: Grammar, assignment: Assignment) {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function findReferences(grammar: Grammar, ref: any) {
-    if (AstNode.node in ref) {
-        iterateNodes(grammar, ref, ref[AstNode.node]);
+    if (AstNode.cstNode in ref) {
+        iterateNodes(grammar, ref, ref[AstNode.cstNode]);
     }
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function iterateNodes(grammar: Grammar, item: any, node: INode) {
-    if (node instanceof CompositeNode) {
+function iterateNodes(grammar: Grammar, item: any, node: CstNode) {
+    if (node instanceof CompositeCstNode) {
         node.children.forEach(e => {
             iterateNodes(grammar, item, e);
         })
-    } else if (node instanceof LeafNode) {
+    } else if (node instanceof LeafCstNode) {
         if (node.element.kind === "Assignment" && node.element.Terminal.kind === "CrossReference") {
-            const text = node.getText();
+            const text = node.text;
             const assignment = node.element;
             switch (assignment.Operator) {
                 case "=": {

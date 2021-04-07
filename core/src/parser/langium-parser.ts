@@ -1,14 +1,13 @@
 import { EmbeddedActionsParser, IRuleConfig, TokenType } from "chevrotain";
 import { PartialDeep } from "type-fest";
 import { Action } from "../gen/ast";
-import { AstNode, CompositeNode, INode, LeafNode, RootNode, RuleResult } from "../generator/ast-node";
+import { AstNode, CompositeCstNode, CstNode, LeafCstNode, RootCstNode, RuleResult } from "../generator/ast-node";
 import { Feature } from "../generator/utils";
-import { getTypeName } from "../grammar/grammar-utils";
 
 type StackItem = {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     object: any,
-    nodes: INode[],
+    nodes: CstNode[],
     executedAction: boolean,
     feature?: Feature
 }
@@ -69,8 +68,8 @@ export class LangiumParser extends EmbeddedActionsParser {
                 }
             }
             if (lastResult) {
-                const lastCstNode = lastResult[AstNode.node] as CompositeNode;
-                const cstNode = result[AstNode.node] as CompositeNode;
+                const lastCstNode = lastResult[AstNode.cstNode] as CompositeCstNode;
+                const cstNode = result[AstNode.cstNode] as CompositeCstNode;
                 if (lastCstNode !== cstNode) {
                     lastCstNode.children.forEach(e => {
                         e.parent = cstNode;
@@ -97,7 +96,7 @@ export class LangiumParser extends EmbeddedActionsParser {
 
     consumeLeaf(idx: number, tokenType: TokenType, feature: Feature): void {
         const token = this.consume(idx, tokenType);
-        const node = new LeafNode(token.startOffset, token.image.length, false);
+        const node = new LeafCstNode(token.startOffset, token.image.length, false);
         node.element = feature;
         this.current.nodes.push(node);
         if (!this.RECORDING_PHASE && feature.kind === "Assignment") {
@@ -115,10 +114,10 @@ export class LangiumParser extends EmbeddedActionsParser {
     subruleLeaf<T extends AstNode>(idx: number, rule: RuleResult<T>, feature: Feature): PartialDeep<T> {
         this.current.feature = feature;
         const subruleResult = this.subrule(idx, rule);
-        const resultNode = subruleResult[AstNode.node];
+        const resultNode = subruleResult[AstNode.cstNode];
         if (resultNode) {
             resultNode.element = feature;
-            this.current.nodes.push(<INode>resultNode);
+            this.current.nodes.push(<CstNode>resultNode);
         }
         if (!this.RECORDING_PHASE && feature.kind === "Assignment") {
             this.assign({ operator: feature.Operator, feature: feature.Feature }, subruleResult);
@@ -131,7 +130,7 @@ export class LangiumParser extends EmbeddedActionsParser {
             const last = this.current;
             const newItem = {
                 ...last,
-                object: { kind: getTypeName(action.Type) },
+                object: { kind: action.Type },
                 executedAction: true
             };
             this.stack.pop();
@@ -143,9 +142,9 @@ export class LangiumParser extends EmbeddedActionsParser {
     }
 
     construct<T extends AstNode>(): PartialDeep<T> {
-        const node = this.stack.length === 1 ? new RootNode() : new CompositeNode();
+        const node = this.stack.length === 1 ? new RootCstNode() : new CompositeCstNode();
         const item = this.current;
-        const obj = { [AstNode.node]: node, ...item.object };
+        const obj = { [AstNode.cstNode]: node, ...item.object };
         if (!this.RECORDING_PHASE) {
             for (const value of Object.values(obj)) {
                 if (Array.isArray(value)) {

@@ -3,112 +3,112 @@ import { Any } from "../gen/ast";
 
 // eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace AstNode {
-    export const node = Symbol("node");
+    export const cstNode = Symbol("node");
 }
 
 export type AstNode = {
     kind: string,
     container: AstNode,
-    [AstNode.node]: INode,
+    [AstNode.cstNode]?: CstNode,
     '.references': Map<string, string | undefined>,
 }
 
-export interface INode {
-    parent?: ICompositeNode;
-    getOffset(): number;
-    getLength(): number;
+export interface CstNode {
+    parent?: ICompositeCstNode;
+    readonly offset: number;
+    readonly length: number;
+    readonly text: string;
+    readonly root: RootCstNode;
     element: Any;
-    getText(): string;
-    getRoot(): RootNode;
 }
 
-export abstract class AbstractNode implements INode {
-    abstract getOffset(): number;
-    abstract getLength(): number;
-    parent?: ICompositeNode;
+export abstract class AbstractCstNode implements CstNode {
+    abstract get offset(): number;
+    abstract get length(): number;
+    parent?: ICompositeCstNode;
     element!: Any;
 
-    getText(): string {
-        const offset = this.getOffset();
-        return this.getRoot().getText().substring(offset, offset + this.getLength());
+    get text(): string {
+        const offset = this.offset;
+        return this.root.text.substring(offset, offset + this.length);
     }
 
-    getRoot(): RootNode {
+    get root(): RootCstNode {
         const parent = this.parent;
-        if (parent instanceof RootNode) {
+        if (parent instanceof RootCstNode) {
             return parent;
         } else if (parent) {
-            return parent.getRoot();
+            return parent.root;
         } else {
             throw new Error("Node has no root");
         }
     }
 }
 
-export interface ICompositeNode extends INode {
-    children: INode[];
+export interface ICompositeCstNode extends CstNode {
+    children: CstNode[];
 }
 
-export interface ILeafNode extends INode {
+export interface ILeafCstNode extends CstNode {
     hidden: boolean;
 }
 
-export class LeafNode extends AbstractNode implements ILeafNode {
-    getOffset(): number {
-        return this.offset;
+export class LeafCstNode extends AbstractCstNode implements ILeafCstNode {
+    get offset(): number {
+        return this._offset;
     }
-    getLength(): number {
-        return this.length;
+    get length(): number {
+        return this._length;
     }
     hidden = false;
 
-    private offset: number;
-    private length: number;
+    private _offset: number;
+    private _length: number;
 
     constructor(offset: number, length: number, hidden = false) {
         super();
         this.hidden = hidden;
-        this.offset = offset;
-        this.length = length;
+        this._offset = offset;
+        this._length = length;
     }
 }
 
-export class CompositeNode extends AbstractNode implements ICompositeNode {
-    getOffset(): number {
+export class CompositeCstNode extends AbstractCstNode implements ICompositeCstNode {
+    get offset(): number {
         if (this.children.length > 0) {
-            return this.children[0].getOffset();
+            return this.children[0].offset;
         } else {
             return 0;
         }
     }
-    getLength(): number {
+    get length(): number {
         if (this.children.length > 0) {
             const last = this.children[this.children.length - 1];
-            return last.getOffset() + last.getLength() - this.getOffset();
+            return last.offset + last.length - this.offset;
         } else {
             return 0;
         }
     }
-    children: INode[] = [];
+    children: CstNode[] = [];
 }
 
-export class RootNode extends CompositeNode {
+export class RootCstNode extends CompositeCstNode {
 
-    private text = "";
+    private _text = "";
 
-    setText(text: string): void {
-        this.text = text;
+    set text(value: string) {
+        this._text = value;
     }
 
-    getText(): string {
-        return this.text;
+    get text(): string {
+        return this._text;
     }
 
-    getOffset(): number {
+    get offset(): number {
         return 0;
     }
 
-    getLength(): number {
+    get length(): number {
         return this.text.length;
     }
 }

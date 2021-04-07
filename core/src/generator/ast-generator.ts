@@ -1,7 +1,27 @@
 import { Grammar, ParserRule } from "../gen/ast";
 import { CompositeGeneratorNode, GeneratorNode, IndentNode, NewLineNode, TextNode } from "./node/node";
 import { process } from "./node/node-processor";
+import { collectAst } from "./type-collector";
 import { collectRule } from "./utils";
+
+export function generateAst2(grammar: Grammar, path?: string): string {
+    const types = collectAst(grammar);
+    const langiumPath = "'" + (path ?? "langium") + "'"
+    const fileNode = new CompositeGeneratorNode();
+    fileNode.children.push(
+        new TextNode("/* eslint-disable */"),
+        new NewLineNode(),
+        new TextNode('import { AstNode } from '), langiumPath, ';',
+        new NewLineNode(),
+        new NewLineNode()
+    );
+
+    for (const type of types) {
+        fileNode.children.push(type.toString(), new NewLineNode());
+    }
+
+    return process(fileNode);
+}
 
 export function generateAst(grammar: Grammar, path?: string): string {
     const node = new CompositeGeneratorNode();
