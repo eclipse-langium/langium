@@ -1,7 +1,8 @@
 import { AbstractRule, AbstractTerminal, Alternatives, Assignment, Grammar, Group, ParserRule, UnorderedGroup } from "../gen/ast";
-import { AstNode, CompositeCstNode, CstNode, LeafCstNode } from "../generator/ast-node";
+import { AstNode, CompositeCstNode, CstNode } from "../generator/ast-node";
 
 export function linkGrammar(grammar: Grammar): void {
+    findReferences(grammar, grammar);
     grammar.rules?.filter(e => e.kind === "ParserRule").map(e => e as ParserRule).forEach(r => {
         linkAlteratives(grammar, r.Alternatives);
     });
@@ -76,27 +77,25 @@ function findReferences(grammar: Grammar, ref: any) {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function iterateNodes(grammar: Grammar, item: any, node: CstNode) {
-    if (node instanceof CompositeCstNode) {
+    if (node.element === item && node.feature && node.feature.kind === "Assignment" && node.feature.Terminal.kind === "CrossReference") {
+        const text = node.text;
+        const assignment = node.feature;
+        switch (assignment.Operator) {
+            case "=": {
+                item[assignment.Feature] = findRule(grammar, text);
+                break;
+            } case "+=": {
+                if (!Array.isArray(item[assignment.Feature])) {
+                    item[assignment.Feature] = [];
+                }
+                item[assignment.Feature].push(findRule(grammar, text));
+                break;
+            }
+        }
+    } else if (node instanceof CompositeCstNode) {
         node.children.forEach(e => {
             iterateNodes(grammar, item, e);
         })
-    } else if (node instanceof LeafCstNode) {
-        if (node.element.kind === "Assignment" && node.element.Terminal.kind === "CrossReference") {
-            const text = node.text;
-            const assignment = node.element;
-            switch (assignment.Operator) {
-                case "=": {
-                    item[assignment.Feature] = findRule(grammar, text);
-                    break;
-                } case "+=": {
-                    if (!Array.isArray(item[assignment.Feature])) {
-                        item[assignment.Feature] = [];
-                    }
-                    item[assignment.Feature].push(findRule(grammar, text));
-                    break;
-                }
-            }
-        }
     }
 }
 

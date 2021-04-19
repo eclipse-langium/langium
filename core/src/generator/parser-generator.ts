@@ -1,10 +1,9 @@
-/* eslint-disable */
 import { AbstractTerminal, Action, Alternatives, AssignableTerminal, Assignment, Grammar, Group, Keyword, ParenthesizedAssignableElement, ParenthesizedElement, ParserRule, RuleCall, TerminalRule, UnorderedGroup } from "../gen/ast";
 import { getTypeName } from "../grammar/grammar-utils";
 import { CompositeGeneratorNode, GeneratorNode, IndentNode, NewLineNode, TextNode } from "./node/node";
 import { process } from "./node/node-processor";
 import { replaceTokens } from "./token-replacer";
-import { Feature, findAllFeatures } from "./utils";
+import { Feature, findAllFeatures, isDataTypeRule } from "./utils";
 
 type RuleContext = {
     name: string,
@@ -19,7 +18,7 @@ type RuleContext = {
 export function generateParser(grammar: Grammar, path?: string): string {
     const keywords = collectKeywords(grammar);
     const langiumPath = "'" + (path ?? "langium") + "'";
-    
+
     const fileNode = new CompositeGeneratorNode();
     fileNode.children.push(
         new TextNode("/* eslint-disable */"),
@@ -28,32 +27,33 @@ export function generateParser(grammar: Grammar, path?: string): string {
         new NewLineNode(),
         new TextNode('import { createToken, Lexer } from "chevrotain";'),
         new NewLineNode(),
-        new TextNode('import { PartialDeep } from "type-fest";'),
-        new NewLineNode(),
-        new TextNode('import { AstNode, RootCstNode, RuleResult, LangiumParser } from '), langiumPath, ';',
+        new TextNode('import { AstNode, RootCstNode, LangiumParser } from '), langiumPath, ';',
         new NewLineNode(),
         new TextNode('import { ' + grammar.Name + 'GrammarAccess } from "./grammar-access";'),
         new NewLineNode(),
     );
 
     fileNode.children.push(new TextNode("import {"));
-    grammar.rules?.filter(e => e.kind == "ParserRule").map(e => e as ParserRule).forEach(e => {
-        fileNode.children.push(new TextNode(" " + e.Name + ","));
+    const ruleNames = new Set<string>();
+    grammar.rules?.filter(e => e.kind === "ParserRule" && !e.fragment && !isDataTypeRule(e)).map(e => e as ParserRule).forEach(e => {
+        ruleNames.add(getTypeName(e));
+    });
+    ruleNames.forEach(e => {
+        fileNode.children.push(new TextNode(" " + e + ","));
     });
     fileNode.children.push(new TextNode(' } from "./ast";'), new NewLineNode(), new NewLineNode());
 
-    let tokens: { name: string, length: number, node: CompositeGeneratorNode }[] = [];
+    const tokens: Array<{ name: string, length: number, node: CompositeGeneratorNode }> = [];
+    const terminals = grammar.rules?.filter(e => e.kind === "TerminalRule").map(e => e as TerminalRule);
 
+    terminals.forEach(e => {
+        tokens.push(buildTerminalToken(grammar, e));
+    });
+    const keywordTokens: Array<{ name: string, length: number, node: CompositeGeneratorNode }> = [];
     keywords.forEach(e => {
-        tokens.push(buildKeywordToken(e));
+        keywordTokens.push(buildKeywordToken(e, keywords, terminals));
     });
-
-    tokens = tokens.sort((a, b) => b.length - a.length);
-
-    grammar.rules?.filter(e => e.kind == "TerminalRule").map(e => e as TerminalRule).forEach(e => {
-        tokens.push(buildTerminalToken(e));
-    });
-
+    tokens.push(...keywordTokens.sort((a, b) => b.length - a.length))
     tokens.forEach(e => {
         fileNode.children.push(e.node, new NewLineNode());
     });
@@ -61,7 +61,7 @@ export function generateParser(grammar: Grammar, path?: string): string {
     fileNode.children.push(new NewLineNode());
 
     keywords.forEach(e => {
-        const token = buildKeywordToken(e);
+        const token = buildKeywordToken(e, keywords, terminals);
         fileNode.children.push(
             new TextNode(token.name),
             new TextNode('.LABEL = "'),
@@ -74,8 +74,8 @@ export function generateParser(grammar: Grammar, path?: string): string {
 
     const tokenListNode = new CompositeGeneratorNode();
     tokenListNode.children.push(
-        new TextNode("const tokens = ["), 
-        new TextNode(tokens.map(e => e.name).join(", ")), 
+        new TextNode("const tokens = ["),
+        new TextNode(tokens.reverse().map(e => e.name).join(", ")),
         new TextNode("];"),
         new NewLineNode()
     );
@@ -98,7 +98,7 @@ function buildParseFunction(grammar: Grammar): CompositeGeneratorNode {
     const parseBody = new IndentNode("    ");
     parseBody.children.push(
         "if (!parser) {", new NewLineNode(),
-        "    parser = new Parser(grammarAccess);" , new NewLineNode(), "}", new NewLineNode(),
+        "    parser = new Parser(grammarAccess);", new NewLineNode(), "}", new NewLineNode(),
         new TextNode("const lexResult = lexer.tokenize(text);"), new NewLineNode(),
         new TextNode("parser.input = lexResult.tokens;"), new NewLineNode(),
         new TextNode("const ast = parser.parse();"), new NewLineNode(),
@@ -129,7 +129,7 @@ function buildParser(grammar: Grammar): CompositeGeneratorNode {
 
     const constructorBody = new IndentNode("    ");
     constructorBody.children.push(
-        new TextNode('super(tokens);'), 
+        new TextNode('super(tokens);'),
         new NewLineNode(),
         new TextNode("this.grammarAccess = grammarAccess;"),
         new NewLineNode(),
@@ -139,8 +139,8 @@ function buildParser(grammar: Grammar): CompositeGeneratorNode {
 
     classBody.children.push(
         constructorBody,
-        new TextNode("}"), 
-        new NewLineNode(), 
+        new TextNode("}"),
+        new NewLineNode(),
         new NewLineNode()
     )
 
@@ -180,7 +180,7 @@ function collectRuleAlternatives(rule: ParserRule): RuleAlternative[] {
     } else {
         alts.push({ rule, index: 0, group: rule.Alternatives });
     }
-    
+
     return alts;
 }
 
@@ -188,16 +188,16 @@ function buildRule(ctx: RuleContext, rule: ParserRule, first: boolean): Composit
     const ruleNode = new CompositeGeneratorNode();
     const alternatives = collectRuleAlternatives(rule);
     ruleNode.children.push(
-        new TextNode("private "), 
+        new TextNode("private "),
         new TextNode(rule.Name)
     );
 
     ruleNode.children.push(
         ' = this.', first ? 'MAIN_RULE("' : 'DEFINE_RULE("',
-        rule.Name, '", "', getTypeName(rule),
-        '", () => {',
+        rule.Name, '", ', rule.fragment ? "undefined" : getTypeName(rule) + ".kind",
+        ', () => {',
         new NewLineNode()
-    )
+    );
 
     const ruleContent = new IndentNode(4);
     ruleNode.children.push(ruleContent);
@@ -205,16 +205,15 @@ function buildRule(ctx: RuleContext, rule: ParserRule, first: boolean): Composit
     ruleContent.children.push(buildRuleReturnStatement(rule));
 
     ruleNode.children.push(
-        new TextNode("})"), 
-        new NewLineNode(), 
+        new TextNode("})"),
+        new NewLineNode(),
         new NewLineNode()
     )
-    
 
     return ruleNode;
 }
 
-function buildRuleReturnStatement(rule: ParserRule) : CompositeGeneratorNode {
+function buildRuleReturnStatement(rule: ParserRule): CompositeGeneratorNode {
     const node = new CompositeGeneratorNode();
     node.children.push("return this.construct<" + getTypeName(rule) + ">(");
     node.children.push(");", new NewLineNode());
@@ -274,7 +273,7 @@ function buildGroup(ctx: RuleContext, group: Group): CompositeGeneratorNode {
 }
 
 function buildAction(ctx: RuleContext, action: Action): GeneratorNode {
-    return "this.executeAction(" + getGrammarAccess(ctx, action) + ")";
+    return "this.executeAction(" + action.Type + ".kind, " + getGrammarAccess(ctx, action) + ")";
 }
 
 function buildTerminal(ctx: RuleContext, terminal: AbstractTerminal): GeneratorNode {
@@ -312,14 +311,8 @@ function buildAssignableElement(ctx: RuleContext, v: AssignableTerminal, assignm
     }
 }
 
-// function findCrossRefTerminal(crossRef: CrossReference) {
-//     if (crossRef.Terminal) {
-//         return 
-//     }
-// }
-
 function buildParenthesizedElement(ctx: RuleContext, element: ParenthesizedAssignableElement, assignment?: Assignment): GeneratorNode {
-    if (element.Elements.length == 1) {
+    if (element.Elements.length === 1) {
         return buildAssignableElement(ctx, element.Elements[0], assignment);
     } else {
         const wrapper = new CompositeGeneratorNode();
@@ -346,9 +339,9 @@ function wrap<T extends GeneratorNode>(ctx: RuleContext, node: T, cardinality: s
         return node;
     } else {
         const wrapper = new CompositeGeneratorNode();
-        if (cardinality == "*" || cardinality == "+") {
+        if (cardinality === "*" || cardinality === "+") {
             wrapper.children.push(new TextNode("this.many(" + ctx.many++ + ", () => {"), new NewLineNode());
-        } else if (cardinality == "?") {
+        } else if (cardinality === "?") {
             wrapper.children.push(new TextNode("this.option(" + ctx.option++ + ", () => {"), new NewLineNode());
         }
 
@@ -371,16 +364,16 @@ function buildParenthesizedGroup(ctx: RuleContext, group: ParenthesizedElement):
 }
 
 function buildRuleCall(ctx: RuleContext, ruleCall: RuleCall, assignment?: Assignment): string {
-    if (ruleCall.Rule.kind == "ParserRule") {
+    if (ruleCall.Rule.kind === "ParserRule") {
         if (assignment) {
             return "this.subruleLeaf(" + ctx.subrule++ + ", this." + ruleCall.Rule.Name + ", " + getGrammarAccess(ctx, assignment) + ")";
         } else {
             return "this.unassignedSubrule(" + ctx.subrule++ + ", this." + ruleCall.Rule.Name + ", " + getGrammarAccess(ctx, ruleCall) + ")";
         }
-    } else if (ruleCall.Rule.kind == "TerminalRule") {
-        return "this.consumeLeaf(" + ctx.consume++  + ", " + ruleCall.Rule.Name + ", " + getGrammarAccess(ctx, assignment ?? ruleCall) + ")";
+    } else if (ruleCall.Rule.kind === "TerminalRule") {
+        return "this.consumeLeaf(" + ctx.consume++ + ", " + ruleCall.Rule.Name + ", " + getGrammarAccess(ctx, assignment ?? ruleCall) + ")";
     }
-    
+
     return "";
 }
 
@@ -394,7 +387,7 @@ function getGrammarAccess(ctx: RuleContext, feature: Feature): string {
     return "this.grammarAccess." + ctx.name + "." + ctx.featureMap.get(feature);
 }
 
-function buildTerminalToken(terminal: TerminalRule): { name: string, length: number, node: CompositeGeneratorNode } {
+function buildTerminalToken(grammar: Grammar, terminal: TerminalRule): { name: string, length: number, node: CompositeGeneratorNode } {
     const terminalNode = new CompositeGeneratorNode();
     terminalNode.children.push(
         new TextNode("const "),
@@ -404,27 +397,35 @@ function buildTerminalToken(terminal: TerminalRule): { name: string, length: num
         new TextNode("', pattern: "),
         new TextNode(terminal.Regex));
 
-    if (terminal.Name === "WS") {
+    if (grammar.HiddenTokens.indexOf(terminal) >= 0) {
         terminalNode.children.push(new TextNode(", group: Lexer.SKIPPED"));
     }
 
     terminalNode.children.push(
         new TextNode(" });"));
-    
+
     return { name: terminal.Name, length: terminal.Regex.length, node: terminalNode };
 }
 
-function buildKeywordToken(keyword: string): { name: string, length: number, node: CompositeGeneratorNode } {
+function buildKeywordToken(keyword: string, keywords: string[], terminals: TerminalRule[]): { name: string, length: number, node: CompositeGeneratorNode } {
     const keywordNode = new CompositeGeneratorNode();
+    const fixed = keyword.substring(1, keyword.length - 1);
+    const longerAlt = findLongerAlt(fixed, keywords, terminals);
     const validName = replaceTokens(keyword) + "Keyword";
     keywordNode.children.push(
-        new TextNode("const "), 
-        new TextNode(validName),
-        new TextNode(" = createToken({ name: '"),
-        new TextNode(validName),
-        new TextNode("', pattern: /"),
-        new TextNode(escapeRegExp(keyword.substring(1, keyword.length - 1))),
-        new TextNode("/ });"));
+        "const ",
+        validName,
+        " = createToken({ name: '",
+        validName,
+        "', pattern: /",
+        escapeRegExp(fixed),
+        "/");
+
+    if (longerAlt) {
+        keywordNode.children.push(", longer_alt: ", longerAlt);
+    }
+
+    keywordNode.children.push(" });");
     return { name: validName, length: keyword.length, node: keywordNode };
 }
 
@@ -432,10 +433,26 @@ function escapeRegExp(text: string): string {
     return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+function findLongerAlt(keyword: string, keywords: string[], terminals: TerminalRule[]): string | undefined {
+    const starter = "'" + keyword
+    const longerKeywords = keywords.filter(e => e.length > keyword.length + 2 && e.startsWith(starter));
+    if (longerKeywords.length > 0) {
+        let shortest = longerKeywords[0];
+        for (const key of longerKeywords) {
+            if (key.length < shortest.length) {
+                shortest = key;
+            }
+        }
+        return replaceTokens(shortest) + "Keyword";
+    }
+    // TODO: for now, just return id
+    return terminals.find(e => e.Name === "ID")?.Name;
+}
+
 function collectKeywords(grammar: Grammar): string[] {
     const keywords = new Set<string>();
 
-    grammar.rules?.filter(e => e.kind == "ParserRule").map(e => e as ParserRule).forEach(r => {
+    grammar.rules?.filter(e => e.kind === "ParserRule").map(e => e as ParserRule).forEach(r => {
         collectRuleKeywords(r, keywords);
     });
 
@@ -483,32 +500,32 @@ function collectAssignableTerminal(terminal: AssignableTerminal, keywords: Set<s
 function collectGroupKeywords(group: Group, keywords: Set<string>) {
     group.Elements.forEach(element => {
 
-        if (element.kind == "Assignment") {
+        if (element.kind === "Assignment") {
             const assignment = element;
-                const terminal = assignment.Terminal;
-                collectAssignableTerminal(terminal, keywords);
+            const terminal = assignment.Terminal;
+            collectAssignableTerminal(terminal, keywords);
         } else if (element.kind !== "Action") {
-                switch (element.kind) {
-                    case "Keyword": {
-                        keywords.add(element.Value);
-                        break;
-                    }
-                    case "Alternatives":
-                    case "UnorderedGroup":
-                    case "Group": {
-                        collectAlternativeKeywords(element, keywords);
-                        break;
-                    }
-                    case "PredicatedGroup": {
-                        element.Elements.forEach(e => {
-                            collectAlternativeKeywords(e, keywords);
-                        });
-                        break;
-                    }
-                    case "PredicatedKeyword": {
-                        keywords.add(element.Value);
-                    }
+            switch (element.kind) {
+                case "Keyword": {
+                    keywords.add(element.Value);
+                    break;
                 }
+                case "Alternatives":
+                case "UnorderedGroup":
+                case "Group": {
+                    collectAlternativeKeywords(element, keywords);
+                    break;
+                }
+                case "PredicatedGroup": {
+                    element.Elements.forEach(e => {
+                        collectAlternativeKeywords(e, keywords);
+                    });
+                    break;
+                }
+                case "PredicatedKeyword": {
+                    keywords.add(element.Value);
+                }
+            }
         }
     });
 }

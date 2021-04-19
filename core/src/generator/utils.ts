@@ -4,8 +4,24 @@ import { replaceTokens } from "./token-replacer";
 
 export type Feature = AbstractToken | CrossReference | ParenthesizedAssignableElement | Group;
 type FeatureValue = {
-    getter: () => Feature;
+    feature: Feature;
     kind: "Keyword" | "RuleCall" | "Assignment" | "CrossReference" | "Action";
+}
+
+export type Cardinality = "?" | "*" | "+" | undefined;
+
+export function isOptionalCardinality(cardinality?: Cardinality): boolean {
+    return cardinality === "?" || cardinality === "*";
+}
+
+export function isDataTypeRule(rule: ParserRule): boolean {
+    const features = Array.from(findAllFeatures(rule).byFeature.keys());
+    const onlyRuleCallsAndKeywords = features.every(e => e.kind === "RuleCall" || e.kind === "Keyword" || e.kind === "Group" || e.kind === "Alternatives" || e.kind === "UnorderedGroup");
+    if (onlyRuleCallsAndKeywords) {
+        const ruleCallWithParserRule = features.filter(e => e.kind === "RuleCall" && e.Rule.kind === "ParserRule" && !isDataTypeRule(e.Rule));
+        return ruleCallWithParserRule.length === 0;
+    }
+    return false;
 }
 
 export function findAllFeatures(rule: ParserRule) : { byName: Map<string, FeatureValue>, byFeature: Map<Feature, string> } {
@@ -37,53 +53,58 @@ function putFeatureInGroup(group: UnorderedGroup, byName: Map<string, FeatureVal
         })
     } else {
         group.Elements.forEach((e, i) => {
-            putFeature(e, i, undefined, () => e, byName, byFeature);
+            putFeature(e, undefined, byName, byFeature);
         })
     }
 }
 
-function putFeature(feature: Feature, index: number, previous: string | undefined, getter: () => Feature, byName: Map<string, FeatureValue>, byFeature: Map<Feature, string>) {
+export let bootstrap = false;
+
+function putFeature(feature: Feature, previous: string | undefined, byName: Map<string, FeatureValue>, byFeature: Map<Feature, string>) {
     if (feature.kind === "Assignment") {
         const fullName = (previous ?? "") + feature.Feature;
-        byName.set(fullName, { getter, kind: "Assignment" });
+        byName.set(fullName, { feature, kind: "Assignment" });
         byFeature.set(feature, fullName);
-        const next = () => {
-            const assignment = <Assignment>getter();
-            return assignment.Terminal;
-        };
-        putFeature(feature.Terminal, 0, fullName, next, byName, byFeature);
+        putFeature(feature.Terminal, fullName, byName, byFeature);
     } else if (feature.kind == "RuleCall") {
         const name = (previous ?? "") + feature.Rule.Name + "RuleCall";
-        byName.set(name, { getter, kind: "RuleCall" });
+        byName.set(name, { feature, kind: "RuleCall" });
         byFeature.set(feature, name);
     } else if (feature.kind == "CrossReference") {
         const name = (previous ?? "") + feature.Type.Name + "CrossReference";
-        byName.set(name, { getter, kind: "CrossReference" });
+        byName.set(name, { feature, kind: "CrossReference" });
         byFeature.set(feature, name);
     } else if (feature.kind == "Keyword") {
         const validName = replaceTokens(feature.Value) + "Keyword";
-        byName.set(validName, { getter, kind: "Keyword" });
+        byName.set(validName, { feature, kind: "Keyword" });
         byFeature.set(feature, validName);
     } else if (feature.kind == "Action") {
-        const name = (previous ?? "") + feature.Feature! + "Action";
-        byName.set(name, { getter, kind: "Action" });
+        let name = "";
+        if (bootstrap) {
+            name = (previous ?? "") + feature.Type + (feature.Feature ?? "") + "Action";
+        } else {
+            name = (previous ?? "") + feature.Feature + "Action";
+        }
+        //const name = (previous ?? "") + feature.Type + (feature.Feature ?? "") + "Action";
+        //const name = (previous ?? "") + feature.Feature + "Action";
+        byName.set(name, { feature, kind: "Action" });
         byFeature.set(feature, name);
     } else if (feature.kind == "AssignableAlternatives") {
         // todo this one
-        feature.Elements.forEach((e, i) => {
-            putFeature(e, i, previous, () => e, byName, byFeature);
+        feature.Elements.forEach(e => {
+            putFeature(e, previous, byName, byFeature);
         });
     } else if (feature.kind == "Alternatives") {
-        feature.Elements.forEach((f) => {
+        feature.Elements.forEach(f => {
             putFeatureInGroup(f, byName, byFeature);
         });
     } else if (feature.kind == "UnorderedGroup") {
-        feature.Elements.forEach((f) => {
+        feature.Elements.forEach(f => {
             putFeatureInGroup(f, byName, byFeature);
         });
     } else if (feature.kind == "Group") {
-        feature.Elements.forEach((f) => {
-            putFeature(f, 0, previous, () => f, byName, byFeature);
+        feature.Elements.forEach(f => {
+            putFeature(f, previous, byName, byFeature);
         });
     }
 }

@@ -39,7 +39,7 @@ function generateBootstrapRuleAccess(rule: ParserRule): GeneratorNode {
     node.children.push(indent);
     Array.from(byName.entries()).forEach(e => {
         const [name, feature] = e;
-        indent.children.push(name, ": ", generateFeature(feature.getter()), new NewLineNode());
+        indent.children.push(name, ": ", generateFeature(feature.feature), new NewLineNode());
     });
 
     node.children.push("}");

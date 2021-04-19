@@ -1,16 +1,43 @@
-import { PartialDeep } from "type-fest"
-import { Any } from "../gen/ast";
+import { PartialDeep } from "type-fest";
+import { Feature } from "./utils";
 
 // eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace AstNode {
+
+    export const kind: Kind = { value: Symbol("AstNode"), super: [] };
+
     export const cstNode = Symbol("node");
+
+    export function is<T extends AstNode>(item: AstNode, kind: string | Kind): item is T {
+        if (typeof kind === "string") {
+            return !!item && 'kind' in item && item.kind === kind;
+        } else {
+            if (!!item && 'kind' in item) {
+                const itemKind = <Kind><unknown>item.kind;
+                return Kind.instanceOf(itemKind, kind);
+            } else {
+                return false;
+            }
+        }
+    }
 }
 
-export type AstNode = {
-    kind: string,
-    container: AstNode,
-    [AstNode.cstNode]?: CstNode,
-    '.references': Map<string, string | undefined>,
+export type Kind = {
+    value: symbol,
+    super: Kind[]
+}
+
+// eslint-disable-next-line @typescript-eslint/no-namespace
+export namespace Kind {
+    export function instanceOf(itemKind: Kind, target: Kind): boolean {
+        return itemKind.value === target.value || itemKind.super.some(e => instanceOf(e, target));
+    }
+}
+
+export interface AstNode {
+    readonly kind: string,
+    readonly container?: AstNode,
+    readonly [AstNode.cstNode]?: CstNode
 }
 
 export interface CstNode {
@@ -19,14 +46,16 @@ export interface CstNode {
     readonly length: number;
     readonly text: string;
     readonly root: RootCstNode;
-    element: Any;
+    feature: Feature;
+    element: AstNode;
 }
 
 export abstract class AbstractCstNode implements CstNode {
     abstract get offset(): number;
     abstract get length(): number;
     parent?: ICompositeCstNode;
-    element!: Any;
+    feature!: Feature;
+    element!: AstNode;
 
     get text(): string {
         const offset = this.offset;

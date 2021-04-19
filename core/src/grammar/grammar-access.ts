@@ -23,7 +23,7 @@ export class GrammarAccess {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const access: any = {};
         for (const [name, value] of Array.from(byName.entries())) {
-            access[name] = value.getter();
+            access[name] = value.feature;
         }
         return <T>access;
     }

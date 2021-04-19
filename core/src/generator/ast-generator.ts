@@ -9,9 +9,15 @@ export function generateAst2(grammar: Grammar, path?: string): string {
     const langiumPath = "'" + (path ?? "langium") + "'"
     const fileNode = new CompositeGeneratorNode();
     fileNode.children.push(
-        new TextNode("/* eslint-disable */"),
+        new TextNode("/* eslint-disable @typescript-eslint/no-namespace */"),
         new NewLineNode(),
-        new TextNode('import { AstNode } from '), langiumPath, ';',
+        new TextNode("/* eslint-disable @typescript-eslint/no-explicit-any */"),
+        new NewLineNode(),
+        new TextNode("/* eslint-disable @typescript-eslint/no-empty-interface */"),
+        new NewLineNode(),
+        new TextNode("/* eslint-disable @typescript-eslint/explicit-module-boundary-types */"),
+        new NewLineNode(),
+        new TextNode('import { AstNode, Kind } from '), langiumPath, ';',
         new NewLineNode(),
         new NewLineNode()
     );
@@ -35,8 +41,6 @@ export function generateAst(grammar: Grammar, path?: string): string {
         new NewLineNode(),
         new NewLineNode()
     );
-
-    node.children.push("export type Any = ", grammar.rules?.filter(e => e.kind === "ParserRule").map(e => e.Name).join(" | "), ";", new NewLineNode(), new NewLineNode());
 
     grammar.rules?.filter(e => e.kind === "ParserRule").map(e => e as ParserRule).forEach(e => {
         node.children.push(generateRuleType(e));

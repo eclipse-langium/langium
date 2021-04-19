@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { EmbeddedActionsParser, IRuleConfig, TokenType } from "chevrotain";
 import { PartialDeep } from "type-fest";
 import { Action } from "../gen/ast";
@@ -5,10 +6,10 @@ import { AstNode, CompositeCstNode, CstNode, LeafCstNode, RootCstNode, RuleResul
 import { Feature } from "../generator/utils";
 
 type StackItem = {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     object: any,
     nodes: CstNode[],
     executedAction: boolean,
+    unassignedRuleCall: boolean,
     feature?: Feature
 }
 
@@ -87,7 +88,8 @@ export class LangiumParser extends EmbeddedActionsParser {
             this.stack.push({
                 object: { kind: typeName },
                 nodes: [],
-                executedAction: false
+                executedAction: false,
+                unassignedRuleCall: false
             });
             const result = implementation(implArgs);
             return result;
@@ -97,16 +99,16 @@ export class LangiumParser extends EmbeddedActionsParser {
     consumeLeaf(idx: number, tokenType: TokenType, feature: Feature): void {
         const token = this.consume(idx, tokenType);
         const node = new LeafCstNode(token.startOffset, token.image.length, false);
-        node.element = feature;
+        node.feature = feature;
         this.current.nodes.push(node);
-        if (!this.RECORDING_PHASE && feature.kind === "Assignment") {
+        if (!this.RECORDING_PHASE && feature.kind === "Assignment" && feature.Terminal.kind !== "CrossReference") {
             this.assign({ operator: feature.Operator, feature: feature.Feature }, token.image);
         }
     }
 
     unassignedSubrule<T extends AstNode>(idx: number, rule: RuleResult<T>, feature: Feature): void {
         const result = this.subruleLeaf(idx, rule, feature);
-        const newItem = { ...this.current, object: result };
+        const newItem = { ...this.current, object: result, unassignedRuleCall: true };
         this.stack.pop();
         this.stack.push(newItem);
     }
@@ -116,7 +118,7 @@ export class LangiumParser extends EmbeddedActionsParser {
         const subruleResult = this.subrule(idx, rule);
         const resultNode = subruleResult[AstNode.cstNode];
         if (resultNode) {
-            resultNode.element = feature;
+            resultNode.feature = feature;
             this.current.nodes.push(<CstNode>resultNode);
         }
         if (!this.RECORDING_PHASE && feature.kind === "Assignment") {
@@ -154,16 +156,33 @@ export class LangiumParser extends EmbeddedActionsParser {
                         }
                     }
                 } else if (typeof (value) === "object") {
-                    (<AstNode>value).container = obj;
+                    (<any>value).container = obj;
                 }
             }
             item.nodes.forEach(e => {
                 e.parent = node;
+                if (item.unassignedRuleCall) {
+                    this.setElementRecursively(e, obj, e.element);
+                } else {
+                    e.element = obj;
+                }
             });
             node.children.push(...item.nodes);
+            node.element = obj;
         }
         this.stack.pop();
         return <PartialDeep<T>>obj;
+    }
+
+    private setElementRecursively(node: CstNode, value: any, oldValue: any) {
+        if (node.element === oldValue) {
+            node.element = value;
+            if (node instanceof CompositeCstNode) {
+                node.children.forEach(e => {
+                    this.setElementRecursively(e, value, oldValue);
+                });
+            }
+        }
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
