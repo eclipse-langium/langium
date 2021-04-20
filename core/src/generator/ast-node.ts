@@ -1,5 +1,5 @@
 import { PartialDeep } from "type-fest";
-import { Feature } from "./utils";
+import { AbstractElement } from "../gen/ast";
 
 // eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace AstNode {
@@ -8,17 +8,8 @@ export namespace AstNode {
 
     export const cstNode = Symbol("node");
 
-    export function is<T extends AstNode>(item: AstNode, kind: string | Kind): item is T {
-        if (typeof kind === "string") {
-            return !!item && 'kind' in item && item.kind === kind;
-        } else {
-            if (!!item && 'kind' in item) {
-                const itemKind = <Kind><unknown>item.kind;
-                return Kind.instanceOf(itemKind, kind);
-            } else {
-                return false;
-            }
-        }
+    export function is<T extends AstNode>(item: AstNode, kind: Kind): item is T {
+        return !!item && 'kind' in item && typeof item.kind === "object" && Kind.instanceOf(item.kind, kind);
     }
 }
 
@@ -35,27 +26,35 @@ export namespace Kind {
 }
 
 export interface AstNode {
-    readonly kind: string,
+    readonly kind: Kind,
     readonly container?: AstNode,
     readonly [AstNode.cstNode]?: CstNode
 }
 
 export interface CstNode {
-    parent?: ICompositeCstNode;
+    readonly parent?: ICompositeCstNode;
     readonly offset: number;
     readonly length: number;
     readonly text: string;
     readonly root: RootCstNode;
-    feature: Feature;
-    element: AstNode;
+    readonly feature: AbstractElement;
+    readonly element: AstNode;
 }
 
 export abstract class AbstractCstNode implements CstNode {
     abstract get offset(): number;
     abstract get length(): number;
     parent?: ICompositeCstNode;
-    feature!: Feature;
-    element!: AstNode;
+    feature!: AbstractElement;
+    private _element!: AstNode;
+
+    get element(): AstNode {
+        return this._element ?? this.parent?.element;
+    }
+
+    set element(value: AstNode) {
+        this._element = value;
+    }
 
     get text(): string {
         const offset = this.offset;
@@ -118,7 +117,24 @@ export class CompositeCstNode extends AbstractCstNode implements ICompositeCstNo
             return 0;
         }
     }
-    children: CstNode[] = [];
+    children: CstNode[] = new CstNodeContainer(this);
+}
+
+class CstNodeContainer extends Array<CstNode> {
+    parent: ICompositeCstNode;
+
+    constructor(parent: ICompositeCstNode) {
+        super();
+        this.parent = parent;
+        Object.setPrototypeOf(this, CstNodeContainer.prototype);
+    }
+
+    push(...items: CstNode[]): number {
+        items.forEach(e => {
+            (<AbstractCstNode>e).parent = this.parent;
+        })
+        return super.push(...items);
+    }
 }
 
 export class RootCstNode extends CompositeCstNode {

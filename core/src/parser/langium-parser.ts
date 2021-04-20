@@ -1,21 +1,21 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { EmbeddedActionsParser, IRuleConfig, TokenType } from "chevrotain";
 import { PartialDeep } from "type-fest";
-import { Action } from "../gen/ast";
-import { AstNode, CompositeCstNode, CstNode, LeafCstNode, RootCstNode, RuleResult } from "../generator/ast-node";
-import { Feature } from "../generator/utils";
+import { AbstractElement, Action, Assignment, CrossReference, RuleCall } from "../gen/ast";
+import { AstNode, Kind, RuleResult } from "../generator/ast-node";
+import { CstNodeBuilder } from "./cst-node-builder";
 
 type StackItem = {
     object: any,
-    nodes: CstNode[],
     executedAction: boolean,
     unassignedRuleCall: boolean,
-    feature?: Feature
+    feature?: AbstractElement
 }
 
 export class LangiumParser extends EmbeddedActionsParser {
 
     private stack: StackItem[] = [];
+    private nodeBuilder = new CstNodeBuilder();
     private mainRule!: (idxInCallingRule?: number, ...args: unknown[]) => unknown;
 
     private get current(): StackItem {
@@ -28,23 +28,25 @@ export class LangiumParser extends EmbeddedActionsParser {
 
     MAIN_RULE<T>(
         name: string,
-        typeName: string,
+        kind: Kind,
         implementation: (...implArgs: unknown[]) => T,
         config?: IRuleConfig<T>
     ): (idxInCallingRule?: number, ...args: unknown[]) => T {
-        return this.mainRule = this.DEFINE_RULE(name, typeName, implementation, config);
+        return this.mainRule = this.DEFINE_RULE(name, kind, implementation, config);
     }
 
     DEFINE_RULE<T>(
         name: string,
-        typeName: string,
+        kind: Kind | undefined,
         implementation: (...implArgs: unknown[]) => T,
         config?: IRuleConfig<T>
     ): (idxInCallingRule?: number, ...args: unknown[]) => T {
-        return super.RULE(name, this.startImplementation(typeName, implementation), config);
+        return super.RULE(name, this.startImplementation(kind, implementation), config);
     }
 
-    parse<T extends AstNode>(): T {
+    parse<T extends AstNode>(input: string): T {
+        this.nodeBuilder = new CstNodeBuilder();
+        this.nodeBuilder.buildRootNode(input);
         let result = this.mainRule();
         if (!result && this.stack.length > 0) {
             result = this.reconstruct();
@@ -54,40 +56,37 @@ export class LangiumParser extends EmbeddedActionsParser {
     }
 
     private reconstruct<T extends AstNode>(): unknown {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         let result: any;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         let lastResult: any = undefined;
         while (this.stack.length > 0) {
             const feature = this.stack[this.stack.length - 1].feature;
             result = this.construct<T>();
             if (feature) {
-                if (feature.kind === "RuleCall") {
+                if (RuleCall.is(feature)) {
                     result = {...result, ...lastResult};
-                } else if (feature.kind === "Assignment") {
-                    this.assign({ operator: feature.Operator, feature: feature.Feature }, lastResult, result);
+                } else if (Assignment.is(feature)) {
+                    this.assign({ operator: feature.operator, feature: feature.feature }, lastResult, result);
                 }
             }
             if (lastResult) {
-                const lastCstNode = lastResult[AstNode.cstNode] as CompositeCstNode;
-                const cstNode = result[AstNode.cstNode] as CompositeCstNode;
-                if (lastCstNode !== cstNode) {
-                    lastCstNode.children.forEach(e => {
-                        e.parent = cstNode;
-                    });
-                    cstNode.children.push(lastCstNode);
-                }
+                // const lastCstNode = lastResult[AstNode.cstNode] as CompositeCstNode;
+                // const cstNode = result[AstNode.cstNode] as CompositeCstNode;
+                // if (lastCstNode !== cstNode) {
+                //     lastCstNode.children.forEach(e => {
+                //         e.parent = cstNode;
+                //     });
+                //     cstNode.children.push(lastCstNode);
+                // }
             }
             lastResult = result;
         }
         return result;
     }
 
-    private startImplementation<T>(typeName: string, implementation: (...implArgs: unknown[]) => T): (implArgs: unknown[]) => T {
+    private startImplementation<T>(kind: Kind | undefined, implementation: (...implArgs: unknown[]) => T): (implArgs: unknown[]) => T {
         return (implArgs: unknown[]): T => {
             this.stack.push({
-                object: { kind: typeName },
-                nodes: [],
+                object: { kind },
                 executedAction: false,
                 unassignedRuleCall: false
             });
@@ -96,57 +95,65 @@ export class LangiumParser extends EmbeddedActionsParser {
         }
     }
 
-    consumeLeaf(idx: number, tokenType: TokenType, feature: Feature): void {
+    consumeLeaf(idx: number, tokenType: TokenType, feature: AbstractElement): void {
         const token = this.consume(idx, tokenType);
-        const node = new LeafCstNode(token.startOffset, token.image.length, false);
-        node.feature = feature;
-        this.current.nodes.push(node);
-        if (!this.RECORDING_PHASE && feature.kind === "Assignment" && feature.Terminal.kind !== "CrossReference") {
-            this.assign({ operator: feature.Operator, feature: feature.Feature }, token.image);
+        if (!this.RECORDING_PHASE) {
+            this.nodeBuilder.buildLeafNode(token, feature);
+        }
+        if (!this.RECORDING_PHASE && Assignment.is(feature) && !CrossReference.is(feature.terminal)) {
+            this.assign({ operator: feature.operator, feature: feature.feature }, token.image);
         }
     }
 
-    unassignedSubrule<T extends AstNode>(idx: number, rule: RuleResult<T>, feature: Feature): void {
+    unassignedSubrule<T extends AstNode>(idx: number, rule: RuleResult<T>, feature: AbstractElement): void {
+        if (!this.RECORDING_PHASE) {
+            this.nodeBuilder.skipNextConstruction();
+        }
         const result = this.subruleLeaf(idx, rule, feature);
-        const newItem = { ...this.current, object: result, unassignedRuleCall: true };
+        const resultKind = result.kind;
+        let object = result;
+        if (!this.RECORDING_PHASE) {
+            object = Object.assign(result, this.current.object);
+        }
+        if (resultKind && !this.RECORDING_PHASE) {
+            (<any>object).kind = resultKind;
+        }
+        const newItem = { ...this.current, object, unassignedRuleCall: true };
         this.stack.pop();
         this.stack.push(newItem);
     }
 
-    subruleLeaf<T extends AstNode>(idx: number, rule: RuleResult<T>, feature: Feature): PartialDeep<T> {
+    subruleLeaf<T extends AstNode>(idx: number, rule: RuleResult<T>, feature: AbstractElement): PartialDeep<T> {
         this.current.feature = feature;
-        const subruleResult = this.subrule(idx, rule);
-        const resultNode = subruleResult[AstNode.cstNode];
-        if (resultNode) {
-            resultNode.feature = feature;
-            this.current.nodes.push(<CstNode>resultNode);
+        if (!this.RECORDING_PHASE) {
+            this.nodeBuilder.buildCompositeNode(feature);
         }
-        if (!this.RECORDING_PHASE && feature.kind === "Assignment") {
-            this.assign({ operator: feature.Operator, feature: feature.Feature }, subruleResult);
+        const subruleResult = this.subrule(idx, rule);
+        if (!this.RECORDING_PHASE && Assignment.is(feature)) {
+            this.assign({ operator: feature.operator, feature: feature.feature }, subruleResult);
         }
         return subruleResult;
     }
 
-    executeAction(action: Action): void {
+    executeAction(kind: Kind, action: Action): void {
         if (!this.RECORDING_PHASE && !this.current.executedAction) {
             const last = this.current;
             const newItem = {
                 ...last,
-                object: { kind: action.Type },
+                object: { kind },
                 executedAction: true
             };
             this.stack.pop();
             this.stack.push(newItem);
-            if (action.Feature && action.Operator) {
-                this.assign({ operator: action.Operator, feature: action.Feature }, last.object);
+            if (action.feature && action.operator) {
+                this.assign({ operator: action.operator, feature: action.feature }, last.object);
             }
         }
     }
 
     construct<T extends AstNode>(): PartialDeep<T> {
-        const node = this.stack.length === 1 ? new RootCstNode() : new CompositeCstNode();
         const item = this.current;
-        const obj = { [AstNode.cstNode]: node, ...item.object };
+        const obj = item.object
         if (!this.RECORDING_PHASE) {
             for (const value of Object.values(obj)) {
                 if (Array.isArray(value)) {
@@ -159,34 +166,14 @@ export class LangiumParser extends EmbeddedActionsParser {
                     (<any>value).container = obj;
                 }
             }
-            item.nodes.forEach(e => {
-                e.parent = node;
-                if (item.unassignedRuleCall) {
-                    this.setElementRecursively(e, obj, e.element);
-                } else {
-                    e.element = obj;
-                }
-            });
-            node.children.push(...item.nodes);
-            node.element = obj;
+            this.nodeBuilder.construct(obj);
         }
         this.stack.pop();
         return <PartialDeep<T>>obj;
     }
 
-    private setElementRecursively(node: CstNode, value: any, oldValue: any) {
-        if (node.element === oldValue) {
-            node.element = value;
-            if (node instanceof CompositeCstNode) {
-                node.children.forEach(e => {
-                    this.setElementRecursively(e, value, oldValue);
-                });
-            }
-        }
-    }
-
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    private assign(assignment: { operator: string, feature: string }, value: unknown, object?: { [k: string]: any }): void {
+    private assign(assignment: { operator: string, feature: string }, value: unknown, object?: any): void {
         const obj = object ?? this.current.object;
         const feature = assignment.feature.replace(/\^/g, "");
         switch (assignment.operator) {

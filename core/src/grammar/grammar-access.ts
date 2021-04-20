@@ -1,5 +1,6 @@
 import { AbstractRule, Grammar, ParserRule } from "../gen/ast";
 import { findAllFeatures } from "../generator/utils";
+import { getRuleName } from "./grammar-utils";
 
 export class GrammarAccess {
 
@@ -10,7 +11,7 @@ export class GrammarAccess {
     }
 
     findRuleByName(name: string): AbstractRule {
-        const result = this.grammar.rules.find(e => e.Name === name);
+        const result = this.grammar.rules.find(e => getRuleName(e) === name);
         if (!result) {
             throw new Error();
         }

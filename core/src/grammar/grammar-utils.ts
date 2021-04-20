@@ -1,4 +1,4 @@
-import { EnumRule, Grammar, ParserRule, TerminalRule } from "../gen/ast";
+import { AbstractRule, EnumRule, Grammar, ParserRule, TerminalRule } from "../gen/ast";
 import { decycle, retrocycle } from 'json-cycle';
 
 export function serialize(grammar: Grammar): string {
@@ -9,9 +9,21 @@ export function deserialize(content: string): Grammar {
     return <Grammar>retrocycle(JSON.parse(content));
 }
 
-export function getTypeName(rule: ParserRule | TerminalRule | EnumRule): string {
-    if (rule.kind === "EnumRule") {
-        return rule.Name;
+
+export function getTypeName(rule: AbstractRule): string {
+    if (EnumRule.is(rule)) {
+        return rule.name;
+    } else if (TerminalRule.is(rule) || ParserRule.is(rule)) {
+        return rule.type ?? rule.name;
+    } else {
+        throw new Error("Unknown rule type");
     }
-    return rule.Type ?? rule.Name;
+}
+
+export function getRuleName(rule: AbstractRule): string {
+    if (EnumRule.is(rule) || TerminalRule.is(rule) || ParserRule.is(rule)) {
+        return rule.name;
+    } else {
+        throw new Error("Unknown rule type");
+    }
 }

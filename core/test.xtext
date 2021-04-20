@@ -146,7 +146,7 @@ ParenthesizedAssignableElement returns AbstractElement:
 ;
 
 AssignableAlternatives returns AbstractElement:
-	AssignableTerminal ({AssignableAlternatives.elements+=current} ('|' elements+=AssignableTerminal)+)?
+	AssignableTerminal ({Alternatives.elements+=current} ('|' elements+=AssignableTerminal)+)?
 ;
 
 CrossReference returns AbstractElement:

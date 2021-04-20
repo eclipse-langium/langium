@@ -3,20 +3,20 @@ import { Action, Assignment, CrossReference, Keyword, RuleCall } from './ast'
 
 export type GrammarRuleAccess = {
     GrammarKeyword: Keyword;
-    Name: Assignment;
-    NameIDRuleCall: RuleCall;
+    name: Assignment;
+    nameIDRuleCall: RuleCall;
     WithKeyword: Keyword;
-    UsedGrammars: Assignment;
-    UsedGrammarsGrammarCrossReference: CrossReference;
+    usedGrammars: Assignment;
+    usedGrammarsGrammarCrossReference: CrossReference;
     CommaKeyword: Keyword;
     definesHiddenTokens: Assignment;
     HiddenKeyword: Keyword;
     ParenthesisOpenKeyword: Keyword;
-    HiddenTokens: Assignment;
-    HiddenTokensAbstractRuleCrossReference: CrossReference;
+    hiddenTokens: Assignment;
+    hiddenTokensAbstractRuleCrossReference: CrossReference;
     ParenthesisCloseKeyword: Keyword;
-    MetamodelDeclarations: Assignment;
-    MetamodelDeclarationsAbstractMetamodelDeclarationRuleCall: RuleCall;
+    metamodelDeclarations: Assignment;
+    metamodelDeclarationsAbstractMetamodelDeclarationRuleCall: RuleCall;
     rules: Assignment;
     rulesAbstractRuleRuleCall: RuleCall;
 }
@@ -34,91 +34,88 @@ export type AbstractMetamodelDeclarationRuleAccess = {
 
 export type GeneratedMetamodelRuleAccess = {
     GenerateKeyword: Keyword;
-    Name: Assignment;
-    NameIDRuleCall: RuleCall;
-    EPackage: Assignment;
-    EPackagestringCrossReference: CrossReference;
+    name: Assignment;
+    nameIDRuleCall: RuleCall;
+    ePackage: Assignment;
+    ePackagestringCrossReference: CrossReference;
     AsKeyword: Keyword;
-    Alias: Assignment;
-    AliasIDRuleCall: RuleCall;
+    alias: Assignment;
+    aliasIDRuleCall: RuleCall;
 }
 
 export type ReferencedMetamodelRuleAccess = {
     ImportKeyword: Keyword;
-    EPackage: Assignment;
-    EPackagestringCrossReference: CrossReference;
+    ePackage: Assignment;
+    ePackagestringCrossReference: CrossReference;
     AsKeyword: Keyword;
-    Alias: Assignment;
-    AliasIDRuleCall: RuleCall;
+    alias: Assignment;
+    aliasIDRuleCall: RuleCall;
 }
 
 export type AnnotationRuleAccess = {
     AtKeyword: Keyword;
-    Name: Assignment;
-    NameIDRuleCall: RuleCall;
+    name: Assignment;
+    nameIDRuleCall: RuleCall;
 }
 
 export type ParserRuleRuleAccess = {
     fragment: Assignment;
     FragmentKeyword: Keyword;
-    Name: Assignment;
-    NameIDRuleCall: RuleCall;
-    LessThanKeyword: Keyword;
-    Parameters: Assignment;
-    ParametersParameterRuleCall: RuleCall;
-    CommaKeyword: Keyword;
-    MoreThanKeyword: Keyword;
+    RuleNameAndParamsRuleCall: RuleCall;
     wildcard: Assignment;
     AsteriskKeyword: Keyword;
     ReturnsKeyword: Keyword;
-    Type: Assignment;
-    TypeIDRuleCall: RuleCall;
-    DefinesHiddenTokens: Assignment;
+    type: Assignment;
+    typeIDRuleCall: RuleCall;
+    definesHiddenTokens: Assignment;
     HiddenKeyword: Keyword;
     ParenthesisOpenKeyword: Keyword;
-    HiddenTokens: Assignment;
-    HiddenTokensAbstractRuleCrossReference: CrossReference;
+    hiddenTokens: Assignment;
+    hiddenTokensAbstractRuleCrossReference: CrossReference;
+    CommaKeyword: Keyword;
     ParenthesisCloseKeyword: Keyword;
     ColonKeyword: Keyword;
-    Alternatives: Assignment;
-    AlternativesAlternativesRuleCall: RuleCall;
+    alternatives: Assignment;
+    alternativesAlternativesRuleCall: RuleCall;
     SemicolonKeyword: Keyword;
 }
 
 export type RuleNameAndParamsRuleAccess = {
-    Name: Assignment;
-    NameIDRuleCall: RuleCall;
+    name: Assignment;
+    nameIDRuleCall: RuleCall;
     LessThanKeyword: Keyword;
-    Parameters: Assignment;
-    ParametersParameterRuleCall: RuleCall;
+    parameters: Assignment;
+    parametersParameterRuleCall: RuleCall;
     CommaKeyword: Keyword;
     MoreThanKeyword: Keyword;
 }
 
 export type ParameterRuleAccess = {
-    Name: Assignment;
-    NameIDRuleCall: RuleCall;
+    name: Assignment;
+    nameIDRuleCall: RuleCall;
 }
 
 export type AlternativesRuleAccess = {
     UnorderedGroupRuleCall: RuleCall;
-    ElementsAction: Action;
+    AlternativeselementsAction: Action;
     PipeKeyword: Keyword;
-    Elements: Assignment;
-    ElementsUnorderedGroupRuleCall: RuleCall;
+    elements: Assignment;
+    elementsUnorderedGroupRuleCall: RuleCall;
 }
 
 export type UnorderedGroupRuleAccess = {
     GroupRuleCall: RuleCall;
-    ElementsAction: Action;
+    UnorderedGroupelementsAction: Action;
     AmpersandKeyword: Keyword;
-    Elements: Assignment;
-    ElementsGroupRuleCall: RuleCall;
+    elements: Assignment;
+    elementsGroupRuleCall: RuleCall;
 }
 
 export type GroupRuleAccess = {
-    Elements: Assignment;
-    ElementsAbstractTokenRuleCall: RuleCall;
+    AbstractTokenRuleCall: RuleCall;
+    GroupelementsAction: Action;
+    elements: Assignment;
+    elementsAbstractTokenRuleCall: RuleCall;
 }
 
 export type AbstractTokenRuleAccess = {
@@ -129,20 +126,21 @@ export type AbstractTokenRuleAccess = {
 export type AbstractTokenWithCardinalityRuleAccess = {
     AssignmentRuleCall: RuleCall;
     AbstractTerminalRuleCall: RuleCall;
-    Cardinality: Assignment;
+    cardinality: Assignment;
     QuestionMarkKeyword: Keyword;
     AsteriskKeyword: Keyword;
     PlusKeyword: Keyword;
 }
 
 export type ActionRuleAccess = {
+    ActionAction: Action;
     CurlyOpenKeyword: Keyword;
     Type: Assignment;
     TypeIDRuleCall: RuleCall;
     DotKeyword: Keyword;
-    Feature: Assignment;
-    FeatureIDRuleCall: RuleCall;
-    Operator: Assignment;
+    feature: Assignment;
+    featureIDRuleCall: RuleCall;
+    operator: Assignment;
     EqualsKeyword: Keyword;
     PlusEqualsKeyword: Keyword;
     CurrentKeyword: Keyword;
@@ -159,56 +157,57 @@ export type AbstractTerminalRuleAccess = {
 }
 
 export type KeywordRuleAccess = {
-    Value: Assignment;
-    ValuestringRuleCall: RuleCall;
+    value: Assignment;
+    valuestringRuleCall: RuleCall;
 }
 
 export type RuleCallRuleAccess = {
-    Rule: Assignment;
-    RuleAbstractRuleCrossReference: CrossReference;
+    rule: Assignment;
+    ruleAbstractRuleCrossReference: CrossReference;
     LessThanKeyword: Keyword;
-    Arguments: Assignment;
-    ArgumentsNamedArgumentRuleCall: RuleCall;
+    arguments: Assignment;
+    argumentsNamedArgumentRuleCall: RuleCall;
     CommaKeyword: Keyword;
     MoreThanKeyword: Keyword;
 }
 
 export type NamedArgumentRuleAccess = {
-    Parameter: Assignment;
-    ParameterParameterCrossReference: CrossReference;
-    CalledByName: Assignment;
+    parameter: Assignment;
+    parameterParameterCrossReference: CrossReference;
+    calledByName: Assignment;
     EqualsKeyword: Keyword;
-    Value: Assignment;
-    ValueDisjunctionRuleCall: RuleCall;
+    value: Assignment;
+    valueDisjunctionRuleCall: RuleCall;
 }
 
 export type LiteralConditionRuleAccess = {
-    True: Assignment;
+    true: Assignment;
     TrueKeyword: Keyword;
     FalseKeyword: Keyword;
 }
 
 export type DisjunctionRuleAccess = {
     ConjunctionRuleCall: RuleCall;
-    LeftAction: Action;
+    DisjunctionleftAction: Action;
     PipeKeyword: Keyword;
-    Right: Assignment;
-    RightConjunctionRuleCall: RuleCall;
+    right: Assignment;
+    rightConjunctionRuleCall: RuleCall;
 }
 
 export type ConjunctionRuleAccess = {
     NegationRuleCall: RuleCall;
-    LeftAction: Action;
+    ConjunctionleftAction: Action;
     AmpersandKeyword: Keyword;
-    Right: Assignment;
-    RightNegationRuleCall: RuleCall;
+    right: Assignment;
+    rightNegationRuleCall: RuleCall;
 }
 
 export type NegationRuleAccess = {
     AtomRuleCall: RuleCall;
+    NegationAction: Action;
     ExclamationMarkKeyword: Keyword;
-    Value: Assignment;
-    ValueNegationRuleCall: RuleCall;
+    value: Assignment;
+    valueNegationRuleCall: RuleCall;
 }
 
 export type AtomRuleAccess = {
@@ -219,57 +218,57 @@ export type AtomRuleAccess = {
 
 export type ParenthesizedConditionRuleAccess = {
     ParenthesisOpenKeyword: Keyword;
-    Value: Assignment;
-    ValueDisjunctionRuleCall: RuleCall;
+    DisjunctionRuleCall: RuleCall;
     ParenthesisCloseKeyword: Keyword;
 }
 
 export type ParameterReferenceRuleAccess = {
-    Parameter: Assignment;
-    ParameterParameterCrossReference: CrossReference;
+    parameter: Assignment;
+    parameterParameterCrossReference: CrossReference;
 }
 
 export type TerminalRuleCallRuleAccess = {
-    Rule: Assignment;
-    RuleAbstractRuleCrossReference: CrossReference;
+    rule: Assignment;
+    ruleAbstractRuleCrossReference: CrossReference;
 }
 
 export type PredicatedKeywordRuleAccess = {
-    Predicated: Assignment;
+    predicated: Assignment;
     EqualsMoreThanKeyword: Keyword;
-    FirstSetPredicated: Assignment;
+    firstSetPredicated: Assignment;
     DashMoreThanKeyword: Keyword;
-    Value: Assignment;
-    ValuestringRuleCall: RuleCall;
+    value: Assignment;
+    valuestringRuleCall: RuleCall;
 }
 
 export type PredicatedRuleCallRuleAccess = {
-    Predicated: Assignment;
+    predicated: Assignment;
     EqualsMoreThanKeyword: Keyword;
-    FirstSetPredicated: Assignment;
+    firstSetPredicated: Assignment;
     DashMoreThanKeyword: Keyword;
-    Rule: Assignment;
-    RuleAbstractRuleCrossReference: CrossReference;
+    rule: Assignment;
+    ruleAbstractRuleCrossReference: CrossReference;
     LessThanKeyword: Keyword;
-    Arguments: Assignment;
-    ArgumentsNamedArgumentRuleCall: RuleCall;
+    arguments: Assignment;
+    argumentsNamedArgumentRuleCall: RuleCall;
     CommaKeyword: Keyword;
     MoreThanKeyword: Keyword;
 }
 
 export type AssignmentRuleAccess = {
-    Predicated: Assignment;
+    AssignmentAction: Action;
+    predicated: Assignment;
     EqualsMoreThanKeyword: Keyword;
-    FirstSetPredicated: Assignment;
+    firstSetPredicated: Assignment;
     DashMoreThanKeyword: Keyword;
-    Feature: Assignment;
-    FeatureIDRuleCall: RuleCall;
-    Operator: Assignment;
+    feature: Assignment;
+    featureIDRuleCall: RuleCall;
+    operator: Assignment;
     PlusEqualsKeyword: Keyword;
     EqualsKeyword: Keyword;
     QuestionMarkEqualsKeyword: Keyword;
-    Terminal: Assignment;
-    TerminalAssignableTerminalRuleCall: RuleCall;
+    terminal: Assignment;
+    terminalAssignableTerminalRuleCall: RuleCall;
 }
 
 export type AssignableTerminalRuleAccess = {
@@ -286,18 +285,21 @@ export type ParenthesizedAssignableElementRuleAccess = {
 }
 
 export type AssignableAlternativesRuleAccess = {
-    Elements: Assignment;
-    ElementsAssignableTerminalRuleCall: RuleCall;
+    AssignableTerminalRuleCall: RuleCall;
+    AlternativeselementsAction: Action;
     PipeKeyword: Keyword;
+    elements: Assignment;
+    elementsAssignableTerminalRuleCall: RuleCall;
 }
 
 export type CrossReferenceRuleAccess = {
+    CrossReferenceAction: Action;
     BracketOpenKeyword: Keyword;
-    Type: Assignment;
-    TypeParserRuleCrossReference: CrossReference;
+    type: Assignment;
+    typeParserRuleCrossReference: CrossReference;
     PipeKeyword: Keyword;
-    Terminal: Assignment;
-    TerminalCrossReferenceableTerminalRuleCall: RuleCall;
+    terminal: Assignment;
+    terminalCrossReferenceableTerminalRuleCall: RuleCall;
     BracketCloseKeyword: Keyword;
 }
 
@@ -313,47 +315,47 @@ export type ParenthesizedElementRuleAccess = {
 }
 
 export type PredicatedGroupRuleAccess = {
-    Predicated: Assignment;
+    predicated: Assignment;
     EqualsMoreThanKeyword: Keyword;
-    FirstSetPredicated: Assignment;
+    firstSetPredicated: Assignment;
     DashMoreThanKeyword: Keyword;
     ParenthesisOpenKeyword: Keyword;
-    Elements: Assignment;
-    ElementsAlternativesRuleCall: RuleCall;
+    elements: Assignment;
+    elementsAlternativesRuleCall: RuleCall;
     ParenthesisCloseKeyword: Keyword;
 }
 
 export type TerminalRuleRuleAccess = {
     TerminalKeyword: Keyword;
-    Fragment: Assignment;
+    fragment: Assignment;
     FragmentKeyword: Keyword;
-    Name: Assignment;
-    NameIDRuleCall: RuleCall;
+    name: Assignment;
+    nameIDRuleCall: RuleCall;
     ReturnsKeyword: Keyword;
-    Type: Assignment;
-    TypeIDRuleCall: RuleCall;
+    type: Assignment;
+    typeIDRuleCall: RuleCall;
     ColonKeyword: Keyword;
-    Regex: Assignment;
-    RegexRegexLiteralRuleCall: RuleCall;
+    regex: Assignment;
+    regexRegexLiteralRuleCall: RuleCall;
     SemicolonKeyword: Keyword;
 }
 
 export type TerminalAlternativesRuleAccess = {
     TerminalGroupRuleCall: RuleCall;
-    ElementsAction: Action;
+    TerminalAlternativeselementsAction: Action;
     PipeKeyword: Keyword;
-    Elements: Assignment;
-    ElementsTerminalGroupRuleCall: RuleCall;
+    elements: Assignment;
+    elementsTerminalGroupRuleCall: RuleCall;
 }
 
 export type TerminalGroupRuleAccess = {
-    Elements: Assignment;
-    ElementsTerminalTokenRuleCall: RuleCall;
+    elements: Assignment;
+    elementsTerminalTokenRuleCall: RuleCall;
 }
 
 export type TerminalTokenRuleAccess = {
     TerminalTokenElementRuleCall: RuleCall;
-    Cardinality: Assignment;
+    cardinality: Assignment;
     QuestionMarkKeyword: Keyword;
     AsteriskKeyword: Keyword;
     PlusKeyword: Keyword;
@@ -380,108 +382,1413 @@ export type AbstractNegatedTokenRuleAccess = {
 
 export type NegatedTokenRuleAccess = {
     ExclamationMarkKeyword: Keyword;
-    Terminal: Assignment;
-    TerminalTerminalTokenElementRuleCall: RuleCall;
+    terminal: Assignment;
+    terminalTerminalTokenElementRuleCall: RuleCall;
 }
 
 export type UntilTokenRuleAccess = {
     DashMoreThanKeyword: Keyword;
-    Terminal: Assignment;
-    TerminalTerminalTokenElementRuleCall: RuleCall;
+    terminal: Assignment;
+    terminalTerminalTokenElementRuleCall: RuleCall;
 }
 
 export type WildcardRuleAccess = {
-    undefinedAction: Action;
+    WildcardAction: Action;
     DotKeyword: Keyword;
 }
 
 export type CharacterRangeRuleAccess = {
-    Left: Assignment;
-    LeftKeywordRuleCall: RuleCall;
+    left: Assignment;
+    leftKeywordRuleCall: RuleCall;
     DotDotKeyword: Keyword;
-    Right: Assignment;
-    RightKeywordRuleCall: RuleCall;
+    right: Assignment;
+    rightKeywordRuleCall: RuleCall;
 }
 
 export type EnumRuleRuleAccess = {
     EnumKeyword: Keyword;
-    Name: Assignment;
-    NameIDRuleCall: RuleCall;
+    name: Assignment;
+    nameIDRuleCall: RuleCall;
     ReturnsKeyword: Keyword;
-    Type: Assignment;
-    TypeIDRuleCall: RuleCall;
+    type: Assignment;
+    typeIDRuleCall: RuleCall;
     ColonKeyword: Keyword;
-    Alternatives: Assignment;
-    AlternativesEnumLiteralsRuleCall: RuleCall;
+    alternatives: Assignment;
+    alternativesEnumLiteralsRuleCall: RuleCall;
     SemicolonKeyword: Keyword;
 }
 
 export type EnumLiteralsRuleAccess = {
     EnumLiteralDeclarationRuleCall: RuleCall;
-    ElementsAction: Action;
+    EnumLiteralselementsAction: Action;
     PipeKeyword: Keyword;
-    Elements: Assignment;
-    ElementsEnumLiteralDeclarationRuleCall: RuleCall;
+    elements: Assignment;
+    elementsEnumLiteralDeclarationRuleCall: RuleCall;
 }
 
 export type EnumLiteralDeclarationRuleAccess = {
-    EnumLiteral: Assignment;
-    EnumLiteralEnumLiteralsCrossReference: CrossReference;
+    enumLiteral: Assignment;
+    enumLiteralEnumLiteralsCrossReference: CrossReference;
     EqualsKeyword: Keyword;
-    Literal: Assignment;
-    LiteralKeywordRuleCall: RuleCall;
+    literal: Assignment;
+    literalKeywordRuleCall: RuleCall;
 }
 
 export class xtextGrammarAccess extends GrammarAccess {
-    Grammar = this.buildAccess<GrammarRuleAccess>('Grammar');
-    AbstractRule = this.buildAccess<AbstractRuleRuleAccess>('AbstractRule');
-    AbstractMetamodelDeclaration = this.buildAccess<AbstractMetamodelDeclarationRuleAccess>('AbstractMetamodelDeclaration');
-    GeneratedMetamodel = this.buildAccess<GeneratedMetamodelRuleAccess>('GeneratedMetamodel');
-    ReferencedMetamodel = this.buildAccess<ReferencedMetamodelRuleAccess>('ReferencedMetamodel');
-    Annotation = this.buildAccess<AnnotationRuleAccess>('Annotation');
-    ParserRule = this.buildAccess<ParserRuleRuleAccess>('ParserRule');
-    RuleNameAndParams = this.buildAccess<RuleNameAndParamsRuleAccess>('RuleNameAndParams');
-    Parameter = this.buildAccess<ParameterRuleAccess>('Parameter');
-    Alternatives = this.buildAccess<AlternativesRuleAccess>('Alternatives');
-    UnorderedGroup = this.buildAccess<UnorderedGroupRuleAccess>('UnorderedGroup');
-    Group = this.buildAccess<GroupRuleAccess>('Group');
-    AbstractToken = this.buildAccess<AbstractTokenRuleAccess>('AbstractToken');
-    AbstractTokenWithCardinality = this.buildAccess<AbstractTokenWithCardinalityRuleAccess>('AbstractTokenWithCardinality');
-    Action = this.buildAccess<ActionRuleAccess>('Action');
-    AbstractTerminal = this.buildAccess<AbstractTerminalRuleAccess>('AbstractTerminal');
-    Keyword = this.buildAccess<KeywordRuleAccess>('Keyword');
-    RuleCall = this.buildAccess<RuleCallRuleAccess>('RuleCall');
-    NamedArgument = this.buildAccess<NamedArgumentRuleAccess>('NamedArgument');
-    LiteralCondition = this.buildAccess<LiteralConditionRuleAccess>('LiteralCondition');
-    Disjunction = this.buildAccess<DisjunctionRuleAccess>('Disjunction');
-    Conjunction = this.buildAccess<ConjunctionRuleAccess>('Conjunction');
-    Negation = this.buildAccess<NegationRuleAccess>('Negation');
-    Atom = this.buildAccess<AtomRuleAccess>('Atom');
-    ParenthesizedCondition = this.buildAccess<ParenthesizedConditionRuleAccess>('ParenthesizedCondition');
-    ParameterReference = this.buildAccess<ParameterReferenceRuleAccess>('ParameterReference');
-    TerminalRuleCall = this.buildAccess<TerminalRuleCallRuleAccess>('TerminalRuleCall');
-    PredicatedKeyword = this.buildAccess<PredicatedKeywordRuleAccess>('PredicatedKeyword');
-    PredicatedRuleCall = this.buildAccess<PredicatedRuleCallRuleAccess>('PredicatedRuleCall');
-    Assignment = this.buildAccess<AssignmentRuleAccess>('Assignment');
-    AssignableTerminal = this.buildAccess<AssignableTerminalRuleAccess>('AssignableTerminal');
-    ParenthesizedAssignableElement = this.buildAccess<ParenthesizedAssignableElementRuleAccess>('ParenthesizedAssignableElement');
-    AssignableAlternatives = this.buildAccess<AssignableAlternativesRuleAccess>('AssignableAlternatives');
-    CrossReference = this.buildAccess<CrossReferenceRuleAccess>('CrossReference');
-    CrossReferenceableTerminal = this.buildAccess<CrossReferenceableTerminalRuleAccess>('CrossReferenceableTerminal');
-    ParenthesizedElement = this.buildAccess<ParenthesizedElementRuleAccess>('ParenthesizedElement');
-    PredicatedGroup = this.buildAccess<PredicatedGroupRuleAccess>('PredicatedGroup');
-    TerminalRule = this.buildAccess<TerminalRuleRuleAccess>('TerminalRule');
-    TerminalAlternatives = this.buildAccess<TerminalAlternativesRuleAccess>('TerminalAlternatives');
-    TerminalGroup = this.buildAccess<TerminalGroupRuleAccess>('TerminalGroup');
-    TerminalToken = this.buildAccess<TerminalTokenRuleAccess>('TerminalToken');
-    TerminalTokenElement = this.buildAccess<TerminalTokenElementRuleAccess>('TerminalTokenElement');
-    ParenthesizedTerminalElement = this.buildAccess<ParenthesizedTerminalElementRuleAccess>('ParenthesizedTerminalElement');
-    AbstractNegatedToken = this.buildAccess<AbstractNegatedTokenRuleAccess>('AbstractNegatedToken');
-    NegatedToken = this.buildAccess<NegatedTokenRuleAccess>('NegatedToken');
-    UntilToken = this.buildAccess<UntilTokenRuleAccess>('UntilToken');
-    Wildcard = this.buildAccess<WildcardRuleAccess>('Wildcard');
-    CharacterRange = this.buildAccess<CharacterRangeRuleAccess>('CharacterRange');
-    EnumRule = this.buildAccess<EnumRuleRuleAccess>('EnumRule');
-    EnumLiterals = this.buildAccess<EnumLiteralsRuleAccess>('EnumLiterals');
-    EnumLiteralDeclaration = this.buildAccess<EnumLiteralDeclarationRuleAccess>('EnumLiteralDeclaration');
+    Grammar: GrammarRuleAccess = <GrammarRuleAccess><unknown>{
+        GrammarKeyword: {
+            kind: 'unknown'
+        },
+        name: {
+            kind: Assignment.kind,
+            feature: 'name',
+            operator: '=',
+            terminal: {
+                kind: 'unknown'
+            }
+        },
+        nameIDRuleCall: {
+            kind: 'unknown'
+        },
+        WithKeyword: {
+            kind: 'unknown'
+        },
+        usedGrammars: {
+            kind: Assignment.kind,
+            feature: 'usedGrammars',
+            operator: '+=',
+            terminal: {
+                kind: CrossReference.kind
+            }
+        },
+        usedGrammarsGrammarCrossReference: {
+            kind: 'unknown'
+        },
+        CommaKeyword: {
+            kind: 'unknown'
+        },
+        definesHiddenTokens: {
+            kind: Assignment.kind,
+            feature: 'definesHiddenTokens',
+            operator: '?=',
+            terminal: {
+                kind: 'unknown'
+            }
+        },
+        HiddenKeyword: {
+            kind: 'unknown'
+        },
+        ParenthesisOpenKeyword: {
+            kind: 'unknown'
+        },
+        hiddenTokens: {
+            kind: Assignment.kind,
+            feature: 'hiddenTokens',
+            operator: '+=',
+            terminal: {
+                kind: CrossReference.kind
+            }
+        },
+        hiddenTokensAbstractRuleCrossReference: {
+            kind: 'unknown'
+        },
+        ParenthesisCloseKeyword: {
+            kind: 'unknown'
+        },
+        metamodelDeclarations: {
+            kind: Assignment.kind,
+            feature: 'metamodelDeclarations',
+            operator: '+=',
+            terminal: {
+                kind: 'unknown'
+            }
+        },
+        metamodelDeclarationsAbstractMetamodelDeclarationRuleCall: {
+            kind: 'unknown'
+        },
+        rules: {
+            kind: Assignment.kind,
+            feature: 'rules',
+            operator: '+=',
+            terminal: {
+                kind: 'unknown'
+            }
+        },
+        rulesAbstractRuleRuleCall: {
+            kind: 'unknown'
+        },
+    }
+    AbstractRule: AbstractRuleRuleAccess = <AbstractRuleRuleAccess><unknown>{
+        ParserRuleRuleCall: {
+            kind: 'unknown'
+        },
+        TerminalRuleRuleCall: {
+            kind: 'unknown'
+        },
+        EnumRuleRuleCall: {
+            kind: 'unknown'
+        },
+    }
+    AbstractMetamodelDeclaration: AbstractMetamodelDeclarationRuleAccess = <AbstractMetamodelDeclarationRuleAccess><unknown>{
+        GeneratedMetamodelRuleCall: {
+            kind: 'unknown'
+        },
+        ReferencedMetamodelRuleCall: {
+            kind: 'unknown'
+        },
+    }
+    GeneratedMetamodel: GeneratedMetamodelRuleAccess = <GeneratedMetamodelRuleAccess><unknown>{
+        GenerateKeyword: {
+            kind: 'unknown'
+        },
+        name: {
+            kind: Assignment.kind,
+            feature: 'name',
+            operator: '=',
+            terminal: {
+                kind: 'unknown'
+            }
+        },
+        nameIDRuleCall: {
+            kind: 'unknown'
+        },
+        ePackage: {
+            kind: Assignment.kind,
+            feature: 'ePackage',
+            operator: '=',
+            terminal: {
+                kind: CrossReference.kind
+            }
+        },
+        ePackagestringCrossReference: {
+            kind: 'unknown'
+        },
+        AsKeyword: {
+            kind: 'unknown'
+        },
+        alias: {
+            kind: Assignment.kind,
+            feature: 'alias',
+            operator: '=',
+            terminal: {
+                kind: 'unknown'
+            }
+        },
+        aliasIDRuleCall: {
+            kind: 'unknown'
+        },
+    }
+    ReferencedMetamodel: ReferencedMetamodelRuleAccess = <ReferencedMetamodelRuleAccess><unknown>{
+        ImportKeyword: {
+            kind: 'unknown'
+        },
+        ePackage: {
+            kind: Assignment.kind,
+            feature: 'ePackage',
+            operator: '=',
+            terminal: {
+                kind: CrossReference.kind
+            }
+        },
+        ePackagestringCrossReference: {
+            kind: 'unknown'
+        },
+        AsKeyword: {
+            kind: 'unknown'
+        },
+        alias: {
+            kind: Assignment.kind,
+            feature: 'alias',
+            operator: '=',
+            terminal: {
+                kind: 'unknown'
+            }
+        },
+        aliasIDRuleCall: {
+            kind: 'unknown'
+        },
+    }
+    Annotation: AnnotationRuleAccess = <AnnotationRuleAccess><unknown>{
+        AtKeyword: {
+            kind: 'unknown'
+        },
+        name: {
+            kind: Assignment.kind,
+            feature: 'name',
+            operator: '=',
+            terminal: {
+                kind: 'unknown'
+            }
+        },
+        nameIDRuleCall: {
+            kind: 'unknown'
+        },
+    }
+    ParserRule: ParserRuleRuleAccess = <ParserRuleRuleAccess><unknown>{
+        fragment: {
+            kind: Assignment.kind,
+            feature: '^fragment',
+            operator: '?=',
+            terminal: {
+                kind: 'unknown'
+            }
+        },
+        FragmentKeyword: {
+            kind: 'unknown'
+        },
+        RuleNameAndParamsRuleCall: {
+            kind: 'unknown'
+        },
+        wildcard: {
+            kind: Assignment.kind,
+            feature: 'wildcard',
+            operator: '?=',
+            terminal: {
+                kind: 'unknown'
+            }
+        },
+        AsteriskKeyword: {
+            kind: 'unknown'
+        },
+        ReturnsKeyword: {
+            kind: 'unknown'
+        },
+        type: {
+            kind: Assignment.kind,
+            feature: 'type',
+            operator: '=',
+            terminal: {
+                kind: 'unknown'
+            }
+        },
+        typeIDRuleCall: {
+            kind: 'unknown'
+        },
+        definesHiddenTokens: {
+            kind: Assignment.kind,
+            feature: 'definesHiddenTokens',
+            operator: '?=',
+            terminal: {
+                kind: 'unknown'
+            }
+        },
+        HiddenKeyword: {
+            kind: 'unknown'
+        },
+        ParenthesisOpenKeyword: {
+            kind: 'unknown'
+        },
+        hiddenTokens: {
+            kind: Assignment.kind,
+            feature: 'hiddenTokens',
+            operator: '+=',
+            terminal: {
+                kind: CrossReference.kind
+            }
+        },
+        hiddenTokensAbstractRuleCrossReference: {
+            kind: 'unknown'
+        },
+        CommaKeyword: {
+            kind: 'unknown'
+        },
+        ParenthesisCloseKeyword: {
+            kind: 'unknown'
+        },
+        ColonKeyword: {
+            kind: 'unknown'
+        },
+        alternatives: {
+            kind: Assignment.kind,
+            feature: 'alternatives',
+            operator: '=',
+            terminal: {
+                kind: 'unknown'
+            }
+        },
+        alternativesAlternativesRuleCall: {
+            kind: 'unknown'
+        },
+        SemicolonKeyword: {
+            kind: 'unknown'
+        },
+    }
+    RuleNameAndParams: RuleNameAndParamsRuleAccess = <RuleNameAndParamsRuleAccess><unknown>{
+        name: {
+            kind: Assignment.kind,
+            feature: 'name',
+            operator: '=',
+            terminal: {
+                kind: 'unknown'
+            }
+        },
+        nameIDRuleCall: {
+            kind: 'unknown'
+        },
+        LessThanKeyword: {
+            kind: 'unknown'
+        },
+        parameters: {
+            kind: Assignment.kind,
+            feature: 'parameters',
+            operator: '+=',
+            terminal: {
+                kind: 'unknown'
+            }
+        },
+        parametersParameterRuleCall: {
+            kind: 'unknown'
+        },
+        CommaKeyword: {
+            kind: 'unknown'
+        },
+        MoreThanKeyword: {
+            kind: 'unknown'
+        },
+    }
+    Parameter: ParameterRuleAccess = <ParameterRuleAccess><unknown>{
+        name: {
+            kind: Assignment.kind,
+            feature: 'name',
+            operator: '=',
+            terminal: {
+                kind: 'unknown'
+            }
+        },
+        nameIDRuleCall: {
+            kind: 'unknown'
+        },
+    }
+    Alternatives: AlternativesRuleAccess = <AlternativesRuleAccess><unknown>{
+        UnorderedGroupRuleCall: {
+            kind: 'unknown'
+        },
+        AlternativeselementsAction: {
+            kind: Action.kind,
+            Type: 'Alternatives',
+            feature: 'elements',
+            operator: '+='
+        },
+        PipeKeyword: {
+            kind: 'unknown'
+        },
+        elements: {
+            kind: Assignment.kind,
+            feature: 'elements',
+            operator: '+=',
+            terminal: {
+                kind: 'unknown'
+            }
+        },
+        elementsUnorderedGroupRuleCall: {
+            kind: 'unknown'
+        },
+    }
+    UnorderedGroup: UnorderedGroupRuleAccess = <UnorderedGroupRuleAccess><unknown>{
+        GroupRuleCall: {
+            kind: 'unknown'
+        },
+        UnorderedGroupelementsAction: {
+            kind: Action.kind,
+            Type: 'UnorderedGroup',
+            feature: 'elements',
+            operator: '+='
+        },
+        AmpersandKeyword: {
+            kind: 'unknown'
+        },
+        elements: {
+            kind: Assignment.kind,
+            feature: 'elements',
+            operator: '+=',
+            terminal: {
+                kind: 'unknown'
+            }
+        },
+        elementsGroupRuleCall: {
+            kind: 'unknown'
+        },
+    }
+    Group: GroupRuleAccess = <GroupRuleAccess><unknown>{
+        AbstractTokenRuleCall: {
+            kind: 'unknown'
+        },
+        GroupelementsAction: {
+            kind: Action.kind,
+            Type: 'Group',
+            feature: 'elements',
+            operator: '+='
+        },
+        elements: {
+            kind: Assignment.kind,
+            feature: 'elements',
+            operator: '+=',
+            terminal: {
+                kind: 'unknown'
+            }
+        },
+        elementsAbstractTokenRuleCall: {
+            kind: 'unknown'
+        },
+    }
+    AbstractToken: AbstractTokenRuleAccess = <AbstractTokenRuleAccess><unknown>{
+        AbstractTokenWithCardinalityRuleCall: {
+            kind: 'unknown'
+        },
+        ActionRuleCall: {
+            kind: 'unknown'
+        },
+    }
+    AbstractTokenWithCardinality: AbstractTokenWithCardinalityRuleAccess = <AbstractTokenWithCardinalityRuleAccess><unknown>{
+        AssignmentRuleCall: {
+            kind: 'unknown'
+        },
+        AbstractTerminalRuleCall: {
+            kind: 'unknown'
+        },
+        cardinality: {
+            kind: Assignment.kind,
+            feature: 'cardinality',
+            operator: '=',
+            terminal: {
+                kind: 'unknown'
+            }
+        },
+        QuestionMarkKeyword: {
+            kind: 'unknown'
+        },
+        AsteriskKeyword: {
+            kind: 'unknown'
+        },
+        PlusKeyword: {
+            kind: 'unknown'
+        },
+    }
+    Action: ActionRuleAccess = <ActionRuleAccess><unknown>{
+        ActionAction: {
+            kind: Action.kind,
+            Type: 'Action',
+            feature: 'undefined',
+            operator: 'undefined'
+        },
+        CurlyOpenKeyword: {
+            kind: 'unknown'
+        },
+        Type: {
+            kind: Assignment.kind,
+            feature: 'Type',
+            operator: '=',
+            terminal: {
+                kind: 'unknown'
+            }
+        },
+        TypeIDRuleCall: {
+            kind: 'unknown'
+        },
+        DotKeyword: {
+            kind: 'unknown'
+        },
+        feature: {
+            kind: Assignment.kind,
+            feature: 'feature',
+            operator: '=',
+            terminal: {
+                kind: 'unknown'
+            }
+        },
+        featureIDRuleCall: {
+            kind: 'unknown'
+        },
+        operator: {
+            kind: Assignment.kind,
+            feature: 'operator',
+            operator: '=',
+            terminal: {
+                kind: 'unknown'
+            }
+        },
+        EqualsKeyword: {
+            kind: 'unknown'
+        },
+        PlusEqualsKeyword: {
+            kind: 'unknown'
+        },
+        CurrentKeyword: {
+            kind: 'unknown'
+        },
+        CurlyCloseKeyword: {
+            kind: 'unknown'
+        },
+    }
+    AbstractTerminal: AbstractTerminalRuleAccess = <AbstractTerminalRuleAccess><unknown>{
+        KeywordRuleCall: {
+            kind: 'unknown'
+        },
+        RuleCallRuleCall: {
+            kind: 'unknown'
+        },
+        ParenthesizedElementRuleCall: {
+            kind: 'unknown'
+        },
+        PredicatedKeywordRuleCall: {
+            kind: 'unknown'
+        },
+        PredicatedRuleCallRuleCall: {
+            kind: 'unknown'
+        },
+        PredicatedGroupRuleCall: {
+            kind: 'unknown'
+        },
+    }
+    Keyword: KeywordRuleAccess = <KeywordRuleAccess><unknown>{
+        value: {
+            kind: Assignment.kind,
+            feature: 'value',
+            operator: '=',
+            terminal: {
+                kind: 'unknown'
+            }
+        },
+        valuestringRuleCall: {
+            kind: 'unknown'
+        },
+    }
+    RuleCall: RuleCallRuleAccess = <RuleCallRuleAccess><unknown>{
+        rule: {
+            kind: Assignment.kind,
+            feature: 'rule',
+            operator: '=',
+            terminal: {
+                kind: CrossReference.kind
+            }
+        },
+        ruleAbstractRuleCrossReference: {
+            kind: 'unknown'
+        },
+        LessThanKeyword: {
+            kind: 'unknown'
+        },
+        arguments: {
+            kind: Assignment.kind,
+            feature: 'arguments',
+            operator: '+=',
+            terminal: {
+                kind: 'unknown'
+            }
+        },
+        argumentsNamedArgumentRuleCall: {
+            kind: 'unknown'
+        },
+        CommaKeyword: {
+            kind: 'unknown'
+        },
+        MoreThanKeyword: {
+            kind: 'unknown'
+        },
+    }
+    NamedArgument: NamedArgumentRuleAccess = <NamedArgumentRuleAccess><unknown>{
+        parameter: {
+            kind: Assignment.kind,
+            feature: 'parameter',
+            operator: '=',
+            terminal: {
+                kind: CrossReference.kind
+            }
+        },
+        parameterParameterCrossReference: {
+            kind: 'unknown'
+        },
+        calledByName: {
+            kind: Assignment.kind,
+            feature: 'calledByName',
+            operator: '?=',
+            terminal: {
+                kind: 'unknown'
+            }
+        },
+        EqualsKeyword: {
+            kind: 'unknown'
+        },
+        value: {
+            kind: Assignment.kind,
+            feature: 'value',
+            operator: '=',
+            terminal: {
+                kind: 'unknown'
+            }
+        },
+        valueDisjunctionRuleCall: {
+            kind: 'unknown'
+        },
+    }
+    LiteralCondition: LiteralConditionRuleAccess = <LiteralConditionRuleAccess><unknown>{
+        true: {
+            kind: Assignment.kind,
+            feature: '^true',
+            operator: '?=',
+            terminal: {
+                kind: 'unknown'
+            }
+        },
+        TrueKeyword: {
+            kind: 'unknown'
+        },
+        FalseKeyword: {
+            kind: 'unknown'
+        },
+    }
+    Disjunction: DisjunctionRuleAccess = <DisjunctionRuleAccess><unknown>{
+        ConjunctionRuleCall: {
+            kind: 'unknown'
+        },
+        DisjunctionleftAction: {
+            kind: Action.kind,
+            Type: 'Disjunction',
+            feature: 'left',
+            operator: '='
+        },
+        PipeKeyword: {
+            kind: 'unknown'
+        },
+        right: {
+            kind: Assignment.kind,
+            feature: 'right',
+            operator: '=',
+            terminal: {
+                kind: 'unknown'
+            }
+        },
+        rightConjunctionRuleCall: {
+            kind: 'unknown'
+        },
+    }
+    Conjunction: ConjunctionRuleAccess = <ConjunctionRuleAccess><unknown>{
+        NegationRuleCall: {
+            kind: 'unknown'
+        },
+        ConjunctionleftAction: {
+            kind: Action.kind,
+            Type: 'Conjunction',
+            feature: 'left',
+            operator: '='
+        },
+        AmpersandKeyword: {
+            kind: 'unknown'
+        },
+        right: {
+            kind: Assignment.kind,
+            feature: 'right',
+            operator: '=',
+            terminal: {
+                kind: 'unknown'
+            }
+        },
+        rightNegationRuleCall: {
+            kind: 'unknown'
+        },
+    }
+    Negation: NegationRuleAccess = <NegationRuleAccess><unknown>{
+        AtomRuleCall: {
+            kind: 'unknown'
+        },
+        NegationAction: {
+            kind: Action.kind,
+            Type: 'Negation',
+            feature: 'undefined',
+            operator: 'undefined'
+        },
+        ExclamationMarkKeyword: {
+            kind: 'unknown'
+        },
+        value: {
+            kind: Assignment.kind,
+            feature: 'value',
+            operator: '=',
+            terminal: {
+                kind: 'unknown'
+            }
+        },
+        valueNegationRuleCall: {
+            kind: 'unknown'
+        },
+    }
+    Atom: AtomRuleAccess = <AtomRuleAccess><unknown>{
+        ParameterReferenceRuleCall: {
+            kind: 'unknown'
+        },
+        ParenthesizedConditionRuleCall: {
+            kind: 'unknown'
+        },
+        LiteralConditionRuleCall: {
+            kind: 'unknown'
+        },
+    }
+    ParenthesizedCondition: ParenthesizedConditionRuleAccess = <ParenthesizedConditionRuleAccess><unknown>{
+        ParenthesisOpenKeyword: {
+            kind: 'unknown'
+        },
+        DisjunctionRuleCall: {
+            kind: 'unknown'
+        },
+        ParenthesisCloseKeyword: {
+            kind: 'unknown'
+        },
+    }
+    ParameterReference: ParameterReferenceRuleAccess = <ParameterReferenceRuleAccess><unknown>{
+        parameter: {
+            kind: Assignment.kind,
+            feature: 'parameter',
+            operator: '=',
+            terminal: {
+                kind: CrossReference.kind
+            }
+        },
+        parameterParameterCrossReference: {
+            kind: 'unknown'
+        },
+    }
+    TerminalRuleCall: TerminalRuleCallRuleAccess = <TerminalRuleCallRuleAccess><unknown>{
+        rule: {
+            kind: Assignment.kind,
+            feature: 'rule',
+            operator: '=',
+            terminal: {
+                kind: CrossReference.kind
+            }
+        },
+        ruleAbstractRuleCrossReference: {
+            kind: 'unknown'
+        },
+    }
+    PredicatedKeyword: PredicatedKeywordRuleAccess = <PredicatedKeywordRuleAccess><unknown>{
+        predicated: {
+            kind: Assignment.kind,
+            feature: 'predicated',
+            operator: '?=',
+            terminal: {
+                kind: 'unknown'
+            }
+        },
+        EqualsMoreThanKeyword: {
+            kind: 'unknown'
+        },
+        firstSetPredicated: {
+            kind: Assignment.kind,
+            feature: 'firstSetPredicated',
+            operator: '?=',
+            terminal: {
+                kind: 'unknown'
+            }
+        },
+        DashMoreThanKeyword: {
+            kind: 'unknown'
+        },
+        value: {
+            kind: Assignment.kind,
+            feature: 'value',
+            operator: '=',
+            terminal: {
+                kind: 'unknown'
+            }
+        },
+        valuestringRuleCall: {
+            kind: 'unknown'
+        },
+    }
+    PredicatedRuleCall: PredicatedRuleCallRuleAccess = <PredicatedRuleCallRuleAccess><unknown>{
+        predicated: {
+            kind: Assignment.kind,
+            feature: 'predicated',
+            operator: '?=',
+            terminal: {
+                kind: 'unknown'
+            }
+        },
+        EqualsMoreThanKeyword: {
+            kind: 'unknown'
+        },
+        firstSetPredicated: {
+            kind: Assignment.kind,
+            feature: 'firstSetPredicated',
+            operator: '?=',
+            terminal: {
+                kind: 'unknown'
+            }
+        },
+        DashMoreThanKeyword: {
+            kind: 'unknown'
+        },
+        rule: {
+            kind: Assignment.kind,
+            feature: 'rule',
+            operator: '=',
+            terminal: {
+                kind: CrossReference.kind
+            }
+        },
+        ruleAbstractRuleCrossReference: {
+            kind: 'unknown'
+        },
+        LessThanKeyword: {
+            kind: 'unknown'
+        },
+        arguments: {
+            kind: Assignment.kind,
+            feature: 'arguments',
+            operator: '+=',
+            terminal: {
+                kind: 'unknown'
+            }
+        },
+        argumentsNamedArgumentRuleCall: {
+            kind: 'unknown'
+        },
+        CommaKeyword: {
+            kind: 'unknown'
+        },
+        MoreThanKeyword: {
+            kind: 'unknown'
+        },
+    }
+    Assignment: AssignmentRuleAccess = <AssignmentRuleAccess><unknown>{
+        AssignmentAction: {
+            kind: Action.kind,
+            Type: 'Assignment',
+            feature: 'undefined',
+            operator: 'undefined'
+        },
+        predicated: {
+            kind: Assignment.kind,
+            feature: 'predicated',
+            operator: '?=',
+            terminal: {
+                kind: 'unknown'
+            }
+        },
+        EqualsMoreThanKeyword: {
+            kind: 'unknown'
+        },
+        firstSetPredicated: {
+            kind: Assignment.kind,
+            feature: 'firstSetPredicated',
+            operator: '?=',
+            terminal: {
+                kind: 'unknown'
+            }
+        },
+        DashMoreThanKeyword: {
+            kind: 'unknown'
+        },
+        feature: {
+            kind: Assignment.kind,
+            feature: 'feature',
+            operator: '=',
+            terminal: {
+                kind: 'unknown'
+            }
+        },
+        featureIDRuleCall: {
+            kind: 'unknown'
+        },
+        operator: {
+            kind: Assignment.kind,
+            feature: 'operator',
+            operator: '=',
+            terminal: {
+                kind: 'unknown'
+            }
+        },
+        PlusEqualsKeyword: {
+            kind: 'unknown'
+        },
+        EqualsKeyword: {
+            kind: 'unknown'
+        },
+        QuestionMarkEqualsKeyword: {
+            kind: 'unknown'
+        },
+        terminal: {
+            kind: Assignment.kind,
+            feature: '^terminal',
+            operator: '=',
+            terminal: {
+                kind: 'unknown'
+            }
+        },
+        terminalAssignableTerminalRuleCall: {
+            kind: 'unknown'
+        },
+    }
+    AssignableTerminal: AssignableTerminalRuleAccess = <AssignableTerminalRuleAccess><unknown>{
+        KeywordRuleCall: {
+            kind: 'unknown'
+        },
+        RuleCallRuleCall: {
+            kind: 'unknown'
+        },
+        ParenthesizedAssignableElementRuleCall: {
+            kind: 'unknown'
+        },
+        CrossReferenceRuleCall: {
+            kind: 'unknown'
+        },
+    }
+    ParenthesizedAssignableElement: ParenthesizedAssignableElementRuleAccess = <ParenthesizedAssignableElementRuleAccess><unknown>{
+        ParenthesisOpenKeyword: {
+            kind: 'unknown'
+        },
+        AssignableAlternativesRuleCall: {
+            kind: 'unknown'
+        },
+        ParenthesisCloseKeyword: {
+            kind: 'unknown'
+        },
+    }
+    AssignableAlternatives: AssignableAlternativesRuleAccess = <AssignableAlternativesRuleAccess><unknown>{
+        AssignableTerminalRuleCall: {
+            kind: 'unknown'
+        },
+        AlternativeselementsAction: {
+            kind: Action.kind,
+            Type: 'Alternatives',
+            feature: 'elements',
+            operator: '+='
+        },
+        PipeKeyword: {
+            kind: 'unknown'
+        },
+        elements: {
+            kind: Assignment.kind,
+            feature: 'elements',
+            operator: '+=',
+            terminal: {
+                kind: 'unknown'
+            }
+        },
+        elementsAssignableTerminalRuleCall: {
+            kind: 'unknown'
+        },
+    }
+    CrossReference: CrossReferenceRuleAccess = <CrossReferenceRuleAccess><unknown>{
+        CrossReferenceAction: {
+            kind: Action.kind,
+            Type: 'CrossReference',
+            feature: 'undefined',
+            operator: 'undefined'
+        },
+        BracketOpenKeyword: {
+            kind: 'unknown'
+        },
+        type: {
+            kind: Assignment.kind,
+            feature: 'type',
+            operator: '=',
+            terminal: {
+                kind: CrossReference.kind
+            }
+        },
+        typeParserRuleCrossReference: {
+            kind: 'unknown'
+        },
+        PipeKeyword: {
+            kind: 'unknown'
+        },
+        terminal: {
+            kind: Assignment.kind,
+            feature: '^terminal',
+            operator: '=',
+            terminal: {
+                kind: 'unknown'
+            }
+        },
+        terminalCrossReferenceableTerminalRuleCall: {
+            kind: 'unknown'
+        },
+        BracketCloseKeyword: {
+            kind: 'unknown'
+        },
+    }
+    CrossReferenceableTerminal: CrossReferenceableTerminalRuleAccess = <CrossReferenceableTerminalRuleAccess><unknown>{
+        KeywordRuleCall: {
+            kind: 'unknown'
+        },
+        RuleCallRuleCall: {
+            kind: 'unknown'
+        },
+    }
+    ParenthesizedElement: ParenthesizedElementRuleAccess = <ParenthesizedElementRuleAccess><unknown>{
+        ParenthesisOpenKeyword: {
+            kind: 'unknown'
+        },
+        AlternativesRuleCall: {
+            kind: 'unknown'
+        },
+        ParenthesisCloseKeyword: {
+            kind: 'unknown'
+        },
+    }
+    PredicatedGroup: PredicatedGroupRuleAccess = <PredicatedGroupRuleAccess><unknown>{
+        predicated: {
+            kind: Assignment.kind,
+            feature: 'predicated',
+            operator: '?=',
+            terminal: {
+                kind: 'unknown'
+            }
+        },
+        EqualsMoreThanKeyword: {
+            kind: 'unknown'
+        },
+        firstSetPredicated: {
+            kind: Assignment.kind,
+            feature: 'firstSetPredicated',
+            operator: '?=',
+            terminal: {
+                kind: 'unknown'
+            }
+        },
+        DashMoreThanKeyword: {
+            kind: 'unknown'
+        },
+        ParenthesisOpenKeyword: {
+            kind: 'unknown'
+        },
+        elements: {
+            kind: Assignment.kind,
+            feature: 'elements',
+            operator: '+=',
+            terminal: {
+                kind: 'unknown'
+            }
+        },
+        elementsAlternativesRuleCall: {
+            kind: 'unknown'
+        },
+        ParenthesisCloseKeyword: {
+            kind: 'unknown'
+        },
+    }
+    TerminalRule: TerminalRuleRuleAccess = <TerminalRuleRuleAccess><unknown>{
+        TerminalKeyword: {
+            kind: 'unknown'
+        },
+        fragment: {
+            kind: Assignment.kind,
+            feature: '^fragment',
+            operator: '?=',
+            terminal: {
+                kind: 'unknown'
+            }
+        },
+        FragmentKeyword: {
+            kind: 'unknown'
+        },
+        name: {
+            kind: Assignment.kind,
+            feature: 'name',
+            operator: '=',
+            terminal: {
+                kind: 'unknown'
+            }
+        },
+        nameIDRuleCall: {
+            kind: 'unknown'
+        },
+        ReturnsKeyword: {
+            kind: 'unknown'
+        },
+        type: {
+            kind: Assignment.kind,
+            feature: 'type',
+            operator: '=',
+            terminal: {
+                kind: 'unknown'
+            }
+        },
+        typeIDRuleCall: {
+            kind: 'unknown'
+        },
+        ColonKeyword: {
+            kind: 'unknown'
+        },
+        regex: {
+            kind: Assignment.kind,
+            feature: 'regex',
+            operator: '=',
+            terminal: {
+                kind: 'unknown'
+            }
+        },
+        regexRegexLiteralRuleCall: {
+            kind: 'unknown'
+        },
+        SemicolonKeyword: {
+            kind: 'unknown'
+        },
+    }
+    TerminalAlternatives: TerminalAlternativesRuleAccess = <TerminalAlternativesRuleAccess><unknown>{
+        TerminalGroupRuleCall: {
+            kind: 'unknown'
+        },
+        TerminalAlternativeselementsAction: {
+            kind: Action.kind,
+            Type: 'TerminalAlternatives',
+            feature: 'elements',
+            operator: '+='
+        },
+        PipeKeyword: {
+            kind: 'unknown'
+        },
+        elements: {
+            kind: Assignment.kind,
+            feature: 'elements',
+            operator: '+=',
+            terminal: {
+                kind: 'unknown'
+            }
+        },
+        elementsTerminalGroupRuleCall: {
+            kind: 'unknown'
+        },
+    }
+    TerminalGroup: TerminalGroupRuleAccess = <TerminalGroupRuleAccess><unknown>{
+        elements: {
+            kind: Assignment.kind,
+            feature: 'elements',
+            operator: '+=',
+            terminal: {
+                kind: 'unknown'
+            }
+        },
+        elementsTerminalTokenRuleCall: {
+            kind: 'unknown'
+        },
+    }
+    TerminalToken: TerminalTokenRuleAccess = <TerminalTokenRuleAccess><unknown>{
+        TerminalTokenElementRuleCall: {
+            kind: 'unknown'
+        },
+        cardinality: {
+            kind: Assignment.kind,
+            feature: 'cardinality',
+            operator: '=',
+            terminal: {
+                kind: 'unknown'
+            }
+        },
+        QuestionMarkKeyword: {
+            kind: 'unknown'
+        },
+        AsteriskKeyword: {
+            kind: 'unknown'
+        },
+        PlusKeyword: {
+            kind: 'unknown'
+        },
+    }
+    TerminalTokenElement: TerminalTokenElementRuleAccess = <TerminalTokenElementRuleAccess><unknown>{
+        CharacterRangeRuleCall: {
+            kind: 'unknown'
+        },
+        TerminalRuleCallRuleCall: {
+            kind: 'unknown'
+        },
+        ParenthesizedTerminalElementRuleCall: {
+            kind: 'unknown'
+        },
+        AbstractNegatedTokenRuleCall: {
+            kind: 'unknown'
+        },
+        WildcardRuleCall: {
+            kind: 'unknown'
+        },
+    }
+    ParenthesizedTerminalElement: ParenthesizedTerminalElementRuleAccess = <ParenthesizedTerminalElementRuleAccess><unknown>{
+        ParenthesisOpenKeyword: {
+            kind: 'unknown'
+        },
+        TerminalAlternativesRuleCall: {
+            kind: 'unknown'
+        },
+        ParenthesisCloseKeyword: {
+            kind: 'unknown'
+        },
+    }
+    AbstractNegatedToken: AbstractNegatedTokenRuleAccess = <AbstractNegatedTokenRuleAccess><unknown>{
+        NegatedTokenRuleCall: {
+            kind: 'unknown'
+        },
+        UntilTokenRuleCall: {
+            kind: 'unknown'
+        },
+    }
+    NegatedToken: NegatedTokenRuleAccess = <NegatedTokenRuleAccess><unknown>{
+        ExclamationMarkKeyword: {
+            kind: 'unknown'
+        },
+        terminal: {
+            kind: Assignment.kind,
+            feature: '^terminal',
+            operator: '=',
+            terminal: {
+                kind: 'unknown'
+            }
+        },
+        terminalTerminalTokenElementRuleCall: {
+            kind: 'unknown'
+        },
+    }
+    UntilToken: UntilTokenRuleAccess = <UntilTokenRuleAccess><unknown>{
+        DashMoreThanKeyword: {
+            kind: 'unknown'
+        },
+        terminal: {
+            kind: Assignment.kind,
+            feature: '^terminal',
+            operator: '=',
+            terminal: {
+                kind: 'unknown'
+            }
+        },
+        terminalTerminalTokenElementRuleCall: {
+            kind: 'unknown'
+        },
+    }
+    Wildcard: WildcardRuleAccess = <WildcardRuleAccess><unknown>{
+        WildcardAction: {
+            kind: Action.kind,
+            Type: 'Wildcard',
+            feature: 'undefined',
+            operator: 'undefined'
+        },
+        DotKeyword: {
+            kind: 'unknown'
+        },
+    }
+    CharacterRange: CharacterRangeRuleAccess = <CharacterRangeRuleAccess><unknown>{
+        left: {
+            kind: Assignment.kind,
+            feature: 'left',
+            operator: '=',
+            terminal: {
+                kind: 'unknown'
+            }
+        },
+        leftKeywordRuleCall: {
+            kind: 'unknown'
+        },
+        DotDotKeyword: {
+            kind: 'unknown'
+        },
+        right: {
+            kind: Assignment.kind,
+            feature: 'right',
+            operator: '=',
+            terminal: {
+                kind: 'unknown'
+            }
+        },
+        rightKeywordRuleCall: {
+            kind: 'unknown'
+        },
+    }
+    EnumRule: EnumRuleRuleAccess = <EnumRuleRuleAccess><unknown>{
+        EnumKeyword: {
+            kind: 'unknown'
+        },
+        name: {
+            kind: Assignment.kind,
+            feature: 'name',
+            operator: '=',
+            terminal: {
+                kind: 'unknown'
+            }
+        },
+        nameIDRuleCall: {
+            kind: 'unknown'
+        },
+        ReturnsKeyword: {
+            kind: 'unknown'
+        },
+        type: {
+            kind: Assignment.kind,
+            feature: 'type',
+            operator: '=',
+            terminal: {
+                kind: 'unknown'
+            }
+        },
+        typeIDRuleCall: {
+            kind: 'unknown'
+        },
+        ColonKeyword: {
+            kind: 'unknown'
+        },
+        alternatives: {
+            kind: Assignment.kind,
+            feature: 'alternatives',
+            operator: '=',
+            terminal: {
+                kind: 'unknown'
+            }
+        },
+        alternativesEnumLiteralsRuleCall: {
+            kind: 'unknown'
+        },
+        SemicolonKeyword: {
+            kind: 'unknown'
+        },
+    }
+    EnumLiterals: EnumLiteralsRuleAccess = <EnumLiteralsRuleAccess><unknown>{
+        EnumLiteralDeclarationRuleCall: {
+            kind: 'unknown'
+        },
+        EnumLiteralselementsAction: {
+            kind: Action.kind,
+            Type: 'EnumLiterals',
+            feature: 'elements',
+            operator: '+='
+        },
+        PipeKeyword: {
+            kind: 'unknown'
+        },
+        elements: {
+            kind: Assignment.kind,
+            feature: 'elements',
+            operator: '+=',
+            terminal: {
+                kind: 'unknown'
+            }
+        },
+        elementsEnumLiteralDeclarationRuleCall: {
+            kind: 'unknown'
+        },
+    }
+    EnumLiteralDeclaration: EnumLiteralDeclarationRuleAccess = <EnumLiteralDeclarationRuleAccess><unknown>{
+        enumLiteral: {
+            kind: Assignment.kind,
+            feature: 'enumLiteral',
+            operator: '=',
+            terminal: {
+                kind: CrossReference.kind
+            }
+        },
+        enumLiteralEnumLiteralsCrossReference: {
+            kind: 'unknown'
+        },
+        EqualsKeyword: {
+            kind: 'unknown'
+        },
+        literal: {
+            kind: Assignment.kind,
+            feature: 'literal',
+            operator: '=',
+            terminal: {
+                kind: 'unknown'
+            }
+        },
+        literalKeywordRuleCall: {
+            kind: 'unknown'
+        },
+    }
 }

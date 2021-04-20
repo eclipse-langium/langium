@@ -1,69 +1,38 @@
-import { AbstractRule, AbstractTerminal, Alternatives, Assignment, Grammar, Group, ParserRule, UnorderedGroup } from "../gen/ast";
+import { AbstractElement, AbstractRule, Action, Alternatives, Assignment, CrossReference, Grammar, Group, ParserRule, RuleCall, UnorderedGroup } from "../gen/ast";
 import { AstNode, CompositeCstNode, CstNode } from "../generator/ast-node";
+import { getRuleName } from "../grammar/grammar-utils";
 
 export function linkGrammar(grammar: Grammar): void {
     findReferences(grammar, grammar);
-    grammar.rules?.filter(e => e.kind === "ParserRule").map(e => e as ParserRule).forEach(r => {
-        linkAlteratives(grammar, r.Alternatives);
+    grammar.rules?.filter(e => ParserRule.is(e)).map(e => e as ParserRule).forEach(r => {
+        linkElement(grammar, r.alternatives);
     });
 }
 
-function linkAlteratives(grammar: Grammar, alternatives: Alternatives) {
-    if (alternatives.kind === "Alternatives") {
-        alternatives.Elements.forEach(e => {
-            linkUnorderedGroup(grammar, e);
-        });
-    } else {
-        linkUnorderedGroup(grammar, alternatives);
-    }
-}
-
-function linkUnorderedGroup(grammar: Grammar, group: UnorderedGroup) {
-    if (group.kind === "UnorderedGroup") {
-        group.Elements.forEach(e => {
-            linkGroup(grammar, e)
-        });
-    } else {
-        linkGroup(grammar, group);
-    }
-}
-
-function linkGroup(grammar: Grammar, group: Group) {
-    group.Elements?.forEach(e => {
-        if (e.kind === "Assignment") {
-            linkAssignment(grammar, e);
-        } else if (e.kind === "Action") {
-            findReferences(grammar, e);
-        } else {
-            linkTerminal(grammar, e);
-        }
-    });
-}
-
-function linkTerminal(grammar: Grammar, terminal: AbstractTerminal) {
-    if (terminal.kind === "RuleCall") {
-        findReferences(grammar, terminal);
-    } else if (terminal.kind === "Alternatives" || terminal.kind === "UnorderedGroup" || terminal.kind === "Group") {
-        linkAlteratives(grammar, terminal);
-    } else if (terminal.kind === "PredicatedRuleCall") {
-        findReferences(grammar, terminal);
-    } else if (terminal.kind === "PredicatedGroup") {
-        terminal.Elements.forEach(e => {
-            linkAlteratives(grammar, e);
+function linkElement(grammar: Grammar, element: AbstractElement) {
+    if (RuleCall.is(element)) {
+        findReferences(grammar, element);
+    } else if (Assignment.is(element)) {
+        linkAssignment(grammar, element);
+    } else if (Action.is(element)) {
+        findReferences(grammar, element);
+    } else if (Alternatives.is(element) || UnorderedGroup.is(element) || Group.is(element)) {
+        element.elements.forEach(e => {
+            linkElement(grammar, e);
         });
     }
 }
 
 function linkAssignment(grammar: Grammar, assignment: Assignment) {
-    const terminal = assignment.Terminal;
-    if (terminal.kind === "CrossReference") {
+    const terminal = assignment.terminal;
+    if (CrossReference.is(terminal)) {
         findReferences(grammar, terminal);
-        if (terminal.Terminal && terminal.Terminal.kind === "RuleCall") {
-            findReferences(grammar, terminal.Terminal);
+        if (RuleCall.is(terminal.terminal)) {
+            findReferences(grammar, terminal.terminal);
         }
-    } else if (terminal.kind === "RuleCall") {
+    } else if (RuleCall.is(terminal)) {
         findReferences(grammar, terminal);
-    } else if (terminal.kind === "AssignableAlternatives") {
+    } else if (Alternatives.is(terminal)) {
         // todo
     }
 }
@@ -77,30 +46,30 @@ function findReferences(grammar: Grammar, ref: any) {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function iterateNodes(grammar: Grammar, item: any, node: CstNode) {
-    if (node.element === item && node.feature && node.feature.kind === "Assignment" && node.feature.Terminal.kind === "CrossReference") {
+    if (node.element === item && node.feature && Assignment.is(node.feature) && CrossReference.is(node.feature.terminal)) {
         const text = node.text;
         const assignment = node.feature;
-        switch (assignment.Operator) {
+        switch (assignment.operator) {
             case "=": {
-                item[assignment.Feature] = findRule(grammar, text);
+                item[assignment.feature] = findRule(grammar, text);
                 break;
             } case "+=": {
-                if (!Array.isArray(item[assignment.Feature])) {
-                    item[assignment.Feature] = [];
+                if (!Array.isArray(item[assignment.feature])) {
+                    item[assignment.feature] = [];
                 }
-                item[assignment.Feature].push(findRule(grammar, text));
+                item[assignment.feature].push(findRule(grammar, text));
                 break;
             }
         }
-    } else if (node instanceof CompositeCstNode) {
+    } else if (node.element === item && node instanceof CompositeCstNode) {
         node.children.forEach(e => {
             iterateNodes(grammar, item, e);
-        })
+        });
     }
 }
 
 function findRule(grammar: Grammar, name: string): AbstractRule {
-    const rule = grammar.rules?.find(e => e.Name === name);
+    const rule = grammar.rules?.find(e => getRuleName(e) === name);
     if (!rule) {
         throw new Error("Could not find rule " + name);
     }
