@@ -262,8 +262,33 @@ export class TypeCollector {
                 interfaces.push(new Interface(ruleCallType.name, ruleCallType.super, []));
             }
         }
+        this.liftFields(interfaces);
 
         return interfaces;
+    }
+
+    private liftFields(interfaces: Interface[]): void {
+        for (const interfaceType of interfaces) {
+            const subInterfaces = interfaces.filter(e => e.superTypes.includes(interfaceType.name));
+            const first = subInterfaces[0];
+            if (first) {
+                const removal: Field[] = [];
+                for (const field of first.fields) {
+                    if (subInterfaces.every(e => e.fields.some(f => f.name === field.name))) {
+                        if (!interfaceType.fields.some(e => e.name === field.name)) {
+                            interfaceType.fields.push(field);
+                        }
+                        removal.push(field);
+                    }
+                }
+                for (const remove of removal) {
+                    subInterfaces.forEach(item => {
+                        const index = item.fields.findIndex(e => e.name === remove.name);
+                        item.fields.splice(index, 1);
+                    })
+                }
+            }
+        }
     }
 
     private clean(value: string): string {

@@ -1,6 +1,5 @@
 import { AbstractElement, AbstractRule, Action, Alternatives, Assignment, CrossReference, Grammar, Group, ParserRule, RuleCall, UnorderedGroup } from "../gen/ast";
 import { AstNode, CompositeCstNode, CstNode } from "../generator/ast-node";
-import { getRuleName } from "../grammar/grammar-utils";
 
 export function linkGrammar(grammar: Grammar): void {
     findReferences(grammar, grammar);
@@ -69,7 +68,7 @@ function iterateNodes(grammar: Grammar, item: any, node: CstNode) {
 }
 
 function findRule(grammar: Grammar, name: string): AbstractRule {
-    const rule = grammar.rules?.find(e => getRuleName(e) === name);
+    const rule = grammar.rules?.find(e => e.name === name);
     if (!rule) {
         throw new Error("Could not find rule " + name);
     }

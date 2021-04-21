@@ -19,11 +19,3 @@ export function getTypeName(rule: AbstractRule): string {
         throw new Error("Unknown rule type");
     }
 }
-
-export function getRuleName(rule: AbstractRule): string {
-    if (EnumRule.is(rule) || TerminalRule.is(rule) || ParserRule.is(rule)) {
-        return rule.name;
-    } else {
-        throw new Error("Unknown rule type");
-    }
-}

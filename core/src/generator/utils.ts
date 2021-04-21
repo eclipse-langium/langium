@@ -1,7 +1,6 @@
 /* eslint-disable */
 import { AbstractElement, Action, Alternatives, Assignment, CrossReference, Group, Keyword, ParserRule, RuleCall, UnorderedGroup } from "../gen/ast";
 import { replaceTokens } from "./token-replacer";
-import { getRuleName } from "../grammar/grammar-utils";
 
 type FeatureValue = {
     feature: AbstractElement;
@@ -47,7 +46,7 @@ function putFeature(feature: AbstractElement, previous: string | undefined, byNa
         byFeature.set(feature, fullName);
         putFeature(feature.terminal, fullName, byName, byFeature);
     } else if (RuleCall.is(feature)) {
-        const name = (previous ?? "") + getRuleName(feature.rule) + "RuleCall";
+        const name = (previous ?? "") + feature.rule.name + "RuleCall";
         byName.set(name, { feature, kind: "RuleCall" });
         byFeature.set(feature, name);
     } else if (CrossReference.is(feature)) {

@@ -22,8 +22,6 @@ export namespace Grammar {
 
 export interface GeneratedMetamodel extends AbstractMetamodelDeclaration {
     name: string
-    ePackage: string
-    alias?: string
 }
 
 export namespace GeneratedMetamodel {
@@ -34,8 +32,6 @@ export namespace GeneratedMetamodel {
 }
 
 export interface ReferencedMetamodel extends AbstractMetamodelDeclaration {
-    ePackage: string
-    alias?: string
 }
 
 export namespace ReferencedMetamodel {
@@ -58,10 +54,8 @@ export namespace Annotation {
 
 export interface ParserRule extends AbstractRule {
     fragment: boolean
-    name: string
     parameters?: Parameter[]
     wildcard: boolean
-    type?: string
     definesHiddenTokens?: boolean
     hiddenTokens?: AbstractRule[]
     alternatives: AbstractElement
@@ -281,8 +275,6 @@ export namespace CrossReference {
 
 export interface TerminalRule extends AbstractRule {
     fragment: boolean
-    name: string
-    type?: string
     regex: string
 }
 
@@ -294,7 +286,6 @@ export namespace TerminalRule {
 }
 
 export interface TerminalAlternatives extends ParenthesizedTerminalElement {
-    elements: TerminalGroup[]
 }
 
 export namespace TerminalAlternatives {
@@ -327,7 +318,6 @@ export namespace TerminalToken {
 }
 
 export interface NegatedToken extends AbstractNegatedToken {
-    terminal: TerminalTokenElement
 }
 
 export namespace NegatedToken {
@@ -338,7 +328,6 @@ export namespace NegatedToken {
 }
 
 export interface UntilToken extends AbstractNegatedToken {
-    terminal: TerminalTokenElement
 }
 
 export namespace UntilToken {
@@ -371,8 +360,6 @@ export namespace CharacterRange {
 }
 
 export interface EnumRule extends AbstractRule {
-    name: string
-    type?: string
     alternatives: EnumLiterals
 }
 
@@ -407,6 +394,8 @@ export namespace EnumLiteralDeclaration {
 }
 
 export interface AbstractRule extends AstNode {
+    name: string
+    type?: string
 }
 
 export namespace AbstractRule {
@@ -417,6 +406,8 @@ export namespace AbstractRule {
 }
 
 export interface AbstractMetamodelDeclaration extends AstNode {
+    ePackage: string
+    alias?: string
 }
 
 export namespace AbstractMetamodelDeclaration {
@@ -447,6 +438,7 @@ export namespace TerminalTokenElement {
 }
 
 export interface ParenthesizedTerminalElement extends AstNode {
+    elements: TerminalGroup[]
 }
 
 export namespace ParenthesizedTerminalElement {
@@ -457,6 +449,7 @@ export namespace ParenthesizedTerminalElement {
 }
 
 export interface AbstractNegatedToken extends AstNode {
+    terminal: TerminalTokenElement
 }
 
 export namespace AbstractNegatedToken {
