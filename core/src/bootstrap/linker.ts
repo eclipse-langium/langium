@@ -1,11 +1,11 @@
-import { AbstractElement, AbstractRule, Action, Alternatives, Assignment, CrossReference, Grammar, Group, ParserRule, RuleCall, UnorderedGroup } from "../gen/ast";
-import { AstNode, CompositeCstNode, CstNode } from "../generator/ast-node";
+import { AbstractElement, AbstractRule, Action, Alternatives, Assignment, CrossReference, Grammar, Group, ParserRule, RuleCall, UnorderedGroup } from '../gen/ast';
+import { AstNode, CompositeCstNode, CstNode } from '../generator/ast-node';
 
 export function linkGrammar(grammar: Grammar): void {
     findReferences(grammar, grammar);
-    grammar.rules?.filter(e => ParserRule.is(e)).map(e => e as ParserRule).forEach(r => {
-        linkElement(grammar, r.alternatives);
-    });
+    for (const rule of grammar.rules.filter(e => ParserRule.is(e)).map(e => e as ParserRule)) {
+        linkElement(grammar, rule.alternatives);
+    }
 }
 
 function linkElement(grammar: Grammar, element: AbstractElement) {
@@ -16,9 +16,9 @@ function linkElement(grammar: Grammar, element: AbstractElement) {
     } else if (Action.is(element)) {
         findReferences(grammar, element);
     } else if (Alternatives.is(element) || UnorderedGroup.is(element) || Group.is(element)) {
-        element.elements.forEach(e => {
-            linkElement(grammar, e);
-        });
+        for (const item of element.elements) {
+            linkElement(grammar, item);
+        }
     }
 }
 
@@ -49,10 +49,10 @@ function iterateNodes(grammar: Grammar, item: any, node: CstNode) {
         const text = node.text;
         const assignment = node.feature;
         switch (assignment.operator) {
-            case "=": {
+            case '=': {
                 item[assignment.feature] = findRule(grammar, text);
                 break;
-            } case "+=": {
+            } case '+=': {
                 if (!Array.isArray(item[assignment.feature])) {
                     item[assignment.feature] = [];
                 }
@@ -61,16 +61,16 @@ function iterateNodes(grammar: Grammar, item: any, node: CstNode) {
             }
         }
     } else if (node.element === item && node instanceof CompositeCstNode) {
-        node.children.forEach(e => {
-            iterateNodes(grammar, item, e);
-        });
+        for (const child of node.children) {
+            iterateNodes(grammar, item, child);
+        }
     }
 }
 
 function findRule(grammar: Grammar, name: string): AbstractRule {
-    const rule = grammar.rules?.find(e => e.name === name);
+    const rule = grammar.rules.find(e => e.name === name);
     if (!rule) {
-        throw new Error("Could not find rule " + name);
+        throw new Error('Could not find rule ' + name);
     }
     return rule;
 }

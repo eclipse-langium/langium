@@ -1,11 +1,11 @@
-import { Grammar } from "../gen/ast";
-import { CompositeGeneratorNode, NewLineNode } from "./node/node";
-import { process } from "./node/node-processor";
-import { collectAst } from "./type-collector";
+import { Grammar } from '../gen/ast';
+import { CompositeGeneratorNode, NewLineNode } from './node/node';
+import { process } from './node/node-processor';
+import { collectAst } from './type-collector';
 
 export function generateAst(grammar: Grammar, path?: string): string {
     const types = collectAst(grammar);
-    const langiumPath = "'" + (path ?? "langium") + "'"
+    const langiumPath = "'" + (path ?? 'langium') + "'"
     const fileNode = new CompositeGeneratorNode();
     fileNode.children.push(
         '/* eslint-disable @typescript-eslint/no-namespace */',

@@ -1,8 +1,8 @@
-import { AbstractElement, Action, Alternatives, Assignment, CrossReference, Grammar, Group, Keyword, ParserRule, RuleCall, UnorderedGroup } from "../gen/ast";
-import { getTypeName } from "../grammar/grammar-utils";
-import { CompositeGeneratorNode, IndentNode, NewLineNode } from "./node/node";
-import { process } from "./node/node-processor";
-import { Cardinality, isDataTypeRule, isOptionalCardinality } from "./utils";
+import { AbstractElement, Action, Alternatives, Assignment, CrossReference, Grammar, Group, Keyword, ParserRule, RuleCall, UnorderedGroup } from '../gen/ast';
+import { getTypeName } from '../grammar/grammar-utils';
+import { CompositeGeneratorNode, IndentNode, NewLineNode } from './node/node';
+import { process } from './node/node-processor';
+import { Cardinality, isDataTypeRule, isOptionalCardinality } from './utils';
 
 type TypeAlternative = {
     name: string,
@@ -32,20 +32,20 @@ export class Interface {
 
     toString(): string {
         const interfaceNode = new CompositeGeneratorNode();
-        const superTypes = this.superTypes.length > 0 ? this.superTypes : [ "AstNode" ];
-        interfaceNode.children.push("export interface ", this.name, " extends ", superTypes.join(", "), " {", new NewLineNode());
+        const superTypes = this.superTypes.length > 0 ? this.superTypes : [ 'AstNode' ];
+        interfaceNode.children.push('export interface ', this.name, ' extends ', superTypes.join(', '), ' {', new NewLineNode());
         const fieldsNode = new IndentNode();
         for (const field of this.fields) {
-            fieldsNode.children.push(field.name, field.optional ? "?" : "", ": ", field.types.join(" | "), field.array ? "[]" : "", new NewLineNode());
+            fieldsNode.children.push(field.name, field.optional ? '?' : '', ': ', field.types.join(' | '), field.array ? '[]' : '', new NewLineNode());
         }
-        interfaceNode.children.push(fieldsNode, "}", new NewLineNode(), new NewLineNode());
-        interfaceNode.children.push("export namespace ", this.name, " {", new NewLineNode());
+        interfaceNode.children.push(fieldsNode, '}', new NewLineNode(), new NewLineNode());
+        interfaceNode.children.push('export namespace ', this.name, ' {', new NewLineNode());
         const interfaceBody = new IndentNode();
-        interfaceBody.children.push("export const kind: Kind = { value: '", this.name, "', get super() { return [ ", superTypes.map(e => e + ".kind").join(", "), " ]; }}", new NewLineNode());
+        interfaceBody.children.push("export const kind: Kind = { value: '", this.name, "', get super() { return [ ", superTypes.map(e => e + '.kind').join(', '), ' ]; }}', new NewLineNode());
         const methodBody = new IndentNode();
-        interfaceBody.children.push("export function is(item: any): item is ", this.name, " {", new NewLineNode(), methodBody, "}");
-        methodBody.children.push("return AstNode.is(item, kind);", new NewLineNode());
-        interfaceNode.children.push(interfaceBody, new NewLineNode(), "}", new NewLineNode());
+        interfaceBody.children.push('export function is(item: any): item is ', this.name, ' {', new NewLineNode(), methodBody, '}');
+        methodBody.children.push('return AstNode.is(item, kind);', new NewLineNode());
+        interfaceNode.children.push(interfaceBody, new NewLineNode(), '}', new NewLineNode());
 
         return process(interfaceNode);
     }
@@ -57,28 +57,19 @@ export function collectAst(grammar: Grammar): Interface[] {
     const parserRules = grammar.rules.filter(e => ParserRule.is(e) && !e.fragment && !isDataTypeRule(e)).map(e => e as ParserRule);
 
     for (const rule of parserRules) {
-        if (!Alternatives.is(rule.alternatives)) {
-            collector.addAlternative(getTypeName(rule));
-        }
-        collectElement(collector, rule.alternatives, getTypeName(rule));
+        collector.addAlternative(getTypeName(rule));
+        collectElement(collector, rule.alternatives);
     }
 
     return collector.calculateAst();
 }
 
-function collectElement(collector: TypeCollector, element: AbstractElement, name?: string): void {
+function collectElement(collector: TypeCollector, element: AbstractElement): void {
     collector.enterGroup(element.cardinality);
-    if (Alternatives.is(element)) {
-        element.elements.forEach(e => {
-            if (name) {
-                collector.addAlternative(name);
-            }
-            collectElement(collector, e);
-        });
-    } else if (UnorderedGroup.is(element) || Group.is(element)) {
-        element.elements.forEach(e => {
-            collectElement(collector, e);
-        })
+    if (Alternatives.is(element) || UnorderedGroup.is(element) || Group.is(element)) {
+        for (const item of element.elements) {
+            collectElement(collector, item);
+        }
     } else if (Action.is(element)) {
         collector.addAction(element);
     } else if (Assignment.is(element)) {
@@ -118,12 +109,12 @@ export class TypeCollector {
             if (this.lastRuleCall) {
                 this.currentAlternative.fields.push({
                     name: this.clean(action.feature),
-                    array: action.operator === "+=",
+                    array: action.operator === '+=',
                     optional: false,
                     types: [getTypeName(this.lastRuleCall.rule)]
                 });
             } else {
-                throw new Error("Actions with features can only be called after an unassigned rule call");
+                throw new Error('Actions with features can only be called after an unassigned rule call');
             }
         }
     }
@@ -137,9 +128,9 @@ export class TypeCollector {
         }
         this.currentAlternative.fields.push({
             name: this.clean(assignment.feature),
-            array: assignment.operator === "+=",
+            array: assignment.operator === '+=',
             optional: isOptionalCardinality(card) || this.isOptional(),
-            types: assignment.operator === "?=" ? ["boolean"] : this.findTypes(assignment.terminal)
+            types: assignment.operator === '?=' ? ['boolean'] : this.findTypes(assignment.terminal)
         });
     }
 
@@ -148,7 +139,7 @@ export class TypeCollector {
         if (ParserRule.is(rule) && rule.fragment) {
             const collector = new TypeCollector();
             collector.addAlternative(rule.name);
-            collectElement(collector, rule.alternatives, rule.name);
+            collectElement(collector, rule.alternatives);
             const types = collector.calculateAst();
             const type = types.find(e => e.name === rule.name);
             if (type) {
@@ -169,14 +160,14 @@ export class TypeCollector {
     }
 
     protected isOptional(): boolean {
-        return this.cardinalities.some(e => e === "*" || e === "?");
+        return this.cardinalities.some(e => e === '*' || e === '?');
     }
 
     protected findTypes(terminal: AbstractElement): string[] {
         const types: string[] = [];
 
         if (Alternatives.is(terminal) || UnorderedGroup.is(terminal) || Group.is(terminal)) {
-            types.push(...this.findInAlternatives(terminal));
+            types.push(...this.findInCollection(terminal));
         } else if (Keyword.is(terminal)) {
             types.push(terminal.value);
         } else if (RuleCall.is(terminal)) {
@@ -187,11 +178,11 @@ export class TypeCollector {
         return types;
     }
 
-    protected findInAlternatives(alternatives: Alternatives | Group | UnorderedGroup): string[] {
+    protected findInCollection(collection: Alternatives | Group | UnorderedGroup): string[] {
         const types: string[] = [];
-        alternatives.elements.forEach(e => {
-            types.push(...this.findTypes(e));
-        });
+        for (const element of collection.elements) {
+            types.push(...this.findTypes(element));
+        }
         return types;
     }
 
@@ -214,14 +205,18 @@ export class TypeCollector {
                     if (existingField) {
                         existingField.optional = existingField.optional && altField.optional;
                         const typeSet = new Set(existingField.types);
-                        altField.types.forEach(e => typeSet.add(e));
+                        for (const type of altField.types) {
+                            typeSet.add(type);
+                        }
                         existingField.types = Array.from(typeSet.values());
                     } else {
                         fields.push({ ...altField });
                     }
                 }
                 if (altFields.length === 0) {
-                    alt.ruleCalls.forEach(e => ruleCalls.add(e));
+                    for (const ruleCall of alt.ruleCalls) {
+                        ruleCalls.add(ruleCall);
+                    }
                 }
             }
             type.ruleCalls = Array.from(ruleCalls);
@@ -282,17 +277,17 @@ export class TypeCollector {
                     }
                 }
                 for (const remove of removal) {
-                    subInterfaces.forEach(item => {
-                        const index = item.fields.findIndex(e => e.name === remove.name);
-                        item.fields.splice(index, 1);
-                    })
+                    for (const subInterface of subInterfaces) {
+                        const index = subInterface.fields.findIndex(e => e.name === remove.name);
+                        subInterface.fields.splice(index, 1);
+                    }
                 }
             }
         }
     }
 
     private clean(value: string): string {
-        if (value.startsWith("^")) {
+        if (value.startsWith('^')) {
             return value.substring(1);
         } else {
             return value;

@@ -40,10 +40,10 @@ export class IndentNode extends CompositeGeneratorNode {
 
     constructor(indentation?: string | number, indentImmediately = true, indentEmptyLines = false) {
         super();
-        if (typeof(indentation) === "string") {
+        if (typeof(indentation) === 'string') {
             this.indentation = indentation;
-        } else if (typeof(indentation) === "number") {
-            this.indentation = "".padStart(indentation);
+        } else if (typeof(indentation) === 'number') {
+            this.indentation = ''.padStart(indentation);
         }
         this._indentImmediately = indentImmediately;
         this._indentEmptyLines = indentEmptyLines;
@@ -90,3 +90,5 @@ export class NewLineNode {
         this._ifNotEmpty = ifNotEmpty;
     }
 }
+
+export const NL = new NewLineNode();

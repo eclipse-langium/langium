@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { EmbeddedActionsParser, IRuleConfig, TokenType } from "chevrotain";
-import { PartialDeep } from "type-fest";
-import { AbstractElement, Action, Assignment, CrossReference, RuleCall } from "../gen/ast";
-import { AstNode, Kind, RuleResult } from "../generator/ast-node";
-import { CstNodeBuilder } from "./cst-node-builder";
+import { EmbeddedActionsParser, IRuleConfig, TokenType } from 'chevrotain';
+import { PartialDeep } from 'type-fest';
+import { AbstractElement, Action, Assignment, CrossReference, RuleCall } from '../gen/ast';
+import { AstNode, CompositeCstNode, Kind, RuleResult } from '../generator/ast-node';
+import { CstNodeBuilder } from './cst-node-builder';
 
 type StackItem = {
     object: any,
@@ -69,14 +69,14 @@ export class LangiumParser extends EmbeddedActionsParser {
                 }
             }
             if (lastResult) {
-                // const lastCstNode = lastResult[AstNode.cstNode] as CompositeCstNode;
-                // const cstNode = result[AstNode.cstNode] as CompositeCstNode;
-                // if (lastCstNode !== cstNode) {
-                //     lastCstNode.children.forEach(e => {
-                //         e.parent = cstNode;
-                //     });
-                //     cstNode.children.push(lastCstNode);
-                // }
+                const lastCstNode = lastResult[AstNode.cstNode] as CompositeCstNode;
+                const cstNode = result[AstNode.cstNode] as CompositeCstNode;
+                if (lastCstNode !== cstNode) {
+                    for (const child of lastCstNode.children) {
+                        (<any>child).parent = cstNode;
+                    }
+                    cstNode.children.push(lastCstNode);
+                }
             }
             lastResult = result;
         }
@@ -106,9 +106,6 @@ export class LangiumParser extends EmbeddedActionsParser {
     }
 
     unassignedSubrule<T extends AstNode>(idx: number, rule: RuleResult<T>, feature: AbstractElement): void {
-        if (!this.RECORDING_PHASE) {
-            this.nodeBuilder.skipNextConstruction();
-        }
         const result = this.subruleLeaf(idx, rule, feature);
         const resultKind = result.kind;
         let object = result;
@@ -158,11 +155,11 @@ export class LangiumParser extends EmbeddedActionsParser {
             for (const value of Object.values(obj)) {
                 if (Array.isArray(value)) {
                     for (const item of value) {
-                        if (typeof (item) === "object") {
+                        if (typeof (item) === 'object') {
                             item.container = obj;
                         }
                     }
-                } else if (typeof (value) === "object") {
+                } else if (typeof (value) === 'object') {
                     (<any>value).container = obj;
                 }
             }
@@ -175,17 +172,17 @@ export class LangiumParser extends EmbeddedActionsParser {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     private assign(assignment: { operator: string, feature: string }, value: unknown, object?: any): void {
         const obj = object ?? this.current.object;
-        const feature = assignment.feature.replace(/\^/g, "");
+        const feature = assignment.feature.replace(/\^/g, '');
         switch (assignment.operator) {
-            case "=": {
+            case '=': {
                 obj[feature] = value;
                 break;
             }
-            case "?=": {
+            case '?=': {
                 obj[feature] = true;
                 break;
             }
-            case "+=": {
+            case '+=': {
                 if (!Array.isArray(obj[feature])) {
                     obj[feature] = [];
                 }

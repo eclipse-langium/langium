@@ -38,6 +38,7 @@ module.exports = {
             "asyncArrow": "always",
             "named": "never"
         }],
+        "quotes": [2, "single", { "avoidEscape": true }],
         "use-isnan": "error",                             // isNaN(i) Number.isNaN(i) instead of i === NaN
 
         // List of [@typescript-eslint rules](https://github.com/typescript-eslint/typescript-eslint/tree/master/packages/eslint-plugin#supported-rules)

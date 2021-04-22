@@ -39,31 +39,31 @@ export function findAllFeatures(rule: ParserRule) : { byName: Map<string, Featur
     return { byName: newMap, byFeature: newFeatureMap };
 }
 
-function putFeature(feature: AbstractElement, previous: string | undefined, byName: Map<string, FeatureValue>, byFeature: Map<AbstractElement, string>) {
-    if (Assignment.is(feature)) {
-        const fullName = (previous ?? "") + feature.feature;
-        byName.set(fullName, { feature, kind: "Assignment" });
-        byFeature.set(feature, fullName);
-        putFeature(feature.terminal, fullName, byName, byFeature);
-    } else if (RuleCall.is(feature)) {
-        const name = (previous ?? "") + feature.rule.name + "RuleCall";
-        byName.set(name, { feature, kind: "RuleCall" });
-        byFeature.set(feature, name);
-    } else if (CrossReference.is(feature)) {
-        const name = (previous ?? "") + feature.type.name + "CrossReference";
-        byName.set(name, { feature, kind: "CrossReference" });
-        byFeature.set(feature, name);
-    } else if (Keyword.is(feature)) {
-        const validName = replaceTokens(feature.value) + "Keyword";
-        byName.set(validName, { feature, kind: "Keyword" });
-        byFeature.set(feature, validName);
-    } else if (Action.is(feature)) {
-        const name = (previous ?? "") + feature.Type + (feature.feature ?? "") + "Action";
-        byName.set(name, { feature, kind: "Action" });
-        byFeature.set(feature, name);
-    } else if (Alternatives.is(feature) || UnorderedGroup.is(feature) || Group.is(feature)) {
-        feature.elements.forEach(f => {
-            putFeature(f, previous, byName, byFeature);
-        });
+function putFeature(element: AbstractElement, previous: string | undefined, byName: Map<string, FeatureValue>, byFeature: Map<AbstractElement, string>) {
+    if (Assignment.is(element)) {
+        const fullName = (previous ?? "") + element.feature;
+        byName.set(fullName, { feature: element, kind: "Assignment" });
+        byFeature.set(element, fullName);
+        putFeature(element.terminal, fullName, byName, byFeature);
+    } else if (RuleCall.is(element)) {
+        const name = (previous ?? "") + element.rule.name + "RuleCall";
+        byName.set(name, { feature: element, kind: "RuleCall" });
+        byFeature.set(element, name);
+    } else if (CrossReference.is(element)) {
+        const name = (previous ?? "") + element.type.name + "CrossReference";
+        byName.set(name, { feature: element, kind: "CrossReference" });
+        byFeature.set(element, name);
+    } else if (Keyword.is(element)) {
+        const validName = replaceTokens(element.value) + "Keyword";
+        byName.set(validName, { feature: element, kind: "Keyword" });
+        byFeature.set(element, validName);
+    } else if (Action.is(element)) {
+        const name = (previous ?? "") + element.Type + (element.feature ?? "") + "Action";
+        byName.set(name, { feature: element, kind: "Action" });
+        byFeature.set(element, name);
+    } else if (Alternatives.is(element) || UnorderedGroup.is(element) || Group.is(element)) {
+        for (const subFeature of element.elements) {
+            putFeature(subFeature, previous, byName, byFeature);
+        }
     }
 }

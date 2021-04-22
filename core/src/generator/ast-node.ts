@@ -1,15 +1,15 @@
-import { PartialDeep } from "type-fest";
-import { AbstractElement } from "../gen/ast";
+import { PartialDeep } from 'type-fest';
+import { AbstractElement } from '../gen/ast';
 
 // eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace AstNode {
 
     export const kind: Kind = { value: 'AstNode', super: [] };
 
-    export const cstNode = Symbol("node");
+    export const cstNode = Symbol('node');
 
     export function is<T extends AstNode>(item: AstNode, kind: Kind): item is T {
-        return !!item && 'kind' in item && typeof item.kind === "object" && Kind.instanceOf(item.kind, kind);
+        return !!item && 'kind' in item && typeof item.kind === 'object' && Kind.instanceOf(item.kind, kind);
     }
 }
 
@@ -68,7 +68,7 @@ export abstract class AbstractCstNode implements CstNode {
         } else if (parent) {
             return parent.root;
         } else {
-            throw new Error("Node has no root");
+            throw new Error('Node has no root');
         }
     }
 }
@@ -130,16 +130,16 @@ class CstNodeContainer extends Array<CstNode> {
     }
 
     push(...items: CstNode[]): number {
-        items.forEach(e => {
-            (<AbstractCstNode>e).parent = this.parent;
-        })
+        for (const item of items) {
+            (<AbstractCstNode>item).parent = this.parent;
+        }
         return super.push(...items);
     }
 }
 
 export class RootCstNode extends CompositeCstNode {
 
-    private _text = "";
+    private _text = '';
 
     set text(value: string) {
         this._text = value;
@@ -155,6 +155,11 @@ export class RootCstNode extends CompositeCstNode {
 
     get length(): number {
         return this.text.length;
+    }
+
+    constructor(input?: string) {
+        super();
+        this._text = input ?? '';
     }
 }
 

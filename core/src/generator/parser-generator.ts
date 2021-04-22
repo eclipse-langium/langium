@@ -1,10 +1,10 @@
-import { AbstractElement, Action, Alternatives, Assignment, CrossReference, Grammar, Group, Keyword, ParserRule, RuleCall, TerminalRule, UnorderedGroup } from "../gen/ast";
-import { getTypeName } from "../grammar/grammar-utils";
-import { CompositeGeneratorNode, GeneratorNode, IndentNode, NewLineNode } from "./node/node";
-import { process } from "./node/node-processor";
-import { replaceTokens } from "./token-replacer";
-import { collectAst } from "./type-collector";
-import { findAllFeatures } from "./utils";
+import { AbstractElement, Action, Alternatives, Assignment, CrossReference, Grammar, Group, Keyword, ParserRule, RuleCall, TerminalRule, UnorderedGroup } from '../gen/ast';
+import { getTypeName } from '../grammar/grammar-utils';
+import { CompositeGeneratorNode, GeneratorNode, IndentNode, NewLineNode, NL } from './node/node';
+import { process } from './node/node-processor';
+import { replaceTokens } from './token-replacer';
+import { collectAst } from './type-collector';
+import { findAllFeatures } from './utils';
 
 type RuleContext = {
     name: string,
@@ -36,38 +36,38 @@ export function generateParser(grammar: Grammar, path?: string): string {
 
     fileNode.children.push('import {');
     const types = collectAst(grammar);
-    types.forEach(e => {
-        fileNode.children.push(' ', e.name, ',');
-    });
+    for (const type of types) {
+        fileNode.children.push(' ', type.name, ',');
+    }
     fileNode.children.push(" } from './ast';", new NewLineNode(), new NewLineNode());
 
     const tokens: Array<{ name: string, length: number, node: CompositeGeneratorNode }> = [];
-    const terminals = grammar.rules?.filter(e => TerminalRule.is(e)).map(e => e as TerminalRule);
+    const terminals = grammar.rules.filter(e => TerminalRule.is(e)).map(e => e as TerminalRule);
 
-    terminals.forEach(e => {
-        tokens.push(buildTerminalToken(grammar, e));
-    });
+    for (const terminal of terminals) {
+        tokens.push(buildTerminalToken(grammar, terminal));
+    }
     let keywordTokens: Array<{ name: string, length: number, node: CompositeGeneratorNode }> = [];
-    keywords.forEach(e => {
-        keywordTokens.push(buildKeywordToken(e, keywords, terminals));
-    });
+    for (const keyword of keywords) {
+        keywordTokens.push(buildKeywordToken(keyword, keywords, terminals));
+    }
     keywordTokens = keywordTokens.sort((a, b) => b.length - a.length);
-    tokens.forEach(e => {
-        fileNode.children.push(e.node, new NewLineNode());
-    });
-    keywordTokens.forEach(e => {
-        fileNode.children.push(e.node, new NewLineNode());
-    });
+    for (const token of tokens) {
+        fileNode.children.push(token.node, new NewLineNode());
+    }
+    for (const keyword of keywordTokens) {
+        fileNode.children.push(keyword.node, new NewLineNode());
+    }
 
     fileNode.children.push(new NewLineNode());
 
-    keywords.forEach(e => {
-        const token = buildKeywordToken(e, keywords, terminals);
+    for (const keyword of keywords) {
+        const token = buildKeywordToken(keyword, keywords, terminals);
         fileNode.children.push(
-            token.name, '.LABEL = "', "'", e.substring(1, e.length - 1), "'\";",
+            token.name, '.LABEL = "', "'", keyword.substring(1, keyword.length - 1), "'\";",
             new NewLineNode()
         );
-    })
+    }
 
     const tokenListNode = new CompositeGeneratorNode();
     tokenListNode.children.push(
@@ -129,30 +129,25 @@ function buildParser(grammar: Grammar): CompositeGeneratorNode {
         new NewLineNode(),
         'this.grammarAccess = grammarAccess;',
         new NewLineNode(),
-        'this.performSelfAnalysis();',
-        new NewLineNode()
+        'this.performSelfAnalysis();', NL
     );
 
-    classBody.children.push(
-        constructorBody, '}',
-        new NewLineNode(),
-        new NewLineNode()
-    )
+    classBody.children.push(constructorBody, '}', NL, NL)
 
     let first = true;
-    grammar.rules?.filter(e => ParserRule.is(e)).map(e => e as ParserRule).forEach(e => {
+    for (const rule of grammar.rules.filter(e => ParserRule.is(e)).map(e => e as ParserRule)) {
         const ctx: RuleContext = {
-            name: e.name,
+            name: rule.name,
             consume: 1,
             option: 1,
             subrule: 1,
             many: 1,
             or: 1,
-            featureMap: findAllFeatures(e).byFeature
+            featureMap: findAllFeatures(rule).byFeature
         };
-        classBody.children.push(buildRule(ctx, e, first));
+        classBody.children.push(buildRule(ctx, rule, first));
         first = false;
-    });
+    }
 
     parserNode.children.push(classBody, '}');
 
@@ -201,10 +196,10 @@ function buildUnorderedGroup(ctx: RuleContext, group: UnorderedGroup, assignment
 function buildGroup(ctx: RuleContext, group: Group, assignment?: Assignment): CompositeGeneratorNode {
     const groupNode = new CompositeGeneratorNode();
 
-    group.elements.forEach(e => {
-        const terminalNode = buildElement(ctx, e, assignment);
-        groupNode.children.push(wrap(ctx, terminalNode, e.cardinality), new NewLineNode(undefined, true));
-    });
+    for (const element of group.elements) {
+        const terminalNode = buildElement(ctx, element, assignment);
+        groupNode.children.push(wrap(ctx, terminalNode, element.cardinality), new NewLineNode(undefined, true));
+    }
 
     return groupNode;
 }
@@ -231,27 +226,28 @@ function buildElement(ctx: RuleContext, terminal: AbstractElement, assignment?: 
     } else if (Group.is(terminal)) {
         return buildGroup(ctx, terminal, assignment);
     } else {
-        return "";
+        return '';
     }
 }
 
-function buildAlternatives(ctx: RuleContext, element: Alternatives, assignment?: Assignment): GeneratorNode {
-    if (element.elements.length === 1) {
-        return buildElement(ctx, element.elements[0], assignment);
+function buildAlternatives(ctx: RuleContext, alternatives: Alternatives, assignment?: Assignment): GeneratorNode {
+    if (alternatives.elements.length === 1) {
+        return buildElement(ctx, alternatives.elements[0], assignment);
     } else {
         const wrapper = new CompositeGeneratorNode();
         wrapper.children.push('this.or(', (ctx.or++).toString(), ', [', new NewLineNode());
         const altWrapper = new IndentNode();
         wrapper.children.push(altWrapper);
-        element.elements.forEach(e => {
+
+        for (const element of alternatives.elements) {
             altWrapper.children.push('{', new NewLineNode());
             const altIndent = new IndentNode();
             const contentIndent = new IndentNode();
             altIndent.children.push('ALT: () => {', new NewLineNode(), contentIndent, '}', new NewLineNode());
-            const elementNode = buildElement(ctx, e, assignment);
-            contentIndent.children.push(wrap(ctx, elementNode, e.cardinality), new NewLineNode(undefined, true));
+            const elementNode = buildElement(ctx, element, assignment);
+            contentIndent.children.push(wrap(ctx, elementNode, element.cardinality), new NewLineNode(undefined, true));
             altWrapper.children.push(altIndent, '},', new NewLineNode());
-        });
+        }
 
         wrapper.children.push(']);', new NewLineNode());
 
@@ -289,7 +285,7 @@ function buildRuleCall(ctx: RuleContext, ruleCall: RuleCall, assignment?: Assign
         return 'this.consumeLeaf(' + ctx.consume++ + ', ' + ruleCall.rule.name + ', ' + getGrammarAccess(ctx, assignment ?? ruleCall) + ');';
     }
 
-    return "";
+    return '';
 }
 
 function buildKeyword(ctx: RuleContext, keyword: Keyword, assignment?: Assignment): string {
@@ -366,18 +362,18 @@ function findLongerAlt(keyword: string, keywords: string[], terminals: TerminalR
 function collectKeywords(grammar: Grammar): string[] {
     const keywords = new Set<string>();
 
-    grammar.rules?.filter(e => ParserRule.is(e)).map(e => e as ParserRule).forEach(r => {
-        collectElementKeywords(r.alternatives, keywords);
-    });
+    for (const rule of grammar.rules.filter(e => ParserRule.is(e)).map(e => e as ParserRule)) {
+        collectElementKeywords(rule.alternatives, keywords);
+    }
 
     return Array.from(keywords);
 }
 
 function collectElementKeywords(element: AbstractElement, keywords: Set<string>) {
     if (Alternatives.is(element) || Group.is(element) || UnorderedGroup.is(element)) {
-        element.elements.forEach(e => {
-            collectElementKeywords(e, keywords);
-        });
+        for (const item of element.elements) {
+            collectElementKeywords(item, keywords);
+        }
     } else if (Assignment.is(element)) {
         collectElementKeywords(element.terminal, keywords);
     } else if (Keyword.is(element)) {
