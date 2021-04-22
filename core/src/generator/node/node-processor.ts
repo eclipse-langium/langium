@@ -2,9 +2,19 @@ import { CompositeGeneratorNode, GeneratorNode, IndentNode, NewLineNode, TextNod
 
 class Context {
 
+    defaultIndentation = "    ";
+
     private lines: string[][] = [[]];
     private _pendingIndent = true;
     private _currentIndents: IndentNode[] = [];
+
+    constructor(defaultIndent?: string | number) {
+        if (typeof defaultIndent === 'string') {
+            this.defaultIndentation = defaultIndent;
+        } else if (typeof defaultIndent === 'number') {
+            this.defaultIndentation = "".padStart(defaultIndent);
+        }
+    }
 
     public get pendingIndent(): boolean {
         return this._pendingIndent;
@@ -54,8 +64,8 @@ class Context {
     }
 }
 
-export function process(node: GeneratorNode): string {
-    const context = new Context();
+export function process(node: GeneratorNode, defaultIndentation?: string | number): string {
+    const context = new Context(defaultIndentation);
     processNode(node, context);
     return context.content;
 }
@@ -100,7 +110,7 @@ function processTextNode(node: TextNode, context: Context) {
 function handlePendingIndent(ctx: Context, endOfLine: boolean) {
     let indent = "";
     ctx.currentIndents.filter(e => e.indentEmptyLines || !endOfLine).forEach(e => {
-        indent += e.indentation;
+        indent += e.indentation ?? ctx.defaultIndentation;
     });
     ctx.append(indent);
     ctx.pendingIndent = false;
@@ -115,7 +125,7 @@ function processCompositeNode(node: CompositeGeneratorNode, context: Context) {
 function processIndentNode(node: IndentNode, context: Context) {
     if (hasContent(node, context)) {
         if (node.indentImmediately && !context.pendingIndent) {
-            context.append(node.indentation);
+            context.append(node.indentation ?? context.defaultIndentation);
         }
         try {
             context.increaseIndent(node);

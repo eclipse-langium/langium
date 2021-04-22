@@ -15,7 +15,7 @@ export function generateGrammarAccess(grammar: Grammar, path?: string, bootstrap
 
     node.children.push("export class ", grammar.name + "GrammarAccess extends GrammarAccess {", new NewLineNode());
 
-    const content = new IndentNode(4);
+    const content = new IndentNode();
 
     grammar.rules.filter(e => ParserRule.is(e)).map(e => e as ParserRule).forEach(e => {
         if (bootstrap) {

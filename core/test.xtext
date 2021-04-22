@@ -1,4 +1,4 @@
-grammar xtext hidden(WS)
+grammar Langium hidden(WS)
 
 terminal WS         : /\s+/;
 terminal ID returns string: /\^?[_a-zA-Z][\w_]*/;

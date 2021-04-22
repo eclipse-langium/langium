@@ -34,15 +34,15 @@ export class Interface {
         const interfaceNode = new CompositeGeneratorNode();
         const superTypes = this.superTypes.length > 0 ? this.superTypes : [ "AstNode" ];
         interfaceNode.children.push("export interface ", this.name, " extends ", superTypes.join(", "), " {", new NewLineNode());
-        const fieldsNode = new IndentNode(4);
+        const fieldsNode = new IndentNode();
         for (const field of this.fields) {
             fieldsNode.children.push(field.name, field.optional ? "?" : "", ": ", field.types.join(" | "), field.array ? "[]" : "", new NewLineNode());
         }
         interfaceNode.children.push(fieldsNode, "}", new NewLineNode(), new NewLineNode());
         interfaceNode.children.push("export namespace ", this.name, " {", new NewLineNode());
-        const interfaceBody = new IndentNode(4);
-        const methodBody = new IndentNode(4);
+        const interfaceBody = new IndentNode();
         interfaceBody.children.push("export const kind: Kind = { value: '", this.name, "', get super() { return [ ", superTypes.map(e => e + ".kind").join(", "), " ]; }}", new NewLineNode());
+        const methodBody = new IndentNode();
         interfaceBody.children.push("export function is(item: any): item is ", this.name, " {", new NewLineNode(), methodBody, "}");
         methodBody.children.push("return AstNode.is(item, kind);", new NewLineNode());
         interfaceNode.children.push(interfaceBody, new NewLineNode(), "}", new NewLineNode());

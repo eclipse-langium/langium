@@ -1,5 +1,5 @@
 import { Grammar } from "../gen/ast";
-import { CompositeGeneratorNode, NewLineNode, TextNode } from "./node/node";
+import { CompositeGeneratorNode, NewLineNode } from "./node/node";
 import { process } from "./node/node-processor";
 import { collectAst } from "./type-collector";
 
@@ -8,15 +8,15 @@ export function generateAst(grammar: Grammar, path?: string): string {
     const langiumPath = "'" + (path ?? "langium") + "'"
     const fileNode = new CompositeGeneratorNode();
     fileNode.children.push(
-        new TextNode("/* eslint-disable @typescript-eslint/no-namespace */"),
+        '/* eslint-disable @typescript-eslint/no-namespace */',
         new NewLineNode(),
-        new TextNode("/* eslint-disable @typescript-eslint/no-explicit-any */"),
+        '/* eslint-disable @typescript-eslint/no-explicit-any */',
         new NewLineNode(),
-        new TextNode("/* eslint-disable @typescript-eslint/no-empty-interface */"),
+        '/* eslint-disable @typescript-eslint/no-empty-interface */',
         new NewLineNode(),
-        new TextNode("/* eslint-disable @typescript-eslint/explicit-module-boundary-types */"),
+        '/* eslint-disable @typescript-eslint/explicit-module-boundary-types */',
         new NewLineNode(),
-        new TextNode('import { AstNode, Kind } from '), langiumPath, ';',
+        'import { AstNode, Kind } from ', langiumPath, ';',
         new NewLineNode(),
         new NewLineNode()
     );
@@ -27,76 +27,3 @@ export function generateAst(grammar: Grammar, path?: string): string {
 
     return process(fileNode);
 }
-
-// export function generateAst(grammar: Grammar, path?: string): string {
-//     const node = new CompositeGeneratorNode();
-//     const langiumPath = "'" + (path ?? "langium") + "'"
-//     node.children.push(
-//         new TextNode("/* eslint-disable */"),
-//         new NewLineNode(),
-//         new TextNode("// @ts-nocheck"),
-//         new NewLineNode(),
-//         new TextNode('import { AstNode } from '), langiumPath, ';',
-//         new NewLineNode(),
-//         new NewLineNode()
-//     );
-
-//     grammar.rules?.filter(e => ParserRule.is(e)).map(e => e as ParserRule).forEach(e => {
-//         node.children.push(generateRuleType(e));
-//     });
-
-//     return process(node);
-// }
-
-// function generateRuleType(rule: ParserRule): GeneratorNode {
-//     const typeNode = new CompositeGeneratorNode();
-//     const { fields, rules, hasAction } = collectRule(rule);
-
-//     typeNode.children.push("export type ", rule.name, " = ");
-
-//     if (fields.length === 0 && rules.length === 0) {
-//         typeNode.children.push('AstNode & { kind: "' + rule.name + '" }');
-//     }
-
-//     if (rules.length > 0 && fields.length > 0 && !hasAction) {
-//         typeNode.children.push("(");
-//     }
-
-//     typeNode.children.push(rules.join(" | "));
-
-//     if (rules.length > 0 && fields.length > 0 && !hasAction) {
-//         typeNode.children.push(")");
-//     }
-
-//     if (fields.length > 0) {
-//         if (hasAction) {
-//             typeNode.children.push(" | AstNode");
-//         } else if (rules.length === 0) {
-//             typeNode.children.push("AstNode");
-//         }
-//         typeNode.children.push(new TextNode(" & {"), new NewLineNode());
-
-//         const indent = new IndentNode("    ");
-//         typeNode.children.push(indent);
-//         if (rules.length === 0 || hasAction) {
-//             fields.push({
-//                 name: "container",
-//                 array: false,
-//                 optional: false,
-//                 type: ["Any"]
-//             });
-//         }
-//         fields.forEach((e, i) => {
-//             const option = e.optional && !e.array ? "?" : "";
-//             const array = e.array ? "[]" : "";
-//             const comma = i < fields.length - 1 ? "," : "";
-//             indent.children.push(new TextNode(e.name + option + ": " + e.type + array + comma), new NewLineNode());
-//         });
-
-//         typeNode.children.push(new TextNode("}"));
-//     }
-
-//     typeNode.children.push(new NewLineNode(), new NewLineNode());
-
-//     return typeNode;
-// }
