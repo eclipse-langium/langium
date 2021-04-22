@@ -68,7 +68,7 @@ AbstractTokenWithCardinality returns AbstractElement:
 ;
 
 Action returns AbstractElement:
-	{Action} '{' Type=ID ('.' feature=ID operator=('='|'+=') 'current')? '}'
+	{Action} '{' type=ID ('.' feature=ID operator=('='|'+=') 'current')? '}'
 ;
 
 AbstractTerminal returns AbstractElement:

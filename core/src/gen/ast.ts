@@ -126,7 +126,7 @@ export namespace AbstractElement {
 }
 
 export interface Action extends AbstractElement {
-    Type: string
+    type: string
     feature?: string
     operator?: '=' | '+='
 }

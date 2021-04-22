@@ -58,7 +58,7 @@ function putFeature(element: AbstractElement, previous: string | undefined, byNa
         byName.set(validName, { feature: element, kind: "Keyword" });
         byFeature.set(element, validName);
     } else if (Action.is(element)) {
-        const name = (previous ?? "") + element.Type + (element.feature ?? "") + "Action";
+        const name = (previous ?? "") + element.type + (element.feature ?? "") + "Action";
         byName.set(name, { feature: element, kind: "Action" });
         byFeature.set(element, name);
     } else if (Alternatives.is(element) || UnorderedGroup.is(element) || Group.is(element)) {

@@ -100,11 +100,11 @@ export class TypeCollector {
     }
 
     addAction(action: Action): void {
-        if (action.Type !== this.currentAlternative.name) {
+        if (action.type !== this.currentAlternative.name) {
             this.currentAlternative.super.push(this.currentAlternative.name);
         }
         this.currentAlternative.hasAction = true;
-        this.currentAlternative.name = action.Type;
+        this.currentAlternative.name = action.type;
         if (action.feature && action.operator) {
             if (this.lastRuleCall) {
                 this.currentAlternative.fields.push({

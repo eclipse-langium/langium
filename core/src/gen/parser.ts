@@ -349,7 +349,7 @@ export class Parser extends LangiumParser {
     private Action = this.DEFINE_RULE("Action", AbstractElement.kind, () => {
         this.executeAction(Action.kind, this.grammarAccess.Action.ActionAction);
         this.consumeLeaf(1, CurlyOpenKeyword, this.grammarAccess.Action.CurlyOpenKeyword);
-        this.consumeLeaf(2, ID, this.grammarAccess.Action.Type);
+        this.consumeLeaf(2, ID, this.grammarAccess.Action.type);
         this.option(1, () => {
             this.consumeLeaf(3, DotKeyword, this.grammarAccess.Action.DotKeyword);
             this.consumeLeaf(4, ID, this.grammarAccess.Action.feature);

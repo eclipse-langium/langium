@@ -189,7 +189,7 @@ function buildGroup(ctx: RuleContext, group: Group, assignment?: Assignment): Co
 }
 
 function buildAction(ctx: RuleContext, action: Action): GeneratorNode {
-    return 'this.executeAction(' + action.Type + '.kind, ' + getGrammarAccess(ctx, action) + ');';
+    return 'this.executeAction(' + action.type + '.kind, ' + getGrammarAccess(ctx, action) + ');';
 }
 
 function buildElement(ctx: RuleContext, terminal: AbstractElement, assignment?: Assignment): GeneratorNode {
