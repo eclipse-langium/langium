@@ -22,16 +22,11 @@ export function generateParser(grammar: Grammar, path?: string): string {
 
     const fileNode = new CompositeGeneratorNode();
     fileNode.children.push(
-        '/* eslint-disable */',
-        new NewLineNode(),
-        '// @ts-nocheck',
-        new NewLineNode(),
-        "import { createToken, Lexer } from 'chevrotain';",
-        new NewLineNode(),
-        'import { LangiumParser } from ', langiumPath, ';',
-        new NewLineNode(),
-        'import { ' + grammar.name + "GrammarAccess } from './grammar-access';",
-        new NewLineNode(),
+        '/* eslint-disable */', NL,
+        '// @ts-nocheck', NL,
+        "import { createToken, Lexer } from 'chevrotain';", NL,
+        'import { LangiumParser } from ', langiumPath, ';', NL,
+        'import { ' + grammar.name + "GrammarAccess } from './grammar-access';", NL,
     );
 
     fileNode.children.push('import {');
@@ -39,7 +34,7 @@ export function generateParser(grammar: Grammar, path?: string): string {
     for (const type of types) {
         fileNode.children.push(' ', type.name, ',');
     }
-    fileNode.children.push(" } from './ast';", new NewLineNode(), new NewLineNode());
+    fileNode.children.push(" } from './ast';", NL, NL);
 
     const tokens: Array<{ name: string, length: number, node: CompositeGeneratorNode }> = [];
     const terminals = grammar.rules.filter(e => TerminalRule.is(e)).map(e => e as TerminalRule);
@@ -53,36 +48,32 @@ export function generateParser(grammar: Grammar, path?: string): string {
     }
     keywordTokens = keywordTokens.sort((a, b) => b.length - a.length);
     for (const token of tokens) {
-        fileNode.children.push(token.node, new NewLineNode());
+        fileNode.children.push(token.node, NL);
     }
     for (const keyword of keywordTokens) {
-        fileNode.children.push(keyword.node, new NewLineNode());
+        fileNode.children.push(keyword.node, NL);
     }
 
-    fileNode.children.push(new NewLineNode());
+    fileNode.children.push(NL);
 
     for (const keyword of keywords) {
         const token = buildKeywordToken(keyword, keywords, terminals);
-        fileNode.children.push(
-            token.name, '.LABEL = "', "'", keyword.substring(1, keyword.length - 1), "'\";",
-            new NewLineNode()
-        );
+        fileNode.children.push(token.name, '.LABEL = "', "'", keyword.substring(1, keyword.length - 1), "'\";", NL);
     }
 
     const tokenListNode = new CompositeGeneratorNode();
     tokenListNode.children.push(
         'const tokens = [',
         keywordTokens.map(e => e.name).join(', ') + ', ' + tokens.map(e => e.name).join(', '),
-        '];',
-        new NewLineNode()
+        '];', NL
     );
 
-    fileNode.children.push(tokenListNode, new NewLineNode());
-    fileNode.children.push('const lexer = new Lexer(tokens);', new NewLineNode());
+    fileNode.children.push(tokenListNode, NL);
+    fileNode.children.push('const lexer = new Lexer(tokens);', NL);
 
-    fileNode.children.push(buildParser(grammar), new NewLineNode(), new NewLineNode());
+    fileNode.children.push(buildParser(grammar), NL, NL);
 
-    fileNode.children.push('let parser: Parser | undefined;', new NewLineNode(), new NewLineNode());
+    fileNode.children.push('let parser: Parser | undefined;', NL, NL);
 
     fileNode.children.push(buildParseFunction(grammar));
     return process(fileNode);
@@ -91,48 +82,46 @@ export function generateParser(grammar: Grammar, path?: string): string {
 function buildParseFunction(grammar: Grammar): CompositeGeneratorNode {
     const parseFunction = new CompositeGeneratorNode();
     parseFunction.children.push(
-        'export function parse(grammarAccess: ', grammar.name, 'GrammarAccess, text: string) {', new NewLineNode());
+        'export function parse(grammarAccess: ', grammar.name, 'GrammarAccess, text: string) {', NL);
     const parseBody = new IndentNode();
     parseBody.children.push(
-        'if (!parser) {', new NewLineNode(),
-        '    parser = new Parser(grammarAccess);', new NewLineNode(), '}', new NewLineNode(),
-        'const lexResult = lexer.tokenize(text);', new NewLineNode(),
-        'parser.input = lexResult.tokens;', new NewLineNode(),
-        'const ast = parser.parse(text);', new NewLineNode(),
-        'return {', new NewLineNode()
+        'if (!parser) {', NL,
+        '    parser = new Parser(grammarAccess);', NL, '}', NL,
+        'const lexResult = lexer.tokenize(text);', NL,
+        'parser.input = lexResult.tokens;', NL,
+        'const ast = parser.parse(text);', NL,
+        'return {', NL
     );
 
     const resultObj = new IndentNode();
     resultObj.children.push(
-        'ast,', new NewLineNode(),
-        'lexErrors: lexResult.errors,', new NewLineNode(),
-        'parseErrors: parser.errors', new NewLineNode()
+        'ast,', NL,
+        'lexErrors: lexResult.errors,', NL,
+        'parseErrors: parser.errors', NL
     );
 
-    parseBody.children.push(resultObj, '}', new NewLineNode());
-    parseFunction.children.push(parseBody, '}', new NewLineNode());
+    parseBody.children.push(resultObj, '}', NL);
+    parseFunction.children.push(parseBody, '}', NL);
     return parseFunction;
 }
 
 function buildParser(grammar: Grammar): CompositeGeneratorNode {
     const parserNode = new CompositeGeneratorNode();
 
-    parserNode.children.push('export class Parser extends LangiumParser {', new NewLineNode());
+    parserNode.children.push('export class Parser extends LangiumParser {', NL);
 
     const classBody = new IndentNode();
-    classBody.children.push('grammarAccess: ', grammar.name, 'GrammarAccess;', new NewLineNode());
-    classBody.children.push('constructor(grammarAccess: ', grammar.name, 'GrammarAccess) {', new NewLineNode());
+    classBody.children.push('grammarAccess: ', grammar.name, 'GrammarAccess;', NL);
+    classBody.children.push('constructor(grammarAccess: ', grammar.name, 'GrammarAccess) {', NL);
 
     const constructorBody = new IndentNode();
     constructorBody.children.push(
-        'super(tokens);',
-        new NewLineNode(),
-        'this.grammarAccess = grammarAccess;',
-        new NewLineNode(),
+        'super(tokens);', NL,
+        'this.grammarAccess = grammarAccess;', NL,
         'this.performSelfAnalysis();', NL
     );
 
-    classBody.children.push(constructorBody, '}', NL, NL)
+    classBody.children.push(constructorBody, '}', NL, NL);
 
     let first = true;
     for (const rule of grammar.rules.filter(e => ParserRule.is(e)).map(e => e as ParserRule)) {
@@ -161,8 +150,7 @@ function buildRule(ctx: RuleContext, rule: ParserRule, first: boolean): Composit
     ruleNode.children.push(
         ' = this.', first ? 'MAIN_RULE("' : 'DEFINE_RULE("',
         rule.name, '", ', rule.fragment ? 'undefined' : getTypeName(rule) + '.kind',
-        ', () => {',
-        new NewLineNode()
+        ', () => {', NL
     );
 
     const ruleContent = new IndentNode();
@@ -170,11 +158,7 @@ function buildRule(ctx: RuleContext, rule: ParserRule, first: boolean): Composit
     ruleContent.children.push(buildElement(ctx, rule.alternatives), new NewLineNode(undefined, true));
     ruleContent.children.push(buildRuleReturnStatement(rule));
 
-    ruleNode.children.push(
-        '})',
-        new NewLineNode(),
-        new NewLineNode()
-    )
+    ruleNode.children.push('})', NL, NL);
 
     return ruleNode;
 }
@@ -235,35 +219,35 @@ function buildAlternatives(ctx: RuleContext, alternatives: Alternatives, assignm
         return buildElement(ctx, alternatives.elements[0], assignment);
     } else {
         const wrapper = new CompositeGeneratorNode();
-        wrapper.children.push('this.or(', (ctx.or++).toString(), ', [', new NewLineNode());
+        wrapper.children.push('this.or(', (ctx.or++).toString(), ', [', NL);
         const altWrapper = new IndentNode();
         wrapper.children.push(altWrapper);
 
         for (const element of alternatives.elements) {
-            altWrapper.children.push('{', new NewLineNode());
+            altWrapper.children.push('{', NL);
             const altIndent = new IndentNode();
             const contentIndent = new IndentNode();
-            altIndent.children.push('ALT: () => {', new NewLineNode(), contentIndent, '}', new NewLineNode());
+            altIndent.children.push('ALT: () => {', NL, contentIndent, '}', NL);
             const elementNode = buildElement(ctx, element, assignment);
             contentIndent.children.push(wrap(ctx, elementNode, element.cardinality), new NewLineNode(undefined, true));
-            altWrapper.children.push(altIndent, '},', new NewLineNode());
+            altWrapper.children.push(altIndent, '},', NL);
         }
 
-        wrapper.children.push(']);', new NewLineNode());
+        wrapper.children.push(']);', NL);
 
         return wrapper;
     }
 }
 
-function wrap<T extends GeneratorNode>(ctx: RuleContext, node: T, cardinality: string | undefined): T | CompositeGeneratorNode {
+function wrap(ctx: RuleContext, node: GeneratorNode, cardinality: string | undefined): GeneratorNode {
     if (!cardinality) {
         return node;
     } else {
         const wrapper = new CompositeGeneratorNode();
         if (cardinality === '*' || cardinality === '+') {
-            wrapper.children.push('this.many(' + ctx.many++ + ', () => {', new NewLineNode());
+            wrapper.children.push('this.many(' + ctx.many++ + ', () => {', NL);
         } else if (cardinality === '?') {
-            wrapper.children.push('this.option(' + ctx.option++ + ', () => {', new NewLineNode());
+            wrapper.children.push('this.option(' + ctx.option++ + ', () => {', NL);
         }
 
         const indent = new IndentNode();
@@ -322,14 +306,7 @@ function buildKeywordToken(keyword: string, keywords: string[], terminals: Termi
     const fixed = keyword.substring(1, keyword.length - 1);
     const longerAlt = findLongerAlt(fixed, keywords, terminals);
     const validName = replaceTokens(keyword) + 'Keyword';
-    keywordNode.children.push(
-        'const ',
-        validName,
-        " = createToken({ name: '",
-        validName,
-        "', pattern: /",
-        escapeRegExp(fixed),
-        '/');
+    keywordNode.children.push('const ', validName, " = createToken({ name: '", validName, "', pattern: /", escapeRegExp(fixed), '/');
 
     if (longerAlt) {
         keywordNode.children.push(', longer_alt: ', longerAlt);
@@ -344,7 +321,7 @@ function escapeRegExp(text: string): string {
 }
 
 function findLongerAlt(keyword: string, keywords: string[], terminals: TerminalRule[]): string | undefined {
-    const starter = "'" + keyword
+    const starter = "'" + keyword;
     const longerKeywords = keywords.filter(e => e.length > keyword.length + 2 && e.startsWith(starter));
     if (longerKeywords.length > 0) {
         let shortest = longerKeywords[0];

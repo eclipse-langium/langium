@@ -92,7 +92,7 @@ export class LangiumParser extends EmbeddedActionsParser {
             });
             const result = implementation(implArgs);
             return result;
-        }
+        };
     }
 
     consumeLeaf(idx: number, tokenType: TokenType, feature: AbstractElement): void {
@@ -150,7 +150,7 @@ export class LangiumParser extends EmbeddedActionsParser {
 
     construct<T extends AstNode>(): PartialDeep<T> {
         const item = this.current;
-        const obj = item.object
+        const obj = item.object;
         if (!this.RECORDING_PHASE) {
             for (const value of Object.values(obj)) {
                 if (Array.isArray(value)) {

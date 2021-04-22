@@ -1,6 +1,6 @@
 import { AbstractElement, Action, Alternatives, Assignment, CrossReference, Grammar, Group, Keyword, ParserRule, RuleCall, UnorderedGroup } from '../gen/ast';
 import { getTypeName } from '../grammar/grammar-utils';
-import { CompositeGeneratorNode, IndentNode, NewLineNode } from './node/node';
+import { CompositeGeneratorNode, IndentNode, NL } from './node/node';
 import { process } from './node/node-processor';
 import { Cardinality, isDataTypeRule, isOptionalCardinality } from './utils';
 
@@ -33,19 +33,19 @@ export class Interface {
     toString(): string {
         const interfaceNode = new CompositeGeneratorNode();
         const superTypes = this.superTypes.length > 0 ? this.superTypes : [ 'AstNode' ];
-        interfaceNode.children.push('export interface ', this.name, ' extends ', superTypes.join(', '), ' {', new NewLineNode());
+        interfaceNode.children.push('export interface ', this.name, ' extends ', superTypes.join(', '), ' {', NL);
         const fieldsNode = new IndentNode();
         for (const field of this.fields) {
-            fieldsNode.children.push(field.name, field.optional ? '?' : '', ': ', field.types.join(' | '), field.array ? '[]' : '', new NewLineNode());
+            fieldsNode.children.push(field.name, field.optional ? '?' : '', ': ', field.types.join(' | '), field.array ? '[]' : '', NL);
         }
-        interfaceNode.children.push(fieldsNode, '}', new NewLineNode(), new NewLineNode());
-        interfaceNode.children.push('export namespace ', this.name, ' {', new NewLineNode());
+        interfaceNode.children.push(fieldsNode, '}', NL, NL);
+        interfaceNode.children.push('export namespace ', this.name, ' {', NL);
         const interfaceBody = new IndentNode();
-        interfaceBody.children.push("export const kind: Kind = { value: '", this.name, "', get super() { return [ ", superTypes.map(e => e + '.kind').join(', '), ' ]; }}', new NewLineNode());
+        interfaceBody.children.push("export const kind: Kind = { value: '", this.name, "', get super() { return [ ", superTypes.map(e => e + '.kind').join(', '), ' ]; }};', NL);
         const methodBody = new IndentNode();
-        interfaceBody.children.push('export function is(item: any): item is ', this.name, ' {', new NewLineNode(), methodBody, '}');
-        methodBody.children.push('return AstNode.is(item, kind);', new NewLineNode());
-        interfaceNode.children.push(interfaceBody, new NewLineNode(), '}', new NewLineNode());
+        interfaceBody.children.push('export function is(item: any): item is ', this.name, ' {', NL, methodBody, '}');
+        methodBody.children.push('return AstNode.is(item, kind);', NL);
+        interfaceNode.children.push(interfaceBody, NL, '}', NL);
 
         return process(interfaceNode);
     }

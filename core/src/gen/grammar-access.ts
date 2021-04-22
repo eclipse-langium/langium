@@ -1,5 +1,5 @@
-import { GrammarAccess } from '../index'
-import { Action, Assignment, CrossReference, Keyword, RuleCall } from './ast'
+import { GrammarAccess } from '../index';
+import { Action, Assignment, CrossReference, Keyword, RuleCall } from './ast';
 
 export type GrammarRuleAccess = {
     GrammarKeyword: Keyword;

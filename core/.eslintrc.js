@@ -38,7 +38,8 @@ module.exports = {
             "asyncArrow": "always",
             "named": "never"
         }],
-        "quotes": [2, "single", { "avoidEscape": true }],
+        "semi": [2, "always"],                            // Always use semicolons at end of statement
+        "quotes": [2, "single", { "avoidEscape": true }], // Prefer single quotes
         "use-isnan": "error",                             // isNaN(i) Number.isNaN(i) instead of i === NaN
 
         // List of [@typescript-eslint rules](https://github.com/typescript-eslint/typescript-eslint/tree/master/packages/eslint-plugin#supported-rules)
