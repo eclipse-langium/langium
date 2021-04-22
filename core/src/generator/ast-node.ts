@@ -4,7 +4,7 @@ import { AbstractElement } from "../gen/ast";
 // eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace AstNode {
 
-    export const kind: Kind = { value: Symbol("AstNode"), super: [] };
+    export const kind: Kind = { value: 'AstNode', super: [] };
 
     export const cstNode = Symbol("node");
 
@@ -14,7 +14,7 @@ export namespace AstNode {
 }
 
 export type Kind = {
-    value: symbol,
+    value: string,
     super: Kind[]
 }
 

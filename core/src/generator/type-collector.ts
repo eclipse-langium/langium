@@ -41,8 +41,8 @@ export class Interface {
         interfaceNode.children.push(fieldsNode, "}", new NewLineNode(), new NewLineNode());
         interfaceNode.children.push("export namespace ", this.name, " {", new NewLineNode());
         const interfaceBody = new IndentNode(4);
-        interfaceBody.children.push("export const kind: Kind = { value: Symbol('", this.name, "'), get super() { return [ ", superTypes.join(".kind, "), ".kind ] }}", new NewLineNode());
         const methodBody = new IndentNode(4);
+        interfaceBody.children.push("export const kind: Kind = { value: '", this.name, "', get super() { return [ ", superTypes.map(e => e + ".kind").join(", "), " ]; }}", new NewLineNode());
         interfaceBody.children.push("export function is(item: any): item is ", this.name, " {", new NewLineNode(), methodBody, "}");
         methodBody.children.push("return AstNode.is(item, kind);", new NewLineNode());
         interfaceNode.children.push(interfaceBody, new NewLineNode(), "}", new NewLineNode());
