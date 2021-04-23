@@ -1,5 +1,6 @@
 import { AbstractElement, Action, Alternatives, Assignment, CrossReference, Grammar, Group, Keyword, ParserRule, RuleCall, TerminalRule, UnorderedGroup } from '../gen/ast';
 import { getTypeName } from '../grammar/grammar-utils';
+import { AstNode } from './ast-node';
 import { CompositeGeneratorNode, GeneratorNode, IndentNode, NewLineNode, NL } from './node/node';
 import { process } from './node/node-processor';
 import { replaceTokens } from './token-replacer';
@@ -169,19 +170,19 @@ function buildRuleReturnStatement(rule: ParserRule): CompositeGeneratorNode {
     return node;
 }
 
-function buildUnorderedGroup(ctx: RuleContext, group: UnorderedGroup, assignment?: Assignment): CompositeGeneratorNode {
+function buildUnorderedGroup(ctx: RuleContext, group: UnorderedGroup): CompositeGeneratorNode {
     if (Group.is(group)) {
-        return buildGroup(ctx, group, assignment);
+        return buildGroup(ctx, group);
     } else {
         throw new Error('Unordered groups are not supported (yet)');
     }
 }
 
-function buildGroup(ctx: RuleContext, group: Group, assignment?: Assignment): CompositeGeneratorNode {
+function buildGroup(ctx: RuleContext, group: Group): CompositeGeneratorNode {
     const groupNode = new CompositeGeneratorNode();
 
     for (const element of group.elements) {
-        const terminalNode = buildElement(ctx, element, assignment);
+        const terminalNode = buildElement(ctx, element);
         groupNode.children.push(wrap(ctx, terminalNode, element.cardinality), new NewLineNode(undefined, true));
     }
 
@@ -192,31 +193,31 @@ function buildAction(ctx: RuleContext, action: Action): GeneratorNode {
     return 'this.executeAction(' + action.type + '.kind, ' + getGrammarAccess(ctx, action) + ');';
 }
 
-function buildElement(ctx: RuleContext, terminal: AbstractElement, assignment?: Assignment): GeneratorNode {
+function buildElement(ctx: RuleContext, terminal: AbstractElement): GeneratorNode {
     if (Keyword.is(terminal)) {
-        return buildKeyword(ctx, terminal, assignment);
+        return buildKeyword(ctx, terminal);
     } else if (Action.is(terminal)) {
         return buildAction(ctx, terminal);
     } else if (Assignment.is(terminal)) {
-        return buildElement(ctx, terminal.terminal, terminal);
+        return buildElement(ctx, terminal.terminal);
     } else if (CrossReference.is(terminal)) {
-        return 'this.consumeLeaf(' + ctx.consume++ + ', ID, ' + getGrammarAccess(ctx, assignment ?? terminal) + ');';
+        return 'this.consumeLeaf(' + ctx.consume++ + ', ID, ' + getGrammarAccess(ctx, terminal) + ');';
     } else if (RuleCall.is(terminal)) {
-        return buildRuleCall(ctx, terminal, assignment);
+        return buildRuleCall(ctx, terminal);
     } else if (Alternatives.is(terminal)) {
-        return buildAlternatives(ctx, terminal, assignment);
+        return buildAlternatives(ctx, terminal);
     } else if (UnorderedGroup.is(terminal)) {
-        return buildUnorderedGroup(ctx, terminal, assignment);
+        return buildUnorderedGroup(ctx, terminal);
     } else if (Group.is(terminal)) {
-        return buildGroup(ctx, terminal, assignment);
+        return buildGroup(ctx, terminal);
     } else {
         return '';
     }
 }
 
-function buildAlternatives(ctx: RuleContext, alternatives: Alternatives, assignment?: Assignment): GeneratorNode {
+function buildAlternatives(ctx: RuleContext, alternatives: Alternatives): GeneratorNode {
     if (alternatives.elements.length === 1) {
-        return buildElement(ctx, alternatives.elements[0], assignment);
+        return buildElement(ctx, alternatives.elements[0]);
     } else {
         const wrapper = new CompositeGeneratorNode();
         wrapper.children.push('this.or(', (ctx.or++).toString(), ', [', NL);
@@ -228,7 +229,7 @@ function buildAlternatives(ctx: RuleContext, alternatives: Alternatives, assignm
             const altIndent = new IndentNode();
             const contentIndent = new IndentNode();
             altIndent.children.push('ALT: () => {', NL, contentIndent, '}', NL);
-            const elementNode = buildElement(ctx, element, assignment);
+            const elementNode = buildElement(ctx, element);
             contentIndent.children.push(wrap(ctx, elementNode, element.cardinality), new NewLineNode(undefined, true));
             altWrapper.children.push(altIndent, '},', NL);
         }
@@ -258,23 +259,24 @@ function wrap(ctx: RuleContext, node: GeneratorNode, cardinality: string | undef
     }
 }
 
-function buildRuleCall(ctx: RuleContext, ruleCall: RuleCall, assignment?: Assignment): string {
-    if (ParserRule.is(ruleCall.rule)) {
-        if (assignment) {
-            return 'this.subruleLeaf(' + ctx.subrule++ + ', this.' + ruleCall.rule.name + ', ' + getGrammarAccess(ctx, assignment) + ');';
+function buildRuleCall(ctx: RuleContext, ruleCall: RuleCall): string {
+    const rule = ruleCall.rule.value;
+    if (ParserRule.is(rule)) {
+        if (AstNode.getContainer(ruleCall, Assignment.kind)) {
+            return 'this.subruleLeaf(' + ctx.subrule++ + ', this.' + rule.name + ', ' + getGrammarAccess(ctx, ruleCall) + ');';
         } else {
-            return 'this.unassignedSubrule(' + ctx.subrule++ + ', this.' + ruleCall.rule.name + ', ' + getGrammarAccess(ctx, ruleCall) + ');';
+            return 'this.unassignedSubrule(' + ctx.subrule++ + ', this.' + rule.name + ', ' + getGrammarAccess(ctx, ruleCall) + ');';
         }
-    } else if (TerminalRule.is(ruleCall.rule)) {
-        return 'this.consumeLeaf(' + ctx.consume++ + ', ' + ruleCall.rule.name + ', ' + getGrammarAccess(ctx, assignment ?? ruleCall) + ');';
+    } else if (TerminalRule.is(rule)) {
+        return 'this.consumeLeaf(' + ctx.consume++ + ', ' + rule.name + ', ' + getGrammarAccess(ctx, ruleCall) + ');';
     }
 
     return '';
 }
 
-function buildKeyword(ctx: RuleContext, keyword: Keyword, assignment?: Assignment): string {
+function buildKeyword(ctx: RuleContext, keyword: Keyword): string {
     const validName = replaceTokens(keyword.value) + 'Keyword';
-    const node = 'this.consumeLeaf(' + ctx.consume++ + ', ' + validName + ', ' + getGrammarAccess(ctx, assignment ?? keyword) + ');';
+    const node = 'this.consumeLeaf(' + ctx.consume++ + ', ' + validName + ', ' + getGrammarAccess(ctx, keyword) + ');';
     return node;
 }
 
@@ -292,7 +294,7 @@ function buildTerminalToken(grammar: Grammar, terminal: TerminalRule): { name: s
         "', pattern: ",
         terminal.regex);
 
-    if (grammar.hiddenTokens && grammar.hiddenTokens.includes(terminal)) {
+    if (grammar.hiddenTokens && grammar.hiddenTokens.map(e => e.value).includes(terminal)) {
         terminalNode.children.push(', group: Lexer.SKIPPED');
     }
 

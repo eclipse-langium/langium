@@ -17,7 +17,7 @@ export function isDataTypeRule(rule: ParserRule): boolean {
     const features = Array.from(findAllFeatures(rule).byFeature.keys());
     const onlyRuleCallsAndKeywords = features.every(e => RuleCall.is(e) || Keyword.is(e) || Group.is(e) || Alternatives.is(e) || UnorderedGroup.is(e));
     if (onlyRuleCallsAndKeywords) {
-        const ruleCallWithParserRule = features.filter(e => RuleCall.is(e) && ParserRule.is(e.rule) && !isDataTypeRule(e.rule));
+        const ruleCallWithParserRule = features.filter(e => RuleCall.is(e) && ParserRule.is(e.rule.value) && !isDataTypeRule(e.rule.value));
         return ruleCallWithParserRule.length === 0;
     }
     return false;
@@ -46,11 +46,11 @@ function putFeature(element: AbstractElement, previous: string | undefined, byNa
         byFeature.set(element, fullName);
         putFeature(element.terminal, fullName, byName, byFeature);
     } else if (RuleCall.is(element)) {
-        const name = (previous ?? "") + element.rule.name + "RuleCall";
+        const name = (previous ?? "") + element.rule.value?.name + "RuleCall";
         byName.set(name, { feature: element, kind: "RuleCall" });
         byFeature.set(element, name);
     } else if (CrossReference.is(element)) {
-        const name = (previous ?? "") + element.type.name + "CrossReference";
+        const name = (previous ?? "") + element.type.value?.name + "CrossReference";
         byName.set(name, { feature: element, kind: "CrossReference" });
         byFeature.set(element, name);
     } else if (Keyword.is(element)) {

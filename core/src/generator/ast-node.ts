@@ -11,6 +11,18 @@ export namespace AstNode {
     export function is<T extends AstNode>(item: AstNode, kind: Kind): item is T {
         return !!item && 'kind' in item && typeof item.kind === 'object' && Kind.instanceOf(item.kind, kind);
     }
+
+    export function getContainer(item: AstNode, kind: Kind): AstNode | undefined {
+        if (!!item && item.container) {
+            if (is(item.container, kind)) {
+                return item.container;
+            } else {
+                return getContainer(item.container, kind);
+            }
+        } else {
+            return undefined;
+        }
+    }
 }
 
 export type Kind = {
@@ -29,6 +41,11 @@ export interface AstNode {
     readonly kind: Kind,
     readonly container?: AstNode,
     readonly [AstNode.cstNode]?: CstNode
+}
+
+export interface Reference<T extends AstNode> {
+    readonly value?: T;
+    readonly uri: string;
 }
 
 export interface CstNode {

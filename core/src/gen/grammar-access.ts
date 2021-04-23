@@ -37,7 +37,7 @@ export type GeneratedMetamodelRuleAccess = {
     name: Assignment;
     nameIDRuleCall: RuleCall;
     ePackage: Assignment;
-    ePackagestringCrossReference: CrossReference;
+    ePackagestringRuleCall: RuleCall;
     AsKeyword: Keyword;
     alias: Assignment;
     aliasIDRuleCall: RuleCall;
@@ -46,7 +46,7 @@ export type GeneratedMetamodelRuleAccess = {
 export type ReferencedMetamodelRuleAccess = {
     ImportKeyword: Keyword;
     ePackage: Assignment;
-    ePackagestringCrossReference: CrossReference;
+    ePackagestringRuleCall: RuleCall;
     AsKeyword: Keyword;
     alias: Assignment;
     aliasIDRuleCall: RuleCall;

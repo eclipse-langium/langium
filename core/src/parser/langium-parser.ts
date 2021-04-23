@@ -65,7 +65,7 @@ export class LangiumParser extends EmbeddedActionsParser {
                 if (RuleCall.is(feature)) {
                     result = {...result, ...lastResult};
                 } else if (Assignment.is(feature)) {
-                    this.assign({ operator: feature.operator, feature: feature.feature }, lastResult, result);
+                    this.assign(feature, lastResult, result);
                 }
             }
             if (lastResult) {
@@ -100,8 +100,9 @@ export class LangiumParser extends EmbeddedActionsParser {
         if (!this.RECORDING_PHASE) {
             this.nodeBuilder.buildLeafNode(token, feature);
         }
-        if (!this.RECORDING_PHASE && Assignment.is(feature) && !CrossReference.is(feature.terminal)) {
-            this.assign({ operator: feature.operator, feature: feature.feature }, token.image);
+        const assignment = <Assignment>AstNode.getContainer(feature, Assignment.kind);
+        if (!this.RECORDING_PHASE && assignment && !CrossReference.is(assignment.terminal)) {
+            this.assign(assignment, token.image);
         }
     }
 
@@ -126,8 +127,9 @@ export class LangiumParser extends EmbeddedActionsParser {
             this.nodeBuilder.buildCompositeNode(feature);
         }
         const subruleResult = this.subrule(idx, rule);
-        if (!this.RECORDING_PHASE && Assignment.is(feature)) {
-            this.assign({ operator: feature.operator, feature: feature.feature }, subruleResult);
+        const assignment = <Assignment>AstNode.getContainer(feature, Assignment.kind);
+        if (!this.RECORDING_PHASE && assignment) {
+            this.assign(assignment, subruleResult);
         }
         return subruleResult;
     }
@@ -143,7 +145,7 @@ export class LangiumParser extends EmbeddedActionsParser {
             this.stack.pop();
             this.stack.push(newItem);
             if (action.feature && action.operator) {
-                this.assign({ operator: action.operator, feature: action.feature }, last.object);
+                this.assign(action, last.object);
             }
         }
     }

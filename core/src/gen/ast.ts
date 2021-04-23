@@ -1,16 +1,17 @@
+/* eslint-disable @typescript-eslint/array-type */
 /* eslint-disable @typescript-eslint/no-namespace */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-empty-interface */
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
-import { AstNode, Kind } from '../index';
+import { AstNode, Kind, Reference } from '../index';
 
 export interface Grammar extends AstNode {
     name: string
-    usedGrammars?: Grammar[]
-    definesHiddenTokens?: boolean
-    hiddenTokens?: AbstractRule[]
-    metamodelDeclarations?: AbstractMetamodelDeclaration[]
-    rules: AbstractRule[]
+    usedGrammars: Array<Reference<Grammar>>
+    definesHiddenTokens: boolean
+    hiddenTokens: Array<Reference<AbstractRule>>
+    metamodelDeclarations: Array<AbstractMetamodelDeclaration>
+    rules: Array<AbstractRule>
 }
 
 export namespace Grammar {
@@ -54,10 +55,10 @@ export namespace Annotation {
 
 export interface ParserRule extends AbstractRule {
     fragment: boolean
-    parameters?: Parameter[]
+    parameters: Array<Parameter>
     wildcard: boolean
-    definesHiddenTokens?: boolean
-    hiddenTokens?: AbstractRule[]
+    definesHiddenTokens: boolean
+    hiddenTokens: Array<Reference<AbstractRule>>
     alternatives: AbstractElement
 }
 
@@ -80,7 +81,7 @@ export namespace Parameter {
 }
 
 export interface Alternatives extends AbstractElement {
-    elements: AbstractElement[]
+    elements: Array<AbstractElement>
 }
 
 export namespace Alternatives {
@@ -91,7 +92,7 @@ export namespace Alternatives {
 }
 
 export interface UnorderedGroup extends AbstractElement {
-    elements: AbstractElement[]
+    elements: Array<AbstractElement>
 }
 
 export namespace UnorderedGroup {
@@ -102,7 +103,7 @@ export namespace UnorderedGroup {
 }
 
 export interface Group extends AbstractElement, AbstractElement {
-    elements: AbstractElement[]
+    elements: Array<AbstractElement>
     predicated: boolean
     firstSetPredicated: boolean
 }
@@ -115,7 +116,7 @@ export namespace Group {
 }
 
 export interface AbstractElement extends AstNode {
-    cardinality?: '?' | '*' | '+'
+    cardinality: '?' | '*' | '+'
 }
 
 export namespace AbstractElement {
@@ -127,8 +128,8 @@ export namespace AbstractElement {
 
 export interface Action extends AbstractElement {
     type: string
-    feature?: string
-    operator?: '=' | '+='
+    feature: string
+    operator: '=' | '+='
 }
 
 export namespace Action {
@@ -152,8 +153,8 @@ export namespace Keyword {
 }
 
 export interface RuleCall extends AbstractElement {
-    rule: AbstractRule
-    arguments?: NamedArgument[]
+    rule: Reference<AbstractRule>
+    arguments: Array<NamedArgument>
     predicated: boolean
     firstSetPredicated: boolean
 }
@@ -166,8 +167,8 @@ export namespace RuleCall {
 }
 
 export interface NamedArgument extends AstNode {
-    parameter?: Parameter
-    calledByName?: boolean
+    parameter?: Reference<Parameter>
+    calledByName: boolean
     value: Condition
 }
 
@@ -191,7 +192,7 @@ export namespace LiteralCondition {
 
 export interface Disjunction extends Condition {
     left: Condition
-    right?: Condition
+    right: Condition
 }
 
 export namespace Disjunction {
@@ -203,7 +204,7 @@ export namespace Disjunction {
 
 export interface Conjunction extends Condition {
     left: Condition
-    right?: Condition
+    right: Condition
 }
 
 export namespace Conjunction {
@@ -225,7 +226,7 @@ export namespace Negation {
 }
 
 export interface ParameterReference extends Condition {
-    parameter: Parameter
+    parameter: Reference<Parameter>
 }
 
 export namespace ParameterReference {
@@ -236,7 +237,7 @@ export namespace ParameterReference {
 }
 
 export interface TerminalRuleCall extends TerminalTokenElement {
-    rule: AbstractRule
+    rule: Reference<AbstractRule>
 }
 
 export namespace TerminalRuleCall {
@@ -247,8 +248,8 @@ export namespace TerminalRuleCall {
 }
 
 export interface Assignment extends AbstractElement {
-    predicated?: boolean
-    firstSetPredicated?: boolean
+    predicated: boolean
+    firstSetPredicated: boolean
     feature: string
     operator: '+=' | '=' | '?='
     terminal: AbstractElement
@@ -262,8 +263,8 @@ export namespace Assignment {
 }
 
 export interface CrossReference extends AbstractElement {
-    type: ParserRule
-    terminal?: AbstractElement
+    type: Reference<ParserRule>
+    terminal: AbstractElement
 }
 
 export namespace CrossReference {
@@ -296,7 +297,7 @@ export namespace TerminalAlternatives {
 }
 
 export interface TerminalGroup extends AstNode {
-    elements?: TerminalToken[]
+    elements: Array<TerminalToken>
 }
 
 export namespace TerminalGroup {
@@ -307,7 +308,7 @@ export namespace TerminalGroup {
 }
 
 export interface TerminalToken extends AstNode {
-    cardinality?: '?' | '*' | '+'
+    cardinality: '?' | '*' | '+'
 }
 
 export namespace TerminalToken {
@@ -349,7 +350,7 @@ export namespace Wildcard {
 
 export interface CharacterRange extends TerminalTokenElement {
     left: Keyword
-    right?: Keyword
+    right: Keyword
 }
 
 export namespace CharacterRange {
@@ -371,7 +372,7 @@ export namespace EnumRule {
 }
 
 export interface EnumLiterals extends AstNode {
-    elements: EnumLiteralDeclaration[]
+    elements: Array<EnumLiteralDeclaration>
 }
 
 export namespace EnumLiterals {
@@ -382,8 +383,8 @@ export namespace EnumLiterals {
 }
 
 export interface EnumLiteralDeclaration extends AstNode {
-    enumLiteral: EnumLiterals
-    literal?: Keyword
+    enumLiteral: Reference<EnumLiterals>
+    literal: Keyword
 }
 
 export namespace EnumLiteralDeclaration {
@@ -395,7 +396,7 @@ export namespace EnumLiteralDeclaration {
 
 export interface AbstractRule extends AstNode {
     name: string
-    type?: string
+    type: string
 }
 
 export namespace AbstractRule {
@@ -407,7 +408,7 @@ export namespace AbstractRule {
 
 export interface AbstractMetamodelDeclaration extends AstNode {
     ePackage: string
-    alias?: string
+    alias: string
 }
 
 export namespace AbstractMetamodelDeclaration {
@@ -438,7 +439,7 @@ export namespace TerminalTokenElement {
 }
 
 export interface ParenthesizedTerminalElement extends AstNode {
-    elements: TerminalGroup[]
+    elements: Array<TerminalGroup>
 }
 
 export namespace ParenthesizedTerminalElement {

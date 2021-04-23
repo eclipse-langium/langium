@@ -10,7 +10,7 @@ export function deserialize(content: string): Grammar {
 }
 
 
-export function getTypeName(rule: AbstractRule): string {
+export function getTypeName(rule: AbstractRule | undefined): string {
     if (EnumRule.is(rule)) {
         return rule.name;
     } else if (TerminalRule.is(rule) || ParserRule.is(rule)) {

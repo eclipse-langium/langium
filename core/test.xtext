@@ -18,10 +18,10 @@ AbstractMetamodelDeclaration :
 	GeneratedMetamodel | ReferencedMetamodel;
 
 GeneratedMetamodel :
-	'generate' name=ID ePackage=[string] ('as' alias=ID)?;
+	'generate' name=ID ePackage=string ('as' alias=ID)?;
 
 ReferencedMetamodel :
-	'import' ePackage=[string] ('as' alias=ID)?;
+	'import' ePackage=string ('as' alias=ID)?;
 
 
 Annotation:

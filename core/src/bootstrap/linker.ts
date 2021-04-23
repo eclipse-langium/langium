@@ -1,5 +1,5 @@
 import { AbstractElement, AbstractRule, Action, Alternatives, Assignment, CrossReference, Grammar, Group, ParserRule, RuleCall, UnorderedGroup } from '../gen/ast';
-import { AstNode, CompositeCstNode, CstNode } from '../generator/ast-node';
+import { AstNode, CompositeCstNode, CstNode, Reference } from '../generator/ast-node';
 
 export function linkGrammar(grammar: Grammar): void {
     findReferences(grammar, grammar);
@@ -45,9 +45,9 @@ function findReferences(grammar: Grammar, ref: any) {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function iterateNodes(grammar: Grammar, item: any, node: CstNode) {
-    if (node.element === item && node.feature && Assignment.is(node.feature) && CrossReference.is(node.feature.terminal)) {
+    const assignment = <Assignment>AstNode.getContainer(node.feature, Assignment.kind);
+    if (node.element === item && assignment && CrossReference.is(assignment.terminal)) {
         const text = node.text;
-        const assignment = node.feature;
         switch (assignment.operator) {
             case '=': {
                 item[assignment.feature] = findRule(grammar, text);
@@ -67,10 +67,10 @@ function iterateNodes(grammar: Grammar, item: any, node: CstNode) {
     }
 }
 
-function findRule(grammar: Grammar, name: string): AbstractRule {
+function findRule(grammar: Grammar, name: string): Reference<AbstractRule> {
     const rule = grammar.rules.find(e => e.name === name);
     if (!rule) {
         throw new Error('Could not find rule ' + name);
     }
-    return rule;
+    return { value: rule, uri: '' };
 }

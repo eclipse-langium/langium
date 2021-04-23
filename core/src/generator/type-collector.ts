@@ -16,7 +16,13 @@ type Field = {
     name: string,
     array: boolean,
     optional: boolean,
-    types: string[]
+    types: string[],
+    reference: boolean,
+}
+
+type TypeCollection = {
+    types: string[],
+    reference: boolean
 }
 
 export class Interface {
@@ -36,7 +42,11 @@ export class Interface {
         interfaceNode.children.push('export interface ', this.name, ' extends ', superTypes.join(', '), ' {', NL);
         const fieldsNode = new IndentNode();
         for (const field of this.fields) {
-            fieldsNode.children.push(field.name, field.optional ? '?' : '', ': ', field.types.join(' | '), field.array ? '[]' : '', NL);
+            const option = field.optional && field.reference && !field.array ? '?' : '';
+            let type = field.types.join(' | ');
+            type = field.reference ? 'Reference<' + type + '>' : type;
+            type = field.array ? 'Array<' + type + '>' : type;
+            fieldsNode.children.push(field.name, option, ': ', type, NL);
         }
         interfaceNode.children.push(fieldsNode, '}', NL, NL);
         interfaceNode.children.push('export namespace ', this.name, ' {', NL);
@@ -111,7 +121,8 @@ export class TypeCollector {
                     name: this.clean(action.feature),
                     array: action.operator === '+=',
                     optional: false,
-                    types: [getTypeName(this.lastRuleCall.rule)]
+                    reference: false,
+                    types: [getTypeName(this.lastRuleCall.rule?.value)]
                 });
             } else {
                 throw new Error('Actions with features can only be called after an unassigned rule call');
@@ -126,16 +137,19 @@ export class TypeCollector {
         if ('cardinality' in anyConv) {
             card = <Cardinality>anyConv.cardinality;
         }
+        const typeItems: TypeCollection = { types: [], reference: false };
+        this.findTypes(assignment.terminal, typeItems);
         this.currentAlternative.fields.push({
             name: this.clean(assignment.feature),
             array: assignment.operator === '+=',
             optional: isOptionalCardinality(card) || this.isOptional(),
-            types: assignment.operator === '?=' ? ['boolean'] : this.findTypes(assignment.terminal)
+            types: assignment.operator === '?=' ? ['boolean'] : typeItems.types,
+            reference: typeItems.reference
         });
     }
 
     addRuleCall(ruleCall: RuleCall): void {
-        const rule = ruleCall.rule;
+        const rule = ruleCall.rule.value;
         if (ParserRule.is(rule) && rule.fragment) {
             const collector = new TypeCollector();
             collector.addAlternative(rule.name);
@@ -163,27 +177,23 @@ export class TypeCollector {
         return this.cardinalities.some(e => e === '*' || e === '?');
     }
 
-    protected findTypes(terminal: AbstractElement): string[] {
-        const types: string[] = [];
-
+    protected findTypes(terminal: AbstractElement, types: TypeCollection): void {
         if (Alternatives.is(terminal) || UnorderedGroup.is(terminal) || Group.is(terminal)) {
-            types.push(...this.findInCollection(terminal));
+            this.findInCollection(terminal, types);
         } else if (Keyword.is(terminal)) {
-            types.push(terminal.value);
+            types.types.push(terminal.value);
         } else if (RuleCall.is(terminal)) {
-            types.push(getTypeName(terminal.rule));
+            types.types.push(getTypeName(terminal.rule?.value));
         } else if (CrossReference.is(terminal)) {
-            types.push(getTypeName(terminal.type));
+            types.types.push(getTypeName(terminal.type?.value));
+            types.reference = true;
         }
-        return types;
     }
 
-    protected findInCollection(collection: Alternatives | Group | UnorderedGroup): string[] {
-        const types: string[] = [];
+    protected findInCollection(collection: Alternatives | Group | UnorderedGroup, types: TypeCollection): void {
         for (const element of collection.elements) {
-            types.push(...this.findTypes(element));
+            this.findTypes(element, types);
         }
-        return types;
     }
 
     // TODO: Optimize/simplify this method

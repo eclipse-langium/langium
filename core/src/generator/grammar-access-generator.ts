@@ -1,4 +1,5 @@
-import { AbstractElement, Action, Assignment, CrossReference, Grammar, ParserRule } from '../gen/ast';
+import { AbstractElement, Action, Assignment, CrossReference, Grammar, Keyword, ParserRule, RuleCall } from '../gen/ast';
+import { AstNode } from './ast-node';
 import { CompositeGeneratorNode, GeneratorNode, IndentNode, NL } from './node/node';
 import { process } from './node/node-processor';
 import { findAllFeatures } from './utils';
@@ -52,28 +53,39 @@ function generateFeature(feature: AbstractElement): GeneratorNode {
     const indent = new IndentNode();
     node.children.push(indent);
     if (Assignment.is(feature)) {
-        indent.children.push('kind: Assignment.kind,', NL);
-        indent.children.push("feature: '", feature.feature ,"',", NL);
-        indent.children.push("operator: '", feature.operator, "',", NL);
-        indent.children.push('terminal: {', NL);
-        const terminal = new IndentNode();
-        if (CrossReference.is(feature.terminal)) {
-            terminal.children.push('kind: CrossReference.kind');
-        } else {
-            terminal.children.push("kind: 'unknown'");
-        }
-        indent.children.push(terminal, NL, '}', NL);
+        node.children.push(generateAssignment(feature));
     } else if (Action.is(feature)) {
         indent.children.push('kind: Action.kind,', NL);
         indent.children.push("type: '" + feature.type + "',", NL);
         indent.children.push("feature: '" + feature.feature + "',", NL);
         indent.children.push("operator: '" + feature.operator + "'", NL);
-    } else {
-        indent.children.push("kind: 'unknown'" , NL);
+    } else if (RuleCall.is(feature) || CrossReference.is(feature) || Keyword.is(feature)) {
+        const assignment = <Assignment>AstNode.getContainer(feature, Assignment.kind);
+        if (assignment) {
+            indent.children.push("kind: 'unknown'," , NL, 'container: {', NL, generateAssignment(assignment), '}', NL);
+        } else {
+            indent.children.push("kind: 'unknown'" , NL);
+        }
     }
 
     node.children.push('},');
     return node;
+}
+
+function generateAssignment(assignment: Assignment): GeneratorNode {
+    const indent = new IndentNode();
+    indent.children.push('kind: Assignment.kind,', NL);
+    indent.children.push("feature: '", assignment.feature ,"',", NL);
+    indent.children.push("operator: '", assignment.operator, "',", NL);
+    indent.children.push('terminal: {', NL);
+    const terminal = new IndentNode();
+    if (CrossReference.is(assignment.terminal)) {
+        terminal.children.push('kind: CrossReference.kind');
+    } else {
+        terminal.children.push("kind: 'unknown'");
+    }
+    indent.children.push(terminal, NL, '}', NL);
+    return indent;
 }
 
 function generateRuleAccess(rule: ParserRule): CompositeGeneratorNode {
