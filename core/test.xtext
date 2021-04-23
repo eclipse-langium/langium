@@ -224,5 +224,5 @@ EnumLiterals:
 ;
 
 EnumLiteralDeclaration:
-	enumLiteral=[EnumLiterals|ID] ('=' literal=Keyword)?
+	enumLiteral=ID ('=' literal=Keyword)?
 ;

@@ -1,8 +1,8 @@
 import { AbstractElement, Action, Alternatives, Assignment, CrossReference, Grammar, Group, Keyword, ParserRule, RuleCall, UnorderedGroup } from '../gen/ast';
-import { getTypeName } from '../grammar/grammar-utils';
+import { getRuleType, getTypeName } from '../grammar/grammar-utils';
 import { CompositeGeneratorNode, IndentNode, NL } from './node/node';
 import { process } from './node/node-processor';
-import { Cardinality, isDataTypeRule, isOptionalCardinality } from './utils';
+import { Cardinality, isDataTypeRule, isOptional } from './utils';
 
 type TypeAlternative = {
     name: string,
@@ -131,18 +131,12 @@ export class TypeCollector {
     }
 
     addAssignment(assignment: Assignment): void {
-        let card: Cardinality = undefined;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const anyConv = <any>assignment;
-        if ('cardinality' in anyConv) {
-            card = <Cardinality>anyConv.cardinality;
-        }
         const typeItems: TypeCollection = { types: [], reference: false };
         this.findTypes(assignment.terminal, typeItems);
         this.currentAlternative.fields.push({
             name: this.clean(assignment.feature),
             array: assignment.operator === '+=',
-            optional: isOptionalCardinality(card) || this.isOptional(),
+            optional: isOptional(assignment.cardinality) || this.isOptional(),
             types: assignment.operator === '?=' ? ['boolean'] : typeItems.types,
             reference: typeItems.reference
         });
@@ -160,7 +154,7 @@ export class TypeCollector {
                 this.currentAlternative.fields.push(...type.fields);
             }
         } else if (ParserRule.is(rule)) {
-            this.currentAlternative.ruleCalls.push(getTypeName(rule));
+            this.currentAlternative.ruleCalls.push(getRuleType(rule));
             this.lastRuleCall = ruleCall;
         }
     }
@@ -183,9 +177,9 @@ export class TypeCollector {
         } else if (Keyword.is(terminal)) {
             types.types.push(terminal.value);
         } else if (RuleCall.is(terminal)) {
-            types.types.push(getTypeName(terminal.rule?.value));
+            types.types.push(getRuleType(terminal.rule.value));
         } else if (CrossReference.is(terminal)) {
-            types.types.push(getTypeName(terminal.type?.value));
+            types.types.push(getRuleType(terminal.type.value));
             types.reference = true;
         }
     }

@@ -428,7 +428,7 @@ export type EnumLiteralsRuleAccess = {
 
 export type EnumLiteralDeclarationRuleAccess = {
     enumLiteral: Assignment;
-    enumLiteralEnumLiteralsCrossReference: CrossReference;
+    enumLiteralIDRuleCall: RuleCall;
     EqualsKeyword: Keyword;
     literal: Assignment;
     literalKeywordRuleCall: RuleCall;

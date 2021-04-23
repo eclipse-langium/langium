@@ -5,7 +5,7 @@ import { CompositeGeneratorNode, GeneratorNode, IndentNode, NewLineNode, NL } fr
 import { process } from './node/node-processor';
 import { replaceTokens } from './token-replacer';
 import { collectAst } from './type-collector';
-import { findAllFeatures } from './utils';
+import { findAllFeatures, isDataTypeRule } from './utils';
 
 type RuleContext = {
     name: string,
@@ -26,7 +26,7 @@ export function generateParser(grammar: Grammar, path?: string): string {
         '/* eslint-disable */', NL,
         '// @ts-nocheck', NL,
         "import { createToken, Lexer } from 'chevrotain';", NL,
-        'import { LangiumParser } from ', langiumPath, ';', NL,
+        'import { Number, String, LangiumParser } from ', langiumPath, ';', NL,
         'import { ' + grammar.name + "GrammarAccess } from './grammar-access';", NL,
     );
 
@@ -148,25 +148,34 @@ function buildRule(ctx: RuleContext, rule: ParserRule, first: boolean): Composit
     const ruleNode = new CompositeGeneratorNode();
     ruleNode.children.push('private ', rule.name);
 
+    let kind = 'undefined';
+
+    if (!rule.fragment) {
+        if (isDataTypeRule(rule)) {
+            kind = 'String.kind';
+        } else {
+            kind = getTypeName(rule) + '.kind';
+        }
+    }
+
     ruleNode.children.push(
         ' = this.', first ? 'MAIN_RULE("' : 'DEFINE_RULE("',
-        rule.name, '", ', rule.fragment ? 'undefined' : getTypeName(rule) + '.kind',
-        ', () => {', NL
+        rule.name, '", ', kind, ', () => {', NL
     );
 
     const ruleContent = new IndentNode();
     ruleNode.children.push(ruleContent);
+    ruleContent.children.push('this.initialize(this.grammarAccess.', ctx.name, ');', new NewLineNode(undefined, true));
     ruleContent.children.push(buildElement(ctx, rule.alternatives), new NewLineNode(undefined, true));
-    ruleContent.children.push(buildRuleReturnStatement(rule));
-
-    ruleNode.children.push('})', NL, NL);
+    ruleContent.children.push(buildRuleReturnStatement());
+    ruleNode.children.push('});', NL, NL);
 
     return ruleNode;
 }
 
-function buildRuleReturnStatement(rule: ParserRule): CompositeGeneratorNode {
+function buildRuleReturnStatement(): CompositeGeneratorNode {
     const node = new CompositeGeneratorNode();
-    node.children.push('return this.construct<', getTypeName(rule), '>();', new NewLineNode(undefined, true));
+    node.children.push('return this.construct();', new NewLineNode(undefined, true));
     return node;
 }
 

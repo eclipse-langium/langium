@@ -21,7 +21,7 @@ const grammar = <Grammar>output.ast;
 linkGrammar(grammar);
 
 const json = serialize(grammar);
-const grammarAccess = generateGrammarAccess(grammar, '../index');
+const grammarAccess = generateGrammarAccess(grammar, '../index', false);
 const parser = generateParser(grammar, '../index');
 const genAst = generateAst(grammar, '../index');
 

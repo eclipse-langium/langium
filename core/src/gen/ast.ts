@@ -383,7 +383,7 @@ export namespace EnumLiterals {
 }
 
 export interface EnumLiteralDeclaration extends AstNode {
-    enumLiteral: Reference<EnumLiterals>
+    enumLiteral: string
     literal: Keyword
 }
 

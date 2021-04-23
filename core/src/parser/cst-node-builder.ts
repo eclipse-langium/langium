@@ -4,6 +4,7 @@ import { AstNode, CompositeCstNode, CstNode, LeafCstNode, RootCstNode } from '..
 
 export class CstNodeBuilder {
 
+    private rootNode!: RootCstNode;
     private nodeStack: CompositeCstNode[] = [];
 
     private get current(): CompositeCstNode {
@@ -11,12 +12,14 @@ export class CstNodeBuilder {
     }
 
     buildRootNode(input: string): void {
-        this.nodeStack.push(new RootCstNode(input));
+        this.rootNode = new RootCstNode(input);
+        this.nodeStack.push(this.rootNode);
     }
 
     buildLeafNode(token: IToken, feature: AbstractElement): void {
         const leafNode = new LeafCstNode(token.startOffset, token.image.length, false);
         leafNode.feature = feature;
+        leafNode.root = this.rootNode;
         this.current.children.push(leafNode);
     }
 
@@ -41,6 +44,7 @@ export class CstNodeBuilder {
     buildCompositeNode(feature: AbstractElement): void {
         const compositeNode = new CompositeCstNode();
         compositeNode.feature = feature;
+        compositeNode.root = this.rootNode;
         this.current.children.push(compositeNode);
         this.nodeStack.push(compositeNode);
     }

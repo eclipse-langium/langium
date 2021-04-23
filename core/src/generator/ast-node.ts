@@ -1,4 +1,4 @@
-import { PartialDeep } from 'type-fest';
+/* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 import { AbstractElement } from '../gen/ast';
 
 // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -43,6 +43,24 @@ export interface AstNode {
     readonly [AstNode.cstNode]?: CstNode
 }
 
+// eslint-disable-next-line @typescript-eslint/no-namespace
+export namespace String {
+    export const kind: Kind = { value: 'String', super: [] };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    export function is(item: any): boolean {
+        return AstNode.is(item, kind);
+    }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-namespace
+export namespace Number {
+    export const kind: Kind = { value: 'Number', super: [] };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    export function is(item: any): boolean {
+        return AstNode.is(item, kind);
+    }
+}
+
 export interface Reference<T extends AstNode> {
     readonly value?: T;
     readonly uri: string;
@@ -63,6 +81,7 @@ export abstract class AbstractCstNode implements CstNode {
     abstract get length(): number;
     parent?: ICompositeCstNode;
     feature!: AbstractElement;
+    root!: RootCstNode;
     private _element!: AstNode;
 
     get element(): AstNode {
@@ -76,17 +95,6 @@ export abstract class AbstractCstNode implements CstNode {
     get text(): string {
         const offset = this.offset;
         return this.root.text.substring(offset, offset + this.length);
-    }
-
-    get root(): RootCstNode {
-        const parent = this.parent;
-        if (parent instanceof RootCstNode) {
-            return parent;
-        } else if (parent) {
-            return parent.root;
-        } else {
-            throw new Error('Node has no root');
-        }
     }
 }
 
@@ -181,4 +189,4 @@ export class RootCstNode extends CompositeCstNode {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type RuleResult<T> = (idxInCallingRule?: number, ...args: any[]) => PartialDeep<T>
+export type RuleResult = (idxInCallingRule?: number, ...args: any[]) => any

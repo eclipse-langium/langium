@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { EmbeddedActionsParser, IRuleConfig, TokenType } from 'chevrotain';
-import { PartialDeep } from 'type-fest';
 import { AbstractElement, Action, Assignment, CrossReference, RuleCall } from '../gen/ast';
-import { AstNode, CompositeCstNode, Kind, RuleResult } from '../generator/ast-node';
+import { AstNode, CompositeCstNode, Kind, Number, RuleResult, String } from '../generator/ast-node';
+import { isArrayOperator } from '../generator/utils';
 import { CstNodeBuilder } from './cst-node-builder';
 
 type StackItem = {
@@ -16,7 +16,7 @@ export class LangiumParser extends EmbeddedActionsParser {
 
     private stack: StackItem[] = [];
     private nodeBuilder = new CstNodeBuilder();
-    private mainRule!: (idxInCallingRule?: number, ...args: unknown[]) => unknown;
+    private mainRule!: RuleResult;
 
     private get current(): StackItem {
         return this.stack[this.stack.length - 1];
@@ -55,12 +55,12 @@ export class LangiumParser extends EmbeddedActionsParser {
         return <T>result;
     }
 
-    private reconstruct<T extends AstNode>(): unknown {
+    private reconstruct(): unknown {
         let result: any;
         let lastResult: any = undefined;
         while (this.stack.length > 0) {
             const feature = this.stack[this.stack.length - 1].feature;
-            result = this.construct<T>();
+            result = this.construct();
             if (feature) {
                 if (RuleCall.is(feature)) {
                     result = {...result, ...lastResult};
@@ -85,11 +85,13 @@ export class LangiumParser extends EmbeddedActionsParser {
 
     private startImplementation<T>(kind: Kind | undefined, implementation: (...implArgs: unknown[]) => T): (implArgs: unknown[]) => T {
         return (implArgs: unknown[]): T => {
-            this.stack.push({
-                object: { kind },
-                executedAction: false,
-                unassignedRuleCall: false
-            });
+            if (!this.RECORDING_PHASE) {
+                this.stack.push({
+                    object: { kind },
+                    executedAction: false,
+                    unassignedRuleCall: false
+                });
+            }
             const result = implementation(implArgs);
             return result;
         };
@@ -99,37 +101,38 @@ export class LangiumParser extends EmbeddedActionsParser {
         const token = this.consume(idx, tokenType);
         if (!this.RECORDING_PHASE) {
             this.nodeBuilder.buildLeafNode(token, feature);
-        }
-        const assignment = <Assignment>AstNode.getContainer(feature, Assignment.kind);
-        if (!this.RECORDING_PHASE && assignment && !CrossReference.is(assignment.terminal)) {
-            this.assign(assignment, token.image);
+            const assignment = <Assignment>AstNode.getContainer(feature, Assignment.kind);
+            if (assignment && !CrossReference.is(assignment.terminal)) {
+                this.assign(assignment, token.image);
+            }
         }
     }
 
-    unassignedSubrule<T extends AstNode>(idx: number, rule: RuleResult<T>, feature: AbstractElement): void {
+    unassignedSubrule(idx: number, rule: RuleResult, feature: AbstractElement): void {
         const result = this.subruleLeaf(idx, rule, feature);
-        const resultKind = result.kind;
-        let object = result;
         if (!this.RECORDING_PHASE) {
-            object = Object.assign(result, this.current.object);
+            const resultKind = result.kind;
+            const object = Object.assign(result, this.current.object);
+            if (resultKind) {
+                (<any>object).kind = resultKind;
+            }
+            const newItem = { ...this.current, object, unassignedRuleCall: true };
+            this.stack.pop();
+            this.stack.push(newItem);
         }
-        if (resultKind && !this.RECORDING_PHASE) {
-            (<any>object).kind = resultKind;
-        }
-        const newItem = { ...this.current, object, unassignedRuleCall: true };
-        this.stack.pop();
-        this.stack.push(newItem);
     }
 
-    subruleLeaf<T extends AstNode>(idx: number, rule: RuleResult<T>, feature: AbstractElement): PartialDeep<T> {
-        this.current.feature = feature;
+    subruleLeaf(idx: number, rule: RuleResult, feature: AbstractElement): any {
         if (!this.RECORDING_PHASE) {
+            this.current.feature = feature;
             this.nodeBuilder.buildCompositeNode(feature);
         }
         const subruleResult = this.subrule(idx, rule);
-        const assignment = <Assignment>AstNode.getContainer(feature, Assignment.kind);
-        if (!this.RECORDING_PHASE && assignment) {
-            this.assign(assignment, subruleResult);
+        if (!this.RECORDING_PHASE) {
+            const assignment = <Assignment>AstNode.getContainer(feature, Assignment.kind);
+            if (assignment) {
+                this.assign(assignment, subruleResult);
+            }
         }
         return subruleResult;
     }
@@ -150,25 +153,52 @@ export class LangiumParser extends EmbeddedActionsParser {
         }
     }
 
-    construct<T extends AstNode>(): PartialDeep<T> {
-        const item = this.current;
-        const obj = item.object;
+    /**
+     * Initializes array fields of the current object. Array fields are not allowed to be undefined.
+     * Therefore, all array fields are initialized with an empty array.
+     * @param grammarAccessElement The grammar access element that belongs to the current rule
+     */
+    initialize(grammarAccessElement: { [key: string]: AbstractElement }): void {
         if (!this.RECORDING_PHASE) {
-            for (const value of Object.values(obj)) {
-                if (Array.isArray(value)) {
-                    for (const item of value) {
-                        if (typeof (item) === 'object') {
-                            item.container = obj;
-                        }
+            // TODO fix this by inverting the assign call in unassignedSubrule
+            //const item = this.current.object;
+            for (const element of Object.values(grammarAccessElement)) {
+                if (Assignment.is(element)) {
+                    if (isArrayOperator(element.operator)) {
+                        //item[element.feature] = [];
                     }
-                } else if (typeof (value) === 'object') {
-                    (<any>value).container = obj;
                 }
             }
-            this.nodeBuilder.construct(obj);
         }
+    }
+
+    construct(): unknown {
+        if (this.RECORDING_PHASE) {
+            return undefined;
+        }
+        const item = this.current;
+        const obj = item.object;
+        for (const value of Object.values(obj)) {
+            if (Array.isArray(value)) {
+                for (const item of value) {
+                    if (typeof (item) === 'object') {
+                        item.container = obj;
+                    }
+                }
+            } else if (typeof (value) === 'object') {
+                (<any>value).container = obj;
+            }
+        }
+        this.nodeBuilder.construct(obj);
         this.stack.pop();
-        return <PartialDeep<T>>obj;
+        if (String.is(obj)) {
+            const node = obj[AstNode.cstNode];
+            return node.text;
+        } else if (Number.is(obj)) {
+            const node = obj[AstNode.cstNode];
+            return parseFloat(<string>node.text);
+        }
+        return obj;
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
