@@ -1,22 +1,22 @@
-import { EmbeddedActionsParser, IRuleConfig, TokenType } from "chevrotain";
-import { PartialDeep } from "type-fest";
-import { Action } from "../gen/ast";
-import { AstNode, CompositeNode, INode, LeafNode, RootNode, RuleResult } from "../generator/ast-node";
-import { Feature } from "../generator/utils";
-import { getTypeName } from "../grammar/grammar-utils";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { EmbeddedActionsParser, IRuleConfig, TokenType } from 'chevrotain';
+import { AbstractElement, Action, Assignment, CrossReference, RuleCall } from '../gen/ast';
+import { AstNode, CompositeCstNode, Kind, Number, RuleResult, String } from '../generator/ast-node';
+import { isArrayOperator } from '../generator/utils';
+import { CstNodeBuilder } from './cst-node-builder';
 
 type StackItem = {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     object: any,
-    nodes: INode[],
     executedAction: boolean,
-    feature?: Feature
+    unassignedRuleCall: boolean,
+    feature?: AbstractElement
 }
 
 export class LangiumParser extends EmbeddedActionsParser {
 
     private stack: StackItem[] = [];
-    private mainRule!: (idxInCallingRule?: number, ...args: unknown[]) => unknown;
+    private nodeBuilder = new CstNodeBuilder();
+    private mainRule!: RuleResult;
 
     private get current(): StackItem {
         return this.stack[this.stack.length - 1];
@@ -28,23 +28,25 @@ export class LangiumParser extends EmbeddedActionsParser {
 
     MAIN_RULE<T>(
         name: string,
-        typeName: string,
+        kind: Kind,
         implementation: (...implArgs: unknown[]) => T,
         config?: IRuleConfig<T>
     ): (idxInCallingRule?: number, ...args: unknown[]) => T {
-        return this.mainRule = this.DEFINE_RULE(name, typeName, implementation, config);
+        return this.mainRule = this.DEFINE_RULE(name, kind, implementation, config);
     }
 
     DEFINE_RULE<T>(
         name: string,
-        typeName: string,
+        kind: Kind | undefined,
         implementation: (...implArgs: unknown[]) => T,
         config?: IRuleConfig<T>
     ): (idxInCallingRule?: number, ...args: unknown[]) => T {
-        return super.RULE(name, this.startImplementation(typeName, implementation), config);
+        return super.RULE(name, this.startImplementation(kind, implementation), config);
     }
 
-    parse<T extends AstNode>(): T {
+    parse<T extends AstNode>(input: string): T {
+        this.nodeBuilder = new CstNodeBuilder();
+        this.nodeBuilder.buildRootNode(input);
         let result = this.mainRule();
         if (!result && this.stack.length > 0) {
             result = this.reconstruct();
@@ -53,28 +55,26 @@ export class LangiumParser extends EmbeddedActionsParser {
         return <T>result;
     }
 
-    private reconstruct<T extends AstNode>(): unknown {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    private reconstruct(): unknown {
         let result: any;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         let lastResult: any = undefined;
         while (this.stack.length > 0) {
             const feature = this.stack[this.stack.length - 1].feature;
-            result = this.construct<T>();
+            result = this.construct();
             if (feature) {
-                if (feature.kind === "RuleCall") {
+                if (RuleCall.is(feature)) {
                     result = {...result, ...lastResult};
-                } else if (feature.kind === "Assignment") {
-                    this.assign({ operator: feature.Operator, feature: feature.Feature }, lastResult, result);
+                } else if (Assignment.is(feature)) {
+                    this.assign(feature, lastResult, result);
                 }
             }
             if (lastResult) {
-                const lastCstNode = lastResult[AstNode.node] as CompositeNode;
-                const cstNode = result[AstNode.node] as CompositeNode;
+                const lastCstNode = lastResult[AstNode.cstNode] as CompositeCstNode;
+                const cstNode = result[AstNode.cstNode] as CompositeCstNode;
                 if (lastCstNode !== cstNode) {
-                    lastCstNode.children.forEach(e => {
-                        e.parent = cstNode;
-                    });
+                    for (const child of lastCstNode.children) {
+                        (<any>child).parent = cstNode;
+                    }
                     cstNode.children.push(lastCstNode);
                 }
             }
@@ -83,104 +83,138 @@ export class LangiumParser extends EmbeddedActionsParser {
         return result;
     }
 
-    private startImplementation<T>(typeName: string, implementation: (...implArgs: unknown[]) => T): (implArgs: unknown[]) => T {
+    private startImplementation<T>(kind: Kind | undefined, implementation: (...implArgs: unknown[]) => T): (implArgs: unknown[]) => T {
         return (implArgs: unknown[]): T => {
-            this.stack.push({
-                object: { kind: typeName },
-                nodes: [],
-                executedAction: false
-            });
+            if (!this.RECORDING_PHASE) {
+                this.stack.push({
+                    object: { kind },
+                    executedAction: false,
+                    unassignedRuleCall: false
+                });
+            }
             const result = implementation(implArgs);
             return result;
-        }
+        };
     }
 
-    consumeLeaf(idx: number, tokenType: TokenType, feature: Feature): void {
+    consumeLeaf(idx: number, tokenType: TokenType, feature: AbstractElement): void {
         const token = this.consume(idx, tokenType);
-        const node = new LeafNode(token.startOffset, token.image.length, false);
-        node.element = feature;
-        this.current.nodes.push(node);
-        if (!this.RECORDING_PHASE && feature.kind === "Assignment") {
-            this.assign({ operator: feature.Operator, feature: feature.Feature }, token.image);
+        if (!this.RECORDING_PHASE) {
+            this.nodeBuilder.buildLeafNode(token, feature);
+            const assignment = <Assignment>AstNode.getContainer(feature, Assignment.kind);
+            if (assignment && !CrossReference.is(assignment.terminal)) {
+                this.assign(assignment, token.image);
+            }
         }
     }
 
-    unassignedSubrule<T extends AstNode>(idx: number, rule: RuleResult<T>, feature: Feature): void {
+    unassignedSubrule(idx: number, rule: RuleResult, feature: AbstractElement): void {
         const result = this.subruleLeaf(idx, rule, feature);
-        const newItem = { ...this.current, object: result };
-        this.stack.pop();
-        this.stack.push(newItem);
+        if (!this.RECORDING_PHASE) {
+            const resultKind = result.kind;
+            const object = Object.assign(result, this.current.object);
+            if (resultKind) {
+                (<any>object).kind = resultKind;
+            }
+            const newItem = { ...this.current, object, unassignedRuleCall: true };
+            this.stack.pop();
+            this.stack.push(newItem);
+        }
     }
 
-    subruleLeaf<T extends AstNode>(idx: number, rule: RuleResult<T>, feature: Feature): PartialDeep<T> {
-        this.current.feature = feature;
-        const subruleResult = this.subrule(idx, rule);
-        const resultNode = subruleResult[AstNode.node];
-        if (resultNode) {
-            resultNode.element = feature;
-            this.current.nodes.push(<INode>resultNode);
+    subruleLeaf(idx: number, rule: RuleResult, feature: AbstractElement): any {
+        if (!this.RECORDING_PHASE) {
+            this.current.feature = feature;
+            this.nodeBuilder.buildCompositeNode(feature);
         }
-        if (!this.RECORDING_PHASE && feature.kind === "Assignment") {
-            this.assign({ operator: feature.Operator, feature: feature.Feature }, subruleResult);
+        const subruleResult = this.subrule(idx, rule);
+        if (!this.RECORDING_PHASE) {
+            const assignment = <Assignment>AstNode.getContainer(feature, Assignment.kind);
+            if (assignment) {
+                this.assign(assignment, subruleResult);
+            }
         }
         return subruleResult;
     }
 
-    executeAction(action: Action): void {
+    executeAction(kind: Kind, action: Action): void {
         if (!this.RECORDING_PHASE && !this.current.executedAction) {
             const last = this.current;
             const newItem = {
                 ...last,
-                object: { kind: getTypeName(action.Type) },
+                object: { kind },
                 executedAction: true
             };
             this.stack.pop();
             this.stack.push(newItem);
-            if (action.Feature && action.Operator) {
-                this.assign({ operator: action.Operator, feature: action.Feature }, last.object);
+            if (action.feature && action.operator) {
+                this.assign(action, last.object);
             }
         }
     }
 
-    construct<T extends AstNode>(): PartialDeep<T> {
-        const node = this.stack.length === 1 ? new RootNode() : new CompositeNode();
-        const item = this.current;
-        const obj = { [AstNode.node]: node, ...item.object };
+    /**
+     * Initializes array fields of the current object. Array fields are not allowed to be undefined.
+     * Therefore, all array fields are initialized with an empty array.
+     * @param grammarAccessElement The grammar access element that belongs to the current rule
+     */
+    initialize(grammarAccessElement: { [key: string]: AbstractElement }): void {
         if (!this.RECORDING_PHASE) {
-            for (const value of Object.values(obj)) {
-                if (Array.isArray(value)) {
-                    for (const item of value) {
-                        if (typeof (item) === "object") {
-                            item.container = obj;
-                        }
+            // TODO fix this by inverting the assign call in unassignedSubrule
+            //const item = this.current.object;
+            for (const element of Object.values(grammarAccessElement)) {
+                if (Assignment.is(element)) {
+                    if (isArrayOperator(element.operator)) {
+                        //item[element.feature] = [];
                     }
-                } else if (typeof (value) === "object") {
-                    (<AstNode>value).container = obj;
                 }
             }
-            item.nodes.forEach(e => {
-                e.parent = node;
-            });
-            node.children.push(...item.nodes);
         }
+    }
+
+    construct(): unknown {
+        if (this.RECORDING_PHASE) {
+            return undefined;
+        }
+        const item = this.current;
+        const obj = item.object;
+        for (const value of Object.values(obj)) {
+            if (Array.isArray(value)) {
+                for (const item of value) {
+                    if (typeof (item) === 'object') {
+                        item.container = obj;
+                    }
+                }
+            } else if (typeof (value) === 'object') {
+                (<any>value).container = obj;
+            }
+        }
+        this.nodeBuilder.construct(obj);
         this.stack.pop();
-        return <PartialDeep<T>>obj;
+        if (String.is(obj)) {
+            const node = obj[AstNode.cstNode];
+            return node.text;
+        } else if (Number.is(obj)) {
+            const node = obj[AstNode.cstNode];
+            return parseFloat(<string>node.text);
+        }
+        return obj;
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    private assign(assignment: { operator: string, feature: string }, value: unknown, object?: { [k: string]: any }): void {
+    private assign(assignment: { operator: string, feature: string }, value: unknown, object?: any): void {
         const obj = object ?? this.current.object;
-        const feature = assignment.feature.replace(/\^/g, "");
+        const feature = assignment.feature.replace(/\^/g, '');
         switch (assignment.operator) {
-            case "=": {
+            case '=': {
                 obj[feature] = value;
                 break;
             }
-            case "?=": {
+            case '?=': {
                 obj[feature] = true;
                 break;
             }
-            case "+=": {
+            case '+=': {
                 if (!Array.isArray(obj[feature])) {
                     obj[feature] = [];
                 }

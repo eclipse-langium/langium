@@ -1,5 +1,5 @@
-import { AbstractRule, Grammar, ParserRule } from "../gen/ast";
-import { findAllFeatures } from "../generator/utils";
+import { AbstractRule, Grammar, ParserRule } from '../gen/ast';
+import { findAllFeatures } from '../generator/utils';
 
 export class GrammarAccess {
 
@@ -10,7 +10,7 @@ export class GrammarAccess {
     }
 
     findRuleByName(name: string): AbstractRule {
-        const result = this.grammar.rules.find(e => e.Name === name);
+        const result = this.grammar.rules.find(e => e.name === name);
         if (!result) {
             throw new Error();
         }
@@ -23,7 +23,7 @@ export class GrammarAccess {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const access: any = {};
         for (const [name, value] of Array.from(byName.entries())) {
-            access[name] = value.getter();
+            access[name] = value.feature;
         }
         return <T>access;
     }

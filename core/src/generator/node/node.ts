@@ -11,12 +11,12 @@ export class CompositeGeneratorNode {
 
 export class IndentNode extends CompositeGeneratorNode {
 
-    private _indentation  = "";
+    private _indentation?: string;
 
-    public get indentation(): string {
+    public get indentation(): string | undefined {
         return this._indentation;
     }
-    public set indentation(v: string) {
+    public set indentation(v: string | undefined) {
         this._indentation = v;
     }
 
@@ -38,12 +38,12 @@ export class IndentNode extends CompositeGeneratorNode {
         this._indentEmptyLines = v;
     }
 
-    constructor(indentation: string | number, indentImmediately = true, indentEmptyLines = false) {
+    constructor(indentation?: string | number, indentImmediately = true, indentEmptyLines = false) {
         super();
-        if (typeof(indentation) === "string") {
-            this._indentation = indentation;
-        } else if (typeof(indentation) === "number") {
-            this._indentation = "".padStart(indentation);
+        if (typeof(indentation) === 'string') {
+            this.indentation = indentation;
+        } else if (typeof(indentation) === 'number') {
+            this.indentation = ''.padStart(indentation);
         }
         this._indentImmediately = indentImmediately;
         this._indentEmptyLines = indentEmptyLines;
@@ -90,3 +90,5 @@ export class NewLineNode {
         this._ifNotEmpty = ifNotEmpty;
     }
 }
+
+export const NL = new NewLineNode();

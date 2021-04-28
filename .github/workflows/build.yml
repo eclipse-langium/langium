@@ -1,0 +1,19 @@
+name: Build
+
+on: push
+
+jobs:
+  build:
+    name: Langium
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Use Node.js
+      uses: actions/setup-node@v1
+    - name: Build
+      shell: bash
+      run: |
+        cd core
+        npm install

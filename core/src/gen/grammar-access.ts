@@ -1,22 +1,22 @@
-import { GrammarAccess } from '../index'
-import { Action, Assignment, CrossReference, Keyword, RuleCall } from './ast'
+import { GrammarAccess } from '../index';
+import { Action, Assignment, CrossReference, Keyword, RuleCall } from './ast';
 
 export type GrammarRuleAccess = {
     GrammarKeyword: Keyword;
-    Name: Assignment;
-    NameIDRuleCall: RuleCall;
+    name: Assignment;
+    nameIDRuleCall: RuleCall;
     WithKeyword: Keyword;
-    UsedGrammars: Assignment;
-    UsedGrammarsGrammarCrossReference: CrossReference;
+    usedGrammars: Assignment;
+    usedGrammarsGrammarCrossReference: CrossReference;
     CommaKeyword: Keyword;
     definesHiddenTokens: Assignment;
     HiddenKeyword: Keyword;
     ParenthesisOpenKeyword: Keyword;
-    HiddenTokens: Assignment;
-    HiddenTokensAbstractRuleCrossReference: CrossReference;
+    hiddenTokens: Assignment;
+    hiddenTokensAbstractRuleCrossReference: CrossReference;
     ParenthesisCloseKeyword: Keyword;
-    MetamodelDeclarations: Assignment;
-    MetamodelDeclarationsAbstractMetamodelDeclarationRuleCall: RuleCall;
+    metamodelDeclarations: Assignment;
+    metamodelDeclarationsAbstractMetamodelDeclarationRuleCall: RuleCall;
     rules: Assignment;
     rulesAbstractRuleRuleCall: RuleCall;
 }
@@ -34,91 +34,88 @@ export type AbstractMetamodelDeclarationRuleAccess = {
 
 export type GeneratedMetamodelRuleAccess = {
     GenerateKeyword: Keyword;
-    Name: Assignment;
-    NameIDRuleCall: RuleCall;
-    EPackage: Assignment;
-    EPackagestringCrossReference: CrossReference;
+    name: Assignment;
+    nameIDRuleCall: RuleCall;
+    ePackage: Assignment;
+    ePackagestringRuleCall: RuleCall;
     AsKeyword: Keyword;
-    Alias: Assignment;
-    AliasIDRuleCall: RuleCall;
+    alias: Assignment;
+    aliasIDRuleCall: RuleCall;
 }
 
 export type ReferencedMetamodelRuleAccess = {
     ImportKeyword: Keyword;
-    EPackage: Assignment;
-    EPackagestringCrossReference: CrossReference;
+    ePackage: Assignment;
+    ePackagestringRuleCall: RuleCall;
     AsKeyword: Keyword;
-    Alias: Assignment;
-    AliasIDRuleCall: RuleCall;
+    alias: Assignment;
+    aliasIDRuleCall: RuleCall;
 }
 
 export type AnnotationRuleAccess = {
     AtKeyword: Keyword;
-    Name: Assignment;
-    NameIDRuleCall: RuleCall;
+    name: Assignment;
+    nameIDRuleCall: RuleCall;
 }
 
 export type ParserRuleRuleAccess = {
     fragment: Assignment;
     FragmentKeyword: Keyword;
-    Name: Assignment;
-    NameIDRuleCall: RuleCall;
-    LessThanKeyword: Keyword;
-    Parameters: Assignment;
-    ParametersParameterRuleCall: RuleCall;
-    CommaKeyword: Keyword;
-    MoreThanKeyword: Keyword;
+    RuleNameAndParamsRuleCall: RuleCall;
     wildcard: Assignment;
     AsteriskKeyword: Keyword;
     ReturnsKeyword: Keyword;
-    Type: Assignment;
-    TypeIDRuleCall: RuleCall;
-    DefinesHiddenTokens: Assignment;
+    type: Assignment;
+    typeIDRuleCall: RuleCall;
+    definesHiddenTokens: Assignment;
     HiddenKeyword: Keyword;
     ParenthesisOpenKeyword: Keyword;
-    HiddenTokens: Assignment;
-    HiddenTokensAbstractRuleCrossReference: CrossReference;
+    hiddenTokens: Assignment;
+    hiddenTokensAbstractRuleCrossReference: CrossReference;
+    CommaKeyword: Keyword;
     ParenthesisCloseKeyword: Keyword;
     ColonKeyword: Keyword;
-    Alternatives: Assignment;
-    AlternativesAlternativesRuleCall: RuleCall;
+    alternatives: Assignment;
+    alternativesAlternativesRuleCall: RuleCall;
     SemicolonKeyword: Keyword;
 }
 
 export type RuleNameAndParamsRuleAccess = {
-    Name: Assignment;
-    NameIDRuleCall: RuleCall;
+    name: Assignment;
+    nameIDRuleCall: RuleCall;
     LessThanKeyword: Keyword;
-    Parameters: Assignment;
-    ParametersParameterRuleCall: RuleCall;
+    parameters: Assignment;
+    parametersParameterRuleCall: RuleCall;
     CommaKeyword: Keyword;
     MoreThanKeyword: Keyword;
 }
 
 export type ParameterRuleAccess = {
-    Name: Assignment;
-    NameIDRuleCall: RuleCall;
+    name: Assignment;
+    nameIDRuleCall: RuleCall;
 }
 
 export type AlternativesRuleAccess = {
     UnorderedGroupRuleCall: RuleCall;
-    ElementsAction: Action;
+    AlternativeselementsAction: Action;
     PipeKeyword: Keyword;
-    Elements: Assignment;
-    ElementsUnorderedGroupRuleCall: RuleCall;
+    elements: Assignment;
+    elementsUnorderedGroupRuleCall: RuleCall;
 }
 
 export type UnorderedGroupRuleAccess = {
     GroupRuleCall: RuleCall;
-    ElementsAction: Action;
+    UnorderedGroupelementsAction: Action;
     AmpersandKeyword: Keyword;
-    Elements: Assignment;
-    ElementsGroupRuleCall: RuleCall;
+    elements: Assignment;
+    elementsGroupRuleCall: RuleCall;
 }
 
 export type GroupRuleAccess = {
-    Elements: Assignment;
-    ElementsAbstractTokenRuleCall: RuleCall;
+    AbstractTokenRuleCall: RuleCall;
+    GroupelementsAction: Action;
+    elements: Assignment;
+    elementsAbstractTokenRuleCall: RuleCall;
 }
 
 export type AbstractTokenRuleAccess = {
@@ -129,20 +126,21 @@ export type AbstractTokenRuleAccess = {
 export type AbstractTokenWithCardinalityRuleAccess = {
     AssignmentRuleCall: RuleCall;
     AbstractTerminalRuleCall: RuleCall;
-    Cardinality: Assignment;
+    cardinality: Assignment;
     QuestionMarkKeyword: Keyword;
     AsteriskKeyword: Keyword;
     PlusKeyword: Keyword;
 }
 
 export type ActionRuleAccess = {
+    ActionAction: Action;
     CurlyOpenKeyword: Keyword;
-    Type: Assignment;
-    TypeParserRuleCrossReference: CrossReference;
+    type: Assignment;
+    typeIDRuleCall: RuleCall;
     DotKeyword: Keyword;
-    Feature: Assignment;
-    FeatureIDRuleCall: RuleCall;
-    Operator: Assignment;
+    feature: Assignment;
+    featureIDRuleCall: RuleCall;
+    operator: Assignment;
     EqualsKeyword: Keyword;
     PlusEqualsKeyword: Keyword;
     CurrentKeyword: Keyword;
@@ -159,56 +157,57 @@ export type AbstractTerminalRuleAccess = {
 }
 
 export type KeywordRuleAccess = {
-    Value: Assignment;
-    ValuestringRuleCall: RuleCall;
+    value: Assignment;
+    valuestringRuleCall: RuleCall;
 }
 
 export type RuleCallRuleAccess = {
-    Rule: Assignment;
-    RuleAbstractRuleCrossReference: CrossReference;
+    rule: Assignment;
+    ruleAbstractRuleCrossReference: CrossReference;
     LessThanKeyword: Keyword;
-    Arguments: Assignment;
-    ArgumentsNamedArgumentRuleCall: RuleCall;
+    arguments: Assignment;
+    argumentsNamedArgumentRuleCall: RuleCall;
     CommaKeyword: Keyword;
     MoreThanKeyword: Keyword;
 }
 
 export type NamedArgumentRuleAccess = {
-    Parameter: Assignment;
-    ParameterParameterCrossReference: CrossReference;
-    CalledByName: Assignment;
+    parameter: Assignment;
+    parameterParameterCrossReference: CrossReference;
+    calledByName: Assignment;
     EqualsKeyword: Keyword;
-    Value: Assignment;
-    ValueDisjunctionRuleCall: RuleCall;
+    value: Assignment;
+    valueDisjunctionRuleCall: RuleCall;
 }
 
 export type LiteralConditionRuleAccess = {
-    True: Assignment;
+    true: Assignment;
     TrueKeyword: Keyword;
     FalseKeyword: Keyword;
 }
 
 export type DisjunctionRuleAccess = {
     ConjunctionRuleCall: RuleCall;
-    LeftAction: Action;
+    DisjunctionleftAction: Action;
     PipeKeyword: Keyword;
-    Right: Assignment;
-    RightConjunctionRuleCall: RuleCall;
+    right: Assignment;
+    rightConjunctionRuleCall: RuleCall;
 }
 
 export type ConjunctionRuleAccess = {
     NegationRuleCall: RuleCall;
-    LeftAction: Action;
+    ConjunctionleftAction: Action;
     AmpersandKeyword: Keyword;
-    Right: Assignment;
-    RightNegationRuleCall: RuleCall;
+    right: Assignment;
+    rightNegationRuleCall: RuleCall;
 }
 
 export type NegationRuleAccess = {
     AtomRuleCall: RuleCall;
+    NegationAction: Action;
     ExclamationMarkKeyword: Keyword;
-    Value: Assignment;
-    ValueNegationRuleCall: RuleCall;
+    value: Assignment;
+    valueNegationRuleCall: RuleCall;
 }
 
 export type AtomRuleAccess = {
@@ -219,57 +218,57 @@ export type AtomRuleAccess = {
 
 export type ParenthesizedConditionRuleAccess = {
     ParenthesisOpenKeyword: Keyword;
-    Value: Assignment;
-    ValueDisjunctionRuleCall: RuleCall;
+    DisjunctionRuleCall: RuleCall;
     ParenthesisCloseKeyword: Keyword;
 }
 
 export type ParameterReferenceRuleAccess = {
-    Parameter: Assignment;
-    ParameterParameterCrossReference: CrossReference;
+    parameter: Assignment;
+    parameterParameterCrossReference: CrossReference;
 }
 
 export type TerminalRuleCallRuleAccess = {
-    Rule: Assignment;
-    RuleAbstractRuleCrossReference: CrossReference;
+    rule: Assignment;
+    ruleAbstractRuleCrossReference: CrossReference;
 }
 
 export type PredicatedKeywordRuleAccess = {
-    Predicated: Assignment;
+    predicated: Assignment;
     EqualsMoreThanKeyword: Keyword;
-    FirstSetPredicated: Assignment;
+    firstSetPredicated: Assignment;
     DashMoreThanKeyword: Keyword;
-    Value: Assignment;
-    ValuestringRuleCall: RuleCall;
+    value: Assignment;
+    valuestringRuleCall: RuleCall;
 }
 
 export type PredicatedRuleCallRuleAccess = {
-    Predicated: Assignment;
+    predicated: Assignment;
     EqualsMoreThanKeyword: Keyword;
-    FirstSetPredicated: Assignment;
+    firstSetPredicated: Assignment;
     DashMoreThanKeyword: Keyword;
-    Rule: Assignment;
-    RuleAbstractRuleCrossReference: CrossReference;
+    rule: Assignment;
+    ruleAbstractRuleCrossReference: CrossReference;
     LessThanKeyword: Keyword;
-    Arguments: Assignment;
-    ArgumentsNamedArgumentRuleCall: RuleCall;
+    arguments: Assignment;
+    argumentsNamedArgumentRuleCall: RuleCall;
     CommaKeyword: Keyword;
     MoreThanKeyword: Keyword;
 }
 
 export type AssignmentRuleAccess = {
-    Predicated: Assignment;
+    AssignmentAction: Action;
+    predicated: Assignment;
     EqualsMoreThanKeyword: Keyword;
-    FirstSetPredicated: Assignment;
+    firstSetPredicated: Assignment;
     DashMoreThanKeyword: Keyword;
-    Feature: Assignment;
-    FeatureIDRuleCall: RuleCall;
-    Operator: Assignment;
+    feature: Assignment;
+    featureIDRuleCall: RuleCall;
+    operator: Assignment;
     PlusEqualsKeyword: Keyword;
     EqualsKeyword: Keyword;
     QuestionMarkEqualsKeyword: Keyword;
-    Terminal: Assignment;
-    TerminalAssignableTerminalRuleCall: RuleCall;
+    terminal: Assignment;
+    terminalAssignableTerminalRuleCall: RuleCall;
 }
 
 export type AssignableTerminalRuleAccess = {
@@ -286,18 +285,21 @@ export type ParenthesizedAssignableElementRuleAccess = {
 }
 
 export type AssignableAlternativesRuleAccess = {
-    Elements: Assignment;
-    ElementsAssignableTerminalRuleCall: RuleCall;
+    AssignableTerminalRuleCall: RuleCall;
+    AlternativeselementsAction: Action;
     PipeKeyword: Keyword;
+    elements: Assignment;
+    elementsAssignableTerminalRuleCall: RuleCall;
 }
 
 export type CrossReferenceRuleAccess = {
+    CrossReferenceAction: Action;
     BracketOpenKeyword: Keyword;
-    Type: Assignment;
-    TypeParserRuleCrossReference: CrossReference;
+    type: Assignment;
+    typeParserRuleCrossReference: CrossReference;
     PipeKeyword: Keyword;
-    Terminal: Assignment;
-    TerminalCrossReferenceableTerminalRuleCall: RuleCall;
+    terminal: Assignment;
+    terminalCrossReferenceableTerminalRuleCall: RuleCall;
     BracketCloseKeyword: Keyword;
 }
 
@@ -313,47 +315,47 @@ export type ParenthesizedElementRuleAccess = {
 }
 
 export type PredicatedGroupRuleAccess = {
-    Predicated: Assignment;
+    predicated: Assignment;
     EqualsMoreThanKeyword: Keyword;
-    FirstSetPredicated: Assignment;
+    firstSetPredicated: Assignment;
     DashMoreThanKeyword: Keyword;
     ParenthesisOpenKeyword: Keyword;
-    Elements: Assignment;
-    ElementsAlternativesRuleCall: RuleCall;
+    elements: Assignment;
+    elementsAlternativesRuleCall: RuleCall;
     ParenthesisCloseKeyword: Keyword;
 }
 
 export type TerminalRuleRuleAccess = {
     TerminalKeyword: Keyword;
-    Fragment: Assignment;
+    fragment: Assignment;
     FragmentKeyword: Keyword;
-    Name: Assignment;
-    NameIDRuleCall: RuleCall;
+    name: Assignment;
+    nameIDRuleCall: RuleCall;
     ReturnsKeyword: Keyword;
-    Type: Assignment;
-    TypeIDRuleCall: RuleCall;
+    type: Assignment;
+    typeIDRuleCall: RuleCall;
     ColonKeyword: Keyword;
-    Regex: Assignment;
-    RegexRegexLiteralRuleCall: RuleCall;
+    regex: Assignment;
+    regexRegexLiteralRuleCall: RuleCall;
     SemicolonKeyword: Keyword;
 }
 
 export type TerminalAlternativesRuleAccess = {
     TerminalGroupRuleCall: RuleCall;
-    ElementsAction: Action;
+    TerminalAlternativeselementsAction: Action;
     PipeKeyword: Keyword;
-    Elements: Assignment;
-    ElementsTerminalGroupRuleCall: RuleCall;
+    elements: Assignment;
+    elementsTerminalGroupRuleCall: RuleCall;
 }
 
 export type TerminalGroupRuleAccess = {
-    Elements: Assignment;
-    ElementsTerminalTokenRuleCall: RuleCall;
+    elements: Assignment;
+    elementsTerminalTokenRuleCall: RuleCall;
 }
 
 export type TerminalTokenRuleAccess = {
     TerminalTokenElementRuleCall: RuleCall;
-    Cardinality: Assignment;
+    cardinality: Assignment;
     QuestionMarkKeyword: Keyword;
     AsteriskKeyword: Keyword;
     PlusKeyword: Keyword;
@@ -380,59 +382,59 @@ export type AbstractNegatedTokenRuleAccess = {
 
 export type NegatedTokenRuleAccess = {
     ExclamationMarkKeyword: Keyword;
-    Terminal: Assignment;
-    TerminalTerminalTokenElementRuleCall: RuleCall;
+    terminal: Assignment;
+    terminalTerminalTokenElementRuleCall: RuleCall;
 }
 
 export type UntilTokenRuleAccess = {
     DashMoreThanKeyword: Keyword;
-    Terminal: Assignment;
-    TerminalTerminalTokenElementRuleCall: RuleCall;
+    terminal: Assignment;
+    terminalTerminalTokenElementRuleCall: RuleCall;
 }
 
 export type WildcardRuleAccess = {
-    undefinedAction: Action;
+    WildcardAction: Action;
     DotKeyword: Keyword;
 }
 
 export type CharacterRangeRuleAccess = {
-    Left: Assignment;
-    LeftKeywordRuleCall: RuleCall;
+    left: Assignment;
+    leftKeywordRuleCall: RuleCall;
     DotDotKeyword: Keyword;
-    Right: Assignment;
-    RightKeywordRuleCall: RuleCall;
+    right: Assignment;
+    rightKeywordRuleCall: RuleCall;
 }
 
 export type EnumRuleRuleAccess = {
     EnumKeyword: Keyword;
-    Name: Assignment;
-    NameIDRuleCall: RuleCall;
+    name: Assignment;
+    nameIDRuleCall: RuleCall;
     ReturnsKeyword: Keyword;
-    Type: Assignment;
-    TypeIDRuleCall: RuleCall;
+    type: Assignment;
+    typeIDRuleCall: RuleCall;
     ColonKeyword: Keyword;
-    Alternatives: Assignment;
-    AlternativesEnumLiteralsRuleCall: RuleCall;
+    alternatives: Assignment;
+    alternativesEnumLiteralsRuleCall: RuleCall;
     SemicolonKeyword: Keyword;
 }
 
 export type EnumLiteralsRuleAccess = {
     EnumLiteralDeclarationRuleCall: RuleCall;
-    ElementsAction: Action;
+    EnumLiteralselementsAction: Action;
     PipeKeyword: Keyword;
-    Elements: Assignment;
-    ElementsEnumLiteralDeclarationRuleCall: RuleCall;
+    elements: Assignment;
+    elementsEnumLiteralDeclarationRuleCall: RuleCall;
 }
 
 export type EnumLiteralDeclarationRuleAccess = {
-    EnumLiteral: Assignment;
-    EnumLiteralEnumLiteralsCrossReference: CrossReference;
+    enumLiteral: Assignment;
+    enumLiteralIDRuleCall: RuleCall;
     EqualsKeyword: Keyword;
-    Literal: Assignment;
-    LiteralKeywordRuleCall: RuleCall;
+    literal: Assignment;
+    literalKeywordRuleCall: RuleCall;
 }
 
-export class xtextGrammarAccess extends GrammarAccess {
+export class LangiumGrammarAccess extends GrammarAccess {
     Grammar = this.buildAccess<GrammarRuleAccess>('Grammar');
     AbstractRule = this.buildAccess<AbstractRuleRuleAccess>('AbstractRule');
     AbstractMetamodelDeclaration = this.buildAccess<AbstractMetamodelDeclarationRuleAccess>('AbstractMetamodelDeclaration');

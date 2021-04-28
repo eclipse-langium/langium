@@ -1,117 +1,192 @@
-import { PartialDeep } from "type-fest"
-import { Any } from "../gen/ast";
+/* eslint-disable @typescript-eslint/explicit-module-boundary-types */
+import { AbstractElement } from '../gen/ast';
 
 // eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace AstNode {
-    export const node = Symbol("node");
-}
 
-export type AstNode = {
-    kind: string,
-    container: AstNode,
-    [AstNode.node]: INode,
-    '.references': Map<string, string | undefined>,
-}
+    export const kind: Kind = { value: 'AstNode', super: [] };
 
-export interface INode {
-    parent?: ICompositeNode;
-    getOffset(): number;
-    getLength(): number;
-    element: Any;
-    getText(): string;
-    getRoot(): RootNode;
-}
+    export const cstNode = Symbol('node');
 
-export abstract class AbstractNode implements INode {
-    abstract getOffset(): number;
-    abstract getLength(): number;
-    parent?: ICompositeNode;
-    element!: Any;
-
-    getText(): string {
-        const offset = this.getOffset();
-        return this.getRoot().getText().substring(offset, offset + this.getLength());
+    export function is<T extends AstNode>(item: AstNode, kind: Kind): item is T {
+        return !!item && 'kind' in item && typeof item.kind === 'object' && Kind.instanceOf(item.kind, kind);
     }
 
-    getRoot(): RootNode {
-        const parent = this.parent;
-        if (parent instanceof RootNode) {
-            return parent;
-        } else if (parent) {
-            return parent.getRoot();
+    export function getContainer(item: AstNode, kind: Kind): AstNode | undefined {
+        if (!!item && item.container) {
+            if (is(item.container, kind)) {
+                return item.container;
+            } else {
+                return getContainer(item.container, kind);
+            }
         } else {
-            throw new Error("Node has no root");
+            return undefined;
         }
     }
 }
 
-export interface ICompositeNode extends INode {
-    children: INode[];
+export type Kind = {
+    value: string,
+    super: Kind[]
 }
 
-export interface ILeafNode extends INode {
+// eslint-disable-next-line @typescript-eslint/no-namespace
+export namespace Kind {
+    export function instanceOf(itemKind: Kind, target: Kind): boolean {
+        return itemKind.value === target.value || itemKind.super.some(e => instanceOf(e, target));
+    }
+}
+
+export interface AstNode {
+    readonly kind: Kind,
+    readonly container?: AstNode,
+    readonly [AstNode.cstNode]?: CstNode
+}
+
+// eslint-disable-next-line @typescript-eslint/no-namespace
+export namespace String {
+    export const kind: Kind = { value: 'String', super: [] };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    export function is(item: any): boolean {
+        return AstNode.is(item, kind);
+    }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-namespace
+export namespace Number {
+    export const kind: Kind = { value: 'Number', super: [] };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    export function is(item: any): boolean {
+        return AstNode.is(item, kind);
+    }
+}
+
+export interface Reference<T extends AstNode> {
+    readonly value?: T;
+    readonly uri: string;
+}
+
+export interface CstNode {
+    readonly parent?: ICompositeCstNode;
+    readonly offset: number;
+    readonly length: number;
+    readonly text: string;
+    readonly root: RootCstNode;
+    readonly feature: AbstractElement;
+    readonly element: AstNode;
+}
+
+export abstract class AbstractCstNode implements CstNode {
+    abstract get offset(): number;
+    abstract get length(): number;
+    parent?: ICompositeCstNode;
+    feature!: AbstractElement;
+    root!: RootCstNode;
+    private _element!: AstNode;
+
+    get element(): AstNode {
+        return this._element ?? this.parent?.element;
+    }
+
+    set element(value: AstNode) {
+        this._element = value;
+    }
+
+    get text(): string {
+        const offset = this.offset;
+        return this.root.text.substring(offset, offset + this.length);
+    }
+}
+
+export interface ICompositeCstNode extends CstNode {
+    children: CstNode[];
+}
+
+export interface ILeafCstNode extends CstNode {
     hidden: boolean;
 }
 
-export class LeafNode extends AbstractNode implements ILeafNode {
-    getOffset(): number {
-        return this.offset;
+export class LeafCstNode extends AbstractCstNode implements ILeafCstNode {
+    get offset(): number {
+        return this._offset;
     }
-    getLength(): number {
-        return this.length;
+    get length(): number {
+        return this._length;
     }
     hidden = false;
 
-    private offset: number;
-    private length: number;
+    private _offset: number;
+    private _length: number;
 
     constructor(offset: number, length: number, hidden = false) {
         super();
         this.hidden = hidden;
-        this.offset = offset;
-        this.length = length;
+        this._offset = offset;
+        this._length = length;
     }
 }
 
-export class CompositeNode extends AbstractNode implements ICompositeNode {
-    getOffset(): number {
+export class CompositeCstNode extends AbstractCstNode implements ICompositeCstNode {
+    get offset(): number {
         if (this.children.length > 0) {
-            return this.children[0].getOffset();
+            return this.children[0].offset;
         } else {
             return 0;
         }
     }
-    getLength(): number {
+    get length(): number {
         if (this.children.length > 0) {
             const last = this.children[this.children.length - 1];
-            return last.getOffset() + last.getLength() - this.getOffset();
+            return last.offset + last.length - this.offset;
         } else {
             return 0;
         }
     }
-    children: INode[] = [];
+    children: CstNode[] = new CstNodeContainer(this);
 }
 
-export class RootNode extends CompositeNode {
+class CstNodeContainer extends Array<CstNode> {
+    parent: ICompositeCstNode;
 
-    private text = "";
-
-    setText(text: string): void {
-        this.text = text;
+    constructor(parent: ICompositeCstNode) {
+        super();
+        this.parent = parent;
+        Object.setPrototypeOf(this, CstNodeContainer.prototype);
     }
 
-    getText(): string {
-        return this.text;
+    push(...items: CstNode[]): number {
+        for (const item of items) {
+            (<AbstractCstNode>item).parent = this.parent;
+        }
+        return super.push(...items);
+    }
+}
+
+export class RootCstNode extends CompositeCstNode {
+
+    private _text = '';
+
+    set text(value: string) {
+        this._text = value;
     }
 
-    getOffset(): number {
+    get text(): string {
+        return this._text;
+    }
+
+    get offset(): number {
         return 0;
     }
 
-    getLength(): number {
+    get length(): number {
         return this.text.length;
+    }
+
+    constructor(input?: string) {
+        super();
+        this._text = input ?? '';
     }
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type RuleResult<T> = (idxInCallingRule?: number, ...args: any[]) => PartialDeep<T>
+export type RuleResult = (idxInCallingRule?: number, ...args: any[]) => any

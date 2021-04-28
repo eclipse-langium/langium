@@ -1,10 +1,20 @@
-import { CompositeGeneratorNode, GeneratorNode, IndentNode, NewLineNode, TextNode } from "./node";
+import { CompositeGeneratorNode, GeneratorNode, IndentNode, NewLineNode, TextNode } from './node';
 
 class Context {
+
+    defaultIndentation = '    ';
 
     private lines: string[][] = [[]];
     private _pendingIndent = true;
     private _currentIndents: IndentNode[] = [];
+
+    constructor(defaultIndent?: string | number) {
+        if (typeof defaultIndent === 'string') {
+            this.defaultIndentation = defaultIndent;
+        } else if (typeof defaultIndent === 'number') {
+            this.defaultIndentation = ''.padStart(defaultIndent);
+        }
+    }
 
     public get pendingIndent(): boolean {
         return this._pendingIndent;
@@ -54,8 +64,8 @@ class Context {
     }
 }
 
-export function process(node: GeneratorNode): string {
-    const context = new Context();
+export function process(node: GeneratorNode, defaultIndentation?: string | number): string {
+    const context = new Context(defaultIndentation);
     processNode(node, context);
     return context.content;
 }
@@ -75,7 +85,7 @@ function processNode(node: GeneratorNode, context: Context) {
 }
 
 function hasContent(node: GeneratorNode, ctx: Context): boolean {
-    if (typeof(node) === "string") {
+    if (typeof(node) === 'string') {
         return hasNonWhitespace(node);
     } else if (node instanceof TextNode) {
         return !!node.text && hasNonWhitespace(node.text);
@@ -98,24 +108,24 @@ function processTextNode(node: TextNode, context: Context) {
 }
 
 function handlePendingIndent(ctx: Context, endOfLine: boolean) {
-    let indent = "";
-    ctx.currentIndents.filter(e => e.indentEmptyLines || !endOfLine).forEach(e => {
-        indent += e.indentation;
-    });
+    let indent = '';
+    for (const indentNode of ctx.currentIndents.filter(e => e.indentEmptyLines || !endOfLine)) {
+        indent += indentNode.indentation ?? ctx.defaultIndentation;
+    }
     ctx.append(indent);
     ctx.pendingIndent = false;
 }
 
 function processCompositeNode(node: CompositeGeneratorNode, context: Context) {
-    node.children.forEach(child => {
+    for (const child of node.children) {
         processNode(child, context);
-    });
+    }
 }
 
 function processIndentNode(node: IndentNode, context: Context) {
     if (hasContent(node, context)) {
         if (node.indentImmediately && !context.pendingIndent) {
-            context.append(node.indentation);
+            context.append(node.indentation ?? context.defaultIndentation);
         }
         try {
             context.increaseIndent(node);
