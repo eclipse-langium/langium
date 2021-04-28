@@ -89,7 +89,7 @@ DotDotKeyword.LABEL = "'..'";
 EnumKeyword.LABEL = "'enum'";
 const tokens = [GenerateKeyword, FragmentKeyword, TerminalKeyword, GrammarKeyword, ReturnsKeyword, CurrentKeyword, HiddenKeyword, ImportKeyword, FalseKeyword, WithKeyword, TrueKeyword, EnumKeyword, AsKeyword, PlusEqualsKeyword, EqualsMoreThanKeyword, DashMoreThanKeyword, QuestionMarkEqualsKeyword, DotDotKeyword, CommaKeyword, ParenthesisOpenKeyword, ParenthesisCloseKeyword, AtKeyword, AsteriskKeyword, ColonKeyword, SemicolonKeyword, LessThanKeyword, MoreThanKeyword, PipeKeyword, AmpersandKeyword, QuestionMarkKeyword, PlusKeyword, CurlyOpenKeyword, DotKeyword, EqualsKeyword, CurlyCloseKeyword, ExclamationMarkKeyword, BracketOpenKeyword, BracketCloseKeyword, WS, ID, INT, string, RegexLiteral];
 
-const lexer = new Lexer(tokens);
+export const lexer = new Lexer(tokens);
 export class Parser extends LangiumParser {
     grammarAccess: LangiumGrammarAccess;
     constructor(grammarAccess: LangiumGrammarAccess) {

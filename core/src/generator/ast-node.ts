@@ -8,16 +8,16 @@ export namespace AstNode {
 
     export const cstNode = Symbol('node');
 
-    export function is<T extends AstNode>(item: AstNode, kind: Kind): item is T {
-        return !!item && 'kind' in item && typeof item.kind === 'object' && Kind.instanceOf(item.kind, kind);
+    export function is<T extends AstNode>(item: AstNode, ...kinds: Kind[]): item is T {
+        return !!item && 'kind' in item && typeof item.kind === 'object' && Kind.instanceOf(item.kind, ...kinds);
     }
 
-    export function getContainer(item: AstNode, kind: Kind): AstNode | undefined {
+    export function getContainer(item: AstNode, ...kinds: Kind[]): AstNode | undefined {
         if (!!item && item.container) {
-            if (is(item.container, kind)) {
+            if (is(item.container, ...kinds)) {
                 return item.container;
             } else {
-                return getContainer(item.container, kind);
+                return getContainer(item.container, ...kinds);
             }
         } else {
             return undefined;
@@ -32,8 +32,11 @@ export type Kind = {
 
 // eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace Kind {
-    export function instanceOf(itemKind: Kind, target: Kind): boolean {
-        return itemKind.value === target.value || itemKind.super.some(e => instanceOf(e, target));
+    function instanceOfSingle(itemKind: Kind, target: Kind): boolean {
+        return itemKind.value === target.value || itemKind.super.some(e => instanceOfSingle(e, target));
+    }
+    export function instanceOf(itemKind: Kind, ...targets: Kind[]): boolean {
+        return targets.some(e => instanceOfSingle(itemKind, e));
     }
 }
 

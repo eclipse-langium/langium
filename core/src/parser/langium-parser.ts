@@ -8,7 +8,6 @@ import { CstNodeBuilder } from './cst-node-builder';
 type StackItem = {
     object: any,
     executedAction: boolean,
-    unassignedRuleCall: boolean,
     feature?: AbstractElement
 }
 
@@ -56,8 +55,7 @@ export class LangiumParser extends EmbeddedActionsParser {
             if (!this.RECORDING_PHASE) {
                 this.stack.push({
                     object: { kind },
-                    executedAction: false,
-                    unassignedRuleCall: false
+                    executedAction: false
                 });
             }
             let result: unknown;
@@ -93,7 +91,7 @@ export class LangiumParser extends EmbeddedActionsParser {
             if (resultKind) {
                 (<any>object).kind = resultKind;
             }
-            const newItem = { ...this.current, object, unassignedRuleCall: true };
+            const newItem = { ...this.current, object };
             this.stack.pop();
             this.stack.push(newItem);
         }
@@ -155,15 +153,17 @@ export class LangiumParser extends EmbeddedActionsParser {
         }
         const item = this.current;
         const obj = item.object;
-        for (const value of Object.values(obj)) {
-            if (Array.isArray(value)) {
-                for (const item of value) {
-                    if (typeof (item) === 'object') {
-                        item.container = obj;
+        for (const [name, value] of Object.entries(obj)) {
+            if (!['kind', '_featureStack'].includes(name)) {
+                if (Array.isArray(value)) {
+                    for (const item of value) {
+                        if (typeof (item) === 'object') {
+                            item.container = obj;
+                        }
                     }
+                } else if (typeof (value) === 'object') {
+                    (<any>value).container = obj;
                 }
-            } else if (typeof (value) === 'object') {
-                (<any>value).container = obj;
             }
         }
         this.nodeBuilder.construct(obj);
