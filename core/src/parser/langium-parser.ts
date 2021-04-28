@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { EmbeddedActionsParser, IRuleConfig, TokenType } from 'chevrotain';
-import { AbstractElement, Action, Assignment, CrossReference, RuleCall } from '../gen/ast';
-import { AstNode, CompositeCstNode, Kind, Number, RuleResult, String } from '../generator/ast-node';
+import { AbstractElement, Action, Assignment, CrossReference } from '../gen/ast';
+import { AstNode, Kind, Number, RuleResult, String } from '../generator/ast-node';
 import { isArrayOperator } from '../generator/utils';
 import { CstNodeBuilder } from './cst-node-builder';
 
@@ -26,65 +26,33 @@ export class LangiumParser extends EmbeddedActionsParser {
         super(tokens, { recoveryEnabled: true, nodeLocationTracking: 'onlyOffset' });
     }
 
-    MAIN_RULE<T>(
+    MAIN_RULE(
         name: string,
         kind: Kind,
-        implementation: (...implArgs: unknown[]) => T,
-        config?: IRuleConfig<T>
-    ): (idxInCallingRule?: number, ...args: unknown[]) => T {
+        implementation: (...implArgs: unknown[]) => unknown,
+        config?: IRuleConfig<unknown>
+    ): (idxInCallingRule?: number, ...args: unknown[]) => unknown {
         return this.mainRule = this.DEFINE_RULE(name, kind, implementation, config);
     }
 
-    DEFINE_RULE<T>(
+    DEFINE_RULE(
         name: string,
         kind: Kind | undefined,
-        implementation: (...implArgs: unknown[]) => T,
-        config?: IRuleConfig<T>
-    ): (idxInCallingRule?: number, ...args: unknown[]) => T {
+        implementation: (...implArgs: unknown[]) => unknown,
+        config?: IRuleConfig<unknown>
+    ): (idxInCallingRule?: number, ...args: unknown[]) => unknown {
         return super.RULE(name, this.startImplementation(kind, implementation), config);
     }
 
     parse<T extends AstNode>(input: string): T {
         this.nodeBuilder = new CstNodeBuilder();
         this.nodeBuilder.buildRootNode(input);
-        let result = this.mainRule();
-        if (!result && this.stack.length > 0) {
-            result = this.reconstruct();
-        }
-
+        const result = this.mainRule();
         return <T>result;
     }
 
-    private reconstruct(): unknown {
-        let result: any;
-        let lastResult: any = undefined;
-        while (this.stack.length > 0) {
-            const feature = this.stack[this.stack.length - 1].feature;
-            result = this.construct();
-            if (feature) {
-                if (RuleCall.is(feature)) {
-                    result = {...result, ...lastResult};
-                } else if (Assignment.is(feature)) {
-                    this.assign(feature, lastResult, result);
-                }
-            }
-            if (lastResult) {
-                const lastCstNode = lastResult[AstNode.cstNode] as CompositeCstNode;
-                const cstNode = result[AstNode.cstNode] as CompositeCstNode;
-                if (lastCstNode !== cstNode) {
-                    for (const child of lastCstNode.children) {
-                        (<any>child).parent = cstNode;
-                    }
-                    cstNode.children.push(lastCstNode);
-                }
-            }
-            lastResult = result;
-        }
-        return result;
-    }
-
-    private startImplementation<T>(kind: Kind | undefined, implementation: (...implArgs: unknown[]) => T): (implArgs: unknown[]) => T {
-        return (implArgs: unknown[]): T => {
+    private startImplementation(kind: Kind | undefined, implementation: (...implArgs: unknown[]) => unknown): (implArgs: unknown[]) => unknown {
+        return (implArgs: unknown[]) => {
             if (!this.RECORDING_PHASE) {
                 this.stack.push({
                     object: { kind },
@@ -92,7 +60,16 @@ export class LangiumParser extends EmbeddedActionsParser {
                     unassignedRuleCall: false
                 });
             }
-            const result = implementation(implArgs);
+            let result: unknown;
+            try {
+                result = implementation(implArgs);
+            } catch (err) {
+                console.log('Parser exception thrown!', err);
+                result = undefined;
+            }
+            if (!this.RECORDING_PHASE && !result) {
+                result = this.construct();
+            }
             return result;
         };
     }
