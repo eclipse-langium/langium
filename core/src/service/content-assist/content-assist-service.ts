@@ -1,20 +1,23 @@
-import { AbstractElement, Grammar, ParserRule, RuleCall } from '../../gen/ast';
+import { AbstractElement, AbstractRule, CrossReference, Grammar, Keyword, ParserRule, RuleCall, TerminalRule } from '../../gen/ast';
 import { AstNode, CstNode } from '../../generator/ast-node';
 import { findLeafNodeAtOffset } from '../../grammar/grammar-utils';
-import { ContentAssistBuilder } from './content-assist-builder';
+import { buildContentAssistFor, buildContentAssistForRule, findFirstFeatures, findNextFeatures } from './content-assist-builder';
 
 export function contentAssist(grammar: Grammar, root: AstNode, offset: number): string[] {
     const cst = root[AstNode.cstNode];
-    const builder = new ContentAssistBuilder();
     if (cst) {
         const node = findLeafNodeAtOffset(cst, offset);
         if (node) {
             const commonSuperRule = findCommonSuperRule(node);
-            commonSuperRule.toString();
-            const features = builder.findNextFeatures(buildFeatureStack(node));
-            return features.flatMap(e => builder.buildContentAssistFor(e));
+            const flattened = CstNode.flatten(commonSuperRule.node).sort((a, b) => b.offset - a.offset);
+            const possibleFeatures = interpretRule(commonSuperRule.rule, flattened);
+            // Remove features which we already identified during parsing
+            const filteredFeatures = possibleFeatures.filter(e => e !== node.feature);
+            const features = findNextFeatures(buildFeatureStack(node));
+            features.push(...filteredFeatures.flatMap(e => findNextFeatures([e])));
+            return features.flatMap(e => buildContentAssistFor(e));
         } else {
-            return builder.buildContentAssistForRule(grammar.rules[0]);
+            return buildContentAssistForRule(grammar.rules[0]);
         }
     } else {
         return [];
@@ -32,13 +35,14 @@ function buildFeatureStack(node: CstNode | undefined): AbstractElement[] {
     return features;
 }
 
-function findCommonSuperRule(node: CstNode): ParserRule {
+function findCommonSuperRule(node: CstNode): { rule: ParserRule, node: CstNode } {
     let superNode = node.parent;
     while (superNode) {
         if (superNode.element !== node.element) {
             const topFeature = node.feature;
             if (RuleCall.is(topFeature) && topFeature.rule.value) {
-                return <ParserRule>topFeature.rule.value;
+                const rule = <ParserRule>topFeature.rule.value;
+                return { rule, node };
             }
             throw new Error();
         }
@@ -46,4 +50,41 @@ function findCommonSuperRule(node: CstNode): ParserRule {
         superNode = node.parent;
     }
     throw new Error();
+}
+
+function interpretRule(rule: ParserRule, nodes: CstNode[]): AbstractElement[] {
+    let features: AbstractElement[] = [];
+    let nextFeatures = findFirstFeatures(rule.alternatives);
+    let node = nodes.pop();
+    while (node && nextFeatures.length > 0) {
+        const n = node;
+        features = nextFeatures.filter(e => featureMatches(e, n));
+        nextFeatures = features.flatMap(e => findNextFeatures([e]));
+        node = nodes.pop();
+    }
+    return features;
+}
+
+function featureMatches(feature: AbstractElement, node: CstNode): boolean {
+    if (Keyword.is(feature)) {
+        const content = feature.value.substring(1, feature.value.length - 1);
+        return content === node.text;
+    } else if (RuleCall.is(feature)) {
+        return ruleMatches(feature.rule.value, node);
+    } else if (CrossReference.is(feature)) {
+        return featureMatches(feature.terminal, node);
+    }
+    return false;
+}
+
+function ruleMatches(rule: AbstractRule | undefined, node: CstNode): boolean {
+    if (ParserRule.is(rule)) {
+        const ruleFeatures = findFirstFeatures(rule.alternatives);
+        return ruleFeatures.some(e => featureMatches(e, node));
+    } else if (TerminalRule.is(rule)) {
+        const regex = rule.regex.substring(1, rule.regex.length - 1);
+        return node.text.match(new RegExp(regex)) !== null;
+    } else {
+        return false;
+    }
 }

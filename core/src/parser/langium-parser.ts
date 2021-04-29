@@ -154,7 +154,7 @@ export class LangiumParser extends EmbeddedActionsParser {
         const item = this.current;
         const obj = item.object;
         for (const [name, value] of Object.entries(obj)) {
-            if (!['kind', '_featureStack'].includes(name)) {
+            if (name !== 'kind') {
                 if (Array.isArray(value)) {
                     for (const item of value) {
                         if (typeof (item) === 'object') {
@@ -179,8 +179,8 @@ export class LangiumParser extends EmbeddedActionsParser {
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    private assign(assignment: { operator: string, feature: string }, value: unknown, object?: any): void {
-        const obj = object ?? this.current.object;
+    private assign(assignment: { operator: string, feature: string }, value: unknown): void {
+        const obj = this.current.object;
         const feature = assignment.feature.replace(/\^/g, '');
         switch (assignment.operator) {
             case '=': {

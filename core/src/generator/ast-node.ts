@@ -80,6 +80,21 @@ export interface CstNode {
     readonly element: AstNode;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-namespace
+export namespace CstNode {
+
+    export function flatten(node: CstNode): ILeafCstNode[] {
+        if (node instanceof LeafCstNode) {
+            return [node];
+        } else if (node instanceof CompositeCstNode) {
+            return node.children.flatMap(e => flatten(e));
+        } else {
+            return [];
+        }
+    }
+
+}
+
 export abstract class AbstractCstNode implements CstNode {
     abstract get offset(): number;
     abstract get length(): number;
