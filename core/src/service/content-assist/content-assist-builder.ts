@@ -1,4 +1,4 @@
-import { AbstractElement, AbstractRule, Alternatives, Assignment, CrossReference, Group, Keyword, ParserRule, RuleCall, TerminalRule, UnorderedGroup } from '../../gen/ast';
+import { AbstractElement, AbstractRule, Action, Alternatives, Assignment, CrossReference, Group, Keyword, ParserRule, RuleCall, TerminalRule, UnorderedGroup } from '../../gen/ast';
 import { isArray, isOptional } from '../../generator/utils';
 
 export class ContentAssistBuilder {
@@ -21,30 +21,28 @@ export class ContentAssistBuilder {
                 break;
             }
         }
+        // first try iterating the same group again
+        if (isArray(item.cardinality)) {
+            features.push(...this.findFirstFeatures(item));
+        }
         if (parent) {
             const ownIndex = parent.elements.indexOf(item);
-            let cont = true;
+            const definedParent = parent;
             if (ownIndex !== undefined && ownIndex < parent.elements.length - 1) {
                 features.push(...this.findNextFeatureInGroup(parent, ownIndex + 1));
-                cont = !features.some(e => !isOptional(e.cardinality));
             }
-            // cont = true assumes we are at the end of the current group
-            if (cont) {
-                // first try iterating the same group again
-                if (isArray(parent.cardinality)) {
-                    features.push(...this.findFirstFeatures(parent));
-                }
+            if (features.every(e => this.isOptionalNextFeature(e, definedParent))) {
                 // secondly, try to find the next elements of the parent
-                if (AbstractElement.is(parent)) {
-                    features.push(...this.findNextFeatures([parent]));
-                }
+                features.push(...this.findNextFeatures([parent]));
+            }
+            if (features.every(e => this.isOptionalNextFeature(e, definedParent))) {
                 // lasty, climb the feature stack and calculate completion for previously called rules
-                featureStack.pop();
+                featureStack.shift();
                 features.push(...this.findNextFeatures(featureStack));
             }
         } else {
             // Climb the feature stack if this feature is the only one in a rule
-            featureStack.pop();
+            featureStack.shift();
             features.push(...this.findNextFeatures(featureStack));
         }
         return features;
@@ -61,8 +59,18 @@ export class ContentAssistBuilder {
             return [];
         } else if (Assignment.is(feature)) {
             return this.findFirstFeatures(feature.terminal);
+        } else if (Action.is(feature)) {
+            return this.findNextFeatures([feature]);
         } else {
             return [feature];
+        }
+    }
+
+    private isOptionalNextFeature(feature: AbstractElement, parent: Group): boolean {
+        if (feature === parent) {
+            return false;
+        } else {
+            return isOptional(feature.cardinality) || (AbstractElement.is(feature.container) && this.isOptionalNextFeature(feature.container, parent));
         }
     }
 
@@ -92,7 +100,7 @@ export class ContentAssistBuilder {
 
     buildContentAssistFor(feature: AbstractElement): string[] {
         if (Keyword.is(feature)) {
-            return [feature.value];
+            return [feature.value.substring(1, feature.value.length - 1)];
         } else if (RuleCall.is(feature) && feature.rule.value) {
             return this.buildContentAssistForRule(feature.rule.value);
         } else if (CrossReference.is(feature)) {
@@ -101,5 +109,4 @@ export class ContentAssistBuilder {
         }
         return [];
     }
-
 }

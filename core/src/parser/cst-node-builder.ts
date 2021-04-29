@@ -17,7 +17,7 @@ export class CstNodeBuilder {
     }
 
     buildLeafNode(token: IToken, feature: AbstractElement): void {
-        const leafNode = new LeafCstNode(token.startOffset, token.image.length, false);
+        const leafNode = new LeafCstNode(token.startOffset, token.image.length, token.tokenType, false);
         leafNode.feature = feature;
         leafNode.root = this.rootNode;
         this.current.children.push(leafNode);

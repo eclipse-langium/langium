@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
+import { TokenType } from 'chevrotain';
 import { AbstractElement } from '../gen/ast';
 
 // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -106,7 +107,8 @@ export interface ICompositeCstNode extends CstNode {
 }
 
 export interface ILeafCstNode extends CstNode {
-    hidden: boolean;
+    readonly hidden: boolean;
+    readonly tokenType: TokenType;
 }
 
 export class LeafCstNode extends AbstractCstNode implements ILeafCstNode {
@@ -116,15 +118,24 @@ export class LeafCstNode extends AbstractCstNode implements ILeafCstNode {
     get length(): number {
         return this._length;
     }
-    hidden = false;
+    get hidden(): boolean {
+        return this._hidden;
+    }
+    get tokenType(): TokenType {
+        return this._tokenType;
+    }
+
+    _hidden = false;
 
     private _offset: number;
     private _length: number;
+    private _tokenType: TokenType;
 
-    constructor(offset: number, length: number, hidden = false) {
+    constructor(offset: number, length: number, tokenType: TokenType, hidden = false) {
         super();
-        this.hidden = hidden;
+        this._hidden = hidden;
         this._offset = offset;
+        this._tokenType = tokenType;
         this._length = length;
     }
 }

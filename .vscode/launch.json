@@ -16,6 +16,39 @@
             "outFiles": [
                 "${workspaceFolder}/core/lib/**/*.js"
             ]
-        }
+        },
+		{
+			"name": "Attach",
+			"port": 6009,
+			"request": "attach",
+			"skipFiles": [
+				"<node_internals>/**"
+			],
+			"sourceMaps": true,
+			"outFiles": [
+				"${workspaceFolder}/core/lib/**/*.js"
+			],
+			"type": "pwa-node"
+		},
+        {
+			"name": "Run Extension",
+			"type": "extensionHost",
+			"request": "launch",
+            "runtimeExecutable": "${execPath}",
+			"args": [
+				"${workspaceFolder}/core",
+				"--extensionDevelopmentPath=${workspaceFolder}/vscode-extension"
+			]
+		},
+		{
+			"name": "Extension Tests",
+			"type": "extensionHost",
+			"request": "launch",
+            "runtimeExecutable": "${execPath}",
+			"args": [
+				"--extensionDevelopmentPath=${workspaceFolder}/vscode-extension",
+				"--extensionTestsPath=${workspaceFolder}/out/test/suite/index"
+			]
+		}
     ]
 }

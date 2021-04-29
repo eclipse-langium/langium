@@ -1,19 +1,27 @@
 {
-  "name": "langium",
+  "name": "langium-vscode",
+  "version": "0.0.0",
   "displayName": "Langium",
   "description": "VS Code Extension for Langium",
-  "version": "0.0.1",
   "engines": {
     "vscode": "^1.53.0"
   },
   "categories": [
     "Other"
   ],
+  "contributes": {
+    "languages": [{
+      "id": "langium",
+      "extensions": [ ".lg", ".xtext" ],
+      "aliases": [ "Langium", "Xtext" ]
+    }]
+  },
   "activationEvents": [
     "onLanguage:javascript",
     "onLanguage:javascriptreact",
     "onLanguage:typescript",
-    "onLanguage:typescriptreact"
+    "onLanguage:typescriptreact",
+    "onLanguage:langium"
   ],
   "main": "./out/extension.js",
   "scripts": {
@@ -23,6 +31,10 @@
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src --ext ts",
     "test": "node ./out/test/runTest.js"
+  },
+  "dependencies": {
+    "langium": "0.0.0",
+    "vscode-languageclient": "^7.0.0"
   },
   "devDependencies": {
     "@types/glob": "^7.1.3",

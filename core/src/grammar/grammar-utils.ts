@@ -1,6 +1,6 @@
 import { AbstractRule, EnumRule, Grammar, ParserRule, TerminalRule } from '../gen/ast';
 import { decycle, retrocycle } from 'json-cycle';
-import { CompositeCstNode, ILeafCstNode, CstNode, LeafCstNode } from '../generator/ast-node';
+import { CompositeCstNode, CstNode, ILeafCstNode, LeafCstNode } from '../generator/ast-node';
 import { isDataTypeRule } from '../generator/utils';
 
 export function serialize(grammar: Grammar): string {
@@ -15,26 +15,15 @@ export function findLeafNodeAtOffset(node: CstNode, offset: number): ILeafCstNod
     if (node instanceof LeafCstNode) {
         return node;
     } else if (node instanceof CompositeCstNode) {
-        let last: CstNode | undefined = undefined;
-        for (const child of node.children) {
-            const start = child.offset;
-            const length = child.length;
-            const end = start + length;
-            if (start > offset) {
-                return findLeafNodeAtOffset(last ?? child, offset);
-            } else if (end >= offset) {
-                return findLeafNodeAtOffset(child, offset);
+        const children = node.children.filter(e => e.offset < offset).reverse();
+        for (const child of children) {
+            const result = findLeafNodeAtOffset(child, offset);
+            if (result) {
+                return result;
             }
-            last = child;
         }
-        if (last) {
-            return findLeafNodeAtOffset(last, offset);
-        } else {
-            return undefined;
-        }
-    } else {
-        return undefined;
     }
+    return undefined;
 }
 
 export function getTypeName(rule: AbstractRule | undefined): string {
