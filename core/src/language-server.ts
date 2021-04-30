@@ -130,19 +130,42 @@ connection.onCompletion(
         const uri = _textDocumentPosition.textDocument.uri;
         const document = documents.get(uri);
         if (document) {
-            const text = document.getText();
+            const text = document.getText({ start: document.positionAt(0), end: _textDocumentPosition.position });
             const offset = document.offsetAt(_textDocumentPosition.position);
             const allTokens = langium.lexer.tokenize(text).tokens;
-            const tokens = allTokens.filter(e => e.startOffset + e.image.length <= offset);
-            parser.input = tokens;
+            parser.input = allTokens;
             const assistResult = parser.parse(text);
             const assist = contentAssist(parser.grammarAccess['grammar'], assistResult, offset);
-            return Array.from(new Set<string>(assist)).map(e => { return { label: e }; });
+            return Array.from(new Set<string>(assist))
+                .map(e => buildCompletionItem(document, offset, text, e));
         } else {
             return [];
         }
     }
 );
+
+function buildCompletionItem(document: TextDocument, offset: number, content: string, completion: string): CompletionItem {
+    let negativeOffset: number = 0;
+    for (let i = completion.length; i > 0; i--) {
+        const contentSub = content.substring(content.length - i);
+        if (completion.startsWith(contentSub)) {
+            negativeOffset = i;
+            break;
+        }
+    }
+    const start = document.positionAt(offset - negativeOffset);
+    const end = document.positionAt(offset);
+    return {
+        label: completion,
+        textEdit: {
+            newText: completion,
+            range: {
+                start,
+                end
+            }
+        }
+    };
+}
 
 // This handler resolves additional information for the item selected in
 // the completion list.
