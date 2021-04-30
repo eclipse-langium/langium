@@ -14,7 +14,14 @@
       "id": "langium",
       "extensions": [ ".lg", ".xtext" ],
       "aliases": [ "Langium", "Xtext" ]
-    }]
+    }],
+    "grammars": [
+      {
+        "language": "langium",
+        "scopeName": "source.langium",
+        "path": "./syntaxes/langium.tmLanguage.json"
+      }
+    ]
   },
   "activationEvents": [
     "onLanguage:javascript",
