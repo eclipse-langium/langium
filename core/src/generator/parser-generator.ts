@@ -70,40 +70,10 @@ export function generateParser(grammar: Grammar, path?: string): string {
     );
 
     fileNode.children.push(tokenListNode, NL);
-    fileNode.children.push('const lexer = new Lexer(tokens);', NL);
 
-    fileNode.children.push(buildParser(grammar), NL, NL);
+    fileNode.children.push(buildParser(grammar), NL);
 
-    fileNode.children.push('let parser: Parser | undefined;', NL, NL);
-
-    fileNode.children.push(buildParseFunction(grammar));
     return process(fileNode);
-}
-
-function buildParseFunction(grammar: Grammar): CompositeGeneratorNode {
-    const parseFunction = new CompositeGeneratorNode();
-    parseFunction.children.push(
-        'export function parse(grammarAccess: ', grammar.name, 'GrammarAccess, text: string) {', NL);
-    const parseBody = new IndentNode();
-    parseBody.children.push(
-        'if (!parser) {', NL,
-        '    parser = new Parser(grammarAccess);', NL, '}', NL,
-        'const lexResult = lexer.tokenize(text);', NL,
-        'parser.input = lexResult.tokens;', NL,
-        'const ast = parser.parse(text);', NL,
-        'return {', NL
-    );
-
-    const resultObj = new IndentNode();
-    resultObj.children.push(
-        'ast,', NL,
-        'lexErrors: lexResult.errors,', NL,
-        'parseErrors: parser.errors', NL
-    );
-
-    parseBody.children.push(resultObj, '}', NL);
-    parseFunction.children.push(parseBody, '}', NL);
-    return parseFunction;
 }
 
 function buildParser(grammar: Grammar): CompositeGeneratorNode {
@@ -146,7 +116,7 @@ function buildParser(grammar: Grammar): CompositeGeneratorNode {
 
 function buildRule(ctx: RuleContext, rule: ParserRule, first: boolean): CompositeGeneratorNode {
     const ruleNode = new CompositeGeneratorNode();
-    ruleNode.children.push('private ', rule.name);
+    ruleNode.children.push(rule.name);
 
     let kind = 'undefined';
 

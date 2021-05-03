@@ -132,9 +132,7 @@ connection.onCompletion(
         if (document) {
             const text = document.getText({ start: document.positionAt(0), end: _textDocumentPosition.position });
             const offset = document.offsetAt(_textDocumentPosition.position);
-            const allTokens = langium.lexer.tokenize(text).tokens;
-            parser.input = allTokens;
-            const assistResult = parser.parse(text);
+            const assistResult = parser.parse(text).value;
             const assist = contentAssist(parser.grammarAccess['grammar'], assistResult, offset);
             return Array.from(new Set<string>(assist))
                 .map(e => buildCompletionItem(document, offset, text, e));

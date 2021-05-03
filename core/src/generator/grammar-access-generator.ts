@@ -8,7 +8,10 @@ export function generateGrammarAccess(grammar: Grammar, path?: string, bootstrap
     const node = new CompositeGeneratorNode();
 
     const langiumPath = "'" + (path ?? 'langium') + "';";
-    node.children.push('import { GrammarAccess } from ', langiumPath, NL, "import { Action, Assignment, CrossReference, Keyword, RuleCall } from './ast';", NL, NL);
+    if (!bootstrap) {
+        node.children.push("import { retrocycle } from 'json-cycle';", NL);
+    }
+    node.children.push('import { Action, Assignment, CrossReference, Keyword, RuleCall, GrammarAccess } from ', langiumPath, NL, NL);
 
     for (const rule of grammar.rules.filter(e => ParserRule.is(e)).map(e => e as ParserRule)) {
         node.children.push(generateRuleAccess(rule), NL, NL);
@@ -24,6 +27,12 @@ export function generateGrammarAccess(grammar: Grammar, path?: string, bootstrap
         } else {
             content.children.push(rule.name, ' = this.buildAccess<', rule.name, "RuleAccess>('", rule.name, "');", NL);
         }
+    }
+
+    if (!bootstrap) {
+        const constructorNode = new IndentNode();
+        constructorNode.children.push('// eslint-disable-next-line @typescript-eslint/no-var-requires', NL, "super(retrocycle(require('./grammar.json')));");
+        content.children.push(NL, 'constructor() {', NL, constructorNode, NL, '}', NL);
     }
 
     node.children.push(content, '}');

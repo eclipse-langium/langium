@@ -1,6 +1,5 @@
 import { retrocycle } from 'json-cycle';
-import { GrammarAccess } from '../grammar/grammar-access';
-import { Action, Assignment, CrossReference, Keyword, RuleCall } from './ast';
+import { Action, Assignment, CrossReference, Keyword, RuleCall, GrammarAccess } from '../index';
 
 export type GrammarRuleAccess = {
     GrammarKeyword: Keyword;
