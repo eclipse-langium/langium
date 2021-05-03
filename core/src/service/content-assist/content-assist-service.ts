@@ -12,7 +12,7 @@ export function contentAssist(grammar: Grammar, root: AstNode, offset: number): 
             const commonSuperRule = findCommonSuperRule(node);
             // In some cases, it is possible that we do not have a super rule
             if (commonSuperRule) {
-                const flattened = CstNode.flatten(commonSuperRule.node).sort((a, b) => b.offset - a.offset);
+                const flattened = CstNode.flatten(commonSuperRule.node);
                 const possibleFeatures = interpretRule(commonSuperRule.rule, [...flattened]);
                 // Remove features which we already identified during parsing
                 const filteredFeatures = possibleFeatures.filter(e => e !== node.feature);
@@ -63,7 +63,7 @@ function findCommonSuperRule(node: CstNode): { rule: ParserRule, node: CstNode }
 function interpretRule(rule: ParserRule, nodes: CstNode[]): AbstractElement[] {
     let features: AbstractElement[] = [];
     let nextFeatures = findFirstFeatures(rule.alternatives);
-    let node = nodes.pop();
+    let node = nodes.shift();
     while (node && nextFeatures.length > 0) {
         const n = node;
         features = nextFeatures.filter(e => {
@@ -74,7 +74,7 @@ function interpretRule(rule: ParserRule, nodes: CstNode[]): AbstractElement[] {
             return match === 'full';
         });
         nextFeatures = features.flatMap(e => findNextFeatures([e]));
-        node = nodes.pop();
+        node = nodes.shift();
     }
     return features;
 }
