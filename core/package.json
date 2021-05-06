@@ -9,9 +9,8 @@
     "build": "tsc --build tsconfig.build.json",
     "watch": "tsc -w --build tsconfig.build.json",
     "lint": "eslint ./src --ext .js,.ts",
-    "prepare": "npm run clean && npm run lint && npm test && npm run build && copyfiles -f ./src/gen/grammar.json ./lib/gen",
-    "test": "jest --coverage",
-    "bootstrap": "langium"
+    "prepare": "npm run clean && npm run lint && npm run build && copyfiles -f ./src/gen/grammar.json ./lib/gen",
+    "test": "jest --coverage"
   },
   "author": "",
   "license": "MIT",
@@ -23,8 +22,6 @@
   "dependencies": {
     "chevrotain": "^7.1.2",
     "fs-extra": "^9.1.0",
-    "json-cycle": "^1.3.0",
-    "type-fest": "^0.21.2",
     "vscode-languageserver": "^7.0.0",
     "vscode-languageserver-textdocument": "^1.0.1"
   },
@@ -39,7 +36,6 @@
     "jest": "^26.6.3",
     "rimraf": "^3.0.2",
     "ts-jest": "^26.5.2",
-    "typescript": "^4.2.2",
-    "langium-cli": "0.0.0"
+    "typescript": "^4.2.2"
   }
 }

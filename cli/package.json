@@ -11,7 +11,7 @@
     "build": "tsc --build tsconfig.build.json",
     "watch": "tsc -w --build tsconfig.build.json",
     "lint": "eslint ./src --ext .js,.ts",
-    "prepare": "npm run clean && npm run lint && npm test && npm run build && npm link",
+    "prepare": "npm run clean && npm run lint && npm run build && npm link",
     "test": "jest --coverage --passWithNoTests"
   },
   "author": "",

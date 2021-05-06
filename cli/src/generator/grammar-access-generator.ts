@@ -8,8 +8,7 @@ export function generateGrammarAccess(grammar: Grammar, path?: string, bootstrap
     const node = new CompositeGeneratorNode();
 
     const langiumPath = "'" + (path ?? 'langium') + "';";
-    node.children.push("import { retrocycle } from 'json-cycle';", NL);
-    node.children.push('import { Action, Assignment, CrossReference, Keyword, RuleCall, GrammarAccess } from ', langiumPath, NL, NL);
+    node.children.push('import { Action, Assignment, CrossReference, Keyword, RuleCall, GrammarAccess, retrocycle } from ', langiumPath, NL, NL);
 
     for (const rule of grammar.rules.filter(e => ParserRule.is(e)).map(e => e as ParserRule)) {
         node.children.push(generateRuleAccess(rule), NL, NL);
