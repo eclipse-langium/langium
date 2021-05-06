@@ -1,11 +1,11 @@
-import { AbstractElement, Action, Alternatives, Assignment, CrossReference, Grammar, Group, Keyword, ParserRule, RuleCall, TerminalRule, UnorderedGroup } from '../gen/ast';
-import { getTypeName } from '../grammar/grammar-utils';
-import { AstNode } from './ast-node';
-import { CompositeGeneratorNode, GeneratorNode, IndentNode, NewLineNode, NL } from './node/node';
-import { process } from './node/node-processor';
-import { replaceTokens } from './token-replacer';
+import { AbstractElement, Action, Alternatives, Assignment, CrossReference, Grammar, Group, Keyword, ParserRule, RuleCall, TerminalRule, UnorderedGroup } from 'langium';
+import { getTypeName } from 'langium';
+import { AstNode } from 'langium';
+import { CompositeGeneratorNode, GeneratorNode, IndentNode, NewLineNode, NL } from 'langium';
+import { process } from 'langium';
+import { replaceTokens } from '../../../core/src/generator/token-replacer';
 import { collectAst } from './type-collector';
-import { Cardinality, findAllFeatures, isArray, isDataTypeRule, isOptional } from './utils';
+import { Cardinality, findAllFeatures, isArray, isDataTypeRule, isOptional } from 'langium';
 
 type RuleContext = {
     name: string,

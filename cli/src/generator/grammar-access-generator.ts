@@ -1,8 +1,8 @@
-import { AbstractElement, Action, Assignment, CrossReference, Grammar, Keyword, ParserRule, RuleCall } from '../gen/ast';
-import { AstNode } from './ast-node';
-import { CompositeGeneratorNode, GeneratorNode, IndentNode, NL } from './node/node';
-import { process } from './node/node-processor';
-import { findAllFeatures } from './utils';
+import { AbstractElement, Action, Assignment, CrossReference, Grammar, Keyword, ParserRule, RuleCall } from 'langium';
+import { AstNode } from 'langium';
+import { CompositeGeneratorNode, GeneratorNode, IndentNode, NL } from 'langium';
+import { process } from 'langium';
+import { findAllFeatures } from 'langium';
 
 export function generateGrammarAccess(grammar: Grammar, path?: string, bootstrap = false): string {
     const node = new CompositeGeneratorNode();

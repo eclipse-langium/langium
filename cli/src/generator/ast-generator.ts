@@ -1,6 +1,6 @@
-import { Grammar } from '../gen/ast';
-import { CompositeGeneratorNode, NL } from './node/node';
-import { process } from './node/node-processor';
+import { Grammar } from 'langium';
+import { CompositeGeneratorNode, NL } from 'langium';
+import { process } from 'langium';
 import { collectAst } from './type-collector';
 
 export function generateAst(grammar: Grammar, path?: string): string {

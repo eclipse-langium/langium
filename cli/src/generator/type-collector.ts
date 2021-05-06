@@ -1,8 +1,8 @@
-import { AbstractElement, Action, Alternatives, Assignment, CrossReference, Grammar, Group, Keyword, ParserRule, RuleCall, UnorderedGroup } from '../gen/ast';
-import { getRuleType, getTypeName } from '../grammar/grammar-utils';
-import { CompositeGeneratorNode, IndentNode, NL } from './node/node';
-import { process } from './node/node-processor';
-import { Cardinality, isDataTypeRule, isOptional } from './utils';
+import { AbstractElement, Action, Alternatives, Assignment, CrossReference, Grammar, Group, Keyword, ParserRule, RuleCall, UnorderedGroup } from 'langium';
+import { getRuleType, getTypeName } from 'langium';
+import { CompositeGeneratorNode, IndentNode, NL } from 'langium';
+import { process } from 'langium';
+import { Cardinality, isDataTypeRule, isOptional } from 'langium';
 
 type TypeAlternative = {
     name: string,
