@@ -51,10 +51,10 @@ export class Interface {
         interfaceNode.children.push(fieldsNode, '}', NL, NL);
         interfaceNode.children.push('export namespace ', this.name, ' {', NL);
         const interfaceBody = new IndentNode();
-        interfaceBody.children.push("export const kind: Kind = { value: '", this.name, "', super: [ ", superTypes.map(e => e + '.kind').join(', '), ' ] };', NL);
+        interfaceBody.children.push("export const type: Type = { value: '", this.name, "', super: [ ", superTypes.map(e => e + '.type').join(', '), ' ] };', NL);
         const methodBody = new IndentNode();
         interfaceBody.children.push('export function is(item: any): item is ', this.name, ' {', NL, methodBody, '}');
-        methodBody.children.push('return AstNode.is(item, kind);', NL);
+        methodBody.children.push('return AstNode.is(item, type);', NL);
         interfaceNode.children.push(interfaceBody, NL, '}', NL);
 
         return process(interfaceNode);

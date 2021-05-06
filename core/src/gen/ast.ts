@@ -3,16 +3,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-empty-interface */
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
-import { AstNode, Kind, Reference } from '../index';
+import { AstNode, Type, Reference } from '../index';
 
 export interface AbstractElement extends AstNode {
     cardinality: '?' | '*' | '+'
 }
 
 export namespace AbstractElement {
-    export const kind: Kind = { value: 'AbstractElement', super: [ AstNode.kind ] };
+    export const type: Type = { value: 'AbstractElement', super: [ AstNode.type ] };
     export function is(item: any): item is AbstractElement {
-        return AstNode.is(item, kind);
+        return AstNode.is(item, type);
     }
 }
 
@@ -22,9 +22,9 @@ export interface AbstractMetamodelDeclaration extends AstNode {
 }
 
 export namespace AbstractMetamodelDeclaration {
-    export const kind: Kind = { value: 'AbstractMetamodelDeclaration', super: [ AstNode.kind ] };
+    export const type: Type = { value: 'AbstractMetamodelDeclaration', super: [ AstNode.type ] };
     export function is(item: any): item is AbstractMetamodelDeclaration {
-        return AstNode.is(item, kind);
+        return AstNode.is(item, type);
     }
 }
 
@@ -33,9 +33,9 @@ export interface AbstractNegatedToken extends AstNode {
 }
 
 export namespace AbstractNegatedToken {
-    export const kind: Kind = { value: 'AbstractNegatedToken', super: [ AstNode.kind ] };
+    export const type: Type = { value: 'AbstractNegatedToken', super: [ AstNode.type ] };
     export function is(item: any): item is AbstractNegatedToken {
-        return AstNode.is(item, kind);
+        return AstNode.is(item, type);
     }
 }
 
@@ -45,9 +45,9 @@ export interface AbstractRule extends AstNode {
 }
 
 export namespace AbstractRule {
-    export const kind: Kind = { value: 'AbstractRule', super: [ AstNode.kind ] };
+    export const type: Type = { value: 'AbstractRule', super: [ AstNode.type ] };
     export function is(item: any): item is AbstractRule {
-        return AstNode.is(item, kind);
+        return AstNode.is(item, type);
     }
 }
 
@@ -56,9 +56,9 @@ export interface Annotation extends AstNode {
 }
 
 export namespace Annotation {
-    export const kind: Kind = { value: 'Annotation', super: [ AstNode.kind ] };
+    export const type: Type = { value: 'Annotation', super: [ AstNode.type ] };
     export function is(item: any): item is Annotation {
-        return AstNode.is(item, kind);
+        return AstNode.is(item, type);
     }
 }
 
@@ -66,9 +66,9 @@ export interface Condition extends AstNode {
 }
 
 export namespace Condition {
-    export const kind: Kind = { value: 'Condition', super: [ AstNode.kind ] };
+    export const type: Type = { value: 'Condition', super: [ AstNode.type ] };
     export function is(item: any): item is Condition {
-        return AstNode.is(item, kind);
+        return AstNode.is(item, type);
     }
 }
 
@@ -78,9 +78,9 @@ export interface EnumLiteralDeclaration extends AstNode {
 }
 
 export namespace EnumLiteralDeclaration {
-    export const kind: Kind = { value: 'EnumLiteralDeclaration', super: [ AstNode.kind ] };
+    export const type: Type = { value: 'EnumLiteralDeclaration', super: [ AstNode.type ] };
     export function is(item: any): item is EnumLiteralDeclaration {
-        return AstNode.is(item, kind);
+        return AstNode.is(item, type);
     }
 }
 
@@ -89,9 +89,9 @@ export interface EnumLiterals extends AstNode {
 }
 
 export namespace EnumLiterals {
-    export const kind: Kind = { value: 'EnumLiterals', super: [ AstNode.kind ] };
+    export const type: Type = { value: 'EnumLiterals', super: [ AstNode.type ] };
     export function is(item: any): item is EnumLiterals {
-        return AstNode.is(item, kind);
+        return AstNode.is(item, type);
     }
 }
 
@@ -105,9 +105,9 @@ export interface Grammar extends AstNode {
 }
 
 export namespace Grammar {
-    export const kind: Kind = { value: 'Grammar', super: [ AstNode.kind ] };
+    export const type: Type = { value: 'Grammar', super: [ AstNode.type ] };
     export function is(item: any): item is Grammar {
-        return AstNode.is(item, kind);
+        return AstNode.is(item, type);
     }
 }
 
@@ -118,9 +118,9 @@ export interface NamedArgument extends AstNode {
 }
 
 export namespace NamedArgument {
-    export const kind: Kind = { value: 'NamedArgument', super: [ AstNode.kind ] };
+    export const type: Type = { value: 'NamedArgument', super: [ AstNode.type ] };
     export function is(item: any): item is NamedArgument {
-        return AstNode.is(item, kind);
+        return AstNode.is(item, type);
     }
 }
 
@@ -129,9 +129,9 @@ export interface Parameter extends AstNode {
 }
 
 export namespace Parameter {
-    export const kind: Kind = { value: 'Parameter', super: [ AstNode.kind ] };
+    export const type: Type = { value: 'Parameter', super: [ AstNode.type ] };
     export function is(item: any): item is Parameter {
-        return AstNode.is(item, kind);
+        return AstNode.is(item, type);
     }
 }
 
@@ -140,9 +140,9 @@ export interface ParenthesizedTerminalElement extends AstNode {
 }
 
 export namespace ParenthesizedTerminalElement {
-    export const kind: Kind = { value: 'ParenthesizedTerminalElement', super: [ AstNode.kind ] };
+    export const type: Type = { value: 'ParenthesizedTerminalElement', super: [ AstNode.type ] };
     export function is(item: any): item is ParenthesizedTerminalElement {
-        return AstNode.is(item, kind);
+        return AstNode.is(item, type);
     }
 }
 
@@ -151,9 +151,9 @@ export interface TerminalGroup extends AstNode {
 }
 
 export namespace TerminalGroup {
-    export const kind: Kind = { value: 'TerminalGroup', super: [ AstNode.kind ] };
+    export const type: Type = { value: 'TerminalGroup', super: [ AstNode.type ] };
     export function is(item: any): item is TerminalGroup {
-        return AstNode.is(item, kind);
+        return AstNode.is(item, type);
     }
 }
 
@@ -162,9 +162,9 @@ export interface TerminalToken extends AstNode {
 }
 
 export namespace TerminalToken {
-    export const kind: Kind = { value: 'TerminalToken', super: [ AstNode.kind ] };
+    export const type: Type = { value: 'TerminalToken', super: [ AstNode.type ] };
     export function is(item: any): item is TerminalToken {
-        return AstNode.is(item, kind);
+        return AstNode.is(item, type);
     }
 }
 
@@ -172,9 +172,9 @@ export interface TerminalTokenElement extends AstNode {
 }
 
 export namespace TerminalTokenElement {
-    export const kind: Kind = { value: 'TerminalTokenElement', super: [ AstNode.kind ] };
+    export const type: Type = { value: 'TerminalTokenElement', super: [ AstNode.type ] };
     export function is(item: any): item is TerminalTokenElement {
-        return AstNode.is(item, kind);
+        return AstNode.is(item, type);
     }
 }
 
@@ -185,9 +185,9 @@ export interface Action extends AbstractElement {
 }
 
 export namespace Action {
-    export const kind: Kind = { value: 'Action', super: [ AbstractElement.kind ] };
+    export const type: Type = { value: 'Action', super: [ AbstractElement.type ] };
     export function is(item: any): item is Action {
-        return AstNode.is(item, kind);
+        return AstNode.is(item, type);
     }
 }
 
@@ -196,9 +196,9 @@ export interface Alternatives extends AbstractElement {
 }
 
 export namespace Alternatives {
-    export const kind: Kind = { value: 'Alternatives', super: [ AbstractElement.kind ] };
+    export const type: Type = { value: 'Alternatives', super: [ AbstractElement.type ] };
     export function is(item: any): item is Alternatives {
-        return AstNode.is(item, kind);
+        return AstNode.is(item, type);
     }
 }
 
@@ -211,9 +211,9 @@ export interface Assignment extends AbstractElement {
 }
 
 export namespace Assignment {
-    export const kind: Kind = { value: 'Assignment', super: [ AbstractElement.kind ] };
+    export const type: Type = { value: 'Assignment', super: [ AbstractElement.type ] };
     export function is(item: any): item is Assignment {
-        return AstNode.is(item, kind);
+        return AstNode.is(item, type);
     }
 }
 
@@ -223,9 +223,9 @@ export interface CrossReference extends AbstractElement {
 }
 
 export namespace CrossReference {
-    export const kind: Kind = { value: 'CrossReference', super: [ AbstractElement.kind ] };
+    export const type: Type = { value: 'CrossReference', super: [ AbstractElement.type ] };
     export function is(item: any): item is CrossReference {
-        return AstNode.is(item, kind);
+        return AstNode.is(item, type);
     }
 }
 
@@ -236,9 +236,9 @@ export interface Group extends AbstractElement, AbstractElement {
 }
 
 export namespace Group {
-    export const kind: Kind = { value: 'Group', super: [ AbstractElement.kind, AbstractElement.kind ] };
+    export const type: Type = { value: 'Group', super: [ AbstractElement.type, AbstractElement.type ] };
     export function is(item: any): item is Group {
-        return AstNode.is(item, kind);
+        return AstNode.is(item, type);
     }
 }
 
@@ -249,9 +249,9 @@ export interface Keyword extends AbstractElement {
 }
 
 export namespace Keyword {
-    export const kind: Kind = { value: 'Keyword', super: [ AbstractElement.kind ] };
+    export const type: Type = { value: 'Keyword', super: [ AbstractElement.type ] };
     export function is(item: any): item is Keyword {
-        return AstNode.is(item, kind);
+        return AstNode.is(item, type);
     }
 }
 
@@ -263,9 +263,9 @@ export interface RuleCall extends AbstractElement {
 }
 
 export namespace RuleCall {
-    export const kind: Kind = { value: 'RuleCall', super: [ AbstractElement.kind ] };
+    export const type: Type = { value: 'RuleCall', super: [ AbstractElement.type ] };
     export function is(item: any): item is RuleCall {
-        return AstNode.is(item, kind);
+        return AstNode.is(item, type);
     }
 }
 
@@ -274,9 +274,9 @@ export interface UnorderedGroup extends AbstractElement {
 }
 
 export namespace UnorderedGroup {
-    export const kind: Kind = { value: 'UnorderedGroup', super: [ AbstractElement.kind ] };
+    export const type: Type = { value: 'UnorderedGroup', super: [ AbstractElement.type ] };
     export function is(item: any): item is UnorderedGroup {
-        return AstNode.is(item, kind);
+        return AstNode.is(item, type);
     }
 }
 
@@ -285,9 +285,9 @@ export interface GeneratedMetamodel extends AbstractMetamodelDeclaration {
 }
 
 export namespace GeneratedMetamodel {
-    export const kind: Kind = { value: 'GeneratedMetamodel', super: [ AbstractMetamodelDeclaration.kind ] };
+    export const type: Type = { value: 'GeneratedMetamodel', super: [ AbstractMetamodelDeclaration.type ] };
     export function is(item: any): item is GeneratedMetamodel {
-        return AstNode.is(item, kind);
+        return AstNode.is(item, type);
     }
 }
 
@@ -295,9 +295,9 @@ export interface ReferencedMetamodel extends AbstractMetamodelDeclaration {
 }
 
 export namespace ReferencedMetamodel {
-    export const kind: Kind = { value: 'ReferencedMetamodel', super: [ AbstractMetamodelDeclaration.kind ] };
+    export const type: Type = { value: 'ReferencedMetamodel', super: [ AbstractMetamodelDeclaration.type ] };
     export function is(item: any): item is ReferencedMetamodel {
-        return AstNode.is(item, kind);
+        return AstNode.is(item, type);
     }
 }
 
@@ -305,9 +305,9 @@ export interface NegatedToken extends AbstractNegatedToken {
 }
 
 export namespace NegatedToken {
-    export const kind: Kind = { value: 'NegatedToken', super: [ AbstractNegatedToken.kind ] };
+    export const type: Type = { value: 'NegatedToken', super: [ AbstractNegatedToken.type ] };
     export function is(item: any): item is NegatedToken {
-        return AstNode.is(item, kind);
+        return AstNode.is(item, type);
     }
 }
 
@@ -315,9 +315,9 @@ export interface UntilToken extends AbstractNegatedToken {
 }
 
 export namespace UntilToken {
-    export const kind: Kind = { value: 'UntilToken', super: [ AbstractNegatedToken.kind ] };
+    export const type: Type = { value: 'UntilToken', super: [ AbstractNegatedToken.type ] };
     export function is(item: any): item is UntilToken {
-        return AstNode.is(item, kind);
+        return AstNode.is(item, type);
     }
 }
 
@@ -326,9 +326,9 @@ export interface EnumRule extends AbstractRule {
 }
 
 export namespace EnumRule {
-    export const kind: Kind = { value: 'EnumRule', super: [ AbstractRule.kind ] };
+    export const type: Type = { value: 'EnumRule', super: [ AbstractRule.type ] };
     export function is(item: any): item is EnumRule {
-        return AstNode.is(item, kind);
+        return AstNode.is(item, type);
     }
 }
 
@@ -342,9 +342,9 @@ export interface ParserRule extends AbstractRule {
 }
 
 export namespace ParserRule {
-    export const kind: Kind = { value: 'ParserRule', super: [ AbstractRule.kind ] };
+    export const type: Type = { value: 'ParserRule', super: [ AbstractRule.type ] };
     export function is(item: any): item is ParserRule {
-        return AstNode.is(item, kind);
+        return AstNode.is(item, type);
     }
 }
 
@@ -354,9 +354,9 @@ export interface TerminalRule extends AbstractRule {
 }
 
 export namespace TerminalRule {
-    export const kind: Kind = { value: 'TerminalRule', super: [ AbstractRule.kind ] };
+    export const type: Type = { value: 'TerminalRule', super: [ AbstractRule.type ] };
     export function is(item: any): item is TerminalRule {
-        return AstNode.is(item, kind);
+        return AstNode.is(item, type);
     }
 }
 
@@ -366,9 +366,9 @@ export interface Conjunction extends Condition {
 }
 
 export namespace Conjunction {
-    export const kind: Kind = { value: 'Conjunction', super: [ Condition.kind ] };
+    export const type: Type = { value: 'Conjunction', super: [ Condition.type ] };
     export function is(item: any): item is Conjunction {
-        return AstNode.is(item, kind);
+        return AstNode.is(item, type);
     }
 }
 
@@ -378,9 +378,9 @@ export interface Disjunction extends Condition {
 }
 
 export namespace Disjunction {
-    export const kind: Kind = { value: 'Disjunction', super: [ Condition.kind ] };
+    export const type: Type = { value: 'Disjunction', super: [ Condition.type ] };
     export function is(item: any): item is Disjunction {
-        return AstNode.is(item, kind);
+        return AstNode.is(item, type);
     }
 }
 
@@ -389,9 +389,9 @@ export interface LiteralCondition extends Condition {
 }
 
 export namespace LiteralCondition {
-    export const kind: Kind = { value: 'LiteralCondition', super: [ Condition.kind ] };
+    export const type: Type = { value: 'LiteralCondition', super: [ Condition.type ] };
     export function is(item: any): item is LiteralCondition {
-        return AstNode.is(item, kind);
+        return AstNode.is(item, type);
     }
 }
 
@@ -400,9 +400,9 @@ export interface Negation extends Condition {
 }
 
 export namespace Negation {
-    export const kind: Kind = { value: 'Negation', super: [ Condition.kind ] };
+    export const type: Type = { value: 'Negation', super: [ Condition.type ] };
     export function is(item: any): item is Negation {
-        return AstNode.is(item, kind);
+        return AstNode.is(item, type);
     }
 }
 
@@ -411,9 +411,9 @@ export interface ParameterReference extends Condition {
 }
 
 export namespace ParameterReference {
-    export const kind: Kind = { value: 'ParameterReference', super: [ Condition.kind ] };
+    export const type: Type = { value: 'ParameterReference', super: [ Condition.type ] };
     export function is(item: any): item is ParameterReference {
-        return AstNode.is(item, kind);
+        return AstNode.is(item, type);
     }
 }
 
@@ -421,9 +421,9 @@ export interface TerminalAlternatives extends ParenthesizedTerminalElement {
 }
 
 export namespace TerminalAlternatives {
-    export const kind: Kind = { value: 'TerminalAlternatives', super: [ ParenthesizedTerminalElement.kind ] };
+    export const type: Type = { value: 'TerminalAlternatives', super: [ ParenthesizedTerminalElement.type ] };
     export function is(item: any): item is TerminalAlternatives {
-        return AstNode.is(item, kind);
+        return AstNode.is(item, type);
     }
 }
 
@@ -433,9 +433,9 @@ export interface CharacterRange extends TerminalTokenElement {
 }
 
 export namespace CharacterRange {
-    export const kind: Kind = { value: 'CharacterRange', super: [ TerminalTokenElement.kind ] };
+    export const type: Type = { value: 'CharacterRange', super: [ TerminalTokenElement.type ] };
     export function is(item: any): item is CharacterRange {
-        return AstNode.is(item, kind);
+        return AstNode.is(item, type);
     }
 }
 
@@ -444,9 +444,9 @@ export interface TerminalRuleCall extends TerminalTokenElement {
 }
 
 export namespace TerminalRuleCall {
-    export const kind: Kind = { value: 'TerminalRuleCall', super: [ TerminalTokenElement.kind ] };
+    export const type: Type = { value: 'TerminalRuleCall', super: [ TerminalTokenElement.type ] };
     export function is(item: any): item is TerminalRuleCall {
-        return AstNode.is(item, kind);
+        return AstNode.is(item, type);
     }
 }
 
@@ -454,9 +454,9 @@ export interface Wildcard extends TerminalTokenElement {
 }
 
 export namespace Wildcard {
-    export const kind: Kind = { value: 'Wildcard', super: [ TerminalTokenElement.kind ] };
+    export const type: Type = { value: 'Wildcard', super: [ TerminalTokenElement.type ] };
     export function is(item: any): item is Wildcard {
-        return AstNode.is(item, kind);
+        return AstNode.is(item, type);
     }
 }
 

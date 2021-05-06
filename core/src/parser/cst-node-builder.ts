@@ -31,9 +31,9 @@ export class CstNodeBuilder {
         this.current.children.push(leafNode);
     }
 
-    construct(item: { [AstNode.cstNode]: CstNode }): void {
+    construct(item: { $cstNode: CstNode }): void {
         this.current.element = <AstNode>item;
-        item[AstNode.cstNode] = this.reduce(this.current);
+        item.$cstNode = this.reduce(this.current);
         this.nodeStack.pop();
     }
 

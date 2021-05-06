@@ -3,7 +3,7 @@ import { getTypeName } from 'langium';
 import { AstNode } from 'langium';
 import { CompositeGeneratorNode, GeneratorNode, IndentNode, NewLineNode, NL } from 'langium';
 import { process } from 'langium';
-import { replaceTokens } from '../../../core/src/generator/token-replacer';
+import { replaceTokens } from 'langium';
 import { collectAst } from './type-collector';
 import { Cardinality, findAllFeatures, isArray, isDataTypeRule, isOptional } from 'langium';
 
@@ -118,19 +118,19 @@ function buildRule(ctx: RuleContext, rule: ParserRule, first: boolean): Composit
     const ruleNode = new CompositeGeneratorNode();
     ruleNode.children.push(rule.name);
 
-    let kind = 'undefined';
+    let type = 'undefined';
 
     if (!rule.fragment) {
         if (isDataTypeRule(rule)) {
-            kind = 'String.kind';
+            type = 'String.type';
         } else {
-            kind = getTypeName(rule) + '.kind';
+            type = getTypeName(rule) + '.type';
         }
     }
 
     ruleNode.children.push(
         ' = this.', first ? 'MAIN_RULE("' : 'DEFINE_RULE("',
-        rule.name, '", ', kind, ', () => {', NL
+        rule.name, '", ', type, ', () => {', NL
     );
 
     const ruleContent = new IndentNode();
@@ -169,7 +169,7 @@ function buildGroup(ctx: RuleContext, group: Group): CompositeGeneratorNode {
 }
 
 function buildAction(ctx: RuleContext, action: Action): GeneratorNode {
-    return `this.executeAction(${action.type}.kind, ${getGrammarAccess(ctx, action)});`;
+    return `this.executeAction(${action.type}.type, ${getGrammarAccess(ctx, action)});`;
 }
 
 function buildElement(ctx: RuleContext, terminal: AbstractElement): GeneratorNode {
@@ -241,7 +241,7 @@ function wrap(ctx: RuleContext, node: GeneratorNode, cardinality: Cardinality): 
 function buildRuleCall(ctx: RuleContext, ruleCall: RuleCall): string {
     const rule = ruleCall.rule.value;
     if (ParserRule.is(rule)) {
-        if (AstNode.getContainer(ruleCall, Assignment.kind)) {
+        if (AstNode.getContainer(ruleCall, Assignment.type)) {
             return `this.subruleLeaf(${ctx.subrule++}, this.${rule.name}, ${getGrammarAccess(ctx, ruleCall)});`;
         } else {
             return `this.unassignedSubrule(${ctx.subrule++}, this.${rule.name}, ${getGrammarAccess(ctx, ruleCall)});`;

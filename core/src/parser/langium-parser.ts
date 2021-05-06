@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { EmbeddedActionsParser, ILexingError, IRecognitionException, IRuleConfig, Lexer, TokenType } from 'chevrotain';
 import { AbstractElement, Action, Assignment, CrossReference } from '../gen/ast';
-import { AstNode, Kind, Number, RuleResult, String } from '../generator/ast-node';
+import { AstNode, Type, Number, RuleResult, String } from '../generator/ast-node';
 import { isArrayOperator } from '../generator/utils';
 import { CstNodeBuilder } from './cst-node-builder';
 
@@ -34,7 +34,7 @@ export class LangiumParser extends EmbeddedActionsParser {
 
     MAIN_RULE(
         name: string,
-        kind: Kind,
+        kind: Type,
         implementation: (...implArgs: unknown[]) => unknown,
         config?: IRuleConfig<unknown>
     ): (idxInCallingRule?: number, ...args: unknown[]) => unknown {
@@ -43,7 +43,7 @@ export class LangiumParser extends EmbeddedActionsParser {
 
     DEFINE_RULE(
         name: string,
-        kind: Kind | undefined,
+        kind: Type | undefined,
         implementation: (...implArgs: unknown[]) => unknown,
         config?: IRuleConfig<unknown>
     ): (idxInCallingRule?: number, ...args: unknown[]) => unknown {
@@ -62,11 +62,11 @@ export class LangiumParser extends EmbeddedActionsParser {
         };
     }
 
-    private startImplementation(kind: Kind | undefined, implementation: (...implArgs: unknown[]) => unknown): (implArgs: unknown[]) => unknown {
+    private startImplementation($type: Type | undefined, implementation: (...implArgs: unknown[]) => unknown): (implArgs: unknown[]) => unknown {
         return (implArgs: unknown[]) => {
             if (!this.RECORDING_PHASE) {
                 this.stack.push({
-                    object: { kind },
+                    object: { $type },
                     executedAction: false
                 });
             }
@@ -88,7 +88,7 @@ export class LangiumParser extends EmbeddedActionsParser {
         const token = this.consume(idx, tokenType);
         if (!this.RECORDING_PHASE) {
             this.nodeBuilder.buildLeafNode(token, feature);
-            const assignment = <Assignment>AstNode.getContainer(feature, Assignment.kind);
+            const assignment = <Assignment>AstNode.getContainer(feature, Assignment.type);
             if (assignment && !CrossReference.is(assignment.terminal)) {
                 this.assign(assignment, token.image);
             }
@@ -98,10 +98,10 @@ export class LangiumParser extends EmbeddedActionsParser {
     unassignedSubrule(idx: number, rule: RuleResult, feature: AbstractElement): void {
         const result = this.subruleLeaf(idx, rule, feature);
         if (!this.RECORDING_PHASE) {
-            const resultKind = result.kind;
+            const resultKind = result.$type;
             const object = Object.assign(result, this.current.object);
             if (resultKind) {
-                (<any>object).kind = resultKind;
+                (<any>object).$type = resultKind;
             }
             const newItem = { ...this.current, object };
             this.stack.pop();
@@ -115,7 +115,7 @@ export class LangiumParser extends EmbeddedActionsParser {
         }
         const subruleResult = this.subrule(idx, rule);
         if (!this.RECORDING_PHASE) {
-            const assignment = <Assignment>AstNode.getContainer(feature, Assignment.kind);
+            const assignment = <Assignment>AstNode.getContainer(feature, Assignment.type);
             if (assignment) {
                 this.assign(assignment, subruleResult);
             }
@@ -123,11 +123,11 @@ export class LangiumParser extends EmbeddedActionsParser {
         return subruleResult;
     }
 
-    executeAction(kind: Kind, action: Action): void {
+    executeAction($type: Type, action: Action): void {
         if (!this.RECORDING_PHASE && !this.current.executedAction) {
             const last = this.current;
             const newItem: StackItem = {
-                object: { kind },
+                object: { $type },
                 executedAction: true
             };
             this.stack.pop();
@@ -164,15 +164,15 @@ export class LangiumParser extends EmbeddedActionsParser {
         const item = this.current;
         const obj = item.object;
         for (const [name, value] of Object.entries(obj)) {
-            if (name !== 'kind') {
+            if (!name.startsWith('$')) {
                 if (Array.isArray(value)) {
                     for (const item of value) {
                         if (typeof (item) === 'object') {
-                            item.container = obj;
+                            item.$container = obj;
                         }
                     }
                 } else if (typeof (value) === 'object') {
-                    (<any>value).container = obj;
+                    (<any>value).$container = obj;
                 }
             }
         }

@@ -9,12 +9,12 @@ export function findNextFeatures(featureStack: AbstractElement[]): AbstractEleme
     const feature = featureStack[0];
     let parent: Group | undefined;
     let item = feature;
-    while (item.container) {
-        if (Group.is(item.container)) {
-            parent = item.container;
+    while (item.$container) {
+        if (Group.is(item.$container)) {
+            parent = item.$container;
             break;
-        } else if (AbstractElement.is(item.container)) {
-            item = item.container;
+        } else if (AbstractElement.is(item.$container)) {
+            item = item.$container;
         } else {
             break;
         }

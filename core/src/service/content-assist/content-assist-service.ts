@@ -4,7 +4,7 @@ import { findLeafNodeAtOffset } from '../../grammar/grammar-utils';
 import { buildContentAssistFor, buildContentAssistForRule, findFirstFeatures, findNextFeatures } from './content-assist-builder';
 
 export function contentAssist(grammar: Grammar, root: AstNode, offset: number): string[] {
-    const cst = root[AstNode.cstNode];
+    const cst = root.$cstNode;
     if (cst) {
         const node = findLeafNodeAtOffset(cst, offset);
         if (node) {

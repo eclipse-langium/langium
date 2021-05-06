@@ -5,20 +5,20 @@ import { AbstractElement } from '../gen/ast';
 // eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace AstNode {
 
-    export const kind: Kind = { value: 'AstNode', super: [] };
+    export const type: Type = { value: 'AstNode', super: [] };
 
     export const cstNode = Symbol('node');
 
-    export function is<T extends AstNode>(item: AstNode, ...kinds: Kind[]): item is T {
-        return !!item && 'kind' in item && typeof item.kind === 'object' && Kind.instanceOf(item.kind, ...kinds);
+    export function is<T extends AstNode>(item: AstNode, ...types: Type[]): item is T {
+        return !!item && '$type' in item && typeof item.$type === 'object' && Kind.instanceOf(item.$type, ...types);
     }
 
-    export function getContainer(item: AstNode, ...kinds: Kind[]): AstNode | undefined {
-        if (!!item && item.container) {
-            if (is(item.container, ...kinds)) {
-                return item.container;
+    export function getContainer(item: AstNode, ...types: Type[]): AstNode | undefined {
+        if (!!item && item.$container) {
+            if (is(item.$container, ...types)) {
+                return item.$container;
             } else {
-                return getContainer(item.container, ...kinds);
+                return getContainer(item.$container, ...types);
             }
         } else {
             return undefined;
@@ -26,42 +26,42 @@ export namespace AstNode {
     }
 }
 
-export type Kind = {
+export type Type = {
     value: string,
-    super: Kind[]
+    super: Type[]
 }
 
 // eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace Kind {
-    function instanceOfSingle(itemKind: Kind, target: Kind): boolean {
+    function instanceOfSingle(itemKind: Type, target: Type): boolean {
         return itemKind.value === target.value || itemKind.super.some(e => instanceOfSingle(e, target));
     }
-    export function instanceOf(itemKind: Kind, ...targets: Kind[]): boolean {
+    export function instanceOf(itemKind: Type, ...targets: Type[]): boolean {
         return targets.some(e => instanceOfSingle(itemKind, e));
     }
 }
 
 export interface AstNode {
-    readonly kind: Kind,
-    readonly container?: AstNode,
-    readonly [AstNode.cstNode]?: CstNode
+    readonly $type: Type,
+    readonly $container?: AstNode,
+    readonly $cstNode?: CstNode
 }
 
 // eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace String {
-    export const kind: Kind = { value: 'String', super: [] };
+    export const type: Type = { value: 'String', super: [] };
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     export function is(item: any): boolean {
-        return AstNode.is(item, kind);
+        return AstNode.is(item, type);
     }
 }
 
 // eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace Number {
-    export const kind: Kind = { value: 'Number', super: [] };
+    export const type: Type = { value: 'Number', super: [] };
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     export function is(item: any): boolean {
-        return AstNode.is(item, kind);
+        return AstNode.is(item, type);
     }
 }
 

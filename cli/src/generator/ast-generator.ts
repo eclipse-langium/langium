@@ -13,7 +13,7 @@ export function generateAst(grammar: Grammar, path?: string): string {
         '/* eslint-disable @typescript-eslint/no-explicit-any */', NL,
         '/* eslint-disable @typescript-eslint/no-empty-interface */', NL,
         '/* eslint-disable @typescript-eslint/explicit-module-boundary-types */', NL,
-        'import { AstNode, Kind, Reference } from ', langiumPath, ';', NL, NL
+        'import { AstNode, Type, Reference } from ', langiumPath, ';', NL, NL
     );
 
     for (const type of types) {
