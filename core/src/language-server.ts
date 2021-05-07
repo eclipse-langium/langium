@@ -135,21 +135,15 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 }
 
 export function toDiagnostic(document: TextDocument, validationItem: ValidationItem): Diagnostic {
-    const item = validationItem.item;
-    const feature = validationItem.feature;
-    const node = findNodeForFeature(item.$cstNode, feature) || item.$cstNode!;
+    const { item, feature, index, message, code, severity } = validationItem;
+    const node = findNodeForFeature(item.$cstNode, feature, index) || item.$cstNode!;
     const start = node.offset;
     const end = start + node.length;
     const range = {
         start: document.positionAt(start),
         end: document.positionAt(end)
     };
-    return {
-        range,
-        message: validationItem.message,
-        code: validationItem.code,
-        severity: validationItem.severity
-    }
+    return { range, message, code, severity };
 }
 
 connection.onDidChangeWatchedFiles(_change => {

@@ -6,6 +6,7 @@ type Validation = (node: any) => void;
 export interface ValidationItem {
     item: AstNode,
     feature?: string,
+    index?: number,
     severity: ValidationSeverity,
     message: string,
     code?: number | string
@@ -49,23 +50,41 @@ export class Validator {
         return this.validationItems;
     }
 
-    addValidation(item: AstNode, message: string, severity: ValidationSeverity, feature?: string, code?: number | string): void {
-        this.validationItems.push({ item, feature, severity, message, code });
+    addValidation(item: AstNode, message: string, severity: ValidationSeverity, feature?: string, code?: number | string, index?: number): void {
+        this.validationItems.push({ item, feature, severity, message, code, index });
+        // TODO: Only items from the current document can be added in here
     }
 
-    error(item: AstNode, message: string, feature?: string, code?: number | string): void {
-        this.addValidation(item, message, ValidationSeverity.Error, feature, code);
+    error(item: AstNode, message: string, feature?: string, code?: number | string, index?: number): void {
+        this.addValidation(item, message, ValidationSeverity.Error, feature, code, index);
     }
 
-    warning(item: AstNode, message: string, feature?: string, code?: number | string): void {
-        this.addValidation(item, message, ValidationSeverity.Warning, feature, code);
+    warning(item: AstNode, message: string, feature?: string, code?: number | string, index?: number): void {
+        this.addValidation(item, message, ValidationSeverity.Warning, feature, code, index);
     }
 
-    information(item: AstNode, message: string, feature?: string, code?: number | string): void {
-        this.addValidation(item, message, ValidationSeverity.Information, feature, code);
+    information(item: AstNode, message: string, feature?: string, code?: number | string, index?: number): void {
+        this.addValidation(item, message, ValidationSeverity.Information, feature, code, index);
     }
 
-    hint(item: AstNode, message: string, feature?: string, code?: number | string): void {
-        this.addValidation(item, message, ValidationSeverity.Hint, feature, code);
+    hint(item: AstNode, message: string, feature?: string, code?: number | string, index?: number): void {
+        this.addValidation(item, message, ValidationSeverity.Hint, feature, code, index);
+    }
+}
+
+export class CompositeValidator extends Validator {
+
+    protected validators: Validator[] = [];
+
+    initialize(validators: Validator[]): void {
+        this.validators = [...validators];
+    }
+
+    validate(node: AstNode): ValidationItem[] {
+        const validationItems: ValidationItem[] = [];
+        for (const validator of this.validators) {
+            validationItems.push(...validator.validate(node));
+        }
+        return validationItems;
     }
 }

@@ -26,36 +26,44 @@ export function findLeafNodeAtOffset(node: CstNode, offset: number): ILeafCstNod
     return undefined;
 }
 
-export function findNodeForFeature(node: CstNode | undefined, feature: string | undefined): CstNode | undefined {
-    return findNodeForFeatureInternal(node, feature, true);
+export function findNodeForFeature(node: CstNode | undefined, feature: string | undefined, index?: number): CstNode | undefined {
+    const nodes = findNodesForFeature(node, feature);
+    if (nodes.length === 0) {
+        return undefined;
+    }
+    if (index !== undefined) {
+        index = Math.max(0, Math.min(index, nodes.length - 1));
+    } else {
+        index = 0;
+    }
+    return nodes[index];
 }
 
 /**
  * This `internal` declared method exists, as we want to find the first child with the specified feature.
  * When the own feature is named the same by accident, we will instead return the input value.
  * Therefore, we skip the first assignment check.
- * @param node
- * @param feature
- * @param first
- * @returns
+ * @param node The node to traverse/check for the specified feature
+ * @param feature The specified feature to find
+ * @param element The element of the initial node. Do not process nodes of other elements.
+ * @param first Whether this is the first node of the whole check.
+ * @returns A list of all nodes within this node that belong to the specified feature.
  */
-function findNodeForFeatureInternal(node: CstNode | undefined, feature: string | undefined, first: boolean): CstNode | undefined {
-    if (!node || !feature) {
-        return undefined;
+function findNodesForFeatureInternal(node: CstNode | undefined, feature: string | undefined, element: AstNode | undefined, first: boolean): CstNode[] {
+    if (!node || !feature || node.element !== element) {
+        return [];
     }
-
     const nodeFeature = <Assignment>AstNode.getContainer(node.feature, Assignment.type);
     if (!first && nodeFeature && nodeFeature.feature === feature) {
-        return node;
+        return [node];
     } else if (node instanceof CompositeCstNode) {
-        for (const child of node.children) {
-            const result = findNodeForFeatureInternal(child, feature, false);
-            if (result) {
-                return result;
-            }
-        }
+        return node.children.flatMap(e => findNodesForFeatureInternal(e, feature, element, false));
     }
-    return undefined;
+    return [];
+}
+
+export function findNodesForFeature(node: CstNode | undefined, feature: string | undefined): CstNode[] {
+    return findNodesForFeatureInternal(node, feature, node?.element, true);
 }
 
 export function getTypeName(rule: ast.AbstractRule | undefined): string {
