@@ -1,14 +1,14 @@
-import { AbstractElement, Action, Assignment, CrossReference, Grammar, Keyword, ParserRule, RuleCall } from '../gen/ast';
-import { AstNode } from './ast-node';
-import { CompositeGeneratorNode, GeneratorNode, IndentNode, NL } from './node/node';
-import { process } from './node/node-processor';
-import { findAllFeatures } from './utils';
+import { AbstractElement, Action, Assignment, CrossReference, Grammar, Keyword, ParserRule, RuleCall } from 'langium';
+import { AstNode } from 'langium';
+import { CompositeGeneratorNode, GeneratorNode, IndentNode, NL } from 'langium';
+import { process } from 'langium';
+import { findAllFeatures } from 'langium';
 
 export function generateGrammarAccess(grammar: Grammar, path?: string, bootstrap = false): string {
     const node = new CompositeGeneratorNode();
 
     const langiumPath = "'" + (path ?? 'langium') + "';";
-    node.children.push('import { GrammarAccess } from ', langiumPath, NL, "import { Action, Assignment, CrossReference, Keyword, RuleCall } from './ast';", NL, NL);
+    node.children.push('import { Action, Assignment, CrossReference, Keyword, RuleCall, GrammarAccess, retrocycle } from ', langiumPath, NL, NL);
 
     for (const rule of grammar.rules.filter(e => ParserRule.is(e)).map(e => e as ParserRule)) {
         node.children.push(generateRuleAccess(rule), NL, NL);
@@ -26,6 +26,9 @@ export function generateGrammarAccess(grammar: Grammar, path?: string, bootstrap
         }
     }
 
+    const constructorNode = new IndentNode();
+    constructorNode.children.push('// eslint-disable-next-line @typescript-eslint/no-var-requires', NL, "super(retrocycle(require('./grammar.json')));");
+    content.children.push(NL, 'constructor() {', NL, constructorNode, NL, '}', NL);
     node.children.push(content, '}');
 
     return process(node);
@@ -55,16 +58,16 @@ function generateFeature(feature: AbstractElement): GeneratorNode {
     if (Assignment.is(feature)) {
         node.children.push(generateAssignment(feature));
     } else if (Action.is(feature)) {
-        indent.children.push('kind: Action.kind,', NL);
+        indent.children.push('$type: Action.type,', NL);
         indent.children.push("type: '" + feature.type + "',", NL);
         indent.children.push("feature: '" + feature.feature + "',", NL);
         indent.children.push("operator: '" + feature.operator + "'", NL);
     } else if (RuleCall.is(feature) || CrossReference.is(feature) || Keyword.is(feature)) {
-        const assignment = <Assignment>AstNode.getContainer(feature, Assignment.kind);
+        const assignment = <Assignment>AstNode.getContainer(feature, Assignment.type);
         if (assignment) {
-            indent.children.push("kind: 'unknown'," , NL, 'container: {', NL, generateAssignment(assignment), '}', NL);
+            indent.children.push("$type: 'unknown'," , NL, '$container: {', NL, generateAssignment(assignment), '}', NL);
         } else {
-            indent.children.push("kind: 'unknown'" , NL);
+            indent.children.push("$type: 'unknown'" , NL);
         }
     }
 
@@ -74,15 +77,15 @@ function generateFeature(feature: AbstractElement): GeneratorNode {
 
 function generateAssignment(assignment: Assignment): GeneratorNode {
     const indent = new IndentNode();
-    indent.children.push('kind: Assignment.kind,', NL);
+    indent.children.push('$type: Assignment.type,', NL);
     indent.children.push("feature: '", assignment.feature ,"',", NL);
     indent.children.push("operator: '", assignment.operator, "',", NL);
     indent.children.push('terminal: {', NL);
     const terminal = new IndentNode();
     if (CrossReference.is(assignment.terminal)) {
-        terminal.children.push('kind: CrossReference.kind');
+        terminal.children.push('$type: CrossReference.type');
     } else {
-        terminal.children.push("kind: 'unknown'");
+        terminal.children.push("$type: 'unknown'");
     }
     indent.children.push(terminal, NL, '}', NL);
     return indent;

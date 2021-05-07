@@ -1,6 +1,6 @@
-import { Grammar } from '../gen/ast';
-import { CompositeGeneratorNode, NL } from './node/node';
-import { process } from './node/node-processor';
+import { Grammar } from 'langium';
+import { CompositeGeneratorNode, NL } from 'langium';
+import { process } from 'langium';
 import { collectAst } from './type-collector';
 
 export function generateAst(grammar: Grammar, path?: string): string {
@@ -13,7 +13,7 @@ export function generateAst(grammar: Grammar, path?: string): string {
         '/* eslint-disable @typescript-eslint/no-explicit-any */', NL,
         '/* eslint-disable @typescript-eslint/no-empty-interface */', NL,
         '/* eslint-disable @typescript-eslint/explicit-module-boundary-types */', NL,
-        'import { AstNode, Kind, Reference } from ', langiumPath, ';', NL, NL
+        'import { AstNode, Type, Reference } from ', langiumPath, ';', NL, NL
     );
 
     for (const type of types) {

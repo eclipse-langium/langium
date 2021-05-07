@@ -4,18 +4,57 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+		{
+			"name": "Bootstrap",
+			"request": "launch",
+			"runtimeArgs": [
+				"run",
+				"bootstrap",
+			],
+			"runtimeExecutable": "npm",
+			"cwd": "${workspaceFolder}/core",
+			"skipFiles": [
+				"<node_internals>/**"
+			],
+			"sourceMaps": true,
+			"outFiles": [
+				"${workspaceFolder}/cli/lib/**/*.js",
+				"${workspaceFolder}/core/lib/**/*.js"
+			],
+			"type": "pwa-node"
+		},
+		{
+			"name": "Attach",
+			"port": 6009,
+			"request": "attach",
+			"skipFiles": [
+				"<node_internals>/**"
+			],
+			"sourceMaps": true,
+			"outFiles": [
+				"${workspaceFolder}/core/lib/**/*.js"
+			],
+			"type": "pwa-node"
+		},
         {
-            "type": "node",
-            "request": "launch",
-            "name": "Bootstrap",
-            "skipFiles": [
-                "<node_internals>/**"
-            ],
-            "program": "${workspaceFolder}/core/src/bootstrap/bootstrapper.ts",
-            "cwd": "${workspaceFolder}/core",
-            "outFiles": [
-                "${workspaceFolder}/core/lib/**/*.js"
-            ]
-        }
+			"name": "Run Extension",
+			"type": "extensionHost",
+			"request": "launch",
+            "runtimeExecutable": "${execPath}",
+			"args": [
+				"${workspaceFolder}/core",
+				"--extensionDevelopmentPath=${workspaceFolder}/vscode-extension"
+			]
+		},
+		{
+			"name": "Extension Tests",
+			"type": "extensionHost",
+			"request": "launch",
+            "runtimeExecutable": "${execPath}",
+			"args": [
+				"--extensionDevelopmentPath=${workspaceFolder}/vscode-extension",
+				"--extensionTestsPath=${workspaceFolder}/out/test/suite/index"
+			]
+		}
     ]
 }

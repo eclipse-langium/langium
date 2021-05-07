@@ -13,23 +13,27 @@ export class CstNodeBuilder {
 
     buildRootNode(input: string): void {
         this.rootNode = new RootCstNode(input);
-        this.nodeStack.push(this.rootNode);
+        this.nodeStack = [this.rootNode];
+    }
+
+    buildCompositeNode(feature: AbstractElement): void {
+        const compositeNode = new CompositeCstNode();
+        compositeNode.feature = feature;
+        compositeNode.root = this.rootNode;
+        this.current.children.push(compositeNode);
+        this.nodeStack.push(compositeNode);
     }
 
     buildLeafNode(token: IToken, feature: AbstractElement): void {
-        const leafNode = new LeafCstNode(token.startOffset, token.image.length, false);
+        const leafNode = new LeafCstNode(token.startOffset, token.image.length, token.tokenType, false);
         leafNode.feature = feature;
         leafNode.root = this.rootNode;
         this.current.children.push(leafNode);
     }
 
-    newRuleNode(): void {
-        this.nodeStack.push(new CompositeCstNode());
-    }
-
-    construct(item: { [AstNode.cstNode]: CstNode }): void {
+    construct(item: { $cstNode: CstNode }): void {
         this.current.element = <AstNode>item;
-        item[AstNode.cstNode] = this.reduce(this.current);
+        item.$cstNode = this.reduce(this.current);
         this.nodeStack.pop();
     }
 
@@ -39,13 +43,5 @@ export class CstNodeBuilder {
         } else {
             return node;
         }
-    }
-
-    buildCompositeNode(feature: AbstractElement): void {
-        const compositeNode = new CompositeCstNode();
-        compositeNode.feature = feature;
-        compositeNode.root = this.rootNode;
-        this.current.children.push(compositeNode);
-        this.nodeStack.push(compositeNode);
     }
 }

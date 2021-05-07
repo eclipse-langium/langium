@@ -1,29 +1,23 @@
 {
-  "name": "langium",
+  "name": "langium-cli",
   "version": "0.0.0",
   "description": "",
-  "main": "lib/index.js",
-  "types": "lib/index.d.ts",
+  "bin": {
+    "langium": "./lib/langium.js"
+  },
+  "main": "./lib/langium.js",
   "scripts": {
     "clean": "rimraf lib/*",
     "build": "tsc --build tsconfig.build.json",
     "watch": "tsc -w --build tsconfig.build.json",
     "lint": "eslint ./src --ext .js,.ts",
-    "prepare": "npm run clean && npm run lint && npm run build && copyfiles -f ./src/gen/grammar.json ./lib/gen",
-    "test": "jest --coverage"
+    "prepare": "npm run clean && npm run lint && npm run build && npm link",
+    "test": "jest --coverage --passWithNoTests"
   },
   "author": "",
   "license": "MIT",
-  "langium": {
-    "grammar": "./langium.lg",
-    "extension": ".lg",
-    "path": "../index"
-  },
   "dependencies": {
-    "chevrotain": "^7.1.2",
-    "fs-extra": "^9.1.0",
-    "vscode-languageserver": "^7.0.0",
-    "vscode-languageserver-textdocument": "^1.0.1"
+    "langium": "0.0.0"
   },
   "devDependencies": {
     "@types/fs-extra": "^9.0.8",
@@ -31,6 +25,7 @@
     "@types/node": "^14.14.31",
     "@typescript-eslint/eslint-plugin": "^4.15.2",
     "@typescript-eslint/parser": "^4.15.2",
+    "commander": "^7.2.0",
     "copyfiles": "^2.4.1",
     "eslint": "^7.20.0",
     "jest": "^26.6.3",

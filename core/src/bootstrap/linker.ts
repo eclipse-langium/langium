@@ -38,14 +38,14 @@ function linkAssignment(grammar: Grammar, assignment: Assignment) {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function findReferences(grammar: Grammar, ref: any) {
-    if (AstNode.cstNode in ref) {
-        iterateNodes(grammar, ref, ref[AstNode.cstNode]);
+    if ('$cstNode' in ref) {
+        iterateNodes(grammar, ref, ref.$cstNode);
     }
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function iterateNodes(grammar: Grammar, item: any, node: CstNode) {
-    const assignment = <Assignment>AstNode.getContainer(node.feature, Assignment.kind);
+    const assignment = <Assignment>AstNode.getContainer(node.feature, Assignment.type);
     if (node.element === item && assignment && CrossReference.is(assignment.terminal)) {
         const text = node.text;
         switch (assignment.operator) {

@@ -1,0 +1,6 @@
+{
+  "packages": [
+    "core", "cli", "vscode-extension"
+  ],
+  "version": "0.0.0"
+}

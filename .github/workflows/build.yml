@@ -17,3 +17,4 @@ jobs:
       run: |
         cd core
         npm install
+        npm run test

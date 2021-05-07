@@ -1,8 +1,8 @@
-import { AbstractElement, Action, Alternatives, Assignment, CrossReference, Grammar, Group, Keyword, ParserRule, RuleCall, UnorderedGroup } from '../gen/ast';
-import { getRuleType, getTypeName } from '../grammar/grammar-utils';
-import { CompositeGeneratorNode, IndentNode, NL } from './node/node';
-import { process } from './node/node-processor';
-import { Cardinality, isDataTypeRule, isOptional } from './utils';
+import { AbstractElement, Action, Alternatives, Assignment, CrossReference, Grammar, Group, Keyword, ParserRule, RuleCall, UnorderedGroup } from 'langium';
+import { getRuleType, getTypeName } from 'langium';
+import { CompositeGeneratorNode, IndentNode, NL } from 'langium';
+import { process } from 'langium';
+import { Cardinality, isDataTypeRule, isOptional } from 'langium';
 
 type TypeAlternative = {
     name: string,
@@ -51,10 +51,10 @@ export class Interface {
         interfaceNode.children.push(fieldsNode, '}', NL, NL);
         interfaceNode.children.push('export namespace ', this.name, ' {', NL);
         const interfaceBody = new IndentNode();
-        interfaceBody.children.push("export const kind: Kind = { value: '", this.name, "', get super() { return [ ", superTypes.map(e => e + '.kind').join(', '), ' ]; }};', NL);
+        interfaceBody.children.push("export const type: Type = { value: '", this.name, "', super: [ ", superTypes.map(e => e + '.type').join(', '), ' ] };', NL);
         const methodBody = new IndentNode();
         interfaceBody.children.push('export function is(item: any): item is ', this.name, ' {', NL, methodBody, '}');
-        methodBody.children.push('return AstNode.is(item, kind);', NL);
+        methodBody.children.push('return AstNode.is(item, type);', NL);
         interfaceNode.children.push(interfaceBody, NL, '}', NL);
 
         return process(interfaceNode);
@@ -263,7 +263,7 @@ export class TypeCollector {
         }
         this.liftFields(interfaces);
 
-        return interfaces;
+        return sortTypes(interfaces);
     }
 
     private liftFields(interfaces: Interface[]): void {
@@ -297,5 +297,34 @@ export class TypeCollector {
             return value;
         }
     }
+}
 
+type TypeNode = {
+    value: Interface;
+    nodes: TypeNode[];
+}
+
+/**
+ * Performs topological sorting on the generated interfaces.
+ * @param interfaces The interfaces to sort topologically.
+ * @returns A topologically sorted set of interfaces.
+ */
+function sortTypes(interfaces: Interface[]): Interface[] {
+    const nodes: TypeNode[] = interfaces
+        .sort((a, b) => a.name.localeCompare(b.name))
+        .map(e => <TypeNode>{ value: e, nodes: [] });
+    for (const node of nodes) {
+        node.nodes = nodes.filter(e => node.value.superTypes.includes(e.value.name));
+    }
+    const l: TypeNode[] = [];
+    const s = nodes.filter(e => e.nodes.length === 0);
+    while (s.length > 0) {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        const n = s.shift()!;
+        l.push(n);
+        for (const m of nodes.filter(e => e.nodes.includes(n))) {
+            s.push(m);
+        }
+    }
+    return l.map(e => e.value);
 }

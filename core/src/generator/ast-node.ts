@@ -1,23 +1,24 @@
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
+import { TokenType } from 'chevrotain';
 import { AbstractElement } from '../gen/ast';
 
 // eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace AstNode {
 
-    export const kind: Kind = { value: 'AstNode', super: [] };
+    export const type: Type = { value: 'AstNode', super: [] };
 
     export const cstNode = Symbol('node');
 
-    export function is<T extends AstNode>(item: AstNode, kind: Kind): item is T {
-        return !!item && 'kind' in item && typeof item.kind === 'object' && Kind.instanceOf(item.kind, kind);
+    export function is<T extends AstNode>(item: AstNode, ...types: Type[]): item is T {
+        return !!item && '$type' in item && typeof item.$type === 'object' && Kind.instanceOf(item.$type, ...types);
     }
 
-    export function getContainer(item: AstNode, kind: Kind): AstNode | undefined {
-        if (!!item && item.container) {
-            if (is(item.container, kind)) {
-                return item.container;
+    export function getContainer(item: AstNode, ...types: Type[]): AstNode | undefined {
+        if (!!item && item.$container) {
+            if (is(item.$container, ...types)) {
+                return item.$container;
             } else {
-                return getContainer(item.container, kind);
+                return getContainer(item.$container, ...types);
             }
         } else {
             return undefined;
@@ -25,39 +26,42 @@ export namespace AstNode {
     }
 }
 
-export type Kind = {
+export type Type = {
     value: string,
-    super: Kind[]
+    super: Type[]
 }
 
 // eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace Kind {
-    export function instanceOf(itemKind: Kind, target: Kind): boolean {
-        return itemKind.value === target.value || itemKind.super.some(e => instanceOf(e, target));
+    function instanceOfSingle(itemKind: Type, target: Type): boolean {
+        return itemKind.value === target.value || itemKind.super.some(e => instanceOfSingle(e, target));
+    }
+    export function instanceOf(itemKind: Type, ...targets: Type[]): boolean {
+        return targets.some(e => instanceOfSingle(itemKind, e));
     }
 }
 
 export interface AstNode {
-    readonly kind: Kind,
-    readonly container?: AstNode,
-    readonly [AstNode.cstNode]?: CstNode
+    readonly $type: Type,
+    readonly $container?: AstNode,
+    readonly $cstNode?: CstNode
 }
 
 // eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace String {
-    export const kind: Kind = { value: 'String', super: [] };
+    export const type: Type = { value: 'String', super: [] };
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     export function is(item: any): boolean {
-        return AstNode.is(item, kind);
+        return AstNode.is(item, type);
     }
 }
 
 // eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace Number {
-    export const kind: Kind = { value: 'Number', super: [] };
+    export const type: Type = { value: 'Number', super: [] };
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     export function is(item: any): boolean {
-        return AstNode.is(item, kind);
+        return AstNode.is(item, type);
     }
 }
 
@@ -74,6 +78,21 @@ export interface CstNode {
     readonly root: RootCstNode;
     readonly feature: AbstractElement;
     readonly element: AstNode;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-namespace
+export namespace CstNode {
+
+    export function flatten(node: CstNode): ILeafCstNode[] {
+        if (node instanceof LeafCstNode) {
+            return [node];
+        } else if (node instanceof CompositeCstNode) {
+            return node.children.flatMap(e => flatten(e));
+        } else {
+            return [];
+        }
+    }
+
 }
 
 export abstract class AbstractCstNode implements CstNode {
@@ -103,7 +122,8 @@ export interface ICompositeCstNode extends CstNode {
 }
 
 export interface ILeafCstNode extends CstNode {
-    hidden: boolean;
+    readonly hidden: boolean;
+    readonly tokenType: TokenType;
 }
 
 export class LeafCstNode extends AbstractCstNode implements ILeafCstNode {
@@ -113,15 +133,24 @@ export class LeafCstNode extends AbstractCstNode implements ILeafCstNode {
     get length(): number {
         return this._length;
     }
-    hidden = false;
+    get hidden(): boolean {
+        return this._hidden;
+    }
+    get tokenType(): TokenType {
+        return this._tokenType;
+    }
+
+    _hidden = false;
 
     private _offset: number;
     private _length: number;
+    private _tokenType: TokenType;
 
-    constructor(offset: number, length: number, hidden = false) {
+    constructor(offset: number, length: number, tokenType: TokenType, hidden = false) {
         super();
-        this.hidden = hidden;
+        this._hidden = hidden;
         this._offset = offset;
+        this._tokenType = tokenType;
         this._length = length;
     }
 }
