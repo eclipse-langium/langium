@@ -26,6 +26,38 @@ export function findLeafNodeAtOffset(node: CstNode, offset: number): ILeafCstNod
     return undefined;
 }
 
+export function findNodeForFeature(node: CstNode | undefined, feature: string | undefined): CstNode | undefined {
+    return findNodeForFeatureInternal(node, feature, true);
+}
+
+/**
+ * This `internal` declared method exists, as we want to find the first child with the specified feature.
+ * When the own feature is named the same by accident, we will instead return the input value.
+ * Therefore, we skip the first assignment check.
+ * @param node
+ * @param feature
+ * @param first
+ * @returns
+ */
+function findNodeForFeatureInternal(node: CstNode | undefined, feature: string | undefined, first: boolean): CstNode | undefined {
+    if (!node || !feature) {
+        return undefined;
+    }
+
+    const nodeFeature = <Assignment>AstNode.getContainer(node.feature, Assignment.type);
+    if (!first && nodeFeature && nodeFeature.feature === feature) {
+        return node;
+    } else if (node instanceof CompositeCstNode) {
+        for (const child of node.children) {
+            const result = findNodeForFeatureInternal(child, feature, false);
+            if (result) {
+                return result;
+            }
+        }
+    }
+    return undefined;
+}
+
 export function getTypeName(rule: ast.AbstractRule | undefined): string {
     if (ast.isEnumRule(rule)) {
         return rule.name;
