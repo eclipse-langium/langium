@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { EmbeddedActionsParser, ILexingError, IRecognitionException, IRuleConfig, Lexer, TokenType } from 'chevrotain';
-import { AbstractElement, Action, Assignment, CrossReference } from '../gen/ast';
+import { AbstractElement, Action, Assignment, isAssignment, isCrossReference } from '../gen/ast';
 import { AstNode, Type, Number, RuleResult, String } from '../generator/ast-node';
 import { isArrayOperator } from '../generator/utils';
 import { CstNodeBuilder } from './cst-node-builder';
@@ -89,7 +89,7 @@ export class LangiumParser extends EmbeddedActionsParser {
         if (!this.RECORDING_PHASE) {
             this.nodeBuilder.buildLeafNode(token, feature);
             const assignment = <Assignment>AstNode.getContainer(feature, Assignment.type);
-            if (assignment && !CrossReference.is(assignment.terminal)) {
+            if (assignment && !isCrossReference(assignment.terminal)) {
                 this.assign(assignment, token.image);
             }
         }
@@ -148,7 +148,7 @@ export class LangiumParser extends EmbeddedActionsParser {
             // TODO fix this by inverting the assign call in unassignedSubrule
             //const item = this.current.object;
             for (const element of Object.values(grammarAccessElement)) {
-                if (Assignment.is(element)) {
+                if (isAssignment(element)) {
                     if (isArrayOperator(element.operator)) {
                         //item[element.feature] = [];
                     }

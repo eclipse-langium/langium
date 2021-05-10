@@ -1,14 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { AbstractRule, EnumRule, Grammar, ParserRule, TerminalRule } from '../gen/ast';
+import * as ast from '../gen/ast';
 import { CompositeCstNode, CstNode, ILeafCstNode, LeafCstNode } from '../generator/ast-node';
 import { isDataTypeRule } from '../generator/utils';
 
-export function serialize(grammar: Grammar): string {
+export function serialize(grammar: ast.Grammar): string {
     return JSON.stringify(decycle(grammar, '$cstNode'));
 }
 
-export function deserialize(content: string): Grammar {
-    return <Grammar>retrocycle(JSON.parse(content));
+export function deserialize(content: string): ast.Grammar {
+    return <ast.Grammar>retrocycle(JSON.parse(content));
 }
 
 export function findLeafNodeAtOffset(node: CstNode, offset: number): ILeafCstNode | undefined {
@@ -26,18 +26,18 @@ export function findLeafNodeAtOffset(node: CstNode, offset: number): ILeafCstNod
     return undefined;
 }
 
-export function getTypeName(rule: AbstractRule | undefined): string {
-    if (EnumRule.is(rule)) {
+export function getTypeName(rule: ast.AbstractRule | undefined): string {
+    if (ast.isEnumRule(rule)) {
         return rule.name;
-    } else if (TerminalRule.is(rule) || ParserRule.is(rule)) {
+    } else if (ast.isTerminalRule(rule) || ast.isParserRule(rule)) {
         return rule.type ?? rule.name;
     } else {
         throw new Error('Unknown rule type');
     }
 }
 
-export function getRuleType(rule: AbstractRule | undefined): string {
-    if (ParserRule.is(rule) && isDataTypeRule(rule) || TerminalRule.is(rule)) {
+export function getRuleType(rule: ast.AbstractRule | undefined): string {
+    if (ast.isParserRule(rule) && isDataTypeRule(rule) || ast.isTerminalRule(rule)) {
         return rule.type ?? 'string';
     }
     return getTypeName(rule);

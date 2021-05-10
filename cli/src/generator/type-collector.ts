@@ -1,4 +1,4 @@
-import { AbstractElement, Action, Alternatives, Assignment, CrossReference, Grammar, Group, Keyword, ParserRule, RuleCall, UnorderedGroup } from 'langium';
+import * as langium from 'langium';
 import { getRuleType, getTypeName } from 'langium';
 import { CompositeGeneratorNode, IndentNode, NL } from 'langium';
 import { process } from 'langium';
@@ -62,10 +62,10 @@ export class Interface {
     }
 }
 
-export function collectAst(grammar: Grammar): Interface[] {
+export function collectAst(grammar: langium.Grammar): Interface[] {
     const collector = new TypeCollector();
 
-    const parserRules = grammar.rules.filter(e => ParserRule.is(e) && !e.fragment && !isDataTypeRule(e)).map(e => e as ParserRule);
+    const parserRules = grammar.rules.filter(e => langium.isParserRule(e) && !e.fragment && !isDataTypeRule(e)).map(e => e as langium.ParserRule);
 
     for (const rule of parserRules) {
         collector.addAlternative(getTypeName(rule));
@@ -75,17 +75,17 @@ export function collectAst(grammar: Grammar): Interface[] {
     return collector.calculateAst();
 }
 
-function collectElement(collector: TypeCollector, element: AbstractElement): void {
+function collectElement(collector: TypeCollector, element: langium.AbstractElement): void {
     collector.enterGroup(element.cardinality);
-    if (Alternatives.is(element) || UnorderedGroup.is(element) || Group.is(element)) {
+    if (langium.isAlternatives(element) || langium.isUnorderedGroup(element) || langium.isGroup(element)) {
         for (const item of element.elements) {
             collectElement(collector, item);
         }
-    } else if (Action.is(element)) {
+    } else if (langium.isAction(element)) {
         collector.addAction(element);
-    } else if (Assignment.is(element)) {
+    } else if (langium.isAssignment(element)) {
         collector.addAssignment(element);
-    } else if (RuleCall.is(element)) {
+    } else if (langium.isRuleCall(element)) {
         collector.addRuleCall(element);
     }
     collector.leaveGroup();
@@ -95,7 +95,7 @@ export class TypeCollector {
 
     private alternatives: TypeAlternative[] = [];
     private cardinalities: Cardinality[] = [];
-    private lastRuleCall?: RuleCall;
+    private lastRuleCall?: langium.RuleCall;
 
     private get currentAlternative(): TypeAlternative {
         return this.alternatives[this.alternatives.length - 1];
@@ -110,7 +110,7 @@ export class TypeCollector {
         this.alternatives.push({ name, super: [], fields: [], ruleCalls: [], hasAction: false });
     }
 
-    addAction(action: Action): void {
+    addAction(action: langium.Action): void {
         if (action.type !== this.currentAlternative.name) {
             this.currentAlternative.super.push(this.currentAlternative.name);
         }
@@ -131,7 +131,7 @@ export class TypeCollector {
         }
     }
 
-    addAssignment(assignment: Assignment): void {
+    addAssignment(assignment: langium.Assignment): void {
         const typeItems: TypeCollection = { types: [], reference: false };
         this.findTypes(assignment.terminal, typeItems);
         this.currentAlternative.fields.push({
@@ -143,9 +143,9 @@ export class TypeCollector {
         });
     }
 
-    addRuleCall(ruleCall: RuleCall): void {
+    addRuleCall(ruleCall: langium.RuleCall): void {
         const rule = ruleCall.rule.value;
-        if (ParserRule.is(rule) && rule.fragment) {
+        if (langium.isParserRule(rule) && rule.fragment) {
             const collector = new TypeCollector();
             collector.addAlternative(rule.name);
             collectElement(collector, rule.alternatives);
@@ -154,7 +154,7 @@ export class TypeCollector {
             if (type) {
                 this.currentAlternative.fields.push(...type.fields);
             }
-        } else if (ParserRule.is(rule)) {
+        } else if (langium.isParserRule(rule)) {
             this.currentAlternative.ruleCalls.push(getRuleType(rule));
             this.lastRuleCall = ruleCall;
         }
@@ -172,20 +172,20 @@ export class TypeCollector {
         return this.cardinalities.some(e => e === '*' || e === '?');
     }
 
-    protected findTypes(terminal: AbstractElement, types: TypeCollection): void {
-        if (Alternatives.is(terminal) || UnorderedGroup.is(terminal) || Group.is(terminal)) {
+    protected findTypes(terminal: langium.AbstractElement, types: TypeCollection): void {
+        if (langium.isAlternatives(terminal) || langium.isUnorderedGroup(terminal) || langium.isGroup(terminal)) {
             this.findInCollection(terminal, types);
-        } else if (Keyword.is(terminal)) {
+        } else if (langium.isKeyword(terminal)) {
             types.types.push(terminal.value);
-        } else if (RuleCall.is(terminal)) {
+        } else if (langium.isRuleCall(terminal)) {
             types.types.push(getRuleType(terminal.rule.value));
-        } else if (CrossReference.is(terminal)) {
+        } else if (langium.isCrossReference(terminal)) {
             types.types.push(getRuleType(terminal.type.value));
             types.reference = true;
         }
     }
 
-    protected findInCollection(collection: Alternatives | Group | UnorderedGroup, types: TypeCollection): void {
+    protected findInCollection(collection: langium.Alternatives | langium.Group | langium.UnorderedGroup, types: TypeCollection): void {
         for (const element of collection.elements) {
             this.findTypes(element, types);
         }

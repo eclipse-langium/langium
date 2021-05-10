@@ -1,9 +1,9 @@
-import { AbstractElement, AbstractRule, CrossReference, Grammar, Keyword, ParserRule, RuleCall, TerminalRule } from '../../gen/ast';
+import * as ast from '../../gen/ast';
 import { AstNode, CstNode } from '../../generator/ast-node';
 import { findLeafNodeAtOffset } from '../../grammar/grammar-utils';
 import { buildContentAssistFor, buildContentAssistForRule, findFirstFeatures, findNextFeatures } from './content-assist-builder';
 
-export function contentAssist(grammar: Grammar, root: AstNode, offset: number): string[] {
+export function contentAssist(grammar: ast.Grammar, root: AstNode, offset: number): string[] {
     const cst = root.$cstNode;
     if (cst) {
         const node = findLeafNodeAtOffset(cst, offset);
@@ -24,7 +24,7 @@ export function contentAssist(grammar: Grammar, root: AstNode, offset: number): 
             return features.flatMap(e => buildContentAssistFor(e));
         } else {
             // The entry rule is the first parser rule
-            const parserRule = <ParserRule>grammar.rules.find(e => ParserRule.is(e));
+            const parserRule = <ast.ParserRule>grammar.rules.find(e => ast.isParserRule(e));
             return buildContentAssistForRule(parserRule);
         }
     } else {
@@ -32,8 +32,8 @@ export function contentAssist(grammar: Grammar, root: AstNode, offset: number): 
     }
 }
 
-function buildFeatureStack(node: CstNode | undefined): AbstractElement[] {
-    const features: AbstractElement[] = [];
+function buildFeatureStack(node: CstNode | undefined): ast.AbstractElement[] {
+    const features: ast.AbstractElement[] = [];
     while (node) {
         if (node.feature) {
             features.push(node.feature);
@@ -43,13 +43,13 @@ function buildFeatureStack(node: CstNode | undefined): AbstractElement[] {
     return features;
 }
 
-function findCommonSuperRule(node: CstNode): { rule: ParserRule, node: CstNode } | undefined {
+function findCommonSuperRule(node: CstNode): { rule: ast.ParserRule, node: CstNode } | undefined {
     let superNode = node.parent;
     while (superNode) {
         if (superNode.element !== node.element) {
             const topFeature = node.feature;
-            if (RuleCall.is(topFeature) && topFeature.rule.value) {
-                const rule = <ParserRule>topFeature.rule.value;
+            if (ast.isRuleCall(topFeature) && topFeature.rule.value) {
+                const rule = <ast.ParserRule>topFeature.rule.value;
                 return { rule, node };
             }
             throw new Error();
@@ -60,8 +60,8 @@ function findCommonSuperRule(node: CstNode): { rule: ParserRule, node: CstNode }
     return undefined;
 }
 
-function interpretRule(rule: ParserRule, nodes: CstNode[]): AbstractElement[] {
-    let features: AbstractElement[] = [];
+function interpretRule(rule: ast.ParserRule, nodes: CstNode[]): ast.AbstractElement[] {
+    let features: ast.AbstractElement[] = [];
     let nextFeatures = findFirstFeatures(rule.alternatives);
     let node = nodes.shift();
     while (node && nextFeatures.length > 0) {
@@ -79,8 +79,8 @@ function interpretRule(rule: ParserRule, nodes: CstNode[]): AbstractElement[] {
     return features;
 }
 
-function featureMatches(feature: AbstractElement, node: CstNode): MatchType {
-    if (Keyword.is(feature)) {
+function featureMatches(feature: ast.AbstractElement, node: CstNode): MatchType {
+    if (ast.isKeyword(feature)) {
         const content = feature.value.substring(1, feature.value.length - 1);
         if (content === node.text) {
             return 'full';
@@ -89,19 +89,19 @@ function featureMatches(feature: AbstractElement, node: CstNode): MatchType {
         } else {
             return 'none';
         }
-    } else if (RuleCall.is(feature)) {
+    } else if (ast.isRuleCall(feature)) {
         return ruleMatches(feature.rule.value, node);
-    } else if (CrossReference.is(feature)) {
+    } else if (ast.isCrossReference(feature)) {
         return featureMatches(feature.terminal, node);
     }
     return 'none';
 }
 
-function ruleMatches(rule: AbstractRule | undefined, node: CstNode): MatchType {
-    if (ParserRule.is(rule)) {
+function ruleMatches(rule: ast.AbstractRule | undefined, node: CstNode): MatchType {
+    if (ast.isParserRule(rule)) {
         const ruleFeatures = findFirstFeatures(rule.alternatives);
         return ruleFeatures.some(e => featureMatches(e, node)) ? 'full' : 'none';
-    } else if (TerminalRule.is(rule)) {
+    } else if (ast.isTerminalRule(rule)) {
         // We have to take keywords into account
         // e.g. most keywords are valid IDs as well
         // Only return 'full' if this terminal does not match a keyword. TODO
