@@ -49,13 +49,14 @@ export class Interface {
             fieldsNode.children.push(field.name, option, ': ', type, NL);
         }
         interfaceNode.children.push(fieldsNode, '}', NL, NL);
-        interfaceNode.children.push('export namespace ', this.name, ' {', NL);
+        interfaceNode.children.push('export function is', this.name, '(item: any): item is ', this.name, ' {', NL);
+        const methodBody = new IndentNode();
+        methodBody.children.push(`return reflectionInstance.isInstance(item, '${this.name}');`, NL);
+        interfaceNode.children.push(methodBody, '}', NL, NL);
+        interfaceNode.children.push('export namespace ', this.name, '{', NL);
         const interfaceBody = new IndentNode();
         interfaceBody.children.push("export const type: Type = { value: '", this.name, "', super: [ ", superTypes.map(e => e + '.type').join(', '), ' ] };', NL);
-        const methodBody = new IndentNode();
-        interfaceBody.children.push('export function is(item: any): item is ', this.name, ' {', NL, methodBody, '}');
-        methodBody.children.push('return AstNode.is(item, type);', NL);
-        interfaceNode.children.push(interfaceBody, NL, '}', NL);
+        interfaceNode.children.push(interfaceBody, '}', NL);
 
         return process(interfaceNode);
     }
@@ -260,6 +261,9 @@ export class TypeCollector {
             if (!exists) {
                 interfaces.push(new Interface(ruleCallType.name, ruleCallType.super, []));
             }
+        }
+        for (const type of interfaces) {
+            type.superTypes = Array.from(new Set(type.superTypes));
         }
         this.liftFields(interfaces);
 

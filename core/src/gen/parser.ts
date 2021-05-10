@@ -3,7 +3,7 @@
 import { createToken, Lexer } from 'chevrotain';
 import { Number, String, LangiumParser } from '../index';
 import { LangiumGrammarAccess } from './grammar-access';
-import { AbstractElement, AbstractMetamodelDeclaration, AbstractNegatedToken, AbstractRule, Annotation, Condition, EnumLiteralDeclaration, EnumLiterals, Grammar, NamedArgument, Parameter, ParenthesizedTerminalElement, TerminalGroup, TerminalToken, TerminalTokenElement, Action, Alternatives, Assignment, CrossReference, Group, Keyword, RuleCall, UnorderedGroup, GeneratedMetamodel, ReferencedMetamodel, NegatedToken, UntilToken, EnumRule, ParserRule, TerminalRule, Conjunction, Disjunction, LiteralCondition, Negation, ParameterReference, TerminalAlternatives, CharacterRange, TerminalRuleCall, Wildcard, } from './ast';
+import { AbstractElement, AbstractMetamodelDeclaration, AbstractNegatedToken, AbstractRule, Annotation, Condition, EnumLiteralDeclaration, EnumLiterals, Grammar, NamedArgument, Parameter, TerminalGroup, TerminalToken, TerminalTokenElement, Action, Alternatives, Assignment, CrossReference, Group, Keyword, RuleCall, UnorderedGroup, GeneratedMetamodel, ReferencedMetamodel, NegatedToken, UntilToken, EnumRule, ParserRule, TerminalRule, Conjunction, Disjunction, LiteralCondition, Negation, ParameterReference, CharacterRange, TerminalAlternatives, TerminalRuleCall, Wildcard, } from './ast';
 
 const WS = createToken({ name : 'WS', pattern: /\s+/, group: Lexer.SKIPPED });
 const ID = createToken({ name : 'ID', pattern: /\^?[_a-zA-Z][\w_]*/ });
@@ -843,7 +843,7 @@ export class Parser extends LangiumParser {
         return this.construct();
     });
 
-    ParenthesizedTerminalElement = this.DEFINE_RULE("ParenthesizedTerminalElement", ParenthesizedTerminalElement.type, () => {
+    ParenthesizedTerminalElement = this.DEFINE_RULE("ParenthesizedTerminalElement", TerminalAlternatives.type, () => {
         this.initialize(this.grammarAccess.ParenthesizedTerminalElement);
         this.consumeLeaf(1, ParenthesisOpenKeyword, this.grammarAccess.ParenthesizedTerminalElement.ParenthesisOpenKeyword);
         this.unassignedSubrule(1, this.TerminalAlternatives, this.grammarAccess.ParenthesizedTerminalElement.TerminalAlternativesRuleCall);
