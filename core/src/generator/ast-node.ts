@@ -2,23 +2,22 @@
 import { TokenType } from 'chevrotain';
 import { AbstractElement } from '../gen/ast';
 
+export interface AstReflection {
+    getReferenceType(referenceId: string): string
+    isInstance(node: AstNode, type: string): boolean
+    isSubtype(subtype: string, supertype: string): boolean
+}
+
 // eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace AstNode {
 
-    export const type: Type = { value: 'AstNode', super: [] };
-
-    export const cstNode = Symbol('node');
-
-    export function is<T extends AstNode>(item: AstNode, ...types: Type[]): item is T {
-        return !!item && '$type' in item && typeof item.$type === 'object' && Kind.instanceOf(item.$type, ...types);
-    }
-
-    export function getContainer(item: AstNode, ...types: Type[]): AstNode | undefined {
+    export function getContainer(item: AstNode, reflection: AstReflection, ...types: string[]): AstNode | undefined {
         if (!!item && item.$container) {
-            if (is(item.$container, ...types)) {
-                return item.$container;
+            const container = item.$container;
+            if (types.some(e => reflection.isInstance(container, e))) {
+                return container;
             } else {
-                return getContainer(item.$container, ...types);
+                return getContainer(container, reflection, ...types);
             }
         } else {
             return undefined;
@@ -26,42 +25,27 @@ export namespace AstNode {
     }
 }
 
-export type Type = {
-    value: string,
-    super: Type[]
-}
-
-// eslint-disable-next-line @typescript-eslint/no-namespace
-export namespace Kind {
-    function instanceOfSingle(itemKind: Type, target: Type): boolean {
-        return itemKind.value === target.value || itemKind.super.some(e => instanceOfSingle(e, target));
-    }
-    export function instanceOf(itemKind: Type, ...targets: Type[]): boolean {
-        return targets.some(e => instanceOfSingle(itemKind, e));
-    }
-}
-
 export interface AstNode {
-    readonly $type: Type,
+    readonly $type: string,
     readonly $container?: AstNode,
     readonly $cstNode?: CstNode
 }
 
 // eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace String {
-    export const type: Type = { value: 'String', super: [] };
+    export const type = 'String';
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     export function is(item: any): boolean {
-        return AstNode.is(item, type);
+        return item.$type === type;
     }
 }
 
 // eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace Number {
-    export const type: Type = { value: 'Number', super: [] };
+    export const type = 'Number';
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     export function is(item: any): boolean {
-        return AstNode.is(item, type);
+        return item.$type === type;
     }
 }
 

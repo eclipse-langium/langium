@@ -52,11 +52,7 @@ export class Interface {
         interfaceNode.children.push('export function is', this.name, '(item: any): item is ', this.name, ' {', NL);
         const methodBody = new IndentNode();
         methodBody.children.push(`return reflectionInstance.isInstance(item, '${this.name}');`, NL);
-        interfaceNode.children.push(methodBody, '}', NL, NL);
-        interfaceNode.children.push('export namespace ', this.name, '{', NL);
-        const interfaceBody = new IndentNode();
-        interfaceBody.children.push("export const type: Type = { value: '", this.name, "', super: [ ", superTypes.map(e => e + '.type').join(', '), ' ] };', NL);
-        interfaceNode.children.push(interfaceBody, '}', NL);
+        interfaceNode.children.push(methodBody, '}', NL);
 
         return process(interfaceNode);
     }

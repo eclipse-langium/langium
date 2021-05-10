@@ -7,11 +7,10 @@ export function generateAst(grammar: Grammar, path?: string): string {
     const fileNode = new CompositeGeneratorNode();
     fileNode.children.push(
         '/* eslint-disable @typescript-eslint/array-type */', NL,
-        '/* eslint-disable @typescript-eslint/no-namespace */', NL,
         '/* eslint-disable @typescript-eslint/no-explicit-any */', NL,
         '/* eslint-disable @typescript-eslint/no-empty-interface */', NL,
         '/* eslint-disable @typescript-eslint/explicit-module-boundary-types */', NL,
-        'import { AstNode, Type, Reference } from ', langiumPath, ';', NL, NL
+        'import { AstNode, Reference } from ', langiumPath, ';', NL, NL
     );
 
     for (const type of types) {
@@ -38,7 +37,7 @@ function generateAstReflection(grammar: Grammar, interfaces: Interface[]): Gener
     const classBodyNode = new IndentNode();
     classBodyNode.children.push('isInstance(node: AstNode, type: string): boolean {', NL);
     const isInstanceNode = new IndentNode();
-    isInstanceNode.children.push('return this.isSubtype(node.$type.value, type);', NL);
+    isInstanceNode.children.push('return this.isSubtype(node.$type, type);', NL);
     classBodyNode.children.push(isInstanceNode, '}', NL, NL);
     classBodyNode.children.push('isSubtype(subtype: string, supertype: string): boolean {', NL);
     classBodyNode.children.push(buildIsSubtypeMethod(interfaces), '}', NL, NL);

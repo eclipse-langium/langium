@@ -58,12 +58,12 @@ function generateFeature(feature: langium.AbstractElement): GeneratorNode {
     if (langium.isAssignment(feature)) {
         node.children.push(generateAssignment(feature));
     } else if (langium.isAction(feature)) {
-        indent.children.push('$type: Action.type,', NL);
+        indent.children.push("$type: 'Action',", NL);
         indent.children.push("type: '" + feature.type + "',", NL);
         indent.children.push("feature: '" + feature.feature + "',", NL);
         indent.children.push("operator: '" + feature.operator + "'", NL);
     } else if (langium.isRuleCall(feature) || langium.isCrossReference(feature) || langium.isKeyword(feature)) {
-        const assignment = <langium.Assignment>AstNode.getContainer(feature, langium.Assignment.type);
+        const assignment = <langium.Assignment>AstNode.getContainer(feature, langium.reflectionInstance, 'Assignment');
         if (assignment) {
             indent.children.push("$type: 'unknown'," , NL, '$container: {', NL, generateAssignment(assignment), '}', NL);
         } else {
@@ -77,13 +77,13 @@ function generateFeature(feature: langium.AbstractElement): GeneratorNode {
 
 function generateAssignment(assignment: langium.Assignment): GeneratorNode {
     const indent = new IndentNode();
-    indent.children.push('$type: Assignment.type,', NL);
+    indent.children.push("$type: 'Assignment',", NL);
     indent.children.push("feature: '", assignment.feature ,"',", NL);
     indent.children.push("operator: '", assignment.operator, "',", NL);
     indent.children.push('terminal: {', NL);
     const terminal = new IndentNode();
     if (langium.isCrossReference(assignment.terminal)) {
-        terminal.children.push('$type: CrossReference.type');
+        terminal.children.push("$type: 'CrossReference'");
     } else {
         terminal.children.push("$type: 'unknown'");
     }
