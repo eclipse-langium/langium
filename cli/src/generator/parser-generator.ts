@@ -124,7 +124,7 @@ function buildRule(ctx: RuleContext, rule: langium.ParserRule, first: boolean): 
         if (isDataTypeRule(rule)) {
             type = "'String'";
         } else {
-            type = `'${getTypeName(rule)}'`;
+            type = getTypeName(rule);
         }
     }
 
@@ -169,7 +169,7 @@ function buildGroup(ctx: RuleContext, group: langium.Group): CompositeGeneratorN
 }
 
 function buildAction(ctx: RuleContext, action: langium.Action): GeneratorNode {
-    return `this.executeAction('${action.type}', ${getGrammarAccess(ctx, action)});`;
+    return `this.executeAction(${action.type}, ${getGrammarAccess(ctx, action)});`;
 }
 
 function buildElement(ctx: RuleContext, terminal: langium.AbstractElement): GeneratorNode {
@@ -241,7 +241,7 @@ function wrap(ctx: RuleContext, node: GeneratorNode, cardinality: Cardinality): 
 function buildRuleCall(ctx: RuleContext, ruleCall: langium.RuleCall): string {
     const rule = ruleCall.rule.value;
     if (langium.isParserRule(rule)) {
-        if (AstNode.getContainer(ruleCall, langium.reflectionInstance, 'Assignment')) {
+        if (AstNode.getContainer(ruleCall, langium.reflectionInstance, langium.Assignment)) {
             return `this.subruleLeaf(${ctx.subrule++}, this.${rule.name}, ${getGrammarAccess(ctx, ruleCall)});`;
         } else {
             return `this.unassignedSubrule(${ctx.subrule++}, this.${rule.name}, ${getGrammarAccess(ctx, ruleCall)});`;

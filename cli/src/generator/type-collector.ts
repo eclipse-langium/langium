@@ -49,6 +49,7 @@ export class Interface {
             fieldsNode.children.push(field.name, option, ': ', type, NL);
         }
         interfaceNode.children.push(fieldsNode, '}', NL, NL);
+        interfaceNode.children.push(`export const ${this.name} = '${this.name}';`, NL, NL);
         interfaceNode.children.push('export function is', this.name, '(item: any): item is ', this.name, ' {', NL);
         const methodBody = new IndentNode();
         methodBody.children.push(`return reflectionInstance.isInstance(item, '${this.name}');`, NL);

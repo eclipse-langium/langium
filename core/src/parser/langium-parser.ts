@@ -88,7 +88,7 @@ export class LangiumParser extends EmbeddedActionsParser {
         const token = this.consume(idx, tokenType);
         if (!this.RECORDING_PHASE) {
             this.nodeBuilder.buildLeafNode(token, feature);
-            const assignment = <Assignment>AstNode.getContainer(feature, reflectionInstance, 'Assignment');
+            const assignment = <Assignment>AstNode.getContainer(feature, reflectionInstance, Assignment);
             if (assignment && !isCrossReference(assignment.terminal)) {
                 this.assign(assignment, token.image);
             }
@@ -115,7 +115,7 @@ export class LangiumParser extends EmbeddedActionsParser {
         }
         const subruleResult = this.subrule(idx, rule);
         if (!this.RECORDING_PHASE) {
-            const assignment = <Assignment>AstNode.getContainer(feature, reflectionInstance, 'Assignment');
+            const assignment = <Assignment>AstNode.getContainer(feature, reflectionInstance, Assignment);
             if (assignment) {
                 this.assign(assignment, subruleResult);
             }
