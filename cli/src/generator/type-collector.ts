@@ -52,7 +52,7 @@ export class Interface {
         interfaceNode.children.push(`export const ${this.name} = '${this.name}';`, NL, NL);
         interfaceNode.children.push('export function is', this.name, '(item: any): item is ', this.name, ' {', NL);
         const methodBody = new IndentNode();
-        methodBody.children.push(`return reflectionInstance.isInstance(item, ${this.name});`, NL);
+        methodBody.children.push(`return reflection.isInstance(item, ${this.name});`, NL);
         interfaceNode.children.push(methodBody, '}', NL);
 
         return process(interfaceNode);

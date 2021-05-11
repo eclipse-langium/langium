@@ -45,7 +45,7 @@ function findReferences(grammar: ast.Grammar, ref: any) {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function iterateNodes(grammar: ast.Grammar, item: any, node: CstNode) {
-    const assignment = <ast.Assignment>AstNode.getContainer(node.feature, ast.reflectionInstance, ast.Assignment);
+    const assignment = <ast.Assignment>AstNode.getContainer(node.feature, ast.reflection, ast.Assignment);
     if (node.element === item && assignment && ast.isCrossReference(assignment.terminal)) {
         const text = node.text;
         switch (assignment.operator) {

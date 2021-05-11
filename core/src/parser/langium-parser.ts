@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { EmbeddedActionsParser, ILexingError, IRecognitionException, IRuleConfig, Lexer, TokenType } from 'chevrotain';
-import { AbstractElement, Action, Assignment, isAssignment, isCrossReference, reflectionInstance } from '../gen/ast';
+import { AbstractElement, Action, Assignment, isAssignment, isCrossReference, reflection } from '../gen/ast';
 import { AstNode, Number, RuleResult, String } from '../generator/ast-node';
 import { isArrayOperator } from '../generator/utils';
 import { CstNodeBuilder } from './cst-node-builder';
@@ -88,7 +88,7 @@ export class LangiumParser extends EmbeddedActionsParser {
         const token = this.consume(idx, tokenType);
         if (!this.RECORDING_PHASE) {
             this.nodeBuilder.buildLeafNode(token, feature);
-            const assignment = <Assignment>AstNode.getContainer(feature, reflectionInstance, Assignment);
+            const assignment = <Assignment>AstNode.getContainer(feature, reflection, Assignment);
             if (assignment && !isCrossReference(assignment.terminal)) {
                 this.assign(assignment, token.image);
             }
@@ -115,7 +115,7 @@ export class LangiumParser extends EmbeddedActionsParser {
         }
         const subruleResult = this.subrule(idx, rule);
         if (!this.RECORDING_PHASE) {
-            const assignment = <Assignment>AstNode.getContainer(feature, reflectionInstance, Assignment);
+            const assignment = <Assignment>AstNode.getContainer(feature, reflection, Assignment);
             if (assignment) {
                 this.assign(assignment, subruleResult);
             }

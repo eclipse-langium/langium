@@ -118,11 +118,11 @@ function buildRule(ctx: RuleContext, rule: langium.ParserRule, first: boolean): 
     const ruleNode = new CompositeGeneratorNode();
     ruleNode.children.push(rule.name);
 
-    let type = undefined;
+    let type = 'undefined';
 
     if (!rule.fragment) {
         if (isDataTypeRule(rule)) {
-            type = "'String'";
+            type = `'${rule.type ?? 'String'}'`;
         } else {
             type = getTypeName(rule);
         }
@@ -130,7 +130,7 @@ function buildRule(ctx: RuleContext, rule: langium.ParserRule, first: boolean): 
 
     ruleNode.children.push(
         ' = this.', first ? 'MAIN_RULE("' : 'DEFINE_RULE("',
-        rule.name, '", ', type ?? 'undefined', ', () => {', NL
+        rule.name, '", ', type, ', () => {', NL
     );
 
     const ruleContent = new IndentNode();
@@ -241,7 +241,7 @@ function wrap(ctx: RuleContext, node: GeneratorNode, cardinality: Cardinality): 
 function buildRuleCall(ctx: RuleContext, ruleCall: langium.RuleCall): string {
     const rule = ruleCall.rule.value;
     if (langium.isParserRule(rule)) {
-        if (AstNode.getContainer(ruleCall, langium.reflectionInstance, langium.Assignment)) {
+        if (AstNode.getContainer(ruleCall, langium.reflection, langium.Assignment)) {
             return `this.subruleLeaf(${ctx.subrule++}, this.${rule.name}, ${getGrammarAccess(ctx, ruleCall)});`;
         } else {
             return `this.unassignedSubrule(${ctx.subrule++}, this.${rule.name}, ${getGrammarAccess(ctx, ruleCall)});`;

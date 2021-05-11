@@ -11,7 +11,7 @@ export interface AbstractElement extends AstNode {
 export const AbstractElement = 'AbstractElement';
 
 export function isAbstractElement(item: any): item is AbstractElement {
-    return reflectionInstance.isInstance(item, AbstractElement);
+    return reflection.isInstance(item, AbstractElement);
 }
 
 export interface AbstractMetamodelDeclaration extends AstNode {
@@ -22,7 +22,7 @@ export interface AbstractMetamodelDeclaration extends AstNode {
 export const AbstractMetamodelDeclaration = 'AbstractMetamodelDeclaration';
 
 export function isAbstractMetamodelDeclaration(item: any): item is AbstractMetamodelDeclaration {
-    return reflectionInstance.isInstance(item, AbstractMetamodelDeclaration);
+    return reflection.isInstance(item, AbstractMetamodelDeclaration);
 }
 
 export interface AbstractNegatedToken extends AstNode {
@@ -32,7 +32,7 @@ export interface AbstractNegatedToken extends AstNode {
 export const AbstractNegatedToken = 'AbstractNegatedToken';
 
 export function isAbstractNegatedToken(item: any): item is AbstractNegatedToken {
-    return reflectionInstance.isInstance(item, AbstractNegatedToken);
+    return reflection.isInstance(item, AbstractNegatedToken);
 }
 
 export interface AbstractRule extends AstNode {
@@ -43,7 +43,7 @@ export interface AbstractRule extends AstNode {
 export const AbstractRule = 'AbstractRule';
 
 export function isAbstractRule(item: any): item is AbstractRule {
-    return reflectionInstance.isInstance(item, AbstractRule);
+    return reflection.isInstance(item, AbstractRule);
 }
 
 export interface Annotation extends AstNode {
@@ -53,7 +53,7 @@ export interface Annotation extends AstNode {
 export const Annotation = 'Annotation';
 
 export function isAnnotation(item: any): item is Annotation {
-    return reflectionInstance.isInstance(item, Annotation);
+    return reflection.isInstance(item, Annotation);
 }
 
 export interface Condition extends AstNode {
@@ -62,7 +62,7 @@ export interface Condition extends AstNode {
 export const Condition = 'Condition';
 
 export function isCondition(item: any): item is Condition {
-    return reflectionInstance.isInstance(item, Condition);
+    return reflection.isInstance(item, Condition);
 }
 
 export interface EnumLiteralDeclaration extends AstNode {
@@ -73,7 +73,7 @@ export interface EnumLiteralDeclaration extends AstNode {
 export const EnumLiteralDeclaration = 'EnumLiteralDeclaration';
 
 export function isEnumLiteralDeclaration(item: any): item is EnumLiteralDeclaration {
-    return reflectionInstance.isInstance(item, EnumLiteralDeclaration);
+    return reflection.isInstance(item, EnumLiteralDeclaration);
 }
 
 export interface EnumLiterals extends AstNode {
@@ -83,7 +83,7 @@ export interface EnumLiterals extends AstNode {
 export const EnumLiterals = 'EnumLiterals';
 
 export function isEnumLiterals(item: any): item is EnumLiterals {
-    return reflectionInstance.isInstance(item, EnumLiterals);
+    return reflection.isInstance(item, EnumLiterals);
 }
 
 export interface Grammar extends AstNode {
@@ -98,7 +98,7 @@ export interface Grammar extends AstNode {
 export const Grammar = 'Grammar';
 
 export function isGrammar(item: any): item is Grammar {
-    return reflectionInstance.isInstance(item, Grammar);
+    return reflection.isInstance(item, Grammar);
 }
 
 export interface NamedArgument extends AstNode {
@@ -110,7 +110,7 @@ export interface NamedArgument extends AstNode {
 export const NamedArgument = 'NamedArgument';
 
 export function isNamedArgument(item: any): item is NamedArgument {
-    return reflectionInstance.isInstance(item, NamedArgument);
+    return reflection.isInstance(item, NamedArgument);
 }
 
 export interface Parameter extends AstNode {
@@ -120,7 +120,7 @@ export interface Parameter extends AstNode {
 export const Parameter = 'Parameter';
 
 export function isParameter(item: any): item is Parameter {
-    return reflectionInstance.isInstance(item, Parameter);
+    return reflection.isInstance(item, Parameter);
 }
 
 export interface TerminalGroup extends AstNode {
@@ -130,7 +130,7 @@ export interface TerminalGroup extends AstNode {
 export const TerminalGroup = 'TerminalGroup';
 
 export function isTerminalGroup(item: any): item is TerminalGroup {
-    return reflectionInstance.isInstance(item, TerminalGroup);
+    return reflection.isInstance(item, TerminalGroup);
 }
 
 export interface TerminalToken extends AstNode {
@@ -140,7 +140,7 @@ export interface TerminalToken extends AstNode {
 export const TerminalToken = 'TerminalToken';
 
 export function isTerminalToken(item: any): item is TerminalToken {
-    return reflectionInstance.isInstance(item, TerminalToken);
+    return reflection.isInstance(item, TerminalToken);
 }
 
 export interface TerminalTokenElement extends AstNode {
@@ -149,7 +149,7 @@ export interface TerminalTokenElement extends AstNode {
 export const TerminalTokenElement = 'TerminalTokenElement';
 
 export function isTerminalTokenElement(item: any): item is TerminalTokenElement {
-    return reflectionInstance.isInstance(item, TerminalTokenElement);
+    return reflection.isInstance(item, TerminalTokenElement);
 }
 
 export interface Action extends AbstractElement {
@@ -161,7 +161,7 @@ export interface Action extends AbstractElement {
 export const Action = 'Action';
 
 export function isAction(item: any): item is Action {
-    return reflectionInstance.isInstance(item, Action);
+    return reflection.isInstance(item, Action);
 }
 
 export interface Alternatives extends AbstractElement {
@@ -171,7 +171,7 @@ export interface Alternatives extends AbstractElement {
 export const Alternatives = 'Alternatives';
 
 export function isAlternatives(item: any): item is Alternatives {
-    return reflectionInstance.isInstance(item, Alternatives);
+    return reflection.isInstance(item, Alternatives);
 }
 
 export interface Assignment extends AbstractElement {
@@ -185,7 +185,7 @@ export interface Assignment extends AbstractElement {
 export const Assignment = 'Assignment';
 
 export function isAssignment(item: any): item is Assignment {
-    return reflectionInstance.isInstance(item, Assignment);
+    return reflection.isInstance(item, Assignment);
 }
 
 export interface CrossReference extends AbstractElement {
@@ -196,7 +196,7 @@ export interface CrossReference extends AbstractElement {
 export const CrossReference = 'CrossReference';
 
 export function isCrossReference(item: any): item is CrossReference {
-    return reflectionInstance.isInstance(item, CrossReference);
+    return reflection.isInstance(item, CrossReference);
 }
 
 export interface Group extends AbstractElement {
@@ -208,7 +208,7 @@ export interface Group extends AbstractElement {
 export const Group = 'Group';
 
 export function isGroup(item: any): item is Group {
-    return reflectionInstance.isInstance(item, Group);
+    return reflection.isInstance(item, Group);
 }
 
 export interface Keyword extends AbstractElement {
@@ -220,7 +220,7 @@ export interface Keyword extends AbstractElement {
 export const Keyword = 'Keyword';
 
 export function isKeyword(item: any): item is Keyword {
-    return reflectionInstance.isInstance(item, Keyword);
+    return reflection.isInstance(item, Keyword);
 }
 
 export interface RuleCall extends AbstractElement {
@@ -233,7 +233,7 @@ export interface RuleCall extends AbstractElement {
 export const RuleCall = 'RuleCall';
 
 export function isRuleCall(item: any): item is RuleCall {
-    return reflectionInstance.isInstance(item, RuleCall);
+    return reflection.isInstance(item, RuleCall);
 }
 
 export interface UnorderedGroup extends AbstractElement {
@@ -243,7 +243,7 @@ export interface UnorderedGroup extends AbstractElement {
 export const UnorderedGroup = 'UnorderedGroup';
 
 export function isUnorderedGroup(item: any): item is UnorderedGroup {
-    return reflectionInstance.isInstance(item, UnorderedGroup);
+    return reflection.isInstance(item, UnorderedGroup);
 }
 
 export interface GeneratedMetamodel extends AbstractMetamodelDeclaration {
@@ -253,7 +253,7 @@ export interface GeneratedMetamodel extends AbstractMetamodelDeclaration {
 export const GeneratedMetamodel = 'GeneratedMetamodel';
 
 export function isGeneratedMetamodel(item: any): item is GeneratedMetamodel {
-    return reflectionInstance.isInstance(item, GeneratedMetamodel);
+    return reflection.isInstance(item, GeneratedMetamodel);
 }
 
 export interface ReferencedMetamodel extends AbstractMetamodelDeclaration {
@@ -262,7 +262,7 @@ export interface ReferencedMetamodel extends AbstractMetamodelDeclaration {
 export const ReferencedMetamodel = 'ReferencedMetamodel';
 
 export function isReferencedMetamodel(item: any): item is ReferencedMetamodel {
-    return reflectionInstance.isInstance(item, ReferencedMetamodel);
+    return reflection.isInstance(item, ReferencedMetamodel);
 }
 
 export interface NegatedToken extends AbstractNegatedToken {
@@ -271,7 +271,7 @@ export interface NegatedToken extends AbstractNegatedToken {
 export const NegatedToken = 'NegatedToken';
 
 export function isNegatedToken(item: any): item is NegatedToken {
-    return reflectionInstance.isInstance(item, NegatedToken);
+    return reflection.isInstance(item, NegatedToken);
 }
 
 export interface UntilToken extends AbstractNegatedToken {
@@ -280,7 +280,7 @@ export interface UntilToken extends AbstractNegatedToken {
 export const UntilToken = 'UntilToken';
 
 export function isUntilToken(item: any): item is UntilToken {
-    return reflectionInstance.isInstance(item, UntilToken);
+    return reflection.isInstance(item, UntilToken);
 }
 
 export interface EnumRule extends AbstractRule {
@@ -290,7 +290,7 @@ export interface EnumRule extends AbstractRule {
 export const EnumRule = 'EnumRule';
 
 export function isEnumRule(item: any): item is EnumRule {
-    return reflectionInstance.isInstance(item, EnumRule);
+    return reflection.isInstance(item, EnumRule);
 }
 
 export interface ParserRule extends AbstractRule {
@@ -305,7 +305,7 @@ export interface ParserRule extends AbstractRule {
 export const ParserRule = 'ParserRule';
 
 export function isParserRule(item: any): item is ParserRule {
-    return reflectionInstance.isInstance(item, ParserRule);
+    return reflection.isInstance(item, ParserRule);
 }
 
 export interface TerminalRule extends AbstractRule {
@@ -316,7 +316,7 @@ export interface TerminalRule extends AbstractRule {
 export const TerminalRule = 'TerminalRule';
 
 export function isTerminalRule(item: any): item is TerminalRule {
-    return reflectionInstance.isInstance(item, TerminalRule);
+    return reflection.isInstance(item, TerminalRule);
 }
 
 export interface Conjunction extends Condition {
@@ -327,7 +327,7 @@ export interface Conjunction extends Condition {
 export const Conjunction = 'Conjunction';
 
 export function isConjunction(item: any): item is Conjunction {
-    return reflectionInstance.isInstance(item, Conjunction);
+    return reflection.isInstance(item, Conjunction);
 }
 
 export interface Disjunction extends Condition {
@@ -338,7 +338,7 @@ export interface Disjunction extends Condition {
 export const Disjunction = 'Disjunction';
 
 export function isDisjunction(item: any): item is Disjunction {
-    return reflectionInstance.isInstance(item, Disjunction);
+    return reflection.isInstance(item, Disjunction);
 }
 
 export interface LiteralCondition extends Condition {
@@ -348,7 +348,7 @@ export interface LiteralCondition extends Condition {
 export const LiteralCondition = 'LiteralCondition';
 
 export function isLiteralCondition(item: any): item is LiteralCondition {
-    return reflectionInstance.isInstance(item, LiteralCondition);
+    return reflection.isInstance(item, LiteralCondition);
 }
 
 export interface Negation extends Condition {
@@ -358,7 +358,7 @@ export interface Negation extends Condition {
 export const Negation = 'Negation';
 
 export function isNegation(item: any): item is Negation {
-    return reflectionInstance.isInstance(item, Negation);
+    return reflection.isInstance(item, Negation);
 }
 
 export interface ParameterReference extends Condition {
@@ -368,7 +368,7 @@ export interface ParameterReference extends Condition {
 export const ParameterReference = 'ParameterReference';
 
 export function isParameterReference(item: any): item is ParameterReference {
-    return reflectionInstance.isInstance(item, ParameterReference);
+    return reflection.isInstance(item, ParameterReference);
 }
 
 export interface CharacterRange extends TerminalTokenElement {
@@ -379,7 +379,7 @@ export interface CharacterRange extends TerminalTokenElement {
 export const CharacterRange = 'CharacterRange';
 
 export function isCharacterRange(item: any): item is CharacterRange {
-    return reflectionInstance.isInstance(item, CharacterRange);
+    return reflection.isInstance(item, CharacterRange);
 }
 
 export interface TerminalAlternatives extends TerminalTokenElement {
@@ -389,7 +389,7 @@ export interface TerminalAlternatives extends TerminalTokenElement {
 export const TerminalAlternatives = 'TerminalAlternatives';
 
 export function isTerminalAlternatives(item: any): item is TerminalAlternatives {
-    return reflectionInstance.isInstance(item, TerminalAlternatives);
+    return reflection.isInstance(item, TerminalAlternatives);
 }
 
 export interface TerminalRuleCall extends TerminalTokenElement {
@@ -399,7 +399,7 @@ export interface TerminalRuleCall extends TerminalTokenElement {
 export const TerminalRuleCall = 'TerminalRuleCall';
 
 export function isTerminalRuleCall(item: any): item is TerminalRuleCall {
-    return reflectionInstance.isInstance(item, TerminalRuleCall);
+    return reflection.isInstance(item, TerminalRuleCall);
 }
 
 export interface Wildcard extends TerminalTokenElement {
@@ -408,7 +408,7 @@ export interface Wildcard extends TerminalTokenElement {
 export const Wildcard = 'Wildcard';
 
 export function isWildcard(item: any): item is Wildcard {
-    return reflectionInstance.isInstance(item, Wildcard);
+    return reflection.isInstance(item, Wildcard);
 }
 
 export type AstReference = 'Grammar:usedGrammars' | 'Grammar:hiddenTokens' | 'NamedArgument:parameter' | 'CrossReference:type' | 'RuleCall:rule' | 'ParserRule:hiddenTokens' | 'ParameterReference:parameter' | 'TerminalRuleCall:rule';
@@ -499,4 +499,4 @@ export class LangiumAstReflection {
     }
 }
 
-export const reflectionInstance = new LangiumAstReflection();
+export const reflection = new LangiumAstReflection();

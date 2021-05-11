@@ -44,7 +44,7 @@ function generateAstReflection(grammar: Grammar, interfaces: Interface[]): Gener
     classBodyNode.children.push('getReferenceType(referenceId: AstReference): string {', NL);
     classBodyNode.children.push(buildReferenceTypeMethod(interfaces), '}', NL);
     reflectionNode.children.push(classBodyNode, '}', NL, NL);
-    reflectionNode.children.push('export const reflectionInstance = new ', grammar.name, 'AstReflection();', NL);
+    reflectionNode.children.push('export const reflection = new ', grammar.name, 'AstReflection();', NL);
     return reflectionNode;
 }
 

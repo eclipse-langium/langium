@@ -63,7 +63,7 @@ function generateFeature(feature: langium.AbstractElement): GeneratorNode {
         indent.children.push("feature: '" + feature.feature + "',", NL);
         indent.children.push("operator: '" + feature.operator + "'", NL);
     } else if (langium.isRuleCall(feature) || langium.isCrossReference(feature) || langium.isKeyword(feature)) {
-        const assignment = <langium.Assignment>AstNode.getContainer(feature, langium.reflectionInstance, langium.Assignment);
+        const assignment = <langium.Assignment>AstNode.getContainer(feature, langium.reflection, langium.Assignment);
         if (assignment) {
             indent.children.push("$type: 'unknown'," , NL, '$container: {', NL, generateAssignment(assignment), '}', NL);
         } else {
