@@ -56,7 +56,7 @@ function buildReferenceTypeMethod(interfaces: Interface[]): GeneratorNode {
     for (const crossRef of crossReferenceTypes) {
         caseNode.children.push(`case '${crossRef.type}:${crossRef.feature}': {`, NL);
         const caseContentNode = new IndentNode();
-        caseContentNode.children.push(`return '${crossRef.referenceType}';`, NL);
+        caseContentNode.children.push(`return ${crossRef.referenceType};`, NL);
         caseNode.children.push(caseContentNode, '}', NL);
     }
     caseNode.children.push('default: {', NL);
@@ -89,12 +89,12 @@ function buildIsSubtypeMethod(interfaces: Interface[]): GeneratorNode {
 
     for (const [superTypes, typeGroup] of Array.from(groups.entries())) {
         for (const typeItem of typeGroup) {
-            switchNode.children.push(`case '${typeItem.name}':`, NL);
+            switchNode.children.push(`case ${typeItem.name}:`, NL);
         }
         switchNode.children.pop();
         switchNode.children.push(' {', NL);
         const caseNode = new IndentNode();
-        caseNode.children.push('return ', superTypes.split(':').map(e => `this.isSubtype('${e}', supertype)`).join(' || '), ';');
+        caseNode.children.push('return ', superTypes.split(':').map(e => `this.isSubtype(${e}, supertype)`).join(' || '), ';');
         switchNode.children.push(caseNode, NL, '}', NL);
     }
 

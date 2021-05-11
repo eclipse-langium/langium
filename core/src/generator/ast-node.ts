@@ -124,8 +124,7 @@ export class LeafCstNode extends AbstractCstNode implements ILeafCstNode {
         return this._tokenType;
     }
 
-    _hidden = false;
-
+    private _hidden: boolean;
     private _offset: number;
     private _length: number;
     private _tokenType: TokenType;
