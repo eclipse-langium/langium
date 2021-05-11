@@ -1,19 +1,19 @@
-import { AbstractElement, AbstractRule, Action, Alternatives, Assignment, CrossReference, Group, Keyword, ParserRule, RuleCall, TerminalRule, UnorderedGroup } from '../../gen/ast';
+import * as ast from '../../gen/ast';
 import { Cardinality, isArray, isOptional } from '../../generator/utils';
 
-export function findNextFeatures(featureStack: AbstractElement[]): AbstractElement[] {
+export function findNextFeatures(featureStack: ast.AbstractElement[]): ast.AbstractElement[] {
     if (featureStack.length === 0) {
         return [];
     }
-    const features: AbstractElement[] = [];
+    const features: ast.AbstractElement[] = [];
     const feature = featureStack[0];
-    let parent: Group | undefined;
+    let parent: ast.Group | undefined;
     let item = feature;
     while (item.$container) {
-        if (Group.is(item.$container)) {
+        if (ast.isGroup(item.$container)) {
             parent = item.$container;
             break;
-        } else if (AbstractElement.is(item.$container)) {
+        } else if (ast.isAbstractElement(item.$container)) {
             item = item.$container;
         } else {
             break;
@@ -46,25 +46,25 @@ export function findNextFeatures(featureStack: AbstractElement[]): AbstractEleme
     return features;
 }
 
-export function findFirstFeatures(feature: AbstractElement | undefined): AbstractElement[] {
+export function findFirstFeatures(feature: ast.AbstractElement | undefined): ast.AbstractElement[] {
     if (feature === undefined) {
         return [];
-    } else if (Group.is(feature)) {
+    } else if (ast.isGroup(feature)) {
         return findNextFeaturesInGroup(feature, 0)
             .map(e => modifyCardinality(e, feature.cardinality));
-    } else if (Alternatives.is(feature)) {
+    } else if (ast.isAlternatives(feature)) {
         return feature.elements.flatMap(e => findFirstFeatures(e))
             .map(e => modifyCardinality(e, feature.cardinality));
-    } else if (UnorderedGroup.is(feature)) {
+    } else if (ast.isUnorderedGroup(feature)) {
         return [];
-    } else if (Assignment.is(feature)) {
+    } else if (ast.isAssignment(feature)) {
         return findFirstFeatures(feature.terminal)
             .map(e => modifyCardinality(e, feature.cardinality));
-    } else if (Action.is(feature)) {
+    } else if (ast.isAction(feature)) {
         return findNextFeatures([feature])
             .map(e => modifyCardinality(e, feature.cardinality));
-    } else if (RuleCall.is(feature)) {
-        if (ParserRule.is(feature.rule.value)) {
+    } else if (ast.isRuleCall(feature)) {
+        if (ast.isParserRule(feature.rule.value)) {
             return findFirstFeatures(feature.rule.value.alternatives)
                 .map(e => modifyCardinality(e, feature.cardinality));
         } else {
@@ -82,7 +82,7 @@ export function findFirstFeatures(feature: AbstractElement | undefined): Abstrac
  * @param cardinality The cardinality of the calling (parent) object.
  * @returns A new feature that could be now optional (`?` or `*`).
  */
-function modifyCardinality(feature: AbstractElement, cardinality: Cardinality): AbstractElement {
+function modifyCardinality(feature: ast.AbstractElement, cardinality: Cardinality): ast.AbstractElement {
     if (isOptional(cardinality)) {
         if (isOptional(feature.cardinality)) {
             return feature;
@@ -96,9 +96,9 @@ function modifyCardinality(feature: AbstractElement, cardinality: Cardinality): 
     }
 }
 
-function findNextFeaturesInGroup(group: Group, index: number): AbstractElement[] {
-    const features: AbstractElement[] = [];
-    let firstFeature: AbstractElement;
+function findNextFeaturesInGroup(group: ast.Group, index: number): ast.AbstractElement[] {
+    const features: ast.AbstractElement[] = [];
+    let firstFeature: ast.AbstractElement;
     do {
         firstFeature = group.elements[index++];
         features.push(...findFirstFeatures(firstFeature));
@@ -109,10 +109,10 @@ function findNextFeaturesInGroup(group: Group, index: number): AbstractElement[]
     return features;
 }
 
-export function buildContentAssistForRule(rule: AbstractRule): string[] {
-    if (TerminalRule.is(rule)) {
+export function buildContentAssistForRule(rule: ast.AbstractRule): string[] {
+    if (ast.isTerminalRule(rule)) {
         return [rule.name];
-    } else if (ParserRule.is(rule)) {
+    } else if (ast.isParserRule(rule)) {
         const features = findFirstFeatures(rule.alternatives);
         return features.flatMap(e => buildContentAssistFor(e));
     } else {
@@ -120,12 +120,12 @@ export function buildContentAssistForRule(rule: AbstractRule): string[] {
     }
 }
 
-export function buildContentAssistFor(feature: AbstractElement): string[] {
-    if (Keyword.is(feature)) {
+export function buildContentAssistFor(feature: ast.AbstractElement): string[] {
+    if (ast.isKeyword(feature)) {
         return [feature.value.substring(1, feature.value.length - 1)];
-    } else if (RuleCall.is(feature) && feature.rule.value) {
+    } else if (ast.isRuleCall(feature) && feature.rule.value) {
         return buildContentAssistForRule(feature.rule.value);
-    } else if (CrossReference.is(feature)) {
+    } else if (ast.isCrossReference(feature)) {
         // TODO: Use scoping here
         return buildContentAssistFor(feature.terminal);
     }

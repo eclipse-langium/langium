@@ -189,7 +189,7 @@ TerminalTokenElement:
 	CharacterRange | TerminalRuleCall | ParenthesizedTerminalElement | AbstractNegatedToken | Wildcard
 ;
 
-ParenthesizedTerminalElement:
+ParenthesizedTerminalElement returns TerminalAlternatives:
 	'(' TerminalAlternatives ')'
 ;
 

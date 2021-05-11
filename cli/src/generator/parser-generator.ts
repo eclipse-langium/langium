@@ -1,4 +1,4 @@
-import { AbstractElement, Action, Alternatives, Assignment, CrossReference, Grammar, Group, Keyword, ParserRule, RuleCall, TerminalRule, UnorderedGroup } from 'langium';
+import * as langium from 'langium';
 import { getTypeName } from 'langium';
 import { AstNode } from 'langium';
 import { CompositeGeneratorNode, GeneratorNode, IndentNode, NewLineNode, NL } from 'langium';
@@ -14,10 +14,10 @@ type RuleContext = {
     subrule: number,
     many: number,
     or: number,
-    featureMap: Map<AbstractElement, string>
+    featureMap: Map<langium.AbstractElement, string>
 }
 
-export function generateParser(grammar: Grammar, path?: string): string {
+export function generateParser(grammar: langium.Grammar, path?: string): string {
     const keywords = collectKeywords(grammar);
     const langiumPath = "'" + (path ?? 'langium') + "'";
 
@@ -38,7 +38,7 @@ export function generateParser(grammar: Grammar, path?: string): string {
     fileNode.children.push(" } from './ast';", NL, NL);
 
     const tokens: Array<{ name: string, length: number, node: CompositeGeneratorNode }> = [];
-    const terminals = grammar.rules.filter(e => TerminalRule.is(e)).map(e => e as TerminalRule);
+    const terminals = grammar.rules.filter(e => langium.isTerminalRule(e)).map(e => e as langium.TerminalRule);
 
     for (const terminal of terminals) {
         tokens.push(buildTerminalToken(grammar, terminal));
@@ -76,7 +76,7 @@ export function generateParser(grammar: Grammar, path?: string): string {
     return process(fileNode);
 }
 
-function buildParser(grammar: Grammar): CompositeGeneratorNode {
+function buildParser(grammar: langium.Grammar): CompositeGeneratorNode {
     const parserNode = new CompositeGeneratorNode();
 
     parserNode.children.push('export class Parser extends LangiumParser {', NL);
@@ -95,7 +95,7 @@ function buildParser(grammar: Grammar): CompositeGeneratorNode {
     classBody.children.push(constructorBody, '}', NL, NL);
 
     let first = true;
-    for (const rule of grammar.rules.filter(e => ParserRule.is(e)).map(e => e as ParserRule)) {
+    for (const rule of grammar.rules.filter(e => langium.isParserRule(e)).map(e => e as langium.ParserRule)) {
         const ctx: RuleContext = {
             name: rule.name,
             consume: 1,
@@ -114,7 +114,7 @@ function buildParser(grammar: Grammar): CompositeGeneratorNode {
     return parserNode;
 }
 
-function buildRule(ctx: RuleContext, rule: ParserRule, first: boolean): CompositeGeneratorNode {
+function buildRule(ctx: RuleContext, rule: langium.ParserRule, first: boolean): CompositeGeneratorNode {
     const ruleNode = new CompositeGeneratorNode();
     ruleNode.children.push(rule.name);
 
@@ -122,9 +122,9 @@ function buildRule(ctx: RuleContext, rule: ParserRule, first: boolean): Composit
 
     if (!rule.fragment) {
         if (isDataTypeRule(rule)) {
-            type = 'String.type';
+            type = `'${rule.type ?? 'String'}'`;
         } else {
-            type = getTypeName(rule) + '.type';
+            type = getTypeName(rule);
         }
     }
 
@@ -149,15 +149,15 @@ function buildRuleReturnStatement(): CompositeGeneratorNode {
     return node;
 }
 
-function buildUnorderedGroup(ctx: RuleContext, group: UnorderedGroup): CompositeGeneratorNode {
-    if (Group.is(group)) {
+function buildUnorderedGroup(ctx: RuleContext, group: langium.UnorderedGroup): CompositeGeneratorNode {
+    if (langium.isGroup(group)) {
         return buildGroup(ctx, group);
     } else {
         throw new Error('Unordered groups are not supported (yet)');
     }
 }
 
-function buildGroup(ctx: RuleContext, group: Group): CompositeGeneratorNode {
+function buildGroup(ctx: RuleContext, group: langium.Group): CompositeGeneratorNode {
     const groupNode = new CompositeGeneratorNode();
 
     for (const element of group.elements) {
@@ -168,33 +168,33 @@ function buildGroup(ctx: RuleContext, group: Group): CompositeGeneratorNode {
     return groupNode;
 }
 
-function buildAction(ctx: RuleContext, action: Action): GeneratorNode {
-    return `this.executeAction(${action.type}.type, ${getGrammarAccess(ctx, action)});`;
+function buildAction(ctx: RuleContext, action: langium.Action): GeneratorNode {
+    return `this.executeAction(${action.type}, ${getGrammarAccess(ctx, action)});`;
 }
 
-function buildElement(ctx: RuleContext, terminal: AbstractElement): GeneratorNode {
-    if (Keyword.is(terminal)) {
+function buildElement(ctx: RuleContext, terminal: langium.AbstractElement): GeneratorNode {
+    if (langium.isKeyword(terminal)) {
         return buildKeyword(ctx, terminal);
-    } else if (Action.is(terminal)) {
+    } else if (langium.isAction(terminal)) {
         return buildAction(ctx, terminal);
-    } else if (Assignment.is(terminal)) {
+    } else if (langium.isAssignment(terminal)) {
         return buildElement(ctx, terminal.terminal);
-    } else if (CrossReference.is(terminal)) {
+    } else if (langium.isCrossReference(terminal)) {
         return `this.consumeLeaf(${ctx.consume++}, ID, ${getGrammarAccess(ctx, terminal)});`;
-    } else if (RuleCall.is(terminal)) {
+    } else if (langium.isRuleCall(terminal)) {
         return buildRuleCall(ctx, terminal);
-    } else if (Alternatives.is(terminal)) {
+    } else if (langium.isAlternatives(terminal)) {
         return buildAlternatives(ctx, terminal);
-    } else if (UnorderedGroup.is(terminal)) {
+    } else if (langium.isUnorderedGroup(terminal)) {
         return buildUnorderedGroup(ctx, terminal);
-    } else if (Group.is(terminal)) {
+    } else if (langium.isGroup(terminal)) {
         return buildGroup(ctx, terminal);
     } else {
         return '';
     }
 }
 
-function buildAlternatives(ctx: RuleContext, alternatives: Alternatives): GeneratorNode {
+function buildAlternatives(ctx: RuleContext, alternatives: langium.Alternatives): GeneratorNode {
     if (alternatives.elements.length === 1) {
         return buildElement(ctx, alternatives.elements[0]);
     } else {
@@ -238,32 +238,32 @@ function wrap(ctx: RuleContext, node: GeneratorNode, cardinality: Cardinality): 
     }
 }
 
-function buildRuleCall(ctx: RuleContext, ruleCall: RuleCall): string {
+function buildRuleCall(ctx: RuleContext, ruleCall: langium.RuleCall): string {
     const rule = ruleCall.rule.value;
-    if (ParserRule.is(rule)) {
-        if (AstNode.getContainer(ruleCall, Assignment.type)) {
+    if (langium.isParserRule(rule)) {
+        if (AstNode.getContainer(ruleCall, langium.reflection, langium.Assignment)) {
             return `this.subruleLeaf(${ctx.subrule++}, this.${rule.name}, ${getGrammarAccess(ctx, ruleCall)});`;
         } else {
             return `this.unassignedSubrule(${ctx.subrule++}, this.${rule.name}, ${getGrammarAccess(ctx, ruleCall)});`;
         }
-    } else if (TerminalRule.is(rule)) {
+    } else if (langium.isTerminalRule(rule)) {
         return `this.consumeLeaf(${ctx.consume++}, ${rule.name}, ${getGrammarAccess(ctx, ruleCall)});`;
     }
 
     return '';
 }
 
-function buildKeyword(ctx: RuleContext, keyword: Keyword): string {
+function buildKeyword(ctx: RuleContext, keyword: langium.Keyword): string {
     const validName = replaceTokens(keyword.value) + 'Keyword';
     const node = `this.consumeLeaf(${ctx.consume++}, ${validName}, ${getGrammarAccess(ctx, keyword)});`;
     return node;
 }
 
-function getGrammarAccess(ctx: RuleContext, feature: AbstractElement): string {
+function getGrammarAccess(ctx: RuleContext, feature: langium.AbstractElement): string {
     return `this.grammarAccess.${ctx.name}.${ctx.featureMap.get(feature)}`;
 }
 
-function buildTerminalToken(grammar: Grammar, terminal: TerminalRule): { name: string, length: number, node: CompositeGeneratorNode } {
+function buildTerminalToken(grammar: langium.Grammar, terminal: langium.TerminalRule): { name: string, length: number, node: CompositeGeneratorNode } {
     const terminalNode = new CompositeGeneratorNode();
     terminalNode.children.push(
         'const ',
@@ -282,7 +282,7 @@ function buildTerminalToken(grammar: Grammar, terminal: TerminalRule): { name: s
     return { name: terminal.name, length: terminal.regex.length, node: terminalNode };
 }
 
-function buildKeywordToken(keyword: string, keywords: string[], terminals: TerminalRule[]): { name: string, length: number, node: CompositeGeneratorNode } {
+function buildKeywordToken(keyword: string, keywords: string[], terminals: langium.TerminalRule[]): { name: string, length: number, node: CompositeGeneratorNode } {
     const keywordNode = new CompositeGeneratorNode();
     const fixed = keyword.substring(1, keyword.length - 1);
     const longerAlt = findLongerAlt(fixed, keywords, terminals);
@@ -301,7 +301,7 @@ function escapeRegExp(text: string): string {
     return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-function findLongerAlt(keyword: string, keywords: string[], terminals: TerminalRule[]): string | undefined {
+function findLongerAlt(keyword: string, keywords: string[], terminals: langium.TerminalRule[]): string | undefined {
     const starter = "'" + keyword;
     const longerKeywords = keywords.filter(e => e.length > keyword.length + 2 && e.startsWith(starter));
     if (longerKeywords.length > 0) {
@@ -317,24 +317,24 @@ function findLongerAlt(keyword: string, keywords: string[], terminals: TerminalR
     return terminals.find(e => e.name === 'ID')?.name;
 }
 
-function collectKeywords(grammar: Grammar): string[] {
+function collectKeywords(grammar: langium.Grammar): string[] {
     const keywords = new Set<string>();
 
-    for (const rule of grammar.rules.filter(e => ParserRule.is(e)).map(e => e as ParserRule)) {
+    for (const rule of grammar.rules.filter(e => langium.isParserRule(e)).map(e => e as langium.ParserRule)) {
         collectElementKeywords(rule.alternatives, keywords);
     }
 
     return Array.from(keywords);
 }
 
-function collectElementKeywords(element: AbstractElement, keywords: Set<string>) {
-    if (Alternatives.is(element) || Group.is(element) || UnorderedGroup.is(element)) {
+function collectElementKeywords(element: langium.AbstractElement, keywords: Set<string>) {
+    if (langium.isAlternatives(element) || langium.isGroup(element) || langium.isUnorderedGroup(element)) {
         for (const item of element.elements) {
             collectElementKeywords(item, keywords);
         }
-    } else if (Assignment.is(element)) {
+    } else if (langium.isAssignment(element)) {
         collectElementKeywords(element.terminal, keywords);
-    } else if (Keyword.is(element)) {
+    } else if (langium.isKeyword(element)) {
         keywords.add(element.value);
     }
 }
