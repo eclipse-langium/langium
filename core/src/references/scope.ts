@@ -1,5 +1,5 @@
 import { AstNode, AstReflection } from '../generator/ast-node';
-import { BindingKey, Factory, ServiceHolder } from '../dependency-injection';
+import { BindingKey, Factory } from '../dependency-injection';
 import { getDocument, streamAllContents } from '../generator/ast-util';
 import { Stream, stream } from '../utils/stream';
 import { ParseResult } from '../parser/langium-parser';
@@ -41,7 +41,7 @@ export const EMPTY_SCOPE: Scope = {
     }
 };
 
-export type ScopeProvider = (this: ServiceHolder, node: AstNode, referenceId: string) => Scope
+export type ScopeProvider = (node: AstNode, referenceId: string) => Scope
 
 export const ScopeProvider: BindingKey<ScopeProvider> = { id: 'ScopeProvider' };
 
