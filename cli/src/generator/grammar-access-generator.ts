@@ -8,11 +8,13 @@ export function generateGrammarAccess(grammar: langium.Grammar, path?: string, b
     const node = new CompositeGeneratorNode();
 
     const langiumPath = "'" + (path ?? 'langium') + "';";
-    node.children.push('import { Action, Assignment, CrossReference, Keyword, RuleCall, GrammarAccess, retrocycle } from ', langiumPath, NL, NL);
+    node.children.push('import { Action, Assignment, BindingKey, CrossReference, Keyword, RuleCall, GrammarAccess, retrocycle } from ', langiumPath, NL, NL);
 
     for (const rule of grammar.rules.filter(e => langium.isParserRule(e)).map(e => e as langium.ParserRule)) {
         node.children.push(generateRuleAccess(rule), NL, NL);
     }
+
+    node.children.push("export const GrammarAccessKey: BindingKey<LangiumGrammarAccess> = { id: 'GrammarAccess' };", NL, NL);
 
     node.children.push('export class ', grammar.name + 'GrammarAccess extends GrammarAccess {', NL);
 

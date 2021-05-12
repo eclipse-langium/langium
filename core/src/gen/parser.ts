@@ -1,7 +1,7 @@
 /* eslint-disable */
 // @ts-nocheck
 import { createToken, Lexer } from 'chevrotain';
-import { Number, String, LangiumParser } from '../index';
+import { DIService, GrammarAccessKey, LangiumParser, Number, String, ServiceHolder } from '../index';
 import { LangiumGrammarAccess } from './grammar-access';
 import { AbstractElement, AbstractMetamodelDeclaration, AbstractNegatedToken, AbstractRule, Annotation, Condition, EnumLiteralDeclaration, EnumLiterals, Grammar, NamedArgument, Parameter, TerminalGroup, TerminalToken, TerminalTokenElement, Action, Alternatives, Assignment, CrossReference, Group, Keyword, RuleCall, UnorderedGroup, GeneratedMetamodel, ReferencedMetamodel, NegatedToken, UntilToken, EnumRule, ParserRule, TerminalRule, Conjunction, Disjunction, LiteralCondition, Negation, ParameterReference, CharacterRange, TerminalAlternatives, TerminalRuleCall, Wildcard, } from './ast';
 
@@ -10,12 +10,12 @@ const ID = createToken({ name : 'ID', pattern: /\^?[_a-zA-Z][\w_]*/ });
 const INT = createToken({ name : 'INT', pattern: /[0-9]+/ });
 const string = createToken({ name : 'string', pattern: /"[^"]*"|'[^']*'/ });
 const RegexLiteral = createToken({ name : 'RegexLiteral', pattern: /\/(?![*+?])(?:[^\r\n\[/\\]|\\.|\[(?:[^\r\n\]\\]|\\.)*\])+\// });
+const TerminalKeyword = createToken({ name: 'TerminalKeyword', pattern: /terminal/, longer_alt: ID });
 const GenerateKeyword = createToken({ name: 'GenerateKeyword', pattern: /generate/, longer_alt: ID });
 const FragmentKeyword = createToken({ name: 'FragmentKeyword', pattern: /fragment/, longer_alt: ID });
-const TerminalKeyword = createToken({ name: 'TerminalKeyword', pattern: /terminal/, longer_alt: ID });
 const GrammarKeyword = createToken({ name: 'GrammarKeyword', pattern: /grammar/, longer_alt: ID });
-const ReturnsKeyword = createToken({ name: 'ReturnsKeyword', pattern: /returns/, longer_alt: ID });
 const CurrentKeyword = createToken({ name: 'CurrentKeyword', pattern: /current/, longer_alt: ID });
+const ReturnsKeyword = createToken({ name: 'ReturnsKeyword', pattern: /returns/, longer_alt: ID });
 const HiddenKeyword = createToken({ name: 'HiddenKeyword', pattern: /hidden/, longer_alt: ID });
 const ImportKeyword = createToken({ name: 'ImportKeyword', pattern: /import/, longer_alt: ID });
 const FalseKeyword = createToken({ name: 'FalseKeyword', pattern: /false/, longer_alt: ID });
@@ -28,26 +28,26 @@ const EqualsMoreThanKeyword = createToken({ name: 'EqualsMoreThanKeyword', patte
 const DashMoreThanKeyword = createToken({ name: 'DashMoreThanKeyword', pattern: /->/, longer_alt: ID });
 const QuestionMarkEqualsKeyword = createToken({ name: 'QuestionMarkEqualsKeyword', pattern: /\?=/, longer_alt: ID });
 const DotDotKeyword = createToken({ name: 'DotDotKeyword', pattern: /\.\./, longer_alt: ID });
-const CommaKeyword = createToken({ name: 'CommaKeyword', pattern: /,/, longer_alt: ID });
-const ParenthesisOpenKeyword = createToken({ name: 'ParenthesisOpenKeyword', pattern: /\(/, longer_alt: ID });
-const ParenthesisCloseKeyword = createToken({ name: 'ParenthesisCloseKeyword', pattern: /\)/, longer_alt: ID });
-const AtKeyword = createToken({ name: 'AtKeyword', pattern: /@/, longer_alt: ID });
-const AsteriskKeyword = createToken({ name: 'AsteriskKeyword', pattern: /\*/, longer_alt: ID });
-const ColonKeyword = createToken({ name: 'ColonKeyword', pattern: /:/, longer_alt: ID });
-const SemicolonKeyword = createToken({ name: 'SemicolonKeyword', pattern: /;/, longer_alt: ID });
-const LessThanKeyword = createToken({ name: 'LessThanKeyword', pattern: /</, longer_alt: ID });
-const MoreThanKeyword = createToken({ name: 'MoreThanKeyword', pattern: />/, longer_alt: ID });
-const PipeKeyword = createToken({ name: 'PipeKeyword', pattern: /\|/, longer_alt: ID });
 const AmpersandKeyword = createToken({ name: 'AmpersandKeyword', pattern: /&/, longer_alt: ID });
-const QuestionMarkKeyword = createToken({ name: 'QuestionMarkKeyword', pattern: /\?/, longer_alt: QuestionMarkEqualsKeyword });
+const AtKeyword = createToken({ name: 'AtKeyword', pattern: /@/, longer_alt: ID });
 const PlusKeyword = createToken({ name: 'PlusKeyword', pattern: /\+/, longer_alt: PlusEqualsKeyword });
 const CurlyOpenKeyword = createToken({ name: 'CurlyOpenKeyword', pattern: /\{/, longer_alt: ID });
 const DotKeyword = createToken({ name: 'DotKeyword', pattern: /\./, longer_alt: DotDotKeyword });
 const EqualsKeyword = createToken({ name: 'EqualsKeyword', pattern: /=/, longer_alt: EqualsMoreThanKeyword });
+const AsteriskKeyword = createToken({ name: 'AsteriskKeyword', pattern: /\*/, longer_alt: ID });
+const ColonKeyword = createToken({ name: 'ColonKeyword', pattern: /:/, longer_alt: ID });
 const CurlyCloseKeyword = createToken({ name: 'CurlyCloseKeyword', pattern: /\}/, longer_alt: ID });
+const ParenthesisCloseKeyword = createToken({ name: 'ParenthesisCloseKeyword', pattern: /\)/, longer_alt: ID });
+const ParenthesisOpenKeyword = createToken({ name: 'ParenthesisOpenKeyword', pattern: /\(/, longer_alt: ID });
 const ExclamationMarkKeyword = createToken({ name: 'ExclamationMarkKeyword', pattern: /!/, longer_alt: ID });
+const SemicolonKeyword = createToken({ name: 'SemicolonKeyword', pattern: /;/, longer_alt: ID });
+const LessThanKeyword = createToken({ name: 'LessThanKeyword', pattern: /</, longer_alt: ID });
+const MoreThanKeyword = createToken({ name: 'MoreThanKeyword', pattern: />/, longer_alt: ID });
 const BracketOpenKeyword = createToken({ name: 'BracketOpenKeyword', pattern: /\[/, longer_alt: ID });
 const BracketCloseKeyword = createToken({ name: 'BracketCloseKeyword', pattern: /\]/, longer_alt: ID });
+const CommaKeyword = createToken({ name: 'CommaKeyword', pattern: /,/, longer_alt: ID });
+const PipeKeyword = createToken({ name: 'PipeKeyword', pattern: /\|/, longer_alt: ID });
+const QuestionMarkKeyword = createToken({ name: 'QuestionMarkKeyword', pattern: /\?/, longer_alt: QuestionMarkEqualsKeyword });
 
 GrammarKeyword.LABEL = "'grammar'";
 WithKeyword.LABEL = "'with'";
@@ -87,18 +87,22 @@ BracketCloseKeyword.LABEL = "']'";
 TerminalKeyword.LABEL = "'terminal'";
 DotDotKeyword.LABEL = "'..'";
 EnumKeyword.LABEL = "'enum'";
-const tokens = [GenerateKeyword, FragmentKeyword, TerminalKeyword, GrammarKeyword, ReturnsKeyword, CurrentKeyword, HiddenKeyword, ImportKeyword, FalseKeyword, WithKeyword, TrueKeyword, EnumKeyword, AsKeyword, PlusEqualsKeyword, EqualsMoreThanKeyword, DashMoreThanKeyword, QuestionMarkEqualsKeyword, DotDotKeyword, CommaKeyword, ParenthesisOpenKeyword, ParenthesisCloseKeyword, AtKeyword, AsteriskKeyword, ColonKeyword, SemicolonKeyword, LessThanKeyword, MoreThanKeyword, PipeKeyword, AmpersandKeyword, QuestionMarkKeyword, PlusKeyword, CurlyOpenKeyword, DotKeyword, EqualsKeyword, CurlyCloseKeyword, ExclamationMarkKeyword, BracketOpenKeyword, BracketCloseKeyword, WS, ID, INT, string, RegexLiteral];
+const tokens = [TerminalKeyword, GenerateKeyword, FragmentKeyword, GrammarKeyword, CurrentKeyword, ReturnsKeyword, HiddenKeyword, ImportKeyword, FalseKeyword, WithKeyword, TrueKeyword, EnumKeyword, AsKeyword, PlusEqualsKeyword, EqualsMoreThanKeyword, DashMoreThanKeyword, QuestionMarkEqualsKeyword, DotDotKeyword, AmpersandKeyword, AtKeyword, PlusKeyword, CurlyOpenKeyword, DotKeyword, EqualsKeyword, AsteriskKeyword, ColonKeyword, CurlyCloseKeyword, ParenthesisCloseKeyword, ParenthesisOpenKeyword, ExclamationMarkKeyword, SemicolonKeyword, LessThanKeyword, MoreThanKeyword, BracketOpenKeyword, BracketCloseKeyword, CommaKeyword, PipeKeyword, QuestionMarkKeyword, WS, ID, INT, string, RegexLiteral];
 
-export class Parser extends LangiumParser {
+export class Parser extends LangiumParser implements DIService {
     grammarAccess: LangiumGrammarAccess;
-    constructor(grammarAccess: LangiumGrammarAccess) {
+
+    constructor() {
         super(tokens);
-        this.grammarAccess = grammarAccess;
+    }
+
+    initialize(services: ServiceHolder): void {
+        this.grammarAccess = services.get(GrammarAccessKey);
         this.performSelfAnalysis();
     }
 
     Grammar = this.MAIN_RULE("Grammar", Grammar, () => {
-        this.initialize(this.grammarAccess.Grammar);
+        this.initializeElement(this.grammarAccess.Grammar);
         this.consumeLeaf(1, GrammarKeyword, this.grammarAccess.Grammar.GrammarKeyword);
         this.consumeLeaf(2, ID, this.grammarAccess.Grammar.nameIDRuleCall);
         this.option(1, () => {
@@ -131,7 +135,7 @@ export class Parser extends LangiumParser {
     });
 
     AbstractRule = this.DEFINE_RULE("AbstractRule", AbstractRule, () => {
-        this.initialize(this.grammarAccess.AbstractRule);
+        this.initializeElement(this.grammarAccess.AbstractRule);
         this.or(1, [
             {
                 ALT: () => {
@@ -153,7 +157,7 @@ export class Parser extends LangiumParser {
     });
 
     AbstractMetamodelDeclaration = this.DEFINE_RULE("AbstractMetamodelDeclaration", AbstractMetamodelDeclaration, () => {
-        this.initialize(this.grammarAccess.AbstractMetamodelDeclaration);
+        this.initializeElement(this.grammarAccess.AbstractMetamodelDeclaration);
         this.or(1, [
             {
                 ALT: () => {
@@ -170,7 +174,7 @@ export class Parser extends LangiumParser {
     });
 
     GeneratedMetamodel = this.DEFINE_RULE("GeneratedMetamodel", GeneratedMetamodel, () => {
-        this.initialize(this.grammarAccess.GeneratedMetamodel);
+        this.initializeElement(this.grammarAccess.GeneratedMetamodel);
         this.consumeLeaf(1, GenerateKeyword, this.grammarAccess.GeneratedMetamodel.GenerateKeyword);
         this.consumeLeaf(2, ID, this.grammarAccess.GeneratedMetamodel.nameIDRuleCall);
         this.consumeLeaf(3, string, this.grammarAccess.GeneratedMetamodel.ePackagestringRuleCall);
@@ -182,7 +186,7 @@ export class Parser extends LangiumParser {
     });
 
     ReferencedMetamodel = this.DEFINE_RULE("ReferencedMetamodel", ReferencedMetamodel, () => {
-        this.initialize(this.grammarAccess.ReferencedMetamodel);
+        this.initializeElement(this.grammarAccess.ReferencedMetamodel);
         this.consumeLeaf(1, ImportKeyword, this.grammarAccess.ReferencedMetamodel.ImportKeyword);
         this.consumeLeaf(2, string, this.grammarAccess.ReferencedMetamodel.ePackagestringRuleCall);
         this.option(1, () => {
@@ -193,14 +197,14 @@ export class Parser extends LangiumParser {
     });
 
     Annotation = this.DEFINE_RULE("Annotation", Annotation, () => {
-        this.initialize(this.grammarAccess.Annotation);
+        this.initializeElement(this.grammarAccess.Annotation);
         this.consumeLeaf(1, AtKeyword, this.grammarAccess.Annotation.AtKeyword);
         this.consumeLeaf(2, ID, this.grammarAccess.Annotation.nameIDRuleCall);
         return this.construct();
     });
 
     ParserRule = this.DEFINE_RULE("ParserRule", ParserRule, () => {
-        this.initialize(this.grammarAccess.ParserRule);
+        this.initializeElement(this.grammarAccess.ParserRule);
         this.or(1, [
             {
                 ALT: () => {
@@ -252,7 +256,7 @@ export class Parser extends LangiumParser {
     });
 
     RuleNameAndParams = this.DEFINE_RULE("RuleNameAndParams", undefined, () => {
-        this.initialize(this.grammarAccess.RuleNameAndParams);
+        this.initializeElement(this.grammarAccess.RuleNameAndParams);
         this.consumeLeaf(1, ID, this.grammarAccess.RuleNameAndParams.nameIDRuleCall);
         this.option(2, () => {
             this.consumeLeaf(2, LessThanKeyword, this.grammarAccess.RuleNameAndParams.LessThanKeyword);
@@ -269,13 +273,13 @@ export class Parser extends LangiumParser {
     });
 
     Parameter = this.DEFINE_RULE("Parameter", Parameter, () => {
-        this.initialize(this.grammarAccess.Parameter);
+        this.initializeElement(this.grammarAccess.Parameter);
         this.consumeLeaf(1, ID, this.grammarAccess.Parameter.nameIDRuleCall);
         return this.construct();
     });
 
     Alternatives = this.DEFINE_RULE("Alternatives", AbstractElement, () => {
-        this.initialize(this.grammarAccess.Alternatives);
+        this.initializeElement(this.grammarAccess.Alternatives);
         this.unassignedSubrule(1, this.UnorderedGroup, this.grammarAccess.Alternatives.UnorderedGroupRuleCall);
         this.many(1, () => {
             this.executeAction(Alternatives, this.grammarAccess.Alternatives.AlternativeselementsAction);
@@ -286,7 +290,7 @@ export class Parser extends LangiumParser {
     });
 
     UnorderedGroup = this.DEFINE_RULE("UnorderedGroup", AbstractElement, () => {
-        this.initialize(this.grammarAccess.UnorderedGroup);
+        this.initializeElement(this.grammarAccess.UnorderedGroup);
         this.unassignedSubrule(1, this.Group, this.grammarAccess.UnorderedGroup.GroupRuleCall);
         this.many(1, () => {
             this.executeAction(UnorderedGroup, this.grammarAccess.UnorderedGroup.UnorderedGroupelementsAction);
@@ -297,7 +301,7 @@ export class Parser extends LangiumParser {
     });
 
     Group = this.DEFINE_RULE("Group", AbstractElement, () => {
-        this.initialize(this.grammarAccess.Group);
+        this.initializeElement(this.grammarAccess.Group);
         this.unassignedSubrule(1, this.AbstractToken, this.grammarAccess.Group.AbstractTokenRuleCall);
         this.many(1, () => {
             this.executeAction(Group, this.grammarAccess.Group.GroupelementsAction);
@@ -307,7 +311,7 @@ export class Parser extends LangiumParser {
     });
 
     AbstractToken = this.DEFINE_RULE("AbstractToken", AbstractElement, () => {
-        this.initialize(this.grammarAccess.AbstractToken);
+        this.initializeElement(this.grammarAccess.AbstractToken);
         this.or(1, [
             {
                 ALT: () => {
@@ -324,7 +328,7 @@ export class Parser extends LangiumParser {
     });
 
     AbstractTokenWithCardinality = this.DEFINE_RULE("AbstractTokenWithCardinality", AbstractElement, () => {
-        this.initialize(this.grammarAccess.AbstractTokenWithCardinality);
+        this.initializeElement(this.grammarAccess.AbstractTokenWithCardinality);
         this.or(1, [
             {
                 ALT: () => {
@@ -360,7 +364,7 @@ export class Parser extends LangiumParser {
     });
 
     Action = this.DEFINE_RULE("Action", AbstractElement, () => {
-        this.initialize(this.grammarAccess.Action);
+        this.initializeElement(this.grammarAccess.Action);
         this.executeAction(Action, this.grammarAccess.Action.ActionAction);
         this.consumeLeaf(1, CurlyOpenKeyword, this.grammarAccess.Action.CurlyOpenKeyword);
         this.consumeLeaf(2, ID, this.grammarAccess.Action.typeIDRuleCall);
@@ -386,7 +390,7 @@ export class Parser extends LangiumParser {
     });
 
     AbstractTerminal = this.DEFINE_RULE("AbstractTerminal", AbstractElement, () => {
-        this.initialize(this.grammarAccess.AbstractTerminal);
+        this.initializeElement(this.grammarAccess.AbstractTerminal);
         this.or(1, [
             {
                 ALT: () => {
@@ -423,13 +427,13 @@ export class Parser extends LangiumParser {
     });
 
     Keyword = this.DEFINE_RULE("Keyword", Keyword, () => {
-        this.initialize(this.grammarAccess.Keyword);
+        this.initializeElement(this.grammarAccess.Keyword);
         this.consumeLeaf(1, string, this.grammarAccess.Keyword.valuestringRuleCall);
         return this.construct();
     });
 
     RuleCall = this.DEFINE_RULE("RuleCall", RuleCall, () => {
-        this.initialize(this.grammarAccess.RuleCall);
+        this.initializeElement(this.grammarAccess.RuleCall);
         this.consumeLeaf(1, ID, this.grammarAccess.RuleCall.ruleAbstractRuleCrossReference);
         this.option(1, () => {
             this.consumeLeaf(2, LessThanKeyword, this.grammarAccess.RuleCall.LessThanKeyword);
@@ -444,7 +448,7 @@ export class Parser extends LangiumParser {
     });
 
     NamedArgument = this.DEFINE_RULE("NamedArgument", NamedArgument, () => {
-        this.initialize(this.grammarAccess.NamedArgument);
+        this.initializeElement(this.grammarAccess.NamedArgument);
         this.option(1, () => {
             this.consumeLeaf(1, ID, this.grammarAccess.NamedArgument.parameterParameterCrossReference);
             this.consumeLeaf(2, EqualsKeyword, this.grammarAccess.NamedArgument.EqualsKeyword);
@@ -454,7 +458,7 @@ export class Parser extends LangiumParser {
     });
 
     LiteralCondition = this.DEFINE_RULE("LiteralCondition", LiteralCondition, () => {
-        this.initialize(this.grammarAccess.LiteralCondition);
+        this.initializeElement(this.grammarAccess.LiteralCondition);
         this.or(1, [
             {
                 ALT: () => {
@@ -471,7 +475,7 @@ export class Parser extends LangiumParser {
     });
 
     Disjunction = this.DEFINE_RULE("Disjunction", Condition, () => {
-        this.initialize(this.grammarAccess.Disjunction);
+        this.initializeElement(this.grammarAccess.Disjunction);
         this.unassignedSubrule(1, this.Conjunction, this.grammarAccess.Disjunction.ConjunctionRuleCall);
         this.option(1, () => {
             this.executeAction(Disjunction, this.grammarAccess.Disjunction.DisjunctionleftAction);
@@ -482,7 +486,7 @@ export class Parser extends LangiumParser {
     });
 
     Conjunction = this.DEFINE_RULE("Conjunction", Condition, () => {
-        this.initialize(this.grammarAccess.Conjunction);
+        this.initializeElement(this.grammarAccess.Conjunction);
         this.unassignedSubrule(1, this.Negation, this.grammarAccess.Conjunction.NegationRuleCall);
         this.option(1, () => {
             this.executeAction(Conjunction, this.grammarAccess.Conjunction.ConjunctionleftAction);
@@ -493,7 +497,7 @@ export class Parser extends LangiumParser {
     });
 
     Negation = this.DEFINE_RULE("Negation", Condition, () => {
-        this.initialize(this.grammarAccess.Negation);
+        this.initializeElement(this.grammarAccess.Negation);
         this.or(1, [
             {
                 ALT: () => {
@@ -512,7 +516,7 @@ export class Parser extends LangiumParser {
     });
 
     Atom = this.DEFINE_RULE("Atom", Condition, () => {
-        this.initialize(this.grammarAccess.Atom);
+        this.initializeElement(this.grammarAccess.Atom);
         this.or(1, [
             {
                 ALT: () => {
@@ -534,7 +538,7 @@ export class Parser extends LangiumParser {
     });
 
     ParenthesizedCondition = this.DEFINE_RULE("ParenthesizedCondition", Condition, () => {
-        this.initialize(this.grammarAccess.ParenthesizedCondition);
+        this.initializeElement(this.grammarAccess.ParenthesizedCondition);
         this.consumeLeaf(1, ParenthesisOpenKeyword, this.grammarAccess.ParenthesizedCondition.ParenthesisOpenKeyword);
         this.unassignedSubrule(1, this.Disjunction, this.grammarAccess.ParenthesizedCondition.DisjunctionRuleCall);
         this.consumeLeaf(2, ParenthesisCloseKeyword, this.grammarAccess.ParenthesizedCondition.ParenthesisCloseKeyword);
@@ -542,19 +546,19 @@ export class Parser extends LangiumParser {
     });
 
     ParameterReference = this.DEFINE_RULE("ParameterReference", ParameterReference, () => {
-        this.initialize(this.grammarAccess.ParameterReference);
+        this.initializeElement(this.grammarAccess.ParameterReference);
         this.consumeLeaf(1, ID, this.grammarAccess.ParameterReference.parameterParameterCrossReference);
         return this.construct();
     });
 
     TerminalRuleCall = this.DEFINE_RULE("TerminalRuleCall", TerminalRuleCall, () => {
-        this.initialize(this.grammarAccess.TerminalRuleCall);
+        this.initializeElement(this.grammarAccess.TerminalRuleCall);
         this.consumeLeaf(1, ID, this.grammarAccess.TerminalRuleCall.ruleAbstractRuleCrossReference);
         return this.construct();
     });
 
     PredicatedKeyword = this.DEFINE_RULE("PredicatedKeyword", Keyword, () => {
-        this.initialize(this.grammarAccess.PredicatedKeyword);
+        this.initializeElement(this.grammarAccess.PredicatedKeyword);
         this.or(1, [
             {
                 ALT: () => {
@@ -572,7 +576,7 @@ export class Parser extends LangiumParser {
     });
 
     PredicatedRuleCall = this.DEFINE_RULE("PredicatedRuleCall", RuleCall, () => {
-        this.initialize(this.grammarAccess.PredicatedRuleCall);
+        this.initializeElement(this.grammarAccess.PredicatedRuleCall);
         this.or(1, [
             {
                 ALT: () => {
@@ -599,7 +603,7 @@ export class Parser extends LangiumParser {
     });
 
     Assignment = this.DEFINE_RULE("Assignment", AbstractElement, () => {
-        this.initialize(this.grammarAccess.Assignment);
+        this.initializeElement(this.grammarAccess.Assignment);
         this.executeAction(Assignment, this.grammarAccess.Assignment.AssignmentAction);
         this.option(1, () => {
             this.or(1, [
@@ -638,7 +642,7 @@ export class Parser extends LangiumParser {
     });
 
     AssignableTerminal = this.DEFINE_RULE("AssignableTerminal", AbstractElement, () => {
-        this.initialize(this.grammarAccess.AssignableTerminal);
+        this.initializeElement(this.grammarAccess.AssignableTerminal);
         this.or(1, [
             {
                 ALT: () => {
@@ -665,7 +669,7 @@ export class Parser extends LangiumParser {
     });
 
     ParenthesizedAssignableElement = this.DEFINE_RULE("ParenthesizedAssignableElement", AbstractElement, () => {
-        this.initialize(this.grammarAccess.ParenthesizedAssignableElement);
+        this.initializeElement(this.grammarAccess.ParenthesizedAssignableElement);
         this.consumeLeaf(1, ParenthesisOpenKeyword, this.grammarAccess.ParenthesizedAssignableElement.ParenthesisOpenKeyword);
         this.unassignedSubrule(1, this.AssignableAlternatives, this.grammarAccess.ParenthesizedAssignableElement.AssignableAlternativesRuleCall);
         this.consumeLeaf(2, ParenthesisCloseKeyword, this.grammarAccess.ParenthesizedAssignableElement.ParenthesisCloseKeyword);
@@ -673,7 +677,7 @@ export class Parser extends LangiumParser {
     });
 
     AssignableAlternatives = this.DEFINE_RULE("AssignableAlternatives", AbstractElement, () => {
-        this.initialize(this.grammarAccess.AssignableAlternatives);
+        this.initializeElement(this.grammarAccess.AssignableAlternatives);
         this.unassignedSubrule(1, this.AssignableTerminal, this.grammarAccess.AssignableAlternatives.AssignableTerminalRuleCall);
         this.option(1, () => {
             this.executeAction(Alternatives, this.grammarAccess.AssignableAlternatives.AlternativeselementsAction);
@@ -686,7 +690,7 @@ export class Parser extends LangiumParser {
     });
 
     CrossReference = this.DEFINE_RULE("CrossReference", AbstractElement, () => {
-        this.initialize(this.grammarAccess.CrossReference);
+        this.initializeElement(this.grammarAccess.CrossReference);
         this.executeAction(CrossReference, this.grammarAccess.CrossReference.CrossReferenceAction);
         this.consumeLeaf(1, BracketOpenKeyword, this.grammarAccess.CrossReference.BracketOpenKeyword);
         this.consumeLeaf(2, ID, this.grammarAccess.CrossReference.typeParserRuleCrossReference);
@@ -699,7 +703,7 @@ export class Parser extends LangiumParser {
     });
 
     CrossReferenceableTerminal = this.DEFINE_RULE("CrossReferenceableTerminal", AbstractElement, () => {
-        this.initialize(this.grammarAccess.CrossReferenceableTerminal);
+        this.initializeElement(this.grammarAccess.CrossReferenceableTerminal);
         this.or(1, [
             {
                 ALT: () => {
@@ -716,7 +720,7 @@ export class Parser extends LangiumParser {
     });
 
     ParenthesizedElement = this.DEFINE_RULE("ParenthesizedElement", AbstractElement, () => {
-        this.initialize(this.grammarAccess.ParenthesizedElement);
+        this.initializeElement(this.grammarAccess.ParenthesizedElement);
         this.consumeLeaf(1, ParenthesisOpenKeyword, this.grammarAccess.ParenthesizedElement.ParenthesisOpenKeyword);
         this.unassignedSubrule(1, this.Alternatives, this.grammarAccess.ParenthesizedElement.AlternativesRuleCall);
         this.consumeLeaf(2, ParenthesisCloseKeyword, this.grammarAccess.ParenthesizedElement.ParenthesisCloseKeyword);
@@ -724,7 +728,7 @@ export class Parser extends LangiumParser {
     });
 
     PredicatedGroup = this.DEFINE_RULE("PredicatedGroup", Group, () => {
-        this.initialize(this.grammarAccess.PredicatedGroup);
+        this.initializeElement(this.grammarAccess.PredicatedGroup);
         this.or(1, [
             {
                 ALT: () => {
@@ -744,7 +748,7 @@ export class Parser extends LangiumParser {
     });
 
     TerminalRule = this.DEFINE_RULE("TerminalRule", TerminalRule, () => {
-        this.initialize(this.grammarAccess.TerminalRule);
+        this.initializeElement(this.grammarAccess.TerminalRule);
         this.consumeLeaf(1, TerminalKeyword, this.grammarAccess.TerminalRule.TerminalKeyword);
         this.or(1, [
             {
@@ -770,7 +774,7 @@ export class Parser extends LangiumParser {
     });
 
     TerminalAlternatives = this.DEFINE_RULE("TerminalAlternatives", TerminalAlternatives, () => {
-        this.initialize(this.grammarAccess.TerminalAlternatives);
+        this.initializeElement(this.grammarAccess.TerminalAlternatives);
         this.unassignedSubrule(1, this.TerminalGroup, this.grammarAccess.TerminalAlternatives.TerminalGroupRuleCall);
         this.many(1, () => {
             this.executeAction(TerminalAlternatives, this.grammarAccess.TerminalAlternatives.TerminalAlternativeselementsAction);
@@ -781,13 +785,13 @@ export class Parser extends LangiumParser {
     });
 
     TerminalGroup = this.DEFINE_RULE("TerminalGroup", TerminalGroup, () => {
-        this.initialize(this.grammarAccess.TerminalGroup);
+        this.initializeElement(this.grammarAccess.TerminalGroup);
         this.subruleLeaf(1, this.TerminalToken, this.grammarAccess.TerminalGroup.elementsTerminalTokenRuleCall);
         return this.construct();
     });
 
     TerminalToken = this.DEFINE_RULE("TerminalToken", TerminalToken, () => {
-        this.initialize(this.grammarAccess.TerminalToken);
+        this.initializeElement(this.grammarAccess.TerminalToken);
         this.unassignedSubrule(1, this.TerminalTokenElement, this.grammarAccess.TerminalToken.TerminalTokenElementRuleCall);
         this.option(1, () => {
             this.or(1, [
@@ -812,7 +816,7 @@ export class Parser extends LangiumParser {
     });
 
     TerminalTokenElement = this.DEFINE_RULE("TerminalTokenElement", TerminalTokenElement, () => {
-        this.initialize(this.grammarAccess.TerminalTokenElement);
+        this.initializeElement(this.grammarAccess.TerminalTokenElement);
         this.or(1, [
             {
                 ALT: () => {
@@ -844,7 +848,7 @@ export class Parser extends LangiumParser {
     });
 
     ParenthesizedTerminalElement = this.DEFINE_RULE("ParenthesizedTerminalElement", TerminalAlternatives, () => {
-        this.initialize(this.grammarAccess.ParenthesizedTerminalElement);
+        this.initializeElement(this.grammarAccess.ParenthesizedTerminalElement);
         this.consumeLeaf(1, ParenthesisOpenKeyword, this.grammarAccess.ParenthesizedTerminalElement.ParenthesisOpenKeyword);
         this.unassignedSubrule(1, this.TerminalAlternatives, this.grammarAccess.ParenthesizedTerminalElement.TerminalAlternativesRuleCall);
         this.consumeLeaf(2, ParenthesisCloseKeyword, this.grammarAccess.ParenthesizedTerminalElement.ParenthesisCloseKeyword);
@@ -852,7 +856,7 @@ export class Parser extends LangiumParser {
     });
 
     AbstractNegatedToken = this.DEFINE_RULE("AbstractNegatedToken", AbstractNegatedToken, () => {
-        this.initialize(this.grammarAccess.AbstractNegatedToken);
+        this.initializeElement(this.grammarAccess.AbstractNegatedToken);
         this.or(1, [
             {
                 ALT: () => {
@@ -869,28 +873,28 @@ export class Parser extends LangiumParser {
     });
 
     NegatedToken = this.DEFINE_RULE("NegatedToken", NegatedToken, () => {
-        this.initialize(this.grammarAccess.NegatedToken);
+        this.initializeElement(this.grammarAccess.NegatedToken);
         this.consumeLeaf(1, ExclamationMarkKeyword, this.grammarAccess.NegatedToken.ExclamationMarkKeyword);
         this.subruleLeaf(1, this.TerminalTokenElement, this.grammarAccess.NegatedToken.terminalTerminalTokenElementRuleCall);
         return this.construct();
     });
 
     UntilToken = this.DEFINE_RULE("UntilToken", UntilToken, () => {
-        this.initialize(this.grammarAccess.UntilToken);
+        this.initializeElement(this.grammarAccess.UntilToken);
         this.consumeLeaf(1, DashMoreThanKeyword, this.grammarAccess.UntilToken.DashMoreThanKeyword);
         this.subruleLeaf(1, this.TerminalTokenElement, this.grammarAccess.UntilToken.terminalTerminalTokenElementRuleCall);
         return this.construct();
     });
 
     Wildcard = this.DEFINE_RULE("Wildcard", Wildcard, () => {
-        this.initialize(this.grammarAccess.Wildcard);
+        this.initializeElement(this.grammarAccess.Wildcard);
         this.executeAction(Wildcard, this.grammarAccess.Wildcard.WildcardAction);
         this.consumeLeaf(1, DotKeyword, this.grammarAccess.Wildcard.DotKeyword);
         return this.construct();
     });
 
     CharacterRange = this.DEFINE_RULE("CharacterRange", CharacterRange, () => {
-        this.initialize(this.grammarAccess.CharacterRange);
+        this.initializeElement(this.grammarAccess.CharacterRange);
         this.subruleLeaf(1, this.Keyword, this.grammarAccess.CharacterRange.leftKeywordRuleCall);
         this.option(1, () => {
             this.consumeLeaf(1, DotDotKeyword, this.grammarAccess.CharacterRange.DotDotKeyword);
@@ -900,7 +904,7 @@ export class Parser extends LangiumParser {
     });
 
     EnumRule = this.DEFINE_RULE("EnumRule", EnumRule, () => {
-        this.initialize(this.grammarAccess.EnumRule);
+        this.initializeElement(this.grammarAccess.EnumRule);
         this.consumeLeaf(1, EnumKeyword, this.grammarAccess.EnumRule.EnumKeyword);
         this.consumeLeaf(2, ID, this.grammarAccess.EnumRule.nameIDRuleCall);
         this.option(1, () => {
@@ -914,7 +918,7 @@ export class Parser extends LangiumParser {
     });
 
     EnumLiterals = this.DEFINE_RULE("EnumLiterals", EnumLiterals, () => {
-        this.initialize(this.grammarAccess.EnumLiterals);
+        this.initializeElement(this.grammarAccess.EnumLiterals);
         this.unassignedSubrule(1, this.EnumLiteralDeclaration, this.grammarAccess.EnumLiterals.EnumLiteralDeclarationRuleCall);
         this.many(1, () => {
             this.executeAction(EnumLiterals, this.grammarAccess.EnumLiterals.EnumLiteralselementsAction);
@@ -925,7 +929,7 @@ export class Parser extends LangiumParser {
     });
 
     EnumLiteralDeclaration = this.DEFINE_RULE("EnumLiteralDeclaration", EnumLiteralDeclaration, () => {
-        this.initialize(this.grammarAccess.EnumLiteralDeclaration);
+        this.initializeElement(this.grammarAccess.EnumLiteralDeclaration);
         this.consumeLeaf(1, ID, this.grammarAccess.EnumLiteralDeclaration.enumLiteralIDRuleCall);
         this.option(1, () => {
             this.consumeLeaf(2, EqualsKeyword, this.grammarAccess.EnumLiteralDeclaration.EqualsKeyword);

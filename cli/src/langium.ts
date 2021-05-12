@@ -2,7 +2,7 @@
 import * as fs from 'fs-extra';
 import { Command } from 'commander';
 import { Package } from './package';
-import { Grammar, LangiumGrammarAccess, linkGrammar, Parser, serialize } from 'langium';
+import { DefaultModule, DIContainer, Grammar, GrammarAccessKey, LangiumGrammarAccess, LangiumParserKey, linkGrammar, Parser, serialize } from 'langium';
 import { generateGrammarAccess } from './generator/grammar-access-generator';
 import { generateParser } from './generator/parser-generator';
 import { generateAst } from './generator/ast-generator';
@@ -22,9 +22,15 @@ const file = opts.file ?? './package.json';
 const packageContent = fs.readFileSync(file).toString();
 const pack = <Package>JSON.parse(packageContent);
 
+const container = new DIContainer();
+container.load(DefaultModule);
+// TODO generate a DI module for these bindings
+container.bindToConstructor(LangiumParserKey, Parser);
+container.bindToConstructor(GrammarAccessKey, LangiumGrammarAccess);
+
 const grammarFile = pack.langium.grammar ?? './grammar.lg';
 const grammarFileContent = fs.readFileSync(grammarFile).toString();
-const grammar = new Parser(new LangiumGrammarAccess()).parse<Grammar>(grammarFileContent).value;
+const grammar = container.get(LangiumParserKey).parse<Grammar>(grammarFileContent).value;
 linkGrammar(grammar);
 const json = serialize(grammar);
 const grammarAccess = generateGrammarAccess(grammar, pack.langium.path, opts.b);

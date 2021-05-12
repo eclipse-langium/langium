@@ -4,6 +4,8 @@ import { AbstractElement, Action, Assignment, isAssignment, isCrossReference, re
 import { AstNode, Number, RuleResult, String } from '../generator/ast-node';
 import { isArrayOperator } from '../generator/utils';
 import { CstNodeBuilder } from './cst-node-builder';
+import { BindingKey } from '../dependency-injection';
+import { GrammarAccess } from '../grammar/grammar-access';
 
 type StackItem = {
     object: any,
@@ -16,7 +18,10 @@ export type ParseResult<T> = {
     lexerErrors: ILexingError[]
 }
 
+export const LangiumParserKey: BindingKey<LangiumParser> = { id: 'LangiumParser' };
+
 export class LangiumParser extends EmbeddedActionsParser {
+    grammarAccess: GrammarAccess;
 
     private stack: StackItem[] = [];
     private nodeBuilder = new CstNodeBuilder();
@@ -143,7 +148,7 @@ export class LangiumParser extends EmbeddedActionsParser {
      * Therefore, all array fields are initialized with an empty array.
      * @param grammarAccessElement The grammar access element that belongs to the current rule
      */
-    initialize(grammarAccessElement: { [key: string]: AbstractElement }): void {
+    initializeElement(grammarAccessElement: { [key: string]: AbstractElement }): void {
         if (!this.RECORDING_PHASE) {
             // TODO fix this by inverting the assign call in unassignedSubrule
             //const item = this.current.object;

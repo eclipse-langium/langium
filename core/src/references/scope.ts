@@ -1,7 +1,8 @@
-import { AstNode } from '../generator/ast-node';
-import { BindingKey, DIContainer, DIService } from '../dependency-injection';
-import { AstReflection, getDocument, streamAllContents } from '../generator/ast-util';
-import { Stream, filterStream, EMPTY_STREAM } from '../utils/stream';
+import { AstNode, AstReflection } from '../generator/ast-node';
+import { BindingKey, Factory, ServiceHolder } from '../dependency-injection';
+import { getDocument, streamAllContents } from '../generator/ast-util';
+import { Stream, stream } from '../utils/stream';
+import { ParseResult } from '../parser/langium-parser';
 
 export interface AstNodeDescription {
     name: string // QualifiedName?
@@ -34,35 +35,32 @@ export class SimpleScope implements Scope {
     }
 }
 
-export const EMPTY_SCOPE = new SimpleScope(EMPTY_STREAM);
+export const EMPTY_SCOPE: Scope = {
+    getElement(): undefined {
+        return undefined;
+    }
+};
 
-export interface ScopeProvider {
-    getScope(node: AstNode, referenceId: string): Scope
-}
+export type ScopeProvider = (this: ServiceHolder, node: AstNode, referenceId: string) => Scope
 
 export const ScopeProvider: BindingKey<ScopeProvider> = { id: 'ScopeProvider' };
 
-export class DefaultScopeProvider implements ScopeProvider, DIService {
-    private reflection: AstReflection;
-
-    initialize(container: DIContainer): void {
-        this.reflection = container.get(AstReflection);
-    }
-
-    getScope(node: AstNode, referenceId: string): Scope {
+export const DefaultScopeProvider: Factory<ScopeProvider> = services => {
+    const reflection = services.get(AstReflection);
+    return function(node: AstNode, referenceId: string) {
         const precomputed = getDocument(node).precomputedScopes;
         if (!precomputed) {
             return EMPTY_SCOPE;
         }
-        const referenceType = this.reflection.getReferenceType(referenceId);
+        const referenceType = reflection.getReferenceType(referenceId);
 
         let currentNode: AstNode | undefined = node;
         const scopes: Array<Stream<AstNodeDescription>> = [];
         do {
             const allDescriptions = precomputed.get(currentNode);
             if (allDescriptions) {
-                scopes.push(filterStream(allDescriptions,
-                    desc => this.reflection.isSubtype(desc.type, referenceType)));
+                scopes.push(stream(allDescriptions).filter(
+                    desc => reflection.isSubtype(desc.type, referenceType)));
             }
             currentNode = currentNode.$container;
         } while (currentNode);
@@ -73,22 +71,23 @@ export class DefaultScopeProvider implements ScopeProvider, DIService {
             result = new SimpleScope(scopes[i], result);
         }
         return result;
-    }
-}
+    };
+};
 
 export interface LangiumDocument {
     documentUri: string // DocumentUri?
-    astRoot: AstNode
+    parseResult: ParseResult<AstNode>
     precomputedScopes?: Map<AstNode, AstNodeDescription[]>
 }
 
 // TODO run scope computation after parsing a new or changed document
+// TODO refactor to a function service?
 export class ScopeComputation {
 
     computeScope(document: LangiumDocument): void {
         const scopes = new Map();
         document.precomputedScopes = scopes;
-        streamAllContents(document.astRoot).forEach(content => {
+        streamAllContents(document.parseResult.value).forEach(content => {
             const { node } = content;
             const container = node.$container;
             if (container) {

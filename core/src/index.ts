@@ -1,5 +1,5 @@
-export * from './bootstrap/linker';
 export * from './dependency-injection';
+export * from './default-module';
 export * from './gen/ast';
 export * from './gen/grammar-access';
 export * from './gen/parser';

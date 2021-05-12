@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-empty-interface */
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
-import { AstNode, Reference } from '../index';
+import { AstNode, AstReflection, Reference } from '../index';
 
 export interface AbstractElement extends AstNode {
     cardinality: '?' | '*' | '+'
@@ -413,7 +413,7 @@ export function isWildcard(item: any): item is Wildcard {
 
 export type AstReference = 'Grammar:usedGrammars' | 'Grammar:hiddenTokens' | 'NamedArgument:parameter' | 'CrossReference:type' | 'RuleCall:rule' | 'ParserRule:hiddenTokens' | 'ParameterReference:parameter' | 'TerminalRuleCall:rule';
 
-export class LangiumAstReflection {
+export class LangiumAstReflection implements AstReflection {
 
     isInstance(node: AstNode, type: string): boolean {
         return this.isSubtype(node.$type, type);
