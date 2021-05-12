@@ -1,7 +1,6 @@
 import { AstNode } from './ast-node';
 import { Stream, StreamImpl, DONE_RESULT, TreeStream, TreeStreamImpl } from '../utils/stream';
-import { LangiumDocument } from '../scoping/scope';
-import { BindingKey } from '../dependency-injection';
+import { LangiumDocument } from '../references/scope';
 
 export function isAstNode(obj: unknown): obj is AstNode {
     return typeof obj === 'object' && typeof (obj as AstNode).$type === 'string';
@@ -56,13 +55,3 @@ export function streamAllContents(node: AstNode): TreeStream<AstNodeContent> {
     const root = { node } as AstNodeContent;
     return new TreeStreamImpl(root, content => streamContents(content.node));
 }
-
-// TODO an implementation of the following service must be generated for the specific AST
-
-export interface AstReflection {
-    getReferenceType(referenceId: string): string
-    isInstance(node: AstNode, type: string): boolean
-    isSubtype(subtype: string, supertype: string): boolean
-}
-
-export const AstReflection: BindingKey<AstReflection> = { id: 'AstReflection' };

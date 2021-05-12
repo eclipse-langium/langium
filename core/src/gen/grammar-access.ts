@@ -1,4 +1,4 @@
-import { Action, Assignment, CrossReference, Keyword, RuleCall, GrammarAccess, retrocycle } from '../index';
+import { Action, Assignment, BindingKey, CrossReference, Keyword, RuleCall, GrammarAccess, retrocycle } from '../index';
 
 export type GrammarRuleAccess = {
     GrammarKeyword: Keyword;
@@ -432,6 +432,8 @@ export type EnumLiteralDeclarationRuleAccess = {
     literal: Assignment;
     literalKeywordRuleCall: RuleCall;
 }
+
+export const GrammarAccessKey: BindingKey<LangiumGrammarAccess> = { id: 'GrammarAccess' };
 
 export class LangiumGrammarAccess extends GrammarAccess {
     Grammar = this.buildAccess<GrammarRuleAccess>('Grammar');

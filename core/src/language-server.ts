@@ -14,10 +14,20 @@ import {
 import * as langium from "./index";
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { contentAssist } from './service/content-assist/content-assist-service';
+import { DIContainer } from './dependency-injection';
+import { LangiumParserKey } from './parser/langium-parser';
+import { GrammarAccessKey } from './gen/grammar-access';
+import { DefaultModule } from './default-module';
+
+const container = new DIContainer();
+container.load(DefaultModule);
+// TODO generate a DI module for these bindings
+container.bindToConstructor(LangiumParserKey, langium.Parser);
+container.bindToConstructor(GrammarAccessKey, langium.LangiumGrammarAccess);
 
 // Create a connection for the server, using Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
-const parser = new langium.Parser(new langium.LangiumGrammarAccess());
+const parser = container.get(LangiumParserKey);
 let connection = createConnection(ProposedFeatures.all);
 
 // Create a simple text document manager.

@@ -10,7 +10,7 @@ export function generateAst(grammar: Grammar, path?: string): string {
         '/* eslint-disable @typescript-eslint/no-explicit-any */', NL,
         '/* eslint-disable @typescript-eslint/no-empty-interface */', NL,
         '/* eslint-disable @typescript-eslint/explicit-module-boundary-types */', NL,
-        'import { AstNode, Reference } from ', langiumPath, ';', NL, NL
+        'import { AstNode, AstReflection, Reference } from ', langiumPath, ';', NL, NL
     );
 
     for (const type of types) {
@@ -32,7 +32,7 @@ function generateAstReflection(grammar: Grammar, interfaces: Interface[]): Gener
     const reflectionNode = new CompositeGeneratorNode();
     const crossReferenceTypes = buildCrossReferenceTypes(interfaces);
     reflectionNode.children.push('export type AstReference = ', crossReferenceTypes.map(e => `'${e.type}:${e.feature}'`).join(' | '), ';', NL, NL);
-    reflectionNode.children.push('export class ', grammar.name, 'AstReflection {', NL, NL);
+    reflectionNode.children.push('export class ', grammar.name, 'AstReflection implements AstReflection {', NL, NL);
 
     const classBodyNode = new IndentNode();
     classBodyNode.children.push('isInstance(node: AstNode, type: string): boolean {', NL);

@@ -26,7 +26,7 @@ export function generateParser(grammar: langium.Grammar, path?: string): string 
         '/* eslint-disable */', NL,
         '// @ts-nocheck', NL,
         "import { createToken, Lexer } from 'chevrotain';", NL,
-        'import { Number, String, LangiumParser } from ', langiumPath, ';', NL,
+        'import { DIService, GrammarAccessKey, LangiumParser, Number, String, ServiceHolder } from ', langiumPath, ';', NL,
         'import { ', grammar.name, "GrammarAccess } from './grammar-access';", NL,
     );
 
@@ -79,20 +79,25 @@ export function generateParser(grammar: langium.Grammar, path?: string): string 
 function buildParser(grammar: langium.Grammar): CompositeGeneratorNode {
     const parserNode = new CompositeGeneratorNode();
 
-    parserNode.children.push('export class Parser extends LangiumParser {', NL);
+    parserNode.children.push('export class Parser extends LangiumParser implements DIService {', NL);
 
     const classBody = new IndentNode();
-    classBody.children.push('grammarAccess: ', grammar.name, 'GrammarAccess;', NL);
-    classBody.children.push('constructor(grammarAccess: ', grammar.name, 'GrammarAccess) {', NL);
+    classBody.children.push('grammarAccess: ', grammar.name, 'GrammarAccess;', NL, NL);
 
+    classBody.children.push('constructor() {', NL);
     const constructorBody = new IndentNode();
     constructorBody.children.push(
         'super(tokens);', NL,
-        'this.grammarAccess = grammarAccess;', NL,
+    );
+    classBody.children.push(constructorBody, '}', NL, NL);
+
+    classBody.children.push('initialize(services: ServiceHolder): void {', NL);
+    const initializeBody = new IndentNode();
+    initializeBody.children.push(
+        'this.grammarAccess = services.get(GrammarAccessKey);', NL,
         'this.performSelfAnalysis();', NL
     );
-
-    classBody.children.push(constructorBody, '}', NL, NL);
+    classBody.children.push(initializeBody, '}', NL, NL);
 
     let first = true;
     for (const rule of grammar.rules.filter(e => langium.isParserRule(e)).map(e => e as langium.ParserRule)) {
@@ -135,7 +140,7 @@ function buildRule(ctx: RuleContext, rule: langium.ParserRule, first: boolean): 
 
     const ruleContent = new IndentNode();
     ruleNode.children.push(ruleContent);
-    ruleContent.children.push('this.initialize(this.grammarAccess.', ctx.name, ');', new NewLineNode(undefined, true));
+    ruleContent.children.push('this.initializeElement(this.grammarAccess.', ctx.name, ');', new NewLineNode(undefined, true));
     ruleContent.children.push(buildElement(ctx, rule.alternatives), new NewLineNode(undefined, true));
     ruleContent.children.push(buildRuleReturnStatement());
     ruleNode.children.push('});', NL, NL);

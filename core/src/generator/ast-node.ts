@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 import { TokenType } from 'chevrotain';
 import { AbstractElement } from '../gen/ast';
+import { BindingKey } from '../dependency-injection';
 
 export interface AstReflection {
     getReferenceType(referenceId: string): string
@@ -202,3 +203,11 @@ export class RootCstNode extends CompositeCstNode {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type RuleResult = (idxInCallingRule?: number, ...args: any[]) => any
+
+export interface AstReflection {
+    getReferenceType(referenceId: string): string
+    isInstance(node: AstNode, type: string): boolean
+    isSubtype(subtype: string, supertype: string): boolean
+}
+
+export const AstReflection: BindingKey<AstReflection> = { id: 'AstReflection' };

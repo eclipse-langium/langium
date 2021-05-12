@@ -1,5 +1,5 @@
 export interface ArrayLikeStream<T> extends Iterable<T> {
-    filter(callback: (element: T) => boolean): Stream<T>
+    filter(predicate: (element: T) => boolean): Stream<T>
     map<T2>(callback: (element: T) => T2): Stream<T2>
     find(predicate: (value: T, index: number) => boolean): T | undefined
     forEach(callback: (element: T, index: number) => void): void
@@ -8,6 +8,8 @@ export interface ArrayLikeStream<T> extends Iterable<T> {
 
 export interface Stream<T> extends ArrayLikeStream<T> {
     iterator(): Iterator<T>
+    filterType<T2 extends T>(predicate: (element: T) => element is T2): Stream<T2>
+    findType<T2 extends T>(predicate: (element: T) => element is T2): T2 | undefined
 }
 
 export class StreamImpl<S, T> implements Stream<T> {
@@ -32,12 +34,50 @@ export class StreamImpl<S, T> implements Stream<T> {
         return this.iterator();
     }
 
-    filter(callback: (element: T) => boolean): Stream<T> {
-        return filterStream(this, callback);
+    filter(predicate: (element: T) => boolean): Stream<T> {
+        return new StreamImpl<S, T>(
+            this.startFn,
+            state => {
+                let result: IteratorResult<T>;
+                do {
+                    result = this.nextFn(state);
+                    if (predicate(result.value)) {
+                        return result;
+                    }
+                } while (!result.done);
+                return DONE_RESULT;
+            }
+        );
+    }
+
+    filterType<T2 extends T>(predicate: (element: T) => element is T2): Stream<T2> {
+        return new StreamImpl<S, T2>(
+            this.startFn,
+            state => {
+                let result: IteratorResult<T>;
+                do {
+                    result = this.nextFn(state);
+                    if (predicate(result.value)) {
+                        return result;
+                    }
+                } while (!result.done);
+                return DONE_RESULT;
+            }
+        );
     }
 
     map<T2>(callback: (element: T) => T2): Stream<T2> {
-        return mapStream(this, callback);
+        return new StreamImpl<S, T2>(
+            this.startFn,
+            (state) => {
+                const { done, value } = this.nextFn(state);
+                if (done) {
+                    return DONE_RESULT;
+                } else {
+                    return { done: false, value: callback(value) };
+                }
+            }
+        );
     }
 
     find<S extends T>(predicate: (value: T, index: number) => value is S): S | undefined {
@@ -50,6 +90,18 @@ export class StreamImpl<S, T> implements Stream<T> {
                 return result.value;
             }
             index++;
+        } while (!result.done);
+        return undefined;
+    }
+
+    findType<T2 extends T>(predicate: (element: T) => element is T2): T2 | undefined {
+        const iterator = this.iterator();
+        let result: IteratorResult<T>;
+        do {
+            result = iterator.next();
+            if (predicate(result.value)) {
+                return result.value;
+            }
         } while (!result.done);
         return undefined;
     }
@@ -105,11 +157,19 @@ export class EmptyStream<T> implements Stream<T> {
         return EMPTY_STREAM;
     }
 
+    filterType<T2 extends T>(): Stream<T2> {
+        return EMPTY_STREAM;
+    }
+
     map<T2>(): Stream<T2> {
         return EMPTY_STREAM;
     }
 
     find(): T | undefined {
+        return undefined;
+    }
+
+    findType<T2 extends T>(): T2 | undefined {
         return undefined;
     }
 
@@ -137,43 +197,21 @@ export function toArray<T>(input: Stream<T>): T[] {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const DONE_RESULT: IteratorResult<any> = Object.freeze({ done: true, value: undefined });
 
-export function filterStream<T>(input: Iterable<T> | ArrayLike<T>, callback: (element: T) => boolean): Stream<T> {
-    return new StreamImpl(
-        () => createIterator(input),
-        (iterator) => {
-            let result: IteratorResult<T>;
-            do {
-                result = iterator.next();
-            } while (!result.done && !callback(result.value));
-            return result;
-        }
-    );
-}
-
-export function mapStream<T1, T2>(input: Iterable<T1> | ArrayLike<T1>, callback: (element: T1) => T2): Stream<T2> {
-    return new StreamImpl(
-        () => createIterator(input),
-        (iterator) => {
-            const { done, value } = iterator.next();
-            if (done) {
-                return DONE_RESULT;
-            } else {
-                return { done: false, value: callback(value) };
+export function stream<T>(collection: Iterable<T> | ArrayLike<T>): Stream<T> {
+    return new StreamImpl<Iterator<T>, T>(
+        () => {
+            const method = (collection as Iterable<T>)[Symbol.iterator];
+            if (typeof method === 'function') {
+                return method.call(collection);
             }
-        }
+            const length = (collection as ArrayLike<T>).length;
+            if (typeof length === 'number' && length >= 0) {
+                return new ArrayIterator(collection as ArrayLike<T>);
+            }
+            return { next: () => DONE_RESULT };
+        },
+        (iterator) => iterator.next()
     );
-}
-
-function createIterator<T>(collection: Iterable<T> | ArrayLike<T>): Iterator<T> {
-    const method = (collection as Iterable<T>)[Symbol.iterator];
-    if (typeof method === 'function') {
-        return method.call(collection);
-    }
-    const length = (collection as ArrayLike<T>).length;
-    if (typeof length === 'number' && length >= 0) {
-        return new ArrayIterator(collection as ArrayLike<T>);
-    }
-    return { next: () => DONE_RESULT };
 }
 
 class ArrayIterator<T> implements IterableIterator<T> {

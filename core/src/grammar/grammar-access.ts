@@ -1,7 +1,7 @@
 import { AbstractRule, Grammar, ParserRule } from '../gen/ast';
 import { findAllFeatures } from '../generator/utils';
 
-export class GrammarAccess {
+export abstract class GrammarAccess {
 
     private grammar: Grammar;
 
