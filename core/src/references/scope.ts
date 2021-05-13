@@ -1,8 +1,9 @@
 import { AstNode, AstReflection } from '../generator/ast-node';
-import { BindingKey, Factory } from '../dependency-injection';
+import { BindingKey, Factory, DIService, ServiceHolder } from '../dependency-injection';
 import { getDocument, streamAllContents } from '../generator/ast-util';
 import { Stream, stream } from '../utils/stream';
 import { ParseResult } from '../parser/langium-parser';
+import { NameProvider } from './naming';
 
 export interface AstNodeDescription {
     name: string // QualifiedName?
@@ -81,8 +82,16 @@ export interface LangiumDocument {
 }
 
 // TODO run scope computation after parsing a new or changed document
-// TODO refactor to a function service?
-export class ScopeComputation {
+
+export const ScopeComputationKey: BindingKey<ScopeComputation> = { id: 'ScopeComputation' };
+
+export class ScopeComputation implements DIService {
+
+    private nameProvider: NameProvider;
+
+    initialize(services: ServiceHolder): void {
+        this.nameProvider = services.get(NameProvider);
+    }
 
     computeScope(document: LangiumDocument): void {
         const scopes = new Map();
@@ -91,7 +100,7 @@ export class ScopeComputation {
             const { node } = content;
             const container = node.$container;
             if (container) {
-                const name = this.getName(node);
+                const name = this.nameProvider(node);
                 if (name) {
                     const description = this.createDescription(node, name, document);
                     if (scopes.has(container)) {
@@ -104,27 +113,12 @@ export class ScopeComputation {
         });
     }
 
-    protected getName(node: AstNode): string | undefined {
-        if (isNamed(node)) {
-            return node.name;
-        }
-        return undefined;
-    }
-
     protected createDescription(node: AstNode, name: string, document: LangiumDocument): AstNodeDescription {
         return {
             name,
-            type: node.$type.toString(), // FIXME
+            type: node.$type,
             documentUri: document.documentUri
         };
     }
 
-}
-
-export interface NamedAstNode extends AstNode {
-    name: string;
-}
-
-export function isNamed(node: AstNode): node is NamedAstNode {
-    return (node as NamedAstNode).name !== undefined;
 }
