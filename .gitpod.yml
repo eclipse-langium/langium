@@ -1,2 +1,2 @@
 tasks:
-  - init: cd core && npm install
+  - init: npm i
