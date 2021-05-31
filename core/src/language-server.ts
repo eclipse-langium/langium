@@ -16,12 +16,14 @@ import { contentAssist } from './service/content-assist/content-assist-service';
 import { DefaultModule } from './default-module';
 import { inject } from './dependency-injection';
 import { LangiumGeneratedModule } from './gen/module';
+import { LangiumDocument } from './references/scope';
+import { AstNode } from './index';
+import { Grammar } from './gen/ast';
 
 const services = inject(DefaultModule, LangiumGeneratedModule);
 
 // Create a connection for the server, using Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
-const parser = services.Parser;
 let connection = createConnection(ProposedFeatures.all);
 
 // Create a simple text document manager.
@@ -134,10 +136,24 @@ connection.onCompletion(
         const uri = _textDocumentPosition.textDocument.uri;
         const document = documents.get(uri);
         if (document) {
+            const doc: LangiumDocument = {
+                documentUri: uri,
+                parseResult: {
+                    lexerErrors: [],
+                    parserErrors: [],
+                    value: <AstNode><unknown>{}
+                }
+            }
             const text = document.getText({ start: document.positionAt(0), end: _textDocumentPosition.position });
             const offset = document.offsetAt(_textDocumentPosition.position);
-            const assistResult = parser.parse(text).value;
-            const assist = contentAssist(parser.grammarAccess['grammar'], assistResult, offset);
+            const parser = services.Parser;
+            doc.parseResult = parser.parse(doc, text);
+            const assist = contentAssist(parser.grammarAccess['grammar'], doc.parseResult.value, offset);
+            const computer = services.references.ScopeComputation;
+            computer.computeScope(doc);
+            const grammar = <Grammar>doc.parseResult.value;
+            const hiddenToken = grammar.hiddenTokens[0].value;
+            hiddenToken!.toString();
             return Array.from(new Set<string>(assist))
                 .map(e => buildCompletionItem(document, offset, text, e));
         } else {

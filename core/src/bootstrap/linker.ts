@@ -72,5 +72,5 @@ function findRule(grammar: ast.Grammar, name: string): Reference<ast.AbstractRul
     if (!rule) {
         throw new Error('Could not find rule ' + name);
     }
-    return { value: rule, uri: '' };
+    return { value: rule, text: '' };
 }

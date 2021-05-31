@@ -10,6 +10,7 @@ export interface Stream<T> extends ArrayLikeStream<T> {
     iterator(): Iterator<T>
     filterType<T2 extends T>(predicate: (element: T) => element is T2): Stream<T2>
     findType<T2 extends T>(predicate: (element: T) => element is T2): T2 | undefined
+    head(): T | undefined
 }
 
 export class StreamImpl<S, T> implements Stream<T> {
@@ -106,6 +107,15 @@ export class StreamImpl<S, T> implements Stream<T> {
         return undefined;
     }
 
+    head(): T | undefined {
+        const iterator = this.iterator();
+        const result = iterator.next();
+        if (result.done) {
+            return undefined;
+        }
+        return result.value;
+    }
+
     forEach(callback: (element: T, index: number) => void): void {
         const iterator = this.iterator();
         let index = 0;
@@ -170,6 +180,10 @@ export class EmptyStream<T> implements Stream<T> {
     }
 
     findType<T2 extends T>(): T2 | undefined {
+        return undefined;
+    }
+
+    head(): T | undefined {
         return undefined;
     }
 

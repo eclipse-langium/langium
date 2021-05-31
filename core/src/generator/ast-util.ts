@@ -10,7 +10,7 @@ export function isAstNode(obj: unknown): obj is AstNode {
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function getDocument(node: AstNode): LangiumDocument {
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    return null!;
+    return node.$document!;
 }
 
 export interface AstNodeContent {

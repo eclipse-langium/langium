@@ -1,5 +1,6 @@
 import { Module } from './dependency-injection';
 import { LangiumServices } from './services';
+import { DefaultLinker } from './references/linker';
 import { DefaultScopeProvider, ScopeComputation } from './references/scope';
 import { DefaultNameProvider } from './references/naming';
 
@@ -15,6 +16,7 @@ export const DefaultModule: Module<LangiumServices> = {
     },
 
     references: {
+        Linker: (injector) => new DefaultLinker(injector),
         NameProvider: () => new DefaultNameProvider(),
         ScopeProvider: (injector) => new DefaultScopeProvider(injector),
         ScopeComputation: (injector) => new ScopeComputation(injector)

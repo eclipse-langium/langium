@@ -1,10 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { EmbeddedActionsParser, ILexingError, IRecognitionException, IRuleConfig, Lexer, TokenType } from 'chevrotain';
 import { AbstractElement, Action, Assignment, isAssignment, isCrossReference, reflection } from '../gen/ast';
-import { AstNode, Number, RuleResult, String } from '../generator/ast-node';
+import { AstNode, Number, Reference, RuleResult, String } from '../generator/ast-node';
 import { isArrayOperator } from '../generator/utils';
 import { CstNodeBuilder } from './cst-node-builder';
 import { GrammarAccess } from '../grammar/grammar-access';
+import { Linker } from '../references/linker';
+import { LangiumDocument } from '../references/scope';
+import { LangiumServices } from '../services';
 
 type StackItem = {
     object: any,
@@ -18,20 +21,25 @@ export type ParseResult<T> = {
 }
 
 export class LangiumParser extends EmbeddedActionsParser {
-    grammarAccess: GrammarAccess;
+    readonly grammarAccess: GrammarAccess;
 
+    private readonly linker: Linker;
+    private readonly lexer: Lexer;
     private stack: StackItem[] = [];
     private nodeBuilder = new CstNodeBuilder();
     private mainRule!: RuleResult;
-    private lexer: Lexer;
+    private document: LangiumDocument;
 
     private get current(): StackItem {
         return this.stack[this.stack.length - 1];
     }
 
-    constructor(tokens: TokenType[]) {
+    constructor(tokens: TokenType[], services: LangiumServices) {
         super(tokens, { recoveryEnabled: true, nodeLocationTracking: 'onlyOffset' });
+        this.grammarAccess = services.GrammarAccess;
+        this.linker = services.references.Linker;
         this.lexer = new Lexer(tokens);
+        this.performSelfAnalysis();
     }
 
     MAIN_RULE(
@@ -52,7 +60,8 @@ export class LangiumParser extends EmbeddedActionsParser {
         return super.RULE(name, this.startImplementation(type, implementation), config);
     }
 
-    parse<T extends AstNode>(input: string): ParseResult<T> {
+    parse<T extends AstNode>(document: LangiumDocument, input: string): ParseResult<T> {
+        this.document = document;
         this.nodeBuilder.buildRootNode(input);
         const lexerResult = this.lexer.tokenize(input);
         this.input = lexerResult.tokens;
@@ -68,7 +77,7 @@ export class LangiumParser extends EmbeddedActionsParser {
         return (implArgs: unknown[]) => {
             if (!this.RECORDING_PHASE) {
                 this.stack.push({
-                    object: { $type },
+                    object: { $type, $document: this.document },
                     executedAction: false
                 });
             }
@@ -91,8 +100,12 @@ export class LangiumParser extends EmbeddedActionsParser {
         if (!this.RECORDING_PHASE) {
             this.nodeBuilder.buildLeafNode(token, feature);
             const assignment = <Assignment>AstNode.getContainer(feature, reflection, Assignment);
-            if (assignment && !isCrossReference(assignment.terminal)) {
-                this.assign(assignment, token.image);
+            if (assignment) {
+                let crossRefId: string | undefined;
+                if (isCrossReference(assignment.terminal)) {
+                    crossRefId = `${this.current.object.$type}:${assignment.feature}`;
+                }
+                this.assign(assignment, token.image, crossRefId);
             }
         }
     }
@@ -129,7 +142,7 @@ export class LangiumParser extends EmbeddedActionsParser {
         if (!this.RECORDING_PHASE && !this.current.executedAction) {
             const last = this.current;
             const newItem: StackItem = {
-                object: { $type },
+                object: { $type, $document: this.document },
                 executedAction: true
             };
             this.stack.pop();
@@ -190,12 +203,13 @@ export class LangiumParser extends EmbeddedActionsParser {
         return obj;
     }
 
-    private assign(assignment: { operator: string, feature: string }, value: unknown): void {
+    private assign(assignment: { operator: string, feature: string }, value: unknown, crossRefId?: string): void {
         const obj = this.current.object;
         const feature = assignment.feature.replace(/\^/g, '');
+        const item = crossRefId && typeof value === 'string' ? this.buildReference(obj, value, crossRefId) : value;
         switch (assignment.operator) {
             case '=': {
-                obj[feature] = value;
+                obj[feature] = item;
                 break;
             }
             case '?=': {
@@ -206,8 +220,18 @@ export class LangiumParser extends EmbeddedActionsParser {
                 if (!Array.isArray(obj[feature])) {
                     obj[feature] = [];
                 }
-                obj[feature].push(value);
+                obj[feature].push(item);
             }
         }
+    }
+
+    private buildReference(node: AstNode, text: string, crossRefId: string): Reference {
+        const link = this.linker.link;
+        return {
+            text,
+            get value() {
+                return link(node, text, crossRefId);
+            }
+        };
     }
 }
