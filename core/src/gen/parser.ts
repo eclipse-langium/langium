@@ -95,9 +95,7 @@ export class Parser extends LangiumParser {
     readonly grammarAccess: LangiumGrammarAccess;
 
     constructor(services: LangiumServices) {
-        super(tokens);
-        this.grammarAccess = services.GrammarAccess;
-        this.performSelfAnalysis();
+        super(tokens, services);
     }
 
     Grammar = this.MAIN_RULE("Grammar", Grammar, () => {

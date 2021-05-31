@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 import { TokenType } from 'chevrotain';
 import { AbstractElement } from '../gen/ast';
+import { LangiumDocument } from '../references/scope';
 
 export interface AstReflection {
     getReferenceType(referenceId: string): string
@@ -28,7 +29,8 @@ export namespace AstNode {
 export interface AstNode {
     readonly $type: string,
     readonly $container?: AstNode,
-    readonly $cstNode?: CstNode
+    readonly $cstNode?: CstNode,
+    readonly $document?: LangiumDocument
 }
 
 // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -49,9 +51,9 @@ export namespace Number {
     }
 }
 
-export interface Reference<T extends AstNode> {
+export interface Reference<T extends AstNode = AstNode> {
     readonly value?: T;
-    readonly uri: string;
+    readonly text: string;
 }
 
 export interface CstNode {
