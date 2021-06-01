@@ -1,4 +1,4 @@
-import { AstNode, Type } from '../generator/ast-node';
+import { AstNode } from '../generator/ast-node';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Validation = (node: any, validationAcceptor: ValidationAcceptor) => void;
@@ -54,10 +54,10 @@ interface ValidatorWithAstNode {
 
 export class Validator {
 
-    private readonly validationMap = new Map<Type, Validation[]>();
+    private readonly validationMap = new Map<string, Validation[]>();
 
-    register(type: Type | Type[], ...methods: Validation[]): void {
-        let types: Type[];
+    register(type: string | string[], ...methods: Validation[]): void {
+        let types: string[];
         if (Array.isArray(type)) {
             types = type;
         } else {

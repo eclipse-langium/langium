@@ -20,11 +20,12 @@ import { inject } from './dependency-injection';
 import { LangiumGeneratedModule } from './gen/module';
 import { ValidationItem } from './validation/validator';
 import { findNodeForFeature } from './grammar/grammar-utils';
+import { LangiumValidator } from '.';
 
 const services = inject(DefaultModule, LangiumGeneratedModule);
 const parser = services.Parser;
 const computer = services.references.ScopeComputation;
-const validator = new langium.LangiumValidator();
+const validator = new LangiumValidator();
 
 // Create a connection for the server, using Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
