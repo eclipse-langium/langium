@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import * as ast from '../gen/ast';
-import { CompositeCstNode, CstNode, ILeafCstNode, LeafCstNode } from '../generator/ast-node';
+import { AstNode, CompositeCstNode, CstNode, ILeafCstNode, LeafCstNode } from '../generator/ast-node';
 import { isDataTypeRule } from '../generator/utils';
 
 export function serialize(grammar: ast.Grammar): string {
@@ -53,7 +53,7 @@ function findNodesForFeatureInternal(node: CstNode | undefined, feature: string 
     if (!node || !feature || node.element !== element) {
         return [];
     }
-    const nodeFeature = <Assignment>AstNode.getContainer(node.feature, Assignment.type);
+    const nodeFeature = <ast.Assignment>AstNode.getContainer(node.feature, ast.reflection, ast.Assignment);
     if (!first && nodeFeature && nodeFeature.feature === feature) {
         return [node];
     } else if (node instanceof CompositeCstNode) {

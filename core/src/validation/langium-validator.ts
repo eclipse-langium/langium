@@ -5,7 +5,7 @@ export class LangiumValidator extends Validator {
 
     constructor() {
         super();
-        this.register(Grammar.type, this.validateName);
+        this.register(Grammar, this.validateName);
     }
 
     validateName(grammar: Grammar, acceptor: ValidationAcceptor): void {
