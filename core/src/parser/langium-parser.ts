@@ -4,7 +4,6 @@ import { AbstractElement, Action, Assignment, isAssignment, isCrossReference, re
 import { AstNode, Number, RuleResult, String } from '../generator/ast-node';
 import { isArrayOperator } from '../generator/utils';
 import { CstNodeBuilder } from './cst-node-builder';
-import { BindingKey } from '../dependency-injection';
 import { GrammarAccess } from '../grammar/grammar-access';
 
 type StackItem = {
@@ -17,8 +16,6 @@ export type ParseResult<T> = {
     parserErrors: IRecognitionException[],
     lexerErrors: ILexingError[]
 }
-
-export const LangiumParserKey: BindingKey<LangiumParser> = { id: 'LangiumParser' };
 
 export class LangiumParser extends EmbeddedActionsParser {
     grammarAccess: GrammarAccess;

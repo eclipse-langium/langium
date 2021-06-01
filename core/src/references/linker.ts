@@ -1,20 +1,25 @@
+import { LangiumServices } from '../services';
 import { AstNode, Reference } from '../generator/ast-node';
-import { BindingKey, Factory, ServiceHolder } from '../dependency-injection';
 import { ScopeProvider } from './scope';
 
-export type Linker = (node: AstNode, reference: Reference<AstNode>, referenceId: string) => void;
+export interface Linker {
+    link(node: AstNode, reference: Reference<AstNode>, referenceId: string): void;
+}
 
-export const Linker: BindingKey<Linker> = { id: 'Linker' };
+export class DefaultLinker implements Linker {
+    protected readonly scopeProvider: ScopeProvider;
 
-export const DefaultLinker: Factory<Linker> = () => {
-    return function(this: ServiceHolder, node: AstNode, reference: Reference<AstNode>, referenceId: string) {
-        const scopeProvider = this.get(ScopeProvider);
+    constructor(services: LangiumServices) {
+        this.scopeProvider = services.references.ScopeProvider;
+    }
+
+    link(node: AstNode, reference: Reference<AstNode>, referenceId: string): void {
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore next-line
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const scope = scopeProvider(node, referenceId);
+        const scope = this.scopeProvider.getScope(node, referenceId);
         // TODO implement linker (see DefaultLinkingService in Xtext)
-    };
-};
+    }
+}
 
 // TODO inject the linker in the generated parser and use it to lazily link references

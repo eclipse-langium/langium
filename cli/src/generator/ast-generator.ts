@@ -1,17 +1,21 @@
 import { GeneratorNode, Grammar, IndentNode, CompositeGeneratorNode, NL, process } from 'langium';
+import { LangiumConfig } from '../package';
 import { collectAst, Interface } from './type-collector';
 
-export function generateAst(grammar: Grammar, path?: string): string {
+export function generateAst(grammar: Grammar, config: LangiumConfig): string {
     const types = collectAst(grammar);
-    const langiumPath = "'" + (path ?? 'langium') + "'";
     const fileNode = new CompositeGeneratorNode();
     fileNode.children.push(
         '/* eslint-disable @typescript-eslint/array-type */', NL,
         '/* eslint-disable @typescript-eslint/no-explicit-any */', NL,
         '/* eslint-disable @typescript-eslint/no-empty-interface */', NL,
-        '/* eslint-disable @typescript-eslint/explicit-module-boundary-types */', NL,
-        'import { AstNode, AstReflection, Reference } from ', langiumPath, ';', NL, NL
+        '/* eslint-disable @typescript-eslint/explicit-module-boundary-types */', NL
     );
+    if (config.langiumInternal) {
+        fileNode.children.push("import { AstNode, AstReflection, Reference } from '../generator/ast-node';", NL, NL);
+    } else {
+        fileNode.children.push("import { AstNode, AstReflection, Reference } from 'langium';", NL, NL);
+    }
 
     for (const type of types) {
         fileNode.children.push(type.toString(), NL);

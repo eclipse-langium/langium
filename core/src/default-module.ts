@@ -1,9 +1,22 @@
-import { DIModule } from './dependency-injection';
-import { ScopeProvider, DefaultScopeProvider, ScopeComputationKey, ScopeComputation } from './references/scope';
-import { NameProvider, DefaultNameProvider } from './references/naming';
+import { Module } from './dependency-injection';
+import { LangiumServices } from './services';
+import { DefaultScopeProvider, ScopeComputation } from './references/scope';
+import { DefaultNameProvider } from './references/naming';
 
-export const DefaultModule: DIModule = container => {
-    container.bindToFactory(NameProvider, DefaultNameProvider);
-    container.bindToFactory(ScopeProvider, DefaultScopeProvider);
-    container.bindToConstructor(ScopeComputationKey, ScopeComputation);
+export const DefaultModule: Module<LangiumServices> = {
+    Parser: () => {
+        throw new Error('Not implemented'); // TODO more helpful error message
+    },
+    GrammarAccess: () => {
+        throw new Error('Not implemented'); // TODO more helpful error message
+    },
+    AstReflection: () => {
+        throw new Error('Not implemented'); // TODO more helpful error message
+    },
+
+    references: {
+        NameProvider: () => new DefaultNameProvider(),
+        ScopeProvider: (injector) => new DefaultScopeProvider(injector),
+        ScopeComputation: (injector) => new ScopeComputation(injector)
+    }
 };

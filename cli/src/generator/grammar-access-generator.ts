@@ -1,20 +1,21 @@
 import * as langium from 'langium';
-import { AstNode } from 'langium';
-import { CompositeGeneratorNode, GeneratorNode, IndentNode, NL } from 'langium';
-import { process } from 'langium';
-import { findAllFeatures } from 'langium';
+import { AstNode, CompositeGeneratorNode, GeneratorNode, IndentNode, NL, process, findAllFeatures } from 'langium';
+import { LangiumConfig } from '../package';
 
-export function generateGrammarAccess(grammar: langium.Grammar, path?: string, bootstrap = false): string {
+export function generateGrammarAccess(grammar: langium.Grammar, config: LangiumConfig, bootstrap?: boolean): string {
     const node = new CompositeGeneratorNode();
 
-    const langiumPath = "'" + (path ?? 'langium') + "';";
-    node.children.push('import { Action, Assignment, BindingKey, CrossReference, Keyword, RuleCall, GrammarAccess, retrocycle } from ', langiumPath, NL, NL);
+    if (config.langiumInternal) {
+        node.children.push("import { GrammarAccess } from '../grammar/grammar-access';", NL);
+        node.children.push("import { retrocycle } from '../grammar/grammar-utils';", NL);
+    } else {
+        node.children.push("import { GrammarAccess, retrocycle } from 'langium';", NL);
+    }
+    node.children.push("import { Action, Assignment, CrossReference, Keyword, RuleCall } from './ast';", NL, NL);
 
     for (const rule of grammar.rules.filter(e => langium.isParserRule(e)).map(e => e as langium.ParserRule)) {
         node.children.push(generateRuleAccess(rule), NL, NL);
     }
-
-    node.children.push("export const GrammarAccessKey: BindingKey<LangiumGrammarAccess> = { id: 'GrammarAccess' };", NL, NL);
 
     node.children.push('export class ', grammar.name + 'GrammarAccess extends GrammarAccess {', NL);
 
@@ -31,7 +32,7 @@ export function generateGrammarAccess(grammar: langium.Grammar, path?: string, b
     const constructorNode = new IndentNode();
     constructorNode.children.push('// eslint-disable-next-line @typescript-eslint/no-var-requires', NL, "super(retrocycle(require('./grammar.json')));");
     content.children.push(NL, 'constructor() {', NL, constructorNode, NL, '}', NL);
-    node.children.push(content, '}');
+    node.children.push(content, '}', NL);
 
     return process(node);
 }
