@@ -1,11 +1,9 @@
 import * as langium from 'langium';
 import { getTypeName } from 'langium';
-import { AstNode } from 'langium';
-import { CompositeGeneratorNode, GeneratorNode, IndentNode, NewLineNode, NL } from 'langium';
-import { process } from 'langium';
-import { replaceTokens } from 'langium';
+import { AstNode, CompositeGeneratorNode, GeneratorNode, IndentNode, NewLineNode, NL, process, replaceTokens } from 'langium';
 import { collectAst } from './type-collector';
 import { Cardinality, findAllFeatures, isArray, isDataTypeRule, isOptional } from 'langium';
+import { LangiumConfig } from '../package';
 
 type RuleContext = {
     name: string,
@@ -17,18 +15,23 @@ type RuleContext = {
     featureMap: Map<langium.AbstractElement, string>
 }
 
-export function generateParser(grammar: langium.Grammar, path?: string): string {
+export function generateParser(grammar: langium.Grammar, config: LangiumConfig): string {
     const keywords = collectKeywords(grammar);
-    const langiumPath = "'" + (path ?? 'langium') + "'";
 
     const fileNode = new CompositeGeneratorNode();
     fileNode.children.push(
         '/* eslint-disable */', NL,
         '// @ts-nocheck', NL,
-        "import { createToken, Lexer } from 'chevrotain';", NL,
-        'import { DIService, GrammarAccessKey, LangiumParser, Number, String, ServiceHolder } from ', langiumPath, ';', NL,
-        'import { ', grammar.name, "GrammarAccess } from './grammar-access';", NL,
+        "import { createToken, Lexer } from 'chevrotain';", NL
     );
+    if (config.langiumInternal) {
+        fileNode.children.push("import { LangiumServices } from '../services';", NL);
+        fileNode.children.push("import { LangiumParser } from '../parser/langium-parser';", NL);
+        fileNode.children.push("import { Number, String } from '../generator/ast-node';", NL);
+    } else {
+        fileNode.children.push("import { LangiumParser, LangiumServices, Number, String } from 'langium';", NL);
+    }
+    fileNode.children.push('import { ', grammar.name, "GrammarAccess } from './grammar-access';", NL);
 
     fileNode.children.push('import {');
     const types = collectAst(grammar);
@@ -79,25 +82,19 @@ export function generateParser(grammar: langium.Grammar, path?: string): string 
 function buildParser(grammar: langium.Grammar): CompositeGeneratorNode {
     const parserNode = new CompositeGeneratorNode();
 
-    parserNode.children.push('export class Parser extends LangiumParser implements DIService {', NL);
+    parserNode.children.push('export class Parser extends LangiumParser {', NL);
 
     const classBody = new IndentNode();
-    classBody.children.push('grammarAccess: ', grammar.name, 'GrammarAccess;', NL, NL);
+    classBody.children.push('readonly grammarAccess: ', grammar.name, 'GrammarAccess;', NL, NL);
 
-    classBody.children.push('constructor() {', NL);
+    classBody.children.push('constructor(services: LangiumServices) {', NL);
     const constructorBody = new IndentNode();
     constructorBody.children.push(
         'super(tokens);', NL,
-    );
-    classBody.children.push(constructorBody, '}', NL, NL);
-
-    classBody.children.push('initialize(services: ServiceHolder): void {', NL);
-    const initializeBody = new IndentNode();
-    initializeBody.children.push(
-        'this.grammarAccess = services.get(GrammarAccessKey);', NL,
+        'this.grammarAccess = services.GrammarAccess;', NL,
         'this.performSelfAnalysis();', NL
     );
-    classBody.children.push(initializeBody, '}', NL, NL);
+    classBody.children.push(constructorBody, '}', NL, NL);
 
     let first = true;
     for (const rule of grammar.rules.filter(e => langium.isParserRule(e)).map(e => e as langium.ParserRule)) {

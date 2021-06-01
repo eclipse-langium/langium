@@ -1,9 +1,9 @@
 import { AstNode, AstReflection } from '../generator/ast-node';
-import { BindingKey, Factory, DIService, ServiceHolder } from '../dependency-injection';
 import { getDocument, streamAllContents } from '../generator/ast-util';
 import { Stream, stream } from '../utils/stream';
 import { ParseResult } from '../parser/langium-parser';
 import { NameProvider } from './naming';
+import { LangiumServices } from '../services';
 
 export interface AstNodeDescription {
     name: string // QualifiedName?
@@ -42,18 +42,23 @@ export const EMPTY_SCOPE: Scope = {
     }
 };
 
-export type ScopeProvider = (node: AstNode, referenceId: string) => Scope
+export interface ScopeProvider {
+    getScope(node: AstNode, referenceId: string): Scope;
+}
 
-export const ScopeProvider: BindingKey<ScopeProvider> = { id: 'ScopeProvider' };
+export class DefaultScopeProvider implements ScopeProvider {
+    protected readonly reflection: AstReflection;
 
-export const DefaultScopeProvider: Factory<ScopeProvider> = services => {
-    const reflection = services.get(AstReflection);
-    return function(node: AstNode, referenceId: string) {
+    constructor(services: LangiumServices) {
+        this.reflection = services.AstReflection;
+    }
+
+    getScope(node: AstNode, referenceId: string): Scope {
         const precomputed = getDocument(node).precomputedScopes;
         if (!precomputed) {
             return EMPTY_SCOPE;
         }
-        const referenceType = reflection.getReferenceType(referenceId);
+        const referenceType = this.reflection.getReferenceType(referenceId);
 
         let currentNode: AstNode | undefined = node;
         const scopes: Array<Stream<AstNodeDescription>> = [];
@@ -61,7 +66,7 @@ export const DefaultScopeProvider: Factory<ScopeProvider> = services => {
             const allDescriptions = precomputed.get(currentNode);
             if (allDescriptions) {
                 scopes.push(stream(allDescriptions).filter(
-                    desc => reflection.isSubtype(desc.type, referenceType)));
+                    desc => this.reflection.isSubtype(desc.type, referenceType)));
             }
             currentNode = currentNode.$container;
         } while (currentNode);
@@ -72,8 +77,8 @@ export const DefaultScopeProvider: Factory<ScopeProvider> = services => {
             result = new SimpleScope(scopes[i], result);
         }
         return result;
-    };
-};
+    }
+}
 
 export interface LangiumDocument {
     documentUri: string // DocumentUri?
@@ -83,14 +88,11 @@ export interface LangiumDocument {
 
 // TODO run scope computation after parsing a new or changed document
 
-export const ScopeComputationKey: BindingKey<ScopeComputation> = { id: 'ScopeComputation' };
+export class ScopeComputation {
+    protected readonly nameProvider: NameProvider;
 
-export class ScopeComputation implements DIService {
-
-    private nameProvider: NameProvider;
-
-    initialize(services: ServiceHolder): void {
-        this.nameProvider = services.get(NameProvider);
+    constructor(services: LangiumServices) {
+        this.nameProvider = services.references.NameProvider;
     }
 
     computeScope(document: LangiumDocument): void {
@@ -100,7 +102,7 @@ export class ScopeComputation implements DIService {
             const { node } = content;
             const container = node.$container;
             if (container) {
-                const name = this.nameProvider(node);
+                const name = this.nameProvider.getName(node);
                 if (name) {
                     const description = this.createDescription(node, name, document);
                     if (scopes.has(container)) {

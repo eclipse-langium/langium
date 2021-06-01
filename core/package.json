@@ -18,7 +18,7 @@
   "langium": {
     "grammar": "./langium.lg",
     "extension": ".lg",
-    "path": "../index"
+    "langiumInternal": true
   },
   "dependencies": {
     "chevrotain": "^7.1.2",

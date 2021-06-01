@@ -9,6 +9,7 @@ export interface LangiumConfig {
     grammar?: string,
     extension?: string,
     name?: string,
-    path?: string,
-    out?: string
+    out?: string,
+    // The following option is meant to be used only by Langium itself
+    langiumInternal?: boolean
 }

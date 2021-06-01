@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 import { TokenType } from 'chevrotain';
 import { AbstractElement } from '../gen/ast';
-import { BindingKey } from '../dependency-injection';
 
 export interface AstReflection {
     getReferenceType(referenceId: string): string
@@ -209,5 +208,3 @@ export interface AstReflection {
     isInstance(node: AstNode, type: string): boolean
     isSubtype(subtype: string, supertype: string): boolean
 }
-
-export const AstReflection: BindingKey<AstReflection> = { id: 'AstReflection' };
