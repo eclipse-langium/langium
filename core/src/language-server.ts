@@ -16,9 +16,6 @@ import { contentAssist } from './service/content-assist/content-assist-service';
 import { DefaultModule } from './default-module';
 import { inject } from './dependency-injection';
 import { LangiumGeneratedModule } from './gen/module';
-import { LangiumDocument } from './references/scope';
-import { AstNode } from './index';
-import { Grammar } from './gen/ast';
 
 const services = inject(DefaultModule, LangiumGeneratedModule);
 
@@ -136,24 +133,13 @@ connection.onCompletion(
         const uri = _textDocumentPosition.textDocument.uri;
         const document = documents.get(uri);
         if (document) {
-            const doc: LangiumDocument = {
-                documentUri: uri,
-                parseResult: {
-                    lexerErrors: [],
-                    parserErrors: [],
-                    value: <AstNode><unknown>{}
-                }
-            }
             const text = document.getText({ start: document.positionAt(0), end: _textDocumentPosition.position });
             const offset = document.offsetAt(_textDocumentPosition.position);
             const parser = services.Parser;
-            doc.parseResult = parser.parse(doc, text);
-            const assist = contentAssist(parser.grammarAccess['grammar'], doc.parseResult.value, offset);
+            const langiumDoc = parser.parse(text, uri);
             const computer = services.references.ScopeComputation;
-            computer.computeScope(doc);
-            const grammar = <Grammar>doc.parseResult.value;
-            const hiddenToken = grammar.hiddenTokens[0].value;
-            hiddenToken!.toString();
+            computer.computeScope(langiumDoc);
+            const assist = contentAssist(parser.grammarAccess['grammar'], langiumDoc.parseResult.value, offset);
             return Array.from(new Set<string>(assist))
                 .map(e => buildCompletionItem(document, offset, text, e));
         } else {

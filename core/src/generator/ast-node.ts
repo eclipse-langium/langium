@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 import { TokenType } from 'chevrotain';
+import { LangiumDocument } from '../documents/document';
 import { AbstractElement } from '../gen/ast';
-import { LangiumDocument } from '../references/scope';
 
 export interface AstReflection {
     getReferenceType(referenceId: string): string
@@ -53,7 +53,7 @@ export namespace Number {
 
 export interface Reference<T extends AstNode = AstNode> {
     readonly value?: T;
-    readonly text: string;
+    readonly $refName: string;
 }
 
 export interface CstNode {

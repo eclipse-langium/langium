@@ -8,10 +8,9 @@
 			"name": "Bootstrap",
 			"request": "launch",
 			"runtimeArgs": [
-				"run",
-				"bootstrap",
+				"../cli/lib/langium",
 			],
-			"runtimeExecutable": "npm",
+			"runtimeExecutable": "node",
 			"cwd": "${workspaceFolder}/core",
 			"skipFiles": [
 				"<node_internals>/**"

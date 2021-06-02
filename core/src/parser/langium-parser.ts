@@ -1,12 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { EmbeddedActionsParser, ILexingError, IRecognitionException, IRuleConfig, Lexer, TokenType } from 'chevrotain';
 import { AbstractElement, Action, Assignment, isAssignment, isCrossReference, reflection } from '../gen/ast';
+import { LangiumDocument } from '../documents/document';
 import { AstNode, Number, Reference, RuleResult, String } from '../generator/ast-node';
 import { isArrayOperator } from '../generator/utils';
 import { CstNodeBuilder } from './cst-node-builder';
 import { GrammarAccess } from '../grammar/grammar-access';
 import { Linker } from '../references/linker';
-import { LangiumDocument } from '../references/scope';
 import { LangiumServices } from '../services';
 
 type StackItem = {
@@ -25,10 +25,9 @@ export class LangiumParser extends EmbeddedActionsParser {
 
     private readonly linker: Linker;
     private readonly lexer: Lexer;
+    private readonly nodeBuilder = new CstNodeBuilder();
     private stack: StackItem[] = [];
-    private nodeBuilder = new CstNodeBuilder();
     private mainRule!: RuleResult;
-    private document: LangiumDocument;
 
     private get current(): StackItem {
         return this.stack[this.stack.length - 1];
@@ -39,7 +38,6 @@ export class LangiumParser extends EmbeddedActionsParser {
         this.grammarAccess = services.GrammarAccess;
         this.linker = services.references.Linker;
         this.lexer = new Lexer(tokens);
-        this.performSelfAnalysis();
     }
 
     MAIN_RULE(
@@ -60,24 +58,28 @@ export class LangiumParser extends EmbeddedActionsParser {
         return super.RULE(name, this.startImplementation(type, implementation), config);
     }
 
-    parse<T extends AstNode>(document: LangiumDocument, input: string): ParseResult<T> {
-        this.document = document;
+    parse(input: string, documentUri: string): LangiumDocument {
         this.nodeBuilder.buildRootNode(input);
         const lexerResult = this.lexer.tokenize(input);
         this.input = lexerResult.tokens;
         const result = this.mainRule();
-        return {
-            value: <T>result,
-            lexerErrors: lexerResult.errors,
-            parserErrors: this.errors
+        const document: LangiumDocument = {
+            parseResult: {
+                value: result,
+                lexerErrors: lexerResult.errors,
+                parserErrors: this.errors
+            },
+            documentUri
         };
+        result.$document = document;
+        return document;
     }
 
     private startImplementation($type: string | undefined, implementation: (...implArgs: unknown[]) => unknown): (implArgs: unknown[]) => unknown {
         return (implArgs: unknown[]) => {
             if (!this.RECORDING_PHASE) {
                 this.stack.push({
-                    object: { $type, $document: this.document },
+                    object: { $type },
                     executedAction: false
                 });
             }
@@ -142,7 +144,7 @@ export class LangiumParser extends EmbeddedActionsParser {
         if (!this.RECORDING_PHASE && !this.current.executedAction) {
             const last = this.current;
             const newItem: StackItem = {
-                object: { $type, $document: this.document },
+                object: { $type },
                 executedAction: true
             };
             this.stack.pop();
@@ -226,12 +228,17 @@ export class LangiumParser extends EmbeddedActionsParser {
     }
 
     private buildReference(node: AstNode, text: string, crossRefId: string): Reference {
-        const link = this.linker.link;
-        return {
-            text,
+        const link = this.linker.link.bind(this.linker);
+        const reference: Reference & { _ref?: AstNode } = {
+            $refName: text,
             get value() {
-                return link(node, text, crossRefId);
+                if (reference._ref === undefined) {
+                    // TODO handle linking errors
+                    reference._ref = link(node, text, crossRefId);
+                }
+                return reference._ref;
             }
         };
+        return reference;
     }
 }
