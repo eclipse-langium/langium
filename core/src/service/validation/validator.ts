@@ -1,54 +1,48 @@
-import { AstNode } from '../generator/ast-node';
+import { AstNode } from '../../generator/ast-node';
+import { DiagnosticSeverity } from 'vscode-languageserver/node';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Validation = (node: any, validationAcceptor: ValidationAcceptor) => void;
 
-export interface ValidationItem {
-    item: AstNode,
+export interface LangiumDiagnostic {
+    node: AstNode,
     feature?: string,
     index?: number,
-    severity: ValidationSeverity,
+    severity: DiagnosticSeverity,
     message: string,
     code?: number | string
-}
-
-export enum ValidationSeverity {
-    Error = 1,
-    Warning = 2,
-    Information = 3,
-    Hint = 4
 }
 
 export class ValidationAcceptor {
 
     protected currentNode!: AstNode;
-    protected validationItems: ValidationItem[] = [];
+    protected validationItems: LangiumDiagnostic[] = [];
 
     error(message: string, feature?: string, item?: AstNode, code?: number | string, index?: number): void {
-        this.addValidation(item, message, ValidationSeverity.Error, feature, code, index);
+        this.addValidation(item, message, DiagnosticSeverity.Error, feature, code, index);
     }
 
     warning(message: string, feature?: string, item?: AstNode, code?: number | string, index?: number): void {
-        this.addValidation(item, message, ValidationSeverity.Warning, feature, code, index);
+        this.addValidation(item, message, DiagnosticSeverity.Warning, feature, code, index);
     }
 
     information(message: string, feature?: string, item?: AstNode, code?: number | string, index?: number): void {
-        this.addValidation(item, message, ValidationSeverity.Information, feature, code, index);
+        this.addValidation(item, message, DiagnosticSeverity.Information, feature, code, index);
     }
 
     hint(message: string, feature?: string, item?: AstNode, code?: number | string, index?: number): void {
-        this.addValidation(item, message, ValidationSeverity.Hint, feature, code, index);
+        this.addValidation(item, message, DiagnosticSeverity.Hint, feature, code, index);
     }
 
-    protected addValidation(item: AstNode | undefined, message: string, severity: ValidationSeverity, feature?: string, code?: number | string, index?: number): void {
-        this.validationItems.push({ item: item ?? this.currentNode, feature, severity, message, code, index });
+    protected addValidation(item: AstNode | undefined, message: string, severity: DiagnosticSeverity, feature?: string, code?: number | string, index?: number): void {
+        this.validationItems.push({ node: item ?? this.currentNode, feature, severity, message, code, index });
         // TODO: Only items from the current document can be added in here
     }
 
 }
 
 interface ValidatorWithAstNode {
-    readonly validationItems: ValidationItem[],
+    readonly validationItems: LangiumDiagnostic[],
     currentNode: AstNode
 }
 
@@ -71,7 +65,7 @@ export class Validator {
         }
     }
 
-    validate(node: AstNode): ValidationItem[] { // FIXME: Insert document here instead and iterate over the tree
+    validate(node: AstNode): LangiumDiagnostic[] { // FIXME: Insert document here instead and iterate over the tree
         const acceptor = new ValidationAcceptor();
         const astNodeAcceptor = <ValidatorWithAstNode><unknown>acceptor;
         const validations = this.validationMap.get(node.$type);
@@ -93,8 +87,8 @@ export class CompositeValidator extends Validator {
         this.validators = [...validators];
     }
 
-    validate(node: AstNode): ValidationItem[] {
-        const validationItems: ValidationItem[] = [];
+    validate(node: AstNode): LangiumDiagnostic[] {
+        const validationItems: LangiumDiagnostic[] = [];
         for (const validator of this.validators) {
             validationItems.push(...validator.validate(node));
         }

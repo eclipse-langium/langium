@@ -42,7 +42,7 @@ export class StreamImpl<S, T> implements Stream<T> {
                 let result: IteratorResult<T>;
                 do {
                     result = this.nextFn(state);
-                    if (predicate(result.value)) {
+                    if (!result.done && predicate(result.value)) {
                         return result;
                     }
                 } while (!result.done);
@@ -58,7 +58,7 @@ export class StreamImpl<S, T> implements Stream<T> {
                 let result: IteratorResult<T>;
                 do {
                     result = this.nextFn(state);
-                    if (predicate(result.value)) {
+                    if (!result.done && predicate(result.value)) {
                         return result;
                     }
                 } while (!result.done);
@@ -87,7 +87,7 @@ export class StreamImpl<S, T> implements Stream<T> {
         let result: IteratorResult<T>;
         do {
             result = iterator.next();
-            if (predicate(result.value, index)) {
+            if (!result.done && predicate(result.value, index)) {
                 return result.value;
             }
             index++;
@@ -100,7 +100,7 @@ export class StreamImpl<S, T> implements Stream<T> {
         let result: IteratorResult<T>;
         do {
             result = iterator.next();
-            if (predicate(result.value)) {
+            if (!result.done && predicate(result.value)) {
                 return result.value;
             }
         } while (!result.done);

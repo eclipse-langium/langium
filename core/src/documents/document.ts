@@ -5,5 +5,7 @@ import { AstNodeDescription } from '../references/scope';
 export interface LangiumDocument {
     documentUri: string // DocumentUri?
     parseResult: ParseResult<AstNode>
-    precomputedScopes?: Map<AstNode, AstNodeDescription[]>
+    precomputedScopes?: PrecomputedScopes
 }
+
+export type PrecomputedScopes = Map<AstNode, AstNodeDescription[]>

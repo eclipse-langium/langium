@@ -2,7 +2,7 @@
 import * as fs from 'fs-extra';
 import { Command } from 'commander';
 import { Package } from './package';
-import { DefaultModule, Grammar, inject, LangiumGeneratedModule, resolveAllReferences, serialize } from 'langium';
+import { Grammar, createLangiumGrammarServices, resolveAllReferences, serialize } from 'langium';
 import { generateGrammarAccess } from './generator/grammar-access-generator';
 import { generateParser } from './generator/parser-generator';
 import { generateAst } from './generator/ast-generator';
@@ -23,7 +23,7 @@ const file = opts.file ?? './package.json';
 const packageContent = fs.readFileSync(file).toString();
 const pack = <Package>JSON.parse(packageContent);
 
-const services = inject(DefaultModule, LangiumGeneratedModule);
+const services = createLangiumGrammarServices();
 
 const grammarFile = pack.langium.grammar ?? './grammar.lg';
 const grammarFileContent = fs.readFileSync(grammarFile).toString();

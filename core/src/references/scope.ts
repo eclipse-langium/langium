@@ -3,7 +3,7 @@ import { getDocument, streamAllContents } from '../generator/ast-util';
 import { Stream, stream } from '../utils/stream';
 import { NameProvider } from './naming';
 import { LangiumServices } from '../services';
-import { LangiumDocument } from '../documents/document';
+import { PrecomputedScopes } from '../documents/document';
 
 export interface AstNodeDescription {
     node?: AstNode
@@ -81,25 +81,26 @@ export class DefaultScopeProvider implements ScopeProvider {
     }
 }
 
-// TODO run scope computation after parsing a new or changed document
+export interface ScopeComputation {
+    computeScope(rootNode: AstNode): PrecomputedScopes;
+}
 
-export class ScopeComputation {
+export class DefaultScopeComputation implements ScopeComputation {
     protected readonly nameProvider: NameProvider;
 
     constructor(services: LangiumServices) {
         this.nameProvider = services.references.NameProvider;
     }
 
-    computeScope(document: LangiumDocument): void {
+    computeScope(rootNode: AstNode): PrecomputedScopes {
         const scopes = new Map();
-        document.precomputedScopes = scopes;
-        streamAllContents(document.parseResult.value).forEach(content => {
+        streamAllContents(rootNode).forEach(content => {
             const { node } = content;
             const container = node.$container;
             if (container) {
                 const name = this.nameProvider.getName(node);
                 if (name) {
-                    const description = this.createDescription(node, name, document);
+                    const description = this.createDescription(node, name);
                     if (scopes.has(container)) {
                         scopes.get(container)?.push(description);
                     } else {
@@ -108,9 +109,11 @@ export class ScopeComputation {
                 }
             }
         });
+        return scopes;
     }
 
-    protected createDescription(node: AstNode, name: string, document: LangiumDocument): AstNodeDescription {
+    protected createDescription(node: AstNode, name: string): AstNodeDescription {
+        const document = getDocument(node);
         return {
             node,
             name,
