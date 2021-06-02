@@ -1,7 +1,7 @@
 import { Grammar } from '../gen/ast';
-import { ValidationAcceptor, Validator } from './validator';
+import { ValidationAcceptor, Validator } from '../service/validation/validator';
 
-export class LangiumValidator extends Validator {
+export class LangiumGrammarValidator extends Validator {
 
     constructor() {
         super();

@@ -9,27 +9,20 @@ import {
     TextDocumentPositionParams,
     TextDocumentSyncKind,
     InitializeResult,
-    Diagnostic,
-    DiagnosticSeverity
 } from 'vscode-languageserver/node';
 
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { contentAssist } from './service/content-assist/content-assist-service';
-import { DefaultModule } from './default-module';
-import { inject } from './dependency-injection';
-import { LangiumGeneratedModule } from './gen/module';
-import { ValidationItem } from './validation/validator';
-import { findNodeForFeature } from './grammar/grammar-utils';
-import { LangiumValidator } from '.';
-
-const services = inject(DefaultModule, LangiumGeneratedModule);
-const parser = services.Parser;
-const computer = services.references.ScopeComputation;
-const validator = new LangiumValidator();
+import { contentAssist } from './service/completion/content-assist-service';
+import { createLangiumGrammarServices } from './grammar-lang/langium-grammar-module';
 
 // Create a connection for the server, using Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
 let connection = createConnection(ProposedFeatures.all);
+
+const services = createLangiumGrammarServices({ connection });
+const parser = services.Parser;
+const scopeComputation = services.references.ScopeComputation;
+const documentBuilder = services.documents.DocumentBuilder;
 
 // Create a simple text document manager.
 let documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument);
@@ -92,60 +85,18 @@ connection.onDidChangeConfiguration(change => {
 });
 
 documents.onDidOpen(change => {
-    validateTextDocument(change.document);
+    documentBuilder.build(change.document, 'open');
+});
+
+documents.onDidClose(change => {
+    documentBuilder.build(change.document, 'close');
 });
 
 // The content of a text document has changed. This event is emitted
 // when the text document first opened or when its content has changed.
 documents.onDidChangeContent(change => {
-    validateTextDocument(change.document);
+    documentBuilder.build(change.document, 'change');
 });
-
-async function validateTextDocument(textDocument: TextDocument): Promise<void> {
-
-    // The validator creates diagnostics for all uppercase words length 2 and more
-    let text = textDocument.getText();
-    const parseResult = parser.parse(text);
-    if (parseResult.lexerErrors.length > 0) {
-        return;
-    }
-
-    let diagnostics: Diagnostic[] = [];
-
-    for (const parserError of parseResult.parserErrors) {
-        const token = parserError.token;
-        let diagnostic: Diagnostic = {
-            severity: DiagnosticSeverity.Error,
-            range: {
-                start: textDocument.positionAt(token.startOffset),
-                end: textDocument.positionAt(token.startOffset + token.image.length)
-            },
-            message: parserError.message,
-            source: 'ex'
-        };
-        diagnostics.push(diagnostic);
-    }
-
-    const validationItems = validator.validate(parseResult.value);
-    for (const validationItem of validationItems) {
-        diagnostics.push(toDiagnostic(textDocument, validationItem));
-    }
-
-    // Send the computed diagnostics to VS Code.
-    connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
-}
-
-export function toDiagnostic(document: TextDocument, validationItem: ValidationItem): Diagnostic {
-    const { item, feature, index, message, code, severity } = validationItem;
-    const node = findNodeForFeature(item.$cstNode, feature, index) || item.$cstNode!;
-    const start = node.offset;
-    const end = start + node.length;
-    const range = {
-        start: document.positionAt(start),
-        end: document.positionAt(end)
-    };
-    return { range, message, code, severity };
-}
 
 connection.onDidChangeWatchedFiles(_change => {
     // Monitored files have change in VS Code
@@ -161,8 +112,9 @@ connection.onCompletion(
             const text = document.getText({ start: document.positionAt(0), end: _textDocumentPosition.position });
             const offset = document.offsetAt(_textDocumentPosition.position);
             const langiumDoc = parser.parse(text, uri);
-            computer.computeScope(langiumDoc);
-            const assist = contentAssist(parser.grammarAccess['grammar'], langiumDoc.parseResult.value, offset);
+            const rootNode = langiumDoc.parseResult.value;
+            langiumDoc.precomputedScopes = scopeComputation.computeScope(rootNode);
+            const assist = contentAssist(parser.grammarAccess['grammar'], rootNode, offset);
             return Array.from(new Set<string>(assist))
                 .map(e => buildCompletionItem(document, offset, text, e));
         } else {
