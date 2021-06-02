@@ -43,12 +43,11 @@ export function getRuleType(rule: ast.AbstractRule | undefined): string {
     return getTypeName(rule);
 }
 
-export function decycle(object: Record<string, any>, ...ignore: string[]): any {
+function decycle(object: Record<string, any>, ...ignore: string[]): any {
     const objectPaths = new Map<any, string>(); // Keep references to each unique object
 
-    return (function replace(value, path): any {
+    const replace = (item: Record<string, any>, path: string) => {
         // The replace function recurses through the object, producing the deep copy.
-        const item = value && value.toJSON instanceof Function ? value.toJSON() : value;
         if (typeof item === 'object' && item !== null) {
             // If the value is an object or array, look to see if we have already
             // encountered it. If so, return a $ref/path object.
@@ -68,7 +67,7 @@ export function decycle(object: Record<string, any>, ...ignore: string[]): any {
                 // If it is an object, replicate the object.
                 newItem = {};
                 for (const [name, itemValue] of Object.entries(item)) {
-                    if (!ignore.includes(name)) {
+                    if (isPlainProperty(item, name) && !ignore.includes(name)) {
                         newItem[name] = replace(<any>itemValue, path + '[' + JSON.stringify(name) + ']');
                     }
                 }
@@ -76,7 +75,15 @@ export function decycle(object: Record<string, any>, ...ignore: string[]): any {
             return newItem;
         }
         return item;
-    }(object, '$'));
+    };
+    return replace(object, '$');
+}
+
+function isPlainProperty(object: Record<string, any>, propertyName: string) {
+    const descriptor = Object.getOwnPropertyDescriptor(object, propertyName);
+    if (descriptor !== undefined)
+        return descriptor.get === undefined;
+    return true;
 }
 
 // eslint-disable-next-line no-control-regex
@@ -84,7 +91,7 @@ const pathRegex = /^\$(?:\[(?:\d+|"(?:[^\\"\u0000-\u001f]|\\([\\"/bfnrt]|u[0-9a-
 
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export function retrocycle($: any): any {
-    (function revive(value: Record<string, any>) {
+    const revive = (value: Record<string, any>) => {
 
         // The revive function walks recursively through the object looking for $ref
         // properties. When it finds one that has a value that is a path, then it
@@ -115,12 +122,19 @@ export function retrocycle($: any): any {
                                 value[name] = eval(path);
                             } else {
                                 revive(item);
+                                if (item._ref) {
+                                    // Special case for Reference
+                                    Object.defineProperty(item, 'value', {
+                                        get: () => item._ref
+                                    });
+                                }
                             }
                         }
                     }
                 }
             }
         }
-    }($));
+    };
+    revive($);
     return $;
 }

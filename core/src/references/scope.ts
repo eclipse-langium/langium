@@ -1,11 +1,12 @@
 import { AstNode, AstReflection } from '../generator/ast-node';
 import { getDocument, streamAllContents } from '../generator/ast-util';
 import { Stream, stream } from '../utils/stream';
-import { ParseResult } from '../parser/langium-parser';
 import { NameProvider } from './naming';
 import { LangiumServices } from '../services';
+import { LangiumDocument } from '../documents/document';
 
 export interface AstNodeDescription {
+    node?: AstNode
     name: string // QualifiedName?
     type: string // AstNodeType?
     documentUri: string // DocumentUri?
@@ -80,12 +81,6 @@ export class DefaultScopeProvider implements ScopeProvider {
     }
 }
 
-export interface LangiumDocument {
-    documentUri: string // DocumentUri?
-    parseResult: ParseResult<AstNode>
-    precomputedScopes?: Map<AstNode, AstNodeDescription[]>
-}
-
 // TODO run scope computation after parsing a new or changed document
 
 export class ScopeComputation {
@@ -117,6 +112,7 @@ export class ScopeComputation {
 
     protected createDescription(node: AstNode, name: string, document: LangiumDocument): AstNodeDescription {
         return {
+            node,
             name,
             type: node.$type,
             documentUri: document.documentUri

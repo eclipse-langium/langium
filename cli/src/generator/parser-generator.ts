@@ -90,8 +90,7 @@ function buildParser(grammar: langium.Grammar): CompositeGeneratorNode {
     classBody.children.push('constructor(services: LangiumServices) {', NL);
     const constructorBody = new IndentNode();
     constructorBody.children.push(
-        'super(tokens);', NL,
-        'this.grammarAccess = services.GrammarAccess;', NL,
+        'super(tokens, services);', NL,
         'this.performSelfAnalysis();', NL
     );
     classBody.children.push(constructorBody, '}', NL, NL);

@@ -2,7 +2,7 @@
 import * as fs from 'fs-extra';
 import { Command } from 'commander';
 import { Package } from './package';
-import { DefaultModule, Grammar, inject, LangiumGeneratedModule, linkGrammar, serialize } from 'langium';
+import { DefaultModule, Grammar, inject, LangiumGeneratedModule, resolveAllReferences, serialize } from 'langium';
 import { generateGrammarAccess } from './generator/grammar-access-generator';
 import { generateParser } from './generator/parser-generator';
 import { generateAst } from './generator/ast-generator';
@@ -27,8 +27,10 @@ const services = inject(DefaultModule, LangiumGeneratedModule);
 
 const grammarFile = pack.langium.grammar ?? './grammar.lg';
 const grammarFileContent = fs.readFileSync(grammarFile).toString();
-const grammar = services.Parser.parse<Grammar>(grammarFileContent).value;
-linkGrammar(grammar);
+const document = services.Parser.parse(grammarFileContent, grammarFile);
+services.references.ScopeComputation.computeScope(document);
+const grammar = document.parseResult.value as Grammar;
+resolveAllReferences(grammar);
 const json = serialize(grammar);
 const parser = generateParser(grammar, pack.langium);
 const grammarAccess = generateGrammarAccess(grammar, pack.langium, opts.b);
