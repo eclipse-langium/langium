@@ -6,7 +6,7 @@ import { Connection } from 'vscode-languageserver/node';
 import { Linker } from './references/linker';
 import { NameProvider } from './references/naming';
 import { ScopeProvider, ScopeComputation } from './references/scope';
-import { Validator } from './service/validation/validator';
+import { ValidationRegistry } from './service/validation/validation-registry';
 import { DocumentValidator } from './service/validation/document-validator';
 
 export type LangiumGeneratedServices = {
@@ -30,7 +30,7 @@ export type LangiumServices = LangiumGeneratedServices & {
     },
     validation: {
         DocumentValidator: DocumentValidator,
-        Validator: Validator
+        ValidationRegistry: ValidationRegistry
     }
 }
 

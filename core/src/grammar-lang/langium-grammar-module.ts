@@ -1,16 +1,25 @@
 import { Module, inject } from '../dependency-injection';
-import { LangiumGrammarValidator } from './langium-grammar-validator';
+import { LangiumGrammarValidationRegistry, LangiumGrammarValidator } from './langium-grammar-validator';
 import { PartialLangiumServices, LangiumServices } from '../services';
 import { DefaultModuleContext, createDefaultModule } from '../default-module';
 import { LangiumGeneratedModule } from '../gen/module';
 
-export const LangiumGrammarModule: Module<PartialLangiumServices> = {
+export type LangiumGrammarAddedServices = {
     validation: {
-        Validator: () => new LangiumGrammarValidator()
+        LangiumGrammarValidator: LangiumGrammarValidator
+    }
+}
+
+export type LangiumGrammarServices = LangiumServices & LangiumGrammarAddedServices
+
+export const LangiumGrammarModule: Module<LangiumGrammarServices, PartialLangiumServices & LangiumGrammarAddedServices> = {
+    validation: {
+        ValidationRegistry: (injector) => new LangiumGrammarValidationRegistry(injector),
+        LangiumGrammarValidator: () => new LangiumGrammarValidator()
     }
 };
 
-export function createLangiumGrammarServices(context?: DefaultModuleContext): LangiumServices {
+export function createLangiumGrammarServices(context?: DefaultModuleContext): LangiumGrammarServices {
     return inject(
         createDefaultModule(context),
         LangiumGeneratedModule,

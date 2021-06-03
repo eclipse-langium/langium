@@ -33,6 +33,8 @@ export interface AstNode {
     readonly $document?: LangiumDocument
 }
 
+export type Properties<N extends AstNode> = keyof Omit<N, keyof AstNode>
+
 // eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace String {
     export const type = 'String';
@@ -206,6 +208,7 @@ export class RootCstNode extends CompositeCstNode {
 export type RuleResult = (idxInCallingRule?: number, ...args: any[]) => any
 
 export interface AstReflection {
+    getAllTypes(): string[]
     getReferenceType(referenceId: string): string
     isInstance(node: AstNode, type: string): boolean
     isSubtype(subtype: string, supertype: string): boolean
