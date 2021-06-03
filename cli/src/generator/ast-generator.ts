@@ -35,17 +35,30 @@ type CrossReferenceType = {
 function generateAstReflection(grammar: Grammar, interfaces: Interface[]): GeneratorNode {
     const reflectionNode = new CompositeGeneratorNode();
     const crossReferenceTypes = buildCrossReferenceTypes(interfaces);
-    reflectionNode.children.push('export type AstReference = ', crossReferenceTypes.map(e => `'${e.type}:${e.feature}'`).join(' | '), ';', NL, NL);
+    reflectionNode.children.push(
+        'export type ', grammar.name, 'AstType = ',
+        interfaces.map(t => `'${t.name}'`).join(' | '),
+        ';', NL, NL
+    );
+    reflectionNode.children.push(
+        'export type ', grammar.name, 'AstReference = ',
+        crossReferenceTypes.map(e => `'${e.type}:${e.feature}'`).join(' | '),
+        ';', NL, NL
+    );
     reflectionNode.children.push('export class ', grammar.name, 'AstReflection implements AstReflection {', NL, NL);
 
     const classBodyNode = new IndentNode();
+    classBodyNode.children.push('getAllTypes(): string[] {', NL);
+    const allTypesNode = new IndentNode();
+    allTypesNode.children.push('return [', interfaces.map(t => `'${t.name}'`).join(', '), '];', NL);
+    classBodyNode.children.push(allTypesNode, '}', NL, NL);
     classBodyNode.children.push('isInstance(node: AstNode, type: string): boolean {', NL);
     const isInstanceNode = new IndentNode();
     isInstanceNode.children.push('return this.isSubtype(node.$type, type);', NL);
     classBodyNode.children.push(isInstanceNode, '}', NL, NL);
     classBodyNode.children.push('isSubtype(subtype: string, supertype: string): boolean {', NL);
     classBodyNode.children.push(buildIsSubtypeMethod(interfaces), '}', NL, NL);
-    classBodyNode.children.push('getReferenceType(referenceId: AstReference): string {', NL);
+    classBodyNode.children.push('getReferenceType(referenceId: ', grammar.name, 'AstReference): string {', NL);
     classBodyNode.children.push(buildReferenceTypeMethod(interfaces), '}', NL);
     reflectionNode.children.push(classBodyNode, '}', NL, NL);
     reflectionNode.children.push('export const reflection = new ', grammar.name, 'AstReflection();', NL);

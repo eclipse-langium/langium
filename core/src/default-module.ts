@@ -5,7 +5,7 @@ import { Connection } from 'vscode-languageserver/node';
 import { DefaultLinker } from './references/linker';
 import { DefaultScopeComputation, DefaultScopeProvider } from './references/scope';
 import { DefaultNameProvider } from './references/naming';
-import { Validator } from './service/validation/validator';
+import { ValidationRegistry } from './service/validation/validation-registry';
 import { DefaultDocumentValidator } from './service/validation/document-validator';
 
 export type DefaultModuleContext = {
@@ -38,7 +38,7 @@ export function createDefaultModule(context: DefaultModuleContext = {}): Module<
         },
         validation: {
             DocumentValidator: (injector) => new DefaultDocumentValidator(injector),
-            Validator: () => new Validator()
+            ValidationRegistry: (injector) => new ValidationRegistry(injector)
         }
     };
 }
