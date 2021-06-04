@@ -6,8 +6,8 @@ export function generateModule(grammar: langium.Grammar, config: LangiumConfig):
     const node = new CompositeGeneratorNode();
 
     if (config.langiumInternal) {
-        node.children.push("import { Module } from '../dependency-injection';", NL);
-        node.children.push("import { LangiumGeneratedServices, LangiumServices } from '../services';", NL);
+        node.children.push("import { Module } from '../../dependency-injection';", NL);
+        node.children.push("import { LangiumGeneratedServices, LangiumServices } from '../../services';", NL);
     } else {
         node.children.push("import { LangiumGeneratedServices, LangiumServices, Module } from 'langium';", NL);
     }

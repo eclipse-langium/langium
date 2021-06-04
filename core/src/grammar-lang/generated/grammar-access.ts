@@ -1,5 +1,5 @@
-import { GrammarAccess } from '../grammar/grammar-access';
-import { retrocycle } from '../grammar/grammar-utils';
+import { GrammarAccess } from '../../grammar/grammar-access';
+import { retrocycle } from '../../grammar/grammar-utils';
 import { Action, Assignment, CrossReference, Keyword, RuleCall } from './ast';
 
 export type GrammarRuleAccess = {
@@ -435,7 +435,7 @@ export type EnumLiteralDeclarationRuleAccess = {
     literalKeywordRuleCall: RuleCall;
 }
 
-export class LangiumGrammarAccess extends GrammarAccess {
+export class LangiumGrammarGrammarAccess extends GrammarAccess {
     Grammar = this.buildAccess<GrammarRuleAccess>('Grammar');
     AbstractRule = this.buildAccess<AbstractRuleRuleAccess>('AbstractRule');
     AbstractMetamodelDeclaration = this.buildAccess<AbstractMetamodelDeclarationRuleAccess>('AbstractMetamodelDeclaration');

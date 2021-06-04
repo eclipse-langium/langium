@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import * as ast from '../gen/ast';
+import * as ast from '../grammar-lang/generated/ast';
 import { AstNode, CompositeCstNode, CstNode, ILeafCstNode, LeafCstNode } from '../generator/ast-node';
 import { isDataTypeRule } from '../generator/utils';
 

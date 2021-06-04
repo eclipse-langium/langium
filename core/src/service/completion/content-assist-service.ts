@@ -1,4 +1,4 @@
-import * as ast from '../../gen/ast';
+import * as ast from '../../grammar-lang/generated/ast';
 import { AstNode, CstNode } from '../../generator/ast-node';
 import { findLeafNodeAtOffset } from '../../grammar/grammar-utils';
 import { buildContentAssistFor, buildContentAssistForRule, findFirstFeatures, findNextFeatures } from './content-assist-builder';

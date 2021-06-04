@@ -1,10 +1,10 @@
 /* eslint-disable */
 // @ts-nocheck
 import { createToken, Lexer } from 'chevrotain';
-import { LangiumServices } from '../services';
-import { LangiumParser } from '../parser/langium-parser';
-import { Number, String } from '../generator/ast-node';
-import { LangiumGrammarAccess } from './grammar-access';
+import { LangiumServices } from '../../services';
+import { LangiumParser } from '../../parser/langium-parser';
+import { Number, String } from '../../generator/ast-node';
+import { LangiumGrammarGrammarAccess } from './grammar-access';
 import { AbstractElement, AbstractMetamodelDeclaration, AbstractNegatedToken, AbstractRule, Annotation, Condition, EnumLiteralDeclaration, EnumLiterals, Grammar, NamedArgument, Parameter, TerminalGroup, TerminalToken, TerminalTokenElement, Action, Alternatives, Assignment, CrossReference, Group, Keyword, RuleCall, UnorderedGroup, GeneratedMetamodel, ReferencedMetamodel, NegatedToken, UntilToken, EnumRule, ParserRule, TerminalRule, Conjunction, Disjunction, LiteralCondition, Negation, ParameterReference, CharacterRange, TerminalAlternatives, TerminalRuleCall, Wildcard, } from './ast';
 
 const WS = createToken({ name : 'WS', pattern: /\s+/, group: Lexer.SKIPPED });
@@ -92,7 +92,7 @@ EnumKeyword.LABEL = "'enum'";
 const tokens = [TerminalKeyword, GenerateKeyword, FragmentKeyword, GrammarKeyword, CurrentKeyword, ReturnsKeyword, HiddenKeyword, ImportKeyword, FalseKeyword, WithKeyword, TrueKeyword, EnumKeyword, AsKeyword, PlusEqualsKeyword, EqualsMoreThanKeyword, DashMoreThanKeyword, QuestionMarkEqualsKeyword, DotDotKeyword, AmpersandKeyword, AtKeyword, PlusKeyword, CurlyOpenKeyword, DotKeyword, EqualsKeyword, AsteriskKeyword, ColonKeyword, CurlyCloseKeyword, ParenthesisCloseKeyword, ParenthesisOpenKeyword, ExclamationMarkKeyword, SemicolonKeyword, LessThanKeyword, MoreThanKeyword, BracketOpenKeyword, BracketCloseKeyword, CommaKeyword, PipeKeyword, QuestionMarkKeyword, WS, ID, INT, string, RegexLiteral];
 
 export class Parser extends LangiumParser {
-    readonly grammarAccess: LangiumGrammarAccess;
+    readonly grammarAccess: LangiumGrammarGrammarAccess;
 
     constructor(services: LangiumServices) {
         super(tokens, services);

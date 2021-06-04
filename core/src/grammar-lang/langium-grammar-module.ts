@@ -2,7 +2,7 @@ import { Module, inject } from '../dependency-injection';
 import { LangiumGrammarValidationRegistry, LangiumGrammarValidator } from './langium-grammar-validator';
 import { PartialLangiumServices, LangiumServices } from '../services';
 import { DefaultModuleContext, createDefaultModule } from '../default-module';
-import { LangiumGeneratedModule } from '../gen/module';
+import { LangiumGrammarGeneratedModule } from './generated/module';
 
 export type LangiumGrammarAddedServices = {
     validation: {
@@ -22,7 +22,7 @@ export const LangiumGrammarModule: Module<LangiumGrammarServices, PartialLangium
 export function createLangiumGrammarServices(context?: DefaultModuleContext): LangiumGrammarServices {
     return inject(
         createDefaultModule(context),
-        LangiumGeneratedModule,
+        LangiumGrammarGeneratedModule,
         LangiumGrammarModule
     );
 }

@@ -12,8 +12,8 @@
   "contributes": {
     "languages": [{
       "id": "langium",
-      "extensions": [ ".lg", ".xtext" ],
-      "aliases": [ "Langium", "Xtext" ]
+      "extensions": [ ".langium" ],
+      "aliases": [ "Langium" ]
     }],
     "grammars": [
       {

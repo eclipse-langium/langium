@@ -1,4 +1,4 @@
-import { AbstractRule, Grammar, ParserRule } from '../gen/ast';
+import { AbstractRule, Grammar, ParserRule } from '../grammar-lang/generated/ast';
 import { findAllFeatures } from '../generator/utils';
 
 export abstract class GrammarAccess {

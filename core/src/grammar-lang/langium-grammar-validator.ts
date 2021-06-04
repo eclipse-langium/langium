@@ -1,8 +1,8 @@
-import { AbstractRule, Grammar, LangiumAstType } from '../gen/ast';
+import { AbstractRule, Grammar, LangiumGrammarAstType } from './generated/ast';
 import { ValidationAcceptor, ValidationCheck, ValidationRegistry } from '../service/validation/validation-registry';
 import { LangiumGrammarServices } from './langium-grammar-module';
 
-type LangiumGrammarChecks = { [type in LangiumAstType]?: ValidationCheck | ValidationCheck[] }
+type LangiumGrammarChecks = { [type in LangiumGrammarAstType]?: ValidationCheck | ValidationCheck[] }
 
 export class LangiumGrammarValidationRegistry extends ValidationRegistry {
     constructor(services: LangiumGrammarServices) {
