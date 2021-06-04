@@ -9,9 +9,9 @@
     "build": "tsc",
     "watch": "tsc --watch",
     "lint": "eslint ./src --ext .js,.ts",
-    "bootstrap": "node ../cli/lib/langium && copyfiles -f ./src/grammar-lang/generated/grammar.json ./lib/grammar-lang/generated",
+    "bootstrap": "node ../cli/lib/langium && npm run copygrammar",
     "test": "jest --coverage",
-    "prepare": "copyfiles -f ./src/grammar-lang/generated/grammar.json ./lib/grammar-lang/generated"
+    "copygrammar": "copyfiles -f ./src/grammar-lang/generated/grammar.json ./lib/grammar-lang/generated"
   },
   "author": "",
   "license": "MIT",
