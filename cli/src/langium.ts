@@ -25,7 +25,7 @@ const pack = <Package>JSON.parse(packageContent);
 
 const services = createLangiumGrammarServices();
 
-const grammarFile = pack.langium.grammar ?? './grammar.lg';
+const grammarFile = pack.langium.grammar ?? 'src/grammar.langium';
 const grammarFileContent = fs.readFileSync(grammarFile).toString();
 const document = services.Parser.parse(grammarFileContent, grammarFile);
 const grammar = document.parseResult.value as Grammar;
@@ -37,7 +37,7 @@ const grammarAccess = generateGrammarAccess(grammar, pack.langium, opts.b);
 const genAst = generateAst(grammar, pack.langium);
 const genModule = generateModule(grammar, pack.langium);
 
-const output = pack.langium.out ?? 'src/gen';
+const output = pack.langium.out ?? 'src/generated';
 
 fs.mkdirsSync(output);
 fs.writeFileSync(`${output}/grammar.json`, json);

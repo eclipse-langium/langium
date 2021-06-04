@@ -6,8 +6,8 @@ export function generateGrammarAccess(grammar: langium.Grammar, config: LangiumC
     const node = new CompositeGeneratorNode();
 
     if (config.langiumInternal) {
-        node.children.push("import { GrammarAccess } from '../grammar/grammar-access';", NL);
-        node.children.push("import { retrocycle } from '../grammar/grammar-utils';", NL);
+        node.children.push("import { GrammarAccess } from '../../grammar/grammar-access';", NL);
+        node.children.push("import { retrocycle } from '../../grammar/grammar-utils';", NL);
     } else {
         node.children.push("import { GrammarAccess, retrocycle } from 'langium';", NL);
     }

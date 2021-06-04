@@ -25,9 +25,9 @@ export function generateParser(grammar: langium.Grammar, config: LangiumConfig):
         "import { createToken, Lexer } from 'chevrotain';", NL
     );
     if (config.langiumInternal) {
-        fileNode.children.push("import { LangiumServices } from '../services';", NL);
-        fileNode.children.push("import { LangiumParser } from '../parser/langium-parser';", NL);
-        fileNode.children.push("import { Number, String } from '../generator/ast-node';", NL);
+        fileNode.children.push("import { LangiumServices } from '../../services';", NL);
+        fileNode.children.push("import { LangiumParser } from '../../parser/langium-parser';", NL);
+        fileNode.children.push("import { Number, String } from '../../generator/ast-node';", NL);
     } else {
         fileNode.children.push("import { LangiumParser, LangiumServices, Number, String } from 'langium';", NL);
     }

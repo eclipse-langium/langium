@@ -1,4 +1,4 @@
-import * as ast from '../../gen/ast';
+import * as ast from '../../grammar-lang/generated/ast';
 import { Cardinality, isArray, isOptional } from '../../generator/utils';
 
 export function findNextFeatures(featureStack: ast.AbstractElement[]): ast.AbstractElement[] {

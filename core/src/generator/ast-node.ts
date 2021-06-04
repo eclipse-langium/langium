@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 import { TokenType } from 'chevrotain';
 import { LangiumDocument } from '../documents/document';
-import { AbstractElement } from '../gen/ast';
+import { AbstractElement } from '../grammar-lang/generated/ast';
 
 export interface AstReflection {
     getReferenceType(referenceId: string): string
