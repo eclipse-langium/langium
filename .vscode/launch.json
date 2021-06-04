@@ -11,14 +11,14 @@
 				"../cli/lib/langium",
 			],
 			"runtimeExecutable": "node",
-			"cwd": "${workspaceFolder}/core",
+			"cwd": "${workspaceFolder}/langium",
 			"skipFiles": [
 				"<node_internals>/**"
 			],
 			"sourceMaps": true,
 			"outFiles": [
-				"${workspaceFolder}/cli/lib/**/*.js",
-				"${workspaceFolder}/core/lib/**/*.js"
+				"${workspaceFolder}/langium-cli/lib/**/*.js",
+				"${workspaceFolder}/langium/lib/**/*.js"
 			],
 			"type": "pwa-node"
 		},
@@ -31,7 +31,7 @@
 			],
 			"sourceMaps": true,
 			"outFiles": [
-				"${workspaceFolder}/core/lib/**/*.js"
+				"${workspaceFolder}/langium/lib/**/*.js"
 			],
 			"type": "pwa-node"
 		},

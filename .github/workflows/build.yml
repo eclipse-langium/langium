@@ -17,7 +17,7 @@ jobs:
     - name: Build
       shell: bash
       run: |
-        mkdir packages/cli/lib
-        touch packages/cli/lib/langium.js
+        mkdir packages/langium-cli/lib
+        touch packages/langium-cli/lib/langium.js
         npm install
         npm test --workspace=langium --workspace=langium-cli
