@@ -1,6 +1,4 @@
 tasks:
   - init: |
       npm install -g npm
-      mkdir packages/langium-cli/lib
-      touch packages/langium-cli/lib/langium.js
       npm install

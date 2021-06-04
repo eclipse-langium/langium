@@ -3,9 +3,9 @@
   "version": "0.0.0",
   "description": "",
   "bin": {
-    "langium": "./lib/langium.js"
+    "langium": "./bin/langium.js"
   },
-  "main": "./lib/langium.js",
+  "main": "./bin/langium.js",
   "scripts": {
     "clean": "rimraf lib/*",
     "build": "tsc",

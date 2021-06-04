@@ -9,7 +9,7 @@
     "build": "tsc",
     "watch": "tsc --watch",
     "lint": "eslint ./src --ext .js,.ts",
-    "bootstrap": "node ../cli/lib/langium && npm run copygrammar",
+    "bootstrap": "node ../langium-cli/bin/langium && npm run copygrammar",
     "test": "jest --coverage",
     "copygrammar": "copyfiles -f ./src/grammar-lang/generated/grammar.json ./lib/grammar-lang/generated"
   },
