@@ -6,12 +6,12 @@
   "types": "lib/index.d.ts",
   "scripts": {
     "clean": "rimraf lib/*",
-    "build": "tsc --build tsconfig.build.json",
-    "watch": "tsc --build tsconfig.build.json --watch",
+    "build": "tsc",
+    "watch": "tsc --watch",
     "lint": "eslint ./src --ext .js,.ts",
-    "prepare": "npm run clean && npm run lint && npm run build && copyfiles -f ./src/grammar-lang/generated/grammar.json ./lib/grammar-lang/generated",
-    "bootstrap": "node ../cli/lib/langium",
-    "test": "jest --coverage"
+    "bootstrap": "node ../cli/lib/langium && copyfiles -f ./src/grammar-lang/generated/grammar.json ./lib/grammar-lang/generated",
+    "test": "jest --coverage",
+    "prepare": "copyfiles -f ./src/grammar-lang/generated/grammar.json ./lib/grammar-lang/generated"
   },
   "author": "",
   "license": "MIT",
