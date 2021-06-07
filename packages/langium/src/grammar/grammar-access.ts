@@ -1,12 +1,27 @@
 import { AbstractRule, Grammar, ParserRule } from '../grammar-lang/generated/ast';
 import { findAllFeatures } from '../generator/utils';
+import { LangiumServices } from '../services';
+import { LangiumDocument } from '../documents/document';
 
 export abstract class GrammarAccess {
 
     private grammar: Grammar;
 
-    constructor(grammar: Grammar) {
-        this.grammar = grammar;
+    constructor(services: LangiumServices, grammar: Grammar) {
+        // TODO: This looks like it only works for the Langium grammar.
+        // Find an easier way to compute scopes for Langium grammars.
+        this.grammar = services.serializer.JsonSerializer.retrocycle(grammar);
+        const doc: LangiumDocument = {
+            documentUri: '',
+            parseResult: {
+                lexerErrors: [],
+                parserErrors: [],
+                value: this.grammar
+            }
+        };
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (this.grammar as any).$document = doc;
+        doc.precomputedScopes = services.references.ScopeComputation.computeScope(this.grammar);
     }
 
     findRuleByName(name: string): AbstractRule {

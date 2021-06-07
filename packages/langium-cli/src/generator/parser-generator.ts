@@ -240,7 +240,7 @@ function wrap(ctx: RuleContext, node: GeneratorNode, cardinality: Cardinality): 
 }
 
 function buildRuleCall(ctx: RuleContext, ruleCall: langium.RuleCall): string {
-    const rule = ruleCall.rule.value;
+    const rule = ruleCall.rule.ref;
     if (langium.isParserRule(rule)) {
         if (AstNode.getContainer(ruleCall, langium.reflection, langium.Assignment)) {
             return `this.subruleLeaf(${ctx.subrule++}, this.${rule.name}, ${getGrammarAccess(ctx, ruleCall)});`;
@@ -274,7 +274,7 @@ function buildTerminalToken(grammar: langium.Grammar, terminal: langium.Terminal
         "', pattern: ",
         terminal.regex);
 
-    if (grammar.hiddenTokens && grammar.hiddenTokens.map(e => e.value).includes(terminal)) {
+    if (grammar.hiddenTokens && grammar.hiddenTokens.map(e => e.ref).includes(terminal)) {
         terminalNode.children.push(', group: Lexer.SKIPPED');
     }
 

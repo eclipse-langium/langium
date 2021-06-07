@@ -64,8 +64,8 @@ export function findFirstFeatures(feature: ast.AbstractElement | undefined): ast
         return findNextFeatures([feature])
             .map(e => modifyCardinality(e, feature.cardinality));
     } else if (ast.isRuleCall(feature)) {
-        if (ast.isParserRule(feature.rule.value)) {
-            return findFirstFeatures(feature.rule.value.alternatives)
+        if (ast.isParserRule(feature.rule.ref)) {
+            return findFirstFeatures(feature.rule.ref.alternatives)
                 .map(e => modifyCardinality(e, feature.cardinality));
         } else {
             return [feature];
@@ -123,8 +123,8 @@ export function buildContentAssistForRule(rule: ast.AbstractRule): string[] {
 export function buildContentAssistFor(feature: ast.AbstractElement): string[] {
     if (ast.isKeyword(feature)) {
         return [feature.value.substring(1, feature.value.length - 1)];
-    } else if (ast.isRuleCall(feature) && feature.rule.value) {
-        return buildContentAssistForRule(feature.rule.value);
+    } else if (ast.isRuleCall(feature) && feature.rule.ref) {
+        return buildContentAssistForRule(feature.rule.ref);
     } else if (ast.isCrossReference(feature)) {
         // TODO: Use scoping here
         return buildContentAssistFor(feature.terminal);

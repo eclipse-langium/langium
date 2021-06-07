@@ -120,7 +120,7 @@ export class TypeCollector {
                     array: action.operator === '+=',
                     optional: false,
                     reference: false,
-                    types: [getTypeName(this.lastRuleCall.rule?.value)]
+                    types: [getTypeName(this.lastRuleCall.rule?.ref)]
                 });
             } else {
                 throw new Error('Actions with features can only be called after an unassigned rule call');
@@ -141,7 +141,7 @@ export class TypeCollector {
     }
 
     addRuleCall(ruleCall: langium.RuleCall): void {
-        const rule = ruleCall.rule.value;
+        const rule = ruleCall.rule.ref;
         if (langium.isParserRule(rule) && rule.fragment) {
             const collector = new TypeCollector();
             collector.addAlternative(rule.name);
@@ -175,9 +175,9 @@ export class TypeCollector {
         } else if (langium.isKeyword(terminal)) {
             types.types.push(terminal.value);
         } else if (langium.isRuleCall(terminal)) {
-            types.types.push(getRuleType(terminal.rule.value));
+            types.types.push(getRuleType(terminal.rule.ref));
         } else if (langium.isCrossReference(terminal)) {
-            types.types.push(getRuleType(terminal.type.value));
+            types.types.push(getRuleType(terminal.type.ref));
             types.reference = true;
         }
     }

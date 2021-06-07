@@ -53,8 +53,15 @@ export namespace Number {
     }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-namespace
+export namespace Reference {
+    export function is(item: unknown): item is Reference {
+        return typeof item === 'object' && item !== null && '$refName' in item;
+    }
+}
+
 export interface Reference<T extends AstNode = AstNode> {
-    readonly value?: T;
+    readonly ref?: T;
     readonly $refName: string;
 }
 

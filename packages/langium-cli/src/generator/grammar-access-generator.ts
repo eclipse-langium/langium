@@ -7,9 +7,9 @@ export function generateGrammarAccess(grammar: langium.Grammar, config: LangiumC
 
     if (config.langiumInternal) {
         node.children.push("import { GrammarAccess } from '../../grammar/grammar-access';", NL);
-        node.children.push("import { retrocycle } from '../../grammar/grammar-utils';", NL);
+        node.children.push("import { LangiumServices } from '../../services';", NL);
     } else {
-        node.children.push("import { GrammarAccess, retrocycle } from 'langium';", NL);
+        node.children.push("import { GrammarAccess, LangiumServices } from 'langium';", NL);
     }
     node.children.push("import { Action, Assignment, CrossReference, Keyword, RuleCall } from './ast';", NL, NL);
 
@@ -30,8 +30,8 @@ export function generateGrammarAccess(grammar: langium.Grammar, config: LangiumC
     }
 
     const constructorNode = new IndentNode();
-    constructorNode.children.push('// eslint-disable-next-line @typescript-eslint/no-var-requires', NL, "super(retrocycle(require('./grammar.json')));");
-    content.children.push(NL, 'constructor() {', NL, constructorNode, NL, '}', NL);
+    constructorNode.children.push('// eslint-disable-next-line @typescript-eslint/no-var-requires', NL, "super(injector, require('./grammar.json'));");
+    content.children.push(NL, 'constructor(injector: LangiumServices) {', NL, constructorNode, NL, '}', NL);
     node.children.push(content, '}', NL);
 
     return process(node);

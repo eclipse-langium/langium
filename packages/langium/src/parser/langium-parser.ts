@@ -231,7 +231,7 @@ export class LangiumParser extends EmbeddedActionsParser {
         const link = this.linker.link.bind(this.linker);
         const reference: Reference & { _ref?: AstNode } = {
             $refName: text,
-            get value() {
+            get ref() {
                 if (reference._ref === undefined) {
                     // TODO handle linking errors
                     reference._ref = link(node, text, crossRefId);
