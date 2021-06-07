@@ -1,0 +1,15 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "lib"
+  },
+  "references": [{ "path": "../langium" }],
+  "include": [
+    "src/**/*"
+  ],
+  "exclude": [
+    "lib",
+    "/node_modules"
+  ]
+}

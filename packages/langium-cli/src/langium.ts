@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 import * as fs from 'fs-extra';
 import { Command } from 'commander';
 import { Package } from './package';

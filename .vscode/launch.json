@@ -8,17 +8,17 @@
 			"name": "Bootstrap",
 			"request": "launch",
 			"runtimeArgs": [
-				"../cli/lib/langium",
+				"../langium-cli/lib/langium",
 			],
 			"runtimeExecutable": "node",
-			"cwd": "${workspaceFolder}/core",
+			"cwd": "${workspaceFolder}/packages/langium",
 			"skipFiles": [
 				"<node_internals>/**"
 			],
 			"sourceMaps": true,
 			"outFiles": [
-				"${workspaceFolder}/cli/lib/**/*.js",
-				"${workspaceFolder}/core/lib/**/*.js"
+				"${workspaceFolder}/packages/langium-cli/lib/**/*.js",
+				"${workspaceFolder}/packages/langium/lib/**/*.js"
 			],
 			"type": "pwa-node"
 		},
@@ -31,7 +31,7 @@
 			],
 			"sourceMaps": true,
 			"outFiles": [
-				"${workspaceFolder}/core/lib/**/*.js"
+				"${workspaceFolder}/packages/langium/lib/**/*.js"
 			],
 			"type": "pwa-node"
 		},
@@ -41,8 +41,8 @@
 			"request": "launch",
             "runtimeExecutable": "${execPath}",
 			"args": [
-				"${workspaceFolder}/core",
-				"--extensionDevelopmentPath=${workspaceFolder}/vscode-extension"
+				"${workspaceFolder}/packages/langium",
+				"--extensionDevelopmentPath=${workspaceFolder}/packages/langiumvscode"
 			]
 		},
 		{
@@ -51,7 +51,7 @@
 			"request": "launch",
             "runtimeExecutable": "${execPath}",
 			"args": [
-				"--extensionDevelopmentPath=${workspaceFolder}/vscode-extension",
+				"--extensionDevelopmentPath=${workspaceFolder}/packages/langium-vscode",
 				"--extensionTestsPath=${workspaceFolder}/out/test/suite/index"
 			]
 		}
