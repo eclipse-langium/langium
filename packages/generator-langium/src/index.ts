@@ -1,47 +1,35 @@
-import yo = require("yeoman-generator");
+import Generator from  'yeoman-generator';
 
-class SimpleGenerator extends yo.generators.Base
-{						
-	constructor(args, options) {
+class SimpleGenerator extends Generator
+{
+    constructor(args: string | string[], options: Generator.GeneratorOptions) {
         super(args, options);
-        this.log("Constructor")              
+        this.log('Constructor');
     }
-	
-	public initialize() : void {
-		this.log("initialize() : Your initialization methods (checking current project state, getting configs, etc)");		
-	}
-	
-	public prompting() : void {
-		this.log("prompting() : Where you prompt users for options (where you'd call this.prompt())");
-	}
-	
-	public configuring() : void {
-		this.log("configuring() : Saving configurations and configure the project (creating .editorconfig files and other metadata files)");
-	}
-	
-	public writing() : void {
-		this.log("writing() : Where you write the generator specific files (routes, controllers, etc)");
-	}
-			
-	public install() : void {
-		this.log("install() : Where installation are run (npm, bower)");	
-	}
 
-	public end() : void {
-		this.log("end() : Called last, cleanup, say good bye, etc");
-	}
-		
-	public SomeMethod() {
-		this.log("SomeMethod");				
-	}
-	
-	public AnotherMethod() {
-		this.log("AnotherMethod");
-	}
+    initialize(): void {
+        this.log('initialize() : Your initialization methods (checking current project state, getting configs, etc)');
+    }
+
+    prompting(): void {
+        this.log('prompting() : Where you prompt users for options (where you\'d call this.prompt())');
+    }
+
+    configuring(): void {
+        this.log('configuring() : Saving configurations and configure the project (creating .editorconfig files and other metadata files)');
+    }
+
+    writing(): void {
+        this.log('writing() : Where you write the generator specific files (routes, controllers, etc)');
+    }
+
+    install(): void {
+        this.log('install() : Where installation are run (npm, bower)');
+    }
+
+    end(): void {
+        this.log('end() : Called last, cleanup, say good bye, etc');
+    }
 }
 
 export = SimpleGenerator;
-
-
-
-

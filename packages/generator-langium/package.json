@@ -8,7 +8,22 @@
   "keywords": [
     "yeoman-generator"
   ],
+  "scripts": {
+    "clean": "rimraf app/*",
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "lint": "eslint ./src --ext .js,.ts"
+  },
   "dependencies": {
     "yeoman-generator": "^5.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^14.14.31",
+    "@types/yeoman-generator": "^5.0.0",
+    "@typescript-eslint/eslint-plugin": "^4.15.2",
+    "@typescript-eslint/parser": "^4.15.2",
+    "eslint": "^7.20.0",
+    "rimraf": "^3.0.2",
+    "typescript": "^4.2.2"
   }
 }

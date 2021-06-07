@@ -1,11 +1,14 @@
 {
+	"extends": "../../tsconfig.json",
 	"compilerOptions": {
-		"sourceMap": true,
-		"module": "commonjs",
-		"target": "ES5",
-		"outDir": "app"					
-	},		
+	  "rootDir": "src",
+	  "outDir": "app"
+	},
 	"include": [
-    	"src/**/*"
-    ]
-}
+	  "src/**/*"
+	],
+	"exclude": [
+	  "app",
+	  "/node_modules"
+	]
+  }

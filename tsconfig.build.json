@@ -1,5 +1,10 @@
 {
-   "extends": "./tsconfig.json",
-   "files": [],
-   "references": [{ "path": "packages/langium" }, { "path": "packages/langium-cli" }, { "path": "packages/langium-vscode" }]
+    "extends": "./tsconfig.json",
+    "files": [],
+    "references": [
+        { "path": "packages/langium" },
+        { "path": "packages/langium-cli" },
+        { "path": "packages/langium-vscode" },
+        { "path": "packages/generator-langium" }
+    ]
  }
