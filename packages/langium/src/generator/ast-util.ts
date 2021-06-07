@@ -109,7 +109,7 @@ export function resolveAllReferences(node: AstNode): { unresolved: AstNodeRefere
     };
     const process = (n: AstNodeContent) => {
         streamReferences(n.node).forEach(r => {
-            const value = r.reference.value;
+            const value = r.reference.ref;
             if (value === undefined) {
                 result.unresolved.push(r);
             }

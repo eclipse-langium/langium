@@ -48,8 +48,8 @@ function findCommonSuperRule(node: CstNode): { rule: ast.ParserRule, node: CstNo
     while (superNode) {
         if (superNode.element !== node.element) {
             const topFeature = node.feature;
-            if (ast.isRuleCall(topFeature) && topFeature.rule.value) {
-                const rule = <ast.ParserRule>topFeature.rule.value;
+            if (ast.isRuleCall(topFeature) && topFeature.rule.ref) {
+                const rule = <ast.ParserRule>topFeature.rule.ref;
                 return { rule, node };
             }
             throw new Error();
@@ -90,7 +90,7 @@ function featureMatches(feature: ast.AbstractElement, node: CstNode): MatchType 
             return 'none';
         }
     } else if (ast.isRuleCall(feature)) {
-        return ruleMatches(feature.rule.value, node);
+        return ruleMatches(feature.rule.ref, node);
     } else if (ast.isCrossReference(feature)) {
         return featureMatches(feature.terminal, node);
     }

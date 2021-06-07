@@ -7,6 +7,7 @@ import { DefaultScopeComputation, DefaultScopeProvider } from './references/scop
 import { DefaultNameProvider } from './references/naming';
 import { ValidationRegistry } from './service/validation/validation-registry';
 import { DefaultDocumentValidator } from './service/validation/document-validator';
+import { AstJsonSerializer } from './service/json-serializer/ast-json-serializer';
 
 export type DefaultModuleContext = {
     connection?: Connection
@@ -39,6 +40,9 @@ export function createDefaultModule(context: DefaultModuleContext = {}): Module<
         validation: {
             DocumentValidator: (injector) => new DefaultDocumentValidator(injector),
             ValidationRegistry: (injector) => new ValidationRegistry(injector)
+        },
+        serializer: {
+            JsonSerializer: (injector) => new AstJsonSerializer(injector)
         }
     };
 }

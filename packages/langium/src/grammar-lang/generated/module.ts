@@ -6,6 +6,6 @@ import { Parser } from './parser';
 
 export const LangiumGrammarGeneratedModule: Module<LangiumServices, LangiumGeneratedServices> = {
     Parser: (injector) => new Parser(injector),
-    GrammarAccess: () => new LangiumGrammarGrammarAccess(),
+    GrammarAccess: (injector) => new LangiumGrammarGrammarAccess(injector),
     AstReflection: () => new LangiumGrammarAstReflection()
 };

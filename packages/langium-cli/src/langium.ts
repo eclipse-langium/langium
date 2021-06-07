@@ -1,7 +1,7 @@
 import * as fs from 'fs-extra';
 import { Command } from 'commander';
 import { Package } from './package';
-import { Grammar, createLangiumGrammarServices, resolveAllReferences, serialize } from 'langium';
+import { Grammar, createLangiumGrammarServices, resolveAllReferences } from 'langium';
 import { generateGrammarAccess } from './generator/grammar-access-generator';
 import { generateParser } from './generator/parser-generator';
 import { generateAst } from './generator/ast-generator';
@@ -30,7 +30,7 @@ const document = services.Parser.parse(grammarFileContent, grammarFile);
 const grammar = document.parseResult.value as Grammar;
 document.precomputedScopes = services.references.ScopeComputation.computeScope(grammar);
 resolveAllReferences(grammar);
-const json = serialize(grammar);
+const json = services.serializer.JsonSerializer.serialize(grammar);
 const parser = generateParser(grammar, pack.langium);
 const grammarAccess = generateGrammarAccess(grammar, pack.langium, opts.b);
 const genAst = generateAst(grammar, pack.langium);

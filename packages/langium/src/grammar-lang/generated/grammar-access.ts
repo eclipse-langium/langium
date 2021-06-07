@@ -1,5 +1,5 @@
 import { GrammarAccess } from '../../grammar/grammar-access';
-import { retrocycle } from '../../grammar/grammar-utils';
+import { LangiumServices } from '../../services';
 import { Action, Assignment, CrossReference, Keyword, RuleCall } from './ast';
 
 export type GrammarRuleAccess = {
@@ -488,8 +488,8 @@ export class LangiumGrammarGrammarAccess extends GrammarAccess {
     EnumLiterals = this.buildAccess<EnumLiteralsRuleAccess>('EnumLiterals');
     EnumLiteralDeclaration = this.buildAccess<EnumLiteralDeclarationRuleAccess>('EnumLiteralDeclaration');
 
-    constructor() {
+    constructor(injector: LangiumServices) {
         // eslint-disable-next-line @typescript-eslint/no-var-requires
-        super(retrocycle(require('./grammar.json')));
+        super(injector, require('./grammar.json'));
     }
 }

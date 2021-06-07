@@ -8,6 +8,7 @@ import { NameProvider } from './references/naming';
 import { ScopeProvider, ScopeComputation } from './references/scope';
 import { ValidationRegistry } from './service/validation/validation-registry';
 import { DocumentValidator } from './service/validation/document-validator';
+import { AstJsonSerializer } from './service/json-serializer/ast-json-serializer';
 
 export type LangiumGeneratedServices = {
     Parser: LangiumParser,
@@ -31,6 +32,9 @@ export type LangiumServices = LangiumGeneratedServices & {
     validation: {
         DocumentValidator: DocumentValidator,
         ValidationRegistry: ValidationRegistry
+    }
+    serializer: {
+        JsonSerializer: AstJsonSerializer
     }
 }
 
