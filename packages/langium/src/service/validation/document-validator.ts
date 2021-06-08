@@ -1,14 +1,14 @@
-import { Range, TextDocument } from 'vscode-languageserver-textdocument';
+import { Range } from 'vscode-languageserver-textdocument';
 import { Diagnostic, DiagnosticSeverity } from 'vscode-languageserver/node';
 import { DiagnosticInfo, ValidationAcceptor, ValidationRegistry } from './validation-registry';
 import { findNodeForFeature } from '../../grammar/grammar-util';
 import { LangiumServices } from '../../services';
-import { LangiumDocument } from '../../documents/document';
+import { ProcessedLangiumDocument } from '../../documents/document';
 import { resolveAllReferences, streamAllContents } from '../../utils/ast-util';
 import { AstNode } from '../../syntax-tree';
 
 export interface DocumentValidator {
-    validateDocument(langiumDocument: LangiumDocument, textDocument: TextDocument): Diagnostic[];
+    validateDocument(document: ProcessedLangiumDocument): Diagnostic[];
 }
 
 export class DefaultDocumentValidator {
@@ -18,8 +18,8 @@ export class DefaultDocumentValidator {
         this.validationRegistry = services.validation.ValidationRegistry;
     }
 
-    validateDocument(langiumDocument: LangiumDocument, textDocument: TextDocument): Diagnostic[] {
-        const parseResult = langiumDocument.parseResult;
+    validateDocument(document: ProcessedLangiumDocument): Diagnostic[] {
+        const parseResult = document.parseResult;
         const diagnostics: Diagnostic[] = [];
 
         // Process lexer errors
@@ -27,8 +27,8 @@ export class DefaultDocumentValidator {
             const diagnostic: Diagnostic = {
                 severity: DiagnosticSeverity.Error,
                 range: {
-                    start: textDocument.positionAt(lexerError.offset),
-                    end: textDocument.positionAt(lexerError.offset + lexerError.length)
+                    start: document.positionAt(lexerError.offset),
+                    end: document.positionAt(lexerError.offset + lexerError.length)
                 },
                 message: lexerError.message
             };
@@ -41,8 +41,8 @@ export class DefaultDocumentValidator {
             const diagnostic: Diagnostic = {
                 severity: DiagnosticSeverity.Error,
                 range: {
-                    start: textDocument.positionAt(token.startOffset),
-                    end: textDocument.positionAt(token.startOffset + token.image.length)
+                    start: document.positionAt(token.startOffset),
+                    end: document.positionAt(token.startOffset + token.image.length)
                 },
                 message: parserError.message
             };
@@ -59,16 +59,16 @@ export class DefaultDocumentValidator {
                 property: unresolved.property as any,
                 index: unresolved.index
             };
-            diagnostics.push(this.toDiagnostic('error', message, info, textDocument));
+            diagnostics.push(this.toDiagnostic('error', message, info, document));
         }
 
         // Process custom validations
-        diagnostics.push(...this.validateAst(parseResult.value, textDocument));
+        diagnostics.push(...this.validateAst(parseResult.value, document));
 
         return diagnostics;
     }
 
-    protected validateAst(rootNode: AstNode, document: TextDocument): Diagnostic[] {
+    protected validateAst(rootNode: AstNode, document: ProcessedLangiumDocument): Diagnostic[] {
         const validationItems: Diagnostic[] = [];
         const acceptor: ValidationAcceptor = <N extends AstNode>(severity: 'error' | 'warning' | 'info' | 'hint', message: string, info: DiagnosticInfo<N>) => {
             validationItems.push(this.toDiagnostic(severity, message, info, document));
@@ -85,7 +85,7 @@ export class DefaultDocumentValidator {
         return validationItems;
     }
 
-    protected toDiagnostic<N extends AstNode>(severity: 'error' | 'warning' | 'info' | 'hint', message: string, info: DiagnosticInfo<N>, document: TextDocument): Diagnostic {
+    protected toDiagnostic<N extends AstNode>(severity: 'error' | 'warning' | 'info' | 'hint', message: string, info: DiagnosticInfo<N>, document: ProcessedLangiumDocument): Diagnostic {
         return {
             message,
             range: getDiagnosticRange(info, document),
@@ -99,7 +99,7 @@ export class DefaultDocumentValidator {
     }
 }
 
-export function getDiagnosticRange<N extends AstNode>(info: DiagnosticInfo<N>, document: TextDocument): Range {
+export function getDiagnosticRange<N extends AstNode>(info: DiagnosticInfo<N>, document: ProcessedLangiumDocument): Range {
     if (info.property !== undefined && typeof info.property !== 'string') {
         throw new Error('Invalid property: ' + info.property);
     }

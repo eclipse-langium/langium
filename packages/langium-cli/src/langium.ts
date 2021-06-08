@@ -1,7 +1,7 @@
 import * as fs from 'fs-extra';
 import { Command } from 'commander';
 import { Package } from './package';
-import { Grammar, createLangiumGrammarServices, resolveAllReferences } from 'langium';
+import { Grammar, createLangiumGrammarServices, LangiumDocumentConfiguration, resolveAllReferences } from 'langium';
 import { generateGrammarAccess } from './generator/grammar-access-generator';
 import { generateParser } from './generator/parser-generator';
 import { generateAst } from './generator/ast-generator';
@@ -26,8 +26,9 @@ const services = createLangiumGrammarServices();
 
 const grammarFile = pack.langium.grammar ?? 'src/grammar.langium';
 const grammarFileContent = fs.readFileSync(grammarFile).toString();
-const document = services.Parser.parse(grammarFileContent, grammarFile);
-const grammar = document.parseResult.value as Grammar;
+const document = LangiumDocumentConfiguration.create(`file:${grammarFile}`, 'langium', 0, grammarFileContent);
+const processedDocument = services.documents.DocumentBuilder.build(document);
+const grammar = processedDocument.parseResult.value as Grammar;
 document.precomputedScopes = services.references.ScopeComputation.computeScope(grammar);
 resolveAllReferences(grammar);
 const json = services.serializer.JsonSerializer.serialize(grammar);

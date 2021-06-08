@@ -1,12 +1,12 @@
-import { TextDocument } from 'vscode-languageserver-textdocument';
 import { Connection } from 'vscode-languageserver/node';
 import { LangiumParser } from '../parser/langium-parser';
 import { LangiumServices } from '../services';
 import { ScopeComputation } from '../references/scope';
 import { DocumentValidator } from '../service/validation/document-validator';
+import { LangiumDocument, ProcessedLangiumDocument } from './document';
 
 export interface DocumentBuilder {
-    build(textDocument: TextDocument, event: 'change' | 'open' | 'close'): void
+    build(document: LangiumDocument): ProcessedLangiumDocument
 }
 
 export class DefaultDocumentBuilder implements DocumentBuilder {
@@ -22,19 +22,18 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
         this.documentValidator = services.validation.DocumentValidator;
     }
 
-    build(textDocument: TextDocument, event: 'change' | 'open' | 'close'): void {
-        if (event === 'close') {
-            return;
-        }
-        // TODO shall we store the parsed documents somewhere in memory?
-        const langiumDoc = this.parser.parse(textDocument.getText(), textDocument.uri);
-        langiumDoc.precomputedScopes = this.scopeComputation.computeScope(langiumDoc.parseResult.value);
-        const diagnostics = this.documentValidator.validateDocument(langiumDoc, textDocument);
+    build(document: LangiumDocument): ProcessedLangiumDocument {
+        const parseResult = this.parser.parse(document);
+        document.parseResult = parseResult;
+        document.precomputedScopes = this.scopeComputation.computeScope(parseResult.value);
+        const processed = document as ProcessedLangiumDocument;
+        const diagnostics = this.documentValidator.validateDocument(processed);
 
         if (this.connection) {
             // Send the computed diagnostics to VS Code.
-            this.connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
+            this.connection.sendDiagnostics({ uri: document.uri, diagnostics });
         }
+        return processed;
     }
 
 }

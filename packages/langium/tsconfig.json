@@ -5,10 +5,10 @@
     "outDir": "lib"
   },
   "include": [
-    "src/**/*"
+    "src/**/*.ts"
   ],
   "exclude": [
     "lib",
-    "/node_modules"
+    "node_modules"
   ]
 }

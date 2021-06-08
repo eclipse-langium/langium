@@ -41,7 +41,8 @@
   },
   "dependencies": {
     "langium": "^0.0.0",
-    "vscode-languageclient": "^7.0.0"
+    "vscode-languageclient": "^7.0.0",
+    "vscode-languageserver": "^7.0.0"
   },
   "devDependencies": {
     "@types/glob": "^7.1.3",

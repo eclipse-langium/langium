@@ -2,13 +2,14 @@ import { LangiumParser } from './parser/langium-parser';
 import { GrammarAccess } from './grammar/grammar-access';
 import { AstReflection } from './syntax-tree';
 import { DocumentBuilder } from './documents/document-builder';
-import { Connection } from 'vscode-languageserver/node';
+import { Connection, TextDocuments } from 'vscode-languageserver/node';
 import { Linker } from './references/linker';
 import { NameProvider } from './references/naming';
 import { ScopeProvider, ScopeComputation } from './references/scope';
 import { ValidationRegistry } from './service/validation/validation-registry';
 import { DocumentValidator } from './service/validation/document-validator';
 import { AstJsonSerializer } from './service/json-serializer/ast-json-serializer';
+import { LangiumDocument } from './documents/document';
 
 export type LangiumGeneratedServices = {
     Parser: LangiumParser,
@@ -18,7 +19,8 @@ export type LangiumGeneratedServices = {
 
 export type LangiumServices = LangiumGeneratedServices & {
     documents: {
-        DocumentBuilder: DocumentBuilder
+        DocumentBuilder: DocumentBuilder,
+        TextDocuments: TextDocuments<LangiumDocument>
     },
     languageServer: {
         Connection?: Connection
@@ -32,7 +34,7 @@ export type LangiumServices = LangiumGeneratedServices & {
     validation: {
         DocumentValidator: DocumentValidator,
         ValidationRegistry: ValidationRegistry
-    }
+    },
     serializer: {
         JsonSerializer: AstJsonSerializer
     }
