@@ -34,13 +34,13 @@ export class ValidationRegistry {
         this.reflection = services.AstReflection;
     }
 
-    register(checksRecord: { [type: string]: ValidationCheck | ValidationCheck[] }, thisObj: ThisParameterType<unknown> = this): void {
+    register(checksRecord: { [type: string]: ValidationCheck | ValidationCheck[] | undefined }, thisObj: ThisParameterType<unknown> = this): void {
         for (const [type, ch] of Object.entries(checksRecord)) {
             if (Array.isArray(ch)) {
                 for (const check of ch) {
                     this.doRegister(type, check.bind(thisObj));
                 }
-            } else {
+            } else if (ch) {
                 this.doRegister(type, ch.bind(thisObj));
             }
         }
