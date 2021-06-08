@@ -1,6 +1,6 @@
 import * as langium from 'langium';
-import { getTypeName } from 'langium';
-import { AstNode, CompositeGeneratorNode, GeneratorNode, IndentNode, NewLineNode, NL, process, replaceTokens } from 'langium';
+import { getContainerOfType, getTypeName } from 'langium';
+import { CompositeGeneratorNode, GeneratorNode, IndentNode, NewLineNode, NL, process, replaceTokens } from 'langium';
 import { collectAst } from './type-collector';
 import { Cardinality, findAllFeatures, isArray, isDataTypeRule, isOptional } from 'langium';
 import { LangiumConfig } from '../package';
@@ -245,7 +245,7 @@ function wrap(ctx: RuleContext, node: GeneratorNode, cardinality: Cardinality): 
 function buildRuleCall(ctx: RuleContext, ruleCall: langium.RuleCall): string {
     const rule = ruleCall.rule.ref;
     if (langium.isParserRule(rule)) {
-        if (AstNode.getContainer(ruleCall, langium.reflection, langium.Assignment)) {
+        if (getContainerOfType(ruleCall, langium.isAssignment)) {
             return `this.subruleLeaf(${ctx.subrule++}, this.${rule.name}, ${getGrammarAccess(ctx, ruleCall)});`;
         } else {
             return `this.unassignedSubrule(${ctx.subrule++}, this.${rule.name}, ${getGrammarAccess(ctx, ruleCall)});`;

@@ -1,13 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { EmbeddedActionsParser, ILexingError, IRecognitionException, IRuleConfig, Lexer, TokenType } from 'chevrotain';
-import { AbstractElement, Action, Assignment, isAssignment, isCrossReference, reflection } from '../grammar/generated/ast';
+import { AbstractElement, Action, isAssignment, isCrossReference } from '../grammar/generated/ast';
 import { LangiumDocument } from '../documents/document';
-import { AstNode, Number, Reference, RuleResult, String } from '../syntax-tree';
+import { AstNode, Reference } from '../syntax-tree';
 import { isArrayOperator } from '../grammar/grammar-util';
 import { CstNodeBuilder } from './cst-node-builder';
 import { GrammarAccess } from '../grammar/grammar-access';
 import { Linker } from '../references/linker';
 import { LangiumServices } from '../services';
+import { getContainerOfType } from '../utils/ast-util';
 
 type StackItem = {
     object: any,
@@ -19,6 +20,25 @@ export type ParseResult<T> = {
     parserErrors: IRecognitionException[],
     lexerErrors: ILexingError[]
 }
+
+// eslint-disable-next-line @typescript-eslint/no-namespace
+export namespace String {
+    export const type = 'String';
+    export function is(item: unknown): boolean {
+        return (item as any).$type === type;
+    }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-namespace
+export namespace Number {
+    export const type = 'Number';
+    export function is(item: unknown): boolean {
+        return (item as any).$type === type;
+    }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type RuleResult = (idxInCallingRule?: number, ...args: any[]) => any
 
 export class LangiumParser extends EmbeddedActionsParser {
     readonly grammarAccess: GrammarAccess;
@@ -100,7 +120,7 @@ export class LangiumParser extends EmbeddedActionsParser {
         const token = this.consume(idx, tokenType);
         if (!this.RECORDING_PHASE) {
             this.nodeBuilder.buildLeafNode(token, feature);
-            const assignment = <Assignment>AstNode.getContainer(feature, reflection, Assignment);
+            const assignment = getContainerOfType(feature, isAssignment);
             if (assignment) {
                 let crossRefId: string | undefined;
                 if (isCrossReference(assignment.terminal)) {
@@ -131,7 +151,7 @@ export class LangiumParser extends EmbeddedActionsParser {
         }
         const subruleResult = this.subrule(idx, rule);
         if (!this.RECORDING_PHASE) {
-            const assignment = <Assignment>AstNode.getContainer(feature, reflection, Assignment);
+            const assignment = getContainerOfType(feature, isAssignment);
             if (assignment) {
                 this.assign(assignment, subruleResult);
             }

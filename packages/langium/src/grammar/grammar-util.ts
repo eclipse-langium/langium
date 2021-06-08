@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import * as ast from '../grammar/generated/ast';
-import { AstNode, CompositeCstNode, CstNode, ILeafCstNode, LeafCstNode } from '../syntax-tree';
+import { CompositeCstNodeImpl, LeafCstNodeImpl } from '../parser/cst-node-builder';
+import { AstNode, CstNode, LeafCstNode } from '../syntax-tree';
+import { getContainerOfType } from '../utils/ast-util';
 
 type FeatureValue = {
     feature: ast.AbstractElement;
@@ -105,10 +107,10 @@ export function replaceTokens(input: string): string {
     return result;
 }
 
-export function findLeafNodeAtOffset(node: CstNode, offset: number): ILeafCstNode | undefined {
-    if (node instanceof LeafCstNode) {
+export function findLeafNodeAtOffset(node: CstNode, offset: number): LeafCstNode | undefined {
+    if (node instanceof LeafCstNodeImpl) {
         return node;
-    } else if (node instanceof CompositeCstNode) {
+    } else if (node instanceof CompositeCstNodeImpl) {
         const children = node.children.filter(e => e.offset < offset).reverse();
         for (const child of children) {
             const result = findLeafNodeAtOffset(child, offset);
@@ -147,10 +149,10 @@ function findNodesForFeatureInternal(node: CstNode | undefined, feature: string 
     if (!node || !feature || node.element !== element) {
         return [];
     }
-    const nodeFeature = <ast.Assignment>AstNode.getContainer(node.feature, ast.reflection, ast.Assignment);
+    const nodeFeature = getContainerOfType(node.feature, ast.isAssignment);
     if (!first && nodeFeature && nodeFeature.feature === feature) {
         return [node];
-    } else if (node instanceof CompositeCstNode) {
+    } else if (node instanceof CompositeCstNodeImpl) {
         return node.children.flatMap(e => findNodesForFeatureInternal(e, feature, element, false));
     }
     return [];
