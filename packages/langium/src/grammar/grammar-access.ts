@@ -2,6 +2,7 @@ import { LangiumServices } from '../services';
 import { LangiumDocument, LangiumDocumentConfiguration } from '../documents/document';
 import { AbstractRule, Grammar, ParserRule } from '../grammar/generated/ast';
 import { findAllFeatures } from '../grammar/grammar-util';
+import { DefaultJsonSerializer } from '../service/json-serializer/ast-json-serializer';
 
 export abstract class GrammarAccess {
 
@@ -10,7 +11,7 @@ export abstract class GrammarAccess {
     constructor(services: LangiumServices, grammar: Grammar) {
         // TODO: This looks like it only works for the Langium grammar.
         // Find an easier way to compute scopes for Langium grammars.
-        this.grammar = services.serializer.JsonSerializer.retrocycle(grammar);
+        this.grammar = (services.serializer.JsonSerializer as DefaultJsonSerializer).retrocycle(grammar);
         const document = LangiumDocumentConfiguration.create('', 'langium', 0, '');
         document.parseResult = {
             lexerErrors: [],

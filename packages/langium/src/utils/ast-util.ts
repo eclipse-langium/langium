@@ -10,6 +10,18 @@ export function isReference(obj: unknown): obj is Reference {
     return typeof obj === 'object' && typeof (obj as Reference).$refName === 'string';
 }
 
+export function getContainerOfType<T extends AstNode>(node: AstNode | undefined, typePredicate: (n: AstNode) => n is T): T | undefined {
+    let item = node;
+    while (item) {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        if (typePredicate(item)) {
+            return item;
+        }
+        item = item.$container;
+    }
+    return undefined;
+}
+
 export function getDocument(node: AstNode): LangiumDocument {
     let n = node;
     while (!n.$document && n.$container) {

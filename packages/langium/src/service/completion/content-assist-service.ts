@@ -1,6 +1,7 @@
 import * as ast from '../../grammar/generated/ast';
 import { AstNode, CstNode } from '../../syntax-tree';
 import { findLeafNodeAtOffset } from '../../grammar/grammar-util';
+import { flatten } from '../../utils/cst-util';
 import { buildContentAssistFor, buildContentAssistForRule, findFirstFeatures, findNextFeatures } from './content-assist-builder';
 
 export function contentAssist(grammar: ast.Grammar, root: AstNode, offset: number): string[] {
@@ -12,7 +13,7 @@ export function contentAssist(grammar: ast.Grammar, root: AstNode, offset: numbe
             const commonSuperRule = findCommonSuperRule(node);
             // In some cases, it is possible that we do not have a super rule
             if (commonSuperRule) {
-                const flattened = CstNode.flatten(commonSuperRule.node);
+                const flattened = flatten(commonSuperRule.node);
                 const possibleFeatures = interpretRule(commonSuperRule.rule, [...flattened]);
                 // Remove features which we already identified during parsing
                 const filteredFeatures = possibleFeatures.filter(e => e !== node.feature);

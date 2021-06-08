@@ -1,9 +1,15 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { AstNode, Reference } from '../../syntax-tree';
+import { AstNode } from '../../syntax-tree';
 import { Linker } from '../../references/linker';
 import { LangiumServices } from '../../services';
+import { isReference } from '../../utils/ast-util';
 
-export class AstJsonSerializer {
+export interface JsonSerializer {
+    serialize(node: AstNode): string
+    deserialize(content: string): AstNode
+}
+
+export class DefaultJsonSerializer {
 
     private readonly linker: Linker;
 
@@ -30,7 +36,7 @@ export class AstJsonSerializer {
                 } else {
                     objects.add(item);
                 }
-                if (Reference.is(item)) {
+                if (isReference(item)) {
                     return { $refName: item.$refName };
                 }
                 let newItem: Record<string, any>;
@@ -76,7 +82,7 @@ export class AstJsonSerializer {
             if (value && typeof value === 'object') {
                 if (Array.isArray(value)) {
                     for (const item of value) {
-                        if (Reference.is(item)) {
+                        if (isReference(item)) {
                             const referenceId = `${(container as any).$type}:${propName}`;
                             Object.defineProperty(item, 'ref', {
                                 get: () => link(container as AstNode, item.$refName, referenceId)
@@ -89,7 +95,7 @@ export class AstJsonSerializer {
                 } else {
                     for (const [name, item] of Object.entries(value)) {
                         if (typeof item === 'object') {
-                            if (Reference.is(item)) {
+                            if (isReference(item)) {
                                 const referenceId = `${value.$type}:${name}`;
                                 Object.defineProperty(item, 'ref', {
                                     get: () => link(value as AstNode, item.$refName, referenceId)
