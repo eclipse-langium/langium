@@ -1,5 +1,5 @@
-import * as ast from '../../grammar-lang/generated/ast';
-import { Cardinality, isArray, isOptional } from '../../generator/utils';
+import * as ast from '../../grammar/generated/ast';
+import { Cardinality, isArray, isOptional } from '../../grammar/grammar-util';
 
 export function findNextFeatures(featureStack: ast.AbstractElement[]): ast.AbstractElement[] {
     if (featureStack.length === 0) {

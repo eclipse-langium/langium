@@ -11,14 +11,14 @@
     "lint": "eslint ./src --ext .js,.ts",
     "bootstrap": "node ../langium-cli/bin/langium && npm run copygrammar",
     "test": "jest --coverage",
-    "copygrammar": "copyfiles -f ./src/grammar-lang/generated/grammar.json ./lib/grammar-lang/generated"
+    "copygrammar": "copyfiles -f ./src/grammar/generated/grammar.json ./lib/grammar/generated"
   },
   "author": "",
   "license": "MIT",
   "langium": {
-    "grammar": "src/grammar-lang/langium-grammar.langium",
+    "grammar": "src/grammar/langium-grammar.langium",
     "extensions": ["langium"],
-    "out": "src/grammar-lang/generated",
+    "out": "src/grammar/generated",
     "langiumInternal": true
   },
   "dependencies": {

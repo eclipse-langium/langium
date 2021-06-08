@@ -1,4 +1,4 @@
-import { AstNode, Reference } from './ast-node';
+import { AstNode, Reference } from '../syntax-tree';
 import { Stream, StreamImpl, DONE_RESULT, TreeStream, TreeStreamImpl } from '../utils/stream';
 import { LangiumDocument } from '../documents/document';
 

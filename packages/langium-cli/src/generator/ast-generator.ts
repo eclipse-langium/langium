@@ -12,7 +12,7 @@ export function generateAst(grammar: Grammar, config: LangiumConfig): string {
         '/* eslint-disable @typescript-eslint/explicit-module-boundary-types */', NL
     );
     if (config.langiumInternal) {
-        fileNode.children.push("import { AstNode, AstReflection, Reference } from '../../generator/ast-node';", NL, NL);
+        fileNode.children.push("import { AstNode, AstReflection, Reference } from '../../syntax-tree';", NL, NL);
     } else {
         fileNode.children.push("import { AstNode, AstReflection, Reference } from 'langium';", NL, NL);
     }

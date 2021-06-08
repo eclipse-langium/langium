@@ -18,11 +18,11 @@ let client: LanguageClient;
 // called by vscode on activation event, see package.json "activationEvents"
 export function activate(context: vscode.ExtensionContext): void {
 
-	let serverModule = context.asAbsolutePath(path.join('node_modules', 'langium', 'lib', 'language-server.js'));
+	let serverModule = context.asAbsolutePath(path.join('out', 'language-server', 'main'));
 	// The debug options for the server
 	// --inspect=6009: runs the server in Node's Inspector mode so VS Code can attach to the server for debugging
 	let debugOptions = { execArgv: ['--nolazy', '--inspect=6009'] };
-  
+
 	// If the extension is launched in debug mode then the debug server options are used
 	// Otherwise the run options are used
 	let serverOptions: ServerOptions = {
@@ -33,7 +33,7 @@ export function activate(context: vscode.ExtensionContext): void {
 		options: debugOptions
 	  }
 	};
-  
+
 	// Options to control the language client
 	let clientOptions: LanguageClientOptions = {
 	  // Register the server for xtext documents
@@ -43,7 +43,7 @@ export function activate(context: vscode.ExtensionContext): void {
 		fileEvents: workspace.createFileSystemWatcher('**/*.xtext')
 	  }
 	};
-  
+
 	// Create the language client and start the client.
 	client = new LanguageClient(
 	  'langium',
@@ -51,7 +51,7 @@ export function activate(context: vscode.ExtensionContext): void {
 	  serverOptions,
 	  clientOptions
 	);
-  
+
 	// Start the client. This will also launch the server
 	client.start();
 

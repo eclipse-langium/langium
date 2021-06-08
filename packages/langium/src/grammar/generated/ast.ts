@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-empty-interface */
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
-import { AstNode, AstReflection, Reference } from '../../generator/ast-node';
+import { AstNode, AstReflection, Reference } from '../../syntax-tree';
 
 export interface AbstractElement extends AstNode {
     cardinality: '?' | '*' | '+'

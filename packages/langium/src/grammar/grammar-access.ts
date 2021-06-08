@@ -1,7 +1,7 @@
-import { AbstractRule, Grammar, ParserRule } from '../grammar-lang/generated/ast';
-import { findAllFeatures } from '../generator/utils';
 import { LangiumServices } from '../services';
 import { LangiumDocument } from '../documents/document';
+import { AbstractRule, Grammar, ParserRule } from '../grammar/generated/ast';
+import { findAllFeatures } from '../grammar/grammar-util';
 
 export abstract class GrammarAccess {
 
@@ -27,7 +27,7 @@ export abstract class GrammarAccess {
     findRuleByName(name: string): AbstractRule {
         const result = this.grammar.rules.find(e => e.name === name);
         if (!result) {
-            throw new Error();
+            throw new Error('Rule not found: ' + name);
         }
         return result;
     }

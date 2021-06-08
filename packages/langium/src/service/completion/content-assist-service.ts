@@ -1,6 +1,6 @@
-import * as ast from '../../grammar-lang/generated/ast';
-import { AstNode, CstNode } from '../../generator/ast-node';
-import { findLeafNodeAtOffset } from '../../grammar/grammar-utils';
+import * as ast from '../../grammar/generated/ast';
+import { AstNode, CstNode } from '../../syntax-tree';
+import { findLeafNodeAtOffset } from '../../grammar/grammar-util';
 import { buildContentAssistFor, buildContentAssistForRule, findFirstFeatures, findNextFeatures } from './content-assist-builder';
 
 export function contentAssist(grammar: ast.Grammar, root: AstNode, offset: number): string[] {

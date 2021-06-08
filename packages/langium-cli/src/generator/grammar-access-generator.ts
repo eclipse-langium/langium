@@ -6,7 +6,7 @@ export function generateGrammarAccess(grammar: langium.Grammar, config: LangiumC
     const node = new CompositeGeneratorNode();
 
     if (config.langiumInternal) {
-        node.children.push("import { GrammarAccess } from '../../grammar/grammar-access';", NL);
+        node.children.push("import { GrammarAccess } from '../grammar-access';", NL);
         node.children.push("import { LangiumServices } from '../../services';", NL);
     } else {
         node.children.push("import { GrammarAccess, LangiumServices } from 'langium';", NL);
