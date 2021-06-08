@@ -58,21 +58,20 @@ export class LangiumParser extends EmbeddedActionsParser {
         return super.RULE(name, this.startImplementation(type, implementation), config);
     }
 
-    parse(input: string, documentUri: string): LangiumDocument {
-        this.nodeBuilder.buildRootNode(input);
-        const lexerResult = this.lexer.tokenize(input);
+    parse(input: string | LangiumDocument): ParseResult<AstNode> {
+        const text = typeof input === 'string' ? input : input.getText();
+        this.nodeBuilder.buildRootNode(text);
+        const lexerResult = this.lexer.tokenize(text);
         this.input = lexerResult.tokens;
         const result = this.mainRule();
-        const document: LangiumDocument = {
-            parseResult: {
-                value: result,
-                lexerErrors: lexerResult.errors,
-                parserErrors: this.errors
-            },
-            documentUri
+        if (typeof input !== 'string') {
+            result.$document = input;
+        }
+        return {
+            value: result,
+            lexerErrors: lexerResult.errors,
+            parserErrors: this.errors
         };
-        result.$document = document;
-        return document;
     }
 
     private startImplementation($type: string | undefined, implementation: (...implArgs: unknown[]) => unknown): (implArgs: unknown[]) => unknown {

@@ -1,5 +1,7 @@
 export * from './dependency-injection';
 export * from './default-module';
+export * from './documents/document';
+export * from './documents/document-builder';
 export * from './services';
 export * from './syntax-tree';
 export * from './generator/node';

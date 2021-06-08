@@ -95,7 +95,7 @@ export class AstJsonSerializer {
                                     get: () => link(value as AstNode, item.$refName, referenceId)
                                 });
                             } else if (item) {
-                                if(Array.isArray(item)) {
+                                if (Array.isArray(item)) {
                                     revive(item, value, name);
                                 } else {
                                     revive(item);

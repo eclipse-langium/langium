@@ -118,7 +118,7 @@ export class DefaultScopeComputation implements ScopeComputation {
             node,
             name,
             type: node.$type,
-            documentUri: document.documentUri
+            documentUri: document.uri
         };
     }
 

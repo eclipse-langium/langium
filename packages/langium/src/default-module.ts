@@ -1,7 +1,8 @@
 import { Module } from './dependency-injection';
 import { LangiumServices } from './services';
+import { LangiumDocumentConfiguration } from './documents/document';
 import { DefaultDocumentBuilder } from './documents/document-builder';
-import { Connection } from 'vscode-languageserver/node';
+import { Connection, TextDocuments } from 'vscode-languageserver/node';
 import { DefaultLinker } from './references/linker';
 import { DefaultScopeComputation, DefaultScopeProvider } from './references/scope';
 import { DefaultNameProvider } from './references/naming';
@@ -26,7 +27,8 @@ export function createDefaultModule(context: DefaultModuleContext = {}): Module<
         },
 
         documents: {
-            DocumentBuilder: (injector) => new DefaultDocumentBuilder(injector)
+            DocumentBuilder: (injector) => new DefaultDocumentBuilder(injector),
+            TextDocuments: () => new TextDocuments(LangiumDocumentConfiguration)
         },
         languageServer: {
             Connection: () => context.connection

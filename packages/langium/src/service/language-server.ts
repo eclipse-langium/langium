@@ -1,61 +1,27 @@
-/* eslint-disable */
 import {
-    createConnection,
-    TextDocuments,
-    ProposedFeatures,
-    InitializeParams,
-    DidChangeConfigurationNotification,
-    CompletionItem,
-    TextDocumentPositionParams,
-    TextDocumentSyncKind,
-    InitializeResult,
+    InitializeParams, CompletionItem, TextDocumentPositionParams, TextDocumentSyncKind, InitializeResult, Connection
 } from 'vscode-languageserver/node';
 
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { contentAssist } from './completion/content-assist-service';
-import { createLangiumGrammarServices } from '../grammar/langium-grammar-module';
+import { LangiumDocument } from '../documents/document';
+import { LangiumServices } from '../services';
 
-export function startLanguageServer(): void {
-    // Create a connection for the server, using Node's IPC as a transport.
-    // Also include all preview / proposed LSP features.
-    let connection = createConnection(ProposedFeatures.all);
-
-    const services = createLangiumGrammarServices({ connection });
-    const parser = services.Parser;
-    const scopeComputation = services.references.ScopeComputation;
-    const documentBuilder = services.documents.DocumentBuilder;
-
-    // Create a simple text document manager.
-    let documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument);
-
-    let hasConfigurationCapability: boolean = false;
-    let hasWorkspaceFolderCapability: boolean = false;
-    // let hasDiagnosticRelatedInformationCapability: boolean = false;
+export function startLanguageServer(services: LangiumServices): void {
+    const connection = services.languageServer.Connection;
+    if (!connection) {
+        throw new Error('Starting a language server requires the languageServer.Connection service to be set.');
+    }
 
     connection.onInitialize((params: InitializeParams) => {
-        let capabilities = params.capabilities;
-        console.log("Initialize!");
-        // Does the client support the `workspace/configuration` request?
-        // If not, we fall back using global settings.
-        hasConfigurationCapability = !!(
-            capabilities.workspace && !!capabilities.workspace.configuration
-        );
-        hasWorkspaceFolderCapability = !!(
-            capabilities.workspace && !!capabilities.workspace.workspaceFolders
-        );
-        // hasDiagnosticRelatedInformationCapability = !!(
-        //     capabilities.textDocument &&
-        //     capabilities.textDocument.publishDiagnostics &&
-        //     capabilities.textDocument.publishDiagnostics.relatedInformation
-        // );
+        const capabilities = params.capabilities;
+        const hasWorkspaceFolderCapability = !!capabilities.workspace?.workspaceFolders;
 
         const result: InitializeResult = {
             capabilities: {
                 textDocumentSync: TextDocumentSyncKind.Incremental,
                 // Tell the client that this server supports code completion.
-                completionProvider: {
-                    resolveProvider: true
-                }
+                completionProvider: {}
             }
         };
         if (hasWorkspaceFolderCapability) {
@@ -68,54 +34,37 @@ export function startLanguageServer(): void {
         return result;
     });
 
-    connection.onInitialized(() => {
-        if (hasConfigurationCapability) {
-            // Register for all configuration changes.
-            connection.client.register(DidChangeConfigurationNotification.type, undefined);
-        }
-        if (hasWorkspaceFolderCapability) {
-            connection.workspace.onDidChangeWorkspaceFolders(_event => {
-                connection.console.log('Workspace folder change event received.');
-            });
-        }
-    });
-
-    connection.onDidChangeConfiguration(change => {
-        // Revalidate all open text documents
-        // documents.all().forEach(validateTextDocument);
-    });
-
-    documents.onDidOpen(change => {
-        documentBuilder.build(change.document, 'open');
-    });
-
-    documents.onDidClose(change => {
-        documentBuilder.build(change.document, 'close');
-    });
-
-    // The content of a text document has changed. This event is emitted
-    // when the text document first opened or when its content has changed.
+    const documents = services.documents.TextDocuments;
+    const documentBuilder = services.documents.DocumentBuilder;
     documents.onDidChangeContent(change => {
-        documentBuilder.build(change.document, 'change');
+        documentBuilder.build(change.document);
     });
 
-    connection.onDidChangeWatchedFiles(_change => {
-        // Monitored files have change in VS Code
-        connection.console.log('We received a file change event');
-    });
+    addCompletionHandler(connection, services);
 
-    // This handler provides the initial list of the completion items.
+    // Make the text document manager listen on the connection for open, change and close text document events.
+    documents.listen(connection);
+
+    // Listen on the connection.
+    connection.listen();
+}
+
+export function addCompletionHandler(connection: Connection, services: LangiumServices): void {
+    // TODO create an extensible service API for completion
     connection.onCompletion(
         (_textDocumentPosition: TextDocumentPositionParams): CompletionItem[] => {
             const uri = _textDocumentPosition.textDocument.uri;
-            const document = documents.get(uri);
+            const document = services.documents.TextDocuments.get(uri);
             if (document) {
                 const text = document.getText({ start: document.positionAt(0), end: _textDocumentPosition.position });
                 const offset = document.offsetAt(_textDocumentPosition.position);
-                const langiumDoc = parser.parse(text, uri);
-                const rootNode = langiumDoc.parseResult.value;
-                langiumDoc.precomputedScopes = scopeComputation.computeScope(rootNode);
-                const assist = contentAssist(parser.grammarAccess['grammar'], rootNode, offset);
+                const parser = services.Parser;
+                const parseResult = parser.parse(text);
+                const rootNode = parseResult.value;
+                (rootNode as { $document: LangiumDocument }).$document = document;
+                document.parseResult = parseResult;
+                document.precomputedScopes = services.references.ScopeComputation.computeScope(rootNode);
+                const assist = contentAssist(parser.grammarAccess.grammar, rootNode, offset);
                 return Array.from(new Set<string>(assist))
                     .map(e => buildCompletionItem(document, offset, text, e));
             } else {
@@ -123,42 +72,27 @@ export function startLanguageServer(): void {
             }
         }
     );
+}
 
-    function buildCompletionItem(document: TextDocument, offset: number, content: string, completion: string): CompletionItem {
-        let negativeOffset: number = 0;
-        for (let i = completion.length; i > 0; i--) {
-            const contentSub = content.substring(content.length - i);
-            if (completion.startsWith(contentSub)) {
-                negativeOffset = i;
-                break;
-            }
+function buildCompletionItem(document: TextDocument, offset: number, content: string, completion: string): CompletionItem {
+    let negativeOffset = 0;
+    for (let i = completion.length; i > 0; i--) {
+        const contentSub = content.substring(content.length - i);
+        if (completion.startsWith(contentSub)) {
+            negativeOffset = i;
+            break;
         }
-        const start = document.positionAt(offset - negativeOffset);
-        const end = document.positionAt(offset);
-        return {
-            label: completion,
-            textEdit: {
-                newText: completion,
-                range: {
-                    start,
-                    end
-                }
-            }
-        };
     }
-
-    // This handler resolves additional information for the item selected in
-    // the completion list.
-    connection.onCompletionResolve(
-        (item: CompletionItem): CompletionItem => {
-            return item;
+    const start = document.positionAt(offset - negativeOffset);
+    const end = document.positionAt(offset);
+    return {
+        label: completion,
+        textEdit: {
+            newText: completion,
+            range: {
+                start,
+                end
+            }
         }
-    );
-
-    // Make the text document manager listen on the connection
-    // for open, change and close text document events
-    documents.listen(connection);
-
-    // Listen on the connection
-    connection.listen();
+    };
 }

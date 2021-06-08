@@ -1,3 +1,6 @@
-import { startLanguageServer } from 'langium';
+import { createLangiumGrammarServices, startLanguageServer } from 'langium';
+import { createConnection, ProposedFeatures } from 'vscode-languageserver/node';
 
-startLanguageServer();
+const connection = createConnection(ProposedFeatures.all);
+const services = createLangiumGrammarServices({ connection });
+startLanguageServer(services);

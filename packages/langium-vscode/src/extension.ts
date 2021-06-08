@@ -1,31 +1,34 @@
 import * as vscode from 'vscode';
-
-// TODO(@@dd): externalize extension config
-const DELAY = 100; // delay in ms until a render can be cancelled on subsequent document changes
-
 import * as path from 'path';
 import { workspace } from 'vscode';
-
 import {
-	LanguageClient,
-	LanguageClientOptions,
-	ServerOptions,
-	TransportKind
-  } from 'vscode-languageclient/node';
+	LanguageClient, LanguageClientOptions, ServerOptions, TransportKind
+} from 'vscode-languageclient/node';
+
+// Called by vscode on activation event, see package.json "activationEvents"
+export function activate(context: vscode.ExtensionContext): void {
+    startLanguageClient(context);
+    configureTemplateDecoration(context);
+}
+
+export function deactivate(): Thenable<void> | undefined {
+	if (client) {
+        return client.stop();
+	}
+    return undefined;
+}
 
 let client: LanguageClient;
 
-// called by vscode on activation event, see package.json "activationEvents"
-export function activate(context: vscode.ExtensionContext): void {
-
-	let serverModule = context.asAbsolutePath(path.join('out', 'language-server', 'main'));
+function startLanguageClient(context: vscode.ExtensionContext): void {
+    const serverModule = context.asAbsolutePath(path.join('out', 'language-server', 'main'));
 	// The debug options for the server
 	// --inspect=6009: runs the server in Node's Inspector mode so VS Code can attach to the server for debugging
-	let debugOptions = { execArgv: ['--nolazy', '--inspect=6009'] };
+	const debugOptions = { execArgv: ['--nolazy', '--inspect=6009'] };
 
 	// If the extension is launched in debug mode then the debug server options are used
 	// Otherwise the run options are used
-	let serverOptions: ServerOptions = {
+	const serverOptions: ServerOptions = {
 	  run: { module: serverModule, transport: TransportKind.ipc },
 	  debug: {
 		module: serverModule,
@@ -35,7 +38,7 @@ export function activate(context: vscode.ExtensionContext): void {
 	};
 
 	// Options to control the language client
-	let clientOptions: LanguageClientOptions = {
+	const clientOptions: LanguageClientOptions = {
 	  // Register the server for xtext documents
 	  documentSelector: [{ scheme: 'file', language: 'langium' }],
 	  synchronize: {
@@ -54,8 +57,14 @@ export function activate(context: vscode.ExtensionContext): void {
 
 	// Start the client. This will also launch the server
 	client.start();
+}
 
-	// define decoration type
+
+// TODO(@@dd): externalize extension config
+const DELAY = 100; // delay in ms until a render can be cancelled on subsequent document changes
+
+function configureTemplateDecoration(context: vscode.ExtensionContext) {
+    // define decoration type
 	const decorationType = vscode.window.createTextEditorDecorationType(decorationRenderOptions());
 
 	// creates a cancelable decorator that delays the update
@@ -68,13 +77,6 @@ export function activate(context: vscode.ExtensionContext): void {
 	vscode.window.onDidChangeActiveTextEditor(() => decorator(), null, context.subscriptions);
 	vscode.workspace.onDidChangeTextDocument(() => decorator(), null, context.subscriptions);
 }
-
-export function deactivate(): Thenable<void> | undefined {
-	if (!client) {
-	  return undefined;
-	}
-	return client.stop();
-  }
 
 // internal type definitions
 type Decorator = (editor: vscode.TextEditor) => void;
