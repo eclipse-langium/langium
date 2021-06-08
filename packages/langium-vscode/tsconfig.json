@@ -2,14 +2,14 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "rootDir": "src",
-    "outDir": "lib"
+    "outDir": "out"
   },
   "references": [{ "path": "../langium" }],
   "include": [
     "src/**/*"
   ],
   "exclude": [
-    "lib",
+    "out",
     "/node_modules"
   ]
 }

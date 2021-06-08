@@ -1,6 +1,6 @@
 import { IToken } from 'chevrotain';
-import { AbstractElement } from '../grammar-lang/generated/ast';
-import { AstNode, CompositeCstNode, CstNode, LeafCstNode, RootCstNode } from '../generator/ast-node';
+import { AbstractElement } from '../grammar/generated/ast';
+import { AstNode, CompositeCstNode, CstNode, LeafCstNode, RootCstNode } from '../syntax-tree';
 
 export class CstNodeBuilder {
 

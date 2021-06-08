@@ -1,4 +1,4 @@
-import { GrammarAccess } from '../../grammar/grammar-access';
+import { GrammarAccess } from '../grammar-access';
 import { LangiumServices } from '../../services';
 import { Action, Assignment, CrossReference, Keyword, RuleCall } from './ast';
 

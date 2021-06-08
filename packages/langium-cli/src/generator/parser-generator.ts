@@ -27,7 +27,7 @@ export function generateParser(grammar: langium.Grammar, config: LangiumConfig):
     if (config.langiumInternal) {
         fileNode.children.push("import { LangiumServices } from '../../services';", NL);
         fileNode.children.push("import { LangiumParser } from '../../parser/langium-parser';", NL);
-        fileNode.children.push("import { Number, String } from '../../generator/ast-node';", NL);
+        fileNode.children.push("import { Number, String } from '../../syntax-tree';", NL);
     } else {
         fileNode.children.push("import { LangiumParser, LangiumServices, Number, String } from 'langium';", NL);
     }
@@ -41,7 +41,10 @@ export function generateParser(grammar: langium.Grammar, config: LangiumConfig):
     fileNode.children.push(" } from './ast';", NL, NL);
 
     const tokens: Array<{ name: string, length: number, node: CompositeGeneratorNode }> = [];
-    const terminals = grammar.rules.filter(e => langium.isTerminalRule(e)).map(e => e as langium.TerminalRule);
+    const terminals = grammar.rules
+        .filter(e => langium.isTerminalRule(e))
+        .map(e => e as langium.TerminalRule)
+        .sort((a, b) => a.name.localeCompare(b.name));
 
     for (const terminal of terminals) {
         tokens.push(buildTerminalToken(grammar, terminal));
@@ -325,7 +328,7 @@ function collectKeywords(grammar: langium.Grammar): string[] {
         collectElementKeywords(rule.alternatives, keywords);
     }
 
-    return Array.from(keywords);
+    return Array.from(keywords).sort((a, b) => a.localeCompare(b));
 }
 
 function collectElementKeywords(element: langium.AbstractElement, keywords: Set<string>) {

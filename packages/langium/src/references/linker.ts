@@ -1,5 +1,5 @@
 import { LangiumServices } from '../services';
-import { AstNode, AstReflection } from '../generator/ast-node';
+import { AstNode, AstReflection } from '../syntax-tree';
 import { ScopeProvider } from './scope';
 
 export interface Linker {

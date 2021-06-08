@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { EmbeddedActionsParser, ILexingError, IRecognitionException, IRuleConfig, Lexer, TokenType } from 'chevrotain';
-import { AbstractElement, Action, Assignment, isAssignment, isCrossReference, reflection } from '../grammar-lang/generated/ast';
+import { AbstractElement, Action, Assignment, isAssignment, isCrossReference, reflection } from '../grammar/generated/ast';
 import { LangiumDocument } from '../documents/document';
-import { AstNode, Number, Reference, RuleResult, String } from '../generator/ast-node';
-import { isArrayOperator } from '../generator/utils';
+import { AstNode, Number, Reference, RuleResult, String } from '../syntax-tree';
+import { isArrayOperator } from '../grammar/grammar-util';
 import { CstNodeBuilder } from './cst-node-builder';
 import { GrammarAccess } from '../grammar/grammar-access';
 import { Linker } from '../references/linker';

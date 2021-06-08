@@ -1,11 +1,11 @@
 import { Range, TextDocument } from 'vscode-languageserver-textdocument';
 import { Diagnostic, DiagnosticSeverity } from 'vscode-languageserver/node';
 import { DiagnosticInfo, ValidationAcceptor, ValidationRegistry } from './validation-registry';
-import { findNodeForFeature } from '../../grammar/grammar-utils';
+import { findNodeForFeature } from '../../grammar/grammar-util';
 import { LangiumServices } from '../../services';
 import { LangiumDocument } from '../../documents/document';
-import { resolveAllReferences, streamAllContents } from '../../generator/ast-util';
-import { AstNode } from '../../generator/ast-node';
+import { resolveAllReferences, streamAllContents } from '../../utils/ast-util';
+import { AstNode } from '../../syntax-tree';
 
 export interface DocumentValidator {
     validateDocument(langiumDocument: LangiumDocument, textDocument: TextDocument): Diagnostic[];

@@ -1,6 +1,6 @@
 import { LangiumParser } from './parser/langium-parser';
 import { GrammarAccess } from './grammar/grammar-access';
-import { AstReflection } from './generator/ast-node';
+import { AstReflection } from './syntax-tree';
 import { DocumentBuilder } from './documents/document-builder';
 import { Connection } from 'vscode-languageserver/node';
 import { Linker } from './references/linker';

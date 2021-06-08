@@ -1,5 +1,5 @@
-import { AstNode, AstReflection } from '../generator/ast-node';
-import { getDocument, streamAllContents } from '../generator/ast-util';
+import { AstNode, AstReflection } from '../syntax-tree';
+import { getDocument, streamAllContents } from '../utils/ast-util';
 import { Stream, stream } from '../utils/stream';
 import { NameProvider } from './naming';
 import { LangiumServices } from '../services';

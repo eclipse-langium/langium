@@ -1,7 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// import { AstNode } from '../../generator/ast-node';
-
-import { AstNode, Reference } from '../../generator/ast-node';
+import { AstNode, Reference } from '../../syntax-tree';
 import { Linker } from '../../references/linker';
 import { LangiumServices } from '../../services';
 

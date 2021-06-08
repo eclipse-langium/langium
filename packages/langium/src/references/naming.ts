@@ -1,4 +1,4 @@
-import { AstNode } from '../generator/ast-node';
+import { AstNode } from '../syntax-tree';
 
 export interface NamedAstNode extends AstNode {
     name: string;
