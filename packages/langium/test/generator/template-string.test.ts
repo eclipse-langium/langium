@@ -1,4 +1,4 @@
-import { s } from '../template-string';
+import { s } from '../../src/generator/template-string';
 
 test('Should not throw when substituting null', () => {
     expect(s`${null}`).toBe('null');

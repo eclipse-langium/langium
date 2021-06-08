@@ -67,7 +67,7 @@ const __requested__ = Symbol();
  * @returns the requested value `obj[prop]`
  * @throws Error if a dependency cycle is detected
  */
-function _resolve<I, T>(obj: any, prop: string | symbol, module: Module<I, T>, injector: I): T[keyof T] | undefined {
+function _resolve<I, T>(obj: any, prop: string | symbol | number, module: Module<I, T>, injector: I): T[keyof T] | undefined {
     if (prop in obj) {
         if (obj[prop] === __requested__) {
             throw new Error('Cycle detected. Please make "' + String(prop) + '" lazy. See https://langium.org/docs/di/cyclic-dependencies');
