@@ -26,8 +26,7 @@ export function generateParser(grammar: langium.Grammar, config: LangiumConfig):
     );
     if (config.langiumInternal) {
         fileNode.children.push("import { LangiumServices } from '../../services';", NL);
-        fileNode.children.push("import { LangiumParser } from '../../parser/langium-parser';", NL);
-        fileNode.children.push("import { Number, String } from '../../syntax-tree';", NL);
+        fileNode.children.push("import { LangiumParser, Number, String } from '../../parser/langium-parser';", NL);
     } else {
         fileNode.children.push("import { LangiumParser, LangiumServices, Number, String } from 'langium';", NL);
     }
@@ -93,8 +92,7 @@ function buildParser(grammar: langium.Grammar): CompositeGeneratorNode {
     classBody.children.push('constructor(services: LangiumServices) {', NL);
     const constructorBody = new IndentNode();
     constructorBody.children.push(
-        'super(tokens, services);', NL,
-        'this.performSelfAnalysis();', NL
+        'super(tokens, services);', NL
     );
     classBody.children.push(constructorBody, '}', NL, NL);
 
@@ -173,7 +171,7 @@ function buildGroup(ctx: RuleContext, group: langium.Group): CompositeGeneratorN
 }
 
 function buildAction(ctx: RuleContext, action: langium.Action): GeneratorNode {
-    return `this.executeAction(${action.type}, ${getGrammarAccess(ctx, action)});`;
+    return `this.action(${action.type}, ${getGrammarAccess(ctx, action)});`;
 }
 
 function buildElement(ctx: RuleContext, terminal: langium.AbstractElement): GeneratorNode {
@@ -184,7 +182,7 @@ function buildElement(ctx: RuleContext, terminal: langium.AbstractElement): Gene
     } else if (langium.isAssignment(terminal)) {
         return buildElement(ctx, terminal.terminal);
     } else if (langium.isCrossReference(terminal)) {
-        return `this.consumeLeaf(${ctx.consume++}, ID, ${getGrammarAccess(ctx, terminal)});`;
+        return `this.consume(${ctx.consume++}, ID, ${getGrammarAccess(ctx, terminal)});`;
     } else if (langium.isRuleCall(terminal)) {
         return buildRuleCall(ctx, terminal);
     } else if (langium.isAlternatives(terminal)) {
@@ -204,17 +202,14 @@ function buildAlternatives(ctx: RuleContext, alternatives: langium.Alternatives)
     } else {
         const wrapper = new CompositeGeneratorNode();
         wrapper.children.push(`this.or(${ctx.or++}, [`, NL);
-        const altWrapper = new IndentNode();
-        wrapper.children.push(altWrapper);
 
         for (const element of alternatives.elements) {
-            altWrapper.children.push('{', NL);
             const altIndent = new IndentNode();
+            wrapper.children.push(altIndent);
             const contentIndent = new IndentNode();
-            altIndent.children.push('ALT: () => {', NL, contentIndent, '}', NL);
+            altIndent.children.push('() => {', NL, contentIndent, '},', NL);
             const elementNode = buildElement(ctx, element);
             contentIndent.children.push(wrap(ctx, elementNode, element.cardinality), new NewLineNode(undefined, true));
-            altWrapper.children.push(altIndent, '},', NL);
         }
 
         wrapper.children.push(']);', NL);
@@ -246,12 +241,12 @@ function buildRuleCall(ctx: RuleContext, ruleCall: langium.RuleCall): string {
     const rule = ruleCall.rule.ref;
     if (langium.isParserRule(rule)) {
         if (getContainerOfType(ruleCall, langium.isAssignment)) {
-            return `this.subruleLeaf(${ctx.subrule++}, this.${rule.name}, ${getGrammarAccess(ctx, ruleCall)});`;
+            return `this.subrule(${ctx.subrule++}, this.${rule.name}, ${getGrammarAccess(ctx, ruleCall)});`;
         } else {
             return `this.unassignedSubrule(${ctx.subrule++}, this.${rule.name}, ${getGrammarAccess(ctx, ruleCall)});`;
         }
     } else if (langium.isTerminalRule(rule)) {
-        return `this.consumeLeaf(${ctx.consume++}, ${rule.name}, ${getGrammarAccess(ctx, ruleCall)});`;
+        return `this.consume(${ctx.consume++}, ${rule.name}, ${getGrammarAccess(ctx, ruleCall)});`;
     }
 
     return '';
@@ -259,7 +254,7 @@ function buildRuleCall(ctx: RuleContext, ruleCall: langium.RuleCall): string {
 
 function buildKeyword(ctx: RuleContext, keyword: langium.Keyword): string {
     const validName = replaceTokens(keyword.value) + 'Keyword';
-    const node = `this.consumeLeaf(${ctx.consume++}, ${validName}, ${getGrammarAccess(ctx, keyword)});`;
+    const node = `this.consume(${ctx.consume++}, ${validName}, ${getGrammarAccess(ctx, keyword)});`;
     return node;
 }
 
@@ -272,7 +267,7 @@ function buildTerminalToken(grammar: langium.Grammar, terminal: langium.Terminal
     terminalNode.children.push(
         'const ',
         terminal.name,
-        " = createToken({ name : '",
+        " = createToken({ name: '",
         terminal.name,
         "', pattern: ",
         terminal.regex);
