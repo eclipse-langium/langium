@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { EmbeddedActionsParser, ILexingError, IRecognitionException, IRuleConfig, Lexer, TokenType } from 'chevrotain';
+import { EmbeddedActionsParser, ILexingError, IOrAlt, IRecognitionException, IToken, Lexer, TokenType } from 'chevrotain';
 import { AbstractElement, Action, isAssignment, isCrossReference } from '../grammar/generated/ast';
 import { LangiumDocument } from '../documents/document';
 import { AstNode, Reference } from '../syntax-tree';
@@ -40,12 +40,13 @@ export namespace Number {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type RuleResult = (idxInCallingRule?: number, ...args: any[]) => any
 
-export class LangiumParser extends EmbeddedActionsParser {
+export class LangiumParser {
     readonly grammarAccess: GrammarAccess;
 
     private readonly linker: Linker;
     private readonly lexer: Lexer;
     private readonly nodeBuilder = new CstNodeBuilder();
+    private readonly wrapper: ChevrotainWrapper;
     private stack: StackItem[] = [];
     private mainRule!: RuleResult;
 
@@ -54,7 +55,7 @@ export class LangiumParser extends EmbeddedActionsParser {
     }
 
     constructor(tokens: TokenType[], services: LangiumServices) {
-        super(tokens, { recoveryEnabled: true, nodeLocationTracking: 'onlyOffset' });
+        this.wrapper = new ChevrotainWrapper(tokens);
         this.grammarAccess = services.GrammarAccess;
         this.linker = services.references.Linker;
         this.lexer = new Lexer(tokens);
@@ -63,40 +64,39 @@ export class LangiumParser extends EmbeddedActionsParser {
     MAIN_RULE(
         name: string,
         type: string,
-        implementation: (...implArgs: unknown[]) => unknown,
-        config?: IRuleConfig<unknown>
-    ): (idxInCallingRule?: number, ...args: unknown[]) => unknown {
-        return this.mainRule = this.DEFINE_RULE(name, type, implementation, config);
+        implementation: () => unknown
+    ): () => unknown {
+        return this.mainRule = this.DEFINE_RULE(name, type, implementation);
     }
 
     DEFINE_RULE(
         name: string,
         type: string | undefined,
-        implementation: (...implArgs: unknown[]) => unknown,
-        config?: IRuleConfig<unknown>
-    ): (idxInCallingRule?: number, ...args: unknown[]) => unknown {
-        return super.RULE(name, this.startImplementation(type, implementation), config);
+        implementation: () => unknown
+    ): () => unknown {
+        return this.wrapper.DEFINE_RULE(name, this.startImplementation(type, implementation).bind(this));
     }
 
     parse(input: string | LangiumDocument): ParseResult<AstNode> {
+        this.wrapper.selfAnalysis();
         const text = typeof input === 'string' ? input : input.getText();
         this.nodeBuilder.buildRootNode(text);
         const lexerResult = this.lexer.tokenize(text);
-        this.input = lexerResult.tokens;
-        const result = this.mainRule();
+        this.wrapper.input = lexerResult.tokens;
+        const result = this.mainRule.call(this.wrapper);
         if (typeof input !== 'string') {
             result.$document = input;
         }
         return {
             value: result,
             lexerErrors: lexerResult.errors,
-            parserErrors: this.errors
+            parserErrors: this.wrapper.errors
         };
     }
 
-    private startImplementation($type: string | undefined, implementation: (...implArgs: unknown[]) => unknown): (implArgs: unknown[]) => unknown {
-        return (implArgs: unknown[]) => {
-            if (!this.RECORDING_PHASE) {
+    private startImplementation($type: string | undefined, implementation: () => unknown): () => unknown {
+        return () => {
+            if (!this.wrapper.IS_RECORDING) {
                 this.stack.push({
                     object: { $type },
                     executedAction: false
@@ -104,21 +104,33 @@ export class LangiumParser extends EmbeddedActionsParser {
             }
             let result: unknown;
             try {
-                result = implementation(implArgs);
+                result = implementation();
             } catch (err) {
                 console.log('Parser exception thrown!', err);
                 result = undefined;
             }
-            if (!this.RECORDING_PHASE && !result) {
+            if (!this.wrapper.IS_RECORDING && !result) {
                 result = this.construct();
             }
             return result;
         };
     }
 
-    consumeLeaf(idx: number, tokenType: TokenType, feature: AbstractElement): void {
-        const token = this.consume(idx, tokenType);
-        if (!this.RECORDING_PHASE) {
+    or(idx: number, choices: Array<() => void>): void {
+        this.wrapper.wrapOr(idx, choices);
+    }
+
+    option(idx: number, callback: () => void): void {
+        this.wrapper.wrapOption(idx, callback);
+    }
+
+    many(idx: number, callback: () => void): void {
+        this.wrapper.wrapMany(idx, callback);
+    }
+
+    consume(idx: number, tokenType: TokenType, feature: AbstractElement): void {
+        const token = this.wrapper.wrapConsume(idx, tokenType);
+        if (!this.wrapper.IS_RECORDING) {
             this.nodeBuilder.buildLeafNode(token, feature);
             const assignment = getContainerOfType(feature, isAssignment);
             if (assignment) {
@@ -132,8 +144,8 @@ export class LangiumParser extends EmbeddedActionsParser {
     }
 
     unassignedSubrule(idx: number, rule: RuleResult, feature: AbstractElement): void {
-        const result = this.subruleLeaf(idx, rule, feature);
-        if (!this.RECORDING_PHASE) {
+        const result = this.subrule(idx, rule, feature);
+        if (!this.wrapper.IS_RECORDING) {
             const resultKind = result.$type;
             const object = Object.assign(result, this.current.object);
             if (resultKind) {
@@ -145,12 +157,12 @@ export class LangiumParser extends EmbeddedActionsParser {
         }
     }
 
-    subruleLeaf(idx: number, rule: RuleResult, feature: AbstractElement): any {
-        if (!this.RECORDING_PHASE) {
+    subrule(idx: number, rule: RuleResult, feature: AbstractElement): any {
+        if (!this.wrapper.IS_RECORDING) {
             this.nodeBuilder.buildCompositeNode(feature);
         }
-        const subruleResult = this.subrule(idx, rule);
-        if (!this.RECORDING_PHASE) {
+        const subruleResult = this.wrapper.wrapSubrule(idx, rule);
+        if (!this.wrapper.IS_RECORDING) {
             const assignment = getContainerOfType(feature, isAssignment);
             if (assignment) {
                 this.assign(assignment, subruleResult);
@@ -159,8 +171,8 @@ export class LangiumParser extends EmbeddedActionsParser {
         return subruleResult;
     }
 
-    executeAction($type: string, action: Action): void {
-        if (!this.RECORDING_PHASE && !this.current.executedAction) {
+    action($type: string, action: Action): void {
+        if (!this.wrapper.IS_RECORDING && !this.current.executedAction) {
             const last = this.current;
             const newItem: StackItem = {
                 object: { $type },
@@ -180,7 +192,7 @@ export class LangiumParser extends EmbeddedActionsParser {
      * @param grammarAccessElement The grammar access element that belongs to the current rule
      */
     initializeElement(grammarAccessElement: { [key: string]: AbstractElement }): void {
-        if (!this.RECORDING_PHASE) {
+        if (!this.wrapper.IS_RECORDING) {
             // TODO fix this by inverting the assign call in unassignedSubrule
             //const item = this.current.object;
             for (const element of Object.values(grammarAccessElement)) {
@@ -194,7 +206,7 @@ export class LangiumParser extends EmbeddedActionsParser {
     }
 
     construct(): unknown {
-        if (this.RECORDING_PHASE) {
+        if (this.wrapper.IS_RECORDING) {
             return undefined;
         }
         const item = this.current;
@@ -259,5 +271,53 @@ export class LangiumParser extends EmbeddedActionsParser {
             }
         };
         return reference;
+    }
+}
+
+/**
+ * This class wraps the embedded actions parser of chevrotain and exposes protected methods.
+ * This way, we can build the `LangiumParser` as a composition.
+ */
+class ChevrotainWrapper extends EmbeddedActionsParser {
+
+    private analysed = false;
+
+    constructor(tokens: TokenType[]) {
+        super(tokens, { recoveryEnabled: true, nodeLocationTracking: 'onlyOffset' });
+    }
+
+    get IS_RECORDING(): boolean {
+        return this.RECORDING_PHASE;
+    }
+
+    DEFINE_RULE(name: string, impl: () => unknown): () => unknown {
+        return this.RULE(name, impl);
+    }
+
+    selfAnalysis(): void {
+        if (!this.analysed) {
+            this.performSelfAnalysis();
+            this.analysed = true;
+        }
+    }
+
+    wrapConsume(idx: number, tokenType: TokenType): IToken {
+        return this.consume(idx, tokenType);
+    }
+
+    wrapSubrule(idx: number, rule: RuleResult): unknown {
+        return this.subrule(idx, rule);
+    }
+
+    wrapOr(idx: number, choices: Array<() => void>): void {
+        this.or(idx, choices.map(e => <IOrAlt<any>>{ ALT: e }));
+    }
+
+    wrapOption(idx: number, callback: () => void): void {
+        this.option(idx, callback);
+    }
+
+    wrapMany(idx: number, callback: () => void): void {
+        this.many(idx, callback);
     }
 }
