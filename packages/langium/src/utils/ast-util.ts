@@ -2,6 +2,10 @@ import { AstNode, Reference } from '../syntax-tree';
 import { Stream, StreamImpl, DONE_RESULT, TreeStream, TreeStreamImpl } from '../utils/stream';
 import { LangiumDocument } from '../documents/document';
 
+export type Mutable<T> = {
+    -readonly [P in keyof T]: T[P]
+};
+
 export function isAstNode(obj: unknown): obj is AstNode {
     return typeof obj === 'object' && typeof (obj as AstNode).$type === 'string';
 }

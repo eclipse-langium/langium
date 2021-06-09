@@ -1,25 +1,12 @@
-import { LangiumServices } from '../services';
-import { LangiumDocument, LangiumDocumentConfiguration } from '../documents/document';
 import { AbstractRule, Grammar, ParserRule } from '../grammar/generated/ast';
-import { findAllFeatures } from '../grammar/grammar-util';
-import { DefaultJsonSerializer } from '../service/json-serializer/ast-json-serializer';
+import { findAllFeatures, loadGrammar } from '../grammar/grammar-util';
 
 export abstract class GrammarAccess {
 
     readonly grammar: Grammar;
 
-    constructor(services: LangiumServices, grammar: Grammar) {
-        // TODO: This looks like it only works for the Langium grammar.
-        // Find an easier way to compute scopes for Langium grammars.
-        this.grammar = (services.serializer.JsonSerializer as DefaultJsonSerializer).retrocycle(grammar);
-        const document = LangiumDocumentConfiguration.create('', 'langium', 0, '');
-        document.parseResult = {
-            lexerErrors: [],
-            parserErrors: [],
-            value: this.grammar
-        };
-        (this.grammar as { $document: LangiumDocument }).$document = document;
-        document.precomputedScopes = services.references.ScopeComputation.computeScope(this.grammar);
+    constructor(grammar: Grammar) {
+        this.grammar = loadGrammar(JSON.stringify(grammar));
     }
 
     findRuleByName(name: string): AbstractRule {
