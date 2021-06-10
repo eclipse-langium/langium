@@ -14,6 +14,7 @@ export interface AstNodeDescription {
 
 export interface Scope {
     getElement(name: string): AstNodeDescription | undefined
+    getAllDescriptions(): AstNodeDescription[]
 }
 
 export class SimpleScope implements Scope {
@@ -23,6 +24,10 @@ export class SimpleScope implements Scope {
     constructor(elements: Stream<AstNodeDescription>, outerScope?: Scope) {
         this.elements = elements;
         this.outerScope = outerScope;
+    }
+
+    getAllDescriptions(): AstNodeDescription[] {
+        return Array.from(this.elements);
     }
 
     getElement(name: string): AstNodeDescription | undefined {
@@ -40,6 +45,9 @@ export class SimpleScope implements Scope {
 export const EMPTY_SCOPE: Scope = {
     getElement(): undefined {
         return undefined;
+    },
+    getAllDescriptions(): AstNodeDescription[] {
+        return [];
     }
 };
 

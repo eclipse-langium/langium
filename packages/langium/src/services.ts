@@ -10,6 +10,9 @@ import { ValidationRegistry } from './service/validation/validation-registry';
 import { DocumentValidator } from './service/validation/document-validator';
 import { JsonSerializer } from './service/json-serializer/ast-json-serializer';
 import { LangiumDocument } from './documents/document';
+import { CompletionProvider } from './completion/completion-provider';
+import { FollowElementComputation } from './completion/follow-element-computation';
+import { RuleInterpreter } from './completion/rule-interpreter';
 
 export type LangiumGeneratedServices = {
     Parser: LangiumParser,
@@ -31,6 +34,11 @@ export type LangiumServices = LangiumGeneratedServices & {
         ScopeProvider: ScopeProvider,
         ScopeComputation: ScopeComputation
     },
+    completion: {
+        CompletionProvider: CompletionProvider,
+        FollowElementComputation: FollowElementComputation,
+        RuleInterpreter: RuleInterpreter
+    }
     validation: {
         DocumentValidator: DocumentValidator,
         ValidationRegistry: ValidationRegistry

@@ -3,7 +3,6 @@ import {
 } from 'vscode-languageserver/node';
 
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { contentAssist } from './completion/content-assist-service';
 import { LangiumDocument } from '../documents/document';
 import { LangiumServices } from '../services';
 
@@ -56,7 +55,7 @@ export function addCompletionHandler(connection: Connection, services: LangiumSe
             const uri = _textDocumentPosition.textDocument.uri;
             const document = services.documents.TextDocuments.get(uri);
             if (document) {
-                const text = document.getText({ start: document.positionAt(0), end: _textDocumentPosition.position });
+                const text = document.getText();
                 const offset = document.offsetAt(_textDocumentPosition.position);
                 const parser = services.Parser;
                 const parseResult = parser.parse(text);
@@ -64,7 +63,8 @@ export function addCompletionHandler(connection: Connection, services: LangiumSe
                 (rootNode as { $document: LangiumDocument }).$document = document;
                 document.parseResult = parseResult;
                 document.precomputedScopes = services.references.ScopeComputation.computeScope(rootNode);
-                const assist = contentAssist(parser.grammarAccess.grammar, rootNode, offset);
+                const completionProvider = services.completion.CompletionProvider;
+                const assist = completionProvider.contentAssist(parser.grammarAccess.grammar, rootNode, offset);
                 return Array.from(new Set<string>(assist))
                     .map(e => buildCompletionItem(document, offset, text, e));
             } else {
