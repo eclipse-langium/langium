@@ -12,7 +12,9 @@
     "clean": "rimraf app/*",
     "build": "tsc",
     "watch": "tsc --watch",
-    "lint": "eslint ./src --ext .js,.ts"
+    "lint": "eslint ./src --ext .js,.ts",
+    "run": "yo langium",
+    "debug": "npx --node-arg=--inspect yo langium"
   },
   "dependencies": {
     "yeoman-generator": "^5.3.0"
