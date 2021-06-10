@@ -29,11 +29,10 @@
   "main": "./out/extension.js",
   "scripts": {
     "vscode:prepublish": "npm run build",
+    "clean": "rimraf out/*",
     "build": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "pretest": "npm run build && npm run lint",
-    "lint": "eslint src --ext ts",
-    "test": "node ./out/test/runTest.js"
+    "lint": "eslint src --ext ts"
   },
   "dependencies": {
     "langium": "0.0.0",
