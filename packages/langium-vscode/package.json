@@ -24,10 +24,6 @@
     ]
   },
   "activationEvents": [
-    "onLanguage:javascript",
-    "onLanguage:javascriptreact",
-    "onLanguage:typescript",
-    "onLanguage:typescriptreact",
     "onLanguage:langium"
   ],
   "main": "./out/extension.js",
@@ -40,7 +36,7 @@
     "test": "node ./out/test/runTest.js"
   },
   "dependencies": {
-    "langium": "^0.0.0",
+    "langium": "0.0.0",
     "vscode-languageclient": "^7.0.0",
     "vscode-languageserver": "^7.0.0"
   },

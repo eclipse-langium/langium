@@ -8,10 +8,10 @@ export function generateGrammarAccess(grammar: langium.Grammar, config: LangiumC
     if (config.langiumInternal) {
         node.children.push("import { GrammarAccess } from '../grammar-access';", NL);
         node.children.push("import { LangiumServices } from '../../services';", NL);
+        node.children.push("import { Action, Assignment, CrossReference, Keyword, RuleCall } from './ast';", NL, NL);
     } else {
-        node.children.push("import { GrammarAccess, LangiumServices } from 'langium';", NL);
+        node.children.push("import { Action, Assignment, CrossReference, GrammarAccess, Keyword, LangiumServices, RuleCall } from 'langium';", NL);
     }
-    node.children.push("import { Action, Assignment, CrossReference, Keyword, RuleCall } from './ast';", NL, NL);
 
     for (const rule of grammar.rules.filter(e => langium.isParserRule(e)).map(e => e as langium.ParserRule)) {
         node.children.push(generateRuleAccess(rule), NL, NL);
