@@ -7,11 +7,11 @@ export type Mutable<T> = {
 };
 
 export function isAstNode(obj: unknown): obj is AstNode {
-    return typeof obj === 'object' && typeof (obj as AstNode).$type === 'string';
+    return typeof obj === 'object' && obj !== null && typeof (obj as AstNode).$type === 'string';
 }
 
 export function isReference(obj: unknown): obj is Reference {
-    return typeof obj === 'object' && typeof (obj as Reference).$refName === 'string';
+    return typeof obj === 'object' && obj !== null && typeof (obj as Reference).$refName === 'string';
 }
 
 export function getContainerOfType<T extends AstNode>(node: AstNode | undefined, typePredicate: (n: AstNode) => n is T): T | undefined {

@@ -215,11 +215,11 @@ export class LangiumParser {
             if (!name.startsWith('$')) {
                 if (Array.isArray(value)) {
                     for (const item of value) {
-                        if (typeof (item) === 'object') {
+                        if (item !== null && typeof item === 'object') {
                             item.$container = obj;
                         }
                     }
-                } else if (typeof (value) === 'object') {
+                } else if (item !== null && typeof (value) === 'object') {
                     (<any>value).$container = obj;
                 }
             }
