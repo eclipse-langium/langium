@@ -17,6 +17,7 @@
     "debug": "npx --node-arg=--inspect yo langium"
   },
   "dependencies": {
+    "turbocommons-ts": "^3.7.0",
     "yeoman-generator": "^5.3.0"
   },
   "devDependencies": {
