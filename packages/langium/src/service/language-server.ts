@@ -1,8 +1,7 @@
 import {
-    InitializeParams, CompletionItem, TextDocumentPositionParams, TextDocumentSyncKind, InitializeResult, Connection
+    InitializeParams, TextDocumentPositionParams, TextDocumentSyncKind, InitializeResult, Connection, CompletionList
 } from 'vscode-languageserver/node';
 
-import { TextDocument } from 'vscode-languageserver-textdocument';
 import { LangiumDocument } from '../documents/document';
 import { LangiumServices } from '../services';
 
@@ -51,7 +50,7 @@ export function startLanguageServer(services: LangiumServices): void {
 export function addCompletionHandler(connection: Connection, services: LangiumServices): void {
     // TODO create an extensible service API for completion
     connection.onCompletion(
-        (_textDocumentPosition: TextDocumentPositionParams): CompletionItem[] => {
+        (_textDocumentPosition: TextDocumentPositionParams): CompletionList => {
             const uri = _textDocumentPosition.textDocument.uri;
             const document = services.documents.TextDocuments.get(uri);
             if (document) {
@@ -65,34 +64,10 @@ export function addCompletionHandler(connection: Connection, services: LangiumSe
                 document.precomputedScopes = services.references.ScopeComputation.computeScope(rootNode);
                 const completionProvider = services.completion.CompletionProvider;
                 const assist = completionProvider.contentAssist(parser.grammarAccess.grammar, rootNode, offset);
-                return Array.from(new Set<string>(assist))
-                    .map(e => buildCompletionItem(document, offset, text, e));
+                return assist;
             } else {
-                return [];
+                return CompletionList.create();
             }
         }
     );
-}
-
-function buildCompletionItem(document: TextDocument, offset: number, content: string, completion: string): CompletionItem {
-    let negativeOffset = 0;
-    for (let i = completion.length; i > 0; i--) {
-        const contentSub = content.substring(content.length - i);
-        if (completion.startsWith(contentSub)) {
-            negativeOffset = i;
-            break;
-        }
-    }
-    const start = document.positionAt(offset - negativeOffset);
-    const end = document.positionAt(offset);
-    return {
-        label: completion,
-        textEdit: {
-            newText: completion,
-            range: {
-                start,
-                end
-            }
-        }
-    };
 }

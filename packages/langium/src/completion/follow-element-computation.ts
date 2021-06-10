@@ -98,7 +98,7 @@ export class FollowElementComputation {
         }
     }
 
-    findNextFeaturesInGroup(group: ast.Group, index: number): ast.AbstractElement[] {
+    protected findNextFeaturesInGroup(group: ast.Group, index: number): ast.AbstractElement[] {
         const features: ast.AbstractElement[] = [];
         let firstFeature: ast.AbstractElement;
         do {
