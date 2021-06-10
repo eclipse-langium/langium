@@ -9,6 +9,9 @@ import { DefaultNameProvider } from './references/naming';
 import { ValidationRegistry } from './service/validation/validation-registry';
 import { DefaultDocumentValidator } from './service/validation/document-validator';
 import { DefaultJsonSerializer } from './service/json-serializer/ast-json-serializer';
+import { CompletionProvider } from './completion/completion-provider';
+import { FollowElementComputation } from './completion/follow-element-computation';
+import { RuleInterpreter } from './completion/rule-interpreter';
 
 export type DefaultModuleContext = {
     connection?: Connection
@@ -38,6 +41,11 @@ export function createDefaultModule(context: DefaultModuleContext = {}): Module<
             NameProvider: () => new DefaultNameProvider(),
             ScopeProvider: (injector) => new DefaultScopeProvider(injector),
             ScopeComputation: (injector) => new DefaultScopeComputation(injector)
+        },
+        completion: {
+            CompletionProvider: (injector) => new CompletionProvider(injector),
+            FollowElementComputation: () => new FollowElementComputation(),
+            RuleInterpreter: (injector) => new RuleInterpreter(injector)
         },
         validation: {
             DocumentValidator: (injector) => new DefaultDocumentValidator(injector),
