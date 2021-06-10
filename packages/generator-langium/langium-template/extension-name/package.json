@@ -1,0 +1,56 @@
+{
+    "name": "extension-name",
+    "displayName": "extension-name",
+    "description": "description",
+    "version": "0.0.1",
+    "engines": {
+        "vscode": "^1.56.0"
+    },
+    "categories": [
+        "Programming Languages"
+    ],
+    "contributes": {
+        "languages": [{
+            "id": "language-id",
+            "aliases": ["LanguageName", "language-id"],
+            "extensions": [".file-extension"],
+            "configuration": "./language-configuration.json"
+        }],
+        "grammars": [{
+            "language": "language-id",
+            "scopeName": "source.language-id",
+            "path": "./syntaxes/language-id.tmLanguage.json"
+        }]
+    },
+    "activationEvents": [
+        "onLanguage:language-id"
+    ],
+    "main": "./out/extension.js",
+    "langium": {
+        "grammar": "src/language-server/language-id.langium",
+        "extensions": [".file-extension"],
+        "out": "src/language-server/generated"
+    },
+    "scripts": {
+        "vscode:prepublish": "npm run build && npm run lint",
+        "build": "tsc",
+        "watch": "tsc -watch",
+        "lint": "eslint src --ext ts",
+        "langium:generate": "langium && npm run copygrammar",
+        "copygrammar": "copyfiles -f ./src/language-server/generated/grammar.json ./out/language-server/generated"
+    },
+    "dependencies": {
+        "langium": "0.0.0",
+        "vscode-languageclient": "^7.0.0",
+        "vscode-languageserver": "^7.0.0"
+    },
+    "devDependencies": {
+        "@types/vscode": "^1.56.0",
+        "@typescript-eslint/eslint-plugin": "^4.14.1",
+        "@typescript-eslint/parser": "^4.14.1",
+        "copyfiles": "^2.4.1",
+        "eslint": "^7.19.0",
+        "langium-cli": "0.0.0",
+        "typescript": "^4.1.3"
+    }
+}
