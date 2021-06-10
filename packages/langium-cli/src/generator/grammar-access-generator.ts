@@ -11,7 +11,7 @@ export function generateGrammarAccess(grammar: langium.Grammar, config: LangiumC
     } else {
         node.children.push("import { Action, Assignment, CrossReference, Keyword, RuleCall, GrammarAccess } from 'langium';");
     }
-    node.children.push(NL, NL);
+    node.children.push(NL, "import * as path from 'path';", NL, NL);
 
     for (const rule of grammar.rules.filter(e => langium.isParserRule(e)).map(e => e as langium.ParserRule)) {
         node.children.push(generateRuleAccess(rule), NL, NL);
@@ -30,7 +30,7 @@ export function generateGrammarAccess(grammar: langium.Grammar, config: LangiumC
     }
 
     const constructorNode = new IndentNode();
-    constructorNode.children.push('// eslint-disable-next-line @typescript-eslint/no-var-requires', NL, "super(require('./grammar.json'));");
+    constructorNode.children.push("super(path.join(__dirname, 'grammar.json'));");
     content.children.push(NL, 'constructor() {', NL, constructorNode, NL, '}', NL);
     node.children.push(content, '}', NL);
 

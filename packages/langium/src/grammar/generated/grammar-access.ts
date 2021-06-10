@@ -1,5 +1,6 @@
 import { GrammarAccess } from '../grammar-access';
 import { Action, Assignment, CrossReference, Keyword, RuleCall } from './ast';
+import * as path from 'path';
 
 export type GrammarRuleAccess = {
     GrammarKeyword: Keyword;
@@ -488,7 +489,6 @@ export class LangiumGrammarGrammarAccess extends GrammarAccess {
     EnumLiteralDeclaration = this.buildAccess<EnumLiteralDeclarationRuleAccess>('EnumLiteralDeclaration');
 
     constructor() {
-        // eslint-disable-next-line @typescript-eslint/no-var-requires
-        super(require('./grammar.json'));
+        super(path.join(__dirname, 'grammar.json'));
     }
 }

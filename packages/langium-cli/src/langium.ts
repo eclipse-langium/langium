@@ -31,14 +31,20 @@ const processedDocument = services.documents.DocumentBuilder.build(document);
 const grammar = processedDocument.parseResult.value as Grammar;
 document.precomputedScopes = services.references.ScopeComputation.computeScope(grammar);
 resolveAllReferences(grammar);
+console.log('Generating serialized grammar...');
 const json = services.serializer.JsonSerializer.serialize(grammar);
+console.log('Generating parser...');
 const parser = generateParser(grammar, pack.langium);
+console.log('Generating grammar access...');
 const grammarAccess = generateGrammarAccess(grammar, pack.langium, opts.b);
+console.log('Generating AST...');
 const genAst = generateAst(grammar, pack.langium);
+console.log('Generating dependency injection module...');
 const genModule = generateModule(grammar, pack.langium);
 
 const output = pack.langium.out ?? 'src/generated';
 
+console.log(`Writing generated files to '${output}'`);
 fs.mkdirsSync(output);
 fs.writeFileSync(`${output}/grammar.json`, json);
 fs.writeFileSync(`${output}/parser.ts`, parser);

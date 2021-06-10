@@ -1,12 +1,13 @@
 import { AbstractRule, Grammar, ParserRule } from '../grammar/generated/ast';
 import { findAllFeatures, loadGrammar } from '../grammar/grammar-util';
+import * as fs from 'fs';
 
 export abstract class GrammarAccess {
 
     readonly grammar: Grammar;
 
-    constructor(grammar: Grammar) {
-        this.grammar = loadGrammar(JSON.stringify(grammar));
+    constructor(grammarPath: string) {
+        this.grammar = loadGrammar(fs.readFileSync(grammarPath).toString());
     }
 
     findRuleByName(name: string): AbstractRule {
