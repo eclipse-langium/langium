@@ -5,9 +5,11 @@ import {
 	LanguageClient, LanguageClientOptions, ServerOptions, TransportKind
 } from 'vscode-languageclient/node';
 
+let client: LanguageClient;
+
 // Called by vscode on activation event, see package.json "activationEvents"
 export function activate(context: vscode.ExtensionContext): void {
-    startLanguageClient(context);
+    client = startLanguageClient(context);
     configureTemplateDecoration(context);
 }
 
@@ -18,9 +20,7 @@ export function deactivate(): Thenable<void> | undefined {
     return undefined;
 }
 
-let client: LanguageClient;
-
-function startLanguageClient(context: vscode.ExtensionContext): void {
+function startLanguageClient(context: vscode.ExtensionContext): LanguageClient {
     const serverModule = context.asAbsolutePath(path.join('out', 'language-server', 'main'));
 	// The debug options for the server
 	// --inspect=6009: runs the server in Node's Inspector mode so VS Code can attach to the server for debugging
@@ -39,16 +39,16 @@ function startLanguageClient(context: vscode.ExtensionContext): void {
 
 	// Options to control the language client
 	const clientOptions: LanguageClientOptions = {
-	  // Register the server for xtext documents
+	  // Register the server for langium documents
 	  documentSelector: [{ scheme: 'file', language: 'langium' }],
 	  synchronize: {
-		// Notify the server about file changes to xtext files contained in the workspace
-		fileEvents: workspace.createFileSystemWatcher('**/*.xtext')
+		// Notify the server about file changes to langium files contained in the workspace
+		fileEvents: workspace.createFileSystemWatcher('**/*.langium')
 	  }
 	};
 
 	// Create the language client and start the client.
-	client = new LanguageClient(
+	const client = new LanguageClient(
 	  'langium',
 	  'Langium',
 	  serverOptions,
@@ -57,6 +57,7 @@ function startLanguageClient(context: vscode.ExtensionContext): void {
 
 	// Start the client. This will also launch the server
 	client.start();
+    return client;
 }
 
 

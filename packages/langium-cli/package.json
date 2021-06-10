@@ -16,7 +16,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "langium": "^0.0.0"
+    "langium": "0.0.0"
   },
   "devDependencies": {
     "@types/fs-extra": "^9.0.8",
