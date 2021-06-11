@@ -11,6 +11,7 @@ export interface Stream<T> extends ArrayLikeStream<T> {
     filterType<T2 extends T>(predicate: (element: T) => element is T2): Stream<T2>
     findType<T2 extends T>(predicate: (element: T) => element is T2): T2 | undefined
     head(): T | undefined
+    concat(other: Stream<T>): Stream<T>
 }
 
 export class StreamImpl<S, T> implements Stream<T> {
@@ -142,6 +143,29 @@ export class StreamImpl<S, T> implements Stream<T> {
         } while (!result.done);
         return -1;
     }
+
+    concat(other: Stream<T>): Stream<T> {
+        const iterator = other.iterator();
+        return new StreamImpl<S, T>(
+            this.startFn,
+            state => {
+                let result: IteratorResult<T>;
+                do {
+                    result = this.nextFn(state);
+                    if (!result.done) {
+                        return result;
+                    }
+                } while (!result.done);
+                do {
+                    result = iterator.next();
+                    if (!result.done) {
+                        return result;
+                    }
+                } while (!result.done);
+                return DONE_RESULT;
+            }
+        );
+    }
 }
 
 export class EmptyStream<T> implements Stream<T> {
@@ -193,6 +217,10 @@ export class EmptyStream<T> implements Stream<T> {
 
     indexOf(): number {
         return -1;
+    }
+
+    concat(other: Stream<T>): Stream<T> {
+        return other;
     }
 }
 

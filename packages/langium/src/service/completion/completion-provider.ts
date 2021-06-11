@@ -1,63 +1,49 @@
-import { Command, CompletionItem, CompletionItemKind, CompletionItemTag, CompletionList, InsertReplaceEdit, InsertTextMode, MarkupContent, TextEdit } from 'vscode-languageserver';
-import { TextDocument } from 'vscode-languageserver-textdocument';
-import * as ast from '../grammar/generated/ast';
-import { findLeafNodeAtOffset } from '../grammar/grammar-util';
-import { isNamed } from '../references/naming';
-import { AstNodeDescription, ScopeProvider } from '../references/scope';
-import { LangiumServices } from '../services';
-import { AstNode, CstNode } from '../syntax-tree';
-import { getContainerOfType, isAstNode } from '../utils/ast-util';
-import { flatten } from '../utils/cst-util';
-import { FollowElementComputation } from './follow-element-computation';
+import { CompletionItem, CompletionItemKind, CompletionList } from 'vscode-languageserver';
+import { TextDocument, TextEdit } from 'vscode-languageserver-textdocument';
+import * as ast from '../../grammar/generated/ast';
+import { GrammarAccess } from '../../grammar/grammar-access';
+import { findLeafNodeAtOffset } from '../../grammar/grammar-util';
+import { isNamed } from '../../references/naming';
+import { AstNodeDescription, ScopeProvider } from '../../references/scope';
+import { LangiumServices } from '../../services';
+import { AstNode, CstNode } from '../../syntax-tree';
+import { getContainerOfType, isAstNode } from '../../utils/ast-util';
+import { flatten } from '../../utils/cst-util';
+import { findFirstFeatures, findNextFeatures } from './follow-element-computation';
 import { RuleInterpreter } from './rule-interpreter';
 
-// TODO: Decice which of these properties we actually need
-export type CompletionInfo = {
-    label?: string;
-    kind?: CompletionItemKind;
-    tags?: CompletionItemTag[];
-    detail?: string;
-    documentation?: string | MarkupContent;
-    deprecated?: boolean;
-    preselect?: boolean;
-    sortText?: string;
-    filterText?: string;
-    insertTextMode?: InsertTextMode;
-    textEdit?: TextEdit | InsertReplaceEdit;
-    additionalTextEdits?: TextEdit[];
-    commitCharacters?: string[];
-    command?: Command;
-    data?: unknown;
+export type CompletionAcceptor = (value: string | AstNode | AstNodeDescription, item?: Partial<CompletionItem>) => void
+
+export interface CompletionProvider {
+    getCompletion(root: AstNode, offset: number): CompletionList
 }
 
-export type CompletionAcceptor = (value: string | AstNode | AstNodeDescription, info?: CompletionInfo) => void
-
-export class CompletionProvider {
+export class DefaultCompletionProvider {
 
     protected readonly scopeProvider: ScopeProvider;
-    protected readonly followElementComputation: FollowElementComputation;
     protected readonly ruleInterpreter: RuleInterpreter;
+    protected readonly grammarAccess: GrammarAccess;
 
     constructor(services: LangiumServices) {
         this.scopeProvider = services.references.ScopeProvider;
-        this.followElementComputation = services.completion.FollowElementComputation;
         this.ruleInterpreter = services.completion.RuleInterpreter;
+        this.grammarAccess = services.GrammarAccess;
     }
 
-    contentAssist(grammar: ast.Grammar, root: AstNode, offset: number): CompletionList {
+    getCompletion(root: AstNode, offset: number): CompletionList {
         const cst = root.$cstNode;
         const items: CompletionItem[] = [];
-        const acceptor = (value: string | AstNode | AstNodeDescription, info?: CompletionInfo) => {
+        const acceptor = (value: string | AstNode | AstNodeDescription, item?: Partial<CompletionItem>) => {
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            const item = this.toCompletionItem(root.$document!, offset, value, info);
-            if (item) {
-                items.push(item);
+            const completionItem = this.fillCompletionItem(root.$document!, offset, value, item);
+            if (completionItem) {
+                items.push(completionItem);
             }
         };
         if (cst) {
             const node = findLeafNodeAtOffset(cst, offset);
             if (node) {
-                const features = this.followElementComputation.findNextFeatures(this.buildFeatureStack(node));
+                const features = findNextFeatures(this.buildFeatureStack(node));
                 const commonSuperRule = this.findCommonSuperRule(node);
                 // In some cases, it is possible that we do not have a super rule
                 if (commonSuperRule) {
@@ -68,35 +54,17 @@ export class CompletionProvider {
                     const partialMatches = filteredFeatures.filter(e => this.ruleInterpreter.featureMatches(e, flattened[flattened.length - 1]) === 'partial');
                     const notMatchingFeatures = filteredFeatures.filter(e => !partialMatches.includes(e));
                     features.push(...partialMatches);
-                    features.push(...notMatchingFeatures.flatMap(e => this.followElementComputation.findNextFeatures([e])));
+                    features.push(...notMatchingFeatures.flatMap(e => findNextFeatures([e])));
                 }
-                features.flatMap(e => this.buildContentAssistFor(node.element, e, acceptor));
+                features.forEach(e => this.buildContentAssistFor(node.element, e, acceptor));
             } else {
                 // The entry rule is the first parser rule
-                const parserRule = <ast.ParserRule>grammar.rules.find(e => ast.isParserRule(e));
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                const parserRule = this.grammarAccess.grammar.rules.find(e => ast.isParserRule(e))!;
                 this.buildContentAssistForRule(undefined, parserRule, acceptor);
             }
         }
         return CompletionList.create(items, true);
-    }
-
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    protected toCompletionItem(document: TextDocument, offset: number, value: string | AstNode | AstNodeDescription, info: CompletionInfo | undefined): CompletionItem | undefined {
-        let text: string;
-        if (typeof value === 'string') {
-            text = value;
-        } else if (isAstNode(value) && isNamed(value)) {
-            text = value.name;
-        } else if (!isAstNode(value)) {
-            text = value.name;
-        } else {
-            return undefined;
-        }
-        const item = this.buildCompletionItem(document, offset, text);
-        if (info) {
-            Object.assign(item, info);
-        }
-        return item;
     }
 
     protected buildFeatureStack(node: CstNode | undefined): ast.AbstractElement[] {
@@ -112,7 +80,7 @@ export class CompletionProvider {
 
     protected buildContentAssistForRule(astNode: AstNode | undefined, rule: ast.AbstractRule, acceptor: CompletionAcceptor): void {
         if (ast.isParserRule(rule)) {
-            const features = this.followElementComputation.findFirstFeatures(rule.alternatives);
+            const features = findFirstFeatures(rule.alternatives);
             features.flatMap(e => this.buildContentAssistFor(astNode, e, acceptor));
         }
     }
@@ -132,7 +100,7 @@ export class CompletionProvider {
         const parserRule = getContainerOfType(crossRef, ast.isParserRule);
         if (assignment && parserRule) {
             const scope = this.scopeProvider.getScope(context, `${parserRule.name}:${assignment.feature}`);
-            scope.getAllDescriptions().forEach(e => {
+            scope.getAllElements().forEach(e => {
                 acceptor(e, { kind: CompletionItemKind.Reference, detail: e.type });
             });
         }
@@ -159,7 +127,26 @@ export class CompletionProvider {
         return undefined;
     }
 
-    protected buildCompletionItem(document: TextDocument, offset: number, completion: string): CompletionItem {
+    protected fillCompletionItem(document: TextDocument, offset: number, value: string | AstNode | AstNodeDescription, info: Partial<CompletionItem> | undefined): CompletionItem | undefined {
+        let label: string;
+        if (typeof value === 'string') {
+            label = value;
+        } else if (isAstNode(value) && isNamed(value)) {
+            label = value.name;
+        } else if (!isAstNode(value)) {
+            label = value.name;
+        } else {
+            return undefined;
+        }
+        const textEdit = this.buildCompletionTextEdit(document, offset, label);
+        const item: CompletionItem = { label, textEdit };
+        if (info) {
+            Object.assign(item, info);
+        }
+        return item;
+    }
+
+    protected buildCompletionTextEdit(document: TextDocument, offset: number, completion: string): TextEdit {
         let negativeOffset = 0;
         const content = document.getText();
         for (let i = completion.length; i > 0; i--) {
@@ -172,13 +159,10 @@ export class CompletionProvider {
         const start = document.positionAt(offset - negativeOffset);
         const end = document.positionAt(offset);
         return {
-            label: completion,
-            textEdit: {
-                newText: completion,
-                range: {
-                    start,
-                    end
-                }
+            newText: completion,
+            range: {
+                start,
+                end
             }
         };
     }
