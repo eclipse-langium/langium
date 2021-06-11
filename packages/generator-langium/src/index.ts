@@ -33,7 +33,7 @@ class LangiumGenerator extends Generator
             message: "Your language identifier",
             default: LANGUAGE_ID,
             validate: function(input: string): boolean | string {
-                if (/^[a-zA-Z_][\w-]+$/.test(input.toString()))
+                if (/^[a-zA-Z_][\w-]*$/.test(input.toString()))
                    return true;
                 return "You entered not correct language-id. Try again.";
             }
@@ -41,9 +41,8 @@ class LangiumGenerator extends Generator
         ]);
     }
 
-    // FIX: types
-    private _replaceInTemplate(answers: any, content: any): string {
-        // FIX: regex can be replaced on parsers, but for what?
+    private _replaceInTemplate(answers: any, content: Buffer): string {
+        // FIX: regex can be replaced on parsers, but for what
         return content.toString()
           .replace(new RegExp(EXTENSION_NAME, 'g'), answers.extension_name)
           .replace(new RegExp(LANGUAGE_ID, 'g'), answers.language_id)
@@ -53,9 +52,9 @@ class LangiumGenerator extends Generator
     writing(): void {
         this.answers.language_name = _.upperFirst(_.camelCase(this.answers.language_id));
         this.fs.copy(
-          this.templatePath(EXTENSION_NAME, '.'),
+          this.templatePath("."),
           this.destinationPath(USER_DIR, this.answers.extension_name),
-          { process: x => this._replaceInTemplate(this.answers, x) }
+          { process: (x: Buffer) => this._replaceInTemplate(this.answers, x) }
         );
     }
 
