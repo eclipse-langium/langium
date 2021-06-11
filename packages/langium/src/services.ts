@@ -17,7 +17,7 @@ import { NameProvider } from './references/naming';
 import { ScopeProvider, ScopeComputation } from './references/scope';
 import { ValidationRegistry } from './service/validation/validation-registry';
 import { DocumentValidator } from './service/validation/document-validator';
-import { JsonSerializer } from './service/json-serializer/ast-json-serializer';
+import { JsonSerializer } from './serializer/json-serializer';
 import { LangiumDocument } from './documents/document';
 import { CompletionProvider } from './service/completion/completion-provider';
 import { RuleInterpreter } from './service/completion/rule-interpreter';
