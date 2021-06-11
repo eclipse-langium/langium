@@ -1,5 +1,5 @@
-import Generator       from  'yeoman-generator';
-import { StringUtils } from 'turbocommons-ts';
+import Generator      from 'yeoman-generator';
+import *         as _ from 'lodash';
 
 // FIX: get during running: "No change to package.json was detected. No package manager install will be executed."
 
@@ -33,16 +33,12 @@ class LangiumGenerator extends Generator
             message: "Your language identifier",
             default: LANGUAGE_ID,
             validate: function(input: string): boolean | string {
-                if (/^[a-zA-Z_][\w]+$/.test(input.toString()))
+                if (/^[a-zA-Z_][\w-]+$/.test(input.toString()))
                    return true;
                 return "You entered not correct language-id. Try again.";
             }
           }
         ]);
-    }
-
-    private _toCamelCase(input: string): string {
-        return StringUtils.formatCase(input, StringUtils.FORMAT_UPPER_CAMEL_CASE);
     }
 
     // FIX: types
@@ -51,10 +47,11 @@ class LangiumGenerator extends Generator
         return content.toString()
           .replace(new RegExp(EXTENSION_NAME, 'g'), answers.extension_name)
           .replace(new RegExp(LANGUAGE_ID, 'g'), answers.language_id)
-          .replace(new RegExp(LANGUAGE_NAME, 'g'), this._toCamelCase(answers.language_id));
+          .replace(new RegExp(LANGUAGE_NAME, 'g'), answers.language_name);
       }
 
     writing(): void {
+        this.answers.language_name = _.upperFirst(_.camelCase(this.answers.language_id));
         this.fs.copy(
           this.templatePath(EXTENSION_NAME, '.'),
           this.destinationPath(USER_DIR, this.answers.extension_name),
@@ -65,6 +62,7 @@ class LangiumGenerator extends Generator
     end(): void {
         this.log("Extension name:", this.answers.extension_name);
         this.log("Language identifier:", this.answers.language_id);
+        this.log("Language name:", this.answers.language_name);
         this.log("Have a nice coding :)");
     }
 }
