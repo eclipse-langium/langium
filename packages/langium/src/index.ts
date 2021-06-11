@@ -24,3 +24,4 @@ export * from './service/completion/rule-interpreter';
 export * from './utils/ast-util';
 export * from './utils/cst-util';
 export * from './utils/stream';
+export * from './serializer/json-serializer';

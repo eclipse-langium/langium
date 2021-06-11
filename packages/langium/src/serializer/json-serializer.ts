@@ -1,8 +1,7 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { AstNode } from '../../syntax-tree';
-import { Linker } from '../../references/linker';
-import { LangiumServices } from '../../services';
-import { isReference } from '../../utils/ast-util';
+import { AstNode } from '../syntax-tree';
+import { Linker } from '../references/linker';
+import { LangiumServices } from '../services';
+import { isAstNode, isReference } from '../utils/ast-util';
 
 export interface JsonSerializer {
     serialize(node: AstNode): string
@@ -22,13 +21,13 @@ export class DefaultJsonSerializer {
     }
 
     deserialize(content: string): AstNode {
-        return this.retrocycle(JSON.parse(content));
+        return this.revive(JSON.parse(content));
     }
 
-    decycle(object: Record<string, any>, ...ignore: string[]): any {
-        const objects = new Set<any>(); // Keep references to each unique object
+    protected decycle(object: AstNode, ...ignore: string[]): unknown {
+        const objects = new Set<unknown>(); // Keep references to each unique object
 
-        const replace = (item: Record<string, any>) => {
+        const replace = (item: unknown) => {
             // The replace function recurses through the object, producing the deep copy.
             if (typeof item === 'object' && item !== null) {
                 if (objects.has(item)) {
@@ -36,10 +35,11 @@ export class DefaultJsonSerializer {
                 } else {
                     objects.add(item);
                 }
+                // If it is a reference, just return the name
                 if (isReference(item)) {
                     return { $refName: item.$refName };
                 }
-                let newItem: Record<string, any>;
+                let newItem: Record<string, unknown> | unknown[];
                 // If it is an array, replicate the array.
                 if (Array.isArray(item)) {
                     newItem = [];
@@ -50,7 +50,7 @@ export class DefaultJsonSerializer {
                     // If it is an object, replicate the object.
                     newItem = {};
                     for (const [name, itemValue] of Object.entries(item)) {
-                        if (this.isPlainProperty(item, name) && !ignore.includes(name)) {
+                        if (!ignore.includes(name)) {
                             newItem[name] = replace(itemValue);
                         }
                     }
@@ -62,33 +62,20 @@ export class DefaultJsonSerializer {
         return replace(object);
     }
 
-    protected isPlainProperty(object: Record<string, any>, propertyName: string): boolean {
-        const descriptor = Object.getOwnPropertyDescriptor(object, propertyName);
-        if (descriptor !== undefined)
-            return descriptor.get === undefined;
-        return true;
-    }
-
-    // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-    retrocycle(object: any): any {
+    protected revive(object: AstNode): AstNode {
         const link = this.linker.link.bind(this.linker);
-        const revive = (value: Record<string, any>, container?: unknown, propName?: string) => {
-
-            // The revive function walks recursively through the object looking for $ref
-            // properties. When it finds one that has a value that is a path, then it
-            // replaces the $ref object with a reference to the value that is found by
-            // the path.
-
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const internalRevive = (value: Record<string, any>, container?: unknown, propName?: string) => {
             if (value && typeof value === 'object' && value !== null) {
                 if (Array.isArray(value)) {
                     for (const item of value) {
-                        if (isReference(item)) {
-                            const referenceId = `${(container as any).$type}:${propName}`;
+                        if (isReference(item) && isAstNode(container)) {
+                            const referenceId = `${container.$type}:${propName}`;
                             Object.defineProperty(item, 'ref', {
                                 get: () => link(container as AstNode, item.$refName, referenceId)
                             });
                         } else if (typeof item === 'object' && item !== null) {
-                            revive(item, item);
+                            internalRevive(item, item);
                             item.$container = container;
                         }
                     }
@@ -100,20 +87,18 @@ export class DefaultJsonSerializer {
                                 Object.defineProperty(item, 'ref', {
                                     get: () => link(value as AstNode, item.$refName, referenceId)
                                 });
-                            } else if (item) {
-                                if (Array.isArray(item)) {
-                                    revive(item, value, name);
-                                } else {
-                                    revive(item);
-                                    item.$container = value;
-                                }
+                            } else if (Array.isArray(item)) {
+                                internalRevive(item, value, name);
+                            } else {
+                                internalRevive(item);
+                                item.$container = value;
                             }
                         }
                     }
                 }
             }
         };
-        revive(object);
+        internalRevive(object);
         return object;
     }
 }
