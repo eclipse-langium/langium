@@ -1,8 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { LangiumDocumentConfiguration } from '../documents/document';
 import * as ast from '../grammar/generated/ast';
 import { CompositeCstNodeImpl, LeafCstNodeImpl } from '../parser/cst-node-builder';
 import { AstNode, CstNode, LeafCstNode } from '../syntax-tree';
-import { getContainerOfType } from '../utils/ast-util';
+import { getContainerOfType, Mutable } from '../utils/ast-util';
+import { createLangiumGrammarServices } from './langium-grammar-module';
 
 type FeatureValue = {
     feature: ast.AbstractElement;
@@ -177,4 +179,22 @@ export function getRuleType(rule: ast.AbstractRule | undefined): string {
         return rule.type ?? 'string';
     }
     return getTypeName(rule);
+}
+
+export function loadGrammar(json: string): ast.Grammar {
+    const services = createLangiumGrammarServices();
+    const astNode = services.serializer.JsonSerializer.deserialize(json);
+    if (!ast.isGrammar(astNode)) {
+        throw new Error('Could not load grammar from specified json input.');
+    }
+    const grammar = astNode as Mutable<ast.Grammar>;
+    const document = LangiumDocumentConfiguration.create('', 'langium', 0, '');
+    document.parseResult = {
+        lexerErrors: [],
+        parserErrors: [],
+        value: grammar
+    };
+    grammar.$document = document;
+    document.precomputedScopes = services.references.ScopeComputation.computeScope(grammar);
+    return grammar;
 }

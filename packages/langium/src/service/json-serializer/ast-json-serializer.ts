@@ -79,7 +79,7 @@ export class DefaultJsonSerializer {
             // replaces the $ref object with a reference to the value that is found by
             // the path.
 
-            if (value && typeof value === 'object') {
+            if (value && typeof value === 'object' && value !== null) {
                 if (Array.isArray(value)) {
                     for (const item of value) {
                         if (isReference(item)) {
@@ -87,14 +87,14 @@ export class DefaultJsonSerializer {
                             Object.defineProperty(item, 'ref', {
                                 get: () => link(container as AstNode, item.$refName, referenceId)
                             });
-                        } else if (item && typeof item === 'object') {
+                        } else if (typeof item === 'object' && item !== null) {
                             revive(item, item);
                             item.$container = container;
                         }
                     }
                 } else {
                     for (const [name, item] of Object.entries(value)) {
-                        if (typeof item === 'object') {
+                        if (typeof item === 'object' && item !== null) {
                             if (isReference(item)) {
                                 const referenceId = `${value.$type}:${name}`;
                                 Object.defineProperty(item, 'ref', {

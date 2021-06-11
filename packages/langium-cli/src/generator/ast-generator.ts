@@ -7,14 +7,13 @@ export function generateAst(grammar: Grammar, config: LangiumConfig): string {
     const fileNode = new CompositeGeneratorNode();
     fileNode.children.push(
         '/* eslint-disable @typescript-eslint/array-type */', NL,
-        '/* eslint-disable @typescript-eslint/no-explicit-any */', NL,
         '/* eslint-disable @typescript-eslint/no-empty-interface */', NL,
-        '/* eslint-disable @typescript-eslint/explicit-module-boundary-types */', NL
     );
     if (config.langiumInternal) {
-        fileNode.children.push("import { AstNode, AstReflection, Reference } from '../../syntax-tree';", NL, NL);
+        fileNode.children.push("import { AstNode, AstReflection, Reference } from '../../syntax-tree';", NL);
+        fileNode.children.push("import { isAstNode } from '../../utils/ast-util';", NL, NL);
     } else {
-        fileNode.children.push("import { AstNode, AstReflection, Reference } from 'langium';", NL, NL);
+        fileNode.children.push("import { AstNode, AstReflection, Reference, isAstNode } from 'langium';", NL, NL);
     }
 
     for (const type of types) {
@@ -52,9 +51,9 @@ function generateAstReflection(grammar: Grammar, interfaces: Interface[]): Gener
     const allTypesNode = new IndentNode();
     allTypesNode.children.push('return [', interfaces.map(t => `'${t.name}'`).join(', '), '];', NL);
     classBodyNode.children.push(allTypesNode, '}', NL, NL);
-    classBodyNode.children.push('isInstance(node: AstNode, type: string): boolean {', NL);
+    classBodyNode.children.push('isInstance(node: unknown, type: string): boolean {', NL);
     const isInstanceNode = new IndentNode();
-    isInstanceNode.children.push('return this.isSubtype(node.$type, type);', NL);
+    isInstanceNode.children.push('return isAstNode(node) && this.isSubtype(node.$type, type);', NL);
     classBodyNode.children.push(isInstanceNode, '}', NL, NL);
     classBodyNode.children.push('isSubtype(subtype: string, supertype: string): boolean {', NL);
     classBodyNode.children.push(buildIsSubtypeMethod(interfaces), '}', NL, NL);

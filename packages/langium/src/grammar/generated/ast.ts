@@ -1,8 +1,7 @@
 /* eslint-disable @typescript-eslint/array-type */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-empty-interface */
-/* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 import { AstNode, AstReflection, Reference } from '../../syntax-tree';
+import { isAstNode } from '../../utils/ast-util';
 
 export interface AbstractElement extends AstNode {
     cardinality: '?' | '*' | '+'
@@ -10,7 +9,7 @@ export interface AbstractElement extends AstNode {
 
 export const AbstractElement = 'AbstractElement';
 
-export function isAbstractElement(item: any): item is AbstractElement {
+export function isAbstractElement(item: unknown): item is AbstractElement {
     return reflection.isInstance(item, AbstractElement);
 }
 
@@ -21,7 +20,7 @@ export interface AbstractMetamodelDeclaration extends AstNode {
 
 export const AbstractMetamodelDeclaration = 'AbstractMetamodelDeclaration';
 
-export function isAbstractMetamodelDeclaration(item: any): item is AbstractMetamodelDeclaration {
+export function isAbstractMetamodelDeclaration(item: unknown): item is AbstractMetamodelDeclaration {
     return reflection.isInstance(item, AbstractMetamodelDeclaration);
 }
 
@@ -31,7 +30,7 @@ export interface AbstractNegatedToken extends AstNode {
 
 export const AbstractNegatedToken = 'AbstractNegatedToken';
 
-export function isAbstractNegatedToken(item: any): item is AbstractNegatedToken {
+export function isAbstractNegatedToken(item: unknown): item is AbstractNegatedToken {
     return reflection.isInstance(item, AbstractNegatedToken);
 }
 
@@ -42,7 +41,7 @@ export interface AbstractRule extends AstNode {
 
 export const AbstractRule = 'AbstractRule';
 
-export function isAbstractRule(item: any): item is AbstractRule {
+export function isAbstractRule(item: unknown): item is AbstractRule {
     return reflection.isInstance(item, AbstractRule);
 }
 
@@ -52,7 +51,7 @@ export interface Annotation extends AstNode {
 
 export const Annotation = 'Annotation';
 
-export function isAnnotation(item: any): item is Annotation {
+export function isAnnotation(item: unknown): item is Annotation {
     return reflection.isInstance(item, Annotation);
 }
 
@@ -61,7 +60,7 @@ export interface Condition extends AstNode {
 
 export const Condition = 'Condition';
 
-export function isCondition(item: any): item is Condition {
+export function isCondition(item: unknown): item is Condition {
     return reflection.isInstance(item, Condition);
 }
 
@@ -72,7 +71,7 @@ export interface EnumLiteralDeclaration extends AstNode {
 
 export const EnumLiteralDeclaration = 'EnumLiteralDeclaration';
 
-export function isEnumLiteralDeclaration(item: any): item is EnumLiteralDeclaration {
+export function isEnumLiteralDeclaration(item: unknown): item is EnumLiteralDeclaration {
     return reflection.isInstance(item, EnumLiteralDeclaration);
 }
 
@@ -82,7 +81,7 @@ export interface EnumLiterals extends AstNode {
 
 export const EnumLiterals = 'EnumLiterals';
 
-export function isEnumLiterals(item: any): item is EnumLiterals {
+export function isEnumLiterals(item: unknown): item is EnumLiterals {
     return reflection.isInstance(item, EnumLiterals);
 }
 
@@ -97,7 +96,7 @@ export interface Grammar extends AstNode {
 
 export const Grammar = 'Grammar';
 
-export function isGrammar(item: any): item is Grammar {
+export function isGrammar(item: unknown): item is Grammar {
     return reflection.isInstance(item, Grammar);
 }
 
@@ -109,7 +108,7 @@ export interface NamedArgument extends AstNode {
 
 export const NamedArgument = 'NamedArgument';
 
-export function isNamedArgument(item: any): item is NamedArgument {
+export function isNamedArgument(item: unknown): item is NamedArgument {
     return reflection.isInstance(item, NamedArgument);
 }
 
@@ -119,7 +118,7 @@ export interface Parameter extends AstNode {
 
 export const Parameter = 'Parameter';
 
-export function isParameter(item: any): item is Parameter {
+export function isParameter(item: unknown): item is Parameter {
     return reflection.isInstance(item, Parameter);
 }
 
@@ -129,7 +128,7 @@ export interface TerminalGroup extends AstNode {
 
 export const TerminalGroup = 'TerminalGroup';
 
-export function isTerminalGroup(item: any): item is TerminalGroup {
+export function isTerminalGroup(item: unknown): item is TerminalGroup {
     return reflection.isInstance(item, TerminalGroup);
 }
 
@@ -139,7 +138,7 @@ export interface TerminalToken extends AstNode {
 
 export const TerminalToken = 'TerminalToken';
 
-export function isTerminalToken(item: any): item is TerminalToken {
+export function isTerminalToken(item: unknown): item is TerminalToken {
     return reflection.isInstance(item, TerminalToken);
 }
 
@@ -148,7 +147,7 @@ export interface TerminalTokenElement extends AstNode {
 
 export const TerminalTokenElement = 'TerminalTokenElement';
 
-export function isTerminalTokenElement(item: any): item is TerminalTokenElement {
+export function isTerminalTokenElement(item: unknown): item is TerminalTokenElement {
     return reflection.isInstance(item, TerminalTokenElement);
 }
 
@@ -160,7 +159,7 @@ export interface Action extends AbstractElement {
 
 export const Action = 'Action';
 
-export function isAction(item: any): item is Action {
+export function isAction(item: unknown): item is Action {
     return reflection.isInstance(item, Action);
 }
 
@@ -170,7 +169,7 @@ export interface Alternatives extends AbstractElement {
 
 export const Alternatives = 'Alternatives';
 
-export function isAlternatives(item: any): item is Alternatives {
+export function isAlternatives(item: unknown): item is Alternatives {
     return reflection.isInstance(item, Alternatives);
 }
 
@@ -184,7 +183,7 @@ export interface Assignment extends AbstractElement {
 
 export const Assignment = 'Assignment';
 
-export function isAssignment(item: any): item is Assignment {
+export function isAssignment(item: unknown): item is Assignment {
     return reflection.isInstance(item, Assignment);
 }
 
@@ -195,7 +194,7 @@ export interface CrossReference extends AbstractElement {
 
 export const CrossReference = 'CrossReference';
 
-export function isCrossReference(item: any): item is CrossReference {
+export function isCrossReference(item: unknown): item is CrossReference {
     return reflection.isInstance(item, CrossReference);
 }
 
@@ -207,7 +206,7 @@ export interface Group extends AbstractElement {
 
 export const Group = 'Group';
 
-export function isGroup(item: any): item is Group {
+export function isGroup(item: unknown): item is Group {
     return reflection.isInstance(item, Group);
 }
 
@@ -219,7 +218,7 @@ export interface Keyword extends AbstractElement {
 
 export const Keyword = 'Keyword';
 
-export function isKeyword(item: any): item is Keyword {
+export function isKeyword(item: unknown): item is Keyword {
     return reflection.isInstance(item, Keyword);
 }
 
@@ -232,7 +231,7 @@ export interface RuleCall extends AbstractElement {
 
 export const RuleCall = 'RuleCall';
 
-export function isRuleCall(item: any): item is RuleCall {
+export function isRuleCall(item: unknown): item is RuleCall {
     return reflection.isInstance(item, RuleCall);
 }
 
@@ -242,7 +241,7 @@ export interface UnorderedGroup extends AbstractElement {
 
 export const UnorderedGroup = 'UnorderedGroup';
 
-export function isUnorderedGroup(item: any): item is UnorderedGroup {
+export function isUnorderedGroup(item: unknown): item is UnorderedGroup {
     return reflection.isInstance(item, UnorderedGroup);
 }
 
@@ -252,7 +251,7 @@ export interface GeneratedMetamodel extends AbstractMetamodelDeclaration {
 
 export const GeneratedMetamodel = 'GeneratedMetamodel';
 
-export function isGeneratedMetamodel(item: any): item is GeneratedMetamodel {
+export function isGeneratedMetamodel(item: unknown): item is GeneratedMetamodel {
     return reflection.isInstance(item, GeneratedMetamodel);
 }
 
@@ -261,7 +260,7 @@ export interface ReferencedMetamodel extends AbstractMetamodelDeclaration {
 
 export const ReferencedMetamodel = 'ReferencedMetamodel';
 
-export function isReferencedMetamodel(item: any): item is ReferencedMetamodel {
+export function isReferencedMetamodel(item: unknown): item is ReferencedMetamodel {
     return reflection.isInstance(item, ReferencedMetamodel);
 }
 
@@ -270,7 +269,7 @@ export interface NegatedToken extends AbstractNegatedToken {
 
 export const NegatedToken = 'NegatedToken';
 
-export function isNegatedToken(item: any): item is NegatedToken {
+export function isNegatedToken(item: unknown): item is NegatedToken {
     return reflection.isInstance(item, NegatedToken);
 }
 
@@ -279,7 +278,7 @@ export interface UntilToken extends AbstractNegatedToken {
 
 export const UntilToken = 'UntilToken';
 
-export function isUntilToken(item: any): item is UntilToken {
+export function isUntilToken(item: unknown): item is UntilToken {
     return reflection.isInstance(item, UntilToken);
 }
 
@@ -289,7 +288,7 @@ export interface EnumRule extends AbstractRule {
 
 export const EnumRule = 'EnumRule';
 
-export function isEnumRule(item: any): item is EnumRule {
+export function isEnumRule(item: unknown): item is EnumRule {
     return reflection.isInstance(item, EnumRule);
 }
 
@@ -304,7 +303,7 @@ export interface ParserRule extends AbstractRule {
 
 export const ParserRule = 'ParserRule';
 
-export function isParserRule(item: any): item is ParserRule {
+export function isParserRule(item: unknown): item is ParserRule {
     return reflection.isInstance(item, ParserRule);
 }
 
@@ -315,7 +314,7 @@ export interface TerminalRule extends AbstractRule {
 
 export const TerminalRule = 'TerminalRule';
 
-export function isTerminalRule(item: any): item is TerminalRule {
+export function isTerminalRule(item: unknown): item is TerminalRule {
     return reflection.isInstance(item, TerminalRule);
 }
 
@@ -326,7 +325,7 @@ export interface Conjunction extends Condition {
 
 export const Conjunction = 'Conjunction';
 
-export function isConjunction(item: any): item is Conjunction {
+export function isConjunction(item: unknown): item is Conjunction {
     return reflection.isInstance(item, Conjunction);
 }
 
@@ -337,7 +336,7 @@ export interface Disjunction extends Condition {
 
 export const Disjunction = 'Disjunction';
 
-export function isDisjunction(item: any): item is Disjunction {
+export function isDisjunction(item: unknown): item is Disjunction {
     return reflection.isInstance(item, Disjunction);
 }
 
@@ -347,7 +346,7 @@ export interface LiteralCondition extends Condition {
 
 export const LiteralCondition = 'LiteralCondition';
 
-export function isLiteralCondition(item: any): item is LiteralCondition {
+export function isLiteralCondition(item: unknown): item is LiteralCondition {
     return reflection.isInstance(item, LiteralCondition);
 }
 
@@ -357,7 +356,7 @@ export interface Negation extends Condition {
 
 export const Negation = 'Negation';
 
-export function isNegation(item: any): item is Negation {
+export function isNegation(item: unknown): item is Negation {
     return reflection.isInstance(item, Negation);
 }
 
@@ -367,7 +366,7 @@ export interface ParameterReference extends Condition {
 
 export const ParameterReference = 'ParameterReference';
 
-export function isParameterReference(item: any): item is ParameterReference {
+export function isParameterReference(item: unknown): item is ParameterReference {
     return reflection.isInstance(item, ParameterReference);
 }
 
@@ -378,7 +377,7 @@ export interface CharacterRange extends TerminalTokenElement {
 
 export const CharacterRange = 'CharacterRange';
 
-export function isCharacterRange(item: any): item is CharacterRange {
+export function isCharacterRange(item: unknown): item is CharacterRange {
     return reflection.isInstance(item, CharacterRange);
 }
 
@@ -388,7 +387,7 @@ export interface TerminalAlternatives extends TerminalTokenElement {
 
 export const TerminalAlternatives = 'TerminalAlternatives';
 
-export function isTerminalAlternatives(item: any): item is TerminalAlternatives {
+export function isTerminalAlternatives(item: unknown): item is TerminalAlternatives {
     return reflection.isInstance(item, TerminalAlternatives);
 }
 
@@ -398,7 +397,7 @@ export interface TerminalRuleCall extends TerminalTokenElement {
 
 export const TerminalRuleCall = 'TerminalRuleCall';
 
-export function isTerminalRuleCall(item: any): item is TerminalRuleCall {
+export function isTerminalRuleCall(item: unknown): item is TerminalRuleCall {
     return reflection.isInstance(item, TerminalRuleCall);
 }
 
@@ -407,7 +406,7 @@ export interface Wildcard extends TerminalTokenElement {
 
 export const Wildcard = 'Wildcard';
 
-export function isWildcard(item: any): item is Wildcard {
+export function isWildcard(item: unknown): item is Wildcard {
     return reflection.isInstance(item, Wildcard);
 }
 
@@ -421,8 +420,8 @@ export class LangiumGrammarAstReflection implements AstReflection {
         return ['AbstractElement', 'AbstractMetamodelDeclaration', 'AbstractNegatedToken', 'AbstractRule', 'Annotation', 'Condition', 'EnumLiteralDeclaration', 'EnumLiterals', 'Grammar', 'NamedArgument', 'Parameter', 'TerminalGroup', 'TerminalToken', 'TerminalTokenElement', 'Action', 'Alternatives', 'Assignment', 'CrossReference', 'Group', 'Keyword', 'RuleCall', 'UnorderedGroup', 'GeneratedMetamodel', 'ReferencedMetamodel', 'NegatedToken', 'UntilToken', 'EnumRule', 'ParserRule', 'TerminalRule', 'Conjunction', 'Disjunction', 'LiteralCondition', 'Negation', 'ParameterReference', 'CharacterRange', 'TerminalAlternatives', 'TerminalRuleCall', 'Wildcard'];
     }
 
-    isInstance(node: AstNode, type: string): boolean {
-        return this.isSubtype(node.$type, type);
+    isInstance(node: unknown, type: string): boolean {
+        return isAstNode(node) && this.isSubtype(node.$type, type);
     }
 
     isSubtype(subtype: string, supertype: string): boolean {
