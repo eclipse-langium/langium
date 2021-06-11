@@ -5,6 +5,7 @@ import *         as _ from 'lodash';
 
 const TEMPLATE_DIR   = 'langium-template';
 const USER_DIR       = 'app';
+
 const EXTENSION_NAME = 'extension-name';
 const LANGUAGE_ID    = 'language-id';
 const LANGUAGE_NAME  = 'LanguageName';
@@ -16,7 +17,6 @@ class LangiumGenerator extends Generator
 
     constructor(args: string | string[], options: Generator.GeneratorOptions) {
         super(args, options);
-        this.sourceRoot(TEMPLATE_DIR);
     }
 
     async prompting(): Promise<void> {
@@ -41,21 +41,25 @@ class LangiumGenerator extends Generator
         ]);
     }
 
-    private _replaceInTemplate(answers: any, content: Buffer): string {
-        // FIX: regex can be replaced on parsers, but for what?
-        return content.toString()
-          .replace(new RegExp(EXTENSION_NAME, 'g'), answers.extensionName)
-          .replace(new RegExp(LANGUAGE_ID, 'g'), answers.languageId)
-          .replace(new RegExp(LANGUAGE_NAME, 'g'), answers.languageName);
-      }
-
     writing(): void {
         this.answers.languageName = _.upperFirst(_.camelCase(this.answers.languageId));
-        this.fs.copy(
-          this.templatePath("."),
-          this.destinationPath(USER_DIR, this.answers.extensionName),
-          { process: (x: Buffer) => this._replaceInTemplate(this.answers, x) }
-        );
+
+        this.sourceRoot(TEMPLATE_DIR);
+        [".", ".vscode", ".eslintrc.json", ".vscodeignore"].map(path => {
+          const replaceInTemplate = function(answers: any, content: Buffer): string {
+            // FIX: regex can be replaced on parsers, but for what?
+            return content.toString()
+              .replace(new RegExp(EXTENSION_NAME, 'g'), answers.extensionName)
+              .replace(new RegExp(LANGUAGE_ID, 'g'), answers.languageId)
+              .replace(new RegExp(LANGUAGE_NAME, 'g'), answers.languageName);
+          }  
+
+          this.fs.copy(
+            this.templatePath(path),
+            this.destinationPath(USER_DIR, this.answers.extensionName, path),
+            { process: (x: Buffer) => replaceInTemplate(this.answers, x) }
+          );
+        });
     }
 
     end(): void {
