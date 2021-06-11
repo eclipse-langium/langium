@@ -38,6 +38,17 @@ class LangiumGenerator extends Generator
                    return true;
                 return "You entered not correct language ID. Try again.";
             }
+          },
+          {
+            type: "input",
+            name: "fileExtension",
+            message: "File extension of your language",
+            default: FILE_EXTENSION,
+            validate: function(input: string): boolean | string {
+                if (/^[a-z]*$/.test(input.toString()))
+                   return true;
+                return "Extension can contain only small letters. Try again.";
+            }
           }
         ]);
     }
@@ -51,6 +62,7 @@ class LangiumGenerator extends Generator
             // FIX: regex can be replaced on parsers, but for what?
             return content.toString()
               .replace(new RegExp(EXTENSION_NAME, 'g'), answers.extensionName)
+              .replace(new RegExp(FILE_EXTENSION, 'g'), answers.fileExtension)
               .replace(new RegExp(LANGUAGE_ID, 'g'), answers.languageId)
               .replace(new RegExp(LANGUAGE_NAME, 'g'), answers.languageName);
           }  
