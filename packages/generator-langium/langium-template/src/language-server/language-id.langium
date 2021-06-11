@@ -1,4 +1,4 @@
-grammar LanguageName hidden(WS)
+grammar <%= LanguageName %> hidden(WS)
 
 Model:
 	(persons+=Person | greetings+=Greeting)*;

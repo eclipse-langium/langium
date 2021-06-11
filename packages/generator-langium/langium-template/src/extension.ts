@@ -35,17 +35,17 @@ function startLanguageClient(context: vscode.ExtensionContext): LanguageClient {
 
     // Options to control the language client
     const clientOptions: LanguageClientOptions = {
-        documentSelector: [{ scheme: 'file', language: 'language-id' }],
+        documentSelector: [{ scheme: 'file', language: '<%= language-id %>' }],
         synchronize: {
             // Notify the server about file changes to files contained in the workspace
-            fileEvents: workspace.createFileSystemWatcher('**/*.file-extension')
+            fileEvents: workspace.createFileSystemWatcher('**/*.<%= file-extension %>')
         }
     };
 
     // Create the language client and start the client.
     const client = new LanguageClient(
-        'language-id',
-        'LanguageName',
+        '<%= language-id %>',
+        '<%= LanguageName %>',
         serverOptions,
         clientOptions
     );

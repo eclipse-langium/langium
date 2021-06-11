@@ -1,26 +1,26 @@
 import { createDefaultModule, DefaultModuleContext, inject, LangiumServices, Module, PartialLangiumServices } from 'langium';
-import { LanguageNameGeneratedModule } from './generated/module';
-import { LanguageNameValidationRegistry, LanguageNameValidator } from './language-id-validator';
+import { <%= LanguageName %>GeneratedModule } from './generated/module';
+import { <%= LanguageName %>ValidationRegistry, <%= LanguageName %>Validator } from './<%= language-id %>-validator';
 
-export type LanguageNameAddedServices = {
+export type <%= LanguageName %>AddedServices = {
     validation: {
-        LanguageNameValidator: LanguageNameValidator
+        <%= LanguageName %>Validator: <%= LanguageName %>Validator
     }
 }
 
-export type LanguageNameServices = LangiumServices & LanguageNameAddedServices
+export type <%= LanguageName %>Services = LangiumServices & <%= LanguageName %>AddedServices
 
-export const LanguageNameModule: Module<LanguageNameServices, PartialLangiumServices & LanguageNameAddedServices> = {
+export const <%= LanguageName %>Module: Module<<%= LanguageName %>Services, PartialLangiumServices & <%= LanguageName %>AddedServices> = {
     validation: {
-        ValidationRegistry: (injector) => new LanguageNameValidationRegistry(injector),
-        LanguageNameValidator: () => new LanguageNameValidator()
+        ValidationRegistry: (injector) => new <%= LanguageName %>ValidationRegistry(injector),
+        <%= LanguageName %>Validator: () => new <%= LanguageName %>Validator()
     }
 };
 
-export function createLanguageNameServices(context?: DefaultModuleContext): LanguageNameServices {
+export function create<%= LanguageName %>Services(context?: DefaultModuleContext): <%= LanguageName %>Services {
     return inject(
         createDefaultModule(context),
-        LanguageNameGeneratedModule,
-        LanguageNameModule
+        <%= LanguageName %>GeneratedModule,
+        <%= LanguageName %>Module
     );
 }

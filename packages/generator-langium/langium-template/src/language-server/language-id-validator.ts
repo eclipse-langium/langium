@@ -1,13 +1,13 @@
 import { ValidationAcceptor, ValidationCheck, ValidationRegistry } from 'langium';
-import { LanguageNameAstType, Person } from './generated/ast';
-import { LanguageNameServices } from './language-id-module';
+import { <%= LanguageName %>AstType, Person } from './generated/ast';
+import { <%= LanguageName %>Services } from './<%= language-id %>-module';
 
-type LangiumGrammarChecks = { [type in LanguageNameAstType]?: ValidationCheck | ValidationCheck[] }
+type LangiumGrammarChecks = { [type in <%= LanguageName %>AstType]?: ValidationCheck | ValidationCheck[] }
 
-export class LanguageNameValidationRegistry extends ValidationRegistry {
-    constructor(services: LanguageNameServices) {
+export class <%= LanguageName %>ValidationRegistry extends ValidationRegistry {
+    constructor(services: <%= LanguageName %>Services) {
         super(services);
-        const validator = services.validation.LanguageNameValidator;
+        const validator = services.validation.<%= LanguageName %>Validator;
         const checks: LangiumGrammarChecks = {
             Person: validator.checkPersonStartsWithCapital
         };
@@ -15,7 +15,7 @@ export class LanguageNameValidationRegistry extends ValidationRegistry {
     }
 }
 
-export class LanguageNameValidator {
+export class <%= LanguageName %>Validator {
 
     checkPersonStartsWithCapital(person: Person, accept: ValidationAcceptor): void {
         if (person.name) {

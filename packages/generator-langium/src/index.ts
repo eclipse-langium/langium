@@ -6,9 +6,10 @@ import *         as _ from 'lodash';
 const TEMPLATE_DIR   = 'langium-template';
 const USER_DIR       = 'app';
 
-const EXTENSION_NAME = 'extension-name';
-const LANGUAGE_ID    = 'language-id';
-const LANGUAGE_NAME  = 'LanguageName';
+const EXTENSION_NAME = '<%= extension-name %>';
+const LANGUAGE_NAME  = '<%= LanguageName %>';
+const FILE_EXTENSION = '<%= file-extension %>';
+const LANGUAGE_ID    = '<%= language-id %>';
 
 class LangiumGenerator extends Generator
 {

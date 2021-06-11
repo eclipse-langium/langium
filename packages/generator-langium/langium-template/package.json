@@ -1,6 +1,6 @@
 {
-    "name": "extension-name",
-    "displayName": "extension-name",
+    "name": "<%= extension-name %>",
+    "displayName": "<%= extension-name %>",
     "description": "description",
     "version": "0.0.1",
     "engines": {
@@ -11,24 +11,24 @@
     ],
     "contributes": {
         "languages": [{
-            "id": "language-id",
-            "aliases": ["LanguageName", "language-id"],
-            "extensions": [".file-extension"],
+            "id": "<%= language-id %>",
+            "aliases": ["<%= LanguageName %>", "<%= language-id %>"],
+            "extensions": [".<%= file-extension %>"],
             "configuration": "./language-configuration.json"
         }],
         "grammars": [{
-            "language": "language-id",
-            "scopeName": "source.language-id",
-            "path": "./syntaxes/language-id.tmLanguage.json"
+            "language": "<%= language-id %>",
+            "scopeName": "source.<%= language-id %>",
+            "path": "./syntaxes/<%= language-id %>.tmLanguage.json"
         }]
     },
     "activationEvents": [
-        "onLanguage:language-id"
+        "onLanguage:<%= language-id %>"
     ],
     "main": "./out/extension.js",
     "langium": {
-        "grammar": "src/language-server/language-id.langium",
-        "extensions": [".file-extension"],
+        "grammar": "src/language-server/<%= language-id %>.langium",
+        "extensions": [".<%= file-extension %>"],
         "out": "src/language-server/generated"
     },
     "scripts": {
