@@ -23,45 +23,45 @@ class LangiumGenerator extends Generator
         this.answers = await this.prompt([ 
           {
             type: "input",
-            name: "extension_name",
+            name: "extensionName",
             message: "Your extension name",
             default: EXTENSION_NAME
           },
           {
             type: "input",
-            name: "language_id",
+            name: "languageId",
             message: "Your language identifier",
             default: LANGUAGE_ID,
             validate: function(input: string): boolean | string {
                 if (/^[a-zA-Z_][\w-]*$/.test(input.toString()))
                    return true;
-                return "You entered not correct language-id. Try again.";
+                return "You entered not correct language ID. Try again.";
             }
           }
         ]);
     }
 
     private _replaceInTemplate(answers: any, content: Buffer): string {
-        // FIX: regex can be replaced on parsers, but for what
+        // FIX: regex can be replaced on parsers, but for what?
         return content.toString()
-          .replace(new RegExp(EXTENSION_NAME, 'g'), answers.extension_name)
-          .replace(new RegExp(LANGUAGE_ID, 'g'), answers.language_id)
-          .replace(new RegExp(LANGUAGE_NAME, 'g'), answers.language_name);
+          .replace(new RegExp(EXTENSION_NAME, 'g'), answers.extensionName)
+          .replace(new RegExp(LANGUAGE_ID, 'g'), answers.languageId)
+          .replace(new RegExp(LANGUAGE_NAME, 'g'), answers.languageName);
       }
 
     writing(): void {
-        this.answers.language_name = _.upperFirst(_.camelCase(this.answers.language_id));
+        this.answers.languageName = _.upperFirst(_.camelCase(this.answers.languageId));
         this.fs.copy(
           this.templatePath("."),
-          this.destinationPath(USER_DIR, this.answers.extension_name),
+          this.destinationPath(USER_DIR, this.answers.extensionName),
           { process: (x: Buffer) => this._replaceInTemplate(this.answers, x) }
         );
     }
 
     end(): void {
-        this.log("Extension name:", this.answers.extension_name);
-        this.log("Language identifier:", this.answers.language_id);
-        this.log("Language name:", this.answers.language_name);
+        this.log("Extension name:", this.answers.extensionName);
+        this.log("Language identifier:", this.answers.languageId);
+        this.log("Language name:", this.answers.languageName);
         this.log("Have a nice coding :)");
     }
 }
