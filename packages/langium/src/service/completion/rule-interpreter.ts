@@ -1,21 +1,21 @@
-import * as ast from '../grammar/generated/ast';
-import { LangiumServices } from '../services';
-import { CstNode } from '../syntax-tree';
-import { FollowElementComputation } from './follow-element-computation';
+import * as ast from '../../grammar/generated/ast';
+import { CstNode } from '../../syntax-tree';
+import { findFirstFeatures, findNextFeatures } from './follow-element-computation';
 
 type MatchType = 'full' | 'partial' | 'none';
 
+/**
+ * The `RuleInterpreter` is used by the `CompletionProvider` to identify any `AbstractElement` that could apply at a given cursor position.
+ *
+ * This is necessary as the parser uses the best fitting grammar rule for any given text input.
+ * Assuming we could have multiple different applying rules at a certain point in the text input, only one of those will be successfully parsed.
+ * However, this `RuleInterpreter` will return **all** possible features that are applicable.
+ */
 export class RuleInterpreter {
-
-    protected readonly followElementComputation: FollowElementComputation;
-
-    constructor(services: LangiumServices) {
-        this.followElementComputation = services.completion.FollowElementComputation;
-    }
 
     interpretRule(rule: ast.ParserRule, nodes: CstNode[]): ast.AbstractElement[] {
         let features: ast.AbstractElement[] = [];
-        let nextFeatures = this.followElementComputation.findFirstFeatures(rule.alternatives);
+        let nextFeatures = findFirstFeatures(rule.alternatives);
         let node = nodes.shift();
         while (node && nextFeatures.length > 0) {
             const n = node;
@@ -26,7 +26,7 @@ export class RuleInterpreter {
                 }
                 return match === 'full';
             });
-            nextFeatures = features.flatMap(e => this.followElementComputation.findNextFeatures([e]));
+            nextFeatures = features.flatMap(e => findNextFeatures([e]));
             node = nodes.shift();
         }
         return features;
@@ -52,7 +52,7 @@ export class RuleInterpreter {
 
     ruleMatches(rule: ast.AbstractRule | undefined, node: CstNode): MatchType {
         if (ast.isParserRule(rule)) {
-            const ruleFeatures = this.followElementComputation.findFirstFeatures(rule.alternatives);
+            const ruleFeatures = findFirstFeatures(rule.alternatives);
             return ruleFeatures.some(e => this.featureMatches(e, node)) ? 'full' : 'none';
         } else if (ast.isTerminalRule(rule)) {
             // We have to take keywords into account

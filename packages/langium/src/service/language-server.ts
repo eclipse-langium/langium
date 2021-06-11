@@ -63,7 +63,7 @@ export function addCompletionHandler(connection: Connection, services: LangiumSe
                 document.parseResult = parseResult;
                 document.precomputedScopes = services.references.ScopeComputation.computeScope(rootNode);
                 const completionProvider = services.completion.CompletionProvider;
-                const assist = completionProvider.contentAssist(parser.grammarAccess.grammar, rootNode, offset);
+                const assist = completionProvider.getCompletion(rootNode, offset);
                 return assist;
             } else {
                 return CompletionList.create();

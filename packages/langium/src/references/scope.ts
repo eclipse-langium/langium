@@ -1,6 +1,6 @@
 import { AstNode, AstReflection } from '../syntax-tree';
 import { getDocument, streamAllContents } from '../utils/ast-util';
-import { Stream, stream } from '../utils/stream';
+import { EMPTY_STREAM, Stream, stream } from '../utils/stream';
 import { NameProvider } from './naming';
 import { LangiumServices } from '../services';
 import { PrecomputedScopes } from '../documents/document';
@@ -14,7 +14,7 @@ export interface AstNodeDescription {
 
 export interface Scope {
     getElement(name: string): AstNodeDescription | undefined
-    getAllDescriptions(): AstNodeDescription[]
+    getAllElements(): Stream<AstNodeDescription>
 }
 
 export class SimpleScope implements Scope {
@@ -26,8 +26,8 @@ export class SimpleScope implements Scope {
         this.outerScope = outerScope;
     }
 
-    getAllDescriptions(): AstNodeDescription[] {
-        return Array.from(this.elements);
+    getAllElements(): Stream<AstNodeDescription> {
+        return this.outerScope ? this.elements.concat(this.outerScope.getAllElements()) : this.elements;
     }
 
     getElement(name: string): AstNodeDescription | undefined {
@@ -46,8 +46,8 @@ export const EMPTY_SCOPE: Scope = {
     getElement(): undefined {
         return undefined;
     },
-    getAllDescriptions(): AstNodeDescription[] {
-        return [];
+    getAllElements(): Stream<AstNodeDescription> {
+        return EMPTY_STREAM;
     }
 };
 
