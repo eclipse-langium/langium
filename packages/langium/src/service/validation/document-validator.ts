@@ -100,6 +100,9 @@ export class DefaultDocumentValidator {
 }
 
 export function getDiagnosticRange<N extends AstNode>(info: DiagnosticInfo<N>, document: ProcessedLangiumDocument): Range {
+    if (info.range) {
+        return info.range;
+    }
     if (info.property !== undefined && typeof info.property !== 'string') {
         throw new Error('Invalid property: ' + info.property);
     }

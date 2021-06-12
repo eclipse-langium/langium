@@ -111,7 +111,7 @@ export class CompositeCstNodeImpl extends AbstractCstNode implements CompositeCs
     get length(): number {
         if (this.children.length > 0) {
             const last = this.children[this.children.length - 1];
-            return last.offset + last.length - this.offset;
+            return Math.max(last.offset + last.length - this.offset, 0);
         } else {
             return 0;
         }
