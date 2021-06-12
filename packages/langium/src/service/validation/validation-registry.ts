@@ -1,4 +1,4 @@
-import { CodeDescription, DiagnosticRelatedInformation, DiagnosticTag, integer } from 'vscode-languageserver/node';
+import { CodeDescription, DiagnosticRelatedInformation, DiagnosticTag, integer, Range } from 'vscode-languageserver/node';
 import { AstNode, Properties } from '../../syntax-tree';
 import { LangiumServices } from '../../services';
 import { AstReflection } from '../../syntax-tree';
@@ -10,6 +10,8 @@ export type DiagnosticInfo<N extends AstNode> = {
     property?: Properties<N>,
     /** In case of a multi-value property (array), an index can be given to select a specific element. */
     index?: number,
+    /** If you want to create a diagnostic independent to any property, use the range property. */
+    range?: Range,
     /** The diagnostic's code, which usually appear in the user interface. */
     code?: integer | string,
     /** An optional property to describe the error code. */
@@ -21,6 +23,7 @@ export type DiagnosticInfo<N extends AstNode> = {
     /** A data entry field that is preserved between a `textDocument/publishDiagnostics` notification and `textDocument/codeAction` request. */
     data?: unknown;
 }
+
 export type ValidationAcceptor = <N extends AstNode>(severity: 'error' | 'warning' | 'info' | 'hint', message: string, info: DiagnosticInfo<N>) => void
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -38,12 +41,22 @@ export class ValidationRegistry {
         for (const [type, ch] of Object.entries(checksRecord)) {
             if (Array.isArray(ch)) {
                 for (const check of ch) {
-                    this.doRegister(type, check.bind(thisObj));
+                    this.doRegister(type, this.wrapValidationException(check).bind(thisObj));
                 }
             } else if (ch) {
-                this.doRegister(type, ch.bind(thisObj));
+                this.doRegister(type, this.wrapValidationException(ch).bind(thisObj));
             }
         }
+    }
+
+    protected wrapValidationException(check: ValidationCheck): ValidationCheck {
+        return (node, accept) => {
+            try {
+                check.call(this, node, accept);
+            } catch (e) {
+                accept('error', 'An exception occured executing a validation.', { node });
+            }
+        };
     }
 
     protected doRegister(type: string, check: ValidationCheck): void {
