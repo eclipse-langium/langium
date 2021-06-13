@@ -6,10 +6,13 @@ import *         as _ from 'lodash';
 const TEMPLATE_DIR   = 'langium-template';
 const USER_DIR       = 'app';
 
-const EXTENSION_NAME = '<%= extension-name %>';
-const LANGUAGE_NAME  = '<%= LanguageName %>';
-const FILE_EXTENSION = '<%= file-extension %>';
-const LANGUAGE_ID    = '<%= language-id %>';
+const OPEN           = '<%= ';
+const CLOSE          = ' %>';
+
+const EXTENSION_NAME = 'extension-name';
+const LANGUAGE_NAME  = 'LanguageName';
+const FILE_EXTENSION = 'file-extension';
+const LANGUAGE_ID    = 'language-id';
 
 class LangiumGenerator extends Generator
 {
@@ -58,24 +61,26 @@ class LangiumGenerator extends Generator
 
         this.sourceRoot(TEMPLATE_DIR);
         [".", ".vscode", ".eslintrc.json", ".vscodeignore"].map(path => {
-          const replaceTemplateWords = function(answers: any, content: string): string {
+          const replaceTemplateWords = function(answers: any, content: Buffer): string {
             // FIX: regex can be replaced on parsers, but for what?
-            return content
-              .replace(new RegExp(EXTENSION_NAME, 'g'), answers.extensionName)
-              .replace(new RegExp(FILE_EXTENSION, 'g'), answers.fileExtension)
-              .replace(new RegExp(LANGUAGE_ID, 'g'), answers.languageId)
-              .replace(new RegExp(LANGUAGE_NAME, 'g'), answers.languageName);
+            const replaceMap = [ [EXTENSION_NAME, answers.extensionName]
+                               , [FILE_EXTENSION, answers.fileExtension]
+                               , [LANGUAGE_ID, answers.languageId]
+                               , [LANGUAGE_NAME, answers.languageName]];
+            return replaceMap.reduce(
+                (acc: string, [templateWord, userAnswer]) => acc.replace(new RegExp(`${OPEN}${templateWord}${CLOSE}`, 'g'), userAnswer)
+              , content.toString());
           }
 
           const replaceTemplateNames = function(answers: any, path: string): string {
             return path
-              .replace(new RegExp('language-id', 'g'), answers.languageId);
+              .replace(new RegExp(LANGUAGE_ID, 'g'), answers.languageId);
           }
 
           this.fs.copy(
             this.templatePath(path),
             this.destinationPath(USER_DIR, this.answers.extensionName, path),
-            { process: (content: Buffer) => replaceTemplateWords(this.answers, content.toString()),
+            { process: (content: Buffer) => replaceTemplateWords(this.answers, content),
               processDestinationPath: (path: string) => replaceTemplateNames(this.answers, path) }
           );
         });
