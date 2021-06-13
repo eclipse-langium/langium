@@ -33,32 +33,28 @@ class LangiumGenerator extends Generator
           },
           {
             type: "input",
-            name: "languageId",
-            message: "Your language identifier",
-            default: LANGUAGE_ID,
-            validate: function(input: string): boolean | string {
-                if (/^[a-zA-Z_][\w-]*$/.test(input.toString()))
-                   return true;
-                return "You entered not correct language ID. Try again.";
-            }
+            name: "languageName",
+            message: "Name of your language",
+            default: LANGUAGE_NAME,
+            validate: (input: string): boolean | string =>
+              /^[a-zA-Z_][\w_ -]*$/.test(input) ? true : "You entered not correct language name. Try again."
           },
           {
             type: "input",
             name: "fileExtension",
             message: "File extension of your language",
             default: FILE_EXTENSION,
-            validate: function(input: string): boolean | string {
-                if (/^[a-z]*$/.test(input.toString()))
-                   return true;
-                return "Extension can contain only small letters. Try again.";
-            }
+            validate: (input: string): boolean | string =>
+                (/^[a-z]*$/.test(input.toString())) ? true : "Extension can contain only small letters. Try again."
           }
         ]);
     }
 
     writing(): void {
-        this.answers.languageName = _.upperFirst(_.camelCase(this.answers.languageId));
-
+        this.answers.languageName = _.upperFirst(_.camelCase(this.answers.languageName
+          .replace(/[ -]+/g, '_')));
+        this.answers.languageId = _.snakeCase(this.answers.languageName);
+  
         this.sourceRoot(TEMPLATE_DIR);
         [".", ".vscode", ".eslintrc.json", ".vscodeignore"].map(path => {
           const replaceTemplateWords = function(answers: any, content: Buffer): string {
@@ -88,8 +84,9 @@ class LangiumGenerator extends Generator
 
     end(): void {
         this.log("Extension name:", this.answers.extensionName);
-        this.log("Language identifier:", this.answers.languageId);
         this.log("Language name:", this.answers.languageName);
+        this.log("Language identifier:", this.answers.languageId);
+        this.log("File extension:", this.answers.fileExtension);
         this.log("Have a nice coding :)");
     }
 }
