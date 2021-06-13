@@ -58,19 +58,25 @@ class LangiumGenerator extends Generator
 
         this.sourceRoot(TEMPLATE_DIR);
         [".", ".vscode", ".eslintrc.json", ".vscodeignore"].map(path => {
-          const replaceInTemplate = function(answers: any, content: Buffer): string {
+          const replaceTemplateWords = function(answers: any, content: string): string {
             // FIX: regex can be replaced on parsers, but for what?
-            return content.toString()
+            return content
               .replace(new RegExp(EXTENSION_NAME, 'g'), answers.extensionName)
               .replace(new RegExp(FILE_EXTENSION, 'g'), answers.fileExtension)
               .replace(new RegExp(LANGUAGE_ID, 'g'), answers.languageId)
               .replace(new RegExp(LANGUAGE_NAME, 'g'), answers.languageName);
-          }  
+          }
+
+          const replaceTemplateNames = function(answers: any, path: string): string {
+            return path
+              .replace(new RegExp('language-id', 'g'), answers.languageId);
+          }
 
           this.fs.copy(
             this.templatePath(path),
             this.destinationPath(USER_DIR, this.answers.extensionName, path),
-            { process: (x: Buffer) => replaceInTemplate(this.answers, x) }
+            { process: (content: Buffer) => replaceTemplateWords(this.answers, content.toString()),
+              processDestinationPath: (path: string) => replaceTemplateNames(this.answers, path) }
           );
         });
     }
