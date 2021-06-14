@@ -2,7 +2,7 @@ import Generator from 'yeoman-generator';
 import * as _ from 'lodash';
 
 const TEMPLATE_DIR = 'langium-template';
-const USER_DIR = 'app';
+const USER_DIR = '.';
 
 const OPEN = '<%= ';
 const CLOSE = ' %>';
@@ -116,15 +116,10 @@ class LangiumGenerator extends Generator {
 
     install(): void {
         const extensionPath = this.destinationPath(
-            '..',
+            USER_DIR,
             this.answers.extensionName
         );
 
-        this.spawnCommand('mv', [
-            this.destinationPath(USER_DIR, this.answers.extensionName),
-            extensionPath,
-        ]);
-        this.spawnCommand('npm', ['i', '--prefix', '../..']);
         this.spawnCommand('npm', [
             'run',
             '--prefix',
