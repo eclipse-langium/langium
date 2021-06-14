@@ -1,3 +1,12 @@
+/**********************************************************************************
+ * Copyright (c) 2021 TypeFox
+ *
+ * This program and the accompanying materials are made available under the terms
+ * of the MIT License, which is available at https://opensource.org/licenses/MIT.
+ *
+ * SPDX-License-Identifier: MIT
+ **********************************************************************************/
+
 import * as langium from 'langium';
 import { getContainerOfType, getTypeName } from 'langium';
 import { CompositeGeneratorNode, GeneratorNode, IndentNode, NewLineNode, NL, process, replaceTokens } from 'langium';
