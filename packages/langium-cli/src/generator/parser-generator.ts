@@ -163,8 +163,7 @@ function buildGroup(ctx: RuleContext, group: langium.Group): CompositeGeneratorN
     const groupNode = new CompositeGeneratorNode();
 
     for (const element of group.elements) {
-        const terminalNode = buildElement(ctx, element);
-        groupNode.children.push(wrap(ctx, terminalNode, element.cardinality), new NewLineNode(undefined, true));
+        groupNode.children.push(buildElement(ctx, element), new NewLineNode(undefined, true));
     }
 
     return groupNode;
@@ -175,25 +174,27 @@ function buildAction(ctx: RuleContext, action: langium.Action): GeneratorNode {
 }
 
 function buildElement(ctx: RuleContext, terminal: langium.AbstractElement): GeneratorNode {
+    let node: GeneratorNode;
     if (langium.isKeyword(terminal)) {
-        return buildKeyword(ctx, terminal);
+        node = buildKeyword(ctx, terminal);
     } else if (langium.isAction(terminal)) {
-        return buildAction(ctx, terminal);
+        node = buildAction(ctx, terminal);
     } else if (langium.isAssignment(terminal)) {
-        return buildElement(ctx, terminal.terminal);
+        node = buildElement(ctx, terminal.terminal);
     } else if (langium.isCrossReference(terminal)) {
-        return `this.consume(${ctx.consume++}, ID, ${getGrammarAccess(ctx, terminal)});`;
+        node = `this.consume(${ctx.consume++}, ID, ${getGrammarAccess(ctx, terminal)});`;
     } else if (langium.isRuleCall(terminal)) {
-        return buildRuleCall(ctx, terminal);
+        node = buildRuleCall(ctx, terminal);
     } else if (langium.isAlternatives(terminal)) {
-        return buildAlternatives(ctx, terminal);
+        node = buildAlternatives(ctx, terminal);
     } else if (langium.isUnorderedGroup(terminal)) {
-        return buildUnorderedGroup(ctx, terminal);
+        node = buildUnorderedGroup(ctx, terminal);
     } else if (langium.isGroup(terminal)) {
-        return buildGroup(ctx, terminal);
+        node = buildGroup(ctx, terminal);
     } else {
-        return '';
+        node = '';
     }
+    return wrap(ctx, node, terminal.cardinality);
 }
 
 function buildAlternatives(ctx: RuleContext, alternatives: langium.Alternatives): GeneratorNode {
@@ -208,8 +209,7 @@ function buildAlternatives(ctx: RuleContext, alternatives: langium.Alternatives)
             wrapper.children.push(altIndent);
             const contentIndent = new IndentNode();
             altIndent.children.push('() => {', NL, contentIndent, '},', NL);
-            const elementNode = buildElement(ctx, element);
-            contentIndent.children.push(wrap(ctx, elementNode, element.cardinality), new NewLineNode(undefined, true));
+            contentIndent.children.push(buildElement(ctx, element), new NewLineNode(undefined, true));
         }
 
         wrapper.children.push(']);', NL);

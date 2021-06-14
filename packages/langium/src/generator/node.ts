@@ -1,3 +1,5 @@
+import { EOL } from 'os';
+
 export type GeneratorNode = CompositeGeneratorNode | IndentNode | TextNode | NewLineNode | string;
 
 export class CompositeGeneratorNode {
@@ -67,7 +69,7 @@ export class TextNode {
 
 export class NewLineNode {
 
-    private _lineDelimiter  = '\n';
+    private _lineDelimiter: string;
 
     public get lineDelimiter(): string {
         return this._lineDelimiter;
@@ -85,8 +87,8 @@ export class NewLineNode {
         this._ifNotEmpty = v;
     }
 
-    constructor(lineDelimiter = '\n', ifNotEmpty = false) {
-        this._lineDelimiter = lineDelimiter;
+    constructor(lineDelimiter?: string, ifNotEmpty = false) {
+        this._lineDelimiter = lineDelimiter ?? EOL;
         this._ifNotEmpty = ifNotEmpty;
     }
 }

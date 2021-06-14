@@ -682,7 +682,9 @@ export class Parser extends LangiumParser {
 
     TerminalGroup = this.DEFINE_RULE("TerminalGroup", TerminalGroup, () => {
         this.initializeElement(this.grammarAccess.TerminalGroup);
-        this.subrule(1, this.TerminalToken, this.grammarAccess.TerminalGroup.elementsTerminalTokenRuleCall);
+        this.many(1, () => {
+            this.subrule(1, this.TerminalToken, this.grammarAccess.TerminalGroup.elementsTerminalTokenRuleCall);
+        });
         return this.construct();
     });
 
