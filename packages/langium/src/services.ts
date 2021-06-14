@@ -19,7 +19,7 @@ import { ValidationRegistry } from './service/validation/validation-registry';
 import { DocumentValidator } from './service/validation/document-validator';
 import { JsonSerializer } from './serializer/json-serializer';
 import { LangiumDocument } from './documents/document';
-import { DocumentSymbolProvider } from './service/symbol/document-symbol-service';
+import { DocumentSymbolProvider } from './service/symbols/document-symbol-service';
 import { CompletionProvider } from './service/completion/completion-provider';
 import { RuleInterpreter } from './service/completion/rule-interpreter';
 
@@ -54,7 +54,7 @@ export type LangiumServices = LangiumGeneratedServices & {
     serializer: {
         JsonSerializer: JsonSerializer
     },
-    symbol: {
+    symbols: {
         DocumentSymbolProvider: DocumentSymbolProvider
     }
 }
