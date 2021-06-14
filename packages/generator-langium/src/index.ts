@@ -82,6 +82,15 @@ class LangiumGenerator extends Generator
         });
     }
 
+    install(): void {
+      const extensionPath = this.destinationPath('..', this.answers.extensionName);
+
+      this.spawnCommand('mv', [this.destinationPath(USER_DIR, this.answers.extensionName), extensionPath]);
+      this.spawnCommand('npm', ['i', '--prefix', '../..']);
+      this.spawnCommand('npm', ['run', '--prefix', extensionPath, 'langium:generate']);
+      this.spawnCommand('npm', ['run', '--prefix', extensionPath, 'build']);
+    }
+
     end(): void {
         this.log("Extension name:",      this.answers.extensionName);
         this.log("Language name:",       this.answers.languageName);
