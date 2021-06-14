@@ -18,6 +18,7 @@ import { DefaultNameProvider } from './references/naming';
 import { ValidationRegistry } from './service/validation/validation-registry';
 import { DefaultDocumentValidator } from './service/validation/document-validator';
 import { DefaultJsonSerializer } from './serializer/json-serializer';
+import { DefaultDocumentSymbolProvider } from './service/symbol/document-symbol-service';
 import { DefaultCompletionProvider } from './service/completion/completion-provider';
 import { RuleInterpreter } from './service/completion/rule-interpreter';
 
@@ -60,6 +61,9 @@ export function createDefaultModule(context: DefaultModuleContext = {}): Module<
         },
         serializer: {
             JsonSerializer: (injector) => new DefaultJsonSerializer(injector)
+        },
+        symbol: {
+            DocumentSymbolProvider: () => new DefaultDocumentSymbolProvider()
         }
     };
 }
