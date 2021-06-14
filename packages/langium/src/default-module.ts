@@ -19,6 +19,7 @@ import { DefaultDocumentSymbolProvider } from './service/symbols/document-symbol
 import { DefaultCompletionProvider } from './service/completion/completion-provider';
 import { RuleInterpreter } from './service/completion/rule-interpreter';
 import { DefaultReferenceFinder } from './references/reference-finder';
+import { DefaultGoToDeclarationProvider } from './references/goto/goto-declaration';
 
 export type DefaultModuleContext = {
     connection?: Connection
@@ -49,6 +50,9 @@ export function createDefaultModule(context: DefaultModuleContext = {}): Module<
             ScopeProvider: (injector) => new DefaultScopeProvider(injector),
             ScopeComputation: (injector) => new DefaultScopeComputation(injector),
             ReferenceFinder:  (services) => new DefaultReferenceFinder(services)
+            goto: {
+                GoToDeclaration: (injector) => new DefaultGoToDeclarationProvider(injector)
+            }
         },
         completion: {
             CompletionProvider: (injector) => new DefaultCompletionProvider(injector),

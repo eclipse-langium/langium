@@ -20,6 +20,7 @@ import { DocumentSymbolProvider } from './service/symbols/document-symbol-provid
 import { CompletionProvider } from './service/completion/completion-provider';
 import { RuleInterpreter } from './service/completion/rule-interpreter';
 import { ReferenceFinder } from './references/reference-finder';
+import { GoToDeclaration } from './references/goto/goto-declaration';
 
 export type LangiumGeneratedServices = {
     Parser: LangiumParser,
@@ -41,6 +42,9 @@ export type LangiumServices = LangiumGeneratedServices & {
         ScopeProvider: ScopeProvider,
         ScopeComputation: ScopeComputation,
         ReferenceFinder: ReferenceFinder
+        goto: {
+            GoToDeclaration: GoToDeclaration
+        }
     },
     completion: {
         CompletionProvider: CompletionProvider,

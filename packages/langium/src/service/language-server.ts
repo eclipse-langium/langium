@@ -11,6 +11,7 @@ import {
 
 import { LangiumDocument } from '../documents/document';
 import { LangiumServices } from '../services';
+import { AstNode } from '../syntax-tree';
 
 export function startLanguageServer(services: LangiumServices): void {
     const connection = services.languageServer.Connection;
@@ -29,6 +30,10 @@ export function startLanguageServer(services: LangiumServices): void {
                 completionProvider: {},
                 referencesProvider: {}, // TODO enable workDoneProgress?
                 documentSymbolProvider: {}
+                // goto-declaration
+                declarationProvider: {},
+                // hoverProvider needs to be created for mouse-over events, etc.
+                hoverProvider: false
             }
         };
         if (hasWorkspaceFolderCapability) {
@@ -50,6 +55,7 @@ export function startLanguageServer(services: LangiumServices): void {
     addCompletionHandler(connection, services);
     addFindReferencesHandler(connection, services);
     addDocumentSymbolHandler(connection, services);
+    addDeclarationProvider(connection, services);
 
     // Make the text document manager listen on the connection for open, change and close text document events.
     documents.listen(connection);
@@ -65,15 +71,10 @@ export function addCompletionHandler(connection: Connection, services: LangiumSe
             const uri = _textDocumentPosition.textDocument.uri;
             const document = services.documents.TextDocuments.get(uri);
             if (document) {
-                const text = document.getText();
-                const offset = document.offsetAt(_textDocumentPosition.position);
-                const parser = services.Parser;
-                const parseResult = parser.parse(text);
-                const rootNode = parseResult.value;
-                (rootNode as { $document: LangiumDocument }).$document = document;
-                document.parseResult = parseResult;
-                document.precomputedScopes = services.references.ScopeComputation.computeScope(rootNode);
+                const rootNode = assembleRoot(services, document);
                 const completionProvider = services.completion.CompletionProvider;
+
+                const offset = document.offsetAt(_textDocumentPosition.position);
                 const assist = completionProvider.getCompletion(rootNode, offset);
                 return assist;
             } else {
@@ -107,4 +108,35 @@ export function addDocumentSymbolHandler(connection: Connection, services: Langi
             return [];
         }
     });
+}
+
+export function addDeclarationProvider(connection: Connection, services: LangiumServices): void {
+    connection.onDeclaration(
+        (_textDocumentPosition: TextDocumentPositionParams): Location[] => {
+            const uri = _textDocumentPosition.textDocument.uri;
+            const document = services.documents.TextDocuments.get(uri);
+            if (document) {
+
+                const rootNode = assembleRoot(services, document);
+                const gotoDeclaration = services.references.goto.GoToDeclaration;
+
+                const offset = document.offsetAt(_textDocumentPosition.position);
+                return gotoDeclaration.findDeclaration(uri, rootNode, offset);
+            }
+            else {
+                return [];
+            }
+        }
+    );
+}
+
+function assembleRoot( services: LangiumServices, document: LangiumDocument): AstNode {
+    const text = document.getText();
+    const parser = services.Parser;
+    const parseResult = parser.parse(text);
+    const rootNode = parseResult.value;
+    (rootNode as { $document: LangiumDocument }).$document = document;
+    document.parseResult = parseResult;
+    document.precomputedScopes = services.references.ScopeComputation.computeScope(rootNode);
+    return rootNode;
 }
