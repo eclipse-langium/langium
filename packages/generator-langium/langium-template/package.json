@@ -13,7 +13,7 @@
         "languages": [{
             "id": "<%= language-id %>",
             "aliases": ["<%= LanguageName %>", "<%= language-id %>"],
-            "extensions": [".<%= file-extension %>"],
+            "extensions": <%= file-extension %>,
             "configuration": "./language-configuration.json"
         }],
         "grammars": [{
@@ -28,7 +28,7 @@
     "main": "./out/extension.js",
     "langium": {
         "grammar": "src/language-server/<%= language-id %>.langium",
-        "extensions": [".<%= file-extension %>"],
+        "extensions": <%= file-extension %>,
         "out": "src/language-server/generated"
     },
     "scripts": {

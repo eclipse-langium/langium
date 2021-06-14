@@ -15,7 +15,7 @@ const LANGUAGE_ID = 'language-id';
 interface Answers {
     extensionName: string;
     languageName: string;
-    fileExtension: string;
+    fileExtensions: string;
     languageId: string;
 }
 
@@ -31,13 +31,13 @@ class LangiumGenerator extends Generator {
             {
                 type: 'input',
                 name: 'extensionName',
-                message: 'Your extension name',
+                message: 'Your extension name:',
                 default: EXTENSION_NAME,
             },
             {
                 type: 'input',
                 name: 'languageName',
-                message: 'Name of your language',
+                message: 'Your language name:',
                 default: LANGUAGE_NAME,
                 validate: (input: string): boolean | string =>
                     /^[a-zA-Z_][\w_ -]*$/.test(input)
@@ -46,13 +46,14 @@ class LangiumGenerator extends Generator {
             },
             {
                 type: 'input',
-                name: 'fileExtension',
-                message: 'File extension of your language',
+                name: 'fileExtensions',
+                message:
+                    'File extensions of your language, separated by commas:',
                 default: FILE_EXTENSION,
                 validate: (input: string): boolean | string =>
-                    /^[a-z]*$/.test(input)
+                    /^\.?[a-z]+(\s*\,\s*\.?[a-z]+)*$/.test(input)
                         ? true
-                        : 'Extension can contain only small letters. Try again.',
+                        : 'The file extension must contain only lowercase letters. Extensions must be separated by commas.',
             },
         ]);
     }
@@ -62,6 +63,21 @@ class LangiumGenerator extends Generator {
             _.camelCase(this.answers.languageName.replace(/[ -]+/g, '_'))
         );
         this.answers.languageId = _.snakeCase(this.answers.languageName);
+        this.answers.fileExtensions =
+            '[' +
+            [
+                ...new Set(
+                    this.answers.fileExtensions
+                        .split(/\s*\,\s*/)
+                        .map(
+                            (fileExtension: string) =>
+                                '".' +
+                                _.trim(fileExtension).replace(/\./, '') +
+                                '"'
+                        )
+                ),
+            ].join(', ') +
+            ']';
 
         this.sourceRoot(TEMPLATE_DIR);
         ['.', '.vscode', '.eslintrc.json', '.vscodeignore'].forEach(
@@ -72,7 +88,7 @@ class LangiumGenerator extends Generator {
                 ): string =>
                     [
                         [EXTENSION_NAME, answers.extensionName],
-                        [FILE_EXTENSION, answers.fileExtension],
+                        [FILE_EXTENSION, this.answers.fileExtensions],
                         [LANGUAGE_ID, answers.languageId],
                         [LANGUAGE_NAME, answers.languageName],
                     ].reduce(
