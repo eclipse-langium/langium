@@ -64,7 +64,7 @@ class LangiumGenerator extends Generator {
         this.answers.languageId = _.snakeCase(this.answers.languageName);
 
         this.sourceRoot(TEMPLATE_DIR);
-        ['.', '.vscode', '.eslintrc.json', '.vscodeignore'].map(
+        ['.', '.vscode', '.eslintrc.json', '.vscodeignore'].forEach(
             (path: string) => {
                 const replaceTemplateWords = (
                     answers: Answers,
@@ -132,14 +132,6 @@ class LangiumGenerator extends Generator {
             'langium:generate',
         ]);
         this.spawnCommand('npm', ['run', '--prefix', extensionPath, 'build']);
-    }
-
-    end(): void {
-        this.log('Extension name:', this.answers.extensionName);
-        this.log('Language name:', this.answers.languageName);
-        this.log('Language identifier:', this.answers.languageId);
-        this.log('File extension:', this.answers.fileExtension);
-        this.log('Have a nice coding :)');
     }
 }
 
