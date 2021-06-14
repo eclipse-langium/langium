@@ -62,8 +62,8 @@ export function createDefaultModule(context: DefaultModuleContext = {}): Module<
         serializer: {
             JsonSerializer: (injector) => new DefaultJsonSerializer(injector)
         },
-        symbol: {
-            DocumentSymbolProvider: () => new DefaultDocumentSymbolProvider()
+        symbols: {
+            DocumentSymbolProvider: (injector) => new DefaultDocumentSymbolProvider(injector)
         }
     };
 }

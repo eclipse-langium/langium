@@ -1,6 +1,5 @@
 import {
-    InitializeParams, CompletionItem, TextDocumentPositionParams, TextDocumentSyncKind, InitializeResult, Connection, DocumentSymbolParams, DocumentSymbol
-    InitializeParams, TextDocumentPositionParams, TextDocumentSyncKind, InitializeResult, Connection, CompletionList
+    InitializeParams, CompletionList, TextDocumentPositionParams, TextDocumentSyncKind, InitializeResult, Connection, DocumentSymbolParams, DocumentSymbol
 } from 'vscode-languageserver/node';
 
 import { LangiumDocument } from '../documents/document';
@@ -76,7 +75,7 @@ export function addCompletionHandler(connection: Connection, services: LangiumSe
 }
 
 export function addDocumentSymbolHandler(connection: Connection, services: LangiumServices): void {
-    const symbolProvider = services.symbol.DocumentSymbolProvider;
+    const symbolProvider = services.symbols.DocumentSymbolProvider;
     connection.onDocumentSymbol((params: DocumentSymbolParams): DocumentSymbol[] => {
         const uri = params.textDocument.uri;
         const document = services.documents.TextDocuments.get(uri);
@@ -86,27 +85,4 @@ export function addDocumentSymbolHandler(connection: Connection, services: Langi
             return [];
         }
     });
-}
-
-function buildCompletionItem(document: TextDocument, offset: number, content: string, completion: string): CompletionItem {
-    let negativeOffset = 0;
-    for (let i = completion.length; i > 0; i--) {
-        const contentSub = content.substring(content.length - i);
-        if (completion.startsWith(contentSub)) {
-            negativeOffset = i;
-            break;
-        }
-    }
-    const start = document.positionAt(offset - negativeOffset);
-    const end = document.positionAt(offset);
-    return {
-        label: completion,
-        textEdit: {
-            newText: completion,
-            range: {
-                start,
-                end
-            }
-        }
-    };
 }

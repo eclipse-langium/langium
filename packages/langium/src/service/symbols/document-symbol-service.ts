@@ -1,6 +1,8 @@
 import { DocumentSymbol, SymbolKind } from 'vscode-languageserver';
 import { LangiumDocument } from '../../documents/document';
 import { findNodeForFeature } from '../../grammar/grammar-util';
+import { NameProvider } from '../../references/naming';
+import { LangiumServices } from '../../services';
 import { AstNode, CstNode } from '../../syntax-tree';
 import { streamContents } from '../../utils/ast-util';
 
@@ -9,6 +11,12 @@ export interface DocumentSymbolProvider {
 }
 
 export class DefaultDocumentSymbolProvider implements DocumentSymbolProvider {
+
+    protected readonly nameProvider: NameProvider;
+
+    constructor(services: LangiumServices) {
+        this.nameProvider = services.references.NameProvider;
+    }
 
     getSymbols(document: LangiumDocument): DocumentSymbol[] {
         if (document.parseResult) {
@@ -27,18 +35,19 @@ export class DefaultDocumentSymbolProvider implements DocumentSymbolProvider {
 
     protected getSymbol(document: LangiumDocument, astNode: AstNode): DocumentSymbol | DocumentSymbol[] | undefined {
         const node = astNode.$cstNode;
-        const name = this.getSignificantFeature(astNode);
-        if (name && node) {
+        const nameNode = this.getSignificantFeature(astNode);
+        if (nameNode && node) {
+            const name = this.nameProvider.getName(astNode);
             return {
                 kind: this.getSymbolKind(astNode.$type),
-                name: name.text,
+                name: name ?? nameNode.text,
                 range: {
                     start: document.positionAt(node.offset),
                     end: document.positionAt(node.offset + node.length)
                 },
                 selectionRange: {
-                    start: document.positionAt(name.offset),
-                    end: document.positionAt(name.offset + name.length)
+                    start: document.positionAt(nameNode.offset),
+                    end: document.positionAt(nameNode.offset + nameNode.length)
                 },
                 children: this.getChildSymbols(document, astNode)
             };
