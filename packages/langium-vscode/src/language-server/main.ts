@@ -1,11 +1,8 @@
-/**********************************************************************************
- * Copyright (c) 2021 TypeFox
- *
- * This program and the accompanying materials are made available under the terms
- * of the MIT License, which is available at https://opensource.org/licenses/MIT.
- *
- * SPDX-License-Identifier: MIT
- **********************************************************************************/
+/******************************************************************************
+ * Copyright 2021 TypeFox GmbH
+ * This program and the accompanying materials are made available under the
+ * terms of the MIT License, which is available in the project root.
+ ******************************************************************************/
 
 import { createLangiumGrammarServices, startLanguageServer } from 'langium';
 import { createConnection, ProposedFeatures } from 'vscode-languageserver/node';
