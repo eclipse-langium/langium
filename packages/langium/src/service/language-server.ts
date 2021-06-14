@@ -1,4 +1,5 @@
 import {
+    InitializeParams, CompletionItem, TextDocumentPositionParams, TextDocumentSyncKind, InitializeResult, Connection, DocumentSymbolParams, DocumentSymbol
     InitializeParams, TextDocumentPositionParams, TextDocumentSyncKind, InitializeResult, Connection, CompletionList
 } from 'vscode-languageserver/node';
 
@@ -19,7 +20,8 @@ export function startLanguageServer(services: LangiumServices): void {
             capabilities: {
                 textDocumentSync: TextDocumentSyncKind.Incremental,
                 // Tell the client that this server supports code completion.
-                completionProvider: {}
+                completionProvider: {},
+                documentSymbolProvider: {}
             }
         };
         if (hasWorkspaceFolderCapability) {
@@ -39,6 +41,7 @@ export function startLanguageServer(services: LangiumServices): void {
     });
 
     addCompletionHandler(connection, services);
+    addDocumentSymbolHandler(connection, services);
 
     // Make the text document manager listen on the connection for open, change and close text document events.
     documents.listen(connection);
@@ -70,4 +73,40 @@ export function addCompletionHandler(connection: Connection, services: LangiumSe
             }
         }
     );
+}
+
+export function addDocumentSymbolHandler(connection: Connection, services: LangiumServices): void {
+    const symbolProvider = services.symbol.DocumentSymbolProvider;
+    connection.onDocumentSymbol((params: DocumentSymbolParams): DocumentSymbol[] => {
+        const uri = params.textDocument.uri;
+        const document = services.documents.TextDocuments.get(uri);
+        if (document) {
+            return symbolProvider.getSymbols(document);
+        } else {
+            return [];
+        }
+    });
+}
+
+function buildCompletionItem(document: TextDocument, offset: number, content: string, completion: string): CompletionItem {
+    let negativeOffset = 0;
+    for (let i = completion.length; i > 0; i--) {
+        const contentSub = content.substring(content.length - i);
+        if (completion.startsWith(contentSub)) {
+            negativeOffset = i;
+            break;
+        }
+    }
+    const start = document.positionAt(offset - negativeOffset);
+    const end = document.positionAt(offset);
+    return {
+        label: completion,
+        textEdit: {
+            newText: completion,
+            range: {
+                start,
+                end
+            }
+        }
+    };
 }
