@@ -8,15 +8,16 @@ const OPEN = '<%= ';
 const CLOSE = ' %>';
 
 const EXTENSION_NAME = 'extension-name';
-const LANGUAGE_NAME = 'LanguageName';
+const RAW_LANGUAGE_NAME = 'RawLanguageName';
 const FILE_EXTENSION = 'file-extension';
+
+const LANGUAGE_NAME = 'LanguageName';
 const LANGUAGE_ID = 'language-id';
 
 interface Answers {
     extensionName: string;
-    languageName: string;
+    rawLanguageName: string;
     fileExtensions: string;
-    languageId: string;
 }
 
 class LangiumGenerator extends Generator {
@@ -36,13 +37,13 @@ class LangiumGenerator extends Generator {
             },
             {
                 type: 'input',
-                name: 'languageName',
+                name: 'rawLanguageName',
                 message: 'Your language name:',
                 default: LANGUAGE_NAME,
                 validate: (input: string): boolean | string =>
-                    /^[a-zA-Z_][\w_ -]*$/.test(input)
+                    /^[a-zA-Z].*$/.test(input)
                         ? true
-                        : 'You entered not correct language name. Try again.',
+                        : 'The language name must start with a letter.',
             },
             {
                 type: 'input',
@@ -59,10 +60,6 @@ class LangiumGenerator extends Generator {
     }
 
     writing(): void {
-        this.answers.languageName = _.upperFirst(
-            _.camelCase(this.answers.languageName.replace(/[ -]+/g, '_'))
-        );
-        this.answers.languageId = _.snakeCase(this.answers.languageName);
         this.answers.fileExtensions =
             '[' +
             [
@@ -78,6 +75,14 @@ class LangiumGenerator extends Generator {
                 ),
             ].join(', ') +
             ']';
+        const languageName = _.upperFirst(
+            _.camelCase(
+                this.answers.rawLanguageName
+                    .replace(/[ -]+/g, '_')
+                    .replace(/~[\w_]/g, '')
+            )
+        );
+        const languageId = _.snakeCase(languageName);
 
         this.sourceRoot(TEMPLATE_DIR);
         ['.', '.vscode', '.eslintrc.json', '.vscodeignore'].forEach(
@@ -87,10 +92,11 @@ class LangiumGenerator extends Generator {
                     content: Buffer
                 ): string =>
                     [
-                        [EXTENSION_NAME, answers.extensionName],
+                        [EXTENSION_NAME, this.answers.extensionName],
+                        [RAW_LANGUAGE_NAME, this.answers.rawLanguageName],
                         [FILE_EXTENSION, this.answers.fileExtensions],
-                        [LANGUAGE_ID, answers.languageId],
-                        [LANGUAGE_NAME, answers.languageName],
+                        [LANGUAGE_NAME, languageName],
+                        [LANGUAGE_ID, languageId],
                     ].reduce(
                         (acc: string, [templateWord, userAnswer]) =>
                             acc.replace(
@@ -107,10 +113,7 @@ class LangiumGenerator extends Generator {
                     answers: Answers,
                     path: string
                 ): string =>
-                    path.replace(
-                        new RegExp(LANGUAGE_ID, 'g'),
-                        answers.languageId
-                    );
+                    path.replace(new RegExp(LANGUAGE_ID, 'g'), languageId);
 
                 this.fs.copy(
                     this.templatePath(path),

@@ -12,7 +12,7 @@
     "contributes": {
         "languages": [{
             "id": "<%= language-id %>",
-            "aliases": ["<%= LanguageName %>", "<%= language-id %>"],
+            "aliases": ["<%= RawLanguageName %>", "<%= language-id %>"],
             "extensions": <%= file-extension %>,
             "configuration": "./language-configuration.json"
         }],
