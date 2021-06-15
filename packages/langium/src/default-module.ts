@@ -17,7 +17,8 @@ import { DefaultScopeComputation, DefaultScopeProvider } from './references/scop
 import { DefaultNameProvider } from './references/naming';
 import { ValidationRegistry } from './service/validation/validation-registry';
 import { DefaultDocumentValidator } from './service/validation/document-validator';
-import { DefaultJsonSerializer } from './service/json-serializer/ast-json-serializer';
+import { DefaultJsonSerializer } from './serializer/json-serializer';
+import { DefaultDocumentSymbolProvider } from './service/symbols/document-symbol-provider';
 import { DefaultCompletionProvider } from './service/completion/completion-provider';
 import { RuleInterpreter } from './service/completion/rule-interpreter';
 import { DefaultReferenceFinder } from './references/reference-finder';
@@ -62,6 +63,9 @@ export function createDefaultModule(context: DefaultModuleContext = {}): Module<
         },
         serializer: {
             JsonSerializer: (injector) => new DefaultJsonSerializer(injector)
+        },
+        symbols: {
+            DocumentSymbolProvider: (injector) => new DefaultDocumentSymbolProvider(injector)
         }
     };
 }
