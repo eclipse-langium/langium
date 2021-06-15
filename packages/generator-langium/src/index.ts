@@ -1,7 +1,8 @@
 import Generator from 'yeoman-generator';
 import * as _ from 'lodash';
+import * as path from 'path';
 
-const TEMPLATE_DIR = 'langium-template';
+const TEMPLATE_DIR = '../langium-template';
 const USER_DIR = '.';
 
 const OPEN = '<%= ';
@@ -85,7 +86,7 @@ class LangiumGenerator extends Generator {
         );
         const languageId = _.snakeCase(this.answers.rawLanguageName);
 
-        this.sourceRoot(TEMPLATE_DIR);
+        this.sourceRoot(path.join(__dirname, TEMPLATE_DIR));
         ['.', '.vscode', '.eslintrc.json', '.vscodeignore'].forEach(
             (path: string) => {
                 const replaceTemplateWords = (

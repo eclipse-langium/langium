@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "description": "",
   "files": [
-    "app"
+    "app", "langium-template"
   ],
   "keywords": [
     "yeoman-generator"
