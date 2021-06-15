@@ -1,6 +1,7 @@
-import { AstNode, Reference } from '../syntax-tree';
+import { AstNode, CstNode, LeafCstNode, Reference } from '../syntax-tree';
 import { Stream, StreamImpl, DONE_RESULT, TreeStream, TreeStreamImpl } from '../utils/stream';
 import { LangiumDocument } from '../documents/document';
+import { CompositeCstNodeImpl, LeafCstNodeImpl } from '../parser/cst-node-builder';
 
 export type Mutable<T> = {
     -readonly [P in keyof T]: T[P]
@@ -134,4 +135,19 @@ export function resolveAllReferences(node: AstNode): { unresolved: AstNodeRefere
     process({ node } as AstNodeContent);
     streamAllContents(node).forEach(process);
     return result;
+}
+
+export function findLeafNodeAtOffset(node: CstNode, offset: number): LeafCstNode | undefined {
+    if (node instanceof LeafCstNodeImpl) {
+        return node;
+    } else if (node instanceof CompositeCstNodeImpl) {
+        const children = node.children.filter(e => e.offset < offset).reverse();
+        for (const child of children) {
+            const result = findLeafNodeAtOffset(child, offset);
+            if (result) {
+                return result;
+            }
+        }
+    }
+    return undefined;
 }

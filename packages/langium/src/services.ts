@@ -21,6 +21,7 @@ import { JsonSerializer } from './service/json-serializer/ast-json-serializer';
 import { LangiumDocument } from './documents/document';
 import { CompletionProvider } from './service/completion/completion-provider';
 import { RuleInterpreter } from './service/completion/rule-interpreter';
+import { ReferenceFinder } from './references/reference-finder';
 
 export type LangiumGeneratedServices = {
     Parser: LangiumParser,
@@ -40,7 +41,8 @@ export type LangiumServices = LangiumGeneratedServices & {
         Linker: Linker,
         NameProvider: NameProvider,
         ScopeProvider: ScopeProvider,
-        ScopeComputation: ScopeComputation
+        ScopeComputation: ScopeComputation,
+        ReferenceFinder: ReferenceFinder
     },
     completion: {
         CompletionProvider: CompletionProvider,
