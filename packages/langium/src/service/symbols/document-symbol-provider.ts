@@ -20,25 +20,18 @@ export class DefaultDocumentSymbolProvider implements DocumentSymbolProvider {
 
     getSymbols(document: LangiumDocument): DocumentSymbol[] {
         if (document.parseResult) {
-            const symbol = this.getSymbol(document, document.parseResult.value);
-            if (Array.isArray(symbol)) {
-                return symbol;
-            } else if (symbol) {
-                return [symbol];
-            } else {
-                return [];
-            }
+            return this.getSymbol(document, document.parseResult.value);
         } else {
             return [];
         }
     }
 
-    protected getSymbol(document: LangiumDocument, astNode: AstNode): DocumentSymbol | DocumentSymbol[] | undefined {
+    protected getSymbol(document: LangiumDocument, astNode: AstNode): DocumentSymbol[] {
         const node = astNode.$cstNode;
         const nameNode = this.getSignificantFeature(astNode);
         if (nameNode && node) {
             const name = this.nameProvider.getName(astNode);
-            return {
+            return [{
                 kind: this.getSymbolKind(astNode.$type),
                 name: name ?? nameNode.text,
                 range: {
@@ -50,9 +43,10 @@ export class DefaultDocumentSymbolProvider implements DocumentSymbolProvider {
                     end: document.positionAt(nameNode.offset + nameNode.length)
                 },
                 children: this.getChildSymbols(document, astNode)
-            };
+            }];
+        } else {
+            return this.getChildSymbols(document, astNode);
         }
-        return undefined;
     }
 
     protected getSignificantFeature(astNode: AstNode): CstNode | undefined {
@@ -64,11 +58,7 @@ export class DefaultDocumentSymbolProvider implements DocumentSymbolProvider {
 
         for (const child of Array.from(streamContents(astNode))) {
             const result = this.getSymbol(document, child.node);
-            if (Array.isArray(result)) {
-                children.push(...result);
-            } else if (result) {
-                children.push(result);
-            }
+            children.push(...result);
         }
         return children;
     }
