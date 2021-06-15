@@ -37,6 +37,7 @@ type TypeCollection = {
 export class Interface {
     name: string;
     superTypes: string[];
+    containerTypes: string[] = [];
     fields: Field[];
 
     constructor(name: string, superTypes: string[], fields: Field[]) {
@@ -50,6 +51,9 @@ export class Interface {
         const superTypes = this.superTypes.length > 0 ? this.superTypes : [ 'AstNode' ];
         interfaceNode.children.push('export interface ', this.name, ' extends ', superTypes.join(', '), ' {', NL);
         const fieldsNode = new IndentNode();
+        if (this.superTypes.length === 0 && this.containerTypes.length > 0) {
+            fieldsNode.children.push('readonly $container: ', this.containerTypes.join(' | '), ';', NL);
+        }
         for (const field of this.fields) {
             const option = field.optional && field.reference && !field.array ? '?' : '';
             let type = field.types.join(' | ');
@@ -272,8 +276,32 @@ export class TypeCollector {
             type.superTypes = Array.from(new Set(type.superTypes));
         }
         this.liftFields(interfaces);
+        this.buildContainerTypes(interfaces);
 
         return sortTypes(interfaces);
+    }
+
+    private buildContainerTypes(interfaces: Interface[]): void {
+        for (const type of interfaces) {
+            for (const field of type.fields.filter(e => !e.reference)) {
+                for (const fieldTypeName of field.types) {
+                    const fieldType = interfaces.find(e => e.name === fieldTypeName);
+                    if (fieldType) {
+                        const topSuperTypes = this.getTopSuperTypes(fieldType, interfaces);
+                        topSuperTypes.forEach(e => e.containerTypes.push(type.name));
+                    }
+                }
+            }
+        }
+    }
+
+    private getTopSuperTypes(type: Interface, types: Interface[]): Interface[] {
+        if (type.superTypes.length > 0) {
+            const superTypes = types.filter(e => type.superTypes.includes(e.name));
+            return superTypes.flatMap(e => this.getTopSuperTypes(e, types));
+        } else {
+            return [type];
+        }
     }
 
     private liftFields(interfaces: Interface[]): void {
