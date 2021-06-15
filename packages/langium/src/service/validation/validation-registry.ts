@@ -54,7 +54,7 @@ export class ValidationRegistry {
             try {
                 check.call(this, node, accept);
             } catch (e) {
-                accept('error', 'An exception occured executing a validation.', { node });
+                console.error('An exception occured executing a validation.', e);
             }
         };
     }
