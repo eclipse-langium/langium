@@ -18,7 +18,7 @@ import { DefaultNameProvider } from './references/naming';
 import { ValidationRegistry } from './service/validation/validation-registry';
 import { DefaultDocumentValidator } from './service/validation/document-validator';
 import { DefaultJsonSerializer } from './serializer/json-serializer';
-import { DefaultDocumentSymbolProvider } from './service/symbol/document-symbol-service';
+import { DefaultDocumentSymbolProvider } from './service/symbols/document-symbol-provider';
 import { DefaultCompletionProvider } from './service/completion/completion-provider';
 import { RuleInterpreter } from './service/completion/rule-interpreter';
 
