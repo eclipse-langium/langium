@@ -1,5 +1,13 @@
-import { CstNode, LeafCstNode } from '../syntax-tree';
+/******************************************************************************
+ * Copyright 2021 TypeFox GmbH
+ * This program and the accompanying materials are made available under the
+ * terms of the MIT License, which is available in the project root.
+ ******************************************************************************/
+
+import { Range } from 'vscode-languageserver';
+import { LangiumDocument } from '../documents/document';
 import { CompositeCstNodeImpl, LeafCstNodeImpl } from '../parser/cst-node-builder';
+import { CstNode, LeafCstNode } from '../syntax-tree';
 
 export function flatten(node: CstNode): LeafCstNode[] {
     if (node instanceof LeafCstNodeImpl) {
@@ -9,4 +17,11 @@ export function flatten(node: CstNode): LeafCstNode[] {
     } else {
         return [];
     }
+}
+
+export function toRange(node: CstNode, document: LangiumDocument): Range {
+    return {
+        start: document.positionAt(node.offset),
+        end: document.positionAt(node.offset + node.length)
+    };
 }

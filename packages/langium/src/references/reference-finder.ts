@@ -1,12 +1,21 @@
+/******************************************************************************
+ * Copyright 2021 TypeFox GmbH
+ * This program and the accompanying materials are made available under the
+ * terms of the MIT License, which is available in the project root.
+ ******************************************************************************/
+
 import { Location, Position } from 'vscode-languageserver';
 import { LangiumDocument } from '../documents/document';
 import { NameProvider } from '../references/naming';
 import { LangiumServices } from '../services';
-import { CstNode } from '../syntax-tree';
+import { CstNode, AstNode } from '../syntax-tree';
 import { AstNodeContent, streamAllContents, streamReferences, findLeafNodeAtOffset, AstNodeReference } from '../utils/ast-util';
+import { flatten, toRange } from '../utils/cst-util';
+import { findNodeForFeature } from '../grammar/grammar-util';
 
 export interface ReferenceFinder {
-    findReferences(document: LangiumDocument, position: Position, includeDeclaration: boolean): Location[];
+    findReferences(document: LangiumDocument, position: Position, includeDeclaration: boolean): CstNode[];
+    findReferenceLocations(document: LangiumDocument, position: Position, includeDeclaration: boolean): Location[];
 }
 
 export class DefaultReferenceFinder implements ReferenceFinder {
@@ -16,57 +25,56 @@ export class DefaultReferenceFinder implements ReferenceFinder {
         this.nameProvider = services.references.NameProvider;
     }
 
-    findReferences(document: LangiumDocument, position: Position, includeDeclaration: boolean): Location[] {
+    findReferences(document: LangiumDocument, position: Position, includeDeclaration: boolean): CstNode[] {
         const rootNode = document.parseResult?.value?.$cstNode;
         if (!rootNode) {
             return [];
         }
-        const locations: Location[] = [];
-        const targetCNode = findLeafNodeAtOffset(rootNode, document.offsetAt(position));
+        const refs: CstNode[] = [];
         // TODO use findDeclaration for crossref nodes
-        const targetAstNode = targetCNode?.element;
+        const targetAstNode = findLeafNodeAtOffset(rootNode, document.offsetAt(position))?.element;
         if (targetAstNode) {
             const process = (node: AstNodeContent) => {
-                if (includeDeclaration && node.node.$cstNode) {
-                    // TODO Use value converter
+                if (includeDeclaration && node.node === targetAstNode) {
                     const targetName = this.nameProvider.getName(targetAstNode);
-                    // TODO check if we can just do: node.node === targetAstNode
-                    if (targetName && node.node.$type === targetAstNode.$type
-                        && targetName === this.nameProvider.getName(node.node)) {
-                        const candidateCstNode = this.findNameNode(node.node.$cstNode, targetName);
-                        locations.push({
-                            uri: document.uri,
-                            range: {
-                                start: document.positionAt(candidateCstNode.offset),
-                                end: document.positionAt(candidateCstNode.offset + candidateCstNode.length)
-                            }
-                        });
+                    if (targetName) {
+                        const candidateCstNode = this.findNameNode(node.node, targetName);
+                        if (candidateCstNode) {
+                            refs.push(candidateCstNode);
+                        }
                     }
                 }
                 streamReferences(node.node).forEach((refNode: AstNodeReference) => {
-                    const refCNode = refNode.container.$cstNode;
-                    if (refCNode && refNode.reference.ref === targetAstNode) {
-                        locations.push({
-                            uri: document.uri,
-                            range: {
-                                start: document.positionAt(refCNode.offset),
-                                end: document.positionAt(refCNode.offset + refCNode.length)
-                            }
-                        });
+                    if (refNode.reference.ref === targetAstNode) {
+                        const refCstNode = findNodeForFeature(refNode.container.$cstNode, refNode.property) ?? refNode.container.$cstNode;
+                        if (refCstNode) {
+                            refs.push(refCstNode);
+                        }
                     }
                 });
             };
             streamAllContents(rootNode.element).forEach(process);
         }
-        return locations;
+        return refs;
     }
 
-    protected findNameNode(node: CstNode, name: string): CstNode {
-        // TODO do something smart:
-        // 1. use a service like getNameFeature
-        // 2. search for CstNode with text === name we are looking for
-        // 3. look for feature named 'name' or the first attribute that is using lexer rule ID
-        return node;
+    findReferenceLocations(document: LangiumDocument, position: Position, includeDeclaration: boolean): Location[] {
+        return this.findReferences(document, position, includeDeclaration).map(node => Location.create(
+            document.uri,
+            toRange(node, document)
+        ));
     }
 
+    protected findNameNode(node: AstNode, name: string): CstNode | undefined {
+        const nameNode = this.nameProvider.getNameNode(node);
+        if (nameNode)
+            return nameNode;
+        if (node.$cstNode) {
+            // try find first leaf with name as text
+            const leafNode = flatten(node.$cstNode).find((n) => n.text === name);
+            if (leafNode)
+                return leafNode;
+        }
+        return node.$cstNode;
+    }
 }

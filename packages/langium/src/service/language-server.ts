@@ -83,7 +83,7 @@ export function addFindReferencesHandler(connection: Connection, services: Langi
         const uri = params.textDocument.uri;
         const document = services.documents.TextDocuments.get(uri);
         if (document) {
-            return referenceFinder.findReferences(document, params.position, params.context.includeDeclaration);
+            return referenceFinder.findReferenceLocations(document, params.position, params.context.includeDeclaration);
         } else {
             return [];
         }
