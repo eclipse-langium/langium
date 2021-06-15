@@ -54,7 +54,7 @@ class LangiumGenerator extends Generator {
                 validate: (input: string): boolean | string =>
                     /^\.?[a-z]+(\s*\,\s*\.?[a-z]+)*$/.test(input)
                         ? true
-                        : 'The file extension must contain only lowercase letters. Extensions must be separated by commas.',
+                        : 'The file extension can start with . and must contain only lowercase letters. Extensions must be separated by commas.',
             },
         ]);
     }
@@ -75,14 +75,15 @@ class LangiumGenerator extends Generator {
                 ),
             ].join(', ') +
             ']';
-        const languageName = _.upperFirst(
-            _.camelCase(
-                this.answers.rawLanguageName
-                    .replace(/[ -]+/g, '_')
-                    .replace(/~[\w_]/g, '')
-            )
+
+        this.answers.rawLanguageName = this.answers.rawLanguageName.replace(
+            /(?![\w| |\-|_])./g,
+            ''
         );
-        const languageId = _.snakeCase(languageName);
+        const languageName = _.upperFirst(
+            _.camelCase(this.answers.rawLanguageName)
+        );
+        const languageId = _.snakeCase(this.answers.rawLanguageName);
 
         this.sourceRoot(TEMPLATE_DIR);
         ['.', '.vscode', '.eslintrc.json', '.vscodeignore'].forEach(
