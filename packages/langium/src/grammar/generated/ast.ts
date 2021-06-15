@@ -4,6 +4,7 @@ import { AstNode, AstReflection, Reference } from '../../syntax-tree';
 import { isAstNode } from '../../utils/ast-util';
 
 export interface AbstractElement extends AstNode {
+    readonly $container: ParserRule | Alternatives | UnorderedGroup | Group | Assignment | CrossReference | CharacterRange | CharacterRange | EnumLiteralDeclaration;
     cardinality: '?' | '*' | '+'
 }
 
@@ -14,6 +15,7 @@ export function isAbstractElement(item: unknown): item is AbstractElement {
 }
 
 export interface AbstractMetamodelDeclaration extends AstNode {
+    readonly $container: Grammar;
     ePackage: string
     alias: string
 }
@@ -35,6 +37,7 @@ export function isAbstractNegatedToken(item: unknown): item is AbstractNegatedTo
 }
 
 export interface AbstractRule extends AstNode {
+    readonly $container: Grammar;
     name: string
     type: string
 }
@@ -56,6 +59,7 @@ export function isAnnotation(item: unknown): item is Annotation {
 }
 
 export interface Condition extends AstNode {
+    readonly $container: NamedArgument | Disjunction | Disjunction | Conjunction | Conjunction | Negation;
 }
 
 export const Condition = 'Condition';
@@ -65,6 +69,7 @@ export function isCondition(item: unknown): item is Condition {
 }
 
 export interface EnumLiteralDeclaration extends AstNode {
+    readonly $container: EnumLiterals;
     enumLiteral: string
     literal: Keyword
 }
@@ -76,6 +81,7 @@ export function isEnumLiteralDeclaration(item: unknown): item is EnumLiteralDecl
 }
 
 export interface EnumLiterals extends AstNode {
+    readonly $container: EnumRule;
     elements: Array<EnumLiteralDeclaration>
 }
 
@@ -101,6 +107,7 @@ export function isGrammar(item: unknown): item is Grammar {
 }
 
 export interface NamedArgument extends AstNode {
+    readonly $container: RuleCall;
     parameter?: Reference<Parameter>
     calledByName: boolean
     value: Condition
@@ -113,6 +120,7 @@ export function isNamedArgument(item: unknown): item is NamedArgument {
 }
 
 export interface Parameter extends AstNode {
+    readonly $container: ParserRule;
     name: string
 }
 
@@ -123,6 +131,7 @@ export function isParameter(item: unknown): item is Parameter {
 }
 
 export interface TerminalGroup extends AstNode {
+    readonly $container: TerminalAlternatives;
     elements: Array<TerminalToken>
 }
 
@@ -133,6 +142,7 @@ export function isTerminalGroup(item: unknown): item is TerminalGroup {
 }
 
 export interface TerminalToken extends AstNode {
+    readonly $container: TerminalGroup;
     cardinality: '?' | '*' | '+'
 }
 
@@ -143,6 +153,7 @@ export function isTerminalToken(item: unknown): item is TerminalToken {
 }
 
 export interface TerminalTokenElement extends AstNode {
+    readonly $container: AbstractNegatedToken;
 }
 
 export const TerminalTokenElement = 'TerminalTokenElement';
