@@ -8,13 +8,14 @@
 import { EmbeddedActionsParser, ILexingError, IOrAlt, IRecognitionException, IToken, Lexer, TokenType } from 'chevrotain';
 import { AbstractElement, Action, isAssignment, isCrossReference } from '../grammar/generated/ast';
 import { LangiumDocument } from '../documents/document';
-import { AstNode, Reference } from '../syntax-tree';
+import { AstNode, CompositeCstNode, CstNode, Reference } from '../syntax-tree';
 import { isArrayOperator } from '../grammar/grammar-util';
 import { CstNodeBuilder } from './cst-node-builder';
 import { GrammarAccess } from '../grammar/grammar-access';
 import { Linker } from '../references/linker';
 import { LangiumServices } from '../services';
 import { getContainerOfType } from '../utils/ast-util';
+import { PrimitiveConverter } from '../converter/primitive-converter';
 
 type StackItem = {
     object: any,
@@ -50,6 +51,7 @@ export class LangiumParser {
     readonly grammarAccess: GrammarAccess;
 
     private readonly linker: Linker;
+    private readonly converter: PrimitiveConverter;
     private readonly lexer: Lexer;
     private readonly nodeBuilder = new CstNodeBuilder();
     private readonly wrapper: ChevrotainWrapper;
@@ -64,6 +66,7 @@ export class LangiumParser {
         this.wrapper = new ChevrotainWrapper(tokens);
         this.grammarAccess = services.GrammarAccess;
         this.linker = services.references.Linker;
+        this.converter = services.converter.PrimitiveConverter;
         this.lexer = new Lexer(tokens);
     }
 
@@ -137,14 +140,14 @@ export class LangiumParser {
     consume(idx: number, tokenType: TokenType, feature: AbstractElement): void {
         const token = this.wrapper.wrapConsume(idx, tokenType);
         if (!this.wrapper.IS_RECORDING) {
-            this.nodeBuilder.buildLeafNode(token, feature);
+            const leafNode = this.nodeBuilder.buildLeafNode(token, feature);
             const assignment = getContainerOfType(feature, isAssignment);
             if (assignment) {
                 let crossRefId: string | undefined;
                 if (isCrossReference(assignment.terminal)) {
                     crossRefId = `${this.current.object.$type}:${assignment.feature}`;
                 }
-                this.assign(assignment, token.image, crossRefId);
+                this.assign(assignment, token.image, leafNode, crossRefId);
             }
         }
     }
@@ -164,14 +167,19 @@ export class LangiumParser {
     }
 
     subrule(idx: number, rule: RuleResult, feature: AbstractElement): any {
+        let cstNode: CompositeCstNode | undefined;
         if (!this.wrapper.IS_RECORDING) {
-            this.nodeBuilder.buildCompositeNode(feature);
+            cstNode = this.nodeBuilder.buildCompositeNode(feature);
         }
         const subruleResult = this.wrapper.wrapSubrule(idx, rule);
         if (!this.wrapper.IS_RECORDING) {
             const assignment = getContainerOfType(feature, isAssignment);
-            if (assignment) {
-                this.assign(assignment, subruleResult);
+            if (assignment && cstNode) {
+                let crossRefId: string | undefined;
+                if (isCrossReference(assignment.terminal)) {
+                    crossRefId = `${this.current.object.$type}:${assignment.feature}`;
+                }
+                this.assign(assignment, subruleResult, cstNode, crossRefId);
             }
         }
         return subruleResult;
@@ -242,10 +250,17 @@ export class LangiumParser {
         return obj;
     }
 
-    private assign(assignment: { operator: string, feature: string }, value: unknown, crossRefId?: string): void {
+    private assign(assignment: { operator: string, feature: string }, value: unknown, cstNode?: CstNode, crossRefId?: string): void {
         const obj = this.current.object;
         const feature = assignment.feature.replace(/\^/g, '');
-        const item = crossRefId && typeof value === 'string' ? this.buildReference(obj, value, crossRefId) : value;
+        let item: unknown;
+        if (crossRefId && typeof value === 'string') {
+            item = this.buildReference(obj, value, crossRefId);
+        } else if (cstNode && typeof value === 'string') {
+            item = this.converter.convert(value, cstNode);
+        } else {
+            item = value;
+        }
         switch (assignment.operator) {
             case '=': {
                 obj[feature] = item;

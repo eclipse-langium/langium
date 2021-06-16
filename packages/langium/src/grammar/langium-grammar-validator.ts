@@ -113,8 +113,6 @@ export class LangiumGrammarValidator {
     }
 
     checkKeyword(keyword: Keyword, accept: ValidationAcceptor): void {
-        // TODO: Those validations won't work until the value converter is up and running
-        // because the value of a keyword always starts and ends with a single quote.
         if (keyword.value.length === 0) {
             accept('error', 'Keywords cannot be empty.', { node: keyword });
         } else if (keyword.value.trim().length === 0) {
