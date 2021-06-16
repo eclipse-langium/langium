@@ -1,5 +1,5 @@
 import Generator from 'yeoman-generator';
-import * as _ from 'lodash';
+import _ from 'lodash';
 import * as path from 'path';
 
 const TEMPLATE_DIR = '../langium-template';
@@ -141,9 +141,10 @@ class LangiumGenerator extends Generator {
             this.answers.extensionName
         );
 
-        this.spawnCommandSync('npm', ['install', '--prefix', extensionPath]);
-        this.spawnCommandSync('npm', ['run', '--prefix', extensionPath, 'langium:generate']);
-        this.spawnCommandSync('npm', ['run', '--prefix', extensionPath, 'build']);
+        const opts = { cwd: extensionPath };
+        this.spawnCommandSync('npm', ['install'], opts);
+        this.spawnCommandSync('npm', ['run', 'langium:generate'], opts);
+        this.spawnCommandSync('npm', ['run', 'build'], opts);
     }
 }
 
