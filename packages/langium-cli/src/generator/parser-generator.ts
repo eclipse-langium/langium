@@ -62,7 +62,7 @@ export function generateParser(grammar: langium.Grammar, config: LangiumConfig):
     for (const keyword of keywords) {
         keywordTokens.push(buildKeywordToken(keyword, keywords, terminals));
     }
-    keywordTokens = keywordTokens.sort((a, b) => b.length - a.length);
+    keywordTokens = keywordTokens.sort((a, b) => a.name.localeCompare(b.name)).sort((a, b) => b.length - a.length);
     for (const token of tokens) {
         fileNode.children.push(token.node, NL);
     }
@@ -74,7 +74,7 @@ export function generateParser(grammar: langium.Grammar, config: LangiumConfig):
 
     for (const keyword of keywords) {
         const token = buildKeywordToken(keyword, keywords, terminals);
-        fileNode.children.push(token.name, '.LABEL = "', "'", keyword.substring(1, keyword.length - 1), "'\";", NL);
+        fileNode.children.push(token.name, '.LABEL = "', "'", keyword, "'\";", NL);
     }
 
     const tokenListNode = new CompositeGeneratorNode();
@@ -305,10 +305,9 @@ function buildTerminalToken(grammar: langium.Grammar, terminal: langium.Terminal
 
 function buildKeywordToken(keyword: string, keywords: string[], terminals: langium.TerminalRule[]): { name: string, length: number, node: CompositeGeneratorNode } {
     const keywordNode = new CompositeGeneratorNode();
-    const fixed = keyword.substring(1, keyword.length - 1);
-    const longerAlt = findLongerAlt(fixed, keywords, terminals);
+    const longerAlt = findLongerAlt(keyword, keywords, terminals);
     const validName = replaceTokens(keyword) + 'Keyword';
-    keywordNode.children.push('const ', validName, " = createToken({ name: '", validName, "', pattern: /", escapeRegExp(fixed), '/');
+    keywordNode.children.push('const ', validName, " = createToken({ name: '", validName, "', pattern: /", escapeRegExp(keyword), '/');
 
     if (longerAlt) {
         keywordNode.children.push(', longer_alt: ', longerAlt);

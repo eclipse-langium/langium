@@ -45,7 +45,7 @@ export class RuleInterpreter {
 
     featureMatches(feature: ast.AbstractElement, node: CstNode, offset: number): MatchType {
         if (ast.isKeyword(feature)) {
-            const content = feature.value.substring(1, feature.value.length - 1);
+            const content = feature.value;
             const nodeEnd = node.offset + node.length;
             const text = nodeEnd > offset ? node.text.substring(0, nodeEnd - offset) : node.text;
             if (content === text) {
