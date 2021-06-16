@@ -4,10 +4,11 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { AbstractRule, Grammar, isParserRule, isTerminalRule, Keyword, LangiumGrammarAstType, ParserRule, UnorderedGroup } from './generated/ast';
+import { AbstractRule, Grammar, isAction, isAssignment, isParserRule, isPrimitiveRule, isRuleCall, isTerminalRule, Keyword, LangiumGrammarAstType, ParserRule, PrimitiveRule, TerminalRule, UnorderedGroup } from './generated/ast';
 import { ValidationAcceptor, ValidationCheck, ValidationRegistry } from '../service/validation/validation-registry';
 import { LangiumGrammarServices } from './langium-grammar-module';
 import { isDataTypeRule } from './grammar-util';
+import { getContainerOfType, streamAllContents } from '../utils/ast-util';
 
 type LangiumGrammarChecks = { [type in LangiumGrammarAstType]?: ValidationCheck | ValidationCheck[] }
 
@@ -17,6 +18,11 @@ export class LangiumGrammarValidationRegistry extends ValidationRegistry {
         const validator = services.validation.LangiumGrammarValidator;
         const checks: LangiumGrammarChecks = {
             AbstractRule: validator.checkRuleName,
+            PrimitiveRule: [
+                validator.checkPrimitiveRuleCalls,
+                validator.checkRuleReturnType
+            ],
+            TerminalRule: validator.checkRuleReturnType,
             Keyword: validator.checkKeyword,
             UnorderedGroup: validator.checkUnorderedGroup,
             Grammar: [
@@ -116,5 +122,29 @@ export class LangiumGrammarValidator {
 
     checkUnorderedGroup(unorderedGroup: UnorderedGroup, accept: ValidationAcceptor): void {
         accept('error', 'Unordered groups are currently not supported', { node: unorderedGroup });
+    }
+
+    checkPrimitiveRuleCalls(rule: PrimitiveRule, accept: ValidationAcceptor): void {
+        streamAllContents(rule).forEach(e => {
+            if (isRuleCall(e.node) && isParserRule(e.node.rule.ref)) {
+                const parentAssignment = getContainerOfType(e.node, isAssignment);
+                if (!parentAssignment) {
+                    accept('error', 'Primitive rules can only call other primitive rules or terminal rules', { node: e.node });
+                }
+            }
+            if (isAction(e.node)) {
+                accept('error', 'Primitive rules cannot contain actions.', { node: e.node });
+            }
+            if (isAssignment(e.node)) {
+                accept('error', 'Primitive rules cannot contain assignments.', { node: e.node });
+            }
+        });
+    }
+
+    checkRuleReturnType(rule: PrimitiveRule | TerminalRule, accept: ValidationAcceptor): void {
+        if (rule.type && !['string', 'number'].includes(rule.type)) {
+            const type = isPrimitiveRule(rule) ? 'Primitive' : 'Terminal';
+            accept('error', type + " rules can only return primitive types like 'string' or 'number'.", { node: rule, property: 'type' });
+        }
     }
 }
