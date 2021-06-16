@@ -19,6 +19,7 @@ export interface Stream<T> extends ArrayLikeStream<T> {
     head(): T | undefined
     concat(other: Stream<T>): Stream<T>
     distinct<Key = T>(by?: (element: T) => Key): Stream<T>
+    join(separator?: string): string
 }
 
 export class StreamImpl<S, T> implements Stream<T> {
@@ -186,6 +187,38 @@ export class StreamImpl<S, T> implements Stream<T> {
             }
         });
     }
+    
+    join(separator: string): string {
+        const iterator = this.iterator();
+        let value = '';
+        let result: IteratorResult<T>;
+        let addSeparator = false;
+        do {
+            result = iterator.next();
+            if (!result.done) {
+                if (addSeparator) {
+                    value += separator ?? ',';
+                }
+                value += toString(result.value);
+            }
+            addSeparator = true;
+        } while (!result.done);
+        return value;
+    }
+}
+
+function toString(item: unknown): string {
+    if (typeof item === 'string') {
+        return item;
+    } else if (typeof item === 'number' || typeof item === 'boolean' || typeof item === 'bigint' || typeof item === 'symbol' || typeof item === 'function' || (typeof item === 'object' && item)) {
+        if (typeof item.toString === 'function') {
+            return item.toString();
+        } else {
+            return Object.prototype.toString.call(item);
+        }
+    } else {
+        return 'undefined';
+    }
 }
 
 export class EmptyStream<T> implements Stream<T> {
@@ -245,6 +278,10 @@ export class EmptyStream<T> implements Stream<T> {
 
     distinct(): Stream<T> {
         return EMPTY_STREAM;
+    }
+    
+    join(): string {
+        return '';
     }
 }
 

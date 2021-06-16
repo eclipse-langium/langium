@@ -106,3 +106,71 @@ describe('distinct', () => {
     });
 
 });
+
+describe('join', () => {
+
+    test('empty array stream', () => {
+        const stream = s.stream([]);
+        expect(stream.join()).toBe('');
+    });
+
+    test('empty stream', () => {
+        const stream = new s.EmptyStream();
+        expect(stream.join()).toBe('');
+    });
+
+    test('string stream with default separator', () => {
+        const stream = s.stream(['A', 'B']);
+        expect(stream.join()).toBe('A,B');
+    });
+
+    test('string stream with custom separator', () => {
+        const stream = s.stream(['A', 'B']);
+        expect(stream.join(' & ')).toBe('A & B');
+    });
+
+    test('number stream', () => {
+        const stream = s.stream([1, 3]);
+        expect(stream.join()).toBe('1,3');
+    });
+
+    test('boolean stream', () => {
+        const stream = s.stream([1, true]);
+        expect(stream.join()).toBe('1,true');
+    });
+
+    test('undefined in stream', () => {
+        const stream = s.stream([1, undefined]);
+        expect(stream.join()).toBe('1,undefined');
+    });
+
+    test('mixed number/string stream', () => {
+        const stream = s.stream([1, 'A']);
+        expect(stream.join()).toBe('1,A');
+    });
+
+    test('object stream', () => {
+        const stream = s.stream([{}]);
+        expect(stream.join()).toBe('[object Object]');
+    });
+
+    test('object stream with custom toString method', () => {
+        const stream = s.stream([new CustomToString('A'), new CustomToString('B')]);
+        expect(stream.join()).toBe('A,B');
+    });
+
+    test('object stream without prototype', () => {
+        const stream = s.stream([Object.create(null)]);
+        expect(stream.join()).toBe('[object Object]');
+    });
+
+    class CustomToString {
+        // eslint-disable-next-line @typescript-eslint/no-parameter-properties
+        constructor(public input: string) {}
+
+        toString(): string {
+            return this.input;
+        }
+    }
+
+});
