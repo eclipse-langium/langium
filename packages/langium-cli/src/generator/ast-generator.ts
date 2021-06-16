@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { GeneratorNode, Grammar, IndentNode, CompositeGeneratorNode, NL, process } from 'langium';
+import { GeneratorNode, Grammar, IndentNode, CompositeGeneratorNode, NL, process, streamAllContents, isCrossReference } from 'langium';
 import { LangiumConfig } from '../package';
 import { collectAst, Interface } from './type-collector';
 import { generatedHeader } from './util';
@@ -17,11 +17,12 @@ export function generateAst(grammar: Grammar, config: LangiumConfig): string {
         '/* eslint-disable @typescript-eslint/array-type */', NL,
         '/* eslint-disable @typescript-eslint/no-empty-interface */', NL,
     );
+    const crossRef = hasCrossReferences(grammar);
     if (config.langiumInternal) {
-        fileNode.children.push("import { AstNode, AstReflection, Reference } from '../../syntax-tree';", NL);
+        fileNode.children.push(`import { AstNode, AstReflection${crossRef ? ', Reference' : ''} } from '../../syntax-tree';`, NL);
         fileNode.children.push("import { isAstNode } from '../../utils/ast-util';", NL, NL);
     } else {
-        fileNode.children.push("import { AstNode, AstReflection, Reference, isAstNode } from 'langium';", NL, NL);
+        fileNode.children.push(`import { AstNode, AstReflection${crossRef ? ', Reference' : ''}, isAstNode } from 'langium';`, NL, NL);
     }
 
     for (const type of types) {
@@ -31,6 +32,16 @@ export function generateAst(grammar: Grammar, config: LangiumConfig): string {
     fileNode.children.push(generateAstReflection(grammar, types));
 
     return process(fileNode);
+}
+
+function hasCrossReferences(grammar: Grammar): boolean {
+    let result = false;
+    streamAllContents(grammar).forEach(e => {
+        if (isCrossReference(e.node)) {
+            result = true;
+        }
+    });
+    return result;
 }
 
 type CrossReferenceType = {
