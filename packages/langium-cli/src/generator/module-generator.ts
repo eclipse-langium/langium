@@ -7,10 +7,11 @@
 import * as langium from 'langium';
 import { CompositeGeneratorNode, IndentNode, NL, process } from 'langium';
 import { LangiumConfig } from '../package';
+import { generatedHeader } from './util';
 
 export function generateModule(grammar: langium.Grammar, config: LangiumConfig): string {
     const node = new CompositeGeneratorNode();
-
+    node.children.push(generatedHeader);
     if (config.langiumInternal) {
         node.children.push("import { Module } from '../../dependency-injection';", NL);
         node.children.push("import { LangiumGeneratedServices, LangiumServices } from '../../services';", NL);

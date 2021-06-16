@@ -7,11 +7,13 @@
 import { GeneratorNode, Grammar, IndentNode, CompositeGeneratorNode, NL, process } from 'langium';
 import { LangiumConfig } from '../package';
 import { collectAst, Interface } from './type-collector';
+import { generatedHeader } from './util';
 
 export function generateAst(grammar: Grammar, config: LangiumConfig): string {
     const types = collectAst(grammar);
     const fileNode = new CompositeGeneratorNode();
     fileNode.children.push(
+        generatedHeader,
         '/* eslint-disable @typescript-eslint/array-type */', NL,
         '/* eslint-disable @typescript-eslint/no-empty-interface */', NL,
     );

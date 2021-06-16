@@ -10,6 +10,7 @@ import { CompositeGeneratorNode, GeneratorNode, IndentNode, NewLineNode, NL, pro
 import { collectAst } from './type-collector';
 import { Cardinality, findAllFeatures, isArray, isDataTypeRule, isOptional } from 'langium';
 import { LangiumConfig } from '../package';
+import { generatedHeader } from './util';
 
 type RuleContext = {
     name: string,
@@ -26,6 +27,7 @@ export function generateParser(grammar: langium.Grammar, config: LangiumConfig):
 
     const fileNode = new CompositeGeneratorNode();
     fileNode.children.push(
+        generatedHeader,
         '/* eslint-disable */', NL,
         '// @ts-nocheck', NL,
         "import { createToken, Lexer } from 'chevrotain';", NL
