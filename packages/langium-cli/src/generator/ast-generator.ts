@@ -109,7 +109,7 @@ function buildIsSubtypeMethod(interfaces: Interface[]): GeneratorNode {
     const switchNode = new IndentNode();
     const groups = groupBySupertypes(interfaces.filter(e => e.superTypes.length > 0));
 
-    for (const [superTypes, typeGroup] of Array.from(groups.entries())) {
+    for (const [superTypes, typeGroup] of groups.entries()) {
         for (const typeItem of typeGroup) {
             switchNode.children.push(`case ${typeItem.name}:`, NL);
         }

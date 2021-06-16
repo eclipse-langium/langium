@@ -304,13 +304,13 @@ describe('The inject result', () => {
         expect(res).toEqual(['a', 'b']);
     });
 
-    test('should have no effect when used with for..of', () => {
+    test('should throw error when used with for..of', () => {
         const obj = inject([() => 1, () => 'a']);
-        const res = [];
-        for (const elem of obj) {
-            res.push(elem);
-        }
-        expect(res).toEqual([]);
+        expect(() => {
+            for (const _ of obj) {
+                // We expect an error here
+            }
+        }).toThrowError();
     });
 
     test('should work with ..in.. for array', () => {

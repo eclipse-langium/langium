@@ -29,7 +29,7 @@ export abstract class GrammarAccess {
         const { byName } = findAllFeatures(rule);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const access: any = {};
-        for (const [name, value] of Array.from(byName.entries())) {
+        for (const [name, value] of byName.entries()) {
             access[name] = value.feature;
         }
         return <T>access;
