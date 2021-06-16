@@ -7,10 +7,12 @@
 import * as langium from 'langium';
 import { CompositeGeneratorNode, GeneratorNode, IndentNode, NL, process, findAllFeatures, getContainerOfType } from 'langium';
 import { LangiumConfig } from '../package';
+import { generatedHeader } from './util';
 
 export function generateGrammarAccess(grammar: langium.Grammar, config: LangiumConfig, bootstrap?: boolean): string {
     const node = new CompositeGeneratorNode();
 
+    node.children.push(generatedHeader);
     if (config.langiumInternal) {
         node.children.push("import { GrammarAccess } from '../grammar-access';", NL);
         node.children.push("import { Action, Assignment, CrossReference, Keyword, RuleCall } from './ast';");
