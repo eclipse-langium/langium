@@ -10,6 +10,7 @@ export interface ArrayLikeStream<T> extends Iterable<T> {
     find(predicate: (value: T, index: number) => boolean): T | undefined
     forEach(callback: (element: T, index: number) => void): void
     indexOf(element: T): number
+    join(separator?: string): string
 }
 
 export interface Stream<T> extends ArrayLikeStream<T> {
@@ -19,7 +20,6 @@ export interface Stream<T> extends ArrayLikeStream<T> {
     head(): T | undefined
     concat(other: Stream<T>): Stream<T>
     distinct<Key = T>(by?: (element: T) => Key): Stream<T>
-    join(separator?: string): string
 }
 
 export class StreamImpl<S, T> implements Stream<T> {

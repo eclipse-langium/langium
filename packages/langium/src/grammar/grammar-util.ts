@@ -42,7 +42,11 @@ export function isDataTypeRule(rule: ast.ParserRule): boolean {
     return false;
 }
 
-export function findAllFeatures(rule: { alternatives: ast.AbstractElement }): { byName: Map<string, FeatureValue>, byFeature: Map<ast.AbstractElement, string> } {
+interface RuleWithAlternatives {
+    alternatives: ast.AbstractElement;
+}
+
+export function findAllFeatures(rule: RuleWithAlternatives): { byName: Map<string, FeatureValue>, byFeature: Map<ast.AbstractElement, string> } {
     const map = new Map<string, FeatureValue>();
     const featureMap = new Map<ast.AbstractElement, string>();
     putFeature(rule.alternatives, undefined, map, featureMap);
