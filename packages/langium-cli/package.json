@@ -1,21 +1,35 @@
 {
   "name": "langium-cli",
   "version": "0.0.0",
-  "description": "",
+  "description": "CLI for Langium - the language engineering tool",
+  "keywords": [
+    "cli",
+    "dsl",
+    "lsp",
+    "vscode",
+    "typescript"
+  ],
+  "license": "MIT",
+  "files": [
+    "bin",
+    "lib",
+    "src"
+  ],
   "bin": {
     "langium": "./bin/langium.js"
   },
-  "main": "./bin/langium.js",
+  "main": "./lib/langium.js",
   "scripts": {
-    "clean": "rimraf lib/*",
+    "clean": "rimraf lib coverage",
     "build": "tsc",
     "watch": "tsc --watch",
+    "test": "jest --coverage --passWithNoTests",
     "lint": "eslint ./src --ext .js,.ts",
-    "test": "jest --coverage --passWithNoTests"
+    "publish:next": "npm --no-git-tag-version version \"$(semver $npm_package_version -i minor)-next.$(git rev-parse --short HEAD)\" && npm publish --tag next",
+    "publish:latest": "npm publish --tag latest"
   },
-  "author": "",
-  "license": "MIT",
   "dependencies": {
+    "commander": "^7.2.0",
     "langium": "0.0.0"
   },
   "devDependencies": {
@@ -24,8 +38,6 @@
     "@types/node": "^14.14.31",
     "@typescript-eslint/eslint-plugin": "^4.15.2",
     "@typescript-eslint/parser": "^4.15.2",
-    "commander": "^7.2.0",
-    "copyfiles": "^2.4.1",
     "eslint": "^7.20.0",
     "jest": "^26.6.3",
     "rimraf": "^3.0.2",

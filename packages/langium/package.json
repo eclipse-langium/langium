@@ -1,23 +1,37 @@
 {
   "name": "langium",
   "version": "0.0.0",
-  "description": "",
+  "description": "A language engineering tool for the Language Server Protocol",
+  "keywords": [
+    "language",
+    "dsl",
+    "lsp",
+    "vscode",
+    "typescript"
+  ],
+  "license": "MIT",
+  "files": [
+    "lib",
+    "src"
+  ],
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
   "scripts": {
-    "clean": "rimraf lib/*",
+    "clean": "rimraf lib coverage",
     "build": "tsc",
     "watch": "tsc --watch",
     "lint": "eslint ./src --ext .js,.ts",
-    "bootstrap": "node ../langium-cli/bin/langium && npm run copygrammar",
     "test": "jest --coverage",
-    "copygrammar": "copyfiles -f ./src/grammar/generated/grammar.json ./lib/grammar/generated"
+    "bootstrap": "node ../langium-cli/bin/langium && npm run copygrammar",
+    "copygrammar": "copyfiles -f ./src/grammar/generated/grammar.json ./lib/grammar/generated",
+    "publish:next": "npm --no-git-tag-version version \"$(semver $npm_package_version -i minor)-next.$(git rev-parse --short HEAD)\" && npm publish --tag next",
+    "publish:latest": "npm publish --tag latest"
   },
-  "author": "",
-  "license": "MIT",
   "langium": {
     "grammar": "src/grammar/langium-grammar.langium",
-    "extensions": ["langium"],
+    "extensions": [
+      "langium"
+    ],
     "out": "src/grammar/generated",
     "langiumInternal": true
   },

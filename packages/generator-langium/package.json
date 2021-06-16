@@ -1,20 +1,31 @@
 {
   "name": "generator-langium",
-  "version": "0.1.0",
-  "description": "",
-  "files": [
-    "app", "langium-template"
-  ],
+  "version": "0.0.0",
+  "description": "Yeoman generator for Langium - the language engineering tool",
   "keywords": [
-    "yeoman-generator"
+    "yeoman-generator",
+    "language",
+    "dsl",
+    "lsp",
+    "vscode"
   ],
+  "license": "MIT",
+  "files": [
+    "app",
+    "langium-template",
+    "src"
+  ],
+  "main": "app/index.js",
+  "types": "app/index.d.ts",
   "scripts": {
-    "clean": "rimraf app/*",
+    "clean": "rimraf app",
     "build": "tsc",
     "watch": "tsc --watch",
     "lint": "eslint ./src --ext .js,.ts",
     "run": "yo langium",
-    "debug": "npx --node-arg=--inspect yo langium"
+    "debug": "npx --node-arg=--inspect yo langium",
+    "publish:next": "npm --no-git-tag-version version \"$(semver $npm_package_version -i minor)-next.$(git rev-parse --short HEAD)\" && npm publish --tag next",
+    "publish:latest": "npm publish --tag latest"
   },
   "dependencies": {
     "lodash": "^4.17.21",
