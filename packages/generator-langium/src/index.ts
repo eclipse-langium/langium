@@ -141,9 +141,9 @@ class LangiumGenerator extends Generator {
             this.answers.extensionName
         );
 
-        this.spawnCommand('npm', ['install', '--prefix', extensionPath]);
-        this.spawnCommand('npm', ['run', '--prefix', extensionPath, 'langium:generate']);
-        this.spawnCommand('npm', ['run', '--prefix', extensionPath, 'build']);
+        this.spawnCommandSync('npm', ['install', '--prefix', extensionPath]);
+        this.spawnCommandSync('npm', ['run', '--prefix', extensionPath, 'langium:generate']);
+        this.spawnCommandSync('npm', ['run', '--prefix', extensionPath, 'build']);
     }
 }
 
