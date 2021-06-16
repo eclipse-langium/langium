@@ -121,8 +121,7 @@ export function addGotoDeclaration(connection: Connection, services: LangiumServ
             const document = services.documents.TextDocuments.get(uri);
             if (document) {
                 const goToResolver = services.references.GoToResolver;
-                const offset = document.offsetAt(_textDocumentPosition.position);
-                return goToResolver.goToDeclaration(document, offset);
+                return goToResolver.goToDeclaration(document, _textDocumentPosition.position);
             }
             else {
                 return [];

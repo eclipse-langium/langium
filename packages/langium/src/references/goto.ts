@@ -4,17 +4,20 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { Location, Range } from 'vscode-languageserver';
+import { Location } from 'vscode-languageserver';
+import { Position } from 'vscode-languageserver-textdocument';
 import { LangiumDocument } from '../documents/document';
 import { isAssignment } from '../grammar/generated/ast';
-import { findLeafNodeAtOffset, findNodeForFeature } from '../grammar/grammar-util';
 import { LangiumServices } from '../services';
-import { Reference } from '../syntax-tree';
-import { getContainerOfType, isReference } from '../utils/ast-util';
+import { CstNode, Reference } from '../syntax-tree';
+import { findLeafNodeAtOffset, getContainerOfType, isReference } from '../utils/ast-util';
+import { toRange } from '../utils/cst-util';
 import { NameProvider } from './naming';
 
 export interface GoToResolver {
-    goToDeclaration(document: LangiumDocument, offset: number): Location[]
+    goToDeclaration(document: LangiumDocument, position: Position): Location[]
+
+    findReference(cstNode: CstNode): CstNode | undefined
 }
 
 export class DefaultGoToResolverProvider implements GoToResolver {
@@ -25,35 +28,41 @@ export class DefaultGoToResolverProvider implements GoToResolver {
         this.nameProvider = services.references.NameProvider;
     }
 
-    goToDeclaration(document: LangiumDocument, offset: number): Location[] {
+    goToDeclaration(document: LangiumDocument, position: Position): Location[] {
         const rootNode = document.parseResult?.value;
         const locations: Location[] = [];
         if (rootNode && rootNode.$cstNode) {
             const cst = rootNode.$cstNode;
-            const node = findLeafNodeAtOffset(cst, offset);
+            const sourceCstNode = findLeafNodeAtOffset(cst, document.offsetAt(position));
+            if (sourceCstNode) {
+                const targetNode = this.findReference(sourceCstNode);
+                if (targetNode) {
+                    locations.push(Location.create(document.uri, toRange(targetNode, document)));
+                }
+            }
+        }
+        return locations;
+    }
 
-            const assignment = getContainerOfType(node?.feature, isAssignment);
-            const nodeElem = node?.element as unknown as Record<string, Reference>;
+    findReference(cstNode: CstNode): CstNode | undefined {
+        let targetNode = undefined;
+        if (cstNode) {
+            const assignment = getContainerOfType(cstNode.feature, isAssignment);
+            const nodeElem = cstNode.element as unknown as Record<string, Reference>;
             if (assignment && nodeElem) {
 
                 if (isReference(nodeElem[assignment.feature])) {
                     const ref = nodeElem[assignment.feature].ref;
-                    if (ref) {
-                        const targetCst = ref.$cstNode;
-
-                        if (targetCst) {
-                            let targetNode = findNodeForFeature(targetCst, 'name');
-                            if (!targetNode) targetNode = targetCst;
-                            const posA = targetNode.offset;
-                            const posB = targetNode.offset + targetNode.length;
-                            locations.push(Location.create(document.uri, Range.create(document.positionAt(posA), document.positionAt(posB))));
+                    if (ref && ref.$cstNode) {
+                        targetNode = this.nameProvider.getNameNode(ref);
+                        if (!targetNode) {
+                            targetNode = ref.$cstNode;
                         }
                     }
                 }
             }
-
         }
-        return locations;
+        return targetNode;
     }
 
 }

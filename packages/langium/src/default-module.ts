@@ -49,7 +49,7 @@ export function createDefaultModule(context: DefaultModuleContext = {}): Module<
             NameProvider: () => new DefaultNameProvider(),
             ScopeProvider: (injector) => new DefaultScopeProvider(injector),
             ScopeComputation: (injector) => new DefaultScopeComputation(injector),
-            ReferenceFinder:  (services) => new DefaultReferenceFinder(services)
+            ReferenceFinder:  (services) => new DefaultReferenceFinder(services),
             GoToResolver: (injector) => new DefaultGoToResolverProvider(injector)
         },
         completion: {
