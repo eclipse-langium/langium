@@ -20,6 +20,7 @@ import { DefaultCompletionProvider } from './service/completion/completion-provi
 import { RuleInterpreter } from './service/completion/rule-interpreter';
 import { DefaultReferenceFinder } from './references/reference-finder';
 import { DefaultGoToResolverProvider } from './references/goto';
+import { DefaultDocumentHighlighter } from './references/document-highlighter';
 
 export type DefaultModuleContext = {
     connection?: Connection
@@ -49,8 +50,9 @@ export function createDefaultModule(context: DefaultModuleContext = {}): Module<
             NameProvider: () => new DefaultNameProvider(),
             ScopeProvider: (injector) => new DefaultScopeProvider(injector),
             ScopeComputation: (injector) => new DefaultScopeComputation(injector),
-            ReferenceFinder:  (services) => new DefaultReferenceFinder(services),
-            GoToResolver: (injector) => new DefaultGoToResolverProvider(injector)
+            ReferenceFinder:  (injector) => new DefaultReferenceFinder(injector),
+            GoToResolver: (injector) => new DefaultGoToResolverProvider(injector),
+            DocumentHighlighter: (injector) => new DefaultDocumentHighlighter(injector)
         },
         completion: {
             CompletionProvider: (injector) => new DefaultCompletionProvider(injector),
