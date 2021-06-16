@@ -11,7 +11,7 @@ Grammar:
 	metamodelDeclarations+=AbstractMetamodelDeclaration*
 	(rules+=AbstractRule)+;
 
-AbstractRule : ParserRule | TerminalRule | EnumRule;
+AbstractRule : ParserRule | TerminalRule | PrimitiveRule;
 
 AbstractMetamodelDeclaration :
 	GeneratedMetamodel | ReferencedMetamodel;
@@ -34,6 +34,9 @@ ParserRule :
 	(definesHiddenTokens?='hidden' '(' (hiddenTokens+=[AbstractRule|ID] (',' hiddenTokens+=[AbstractRule|ID])*)? ')')? ':'
 		alternatives=Alternatives
 	';';
+
+PrimitiveRule:
+	'primitive' name=ID ('returns' type=ID)? ':' alternatives=Alternatives ';';
 
 fragment RuleNameAndParams:
 	name=ID ('<' (parameters+=Parameter (',' parameters+=Parameter)*)? '>')?;
@@ -169,13 +172,3 @@ Wildcard:
 CharacterRange:
 	left=Keyword ('..' right=Keyword)?;
 
-EnumRule:
-	'enum' name=ID ('returns' type=ID)? ':'
-		alternatives=EnumLiterals
-	';';
-
-EnumLiterals:
-	EnumLiteralDeclaration ({EnumLiterals.elements+=current} '|' elements+=EnumLiteralDeclaration)*;
-
-EnumLiteralDeclaration:
-	enumLiteral=ID ('=' literal=Keyword)?;

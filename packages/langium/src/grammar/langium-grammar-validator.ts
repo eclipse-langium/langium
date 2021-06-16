@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { AbstractRule, EnumRule, Grammar, isParserRule, isTerminalRule, Keyword, LangiumGrammarAstType, ParserRule, UnorderedGroup } from './generated/ast';
+import { AbstractRule, Grammar, isParserRule, isTerminalRule, Keyword, LangiumGrammarAstType, ParserRule, UnorderedGroup } from './generated/ast';
 import { ValidationAcceptor, ValidationCheck, ValidationRegistry } from '../service/validation/validation-registry';
 import { LangiumGrammarServices } from './langium-grammar-module';
 import { isDataTypeRule } from './grammar-util';
@@ -18,7 +18,6 @@ export class LangiumGrammarValidationRegistry extends ValidationRegistry {
         const checks: LangiumGrammarChecks = {
             AbstractRule: validator.checkRuleName,
             Keyword: validator.checkKeyword,
-            EnumRule: validator.checkEnum,
             UnorderedGroup: validator.checkUnorderedGroup,
             Grammar: [
                 validator.checkGrammarName,
@@ -117,9 +116,5 @@ export class LangiumGrammarValidator {
 
     checkUnorderedGroup(unorderedGroup: UnorderedGroup, accept: ValidationAcceptor): void {
         accept('error', 'Unordered groups are currently not supported', { node: unorderedGroup });
-    }
-
-    checkEnum(enumRule: EnumRule, accept: ValidationAcceptor): void {
-        accept('error', 'Enum rules are currently not supported.', { node: enumRule });
     }
 }

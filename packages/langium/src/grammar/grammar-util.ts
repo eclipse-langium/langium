@@ -42,7 +42,7 @@ export function isDataTypeRule(rule: ast.ParserRule): boolean {
     return false;
 }
 
-export function findAllFeatures(rule: ast.ParserRule): { byName: Map<string, FeatureValue>, byFeature: Map<ast.AbstractElement, string> } {
+export function findAllFeatures(rule: { alternatives: ast.AbstractElement }): { byName: Map<string, FeatureValue>, byFeature: Map<ast.AbstractElement, string> } {
     const map = new Map<string, FeatureValue>();
     const featureMap = new Map<ast.AbstractElement, string>();
     putFeature(rule.alternatives, undefined, map, featureMap);
@@ -156,9 +156,7 @@ export function findNodesForFeature(node: CstNode | undefined, feature: string |
 }
 
 export function getTypeName(rule: ast.AbstractRule | undefined): string {
-    if (ast.isEnumRule(rule)) {
-        return rule.name;
-    } else if (ast.isTerminalRule(rule) || ast.isParserRule(rule)) {
+    if (rule) {
         return rule.type ?? rule.name;
     } else {
         throw new Error('Unknown rule type');

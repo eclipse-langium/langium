@@ -5,12 +5,14 @@
  ******************************************************************************/
 
 import * as langium from 'langium';
-import { getContainerOfType, getTypeName } from 'langium';
+import { getContainerOfType, getTypeName, isParserRule, isPrimitiveRule, ParserRule, PrimitiveRule, stream } from 'langium';
 import { CompositeGeneratorNode, GeneratorNode, IndentNode, NewLineNode, NL, process, replaceTokens } from 'langium';
 import { collectAst } from './type-collector';
-import { Cardinality, findAllFeatures, isArray, isDataTypeRule, isOptional } from 'langium';
+import { Cardinality, findAllFeatures, isArray, isOptional } from 'langium';
 import { LangiumConfig } from '../package';
 import { generatedHeader } from './util';
+
+type RuleWithAlternatives = ParserRule | PrimitiveRule;
 
 type RuleContext = {
     name: string,
@@ -105,7 +107,20 @@ function buildParser(grammar: langium.Grammar): CompositeGeneratorNode {
     classBody.children.push(constructorBody, '}', NL, NL);
 
     let first = true;
-    for (const rule of grammar.rules.filter(e => langium.isParserRule(e)).map(e => e as langium.ParserRule)) {
+    for (const rule of stream(grammar.rules).filterType(langium.isParserRule)) {
+        const ctx: RuleContext = {
+            name: rule.name,
+            consume: 1,
+            option: 1,
+            subrule: 1,
+            many: 1,
+            or: 1,
+            featureMap: findAllFeatures(rule).byFeature
+        };
+        classBody.children.push(buildRule(ctx, rule, first));
+        first = false;
+    }
+    for (const rule of stream(grammar.rules).filterType(isPrimitiveRule)) {
         const ctx: RuleContext = {
             name: rule.name,
             consume: 1,
@@ -124,18 +139,17 @@ function buildParser(grammar: langium.Grammar): CompositeGeneratorNode {
     return parserNode;
 }
 
-function buildRule(ctx: RuleContext, rule: langium.ParserRule, first: boolean): CompositeGeneratorNode {
+function buildRule(ctx: RuleContext, rule: RuleWithAlternatives, first: boolean): CompositeGeneratorNode {
     const ruleNode = new CompositeGeneratorNode();
     ruleNode.children.push(rule.name);
 
-    let type = 'undefined';
-
-    if (!rule.fragment) {
-        if (isDataTypeRule(rule)) {
-            type = `'${rule.type ?? 'String'}'`;
-        } else {
-            type = getTypeName(rule);
-        }
+    let type: string;
+    if (isParserRule(rule) && rule.fragment) {
+        type = 'undefined';
+    } else if (isParserRule(rule)) {
+        type = getTypeName(rule);
+    } else {
+        type = `'${rule.type ?? 'String'}'`;
     }
 
     ruleNode.children.push(
@@ -327,7 +341,7 @@ function findLongerAlt(keyword: string, keywords: string[], terminals: langium.T
 function collectKeywords(grammar: langium.Grammar): string[] {
     const keywords = new Set<string>();
 
-    for (const rule of grammar.rules.filter(e => langium.isParserRule(e)).map(e => e as langium.ParserRule)) {
+    for (const rule of grammar.rules.filter(e => langium.isParserRule(e) || langium.isPrimitiveRule(e)).map(e => e as RuleWithAlternatives)) {
         collectElementKeywords(rule.alternatives, keywords);
     }
 
