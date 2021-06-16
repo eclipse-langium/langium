@@ -34,13 +34,13 @@ class LangiumGenerator extends Generator {
                 type: 'input',
                 name: 'extensionName',
                 message: 'Your extension name:',
-                default: EXTENSION_NAME,
+                default: 'hello-world',
             },
             {
                 type: 'input',
                 name: 'rawLanguageName',
                 message: 'Your language name:',
-                default: LANGUAGE_NAME,
+                default: 'Hello World',
                 validate: (input: string): boolean | string =>
                     /^[a-zA-Z].*$/.test(input)
                         ? true
@@ -51,7 +51,7 @@ class LangiumGenerator extends Generator {
                 name: 'fileExtensions',
                 message:
                     'File extensions of your language, separated by commas:',
-                default: FILE_EXTENSION,
+                default: '.hello',
                 validate: (input: string): boolean | string =>
                     /^\.?[a-z]+(\s*,\s*\.?[a-z]+)*$/.test(input)
                         ? true
@@ -84,7 +84,7 @@ class LangiumGenerator extends Generator {
         const languageName = _.upperFirst(
             _.camelCase(this.answers.rawLanguageName)
         );
-        const languageId = _.snakeCase(this.answers.rawLanguageName);
+        const languageId = _.kebabCase(this.answers.rawLanguageName);
 
         this.sourceRoot(path.join(__dirname, TEMPLATE_DIR));
         ['.', '.vscode', '.eslintrc.json', '.vscodeignore'].forEach(
@@ -141,12 +141,8 @@ class LangiumGenerator extends Generator {
             this.answers.extensionName
         );
 
-        this.spawnCommand('npm', [
-            'run',
-            '--prefix',
-            extensionPath,
-            'langium:generate',
-        ]);
+        this.spawnCommand('npm', ['install', '--prefix', extensionPath]);
+        this.spawnCommand('npm', ['run', '--prefix', extensionPath, 'langium:generate']);
         this.spawnCommand('npm', ['run', '--prefix', extensionPath, 'build']);
     }
 }
