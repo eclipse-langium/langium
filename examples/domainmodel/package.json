@@ -1,0 +1,57 @@
+{
+    "name": "domainmodel",
+    "displayName": "domainmodel",
+    "description": "description",
+    "version": "0.0.1",
+    "engines": {
+        "vscode": "^1.56.0"
+    },
+    "categories": [
+        "Programming Languages"
+    ],
+    "contributes": {
+        "languages": [{
+            "id": "domain-model",
+            "aliases": ["DomainModel", "domain-model"],
+            "extensions": [".dmodel"],
+            "configuration": "./language-configuration.json"
+        }],
+        "grammars": [{
+            "language": "domain-model",
+            "scopeName": "source.domain-model",
+            "path": "./syntaxes/domain-model.tmLanguage.json"
+        }]
+    },
+    "activationEvents": [
+        "onLanguage:domain-model"
+    ],
+    "main": "./out/extension.js",
+    "langium": {
+        "grammar": "src/language-server/domain-model.langium",
+        "extensions": [".dmodel"],
+        "out": "src/language-server/generated"
+    },
+    "scripts": {
+        "vscode:prepublish": "npm run build && npm run lint",
+        "build": "tsc",
+        "watch": "tsc -watch",
+        "lint": "eslint src --ext ts",
+        "langium:generate": "langium && npm run copygrammar",
+        "copygrammar": "copyfiles -f ./src/language-server/generated/grammar.json ./out/language-server/generated"
+    },
+    "dependencies": {
+        "langium": "0.1.0-next.00ebfd9",
+        "vscode-languageclient": "^7.0.0",
+        "vscode-languageserver": "^7.0.0"
+    },
+    "devDependencies": {
+        "@types/node": "^14.17.3",
+        "@types/vscode": "^1.56.0",
+        "@typescript-eslint/eslint-plugin": "^4.14.1",
+        "@typescript-eslint/parser": "^4.14.1",
+        "copyfiles": "^2.4.1",
+        "eslint": "^7.19.0",
+        "langium-cli": "0.1.0-next.00ebfd9",
+        "typescript": "^4.1.3"
+    }
+}

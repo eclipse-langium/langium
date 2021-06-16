@@ -15,6 +15,7 @@
     "ts-jest": "^26.5.2"
   },
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "examples/*"
   ]
 }
