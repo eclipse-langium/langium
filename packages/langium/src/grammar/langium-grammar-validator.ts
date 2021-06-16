@@ -7,7 +7,6 @@
 import { AbstractRule, Grammar, isAction, isAssignment, isParserRule, isPrimitiveRule, isRuleCall, isTerminalRule, Keyword, LangiumGrammarAstType, ParserRule, PrimitiveRule, TerminalRule, UnorderedGroup } from './generated/ast';
 import { ValidationAcceptor, ValidationCheck, ValidationRegistry } from '../service/validation/validation-registry';
 import { LangiumGrammarServices } from './langium-grammar-module';
-import { isDataTypeRule } from './grammar-util';
 import { AstNodeContent, streamAllContents } from '../utils/ast-util';
 
 type LangiumGrammarChecks = { [type in LangiumGrammarAstType]?: ValidationCheck | ValidationCheck[] }
@@ -54,9 +53,7 @@ export class LangiumGrammarValidator {
     checkFirstGrammarRule(grammar: Grammar, accept: ValidationAcceptor): void {
         const firstRule = grammar.rules.find(e => isParserRule(e)) as ParserRule;
         if (firstRule) {
-            if (isDataTypeRule(firstRule)) {
-                accept('error', 'The entry rule cannot be a data type rule.', { node: firstRule, property: 'name' });
-            } else if (firstRule.fragment) {
+            if (firstRule.fragment) {
                 accept('error', 'The entry rule cannot be a fragment.', { node: firstRule, property: 'name' });
             }
         } else {
