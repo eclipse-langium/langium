@@ -8,7 +8,7 @@ import { AbstractRule, Grammar, isAction, isAssignment, isParserRule, isPrimitiv
 import { ValidationAcceptor, ValidationCheck, ValidationRegistry } from '../service/validation/validation-registry';
 import { LangiumGrammarServices } from './langium-grammar-module';
 import { isDataTypeRule } from './grammar-util';
-import { getContainerOfType, streamAllContents } from '../utils/ast-util';
+import { AstNodeContent, streamAllContents } from '../utils/ast-util';
 
 type LangiumGrammarChecks = { [type in LangiumGrammarAstType]?: ValidationCheck | ValidationCheck[] }
 
@@ -21,6 +21,10 @@ export class LangiumGrammarValidationRegistry extends ValidationRegistry {
             PrimitiveRule: [
                 validator.checkPrimitiveRuleCalls,
                 validator.checkRuleReturnType
+            ],
+            ParserRule: [
+                validator.checkParserRuleDataType,
+                validator.checkParserRuleReturnType
             ],
             TerminalRule: validator.checkRuleReturnType,
             Keyword: validator.checkKeyword,
@@ -125,26 +129,59 @@ export class LangiumGrammarValidator {
     }
 
     checkPrimitiveRuleCalls(rule: PrimitiveRule, accept: ValidationAcceptor): void {
-        streamAllContents(rule).forEach(e => {
-            if (isRuleCall(e.node) && isParserRule(e.node.rule.ref)) {
-                const parentAssignment = getContainerOfType(e.node, isAssignment);
-                if (!parentAssignment) {
-                    accept('error', 'Primitive rules can only call other primitive rules or terminal rules', { node: e.node });
+        const iterator = streamAllContents(rule).iterator();
+        let result: IteratorResult<AstNodeContent>;
+        do {
+            result = iterator.next();
+            if (!result.done) {
+                const node = result.value.node;
+                if (isRuleCall(node) && isParserRule(node.rule.ref)) {
+                    accept('error', 'Primitive rules can only call other primitive rules or terminal rules', { node });
+                }
+                if (isAction(node)) {
+                    accept('error', 'Primitive rules cannot contain actions.', { node });
+                }
+                if (isAssignment(node)) {
+                    accept('error', 'Primitive rules cannot contain assignments.', { node });
+                    iterator.prune();
                 }
             }
-            if (isAction(e.node)) {
-                accept('error', 'Primitive rules cannot contain actions.', { node: e.node });
+        } while (!result.done);
+    }
+
+    checkParserRuleDataType(rule: ParserRule, accept: ValidationAcceptor): void {
+        let shouldBePrimitiveRule = true;
+        const iterator = streamAllContents(rule).iterator();
+        let result: IteratorResult<AstNodeContent>;
+        do {
+            result = iterator.next();
+            if (!result.done) {
+                const node = result.value.node;
+                if (isRuleCall(node) && isParserRule(node.rule.ref) || isAction(node) || isAssignment(node)) {
+                    shouldBePrimitiveRule = false;
+                }
             }
-            if (isAssignment(e.node)) {
-                accept('error', 'Primitive rules cannot contain assignments.', { node: e.node });
-            }
-        });
+        } while (!result.done && shouldBePrimitiveRule);
+
+        if (shouldBePrimitiveRule) {
+            accept('error', 'This parser rule does not create an object. Use a primitive rule or add an action to the start of the rule to force object instantiation.', { node: rule, property: 'name' });
+        }
+    }
+
+    checkParserRuleReturnType(rule: ParserRule, accept: ValidationAcceptor): void {
+        if (rule.type && isPrimitiveType(rule.type)) {
+            accept('error', 'Parser rules are not allowed to return a primitive value. Use a primitive rule for that.', { node: rule, property: 'type' });
+        }
     }
 
     checkRuleReturnType(rule: PrimitiveRule | TerminalRule, accept: ValidationAcceptor): void {
-        if (rule.type && !['string', 'number'].includes(rule.type)) {
+        if (rule.type && !isPrimitiveType(rule.type)) {
             const type = isPrimitiveRule(rule) ? 'Primitive' : 'Terminal';
             accept('error', type + " rules can only return primitive types like 'string' or 'number'.", { node: rule, property: 'type' });
         }
     }
+}
+
+function isPrimitiveType(type: string): boolean {
+    return ['string', 'number'].includes(type);
 }
