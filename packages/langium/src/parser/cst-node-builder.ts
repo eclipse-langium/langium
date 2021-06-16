@@ -22,19 +22,21 @@ export class CstNodeBuilder {
         this.nodeStack = [this.rootNode];
     }
 
-    buildCompositeNode(feature: AbstractElement): void {
+    buildCompositeNode(feature: AbstractElement): CompositeCstNode {
         const compositeNode = new CompositeCstNodeImpl();
         compositeNode.feature = feature;
         compositeNode.root = this.rootNode;
         this.current.children.push(compositeNode);
         this.nodeStack.push(compositeNode);
+        return compositeNode;
     }
 
-    buildLeafNode(token: IToken, feature: AbstractElement): void {
+    buildLeafNode(token: IToken, feature: AbstractElement): LeafCstNode {
         const leafNode = new LeafCstNodeImpl(token.startOffset, token.image.length, token.tokenType, false);
         leafNode.feature = feature;
         leafNode.root = this.rootNode;
         this.current.children.push(leafNode);
+        return leafNode;
     }
 
     construct(item: { $cstNode: CstNode }): void {

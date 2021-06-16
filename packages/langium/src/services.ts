@@ -19,6 +19,7 @@ import { LangiumDocument } from './documents/document';
 import { DocumentSymbolProvider } from './service/symbols/document-symbol-provider';
 import { CompletionProvider } from './service/completion/completion-provider';
 import { RuleInterpreter } from './service/completion/rule-interpreter';
+import { PrimitiveConverter } from './converter/primitive-converter';
 import { ReferenceFinder } from './references/reference-finder';
 import { GoToResolver } from './references/goto';
 import { DocumentHighlighter } from './references/document-highlighter';
@@ -30,6 +31,9 @@ export type LangiumGeneratedServices = {
 }
 
 export type LangiumServices = LangiumGeneratedServices & {
+    converter: {
+        PrimitiveConverter: PrimitiveConverter
+    }
     documents: {
         DocumentBuilder: DocumentBuilder,
         TextDocuments: TextDocuments<LangiumDocument>
