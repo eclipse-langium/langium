@@ -5,23 +5,23 @@
  ******************************************************************************/
 
 import * as langium from 'langium';
-import { CompositeGeneratorNode, GeneratorNode, IndentNode, NL, process, findAllFeatures, getContainerOfType } from 'langium';
+import { CompositeGeneratorNode, GeneratorNode, IndentNode, NL, process, findAllFeatures, getContainerOfType, streamAllContents, isAction, isAssignment, isCrossReference, isKeyword, isRuleCall, stream } from 'langium';
 import { LangiumConfig } from '../package';
 import { generatedHeader } from './util';
 
 export function generateGrammarAccess(grammar: langium.Grammar, config: LangiumConfig, bootstrap?: boolean): string {
     const node = new CompositeGeneratorNode();
-
+    const imports = identifyImports(grammar).join(', ');
     node.children.push(generatedHeader);
     if (config.langiumInternal) {
         node.children.push("import { GrammarAccess } from '../grammar-access';", NL);
-        node.children.push("import { Action, Assignment, CrossReference, Keyword, RuleCall } from './ast';");
+        node.children.push(`import { ${imports} } from './ast';`);
     } else {
-        node.children.push("import { Action, Assignment, CrossReference, Keyword, RuleCall, GrammarAccess } from 'langium';");
+        node.children.push(`import { ${imports}, GrammarAccess } from 'langium';`);
     }
     node.children.push(NL, "import * as path from 'path';", NL, NL);
 
-    for (const rule of grammar.rules.filter(e => langium.isParserRule(e)).map(e => e as langium.ParserRule)) {
+    for (const rule of stream(grammar.rules).filterType(langium.isParserRule)) {
         node.children.push(generateRuleAccess(rule), NL, NL);
     }
 
@@ -29,7 +29,7 @@ export function generateGrammarAccess(grammar: langium.Grammar, config: LangiumC
 
     const content = new IndentNode();
 
-    for (const rule of grammar.rules.filter(e => langium.isParserRule(e)).map(e => e as langium.ParserRule)) {
+    for (const rule of stream(grammar.rules).filterType(langium.isParserRule)) {
         if (bootstrap) {
             content.children.push(rule.name, generateBootstrapRuleAccess(rule), NL);
         } else {
@@ -43,6 +43,16 @@ export function generateGrammarAccess(grammar: langium.Grammar, config: LangiumC
     node.children.push(content, '}', NL);
 
     return process(node);
+}
+
+function identifyImports(grammar: langium.Grammar): string[] {
+    const items = new Set<string>();
+    streamAllContents(grammar).forEach(e => {
+        if (isAction(e.node) || isAssignment(e.node) || isCrossReference(e.node) || isKeyword(e.node) || isRuleCall(e.node)) {
+            items.add(e.node.$type);
+        }
+    });
+    return Array.from(items).sort();
 }
 
 function generateBootstrapRuleAccess(rule: langium.ParserRule): GeneratorNode {
