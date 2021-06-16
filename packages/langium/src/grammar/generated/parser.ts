@@ -9,13 +9,14 @@ import { createToken, Lexer } from 'chevrotain';
 import { LangiumServices } from '../../services';
 import { LangiumParser, Number, String } from '../../parser/langium-parser';
 import { LangiumGrammarGrammarAccess } from './grammar-access';
-import { AbstractElement, AbstractMetamodelDeclaration, AbstractNegatedToken, AbstractRule, Annotation, Condition, EnumLiteralDeclaration, EnumLiterals, Grammar, NamedArgument, Parameter, TerminalGroup, TerminalToken, TerminalTokenElement, Action, Alternatives, Assignment, CrossReference, Group, Keyword, RuleCall, UnorderedGroup, GeneratedMetamodel, ReferencedMetamodel, NegatedToken, UntilToken, EnumRule, ParserRule, TerminalRule, Conjunction, Disjunction, LiteralCondition, Negation, ParameterReference, CharacterRange, TerminalAlternatives, TerminalRuleCall, Wildcard, } from './ast';
+import { AbstractElement, AbstractMetamodelDeclaration, AbstractNegatedToken, AbstractRule, Annotation, Condition, Grammar, NamedArgument, Parameter, TerminalGroup, TerminalToken, TerminalTokenElement, Action, Alternatives, Assignment, CrossReference, Group, Keyword, RuleCall, UnorderedGroup, GeneratedMetamodel, ReferencedMetamodel, NegatedToken, UntilToken, ParserRule, PrimitiveRule, TerminalRule, Conjunction, Disjunction, LiteralCondition, Negation, ParameterReference, CharacterRange, TerminalAlternatives, TerminalRuleCall, Wildcard, } from './ast';
 
 const ID = createToken({ name: 'ID', pattern: /\^?[_a-zA-Z][\w_]*/ });
 const INT = createToken({ name: 'INT', pattern: /[0-9]+/ });
 const RegexLiteral = createToken({ name: 'RegexLiteral', pattern: /\/(?![*+?])(?:[^\r\n\[/\\]|\\.|\[(?:[^\r\n\]\\]|\\.)*\])+\// });
 const string = createToken({ name: 'string', pattern: /"[^"]*"|'[^']*'/ });
 const WS = createToken({ name: 'WS', pattern: /\s+/, group: Lexer.SKIPPED });
+const PrimitiveKeyword = createToken({ name: 'PrimitiveKeyword', pattern: /primitive/, longer_alt: ID });
 const FragmentKeyword = createToken({ name: 'FragmentKeyword', pattern: /fragment/, longer_alt: ID });
 const GenerateKeyword = createToken({ name: 'GenerateKeyword', pattern: /generate/, longer_alt: ID });
 const TerminalKeyword = createToken({ name: 'TerminalKeyword', pattern: /terminal/, longer_alt: ID });
@@ -25,7 +26,6 @@ const ReturnsKeyword = createToken({ name: 'ReturnsKeyword', pattern: /returns/,
 const HiddenKeyword = createToken({ name: 'HiddenKeyword', pattern: /hidden/, longer_alt: ID });
 const ImportKeyword = createToken({ name: 'ImportKeyword', pattern: /import/, longer_alt: ID });
 const FalseKeyword = createToken({ name: 'FalseKeyword', pattern: /false/, longer_alt: ID });
-const EnumKeyword = createToken({ name: 'EnumKeyword', pattern: /enum/, longer_alt: ID });
 const TrueKeyword = createToken({ name: 'TrueKeyword', pattern: /true/, longer_alt: ID });
 const WithKeyword = createToken({ name: 'WithKeyword', pattern: /with/, longer_alt: ID });
 const DashMoreThanKeyword = createToken({ name: 'DashMoreThanKeyword', pattern: /->/, longer_alt: ID });
@@ -82,18 +82,18 @@ MoreThanKeyword.LABEL = "'>'";
 PipeKeyword.LABEL = "'|'";
 AsKeyword.LABEL = "'as'";
 CurrentKeyword.LABEL = "'current'";
-EnumKeyword.LABEL = "'enum'";
 FalseKeyword.LABEL = "'false'";
 FragmentKeyword.LABEL = "'fragment'";
 GenerateKeyword.LABEL = "'generate'";
 GrammarKeyword.LABEL = "'grammar'";
 HiddenKeyword.LABEL = "'hidden'";
 ImportKeyword.LABEL = "'import'";
+PrimitiveKeyword.LABEL = "'primitive'";
 ReturnsKeyword.LABEL = "'returns'";
 TerminalKeyword.LABEL = "'terminal'";
 TrueKeyword.LABEL = "'true'";
 WithKeyword.LABEL = "'with'";
-const tokens = [FragmentKeyword, GenerateKeyword, TerminalKeyword, CurrentKeyword, GrammarKeyword, ReturnsKeyword, HiddenKeyword, ImportKeyword, FalseKeyword, EnumKeyword, TrueKeyword, WithKeyword, DashMoreThanKeyword, QuestionMarkEqualsKeyword, DotDotKeyword, PlusEqualsKeyword, EqualsMoreThanKeyword, AsKeyword, CommaKeyword, SemicolonKeyword, ColonKeyword, ExclamationMarkKeyword, QuestionMarkKeyword, DotKeyword, ParenthesisOpenKeyword, ParenthesisCloseKeyword, BracketOpenKeyword, BracketCloseKeyword, CurlyOpenKeyword, CurlyCloseKeyword, AtKeyword, AsteriskKeyword, AmpersandKeyword, PlusKeyword, LessThanKeyword, EqualsKeyword, MoreThanKeyword, PipeKeyword, ID, INT, RegexLiteral, string, WS];
+const tokens = [PrimitiveKeyword, FragmentKeyword, GenerateKeyword, TerminalKeyword, CurrentKeyword, GrammarKeyword, ReturnsKeyword, HiddenKeyword, ImportKeyword, FalseKeyword, TrueKeyword, WithKeyword, DashMoreThanKeyword, QuestionMarkEqualsKeyword, DotDotKeyword, PlusEqualsKeyword, EqualsMoreThanKeyword, AsKeyword, CommaKeyword, SemicolonKeyword, ColonKeyword, ExclamationMarkKeyword, QuestionMarkKeyword, DotKeyword, ParenthesisOpenKeyword, ParenthesisCloseKeyword, BracketOpenKeyword, BracketCloseKeyword, CurlyOpenKeyword, CurlyCloseKeyword, AtKeyword, AsteriskKeyword, AmpersandKeyword, PlusKeyword, LessThanKeyword, EqualsKeyword, MoreThanKeyword, PipeKeyword, ID, INT, RegexLiteral, string, WS];
 
 export class Parser extends LangiumParser {
     readonly grammarAccess: LangiumGrammarGrammarAccess;
@@ -145,7 +145,7 @@ export class Parser extends LangiumParser {
                 this.unassignedSubrule(2, this.TerminalRule, this.grammarAccess.AbstractRule.TerminalRuleRuleCall);
             },
             () => {
-                this.unassignedSubrule(3, this.EnumRule, this.grammarAccess.AbstractRule.EnumRuleRuleCall);
+                this.unassignedSubrule(3, this.PrimitiveRule, this.grammarAccess.AbstractRule.PrimitiveRuleRuleCall);
             },
         ]);
         return this.construct();
@@ -235,6 +235,20 @@ export class Parser extends LangiumParser {
         this.consume(13, ColonKeyword, this.grammarAccess.ParserRule.ColonKeyword);
         this.subrule(3, this.Alternatives, this.grammarAccess.ParserRule.alternativesAlternativesRuleCall);
         this.consume(14, SemicolonKeyword, this.grammarAccess.ParserRule.SemicolonKeyword);
+        return this.construct();
+    });
+
+    PrimitiveRule = this.DEFINE_RULE("PrimitiveRule", PrimitiveRule, () => {
+        this.initializeElement(this.grammarAccess.PrimitiveRule);
+        this.consume(1, PrimitiveKeyword, this.grammarAccess.PrimitiveRule.PrimitiveKeyword);
+        this.consume(2, ID, this.grammarAccess.PrimitiveRule.nameIDRuleCall);
+        this.option(1, () => {
+            this.consume(3, ReturnsKeyword, this.grammarAccess.PrimitiveRule.ReturnsKeyword);
+            this.consume(4, ID, this.grammarAccess.PrimitiveRule.typeIDRuleCall);
+        });
+        this.consume(5, ColonKeyword, this.grammarAccess.PrimitiveRule.ColonKeyword);
+        this.subrule(1, this.Alternatives, this.grammarAccess.PrimitiveRule.alternativesAlternativesRuleCall);
+        this.consume(6, SemicolonKeyword, this.grammarAccess.PrimitiveRule.SemicolonKeyword);
         return this.construct();
     });
 
@@ -782,41 +796,6 @@ export class Parser extends LangiumParser {
         this.option(1, () => {
             this.consume(1, DotDotKeyword, this.grammarAccess.CharacterRange.DotDotKeyword);
             this.subrule(2, this.Keyword, this.grammarAccess.CharacterRange.rightKeywordRuleCall);
-        });
-        return this.construct();
-    });
-
-    EnumRule = this.DEFINE_RULE("EnumRule", EnumRule, () => {
-        this.initializeElement(this.grammarAccess.EnumRule);
-        this.consume(1, EnumKeyword, this.grammarAccess.EnumRule.EnumKeyword);
-        this.consume(2, ID, this.grammarAccess.EnumRule.nameIDRuleCall);
-        this.option(1, () => {
-            this.consume(3, ReturnsKeyword, this.grammarAccess.EnumRule.ReturnsKeyword);
-            this.consume(4, ID, this.grammarAccess.EnumRule.typeIDRuleCall);
-        });
-        this.consume(5, ColonKeyword, this.grammarAccess.EnumRule.ColonKeyword);
-        this.subrule(1, this.EnumLiterals, this.grammarAccess.EnumRule.alternativesEnumLiteralsRuleCall);
-        this.consume(6, SemicolonKeyword, this.grammarAccess.EnumRule.SemicolonKeyword);
-        return this.construct();
-    });
-
-    EnumLiterals = this.DEFINE_RULE("EnumLiterals", EnumLiterals, () => {
-        this.initializeElement(this.grammarAccess.EnumLiterals);
-        this.unassignedSubrule(1, this.EnumLiteralDeclaration, this.grammarAccess.EnumLiterals.EnumLiteralDeclarationRuleCall);
-        this.many(1, () => {
-            this.action(EnumLiterals, this.grammarAccess.EnumLiterals.EnumLiteralselementsAction);
-            this.consume(1, PipeKeyword, this.grammarAccess.EnumLiterals.PipeKeyword);
-            this.subrule(2, this.EnumLiteralDeclaration, this.grammarAccess.EnumLiterals.elementsEnumLiteralDeclarationRuleCall);
-        });
-        return this.construct();
-    });
-
-    EnumLiteralDeclaration = this.DEFINE_RULE("EnumLiteralDeclaration", EnumLiteralDeclaration, () => {
-        this.initializeElement(this.grammarAccess.EnumLiteralDeclaration);
-        this.consume(1, ID, this.grammarAccess.EnumLiteralDeclaration.enumLiteralIDRuleCall);
-        this.option(1, () => {
-            this.consume(2, EqualsKeyword, this.grammarAccess.EnumLiteralDeclaration.EqualsKeyword);
-            this.subrule(1, this.Keyword, this.grammarAccess.EnumLiteralDeclaration.literalKeywordRuleCall);
         });
         return this.construct();
     });

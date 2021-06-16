@@ -30,7 +30,7 @@ export type GrammarRuleAccess = {
 export type AbstractRuleRuleAccess = {
     ParserRuleRuleCall: RuleCall;
     TerminalRuleRuleCall: RuleCall;
-    EnumRuleRuleCall: RuleCall;
+    PrimitiveRuleRuleCall: RuleCall;
 }
 
 export type AbstractMetamodelDeclarationRuleAccess = {
@@ -80,6 +80,19 @@ export type ParserRuleRuleAccess = {
     hiddenTokensAbstractRuleCrossReference: CrossReference;
     CommaKeyword: Keyword;
     ParenthesisCloseKeyword: Keyword;
+    ColonKeyword: Keyword;
+    alternatives: Assignment;
+    alternativesAlternativesRuleCall: RuleCall;
+    SemicolonKeyword: Keyword;
+}
+
+export type PrimitiveRuleRuleAccess = {
+    PrimitiveKeyword: Keyword;
+    name: Assignment;
+    nameIDRuleCall: RuleCall;
+    ReturnsKeyword: Keyword;
+    type: Assignment;
+    typeIDRuleCall: RuleCall;
     ColonKeyword: Keyword;
     alternatives: Assignment;
     alternativesAlternativesRuleCall: RuleCall;
@@ -411,35 +424,6 @@ export type CharacterRangeRuleAccess = {
     rightKeywordRuleCall: RuleCall;
 }
 
-export type EnumRuleRuleAccess = {
-    EnumKeyword: Keyword;
-    name: Assignment;
-    nameIDRuleCall: RuleCall;
-    ReturnsKeyword: Keyword;
-    type: Assignment;
-    typeIDRuleCall: RuleCall;
-    ColonKeyword: Keyword;
-    alternatives: Assignment;
-    alternativesEnumLiteralsRuleCall: RuleCall;
-    SemicolonKeyword: Keyword;
-}
-
-export type EnumLiteralsRuleAccess = {
-    EnumLiteralDeclarationRuleCall: RuleCall;
-    EnumLiteralselementsAction: Action;
-    PipeKeyword: Keyword;
-    elements: Assignment;
-    elementsEnumLiteralDeclarationRuleCall: RuleCall;
-}
-
-export type EnumLiteralDeclarationRuleAccess = {
-    enumLiteral: Assignment;
-    enumLiteralIDRuleCall: RuleCall;
-    EqualsKeyword: Keyword;
-    literal: Assignment;
-    literalKeywordRuleCall: RuleCall;
-}
-
 export class LangiumGrammarGrammarAccess extends GrammarAccess {
     Grammar = this.buildAccess<GrammarRuleAccess>('Grammar');
     AbstractRule = this.buildAccess<AbstractRuleRuleAccess>('AbstractRule');
@@ -448,6 +432,7 @@ export class LangiumGrammarGrammarAccess extends GrammarAccess {
     ReferencedMetamodel = this.buildAccess<ReferencedMetamodelRuleAccess>('ReferencedMetamodel');
     Annotation = this.buildAccess<AnnotationRuleAccess>('Annotation');
     ParserRule = this.buildAccess<ParserRuleRuleAccess>('ParserRule');
+    PrimitiveRule = this.buildAccess<PrimitiveRuleRuleAccess>('PrimitiveRule');
     RuleNameAndParams = this.buildAccess<RuleNameAndParamsRuleAccess>('RuleNameAndParams');
     Parameter = this.buildAccess<ParameterRuleAccess>('Parameter');
     Alternatives = this.buildAccess<AlternativesRuleAccess>('Alternatives');
@@ -489,9 +474,6 @@ export class LangiumGrammarGrammarAccess extends GrammarAccess {
     UntilToken = this.buildAccess<UntilTokenRuleAccess>('UntilToken');
     Wildcard = this.buildAccess<WildcardRuleAccess>('Wildcard');
     CharacterRange = this.buildAccess<CharacterRangeRuleAccess>('CharacterRange');
-    EnumRule = this.buildAccess<EnumRuleRuleAccess>('EnumRule');
-    EnumLiterals = this.buildAccess<EnumLiteralsRuleAccess>('EnumLiterals');
-    EnumLiteralDeclaration = this.buildAccess<EnumLiteralDeclarationRuleAccess>('EnumLiteralDeclaration');
 
     constructor() {
         super(path.join(__dirname, 'grammar.json'));
