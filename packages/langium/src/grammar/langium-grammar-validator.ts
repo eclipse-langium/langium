@@ -67,7 +67,7 @@ export class LangiumGrammarValidator {
                 ruleMap.set(lowerCaseName, [rule]);
             }
         }
-        for (const rules of Array.from(ruleMap.values())) {
+        for (const rules of ruleMap.values()) {
             if (rules.length > 1) {
                 rules.forEach(e => {
                     accept('error', message, { node: e, property: 'name' });

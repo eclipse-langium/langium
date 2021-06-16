@@ -2,8 +2,7 @@
 	"extends": "../../tsconfig.json",
 	"compilerOptions": {
 	  "rootDir": "src",
-	  "outDir": "app",
-	  "target": "es6"
+	  "outDir": "app"
 	},
 	"include": [
 	  "src/**/*"

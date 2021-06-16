@@ -199,7 +199,7 @@ export class TypeCollector {
         const names = new Set<string>(alternatives.map(e => e.name));
         const types: TypeAlternative[] = [];
 
-        for (const name of Array.from(names)) {
+        for (const name of names) {
             const fields: Field[] = [];
             const ruleCalls = new Set<string>();
             const type = { name, fields, ruleCalls: <string[]>[], super: <string[]>[], hasAction: false };

@@ -56,7 +56,7 @@ export class DefaultDocumentSymbolProvider implements DocumentSymbolProvider {
     protected getChildSymbols(document: LangiumDocument, astNode: AstNode): DocumentSymbol[] {
         const children: DocumentSymbol[] = [];
 
-        for (const child of Array.from(streamContents(astNode))) {
+        for (const child of streamContents(astNode)) {
             const result = this.getSymbol(document, child.node);
             children.push(...result);
         }

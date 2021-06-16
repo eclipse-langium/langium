@@ -50,7 +50,7 @@ function generateBootstrapRuleAccess(rule: langium.ParserRule): GeneratorNode {
     node.children.push(': ', rule.name, 'RuleAccess = <', rule.name, 'RuleAccess><unknown>{', NL);
     const indent = new IndentNode();
     node.children.push(indent);
-    for (const [name, feature] of Array.from(byName.entries())) {
+    for (const [name, feature] of byName.entries()) {
         indent.children.push(name, ': ', generateFeature(feature.feature), NL);
     }
 
@@ -109,7 +109,7 @@ function generateRuleAccess(rule: langium.ParserRule): CompositeGeneratorNode {
     node.children.push('export type ', rule.name + 'RuleAccess = {', NL);
 
     const indent = new IndentNode();
-    for (const [name, {kind}] of Array.from(byName.entries())) {
+    for (const [name, {kind}] of byName.entries()) {
         indent.children.push(name, ': ', kind, ';', NL);
     }
 

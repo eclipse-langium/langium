@@ -47,11 +47,11 @@ export function findAllFeatures(rule: ast.ParserRule): { byName: Map<string, Fea
     const featureMap = new Map<ast.AbstractElement, string>();
     putFeature(rule.alternatives, undefined, map, featureMap);
     const newMap = new Map<string, FeatureValue>();
-    for (const [key, value] of Array.from(map.entries())) {
+    for (const [key, value] of map.entries()) {
         newMap.set(key.replace(/\^/g, ''), value);
     }
     const newFeatureMap = new Map<ast.AbstractElement, string>();
-    for (const [key, value] of Array.from(featureMap.entries())) {
+    for (const [key, value] of featureMap.entries()) {
         newFeatureMap.set(key, value.replace(/\^/g, ''));
     }
     return { byName: newMap, byFeature: newFeatureMap };
