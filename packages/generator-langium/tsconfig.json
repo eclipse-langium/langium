@@ -1,0 +1,15 @@
+{
+	"extends": "../../tsconfig.json",
+	"compilerOptions": {
+	  "rootDir": "src",
+	  "outDir": "app",
+	  "target": "es6"
+	},
+	"include": [
+	  "src/**/*"
+	],
+	"exclude": [
+	  "app",
+	  "/node_modules"
+	]
+  }
