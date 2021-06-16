@@ -1,11 +1,8 @@
-/**********************************************************************************
- * Copyright (c) 2021 TypeFox
- *
- * This program and the accompanying materials are made available under the terms
- * of the MIT License, which is available at https://opensource.org/licenses/MIT.
- *
- * SPDX-License-Identifier: MIT
- **********************************************************************************/
+/******************************************************************************
+ * Copyright 2021 TypeFox GmbH
+ * This program and the accompanying materials are made available under the
+ * terms of the MIT License, which is available in the project root.
+ ******************************************************************************/
 
 import * as langium from 'langium';
 import { getRuleType, getTypeName } from 'langium';
@@ -202,7 +199,7 @@ export class TypeCollector {
         const names = new Set<string>(alternatives.map(e => e.name));
         const types: TypeAlternative[] = [];
 
-        for (const name of Array.from(names)) {
+        for (const name of names) {
             const fields: Field[] = [];
             const ruleCalls = new Set<string>();
             const type = { name, fields, ruleCalls: <string[]>[], super: <string[]>[], hasAction: false };

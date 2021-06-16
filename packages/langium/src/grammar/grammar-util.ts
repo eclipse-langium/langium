@@ -1,3 +1,9 @@
+/******************************************************************************
+ * Copyright 2021 TypeFox GmbH
+ * This program and the accompanying materials are made available under the
+ * terms of the MIT License, which is available in the project root.
+ ******************************************************************************/
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { LangiumDocumentConfiguration } from '../documents/document';
 import * as ast from '../grammar/generated/ast';
@@ -41,11 +47,11 @@ export function findAllFeatures(rule: ast.ParserRule): { byName: Map<string, Fea
     const featureMap = new Map<ast.AbstractElement, string>();
     putFeature(rule.alternatives, undefined, map, featureMap);
     const newMap = new Map<string, FeatureValue>();
-    for (const [key, value] of Array.from(map.entries())) {
+    for (const [key, value] of map.entries()) {
         newMap.set(key.replace(/\^/g, ''), value);
     }
     const newFeatureMap = new Map<ast.AbstractElement, string>();
-    for (const [key, value] of Array.from(featureMap.entries())) {
+    for (const [key, value] of featureMap.entries()) {
         newFeatureMap.set(key, value.replace(/\^/g, ''));
     }
     return { byName: newMap, byFeature: newFeatureMap };

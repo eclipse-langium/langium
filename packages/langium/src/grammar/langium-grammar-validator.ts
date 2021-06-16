@@ -1,3 +1,9 @@
+/******************************************************************************
+ * Copyright 2021 TypeFox GmbH
+ * This program and the accompanying materials are made available under the
+ * terms of the MIT License, which is available in the project root.
+ ******************************************************************************/
+
 import { AbstractRule, EnumRule, Grammar, isParserRule, isTerminalRule, Keyword, LangiumGrammarAstType, ParserRule, UnorderedGroup } from './generated/ast';
 import { ValidationAcceptor, ValidationCheck, ValidationRegistry } from '../service/validation/validation-registry';
 import { LangiumGrammarServices } from './langium-grammar-module';
@@ -61,7 +67,7 @@ export class LangiumGrammarValidator {
                 ruleMap.set(lowerCaseName, [rule]);
             }
         }
-        for (const rules of Array.from(ruleMap.values())) {
+        for (const rules of ruleMap.values()) {
             if (rules.length > 1) {
                 rules.forEach(e => {
                     accept('error', message, { node: e, property: 'name' });

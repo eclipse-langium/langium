@@ -1,11 +1,8 @@
-/**********************************************************************************
- * Copyright (c) 2021 TypeFox
- *
- * This program and the accompanying materials are made available under the terms
- * of the MIT License, which is available at https://opensource.org/licenses/MIT.
- *
- * SPDX-License-Identifier: MIT
- **********************************************************************************/
+/******************************************************************************
+ * Copyright 2021 TypeFox GmbH
+ * This program and the accompanying materials are made available under the
+ * terms of the MIT License, which is available in the project root.
+ ******************************************************************************/
 
 import { GeneratorNode, Grammar, IndentNode, CompositeGeneratorNode, NL, process } from 'langium';
 import { LangiumConfig } from '../package';
@@ -112,7 +109,7 @@ function buildIsSubtypeMethod(interfaces: Interface[]): GeneratorNode {
     const switchNode = new IndentNode();
     const groups = groupBySupertypes(interfaces.filter(e => e.superTypes.length > 0));
 
-    for (const [superTypes, typeGroup] of Array.from(groups.entries())) {
+    for (const [superTypes, typeGroup] of groups.entries()) {
         for (const typeItem of typeGroup) {
             switchNode.children.push(`case ${typeItem.name}:`, NL);
         }

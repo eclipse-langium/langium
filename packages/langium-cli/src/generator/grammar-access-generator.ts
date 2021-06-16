@@ -1,11 +1,8 @@
-/**********************************************************************************
- * Copyright (c) 2021 TypeFox
- *
- * This program and the accompanying materials are made available under the terms
- * of the MIT License, which is available at https://opensource.org/licenses/MIT.
- *
- * SPDX-License-Identifier: MIT
- **********************************************************************************/
+/******************************************************************************
+ * Copyright 2021 TypeFox GmbH
+ * This program and the accompanying materials are made available under the
+ * terms of the MIT License, which is available in the project root.
+ ******************************************************************************/
 
 import * as langium from 'langium';
 import { CompositeGeneratorNode, GeneratorNode, IndentNode, NL, process, findAllFeatures, getContainerOfType } from 'langium';
@@ -53,7 +50,7 @@ function generateBootstrapRuleAccess(rule: langium.ParserRule): GeneratorNode {
     node.children.push(': ', rule.name, 'RuleAccess = <', rule.name, 'RuleAccess><unknown>{', NL);
     const indent = new IndentNode();
     node.children.push(indent);
-    for (const [name, feature] of Array.from(byName.entries())) {
+    for (const [name, feature] of byName.entries()) {
         indent.children.push(name, ': ', generateFeature(feature.feature), NL);
     }
 
@@ -112,7 +109,7 @@ function generateRuleAccess(rule: langium.ParserRule): CompositeGeneratorNode {
     node.children.push('export type ', rule.name + 'RuleAccess = {', NL);
 
     const indent = new IndentNode();
-    for (const [name, {kind}] of Array.from(byName.entries())) {
+    for (const [name, {kind}] of byName.entries()) {
         indent.children.push(name, ': ', kind, ';', NL);
     }
 

@@ -6,8 +6,8 @@
 
 import { Range } from 'vscode-languageserver';
 import { LangiumDocument } from '../documents/document';
-import { CompositeCstNodeImpl, LeafCstNodeImpl } from '../parser/cst-node-builder';
 import { CstNode, LeafCstNode } from '../syntax-tree';
+import { CompositeCstNodeImpl, LeafCstNodeImpl } from '../parser/cst-node-builder';
 
 export function flatten(node: CstNode): LeafCstNode[] {
     if (node instanceof LeafCstNodeImpl) {

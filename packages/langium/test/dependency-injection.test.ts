@@ -1,3 +1,9 @@
+/******************************************************************************
+ * Copyright 2021 TypeFox GmbH
+ * This program and the accompanying materials are made available under the
+ * terms of the MIT License, which is available in the project root.
+ ******************************************************************************/
+
 /* eslint-disable @typescript-eslint/no-empty-function */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
@@ -298,13 +304,13 @@ describe('The inject result', () => {
         expect(res).toEqual(['a', 'b']);
     });
 
-    test('should have no effect when used with for..of', () => {
+    test('should throw error when used with for..of', () => {
         const obj = inject([() => 1, () => 'a']);
-        const res = [];
-        for (const elem of obj) {
-            res.push(elem);
-        }
-        expect(res).toEqual([]);
+        expect(() => {
+            for (const _ of obj) {
+                // We expect an error here
+            }
+        }).toThrowError();
     });
 
     test('should work with ..in.. for array', () => {
