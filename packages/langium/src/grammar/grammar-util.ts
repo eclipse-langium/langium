@@ -91,7 +91,7 @@ function putFeature(element: ast.AbstractElement, previous: string | undefined, 
 }
 
 export function replaceTokens(input: string): string {
-    let result = input.substring(1, input.length - 1);
+    let result = input;
     result = result.replace(/:/g, 'Colon');
     result = result.replace(/\./g, 'Dot');
     result = result.replace(/\//g, 'Slash');

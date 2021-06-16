@@ -126,7 +126,7 @@ export class TypeCollector {
         if (action.feature && action.operator) {
             if (this.lastRuleCall) {
                 this.currentAlternative.fields.push({
-                    name: this.clean(action.feature),
+                    name: action.feature,
                     array: action.operator === '+=',
                     optional: false,
                     reference: false,
@@ -142,7 +142,7 @@ export class TypeCollector {
         const typeItems: TypeCollection = { types: [], reference: false };
         this.findTypes(assignment.terminal, typeItems);
         this.currentAlternative.fields.push({
-            name: this.clean(assignment.feature),
+            name: assignment.feature,
             array: assignment.operator === '+=',
             optional: isOptional(assignment.cardinality) || this.isOptional(),
             types: assignment.operator === '?=' ? ['boolean'] : typeItems.types,
@@ -183,7 +183,7 @@ export class TypeCollector {
         if (langium.isAlternatives(terminal) || langium.isUnorderedGroup(terminal) || langium.isGroup(terminal)) {
             this.findInCollection(terminal, types);
         } else if (langium.isKeyword(terminal)) {
-            types.types.push(terminal.value);
+            types.types.push(`'${terminal.value}'`);
         } else if (langium.isRuleCall(terminal)) {
             types.types.push(getRuleType(terminal.rule.ref));
         } else if (langium.isCrossReference(terminal)) {
@@ -322,14 +322,6 @@ export class TypeCollector {
                     }
                 }
             }
-        }
-    }
-
-    private clean(value: string): string {
-        if (value.startsWith('^')) {
-            return value.substring(1);
-        } else {
-            return value;
         }
     }
 }
