@@ -1,3 +1,9 @@
+/******************************************************************************
+ * Copyright 2021 TypeFox GmbH
+ * This program and the accompanying materials are made available under the
+ * terms of the MIT License, which is available in the project root.
+ ******************************************************************************/
+
 import { IToken, TokenType } from 'chevrotain';
 import { AbstractElement } from '../grammar/generated/ast';
 import { AstNode, CompositeCstNode, CstNode, LeafCstNode } from '../syntax-tree';

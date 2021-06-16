@@ -53,7 +53,7 @@ class LangiumGenerator extends Generator {
                     'File extensions of your language, separated by commas:',
                 default: FILE_EXTENSION,
                 validate: (input: string): boolean | string =>
-                    /^\.?[a-z]+(\s*\,\s*\.?[a-z]+)*$/.test(input)
+                    /^\.?[a-z]+(\s*,\s*\.?[a-z]+)*$/.test(input)
                         ? true
                         : 'The file extension can start with . and must contain only lowercase letters. Extensions must be separated by commas.',
             },
@@ -66,7 +66,7 @@ class LangiumGenerator extends Generator {
             [
                 ...new Set(
                     this.answers.fileExtensions
-                        .split(/\s*\,\s*/)
+                        .split(/\s*,\s*/)
                         .map(
                             (fileExtension: string) =>
                                 '".' +
