@@ -106,13 +106,13 @@ export class DefaultCompletionProvider {
         if (assignment && parserRule) {
             const scope = this.scopeProvider.getScope(context, `${parserRule.name}:${assignment.feature}`);
             scope.getAllElements().forEach(e => {
-                acceptor(e, { kind: CompletionItemKind.Reference, detail: e.type });
+                acceptor(e, { kind: CompletionItemKind.Reference, detail: e.type, sortText: '0' });
             });
         }
     }
 
     protected forKeyword(keyword: ast.Keyword, context: AstNode | undefined, acceptor: CompletionAcceptor): void {
-        acceptor(keyword.value.substring(1, keyword.value.length - 1), { kind: CompletionItemKind.Keyword, detail: 'Keyword' });
+        acceptor(keyword.value.substring(1, keyword.value.length - 1), { kind: CompletionItemKind.Keyword, detail: 'Keyword', sortText: /\w/.test(keyword.value) ? '1' : '2' });
     }
 
     protected findCommonSuperRule(node: CstNode): { rule: ast.ParserRule, node: CstNode } | undefined {
@@ -159,12 +159,12 @@ export class DefaultCompletionProvider {
         const content = document.getText();
         for (let i = completion.length; i > 0; i--) {
             const contentSub = content.substring(offset - i, offset);
-            if (completion.startsWith(contentSub) && (i === 0 || !content.charAt(offset - i - 1).match(/\w/))) {
+            if (completion.startsWith(contentSub) && (i === 0 || !this.isWordCharacterAt(content, offset - i - 1))) {
                 negativeOffset = i;
                 break;
             }
         }
-        if (negativeOffset > 0 || offset === 0 || !content.charAt(offset - 1).match(/\w/) || !content.charAt(offset).match(/\w/)) {
+        if (negativeOffset > 0 || offset === 0 || !this.isWordCharacterAt(content, offset - 1) || !this.isWordCharacterAt(content, offset)) {
             const start = document.positionAt(offset - negativeOffset);
             const end = document.positionAt(offset);
             return {
@@ -177,5 +177,9 @@ export class DefaultCompletionProvider {
         } else {
             return undefined;
         }
+    }
+
+    protected isWordCharacterAt(content: string, index: number): boolean {
+        return /\w/.test(content.charAt(index - 1));
     }
 }
