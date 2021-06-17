@@ -7,8 +7,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { LangiumDocumentConfiguration } from '../documents/document';
 import * as ast from '../grammar/generated/ast';
-import { CompositeCstNodeImpl, LeafCstNodeImpl } from '../parser/cst-node-builder';
-import { AstNode, CstNode, LeafCstNode } from '../syntax-tree';
+import { CompositeCstNodeImpl } from '../parser/cst-node-builder';
+import { AstNode, CstNode } from '../syntax-tree';
 import { getContainerOfType, Mutable } from '../utils/ast-util';
 import { createLangiumGrammarServices } from './langium-grammar-module';
 
@@ -113,21 +113,6 @@ export function replaceTokens(input: string): string {
     result = result.replace(/@/g, 'At');
     result = result[0].toUpperCase() + result.substring(1);
     return result;
-}
-
-export function findLeafNodeAtOffset(node: CstNode, offset: number): LeafCstNode | undefined {
-    if (node instanceof LeafCstNodeImpl) {
-        return node;
-    } else if (node instanceof CompositeCstNodeImpl) {
-        const children = node.children.filter(e => e.offset < offset).reverse();
-        for (const child of children) {
-            const result = findLeafNodeAtOffset(child, offset);
-            if (result) {
-                return result;
-            }
-        }
-    }
-    return undefined;
 }
 
 export function findNodeForFeature(node: CstNode | undefined, feature: string | undefined, index?: number): CstNode | undefined {

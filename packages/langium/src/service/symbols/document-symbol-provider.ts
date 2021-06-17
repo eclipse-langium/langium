@@ -1,9 +1,8 @@
 import { DocumentSymbol, SymbolKind } from 'vscode-languageserver';
 import { LangiumDocument } from '../../documents/document';
-import { findNodeForFeature } from '../../grammar/grammar-util';
 import { NameProvider } from '../../references/naming';
 import { LangiumServices } from '../../services';
-import { AstNode, CstNode } from '../../syntax-tree';
+import { AstNode } from '../../syntax-tree';
 import { streamContents } from '../../utils/ast-util';
 
 export interface DocumentSymbolProvider {
@@ -28,7 +27,7 @@ export class DefaultDocumentSymbolProvider implements DocumentSymbolProvider {
 
     protected getSymbol(document: LangiumDocument, astNode: AstNode): DocumentSymbol[] {
         const node = astNode.$cstNode;
-        const nameNode = this.getSignificantFeature(astNode);
+        const nameNode = this.nameProvider.getNameNode(astNode);
         if (nameNode && node) {
             const name = this.nameProvider.getName(astNode);
             return [{
@@ -47,10 +46,6 @@ export class DefaultDocumentSymbolProvider implements DocumentSymbolProvider {
         } else {
             return this.getChildSymbols(document, astNode);
         }
-    }
-
-    protected getSignificantFeature(astNode: AstNode): CstNode | undefined {
-        return findNodeForFeature(astNode.$cstNode, 'name');
     }
 
     protected getChildSymbols(document: LangiumDocument, astNode: AstNode): DocumentSymbol[] {

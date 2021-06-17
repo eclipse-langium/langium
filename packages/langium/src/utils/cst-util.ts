@@ -4,6 +4,8 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import { Range } from 'vscode-languageserver';
+import { LangiumDocument } from '../documents/document';
 import { CstNode, LeafCstNode } from '../syntax-tree';
 import { CompositeCstNodeImpl, LeafCstNodeImpl } from '../parser/cst-node-builder';
 
@@ -15,4 +17,11 @@ export function flatten(node: CstNode): LeafCstNode[] {
     } else {
         return [];
     }
+}
+
+export function toRange(node: CstNode, document: LangiumDocument): Range {
+    return {
+        start: document.positionAt(node.offset),
+        end: document.positionAt(node.offset + node.length)
+    };
 }

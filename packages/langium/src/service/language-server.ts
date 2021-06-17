@@ -5,7 +5,8 @@
  ******************************************************************************/
 
 import {
-    InitializeParams, CompletionList, TextDocumentPositionParams, TextDocumentSyncKind, InitializeResult, Connection, DocumentSymbolParams, DocumentSymbol
+    InitializeParams, TextDocumentPositionParams, TextDocumentSyncKind, InitializeResult, Connection, CompletionList,
+    ReferenceParams, Location, DocumentSymbolParams, DocumentSymbol
 } from 'vscode-languageserver/node';
 
 import { LangiumDocument } from '../documents/document';
@@ -26,6 +27,7 @@ export function startLanguageServer(services: LangiumServices): void {
                 textDocumentSync: TextDocumentSyncKind.Incremental,
                 // Tell the client that this server supports code completion.
                 completionProvider: {},
+                referencesProvider: {}, // TODO enable workDoneProgress?
                 documentSymbolProvider: {}
             }
         };
@@ -46,6 +48,7 @@ export function startLanguageServer(services: LangiumServices): void {
     });
 
     addCompletionHandler(connection, services);
+    addFindReferencesHandler(connection, services);
     addDocumentSymbolHandler(connection, services);
 
     // Make the text document manager listen on the connection for open, change and close text document events.
@@ -78,6 +81,19 @@ export function addCompletionHandler(connection: Connection, services: LangiumSe
             }
         }
     );
+}
+
+export function addFindReferencesHandler(connection: Connection, services: LangiumServices): void {
+    const referenceFinder = services.references.ReferenceFinder;
+    connection.onReferences((params: ReferenceParams): Location[] => {
+        const uri = params.textDocument.uri;
+        const document = services.documents.TextDocuments.get(uri);
+        if (document) {
+            return referenceFinder.findReferenceLocations(document, params.position, params.context.includeDeclaration);
+        } else {
+            return [];
+        }
+    });
 }
 
 export function addDocumentSymbolHandler(connection: Connection, services: LangiumServices): void {

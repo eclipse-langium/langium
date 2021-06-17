@@ -8,12 +8,11 @@ import { CompletionItem, CompletionItemKind, CompletionList } from 'vscode-langu
 import { TextDocument, TextEdit } from 'vscode-languageserver-textdocument';
 import * as ast from '../../grammar/generated/ast';
 import { GrammarAccess } from '../../grammar/grammar-access';
-import { findLeafNodeAtOffset } from '../../grammar/grammar-util';
 import { isNamed } from '../../references/naming';
 import { AstNodeDescription, ScopeProvider } from '../../references/scope';
 import { LangiumServices } from '../../services';
 import { AstNode, CstNode } from '../../syntax-tree';
-import { getContainerOfType, isAstNode } from '../../utils/ast-util';
+import { getContainerOfType, isAstNode, findLeafNodeAtOffset } from '../../utils/ast-util';
 import { flatten } from '../../utils/cst-util';
 import { findFirstFeatures, findNextFeatures } from './follow-element-computation';
 import { RuleInterpreter } from './rule-interpreter';

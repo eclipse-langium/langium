@@ -18,6 +18,7 @@ import { DefaultJsonSerializer } from './serializer/json-serializer';
 import { DefaultDocumentSymbolProvider } from './service/symbols/document-symbol-provider';
 import { DefaultCompletionProvider } from './service/completion/completion-provider';
 import { RuleInterpreter } from './service/completion/rule-interpreter';
+import { DefaultReferenceFinder } from './references/reference-finder';
 
 export type DefaultModuleContext = {
     connection?: Connection
@@ -46,7 +47,8 @@ export function createDefaultModule(context: DefaultModuleContext = {}): Module<
             Linker: (injector) => new DefaultLinker(injector),
             NameProvider: () => new DefaultNameProvider(),
             ScopeProvider: (injector) => new DefaultScopeProvider(injector),
-            ScopeComputation: (injector) => new DefaultScopeComputation(injector)
+            ScopeComputation: (injector) => new DefaultScopeComputation(injector),
+            ReferenceFinder:  (services) => new DefaultReferenceFinder(services)
         },
         completion: {
             CompletionProvider: (injector) => new DefaultCompletionProvider(injector),
