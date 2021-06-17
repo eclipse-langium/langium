@@ -15,7 +15,7 @@ import { GrammarAccess } from '../grammar/grammar-access';
 import { Linker } from '../references/linker';
 import { LangiumServices } from '../services';
 import { getContainerOfType } from '../utils/ast-util';
-import { PrimitiveConverter } from '../converter/primitive-converter';
+import { ValueConverterRegistry } from './value-converter';
 
 type StackItem = {
     object: any,
@@ -51,7 +51,7 @@ export class LangiumParser {
     readonly grammarAccess: GrammarAccess;
 
     private readonly linker: Linker;
-    private readonly converter: PrimitiveConverter;
+    private readonly converter: ValueConverterRegistry;
     private readonly lexer: Lexer;
     private readonly nodeBuilder = new CstNodeBuilder();
     private readonly wrapper: ChevrotainWrapper;
@@ -66,7 +66,7 @@ export class LangiumParser {
         this.wrapper = new ChevrotainWrapper(tokens);
         this.grammarAccess = services.GrammarAccess;
         this.linker = services.references.Linker;
-        this.converter = services.converter.PrimitiveConverter;
+        this.converter = services.parser.ValueConverterRegistry;
         this.lexer = new Lexer(tokens);
     }
 

@@ -125,38 +125,32 @@ export class LangiumGrammarValidator {
 
     checkPrimitiveRuleCalls(rule: PrimitiveRule, accept: ValidationAcceptor): void {
         const iterator = streamAllContents(rule).iterator();
-        let result: IteratorResult<AstNodeContent>;
-        do {
-            result = iterator.next();
-            if (!result.done) {
-                const node = result.value.node;
-                if (isRuleCall(node) && isParserRule(node.rule.ref)) {
-                    accept('error', 'Primitive rules can only call other primitive rules or terminal rules', { node });
-                }
-                if (isAction(node)) {
-                    accept('error', 'Primitive rules cannot contain actions.', { node });
-                }
-                if (isAssignment(node)) {
-                    accept('error', 'Primitive rules cannot contain assignments.', { node });
-                    iterator.prune();
-                }
+        let next: IteratorResult<AstNodeContent>;
+        while (!(next = iterator.next()).done) {
+            const node = next.value.node;
+            if (isRuleCall(node) && isParserRule(node.rule.ref)) {
+                accept('error', 'Primitive rules can only call other primitive rules or terminal rules', { node });
             }
-        } while (!result.done);
+            if (isAction(node)) {
+                accept('error', 'Primitive rules cannot contain actions.', { node });
+            }
+            if (isAssignment(node)) {
+                accept('error', 'Primitive rules cannot contain assignments.', { node });
+                iterator.prune();
+            }
+        }
     }
 
     checkParserRuleDataType(rule: ParserRule, accept: ValidationAcceptor): void {
         let shouldBePrimitiveRule = true;
         const iterator = streamAllContents(rule).iterator();
-        let result: IteratorResult<AstNodeContent>;
-        do {
-            result = iterator.next();
-            if (!result.done) {
-                const node = result.value.node;
-                if (isRuleCall(node) && isParserRule(node.rule.ref) || isAction(node) || isAssignment(node)) {
-                    shouldBePrimitiveRule = false;
-                }
+        let next: IteratorResult<AstNodeContent>;
+        while (!(next = iterator.next()).done && shouldBePrimitiveRule) {
+            const node = next.value.node;
+            if (isRuleCall(node) && isParserRule(node.rule.ref) || isAction(node) || isAssignment(node)) {
+                shouldBePrimitiveRule = false;
             }
-        } while (!result.done && shouldBePrimitiveRule);
+        }
 
         if (shouldBePrimitiveRule) {
             accept('error', 'This parser rule does not create an object. Use a primitive rule or add an action to the start of the rule to force object instantiation.', { node: rule, property: 'name' });
@@ -172,11 +166,13 @@ export class LangiumGrammarValidator {
     checkRuleReturnType(rule: PrimitiveRule | TerminalRule, accept: ValidationAcceptor): void {
         if (rule.type && !isPrimitiveType(rule.type)) {
             const type = isPrimitiveRule(rule) ? 'Primitive' : 'Terminal';
-            accept('error', type + " rules can only return primitive types like 'string' or 'number'.", { node: rule, property: 'type' });
+            accept('error', type + " rules can only return primitive types like 'string', 'boolean', 'number' or 'date'.", { node: rule, property: 'type' });
         }
     }
 }
 
+const primitiveTypes = ['string', 'number', 'boolean', 'date'];
+
 function isPrimitiveType(type: string): boolean {
-    return ['string', 'number'].includes(type);
+    return primitiveTypes.includes(type);
 }

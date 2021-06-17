@@ -18,7 +18,7 @@ import { DefaultJsonSerializer } from './serializer/json-serializer';
 import { DefaultDocumentSymbolProvider } from './service/symbols/document-symbol-provider';
 import { DefaultCompletionProvider } from './service/completion/completion-provider';
 import { RuleInterpreter } from './service/completion/rule-interpreter';
-import { DefaultPrimitiveConverter } from './converter/primitive-converter';
+import { DefaultValueConverterRegistry } from './parser/value-converter';
 import { DefaultReferenceFinder } from './references/reference-finder';
 import { DefaultGoToResolverProvider } from './references/goto';
 import { DefaultDocumentHighlighter } from './references/document-highlighter';
@@ -39,8 +39,8 @@ export function createDefaultModule(context: DefaultModuleContext = {}): Module<
             throw new Error('Not implemented'); // TODO more helpful error message
         },
 
-        converter: {
-            PrimitiveConverter: () => new DefaultPrimitiveConverter()
+        parser: {
+            ValueConverterRegistry: () => new DefaultValueConverterRegistry()
         },
         documents: {
             DocumentBuilder: (injector) => new DefaultDocumentBuilder(injector),
