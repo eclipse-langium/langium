@@ -4,20 +4,18 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { Location } from 'vscode-languageserver';
 import { Position } from 'vscode-languageserver-textdocument';
 import { LangiumDocument } from '../documents/document';
 import { isAssignment } from '../grammar/generated/ast';
 import { LangiumServices } from '../services';
 import { CstNode, Reference } from '../syntax-tree';
 import { findLeafNodeAtOffset, getContainerOfType, isReference } from '../utils/ast-util';
-import { toRange } from '../utils/cst-util';
 import { NameProvider } from './naming';
 
 export interface GoToResolver {
-    goToDeclaration(document: LangiumDocument, position: Position): Location[]
+    goToDeclaration(document: LangiumDocument, position: Position): CstNode[]
 
-    findReference(cstNode: CstNode): CstNode | undefined
+    findReferenceTarget(cstNode: CstNode): CstNode | undefined
 }
 
 export class DefaultGoToResolverProvider implements GoToResolver {
@@ -28,24 +26,23 @@ export class DefaultGoToResolverProvider implements GoToResolver {
         this.nameProvider = services.references.NameProvider;
     }
 
-    goToDeclaration(document: LangiumDocument, position: Position): Location[] {
+    goToDeclaration(document: LangiumDocument, position: Position): CstNode[] {
         const rootNode = document.parseResult?.value;
-        const locations: Location[] = [];
+        const targetCstNodes: CstNode[] = [];
         if (rootNode && rootNode.$cstNode) {
             const cst = rootNode.$cstNode;
             const sourceCstNode = findLeafNodeAtOffset(cst, document.offsetAt(position));
             if (sourceCstNode) {
-                const targetNode = this.findReference(sourceCstNode);
+                const targetNode = this.findReferenceTarget(sourceCstNode);
                 if (targetNode) {
-                    locations.push(Location.create(document.uri, toRange(targetNode, document)));
+                    targetCstNodes.push(targetNode);
                 }
             }
         }
-        return locations;
+        return targetCstNodes;
     }
 
-    findReference(cstNode: CstNode): CstNode | undefined {
-        let targetNode = undefined;
+    findReferenceTarget(cstNode: CstNode): CstNode | undefined {
         if (cstNode) {
             const assignment = getContainerOfType(cstNode.feature, isAssignment);
             const nodeElem = cstNode.element as unknown as Record<string, Reference>;
@@ -54,15 +51,18 @@ export class DefaultGoToResolverProvider implements GoToResolver {
                 if (isReference(nodeElem[assignment.feature])) {
                     const ref = nodeElem[assignment.feature].ref;
                     if (ref && ref.$cstNode) {
-                        targetNode = this.nameProvider.getNameNode(ref);
+                        const targetNode = this.nameProvider.getNameNode(ref);
                         if (!targetNode) {
-                            targetNode = ref.$cstNode;
+                            return ref.$cstNode;
+                        }
+                        else {
+                            return targetNode;
                         }
                     }
                 }
             }
         }
-        return targetNode;
+        return undefined;
     }
 
 }

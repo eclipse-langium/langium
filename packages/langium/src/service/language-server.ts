@@ -11,6 +11,7 @@ import {
 
 import { LangiumDocument } from '../documents/document';
 import { LangiumServices } from '../services';
+import { toRange } from '../utils/cst-util';
 
 export function startLanguageServer(services: LangiumServices): void {
     const connection = services.languageServer.Connection;
@@ -121,7 +122,10 @@ export function addGotoDeclaration(connection: Connection, services: LangiumServ
             const document = services.documents.TextDocuments.get(uri);
             if (document) {
                 const goToResolver = services.references.GoToResolver;
-                return goToResolver.goToDeclaration(document, _textDocumentPosition.position);
+                const locations: Location[] = [];
+                const cstNodes = goToResolver.goToDeclaration(document, _textDocumentPosition.position);
+                cstNodes.forEach(cstNode => locations.push(Location.create(document.uri, toRange(cstNode, document))));
+                return locations;
             }
             else {
                 return [];
