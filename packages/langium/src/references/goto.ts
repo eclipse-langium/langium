@@ -15,7 +15,7 @@ import { NameProvider } from './naming';
 export interface GoToResolver {
     goToDeclaration(document: LangiumDocument, position: Position): CstNode[]
 
-    findReferenceTarget(cstNode: CstNode): CstNode | undefined
+    findDeclaration(cstNode: CstNode): CstNode | undefined
 }
 
 export class DefaultGoToResolverProvider implements GoToResolver {
@@ -33,7 +33,7 @@ export class DefaultGoToResolverProvider implements GoToResolver {
             const cst = rootNode.$cstNode;
             const sourceCstNode = findLeafNodeAtOffset(cst, document.offsetAt(position));
             if (sourceCstNode) {
-                const targetNode = this.findReferenceTarget(sourceCstNode);
+                const targetNode = this.findDeclaration(sourceCstNode);
                 if (targetNode) {
                     targetCstNodes.push(targetNode);
                 }
@@ -42,7 +42,7 @@ export class DefaultGoToResolverProvider implements GoToResolver {
         return targetCstNodes;
     }
 
-    findReferenceTarget(cstNode: CstNode): CstNode | undefined {
+    findDeclaration(cstNode: CstNode): CstNode | undefined {
         if (cstNode) {
             const assignment = getContainerOfType(cstNode.feature, isAssignment);
             const nodeElem = cstNode.element as unknown as Record<string, Reference>;
@@ -58,6 +58,12 @@ export class DefaultGoToResolverProvider implements GoToResolver {
                         else {
                             return targetNode;
                         }
+                    }
+                }
+                else {
+                    const nameNode = this.nameProvider.getNameNode(cstNode.element);
+                    if (nameNode === cstNode) {
+                        return cstNode;
                     }
                 }
             }

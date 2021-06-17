@@ -124,7 +124,7 @@ export function addGotoDeclaration(connection: Connection, services: LangiumServ
                 const goToResolver = services.references.GoToResolver;
                 const locations: Location[] = [];
                 const cstNodes = goToResolver.goToDeclaration(document, _textDocumentPosition.position);
-                cstNodes.forEach(cstNode => locations.push(Location.create(document.uri, toRange(cstNode, document))));
+                cstNodes.map(cstNode => locations.push(Location.create(document.uri, toRange(cstNode, document))));
                 return locations;
             }
             else {
