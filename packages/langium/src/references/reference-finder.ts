@@ -12,6 +12,7 @@ import { CstNode, AstNode } from '../syntax-tree';
 import { AstNodeContent, streamAllContents, streamReferences, findLeafNodeAtOffset, AstNodeReference } from '../utils/ast-util';
 import { flatten, toRange } from '../utils/cst-util';
 import { findNodeForFeature } from '../grammar/grammar-util';
+import { GoToResolver } from './goto';
 
 export interface ReferenceFinder {
     findReferences(document: LangiumDocument, position: Position, includeDeclaration: boolean): CstNode[];
@@ -20,9 +21,11 @@ export interface ReferenceFinder {
 
 export class DefaultReferenceFinder implements ReferenceFinder {
     protected readonly nameProvider: NameProvider;
+    protected readonly findDeclaration: GoToResolver;
 
     constructor(services: LangiumServices) {
         this.nameProvider = services.references.NameProvider;
+        this.findDeclaration = services.references.GoToResolver;
     }
 
     findReferences(document: LangiumDocument, position: Position, includeDeclaration: boolean): CstNode[] {
@@ -32,7 +35,11 @@ export class DefaultReferenceFinder implements ReferenceFinder {
         }
         const refs: CstNode[] = [];
         // TODO use findDeclaration for crossref nodes
-        const targetAstNode = findLeafNodeAtOffset(rootNode, document.offsetAt(position))?.element;
+        const selectedNode = findLeafNodeAtOffset(rootNode, document.offsetAt(position));
+        if(!selectedNode) {
+            return [];
+        }
+        const targetAstNode = this.findDeclaration.findDeclaration(selectedNode)?.element;
         if (targetAstNode) {
             const process = (node: AstNodeContent) => {
                 if (includeDeclaration && node.node === targetAstNode) {
