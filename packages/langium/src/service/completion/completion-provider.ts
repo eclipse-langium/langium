@@ -61,6 +61,9 @@ export class DefaultCompletionProvider {
                     features.push(...partialMatches);
                     features.push(...notMatchingFeatures.flatMap(e => findNextFeatures([e])));
                 }
+                if (node.length + node.offset > offset) {
+                    features.push(node.feature);
+                }
                 stream(features).distinct().forEach(e => this.buildContentAssistFor(node.element, e, acceptor));
             } else {
                 // The entry rule is the first parser rule
@@ -180,6 +183,6 @@ export class DefaultCompletionProvider {
     }
 
     protected isWordCharacterAt(content: string, index: number): boolean {
-        return /\w/.test(content.charAt(index - 1));
+        return /\w/.test(content.charAt(index));
     }
 }
