@@ -6,12 +6,11 @@
 
 import {
     InitializeParams, TextDocumentPositionParams, TextDocumentSyncKind, InitializeResult, Connection, CompletionList,
-    ReferenceParams, Location, DocumentSymbolParams, DocumentSymbol
+    ReferenceParams, Location, DocumentSymbolParams, DocumentSymbol, Range
 } from 'vscode-languageserver/node';
 
 import { LangiumDocument } from '../documents/document';
 import { LangiumServices } from '../services';
-import { toRange } from '../utils/cst-util';
 
 export function startLanguageServer(services: LangiumServices): void {
     const connection = services.languageServer.Connection;
@@ -124,7 +123,10 @@ export function addGotoDeclaration(connection: Connection, services: LangiumServ
                 const goToResolver = services.references.GoToResolver;
                 const locations: Location[] = [];
                 const cstNodes = goToResolver.goToDeclaration(document, _textDocumentPosition.position);
-                cstNodes.map(cstNode => locations.push(Location.create(document.uri, toRange(cstNode, document))));
+                cstNodes.map(cstNode => {
+                    const offset = document.positionAt(cstNode.offset);
+                    locations.push(Location.create(document.uri, Range.create(offset, offset)));
+                });
                 return locations;
             }
             else {
