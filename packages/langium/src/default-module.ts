@@ -18,7 +18,7 @@ import { DefaultJsonSerializer } from './serializer/json-serializer';
 import { DefaultDocumentSymbolProvider } from './service/symbols/document-symbol-provider';
 import { DefaultCompletionProvider } from './service/completion/completion-provider';
 import { RuleInterpreter } from './service/completion/rule-interpreter';
-import { DefaultValueConverterRegistry } from './parser/value-converter';
+import { DefaultValueConverter } from './parser/value-converter';
 import { DefaultReferenceFinder } from './references/reference-finder';
 import { DefaultGoToResolverProvider } from './references/goto';
 import { DefaultDocumentHighlighter } from './references/document-highlighter';
@@ -40,7 +40,7 @@ export function createDefaultModule(context: DefaultModuleContext = {}): Module<
         },
 
         parser: {
-            ValueConverterRegistry: () => new DefaultValueConverterRegistry()
+            ValueConverter: () => new DefaultValueConverter()
         },
         documents: {
             DocumentBuilder: (injector) => new DefaultDocumentBuilder(injector),

@@ -7,21 +7,13 @@
 import { isRuleCall } from '../grammar/generated/ast';
 import { CstNode } from '../syntax-tree';
 
-export interface ValueConverterRegistry {
+export interface ValueConverter {
     convert(input: string, cstNode: CstNode): unknown;
 }
 
 export type ValueType = string | number | boolean | Date;
-export type ValueConverter = (input: string, cstNode: CstNode) => ValueType;
 
-export class DefaultValueConverterRegistry implements ValueConverterRegistry {
-
-    protected converters = new Map<string, ValueConverter>();
-
-    constructor() {
-        this.convertFor('string', convertString);
-        this.convertFor('ID', convertID);
-    }
+export class DefaultValueConverter implements ValueConverter {
 
     convert(input: string, cstNode: CstNode): ValueType {
         if (isRuleCall(cstNode.feature)) {
@@ -35,16 +27,12 @@ export class DefaultValueConverterRegistry implements ValueConverterRegistry {
         }
     }
 
-    protected convertFor(ruleName: string, converter: ValueConverter): void {
-        this.converters.set(ruleName, converter);
-    }
-
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     protected runConverter(ruleName: string, input: string, cstNode: CstNode): ValueType {
-        const converter = this.converters.get(ruleName);
-        if (converter) {
-            return converter(input, cstNode);
-        } else {
-            return input;
+        switch (ruleName) {
+            case 'string': return convertString(input);
+            case 'ID': return convertID(input);
+            default: return input;
         }
     }
 }

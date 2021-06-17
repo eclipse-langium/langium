@@ -19,7 +19,7 @@ import { LangiumDocument } from './documents/document';
 import { DocumentSymbolProvider } from './service/symbols/document-symbol-provider';
 import { CompletionProvider } from './service/completion/completion-provider';
 import { RuleInterpreter } from './service/completion/rule-interpreter';
-import { ValueConverterRegistry } from './parser/value-converter';
+import { ValueConverter } from './parser/value-converter';
 import { ReferenceFinder } from './references/reference-finder';
 import { GoToResolver } from './references/goto';
 import { DocumentHighlighter } from './references/document-highlighter';
@@ -32,7 +32,7 @@ export type LangiumGeneratedServices = {
 
 export type LangiumServices = LangiumGeneratedServices & {
     parser: {
-        ValueConverterRegistry: ValueConverterRegistry
+        ValueConverter: ValueConverter
     }
     documents: {
         DocumentBuilder: DocumentBuilder,
