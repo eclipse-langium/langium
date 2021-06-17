@@ -11,6 +11,7 @@ import {
 
 import { LangiumDocument } from '../documents/document';
 import { LangiumServices } from '../services';
+import { toRange } from '../utils/cst-util';
 
 export function startLanguageServer(services: LangiumServices): void {
     const connection = services.languageServer.Connection;
@@ -28,7 +29,11 @@ export function startLanguageServer(services: LangiumServices): void {
                 // Tell the client that this server supports code completion.
                 completionProvider: {},
                 referencesProvider: {}, // TODO enable workDoneProgress?
-                documentSymbolProvider: {}
+                documentSymbolProvider: {},
+                // goto-declaration
+                declarationProvider: {},
+                // hoverProvider needs to be created for mouse-over events, etc.
+                hoverProvider: false
             }
         };
         if (hasWorkspaceFolderCapability) {
@@ -50,6 +55,7 @@ export function startLanguageServer(services: LangiumServices): void {
     addCompletionHandler(connection, services);
     addFindReferencesHandler(connection, services);
     addDocumentSymbolHandler(connection, services);
+    addGotoDeclaration(connection, services);
 
     // Make the text document manager listen on the connection for open, change and close text document events.
     documents.listen(connection);
@@ -107,4 +113,23 @@ export function addDocumentSymbolHandler(connection: Connection, services: Langi
             return [];
         }
     });
+}
+
+export function addGotoDeclaration(connection: Connection, services: LangiumServices): void {
+    connection.onDeclaration(
+        (_textDocumentPosition: TextDocumentPositionParams): Location[] => {
+            const uri = _textDocumentPosition.textDocument.uri;
+            const document = services.documents.TextDocuments.get(uri);
+            if (document) {
+                const goToResolver = services.references.GoToResolver;
+                const locations: Location[] = [];
+                const cstNodes = goToResolver.goToDeclaration(document, _textDocumentPosition.position);
+                cstNodes.map(cstNode => locations.push(Location.create(document.uri, toRange(cstNode, document))));
+                return locations;
+            }
+            else {
+                return [];
+            }
+        }
+    );
 }

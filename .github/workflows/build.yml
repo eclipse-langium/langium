@@ -19,3 +19,4 @@ jobs:
       run: |
         npm install
         npm test --workspace=langium --workspace=langium-cli
+        npm run lint --workspaces
