@@ -18,6 +18,7 @@ export interface Stream<T> extends ArrayLikeStream<T> {
     findType<T2 extends T>(predicate: (element: T) => element is T2): T2 | undefined
     head(): T | undefined
     concat(other: Stream<T>): Stream<T>
+    distinct<Key = T>(by?: (element: T) => Key): Stream<T>
 }
 
 export class StreamImpl<S, T> implements Stream<T> {
@@ -172,6 +173,19 @@ export class StreamImpl<S, T> implements Stream<T> {
             }
         );
     }
+
+    distinct<Key = T>(by?: (element: T) => Key): Stream<T> {
+        const set = new Set<T | Key>();
+        return this.filter(e => {
+            const value = by ? by(e) : e;
+            if (set.has(value)) {
+                return false;
+            } else {
+                set.add(value);
+                return true;
+            }
+        });
+    }
 }
 
 export class EmptyStream<T> implements Stream<T> {
@@ -227,6 +241,10 @@ export class EmptyStream<T> implements Stream<T> {
 
     concat(other: Stream<T>): Stream<T> {
         return other;
+    }
+
+    distinct(): Stream<T> {
+        return EMPTY_STREAM;
     }
 }
 

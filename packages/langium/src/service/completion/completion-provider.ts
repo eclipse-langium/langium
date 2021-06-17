@@ -14,6 +14,7 @@ import { LangiumServices } from '../../services';
 import { AstNode, CstNode } from '../../syntax-tree';
 import { getContainerOfType, isAstNode, findLeafNodeAtOffset } from '../../utils/ast-util';
 import { flatten } from '../../utils/cst-util';
+import { stream } from '../../utils/stream';
 import { findFirstFeatures, findNextFeatures } from './follow-element-computation';
 import { RuleInterpreter } from './rule-interpreter';
 
@@ -52,16 +53,15 @@ export class DefaultCompletionProvider {
                 const commonSuperRule = this.findCommonSuperRule(node);
                 // In some cases, it is possible that we do not have a super rule
                 if (commonSuperRule) {
-                    const flattened = flatten(commonSuperRule.node);
-                    const possibleFeatures = this.ruleInterpreter.interpretRule(commonSuperRule.rule, [...flattened]);
+                    const flattened = flatten(commonSuperRule.node).filter(e => e.offset < offset);
+                    const possibleFeatures = this.ruleInterpreter.interpretRule(commonSuperRule.rule, [...flattened], offset);
                     // Remove features which we already identified during parsing
-                    const filteredFeatures = possibleFeatures.filter(e => e !== node.feature);
-                    const partialMatches = filteredFeatures.filter(e => this.ruleInterpreter.featureMatches(e, flattened[flattened.length - 1]) === 'partial');
-                    const notMatchingFeatures = filteredFeatures.filter(e => !partialMatches.includes(e));
+                    const partialMatches = possibleFeatures.filter(e => this.ruleInterpreter.featureMatches(e, flattened[flattened.length - 1], offset) === 'partial');
+                    const notMatchingFeatures = possibleFeatures.filter(e => !partialMatches.includes(e));
                     features.push(...partialMatches);
                     features.push(...notMatchingFeatures.flatMap(e => findNextFeatures([e])));
                 }
-                features.forEach(e => this.buildContentAssistFor(node.element, e, acceptor));
+                stream(features).distinct().forEach(e => this.buildContentAssistFor(node.element, e, acceptor));
             } else {
                 // The entry rule is the first parser rule
                 // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -144,6 +144,9 @@ export class DefaultCompletionProvider {
             return undefined;
         }
         const textEdit = this.buildCompletionTextEdit(document, offset, label);
+        if (!textEdit) {
+            return undefined;
+        }
         const item: CompletionItem = { label, textEdit };
         if (info) {
             Object.assign(item, info);
@@ -151,24 +154,28 @@ export class DefaultCompletionProvider {
         return item;
     }
 
-    protected buildCompletionTextEdit(document: TextDocument, offset: number, completion: string): TextEdit {
+    protected buildCompletionTextEdit(document: TextDocument, offset: number, completion: string): TextEdit | undefined {
         let negativeOffset = 0;
         const content = document.getText();
         for (let i = completion.length; i > 0; i--) {
-            const contentSub = content.substring(content.length - i);
-            if (completion.startsWith(contentSub)) {
+            const contentSub = content.substring(offset - i, offset);
+            if (completion.startsWith(contentSub) && (i === 0 || !content.charAt(offset - i - 1).match(/\w/))) {
                 negativeOffset = i;
                 break;
             }
         }
-        const start = document.positionAt(offset - negativeOffset);
-        const end = document.positionAt(offset);
-        return {
-            newText: completion,
-            range: {
-                start,
-                end
-            }
-        };
+        if (negativeOffset > 0 || offset === 0 || !content.charAt(offset - 1).match(/\w/) || !content.charAt(offset).match(/\w/)) {
+            const start = document.positionAt(offset - negativeOffset);
+            const end = document.positionAt(offset);
+            return {
+                newText: completion,
+                range: {
+                    start,
+                    end
+                }
+            };
+        } else {
+            return undefined;
+        }
     }
 }

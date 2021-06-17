@@ -14,6 +14,10 @@ import { Cardinality, isArray, isOptional } from '../../grammar/grammar-util';
  * @returns Any `AbstractElement` that could be following the given feature stack.
  */
 export function findNextFeatures(featureStack: ast.AbstractElement[]): ast.AbstractElement[] {
+    return findNextFeaturesInternal(featureStack, new Map<ast.AbstractElement, Cardinality>());
+}
+
+export function findNextFeaturesInternal(featureStack: ast.AbstractElement[], cardinalities: Map<ast.AbstractElement, Cardinality>): ast.AbstractElement[] {
     if (featureStack.length === 0) {
         return [];
     }
@@ -32,28 +36,28 @@ export function findNextFeatures(featureStack: ast.AbstractElement[]): ast.Abstr
         }
     }
     // First try to iterate the same element again
-    if (isArray(item.cardinality)) {
-        features.push(...findFirstFeatures(item));
+    if (isArray(item.cardinality ?? cardinalities.get(item))) {
+        features.push(...findFirstFeatures(item, cardinalities));
     }
     if (parent) {
         const ownIndex = parent.elements.indexOf(item);
         // Find next elements of the same group
         if (ownIndex !== undefined && ownIndex < parent.elements.length - 1) {
-            features.push(...findNextFeaturesInGroup(parent, ownIndex + 1));
+            features.push(...findNextFeaturesInGroup(parent, ownIndex + 1, cardinalities));
         }
-        if (features.every(e => isOptional(e.cardinality))) {
+        if (features.every(e => isOptional(e.cardinality ?? cardinalities.get(e)))) {
             // secondly, try to find the next elements of the parent
-            features.push(...findNextFeatures([parent]));
+            features.push(...findNextFeaturesInternal([parent], cardinalities));
         }
-        if (features.every(e => isOptional(e.cardinality))) {
+        if (features.every(e => isOptional(e.cardinality ?? cardinalities.get(e)))) {
             // lasty, climb the feature stack and calculate completion for previously called rules
             featureStack.shift();
-            features.push(...findNextFeatures(featureStack));
+            features.push(...findNextFeaturesInternal(featureStack, cardinalities));
         }
     } else {
         // Climb the feature stack if this feature is the only one in a rule
         featureStack.shift();
-        features.push(...findNextFeatures(featureStack));
+        features.push(...findNextFeaturesInternal(featureStack, cardinalities));
     }
     return features;
 }
@@ -64,27 +68,28 @@ export function findNextFeatures(featureStack: ast.AbstractElement[]): ast.Abstr
  * @returns A list of features that could be the first feature of the given `AbstractElement`.
  * These features contain a modified `cardinality` property. If the given `feature` is optional, the returned features will be optional as well.
  */
-export function findFirstFeatures(feature: ast.AbstractElement | undefined): ast.AbstractElement[] {
+export function findFirstFeatures(feature: ast.AbstractElement | undefined, cardinalities?: Map<ast.AbstractElement, Cardinality>): ast.AbstractElement[] {
+    const card = cardinalities ?? new Map();
     if (feature === undefined) {
         return [];
     } else if (ast.isGroup(feature)) {
-        return findNextFeaturesInGroup(feature, 0)
-            .map(e => modifyCardinality(e, feature.cardinality));
+        return findNextFeaturesInGroup(feature, 0, card)
+            .map(e => modifyCardinality(e, feature.cardinality, card));
     } else if (ast.isAlternatives(feature)) {
-        return feature.elements.flatMap(e => findFirstFeatures(e))
-            .map(e => modifyCardinality(e, feature.cardinality));
+        return feature.elements.flatMap(e => findFirstFeatures(e, card))
+            .map(e => modifyCardinality(e, feature.cardinality, card));
     } else if (ast.isUnorderedGroup(feature)) {
         // TODO: Do we want to continue supporting unordered groups?
         return [];
     } else if (ast.isAssignment(feature)) {
-        return findFirstFeatures(feature.terminal)
-            .map(e => modifyCardinality(e, feature.cardinality));
+        return findFirstFeatures(feature.terminal, card)
+            .map(e => modifyCardinality(e, feature.cardinality, card));
     } else if (ast.isAction(feature)) {
-        return findNextFeatures([feature])
-            .map(e => modifyCardinality(e, feature.cardinality));
+        return findNextFeaturesInternal([feature], card)
+            .map(e => modifyCardinality(e, feature.cardinality, card));
     } else if (ast.isRuleCall(feature) && ast.isParserRule(feature.rule.ref)) {
-        return findFirstFeatures(feature.rule.ref.alternatives)
-            .map(e => modifyCardinality(e, feature.cardinality));
+        return findFirstFeatures(feature.rule.ref.alternatives, card)
+            .map(e => modifyCardinality(e, feature.cardinality, card));
     } else {
         return [feature];
     }
@@ -97,27 +102,24 @@ export function findFirstFeatures(feature: ast.AbstractElement | undefined): ast
  * @param cardinality The cardinality of the calling (parent) object.
  * @returns A new feature that could be now optional (`?` or `*`).
  */
-function modifyCardinality(feature: ast.AbstractElement, cardinality: Cardinality): ast.AbstractElement {
+function modifyCardinality(feature: ast.AbstractElement, cardinality: Cardinality, cardinalities: Map<ast.AbstractElement, Cardinality>): ast.AbstractElement {
     if (isOptional(cardinality)) {
-        if (isOptional(feature.cardinality)) {
-            return feature;
-        } else if (isArray(feature.cardinality)) {
-            return { ...feature, cardinality: '*' };
+        if (isArray(feature.cardinality)) {
+            cardinalities.set(feature, '*');
         } else {
-            return { ...feature, cardinality: '?' };
+            cardinalities.set(feature, '?');
         }
-    } else {
-        return feature;
     }
+    return feature;
 }
 
-function findNextFeaturesInGroup(group: ast.Group, index: number): ast.AbstractElement[] {
+function findNextFeaturesInGroup(group: ast.Group, index: number, cardinalities: Map<ast.AbstractElement, Cardinality>): ast.AbstractElement[] {
     const features: ast.AbstractElement[] = [];
     let firstFeature: ast.AbstractElement;
     do {
         firstFeature = group.elements[index++];
-        features.push(...findFirstFeatures(firstFeature));
-        if (!isOptional(firstFeature?.cardinality)) {
+        features.push(...findFirstFeatures(firstFeature, cardinalities));
+        if (!isOptional(firstFeature?.cardinality ?? cardinalities.get(firstFeature))) {
             break;
         }
     } while (firstFeature);

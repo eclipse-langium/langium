@@ -19,53 +19,60 @@ type MatchType = 'full' | 'partial' | 'none';
  */
 export class RuleInterpreter {
 
-    interpretRule(rule: ast.ParserRule, nodes: CstNode[]): ast.AbstractElement[] {
+    interpretRule(rule: ast.ParserRule, nodes: CstNode[], offset: number): ast.AbstractElement[] {
         let features: ast.AbstractElement[] = [];
         let nextFeatures = findFirstFeatures(rule.alternatives);
         let node = nodes.shift();
         while (node && nextFeatures.length > 0) {
             const n = node;
-            features = nextFeatures.filter(e => {
-                const match = this.featureMatches(e, n);
+            const feats: ast.AbstractElement[] = [];
+            features = [];
+            nextFeatures.forEach(e => {
+                const match = this.featureMatches(e, n, offset);
                 if (nodes.length === 0 && match === 'partial') {
-                    return true;
+                    feats.push(e);
                 }
-                return match === 'full';
+                if (match === 'full') {
+                    features.push(e);
+                }
             });
             nextFeatures = features.flatMap(e => findNextFeatures([e]));
+            features.push(...feats);
             node = nodes.shift();
         }
         return features;
     }
 
-    featureMatches(feature: ast.AbstractElement, node: CstNode): MatchType {
+    featureMatches(feature: ast.AbstractElement, node: CstNode, offset: number): MatchType {
         if (ast.isKeyword(feature)) {
             const content = feature.value.substring(1, feature.value.length - 1);
-            if (content === node.text) {
+            const nodeEnd = node.offset + node.length;
+            const text = nodeEnd > offset ? node.text.substring(0, nodeEnd - offset) : node.text;
+            if (content === text) {
                 return 'full';
-            } else if (content.startsWith(node.text)) {
+            } else if (content.startsWith(text)) {
                 return 'partial';
             } else {
                 return 'none';
             }
         } else if (ast.isRuleCall(feature)) {
-            return this.ruleMatches(feature.rule.ref, node);
+            return this.ruleMatches(feature.rule.ref, node, offset);
         } else if (ast.isCrossReference(feature)) {
-            return this.featureMatches(feature.terminal, node);
+            return this.featureMatches(feature.terminal, node, offset);
         }
         return 'none';
     }
 
-    ruleMatches(rule: ast.AbstractRule | undefined, node: CstNode): MatchType {
+    ruleMatches(rule: ast.AbstractRule | undefined, node: CstNode, offset: number): MatchType {
         if (ast.isParserRule(rule)) {
             const ruleFeatures = findFirstFeatures(rule.alternatives);
-            return ruleFeatures.some(e => this.featureMatches(e, node)) ? 'full' : 'none';
+            return ruleFeatures.some(e => this.featureMatches(e, node, offset)) ? 'full' : 'none';
         } else if (ast.isTerminalRule(rule)) {
             // We have to take keywords into account
             // e.g. most keywords are valid IDs as well
             // Only return 'full' if this terminal does not match a keyword. TODO
             const regex = rule.regex.substring(1, rule.regex.length - 1);
-            return node.text.match(new RegExp(regex)) !== null ? 'full' : 'none';
+            return node.text.match(new RegExp(regex)) !== null ? 'partial' : 'none';
         } else {
             return 'none';
         }
