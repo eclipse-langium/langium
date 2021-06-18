@@ -64,12 +64,18 @@ export class DefaultCompletionProvider {
                 if (node.length + node.offset > offset) {
                     features.push(node.feature);
                 }
-                stream(features).distinct().forEach(e => this.buildContentAssistFor(node.element, e, acceptor));
+                stream(features).distinct(e => {
+                    if (ast.isKeyword(e)) {
+                        return e.value;
+                    } else {
+                        return e;
+                    }
+                }).forEach(e => this.completionFor(node.element, e, acceptor));
             } else {
                 // The entry rule is the first parser rule
                 // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                 const parserRule = this.grammarAccess.grammar.rules.find(e => ast.isParserRule(e))!;
-                this.buildContentAssistForRule(undefined, parserRule, acceptor);
+                this.completionForRule(undefined, parserRule, acceptor);
             }
         }
         return CompletionList.create(items, true);
@@ -86,24 +92,24 @@ export class DefaultCompletionProvider {
         return features;
     }
 
-    protected buildContentAssistForRule(astNode: AstNode | undefined, rule: ast.AbstractRule, acceptor: CompletionAcceptor): void {
+    protected completionForRule(astNode: AstNode | undefined, rule: ast.AbstractRule, acceptor: CompletionAcceptor): void {
         if (ast.isParserRule(rule)) {
             const features = findFirstFeatures(rule.alternatives);
-            features.flatMap(e => this.buildContentAssistFor(astNode, e, acceptor));
+            features.flatMap(e => this.completionFor(astNode, e, acceptor));
         }
     }
 
-    protected buildContentAssistFor(astNode: AstNode | undefined, feature: ast.AbstractElement, acceptor: CompletionAcceptor): void {
+    protected completionFor(astNode: AstNode | undefined, feature: ast.AbstractElement, acceptor: CompletionAcceptor): void {
         if (ast.isKeyword(feature)) {
-            this.forKeyword(feature, astNode, acceptor);
+            this.completionForKeyword(feature, astNode, acceptor);
         } else if (ast.isRuleCall(feature) && feature.rule.ref) {
-            return this.buildContentAssistForRule(astNode, feature.rule.ref, acceptor);
+            return this.completionForRule(astNode, feature.rule.ref, acceptor);
         } else if (ast.isCrossReference(feature) && astNode) {
-            this.forCrossReference(feature, astNode, acceptor);
+            this.completionForCrossReference(feature, astNode, acceptor);
         }
     }
 
-    protected forCrossReference(crossRef: ast.CrossReference, context: AstNode, acceptor: CompletionAcceptor): void {
+    protected completionForCrossReference(crossRef: ast.CrossReference, context: AstNode, acceptor: CompletionAcceptor): void {
         const assignment = getContainerOfType(crossRef, ast.isAssignment);
         const parserRule = getContainerOfType(crossRef, ast.isParserRule);
         if (assignment && parserRule) {
@@ -114,7 +120,7 @@ export class DefaultCompletionProvider {
         }
     }
 
-    protected forKeyword(keyword: ast.Keyword, context: AstNode | undefined, acceptor: CompletionAcceptor): void {
+    protected completionForKeyword(keyword: ast.Keyword, context: AstNode | undefined, acceptor: CompletionAcceptor): void {
         acceptor(keyword.value.substring(1, keyword.value.length - 1), { kind: CompletionItemKind.Keyword, detail: 'Keyword', sortText: /\w/.test(keyword.value) ? '1' : '2' });
     }
 
