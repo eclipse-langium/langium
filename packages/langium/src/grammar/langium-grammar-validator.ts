@@ -4,10 +4,10 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { AbstractRule, Grammar, isAction, isAssignment, isParserRule, isPrimitiveRule, isRuleCall, isTerminalRule, Keyword, LangiumGrammarAstType, ParserRule, PrimitiveRule, TerminalRule, UnorderedGroup } from './generated/ast';
+import { AbstractRule, Grammar, isParserRule, isTerminalRule, Keyword, LangiumGrammarAstType, ParserRule, TerminalRule, UnorderedGroup } from './generated/ast';
 import { ValidationAcceptor, ValidationCheck, ValidationRegistry } from '../service/validation/validation-registry';
 import { LangiumGrammarServices } from './langium-grammar-module';
-import { AstNodeContent, streamAllContents } from '../utils/ast-util';
+import { isDataTypeRule } from './grammar-util';
 
 type LangiumGrammarChecks = { [type in LangiumGrammarAstType]?: ValidationCheck | ValidationCheck[] }
 
@@ -17,15 +17,10 @@ export class LangiumGrammarValidationRegistry extends ValidationRegistry {
         const validator = services.validation.LangiumGrammarValidator;
         const checks: LangiumGrammarChecks = {
             AbstractRule: validator.checkRuleName,
-            PrimitiveRule: [
-                validator.checkPrimitiveRuleCalls,
-                validator.checkRuleReturnType
-            ],
             ParserRule: [
-                validator.checkParserRuleDataType,
-                validator.checkParserRuleReturnType
+                validator.checkParserRuleDataType
             ],
-            TerminalRule: validator.checkRuleReturnType,
+            TerminalRule: validator.checkTerminalRuleReturnType,
             Keyword: validator.checkKeyword,
             UnorderedGroup: validator.checkUnorderedGroup,
             Grammar: [
@@ -53,7 +48,9 @@ export class LangiumGrammarValidator {
     checkFirstGrammarRule(grammar: Grammar, accept: ValidationAcceptor): void {
         const firstRule = grammar.rules.find(e => isParserRule(e)) as ParserRule;
         if (firstRule) {
-            if (firstRule.fragment) {
+            if (isDataTypeRule(firstRule)) {
+                accept('error', 'The entry rule cannot be a data type rule.', { node: firstRule, property: 'name' });
+            } else if (firstRule.fragment) {
                 accept('error', 'The entry rule cannot be a fragment.', { node: firstRule, property: 'name' });
             }
         } else {
@@ -123,50 +120,19 @@ export class LangiumGrammarValidator {
         accept('error', 'Unordered groups are currently not supported', { node: unorderedGroup });
     }
 
-    checkPrimitiveRuleCalls(rule: PrimitiveRule, accept: ValidationAcceptor): void {
-        const iterator = streamAllContents(rule).iterator();
-        let next: IteratorResult<AstNodeContent>;
-        while (!(next = iterator.next()).done) {
-            const node = next.value.node;
-            if (isRuleCall(node) && isParserRule(node.rule.ref)) {
-                accept('error', 'Primitive rules can only call other primitive rules or terminal rules', { node });
-            }
-            if (isAction(node)) {
-                accept('error', 'Primitive rules cannot contain actions.', { node });
-            }
-            if (isAssignment(node)) {
-                accept('error', 'Primitive rules cannot contain assignments.', { node });
-                iterator.prune();
-            }
-        }
-    }
-
     checkParserRuleDataType(rule: ParserRule, accept: ValidationAcceptor): void {
-        let shouldBePrimitiveRule = true;
-        const iterator = streamAllContents(rule).iterator();
-        let next: IteratorResult<AstNodeContent>;
-        while (!(next = iterator.next()).done && shouldBePrimitiveRule) {
-            const node = next.value.node;
-            if (isRuleCall(node) && isParserRule(node.rule.ref) || isAction(node) || isAssignment(node)) {
-                shouldBePrimitiveRule = false;
-            }
-        }
-
-        if (shouldBePrimitiveRule) {
-            accept('error', 'This parser rule does not create an object. Use a primitive rule or add an action to the start of the rule to force object instantiation.', { node: rule, property: 'name' });
+        const hasDatatypeReturnType = rule.type && isPrimitiveType(rule.type);
+        const isDataType = isDataTypeRule(rule);
+        if (!hasDatatypeReturnType && isDataType) {
+            accept('error', 'This parser rule does not create an object. Add a primitive return type or an action to the start of the rule to force object instantiation.', { node: rule, property: 'name' });
+        } else if (hasDatatypeReturnType && !isDataType) {
+            accept('error', 'Normal parser rules are not allowed to return a primitive value. Use a datatype rule for that.', { node: rule, property: 'type' });
         }
     }
 
-    checkParserRuleReturnType(rule: ParserRule, accept: ValidationAcceptor): void {
-        if (rule.type && isPrimitiveType(rule.type)) {
-            accept('error', 'Parser rules are not allowed to return a primitive value. Use a primitive rule for that.', { node: rule, property: 'type' });
-        }
-    }
-
-    checkRuleReturnType(rule: PrimitiveRule | TerminalRule, accept: ValidationAcceptor): void {
+    checkTerminalRuleReturnType(rule: TerminalRule, accept: ValidationAcceptor): void {
         if (rule.type && !isPrimitiveType(rule.type)) {
-            const type = isPrimitiveRule(rule) ? 'Primitive' : 'Terminal';
-            accept('error', type + " rules can only return primitive types like 'string', 'boolean', 'number' or 'date'.", { node: rule, property: 'type' });
+            accept('error', "Terminal rules can only return primitive types like 'string', 'boolean', 'number' or 'date'.", { node: rule, property: 'type' });
         }
     }
 }

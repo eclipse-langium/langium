@@ -9,14 +9,13 @@ import { createToken, Lexer } from 'chevrotain';
 import { LangiumServices } from '../../services';
 import { LangiumParser, Number, String } from '../../parser/langium-parser';
 import { LangiumGrammarGrammarAccess } from './grammar-access';
-import { AbstractElement, AbstractMetamodelDeclaration, AbstractNegatedToken, AbstractRule, Annotation, Condition, Grammar, NamedArgument, Parameter, TerminalGroup, TerminalToken, TerminalTokenElement, Action, Alternatives, Assignment, CrossReference, Group, Keyword, RuleCall, UnorderedGroup, GeneratedMetamodel, ReferencedMetamodel, NegatedToken, UntilToken, ParserRule, PrimitiveRule, TerminalRule, Conjunction, Disjunction, LiteralCondition, Negation, ParameterReference, CharacterRange, TerminalAlternatives, TerminalRuleCall, Wildcard, } from './ast';
+import { AbstractElement, AbstractMetamodelDeclaration, AbstractNegatedToken, AbstractRule, Annotation, Condition, Grammar, NamedArgument, Parameter, TerminalGroup, TerminalToken, TerminalTokenElement, Action, Alternatives, Assignment, CrossReference, Group, Keyword, RuleCall, UnorderedGroup, GeneratedMetamodel, ReferencedMetamodel, NegatedToken, UntilToken, ParserRule, TerminalRule, Conjunction, Disjunction, LiteralCondition, Negation, ParameterReference, CharacterRange, TerminalAlternatives, TerminalRuleCall, Wildcard, } from './ast';
 
 const ID = createToken({ name: 'ID', pattern: /\^?[_a-zA-Z][\w_]*/ });
 const INT = createToken({ name: 'INT', pattern: /[0-9]+/ });
 const RegexLiteral = createToken({ name: 'RegexLiteral', pattern: /\/(?![*+?])(?:[^\r\n\[/\\]|\\.|\[(?:[^\r\n\]\\]|\\.)*\])+\// });
 const string = createToken({ name: 'string', pattern: /"[^"]*"|'[^']*'/ });
 const WS = createToken({ name: 'WS', pattern: /\s+/, group: Lexer.SKIPPED });
-const PrimitiveKeyword = createToken({ name: 'PrimitiveKeyword', pattern: /primitive/, longer_alt: ID });
 const FragmentKeyword = createToken({ name: 'FragmentKeyword', pattern: /fragment/, longer_alt: ID });
 const GenerateKeyword = createToken({ name: 'GenerateKeyword', pattern: /generate/, longer_alt: ID });
 const TerminalKeyword = createToken({ name: 'TerminalKeyword', pattern: /terminal/, longer_alt: ID });
@@ -88,12 +87,11 @@ GenerateKeyword.LABEL = "'generate'";
 GrammarKeyword.LABEL = "'grammar'";
 HiddenKeyword.LABEL = "'hidden'";
 ImportKeyword.LABEL = "'import'";
-PrimitiveKeyword.LABEL = "'primitive'";
 ReturnsKeyword.LABEL = "'returns'";
 TerminalKeyword.LABEL = "'terminal'";
 TrueKeyword.LABEL = "'true'";
 WithKeyword.LABEL = "'with'";
-const tokens = [PrimitiveKeyword, FragmentKeyword, GenerateKeyword, TerminalKeyword, CurrentKeyword, GrammarKeyword, ReturnsKeyword, HiddenKeyword, ImportKeyword, FalseKeyword, TrueKeyword, WithKeyword, AsKeyword, DashMoreThanKeyword, DotDotKeyword, EqualsMoreThanKeyword, PlusEqualsKeyword, QuestionMarkEqualsKeyword, AmpersandKeyword, AsteriskKeyword, AtKeyword, BracketCloseKeyword, BracketOpenKeyword, ColonKeyword, CommaKeyword, CurlyCloseKeyword, CurlyOpenKeyword, DotKeyword, EqualsKeyword, ExclamationMarkKeyword, LessThanKeyword, MoreThanKeyword, ParenthesisCloseKeyword, ParenthesisOpenKeyword, PipeKeyword, PlusKeyword, QuestionMarkKeyword, SemicolonKeyword, ID, INT, RegexLiteral, string, WS];
+const tokens = [FragmentKeyword, GenerateKeyword, TerminalKeyword, CurrentKeyword, GrammarKeyword, ReturnsKeyword, HiddenKeyword, ImportKeyword, FalseKeyword, TrueKeyword, WithKeyword, AsKeyword, DashMoreThanKeyword, DotDotKeyword, EqualsMoreThanKeyword, PlusEqualsKeyword, QuestionMarkEqualsKeyword, AmpersandKeyword, AsteriskKeyword, AtKeyword, BracketCloseKeyword, BracketOpenKeyword, ColonKeyword, CommaKeyword, CurlyCloseKeyword, CurlyOpenKeyword, DotKeyword, EqualsKeyword, ExclamationMarkKeyword, LessThanKeyword, MoreThanKeyword, ParenthesisCloseKeyword, ParenthesisOpenKeyword, PipeKeyword, PlusKeyword, QuestionMarkKeyword, SemicolonKeyword, ID, INT, RegexLiteral, string, WS];
 
 export class Parser extends LangiumParser {
     readonly grammarAccess: LangiumGrammarGrammarAccess;
@@ -143,9 +141,6 @@ export class Parser extends LangiumParser {
             },
             () => {
                 this.unassignedSubrule(2, this.TerminalRule, this.grammarAccess.AbstractRule.TerminalRuleRuleCall);
-            },
-            () => {
-                this.unassignedSubrule(3, this.PrimitiveRule, this.grammarAccess.AbstractRule.PrimitiveRuleRuleCall);
             },
         ]);
         return this.construct();
@@ -235,20 +230,6 @@ export class Parser extends LangiumParser {
         this.consume(13, ColonKeyword, this.grammarAccess.ParserRule.ColonKeyword);
         this.subrule(3, this.Alternatives, this.grammarAccess.ParserRule.alternativesAlternativesRuleCall);
         this.consume(14, SemicolonKeyword, this.grammarAccess.ParserRule.SemicolonKeyword);
-        return this.construct();
-    });
-
-    PrimitiveRule = this.DEFINE_RULE("PrimitiveRule", PrimitiveRule, () => {
-        this.initializeElement(this.grammarAccess.PrimitiveRule);
-        this.consume(1, PrimitiveKeyword, this.grammarAccess.PrimitiveRule.PrimitiveKeyword);
-        this.consume(2, ID, this.grammarAccess.PrimitiveRule.nameIDRuleCall);
-        this.option(1, () => {
-            this.consume(3, ReturnsKeyword, this.grammarAccess.PrimitiveRule.ReturnsKeyword);
-            this.consume(4, ID, this.grammarAccess.PrimitiveRule.typeIDRuleCall);
-        });
-        this.consume(5, ColonKeyword, this.grammarAccess.PrimitiveRule.ColonKeyword);
-        this.subrule(1, this.Alternatives, this.grammarAccess.PrimitiveRule.alternativesAlternativesRuleCall);
-        this.consume(6, SemicolonKeyword, this.grammarAccess.PrimitiveRule.SemicolonKeyword);
         return this.construct();
     });
 

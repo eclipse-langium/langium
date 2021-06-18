@@ -30,7 +30,6 @@ export type GrammarRuleAccess = {
 export type AbstractRuleRuleAccess = {
     ParserRuleRuleCall: RuleCall;
     TerminalRuleRuleCall: RuleCall;
-    PrimitiveRuleRuleCall: RuleCall;
 }
 
 export type AbstractMetamodelDeclarationRuleAccess = {
@@ -80,19 +79,6 @@ export type ParserRuleRuleAccess = {
     hiddenTokensAbstractRuleCrossReference: CrossReference;
     CommaKeyword: Keyword;
     ParenthesisCloseKeyword: Keyword;
-    ColonKeyword: Keyword;
-    alternatives: Assignment;
-    alternativesAlternativesRuleCall: RuleCall;
-    SemicolonKeyword: Keyword;
-}
-
-export type PrimitiveRuleRuleAccess = {
-    PrimitiveKeyword: Keyword;
-    name: Assignment;
-    nameIDRuleCall: RuleCall;
-    ReturnsKeyword: Keyword;
-    type: Assignment;
-    typeIDRuleCall: RuleCall;
     ColonKeyword: Keyword;
     alternatives: Assignment;
     alternativesAlternativesRuleCall: RuleCall;
@@ -432,7 +418,6 @@ export class LangiumGrammarGrammarAccess extends GrammarAccess {
     ReferencedMetamodel = this.buildAccess<ReferencedMetamodelRuleAccess>('ReferencedMetamodel');
     Annotation = this.buildAccess<AnnotationRuleAccess>('Annotation');
     ParserRule = this.buildAccess<ParserRuleRuleAccess>('ParserRule');
-    PrimitiveRule = this.buildAccess<PrimitiveRuleRuleAccess>('PrimitiveRule');
     RuleNameAndParams = this.buildAccess<RuleNameAndParamsRuleAccess>('RuleNameAndParams');
     Parameter = this.buildAccess<ParameterRuleAccess>('Parameter');
     Alternatives = this.buildAccess<AlternativesRuleAccess>('Alternatives');

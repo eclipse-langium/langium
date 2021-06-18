@@ -9,7 +9,7 @@ import { AstNode, AstReflection, Reference } from '../../syntax-tree';
 import { isAstNode } from '../../utils/ast-util';
 
 export interface AbstractElement extends AstNode {
-    readonly $container: ParserRule | PrimitiveRule | Alternatives | UnorderedGroup | Group | Assignment | CrossReference | CharacterRange | CharacterRange;
+    readonly $container: ParserRule | Alternatives | UnorderedGroup | Group | Assignment | CrossReference | CharacterRange | CharacterRange;
     cardinality: '?' | '*' | '+'
 }
 
@@ -43,6 +43,7 @@ export function isAbstractNegatedToken(item: unknown): item is AbstractNegatedTo
 
 export interface AbstractRule extends AstNode {
     readonly $container: Grammar;
+    fragment: boolean
     name: string
     type: string
 }
@@ -276,7 +277,6 @@ export function isUntilToken(item: unknown): item is UntilToken {
 }
 
 export interface ParserRule extends AbstractRule {
-    fragment: boolean
     parameters: Array<Parameter>
     wildcard: boolean
     definesHiddenTokens: boolean
@@ -290,18 +290,7 @@ export function isParserRule(item: unknown): item is ParserRule {
     return reflection.isInstance(item, ParserRule);
 }
 
-export interface PrimitiveRule extends AbstractRule {
-    alternatives: AbstractElement
-}
-
-export const PrimitiveRule = 'PrimitiveRule';
-
-export function isPrimitiveRule(item: unknown): item is PrimitiveRule {
-    return reflection.isInstance(item, PrimitiveRule);
-}
-
 export interface TerminalRule extends AbstractRule {
-    fragment: boolean
     regex: string
 }
 
@@ -403,14 +392,14 @@ export function isWildcard(item: unknown): item is Wildcard {
     return reflection.isInstance(item, Wildcard);
 }
 
-export type LangiumGrammarAstType = 'AbstractElement' | 'AbstractMetamodelDeclaration' | 'AbstractNegatedToken' | 'AbstractRule' | 'Annotation' | 'Condition' | 'Grammar' | 'NamedArgument' | 'Parameter' | 'TerminalGroup' | 'TerminalToken' | 'TerminalTokenElement' | 'Action' | 'Alternatives' | 'Assignment' | 'CrossReference' | 'Group' | 'Keyword' | 'RuleCall' | 'UnorderedGroup' | 'GeneratedMetamodel' | 'ReferencedMetamodel' | 'NegatedToken' | 'UntilToken' | 'ParserRule' | 'PrimitiveRule' | 'TerminalRule' | 'Conjunction' | 'Disjunction' | 'LiteralCondition' | 'Negation' | 'ParameterReference' | 'CharacterRange' | 'TerminalAlternatives' | 'TerminalRuleCall' | 'Wildcard';
+export type LangiumGrammarAstType = 'AbstractElement' | 'AbstractMetamodelDeclaration' | 'AbstractNegatedToken' | 'AbstractRule' | 'Annotation' | 'Condition' | 'Grammar' | 'NamedArgument' | 'Parameter' | 'TerminalGroup' | 'TerminalToken' | 'TerminalTokenElement' | 'Action' | 'Alternatives' | 'Assignment' | 'CrossReference' | 'Group' | 'Keyword' | 'RuleCall' | 'UnorderedGroup' | 'GeneratedMetamodel' | 'ReferencedMetamodel' | 'NegatedToken' | 'UntilToken' | 'ParserRule' | 'TerminalRule' | 'Conjunction' | 'Disjunction' | 'LiteralCondition' | 'Negation' | 'ParameterReference' | 'CharacterRange' | 'TerminalAlternatives' | 'TerminalRuleCall' | 'Wildcard';
 
 export type LangiumGrammarAstReference = 'Grammar:usedGrammars' | 'Grammar:hiddenTokens' | 'NamedArgument:parameter' | 'CrossReference:type' | 'RuleCall:rule' | 'ParserRule:hiddenTokens' | 'ParameterReference:parameter' | 'TerminalRuleCall:rule';
 
 export class LangiumGrammarAstReflection implements AstReflection {
 
     getAllTypes(): string[] {
-        return ['AbstractElement', 'AbstractMetamodelDeclaration', 'AbstractNegatedToken', 'AbstractRule', 'Annotation', 'Condition', 'Grammar', 'NamedArgument', 'Parameter', 'TerminalGroup', 'TerminalToken', 'TerminalTokenElement', 'Action', 'Alternatives', 'Assignment', 'CrossReference', 'Group', 'Keyword', 'RuleCall', 'UnorderedGroup', 'GeneratedMetamodel', 'ReferencedMetamodel', 'NegatedToken', 'UntilToken', 'ParserRule', 'PrimitiveRule', 'TerminalRule', 'Conjunction', 'Disjunction', 'LiteralCondition', 'Negation', 'ParameterReference', 'CharacterRange', 'TerminalAlternatives', 'TerminalRuleCall', 'Wildcard'];
+        return ['AbstractElement', 'AbstractMetamodelDeclaration', 'AbstractNegatedToken', 'AbstractRule', 'Annotation', 'Condition', 'Grammar', 'NamedArgument', 'Parameter', 'TerminalGroup', 'TerminalToken', 'TerminalTokenElement', 'Action', 'Alternatives', 'Assignment', 'CrossReference', 'Group', 'Keyword', 'RuleCall', 'UnorderedGroup', 'GeneratedMetamodel', 'ReferencedMetamodel', 'NegatedToken', 'UntilToken', 'ParserRule', 'TerminalRule', 'Conjunction', 'Disjunction', 'LiteralCondition', 'Negation', 'ParameterReference', 'CharacterRange', 'TerminalAlternatives', 'TerminalRuleCall', 'Wildcard'];
     }
 
     isInstance(node: unknown, type: string): boolean {
@@ -441,7 +430,6 @@ export class LangiumGrammarAstReflection implements AstReflection {
                 return this.isSubtype(AbstractNegatedToken, supertype);
             }
             case ParserRule:
-            case PrimitiveRule:
             case TerminalRule: {
                 return this.isSubtype(AbstractRule, supertype);
             }
