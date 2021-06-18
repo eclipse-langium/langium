@@ -6,11 +6,12 @@
 
 import {
     InitializeParams, TextDocumentPositionParams, TextDocumentSyncKind, InitializeResult, Connection, CompletionList,
-    ReferenceParams, Location, DocumentSymbolParams, DocumentSymbol, Range
+    ReferenceParams, Location, DocumentSymbolParams, DocumentSymbol, Range, DocumentHighlightParams
 } from 'vscode-languageserver/node';
 
 import { LangiumDocument } from '../documents/document';
 import { LangiumServices } from '../services';
+import { toRange } from '../utils/cst-util';
 
 export function startLanguageServer(services: LangiumServices): void {
     const connection = services.languageServer.Connection;
@@ -31,6 +32,7 @@ export function startLanguageServer(services: LangiumServices): void {
                 documentSymbolProvider: {},
                 // goto-declaration
                 declarationProvider: {},
+                documentHighlightProvider: {},
                 // hoverProvider needs to be created for mouse-over events, etc.
                 hoverProvider: false
             }
@@ -55,6 +57,7 @@ export function startLanguageServer(services: LangiumServices): void {
     addFindReferencesHandler(connection, services);
     addDocumentSymbolHandler(connection, services);
     addGotoDeclaration(connection, services);
+    addDocumentHighlightsHandler(connection, services);
 
     // Make the text document manager listen on the connection for open, change and close text document events.
     documents.listen(connection);
@@ -134,4 +137,20 @@ export function addGotoDeclaration(connection: Connection, services: LangiumServ
             }
         }
     );
+}
+
+export function addDocumentHighlightsHandler(connection: Connection, services: LangiumServices): void {
+    const documentHighlighter = services.references.DocumentHighlighter;
+    connection.onDocumentHighlight((params: DocumentHighlightParams): Location[] => {
+        const uri = params.textDocument.uri;
+        const document = services.documents.TextDocuments.get(uri);
+        if (document) {
+            return documentHighlighter.findHighlights(document, params.position).map(node => Location.create(
+                document.uri,
+                toRange(node, document)
+            ));
+        } else {
+            return [];
+        }
+    });
 }

@@ -21,6 +21,7 @@ import { CompletionProvider } from './service/completion/completion-provider';
 import { RuleInterpreter } from './service/completion/rule-interpreter';
 import { ReferenceFinder } from './references/reference-finder';
 import { GoToResolver } from './references/goto';
+import { DocumentHighlighter } from './references/document-highlighter';
 
 export type LangiumGeneratedServices = {
     Parser: LangiumParser,
@@ -42,7 +43,8 @@ export type LangiumServices = LangiumGeneratedServices & {
         ScopeProvider: ScopeProvider,
         ScopeComputation: ScopeComputation,
         ReferenceFinder: ReferenceFinder
-        GoToResolver: GoToResolver
+        GoToResolver: GoToResolver,
+        DocumentHighlighter: DocumentHighlighter
     },
     completion: {
         CompletionProvider: CompletionProvider,
