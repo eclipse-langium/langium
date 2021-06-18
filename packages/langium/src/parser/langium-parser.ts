@@ -195,7 +195,7 @@ export class LangiumParser {
             this.stack.pop();
             this.stack.push(newItem);
             if (action.feature && action.operator) {
-                this.assign(action, last.object);
+                this.assign(action, last.object, last.object.$cstNode);
             }
         }
     }
@@ -250,7 +250,7 @@ export class LangiumParser {
         return obj;
     }
 
-    private assign(assignment: { operator: string, feature: string }, value: unknown, cstNode?: CstNode, crossRefId?: string): void {
+    private assign(assignment: { operator: string, feature: string }, value: unknown, cstNode: CstNode, crossRefId?: string): void {
         const obj = this.current.object;
         const feature = assignment.feature.replace(/\^/g, '');
         let item: unknown;
