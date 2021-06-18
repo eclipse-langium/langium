@@ -11,6 +11,7 @@ import {
 
 import { LangiumDocument } from '../documents/document';
 import { LangiumServices } from '../services';
+import { toRange } from '../utils/cst-util';
 
 export function startLanguageServer(services: LangiumServices): void {
     const connection = services.languageServer.Connection;
@@ -144,7 +145,10 @@ export function addDocumentHighlightsHandler(connection: Connection, services: L
         const uri = params.textDocument.uri;
         const document = services.documents.TextDocuments.get(uri);
         if (document) {
-            return documentHighlighter.findHighlightLocations(document, params.position);
+            return documentHighlighter.findHighlights(document, params.position).map(node => Location.create(
+                document.uri,
+                toRange(node, document)
+            ));
         } else {
             return [];
         }
