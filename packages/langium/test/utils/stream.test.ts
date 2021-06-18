@@ -47,3 +47,62 @@ describe('concat', () => {
     });
 
 });
+
+describe('distinct', () => {
+
+    test('empty stream returns empty stream', () => {
+        expect(s.toArray(s.EMPTY_STREAM.distinct())).toMatchObject([]);
+    });
+
+    test('empty array stream returns empty stream', () => {
+        expect(s.toArray(s.stream([]).distinct())).toMatchObject([]);
+    });
+
+    test('different items stay the same', () => {
+        const stream = s.stream(['A', 'B', 'C']);
+        expect(s.toArray(stream.distinct())).toMatchObject(['A', 'B', 'C']);
+    });
+
+    test('different items with different types stay the same', () => {
+        const stream = s.stream(['A', 1, true]);
+        expect(s.toArray(stream.distinct())).toMatchObject(['A', 1, true]);
+    });
+
+    test('duplicate entries are removed', () => {
+        const stream = s.stream(['A', 'A', 'B']);
+        expect(s.toArray(stream.distinct())).toMatchObject(['A', 'B']);
+    });
+
+    test('duplicate entries of different types stay the same', () => {
+        const stream = s.stream(['1', 1, '2']);
+        expect(s.toArray(stream.distinct())).toMatchObject(['1', 1, '2']);
+    });
+
+    test('distinct empty objects stay the same', () => {
+        const a = {};
+        const b = {};
+        const stream = s.stream([a, b]);
+        expect(s.toArray(stream.distinct())).toMatchObject([a, b]);
+    });
+
+    test('same objects are removed', () => {
+        const a = {};
+        const stream = s.stream([a, a]);
+        expect(s.toArray(stream.distinct())).toMatchObject([a]);
+    });
+
+    test('distinct objects by value are removed', () => {
+        const a = { value: 'A' };
+        const b = { value: 'A' };
+        const stream = s.stream([a, b]);
+        expect(s.toArray(stream.distinct(e => e.value))).toMatchObject([a]);
+    });
+
+    test('distinct objects by value stay the same', () => {
+        const a = { value: 'A' };
+        const b = { value: 'B' };
+        const stream = s.stream([a, b]);
+        expect(s.toArray(stream.distinct(e => e.value))).toMatchObject([a, b]);
+    });
+
+});
