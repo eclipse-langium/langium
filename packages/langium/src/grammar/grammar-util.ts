@@ -32,6 +32,16 @@ export function isArrayOperator(operator?: Operator): boolean {
     return operator === '+=';
 }
 
+export function isDataTypeRule(rule: ast.ParserRule): boolean {
+    const features = Array.from(findAllFeatures(rule).byFeature.keys());
+    const onlyRuleCallsAndKeywords = features.every(e => ast.isRuleCall(e) || ast.isKeyword(e) || ast.isGroup(e) || ast.isAlternatives(e) || ast.isUnorderedGroup(e));
+    if (onlyRuleCallsAndKeywords) {
+        const ruleCallWithParserRule = features.filter(e => ast.isRuleCall(e) && ast.isParserRule(e.rule.ref) && !isDataTypeRule(e.rule.ref));
+        return ruleCallWithParserRule.length === 0;
+    }
+    return false;
+}
+
 interface RuleWithAlternatives {
     alternatives: ast.AbstractElement;
 }
@@ -158,7 +168,7 @@ export function getTypeName(rule: ast.AbstractRule | undefined): string {
 }
 
 export function getRuleType(rule: ast.AbstractRule | undefined): string {
-    if (ast.isPrimitiveRule(rule) || ast.isTerminalRule(rule)) {
+    if (ast.isParserRule(rule) && isDataTypeRule(rule) || ast.isTerminalRule(rule)) {
         return rule.type ?? 'string';
     }
     return getTypeName(rule);

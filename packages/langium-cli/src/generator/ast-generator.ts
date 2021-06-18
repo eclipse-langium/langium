@@ -4,8 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { GeneratorNode, Grammar, IndentNode, CompositeGeneratorNode, NL, process, stream, isPrimitiveRule, PrimitiveRule, isAlternatives, isKeyword } from 'langium';
-import { GeneratorNode, Grammar, IndentNode, CompositeGeneratorNode, NL, process, streamAllContents, isCrossReference } from 'langium';
+import { GeneratorNode, Grammar, IndentNode, CompositeGeneratorNode, NL, process, stream, isAlternatives, isKeyword, isParserRule, isDataTypeRule, ParserRule, streamAllContents, isCrossReference } from 'langium';
 import { LangiumConfig } from '../package';
 import { collectAst, Interface } from './type-collector';
 import { generatedHeader } from './util';
@@ -29,8 +28,8 @@ export function generateAst(grammar: Grammar, config: LangiumConfig): string {
     for (const type of types) {
         fileNode.children.push(type.toString(), NL);
     }
-    for (const primitiveRule of stream(grammar.rules).filterType(isPrimitiveRule)) {
-        fileNode.children.push(buildPrimitiveType(primitiveRule), NL, NL);
+    for (const primitiveRule of stream(grammar.rules).filterType(isParserRule).filter(e => isDataTypeRule(e))) {
+        fileNode.children.push(buildDatatype(primitiveRule), NL, NL);
     }
 
     fileNode.children.push(generateAstReflection(grammar, types));
@@ -38,7 +37,7 @@ export function generateAst(grammar: Grammar, config: LangiumConfig): string {
     return process(fileNode);
 }
 
-function buildPrimitiveType(rule: PrimitiveRule): GeneratorNode {
+function buildDatatype(rule: ParserRule): GeneratorNode {
     if (isAlternatives(rule.alternatives) && rule.alternatives.elements.every(e => isKeyword(e))) {
         return `export type ${rule.name} = ${stream(rule.alternatives.elements).filterType(isKeyword).map(e => e.value).join(' | ')}`;
     } else {

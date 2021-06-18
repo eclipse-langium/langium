@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import * as langium from 'langium';
-import { getRuleType, getTypeName } from 'langium';
+import { getRuleType, getTypeName, isDataTypeRule } from 'langium';
 import { CompositeGeneratorNode, IndentNode, NL } from 'langium';
 import { process } from 'langium';
 import { Cardinality, isOptional } from 'langium';
@@ -72,7 +72,7 @@ export class Interface {
 export function collectAst(grammar: langium.Grammar): Interface[] {
     const collector = new TypeCollector();
 
-    const parserRules = grammar.rules.filter(e => langium.isParserRule(e) && !e.fragment).map(e => e as langium.ParserRule);
+    const parserRules = grammar.rules.filter(e => langium.isParserRule(e) && !e.fragment && !isDataTypeRule(e)).map(e => e as langium.ParserRule);
 
     for (const rule of parserRules) {
         collector.addAlternative(getTypeName(rule));

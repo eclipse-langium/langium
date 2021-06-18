@@ -11,7 +11,7 @@ Grammar:
 	metamodelDeclarations+=AbstractMetamodelDeclaration*
 	(rules+=AbstractRule)+;
 
-AbstractRule : ParserRule | TerminalRule | PrimitiveRule;
+AbstractRule : ParserRule | TerminalRule;
 
 AbstractMetamodelDeclaration :
 	GeneratedMetamodel | ReferencedMetamodel;
@@ -34,9 +34,6 @@ ParserRule :
 	(definesHiddenTokens?='hidden' '(' (hiddenTokens+=[AbstractRule|ID] (',' hiddenTokens+=[AbstractRule|ID])*)? ')')? ':'
 		alternatives=Alternatives
 	';';
-
-PrimitiveRule:
-	'primitive' name=ID ('returns' type=ID)? ':' alternatives=Alternatives ';';
 
 fragment RuleNameAndParams:
 	name=ID ('<' (parameters+=Parameter (',' parameters+=Parameter)*)? '>')?;
