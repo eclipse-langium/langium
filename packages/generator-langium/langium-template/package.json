@@ -43,7 +43,7 @@
         "langium:generate": "langium"
     },
     "dependencies": {
-        "langium": "0.1.0-next.00ebfd9",
+        "langium": "0.0.0",
         "vscode-languageclient": "^7.0.0",
         "vscode-languageserver": "^7.0.0"
     },

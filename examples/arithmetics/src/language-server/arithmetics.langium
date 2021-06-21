@@ -7,11 +7,7 @@ terminal NUMBER: /[0-9]+(\.[0-9])?/;
 
 Module:
 	'module' name=ID
-	(imports+=Import)*
 	(statements+=Statement)*;
-
-Import:
-	'import' module=[Module];
 
 Statement:
 	Definition | Evaluation;
@@ -42,13 +38,13 @@ Multiplication returns Expression:
 	Division (({Multiplication.left=current} '*') right=Division)*;
 
 Division returns Expression:
-	PrimaryExpression (({Division.left=current} '!') right=PrimaryExpression)*;
+	PrimaryExpression (({Division.left=current} '/') right=PrimaryExpression)*;
 
 PrimaryExpression returns Expression:
-	'(' Expression ')' | Num | FuncCall;
+	'(' Expression ')' | NumberLiteral | FunctionCall;
 
-Num returns Expression:
-	{Num} value=NUMBER;
+NumberLiteral returns Expression:
+	{NumberLiteral} value=NUMBER;
 	
-FuncCall returns Expression:
-	{FuncCall} func=[AbstractDefinition] ('(' args+=Expression (',' args+=Expression)* ')')?;
+FunctionCall returns Expression:
+	{FunctionCall} func=[AbstractDefinition] ('(' args+=Expression (',' args+=Expression)* ')')?;

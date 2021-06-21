@@ -1,7 +1,9 @@
 import { ValidationAcceptor, ValidationCheck, ValidationRegistry } from 'langium';
-import { ArithmeticsAstType, Division, Num } from './generated/ast';
+import { ArithmeticsAstType, Division, NumberLiteral, isNumberLiteral } from './generated/ast';
 import { ArithmeticsServices } from './arithmetics-module';
+
 type LangiumGrammarChecks = { [type in ArithmeticsAstType]?: ValidationCheck | ValidationCheck[] }
+
 export class ArithmeticsValidationRegistry extends ValidationRegistry {
     constructor(services: ArithmeticsServices) {
         super(services);
@@ -14,8 +16,8 @@ export class ArithmeticsValidationRegistry extends ValidationRegistry {
 }
 export class ArithmeticsValidator {
     checkDivByZero(div: Division, accept: ValidationAcceptor): void {
-        if (Object.getPrototypeOf(div.right) == Num && Number((div.right as Num).value) == 0) {
-            accept('error', 'Devision by zero is detected', { node: div, property: 'right' });
+        if (isNumberLiteral(div.right) && Number((div.right as NumberLiteral).value) === 0) {
+            accept('error', 'Division by zero is detected.', { node: div, property: 'right' });
         }
 	}
 }
