@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import { AstNode, CstNode, LeafCstNode, Reference } from '../syntax-tree';
-import { Stream, StreamImpl, DONE_RESULT, TreeStream, TreeStreamImpl } from '../utils/stream';
+import { Stream, StreamImpl, DONE_RESULT, TreeStream, TreeStreamImpl, stream } from '../utils/stream';
 import { LangiumDocument } from '../documents/document';
 import { CompositeCstNodeImpl, LeafCstNodeImpl } from '../parser/cst-node-builder';
 
@@ -156,4 +156,25 @@ export function findLeafNodeAtOffset(node: CstNode, offset: number): LeafCstNode
         }
     }
     return undefined;
+}
+
+/**
+ * Returns a Stream of referenses to targetNode from the AstNode tree
+ *
+ * @param targetNode AstNode we are looking for
+ * @param lookup AstNode where we are looking for references. This node
+ *      can be RootAstNode but must not. It also must not be from the same
+ *      Document as the targetNode.
+ */
+export function findLocalReferences(targetNode: AstNode, lookup: AstNode): Stream<AstNodeReference> {
+    const refs: AstNodeReference[] = [];
+    const process = (node: AstNodeContent) => {
+        streamReferences(node.node).forEach((refNode: AstNodeReference) => {
+            if (refNode.reference.ref === targetNode) {
+                refs.push(refNode);
+            }
+        });
+    };
+    streamAllContents(lookup).forEach(process);
+    return stream(refs);
 }

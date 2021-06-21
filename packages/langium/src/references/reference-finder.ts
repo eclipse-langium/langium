@@ -4,69 +4,54 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { Location, Position } from 'vscode-languageserver';
+import { Location, TextDocumentPositionParams } from 'vscode-languageserver';
 import { LangiumDocument } from '../documents/document';
 import { NameProvider } from '../references/naming';
 import { LangiumServices } from '../services';
-import { CstNode, AstNode } from '../syntax-tree';
-import { AstNodeContent, streamAllContents, streamReferences, findLeafNodeAtOffset, AstNodeReference } from '../utils/ast-util';
+import { AstNode, CstNode } from '../syntax-tree';
+import { findLeafNodeAtOffset, findLocalReferences } from '../utils/ast-util';
 import { flatten, toRange } from '../utils/cst-util';
-import { findNodeForFeature } from '../grammar/grammar-util';
-import { GoToResolver } from './goto';
+import { References } from './references';
 
 export interface ReferenceFinder {
-    findReferences(document: LangiumDocument, position: Position, includeDeclaration: boolean): CstNode[];
-    findReferenceLocations(document: LangiumDocument, position: Position, includeDeclaration: boolean): Location[];
+    findReferences(document: LangiumDocument, params: TextDocumentPositionParams, includeDeclaration: boolean): Location[];
 }
 
 export class DefaultReferenceFinder implements ReferenceFinder {
     protected readonly nameProvider: NameProvider;
-    protected readonly findDeclaration: GoToResolver;
+    protected readonly references: References;
 
     constructor(services: LangiumServices) {
         this.nameProvider = services.references.NameProvider;
-        this.findDeclaration = services.references.GoToResolver;
+        this.references = services.references.References;
     }
 
-    findReferences(document: LangiumDocument, position: Position, includeDeclaration: boolean): CstNode[] {
+    findReferences(document: LangiumDocument, params: TextDocumentPositionParams, includeDeclaration: boolean): Location[] {
         const rootNode = document.parseResult?.value?.$cstNode;
         if (!rootNode) {
             return [];
         }
         const refs: CstNode[] = [];
-        // TODO use findDeclaration for crossref nodes
-        const selectedNode = findLeafNodeAtOffset(rootNode, document.offsetAt(position));
-        if(!selectedNode) {
+        const selectedNode = findLeafNodeAtOffset(rootNode, document.offsetAt(params.position));
+        if (!selectedNode) {
             return [];
         }
-        const targetAstNode = this.findDeclaration.findDeclaration(selectedNode)?.element;
+        const targetAstNode = this.references.findDeclaration(selectedNode)?.element;
         if (targetAstNode) {
-            const process = (node: AstNodeContent) => {
-                if (includeDeclaration && node.node === targetAstNode) {
-                    const targetName = this.nameProvider.getName(targetAstNode);
-                    if (targetName) {
-                        const candidateCstNode = this.findNameNode(node.node, targetName);
-                        if (candidateCstNode) {
-                            refs.push(candidateCstNode);
-                        }
-                    }
+            if (includeDeclaration) {
+                const nameNode = this.findNameNode(targetAstNode, selectedNode.text);
+                if (nameNode)
+                    refs.push(nameNode);
+            }
+            findLocalReferences(targetAstNode, rootNode.element).forEach((element) => {
+                if (element) {
+                    const nameNode = this.findNameNode(element.container, element.reference.$refName);
+                    if (nameNode)
+                        refs.push(nameNode);
                 }
-                streamReferences(node.node).forEach((refNode: AstNodeReference) => {
-                    if (refNode.reference.ref === targetAstNode) {
-                        const refCstNode = findNodeForFeature(refNode.container.$cstNode, refNode.property) ?? refNode.container.$cstNode;
-                        if (refCstNode) {
-                            refs.push(refCstNode);
-                        }
-                    }
-                });
-            };
-            streamAllContents(rootNode.element).forEach(process);
+            });
         }
-        return refs;
-    }
-
-    findReferenceLocations(document: LangiumDocument, position: Position, includeDeclaration: boolean): Location[] {
-        return this.findReferences(document, position, includeDeclaration).map(node => Location.create(
+        return refs.map(node => Location.create(
             document.uri,
             toRange(node, document)
         ));

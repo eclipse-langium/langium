@@ -4,14 +4,13 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { Position } from 'vscode-languageserver';
+import { DocumentHighlightParams, Location } from 'vscode-languageserver';
 import { LangiumDocument } from '../documents/document';
 import { LangiumServices } from '../services';
-import { CstNode } from '../syntax-tree';
 import { ReferenceFinder } from './reference-finder';
 
 export interface DocumentHighlighter {
-    findHighlights(document: LangiumDocument, position: Position): CstNode[];
+    findHighlights(document: LangiumDocument, params: DocumentHighlightParams): Location[];
 }
 
 export class DefaultDocumentHighlighter implements DocumentHighlighter {
@@ -21,7 +20,7 @@ export class DefaultDocumentHighlighter implements DocumentHighlighter {
         this.referenceFinder = services.references.ReferenceFinder;
     }
 
-    findHighlights(document: LangiumDocument, position: Position): CstNode[] {
-        return this.referenceFinder.findReferences(document, position, true);
+    findHighlights(document: LangiumDocument, params: DocumentHighlightParams): Location[] {
+        return this.referenceFinder.findReferences(document, params, true);
     }
 }

@@ -22,6 +22,7 @@ import { DefaultValueConverter } from './parser/value-converter';
 import { DefaultReferenceFinder } from './references/reference-finder';
 import { DefaultGoToResolverProvider } from './references/goto';
 import { DefaultDocumentHighlighter } from './references/document-highlighter';
+import { DefaultReferences } from './references/references';
 
 export type DefaultModuleContext = {
     connection?: Connection
@@ -54,6 +55,7 @@ export function createDefaultModule(context: DefaultModuleContext = {}): Module<
             NameProvider: () => new DefaultNameProvider(),
             ScopeProvider: (injector) => new DefaultScopeProvider(injector),
             ScopeComputation: (injector) => new DefaultScopeComputation(injector),
+            References: (injector) => new DefaultReferences(injector),
             ReferenceFinder:  (injector) => new DefaultReferenceFinder(injector),
             GoToResolver: (injector) => new DefaultGoToResolverProvider(injector),
             DocumentHighlighter: (injector) => new DefaultDocumentHighlighter(injector)
