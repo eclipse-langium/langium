@@ -190,7 +190,7 @@ function buildElement(ctx: RuleContext, terminal: langium.AbstractElement): Gene
     } else if (langium.isAssignment(terminal)) {
         node = buildElement(ctx, terminal.terminal);
     } else if (langium.isCrossReference(terminal)) {
-        node = `this.consume(${ctx.consume++}, ID, ${getGrammarAccess(ctx, terminal)});`;
+        node = buildCrossReferenceTerminal(ctx, terminal);
     } else if (langium.isRuleCall(terminal)) {
         node = buildRuleCall(ctx, terminal);
     } else if (langium.isAlternatives(terminal)) {
@@ -203,6 +203,19 @@ function buildElement(ctx: RuleContext, terminal: langium.AbstractElement): Gene
         node = '';
     }
     return wrap(ctx, node, terminal.cardinality);
+}
+
+function buildCrossReferenceTerminal(ctx: RuleContext, crossRef: langium.CrossReference): GeneratorNode {
+    const terminal = crossRef.terminal;
+    if (!terminal) {
+        return `this.consume(${ctx.consume++}, ID, ${getGrammarAccess(ctx, crossRef)});`;
+    } else if (langium.isRuleCall(terminal) && langium.isParserRule(terminal.rule.ref)) {
+        return `this.subrule(${ctx.subrule++}, this.${terminal.rule.ref.name}, ${getGrammarAccess(ctx, crossRef)});`;
+    } else if (langium.isRuleCall(terminal) && langium.isTerminalRule(terminal.rule.ref)) {
+        return `this.consume(${ctx.consume++}, ${terminal.rule.ref.name}, ${getGrammarAccess(ctx, crossRef)});`;
+    } else {
+        return '';
+    }
 }
 
 function buildAlternatives(ctx: RuleContext, alternatives: langium.Alternatives): GeneratorNode {
