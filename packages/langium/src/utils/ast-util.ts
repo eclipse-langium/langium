@@ -166,12 +166,12 @@ export function findLeafNodeAtOffset(node: CstNode, offset: number): LeafCstNode
  *      can be RootAstNode but must not. It also must not be from the same
  *      Document as the targetNode.
  */
-export function findLocalReferences(targetNode: AstNode, lookup: AstNode): Stream<AstNodeReference> {
-    const refs: AstNodeReference[] = [];
+export function findLocalReferences(targetNode: AstNode, lookup: AstNode): Stream<Reference> {
+    const refs: Reference[] = [];
     const process = (node: AstNodeContent) => {
         streamReferences(node.node).forEach((refNode: AstNodeReference) => {
             if (refNode.reference.ref === targetNode) {
-                refs.push(refNode);
+                refs.push(refNode.reference);
             }
         });
     };

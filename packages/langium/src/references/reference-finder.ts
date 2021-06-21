@@ -44,11 +44,7 @@ export class DefaultReferenceFinder implements ReferenceFinder {
                     refs.push(nameNode);
             }
             findLocalReferences(targetAstNode, rootNode.element).forEach((element) => {
-                if (element) {
-                    const nameNode = this.findNameNode(element.container, element.reference.$refName);
-                    if (nameNode)
-                        refs.push(nameNode);
-                }
+                refs.push(element.$refNode);
             });
         }
         return refs.map(node => Location.create(

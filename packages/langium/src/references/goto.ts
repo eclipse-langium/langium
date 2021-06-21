@@ -4,12 +4,11 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { Location, TextDocumentPositionParams } from 'vscode-languageserver';
+import { Location, Range, TextDocumentPositionParams } from 'vscode-languageserver';
 import { LangiumDocument } from '../documents/document';
 import { LangiumServices } from '../services';
 import { CstNode } from '../syntax-tree';
 import { findLeafNodeAtOffset } from '../utils/ast-util';
-import { toRange } from '../utils/cst-util';
 import { NameProvider } from './naming';
 import { References } from './references';
 
@@ -40,10 +39,13 @@ export class DefaultGoToResolverProvider implements GoToResolver {
                 }
             }
         }
-        return targetCstNodes.map(node => Location.create(
-            document.uri,
-            toRange(node, document)
-        ));
+        return targetCstNodes.map(node => {
+            const offset = document.positionAt(node.offset);
+            return Location.create(
+                document.uri,
+                Range.create(offset, offset));
+        }
+        );
     }
 
 }
