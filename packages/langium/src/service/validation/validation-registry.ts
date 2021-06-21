@@ -47,18 +47,18 @@ export class ValidationRegistry {
         for (const [type, ch] of Object.entries(checksRecord)) {
             if (Array.isArray(ch)) {
                 for (const check of ch) {
-                    this.doRegister(type, this.wrapValidationException(check).bind(thisObj));
+                    this.doRegister(type, this.wrapValidationException(check, thisObj));
                 }
             } else if (ch) {
-                this.doRegister(type, this.wrapValidationException(ch).bind(thisObj));
+                this.doRegister(type, this.wrapValidationException(ch, thisObj));
             }
         }
     }
 
-    protected wrapValidationException(check: ValidationCheck): ValidationCheck {
+    protected wrapValidationException(check: ValidationCheck, thisObj: unknown): ValidationCheck {
         return (node, accept) => {
             try {
-                check.call(this, node, accept);
+                check.call(thisObj, node, accept);
             } catch (e) {
                 console.error('An exception occured executing a validation.', e);
             }

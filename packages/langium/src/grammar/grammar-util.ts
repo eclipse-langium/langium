@@ -92,9 +92,11 @@ function putFeature(element: ast.AbstractElement, previous: string | undefined, 
 
 export function replaceTokens(input: string): string {
     let result = input;
+    result = result.replace(/\s+/g, 'Whitespace');
     result = result.replace(/:/g, 'Colon');
     result = result.replace(/\./g, 'Dot');
     result = result.replace(/\//g, 'Slash');
+    result = result.replace(/\\/g, 'Backslash');
     result = result.replace(/,/g, 'Comma');
     result = result.replace(/\(/g, 'ParenthesisOpen');
     result = result.replace(/\)/g, 'ParenthesisClose');
@@ -113,10 +115,32 @@ export function replaceTokens(input: string): string {
     result = result.replace(/\|/g, 'Pipe');
     result = result.replace(/=/g, 'Equals');
     result = result.replace(/-/g, 'Dash');
+    result = result.replace(/_/g, 'Underscore');
     result = result.replace(/;/g, 'Semicolon');
     result = result.replace(/@/g, 'At');
+    result = result.replace(/%/g, 'Percent');
+    result = result.replace(/\$/g, 'Currency');
+    result = result.replace(/"/g, 'DoubleQuote');
+    result = result.replace(/'/g, 'SingleQuote');
+    result = result.replace(/#/g, 'Hash');
+    // The ß gets special treatment here, because its `toUpperCase` behavior is really weird.
+    result = result.replace(/ß/g, 'Eszett');
     result = result[0].toUpperCase() + result.substring(1);
+    result = replaceUnicodeTokens(result);
     return result;
+}
+
+export function replaceUnicodeTokens(input: string): string {
+    let output = '';
+    for (let i = 0; i < input.length; i++) {
+        const char = input.charCodeAt(i);
+        if (char < 65 || char > 90 && char < 97 || char > 122) {
+            output += `u${char}`;
+        } else {
+            output += input.charAt(i);
+        }
+    }
+    return output;
 }
 
 export function findNodeForFeature(node: CstNode | undefined, feature: string | undefined, index?: number): CstNode | undefined {
@@ -172,6 +196,10 @@ export function getRuleType(rule: ast.AbstractRule | undefined): string {
         return rule.type ?? 'string';
     }
     return getTypeName(rule);
+}
+
+export function getEntryRule(grammar: ast.Grammar): ast.ParserRule | undefined {
+    return grammar.rules.find(e => ast.isParserRule(e)) as ast.ParserRule;
 }
 
 export function loadGrammar(json: string): ast.Grammar {

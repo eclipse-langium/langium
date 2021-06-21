@@ -4,10 +4,10 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { AbstractRule, Grammar, isParserRule, isTerminalRule, Keyword, LangiumGrammarAstType, ParserRule, TerminalRule, UnorderedGroup } from './generated/ast';
+import { AbstractRule, Grammar, isTerminalRule, Keyword, LangiumGrammarAstType, ParserRule, TerminalRule, UnorderedGroup } from './generated/ast';
 import { ValidationAcceptor, ValidationCheck, ValidationRegistry } from '../service/validation/validation-registry';
 import { LangiumGrammarServices } from './langium-grammar-module';
-import { isDataTypeRule } from './grammar-util';
+import { getEntryRule, isDataTypeRule } from './grammar-util';
 
 type LangiumGrammarChecks = { [type in LangiumGrammarAstType]?: ValidationCheck | ValidationCheck[] }
 
@@ -46,7 +46,7 @@ export class LangiumGrammarValidator {
     }
 
     checkFirstGrammarRule(grammar: Grammar, accept: ValidationAcceptor): void {
-        const firstRule = grammar.rules.find(e => isParserRule(e)) as ParserRule;
+        const firstRule = getEntryRule(grammar);
         if (firstRule) {
             if (isDataTypeRule(firstRule)) {
                 accept('error', 'The entry rule cannot be a data type rule.', { node: firstRule, property: 'name' });

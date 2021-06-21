@@ -17,11 +17,6 @@ import { LangiumServices } from '../services';
 import { getContainerOfType } from '../utils/ast-util';
 import { ValueConverter } from './value-converter';
 
-type StackItem = {
-    object: any,
-    executedAction: boolean
-}
-
 export type ParseResult<T> = {
     value: T,
     parserErrors: IRecognitionException[],
@@ -30,7 +25,7 @@ export type ParseResult<T> = {
 
 export const DatatypeSymbol = Symbol('Datatype');
 
-export type RuleResult = (idxInCallingRule?: number, ...args: any[]) => any
+type RuleResult = () => any;
 
 export class LangiumParser {
     readonly grammarAccess: GrammarAccess;
@@ -40,10 +35,10 @@ export class LangiumParser {
     private readonly lexer: Lexer;
     private readonly nodeBuilder = new CstNodeBuilder();
     private readonly wrapper: ChevrotainWrapper;
-    private stack: StackItem[] = [];
+    private stack: any[] = [];
     private mainRule!: RuleResult;
 
-    private get current(): StackItem {
+    private get current(): any {
         return this.stack[this.stack.length - 1];
     }
 
@@ -91,10 +86,7 @@ export class LangiumParser {
     private startImplementation($type: string | symbol | undefined, implementation: () => unknown): () => unknown {
         return () => {
             if (!this.wrapper.IS_RECORDING) {
-                this.stack.push({
-                    object: { $type },
-                    executedAction: false
-                });
+                this.stack.push({ $type });
             }
             let result: unknown;
             try {
@@ -122,6 +114,10 @@ export class LangiumParser {
         this.wrapper.wrapMany(idx, callback);
     }
 
+    atLeastOne(idx: number, callback: () => void): void {
+        this.wrapper.wrapAtLeastOne(idx, callback);
+    }
+
     consume(idx: number, tokenType: TokenType, feature: AbstractElement): void {
         const token = this.wrapper.wrapConsume(idx, tokenType);
         if (!this.wrapper.IS_RECORDING) {
@@ -130,7 +126,7 @@ export class LangiumParser {
             if (assignment) {
                 let crossRefId: string | undefined;
                 if (isCrossReference(assignment.terminal)) {
-                    crossRefId = `${this.current.object.$type}:${assignment.feature}`;
+                    crossRefId = `${this.current.$type}:${assignment.feature}`;
                 }
                 this.assign(assignment, token.image, leafNode, crossRefId);
             }
@@ -141,11 +137,11 @@ export class LangiumParser {
         const result = this.subrule(idx, rule, feature);
         if (!this.wrapper.IS_RECORDING) {
             const resultKind = result.$type;
-            const object = Object.assign(result, this.current.object);
+            const object = Object.assign(result, this.current);
             if (resultKind) {
-                (<any>object).$type = resultKind;
+                object.$type = resultKind;
             }
-            const newItem = { ...this.current, object };
+            const newItem = object;
             this.stack.pop();
             this.stack.push(newItem);
         }
@@ -171,16 +167,13 @@ export class LangiumParser {
     }
 
     action($type: string, action: Action): void {
-        if (!this.wrapper.IS_RECORDING && !this.current.executedAction) {
+        if (!this.wrapper.IS_RECORDING) {
             const last = this.current;
-            const newItem: StackItem = {
-                object: { $type },
-                executedAction: true
-            };
+            const newItem = { $type };
             this.stack.pop();
             this.stack.push(newItem);
             if (action.feature && action.operator) {
-                this.assign(action, last.object, last.object.$cstNode);
+                this.assign(action, last, last.$cstNode);
             }
         }
     }
@@ -208,8 +201,7 @@ export class LangiumParser {
         if (this.wrapper.IS_RECORDING) {
             return undefined;
         }
-        const item = this.current;
-        const obj = item.object;
+        const obj = this.current;
         for (const [name, value] of Object.entries(obj)) {
             if (!name.startsWith('$')) {
                 if (Array.isArray(value)) {
@@ -218,7 +210,7 @@ export class LangiumParser {
                             item.$container = obj;
                         }
                     }
-                } else if (item !== null && typeof (value) === 'object') {
+                } else if (obj !== null && typeof (value) === 'object') {
                     (<any>value).$container = obj;
                 }
             }
@@ -233,7 +225,7 @@ export class LangiumParser {
     }
 
     private assign(assignment: { operator: string, feature: string }, value: unknown, cstNode: CstNode, crossRefId?: string): void {
-        const obj = this.current.object;
+        const obj = this.current;
         const feature = assignment.feature.replace(/\^/g, '');
         let item: unknown;
         if (crossRefId && typeof value === 'string') {
@@ -322,5 +314,9 @@ class ChevrotainWrapper extends EmbeddedActionsParser {
 
     wrapMany(idx: number, callback: () => void): void {
         this.many(idx, callback);
+    }
+
+    wrapAtLeastOne(idx: number, callback: () => void): void {
+        this.atLeastOne(idx, callback);
     }
 }
