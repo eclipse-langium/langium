@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { isRuleCall } from '../grammar/generated/ast';
+import { AbstractRule, isRuleCall } from '../grammar/generated/ast';
 import { CstNode } from '../syntax-tree';
 
 export interface ValueConverter {
@@ -21,17 +21,22 @@ export class DefaultValueConverter implements ValueConverter {
             if (!rule) {
                 throw new Error('This cst node was not parsed by a rule.');
             }
-            return this.runConverter(rule.name, input, cstNode);
+            return this.runConverter(rule, input, cstNode);
         } else {
             return input;
         }
     }
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    protected runConverter(ruleName: string, input: string, cstNode: CstNode): ValueType {
-        switch (ruleName) {
+    protected runConverter(rule: AbstractRule, input: string, cstNode: CstNode): ValueType {
+        switch (rule.name) {
+            case 'INT': return convertInt(input);
             case 'string': return convertString(input);
             case 'ID': return convertID(input);
+        }
+        switch (rule.type) {
+            case 'number': return convertNumber(input);
+            case 'boolean': return convertBoolean(input);
             default: return input;
         }
     }
@@ -47,4 +52,16 @@ export function convertID(input: string): string {
     } else {
         return input;
     }
+}
+
+export function convertInt(input: string): number {
+    return parseInt(input);
+}
+
+export function convertNumber(input: string): number {
+    return parseFloat(input);
+}
+
+export function convertBoolean(input: string): boolean {
+    return input.toLowerCase() === 'true';
 }

@@ -137,7 +137,7 @@ export class LangiumGrammarValidator {
     }
 }
 
-const primitiveTypes = ['string', 'number', 'boolean', 'date'];
+const primitiveTypes = ['string', 'number', 'boolean', 'Date'];
 
 function isPrimitiveType(type: string): boolean {
     return primitiveTypes.includes(type);

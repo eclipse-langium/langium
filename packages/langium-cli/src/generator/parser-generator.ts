@@ -34,9 +34,9 @@ export function generateParser(grammar: langium.Grammar, config: LangiumConfig):
     );
     if (config.langiumInternal) {
         fileNode.children.push("import { LangiumServices } from '../../services';", NL);
-        fileNode.children.push("import { LangiumParser, Number, String } from '../../parser/langium-parser';", NL);
+        fileNode.children.push("import { LangiumParser, DatatypeSymbol } from '../../parser/langium-parser';", NL);
     } else {
-        fileNode.children.push("import { LangiumParser, LangiumServices, Number, String } from 'langium';", NL);
+        fileNode.children.push("import { LangiumParser, LangiumServices, DatatypeSymbol } from 'langium';", NL);
     }
     fileNode.children.push('import { ', grammar.name, "GrammarAccess } from './grammar-access';", NL);
 
@@ -132,7 +132,7 @@ function buildRule(ctx: RuleContext, rule: ParserRule, first: boolean): Composit
 
     if (!rule.fragment) {
         if (isDataTypeRule(rule)) {
-            type = `'${rule.type ?? 'String'}'`;
+            type = 'DatatypeSymbol';
         } else {
             type = getTypeName(rule);
         }

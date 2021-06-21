@@ -28,21 +28,7 @@ export type ParseResult<T> = {
     lexerErrors: ILexingError[]
 }
 
-// eslint-disable-next-line @typescript-eslint/no-namespace
-export namespace String {
-    export const type = 'String';
-    export function is(item: unknown): boolean {
-        return (item as any).$type === type;
-    }
-}
-
-// eslint-disable-next-line @typescript-eslint/no-namespace
-export namespace Number {
-    export const type = 'Number';
-    export function is(item: unknown): boolean {
-        return (item as any).$type === type;
-    }
-}
+export const DatatypeSymbol = Symbol('Datatype');
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type RuleResult = (idxInCallingRule?: number, ...args: any[]) => any
@@ -72,7 +58,7 @@ export class LangiumParser {
 
     MAIN_RULE(
         name: string,
-        type: string,
+        type: string | symbol,
         implementation: () => unknown
     ): () => unknown {
         return this.mainRule = this.DEFINE_RULE(name, type, implementation);
@@ -80,7 +66,7 @@ export class LangiumParser {
 
     DEFINE_RULE(
         name: string,
-        type: string | undefined,
+        type: string | symbol | undefined,
         implementation: () => unknown
     ): () => unknown {
         return this.wrapper.DEFINE_RULE(name, this.startImplementation(type, implementation).bind(this));
@@ -103,7 +89,7 @@ export class LangiumParser {
         };
     }
 
-    private startImplementation($type: string | undefined, implementation: () => unknown): () => unknown {
+    private startImplementation($type: string | symbol | undefined, implementation: () => unknown): () => unknown {
         return () => {
             if (!this.wrapper.IS_RECORDING) {
                 this.stack.push({
@@ -240,12 +226,9 @@ export class LangiumParser {
         }
         this.nodeBuilder.construct(obj);
         this.stack.pop();
-        if (String.is(obj)) {
+        if (obj.$type === DatatypeSymbol) {
             const node = obj.$cstNode;
             return node.text;
-        } else if (Number.is(obj)) {
-            const node = obj.$cstNode;
-            return parseFloat(<string>node.text);
         }
         return obj;
     }
