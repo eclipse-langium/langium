@@ -30,7 +30,6 @@ export type ParseResult<T> = {
 
 export const DatatypeSymbol = Symbol('Datatype');
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type RuleResult = (idxInCallingRule?: number, ...args: any[]) => any
 
 export class LangiumParser {
@@ -104,7 +103,7 @@ export class LangiumParser {
                 console.log('Parser exception thrown!', err);
                 result = undefined;
             }
-            if (!this.wrapper.IS_RECORDING && !result) {
+            if (!this.wrapper.IS_RECORDING && result === undefined) {
                 result = this.construct();
             }
             return result;
