@@ -5,10 +5,10 @@
  ******************************************************************************/
 
 import * as langium from 'langium';
-import { getContainerOfType, getTypeName, isDataTypeRule, ParserRule, stream } from 'langium';
+import { getContainerOfType, getTypeName, ParserRule, stream } from 'langium';
 import { CompositeGeneratorNode, GeneratorNode, IndentNode, NewLineNode, NL, process, replaceTokens } from 'langium';
 import { collectAst } from './type-collector';
-import { Cardinality, findAllFeatures, isArray, isOptional } from 'langium';
+import { Cardinality, findAllFeatures, isDataTypeRule, isOptional } from 'langium';
 import { LangiumConfig } from '../package';
 import { generatedHeader } from './util';
 
@@ -244,8 +244,10 @@ function wrap(ctx: RuleContext, node: GeneratorNode, cardinality: Cardinality): 
         return node;
     } else {
         const wrapper = new CompositeGeneratorNode();
-        if (isArray(cardinality)) {
+        if (cardinality === '*') {
             wrapper.children.push(`this.many(${ctx.many++}, () => {`, NL);
+        } else if (cardinality === '+') {
+            wrapper.children.push(`this.atLeastOne(${ctx.many++}, () => {`, NL);
         } else if (isOptional(cardinality)) {
             wrapper.children.push(`this.option(${ctx.option++}, () => {`, NL);
         }
@@ -317,7 +319,7 @@ function buildKeywordToken(keyword: string, keywords: string[], terminals: langi
 }
 
 function escapeRegExp(text: string): string {
-    return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return text.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&');
 }
 
 function findLongerAlt(keyword: string, keywords: string[], terminals: langium.TerminalRule[]): string | undefined {

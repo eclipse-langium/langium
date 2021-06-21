@@ -127,7 +127,7 @@ export class Parser extends LangiumParser {
         this.many(3, () => {
             this.subrule(1, this.AbstractMetamodelDeclaration, this.grammarAccess.Grammar.metamodelDeclarationsAbstractMetamodelDeclarationRuleCall);
         });
-        this.many(4, () => {
+        this.atLeastOne(4, () => {
             this.subrule(2, this.AbstractRule, this.grammarAccess.Grammar.rulesAbstractRuleRuleCall);
         });
         return this.construct();
@@ -259,10 +259,12 @@ export class Parser extends LangiumParser {
     Alternatives = this.DEFINE_RULE("Alternatives", AbstractElement, () => {
         this.initializeElement(this.grammarAccess.Alternatives);
         this.unassignedSubrule(1, this.UnorderedGroup, this.grammarAccess.Alternatives.UnorderedGroupRuleCall);
-        this.many(1, () => {
+        this.option(1, () => {
             this.action(Alternatives, this.grammarAccess.Alternatives.AlternativeselementsAction);
-            this.consume(1, PipeKeyword, this.grammarAccess.Alternatives.PipeKeyword);
-            this.subrule(2, this.UnorderedGroup, this.grammarAccess.Alternatives.elementsUnorderedGroupRuleCall);
+            this.atLeastOne(1, () => {
+                this.consume(1, PipeKeyword, this.grammarAccess.Alternatives.PipeKeyword);
+                this.subrule(2, this.UnorderedGroup, this.grammarAccess.Alternatives.elementsUnorderedGroupRuleCall);
+            });
         });
         return this.construct();
     });
@@ -270,10 +272,12 @@ export class Parser extends LangiumParser {
     UnorderedGroup = this.DEFINE_RULE("UnorderedGroup", AbstractElement, () => {
         this.initializeElement(this.grammarAccess.UnorderedGroup);
         this.unassignedSubrule(1, this.Group, this.grammarAccess.UnorderedGroup.GroupRuleCall);
-        this.many(1, () => {
+        this.option(1, () => {
             this.action(UnorderedGroup, this.grammarAccess.UnorderedGroup.UnorderedGroupelementsAction);
-            this.consume(1, AmpersandKeyword, this.grammarAccess.UnorderedGroup.AmpersandKeyword);
-            this.subrule(2, this.Group, this.grammarAccess.UnorderedGroup.elementsGroupRuleCall);
+            this.atLeastOne(1, () => {
+                this.consume(1, AmpersandKeyword, this.grammarAccess.UnorderedGroup.AmpersandKeyword);
+                this.subrule(2, this.Group, this.grammarAccess.UnorderedGroup.elementsGroupRuleCall);
+            });
         });
         return this.construct();
     });
@@ -281,9 +285,11 @@ export class Parser extends LangiumParser {
     Group = this.DEFINE_RULE("Group", AbstractElement, () => {
         this.initializeElement(this.grammarAccess.Group);
         this.unassignedSubrule(1, this.AbstractToken, this.grammarAccess.Group.AbstractTokenRuleCall);
-        this.many(1, () => {
+        this.option(1, () => {
             this.action(Group, this.grammarAccess.Group.GroupelementsAction);
-            this.subrule(2, this.AbstractToken, this.grammarAccess.Group.elementsAbstractTokenRuleCall);
+            this.atLeastOne(1, () => {
+                this.subrule(2, this.AbstractToken, this.grammarAccess.Group.elementsAbstractTokenRuleCall);
+            });
         });
         return this.construct();
     });
@@ -589,7 +595,7 @@ export class Parser extends LangiumParser {
         this.unassignedSubrule(1, this.AssignableTerminal, this.grammarAccess.AssignableAlternatives.AssignableTerminalRuleCall);
         this.option(1, () => {
             this.action(Alternatives, this.grammarAccess.AssignableAlternatives.AlternativeselementsAction);
-            this.many(1, () => {
+            this.atLeastOne(1, () => {
                 this.consume(1, PipeKeyword, this.grammarAccess.AssignableAlternatives.PipeKeyword);
                 this.subrule(2, this.AssignableTerminal, this.grammarAccess.AssignableAlternatives.elementsAssignableTerminalRuleCall);
             });

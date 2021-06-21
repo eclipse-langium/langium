@@ -42,13 +42,13 @@ Parameter:
 	name=ID;
 
 Alternatives returns AbstractElement:
-	UnorderedGroup ({Alternatives.elements+=current} '|' elements+=UnorderedGroup)*;
+	UnorderedGroup ({Alternatives.elements+=current} ('|' elements+=UnorderedGroup)+)?;
 
 UnorderedGroup returns AbstractElement:
-	Group ({UnorderedGroup.elements+=current} '&' elements+=Group)*;
+	Group ({UnorderedGroup.elements+=current} ('&' elements+=Group)+)?;
 
 Group returns AbstractElement:
-	AbstractToken ({Group.elements+=current} elements+=AbstractToken)*;
+	AbstractToken ({Group.elements+=current} elements+=AbstractToken+)?;
 
 AbstractToken returns AbstractElement:
 	AbstractTokenWithCardinality |
