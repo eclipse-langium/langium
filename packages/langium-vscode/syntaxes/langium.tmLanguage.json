@@ -13,7 +13,7 @@
         },
         {
             "name": "keyword.control.langium",
-            "match": "\\b(grammar|terminal|enum|fragment|hidden|generate|as|with|import|returns|primitive)\\b"
+            "match": "\\b(grammar|terminal|enum|fragment|hidden|generate|as|with|import|returns)\\b"
         },
         {
             "name": "constant.language.langium",

@@ -7,7 +7,7 @@
 // @ts-nocheck
 import { createToken, Lexer } from 'chevrotain';
 import { LangiumServices } from '../../services';
-import { LangiumParser, Number, String } from '../../parser/langium-parser';
+import { LangiumParser, DatatypeSymbol } from '../../parser/langium-parser';
 import { LangiumGrammarGrammarAccess } from './grammar-access';
 import { AbstractElement, AbstractMetamodelDeclaration, AbstractNegatedToken, AbstractRule, Annotation, Condition, Grammar, NamedArgument, Parameter, TerminalGroup, TerminalToken, TerminalTokenElement, Action, Alternatives, Assignment, CrossReference, Group, Keyword, RuleCall, UnorderedGroup, GeneratedMetamodel, ReferencedMetamodel, NegatedToken, UntilToken, ParserRule, TerminalRule, Conjunction, Disjunction, LiteralCondition, Negation, ParameterReference, CharacterRange, TerminalAlternatives, TerminalRuleCall, Wildcard, } from './ast';
 

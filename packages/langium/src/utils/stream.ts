@@ -187,7 +187,7 @@ export class StreamImpl<S, T> implements Stream<T> {
             }
         });
     }
-    
+
     join(separator: string): string {
         const iterator = this.iterator();
         let value = '';
@@ -279,7 +279,7 @@ export class EmptyStream<T> implements Stream<T> {
     distinct(): Stream<T> {
         return EMPTY_STREAM;
     }
-    
+
     join(): string {
         return '';
     }
