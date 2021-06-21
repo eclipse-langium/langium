@@ -10,7 +10,7 @@ import { CompositeGeneratorNode, GeneratorNode, IndentNode, NewLineNode, NL, pro
 import { collectAst } from './type-collector';
 import { Cardinality, findAllFeatures, isArray, isOptional } from 'langium';
 import { LangiumConfig } from '../package';
-import { generatedHeader } from './util';
+import { collectKeywords, generatedHeader } from './util';
 
 type RuleContext = {
     name: string,
@@ -334,26 +334,4 @@ function findLongerAlt(keyword: string, keywords: string[], terminals: langium.T
     }
     // TODO: for now, just return id
     return terminals.find(e => e.name === 'ID')?.name;
-}
-
-function collectKeywords(grammar: langium.Grammar): string[] {
-    const keywords = new Set<string>();
-
-    for (const rule of stream(grammar.rules).filterType(langium.isParserRule)) {
-        collectElementKeywords(rule.alternatives, keywords);
-    }
-
-    return Array.from(keywords).sort((a, b) => a.localeCompare(b));
-}
-
-function collectElementKeywords(element: langium.AbstractElement, keywords: Set<string>) {
-    if (langium.isAlternatives(element) || langium.isGroup(element) || langium.isUnorderedGroup(element)) {
-        for (const item of element.elements) {
-            collectElementKeywords(item, keywords);
-        }
-    } else if (langium.isAssignment(element)) {
-        collectElementKeywords(element.terminal, keywords);
-    } else if (langium.isKeyword(element)) {
-        keywords.add(element.value);
-    }
 }
