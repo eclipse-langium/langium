@@ -46,6 +46,16 @@
 			]
 		},
 		{
+			"name": "Run Domainmodel Extension",
+			"type": "extensionHost",
+			"request": "launch",
+            "runtimeExecutable": "${execPath}",
+			"args": [
+				"${workspaceFolder}/packages/langium",
+				"--extensionDevelopmentPath=${workspaceFolder}/examples/domainmodel"
+			]
+		},
+		{
 			"name": "Extension Tests",
 			"type": "extensionHost",
 			"request": "launch",

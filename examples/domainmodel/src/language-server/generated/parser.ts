@@ -135,13 +135,13 @@ export class Parser extends LangiumParser {
         this.consume(2, ID, this.grammarAccess.Entity.nameIDRuleCall);
         this.option(1, () => {
             this.consume(3, ExtendsKeyword, this.grammarAccess.Entity.ExtendsKeyword);
-            this.consume(4, ID, this.grammarAccess.Entity.superTypeEntityCrossReference);
+            this.subrule(1, this.QualifiedName, this.grammarAccess.Entity.superTypeEntityCrossReference);
         });
-        this.consume(5, CurlyOpenKeyword, this.grammarAccess.Entity.CurlyOpenKeyword);
+        this.consume(4, CurlyOpenKeyword, this.grammarAccess.Entity.CurlyOpenKeyword);
         this.many(1, () => {
-            this.subrule(1, this.Feature, this.grammarAccess.Entity.featuresFeatureRuleCall);
+            this.subrule(2, this.Feature, this.grammarAccess.Entity.featuresFeatureRuleCall);
         });
-        this.consume(6, CurlyCloseKeyword, this.grammarAccess.Entity.CurlyCloseKeyword);
+        this.consume(5, CurlyCloseKeyword, this.grammarAccess.Entity.CurlyCloseKeyword);
         return this.construct();
     });
 
@@ -152,7 +152,7 @@ export class Parser extends LangiumParser {
         });
         this.consume(2, ID, this.grammarAccess.Feature.nameIDRuleCall);
         this.consume(3, ColonKeyword, this.grammarAccess.Feature.ColonKeyword);
-        this.consume(4, ID, this.grammarAccess.Feature.typeTypeCrossReference);
+        this.subrule(1, this.QualifiedName, this.grammarAccess.Feature.typeTypeCrossReference);
         return this.construct();
     });
 
