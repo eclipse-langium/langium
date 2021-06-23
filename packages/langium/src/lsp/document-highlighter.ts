@@ -6,12 +6,12 @@
 
 import * as vscodeLanguageserver from 'vscode-languageserver';
 import { LangiumDocument } from '../documents/document';
+import { NameProvider } from '../references/naming';
+import { References } from '../references/references';
 import { LangiumServices } from '../services';
 import { AstNode, CstNode } from '../syntax-tree';
 import { findLeafNodeAtOffset, findLocalReferences } from '../utils/ast-util';
 import { toRange } from '../utils/cst-util';
-import { NameProvider } from './naming';
-import { References } from './references';
 
 export interface DocumentHighlighter {
     findHighlights(document: LangiumDocument, params: vscodeLanguageserver.DocumentHighlightParams): vscodeLanguageserver.Location[];

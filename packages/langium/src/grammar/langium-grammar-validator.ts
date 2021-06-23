@@ -4,10 +4,10 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import { ValidationAcceptor, ValidationCheck, ValidationRegistry } from '../lsp/validation/validation-registry';
 import { AbstractRule, Grammar, isTerminalRule, Keyword, LangiumGrammarAstType, ParserRule, TerminalRule, UnorderedGroup } from './generated/ast';
-import { ValidationAcceptor, ValidationCheck, ValidationRegistry } from '../service/validation/validation-registry';
-import { LangiumGrammarServices } from './langium-grammar-module';
 import { getEntryRule, isDataTypeRule } from './grammar-util';
+import { LangiumGrammarServices } from './langium-grammar-module';
 
 type LangiumGrammarChecks = { [type in LangiumGrammarAstType]?: ValidationCheck | ValidationCheck[] }
 

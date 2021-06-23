@@ -7,11 +7,11 @@
 import { Location, TextDocumentPositionParams } from 'vscode-languageserver';
 import { LangiumDocument } from '../documents/document';
 import { NameProvider } from '../references/naming';
+import { References } from '../references/references';
 import { LangiumServices } from '../services';
 import { AstNode, CstNode } from '../syntax-tree';
 import { findLeafNodeAtOffset, findLocalReferences } from '../utils/ast-util';
 import { flatten, toRange } from '../utils/cst-util';
-import { References } from './references';
 
 export interface ReferenceFinder {
     findReferences(document: LangiumDocument, params: TextDocumentPositionParams, includeDeclaration: boolean): Location[];

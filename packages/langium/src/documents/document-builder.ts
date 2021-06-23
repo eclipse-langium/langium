@@ -5,10 +5,10 @@
  ******************************************************************************/
 
 import { Connection } from 'vscode-languageserver/node';
+import { DocumentValidator } from '../lsp/validation/document-validator';
 import { LangiumParser } from '../parser/langium-parser';
-import { LangiumServices } from '../services';
 import { ScopeComputation } from '../references/scope';
-import { DocumentValidator } from '../service/validation/document-validator';
+import { LangiumServices } from '../services';
 import { LangiumDocument, ProcessedLangiumDocument } from './document';
 
 export interface DocumentBuilder {
