@@ -8,11 +8,12 @@
 import { createToken, Lexer } from 'chevrotain';
 import { LangiumParser, LangiumServices, DatatypeSymbol } from 'langium';
 import { ArithmeticsGrammarAccess } from './grammar-access';
-import { AbstractDefinition, Expression, Module, Statement, DeclaredParameter, Definition, Addition, Division, FunctionCall, Multiplication, NumberLiteral, Subtraction, Evaluation, } from './ast';
+import { AbstractDefinition, Expression, Import, Module, Statement, DeclaredParameter, Definition, Addition, Division, FunctionCall, Multiplication, NumberLiteral, Subtraction, Evaluation, } from './ast';
 
 const ID = createToken({ name: 'ID', pattern: /[_a-zA-Z][\w_]*/ });
 const NUMBER = createToken({ name: 'NUMBER', pattern: /[0-9]+(\.[0-9])?/ });
 const WS = createToken({ name: 'WS', pattern: /\s+/, group: Lexer.SKIPPED });
+const ImportKeyword = createToken({ name: 'ImportKeyword', pattern: /import/, longer_alt: ID });
 const ModuleKeyword = createToken({ name: 'ModuleKeyword', pattern: /module/, longer_alt: ID });
 const DefKeyword = createToken({ name: 'DefKeyword', pattern: /def/, longer_alt: ID });
 const AsteriskKeyword = createToken({ name: 'AsteriskKeyword', pattern: /\*/, longer_alt: ID });
@@ -35,8 +36,9 @@ AsteriskKeyword.LABEL = "'*'";
 SlashKeyword.LABEL = "'/'";
 PlusKeyword.LABEL = "'+'";
 DefKeyword.LABEL = "'def'";
+ImportKeyword.LABEL = "'import'";
 ModuleKeyword.LABEL = "'module'";
-const tokens = [ModuleKeyword, DefKeyword, AsteriskKeyword, ColonKeyword, CommaKeyword, DashKeyword, ParenthesisCloseKeyword, ParenthesisOpenKeyword, PlusKeyword, SemicolonKeyword, SlashKeyword, ID, NUMBER, WS];
+const tokens = [ImportKeyword, ModuleKeyword, DefKeyword, AsteriskKeyword, ColonKeyword, CommaKeyword, DashKeyword, ParenthesisCloseKeyword, ParenthesisOpenKeyword, PlusKeyword, SemicolonKeyword, SlashKeyword, ID, NUMBER, WS];
 
 export class Parser extends LangiumParser {
     readonly grammarAccess: ArithmeticsGrammarAccess;
@@ -50,8 +52,18 @@ export class Parser extends LangiumParser {
         this.consume(1, ModuleKeyword, this.grammarAccess.Module.ModuleKeyword);
         this.consume(2, ID, this.grammarAccess.Module.nameIDRuleCall);
         this.many(1, () => {
-            this.subrule(1, this.Statement, this.grammarAccess.Module.statementsStatementRuleCall);
+            this.subrule(1, this.Import, this.grammarAccess.Module.importsImportRuleCall);
         });
+        this.many(2, () => {
+            this.subrule(2, this.Statement, this.grammarAccess.Module.statementsStatementRuleCall);
+        });
+        return this.construct();
+    });
+
+    Import = this.DEFINE_RULE("Import", Import, () => {
+        this.initializeElement(this.grammarAccess.Import);
+        this.consume(1, ImportKeyword, this.grammarAccess.Import.ImportKeyword);
+        this.consume(2, ID, this.grammarAccess.Import.moduleModuleCrossReference);
         return this.construct();
     });
 
@@ -121,44 +133,38 @@ export class Parser extends LangiumParser {
 
     Addition = this.DEFINE_RULE("Addition", Expression, () => {
         this.initializeElement(this.grammarAccess.Addition);
-        this.unassignedSubrule(1, this.Subtraction, this.grammarAccess.Addition.SubtractionRuleCall);
+        this.unassignedSubrule(1, this.Multiplication, this.grammarAccess.Addition.MultiplicationRuleCall);
         this.many(1, () => {
-            this.action(Addition, this.grammarAccess.Addition.AdditionleftAction);
-            this.consume(1, PlusKeyword, this.grammarAccess.Addition.PlusKeyword);
-            this.subrule(2, this.Subtraction, this.grammarAccess.Addition.rightSubtractionRuleCall);
-        });
-        return this.construct();
-    });
-
-    Subtraction = this.DEFINE_RULE("Subtraction", Expression, () => {
-        this.initializeElement(this.grammarAccess.Subtraction);
-        this.unassignedSubrule(1, this.Multiplication, this.grammarAccess.Subtraction.MultiplicationRuleCall);
-        this.many(1, () => {
-            this.action(Subtraction, this.grammarAccess.Subtraction.SubtractionleftAction);
-            this.consume(1, DashKeyword, this.grammarAccess.Subtraction.DashKeyword);
-            this.subrule(2, this.Multiplication, this.grammarAccess.Subtraction.rightMultiplicationRuleCall);
+            this.or(1, [
+                () => {
+                    this.action(Addition, this.grammarAccess.Addition.AdditionleftAction);
+                    this.consume(1, PlusKeyword, this.grammarAccess.Addition.PlusKeyword);
+                },
+                () => {
+                    this.action(Subtraction, this.grammarAccess.Addition.SubtractionleftAction);
+                    this.consume(2, DashKeyword, this.grammarAccess.Addition.DashKeyword);
+                },
+            ]);
+            this.subrule(2, this.Multiplication, this.grammarAccess.Addition.rightMultiplicationRuleCall);
         });
         return this.construct();
     });
 
     Multiplication = this.DEFINE_RULE("Multiplication", Expression, () => {
         this.initializeElement(this.grammarAccess.Multiplication);
-        this.unassignedSubrule(1, this.Division, this.grammarAccess.Multiplication.DivisionRuleCall);
+        this.unassignedSubrule(1, this.PrimaryExpression, this.grammarAccess.Multiplication.PrimaryExpressionRuleCall);
         this.many(1, () => {
-            this.action(Multiplication, this.grammarAccess.Multiplication.MultiplicationleftAction);
-            this.consume(1, AsteriskKeyword, this.grammarAccess.Multiplication.AsteriskKeyword);
-            this.subrule(2, this.Division, this.grammarAccess.Multiplication.rightDivisionRuleCall);
-        });
-        return this.construct();
-    });
-
-    Division = this.DEFINE_RULE("Division", Expression, () => {
-        this.initializeElement(this.grammarAccess.Division);
-        this.unassignedSubrule(1, this.PrimaryExpression, this.grammarAccess.Division.PrimaryExpressionRuleCall);
-        this.many(1, () => {
-            this.action(Division, this.grammarAccess.Division.DivisionleftAction);
-            this.consume(1, SlashKeyword, this.grammarAccess.Division.SlashKeyword);
-            this.subrule(2, this.PrimaryExpression, this.grammarAccess.Division.rightPrimaryExpressionRuleCall);
+            this.or(1, [
+                () => {
+                    this.action(Multiplication, this.grammarAccess.Multiplication.MultiplicationleftAction);
+                    this.consume(1, AsteriskKeyword, this.grammarAccess.Multiplication.AsteriskKeyword);
+                },
+                () => {
+                    this.action(Division, this.grammarAccess.Multiplication.DivisionleftAction);
+                    this.consume(2, SlashKeyword, this.grammarAccess.Multiplication.SlashKeyword);
+                },
+            ]);
+            this.subrule(2, this.PrimaryExpression, this.grammarAccess.Multiplication.rightPrimaryExpressionRuleCall);
         });
         return this.construct();
     });
@@ -172,35 +178,23 @@ export class Parser extends LangiumParser {
                 this.consume(2, ParenthesisCloseKeyword, this.grammarAccess.PrimaryExpression.ParenthesisCloseKeyword);
             },
             () => {
-                this.unassignedSubrule(2, this.NumberLiteral, this.grammarAccess.PrimaryExpression.NumberLiteralRuleCall);
+                this.action(NumberLiteral, this.grammarAccess.PrimaryExpression.NumberLiteralAction);
+                this.consume(3, NUMBER, this.grammarAccess.PrimaryExpression.valueNUMBERRuleCall);
             },
             () => {
-                this.unassignedSubrule(3, this.FunctionCall, this.grammarAccess.PrimaryExpression.FunctionCallRuleCall);
+                this.action(FunctionCall, this.grammarAccess.PrimaryExpression.FunctionCallAction);
+                this.consume(4, ID, this.grammarAccess.PrimaryExpression.funcAbstractDefinitionCrossReference);
+                this.option(1, () => {
+                    this.consume(5, ParenthesisOpenKeyword, this.grammarAccess.PrimaryExpression.ParenthesisOpenKeyword);
+                    this.subrule(2, this.Expression, this.grammarAccess.PrimaryExpression.argsExpressionRuleCall);
+                    this.many(1, () => {
+                        this.consume(6, CommaKeyword, this.grammarAccess.PrimaryExpression.CommaKeyword);
+                        this.subrule(3, this.Expression, this.grammarAccess.PrimaryExpression.argsExpressionRuleCall);
+                    });
+                    this.consume(7, ParenthesisCloseKeyword, this.grammarAccess.PrimaryExpression.ParenthesisCloseKeyword);
+                });
             },
         ]);
-        return this.construct();
-    });
-
-    NumberLiteral = this.DEFINE_RULE("NumberLiteral", Expression, () => {
-        this.initializeElement(this.grammarAccess.NumberLiteral);
-        this.action(NumberLiteral, this.grammarAccess.NumberLiteral.NumberLiteralAction);
-        this.consume(1, NUMBER, this.grammarAccess.NumberLiteral.valueNUMBERRuleCall);
-        return this.construct();
-    });
-
-    FunctionCall = this.DEFINE_RULE("FunctionCall", Expression, () => {
-        this.initializeElement(this.grammarAccess.FunctionCall);
-        this.action(FunctionCall, this.grammarAccess.FunctionCall.FunctionCallAction);
-        this.consume(1, ID, this.grammarAccess.FunctionCall.funcAbstractDefinitionCrossReference);
-        this.option(1, () => {
-            this.consume(2, ParenthesisOpenKeyword, this.grammarAccess.FunctionCall.ParenthesisOpenKeyword);
-            this.subrule(1, this.Expression, this.grammarAccess.FunctionCall.argsExpressionRuleCall);
-            this.many(1, () => {
-                this.consume(3, CommaKeyword, this.grammarAccess.FunctionCall.CommaKeyword);
-                this.subrule(2, this.Expression, this.grammarAccess.FunctionCall.argsExpressionRuleCall);
-            });
-            this.consume(4, ParenthesisCloseKeyword, this.grammarAccess.FunctionCall.ParenthesisCloseKeyword);
-        });
         return this.construct();
     });
 
