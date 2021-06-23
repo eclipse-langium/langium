@@ -143,7 +143,7 @@ TerminalAlternatives:
 	TerminalGroup ({TerminalAlternatives.elements+=current} '|' elements+=TerminalGroup)*;
 
 TerminalGroup:
-	elements+=TerminalToken*;
+	TerminalToken ({TerminalGroup.elements+=current} elements+=TerminalToken+)?;
 
 TerminalToken:
 	TerminalTokenElement cardinality=('?'|'*'|'+')?;
