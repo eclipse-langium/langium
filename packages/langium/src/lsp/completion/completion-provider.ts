@@ -13,7 +13,7 @@ import { AstNodeDescription, ScopeProvider } from '../../references/scope';
 import { LangiumServices } from '../../services';
 import { AstNode, CstNode } from '../../syntax-tree';
 import { getContainerOfType, isAstNode, findLeafNodeAtOffset } from '../../utils/ast-util';
-import { flatten } from '../../utils/cst-util';
+import { findRelevantNode, flatten } from '../../utils/cst-util';
 import { stream } from '../../utils/stream';
 import { findFirstFeatures, findNextFeatures } from './follow-element-computation';
 import { RuleInterpreter } from './rule-interpreter';
@@ -56,7 +56,10 @@ export class DefaultCompletionProvider {
                     const flattened = flatten(commonSuperRule.node).filter(e => e.offset < offset);
                     const possibleFeatures = this.ruleInterpreter.interpretRule(commonSuperRule.rule, [...flattened], offset);
                     // Remove features which we already identified during parsing
-                    const partialMatches = possibleFeatures.filter(e => this.ruleInterpreter.featureMatches(e, flattened[flattened.length - 1], offset) === 'partial');
+                    const partialMatches = possibleFeatures.filter(e => {
+                        const match = this.ruleInterpreter.featureMatches(e, flattened[flattened.length - 1], offset);
+                        return match === 'partial' || match === 'both';
+                    });
                     const notMatchingFeatures = possibleFeatures.filter(e => !partialMatches.includes(e));
                     features.push(...partialMatches);
                     features.push(...notMatchingFeatures.flatMap(e => findNextFeatures([e])));
@@ -70,7 +73,7 @@ export class DefaultCompletionProvider {
                     } else {
                         return e;
                     }
-                }).forEach(e => this.completionFor(node.element, e, acceptor));
+                }).forEach(e => this.completionFor(findRelevantNode(node), e, acceptor));
             } else {
                 // The entry rule is the first parser rule
                 // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -125,6 +128,10 @@ export class DefaultCompletionProvider {
     }
 
     protected findCommonSuperRule(node: CstNode): { rule: ast.ParserRule, node: CstNode } | undefined {
+        while (typeof node.element.$type !== 'string') {
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            node = node.parent!;
+        }
         let superNode = node.parent;
         while (superNode) {
             if (superNode.element !== node.element) {
@@ -173,7 +180,7 @@ export class DefaultCompletionProvider {
                 break;
             }
         }
-        if (negativeOffset > 0 || offset === 0 || !this.isWordCharacterAt(content, offset - 1) || !this.isWordCharacterAt(content, offset)) {
+        if (negativeOffset > 0 || offset === 0 || !this.isWordCharacterAt(completion, 0) || (!this.isWordCharacterAt(content, offset - 1) && !this.isWordCharacterAt(content, offset))) {
             const start = document.positionAt(offset - negativeOffset);
             const end = document.positionAt(offset);
             return {
