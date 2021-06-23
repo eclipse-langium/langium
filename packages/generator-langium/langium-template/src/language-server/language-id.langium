@@ -1,13 +1,14 @@
-grammar <%= LanguageName %> hidden(WS)
+grammar <%= LanguageName %>
+hidden(WS)
 
 Model:
-	(persons+=Person | greetings+=Greeting)*;
+    (persons+=Person | greetings+=Greeting)*;
 
 Person:
     'person' name=ID;
 
 Greeting:
-	'Hello' person=[Person|ID] '!';
+    'Hello' person=[Person|ID] '!';
 
 terminal WS: /\s+/;
 terminal ID: /[_a-zA-Z][\w_]*/;

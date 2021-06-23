@@ -13,7 +13,7 @@ import { LangiumDocument } from '../documents/document';
 import { LangiumServices } from '../services';
 
 export function startLanguageServer(services: LangiumServices): void {
-    const connection = services.languageServer.Connection;
+    const connection = services.lsp.Connection;
     if (!connection) {
         throw new Error('Starting a language server requires the languageServer.Connection service to be set.');
     }
@@ -72,13 +72,13 @@ export function addCompletionHandler(connection: Connection, services: LangiumSe
             if (document) {
                 const text = document.getText();
                 const offset = document.offsetAt(_textDocumentPosition.position);
-                const parser = services.Parser;
+                const parser = services.parser.LangiumParser;
                 const parseResult = parser.parse(text);
                 const rootNode = parseResult.value;
                 (rootNode as { $document: LangiumDocument }).$document = document;
                 document.parseResult = parseResult;
                 document.precomputedScopes = services.references.ScopeComputation.computeScope(document);
-                const completionProvider = services.completion.CompletionProvider;
+                const completionProvider = services.lsp.completion.CompletionProvider;
                 const assist = completionProvider.getCompletion(rootNode, offset);
                 return assist;
             } else {
@@ -89,7 +89,7 @@ export function addCompletionHandler(connection: Connection, services: LangiumSe
 }
 
 export function addFindReferencesHandler(connection: Connection, services: LangiumServices): void {
-    const referenceFinder = services.references.ReferenceFinder;
+    const referenceFinder = services.lsp.ReferenceFinder;
     connection.onReferences((params: ReferenceParams): Location[] => {
         const document = paramsDocument(params, services);
         if (document) {
@@ -101,7 +101,7 @@ export function addFindReferencesHandler(connection: Connection, services: Langi
 }
 
 export function addDocumentSymbolHandler(connection: Connection, services: LangiumServices): void {
-    const symbolProvider = services.symbols.DocumentSymbolProvider;
+    const symbolProvider = services.lsp.DocumentSymbolProvider;
     connection.onDocumentSymbol((params: DocumentSymbolParams): DocumentSymbol[] => {
         const document = paramsDocument(params, services);
         if (document) {
@@ -117,7 +117,7 @@ export function addGotoDefinition(connection: Connection, services: LangiumServi
         (_textDocumentPosition: TextDocumentPositionParams): LocationLink[] => {
             const document = paramsDocument(_textDocumentPosition, services);
             if (document) {
-                return services.references.GoToResolver.goToDefinition(document, _textDocumentPosition);
+                return services.lsp.GoToResolver.goToDefinition(document, _textDocumentPosition);
             }
             else {
                 return [];
@@ -127,7 +127,7 @@ export function addGotoDefinition(connection: Connection, services: LangiumServi
 }
 
 export function addDocumentHighlightsHandler(connection: Connection, services: LangiumServices): void {
-    const documentHighlighter = services.references.DocumentHighlighter;
+    const documentHighlighter = services.lsp.DocumentHighlighter;
     connection.onDocumentHighlight((params: DocumentHighlightParams): Location[] => {
         const document = paramsDocument(params, services);
         if (document) {

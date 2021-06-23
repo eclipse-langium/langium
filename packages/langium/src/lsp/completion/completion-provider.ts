@@ -32,7 +32,7 @@ export class DefaultCompletionProvider {
 
     constructor(services: LangiumServices) {
         this.scopeProvider = services.references.ScopeProvider;
-        this.ruleInterpreter = services.completion.RuleInterpreter;
+        this.ruleInterpreter = services.lsp.completion.RuleInterpreter;
         this.grammarAccess = services.GrammarAccess;
     }
 

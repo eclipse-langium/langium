@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import { Connection } from 'vscode-languageserver/node';
-import { DocumentValidator } from '../lsp/validation/document-validator';
+import { DocumentValidator } from '../validation/document-validator';
 import { resolveAllReferences } from '../utils/ast-util';
 import { LangiumParser } from '../parser/langium-parser';
 import { ScopeComputation } from '../references/scope';
@@ -23,8 +23,8 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
     protected readonly documentValidator: DocumentValidator;
 
     constructor(services: LangiumServices) {
-        this.connection = services.languageServer.Connection;
-        this.parser = services.Parser;
+        this.connection = services.lsp.Connection;
+        this.parser = services.parser.LangiumParser;
         this.scopeComputation = services.references.ScopeComputation;
         this.documentValidator = services.validation.DocumentValidator;
     }

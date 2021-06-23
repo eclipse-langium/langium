@@ -9,7 +9,9 @@ import { DomainModelGrammarAccess } from './grammar-access';
 import { Parser } from './parser';
 
 export const DomainModelGeneratedModule: Module<LangiumServices, LangiumGeneratedServices> = {
-    Parser: (injector) => new Parser(injector),
+    parser: {
+        LangiumParser: (injector) => new Parser(injector)
+    },
     GrammarAccess: () => new DomainModelGrammarAccess(),
     AstReflection: () => new DomainModelAstReflection()
 };
