@@ -10,7 +10,9 @@ import { LangiumGrammarGrammarAccess } from './grammar-access';
 import { Parser } from './parser';
 
 export const LangiumGrammarGeneratedModule: Module<LangiumServices, LangiumGeneratedServices> = {
-    Parser: (injector) => new Parser(injector),
+    parser: {
+        LangiumParser: (injector) => new Parser(injector)
+    },
     GrammarAccess: () => new LangiumGrammarGrammarAccess(),
     AstReflection: () => new LangiumGrammarAstReflection()
 };

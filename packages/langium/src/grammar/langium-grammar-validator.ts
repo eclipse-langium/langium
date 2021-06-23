@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { ValidationAcceptor, ValidationCheck, ValidationRegistry } from '../lsp/validation/validation-registry';
+import { ValidationAcceptor, ValidationCheck, ValidationRegistry } from '../validation/validation-registry';
 import { AbstractRule, Grammar, isTerminalRule, Keyword, LangiumGrammarAstType, ParserRule, TerminalRule, UnorderedGroup } from './generated/ast';
 import { getEntryRule, isDataTypeRule } from './grammar-util';
 import { LangiumGrammarServices } from './langium-grammar-module';

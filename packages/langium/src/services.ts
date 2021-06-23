@@ -12,8 +12,6 @@ import { Connection, TextDocuments } from 'vscode-languageserver/node';
 import { Linker } from './references/linker';
 import { NameProvider } from './references/naming';
 import { ScopeProvider, ScopeComputation } from './references/scope';
-import { ValidationRegistry } from './lsp/validation/validation-registry';
-import { DocumentValidator } from './lsp/validation/document-validator';
 import { JsonSerializer } from './serializer/json-serializer';
 import { LangiumDocument } from './documents/document';
 import { DocumentSymbolProvider } from './lsp/document-symbol-provider';
@@ -24,49 +22,55 @@ import { ReferenceFinder } from './lsp/reference-finder';
 import { GoToResolver } from './lsp/goto';
 import { DocumentHighlighter } from './lsp/document-highlighter';
 import { References } from './references/references';
+import { ValidationRegistry } from './validation/validation-registry';
+import { DocumentValidator } from './validation/document-validator';
 
 export type LangiumGeneratedServices = {
-    Parser: LangiumParser,
-    GrammarAccess: GrammarAccess,
+    parser: {
+        LangiumParser: LangiumParser
+    }
     AstReflection: AstReflection
+    GrammarAccess: GrammarAccess
 }
 
-export type LangiumServices = LangiumGeneratedServices & {
+export type LangiumLspServices = {
+    completion: {
+        CompletionProvider: CompletionProvider
+        RuleInterpreter: RuleInterpreter
+    }
+    Connection?: Connection
+    DocumentHighlighter: DocumentHighlighter
+    DocumentSymbolProvider: DocumentSymbolProvider
+    GoToResolver: GoToResolver
+    ReferenceFinder: ReferenceFinder
+}
+
+export type LangiumDefaultServices = {
     parser: {
         ValueConverter: ValueConverter
     }
     documents: {
-        DocumentBuilder: DocumentBuilder,
+        DocumentBuilder: DocumentBuilder
         TextDocuments: TextDocuments<LangiumDocument>
-    },
-    languageServer: {
-        Connection?: Connection
-    },
-    references: {
-        Linker: Linker,
-        NameProvider: NameProvider,
-        ScopeProvider: ScopeProvider,
-        ScopeComputation: ScopeComputation,
-        References: References,
-        ReferenceFinder: ReferenceFinder,
-        GoToResolver: GoToResolver,
-        DocumentHighlighter: DocumentHighlighter
-    },
-    completion: {
-        CompletionProvider: CompletionProvider,
-        RuleInterpreter: RuleInterpreter
     }
-    validation: {
-        DocumentValidator: DocumentValidator,
-        ValidationRegistry: ValidationRegistry
-    },
+    lsp: LangiumLspServices
+    references: {
+        Linker: Linker
+        NameProvider: NameProvider
+        References: References
+        ScopeProvider: ScopeProvider
+        ScopeComputation: ScopeComputation
+    }
     serializer: {
         JsonSerializer: JsonSerializer
-    },
-    symbols: {
-        DocumentSymbolProvider: DocumentSymbolProvider
+    }
+    validation: {
+        DocumentValidator: DocumentValidator
+        ValidationRegistry: ValidationRegistry
     }
 }
+
+export type LangiumServices = LangiumGeneratedServices & LangiumDefaultServices
 
 type DeepPartial<T> = {
     [P in keyof T]?: DeepPartial<T[P]>;

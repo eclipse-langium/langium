@@ -2,13 +2,13 @@ import { ValidationAcceptor, ValidationCheck, ValidationRegistry } from 'langium
 import { DomainModelAstType, Type } from './generated/ast';
 import { DomainModelServices } from './domain-model-module';
 
-type LangiumGrammarChecks = { [type in DomainModelAstType]?: ValidationCheck | ValidationCheck[] }
+type DomainModelChecks = { [type in DomainModelAstType]?: ValidationCheck | ValidationCheck[] }
 
 export class DomainModelValidationRegistry extends ValidationRegistry {
     constructor(services: DomainModelServices) {
         super(services);
         const validator = services.validation.DomainModelValidator;
-        const checks: LangiumGrammarChecks = {
+        const checks: DomainModelChecks = {
             Type: validator.checkTypeStartsWithCapital
         };
         this.register(checks, validator);

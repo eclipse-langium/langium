@@ -26,7 +26,10 @@ export function generateModule(grammar: langium.Grammar, config: LangiumConfig):
 
     node.children.push('export const ', grammar.name, 'GeneratedModule: Module<LangiumServices, LangiumGeneratedServices> = {', NL);
     const moduleNode = new IndentNode();
-    moduleNode.children.push('Parser: (injector) => new Parser(injector),', NL);
+    moduleNode.children.push('parser: {', NL);
+    const parserNode = new IndentNode();
+    parserNode.children.push('LangiumParser: (injector) => new Parser(injector)', NL);
+    moduleNode.children.push(parserNode, '},', NL);
     moduleNode.children.push('GrammarAccess: () => new ', grammar.name, 'GrammarAccess(),', NL);
     moduleNode.children.push('AstReflection: () => new ', grammar.name, 'AstReflection()', NL);
     node.children.push(moduleNode, '};', NL);
