@@ -158,7 +158,7 @@ export class LangiumParser {
             if (assignment && cstNode) {
                 let crossRefId: string | undefined;
                 if (isCrossReference(assignment.terminal)) {
-                    crossRefId = `${this.current.object.$type}:${assignment.feature}`;
+                    crossRefId = `${this.current.$type}:${assignment.feature}`;
                 }
                 this.assign(assignment, subruleResult, cstNode, crossRefId);
             }

@@ -183,6 +183,18 @@ export function findNodesForFeature(node: CstNode | undefined, feature: string |
     return findNodesForFeatureInternal(node, feature, node?.element, true);
 }
 
+export function findAssignment(cstNode: CstNode): ast.Assignment | undefined {
+    let n: CstNode | undefined = cstNode;
+    do {
+        const assignment = getContainerOfType(n.feature, ast.isAssignment);
+        if (assignment) {
+            return assignment;
+        }
+        n = n.parent;
+    } while (n);
+    return undefined;
+}
+
 export function getTypeName(rule: ast.AbstractRule | undefined): string {
     if (rule) {
         return rule.type ?? rule.name;
@@ -216,6 +228,6 @@ export function loadGrammar(json: string): ast.Grammar {
         value: grammar
     };
     grammar.$document = document;
-    document.precomputedScopes = services.references.ScopeComputation.computeScope(grammar);
+    document.precomputedScopes = services.references.ScopeComputation.computeScope(document);
     return grammar;
 }

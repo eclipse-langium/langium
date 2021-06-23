@@ -41,15 +41,12 @@ export class DefaultGoToResolverProvider implements GoToResolver {
             }
         }
         // TODO handle different documents URI -> LangiumDocument adjust positioning below
-        return targetCstNodes.map(link => {
-            return LocationLink.create(
-                document.uri,
-                toRange(this.findActualNodeFor(link.target) ?? link.target, document),
-                toRange(link.target, document),
-                toRange(link.source, document)
-            );
-        }
-        );
+        return targetCstNodes.map(link => LocationLink.create(
+            document.uri,
+            toRange(this.findActualNodeFor(link.target) ?? link.target, document),
+            toRange(link.target, document),
+            toRange(link.source, document)
+        ));
     }
     protected findActualNodeFor(cstNode: CstNode): CstNode | undefined {
         let actualNode: CstNode | undefined = cstNode;

@@ -6,13 +6,14 @@
 
 import { Connection } from 'vscode-languageserver/node';
 import { DocumentValidator } from '../lsp/validation/document-validator';
+import { resolveAllReferences } from '../utils/ast-util';
 import { LangiumParser } from '../parser/langium-parser';
 import { ScopeComputation } from '../references/scope';
 import { LangiumServices } from '../services';
-import { LangiumDocument, ProcessedLangiumDocument } from './document';
+import { LangiumDocument } from './document';
 
 export interface DocumentBuilder {
-    build(document: LangiumDocument): ProcessedLangiumDocument
+    build(document: LangiumDocument): void
 }
 
 export class DefaultDocumentBuilder implements DocumentBuilder {
@@ -28,18 +29,25 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
         this.documentValidator = services.validation.DocumentValidator;
     }
 
-    build(document: LangiumDocument): ProcessedLangiumDocument {
+    build(document: LangiumDocument): void {
         const parseResult = this.parser.parse(document);
         document.parseResult = parseResult;
-        document.precomputedScopes = this.scopeComputation.computeScope(parseResult.value);
-        const processed = document as ProcessedLangiumDocument;
-        const diagnostics = this.documentValidator.validateDocument(processed);
+        this.process(document);
 
         if (this.connection) {
+            const diagnostics = this.documentValidator.validateDocument(document);
             // Send the computed diagnostics to VS Code.
             this.connection.sendDiagnostics({ uri: document.uri, diagnostics });
+        } else {
+            resolveAllReferences(parseResult.value);
         }
-        return processed;
+    }
+
+    /**
+     * Process the document by running precomputations. The default implementation precomputes the scope.
+     */
+    protected process(document: LangiumDocument): void {
+        document.precomputedScopes = this.scopeComputation.computeScope(document);
     }
 
 }

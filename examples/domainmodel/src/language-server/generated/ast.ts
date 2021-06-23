@@ -8,7 +8,9 @@
 import { AstNode, AstReflection, Reference, isAstNode } from 'langium';
 
 export interface AbstractElement extends AstNode {
-    readonly $container: Domainmodel | PackageDeclaration;
+    readonly $container: Domainmodel | AbstractElement;
+    name: string
+    elements: Array<AbstractElement>
 }
 
 export const AbstractElement = 'AbstractElement';
@@ -50,19 +52,7 @@ export function isType(item: unknown): item is Type {
     return reflection.isInstance(item, Type);
 }
 
-export interface Import extends AbstractElement {
-    importedNamespace: string
-}
-
-export const Import = 'Import';
-
-export function isImport(item: unknown): item is Import {
-    return reflection.isInstance(item, Import);
-}
-
 export interface PackageDeclaration extends AbstractElement {
-    name: string
-    elements: Array<AbstractElement>
 }
 
 export const PackageDeclaration = 'PackageDeclaration';
@@ -93,16 +83,14 @@ export function isEntity(item: unknown): item is Entity {
 
 export type QualifiedName = string
 
-export type QualifiedNameWithWildcard = string
-
-export type DomainModelAstType = 'AbstractElement' | 'Domainmodel' | 'Feature' | 'Type' | 'Import' | 'PackageDeclaration' | 'DataType' | 'Entity';
+export type DomainModelAstType = 'AbstractElement' | 'Domainmodel' | 'Feature' | 'Type' | 'PackageDeclaration' | 'DataType' | 'Entity';
 
 export type DomainModelAstReference = 'Feature:type' | 'Entity:superType';
 
 export class DomainModelAstReflection implements AstReflection {
 
     getAllTypes(): string[] {
-        return ['AbstractElement', 'Domainmodel', 'Feature', 'Type', 'Import', 'PackageDeclaration', 'DataType', 'Entity'];
+        return ['AbstractElement', 'Domainmodel', 'Feature', 'Type', 'PackageDeclaration', 'DataType', 'Entity'];
     }
 
     isInstance(node: unknown, type: string): boolean {
@@ -114,7 +102,6 @@ export class DomainModelAstReflection implements AstReflection {
             return true;
         }
         switch (subtype) {
-            case Import:
             case PackageDeclaration: {
                 return this.isSubtype(AbstractElement, supertype);
             }

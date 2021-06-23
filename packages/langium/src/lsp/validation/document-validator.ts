@@ -6,7 +6,7 @@
 
 import { Range } from 'vscode-languageserver-textdocument';
 import { Diagnostic, DiagnosticSeverity } from 'vscode-languageserver/node';
-import { ProcessedLangiumDocument } from '../../documents/document';
+import { LangiumDocument } from '../../documents/document';
 import { findNodeForFeature } from '../../grammar/grammar-util';
 import { LangiumServices } from '../../services';
 import { AstNode } from '../../syntax-tree';
@@ -14,7 +14,7 @@ import { resolveAllReferences, streamAllContents } from '../../utils/ast-util';
 import { DiagnosticInfo, ValidationAcceptor, ValidationRegistry } from './validation-registry';
 
 export interface DocumentValidator {
-    validateDocument(document: ProcessedLangiumDocument): Diagnostic[];
+    validateDocument(document: LangiumDocument): Diagnostic[];
 }
 
 export class DefaultDocumentValidator {
@@ -24,9 +24,12 @@ export class DefaultDocumentValidator {
         this.validationRegistry = services.validation.ValidationRegistry;
     }
 
-    validateDocument(document: ProcessedLangiumDocument): Diagnostic[] {
+    validateDocument(document: LangiumDocument): Diagnostic[] {
         const parseResult = document.parseResult;
         const diagnostics: Diagnostic[] = [];
+        if (!parseResult) {
+            return diagnostics;
+        }
 
         // Process lexer errors
         for (const lexerError of parseResult.lexerErrors) {
@@ -74,7 +77,7 @@ export class DefaultDocumentValidator {
         return diagnostics;
     }
 
-    protected validateAst(rootNode: AstNode, document: ProcessedLangiumDocument): Diagnostic[] {
+    protected validateAst(rootNode: AstNode, document: LangiumDocument): Diagnostic[] {
         const validationItems: Diagnostic[] = [];
         const acceptor: ValidationAcceptor = <N extends AstNode>(severity: 'error' | 'warning' | 'info' | 'hint', message: string, info: DiagnosticInfo<N>) => {
             validationItems.push(this.toDiagnostic(severity, message, info, document));
@@ -91,7 +94,7 @@ export class DefaultDocumentValidator {
         return validationItems;
     }
 
-    protected toDiagnostic<N extends AstNode>(severity: 'error' | 'warning' | 'info' | 'hint', message: string, info: DiagnosticInfo<N>, document: ProcessedLangiumDocument): Diagnostic {
+    protected toDiagnostic<N extends AstNode>(severity: 'error' | 'warning' | 'info' | 'hint', message: string, info: DiagnosticInfo<N>, document: LangiumDocument): Diagnostic {
         return {
             message,
             range: getDiagnosticRange(info, document),
@@ -105,7 +108,7 @@ export class DefaultDocumentValidator {
     }
 }
 
-export function getDiagnosticRange<N extends AstNode>(info: DiagnosticInfo<N>, document: ProcessedLangiumDocument): Range {
+export function getDiagnosticRange<N extends AstNode>(info: DiagnosticInfo<N>, document: LangiumDocument): Range {
     if (info.range) {
         return info.range;
     }
