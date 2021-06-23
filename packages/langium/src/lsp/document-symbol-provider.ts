@@ -5,11 +5,11 @@
  ******************************************************************************/
 
 import { DocumentSymbol, SymbolKind } from 'vscode-languageserver';
-import { LangiumDocument } from '../../documents/document';
-import { NameProvider } from '../../references/naming';
-import { LangiumServices } from '../../services';
-import { AstNode } from '../../syntax-tree';
-import { streamContents } from '../../utils/ast-util';
+import { LangiumDocument } from '../documents/document';
+import { NameProvider } from '../references/naming';
+import { LangiumServices } from '../services';
+import { AstNode } from '../syntax-tree';
+import { streamContents } from '../utils/ast-util';
 
 export interface DocumentSymbolProvider {
     getSymbols(document: LangiumDocument): DocumentSymbol[];

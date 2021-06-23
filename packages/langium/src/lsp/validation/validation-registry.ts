@@ -5,9 +5,8 @@
  ******************************************************************************/
 
 import { CodeDescription, DiagnosticRelatedInformation, DiagnosticTag, integer, Range } from 'vscode-languageserver/node';
-import { AstNode, Properties } from '../../syntax-tree';
 import { LangiumServices } from '../../services';
-import { AstReflection } from '../../syntax-tree';
+import { AstNode, AstReflection, Properties } from '../../syntax-tree';
 
 export type DiagnosticInfo<N extends AstNode> = {
     /** The AST node to which the diagnostic is attached. */

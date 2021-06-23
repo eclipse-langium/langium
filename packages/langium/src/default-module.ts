@@ -4,25 +4,25 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import { Connection, TextDocuments } from 'vscode-languageserver/node';
 import { Module } from './dependency-injection';
-import { LangiumServices } from './services';
 import { LangiumDocumentConfiguration } from './documents/document';
 import { DefaultDocumentBuilder } from './documents/document-builder';
-import { Connection, TextDocuments } from 'vscode-languageserver/node';
-import { DefaultLinker } from './references/linker';
-import { DefaultScopeComputation, DefaultScopeProvider } from './references/scope';
-import { DefaultNameProvider } from './references/naming';
-import { ValidationRegistry } from './service/validation/validation-registry';
-import { DefaultDocumentValidator } from './service/validation/document-validator';
-import { DefaultJsonSerializer } from './serializer/json-serializer';
-import { DefaultDocumentSymbolProvider } from './service/symbols/document-symbol-provider';
-import { DefaultCompletionProvider } from './service/completion/completion-provider';
-import { RuleInterpreter } from './service/completion/rule-interpreter';
+import { DefaultCompletionProvider } from './lsp/completion/completion-provider';
+import { RuleInterpreter } from './lsp/completion/rule-interpreter';
+import { DefaultDocumentHighlighter } from './lsp/document-highlighter';
+import { DefaultDocumentSymbolProvider } from './lsp/document-symbol-provider';
+import { DefaultGoToResolverProvider } from './lsp/goto';
+import { DefaultReferenceFinder } from './lsp/reference-finder';
+import { DefaultDocumentValidator } from './lsp/validation/document-validator';
+import { ValidationRegistry } from './lsp/validation/validation-registry';
 import { DefaultValueConverter } from './parser/value-converter';
-import { DefaultReferenceFinder } from './references/reference-finder';
-import { DefaultGoToResolverProvider } from './references/goto';
-import { DefaultDocumentHighlighter } from './references/document-highlighter';
+import { DefaultLinker } from './references/linker';
+import { DefaultNameProvider } from './references/naming';
 import { DefaultReferences } from './references/references';
+import { DefaultScopeComputation, DefaultScopeProvider } from './references/scope';
+import { DefaultJsonSerializer } from './serializer/json-serializer';
+import { LangiumServices } from './services';
 
 export type DefaultModuleContext = {
     connection?: Connection

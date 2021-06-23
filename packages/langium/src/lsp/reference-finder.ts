@@ -4,29 +4,29 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import * as vscodeLanguageserver from 'vscode-languageserver';
+import { Location, TextDocumentPositionParams } from 'vscode-languageserver';
 import { LangiumDocument } from '../documents/document';
+import { NameProvider } from '../references/naming';
+import { References } from '../references/references';
 import { LangiumServices } from '../services';
 import { AstNode, CstNode } from '../syntax-tree';
 import { findLeafNodeAtOffset, findLocalReferences } from '../utils/ast-util';
-import { toRange } from '../utils/cst-util';
-import { NameProvider } from './naming';
-import { References } from './references';
+import { flatten, toRange } from '../utils/cst-util';
 
-export interface DocumentHighlighter {
-    findHighlights(document: LangiumDocument, params: vscodeLanguageserver.DocumentHighlightParams): vscodeLanguageserver.Location[];
+export interface ReferenceFinder {
+    findReferences(document: LangiumDocument, params: TextDocumentPositionParams, includeDeclaration: boolean): Location[];
 }
 
-export class DefaultDocumentHighlighter implements DocumentHighlighter {
-    protected readonly references: References;
+export class DefaultReferenceFinder implements ReferenceFinder {
     protected readonly nameProvider: NameProvider;
+    protected readonly references: References;
 
     constructor(services: LangiumServices) {
-        this.references = services.references.References;
         this.nameProvider = services.references.NameProvider;
+        this.references = services.references.References;
     }
 
-    findHighlights(document: LangiumDocument, params: vscodeLanguageserver.DocumentHighlightParams): vscodeLanguageserver.Location[] {
+    findReferences(document: LangiumDocument, params: TextDocumentPositionParams, includeDeclaration: boolean): Location[] {
         const rootNode = document.parseResult?.value?.$cstNode;
         if (!rootNode) {
             return [];
@@ -38,22 +38,31 @@ export class DefaultDocumentHighlighter implements DocumentHighlighter {
         }
         const targetAstNode = this.references.findDeclaration(selectedNode)?.element;
         if (targetAstNode) {
-            const nameNode = this.findNameNode(targetAstNode);
-            if (nameNode)
-                refs.push(nameNode);
+            if (includeDeclaration) {
+                const nameNode = this.findNameNode(targetAstNode, selectedNode.text);
+                if (nameNode)
+                    refs.push(nameNode);
+            }
             findLocalReferences(targetAstNode, rootNode.element).forEach((element) => {
                 refs.push(element.$refNode);
             });
         }
-        return refs.map(node => vscodeLanguageserver.Location.create(
+        return refs.map(node => Location.create(
             document.uri,
             toRange(node, document)
         ));
     }
-    protected findNameNode(node: AstNode): CstNode | undefined {
+
+    protected findNameNode(node: AstNode, name: string): CstNode | undefined {
         const nameNode = this.nameProvider.getNameNode(node);
         if (nameNode)
             return nameNode;
+        if (node.$cstNode) {
+            // try find first leaf with name as text
+            const leafNode = flatten(node.$cstNode).find((n) => n.text === name);
+            if (leafNode)
+                return leafNode;
+        }
         return node.$cstNode;
     }
 }

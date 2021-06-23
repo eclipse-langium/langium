@@ -12,17 +12,17 @@ import { Connection, TextDocuments } from 'vscode-languageserver/node';
 import { Linker } from './references/linker';
 import { NameProvider } from './references/naming';
 import { ScopeProvider, ScopeComputation } from './references/scope';
-import { ValidationRegistry } from './service/validation/validation-registry';
-import { DocumentValidator } from './service/validation/document-validator';
+import { ValidationRegistry } from './lsp/validation/validation-registry';
+import { DocumentValidator } from './lsp/validation/document-validator';
 import { JsonSerializer } from './serializer/json-serializer';
 import { LangiumDocument } from './documents/document';
-import { DocumentSymbolProvider } from './service/symbols/document-symbol-provider';
-import { CompletionProvider } from './service/completion/completion-provider';
-import { RuleInterpreter } from './service/completion/rule-interpreter';
+import { DocumentSymbolProvider } from './lsp/document-symbol-provider';
+import { CompletionProvider } from './lsp/completion/completion-provider';
+import { RuleInterpreter } from './lsp/completion/rule-interpreter';
 import { ValueConverter } from './parser/value-converter';
-import { ReferenceFinder } from './references/reference-finder';
-import { GoToResolver } from './references/goto';
-import { DocumentHighlighter } from './references/document-highlighter';
+import { ReferenceFinder } from './lsp/reference-finder';
+import { GoToResolver } from './lsp/goto';
+import { DocumentHighlighter } from './lsp/document-highlighter';
 import { References } from './references/references';
 
 export type LangiumGeneratedServices = {

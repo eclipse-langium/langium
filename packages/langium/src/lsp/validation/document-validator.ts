@@ -6,12 +6,12 @@
 
 import { Range } from 'vscode-languageserver-textdocument';
 import { Diagnostic, DiagnosticSeverity } from 'vscode-languageserver/node';
-import { DiagnosticInfo, ValidationAcceptor, ValidationRegistry } from './validation-registry';
+import { ProcessedLangiumDocument } from '../../documents/document';
 import { findNodeForFeature } from '../../grammar/grammar-util';
 import { LangiumServices } from '../../services';
-import { ProcessedLangiumDocument } from '../../documents/document';
-import { resolveAllReferences, streamAllContents } from '../../utils/ast-util';
 import { AstNode } from '../../syntax-tree';
+import { resolveAllReferences, streamAllContents } from '../../utils/ast-util';
+import { DiagnosticInfo, ValidationAcceptor, ValidationRegistry } from './validation-registry';
 
 export interface DocumentValidator {
     validateDocument(document: ProcessedLangiumDocument): Diagnostic[];
