@@ -6,12 +6,11 @@
 
 import {
     InitializeParams, TextDocumentPositionParams, TextDocumentSyncKind, InitializeResult, Connection, CompletionList,
-    ReferenceParams, Location, DocumentSymbolParams, DocumentSymbol, Range, DocumentHighlightParams
+    ReferenceParams, Location, DocumentSymbolParams, DocumentSymbol, DocumentHighlightParams
 } from 'vscode-languageserver/node';
 
 import { LangiumDocument } from '../documents/document';
 import { LangiumServices } from '../services';
-import { toRange } from '../utils/cst-util';
 
 export function startLanguageServer(services: LangiumServices): void {
     const connection = services.languageServer.Connection;
@@ -70,8 +69,7 @@ export function addCompletionHandler(connection: Connection, services: LangiumSe
     // TODO create an extensible service API for completion
     connection.onCompletion(
         (_textDocumentPosition: TextDocumentPositionParams): CompletionList => {
-            const uri = _textDocumentPosition.textDocument.uri;
-            const document = services.documents.TextDocuments.get(uri);
+            const document = paramsDocument(_textDocumentPosition, services);
             if (document) {
                 const text = document.getText();
                 const offset = document.offsetAt(_textDocumentPosition.position);
@@ -94,10 +92,9 @@ export function addCompletionHandler(connection: Connection, services: LangiumSe
 export function addFindReferencesHandler(connection: Connection, services: LangiumServices): void {
     const referenceFinder = services.references.ReferenceFinder;
     connection.onReferences((params: ReferenceParams): Location[] => {
-        const uri = params.textDocument.uri;
-        const document = services.documents.TextDocuments.get(uri);
+        const document = paramsDocument(params, services);
         if (document) {
-            return referenceFinder.findReferenceLocations(document, params.position, params.context.includeDeclaration);
+            return referenceFinder.findReferences(document, params, params.context.includeDeclaration);
         } else {
             return [];
         }
@@ -107,8 +104,7 @@ export function addFindReferencesHandler(connection: Connection, services: Langi
 export function addDocumentSymbolHandler(connection: Connection, services: LangiumServices): void {
     const symbolProvider = services.symbols.DocumentSymbolProvider;
     connection.onDocumentSymbol((params: DocumentSymbolParams): DocumentSymbol[] => {
-        const uri = params.textDocument.uri;
-        const document = services.documents.TextDocuments.get(uri);
+        const document = paramsDocument(params, services);
         if (document) {
             return symbolProvider.getSymbols(document);
         } else {
@@ -120,17 +116,9 @@ export function addDocumentSymbolHandler(connection: Connection, services: Langi
 export function addGotoDeclaration(connection: Connection, services: LangiumServices): void {
     connection.onDeclaration(
         (_textDocumentPosition: TextDocumentPositionParams): Location[] => {
-            const uri = _textDocumentPosition.textDocument.uri;
-            const document = services.documents.TextDocuments.get(uri);
+            const document = paramsDocument(_textDocumentPosition, services);
             if (document) {
-                const goToResolver = services.references.GoToResolver;
-                const locations: Location[] = [];
-                const cstNodes = goToResolver.goToDeclaration(document, _textDocumentPosition.position);
-                cstNodes.map(cstNode => {
-                    const offset = document.positionAt(cstNode.offset);
-                    locations.push(Location.create(document.uri, Range.create(offset, offset)));
-                });
-                return locations;
+                return services.references.GoToResolver.goToDeclaration(document, _textDocumentPosition);
             }
             else {
                 return [];
@@ -142,15 +130,16 @@ export function addGotoDeclaration(connection: Connection, services: LangiumServ
 export function addDocumentHighlightsHandler(connection: Connection, services: LangiumServices): void {
     const documentHighlighter = services.references.DocumentHighlighter;
     connection.onDocumentHighlight((params: DocumentHighlightParams): Location[] => {
-        const uri = params.textDocument.uri;
-        const document = services.documents.TextDocuments.get(uri);
+        const document = paramsDocument(params, services);
         if (document) {
-            return documentHighlighter.findHighlights(document, params.position).map(node => Location.create(
-                document.uri,
-                toRange(node, document)
-            ));
+            return documentHighlighter.findHighlights(document, params);
         } else {
             return [];
         }
     });
+}
+
+function paramsDocument(params: TextDocumentPositionParams | DocumentSymbolParams, services: LangiumServices): LangiumDocument | undefined {
+    const uri = params.textDocument.uri;
+    return services.documents.TextDocuments.get(uri);
 }

@@ -19,6 +19,7 @@ export type Properties<N extends AstNode> = keyof Omit<N, keyof AstNode>
 
 export interface Reference<T extends AstNode = AstNode> {
     readonly ref?: T;
+    readonly $refNode: CstNode;
     readonly $refName: string;
 }
 

@@ -23,6 +23,7 @@ import { ValueConverter } from './parser/value-converter';
 import { ReferenceFinder } from './references/reference-finder';
 import { GoToResolver } from './references/goto';
 import { DocumentHighlighter } from './references/document-highlighter';
+import { References } from './references/references';
 
 export type LangiumGeneratedServices = {
     Parser: LangiumParser,
@@ -46,7 +47,8 @@ export type LangiumServices = LangiumGeneratedServices & {
         NameProvider: NameProvider,
         ScopeProvider: ScopeProvider,
         ScopeComputation: ScopeComputation,
-        ReferenceFinder: ReferenceFinder
+        References: References,
+        ReferenceFinder: ReferenceFinder,
         GoToResolver: GoToResolver,
         DocumentHighlighter: DocumentHighlighter
     },
