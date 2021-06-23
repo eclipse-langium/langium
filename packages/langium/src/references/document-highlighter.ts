@@ -4,23 +4,56 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { DocumentHighlightParams, Location } from 'vscode-languageserver';
+import * as vscodeLanguageserver from 'vscode-languageserver';
 import { LangiumDocument } from '../documents/document';
 import { LangiumServices } from '../services';
-import { ReferenceFinder } from './reference-finder';
+import { AstNode, CstNode } from '../syntax-tree';
+import { findLeafNodeAtOffset, findLocalReferences } from '../utils/ast-util';
+import { toRange } from '../utils/cst-util';
+import { NameProvider } from './naming';
+import { References } from './references';
 
 export interface DocumentHighlighter {
-    findHighlights(document: LangiumDocument, params: DocumentHighlightParams): Location[];
+    findHighlights(document: LangiumDocument, params: vscodeLanguageserver.DocumentHighlightParams): vscodeLanguageserver.Location[];
 }
 
 export class DefaultDocumentHighlighter implements DocumentHighlighter {
-    protected readonly referenceFinder: ReferenceFinder;
+    protected readonly references: References;
+    protected readonly nameProvider: NameProvider;
 
     constructor(services: LangiumServices) {
-        this.referenceFinder = services.references.ReferenceFinder;
+        this.references = services.references.References;
+        this.nameProvider = services.references.NameProvider;
     }
 
-    findHighlights(document: LangiumDocument, params: DocumentHighlightParams): Location[] {
-        return this.referenceFinder.findReferences(document, params, true);
+    findHighlights(document: LangiumDocument, params: vscodeLanguageserver.DocumentHighlightParams): vscodeLanguageserver.Location[] {
+        const rootNode = document.parseResult?.value?.$cstNode;
+        if (!rootNode) {
+            return [];
+        }
+        const refs: CstNode[] = [];
+        const selectedNode = findLeafNodeAtOffset(rootNode, document.offsetAt(params.position));
+        if (!selectedNode) {
+            return [];
+        }
+        const targetAstNode = this.references.findDeclaration(selectedNode)?.element;
+        if (targetAstNode) {
+            const nameNode = this.findNameNode(targetAstNode);
+            if (nameNode)
+                refs.push(nameNode);
+            findLocalReferences(targetAstNode, rootNode.element).forEach((element) => {
+                refs.push(element.$refNode);
+            });
+        }
+        return refs.map(node => vscodeLanguageserver.Location.create(
+            document.uri,
+            toRange(node, document)
+        ));
+    }
+    protected findNameNode(node: AstNode): CstNode | undefined {
+        const nameNode = this.nameProvider.getNameNode(node);
+        if (nameNode)
+            return nameNode;
+        return node.$cstNode;
     }
 }
