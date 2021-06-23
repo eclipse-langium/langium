@@ -1,5 +1,5 @@
 grammar <%= LanguageName %>
-hidden(WS)
+hidden(WS, SL_COMMENT, ML_COMMENT)
 
 Model:
     (persons+=Person | greetings+=Greeting)*;
@@ -14,3 +14,6 @@ terminal WS: /\s+/;
 terminal ID: /[_a-zA-Z][\w_]*/;
 terminal INT returns number: /[0-9]+/;
 terminal STRING: /"[^"]*"|'[^']*'/;
+
+terminal ML_COMMENT: /\/\*[\s\S]*?\*\//;
+terminal SL_COMMENT: /\/\/[^\n\r]*/;

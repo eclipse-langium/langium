@@ -12,6 +12,8 @@ import { AbstractElement, Domainmodel, Feature, Type, PackageDeclaration, DataTy
 
 const ID = createToken({ name: 'ID', pattern: /[_a-zA-Z][\w_]*/ });
 const INT = createToken({ name: 'INT', pattern: /[0-9]+/ });
+const ML_COMMENT = createToken({ name: 'ML_COMMENT', pattern: /\/\*[\s\S]*?\*\//, group: Lexer.SKIPPED });
+const SL_COMMENT = createToken({ name: 'SL_COMMENT', pattern: /\/\/[^\n\r]*/, group: Lexer.SKIPPED });
 const STRING = createToken({ name: 'STRING', pattern: /"[^"]*"|'[^']*'/ });
 const WS = createToken({ name: 'WS', pattern: /\s+/, group: Lexer.SKIPPED });
 const DatatypeKeyword = createToken({ name: 'DatatypeKeyword', pattern: /datatype/, longer_alt: ID });
@@ -33,7 +35,7 @@ EntityKeyword.LABEL = "'entity'";
 ExtendsKeyword.LABEL = "'extends'";
 ManyKeyword.LABEL = "'many'";
 PackageKeyword.LABEL = "'package'";
-const tokens = [DatatypeKeyword, ExtendsKeyword, PackageKeyword, EntityKeyword, ManyKeyword, ColonKeyword, CurlyCloseKeyword, CurlyOpenKeyword, DotKeyword, ID, INT, STRING, WS];
+const tokens = [DatatypeKeyword, ExtendsKeyword, PackageKeyword, EntityKeyword, ManyKeyword, ColonKeyword, CurlyCloseKeyword, CurlyOpenKeyword, DotKeyword, ID, INT, ML_COMMENT, SL_COMMENT, STRING, WS];
 
 export class Parser extends LangiumParser {
     readonly grammarAccess: DomainModelGrammarAccess;

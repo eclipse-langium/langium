@@ -13,7 +13,9 @@ import { AbstractElement, AbstractMetamodelDeclaration, AbstractNegatedToken, Ab
 
 const ID = createToken({ name: 'ID', pattern: /\^?[_a-zA-Z][\w_]*/ });
 const INT = createToken({ name: 'INT', pattern: /[0-9]+/ });
+const ML_COMMENT = createToken({ name: 'ML_COMMENT', pattern: /\/\*[\s\S]*?\*\//, group: Lexer.SKIPPED });
 const RegexLiteral = createToken({ name: 'RegexLiteral', pattern: /\/(?![*+?])(?:[^\r\n\[/\\]|\\.|\[(?:[^\r\n\]\\]|\\.)*\])+\// });
+const SL_COMMENT = createToken({ name: 'SL_COMMENT', pattern: /\/\/[^\n\r]*/, group: Lexer.SKIPPED });
 const string = createToken({ name: 'string', pattern: /"[^"]*"|'[^']*'/ });
 const WS = createToken({ name: 'WS', pattern: /\s+/, group: Lexer.SKIPPED });
 const FragmentKeyword = createToken({ name: 'FragmentKeyword', pattern: /fragment/, longer_alt: ID });
@@ -91,7 +93,7 @@ ReturnsKeyword.LABEL = "'returns'";
 TerminalKeyword.LABEL = "'terminal'";
 TrueKeyword.LABEL = "'true'";
 WithKeyword.LABEL = "'with'";
-const tokens = [FragmentKeyword, GenerateKeyword, TerminalKeyword, CurrentKeyword, GrammarKeyword, ReturnsKeyword, HiddenKeyword, ImportKeyword, FalseKeyword, TrueKeyword, WithKeyword, AsKeyword, DashMoreThanKeyword, DotDotKeyword, EqualsMoreThanKeyword, PlusEqualsKeyword, QuestionMarkEqualsKeyword, AmpersandKeyword, AsteriskKeyword, AtKeyword, BracketCloseKeyword, BracketOpenKeyword, ColonKeyword, CommaKeyword, CurlyCloseKeyword, CurlyOpenKeyword, DotKeyword, EqualsKeyword, ExclamationMarkKeyword, LessThanKeyword, MoreThanKeyword, ParenthesisCloseKeyword, ParenthesisOpenKeyword, PipeKeyword, PlusKeyword, QuestionMarkKeyword, SemicolonKeyword, ID, INT, RegexLiteral, string, WS];
+const tokens = [FragmentKeyword, GenerateKeyword, TerminalKeyword, CurrentKeyword, GrammarKeyword, ReturnsKeyword, HiddenKeyword, ImportKeyword, FalseKeyword, TrueKeyword, WithKeyword, AsKeyword, DashMoreThanKeyword, DotDotKeyword, EqualsMoreThanKeyword, PlusEqualsKeyword, QuestionMarkEqualsKeyword, AmpersandKeyword, AsteriskKeyword, AtKeyword, BracketCloseKeyword, BracketOpenKeyword, ColonKeyword, CommaKeyword, CurlyCloseKeyword, CurlyOpenKeyword, DotKeyword, EqualsKeyword, ExclamationMarkKeyword, LessThanKeyword, MoreThanKeyword, ParenthesisCloseKeyword, ParenthesisOpenKeyword, PipeKeyword, PlusKeyword, QuestionMarkKeyword, SemicolonKeyword, ID, INT, ML_COMMENT, RegexLiteral, SL_COMMENT, string, WS];
 
 export class Parser extends LangiumParser {
     readonly grammarAccess: LangiumGrammarGrammarAccess;

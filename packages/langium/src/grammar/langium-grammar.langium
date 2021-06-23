@@ -1,9 +1,12 @@
-grammar LangiumGrammar hidden(WS)
+grammar LangiumGrammar hidden(WS, SL_COMMENT, ML_COMMENT)
 
 terminal WS         : /\s+/;
 terminal ID returns string: /\^?[_a-zA-Z][\w_]*/;
 terminal INT returns number: /[0-9]+/;
 terminal string: /"[^"]*"|'[^']*'/;
+
+terminal ML_COMMENT: /\/\*[\s\S]*?\*\//;
+terminal SL_COMMENT: /\/\/[^\n\r]*/;
 
 Grammar:
 	'grammar' name=ID ('with' usedGrammars+=[Grammar|ID] (',' usedGrammars+=[Grammar|ID])*)?
