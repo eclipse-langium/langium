@@ -31,7 +31,8 @@
 			],
 			"sourceMaps": true,
 			"outFiles": [
-				"${workspaceFolder}/packages/langium/lib/**/*.js"
+				"${workspaceFolder}/packages/langium/lib/**/*.js",
+				"${workspaceFolder}/examples/domainmodel/out/**/*.js"
 			],
 			"type": "pwa-node"
 		},

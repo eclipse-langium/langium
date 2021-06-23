@@ -8,7 +8,7 @@
 import { createToken, Lexer } from 'chevrotain';
 import { LangiumParser, LangiumServices, DatatypeSymbol } from 'langium';
 import { DomainModelGrammarAccess } from './grammar-access';
-import { AbstractElement, Domainmodel, Feature, Type, Import, PackageDeclaration, DataType, Entity, } from './ast';
+import { AbstractElement, Domainmodel, Feature, Type, PackageDeclaration, DataType, Entity, } from './ast';
 
 const ID = createToken({ name: 'ID', pattern: /[_a-zA-Z][\w_]*/ });
 const INT = createToken({ name: 'INT', pattern: /[0-9]+/ });
@@ -18,9 +18,7 @@ const DatatypeKeyword = createToken({ name: 'DatatypeKeyword', pattern: /datatyp
 const ExtendsKeyword = createToken({ name: 'ExtendsKeyword', pattern: /extends/, longer_alt: ID });
 const PackageKeyword = createToken({ name: 'PackageKeyword', pattern: /package/, longer_alt: ID });
 const EntityKeyword = createToken({ name: 'EntityKeyword', pattern: /entity/, longer_alt: ID });
-const ImportKeyword = createToken({ name: 'ImportKeyword', pattern: /import/, longer_alt: ID });
 const ManyKeyword = createToken({ name: 'ManyKeyword', pattern: /many/, longer_alt: ID });
-const DotAsteriskKeyword = createToken({ name: 'DotAsteriskKeyword', pattern: /\.\*/, longer_alt: ID });
 const ColonKeyword = createToken({ name: 'ColonKeyword', pattern: /:/, longer_alt: ID });
 const CurlyCloseKeyword = createToken({ name: 'CurlyCloseKeyword', pattern: /\}/, longer_alt: ID });
 const CurlyOpenKeyword = createToken({ name: 'CurlyOpenKeyword', pattern: /\{/, longer_alt: ID });
@@ -28,16 +26,14 @@ const DotKeyword = createToken({ name: 'DotKeyword', pattern: /\./, longer_alt: 
 
 ColonKeyword.LABEL = "':'";
 DotKeyword.LABEL = "'.'";
-DotAsteriskKeyword.LABEL = "'.*'";
 CurlyOpenKeyword.LABEL = "'{'";
 CurlyCloseKeyword.LABEL = "'}'";
 DatatypeKeyword.LABEL = "'datatype'";
 EntityKeyword.LABEL = "'entity'";
 ExtendsKeyword.LABEL = "'extends'";
-ImportKeyword.LABEL = "'import'";
 ManyKeyword.LABEL = "'many'";
 PackageKeyword.LABEL = "'package'";
-const tokens = [DatatypeKeyword, ExtendsKeyword, PackageKeyword, EntityKeyword, ImportKeyword, ManyKeyword, DotAsteriskKeyword, ColonKeyword, CurlyCloseKeyword, CurlyOpenKeyword, DotKeyword, ID, INT, STRING, WS];
+const tokens = [DatatypeKeyword, ExtendsKeyword, PackageKeyword, EntityKeyword, ManyKeyword, ColonKeyword, CurlyCloseKeyword, CurlyOpenKeyword, DotKeyword, ID, INT, STRING, WS];
 
 export class Parser extends LangiumParser {
     readonly grammarAccess: DomainModelGrammarAccess;
@@ -55,18 +51,6 @@ export class Parser extends LangiumParser {
         return this.construct();
     });
 
-    PackageDeclaration = this.DEFINE_RULE("PackageDeclaration", PackageDeclaration, () => {
-        this.initializeElement(this.grammarAccess.PackageDeclaration);
-        this.consume(1, PackageKeyword, this.grammarAccess.PackageDeclaration.PackageKeyword);
-        this.subrule(1, this.QualifiedName, this.grammarAccess.PackageDeclaration.nameQualifiedNameRuleCall);
-        this.consume(2, CurlyOpenKeyword, this.grammarAccess.PackageDeclaration.CurlyOpenKeyword);
-        this.many(1, () => {
-            this.subrule(2, this.AbstractElement, this.grammarAccess.PackageDeclaration.elementsAbstractElementRuleCall);
-        });
-        this.consume(3, CurlyCloseKeyword, this.grammarAccess.PackageDeclaration.CurlyCloseKeyword);
-        return this.construct();
-    });
-
     AbstractElement = this.DEFINE_RULE("AbstractElement", AbstractElement, () => {
         this.initializeElement(this.grammarAccess.AbstractElement);
         this.or(1, [
@@ -76,36 +60,19 @@ export class Parser extends LangiumParser {
             () => {
                 this.unassignedSubrule(2, this.Type, this.grammarAccess.AbstractElement.TypeRuleCall);
             },
-            () => {
-                this.unassignedSubrule(3, this.Import, this.grammarAccess.AbstractElement.ImportRuleCall);
-            },
         ]);
         return this.construct();
     });
 
-    QualifiedName = this.DEFINE_RULE("QualifiedName", DatatypeSymbol, () => {
-        this.initializeElement(this.grammarAccess.QualifiedName);
-        this.consume(1, ID, this.grammarAccess.QualifiedName.IDRuleCall);
+    PackageDeclaration = this.DEFINE_RULE("PackageDeclaration", PackageDeclaration, () => {
+        this.initializeElement(this.grammarAccess.PackageDeclaration);
+        this.consume(1, PackageKeyword, this.grammarAccess.PackageDeclaration.PackageKeyword);
+        this.subrule(1, this.QualifiedName, this.grammarAccess.PackageDeclaration.nameQualifiedNameRuleCall);
+        this.consume(2, CurlyOpenKeyword, this.grammarAccess.PackageDeclaration.CurlyOpenKeyword);
         this.many(1, () => {
-            this.consume(2, DotKeyword, this.grammarAccess.QualifiedName.DotKeyword);
-            this.consume(3, ID, this.grammarAccess.QualifiedName.IDRuleCall);
+            this.subrule(2, this.AbstractElement, this.grammarAccess.PackageDeclaration.elementsAbstractElementRuleCall);
         });
-        return this.construct();
-    });
-
-    Import = this.DEFINE_RULE("Import", Import, () => {
-        this.initializeElement(this.grammarAccess.Import);
-        this.consume(1, ImportKeyword, this.grammarAccess.Import.ImportKeyword);
-        this.subrule(1, this.QualifiedNameWithWildcard, this.grammarAccess.Import.importedNamespaceQualifiedNameWithWildcardRuleCall);
-        return this.construct();
-    });
-
-    QualifiedNameWithWildcard = this.DEFINE_RULE("QualifiedNameWithWildcard", DatatypeSymbol, () => {
-        this.initializeElement(this.grammarAccess.QualifiedNameWithWildcard);
-        this.unassignedSubrule(1, this.QualifiedName, this.grammarAccess.QualifiedNameWithWildcard.QualifiedNameRuleCall);
-        this.option(1, () => {
-            this.consume(1, DotAsteriskKeyword, this.grammarAccess.QualifiedNameWithWildcard.DotAsteriskKeyword);
-        });
+        this.consume(3, CurlyCloseKeyword, this.grammarAccess.PackageDeclaration.CurlyCloseKeyword);
         return this.construct();
     });
 
@@ -153,6 +120,16 @@ export class Parser extends LangiumParser {
         this.consume(2, ID, this.grammarAccess.Feature.nameIDRuleCall);
         this.consume(3, ColonKeyword, this.grammarAccess.Feature.ColonKeyword);
         this.subrule(1, this.QualifiedName, this.grammarAccess.Feature.typeTypeCrossReference);
+        return this.construct();
+    });
+
+    QualifiedName = this.DEFINE_RULE("QualifiedName", DatatypeSymbol, () => {
+        this.initializeElement(this.grammarAccess.QualifiedName);
+        this.consume(1, ID, this.grammarAccess.QualifiedName.IDRuleCall);
+        this.many(1, () => {
+            this.consume(2, DotKeyword, this.grammarAccess.QualifiedName.DotKeyword);
+            this.consume(3, ID, this.grammarAccess.QualifiedName.IDRuleCall);
+        });
         return this.construct();
     });
 

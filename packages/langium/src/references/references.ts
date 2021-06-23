@@ -4,11 +4,11 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { isAssignment } from '../grammar/generated/ast';
+import { findAssignment } from '../grammar/grammar-util';
 import { LangiumServices } from '../services';
-import { CstNode, Reference } from '../syntax-tree';
-import { getContainerOfType, isReference } from '../utils/ast-util';
-
+import { CstNode } from '../syntax-tree';
+import { isReference } from '../utils/ast-util';
+import { findRelevantNode } from '../utils/cst-util';
 import { NameProvider } from './naming';
 
 export interface References {
@@ -31,12 +31,13 @@ export class DefaultReferences implements References {
 
     findDeclaration(sourceCstNode: CstNode): CstNode | undefined {
         if (sourceCstNode) {
-            const assignment = getContainerOfType(sourceCstNode.feature, isAssignment);
-            const nodeElem = sourceCstNode.element as unknown as Record<string, Reference>;
+            const assignment = findAssignment(sourceCstNode);
+            const nodeElem = findRelevantNode(sourceCstNode);
             if (assignment && nodeElem) {
-
-                if (isReference(nodeElem[assignment.feature])) {
-                    const ref = nodeElem[assignment.feature].ref;
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const reference = (nodeElem as any)[assignment.feature] as unknown;
+                if (isReference(reference)) {
+                    const ref = reference.ref;
                     if (ref && ref.$cstNode) {
                         const targetNode = this.nameProvider.getNameNode(ref);
                         if (!targetNode) {
@@ -46,9 +47,8 @@ export class DefaultReferences implements References {
                             return targetNode;
                         }
                     }
-                }
-                else {
-                    const nameNode = this.nameProvider.getNameNode(sourceCstNode.element);
+                } else {
+                    const nameNode = this.nameProvider.getNameNode(nodeElem);
                     if (nameNode === sourceCstNode) {
                         return sourceCstNode;
                     }

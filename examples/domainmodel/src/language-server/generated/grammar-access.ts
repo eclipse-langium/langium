@@ -12,6 +12,11 @@ export type DomainmodelRuleAccess = {
     elementsAbstractElementRuleCall: RuleCall;
 }
 
+export type AbstractElementRuleAccess = {
+    PackageDeclarationRuleCall: RuleCall;
+    TypeRuleCall: RuleCall;
+}
+
 export type PackageDeclarationRuleAccess = {
     PackageKeyword: Keyword;
     name: Assignment;
@@ -20,28 +25,6 @@ export type PackageDeclarationRuleAccess = {
     elements: Assignment;
     elementsAbstractElementRuleCall: RuleCall;
     CurlyCloseKeyword: Keyword;
-}
-
-export type AbstractElementRuleAccess = {
-    PackageDeclarationRuleCall: RuleCall;
-    TypeRuleCall: RuleCall;
-    ImportRuleCall: RuleCall;
-}
-
-export type QualifiedNameRuleAccess = {
-    IDRuleCall: RuleCall;
-    DotKeyword: Keyword;
-}
-
-export type ImportRuleAccess = {
-    ImportKeyword: Keyword;
-    importedNamespace: Assignment;
-    importedNamespaceQualifiedNameWithWildcardRuleCall: RuleCall;
-}
-
-export type QualifiedNameWithWildcardRuleAccess = {
-    QualifiedNameRuleCall: RuleCall;
-    DotAsteriskKeyword: Keyword;
 }
 
 export type TypeRuleAccess = {
@@ -78,17 +61,20 @@ export type FeatureRuleAccess = {
     typeTypeCrossReference: CrossReference;
 }
 
+export type QualifiedNameRuleAccess = {
+    IDRuleCall: RuleCall;
+    DotKeyword: Keyword;
+}
+
 export class DomainModelGrammarAccess extends GrammarAccess {
     Domainmodel = this.buildAccess<DomainmodelRuleAccess>('Domainmodel');
-    PackageDeclaration = this.buildAccess<PackageDeclarationRuleAccess>('PackageDeclaration');
     AbstractElement = this.buildAccess<AbstractElementRuleAccess>('AbstractElement');
-    QualifiedName = this.buildAccess<QualifiedNameRuleAccess>('QualifiedName');
-    Import = this.buildAccess<ImportRuleAccess>('Import');
-    QualifiedNameWithWildcard = this.buildAccess<QualifiedNameWithWildcardRuleAccess>('QualifiedNameWithWildcard');
+    PackageDeclaration = this.buildAccess<PackageDeclarationRuleAccess>('PackageDeclaration');
     Type = this.buildAccess<TypeRuleAccess>('Type');
     DataType = this.buildAccess<DataTypeRuleAccess>('DataType');
     Entity = this.buildAccess<EntityRuleAccess>('Entity');
     Feature = this.buildAccess<FeatureRuleAccess>('Feature');
+    QualifiedName = this.buildAccess<QualifiedNameRuleAccess>('QualifiedName');
 
     constructor() {
         super(path.join(__dirname, 'grammar.json'));

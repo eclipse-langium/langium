@@ -77,7 +77,7 @@ export function addCompletionHandler(connection: Connection, services: LangiumSe
                 const rootNode = parseResult.value;
                 (rootNode as { $document: LangiumDocument }).$document = document;
                 document.parseResult = parseResult;
-                document.precomputedScopes = services.references.ScopeComputation.computeScope(rootNode);
+                document.precomputedScopes = services.references.ScopeComputation.computeScope(document);
                 const completionProvider = services.completion.CompletionProvider;
                 const assist = completionProvider.getCompletion(rootNode, offset);
                 return assist;

@@ -1,0 +1,48 @@
+{
+  "name": "domain-model",
+  "scopeName": "source.domain-model",
+  "fileTypes": [
+    ".dmodel"
+  ],
+  "patterns": [
+    {
+      "name": "keyword.control.domain-model",
+      "match": "\\b(datatype|entity|extends|many|package)\\b"
+    },
+    {
+      "name": "keyword.symbol.domain-model",
+      "match": "(\\:|\\.|\\{|\\})"
+    }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.block.domain-model",
+          "begin": "/\\*",
+          "beginCaptures": {
+            "0": {
+              "name": "punctuation.definition.comment.domain-model"
+            }
+          },
+          "end": "\\*/",
+          "endCaptures": {
+            "0": {
+              "name": "punctuation.definition.comment.domain-model"
+            }
+          }
+        },
+        {
+          "begin": "(^\\s+)?(?=//)",
+          "beginCaptures": {
+            "1": {
+              "name": "punctuation.whitespace.comment.leading.cs"
+            }
+          },
+          "end": "(?=$)",
+          "name": "comment.line.domain-model"
+        }
+      ]
+    }
+  }
+}

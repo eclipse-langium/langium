@@ -14,10 +14,6 @@ export interface LangiumDocument extends TextDocument {
     parseResult?: ParseResult<AstNode>
     precomputedScopes?: PrecomputedScopes
 }
-export interface ProcessedLangiumDocument extends TextDocument {
-    parseResult: ParseResult<AstNode>
-    precomputedScopes?: PrecomputedScopes
-}
 
 export type PrecomputedScopes = Map<AstNode, AstNodeDescription[]>
 

@@ -9,7 +9,7 @@ import { getDocument, streamAllContents } from '../utils/ast-util';
 import { EMPTY_STREAM, Stream, stream } from '../utils/stream';
 import { NameProvider } from './naming';
 import { LangiumServices } from '../services';
-import { PrecomputedScopes } from '../documents/document';
+import { LangiumDocument, PrecomputedScopes } from '../documents/document';
 
 export interface AstNodeDescription {
     node?: AstNode
@@ -33,7 +33,11 @@ export class SimpleScope implements Scope {
     }
 
     getAllElements(): Stream<AstNodeDescription> {
-        return this.outerScope ? this.elements.concat(this.outerScope.getAllElements()) : this.elements;
+        if (this.outerScope) {
+            return this.elements.concat(this.outerScope.getAllElements());
+        } else {
+            return this.elements;
+        }
     }
 
     getElement(name: string): AstNodeDescription | undefined {
@@ -96,7 +100,7 @@ export class DefaultScopeProvider implements ScopeProvider {
 }
 
 export interface ScopeComputation {
-    computeScope(rootNode: AstNode): PrecomputedScopes;
+    computeScope(document: LangiumDocument): PrecomputedScopes;
 }
 
 export class DefaultScopeComputation implements ScopeComputation {
@@ -106,34 +110,41 @@ export class DefaultScopeComputation implements ScopeComputation {
         this.nameProvider = services.references.NameProvider;
     }
 
-    computeScope(rootNode: AstNode): PrecomputedScopes {
+    computeScope(document: LangiumDocument): PrecomputedScopes {
+        const rootNode = document.parseResult?.value;
         const scopes = new Map();
+        if (!rootNode) {
+            return scopes;
+        }
         streamAllContents(rootNode).forEach(content => {
             const { node } = content;
             const container = node.$container;
             if (container) {
                 const name = this.nameProvider.getName(node);
                 if (name) {
-                    const description = this.createDescription(node, name);
-                    if (scopes.has(container)) {
-                        scopes.get(container)?.push(description);
-                    } else {
-                        scopes.set(container, [description]);
-                    }
+                    const description = this.createDescription(node, name, document);
+                    this.addToContainer(description, container, scopes);
                 }
             }
         });
         return scopes;
     }
 
-    protected createDescription(node: AstNode, name: string): AstNodeDescription {
-        const document = getDocument(node);
+    protected createDescription(node: AstNode, name: string, document: LangiumDocument): AstNodeDescription {
         return {
             node,
             name,
             type: node.$type,
             documentUri: document.uri
         };
+    }
+
+    protected addToContainer(description: AstNodeDescription, container: AstNode, scopes: PrecomputedScopes): void {
+        if (scopes.has(container)) {
+            scopes.get(container)?.push(description);
+        } else {
+            scopes.set(container, [description]);
+        }
     }
 
 }

@@ -35,9 +35,13 @@ const services = createLangiumGrammarServices();
 const grammarFile = pack.langium.grammar ?? 'src/grammar.langium';
 const grammarFileContent = fs.readFileSync(grammarFile).toString();
 const document = LangiumDocumentConfiguration.create(`file:${grammarFile}`, 'langium', 0, grammarFileContent);
-const processedDocument = services.documents.DocumentBuilder.build(document);
-const grammar = processedDocument.parseResult.value as Grammar;
-document.precomputedScopes = services.references.ScopeComputation.computeScope(grammar);
+services.documents.DocumentBuilder.build(document);
+if (!document.parseResult) {
+    console.error('Failed to parse the grammar file: ' + grammarFile);
+    process.exit(1);
+}
+const grammar = document.parseResult.value as Grammar;
+document.precomputedScopes = services.references.ScopeComputation.computeScope(document);
 resolveAllReferences(grammar);
 console.log('Generating serialized grammar...');
 const json = services.serializer.JsonSerializer.serialize(grammar);
@@ -49,9 +53,9 @@ console.log('Generating AST...');
 const genAst = generateAst(grammar, pack.langium);
 console.log('Generating dependency injection module...');
 const genModule = generateModule(grammar, pack.langium);
-if(pack.langium.textMate) {
-    if(!pack.langium.languageId) {
-        console.log('Language Id needs to be set in order to generate the textmate grammars.');
+if (pack.langium.textMate) {
+    if (!pack.langium.languageId) {
+        console.error('Language Id needs to be set in order to generate the textmate grammars.');
     } else {
         console.log('Generating textmate grammars');
         const genTmGrammar = generateTextMate(grammar, pack.langium);
