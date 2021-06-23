@@ -5,10 +5,11 @@
  ******************************************************************************/
 
 import * as ast from '../../grammar/generated/ast';
+import { isDataTypeRule } from '../../grammar/grammar-util';
 import { CstNode } from '../../syntax-tree';
 import { findFirstFeatures, findNextFeatures } from './follow-element-computation';
 
-type MatchType = 'full' | 'partial' | 'none';
+type MatchType = 'full' | 'both' | 'partial' | 'none';
 
 /**
  * The `RuleInterpreter` is used by the `CompletionProvider` to identify any `AbstractElement` that could apply at a given cursor position.
@@ -29,10 +30,10 @@ export class RuleInterpreter {
             features = [];
             nextFeatures.forEach(e => {
                 const match = this.featureMatches(e, n, offset);
-                if (nodes.length === 0 && match === 'partial') {
+                if (nodes.length === 0 && match !== 'none') {
                     feats.push(e);
                 }
-                if (match === 'full') {
+                if (match === 'full' || match === 'both') {
                     features.push(e);
                 }
             });
@@ -66,13 +67,14 @@ export class RuleInterpreter {
     ruleMatches(rule: ast.AbstractRule | undefined, node: CstNode, offset: number): MatchType {
         if (ast.isParserRule(rule)) {
             const ruleFeatures = findFirstFeatures(rule.alternatives);
-            return ruleFeatures.some(e => this.featureMatches(e, node, offset)) ? 'full' : 'none';
+            const matchType = isDataTypeRule(rule) ? 'both' : 'full';
+            return ruleFeatures.some(e => this.featureMatches(e, node, offset)) ? matchType : 'none';
         } else if (ast.isTerminalRule(rule)) {
             // We have to take keywords into account
             // e.g. most keywords are valid IDs as well
             // Only return 'full' if this terminal does not match a keyword. TODO
             const regex = rule.regex.substring(1, rule.regex.length - 1);
-            return node.text.match(new RegExp(regex)) !== null ? 'partial' : 'none';
+            return node.text.match(new RegExp(regex)) !== null ? 'both' : 'none';
         } else {
             return 'none';
         }
