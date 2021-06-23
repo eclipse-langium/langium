@@ -9,7 +9,7 @@ import { createToken, Lexer } from 'chevrotain';
 import { LangiumServices } from '../../services';
 import { LangiumParser, DatatypeSymbol } from '../../parser/langium-parser';
 import { LangiumGrammarGrammarAccess } from './grammar-access';
-import { AbstractElement, AbstractMetamodelDeclaration, AbstractNegatedToken, AbstractRule, Annotation, Condition, Grammar, NamedArgument, Parameter, TerminalGroup, TerminalToken, TerminalTokenElement, Action, Alternatives, Assignment, CrossReference, Group, Keyword, RuleCall, UnorderedGroup, GeneratedMetamodel, ReferencedMetamodel, NegatedToken, UntilToken, ParserRule, TerminalRule, Conjunction, Disjunction, LiteralCondition, Negation, ParameterReference, CharacterRange, TerminalAlternatives, TerminalRuleCall, Wildcard, } from './ast';
+import { AbstractElement, AbstractMetamodelDeclaration, AbstractNegatedToken, AbstractRule, Annotation, Condition, Grammar, NamedArgument, Parameter, TerminalTokenElement, Action, Alternatives, Assignment, CrossReference, Group, Keyword, RuleCall, UnorderedGroup, GeneratedMetamodel, ReferencedMetamodel, NegatedToken, UntilToken, ParserRule, TerminalRule, Conjunction, Disjunction, LiteralCondition, Negation, ParameterReference, CharacterRange, TerminalAlternatives, TerminalRuleCall, Wildcard, TerminalGroup, TerminalToken, } from './ast';
 
 const ID = createToken({ name: 'ID', pattern: /\^?[_a-zA-Z][\w_]*/ });
 const INT = createToken({ name: 'INT', pattern: /[0-9]+/ });
@@ -688,8 +688,12 @@ export class Parser extends LangiumParser {
 
     TerminalGroup = this.DEFINE_RULE("TerminalGroup", TerminalGroup, () => {
         this.initializeElement(this.grammarAccess.TerminalGroup);
-        this.many(1, () => {
-            this.subrule(1, this.TerminalToken, this.grammarAccess.TerminalGroup.elementsTerminalTokenRuleCall);
+        this.unassignedSubrule(1, this.TerminalToken, this.grammarAccess.TerminalGroup.TerminalTokenRuleCall);
+        this.option(1, () => {
+            this.action(TerminalGroup, this.grammarAccess.TerminalGroup.TerminalGroupelementsAction);
+            this.atLeastOne(1, () => {
+                this.subrule(2, this.TerminalToken, this.grammarAccess.TerminalGroup.elementsTerminalTokenRuleCall);
+            });
         });
         return this.construct();
     });

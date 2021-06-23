@@ -354,6 +354,8 @@ export type TerminalAlternativesRuleAccess = {
 }
 
 export type TerminalGroupRuleAccess = {
+    TerminalTokenRuleCall: RuleCall;
+    TerminalGroupelementsAction: Action;
     elements: Assignment;
     elementsTerminalTokenRuleCall: RuleCall;
 }
