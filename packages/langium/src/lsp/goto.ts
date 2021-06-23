@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { LocationLink, Range, TextDocumentPositionParams } from 'vscode-languageserver';
+import { LocationLink, TextDocumentPositionParams } from 'vscode-languageserver';
 import { LangiumDocument } from '../documents/document';
 import { NameProvider } from '../references/naming';
 import { References } from '../references/references';
@@ -29,28 +29,35 @@ export class DefaultGoToResolverProvider implements GoToResolver {
 
     goToDefinition(document: LangiumDocument, params: TextDocumentPositionParams): LocationLink[] {
         const rootNode = document.parseResult?.value;
-        const targetCstNodes: Array<{source: CstNode, target: CstNode}> = [];
+        const targetCstNodes: Array<{ source: CstNode, target: CstNode }> = [];
         if (rootNode && rootNode.$cstNode) {
             const cst = rootNode.$cstNode;
             const sourceCstNode = findLeafNodeAtOffset(cst, document.offsetAt(params.position));
             if (sourceCstNode) {
                 const targetNode = this.references.findDeclaration(sourceCstNode);
                 if (targetNode) {
-                    targetCstNodes.push({source:sourceCstNode, target:targetNode});
+                    targetCstNodes.push({ source: sourceCstNode, target: targetNode });
                 }
             }
         }
         // TODO handle different documents URI -> LangiumDocument adjust positioning below
         return targetCstNodes.map(link => {
-            const offset = document.positionAt(link.target.offset);
             return LocationLink.create(
                 document.uri,
+                toRange(this.findActualNodeFor(link.target) ?? link.target, document),
                 toRange(link.target, document),
-                Range.create(offset, offset),
                 toRange(link.source, document)
             );
         }
         );
     }
-
+    protected findActualNodeFor(cstNode: CstNode): CstNode | undefined {
+        let actualNode: CstNode | undefined = cstNode;
+        while (!actualNode?.element?.$cstNode) {
+            if (!actualNode)
+                return undefined;
+            actualNode = actualNode.parent;
+        }
+        return actualNode.element.$cstNode;
+    }
 }
