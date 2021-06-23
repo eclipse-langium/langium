@@ -9,8 +9,8 @@ import { AstNode, AstReflection, Reference, isAstNode } from 'langium';
 
 export interface AbstractElement extends AstNode {
     readonly $container: Domainmodel | AbstractElement;
-    name: string
     elements: Array<AbstractElement>
+    name: string
 }
 
 export const AbstractElement = 'AbstractElement';
@@ -71,8 +71,8 @@ export function isDataType(item: unknown): item is DataType {
 }
 
 export interface Entity extends Type {
-    superType?: Reference<Entity>
     features: Array<Feature>
+    superType?: Reference<Entity>
 }
 
 export const Entity = 'Entity';

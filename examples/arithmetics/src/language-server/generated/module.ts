@@ -9,7 +9,9 @@ import { ArithmeticsGrammarAccess } from './grammar-access';
 import { Parser } from './parser';
 
 export const ArithmeticsGeneratedModule: Module<LangiumServices, LangiumGeneratedServices> = {
-    Parser: (injector) => new Parser(injector),
+    parser: {
+        LangiumParser: (injector) => new Parser(injector)
+    },
     GrammarAccess: () => new ArithmeticsGrammarAccess(),
     AstReflection: () => new ArithmeticsAstReflection()
 };
