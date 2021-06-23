@@ -42,6 +42,7 @@ type CollectorState = {
 export class Interface {
     name: string;
     superTypes: string[];
+    subTypes: string[] = [];
     containerTypes: string[] = [];
     fields: Field[];
 
@@ -56,8 +57,8 @@ export class Interface {
         const superTypes = this.superTypes.length > 0 ? this.superTypes : [ 'AstNode' ];
         interfaceNode.children.push('export interface ', this.name, ' extends ', superTypes.join(', '), ' {', NL);
         const fieldsNode = new IndentNode();
-        if (this.superTypes.length === 0 && this.containerTypes.length > 0) {
-            fieldsNode.children.push('readonly $container: ', this.containerTypes.join(' | '), ';', NL);
+        if (this.containerTypes.length > 0) {
+            fieldsNode.children.push('readonly $container: ', Array.from(new Set<string>(this.containerTypes)).join(' | '), ';', NL);
         }
         for (const field of this.fields.sort((a, b) => a.name.localeCompare(b.name))) {
             const option = field.optional && field.reference && !field.array ? '?' : '';
@@ -368,25 +369,71 @@ function removeInvalidSuperTypes(interfaces: Interface[]): void {
 }
 
 function buildContainerTypes(interfaces: Interface[]): void {
+    // 1st stage: collect container types
     for (const type of interfaces) {
         for (const field of type.fields.filter(e => !e.reference)) {
             for (const fieldTypeName of field.types) {
                 const fieldType = interfaces.find(e => e.name === fieldTypeName);
                 if (fieldType) {
-                    const topSuperTypes = getTopSuperTypes(fieldType, interfaces);
-                    topSuperTypes.forEach(e => e.containerTypes.push(type.name));
+                    fieldType.containerTypes.push(type.name);
                 }
             }
         }
     }
+    const connectedComponents: Interface[][] = [];
+    // 2nd stage: share container types and lift them in supertypes
+    calculateSubTypes(interfaces);
+    calculateConnectedComponents(connectedComponents, interfaces);
+    shareAndLiftContainerTypes(connectedComponents);
 }
 
-function getTopSuperTypes(type: Interface, types: Interface[]): Interface[] {
-    if (type.superTypes.length > 0) {
-        const superTypes = types.filter(e => type.superTypes.includes(e.name));
-        return superTypes.flatMap(e => getTopSuperTypes(e, types));
-    } else {
-        return [type];
+function calculateSubTypes(interfaces: Interface[]): void {
+    for (const type of interfaces) {
+        for (const superTypeName of type.superTypes) {
+            const superType = interfaces.find(e => e.name === superTypeName);
+            if (superType) {
+                superType.subTypes.push(type.name);
+            }
+        }
+        type.subTypes = Array.from(new Set<string>(type.subTypes));
+    }
+}
+
+function calculateConnectedComponents(connectedComponents: Interface[][], interfaces: Interface[]): void {
+    const visited: Set<string> = new Set();
+
+    function dfs(type: Interface): Interface[] {
+        let component: Interface[] = [type];
+        visited.add(type.name);
+        for (const nextTypeName of type.subTypes.concat(type.superTypes)) {
+            if (!visited.has(nextTypeName)) {
+                const superType = interfaces.find(e => e.name === nextTypeName);
+                if (superType) {
+                    component = component.concat(dfs(superType));
+                }
+            }
+        }
+        return component;
+    }
+
+    for (const type of interfaces) {
+        if (!visited.has(type.name)) {
+            connectedComponents.push(dfs(type));
+        }
+    }
+}
+
+function shareAndLiftContainerTypes(connectedComponents: Interface[][]): void {
+    for (const component of connectedComponents) {
+        let containerTypes: string[] = [];
+        component.forEach(type => containerTypes = containerTypes.concat(type.containerTypes));
+        for (const type of component) {
+            if (type.superTypes.length > 0) {
+                type.containerTypes = [];
+            } else {
+                type.containerTypes = containerTypes;
+            }
+        }
     }
 }
 
