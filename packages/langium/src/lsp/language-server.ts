@@ -5,10 +5,10 @@
  ******************************************************************************/
 
 import {
-    InitializeParams, TextDocumentPositionParams, TextDocumentSyncKind, InitializeResult, Connection, CompletionList,
-    ReferenceParams, Location, DocumentSymbolParams, DocumentSymbol, DocumentHighlightParams
+    CompletionList, Connection,
+    DocumentHighlightParams, DocumentSymbol, DocumentSymbolParams, InitializeParams, InitializeResult,
+    Location, LocationLink, ReferenceParams, TextDocumentPositionParams, TextDocumentSyncKind
 } from 'vscode-languageserver/node';
-
 import { LangiumDocument } from '../documents/document';
 import { LangiumServices } from '../services';
 
@@ -29,8 +29,7 @@ export function startLanguageServer(services: LangiumServices): void {
                 completionProvider: {},
                 referencesProvider: {}, // TODO enable workDoneProgress?
                 documentSymbolProvider: {},
-                // goto-declaration
-                declarationProvider: {},
+                definitionProvider: {},
                 documentHighlightProvider: {},
                 // hoverProvider needs to be created for mouse-over events, etc.
                 hoverProvider: false
@@ -55,7 +54,7 @@ export function startLanguageServer(services: LangiumServices): void {
     addCompletionHandler(connection, services);
     addFindReferencesHandler(connection, services);
     addDocumentSymbolHandler(connection, services);
-    addGotoDeclaration(connection, services);
+    addGotoDefinition(connection, services);
     addDocumentHighlightsHandler(connection, services);
 
     // Make the text document manager listen on the connection for open, change and close text document events.
@@ -113,12 +112,12 @@ export function addDocumentSymbolHandler(connection: Connection, services: Langi
     });
 }
 
-export function addGotoDeclaration(connection: Connection, services: LangiumServices): void {
-    connection.onDeclaration(
-        (_textDocumentPosition: TextDocumentPositionParams): Location[] => {
+export function addGotoDefinition(connection: Connection, services: LangiumServices): void {
+    connection.onDefinition(
+        (_textDocumentPosition: TextDocumentPositionParams): LocationLink[] => {
             const document = paramsDocument(_textDocumentPosition, services);
             if (document) {
-                return services.references.GoToResolver.goToDeclaration(document, _textDocumentPosition);
+                return services.references.GoToResolver.goToDefinition(document, _textDocumentPosition);
             }
             else {
                 return [];
