@@ -9,7 +9,7 @@ import { LangiumDocumentConfiguration } from '../documents/document';
 import * as ast from '../grammar/generated/ast';
 import { CompositeCstNodeImpl } from '../parser/cst-node-builder';
 import { AstNode, CstNode } from '../syntax-tree';
-import { getContainerOfType, Mutable } from '../utils/ast-util';
+import { getContainerOfType, Mutable, streamAllContents } from '../utils/ast-util';
 import { createLangiumGrammarServices } from './langium-grammar-module';
 
 type FeatureValue = {
@@ -193,6 +193,40 @@ export function findAssignment(cstNode: CstNode): ast.Assignment | undefined {
         n = n.parent;
     } while (n);
     return undefined;
+}
+
+export function getTypeNameAtElement(rule: ast.ParserRule, element: ast.AbstractElement): string {
+    const action = getActionAtElement(element);
+    return action?.type ?? getTypeName(rule);
+}
+
+export function getActionAtElement(element: ast.AbstractElement): ast.Action | undefined {
+    const parent = element.$container;
+    if (ast.isGroup(parent)) {
+        const elements = parent.elements;
+        const index = elements.indexOf(element);
+        for (let i = index - 1; i >= 0; i--) {
+            const item = elements[i];
+            if (ast.isAction(item)) {
+                return item;
+            } else {
+                let action: ast.Action | undefined;
+                streamAllContents(elements[i]).forEach(e => {
+                    if (ast.isAction(e.node)) {
+                        action = e.node;
+                    }
+                });
+                if (action) {
+                    return action;
+                }
+            }
+        }
+    }
+    if (ast.isAbstractElement(parent)) {
+        return getActionAtElement(parent);
+    } else {
+        return undefined;
+    }
 }
 
 export function getTypeName(rule: ast.AbstractRule | undefined): string {

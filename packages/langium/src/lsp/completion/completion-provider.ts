@@ -8,6 +8,7 @@ import { CompletionItem, CompletionItemKind, CompletionList } from 'vscode-langu
 import { TextDocument, TextEdit } from 'vscode-languageserver-textdocument';
 import * as ast from '../../grammar/generated/ast';
 import { GrammarAccess } from '../../grammar/grammar-access';
+import { getTypeNameAtElement } from '../../grammar/grammar-util';
 import { isNamed } from '../../references/naming';
 import { AstNodeDescription, ScopeProvider } from '../../references/scope';
 import { LangiumServices } from '../../services';
@@ -116,7 +117,7 @@ export class DefaultCompletionProvider {
         const assignment = getContainerOfType(crossRef, ast.isAssignment);
         const parserRule = getContainerOfType(crossRef, ast.isParserRule);
         if (assignment && parserRule) {
-            const scope = this.scopeProvider.getScope(context, `${parserRule.name}:${assignment.feature}`);
+            const scope = this.scopeProvider.getScope(context, `${getTypeNameAtElement(parserRule, assignment)}:${assignment.feature}`);
             scope.getAllElements().forEach(e => {
                 acceptor(e, { kind: CompletionItemKind.Reference, detail: e.type, sortText: '0' });
             });
@@ -180,7 +181,7 @@ export class DefaultCompletionProvider {
                 break;
             }
         }
-        if (negativeOffset > 0 || offset === 0 || !this.isWordCharacterAt(completion, 0) || (!this.isWordCharacterAt(content, offset - 1) && !this.isWordCharacterAt(content, offset))) {
+        if (negativeOffset > 0 || offset === 0 || !this.isWordCharacterAt(completion, 0) || !this.isWordCharacterAt(content, offset - 1)) {
             const start = document.positionAt(offset - negativeOffset);
             const end = document.positionAt(offset);
             return {
