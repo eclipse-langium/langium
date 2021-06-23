@@ -1,17 +1,9 @@
-grammar Arithmetics hidden(WS)
-
-terminal WS: /\s+/;
-terminal ID: /[_a-zA-Z][\w_]*/;
-terminal NUMBER: /[0-9]+(\.[0-9])?/;
-
+grammar Arithmetics
+hidden(WS)
 
 Module:
 	'module' name=ID
-	(imports+=Import)*
 	(statements+=Statement)*;
-
-Import:
-	'import' module=[Module];
 
 Statement:
 	Definition | Evaluation;
@@ -42,3 +34,7 @@ PrimaryExpression returns Expression:
 	'(' Expression ')' |
 	{NumberLiteral} value=NUMBER |
 	{FunctionCall} func=[AbstractDefinition] ('(' args+=Expression (',' args+=Expression)* ')')?;
+
+terminal WS: /\s+/;
+terminal ID: /[_a-zA-Z][\w_]*/;
+terminal NUMBER: /[0-9]+(\.[0-9])?/;

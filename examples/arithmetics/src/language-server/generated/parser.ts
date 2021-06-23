@@ -8,12 +8,11 @@
 import { createToken, Lexer } from 'chevrotain';
 import { LangiumParser, LangiumServices, DatatypeSymbol } from 'langium';
 import { ArithmeticsGrammarAccess } from './grammar-access';
-import { AbstractDefinition, Expression, Import, Module, Statement, DeclaredParameter, Definition, Addition, Division, FunctionCall, Multiplication, NumberLiteral, Subtraction, Evaluation, } from './ast';
+import { AbstractDefinition, Expression, Module, Statement, DeclaredParameter, Definition, Addition, Division, FunctionCall, Multiplication, NumberLiteral, Subtraction, Evaluation, } from './ast';
 
 const ID = createToken({ name: 'ID', pattern: /[_a-zA-Z][\w_]*/ });
 const NUMBER = createToken({ name: 'NUMBER', pattern: /[0-9]+(\.[0-9])?/ });
 const WS = createToken({ name: 'WS', pattern: /\s+/, group: Lexer.SKIPPED });
-const ImportKeyword = createToken({ name: 'ImportKeyword', pattern: /import/, longer_alt: ID });
 const ModuleKeyword = createToken({ name: 'ModuleKeyword', pattern: /module/, longer_alt: ID });
 const DefKeyword = createToken({ name: 'DefKeyword', pattern: /def/, longer_alt: ID });
 const AsteriskKeyword = createToken({ name: 'AsteriskKeyword', pattern: /\*/, longer_alt: ID });
@@ -36,9 +35,8 @@ AsteriskKeyword.LABEL = "'*'";
 SlashKeyword.LABEL = "'/'";
 PlusKeyword.LABEL = "'+'";
 DefKeyword.LABEL = "'def'";
-ImportKeyword.LABEL = "'import'";
 ModuleKeyword.LABEL = "'module'";
-const tokens = [ImportKeyword, ModuleKeyword, DefKeyword, AsteriskKeyword, ColonKeyword, CommaKeyword, DashKeyword, ParenthesisCloseKeyword, ParenthesisOpenKeyword, PlusKeyword, SemicolonKeyword, SlashKeyword, ID, NUMBER, WS];
+const tokens = [ModuleKeyword, DefKeyword, AsteriskKeyword, ColonKeyword, CommaKeyword, DashKeyword, ParenthesisCloseKeyword, ParenthesisOpenKeyword, PlusKeyword, SemicolonKeyword, SlashKeyword, ID, NUMBER, WS];
 
 export class Parser extends LangiumParser {
     readonly grammarAccess: ArithmeticsGrammarAccess;
@@ -52,18 +50,8 @@ export class Parser extends LangiumParser {
         this.consume(1, ModuleKeyword, this.grammarAccess.Module.ModuleKeyword);
         this.consume(2, ID, this.grammarAccess.Module.nameIDRuleCall);
         this.many(1, () => {
-            this.subrule(1, this.Import, this.grammarAccess.Module.importsImportRuleCall);
+            this.subrule(1, this.Statement, this.grammarAccess.Module.statementsStatementRuleCall);
         });
-        this.many(2, () => {
-            this.subrule(2, this.Statement, this.grammarAccess.Module.statementsStatementRuleCall);
-        });
-        return this.construct();
-    });
-
-    Import = this.DEFINE_RULE("Import", Import, () => {
-        this.initializeElement(this.grammarAccess.Import);
-        this.consume(1, ImportKeyword, this.grammarAccess.Import.ImportKeyword);
-        this.consume(2, ID, this.grammarAccess.Import.moduleModuleCrossReference);
         return this.construct();
     });
 

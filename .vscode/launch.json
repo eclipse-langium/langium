@@ -32,12 +32,13 @@
 			"sourceMaps": true,
 			"outFiles": [
 				"${workspaceFolder}/packages/langium/lib/**/*.js",
+				"${workspaceFolder}/examples/arithmetics/out/**/*.js",
 				"${workspaceFolder}/examples/domainmodel/out/**/*.js"
 			],
 			"type": "pwa-node"
 		},
         {
-			"name": "Run Extension",
+			"name": "Run Grammar Extension",
 			"type": "extensionHost",
 			"request": "launch",
             "runtimeExecutable": "${execPath}",
@@ -47,12 +48,22 @@
 			]
 		},
 		{
+			"name": "Run Arithmetics Extension",
+			"type": "extensionHost",
+			"request": "launch",
+            "runtimeExecutable": "${execPath}",
+			"args": [
+				"${workspaceFolder}/examples/arithmetics",
+				"--extensionDevelopmentPath=${workspaceFolder}/examples/arithmetics"
+			]
+		},
+		{
 			"name": "Run Domainmodel Extension",
 			"type": "extensionHost",
 			"request": "launch",
             "runtimeExecutable": "${execPath}",
 			"args": [
-				"${workspaceFolder}/packages/langium",
+				"${workspaceFolder}/examples/domainmodel",
 				"--extensionDevelopmentPath=${workspaceFolder}/examples/domainmodel"
 			]
 		},

@@ -28,19 +28,7 @@ export function isExpression(item: unknown): item is Expression {
     return reflection.isInstance(item, Expression);
 }
 
-export interface Import extends AstNode {
-    readonly $container: Module;
-    module: Reference<Module>
-}
-
-export const Import = 'Import';
-
-export function isImport(item: unknown): item is Import {
-    return reflection.isInstance(item, Import);
-}
-
 export interface Module extends AstNode {
-    imports: Array<Import>
     name: string
     statements: Array<Statement>
 }
@@ -156,14 +144,14 @@ export function isEvaluation(item: unknown): item is Evaluation {
     return reflection.isInstance(item, Evaluation);
 }
 
-export type ArithmeticsAstType = 'AbstractDefinition' | 'Expression' | 'Import' | 'Module' | 'Statement' | 'DeclaredParameter' | 'Definition' | 'Addition' | 'Division' | 'FunctionCall' | 'Multiplication' | 'NumberLiteral' | 'Subtraction' | 'Evaluation';
+export type ArithmeticsAstType = 'AbstractDefinition' | 'Expression' | 'Module' | 'Statement' | 'DeclaredParameter' | 'Definition' | 'Addition' | 'Division' | 'FunctionCall' | 'Multiplication' | 'NumberLiteral' | 'Subtraction' | 'Evaluation';
 
-export type ArithmeticsAstReference = 'Import:module' | 'FunctionCall:func';
+export type ArithmeticsAstReference = 'FunctionCall:func';
 
 export class ArithmeticsAstReflection implements AstReflection {
 
     getAllTypes(): string[] {
-        return ['AbstractDefinition', 'Expression', 'Import', 'Module', 'Statement', 'DeclaredParameter', 'Definition', 'Addition', 'Division', 'FunctionCall', 'Multiplication', 'NumberLiteral', 'Subtraction', 'Evaluation'];
+        return ['AbstractDefinition', 'Expression', 'Module', 'Statement', 'DeclaredParameter', 'Definition', 'Addition', 'Division', 'FunctionCall', 'Multiplication', 'NumberLiteral', 'Subtraction', 'Evaluation'];
     }
 
     isInstance(node: unknown, type: string): boolean {
@@ -200,9 +188,6 @@ export class ArithmeticsAstReflection implements AstReflection {
 
     getReferenceType(referenceId: ArithmeticsAstReference): string {
         switch (referenceId) {
-            case 'Import:module': {
-                return Module;
-            }
             case 'FunctionCall:func': {
                 return AbstractDefinition;
             }

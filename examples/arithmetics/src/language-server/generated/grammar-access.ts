@@ -10,16 +10,8 @@ export type ModuleRuleAccess = {
     ModuleKeyword: Keyword;
     name: Assignment;
     nameIDRuleCall: RuleCall;
-    imports: Assignment;
-    importsImportRuleCall: RuleCall;
     statements: Assignment;
     statementsStatementRuleCall: RuleCall;
-}
-
-export type ImportRuleAccess = {
-    ImportKeyword: Keyword;
-    module: Assignment;
-    moduleModuleCrossReference: CrossReference;
 }
 
 export type StatementRuleAccess = {
@@ -99,7 +91,6 @@ export type PrimaryExpressionRuleAccess = {
 
 export class ArithmeticsGrammarAccess extends GrammarAccess {
     Module = this.buildAccess<ModuleRuleAccess>('Module');
-    Import = this.buildAccess<ImportRuleAccess>('Import');
     Statement = this.buildAccess<StatementRuleAccess>('Statement');
     Definition = this.buildAccess<DefinitionRuleAccess>('Definition');
     DeclaredParameter = this.buildAccess<DeclaredParameterRuleAccess>('DeclaredParameter');
