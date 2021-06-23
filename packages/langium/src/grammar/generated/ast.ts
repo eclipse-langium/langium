@@ -9,7 +9,7 @@ import { AstNode, AstReflection, Reference } from '../../syntax-tree';
 import { isAstNode } from '../../utils/ast-util';
 
 export interface AbstractElement extends AstNode {
-    readonly $container: ParserRule | Alternatives | UnorderedGroup | Group | Assignment | CrossReference | CharacterRange | CharacterRange;
+    readonly $container: ParserRule | Alternatives | UnorderedGroup | Group | Assignment | CrossReference | CharacterRange;
     cardinality: '?' | '*' | '+'
 }
 
@@ -65,7 +65,7 @@ export function isAnnotation(item: unknown): item is Annotation {
 }
 
 export interface Condition extends AstNode {
-    readonly $container: NamedArgument | Disjunction | Disjunction | Conjunction | Conjunction | Negation;
+    readonly $container: NamedArgument | Disjunction | Conjunction | Negation;
 }
 
 export const Condition = 'Condition';
@@ -114,7 +114,7 @@ export function isParameter(item: unknown): item is Parameter {
 }
 
 export interface TerminalTokenElement extends AstNode {
-    readonly $container: TerminalAlternatives | AbstractNegatedToken;
+    readonly $container: AbstractNegatedToken | TerminalAlternatives;
 }
 
 export const TerminalTokenElement = 'TerminalTokenElement';
