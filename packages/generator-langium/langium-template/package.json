@@ -27,9 +27,13 @@
     ],
     "main": "./out/extension.js",
     "langium": {
+        "languageId": "<%= language-id %=>",
         "grammar": "src/language-server/<%= language-id %>.langium",
         "extensions": <%= file-extension %>,
-        "out": "src/language-server/generated"
+        "out": "src/language-server/generated",
+        "textmate": {
+            "out": "./syntaxes/<%= language-id %>.tmLanguage.json"
+        }
     },
     "scripts": {
         "vscode:prepublish": "npm run build && npm run lint",

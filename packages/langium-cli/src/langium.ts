@@ -12,6 +12,8 @@ import { generateGrammarAccess } from './generator/grammar-access-generator';
 import { generateParser } from './generator/parser-generator';
 import { generateAst } from './generator/ast-generator';
 import { generateModule } from './generator/module-generator';
+import { generateTextMate } from './generator/textmate-generator';
+import path from 'path';
 
 const program = new Command();
 program
@@ -47,6 +49,18 @@ console.log('Generating AST...');
 const genAst = generateAst(grammar, pack.langium);
 console.log('Generating dependency injection module...');
 const genModule = generateModule(grammar, pack.langium);
+if(pack.langium.textMate) {
+    if(!pack.langium.languageId) {
+        console.log('Language Id needs to be set in order to generate the textmate grammars.');
+    } else {
+        console.log('Generating textmate grammars');
+        const genTmGrammar = generateTextMate(grammar, pack.langium);
+        console.log(`Writing textmate grammars to '${pack.langium.textMate.out}'`);
+        const parentDir = path.dirname(pack.langium.textMate.out).split(path.sep).pop();
+        parentDir && fs.mkdirsSync(parentDir);
+        fs.writeFileSync(pack.langium.textMate.out, genTmGrammar);
+    }
+}
 
 const output = pack.langium.out ?? 'src/generated';
 

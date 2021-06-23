@@ -11,9 +11,13 @@ export interface Package {
 }
 
 export interface LangiumConfig {
+    languageId?: string,
     grammar?: string,
     extensions?: string[],
     out?: string,
+    textMate?: {
+        out: string
+    }
     // The following option is meant to be used only by Langium itself
     langiumInternal?: boolean
 }

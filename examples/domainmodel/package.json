@@ -28,9 +28,13 @@
     ],
     "main": "./out/extension.js",
     "langium": {
+        "languageId": "domain-model",
         "grammar": "src/language-server/domain-model.langium",
         "extensions": [".dmodel"],
-        "out": "src/language-server/generated"
+        "out": "src/language-server/generated",
+        "textMate": {
+            "out": "./syntaxes/domain-model.tmLanguage.json"
+        }
     },
     "scripts": {
         "vscode:prepublish": "npm run build && npm run lint",

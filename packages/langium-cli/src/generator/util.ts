@@ -4,8 +4,9 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import * as langium from 'langium';
 import { readFileSync } from 'fs';
-import { CompositeGeneratorNode, GeneratorNode, NL } from 'langium';
+import { CompositeGeneratorNode, GeneratorNode, NL, stream } from 'langium';
 import path from 'path';
 
 function getLangiumCliVersion(): string {
@@ -24,6 +25,28 @@ function getGeneratedHeader(): GeneratorNode {
         ' ******************************************************************************/', NL, NL
     );
     return node;
+}
+
+export function collectKeywords(grammar: langium.Grammar): string[] {
+    const keywords = new Set<string>();
+
+    for (const rule of stream(grammar.rules).filterType(langium.isParserRule)) {
+        collectElementKeywords(rule.alternatives, keywords);
+    }
+
+    return Array.from(keywords).sort((a, b) => a.localeCompare(b));
+}
+
+function collectElementKeywords(element: langium.AbstractElement, keywords: Set<string>) {
+    if (langium.isAlternatives(element) || langium.isGroup(element) || langium.isUnorderedGroup(element)) {
+        for (const item of element.elements) {
+            collectElementKeywords(item, keywords);
+        }
+    } else if (langium.isAssignment(element)) {
+        collectElementKeywords(element.terminal, keywords);
+    } else if (langium.isKeyword(element)) {
+        keywords.add(element.value);
+    }
 }
 
 export const cliVersion = getLangiumCliVersion();
