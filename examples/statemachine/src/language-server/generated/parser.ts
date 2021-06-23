@@ -12,6 +12,8 @@ import { Command, Event, State, Statemachine, Transition, } from './ast';
 
 const ID = createToken({ name: 'ID', pattern: /[_a-zA-Z][\w_]*/ });
 const INT = createToken({ name: 'INT', pattern: /[0-9]+/ });
+const ML_COMMENT = createToken({ name: 'ML_COMMENT', pattern: /\/\*[\s\S]*?\*\//, group: Lexer.SKIPPED });
+const SL_COMMENT = createToken({ name: 'SL_COMMENT', pattern: /\/\/[^\n\r]*/, group: Lexer.SKIPPED });
 const STRING = createToken({ name: 'STRING', pattern: /"[^"]*"|'[^']*'/ });
 const WS = createToken({ name: 'WS', pattern: /\s+/, group: Lexer.SKIPPED });
 const ResetEventsKeyword = createToken({ name: 'ResetEventsKeyword', pattern: /resetEvents/, longer_alt: ID });
@@ -33,7 +35,7 @@ EndKeyword.LABEL = "'end'";
 EventsKeyword.LABEL = "'events'";
 ResetEventsKeyword.LABEL = "'resetEvents'";
 StateKeyword.LABEL = "'state'";
-const tokens = [ResetEventsKeyword, CommandsKeyword, ActionsKeyword, EventsKeyword, StateKeyword, EndKeyword, EqualsMoreThanKeyword, CurlyCloseKeyword, CurlyOpenKeyword, ID, INT, STRING, WS];
+const tokens = [ResetEventsKeyword, CommandsKeyword, ActionsKeyword, EventsKeyword, StateKeyword, EndKeyword, EqualsMoreThanKeyword, CurlyCloseKeyword, CurlyOpenKeyword, ID, INT, ML_COMMENT, SL_COMMENT, STRING, WS];
 
 export class Parser extends LangiumParser {
     readonly grammarAccess: StatemachineGrammarAccess;
