@@ -32,7 +32,7 @@
         "extensions": [".calc"],
         "out": "src/language-server/generated",
         "textMate": {
-            "out": "./syntaxes/arithmetics.tmLanguage.json"
+            "out": "syntaxes/arithmetics.tmLanguage.json"
         }
     },
     "scripts": {

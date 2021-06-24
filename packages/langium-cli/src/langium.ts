@@ -14,8 +14,8 @@ program
 
 program
     .command('generate')
-    .description('Generate code for a Langium language')
-    .option('-f', '--file <file>')
+    .description('generate code for a Langium grammar')
+    .option('-f, --file <file>', 'the configuration file or package.json setting up the generator')
     .action((options: GenerateOptions) => {
         generate(options);
     });

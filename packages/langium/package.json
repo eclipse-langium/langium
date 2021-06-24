@@ -5,7 +5,9 @@
   "keywords": [
     "language",
     "dsl",
+    "low-code",
     "lsp",
+    "language-server",
     "vscode",
     "typescript"
   ],

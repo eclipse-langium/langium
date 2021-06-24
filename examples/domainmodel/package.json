@@ -33,7 +33,7 @@
         "extensions": [".dmodel"],
         "out": "src/language-server/generated",
         "textMate": {
-            "out": "./syntaxes/domain-model.tmLanguage.json"
+            "out": "syntaxes/domain-model.tmLanguage.json"
         }
     },
     "scripts": {

@@ -1,24 +1,5 @@
-## How to generate your extension
+# Langium Package Generator
 
-#### Open the langium project
+This [Yeoman](https://yeoman.io) generator is used to create a new Langium extension for VS Code.
 
-```bash
-pwd
-```
-
--   `./langium`
-
-#### Generate your extension
-
-```bash
-npm run build --prefix packages/generator-langium
-yo langium                                            # follow the guide
-```
-
--   Suppose your extension has a name "my-super-language". It "respawns" in `./langium/packages/my-super-language`
-
-#### Open the extension folder in a new window
-
-#### Press F5
-
--   A new VSCode window is opened with your built-in extension
+Please read the [langium](https://www.npmjs.com/package/langium) package documentation to get started.

@@ -11,13 +11,19 @@ export interface Package {
 }
 
 export interface LangiumConfig {
-    languageId?: string,
-    grammar?: string,
-    extensions?: string[],
-    out?: string,
+    /** The identifier of your language as used in vscode */
+    languageId?: string
+    /** Path to the grammar file */
+    grammar?: string
+    /** File extensions with leading `.` */
+    extensions?: string[]
+    /** Main output directory for TypeScript code */
+    out?: string
+    /** Enable generating a TextMate syntax highlighting file */
     textMate?: {
+        /** Output path to syntax highlighting file */
         out: string
     }
-    // The following option is meant to be used only by Langium itself
+    /** The following option is meant to be used only by Langium itself */
     langiumInternal?: boolean
 }

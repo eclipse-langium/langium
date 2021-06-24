@@ -1,0 +1,22 @@
+# Langium
+[![npm](https://img.shields.io/npm/v/langium)](https://www.npmjs.com/package/langium)
+[![Build](https://github.com/langium/langium/actions/workflows/build.yml/badge.svg)](https://github.com/langium/langium/actions/workflows/build.yml)
+
+Langium is a language engineering tool with built-in support for the [Language Server Protocol](https://microsoft.github.io/language-server-protocol/). Here are some key facts:
+
+ * Simple and direct integration with the [VS Code extension API](https://code.visualstudio.com/api/language-extensions/overview)
+ * Implemented in [TypeScript](https://www.typescriptlang.org/), runs in [NodeJS](https://nodejs.org/)
+ * Generates a parser and abstract syntax tree from a grammar declaration
+ * The parser is based on [Chevrotain](https://chevrotain.io/)
+ * Grammar declaration language similar to [Xtext](https://www.eclipse.org/Xtext/documentation/301_grammarlanguage.html)
+ * High out-of-the-box functionality, high extensibility
+
+## Why?
+
+A domain-specific language (DSL) enables domain experts to contribute automatically processable content without any programming knowledge. This is often referred to as _low-code_. The contributed content can describe anything like structural data, behavior, or a mixture of both. By plugging in code generators that operate on the DSL, you create a powerful tool chain that creates technical artifacts from high-level specifications, improves communication between engineers as well as non-technical stakeholders and boosts the overall efficiency.
+
+The main goal of Langium is to lower the barrier of creating a DSL / low-code platform. We achieve this by providing a DSL that describes the syntax and structure of your language: the _grammar language_. Langium's out-of-the-box functionality is based on the information extracted from a grammar declaration. The Xtext framework has proved this approach to be suitable both for rapid prototyping and large-scale applications.
+
+## How?
+
+Langium is available as [npm package](https://www.npmjs.com/package/langium). Please read the package documentation to get started.
