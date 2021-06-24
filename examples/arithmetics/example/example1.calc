@@ -1,0 +1,5 @@
+module example1
+
+def x: 1 + 2;
+
+x * 2 - 4;

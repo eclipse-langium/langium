@@ -1,0 +1,32 @@
+datatype String
+
+entity E1 {
+    name: String
+}
+
+package foo.bar {
+    datatype Complex
+
+    entity E2 extends E1 {
+        next: E2
+        other: baz.E3
+        nested: baz.nested.E5
+    }
+}
+
+package baz {
+    entity E3 {
+        this: E4
+        other: foo.bar.E2
+        nested: nested.E5
+    }
+
+    entity E4 {
+    }
+
+    package nested {
+        entity E5 {
+            ref: E3
+        }
+    }
+}

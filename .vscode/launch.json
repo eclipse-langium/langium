@@ -43,7 +43,7 @@
 			"request": "launch",
             "runtimeExecutable": "${execPath}",
 			"args": [
-				"${workspaceFolder}/packages/langium",
+				"${workspaceFolder}/examples",
 				"--extensionDevelopmentPath=${workspaceFolder}/packages/langium-vscode"
 			]
 		},
@@ -53,7 +53,7 @@
 			"request": "launch",
             "runtimeExecutable": "${execPath}",
 			"args": [
-				"${workspaceFolder}/examples/arithmetics",
+				"${workspaceFolder}/examples/arithmetics/example",
 				"--extensionDevelopmentPath=${workspaceFolder}/examples/arithmetics"
 			]
 		},
@@ -63,7 +63,7 @@
 			"request": "launch",
             "runtimeExecutable": "${execPath}",
 			"args": [
-				"${workspaceFolder}/examples/domainmodel",
+				"${workspaceFolder}/examples/domainmodel/example",
 				"--extensionDevelopmentPath=${workspaceFolder}/examples/domainmodel"
 			]
 		},
