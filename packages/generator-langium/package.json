@@ -40,5 +40,11 @@
     "eslint": "^7.28.0",
     "rimraf": "^3.0.2",
     "typescript": "^4.2.2"
+  },
+  "repository": "github:langium/langium",
+  "bugs": "https://github.com/langium/langium/issues",
+  "author": {
+      "name": "TypeFox",
+      "url": "https://www.typefox.io"
   }
 }
