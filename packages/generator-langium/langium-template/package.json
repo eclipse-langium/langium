@@ -27,11 +27,11 @@
     ],
     "main": "./out/extension.js",
     "langium": {
-        "languageId": "<%= language-id %=>",
+        "languageId": "<%= language-id %>",
         "grammar": "src/language-server/<%= language-id %>.langium",
         "extensions": <%= file-extension %>,
         "out": "src/language-server/generated",
-        "textmate": {
+        "textMate": {
             "out": "./syntaxes/<%= language-id %>.tmLanguage.json"
         }
     },
