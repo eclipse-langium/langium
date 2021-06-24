@@ -1,0 +1,48 @@
+{
+  "name": "statemachine",
+  "scopeName": "source.statemachine",
+  "fileTypes": [
+    ".statemachine"
+  ],
+  "patterns": [
+    {
+      "name": "keyword.control.statemachine",
+      "match": "\\b(actions|commands|end|events|resetEvents|state)\\b"
+    },
+    {
+      "name": "keyword.symbol.statemachine",
+      "match": "(\\{|\\}|\\=>)"
+    }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.block.statemachine",
+          "begin": "/\\*",
+          "beginCaptures": {
+            "0": {
+              "name": "punctuation.definition.comment.statemachine"
+            }
+          },
+          "end": "\\*/",
+          "endCaptures": {
+            "0": {
+              "name": "punctuation.definition.comment.statemachine"
+            }
+          }
+        },
+        {
+          "begin": "(^\\s+)?(?=//)",
+          "beginCaptures": {
+            "1": {
+              "name": "punctuation.whitespace.comment.leading.cs"
+            }
+          },
+          "end": "(?=$)",
+          "name": "comment.line.statemachine"
+        }
+      ]
+    }
+  }
+}
