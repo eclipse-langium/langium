@@ -137,7 +137,7 @@ export class LangiumParser {
         const result = this.subrule(idx, rule, feature);
         if (!this.wrapper.IS_RECORDING) {
             const resultKind = result.$type;
-            const object = Object.assign(result, this.current);
+            const object = this.assignWithoutOverride(result, this.current);
             if (resultKind) {
                 object.$type = resultKind;
             }
@@ -185,12 +185,11 @@ export class LangiumParser {
      */
     initializeElement(grammarAccessElement: { [key: string]: AbstractElement }): void {
         if (!this.wrapper.IS_RECORDING) {
-            // TODO fix this by inverting the assign call in unassignedSubrule
-            //const item = this.current.object;
+            const item = this.current;
             for (const element of Object.values(grammarAccessElement)) {
                 if (isAssignment(element)) {
                     if (isArrayOperator(element.operator)) {
-                        //item[element.feature] = [];
+                        item[element.feature] = [];
                     }
                 }
             }
@@ -267,6 +266,15 @@ export class LangiumParser {
             }
         };
         return reference;
+    }
+
+    private assignWithoutOverride(target: any, source: any): any {
+        for (const [name, value] of Object.entries(source)) {
+            if (target[name] === undefined) {
+                target[name] = value;
+            }
+        }
+        return target;
     }
 }
 

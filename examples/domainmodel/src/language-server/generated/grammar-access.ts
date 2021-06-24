@@ -3,11 +3,10 @@
  * DO NOT EDIT MANUALLY!
  ******************************************************************************/
 
-import { Action, Assignment, CrossReference, Keyword, RuleCall, GrammarAccess } from 'langium';
+import { Assignment, CrossReference, Keyword, RuleCall, GrammarAccess } from 'langium';
 import * as path from 'path';
 
 export type DomainmodelRuleAccess = {
-    DomainmodelAction: Action;
     elements: Assignment;
     elementsAbstractElementRuleCall: RuleCall;
 }
