@@ -9,6 +9,7 @@
 			"request": "launch",
 			"runtimeArgs": [
 				"../langium-cli/lib/langium",
+				"generate"
 			],
 			"runtimeExecutable": "node",
 			"cwd": "${workspaceFolder}/packages/langium",

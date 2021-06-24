@@ -2,7 +2,6 @@ grammar DomainModel
 hidden(WS, SL_COMMENT, ML_COMMENT)
 
 Domainmodel:
-    {Domainmodel}
     (elements+=AbstractElement)*;
 
 AbstractElement:

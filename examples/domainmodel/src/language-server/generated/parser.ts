@@ -46,7 +46,6 @@ export class Parser extends LangiumParser {
 
     Domainmodel = this.MAIN_RULE("Domainmodel", Domainmodel, () => {
         this.initializeElement(this.grammarAccess.Domainmodel);
-        this.action(Domainmodel, this.grammarAccess.Domainmodel.DomainmodelAction);
         this.many(1, () => {
             this.subrule(1, this.AbstractElement, this.grammarAccess.Domainmodel.elementsAbstractElementRuleCall);
         });
