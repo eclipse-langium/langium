@@ -1,7 +1,7 @@
 {
   "name": "langium-vscode",
   "publisher": "langium",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "displayName": "Langium",
   "description": "VS Code extension for Langium",
   "categories": [
@@ -38,7 +38,7 @@
     "lint": "eslint src --ext ts"
   },
   "dependencies": {
-    "langium": "0.0.0",
+    "langium": "0.1.0",
     "vscode-languageclient": "^7.0.0",
     "vscode-languageserver": "^7.0.0"
   },
