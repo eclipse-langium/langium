@@ -6,6 +6,7 @@
         { "path": "packages/langium-cli" },
         { "path": "packages/generator-langium" },
         { "path": "examples/arithmetics" },
-        { "path": "examples/domainmodel" }
+        { "path": "examples/domainmodel" },
+        { "path": "examples/statemachine" }
     ]
  }
