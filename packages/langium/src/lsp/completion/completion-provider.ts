@@ -174,9 +174,11 @@ export class DefaultCompletionProvider {
     protected buildCompletionTextEdit(document: TextDocument, offset: number, completion: string): TextEdit | undefined {
         let negativeOffset = 0;
         const content = document.getText();
-        for (let i = completion.length; i > 0; i--) {
-            const contentSub = content.substring(offset - i, offset);
-            if (completion.startsWith(contentSub) && (i === 0 || !this.isWordCharacterAt(content, offset - i - 1))) {
+        const contentLowerCase = content.toLowerCase();
+        const completionLowerCase = completion.toLowerCase();
+        for (let i = completionLowerCase.length; i > 0; i--) {
+            const contentLowerCaseSub = contentLowerCase.substring(offset - i, offset);
+            if (completionLowerCase.startsWith(contentLowerCaseSub) && (i === 0 || !this.isWordCharacterAt(contentLowerCase, offset - i - 1))) {
                 negativeOffset = i;
                 break;
             }
