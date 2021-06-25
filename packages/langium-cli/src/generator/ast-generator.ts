@@ -71,7 +71,7 @@ function generateAstReflection(grammar: Grammar, interfaces: Interface[]): Gener
     );
     reflectionNode.children.push(
         'export type ', grammar.name, 'AstReference = ',
-        crossReferenceTypes.map(e => `'${e.type}:${e.feature}'`).join(' | '),
+        crossReferenceTypes.map(e => `'${e.type}:${e.feature}'`).join(' | ') || 'never',
         ';', NL, NL
     );
     reflectionNode.children.push('export class ', grammar.name, 'AstReflection implements AstReflection {', NL, NL);
