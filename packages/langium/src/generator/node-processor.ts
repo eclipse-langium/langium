@@ -4,15 +4,15 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { CompositeGeneratorNode, GeneratorNode, IndentNode, NewLineNode, TextNode } from './node';
+import { CompositeGeneratorNode, GeneratorNode, IndentNode, NewLineNode } from './node';
 
 class Context {
 
     defaultIndentation = '    ';
+    pendingIndent = true;
+    readonly currentIndents: IndentNode[] = [];
 
     private lines: string[][] = [[]];
-    private _pendingIndent = true;
-    private _currentIndents: IndentNode[] = [];
 
     constructor(defaultIndent?: string | number) {
         if (typeof defaultIndent === 'string') {
@@ -22,20 +22,8 @@ class Context {
         }
     }
 
-    public get pendingIndent(): boolean {
-        return this._pendingIndent;
-    }
-
-    public set pendingIndent(v: boolean) {
-        this._pendingIndent = v;
-    }
-
     get content(): string {
         return this.lines.map(e => e.join('')).join('');
-    }
-
-    get currentIndents(): IndentNode[] {
-        return this._currentIndents;
     }
 
     get currentLineNumber(): number {
@@ -53,11 +41,11 @@ class Context {
     }
 
     increaseIndent(node: IndentNode) {
-        this._currentIndents.push(node);
+        this.currentIndents.push(node);
     }
 
     decreaseIndent() {
-        this._currentIndents.pop();
+        this.currentIndents.pop();
     }
 
     resetCurrentLine() {
@@ -70,17 +58,15 @@ class Context {
     }
 }
 
-export function process(node: GeneratorNode, defaultIndentation?: string | number): string {
+export function processNode(node: GeneratorNode, defaultIndentation?: string | number): string {
     const context = new Context(defaultIndentation);
-    processNode(node, context);
+    processNodeInternal(node, context);
     return context.content;
 }
 
-function processNode(node: GeneratorNode, context: Context) {
+function processNodeInternal(node: GeneratorNode, context: Context) {
     if (typeof(node) === 'string') {
-        processTextNode(new TextNode(node), context);
-    } else if (node instanceof TextNode) {
-        processTextNode(node, context);
+        processStringNode(node, context);
     } else if (node instanceof IndentNode) {
         processIndentNode(node, context);
     } else if (node instanceof CompositeGeneratorNode) {
@@ -93,8 +79,6 @@ function processNode(node: GeneratorNode, context: Context) {
 function hasContent(node: GeneratorNode, ctx: Context): boolean {
     if (typeof(node) === 'string') {
         return hasNonWhitespace(node);
-    } else if (node instanceof TextNode) {
-        return !!node.text && hasNonWhitespace(node.text);
     } else if (node instanceof IndentNode || node instanceof CompositeGeneratorNode) {
         return node.children.some(e => hasContent(e, ctx));
     } else if (node instanceof NewLineNode) {
@@ -104,12 +88,12 @@ function hasContent(node: GeneratorNode, ctx: Context): boolean {
     }
 }
 
-function processTextNode(node: TextNode, context: Context) {
-    if (node.text && node.text.length > 0) {
+function processStringNode(node: string, context: Context) {
+    if (node) {
         if (context.pendingIndent) {
             handlePendingIndent(context, false);
         }
-        context.append(node.text);
+        context.append(node);
     }
 }
 
@@ -124,7 +108,7 @@ function handlePendingIndent(ctx: Context, endOfLine: boolean) {
 
 function processCompositeNode(node: CompositeGeneratorNode, context: Context) {
     for (const child of node.children) {
-        processNode(child, context);
+        processNodeInternal(child, context);
     }
 }
 

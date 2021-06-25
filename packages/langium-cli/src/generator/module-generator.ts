@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import * as langium from 'langium';
-import { CompositeGeneratorNode, IndentNode, NL, process } from 'langium';
+import { CompositeGeneratorNode, IndentNode, NL, processNode } from 'langium';
 import { LangiumConfig } from '../package';
 import { generatedHeader } from './util';
 
@@ -34,5 +34,5 @@ export function generateModule(grammar: langium.Grammar, config: LangiumConfig):
     moduleNode.children.push('AstReflection: () => new ', grammar.name, 'AstReflection()', NL);
     node.children.push(moduleNode, '};', NL);
 
-    return process(node);
+    return processNode(node);
 }

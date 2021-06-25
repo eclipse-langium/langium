@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import * as langium from 'langium';
-import { CompositeGeneratorNode, GeneratorNode, IndentNode, NL, process, findAllFeatures, getContainerOfType, streamAllContents, isAction, isAssignment, isCrossReference, isKeyword, isRuleCall, stream } from 'langium';
+import { CompositeGeneratorNode, GeneratorNode, IndentNode, NL, processNode, findAllFeatures, getContainerOfType, streamAllContents, isAction, isAssignment, isCrossReference, isKeyword, isRuleCall, stream } from 'langium';
 import { LangiumConfig } from '../package';
 import { generatedHeader } from './util';
 
@@ -42,7 +42,7 @@ export function generateGrammarAccess(grammar: langium.Grammar, config: LangiumC
     content.children.push(NL, 'constructor() {', NL, constructorNode, NL, '}', NL);
     node.children.push(content, '}', NL);
 
-    return process(node);
+    return processNode(node);
 }
 
 function identifyImports(grammar: langium.Grammar): string[] {

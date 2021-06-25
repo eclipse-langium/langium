@@ -6,7 +6,7 @@
 
 import * as langium from 'langium';
 import { getContainerOfType, getTypeName, ParserRule, stream } from 'langium';
-import { CompositeGeneratorNode, GeneratorNode, IndentNode, NewLineNode, NL, process, replaceTokens } from 'langium';
+import { CompositeGeneratorNode, GeneratorNode, IndentNode, NewLineNode, NL, processNode, replaceTokens } from 'langium';
 import { collectAst } from './type-collector';
 import { Cardinality, findAllFeatures, isDataTypeRule, isOptional } from 'langium';
 import { LangiumConfig } from '../package';
@@ -86,7 +86,7 @@ export function generateParser(grammar: langium.Grammar, config: LangiumConfig):
 
     fileNode.children.push(buildParser(grammar), NL);
 
-    return process(fileNode);
+    return processNode(fileNode);
 }
 
 function buildParser(grammar: langium.Grammar): CompositeGeneratorNode {
