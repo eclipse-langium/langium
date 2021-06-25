@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { GeneratorNode, Grammar, IndentNode, CompositeGeneratorNode, NL, process, stream, isAlternatives, isKeyword, isParserRule, isDataTypeRule, ParserRule, streamAllContents, isCrossReference } from 'langium';
+import { GeneratorNode, Grammar, IndentNode, CompositeGeneratorNode, NL, processNode, stream, isAlternatives, isKeyword, isParserRule, isDataTypeRule, ParserRule, streamAllContents, isCrossReference } from 'langium';
 import { LangiumConfig } from '../package';
 import { collectAst, Interface } from './type-collector';
 import { generatedHeader } from './util';
@@ -34,7 +34,7 @@ export function generateAst(grammar: Grammar, config: LangiumConfig): string {
 
     fileNode.children.push(generateAstReflection(grammar, types));
 
-    return process(fileNode);
+    return processNode(fileNode);
 }
 
 function buildDatatype(rule: ParserRule): GeneratorNode {

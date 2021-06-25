@@ -8,7 +8,7 @@ import _ from 'lodash';
 import * as langium from 'langium';
 import { getRuleType, getTypeName, isDataTypeRule } from 'langium';
 import { CompositeGeneratorNode, IndentNode, NL } from 'langium';
-import { process } from 'langium';
+import { processNode } from 'langium';
 import { Cardinality, isOptional } from 'langium';
 
 type TypeAlternative = {
@@ -74,7 +74,7 @@ export class Interface {
         methodBody.children.push(`return reflection.isInstance(item, ${this.name});`, NL);
         interfaceNode.children.push(methodBody, '}', NL);
 
-        return process(interfaceNode);
+        return processNode(interfaceNode);
     }
 }
 
