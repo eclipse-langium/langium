@@ -9,5 +9,6 @@ module.exports = {
     roots: [
         '<rootDir>/test'
     ],
+    collectCoverageFrom: ['src/**/*'],
     testEnvironment: 'node'
 }
