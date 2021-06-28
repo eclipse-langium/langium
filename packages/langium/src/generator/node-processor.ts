@@ -79,7 +79,7 @@ function processNodeInternal(node: GeneratorNode, context: Context) {
 function hasContent(node: GeneratorNode, ctx: Context): boolean {
     if (typeof(node) === 'string') {
         return hasNonWhitespace(node);
-    } else if (node instanceof IndentNode || node instanceof CompositeGeneratorNode) {
+    } else if (node instanceof CompositeGeneratorNode) {
         return node.children.some(e => hasContent(e, ctx));
     } else if (node instanceof NewLineNode) {
         return !(node.ifNotEmpty && ctx.currentLineContent.length === 0);
