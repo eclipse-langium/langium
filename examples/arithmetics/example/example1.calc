@@ -4,9 +4,10 @@ def x: 1 + 2;
 
 x * 2 - 4;
 
+def t: 4;
+
 def func(t, x):
     t * t + x;
 
-func(4, x);
-
-66 / (x * 2);
+func(t, x);
+func(x, t);

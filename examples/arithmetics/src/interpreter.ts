@@ -1,5 +1,4 @@
 import { AbstractDefinition, Addition, Definition, Division, Evaluation, Expression, FunctionCall, isAddition, isDefinition, isDivision, isEvaluation, isFunctionCall, isMultiplication, isNumberLiteral, isSubtraction, Module, Multiplication, NumberLiteral, Statement, Subtraction } from './language-server/generated/ast';
-import * as _ from 'lodash';
 
 export class ArithmeticsInterpreter {
     // variable name --> value
@@ -74,9 +73,14 @@ export class ArithmeticsInterpreter {
                 process.exit(1);
             }
 
-            const backupContext = _.cloneDeep(this.context);
+            const backupContext = new Map<string, number | Definition>();
             for (let i = 0; i < valueOrDef.args.length; i += 1) {
-                this.context.set(valueOrDef.args[i].name, this.evalExpression(funcCall.args[i]));
+                backupContext.set(valueOrDef.args[i].name, this.evalExpression(funcCall.args[i]));
+            }
+            for (const [variable, value] of this.context) {
+                if (!backupContext.has(variable)) {
+                    backupContext.set(variable, value);
+                }
             }
             const funcCallRes = this.evalExpression(valueOrDef.expr);
             this.context = backupContext;
