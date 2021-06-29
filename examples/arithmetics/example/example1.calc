@@ -2,6 +2,10 @@ module example1
 
 def x: 1 + 2;
 
+def y: 99999999999 / 2 + 2 - 1;
+
+def x: 12 / 3 - 1;
+
 x * 2 - 4;
 
 def t: 4;

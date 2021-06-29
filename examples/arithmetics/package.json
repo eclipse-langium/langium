@@ -52,6 +52,8 @@
         "copygrammar": "copyfiles -f ./src/language-server/generated/grammar.json ./out/language-server/generated"
     },
     "dependencies": {
+        "colors": "^1.4.0",
+        "commander": "^8.0.0",
         "langium": "0.1.0",
         "vscode-languageclient": "^7.0.0",
         "vscode-languageserver": "^7.0.0"
@@ -61,7 +63,6 @@
         "@types/vscode": "^1.56.0",
         "@typescript-eslint/eslint-plugin": "^4.14.1",
         "@typescript-eslint/parser": "^4.14.1",
-        "colors": "^1.4.0",
         "copyfiles": "^2.4.1",
         "eslint": "^7.19.0",
         "langium-cli": "0.1.0",

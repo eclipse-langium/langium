@@ -9,7 +9,7 @@ import colors from 'colors';
 import { Command } from 'commander';
 import { Grammar, LangiumDocumentConfiguration, DefaultDocumentValidator } from 'langium';
 import { createArithmeticsServices } from './language-server/arithmetics-module';
-import { isModule, Module } from './language-server/generated/ast';
+import { isModule } from './language-server/generated/ast';
 import { ArithmeticsInterpreter } from './interpreter';
 
 const program = new Command();
@@ -19,41 +19,37 @@ program
 
 program
     .command('eval')
+    .argument('<file>', 'the .calc file')
     .description('calculate Evaluations in the .calc file')
-    .option('-f, --file <file>', 'the .calc file')
-    .action((options: EvalOptions) => {
-        if (!options.file) {
-            console.log('Please, enter a file name.');
-            process.exit(1);
-        }
-        if (!isCalcExtension(options.file)) {
-            console.log('Please, choose a file with the .calc extension.');
+    .action((fileName: string) => {
+        if (!/^.*\.calc$/.test(fileName)) {
+            console.error('Please, choose a file with the .calc extension.');
             process.exit(1);
         }
 
-        if (!fs.existsSync(options.file)) {
-            console.log('File doesn\'t exist: ' + options.file);
+        if (!fs.existsSync(fileName)) {
+            console.error(`File ${fileName} doesn't exist.`);
             process.exit(1);
         }
-        const fileContent = fs.readFileSync(options.file).toString();
+        const fileContent = fs.readFileSync(fileName).toString();
 
         const arithmeticsServices = createArithmeticsServices();
         // eslint-disable-next-line @typescript-eslint/no-var-requires
         const languageId = require('../package.json').contributes.languages.id;
-        // eslint-disable-next-line @typescript-eslint/no-var-requires
-        const version = require('../package.json').version;
-        const document = LangiumDocumentConfiguration.create(`file:${options.file}`, languageId, version, fileContent);
+        const document = LangiumDocumentConfiguration.create(`file:${fileName}`, languageId, 0, fileContent);
         arithmeticsServices.documents.DocumentBuilder.build(document);
         if (!document.parseResult) {
-            console.error('Failed to parse the grammar file: ' + options.file);
+            console.error(`Failed to parse the grammar file ${fileName}`);
             process.exit(1);
         }
 
-        const validationErrors = new DefaultDocumentValidator(arithmeticsServices).validateDocument(document);
+        const validationErrors = new DefaultDocumentValidator(arithmeticsServices)
+            .validateDocument(document)
+            .filter(e => e.severity === 1);
         if (validationErrors.length > 0) {
-            console.log('There are validation errors:');
+            console.error('There are validation errors:');
             for (const validationError of validationErrors) {
-                console.log(validationError.range.start, '-', validationError.range.end, ':', validationError.message);
+                console.error(validationError.range.start, '-', validationError.range.end, ':', validationError.message);
             }
             process.exit(1);
         }
@@ -61,19 +57,10 @@ program
         const grammar = document.parseResult.value as Grammar;
         const evaluator = new ArithmeticsInterpreter();
         if (isModule(grammar)) {
-            for (const [expr, value] of evaluator.eval(grammar as Module)) {
-                console.log(colors.green(expr), '===>', value);
+            for (const [expr, value] of evaluator.eval(grammar)) {
+                console.error(colors.green(expr), '===>', value);
             }
         }
     });
 
 program.parse(process.argv);
-
-export type EvalOptions = {
-    file?: string;
-}
-
-function isCalcExtension(fileName: string): boolean {
-    return /^.*\.calc$/.test(fileName);
-}
-

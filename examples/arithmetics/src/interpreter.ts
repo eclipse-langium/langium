@@ -1,4 +1,10 @@
-import { AbstractDefinition, Addition, Definition, Division, Evaluation, Expression, FunctionCall, isAddition, isDefinition, isDivision, isEvaluation, isFunctionCall, isMultiplication, isNumberLiteral, isSubtraction, Module, Multiplication, NumberLiteral, Statement, Subtraction } from './language-server/generated/ast';
+/******************************************************************************
+ * Copyright 2021 TypeFox GmbH
+ * This program and the accompanying materials are made available under the
+ * terms of the MIT License, which is available in the project root.
+ ******************************************************************************/
+
+import { AbstractDefinition, Definition, Evaluation, Expression, isAddition, isDefinition, isDivision, isEvaluation, isFunctionCall, isMultiplication, isNumberLiteral, isSubtraction, Module, Statement } from './language-server/generated/ast';
 
 export class ArithmeticsInterpreter {
     // variable name --> value
@@ -17,9 +23,9 @@ export class ArithmeticsInterpreter {
 
     private evalStatement(stmt: Statement): void {
         if (isDefinition(stmt)) {
-            this.evalDefinition(stmt as Definition);
+            this.evalDefinition(stmt);
         } else if (isEvaluation(stmt)) {
-            this.evalEvaluation(stmt as Evaluation);
+            this.evalEvaluation(stmt);
         }
     }
 
@@ -34,48 +40,43 @@ export class ArithmeticsInterpreter {
         }
     }
 
-    private evalExpression(expr: Expression): number {
+    public evalExpression(expr: Expression): number {
         if (isAddition(expr)) {
-            const castedExpr = expr as Addition;
-            const left = this.evalExpression(castedExpr.left);
-            const right = this.evalExpression(castedExpr.right);
+            const left = this.evalExpression(expr.left);
+            const right = this.evalExpression(expr.right);
             return right ? left + right : left;
         }
         if (isSubtraction(expr)) {
-            const castedExpr = expr as Subtraction;
-            const left = this.evalExpression(castedExpr.left);
-            const right = this.evalExpression(castedExpr.right);
+            const left = this.evalExpression(expr.left);
+            const right = this.evalExpression(expr.right);
             return right ? left - right : left;
         }
         if (isMultiplication(expr)) {
-            const castedExpr = expr as Multiplication;
-            const left = this.evalExpression(castedExpr.left);
-            const right = this.evalExpression(castedExpr.right);
+            const left = this.evalExpression(expr.left);
+            const right = this.evalExpression(expr.right);
             return right ? left * right : left;
         }
         if (isDivision(expr)) {
-            const castedExpr = expr as Division;
-            const left = this.evalExpression(castedExpr.left);
-            const right = this.evalExpression(castedExpr.right);
+            const left = this.evalExpression(expr.left);
+            const right = this.evalExpression(expr.right);
             return right ? left / right : left;
         }
         if (isNumberLiteral(expr)) {
-            return +(expr as NumberLiteral).value;
+            return +expr.value;
         }
         if (isFunctionCall(expr)) {
-            const funcCall = expr as FunctionCall;
-            const valueOrDef = this.context.get((funcCall.func.ref as AbstractDefinition).name) as number | Definition;
+            const valueOrDef = this.context.get((expr.func.ref as AbstractDefinition).name) as number | Definition;
             if (!isDefinition(valueOrDef)) {
                 return valueOrDef;
             }
-            if (valueOrDef.args.length !== funcCall.args.length) {
-                console.log('Function definition and call have different number of arguments: ' + valueOrDef.name);
+            if (valueOrDef.args.length !== expr.args.length) {
+                console.error('Function definition and its call have different number of arguments: ' + valueOrDef.name);
                 process.exit(1);
             }
 
             const backupContext = new Map<string, number | Definition>();
             for (let i = 0; i < valueOrDef.args.length; i += 1) {
-                backupContext.set(valueOrDef.args[i].name, this.evalExpression(funcCall.args[i]));
+                backupContext.set(valueOrDef.args[i].name, this.evalExpression(expr.args[i]));
             }
             for (const [variable, value] of this.context) {
                 if (!backupContext.has(variable)) {
@@ -87,7 +88,7 @@ export class ArithmeticsInterpreter {
             return funcCallRes;
         }
 
-        console.log('Impossible type of Expression.');
+        console.error('Impossible type of Expression.');
         process.exit(1);
     }
 }
