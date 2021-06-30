@@ -4,7 +4,7 @@
  ******************************************************************************/
 
 import { Action, Assignment, CrossReference, Keyword, RuleCall, GrammarAccess } from 'langium';
-import * as path from 'path';
+import grammar from './grammar';
 
 export type ModuleRuleAccess = {
     ModuleKeyword: Keyword;
@@ -102,6 +102,6 @@ export class ArithmeticsGrammarAccess extends GrammarAccess {
     PrimaryExpression = this.buildAccess<PrimaryExpressionRuleAccess>('PrimaryExpression');
 
     constructor() {
-        super(path.join(__dirname, 'grammar.json'));
+        super(grammar());
     }
 }

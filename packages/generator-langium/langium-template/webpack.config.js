@@ -3,7 +3,6 @@
 'use strict';
 
 const path = require('path');
-const CopyPlugin = require("copy-webpack-plugin");
 
 /**@type {import('webpack').Configuration}*/
 const commonConfig = {
@@ -45,17 +44,7 @@ const lspConfig = {
         libraryTarget: 'commonjs2',
         devtoolModuleFilenameTemplate: '../../[resource-path]',
         clean: true
-    },
-    plugins: [
-        new CopyPlugin({ // This copy plugin call is required to put the generated grammar file in the right directory
-            patterns: [
-                {
-                    from: path.resolve(__dirname, 'src/language-server/generated/grammar.json'),
-                    to: path.resolve(__dirname, 'out/language-server')
-                }
-            ]
-        })
-    ]
+    }
 };
 
 /**@type {import('webpack').Configuration}*/

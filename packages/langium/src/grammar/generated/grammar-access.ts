@@ -5,7 +5,7 @@
 
 import { GrammarAccess } from '../grammar-access';
 import { Action, Assignment, CrossReference, Keyword, RuleCall } from './ast';
-import * as path from 'path';
+import grammar from './grammar';
 
 export type GrammarRuleAccess = {
     GrammarKeyword: Keyword;
@@ -463,6 +463,6 @@ export class LangiumGrammarGrammarAccess extends GrammarAccess {
     CharacterRange = this.buildAccess<CharacterRangeRuleAccess>('CharacterRange');
 
     constructor() {
-        super(path.join(__dirname, 'grammar.json'));
+        super(grammar());
     }
 }
