@@ -10,7 +10,7 @@ import { LangiumServices } from '../services';
 import { isAstNode, isReference } from '../utils/ast-util';
 
 export interface JsonSerializer {
-    serialize(node: AstNode): string
+    serialize(node: AstNode, space?: string | number): string
     deserialize(content: string): AstNode
 }
 
@@ -22,8 +22,8 @@ export class DefaultJsonSerializer {
         this.linker = services.references.Linker;
     }
 
-    serialize(node: AstNode): string {
-        return JSON.stringify(this.decycle(node, '$container', '$document', '$cstNode'));
+    serialize(node: AstNode, space?: string | number): string {
+        return JSON.stringify(this.decycle(node, '$container', '$document', '$cstNode'), undefined, space);
     }
 
     deserialize(content: string): AstNode {

@@ -13,6 +13,7 @@ import { generateAst } from './generator/ast-generator';
 import { generateModule } from './generator/module-generator';
 import { generateTextMate } from './generator/textmate-generator';
 import path from 'path';
+import { serializeGrammar } from './generator/grammar-serializer';
 
 export type GenerateOptions = {
     file?: string;
@@ -42,8 +43,8 @@ export function generate(opts: GenerateOptions): void {
     fs.mkdirsSync(output);
 
     console.log('Generating serialized grammar...');
-    const json = services.serializer.JsonSerializer.serialize(grammar);
-    fs.writeFileSync(`${output}/grammar.json`, json);
+    const serializedGrammar = serializeGrammar(services, grammar, pack.langium);
+    fs.writeFileSync(`${output}/grammar.ts`, serializedGrammar);
 
     console.log('Generating parser...');
     const parser = generateParser(grammar, pack.langium);
