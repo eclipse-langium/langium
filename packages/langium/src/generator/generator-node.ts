@@ -12,7 +12,11 @@ export class CompositeGeneratorNode {
 
     readonly contents: GeneratorNode[] = [];
 
-    append(...args: Array<GeneratorNode | ((node: CompositeGeneratorNode) => void)>): GeneratorNode {
+    constructor(...contents: GeneratorNode[]) {
+        this.append(...contents);
+    }
+
+    append(...args: Array<GeneratorNode | ((node: CompositeGeneratorNode) => void)>): CompositeGeneratorNode {
         for (const arg of args) {
             if (typeof arg === 'function') {
                 arg(this);
@@ -23,13 +27,13 @@ export class CompositeGeneratorNode {
         return this;
     }
 
-    indent(func?: (indentNode: IndentNode) => void): IndentNode {
+    indent(func?: (indentNode: IndentNode) => void): CompositeGeneratorNode {
         const node = new IndentNode();
         this.contents.push(node);
         if (func) {
             func(node);
         }
-        return node;
+        return this;
     }
 }
 

@@ -5,34 +5,38 @@
  ******************************************************************************/
 
 import * as langium from 'langium';
-import { CompositeGeneratorNode, IndentNode, NL, processGeneratorNode } from 'langium';
+import { CompositeGeneratorNode, NL, processGeneratorNode } from 'langium';
 import { LangiumConfig } from '../package';
 import { generatedHeader } from './util';
 
 export function generateModule(grammar: langium.Grammar, config: LangiumConfig): string {
     const node = new CompositeGeneratorNode();
-    node.contents.push(generatedHeader);
+    node.append(generatedHeader);
     if (config.langiumInternal) {
-        node.contents.push("import { Module } from '../../dependency-injection';", NL);
+        node.append("import { Module } from '../../dependency-injection';", NL);
         node.contents.push("import { LangiumGeneratedServices, LangiumServices } from '../../services';", NL);
     } else {
-        node.contents.push("import { LangiumGeneratedServices, LangiumServices, Module } from 'langium';", NL);
+        node.append("import { LangiumGeneratedServices, LangiumServices, Module } from 'langium';", NL);
     }
-    node.contents.push(
+    node.append(
         'import { ', grammar.name, "AstReflection } from './ast';", NL,
         'import { ', grammar.name, "GrammarAccess } from './grammar-access';", NL,
         "import { Parser } from './parser';", NL, NL
     );
 
-    node.contents.push('export const ', grammar.name, 'GeneratedModule: Module<LangiumServices, LangiumGeneratedServices> = {', NL);
-    const moduleNode = new IndentNode();
-    moduleNode.contents.push('parser: {', NL);
-    const parserNode = new IndentNode();
-    parserNode.contents.push('LangiumParser: (injector) => new Parser(injector)', NL);
-    moduleNode.contents.push(parserNode, '},', NL);
-    moduleNode.contents.push('GrammarAccess: () => new ', grammar.name, 'GrammarAccess(),', NL);
-    moduleNode.contents.push('AstReflection: () => new ', grammar.name, 'AstReflection()', NL);
-    node.contents.push(moduleNode, '};', NL);
+    node.append('export const ', grammar.name, 'GeneratedModule: Module<LangiumServices, LangiumGeneratedServices> = {', NL);
+    node.indent(moduleNode => {
+        moduleNode.append('parser: {', NL);
+        moduleNode.indent(parserNode => {
+            parserNode.append('LangiumParser: (injector) => new Parser(injector)', NL);
+        });
+        moduleNode.append(
+            '},', NL,
+            'GrammarAccess: () => new ', grammar.name, 'GrammarAccess(),', NL,
+            'AstReflection: () => new ', grammar.name, 'AstReflection()', NL
+        );
+    });
+    node.append('};', NL);
 
     return processGeneratorNode(node);
 }
