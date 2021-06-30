@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { GeneratorNode, Grammar, IndentNode, CompositeGeneratorNode, NL, processNode, stream, isAlternatives, isKeyword, isParserRule, isDataTypeRule, ParserRule, streamAllContents, isCrossReference } from 'langium';
+import { GeneratorNode, Grammar, IndentNode, CompositeGeneratorNode, NL, processGeneratorNode, stream, isAlternatives, isKeyword, isParserRule, isDataTypeRule, ParserRule, streamAllContents, isCrossReference } from 'langium';
 import { LangiumConfig } from '../package';
 import { collectAst, Interface } from './type-collector';
 import { generatedHeader } from './util';
@@ -36,7 +36,7 @@ export function generateAst(grammar: Grammar, config: LangiumConfig): string {
 
     fileNode.append(generateAstReflection(grammar, types));
 
-    return processNode(fileNode);
+    return processGeneratorNode(fileNode);
 }
 
 function buildDatatype(rule: ParserRule): GeneratorNode {
@@ -152,7 +152,7 @@ function buildIsSubtypeMethod(interfaces: Interface[]): GeneratorNode {
             for (const typeItem of typeGroup) {
                 switchNode.append(`case ${typeItem.name}:`, NL);
             }
-            switchNode.children.pop();
+            switchNode.contents.pop();
             switchNode.append(' {', NL);
             switchNode.indent(caseNode => {
                 caseNode.append('return ', superTypes.split(':').map(e => `this.isSubtype(${e}, supertype)`).join(' || '), ';');

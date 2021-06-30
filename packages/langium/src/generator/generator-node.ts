@@ -10,14 +10,14 @@ export type GeneratorNode = CompositeGeneratorNode | IndentNode | NewLineNode | 
 
 export class CompositeGeneratorNode {
 
-    readonly children: GeneratorNode[] = [];
+    readonly contents: GeneratorNode[] = [];
 
     append(...args: Array<GeneratorNode | ((node: CompositeGeneratorNode) => void)>): GeneratorNode {
         for (const arg of args) {
             if (typeof arg === 'function') {
                 arg(this);
             } else {
-                this.children.push(arg);
+                this.contents.push(arg);
             }
         }
         return this;
@@ -25,7 +25,7 @@ export class CompositeGeneratorNode {
 
     indent(func?: (indentNode: IndentNode) => void): IndentNode {
         const node = new IndentNode();
-        this.children.push(node);
+        this.contents.push(node);
         if (func) {
             func(node);
         }

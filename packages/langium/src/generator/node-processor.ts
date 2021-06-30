@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { CompositeGeneratorNode, GeneratorNode, IndentNode, NewLineNode } from './node';
+import { CompositeGeneratorNode, GeneratorNode, IndentNode, NewLineNode } from './generator-node';
 
 class Context {
 
@@ -58,7 +58,7 @@ class Context {
     }
 }
 
-export function processNode(node: GeneratorNode, defaultIndentation?: string | number): string {
+export function processGeneratorNode(node: GeneratorNode, defaultIndentation?: string | number): string {
     const context = new Context(defaultIndentation);
     processNodeInternal(node, context);
     return context.content;
@@ -80,7 +80,7 @@ function hasContent(node: GeneratorNode, ctx: Context): boolean {
     if (typeof(node) === 'string') {
         return hasNonWhitespace(node);
     } else if (node instanceof CompositeGeneratorNode) {
-        return node.children.some(e => hasContent(e, ctx));
+        return node.contents.some(e => hasContent(e, ctx));
     } else if (node instanceof NewLineNode) {
         return !(node.ifNotEmpty && ctx.currentLineContent.length === 0);
     } else {
@@ -107,7 +107,7 @@ function handlePendingIndent(ctx: Context, endOfLine: boolean) {
 }
 
 function processCompositeNode(node: CompositeGeneratorNode, context: Context) {
-    for (const child of node.children) {
+    for (const child of node.contents) {
         processNodeInternal(child, context);
     }
 }

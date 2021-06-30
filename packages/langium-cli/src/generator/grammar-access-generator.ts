@@ -5,44 +5,44 @@
  ******************************************************************************/
 
 import * as langium from 'langium';
-import { CompositeGeneratorNode, GeneratorNode, IndentNode, NL, processNode, findAllFeatures, getContainerOfType, streamAllContents, isAction, isAssignment, isCrossReference, isKeyword, isRuleCall, stream } from 'langium';
+import { CompositeGeneratorNode, GeneratorNode, IndentNode, NL, processGeneratorNode, findAllFeatures, getContainerOfType, streamAllContents, isAction, isAssignment, isCrossReference, isKeyword, isRuleCall, stream } from 'langium';
 import { LangiumConfig } from '../package';
 import { generatedHeader } from './util';
 
 export function generateGrammarAccess(grammar: langium.Grammar, config: LangiumConfig, bootstrap?: boolean): string {
     const node = new CompositeGeneratorNode();
     const imports = identifyImports(grammar).join(', ');
-    node.children.push(generatedHeader);
+    node.contents.push(generatedHeader);
     if (config.langiumInternal) {
-        node.children.push("import { GrammarAccess } from '../grammar-access';", NL);
-        node.children.push(`import { ${imports} } from './ast';`);
+        node.contents.push("import { GrammarAccess } from '../grammar-access';", NL);
+        node.contents.push(`import { ${imports} } from './ast';`);
     } else {
-        node.children.push(`import { ${imports}, GrammarAccess } from 'langium';`);
+        node.contents.push(`import { ${imports}, GrammarAccess } from 'langium';`);
     }
-    node.children.push(NL, "import * as path from 'path';", NL, NL);
+    node.contents.push(NL, "import * as path from 'path';", NL, NL);
 
     for (const rule of stream(grammar.rules).filterType(langium.isParserRule)) {
-        node.children.push(generateRuleAccess(rule), NL, NL);
+        node.contents.push(generateRuleAccess(rule), NL, NL);
     }
 
-    node.children.push('export class ', grammar.name + 'GrammarAccess extends GrammarAccess {', NL);
+    node.contents.push('export class ', grammar.name + 'GrammarAccess extends GrammarAccess {', NL);
 
     const content = new IndentNode();
 
     for (const rule of stream(grammar.rules).filterType(langium.isParserRule)) {
         if (bootstrap) {
-            content.children.push(rule.name, generateBootstrapRuleAccess(rule), NL);
+            content.contents.push(rule.name, generateBootstrapRuleAccess(rule), NL);
         } else {
-            content.children.push(rule.name, ' = this.buildAccess<', rule.name, "RuleAccess>('", rule.name, "');", NL);
+            content.contents.push(rule.name, ' = this.buildAccess<', rule.name, "RuleAccess>('", rule.name, "');", NL);
         }
     }
 
     const constructorNode = new IndentNode();
-    constructorNode.children.push("super(path.join(__dirname, 'grammar.json'));");
-    content.children.push(NL, 'constructor() {', NL, constructorNode, NL, '}', NL);
-    node.children.push(content, '}', NL);
+    constructorNode.contents.push("super(path.join(__dirname, 'grammar.json'));");
+    content.contents.push(NL, 'constructor() {', NL, constructorNode, NL, '}', NL);
+    node.contents.push(content, '}', NL);
 
-    return processNode(node);
+    return processGeneratorNode(node);
 }
 
 function identifyImports(grammar: langium.Grammar): string[] {
@@ -59,56 +59,56 @@ function generateBootstrapRuleAccess(rule: langium.ParserRule): GeneratorNode {
     const { byName } = findAllFeatures(rule);
 
     const node = new CompositeGeneratorNode();
-    node.children.push(': ', rule.name, 'RuleAccess = <', rule.name, 'RuleAccess><unknown>{', NL);
+    node.contents.push(': ', rule.name, 'RuleAccess = <', rule.name, 'RuleAccess><unknown>{', NL);
     const indent = new IndentNode();
-    node.children.push(indent);
+    node.contents.push(indent);
     for (const [name, feature] of byName.entries()) {
-        indent.children.push(name, ': ', generateFeature(feature.feature), NL);
+        indent.contents.push(name, ': ', generateFeature(feature.feature), NL);
     }
 
-    node.children.push('}');
+    node.contents.push('}');
     return node;
 }
 
 function generateFeature(feature: langium.AbstractElement): GeneratorNode {
     const node = new CompositeGeneratorNode();
-    node.children.push('{', NL);
+    node.contents.push('{', NL);
 
     const indent = new IndentNode();
-    node.children.push(indent);
+    node.contents.push(indent);
     if (langium.isAssignment(feature)) {
-        node.children.push(generateAssignment(feature));
+        node.contents.push(generateAssignment(feature));
     } else if (langium.isAction(feature)) {
-        indent.children.push("$type: 'Action',", NL);
-        indent.children.push("type: '" + feature.type + "',", NL);
-        indent.children.push("feature: '" + feature.feature + "',", NL);
-        indent.children.push("operator: '" + feature.operator + "'", NL);
+        indent.contents.push("$type: 'Action',", NL);
+        indent.contents.push("type: '" + feature.type + "',", NL);
+        indent.contents.push("feature: '" + feature.feature + "',", NL);
+        indent.contents.push("operator: '" + feature.operator + "'", NL);
     } else if (langium.isRuleCall(feature) || langium.isCrossReference(feature) || langium.isKeyword(feature)) {
         const assignment = getContainerOfType(feature, langium.isAssignment);
         if (assignment) {
-            indent.children.push("$type: 'unknown'," , NL, '$container: {', NL, generateAssignment(assignment), '}', NL);
+            indent.contents.push("$type: 'unknown'," , NL, '$container: {', NL, generateAssignment(assignment), '}', NL);
         } else {
-            indent.children.push("$type: 'unknown'" , NL);
+            indent.contents.push("$type: 'unknown'" , NL);
         }
     }
 
-    node.children.push('},');
+    node.contents.push('},');
     return node;
 }
 
 function generateAssignment(assignment: langium.Assignment): GeneratorNode {
     const indent = new IndentNode();
-    indent.children.push("$type: 'Assignment',", NL);
-    indent.children.push("feature: '", assignment.feature ,"',", NL);
-    indent.children.push("operator: '", assignment.operator, "',", NL);
-    indent.children.push('terminal: {', NL);
+    indent.contents.push("$type: 'Assignment',", NL);
+    indent.contents.push("feature: '", assignment.feature ,"',", NL);
+    indent.contents.push("operator: '", assignment.operator, "',", NL);
+    indent.contents.push('terminal: {', NL);
     const terminal = new IndentNode();
     if (langium.isCrossReference(assignment.terminal)) {
-        terminal.children.push("$type: 'CrossReference'");
+        terminal.contents.push("$type: 'CrossReference'");
     } else {
-        terminal.children.push("$type: 'unknown'");
+        terminal.contents.push("$type: 'unknown'");
     }
-    indent.children.push(terminal, NL, '}', NL);
+    indent.contents.push(terminal, NL, '}', NL);
     return indent;
 }
 
@@ -118,14 +118,14 @@ function generateRuleAccess(rule: langium.ParserRule): CompositeGeneratorNode {
 
     const node = new CompositeGeneratorNode();
 
-    node.children.push('export type ', rule.name + 'RuleAccess = {', NL);
+    node.contents.push('export type ', rule.name + 'RuleAccess = {', NL);
 
     const indent = new IndentNode();
     for (const [name, {kind}] of byName.entries()) {
-        indent.children.push(name, ': ', kind, ';', NL);
+        indent.contents.push(name, ': ', kind, ';', NL);
     }
 
-    node.children.push(indent, '}');
+    node.contents.push(indent, '}');
 
     return node;
 }
