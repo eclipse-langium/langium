@@ -8,7 +8,7 @@ import _ from 'lodash';
 import * as langium from 'langium';
 import { getRuleType, getTypeName, isDataTypeRule } from 'langium';
 import { CompositeGeneratorNode, IndentNode, NL } from 'langium';
-import { processNode } from 'langium';
+import { processGeneratorNode } from 'langium';
 import { Cardinality, isOptional } from 'langium';
 
 type TypeAlternative = {
@@ -55,26 +55,26 @@ export class Interface {
     toString(): string {
         const interfaceNode = new CompositeGeneratorNode();
         const superTypes = this.superTypes.length > 0 ? this.superTypes : [ 'AstNode' ];
-        interfaceNode.children.push('export interface ', this.name, ' extends ', superTypes.join(', '), ' {', NL);
+        interfaceNode.contents.push('export interface ', this.name, ' extends ', superTypes.join(', '), ' {', NL);
         const fieldsNode = new IndentNode();
         if (this.containerTypes.length > 0) {
-            fieldsNode.children.push('readonly $container: ', Array.from(new Set<string>(this.containerTypes)).join(' | '), ';', NL);
+            fieldsNode.contents.push('readonly $container: ', Array.from(new Set<string>(this.containerTypes)).join(' | '), ';', NL);
         }
         for (const field of this.fields.sort((a, b) => a.name.localeCompare(b.name))) {
             const option = field.optional && field.reference && !field.array ? '?' : '';
             let type = field.types.join(' | ');
             type = field.reference ? 'Reference<' + type + '>' : type;
             type = field.array ? 'Array<' + type + '>' : type;
-            fieldsNode.children.push(field.name, option, ': ', type, NL);
+            fieldsNode.contents.push(field.name, option, ': ', type, NL);
         }
-        interfaceNode.children.push(fieldsNode, '}', NL, NL);
-        interfaceNode.children.push(`export const ${this.name} = '${this.name}';`, NL, NL);
-        interfaceNode.children.push('export function is', this.name, '(item: unknown): item is ', this.name, ' {', NL);
+        interfaceNode.contents.push(fieldsNode, '}', NL, NL);
+        interfaceNode.contents.push(`export const ${this.name} = '${this.name}';`, NL, NL);
+        interfaceNode.contents.push('export function is', this.name, '(item: unknown): item is ', this.name, ' {', NL);
         const methodBody = new IndentNode();
-        methodBody.children.push(`return reflection.isInstance(item, ${this.name});`, NL);
-        interfaceNode.children.push(methodBody, '}', NL);
+        methodBody.contents.push(`return reflection.isInstance(item, ${this.name});`, NL);
+        interfaceNode.contents.push(methodBody, '}', NL);
 
-        return processNode(interfaceNode);
+        return processGeneratorNode(interfaceNode);
     }
 }
 

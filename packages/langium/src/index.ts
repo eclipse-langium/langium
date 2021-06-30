@@ -8,7 +8,7 @@ export * from './default-module';
 export * from './dependency-injection';
 export * from './documents/document';
 export * from './documents/document-builder';
-export * from './generator/node';
+export * from './generator/generator-node';
 export * from './generator/node-processor';
 export * from './generator/template-string';
 export * from './grammar/generated/ast';
