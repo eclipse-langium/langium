@@ -4,7 +4,7 @@
  ******************************************************************************/
 
 import { Assignment, CrossReference, Keyword, RuleCall, GrammarAccess } from 'langium';
-import * as path from 'path';
+import grammar from './grammar';
 
 export type DomainmodelRuleAccess = {
     elements: Assignment;
@@ -76,6 +76,6 @@ export class DomainModelGrammarAccess extends GrammarAccess {
     QualifiedName = this.buildAccess<QualifiedNameRuleAccess>('QualifiedName');
 
     constructor() {
-        super(path.join(__dirname, 'grammar.json'));
+        super(grammar());
     }
 }

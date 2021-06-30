@@ -4,7 +4,7 @@
  ******************************************************************************/
 
 import { Action, Assignment, CrossReference, Keyword, RuleCall, GrammarAccess } from 'langium';
-import * as path from 'path';
+import grammar from './grammar';
 
 export type StatemachineRuleAccess = {
     StatemachineAction: Action;
@@ -66,6 +66,6 @@ export class StatemachineGrammarAccess extends GrammarAccess {
     Transition = this.buildAccess<TransitionRuleAccess>('Transition');
 
     constructor() {
-        super(path.join(__dirname, 'grammar.json'));
+        super(grammar());
     }
 }

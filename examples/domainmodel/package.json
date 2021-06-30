@@ -41,8 +41,7 @@
         "build": "tsc",
         "watch": "tsc -watch",
         "lint": "eslint src --ext ts",
-        "langium:generate": "langium generate && npm run copygrammar",
-        "copygrammar": "copyfiles -f ./src/language-server/generated/grammar.json ./out/language-server/generated"
+        "langium:generate": "langium generate"
     },
     "dependencies": {
         "langium": "0.1.0",

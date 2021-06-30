@@ -5,15 +5,14 @@
  ******************************************************************************/
 
 import { AbstractRule, Grammar, ParserRule } from '../grammar/generated/ast';
-import { findAllFeatures, loadGrammar } from '../grammar/grammar-util';
-import * as fs from 'fs';
+import { findAllFeatures } from '../grammar/grammar-util';
 
 export abstract class GrammarAccess {
 
     readonly grammar: Grammar;
 
-    constructor(grammarPath: string) {
-        this.grammar = loadGrammar(fs.readFileSync(grammarPath).toString());
+    constructor(grammar: Grammar) {
+        this.grammar = grammar;
     }
 
     findRuleByName(name: string): AbstractRule {
