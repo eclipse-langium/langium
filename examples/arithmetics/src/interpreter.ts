@@ -10,15 +10,15 @@ export class ArithmeticsInterpreter {
     // variable name --> value
     private context: Map<string, number | Definition>;
     // expression --> value
-    private res = new Map<string, number>();
+    private result = new Map<Evaluation, number>();
 
     constructor(context: Map<string, number | Definition> = new Map<string, number | Definition>()) {
         this.context = context;
     }
 
-    public eval(module: Module): Map<string, number> {
+    public eval(module: Module): Map<Evaluation, number> {
         module.statements.forEach(stmt => this.evalStatement(stmt));
-        return this.res;
+        return this.result;
     }
 
     private evalStatement(stmt: Statement): void {
@@ -34,10 +34,7 @@ export class ArithmeticsInterpreter {
     }
 
     private evalEvaluation(evaluation: Evaluation): void {
-        const expr = evaluation.expression;
-        if (expr.$cstNode?.text) {
-            this.res.set(expr.$cstNode?.text, this.evalExpression(expr));
-        }
+        this.result.set(evaluation, this.evalExpression(evaluation.expression));
     }
 
     public evalExpression(expr: Expression): number {

@@ -49,16 +49,21 @@ program
         if (validationErrors.length > 0) {
             console.error('There are validation errors:');
             for (const validationError of validationErrors) {
-                console.error(validationError.range.start, '-', validationError.range.end, ':', validationError.message);
+                console.error(colors.red(
+                    `line ${validationError.range.start.line}: ${validationError.message} [${document.getText(validationError.range)}]`
+                ));
             }
             process.exit(1);
         }
 
         const grammar = document.parseResult.value as Grammar;
-        const evaluator = new ArithmeticsInterpreter();
         if (isModule(grammar)) {
-            for (const [expr, value] of evaluator.eval(grammar)) {
-                console.error(colors.green(expr), '===>', value);
+            for (const [evaluation, value] of new ArithmeticsInterpreter().eval(grammar)) {
+                const cstNode = evaluation.expression.$cstNode;
+                if (cstNode) {
+                    const line = document.positionAt(cstNode.offset).line + 1;
+                    console.log(`line ${line}:`, colors.green(cstNode.text), '===>', value);
+                }
             }
         }
     });
