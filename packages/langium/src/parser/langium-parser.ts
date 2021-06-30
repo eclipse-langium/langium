@@ -168,7 +168,15 @@ export class LangiumParser {
 
     action($type: string, action: Action): void {
         if (!this.wrapper.IS_RECORDING) {
-            const last = this.current;
+            let last = this.current;
+            // This branch is used for left recursive grammar rules.
+            // Those don't call `construct` before another action.
+            // Therefore, we need to call it here.
+            if (!last.$cstNode && action.feature && action.operator) {
+                last = this.construct(false);
+                const feature = last.$cstNode.feature;
+                this.nodeBuilder.buildCompositeNode(feature);
+            }
             const newItem = { $type };
             this.stack.pop();
             this.stack.push(newItem);
@@ -196,7 +204,7 @@ export class LangiumParser {
         }
     }
 
-    construct(): unknown {
+    construct(pop = true): unknown {
         if (this.wrapper.IS_RECORDING) {
             return undefined;
         }
@@ -215,7 +223,9 @@ export class LangiumParser {
             }
         }
         this.nodeBuilder.construct(obj);
-        this.stack.pop();
+        if (pop) {
+            this.stack.pop();
+        }
         if (obj.$type === DatatypeSymbol) {
             const node = obj.$cstNode;
             return node.text;
