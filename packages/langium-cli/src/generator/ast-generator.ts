@@ -82,7 +82,7 @@ function generateAstReflection(grammar: Grammar, interfaces: Interface[]): Gener
         classBody.indent(allTypes => {
             allTypes.append('return [', interfaces.map(t => `'${t.name}'`).join(', '), '];', NL);
         });
-        classBody.append('isInstance(node: unknown, type: string): boolean {', NL);
+        classBody.append('}', NL, NL, 'isInstance(node: unknown, type: string): boolean {', NL);
         classBody.indent(isInstance => {
             isInstance.append('return isAstNode(node) && this.isSubtype(node.$type, type);', NL);
         });

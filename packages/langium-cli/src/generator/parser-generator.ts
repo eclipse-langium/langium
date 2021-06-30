@@ -5,8 +5,8 @@
  ******************************************************************************/
 
 import * as langium from 'langium';
-import { getContainerOfType, getTypeName, ParserRule, stream } from 'langium';
-import { CompositeGeneratorNode, GeneratorNode, IndentNode, NewLineNode, NL, processGeneratorNode, replaceTokens } from 'langium';
+import { getContainerOfType, getTypeName, NLEmpty, ParserRule, stream } from 'langium';
+import { CompositeGeneratorNode, GeneratorNode, NL, processGeneratorNode, replaceTokens } from 'langium';
 import { collectAst } from './type-collector';
 import { Cardinality, findAllFeatures, isDataTypeRule, isOptional } from 'langium';
 import { LangiumConfig } from '../package';
@@ -26,26 +26,29 @@ export function generateParser(grammar: langium.Grammar, config: LangiumConfig):
     const keywords = collectKeywords(grammar);
 
     const fileNode = new CompositeGeneratorNode();
-    fileNode.contents.push(
+    fileNode.append(
         generatedHeader,
         '/* eslint-disable */', NL,
         '// @ts-nocheck', NL,
         "import { createToken, Lexer } from 'chevrotain';", NL
     );
     if (config.langiumInternal) {
-        fileNode.contents.push("import { LangiumServices } from '../../services';", NL);
-        fileNode.contents.push("import { LangiumParser, DatatypeSymbol } from '../../parser/langium-parser';", NL);
+        fileNode.append(
+            "import { LangiumServices } from '../../services';", NL,
+            "import { LangiumParser, DatatypeSymbol } from '../../parser/langium-parser';", NL
+        );
     } else {
-        fileNode.contents.push("import { LangiumParser, LangiumServices, DatatypeSymbol } from 'langium';", NL);
+        fileNode.append("import { LangiumParser, LangiumServices, DatatypeSymbol } from 'langium';", NL);
     }
-    fileNode.contents.push('import { ', grammar.name, "GrammarAccess } from './grammar-access';", NL);
-
-    fileNode.contents.push('import {');
+    fileNode.append(
+        'import { ', grammar.name, "GrammarAccess } from './grammar-access';", NL,
+        'import {'
+    );
     const types = collectAst(grammar);
     for (const type of types) {
-        fileNode.contents.push(' ', type.name, ',');
+        fileNode.append(' ', type.name, ',');
     }
-    fileNode.contents.push(" } from './ast';", NL, NL);
+    fileNode.append(" } from './ast';", NL, NL);
 
     const tokens: Array<{ name: string, length: number, node: CompositeGeneratorNode }> = [];
     const terminals = grammar.rules
@@ -62,29 +65,26 @@ export function generateParser(grammar: langium.Grammar, config: LangiumConfig):
     }
     keywordTokens = keywordTokens.sort((a, b) => a.name.localeCompare(b.name)).sort((a, b) => b.length - a.length);
     for (const token of tokens) {
-        fileNode.contents.push(token.node, NL);
+        fileNode.append(token.node, NL);
     }
     for (const keyword of keywordTokens) {
-        fileNode.contents.push(keyword.node, NL);
+        fileNode.append(keyword.node, NL);
     }
 
-    fileNode.contents.push(NL);
+    fileNode.append(NL);
 
     for (const keyword of keywords) {
         const token = buildKeywordToken(keyword, keywords, terminals);
-        fileNode.contents.push(token.name, '.LABEL = "', "'", keyword, "'\";", NL);
+        fileNode.append(token.name, '.LABEL = "', "'", keyword, "'\";", NL);
     }
 
-    const tokenListNode = new CompositeGeneratorNode();
-    tokenListNode.contents.push(
+    fileNode.append(
         'const tokens = [',
-        keywordTokens.map(e => e.name).join(', ') + ', ' + tokens.map(e => e.name).join(', '),
-        '];', NL
+        keywordTokens.map(e => e.name).join(', ') + ', ' + tokens.map(e => e.name).join(', '), '];',
+        NL, NL
     );
 
-    fileNode.contents.push(tokenListNode, NL);
-
-    fileNode.contents.push(buildParser(grammar), NL);
+    fileNode.append(buildParser(grammar), NL);
 
     return processGeneratorNode(fileNode);
 }
@@ -92,41 +92,42 @@ export function generateParser(grammar: langium.Grammar, config: LangiumConfig):
 function buildParser(grammar: langium.Grammar): CompositeGeneratorNode {
     const parserNode = new CompositeGeneratorNode();
 
-    parserNode.contents.push('export class Parser extends LangiumParser {', NL);
+    parserNode.append('export class Parser extends LangiumParser {', NL);
 
-    const classBody = new IndentNode();
-    classBody.contents.push('readonly grammarAccess: ', grammar.name, 'GrammarAccess;', NL, NL);
+    parserNode.indent(classBody => {
+        classBody.append('readonly grammarAccess: ', grammar.name, 'GrammarAccess;', NL, NL);
 
-    classBody.contents.push('constructor(services: LangiumServices) {', NL);
-    const constructorBody = new IndentNode();
-    constructorBody.contents.push(
-        'super(tokens, services);', NL
-    );
-    classBody.contents.push(constructorBody, '}', NL, NL);
+        classBody.append('constructor(services: LangiumServices) {', NL);
+        classBody.indent(constructorBody => {
+            constructorBody.append(
+                'super(tokens, services);', NL
+            );
+        });
+        classBody.append('}', NL, NL);
 
-    let first = true;
-    for (const rule of stream(grammar.rules).filterType(langium.isParserRule)) {
-        const ctx: RuleContext = {
-            name: rule.name,
-            consume: 1,
-            option: 1,
-            subrule: 1,
-            many: 1,
-            or: 1,
-            featureMap: findAllFeatures(rule).byFeature
-        };
-        classBody.contents.push(buildRule(ctx, rule, first));
-        first = false;
-    }
-
-    parserNode.contents.push(classBody, '}');
+        let first = true;
+        for (const rule of stream(grammar.rules).filterType(langium.isParserRule)) {
+            const ctx: RuleContext = {
+                name: rule.name,
+                consume: 1,
+                option: 1,
+                subrule: 1,
+                many: 1,
+                or: 1,
+                featureMap: findAllFeatures(rule).byFeature
+            };
+            classBody.append(buildRule(ctx, rule, first));
+            first = false;
+        }
+    });
+    parserNode.contents.push('}');
 
     return parserNode;
 }
 
 function buildRule(ctx: RuleContext, rule: ParserRule, first: boolean): CompositeGeneratorNode {
     const ruleNode = new CompositeGeneratorNode();
-    ruleNode.contents.push(rule.name);
+    ruleNode.append(rule.name);
 
     let type = 'undefined';
 
@@ -138,25 +139,25 @@ function buildRule(ctx: RuleContext, rule: ParserRule, first: boolean): Composit
         }
     }
 
-    ruleNode.contents.push(
+    ruleNode.append(
         ' = this.', first ? 'MAIN_RULE("' : 'DEFINE_RULE("',
         rule.name, '", ', type, ', () => {', NL
     );
 
-    const ruleContent = new IndentNode();
-    ruleNode.contents.push(ruleContent);
-    ruleContent.contents.push('this.initializeElement(this.grammarAccess.', ctx.name, ');', new NewLineNode(undefined, true));
-    ruleContent.contents.push(buildElement(ctx, rule.alternatives), new NewLineNode(undefined, true));
-    ruleContent.contents.push(buildRuleReturnStatement());
-    ruleNode.contents.push('});', NL, NL);
+    ruleNode.indent(ruleContent => {
+        ruleContent.append(
+            'this.initializeElement(this.grammarAccess.', ctx.name, ');', NLEmpty,
+            buildElement(ctx, rule.alternatives), NLEmpty,
+            buildRuleReturnStatement()
+        );
+    });
+    ruleNode.append('});', NL, NL);
 
     return ruleNode;
 }
 
 function buildRuleReturnStatement(): CompositeGeneratorNode {
-    const node = new CompositeGeneratorNode();
-    node.contents.push('return this.construct();', new NewLineNode(undefined, true));
-    return node;
+    return new CompositeGeneratorNode('return this.construct();', NLEmpty);
 }
 
 function buildUnorderedGroup(ctx: RuleContext, group: langium.UnorderedGroup): CompositeGeneratorNode {
@@ -171,7 +172,7 @@ function buildGroup(ctx: RuleContext, group: langium.Group): CompositeGeneratorN
     const groupNode = new CompositeGeneratorNode();
 
     for (const element of group.elements) {
-        groupNode.contents.push(buildElement(ctx, element), new NewLineNode(undefined, true));
+        groupNode.append(buildElement(ctx, element), NLEmpty);
     }
 
     return groupNode;
@@ -222,18 +223,19 @@ function buildAlternatives(ctx: RuleContext, alternatives: langium.Alternatives)
     if (alternatives.elements.length === 1) {
         return buildElement(ctx, alternatives.elements[0]);
     } else {
-        const wrapper = new CompositeGeneratorNode();
-        wrapper.contents.push(`this.or(${ctx.or++}, [`, NL);
+        const wrapper = new CompositeGeneratorNode(`this.or(${ctx.or++}, [`, NL);
 
         for (const element of alternatives.elements) {
-            const altIndent = new IndentNode();
-            wrapper.contents.push(altIndent);
-            const contentIndent = new IndentNode();
-            altIndent.contents.push('() => {', NL, contentIndent, '},', NL);
-            contentIndent.contents.push(buildElement(ctx, element), new NewLineNode(undefined, true));
+            wrapper.indent(altIndent => {
+                altIndent.append('() => {', NL);
+                altIndent.indent(contentIndent => {
+                    contentIndent.append(buildElement(ctx, element), NLEmpty);
+                });
+                altIndent.append('},', NL);
+            });
         }
 
-        wrapper.contents.push(']);', NL);
+        wrapper.append(']);', NL);
 
         return wrapper;
     }
@@ -245,17 +247,16 @@ function wrap(ctx: RuleContext, node: GeneratorNode, cardinality: Cardinality): 
     } else {
         const wrapper = new CompositeGeneratorNode();
         if (cardinality === '*') {
-            wrapper.contents.push(`this.many(${ctx.many++}, () => {`, NL);
+            wrapper.append(`this.many(${ctx.many++}, () => {`, NL);
         } else if (cardinality === '+') {
-            wrapper.contents.push(`this.atLeastOne(${ctx.many++}, () => {`, NL);
+            wrapper.append(`this.atLeastOne(${ctx.many++}, () => {`, NL);
         } else if (isOptional(cardinality)) {
-            wrapper.contents.push(`this.option(${ctx.option++}, () => {`, NL);
+            wrapper.append(`this.option(${ctx.option++}, () => {`, NL);
         }
-
-        const indent = new IndentNode();
-        indent.contents.push(node, new NewLineNode(undefined, true));
-        wrapper.contents.push(indent, '});');
-
+        wrapper.indent(indent => {
+            indent.append(node, NLEmpty);
+        });
+        wrapper.append('});');
         return wrapper;
     }
 }
@@ -287,7 +288,7 @@ function getGrammarAccess(ctx: RuleContext, feature: langium.AbstractElement): s
 
 function buildTerminalToken(grammar: langium.Grammar, terminal: langium.TerminalRule): { name: string, length: number, node: CompositeGeneratorNode } {
     const terminalNode = new CompositeGeneratorNode();
-    terminalNode.contents.push(
+    terminalNode.append(
         'const ',
         terminal.name,
         " = createToken({ name: '",
@@ -296,10 +297,10 @@ function buildTerminalToken(grammar: langium.Grammar, terminal: langium.Terminal
         terminal.regex);
 
     if (grammar.hiddenTokens && grammar.hiddenTokens.map(e => e.ref).includes(terminal)) {
-        terminalNode.contents.push(', group: Lexer.SKIPPED');
+        terminalNode.append(', group: Lexer.SKIPPED');
     }
 
-    terminalNode.contents.push(' });');
+    terminalNode.append(' });');
 
     return { name: terminal.name, length: terminal.regex.length, node: terminalNode };
 }
@@ -308,13 +309,13 @@ function buildKeywordToken(keyword: string, keywords: string[], terminals: langi
     const keywordNode = new CompositeGeneratorNode();
     const longerAlt = findLongerAlt(keyword, keywords, terminals);
     const validName = replaceTokens(keyword) + 'Keyword';
-    keywordNode.contents.push('const ', validName, " = createToken({ name: '", validName, "', pattern: /", escapeRegExp(keyword), '/');
+    keywordNode.append('const ', validName, " = createToken({ name: '", validName, "', pattern: /", escapeRegExp(keyword), '/');
 
     if (longerAlt) {
-        keywordNode.contents.push(', longer_alt: ', longerAlt);
+        keywordNode.append(', longer_alt: ', longerAlt);
     }
 
-    keywordNode.contents.push(' });');
+    keywordNode.append(' });');
     return { name: validName, length: keyword.length, node: keywordNode };
 }
 

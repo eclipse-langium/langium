@@ -1,47 +1,47 @@
 import { EOL } from 'os';
-import { processNode, CompositeGeneratorNode, NL, NLEmpty, NewLineNode, IndentNode } from '../../src';
+import { processGeneratorNode as process, CompositeGeneratorNode, NL, NLEmpty, NewLineNode, IndentNode } from '../../src';
 
 describe('new lines', () => {
 
     test('should create new line', () => {
-        const result = processNode(NL);
+        const result = process(NL);
         expect(result).toBe(EOL);
     });
 
     test('should split text into new lines', () => {
         const comp = new CompositeGeneratorNode();
         comp.append('First', NL, 'Second');
-        expect(processNode(comp)).toBe(`First${EOL}Second`);
+        expect(process(comp)).toBe(`First${EOL}Second`);
     });
 
     test('should process with speicified line delimiter', () => {
         const comp = new CompositeGeneratorNode();
         comp.append('First', new NewLineNode('/'), 'Second');
-        expect(processNode(comp)).toBe('First/Second');
+        expect(process(comp)).toBe('First/Second');
     });
 
     test('should not split text into new lines on previous empty line', () => {
         const comp = new CompositeGeneratorNode();
         comp.append('', NLEmpty, 'Second');
-        expect(processNode(comp)).toBe('Second');
+        expect(process(comp)).toBe('Second');
     });
 
     test('should split text into new lines on previous empty line', () => {
         const comp = new CompositeGeneratorNode();
         comp.append('First', NLEmpty, 'Second');
-        expect(processNode(comp)).toBe(`First${EOL}Second`);
+        expect(process(comp)).toBe(`First${EOL}Second`);
     });
 
     test('should create multiple new lines', () => {
         const comp = new CompositeGeneratorNode();
         comp.append('First', NL, NL, 'Second');
-        expect(processNode(comp)).toBe(`First${EOL}${EOL}Second`);
+        expect(process(comp)).toBe(`First${EOL}${EOL}Second`);
     });
 
     test('should not create multiple new lines on previous empty line', () => {
         const comp = new CompositeGeneratorNode();
         comp.append('First', NL, NLEmpty, 'Second');
-        expect(processNode(comp)).toBe(`First${EOL}Second`);
+        expect(process(comp)).toBe(`First${EOL}Second`);
     });
 
 });
@@ -69,7 +69,7 @@ describe('indentation', () => {
         comp.indent(node => {
             node.append('Indent');
         });
-        expect(processNode(comp)).toBe(`No indent${EOL}    Indent`);
+        expect(process(comp)).toBe(`No indent${EOL}    Indent`);
     });
 
     test('should indent 2 spaces if specified after new line', () => {
@@ -78,17 +78,17 @@ describe('indentation', () => {
         comp.indent(node => {
             node.append('Indent');
         });
-        expect(processNode(comp, 2)).toBe(`No indent${EOL}  Indent`);
+        expect(process(comp, 2)).toBe(`No indent${EOL}  Indent`);
     });
 
     test('should indent 2 spaces by default after new line if specified', () => {
         const comp = new CompositeGeneratorNode();
         comp.append('No indent', NL);
-        const indent = comp.indent(node => {
-            node.append('Indent');
-        });
+        const indent = new IndentNode();
+        indent.append('Indent');
+        comp.append(indent);
         indent.indentation = '  ';
-        expect(processNode(comp)).toBe(`No indent${EOL}  Indent`);
+        expect(process(comp)).toBe(`No indent${EOL}  Indent`);
     });
 
     test('should de-indent correctly after indentation', () => {
@@ -98,7 +98,7 @@ describe('indentation', () => {
             node.append('Indent', NL);
         });
         comp.append('No indent');
-        expect(processNode(comp)).toBe(`No indent${EOL}    Indent${EOL}No indent`);
+        expect(process(comp)).toBe(`No indent${EOL}    Indent${EOL}No indent`);
     });
 
     test('should indent with multiple lines', () => {
@@ -107,7 +107,7 @@ describe('indentation', () => {
         comp.indent(node => {
             node.append('Indent', NL, 'Indent');
         });
-        expect(processNode(comp, ' ')).toBe(`No indent${EOL} Indent${EOL} Indent`);
+        expect(process(comp, ' ')).toBe(`No indent${EOL} Indent${EOL} Indent`);
     });
 
 });
@@ -117,20 +117,20 @@ describe('composite', () => {
     test('should append default', () => {
         const comp = new CompositeGeneratorNode();
         comp.append('Some ', 'text');
-        expect(processNode(comp)).toBe('Some text');
+        expect(process(comp)).toBe('Some text');
     });
 
     test('should append with generator function', () => {
         const comp = new CompositeGeneratorNode();
         comp.append('Some ', node => node.append('more'), ' text');
-        expect(processNode(comp)).toBe('Some more text');
+        expect(process(comp)).toBe('Some more text');
     });
 
     test('should indent without function argument', () => {
-        const comp = new CompositeGeneratorNode();
-        const indent = comp.indent();
+        const indent = new IndentNode();
+        const comp = new CompositeGeneratorNode(indent);
         indent.append('Indent');
-        expect(processNode(comp)).toBe('    Indent');
+        expect(process(comp)).toBe('    Indent');
     });
 
 });

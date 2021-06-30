@@ -14,33 +14,36 @@ export function generateGrammarAccess(grammar: langium.Grammar, config: LangiumC
     const imports = identifyImports(grammar).join(', ');
     node.contents.push(generatedHeader);
     if (config.langiumInternal) {
-        node.contents.push("import { GrammarAccess } from '../grammar-access';", NL);
-        node.contents.push(`import { ${imports} } from './ast';`);
+        node.append(
+            "import { GrammarAccess } from '../grammar-access';", NL,
+            `import { ${imports} } from './ast';`
+        );
     } else {
-        node.contents.push(`import { ${imports}, GrammarAccess } from 'langium';`);
+        node.append(`import { ${imports}, GrammarAccess } from 'langium';`);
     }
-    node.contents.push(NL, "import * as path from 'path';", NL, NL);
+    node.append(NL, "import * as path from 'path';", NL, NL);
 
     for (const rule of stream(grammar.rules).filterType(langium.isParserRule)) {
-        node.contents.push(generateRuleAccess(rule), NL, NL);
+        node.append(generateRuleAccess(rule), NL, NL);
     }
 
-    node.contents.push('export class ', grammar.name + 'GrammarAccess extends GrammarAccess {', NL);
+    node.append('export class ', grammar.name + 'GrammarAccess extends GrammarAccess {', NL);
 
-    const content = new IndentNode();
-
-    for (const rule of stream(grammar.rules).filterType(langium.isParserRule)) {
-        if (bootstrap) {
-            content.contents.push(rule.name, generateBootstrapRuleAccess(rule), NL);
-        } else {
-            content.contents.push(rule.name, ' = this.buildAccess<', rule.name, "RuleAccess>('", rule.name, "');", NL);
+    node.indent(content => {
+        for (const rule of stream(grammar.rules).filterType(langium.isParserRule)) {
+            if (bootstrap) {
+                content.append(rule.name, generateBootstrapRuleAccess(rule), NL);
+            } else {
+                content.append(rule.name, ' = this.buildAccess<', rule.name, "RuleAccess>('", rule.name, "');", NL);
+            }
         }
-    }
-
-    const constructorNode = new IndentNode();
-    constructorNode.contents.push("super(path.join(__dirname, 'grammar.json'));");
-    content.contents.push(NL, 'constructor() {', NL, constructorNode, NL, '}', NL);
-    node.contents.push(content, '}', NL);
+        content
+            .append(NL, 'constructor() {', NL)
+            .indent(constructorNode => {
+                constructorNode.append("super(path.join(__dirname, 'grammar.json'));");
+            })
+            .append(NL, '}', NL);
+    }).append('}', NL);
 
     return processGeneratorNode(node);
 }
