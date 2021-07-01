@@ -40,7 +40,7 @@ export function generateGrammarAccess(grammar: langium.Grammar, config: LangiumC
         content
             .append(NL, 'constructor() {', NL)
             .indent(constructorNode => {
-                constructorNode.append("super(grammar());");
+                constructorNode.append('super(grammar());');
             })
             .append(NL, '}', NL);
     }).append('}', NL);

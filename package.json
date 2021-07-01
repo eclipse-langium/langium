@@ -5,8 +5,7 @@
     "clean": "rimraf \"packages/**/lib\" \"packages/**/*.tsbuildinfo\"",
     "build": "tsc -b tsconfig.build.json",
     "watch": "tsc -b tsconfig.build.json -w",
-    "copygrammar": "npm run copygrammar --workspace=langium --workspace=arithmetics --workspace=domainmodel",
-    "prepare": "npm run clean && npm run build && npm run copygrammar"
+    "prepare": "npm run clean && npm run build"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^4.22.1",

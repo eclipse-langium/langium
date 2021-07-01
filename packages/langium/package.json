@@ -24,8 +24,7 @@
     "watch": "tsc --watch",
     "lint": "eslint ./src --ext .js,.ts",
     "test": "jest --coverage",
-    "bootstrap": "node ../langium-cli/bin/langium generate && npm run copygrammar",
-    "copygrammar": "copyfiles -f ./src/grammar/generated/grammar.json ./lib/grammar/generated",
+    "langium:generate": "node ../langium-cli/bin/langium generate",
     "publish:next": "npm --no-git-tag-version version \"$(semver $npm_package_version -i minor)-next.$(git rev-parse --short HEAD)\" && npm publish --tag next",
     "publish:latest": "npm publish --tag latest"
   },
@@ -47,7 +46,6 @@
     "@types/node": "^14.14.31",
     "@typescript-eslint/eslint-plugin": "^4.15.2",
     "@typescript-eslint/parser": "^4.15.2",
-    "copyfiles": "^2.4.1",
     "eslint": "^7.20.0",
     "jest": "^26.6.3",
     "rimraf": "^3.0.2",
