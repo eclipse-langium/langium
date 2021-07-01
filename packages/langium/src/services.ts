@@ -27,6 +27,7 @@ import { LangiumParser } from './parser/langium-parser';
 import { TokenBuilder } from './parser/token-builder';
 import { LanguageMetaData } from './grammar/language-meta-data';
 import { CodeActionProvider} from './lsp/code-action';
+import { MonikerProvider } from './references/moniker';
 
 export type LangiumGeneratedServices = {
     Grammar: Grammar
@@ -64,6 +65,7 @@ export type LangiumDefaultServices = {
         References: References
         ScopeProvider: ScopeProvider
         ScopeComputation: ScopeComputation
+        MonikerProvider: MonikerProvider
     }
     serializer: {
         JsonSerializer: JsonSerializer
