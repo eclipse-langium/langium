@@ -6,7 +6,7 @@
 
 import fs from 'fs-extra';
 import path from 'path';
-import { LangiumConfig, AbsolutePath } from './package';
+import { LangiumConfig, RelativePath } from './package';
 import { Grammar, createLangiumGrammarServices, LangiumDocumentConfiguration } from 'langium';
 import { generateGrammarAccess } from './generator/grammar-access-generator';
 import { generateParser } from './generator/parser-generator';
@@ -21,16 +21,21 @@ export type GenerateOptions = {
 
 export function generate(config: LangiumConfig): void {
     const services = createLangiumGrammarServices();
-    const absPath = config[AbsolutePath];
+    const relPath = config[RelativePath];
 
     const grammarFile = config.grammar ?? 'src/grammar.langium';
-    const grammarFileContent = fs.readFileSync(path.join(absPath, grammarFile)).toString();
+
+    let grammarFileContent: string;
+    try {
+        grammarFileContent = fs.readFileSync(path.join(relPath, grammarFile), 'utf-8');
+    } catch (e) {
+        exit(`Failed to read grammar file at ${path.join(relPath, grammarFile).red.bold}`, e);
+    }
     const document = LangiumDocumentConfiguration.create(`file:${grammarFile}`, 'langium', 0, grammarFileContent);
     services.documents.DocumentBuilder.build(document);
     if (!document.parseResult) {
         console.error('Failed to parse the grammar file: ' + grammarFile);
-        console.log(`Langium generator ${'failed'.red.bold}.`);
-        process.exit(1);
+        exit(`Langium generator ${'failed'.red.bold}.`);
     } else if (document.diagnostics?.length && document.diagnostics.some(e => e.severity === 1)) {
         console.error('Grammar contains validation errors:');
         document.diagnostics.forEach(e => {
@@ -43,48 +48,61 @@ export function generate(config: LangiumConfig): void {
                 console.log(message);
             }
         });
-        console.log('Langium generator ' + 'failed'.red.bold + '.');
-        process.exit(1);
+        exit(`Langium generator ${'failed'.red.bold}.`);
     }
     const grammar = document.parseResult.value as Grammar;
 
-    const output = path.relative(process.cwd(), path.join(absPath, config.out ?? 'src/generated'));
+    const output = path.join(relPath, config.out ?? 'src/generated');
     console.log(`Writing generated files to ${output.white.bold}`);
-    fs.mkdirsSync(output);
+    mkdirWithFail(output);
 
-    console.log('Generating AST...');
     const genAst = generateAst(grammar, config);
-    fs.writeFileSync(`${output}/ast.ts`, genAst);
+    writeWithFail(path.join(output, 'ast.ts'), genAst);
 
-    console.log('Generating serialized grammar...');
     const serializedGrammar = serializeGrammar(services, grammar, config);
-    fs.writeFileSync(`${output}/grammar.ts`, serializedGrammar);
+    writeWithFail(path.join(output, 'grammar.ts'), serializedGrammar);
 
-    console.log('Generating grammar access...');
     const grammarAccess = generateGrammarAccess(grammar, config);
-    fs.writeFileSync(`${output}/grammar-access.ts`, grammarAccess);
+    writeWithFail(path.join(output, 'grammar-access.ts'), grammarAccess);
 
-    console.log('Generating parser...');
     const parser = generateParser(grammar, config);
-    fs.writeFileSync(`${output}/parser.ts`, parser);
+    writeWithFail(path.join(output, 'parser.ts'), parser);
 
     console.log('Generating dependency injection module...');
     const genModule = generateModule(grammar, config);
-    fs.writeFileSync(`${output}/module.ts`, genModule);
+    writeWithFail(path.join(output, 'module.ts'), genModule);
 
     if (config.textMate) {
         if (!config.languageId) {
-            console.error('Language Id needs to be set in order to generate the textmate grammars.'.red);
+            console.error('Language Id needs to be set in order to generate the textmate grammar.'.red);
         } else {
-            console.log('Generating textmate grammars');
             const genTmGrammar = generateTextMate(grammar, config);
-            const textMatePath = path.join(absPath, config.textMate.out);
-            console.log(`Writing textmate grammars to '${textMatePath}'`);
+            const textMatePath = path.join(relPath, config.textMate.out);
+            console.log(`Writing textmate grammar to ${textMatePath.white.bold}`);
             const parentDir = path.dirname(textMatePath).split(path.sep).pop();
-            parentDir && fs.mkdirsSync(parentDir);
-            fs.writeFileSync(textMatePath, genTmGrammar);
+            parentDir && mkdirWithFail(parentDir);
+            writeWithFail(textMatePath, genTmGrammar);
         }
     }
+}
 
-    console.log(`Langium generator finished ${'successfully'.green.bold} in: ${elapsedTime()}ms`);
+export function exit(reason: string, ...args: unknown[]): never {
+    console.error(reason, ...args);
+    return process.exit(1);
+}
+
+function mkdirWithFail(path: string): void {
+    try {
+        fs.mkdirsSync(path);
+    } catch (e) {
+        exit(`Failed to create directory ${path.red.bold}`, e);
+    }
+}
+
+function writeWithFail(path: string, content: string): void {
+    try {
+        fs.writeFileSync(path, content);
+    } catch (e) {
+        exit(`Failed to write file to ${path.red.bold}`, e);
+    }
 }
