@@ -19,5 +19,5 @@ export class ArithmeticsValidator {
         if (isNumberLiteral(div.right) && Number((div.right as NumberLiteral).value) === 0) {
             accept('error', 'Division by zero is detected.', { node: div, property: 'right' });
         }
-	}
+    }
 }

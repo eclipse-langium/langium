@@ -2,4 +2,16 @@ module example1
 
 def x: 1 + 2;
 
+def y: 99999999999 / 2 + 2 - 1;
+
+def x: 12 / 3 - 1;
+
 x * 2 - 4;
+
+def t: 4;
+
+def func(t, x):
+    t * t + x;
+
+func(t, x);
+func(x, t);

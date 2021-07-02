@@ -25,6 +25,14 @@
     "activationEvents": [
         "onLanguage:arithmetics"
     ],
+    "files": [
+        "bin",
+        "out",
+        "src"
+    ],
+    "bin": {
+        "cli": "./bin/cli.js"
+    },
     "main": "./out/extension.js",
     "langium": {
         "languageId": "arithmetics",
@@ -44,6 +52,8 @@
         "copygrammar": "copyfiles -f ./src/language-server/generated/grammar.json ./out/language-server/generated"
     },
     "dependencies": {
+        "colors": "^1.4.0",
+        "commander": "^8.0.0",
         "langium": "0.1.0",
         "vscode-languageclient": "^7.0.0",
         "vscode-languageserver": "^7.0.0"
