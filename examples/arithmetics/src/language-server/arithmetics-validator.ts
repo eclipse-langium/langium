@@ -29,7 +29,7 @@ export class ArithmeticsValidator {
             const subExprs = [expr.left, expr.right];
             subExprs.forEach(e => evalExpr(e));
             const [left, right] = subExprs.map(e => isNumberLiteral(e) ? +e.value : context.get(e));
-            if (left && right && op(left, right).toString().length <= 8) {
+            if (left !== undefined && right !== undefined && op(left, right).toString().length <= 8) {
                 context.set(expr, op(left, right));
                 subExprs.forEach(e => context.delete(e));
             }
