@@ -6,7 +6,6 @@
 
 import { Connection } from 'vscode-languageserver/node';
 import { DocumentValidator } from '../validation/document-validator';
-import { resolveAllReferences } from '../utils/ast-util';
 import { LangiumParser } from '../parser/langium-parser';
 import { ScopeComputation } from '../references/scope';
 import { LangiumServices } from '../services';
@@ -33,13 +32,12 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
         const parseResult = this.parser.parse(document);
         document.parseResult = parseResult;
         this.process(document);
+        const diagnostics = this.documentValidator.validateDocument(document);
+        document.diagnostics = diagnostics;
 
         if (this.connection) {
-            const diagnostics = this.documentValidator.validateDocument(document);
             // Send the computed diagnostics to VS Code.
             this.connection.sendDiagnostics({ uri: document.uri, diagnostics });
-        } else {
-            resolveAllReferences(parseResult.value);
         }
     }
 
