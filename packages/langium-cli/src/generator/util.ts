@@ -9,6 +9,14 @@ import { readFileSync } from 'fs';
 import { CompositeGeneratorNode, GeneratorNode, NL, stream } from 'langium';
 import path from 'path';
 
+let start = process.hrtime();
+
+export function elapsedTime(): string {
+    const elapsed = process.hrtime(start)[1] / 1000000; // divide by a million to get nano to milli
+    start = process.hrtime(); // reset the timer
+    return elapsed.toFixed();
+}
+
 function getLangiumCliVersion(): string {
     const ownPackagePath = path.join(__dirname, '..', '..', 'package.json');
     const packageJson = readFileSync(ownPackagePath).toString();
