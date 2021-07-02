@@ -1,0 +1,54 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "definitions": {
+        "config": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "grammar": {
+                    "type": "string"
+                },
+                "extensions": {
+                    "type": "array",
+                    "items": [
+                        {
+                            "type": "string"
+                        }
+                    ]
+                },
+                "languageId": {
+                    "type": "string"
+                },
+                "out": {
+                    "type": "string"
+                },
+                "textMate": {
+                    "type": "object",
+                    "properties": {
+                        "out": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "out"
+                    ]
+                },
+                "langiumInternal": {
+                    "type": "boolean"
+                }
+            }
+        }
+    },
+    "anyOf": [
+        {
+            "$ref": "#/definitions/config"
+        },
+        {
+            "type": "array",
+            "description": "...",
+            "items": {
+                "$ref": "#/definitions/config"
+            }
+        }
+    ]
+}

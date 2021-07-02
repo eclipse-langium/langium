@@ -5,8 +5,8 @@
  ******************************************************************************/
 
 import * as langium from 'langium';
-import { readFileSync } from 'fs';
 import { CompositeGeneratorNode, GeneratorNode, NL, stream } from 'langium';
+import fs from 'fs-extra';
 import path from 'path';
 
 let start = process.hrtime();
@@ -19,8 +19,7 @@ export function elapsedTime(): string {
 
 function getLangiumCliVersion(): string {
     const ownPackagePath = path.join(__dirname, '..', '..', 'package.json');
-    const packageJson = readFileSync(ownPackagePath).toString();
-    const pack = JSON.parse(packageJson);
+    const pack = fs.readJsonSync(ownPackagePath, { encoding: 'utf-8' });
     return pack.version;
 }
 
@@ -59,3 +58,4 @@ function collectElementKeywords(element: langium.AbstractElement, keywords: Set<
 
 export const cliVersion = getLangiumCliVersion();
 export const generatedHeader = getGeneratedHeader();
+export const schema = fs.readJsonSync(path.join(__dirname, '../../schema.json'), { encoding: 'utf-8' });

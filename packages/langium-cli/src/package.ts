@@ -6,6 +6,7 @@
 
 import fs from 'fs-extra';
 import path from 'path';
+import { exit } from './generate';
 
 export interface Package {
     name: string,
@@ -13,11 +14,11 @@ export interface Package {
     langium: LangiumConfig
 }
 
-export const AbsolutePath = Symbol('AbsolutePath');
+export const RelativePath = Symbol('RelativePath');
 
 export interface LangiumConfig {
-    /** Absolute path to the directory of the config */
-    [AbsolutePath]: string
+    /** Relative path to the directory of the config */
+    [RelativePath]: string
     /** The identifier of your language as used in vscode */
     languageId?: string
     /** Path to the grammar file */
@@ -40,19 +41,25 @@ export function loadConfigs(file: string | undefined): LangiumConfig[] {
     if (!fs.existsSync(defaultPath)) {
         defaultPath = './package.json';
     }
-    const filePath = file ?? defaultPath;
-    const fullPath = path.join(process.cwd(), path.dirname(filePath));
-    const obj = fs.readJsonSync(filePath, { encoding: 'utf-8' });
+    const filePath = path.normalize(file ?? defaultPath);
+    const relativePath = path.dirname(filePath);
+    console.log(`Reading config from ${filePath.white.bold}`);
+    let obj;
+    try {
+        obj = fs.readJsonSync(filePath, { encoding: 'utf-8' });
+    } catch (e) {
+        exit('Failed to read config file.', e);
+    }
+    if (typeof obj === 'object' && obj && 'langium' in obj) {
+        obj = obj.langium;
+    }
     if (Array.isArray(obj)) { // We have an array of configs in our 'langium-config.json'
         return obj.map(e => {
-            e[AbsolutePath] = fullPath;
+            e[RelativePath] = relativePath;
             return e;
         });
-    } else if ('langium' in obj) { // We use a 'package.json' as our config file
-        obj.langium[AbsolutePath] = fullPath;
-        return [obj.langium];
     } else if (!('name' in obj)) { // We have a single config in our 'langium-config.json'
-        obj[AbsolutePath] = fullPath;
+        obj[RelativePath] = relativePath;
         return [obj];
     } else { // Invalid data
         return [];

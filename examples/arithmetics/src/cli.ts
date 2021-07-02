@@ -31,7 +31,7 @@ program
             console.error(`File ${fileName} doesn't exist.`);
             process.exit(1);
         }
-        const fileContent = fs.readFileSync(fileName).toString();
+        const fileContent = fs.readFileSync(fileName, 'utf-8');
 
         const arithmeticsServices = createArithmeticsServices();
         // eslint-disable-next-line @typescript-eslint/no-var-requires
