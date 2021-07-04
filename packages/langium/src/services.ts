@@ -72,7 +72,10 @@ export type LangiumDefaultServices = {
 
 export type LangiumServices = LangiumGeneratedServices & LangiumDefaultServices
 
-type DeepPartial<T> = {
+// We basically look into T to see whether its type definition contains any methods. (with T[keyof T])
+// If it does, it's one of our services and therefore should not be partialized.
+// eslint-disable-next-line @typescript-eslint/ban-types
+type DeepPartial<T> = T[keyof T] extends Function ? T : {
     [P in keyof T]?: DeepPartial<T[P]>;
 }
 
