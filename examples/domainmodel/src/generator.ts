@@ -24,33 +24,33 @@ export class DomainModelGenerator {
     }
 
     public generate(): void {
-        const context = this.collectContext(this.domainmodel.elements);
-        this.generateAbstractElements(this.domainmodel.elements, context);
+        const scope = this.collectScope(this.domainmodel.elements);
+        this.generateAbstractElements(this.domainmodel.elements, scope);
     }
 
-    private collectContext(elements: (AbstractElement | Type)[], context: Set<string> = new Set<string>(), path: string = ''): Set<string> {
+    private collectScope(elements: (AbstractElement | Type)[], scope: Set<string> = new Set<string>(), path: string = ''): Set<string> {
         for (const elem of elements) {
             const fullQualifiedName = (path ? `${path}.` : ``) + elem.name;
             if (isPackageDeclaration(elem)) {
-                this.collectContext(elem.elements, context, fullQualifiedName);
+                this.collectScope(elem.elements, scope, fullQualifiedName);
             } else if (isEntity(elem) || isDataType(elem)) {
-                context.add(fullQualifiedName);
+                scope.add(fullQualifiedName);
             }
         }
-        return context;
+        return scope;
     }
 
-    private updateContext(path: string, context: Set<string>): Set<string> {
-        let updContext = new Set<string>(context);
-        for (const elem of context) {
+    private updateScope(path: string, scope: Set<string>): Set<string> {
+        const updScope = new Set<string>(scope);
+        for (const elem of scope) {
             if (elem.startsWith(path)) {
-                updContext.add(elem.substr(path.length + 1));
+                updScope.add(elem.substr(path.length + 1));
             }
         }
-        return updContext;
+        return updScope;
     }
 
-    private generateAbstractElements(elements: (AbstractElement | Type)[], context: Set<string>, path: string = ''): void {
+    private generateAbstractElements(elements: (AbstractElement | Type)[], scope: Set<string>, path: string = ''): void {
         const fullPath = `${this.dest}/${path.replace('.', '/')}`;
         if (!fs.existsSync(fullPath)) {
             fs.mkdirSync(fullPath, { recursive: true });
@@ -59,25 +59,25 @@ export class DomainModelGenerator {
         for (const elem of elements) {
             if (isPackageDeclaration(elem)) {
                 const fullQualifiedName = `${path ? `${path}.` : ``}${elem.name}`;
-                this.generateAbstractElements(elem.elements, this.updateContext(fullQualifiedName, context), fullQualifiedName);
+                this.generateAbstractElements(elem.elements, this.updateScope(fullQualifiedName, scope), fullQualifiedName);
             } else if (isEntity(elem)) {
                 const fileNode = new CompositeGeneratorNode();
                 fileNode.append(`package ${this.basePackage}${path ? `.${path}` : ''};`, NL, NL);
-                this.generateEntity(elem, fileNode, context);
+                this.generateEntity(elem, fileNode, scope);
                 fs.writeFileSync(`${fullPath}/${elem.name}.java`, processGeneratorNode(fileNode));
             }
         }
     }
 
-    private generateEntity(entity: Entity, fileNode: CompositeGeneratorNode, context: Set<string>): void {
+    private generateEntity(entity: Entity, fileNode: CompositeGeneratorNode, scope: Set<string>): void {
         fileNode.append(`class ${entity.name} `);
-        if (entity.superType && context.has(entity.superType.$refName)) {
+        if (entity.superType && scope.has(entity.superType.$refName)) {
             fileNode.append(`extends ${entity.superType.$refName} `)
         }
         fileNode.append(`{`, NL);
     
         fileNode.indent(classBody => {
-            const featureData = entity.features.map(f => new FeatureData(f, context));
+            const featureData = entity.features.map(f => new FeatureData(f, scope));
             featureData.forEach(f => f.generateField(classBody));
             featureData.forEach(f => f.generateSetMethod(classBody));
             featureData.forEach(f => f.generateGetMethod(classBody));
@@ -90,14 +90,10 @@ class FeatureData {
     private name: string;
     private type: string = 'Object';
     
-    constructor(feature: Feature, context: Set<string>) {
+    constructor(feature: Feature, scope: Set<string>) {
         this.name = feature.name;
-        if (context.has(feature.type.$refName)) {
+        if (scope.has(feature.type.$refName)) {
             this.type = feature.type.$refName + (feature.many ? '[]' : '');
-        } else {
-            console.log(Array.from(context).toString());
-            console.log(feature.name, '   ', feature.type.$refName);
-            process.exit(1);
         }
     }
 
