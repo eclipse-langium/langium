@@ -37,4 +37,4 @@ PrimaryExpression returns Expression:
 
 terminal WS: /\s+/;
 terminal ID: /[_a-zA-Z][\w_]*/;
-terminal NUMBER: /[0-9]+(\.[0-9])?/;
+terminal NUMBER returns number: /[0-9]+(\.[0-9])?/;

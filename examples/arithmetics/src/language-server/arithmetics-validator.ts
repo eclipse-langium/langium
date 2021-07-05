@@ -17,7 +17,7 @@ export class ArithmeticsValidationRegistry extends ValidationRegistry {
 }
 export class ArithmeticsValidator {
     checkDivByZero(div: Division, accept: ValidationAcceptor): void {
-        if (isNumberLiteral(div.right) && +div.right.value === 0) {
+        if (isNumberLiteral(div.right) && div.right.value === 0) {
             accept('error', 'Division by zero is detected.', { node: div, property: 'right' });
         }
     }
@@ -28,7 +28,7 @@ export class ArithmeticsValidator {
         const makeOp = (expr: Addition | Subtraction | Multiplication | Division, op: (x: number, y: number) => number): void => {
             const subExprs = [expr.left, expr.right];
             subExprs.forEach(e => evalExpr(e));
-            const [left, right] = subExprs.map(e => isNumberLiteral(e) ? +e.value : context.get(e));
+            const [left, right] = subExprs.map(e => isNumberLiteral(e) ? e.value : context.get(e));
             if (left !== undefined && right !== undefined && op(left, right).toString().length <= 8) {
                 context.set(expr, op(left, right));
                 subExprs.forEach(e => context.delete(e));

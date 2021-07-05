@@ -114,7 +114,7 @@ export function isMultiplication(item: unknown): item is Multiplication {
 }
 
 export interface NumberLiteral extends Expression {
-    value: string
+    value: number
 }
 
 export const NumberLiteral = 'NumberLiteral';
