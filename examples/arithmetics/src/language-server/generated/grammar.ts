@@ -559,6 +559,7 @@ const grammar = (): Grammar => loadGrammar(`{
     {
       "$type": "TerminalRule",
       "name": "NUMBER",
+      "type": "number",
       "regex": "/[0-9]+(\\\\.[0-9])?/"
     }
   ],

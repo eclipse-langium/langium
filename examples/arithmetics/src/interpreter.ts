@@ -41,17 +41,17 @@ export class ArithmeticsInterpreter {
         if (isAddition(expr)) {
             const left = this.evalExpression(expr.left);
             const right = this.evalExpression(expr.right);
-            return right ? left + right : left;
+            return right !== undefined ? left + right : left;
         }
         if (isSubtraction(expr)) {
             const left = this.evalExpression(expr.left);
             const right = this.evalExpression(expr.right);
-            return right ? left - right : left;
+            return right !== undefined ? left - right : left;
         }
         if (isMultiplication(expr)) {
             const left = this.evalExpression(expr.left);
             const right = this.evalExpression(expr.right);
-            return right ? left * right : left;
+            return right !== undefined ? left * right : left;
         }
         if (isDivision(expr)) {
             const left = this.evalExpression(expr.left);
