@@ -1,3 +1,9 @@
+/******************************************************************************
+ * Copyright 2021 TypeFox GmbH
+ * This program and the accompanying materials are made available under the
+ * terms of the MIT License, which is available in the project root.
+ ******************************************************************************/
+
 import { ValidationAcceptor, ValidationCheck, ValidationRegistry } from 'langium';
 import { DomainModelAstType, Type } from './generated/ast';
 import { DomainModelServices } from './domain-model-module';
@@ -24,6 +30,6 @@ export class DomainModelValidator {
                 accept('warning', 'Type name should start with a capital.', { node: type, property: 'name' });
             }
         }
-	}
+    }
 
 }

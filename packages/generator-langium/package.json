@@ -21,7 +21,7 @@
     "clean": "rimraf app",
     "build": "tsc",
     "watch": "tsc --watch",
-    "lint": "eslint ./src --ext .js,.ts",
+    "lint": "eslint src --ext .ts",
     "run": "yo langium",
     "debug": "npx --node-arg=--inspect yo langium",
     "publish:next": "npm --no-git-tag-version version \"$(semver $npm_package_version -i minor)-next.$(git rev-parse --short HEAD)\" && npm publish --tag next",
@@ -38,6 +38,7 @@
     "@typescript-eslint/eslint-plugin": "^4.15.2",
     "@typescript-eslint/parser": "^4.15.2",
     "eslint": "^7.28.0",
+    "eslint-plugin-header": "^3.1.1",
     "rimraf": "^3.0.2",
     "typescript": "^4.2.2"
   },

@@ -1,6 +1,12 @@
+/******************************************************************************
+ * Copyright 2021 TypeFox GmbH
+ * This program and the accompanying materials are made available under the
+ * terms of the MIT License, which is available in the project root.
+ ******************************************************************************/
+
 import Generator from 'yeoman-generator';
 import _ from 'lodash';
-import * as path from 'path';
+import path from 'path';
 
 const TEMPLATE_DIR = '../langium-template';
 const USER_DIR = '.';

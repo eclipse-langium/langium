@@ -24,7 +24,7 @@
     "build": "tsc",
     "watch": "tsc --watch",
     "test": "jest --coverage --passWithNoTests",
-    "lint": "eslint ./src --ext .js,.ts",
+    "lint": "eslint src --ext .ts",
     "publish:next": "npm --no-git-tag-version version \"$(semver $npm_package_version -i minor)-next.$(git rev-parse --short HEAD)\" && npm publish --tag next",
     "publish:latest": "npm publish --tag latest"
   },
@@ -41,6 +41,7 @@
     "@typescript-eslint/eslint-plugin": "^4.15.2",
     "@typescript-eslint/parser": "^4.15.2",
     "eslint": "^7.20.0",
+    "eslint-plugin-header": "^3.1.1",
     "jest": "^26.6.3",
     "rimraf": "^3.0.2",
     "ts-jest": "^26.5.2",
