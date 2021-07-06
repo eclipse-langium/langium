@@ -12,8 +12,8 @@ import { AbstractElement, Domainmodel, Feature, Type, PackageDeclaration, DataTy
 
 const ID = createToken({ name: 'ID', pattern: /[_a-zA-Z][\w_]*/ });
 const INT = createToken({ name: 'INT', pattern: /[0-9]+/ });
-const ML_COMMENT = createToken({ name: 'ML_COMMENT', pattern: /\/\*[\s\S]*?\*\//, group: Lexer.SKIPPED });
-const SL_COMMENT = createToken({ name: 'SL_COMMENT', pattern: /\/\/[^\n\r]*/, group: Lexer.SKIPPED });
+const ML_COMMENT = createToken({ name: 'ML_COMMENT', pattern: /\/\*[\s\S]*?\*\//, group: 'hidden' });
+const SL_COMMENT = createToken({ name: 'SL_COMMENT', pattern: /\/\/[^\n\r]*/, group: 'hidden' });
 const STRING = createToken({ name: 'STRING', pattern: /"[^"]*"|'[^']*'/ });
 const WS = createToken({ name: 'WS', pattern: /\s+/, group: Lexer.SKIPPED });
 const DatatypeKeyword = createToken({ name: 'DatatypeKeyword', pattern: /datatype/, longer_alt: ID });
@@ -21,10 +21,10 @@ const ExtendsKeyword = createToken({ name: 'ExtendsKeyword', pattern: /extends/,
 const PackageKeyword = createToken({ name: 'PackageKeyword', pattern: /package/, longer_alt: ID });
 const EntityKeyword = createToken({ name: 'EntityKeyword', pattern: /entity/, longer_alt: ID });
 const ManyKeyword = createToken({ name: 'ManyKeyword', pattern: /many/, longer_alt: ID });
-const ColonKeyword = createToken({ name: 'ColonKeyword', pattern: /:/, longer_alt: ID });
-const CurlyCloseKeyword = createToken({ name: 'CurlyCloseKeyword', pattern: /\}/, longer_alt: ID });
-const CurlyOpenKeyword = createToken({ name: 'CurlyOpenKeyword', pattern: /\{/, longer_alt: ID });
-const DotKeyword = createToken({ name: 'DotKeyword', pattern: /\./, longer_alt: ID });
+const ColonKeyword = createToken({ name: 'ColonKeyword', pattern: /:/ });
+const CurlyCloseKeyword = createToken({ name: 'CurlyCloseKeyword', pattern: /\}/ });
+const CurlyOpenKeyword = createToken({ name: 'CurlyOpenKeyword', pattern: /\{/ });
+const DotKeyword = createToken({ name: 'DotKeyword', pattern: /\./ });
 
 ColonKeyword.LABEL = "':'";
 DotKeyword.LABEL = "'.'";

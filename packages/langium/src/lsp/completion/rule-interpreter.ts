@@ -73,8 +73,7 @@ export class RuleInterpreter {
             // We have to take keywords into account
             // e.g. most keywords are valid IDs as well
             // Only return 'full' if this terminal does not match a keyword. TODO
-            const regex = rule.regex.substring(1, rule.regex.length - 1);
-            return node.text.match(new RegExp(regex)) !== null ? 'both' : 'none';
+            return node.text.match(new RegExp(rule.regex)) !== null ? 'both' : 'none';
         } else {
             return 'none';
         }

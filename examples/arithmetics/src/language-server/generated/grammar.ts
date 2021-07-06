@@ -11,6 +11,9 @@ const grammar = (): Grammar => loadGrammar(`{
   "hiddenTokens": [
     {
       "$refName": "WS"
+    },
+    {
+      "$refName": "COMMENT"
     }
   ],
   "metamodelDeclarations": [],
@@ -549,18 +552,23 @@ const grammar = (): Grammar => loadGrammar(`{
     {
       "$type": "TerminalRule",
       "name": "WS",
-      "regex": "/\\\\s+/"
+      "regex": "\\\\s+"
     },
     {
       "$type": "TerminalRule",
       "name": "ID",
-      "regex": "/[_a-zA-Z][\\\\w_]*/"
+      "regex": "[_a-zA-Z][\\\\w_]*"
     },
     {
       "$type": "TerminalRule",
       "name": "NUMBER",
       "type": "number",
-      "regex": "/[0-9]+(\\\\.[0-9])?/"
+      "regex": "[0-9]+(\\\\.[0-9])?"
+    },
+    {
+      "$type": "TerminalRule",
+      "name": "COMMENT",
+      "regex": "\\\\/(\\\\*[\\\\s\\\\S]*?\\\\*\\\\/|\\\\/[^\\\\n\\\\r]*)"
     }
   ],
   "name": "Arithmetics",

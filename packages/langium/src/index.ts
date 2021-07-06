@@ -33,5 +33,6 @@ export * from './services';
 export * from './syntax-tree';
 export * from './utils/ast-util';
 export * from './utils/cst-util';
+export * from './utils/regex-util';
 export * from './utils/stream';
 

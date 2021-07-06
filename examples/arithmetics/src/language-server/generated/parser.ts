@@ -10,20 +10,21 @@ import { LangiumParser, LangiumServices, DatatypeSymbol } from 'langium';
 import { ArithmeticsGrammarAccess } from './grammar-access';
 import { AbstractDefinition, Expression, Module, Statement, DeclaredParameter, Definition, Addition, Division, FunctionCall, Multiplication, NumberLiteral, Subtraction, Evaluation, } from './ast';
 
+const COMMENT = createToken({ name: 'COMMENT', pattern: /\/(\*[\s\S]*?\*\/|\/[^\n\r]*)/, group: 'hidden' });
 const ID = createToken({ name: 'ID', pattern: /[_a-zA-Z][\w_]*/ });
 const NUMBER = createToken({ name: 'NUMBER', pattern: /[0-9]+(\.[0-9])?/ });
 const WS = createToken({ name: 'WS', pattern: /\s+/, group: Lexer.SKIPPED });
 const ModuleKeyword = createToken({ name: 'ModuleKeyword', pattern: /module/, longer_alt: ID });
 const DefKeyword = createToken({ name: 'DefKeyword', pattern: /def/, longer_alt: ID });
-const AsteriskKeyword = createToken({ name: 'AsteriskKeyword', pattern: /\*/, longer_alt: ID });
-const ColonKeyword = createToken({ name: 'ColonKeyword', pattern: /:/, longer_alt: ID });
-const CommaKeyword = createToken({ name: 'CommaKeyword', pattern: /,/, longer_alt: ID });
-const DashKeyword = createToken({ name: 'DashKeyword', pattern: /-/, longer_alt: ID });
-const ParenthesisCloseKeyword = createToken({ name: 'ParenthesisCloseKeyword', pattern: /\)/, longer_alt: ID });
-const ParenthesisOpenKeyword = createToken({ name: 'ParenthesisOpenKeyword', pattern: /\(/, longer_alt: ID });
-const PlusKeyword = createToken({ name: 'PlusKeyword', pattern: /\+/, longer_alt: ID });
-const SemicolonKeyword = createToken({ name: 'SemicolonKeyword', pattern: /;/, longer_alt: ID });
-const SlashKeyword = createToken({ name: 'SlashKeyword', pattern: /\//, longer_alt: ID });
+const AsteriskKeyword = createToken({ name: 'AsteriskKeyword', pattern: /\*/ });
+const ColonKeyword = createToken({ name: 'ColonKeyword', pattern: /:/ });
+const CommaKeyword = createToken({ name: 'CommaKeyword', pattern: /,/ });
+const DashKeyword = createToken({ name: 'DashKeyword', pattern: /-/ });
+const ParenthesisCloseKeyword = createToken({ name: 'ParenthesisCloseKeyword', pattern: /\)/ });
+const ParenthesisOpenKeyword = createToken({ name: 'ParenthesisOpenKeyword', pattern: /\(/ });
+const PlusKeyword = createToken({ name: 'PlusKeyword', pattern: /\+/ });
+const SemicolonKeyword = createToken({ name: 'SemicolonKeyword', pattern: /;/ });
+const SlashKeyword = createToken({ name: 'SlashKeyword', pattern: /\//, longer_alt: COMMENT });
 
 DashKeyword.LABEL = "'-'";
 CommaKeyword.LABEL = "','";
@@ -36,7 +37,7 @@ SlashKeyword.LABEL = "'/'";
 PlusKeyword.LABEL = "'+'";
 DefKeyword.LABEL = "'def'";
 ModuleKeyword.LABEL = "'module'";
-const tokens = [ModuleKeyword, DefKeyword, AsteriskKeyword, ColonKeyword, CommaKeyword, DashKeyword, ParenthesisCloseKeyword, ParenthesisOpenKeyword, PlusKeyword, SemicolonKeyword, SlashKeyword, ID, NUMBER, WS];
+const tokens = [ModuleKeyword, DefKeyword, AsteriskKeyword, ColonKeyword, CommaKeyword, DashKeyword, ParenthesisCloseKeyword, ParenthesisOpenKeyword, PlusKeyword, SemicolonKeyword, SlashKeyword, COMMENT, ID, NUMBER, WS];
 
 export class Parser extends LangiumParser {
     readonly grammarAccess: ArithmeticsGrammarAccess;
