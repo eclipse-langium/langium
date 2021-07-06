@@ -8,12 +8,12 @@ class Blog {
         this.title = title;
     }
 
-    public void setPosts(Post[] posts) {
-        this.posts = posts;
-    }
-
     public String getTitle() {
         return title;
+    }
+
+    public void setPosts(Post[] posts) {
+        this.posts = posts;
     }
 
     public Post[] getPosts() {

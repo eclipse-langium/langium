@@ -9,20 +9,20 @@ class Post extends HasAuthor {
         this.title = title;
     }
 
-    public void setContent(String content) {
-        this.content = content;
-    }
-
-    public void setComments(Comment[] comments) {
-        this.comments = comments;
-    }
-
     public String getTitle() {
         return title;
     }
 
+    public void setContent(String content) {
+        this.content = content;
+    }
+
     public String getContent() {
         return content;
+    }
+
+    public void setComments(Comment[] comments) {
+        this.comments = comments;
     }
 
     public Comment[] getComments() {

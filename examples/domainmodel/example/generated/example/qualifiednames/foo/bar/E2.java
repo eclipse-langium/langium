@@ -9,20 +9,20 @@ class E2 extends E1 {
         this.next = next;
     }
 
-    public void setOther(baz.E3 other) {
-        this.other = other;
-    }
-
-    public void setNested(baz.nested.E5 nested) {
-        this.nested = nested;
-    }
-
     public E2 getNext() {
         return next;
     }
 
+    public void setOther(baz.E3 other) {
+        this.other = other;
+    }
+
     public baz.E3 getOther() {
         return other;
+    }
+
+    public void setNested(baz.nested.E5 nested) {
+        this.nested = nested;
     }
 
     public baz.nested.E5 getNested() {

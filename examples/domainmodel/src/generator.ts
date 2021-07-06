@@ -14,30 +14,30 @@ export class DomainModelGenerator {
     private destination: string;
     private path: string;
 
-    constructor(grammar: Grammar, fileName: string, destination: string = '.') {
+    constructor(grammar: Grammar, fileName: string, destination = '.') {
         if (!isDomainmodel(grammar)) {
             console.error('Please, apply this generator to Domainmodel file');
             process.exit(1);
         }
         this.domainmodel = grammar;
         this.destination = destination;
-        this.path = fileName.replace(/\..*$/, '').replaceAll(/[\.-]/g, '');
+        this.path = fileName.replace(/\..*$/, '').replaceAll(/[.-]/g, '');
     }
 
     public generate(): void {
         this.generateAbstractElements(this.domainmodel.elements, this.path);
     }
 
-    private generateAbstractElements(elements: (AbstractElement | Type)[], path: string): void {
+    private generateAbstractElements(elements: Array<AbstractElement | Type>, path: string): void {
         const fullPath = `${this.destination}/${path}`;
         if (!fs.existsSync(fullPath)) {
             fs.mkdirSync(fullPath, { recursive: true });
         }
 
-        const packagePath = path.replaceAll('\/', '.').replace(/^\.+/, '');
+        const packagePath = path.replaceAll('/', '.').replace(/^\.+/, '');
         for (const elem of elements) {
             if (isPackageDeclaration(elem)) {
-                this.generateAbstractElements(elem.elements, `${path}/${elem.name.replaceAll('\.', '/')}`);
+                this.generateAbstractElements(elem.elements, `${path}/${elem.name.replaceAll('.', '/')}`);
             } else if (isEntity(elem)) {
                 const fileNode = new CompositeGeneratorNode();
                 fileNode.append(`package ${packagePath};`, NL, NL);
@@ -49,45 +49,41 @@ export class DomainModelGenerator {
 
     private generateEntity(entity: Entity, fileNode: CompositeGeneratorNode): void {
         const maybeExtends = entity.superType ? ` extends ${entity.superType.$refName}` : '';
-        fileNode.append(`class ${entity.name}${maybeExtends} {`, NL);    
+        fileNode.append(`class ${entity.name}${maybeExtends} {`, NL);
         fileNode.indent(classBody => {
-            const featureData = entity.features.map(f => new FeatureData(f));
-            featureData.forEach(f => f.generateField(classBody));
-            featureData.forEach(f => f.generateSetMethod(classBody));
-            featureData.forEach(f => f.generateGetMethod(classBody));
+            const featureData = entity.features.map(f => this.generateFeature(f, classBody));
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            featureData.forEach(([generateField, _1, _2]) => generateField());
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            featureData.forEach(([_0, generateSetter, generateGetter]) => { generateSetter(); generateGetter(); } );
         });
-        fileNode.append(`}`, NL);
-    }
-}
-
-class FeatureData {
-    private name: string;
-    private type: string = 'Object';
-    
-    constructor(feature: Feature) {
-        this.name = feature.name;
-        this.type = feature.type.$refName + (feature.many ? '[]' : '');
+        fileNode.append('}', NL);
     }
 
-    public generateField(classBody: IndentNode) {
-        classBody.append(`private ${this.type} ${this.name};`, NL);
-    }
+    private generateFeature(feature: Feature, classBody: IndentNode): [() => void, () => void, () => void] {
+        const name = feature.name;
+        const type = feature.type.$refName + (feature.many ? '[]' : '');
 
-    public generateSetMethod(classBody: IndentNode) {
-        classBody.append(NL);
-        classBody.append(`public void set${_.upperFirst(this.name)}(${this.type} ${this.name}) {`, NL);
-        classBody.indent(methodBody => {
-            methodBody.append(`this.${this.name} = ${this.name};`, NL);
-        });
-        classBody.append(`}`, NL);
-    }
-
-    public generateGetMethod(classBody: IndentNode) {
-        classBody.append(NL);
-        classBody.append(`public ${this.type} get${_.upperFirst(this.name)}() {`, NL);
-        classBody.indent(methodBody => {
-            methodBody.append(`return ${this.name};`, NL);
-        });
-        classBody.append(`}`, NL);
+        return [
+            () => { // generate the field
+                classBody.append(`private ${type} ${name};`, NL);
+            },
+            () => { // generate the setter
+                classBody.append(NL);
+                classBody.append(`public void set${_.upperFirst(name)}(${type} ${name}) {`, NL);
+                classBody.indent(methodBody => {
+                    methodBody.append(`this.${name} = ${name};`, NL);
+                });
+                classBody.append('}', NL);
+            },
+            () => { // generate the getter
+                classBody.append(NL);
+                classBody.append(`public ${type} get${_.upperFirst(name)}() {`, NL);
+                classBody.indent(methodBody => {
+                    methodBody.append(`return ${name};`, NL);
+                });
+                classBody.append('}', NL);
+            }
+        ];
     }
 }
