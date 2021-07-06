@@ -5,11 +5,14 @@
  ******************************************************************************/
 
 import { CompositeGeneratorNode, Grammar, LangiumServices, NL, processGeneratorNode } from 'langium';
+import { EOL } from 'os';
 import { LangiumConfig } from '../package';
 import { generatedHeader } from './util';
 
 export function serializeGrammar(services: LangiumServices, grammar: Grammar, config: LangiumConfig): string {
-    const json = services.serializer.JsonSerializer.serialize(grammar, 2);
+    // The json serializer returns strings with \n line delimiter by default
+    // We need to translate these line endings to the OS specific line ending
+    const json = services.serializer.JsonSerializer.serialize(grammar, 2).replace(/\\/g, '\\\\').split('\n').join(EOL);
     const node = new CompositeGeneratorNode();
     node.append(generatedHeader);
 
@@ -24,7 +27,7 @@ export function serializeGrammar(services: LangiumServices, grammar: Grammar, co
     node.append(NL, NL);
 
     node.append(
-        'const grammar = (): Grammar => loadGrammar(`', json.replace(/\\/g, '\\\\'), '`);', NL, NL,
+        'const grammar = (): Grammar => loadGrammar(`', json, '`);', NL, NL,
         'export default grammar;', NL
     );
     return processGeneratorNode(node);
