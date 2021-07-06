@@ -1,4 +1,4 @@
-package base.baz;
+package example.generated.qualifiednames.baz;
 
 class E3 {
     private E4 this;

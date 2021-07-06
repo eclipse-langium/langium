@@ -1,4 +1,4 @@
-package base.baz.nested;
+package example.generated.qualifiednames.baz.nested;
 
 class E5 {
     private E3 ref;

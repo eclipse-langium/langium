@@ -1,4 +1,4 @@
-package base;
+package example.generated.blog;
 
 class Blog {
     private String title;
