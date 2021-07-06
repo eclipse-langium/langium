@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import * as langium from 'langium';
-import { getContainerOfType, getTypeName, NLEmpty, ParserRule, stream } from 'langium';
+import { getContainerOfType, getTypeName, NLEmpty, ParserRule, partialRegex, stream } from 'langium';
 import { CompositeGeneratorNode, GeneratorNode, NL, processGeneratorNode, replaceTokens } from 'langium';
 import { collectAst } from './type-collector';
 import { Cardinality, findAllFeatures, isDataTypeRule, isOptional } from 'langium';
@@ -61,7 +61,7 @@ export function generateParser(grammar: langium.Grammar, config: LangiumConfig):
     }
     let keywordTokens: Array<{ name: string, length: number, node: CompositeGeneratorNode }> = [];
     for (const keyword of keywords) {
-        keywordTokens.push(buildKeywordToken(keyword, keywords, terminals));
+        keywordTokens.push(buildKeywordToken(keyword, terminals));
     }
     keywordTokens = keywordTokens.sort((a, b) => a.name.localeCompare(b.name)).sort((a, b) => b.length - a.length);
     for (const token of tokens) {
@@ -74,7 +74,7 @@ export function generateParser(grammar: langium.Grammar, config: LangiumConfig):
     fileNode.append(NL);
 
     for (const keyword of keywords) {
-        const token = buildKeywordToken(keyword, keywords, terminals);
+        const token = buildKeywordToken(keyword, terminals);
         fileNode.append(token.name, '.LABEL = "', "'", keyword, "'\";", NL);
     }
 
@@ -293,12 +293,11 @@ function buildTerminalToken(grammar: langium.Grammar, terminal: langium.Terminal
         terminal.name,
         " = createToken({ name: '",
         terminal.name,
-        "', pattern: ",
-        terminal.regex);
+        "', pattern: /",
+        terminal.regex, '/');
 
     if (grammar.hiddenTokens && grammar.hiddenTokens.map(e => e.ref).includes(terminal)) {
-        const regex = terminal.regex.substring(1, terminal.regex.length - 1);
-        if (new RegExp(regex).test(' ')) { // Only skip tokens that are able to accept whitespace
+        if (new RegExp(terminal.regex).test(' ')) { // Only skip tokens that are able to accept whitespace
             terminalNode.append(', group: Lexer.SKIPPED');
         } else {
             terminalNode.append(", group: 'hidden'");
@@ -310,9 +309,9 @@ function buildTerminalToken(grammar: langium.Grammar, terminal: langium.Terminal
     return { name: terminal.name, length: terminal.regex.length, node: terminalNode };
 }
 
-function buildKeywordToken(keyword: string, keywords: string[], terminals: langium.TerminalRule[]): { name: string, length: number, node: CompositeGeneratorNode } {
+function buildKeywordToken(keyword: string, terminals: langium.TerminalRule[]): { name: string, length: number, node: CompositeGeneratorNode } {
     const keywordNode = new CompositeGeneratorNode();
-    const longerAlt = findLongerAlt(keyword, keywords, terminals);
+    const longerAlt = findLongerAlt(keyword, terminals);
     const validName = replaceTokens(keyword) + 'Keyword';
     keywordNode.append('const ', validName, " = createToken({ name: '", validName, "', pattern: /", escapeRegExp(keyword), '/');
 
@@ -328,18 +327,13 @@ function escapeRegExp(text: string): string {
     return text.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&');
 }
 
-function findLongerAlt(keyword: string, keywords: string[], terminals: langium.TerminalRule[]): string | undefined {
-    const starter = "'" + keyword;
-    const longerKeywords = keywords.filter(e => e.length > keyword.length + 2 && e.startsWith(starter));
-    if (longerKeywords.length > 0) {
-        let shortest = longerKeywords[0];
-        for (const key of longerKeywords) {
-            if (key.length < shortest.length) {
-                shortest = key;
-            }
+function findLongerAlt(keyword: string, terminals: langium.TerminalRule[]): string | undefined {
+    for (const terminal of terminals) {
+        const regex = partialRegex(new RegExp('^' + terminal.regex));
+        const match = keyword.match(regex);
+        if (match && match[0].length > 0) {
+            return terminal.name;
         }
-        return replaceTokens(shortest) + 'Keyword';
     }
-    // TODO: for now, just return id
-    return terminals.find(e => e.name === 'ID')?.name;
+    return undefined;
 }

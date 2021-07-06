@@ -322,33 +322,33 @@ const grammar = (): Grammar => loadGrammar(`{
     {
       "$type": "TerminalRule",
       "name": "WS",
-      "regex": "/\\\\s+/"
+      "regex": "\\\\s+"
     },
     {
       "$type": "TerminalRule",
       "name": "ID",
-      "regex": "/[_a-zA-Z][\\\\w_]*/"
+      "regex": "[_a-zA-Z][\\\\w_]*"
     },
     {
       "$type": "TerminalRule",
       "name": "INT",
       "type": "number",
-      "regex": "/[0-9]+/"
+      "regex": "[0-9]+"
     },
     {
       "$type": "TerminalRule",
       "name": "STRING",
-      "regex": "/\\"[^\\"]*\\"|'[^']*'/"
+      "regex": "\\"[^\\"]*\\"|'[^']*'"
     },
     {
       "$type": "TerminalRule",
       "name": "ML_COMMENT",
-      "regex": "/\\\\/\\\\*[\\\\s\\\\S]*?\\\\*\\\\//"
+      "regex": "\\\\/\\\\*[\\\\s\\\\S]*?\\\\*\\\\/"
     },
     {
       "$type": "TerminalRule",
       "name": "SL_COMMENT",
-      "regex": "/\\\\/\\\\/[^\\\\n\\\\r]*/"
+      "regex": "\\\\/\\\\/[^\\\\n\\\\r]*"
     }
   ],
   "name": "Statemachine",

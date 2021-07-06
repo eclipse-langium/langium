@@ -8,7 +8,7 @@ import { AbstractRule, isRuleCall } from '../grammar/generated/ast';
 import { CstNode } from '../syntax-tree';
 
 export interface ValueConverter {
-    convert(input: string, cstNode: CstNode): unknown;
+    convert(input: string, cstNode: CstNode): ValueType;
 }
 
 export type ValueType = string | number | boolean | Date;
@@ -29,12 +29,13 @@ export class DefaultValueConverter implements ValueConverter {
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     protected runConverter(rule: AbstractRule, input: string, cstNode: CstNode): ValueType {
-        switch (rule.name) {
+        switch (rule.name.toUpperCase()) {
             case 'INT': return convertInt(input);
-            case 'string': return convertString(input);
+            case 'STRING': return convertString(input);
             case 'ID': return convertID(input);
+            case 'REGEXLITERAL': return convertString(input);
         }
-        switch (rule.type) {
+        switch (rule.type.toLowerCase()) {
             case 'number': return convertNumber(input);
             case 'boolean': return convertBoolean(input);
             default: return input;
@@ -59,7 +60,7 @@ export function convertInt(input: string): number {
 }
 
 export function convertNumber(input: string): number {
-    return parseFloat(input);
+    return Number(input);
 }
 
 export function convertBoolean(input: string): boolean {

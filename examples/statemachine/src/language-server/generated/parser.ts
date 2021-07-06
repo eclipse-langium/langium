@@ -12,8 +12,8 @@ import { Command, Event, State, Statemachine, Transition, } from './ast';
 
 const ID = createToken({ name: 'ID', pattern: /[_a-zA-Z][\w_]*/ });
 const INT = createToken({ name: 'INT', pattern: /[0-9]+/ });
-const ML_COMMENT = createToken({ name: 'ML_COMMENT', pattern: /\/\*[\s\S]*?\*\//, group: Lexer.SKIPPED });
-const SL_COMMENT = createToken({ name: 'SL_COMMENT', pattern: /\/\/[^\n\r]*/, group: Lexer.SKIPPED });
+const ML_COMMENT = createToken({ name: 'ML_COMMENT', pattern: /\/\*[\s\S]*?\*\//, group: 'hidden' });
+const SL_COMMENT = createToken({ name: 'SL_COMMENT', pattern: /\/\/[^\n\r]*/, group: 'hidden' });
 const STRING = createToken({ name: 'STRING', pattern: /"[^"]*"|'[^']*'/ });
 const WS = createToken({ name: 'WS', pattern: /\s+/, group: Lexer.SKIPPED });
 const ResetEventsKeyword = createToken({ name: 'ResetEventsKeyword', pattern: /resetEvents/, longer_alt: ID });
@@ -22,9 +22,9 @@ const ActionsKeyword = createToken({ name: 'ActionsKeyword', pattern: /actions/,
 const EventsKeyword = createToken({ name: 'EventsKeyword', pattern: /events/, longer_alt: ID });
 const StateKeyword = createToken({ name: 'StateKeyword', pattern: /state/, longer_alt: ID });
 const EndKeyword = createToken({ name: 'EndKeyword', pattern: /end/, longer_alt: ID });
-const EqualsMoreThanKeyword = createToken({ name: 'EqualsMoreThanKeyword', pattern: /=>/, longer_alt: ID });
-const CurlyCloseKeyword = createToken({ name: 'CurlyCloseKeyword', pattern: /\}/, longer_alt: ID });
-const CurlyOpenKeyword = createToken({ name: 'CurlyOpenKeyword', pattern: /\{/, longer_alt: ID });
+const EqualsMoreThanKeyword = createToken({ name: 'EqualsMoreThanKeyword', pattern: /=>/ });
+const CurlyCloseKeyword = createToken({ name: 'CurlyCloseKeyword', pattern: /\}/ });
+const CurlyOpenKeyword = createToken({ name: 'CurlyOpenKeyword', pattern: /\{/ });
 
 CurlyOpenKeyword.LABEL = "'{'";
 CurlyCloseKeyword.LABEL = "'}'";
