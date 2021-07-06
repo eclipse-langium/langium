@@ -1,3 +1,9 @@
+/******************************************************************************
+ * Copyright 2021 TypeFox GmbH
+ * This program and the accompanying materials are made available under the
+ * terms of the MIT License, which is available in the project root.
+ ******************************************************************************/
+
 import { ValidationAcceptor, ValidationCheck, ValidationRegistry } from 'langium';
 import { State, StatemachineAstType } from './generated/ast';
 import { StatemachineServices } from './statemachine-module';
@@ -24,6 +30,6 @@ export class StatemachineValidator {
                 accept('warning', 'State name should start with a lower case letter.', { node: state, property: 'name' });
             }
         }
-	}
+    }
 
 }

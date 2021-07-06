@@ -33,6 +33,6 @@ export class <%= LanguageName %>Validator {
                 accept('warning', 'Person name should start with a capital.', { node: person, property: 'name' });
             }
         }
-	}
+    }
 
 }

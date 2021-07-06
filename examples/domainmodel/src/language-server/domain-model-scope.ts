@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
- import { AstNodeDescription, DefaultScopeComputation, LangiumDocument, LangiumServices, PrecomputedScopes } from 'langium';
+import { AstNodeDescription, DefaultScopeComputation, LangiumDocument, LangiumServices, PrecomputedScopes } from 'langium';
 import { Domainmodel, isType, PackageDeclaration, isPackageDeclaration } from './generated/ast';
 
 export class DomainModelScopeComputation extends DefaultScopeComputation {
@@ -32,7 +32,7 @@ export class DomainModelScopeComputation extends DefaultScopeComputation {
                     // Add qualified names to the container
                     const qualified = this.createQualifiedDescription(element, description, document);
                     localDescriptions.push(qualified);
-                };
+                }
             }
         }
         scopes.set(container, localDescriptions);
@@ -41,6 +41,7 @@ export class DomainModelScopeComputation extends DefaultScopeComputation {
 
     protected createQualifiedDescription(pack: PackageDeclaration, description: AstNodeDescription, document: LangiumDocument): AstNodeDescription {
         const name = pack.name + '.' + description.name;
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         return this.createDescription(description.node!, name, document);
     }
 
