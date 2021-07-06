@@ -138,10 +138,24 @@ class CstNodeContainer extends Array<CstNode> {
     }
 
     push(...items: CstNode[]): number {
+        this.addParents(items);
+        return super.push(...items);
+    }
+
+    unshift(...items: CstNode[]): number {
+        this.addParents(items);
+        return super.unshift(...items);
+    }
+
+    splice(start: number, count: number, ...items: CstNode[]): CstNode[] {
+        this.addParents(items);
+        return super.splice(start, count, ...items);
+    }
+
+    private addParents(items: CstNode[]): void {
         for (const item of items) {
             (<AbstractCstNode>item).parent = this.parent;
         }
-        return super.push(...items);
     }
 }
 

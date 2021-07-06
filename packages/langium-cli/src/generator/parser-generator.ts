@@ -297,7 +297,12 @@ function buildTerminalToken(grammar: langium.Grammar, terminal: langium.Terminal
         terminal.regex);
 
     if (grammar.hiddenTokens && grammar.hiddenTokens.map(e => e.ref).includes(terminal)) {
-        terminalNode.append(', group: Lexer.SKIPPED');
+        const regex = terminal.regex.substring(1, terminal.regex.length - 1);
+        if (new RegExp(regex).test(' ')) { // Only skip tokens that are able to accept whitespace
+            terminalNode.append(', group: Lexer.SKIPPED');
+        } else {
+            terminalNode.append(", group: 'hidden'");
+        }
     }
 
     terminalNode.append(' });');
