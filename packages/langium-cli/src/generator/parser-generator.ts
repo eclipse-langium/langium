@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import * as langium from 'langium';
-import { getContainerOfType, getTypeName, NLEmpty, ParserRule, partialRegex, stream } from 'langium';
+import { getContainerOfType, getTypeName, NLEmpty, ParserRule, partialMatches, stream } from 'langium';
 import { CompositeGeneratorNode, GeneratorNode, NL, processGeneratorNode, replaceTokens } from 'langium';
 import { collectAst } from './type-collector';
 import { Cardinality, findAllFeatures, isDataTypeRule, isOptional } from 'langium';
@@ -329,9 +329,7 @@ function escapeRegExp(text: string): string {
 
 function findLongerAlt(keyword: string, terminals: langium.TerminalRule[]): string | undefined {
     for (const terminal of terminals) {
-        const regex = partialRegex(new RegExp('^' + terminal.regex));
-        const match = keyword.match(regex);
-        if (match && match[0].length > 0) {
+        if (partialMatches('^' + terminal.regex, keyword)) {
             return terminal.name;
         }
     }

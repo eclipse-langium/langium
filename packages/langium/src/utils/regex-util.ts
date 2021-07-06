@@ -1,4 +1,31 @@
-export function partialRegex(regex: RegExp): RegExp {
+/******************************************************************************
+ * Copyright 2021 TypeFox GmbH
+ * This program and the accompanying materials are made available under the
+ * terms of the MIT License, which is available in the project root.
+ ******************************************************************************/
+
+/**
+ * Determines whether the given input has a partial match with the specified regex.
+ * @param regex The regex to partially match against
+ * @param input The input string
+ * @returns Whether any match exists.
+ */
+export function partialMatches(regex: RegExp | string, input: string): boolean {
+    const partial = partialRegex(regex);
+    const match = input.match(partial);
+    return !!match && match[0].length > 0;
+}
+
+/**
+ * Builds a partial regex from the input regex. A partial regex is able to match incomplete input strings. E.g.
+ * a partial regex constructed from `/ab/` is able to match the string `a` without needing a following `b` character. However it won't match `b` alone.
+ * @param regex The input regex to be converted.
+ * @returns A partial regex constructed from the input regex.
+ */
+export function partialRegex(regex: RegExp | string): RegExp {
+    if (typeof regex === 'string') {
+        regex = new RegExp(regex);
+    }
     const re = regex, source = regex.source;
     let i = 0;
 
