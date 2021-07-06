@@ -11,21 +11,17 @@ import { AbstractElement, Domainmodel, Entity, Feature, isDomainmodel, isEntity,
 
 export class DomainModelGenerator {
     private domainmodel: Domainmodel;
-    private path: string = 'dmodel';
+    private destination: string;
+    private path: string;
 
-    constructor(grammar: Grammar, dest: string) {
+    constructor(grammar: Grammar, fileName: string, destination: string = '.') {
         if (!isDomainmodel(grammar)) {
             console.error('Please, apply this generator to Domainmodel file');
             process.exit(1);
         }
         this.domainmodel = grammar;
-
-        if (dest === '') return;
-        if (dest === '.' || dest === '..' || dest === '~') {
-            this.path = `${dest}/${this.path}`;
-        } else {
-            this.path = dest;
-        }
+        this.destination = destination;
+        this.path = fileName.replace(/\..*$/, '').replaceAll(/[\.-]/g, '');
     }
 
     public generate(): void {
@@ -33,11 +29,12 @@ export class DomainModelGenerator {
     }
 
     private generateAbstractElements(elements: (AbstractElement | Type)[], path: string): void {
-        if (!fs.existsSync(path)) {
-            fs.mkdirSync(path, { recursive: true });
+        const fullPath = `${this.destination}/${path}`;
+        if (!fs.existsSync(fullPath)) {
+            fs.mkdirSync(fullPath, { recursive: true });
         }
-        const packagePath = path.replaceAll('\/', '.');
 
+        const packagePath = path.replaceAll('\/', '.').replace(/^\.+/, '');
         for (const elem of elements) {
             if (isPackageDeclaration(elem)) {
                 this.generateAbstractElements(elem.elements, `${path}/${elem.name.replaceAll('\.', '/')}`);
@@ -45,7 +42,7 @@ export class DomainModelGenerator {
                 const fileNode = new CompositeGeneratorNode();
                 fileNode.append(`package ${packagePath};`, NL, NL);
                 this.generateEntity(elem, fileNode);
-                fs.writeFileSync(`${path}/${elem.name}.java`, processGeneratorNode(fileNode));
+                fs.writeFileSync(`${fullPath}/${elem.name}.java`, processGeneratorNode(fileNode));
             }
         }
     }

@@ -1,4 +1,4 @@
-package example.generated.qualifiednames;
+package example.qualifiednames;
 
 class E1 {
     private String name;

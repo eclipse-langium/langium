@@ -1,4 +1,4 @@
-package example.generated.blog;
+package example.blog;
 
 class Post extends HasAuthor {
     private String title;

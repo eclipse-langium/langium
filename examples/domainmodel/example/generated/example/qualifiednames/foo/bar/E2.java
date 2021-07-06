@@ -1,4 +1,4 @@
-package example.generated.qualifiednames.foo.bar;
+package example.qualifiednames.foo.bar;
 
 class E2 extends E1 {
     private E2 next;

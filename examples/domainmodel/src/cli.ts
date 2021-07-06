@@ -22,8 +22,7 @@ program
     .description('generate Java classes from .dmodel file')
     .action((fileName: string, opts: GenerateOptions) => {
         const grammar = extractGrammar(fileName, './package.json', createDomainModelServices());
-        const destination = opts.destination ? opts.destination : '.';
-        new DomainModelGenerator(grammar, destination).generate();
+        new DomainModelGenerator(grammar, fileName, opts.destination).generate();
     });
 
 program.parse(process.argv);

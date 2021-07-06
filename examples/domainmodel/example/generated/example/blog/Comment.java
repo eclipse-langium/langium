@@ -1,4 +1,4 @@
-package example.generated.blog;
+package example.blog;
 
 class Comment extends HasAuthor {
     private String content;
