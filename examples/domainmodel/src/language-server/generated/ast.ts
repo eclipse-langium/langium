@@ -10,7 +10,7 @@ import { AstNode, AstReflection, Reference, isAstNode } from 'langium';
 export interface AbstractElement extends AstNode {
     readonly $container: Domainmodel | AbstractElement;
     elements: Array<AbstractElement>
-    name: string
+    name: QualifiedName
 }
 
 export const AbstractElement = 'AbstractElement';
