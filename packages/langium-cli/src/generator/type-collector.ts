@@ -6,7 +6,7 @@
 
 import _ from 'lodash';
 import * as langium from 'langium';
-import { getRuleType, getTypeName, isDataTypeRule } from 'langium';
+import { getRuleType, getTypeName, isDataTypeRule, isParserRule } from 'langium';
 import { CompositeGeneratorNode, IndentNode, NL } from 'langium';
 import { processGeneratorNode } from 'langium';
 import { Cardinality, isOptional } from 'langium';
@@ -245,7 +245,11 @@ function findTypes(terminal: langium.AbstractElement, types: TypeCollection): vo
     } else if (langium.isKeyword(terminal)) {
         types.types.push(`'${terminal.value}'`);
     } else if (langium.isRuleCall(terminal)) {
-        types.types.push(getRuleType(terminal.rule.ref));
+        if (isParserRule(terminal.rule.ref) && isDataTypeRule(terminal.rule.ref)) {
+            types.types.push(terminal.rule.ref.name);
+        } else {
+            types.types.push(getRuleType(terminal.rule.ref));
+        }
     } else if (langium.isCrossReference(terminal)) {
         types.types.push(getRuleType(terminal.type.ref));
         types.reference = true;
