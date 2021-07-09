@@ -20,9 +20,9 @@ export interface LangiumConfig {
     /** Relative path to the directory of the config */
     [RelativePath]: string
     /** The identifier of your language as used in vscode */
-    languageId?: string
+    languageId: string
     /** Path to the grammar file */
-    grammar?: string
+    grammar: string
     /** File extensions with leading `.` */
     fileExtensions?: string[]
     /** Main output directory for TypeScript code */
