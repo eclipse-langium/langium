@@ -18,19 +18,25 @@ export interface IndexManager {
     initializeWorspace(folders: WorkspaceFolder[] | null): void;
     update(document: LangiumDocument): void;
     /* Use stream? */
-    allElements(): Map<string, AstNodeDescription[]>;
+    allElements(): AstNodeDescription[];
 }
 
+// don't know how to trac this.simpleIndex inside DefaultIndexManager
 export class DefaultIndexManager implements IndexManager {
     protected readonly services: LangiumServices
-    readonly simpleIndex: Map<string, AstNodeDescription[]> = new Map<string, AstNodeDescription[]>();
+
+    simpleIndex: Map<string, AstNodeDescription[]> = new Map<string, AstNodeDescription[]>();
 
     constructor(services: LangiumServices) {
         this.services = services;
     }
 
-    allElements(): Map<string, AstNodeDescription[]> {
-        return this.simpleIndex;
+    allElements(): AstNodeDescription[] {
+        const allDescriptions: AstNodeDescription[] = [];
+        for (const astNodeDesc of this.simpleIndex.values()) {
+            allDescriptions.push(...astNodeDesc);
+        }
+        return allDescriptions;
     }
 
     initializeRoot(rootUri: string): void {
@@ -43,10 +49,8 @@ export class DefaultIndexManager implements IndexManager {
     }
 
     initializeWorspace(folders: WorkspaceFolder[] | null): void {
-        delay(5000).then(() => {
-            folders?.forEach((folder) => {
-                this.traverseFolder(fileURLToPath(folder.uri), 'langium');
-            });
+        folders?.forEach((folder) => {
+            this.traverseFolder(fileURLToPath(folder.uri), 'langium');
         });
     }
 

@@ -10,6 +10,7 @@ import { EMPTY_STREAM, Stream, stream } from '../utils/stream';
 import { NameProvider } from './naming';
 import { LangiumServices } from '../services';
 import { LangiumDocument, PrecomputedScopes } from '../documents/document';
+import { IndexManager } from '../index/workspace-index-manager';
 
 export interface AstNodeDescription {
     node?: AstNode
@@ -67,9 +68,11 @@ export interface ScopeProvider {
 
 export class DefaultScopeProvider implements ScopeProvider {
     protected readonly reflection: AstReflection;
+    protected readonly globalScope: IndexManager;
 
     constructor(services: LangiumServices) {
         this.reflection = services.AstReflection;
+        this.globalScope = services.index.IndexManager;
     }
 
     getScope(node: AstNode, referenceId: string): Scope {
@@ -90,12 +93,16 @@ export class DefaultScopeProvider implements ScopeProvider {
             currentNode = currentNode.$container;
         } while (currentNode);
 
-        // TODO use the global scope (index) as outermost scope
-        let result: Scope = EMPTY_SCOPE;
+        let result: Scope = this.getGlobalScope();
         for (let i = scopes.length - 1; i >= 0; i--) {
             result = new SimpleScope(scopes[i], result);
         }
         return result;
+    }
+
+    // TODO use the global scope (index) as outermost scope
+    protected getGlobalScope(): Scope {
+        return new SimpleScope(stream(this.globalScope.allElements()));
     }
 }
 

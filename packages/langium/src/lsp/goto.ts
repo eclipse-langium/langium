@@ -10,7 +10,7 @@ import { NameProvider } from '../references/naming';
 import { References } from '../references/references';
 import { LangiumServices } from '../services';
 import { CstNode } from '../syntax-tree';
-import { findLeafNodeAtOffset } from '../utils/ast-util';
+import { findLeafNodeAtOffset, getDocument } from '../utils/ast-util';
 import { toRange } from '../utils/cst-util';
 
 export interface GoToResolver {
@@ -29,22 +29,24 @@ export class DefaultGoToResolverProvider implements GoToResolver {
 
     goToDefinition(document: LangiumDocument, params: TextDocumentPositionParams): LocationLink[] {
         const rootNode = document.parseResult?.value;
-        const targetCstNodes: Array<{ source: CstNode, target: CstNode }> = [];
+        const targetCstNodes: Array<{ source: CstNode, target: CstNode, targetDocument: LangiumDocument }> = [];
         if (rootNode && rootNode.$cstNode) {
             const cst = rootNode.$cstNode;
             const sourceCstNode = findLeafNodeAtOffset(cst, document.offsetAt(params.position));
             if (sourceCstNode) {
                 const targetNode = this.references.findDeclaration(sourceCstNode);
-                if (targetNode) {
-                    targetCstNodes.push({ source: sourceCstNode, target: targetNode });
+                if (targetNode?.element) {
+                    const targetDoc = getDocument(targetNode?.element);
+                    if (targetNode && targetDoc) {
+                        targetCstNodes.push({ source: sourceCstNode, target: targetNode, targetDocument: targetDoc });
+                    }
                 }
             }
         }
-        // TODO handle different documents URI -> LangiumDocument adjust positioning below
         return targetCstNodes.map(link => LocationLink.create(
-            document.uri,
-            toRange(this.findActualNodeFor(link.target) ?? link.target, document),
-            toRange(link.target, document),
+            link.targetDocument.uri,
+            toRange(this.findActualNodeFor(link.target) ?? link.target, link.targetDocument),
+            toRange(link.target, link.targetDocument),
             toRange(link.source, document)
         ));
     }
