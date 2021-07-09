@@ -7,7 +7,6 @@
 import { CompletionItem, CompletionItemKind, CompletionList } from 'vscode-languageserver';
 import { TextDocument, TextEdit } from 'vscode-languageserver-textdocument';
 import * as ast from '../../grammar/generated/ast';
-import { GrammarAccess } from '../../grammar/grammar-access';
 import { getTypeNameAtElement } from '../../grammar/grammar-util';
 import { isNamed } from '../../references/naming';
 import { AstNodeDescription, ScopeProvider } from '../../references/scope';
@@ -29,12 +28,12 @@ export class DefaultCompletionProvider {
 
     protected readonly scopeProvider: ScopeProvider;
     protected readonly ruleInterpreter: RuleInterpreter;
-    protected readonly grammarAccess: GrammarAccess;
+    protected readonly grammar: ast.Grammar;
 
     constructor(services: LangiumServices) {
         this.scopeProvider = services.references.ScopeProvider;
         this.ruleInterpreter = services.lsp.completion.RuleInterpreter;
-        this.grammarAccess = services.GrammarAccess;
+        this.grammar = services.Grammar;
     }
 
     getCompletion(root: AstNode, offset: number): CompletionList {
@@ -78,7 +77,7 @@ export class DefaultCompletionProvider {
             } else {
                 // The entry rule is the first parser rule
                 // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                const parserRule = this.grammarAccess.grammar.rules.find(e => ast.isParserRule(e))!;
+                const parserRule = this.grammar.rules.find(e => ast.isParserRule(e))!;
                 this.completionForRule(undefined, parserRule, acceptor);
             }
         }

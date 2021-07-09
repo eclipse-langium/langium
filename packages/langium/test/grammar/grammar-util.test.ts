@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { getEntryRule, LangiumGrammarGrammarAccess, replaceTokens } from '../../lib';
+import { createLangiumGrammarServices, getEntryRule, replaceTokens } from '../../lib';
 
 describe('Token replacement', () => {
 
@@ -33,6 +33,6 @@ describe('Token replacement', () => {
 });
 
 test('Langium grammar entry rule', () => {
-    const grammar = new LangiumGrammarGrammarAccess().grammar;
+    const grammar = createLangiumGrammarServices().Grammar;
     expect(getEntryRule(grammar)?.name).toBe('Grammar');
 });

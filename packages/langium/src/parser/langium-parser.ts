@@ -4,365 +4,213 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { EmbeddedActionsParser, ILexingError, IOrAlt, IRecognitionException, IToken, Lexer, TokenType } from 'chevrotain';
-import { AbstractElement, Action, isAssignment, isCrossReference } from '../grammar/generated/ast';
-import { LangiumDocument } from '../documents/document';
-import { AstNode, CompositeCstNode, CstNode, LeafCstNode, Reference } from '../syntax-tree';
-import { isArrayOperator } from '../grammar/grammar-util';
-import { CompositeCstNodeImpl, CstNodeBuilder, LeafCstNodeImpl } from './cst-node-builder';
-import { GrammarAccess } from '../grammar/grammar-access';
-import { Linker } from '../references/linker';
+import { TokenType } from 'chevrotain';
+import { AbstractElement, Action, Alternatives, CrossReference, Grammar, Group, isAction, isAlternatives, isAssignment, isCrossReference, isGroup, isKeyword, isParserRule, isRuleCall, isTerminalRule, isUnorderedGroup, Keyword, ParserRule, RuleCall, UnorderedGroup } from '../grammar/generated/ast';
+import { Cardinality, getTypeName, isArrayOperator, isDataTypeRule, replaceTokens } from '../grammar/grammar-util';
 import { LangiumServices } from '../services';
-import { getContainerOfType } from '../utils/ast-util';
-import { ValueConverter } from './value-converter';
+import { getContainerOfType, streamAllContents } from '../utils/ast-util';
+import { stream } from '../utils/stream';
+import { DatatypeSymbol, LangiumBaseParser } from './langium-base-parser';
 
-export type ParseResult<T = AstNode> = {
-    value: T,
-    parserErrors: IRecognitionException[],
-    lexerErrors: ILexingError[]
+type RuleContext = {
+    option: number,
+    consume: number,
+    subrule: number,
+    many: number,
+    or: number
 }
 
-export const DatatypeSymbol = Symbol('Datatype');
+type Method = () => void;
 
-type RuleResult = () => any;
+export class LangiumParser extends LangiumBaseParser {
 
-export class LangiumParser {
-    readonly grammarAccess: GrammarAccess;
+    private rules: Map<string, Method> = new Map();
+    private tokens: Map<string, TokenType> = new Map();
 
-    private readonly linker: Linker;
-    private readonly converter: ValueConverter;
-    private readonly lexer: Lexer;
-    private readonly nodeBuilder = new CstNodeBuilder();
-    private readonly wrapper: ChevrotainWrapper;
-    private stack: any[] = [];
-    private mainRule!: RuleResult;
-
-    private get current(): any {
-        return this.stack[this.stack.length - 1];
+    constructor(services: LangiumServices) {
+        super(services);
+        services.parser.Tokens.forEach(e => {
+            this.tokens.set(e.name, e);
+        });
+        this.buildInternalParser(services.Grammar);
     }
 
-    constructor(tokens: TokenType[], services: LangiumServices) {
-        this.wrapper = new ChevrotainWrapper(tokens);
-        this.grammarAccess = services.GrammarAccess;
-        this.linker = services.references.Linker;
-        this.converter = services.parser.ValueConverter;
-        this.lexer = new Lexer(tokens);
+    protected getRule(name: string): Method {
+        const rule = this.rules.get(name);
+        if (!rule) throw new Error();
+        return rule;
     }
 
-    MAIN_RULE(
-        name: string,
-        type: string | symbol,
-        implementation: () => unknown
-    ): () => unknown {
-        return this.mainRule = this.DEFINE_RULE(name, type, implementation);
+    protected getToken(name: string): TokenType {
+        const token = this.tokens.get(name);
+        if (!token) throw new Error();
+        return token;
     }
 
-    DEFINE_RULE(
-        name: string,
-        type: string | symbol | undefined,
-        implementation: () => unknown
-    ): () => unknown {
-        return this.wrapper.DEFINE_RULE(name, this.startImplementation(type, implementation).bind(this));
-    }
-
-    parse(input: string | LangiumDocument): ParseResult {
-        this.wrapper.selfAnalysis();
-        const text = typeof input === 'string' ? input : input.getText();
-        this.nodeBuilder.buildRootNode(text);
-        const lexerResult = this.lexer.tokenize(text);
-        this.wrapper.input = lexerResult.tokens;
-        const result = this.mainRule.call(this.wrapper);
-        this.addHiddenTokens(result.$cstNode, lexerResult.groups.hidden);
-        if (typeof input !== 'string') {
-            result.$document = input;
-        }
-        return {
-            value: result,
-            lexerErrors: lexerResult.errors,
-            parserErrors: this.wrapper.errors
-        };
-    }
-
-    private addHiddenTokens(node: CompositeCstNode, tokens: IToken[]): void {
-        for (const token of tokens) {
-            this.addHiddenToken(node, new LeafCstNodeImpl(token.startOffset, token.image.length, token.tokenType, true));
+    protected buildInternalParser(grammar: Grammar): void {
+        let first = true;
+        for (const rule of stream(grammar.rules).filterType(isParserRule)) {
+            const ctx: RuleContext = {
+                consume: 1,
+                option: 1,
+                subrule: 1,
+                many: 1,
+                or: 1
+            };
+            this.buildRule(ctx, rule, first);
+            first = false;
         }
     }
 
-    private addHiddenToken(node: CompositeCstNode, token: LeafCstNode): void {
-        if (node.offset >= token.offset + token.length) {
-            node.children.unshift(token);
-        } else if (node.offset + node.length <= token.offset) {
-            node.children.push(token);
-        } else {
-            const tokenEnd = token.offset + token.length;
-            for (let i = 0; i < node.children.length; i++) {
-                const child = node.children[i];
-                const childEnd = child.offset + child.length;
-                if (child instanceof CompositeCstNodeImpl && token.offset > child.offset && tokenEnd < childEnd) {
-                    this.addHiddenToken(child, token);
-                    return;
-                } else if (tokenEnd <= child.offset) {
-                    node.children.splice(i, 0, token);
-                    return;
-                }
+    protected buildRule(ctx: RuleContext, rule: ParserRule, first: boolean): void {
+        const method = (first ? this.MAIN_RULE : this.DEFINE_RULE).bind(this);
+        let type: string | symbol | undefined;
+        if (!rule.fragment) {
+            if (isDataTypeRule(rule)) {
+                type = DatatypeSymbol;
+            } else {
+                type = getTypeName(rule);
             }
         }
+
+        this.rules.set(rule.name, method(rule.name, type, this.buildRuleContent(ctx, rule)));
     }
 
-    private startImplementation($type: string | symbol | undefined, implementation: () => unknown): () => unknown {
+    protected buildRuleContent(ctx: RuleContext, rule: ParserRule): () => unknown {
+        const method = this.buildElement(ctx, rule.alternatives);
+        const arrays: string[] = [];
+        streamAllContents(rule.alternatives).forEach(e => {
+            const item = e.node;
+            if (isAssignment(item) && isArrayOperator(item.operator)) {
+                arrays.push(item.feature);
+            }
+        });
         return () => {
-            if (!this.wrapper.IS_RECORDING) {
-                this.stack.push({ $type });
-            }
-            let result: unknown;
-            try {
-                result = implementation();
-            } catch (err) {
-                result = undefined;
-            }
-            if (!this.wrapper.IS_RECORDING && result === undefined) {
-                result = this.construct();
-            }
-            return result;
+            this.initializeElement(arrays);
+            method();
+            return this.construct();
         };
     }
 
-    or(idx: number, choices: Array<() => void>): void {
-        this.wrapper.wrapOr(idx, choices);
-    }
-
-    option(idx: number, callback: () => void): void {
-        this.wrapper.wrapOption(idx, callback);
-    }
-
-    many(idx: number, callback: () => void): void {
-        this.wrapper.wrapMany(idx, callback);
-    }
-
-    atLeastOne(idx: number, callback: () => void): void {
-        this.wrapper.wrapAtLeastOne(idx, callback);
-    }
-
-    consume(idx: number, tokenType: TokenType, feature: AbstractElement): void {
-        const token = this.wrapper.wrapConsume(idx, tokenType);
-        if (!this.wrapper.IS_RECORDING) {
-            const leafNode = this.nodeBuilder.buildLeafNode(token, feature);
-            const assignment = getContainerOfType(feature, isAssignment);
-            if (assignment) {
-                let crossRefId: string | undefined;
-                if (isCrossReference(assignment.terminal)) {
-                    crossRefId = `${this.current.$type}:${assignment.feature}`;
-                }
-                this.assign(assignment, token.image, leafNode, crossRefId);
-            }
-        }
-    }
-
-    unassignedSubrule(idx: number, rule: RuleResult, feature: AbstractElement): void {
-        const result = this.subrule(idx, rule, feature);
-        if (!this.wrapper.IS_RECORDING) {
-            const resultKind = result.$type;
-            const object = this.assignWithoutOverride(result, this.current);
-            if (resultKind) {
-                object.$type = resultKind;
-            }
-            const newItem = object;
-            this.stack.pop();
-            this.stack.push(newItem);
-        }
-    }
-
-    subrule(idx: number, rule: RuleResult, feature: AbstractElement): any {
-        let cstNode: CompositeCstNode | undefined;
-        if (!this.wrapper.IS_RECORDING) {
-            cstNode = this.nodeBuilder.buildCompositeNode(feature);
-        }
-        const subruleResult = this.wrapper.wrapSubrule(idx, rule);
-        if (!this.wrapper.IS_RECORDING) {
-            const assignment = getContainerOfType(feature, isAssignment);
-            if (assignment && cstNode) {
-                let crossRefId: string | undefined;
-                if (isCrossReference(assignment.terminal)) {
-                    crossRefId = `${this.current.$type}:${assignment.feature}`;
-                }
-                this.assign(assignment, subruleResult, cstNode, crossRefId);
-            }
-        }
-        return subruleResult;
-    }
-
-    action($type: string, action: Action): void {
-        if (!this.wrapper.IS_RECORDING) {
-            let last = this.current;
-            // This branch is used for left recursive grammar rules.
-            // Those don't call `construct` before another action.
-            // Therefore, we need to call it here.
-            if (!last.$cstNode && action.feature && action.operator) {
-                last = this.construct(false);
-                const feature = last.$cstNode.feature;
-                this.nodeBuilder.buildCompositeNode(feature);
-            }
-            const newItem = { $type };
-            this.stack.pop();
-            this.stack.push(newItem);
-            if (action.feature && action.operator) {
-                this.assign(action, last, last.$cstNode);
-            }
-        }
-    }
-
-    /**
-     * Initializes array fields of the current object. Array fields are not allowed to be undefined.
-     * Therefore, all array fields are initialized with an empty array.
-     * @param grammarAccessElement The grammar access element that belongs to the current rule
-     */
-    initializeElement(grammarAccessElement: { [key: string]: AbstractElement }): void {
-        if (!this.wrapper.IS_RECORDING) {
-            const item = this.current;
-            for (const element of Object.values(grammarAccessElement)) {
-                if (isAssignment(element)) {
-                    if (isArrayOperator(element.operator)) {
-                        item[element.feature] = [];
-                    }
-                }
-            }
-        }
-    }
-
-    construct(pop = true): unknown {
-        if (this.wrapper.IS_RECORDING) {
-            return undefined;
-        }
-        const obj = this.current;
-        for (const [name, value] of Object.entries(obj)) {
-            if (!name.startsWith('$')) {
-                if (Array.isArray(value)) {
-                    for (const item of value) {
-                        if (item !== null && typeof item === 'object') {
-                            item.$container = obj;
-                        }
-                    }
-                } else if (obj !== null && typeof (value) === 'object') {
-                    (<any>value).$container = obj;
-                }
-            }
-        }
-        this.nodeBuilder.construct(obj);
-        if (pop) {
-            this.stack.pop();
-        }
-        if (obj.$type === DatatypeSymbol) {
-            const node = obj.$cstNode;
-            return node.text;
-        }
-        return obj;
-    }
-
-    private assign(assignment: { operator: string, feature: string }, value: unknown, cstNode: CstNode, crossRefId?: string): void {
-        const obj = this.current;
-        const feature = assignment.feature.replace(/\^/g, '');
-        let item: unknown;
-        if (crossRefId && typeof value === 'string') {
-            item = this.buildReference(obj, cstNode, value, crossRefId);
-        } else if (cstNode && typeof value === 'string') {
-            item = this.converter.convert(value, cstNode);
+    protected buildElement(ctx: RuleContext, element: AbstractElement): Method {
+        let method: Method;
+        if (isKeyword(element)) {
+            method = this.buildKeyword(ctx, element);
+        } else if (isAction(element)) {
+            method = this.buildAction(ctx, element);
+        } else if (isAssignment(element)) {
+            method = this.buildElement(ctx, element.terminal);
+        } else if (isCrossReference(element)) {
+            method = this.buildCrossReference(ctx, element);
+        } else if (isRuleCall(element)) {
+            method = this.buildRuleCall(ctx, element);
+        } else if (isAlternatives(element)) {
+            method = this.buildAlternatives(ctx, element);
+        } else if (isUnorderedGroup(element)) {
+            method = this.buildUnorderedGroup(ctx, element);
+        } else if (isGroup(element)) {
+            method = this.buildGroup(ctx, element);
         } else {
-            item = value;
+            throw new Error();
         }
-        switch (assignment.operator) {
-            case '=': {
-                obj[feature] = item;
-                break;
+        return this.wrap(ctx, method, element.cardinality);
+    }
+
+    protected buildRuleCall(ctx: RuleContext, ruleCall: RuleCall): Method {
+        const rule = ruleCall.rule.ref;
+        if (isParserRule(rule)) {
+            const idx = ctx.subrule++;
+            if (getContainerOfType(ruleCall, isAssignment)) {
+                return () => this.subrule(idx, this.getRule(rule.name), ruleCall);
+            } else {
+                return () => this.unassignedSubrule(idx, this.getRule(rule.name), ruleCall);
             }
-            case '?=': {
-                obj[feature] = true;
-                break;
-            }
-            case '+=': {
-                if (!Array.isArray(obj[feature])) {
-                    obj[feature] = [];
-                }
-                obj[feature].push(item);
-            }
-        }
-    }
-
-    private buildReference(node: AstNode, refNode: CstNode, text: string, crossRefId: string): Reference {
-        const link = this.linker.link.bind(this.linker);
-        const reference: Reference & { _ref?: AstNode } = {
-            $refNode: refNode,
-            $refName: text,
-            get ref() {
-                if (reference._ref === undefined) {
-                    // TODO handle linking errors
-                    reference._ref = link(node, text, crossRefId);
-                }
-                return reference._ref;
-            }
-        };
-        return reference;
-    }
-
-    private assignWithoutOverride(target: any, source: any): any {
-        for (const [name, value] of Object.entries(source)) {
-            if (target[name] === undefined) {
-                target[name] = value;
-            }
-        }
-        return target;
-    }
-}
-
-/**
- * This class wraps the embedded actions parser of chevrotain and exposes protected methods.
- * This way, we can build the `LangiumParser` as a composition.
- */
-class ChevrotainWrapper extends EmbeddedActionsParser {
-
-    private analysed = false;
-
-    constructor(tokens: TokenType[]) {
-        super(tokens, { recoveryEnabled: true, nodeLocationTracking: 'onlyOffset' });
-    }
-
-    get IS_RECORDING(): boolean {
-        return this.RECORDING_PHASE;
-    }
-
-    DEFINE_RULE(name: string, impl: () => unknown): () => unknown {
-        return this.RULE(name, impl);
-    }
-
-    selfAnalysis(): void {
-        if (!this.analysed) {
-            this.performSelfAnalysis();
-            this.analysed = true;
+        } else if (isTerminalRule(rule)) {
+            const idx = ctx.consume++;
+            const method = this.getToken(rule.name);
+            return () => this.consume(idx, method, ruleCall);
+        } else {
+            throw new Error();
         }
     }
 
-    wrapConsume(idx: number, tokenType: TokenType): IToken {
-        return this.consume(idx, tokenType);
+    protected buildAlternatives(ctx: RuleContext, alternatives: Alternatives): Method {
+        if (alternatives.elements.length === 1) {
+            return this.buildElement(ctx, alternatives.elements[0]);
+        } else {
+            const methods: Method[] = [];
+
+            for (const element of alternatives.elements) {
+                methods.push(this.buildElement(ctx, element));
+            }
+
+            const idx = ctx.or++;
+            return () => this.or(idx, methods);
+        }
     }
 
-    wrapSubrule(idx: number, rule: RuleResult): unknown {
-        return this.subrule(idx, rule);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    protected buildUnorderedGroup(ctx: RuleContext, group: UnorderedGroup): Method {
+        throw new Error('Unordered groups are not supported (yet)');
     }
 
-    wrapOr(idx: number, choices: Array<() => void>): void {
-        this.or(idx, choices.map(e => <IOrAlt<any>>{ ALT: e }));
+    protected buildGroup(ctx: RuleContext, group: Group): Method {
+        const methods: Method[] = [];
+
+        for (const element of group.elements) {
+            methods.push(this.buildElement(ctx, element));
+        }
+
+        return () => methods.forEach(e => e());
     }
 
-    wrapOption(idx: number, callback: () => void): void {
-        this.option(idx, callback);
+    protected buildAction(ctx: RuleContext, action: Action): Method {
+        return () => this.action(action.type, action);
     }
 
-    wrapMany(idx: number, callback: () => void): void {
-        this.many(idx, callback);
+    protected buildCrossReference(ctx: RuleContext, crossRef: CrossReference): Method {
+        const terminal = crossRef.terminal;
+        if (!terminal) {
+            const idx = ctx.consume++;
+            const idToken = this.getToken('ID');
+            return () => this.consume(idx, idToken, crossRef);
+        } else if (isRuleCall(terminal) && isParserRule(terminal.rule.ref)) {
+            const idx = ctx.subrule++;
+            const name = terminal.rule.ref.name;
+            return () => this.subrule(idx, this.getRule(name), crossRef);
+        } else if (isRuleCall(terminal) && isTerminalRule(terminal.rule.ref)) {
+            const idx = ctx.consume++;
+            const terminalRule = this.getToken(terminal.rule.ref.name);
+            return () => this.consume(idx, terminalRule, crossRef);
+        } else {
+            throw new Error();
+        }
     }
 
-    wrapAtLeastOne(idx: number, callback: () => void): void {
-        this.atLeastOne(idx, callback);
+    protected buildKeyword(ctx: RuleContext, keyword: Keyword): Method {
+        const validName = replaceTokens(keyword.value) + 'Keyword';
+        const idx = ctx.consume++;
+        const token = this.tokens.get(validName);
+        if (!token) {
+            throw new Error();
+        }
+        return () => this.consume(idx, token, keyword);
+    }
+
+    protected wrap(ctx: RuleContext, method: Method, cardinality: Cardinality): Method {
+        if (!cardinality) {
+            return method;
+        } else if (cardinality === '*') {
+            const idx = ctx.many++;
+            return () => this.many(idx, method);
+        } else if (cardinality === '+') {
+            const idx = ctx.many++;
+            return () => this.atLeastOne(idx, method);
+        } else if (cardinality === '?') {
+            const idx = ctx.option++;
+            return () => this.option(idx, method);
+        } else {
+            throw new Error();
+        }
     }
 }
