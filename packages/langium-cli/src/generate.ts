@@ -66,11 +66,6 @@ export function generate(config: LangiumConfig): boolean {
     const serializedGrammar = serializeGrammar(services, grammar, config);
     writeWithFail(path.join(output, 'grammar.ts'), serializedGrammar);
 
-    const grammarAccess = generateGrammarAccess(grammar, config);
-    writeWithFail(path.join(output, 'grammar-access.ts'), grammarAccess);
-
-    const parser = generateParser(grammar, config);
-    writeWithFail(path.join(output, 'parser.ts'), parser);
 
     const genModule = generateModule(grammar, config);
     writeWithFail(path.join(output, 'module.ts'), genModule);

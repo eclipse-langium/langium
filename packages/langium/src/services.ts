@@ -4,8 +4,6 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { LangiumParser } from './parser/langium-parser';
-import { GrammarAccess } from './grammar/grammar-access';
 import { AstReflection } from './syntax-tree';
 import { DocumentBuilder } from './documents/document-builder';
 import { Connection, TextDocuments } from 'vscode-languageserver/node';
@@ -24,14 +22,17 @@ import { DocumentHighlighter } from './lsp/document-highlighter';
 import { References } from './references/references';
 import { ValidationRegistry } from './validation/validation-registry';
 import { DocumentValidator } from './validation/document-validator';
+import { Grammar } from './grammar/generated/ast';
+import { TokenType } from 'chevrotain';
+import { LangiumParser } from './parser/langium-parser';
 import { LanguageMetaData } from './grammar/language-meta-data';
 
 export type LangiumGeneratedServices = {
     parser: {
-        LangiumParser: LangiumParser
+        Tokens: TokenType[]
     }
+    Grammar: Grammar
     AstReflection: AstReflection
-    GrammarAccess: GrammarAccess
     LanguageMetaData: LanguageMetaData
 }
 
@@ -50,6 +51,7 @@ export type LangiumLspServices = {
 export type LangiumDefaultServices = {
     parser: {
         ValueConverter: ValueConverter
+        LangiumParser: LangiumParser
     }
     documents: {
         DocumentBuilder: DocumentBuilder

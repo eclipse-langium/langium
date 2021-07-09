@@ -5,8 +5,8 @@
 
 import { LangiumGeneratedServices, LangiumServices, Module } from 'langium';
 import { ArithmeticsAstReflection } from './ast';
-import { ArithmeticsGrammarAccess } from './grammar-access';
-import { Parser } from './parser';
+import { tokens } from './parser';
+import { grammar } from './grammar';
 
 export const languageMetaData = {
     languageId: 'arithmetics',
@@ -15,9 +15,9 @@ export const languageMetaData = {
 
 export const ArithmeticsGeneratedModule: Module<LangiumServices, LangiumGeneratedServices> = {
     parser: {
-        LangiumParser: (injector) => new Parser(injector)
+        Tokens: () => tokens
     },
-    GrammarAccess: () => new ArithmeticsGrammarAccess(),
+    Grammar: () => grammar(),
     AstReflection: () => new ArithmeticsAstReflection(),
     LanguageMetaData: () => languageMetaData
 };

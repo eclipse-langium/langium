@@ -7,7 +7,7 @@
 import { TextDocument, TextDocumentContentChangeEvent } from 'vscode-languageserver-textdocument';
 import { TextDocumentsConfiguration } from 'vscode-languageserver/node';
 import { AstNode } from '../syntax-tree';
-import { ParseResult } from '../parser/langium-parser';
+import { ParseResult } from '../parser/langium-base-parser';
 import { AstNodeDescription } from '../references/scope';
 
 export interface LangiumDocument extends TextDocument {

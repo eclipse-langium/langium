@@ -79,17 +79,17 @@ export function generateParser(grammar: langium.Grammar, config: LangiumConfig):
     }
 
     fileNode.append(
-        'const tokens = [',
+        'export const tokens = [',
         keywordTokens.map(e => e.name).join(', ') + ', ' + tokens.map(e => e.name).join(', '), '];',
-        NL, NL
+        NL
     );
 
-    fileNode.append(buildParser(grammar), NL);
+    // fileNode.append(buildParser(grammar), NL);
 
     return processGeneratorNode(fileNode);
 }
 
-function buildParser(grammar: langium.Grammar): CompositeGeneratorNode {
+export function buildParser(grammar: langium.Grammar): CompositeGeneratorNode {
     const parserNode = new CompositeGeneratorNode();
 
     parserNode.append('export class Parser extends LangiumParser {', NL);

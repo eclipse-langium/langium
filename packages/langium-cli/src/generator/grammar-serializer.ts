@@ -27,8 +27,8 @@ export function serializeGrammar(services: LangiumServices, grammar: Grammar, co
     node.append(NL, NL);
 
     node.append(
-        'const grammar = (): Grammar => loadGrammar(`', json, '`);', NL, NL,
-        'export default grammar;', NL
+        'let loaded: Grammar | undefined;', NL,
+        'export const grammar = (): Grammar => loaded || (loaded = loadGrammar(`', json, '`));', NL
     );
     return processGeneratorNode(node);
 }

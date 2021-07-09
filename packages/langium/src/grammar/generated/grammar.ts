@@ -6,7 +6,8 @@
 import { loadGrammar } from '../grammar-util';
 import { Grammar } from './ast';
 
-const grammar = (): Grammar => loadGrammar(`{
+let loaded: Grammar | undefined;
+export const grammar = (): Grammar => loaded || (loaded = loadGrammar(`{
   "$type": "Grammar",
   "usedGrammars": [],
   "hiddenTokens": [
@@ -2613,6 +2614,4 @@ const grammar = (): Grammar => loadGrammar(`{
   ],
   "name": "LangiumGrammar",
   "definesHiddenTokens": true
-}`);
-
-export default grammar;
+}`));
