@@ -18,6 +18,7 @@ export * from './grammar/generated/parser';
 export * from './grammar/grammar-access';
 export * from './grammar/grammar-util';
 export * from './grammar/langium-grammar-module';
+export * from './grammar/language-meta-data';
 export * from './lsp/completion/completion-provider';
 export * from './lsp/completion/follow-element-computation';
 export * from './lsp/completion/rule-interpreter';
