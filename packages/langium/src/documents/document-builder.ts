@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { Connection } from 'vscode-languageserver/node';
+import { Connection, Diagnostic } from 'vscode-languageserver/node';
 import { DocumentValidator } from '../validation/document-validator';
 import { LangiumParser } from '../parser/langium-parser';
 import { ScopeComputation } from '../references/scope';
@@ -12,7 +12,7 @@ import { LangiumServices } from '../services';
 import { LangiumDocument } from './document';
 
 export interface DocumentBuilder {
-    build(document: LangiumDocument): void
+    build(document: LangiumDocument, diagnostics?: Diagnostic[]): void
 }
 
 export class DefaultDocumentBuilder implements DocumentBuilder {
@@ -28,16 +28,19 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
         this.documentValidator = services.validation.DocumentValidator;
     }
 
-    build(document: LangiumDocument): void {
+    build(document: LangiumDocument, diagnostics?: Diagnostic[]): void {
         const parseResult = this.parser.parse(document);
         document.parseResult = parseResult;
         this.process(document);
-        const diagnostics = this.documentValidator.validateDocument(document);
-        document.diagnostics = diagnostics;
-
-        if (this.connection) {
-            // Send the computed diagnostics to VS Code.
-            this.connection.sendDiagnostics({ uri: document.uri, diagnostics });
+        if (diagnostics || this.connection) {
+            const docDiagnostics = this.documentValidator.validateDocument(document);
+            if (diagnostics) {
+                diagnostics.push(...docDiagnostics);
+            }
+            if (this.connection) {
+                // Send the computed diagnostics to VS Code.
+                this.connection.sendDiagnostics({ uri: document.uri, diagnostics: docDiagnostics });
+            }
         }
     }
 

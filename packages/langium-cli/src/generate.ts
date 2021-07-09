@@ -8,6 +8,7 @@ import fs from 'fs-extra';
 import path from 'path';
 import { LangiumConfig, RelativePath } from './package';
 import { Grammar, createLangiumGrammarServices, LangiumDocumentConfiguration } from 'langium';
+import { Diagnostic } from 'vscode-languageserver-types';
 import { generateGrammarAccess } from './generator/grammar-access-generator';
 import { generateParser } from './generator/parser-generator';
 import { generateAst } from './generator/ast-generator';
@@ -23,22 +24,21 @@ export function generate(config: LangiumConfig): void {
     const services = createLangiumGrammarServices();
     const relPath = config[RelativePath];
 
-    const grammarFile = config.grammar ?? 'src/grammar.langium';
-
     let grammarFileContent: string;
     try {
-        grammarFileContent = fs.readFileSync(path.join(relPath, grammarFile), 'utf-8');
+        grammarFileContent = fs.readFileSync(path.join(relPath, config.grammar), 'utf-8');
     } catch (e) {
-        exit(`Failed to read grammar file at ${path.join(relPath, grammarFile).red.bold}`, e);
+        exit(`Failed to read grammar file at ${path.join(relPath, config.grammar).red.bold}`, e);
     }
-    const document = LangiumDocumentConfiguration.create(`file:${grammarFile}`, 'langium', 0, grammarFileContent);
-    services.documents.DocumentBuilder.build(document);
+    const document = LangiumDocumentConfiguration.create(`file:${config.grammar}`, 'langium', 0, grammarFileContent);
+    const diagnostics: Diagnostic[] = [];
+    services.documents.DocumentBuilder.build(document, diagnostics);
     if (!document.parseResult) {
-        console.error('Failed to parse the grammar file: ' + grammarFile);
+        console.error('Failed to parse the grammar file: ' + config.grammar);
         exit(`Langium generator ${'failed'.red.bold}.`);
-    } else if (document.diagnostics?.length && document.diagnostics.some(e => e.severity === 1)) {
+    } else if (diagnostics?.length && diagnostics.some(e => e.severity === 1)) {
         console.error('Grammar contains validation errors:');
-        document.diagnostics.forEach(e => {
+        diagnostics.forEach(e => {
             const message = `${e.range.start.line}:${e.range.start.character} - ${e.message}`;
             if (e.severity === 1) {
                 console.error(message.red);

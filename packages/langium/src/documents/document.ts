@@ -5,15 +5,14 @@
  ******************************************************************************/
 
 import { TextDocument, TextDocumentContentChangeEvent } from 'vscode-languageserver-textdocument';
-import { Diagnostic, TextDocumentsConfiguration } from 'vscode-languageserver/node';
+import { TextDocumentsConfiguration } from 'vscode-languageserver/node';
 import { AstNode } from '../syntax-tree';
 import { ParseResult } from '../parser/langium-parser';
 import { AstNodeDescription } from '../references/scope';
 
 export interface LangiumDocument extends TextDocument {
     parseResult?: ParseResult<AstNode>
-    precomputedScopes?: PrecomputedScopes,
-    diagnostics?: Diagnostic[]
+    precomputedScopes?: PrecomputedScopes
 }
 
 export type PrecomputedScopes = Map<AstNode, AstNodeDescription[]>
