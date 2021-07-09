@@ -40,6 +40,7 @@ export function startLanguageServer(services: LangiumServices): void {
                 monikerProvider: {}
             }
         };
+
         if (hasWorkspaceFolderCapability) {
             result.capabilities.workspace = {
                 workspaceFolders: {
@@ -47,19 +48,28 @@ export function startLanguageServer(services: LangiumServices): void {
                 }
             };
         }
+
+        if (params.capabilities.workspace?.configuration) {
+            try {
+                // experimental
+                const indexer = services.index.IndexManager;
+                if (params.workspaceFolders)
+                    indexer.initializeWorspace(params.workspaceFolders);
+                else if (params.rootUri)
+                    indexer.initializeRoot(params.rootUri);
+            } catch (e) {
+                console.error(e);
+            }
+        }
         return result;
     });
 
     const documents = services.documents.TextDocuments;
     const documentBuilder = services.documents.DocumentBuilder;
-    const monikerProvider = services.references.MonikerProvider;
     documents.onDidChangeContent(change => {
         documentBuilder.build(change.document);
-        if(change.document.parseResult?.value) {
-            const monikers = monikerProvider.createMonikers(change.document.parseResult?.value);
-            monikers.forEach(m => {
-                console.warn(m);
-            });
+        if (change.document.parseResult?.value) {
+            services.index.IndexManager.update(change.document);
         }
     });
 

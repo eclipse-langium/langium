@@ -1,3 +1,9 @@
+/******************************************************************************
+ * Copyright 2021 TypeFox GmbH
+ * This program and the accompanying materials are made available under the
+ * terms of the MIT License, which is available in the project root.
+ ******************************************************************************/
+
 import { Moniker, MonikerKind, UniquenessLevel } from 'vscode-languageserver';
 import { LangiumServices } from '../services';
 import { AstNode } from '../syntax-tree';
@@ -24,7 +30,7 @@ export class DefaultMonikerProvider implements MonikerProvider {
 
     createMonikers(astNode: AstNode): Stream<LangiumMoniker> {
         const monikers: LangiumMoniker[] = [];
-        const languageScheme = astNode.$document?.languageId??'onknown';
+        const languageScheme = astNode.$document?.languageId??'unknown';
         const refConverter = (refNode: AstNodeReference) => {
             const astNode = refNode.reference.ref;
             // Do not handle unresolved refs or local references

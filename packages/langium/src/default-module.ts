@@ -8,6 +8,7 @@ import { Connection, TextDocuments } from 'vscode-languageserver/node';
 import { Module } from './dependency-injection';
 import { LangiumDocumentConfiguration } from './documents/document';
 import { DefaultDocumentBuilder } from './documents/document-builder';
+import { DefaultIndexManager } from './index/workspace-index-manager';
 import { DefaultCompletionProvider } from './lsp/completion/completion-provider';
 import { RuleInterpreter } from './lsp/completion/rule-interpreter';
 import { DefaultDocumentHighlighter } from './lsp/document-highlighter';
@@ -52,6 +53,9 @@ export function createDefaultModule(context: DefaultModuleContext = {}): Module<
             ReferenceFinder:  (injector) => new DefaultReferenceFinder(injector),
             GoToResolver: (injector) => new DefaultGoToResolverProvider(injector),
             DocumentHighlighter: (injector) => new DefaultDocumentHighlighter(injector)
+        },
+        index: {
+            IndexManager: (injector) => new DefaultIndexManager(injector)
         },
         references: {
             Linker: (injector) => new DefaultLinker(injector),

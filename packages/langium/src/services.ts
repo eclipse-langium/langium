@@ -28,6 +28,7 @@ import { TokenBuilder } from './parser/token-builder';
 import { LanguageMetaData } from './grammar/language-meta-data';
 import { CodeActionProvider} from './lsp/code-action';
 import { MonikerProvider } from './references/moniker';
+import { IndexManager } from './index/workspace-index-manager';
 
 export type LangiumGeneratedServices = {
     Grammar: Grammar
@@ -59,6 +60,9 @@ export type LangiumDefaultServices = {
         TextDocuments: TextDocuments<LangiumDocument>
     }
     lsp: LangiumLspServices
+    index: {
+        IndexManager: IndexManager
+    }
     references: {
         Linker: Linker
         NameProvider: NameProvider
