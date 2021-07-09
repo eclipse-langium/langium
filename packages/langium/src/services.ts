@@ -24,6 +24,7 @@ import { DocumentHighlighter } from './lsp/document-highlighter';
 import { References } from './references/references';
 import { ValidationRegistry } from './validation/validation-registry';
 import { DocumentValidator } from './validation/document-validator';
+import { LanguageMetaData } from './grammar/language-meta-data';
 
 export type LangiumGeneratedServices = {
     parser: {
@@ -31,6 +32,7 @@ export type LangiumGeneratedServices = {
     }
     AstReflection: AstReflection
     GrammarAccess: GrammarAccess
+    LanguageMetaData: LanguageMetaData
 }
 
 export type LangiumLspServices = {

@@ -14,6 +14,7 @@ import { generateModule } from './generator/module-generator';
 import { generateTextMate } from './generator/textmate-generator';
 import path from 'path';
 import { serializeGrammar } from './generator/grammar-serializer';
+import { generateMetaData } from './generator/meta-data-generator';
 
 export type GenerateOptions = {
     file?: string;
@@ -57,6 +58,9 @@ export function generate(opts: GenerateOptions): void {
     console.log('Generating AST...');
     const genAst = generateAst(grammar, pack.langium);
     fs.writeFileSync(`${output}/ast.ts`, genAst);
+
+    const metaData = generateMetaData(grammar, pack.langium);
+    fs.writeFileSync(`${output}/meta-data.ts`, metaData);
 
     console.log('Generating dependency injection module...');
     const genModule = generateModule(grammar, pack.langium);

@@ -29,6 +29,7 @@
     "publish:latest": "npm publish --tag latest"
   },
   "langium": {
+    "languageId": "langium",
     "grammar": "src/grammar/langium-grammar.langium",
     "extensions": [
       "langium"
