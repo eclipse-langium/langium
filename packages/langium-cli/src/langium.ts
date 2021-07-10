@@ -5,11 +5,13 @@
  ******************************************************************************/
 
 import 'colors';
+import fs from 'fs-extra';
 import { Command } from 'commander';
 import { validate } from 'jsonschema';
 import { generate, GenerateOptions } from './generate';
-import { cliVersion, elapsedTime, schema } from './generator/util';
-import { LangiumConfig, loadConfigs } from './package';
+import { cliVersion, elapsedTime, getTime, schema } from './generator/util';
+import { LangiumConfig, loadConfigs, RelativePath } from './package';
+import path from 'path';
 
 const program = new Command();
 program
@@ -17,14 +19,15 @@ program
     .command('generate')
     .description('Generate code for a Langium grammar')
     .option('-f, --file <file>', 'the configuration file or package.json setting up the generator')
+    .option('-w, --watch', 'enables watch mode', false)
     .action((options: GenerateOptions) => {
+        elapsedTime();
         forEachConfig(options, generate);
-        console.log(`Langium generator finished ${'successfully'.green.bold} in: ${elapsedTime()}ms`);
     });
 
 program.parse(process.argv);
 
-function forEachConfig(options: GenerateOptions, callback: (config: LangiumConfig) => void): void {
+function forEachConfig(options: GenerateOptions, callback: (config: LangiumConfig) => boolean): void {
     const configs = loadConfigs(options.file);
     if (!configs.length) {
         console.error('Could not find a langium configuration. Please add a langium-config.json to your project or a langium section to your package.json.'.red);
@@ -35,5 +38,25 @@ function forEachConfig(options: GenerateOptions, callback: (config: LangiumConfi
         console.error('Your langium configuration is invalid.'.red);
         process.exit(1);
     }
-    configs.forEach(callback);
+
+    if (options.watch) {
+        if (configs.every(callback)) {
+            console.log(`${getTime()}Langium generator finished ${'successfully'.green.bold} in: ${elapsedTime()}ms`);
+        }
+        console.log(getTime() + 'Langium generator will continue running in watch mode');
+        configs.forEach(e => {
+            const grammarPath = path.join(e[RelativePath], e.grammar);
+            fs.watchFile(grammarPath, () => {
+                console.log(getTime() + 'File change detected. Starting compilation...');
+                elapsedTime();
+                if (callback(e)) {
+                    console.log(`${getTime()}Langium generator finished ${'successfully'.green.bold} in: ${elapsedTime()}ms`);
+                }
+            });
+        });
+    } else if (configs.some(e => !callback(e))) {
+        process.exit(1);
+    } else {
+        console.log(`${getTime()}Langium generator finished ${'successfully'.green.bold} in: ${elapsedTime()}ms`);
+    }
 }
