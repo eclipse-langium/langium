@@ -120,7 +120,6 @@ export class LangiumParser {
             try {
                 result = implementation();
             } catch (err) {
-                console.log('Parser exception thrown!', err);
                 result = undefined;
             }
             if (!this.wrapper.IS_RECORDING && result === undefined) {

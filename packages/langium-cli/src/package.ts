@@ -6,7 +6,7 @@
 
 import fs from 'fs-extra';
 import path from 'path';
-import { exit } from './generate';
+import { getTime } from './generator/util';
 
 export interface Package {
     name: string,
@@ -43,12 +43,13 @@ export function loadConfigs(file: string | undefined): LangiumConfig[] {
     }
     const filePath = path.normalize(file ?? defaultPath);
     const relativePath = path.dirname(filePath);
-    console.log(`Reading config from ${filePath.white.bold}`);
+    console.log(`${getTime()}Reading config from ${filePath.white.bold}`);
     let obj;
     try {
         obj = fs.readJsonSync(filePath, { encoding: 'utf-8' });
     } catch (e) {
-        exit('Failed to read config file.', e);
+        console.error(getTime() + 'Failed to read config file.', e);
+        process.exit(1);
     }
     if (typeof obj === 'object' && obj && 'langium' in obj) {
         obj = obj.langium;

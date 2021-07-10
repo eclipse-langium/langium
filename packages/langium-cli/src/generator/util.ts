@@ -17,6 +17,15 @@ export function elapsedTime(): string {
     return elapsed.toFixed();
 }
 
+export function getTime(): string {
+    const date = new Date();
+    return `[${`${padZeroes(date.getHours())}:${padZeroes(date.getMinutes())}:${padZeroes(date.getSeconds())}`.gray}] `;
+}
+
+function padZeroes(i: number): string {
+    return i.toString().padStart(2, '0');
+}
+
 function getLangiumCliVersion(): string {
     const ownPackagePath = path.join(__dirname, '..', '..', 'package.json');
     const pack = fs.readJsonSync(ownPackagePath, { encoding: 'utf-8' });
