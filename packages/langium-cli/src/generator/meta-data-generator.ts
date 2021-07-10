@@ -15,6 +15,6 @@ export function generateMetaData(grammar: Grammar, config: LangiumConfig): strin
         classBody.append(`languageId = '${config.languageId}';`, NL);
         classBody.append(`extensions = [${config.extensions && config.extensions.map(e => `'${e}'`).join(', ')}];`, NL);
     });
-    node.append('}');
+    node.append('}', NL);
     return processGeneratorNode(node);
 }
