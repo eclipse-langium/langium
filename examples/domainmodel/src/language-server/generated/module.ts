@@ -5,7 +5,6 @@
 
 import { LangiumGeneratedServices, LangiumServices, Module } from 'langium';
 import { DomainModelAstReflection } from './ast';
-import { tokens } from './parser';
 import { grammar } from './grammar';
 
 export const languageMetaData = {
@@ -14,9 +13,6 @@ export const languageMetaData = {
 };
 
 export const DomainModelGeneratedModule: Module<LangiumServices, LangiumGeneratedServices> = {
-    parser: {
-        Tokens: () => tokens
-    },
     Grammar: () => grammar(),
     AstReflection: () => new DomainModelAstReflection(),
     LanguageMetaData: () => languageMetaData

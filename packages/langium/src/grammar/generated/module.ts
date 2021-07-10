@@ -6,7 +6,6 @@
 import { Module } from '../../dependency-injection';
 import { LangiumGeneratedServices, LangiumServices } from '../../services';
 import { LangiumGrammarAstReflection } from './ast';
-import { tokens } from './parser';
 import { grammar } from './grammar';
 
 export const languageMetaData = {
@@ -15,9 +14,6 @@ export const languageMetaData = {
 };
 
 export const LangiumGrammarGeneratedModule: Module<LangiumServices, LangiumGeneratedServices> = {
-    parser: {
-        Tokens: () => tokens
-    },
     Grammar: () => grammar(),
     AstReflection: () => new LangiumGrammarAstReflection(),
     LanguageMetaData: () => languageMetaData

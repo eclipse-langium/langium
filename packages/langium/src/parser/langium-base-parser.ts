@@ -15,7 +15,7 @@ import { LangiumServices } from '../services';
 import { getContainerOfType } from '../utils/ast-util';
 import { ValueConverter } from './value-converter';
 
-export type ParseResult<T> = {
+export type ParseResult<T = AstNode> = {
     value: T,
     parserErrors: IRecognitionException[],
     lexerErrors: ILexingError[]
@@ -38,11 +38,11 @@ export class LangiumBaseParser {
         return this.stack[this.stack.length - 1];
     }
 
-    constructor(services: LangiumServices) {
-        this.wrapper = new ChevrotainWrapper(services.parser.Tokens);
+    constructor(services: LangiumServices, tokens: TokenType[]) {
+        this.wrapper = new ChevrotainWrapper(tokens);
         this.linker = services.references.Linker;
         this.converter = services.parser.ValueConverter;
-        this.lexer = new Lexer(services.parser.Tokens);
+        this.lexer = new Lexer(tokens);
     }
 
     MAIN_RULE(
@@ -61,7 +61,7 @@ export class LangiumBaseParser {
         return this.wrapper.DEFINE_RULE(name, this.startImplementation(type, implementation).bind(this));
     }
 
-    parse(input: string | LangiumDocument): ParseResult<AstNode> {
+    parse(input: string | LangiumDocument): ParseResult {
         this.wrapper.selfAnalysis();
         const text = typeof input === 'string' ? input : input.getText();
         this.nodeBuilder.buildRootNode(text);

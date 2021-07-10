@@ -6,7 +6,7 @@
 
 import { TokenType } from 'chevrotain';
 import { AbstractElement, Action, Alternatives, CrossReference, Grammar, Group, isAction, isAlternatives, isAssignment, isCrossReference, isGroup, isKeyword, isParserRule, isRuleCall, isTerminalRule, isUnorderedGroup, Keyword, ParserRule, RuleCall, UnorderedGroup } from '../grammar/generated/ast';
-import { Cardinality, getTypeName, isArrayOperator, isDataTypeRule, replaceTokens } from '../grammar/grammar-util';
+import { Cardinality, getTypeName, isArrayOperator, isDataTypeRule } from '../grammar/grammar-util';
 import { LangiumServices } from '../services';
 import { getContainerOfType, streamAllContents } from '../utils/ast-util';
 import { stream } from '../utils/stream';
@@ -27,9 +27,9 @@ export class LangiumParser extends LangiumBaseParser {
     private rules: Map<string, Method> = new Map();
     private tokens: Map<string, TokenType> = new Map();
 
-    constructor(services: LangiumServices) {
-        super(services);
-        services.parser.Tokens.forEach(e => {
+    constructor(services: LangiumServices, tokens = services.parser.TokenBuilder.buildTokens(services.Grammar)) {
+        super(services, tokens);
+        tokens.forEach(e => {
             this.tokens.set(e.name, e);
         });
         this.buildInternalParser(services.Grammar);
@@ -97,7 +97,7 @@ export class LangiumParser extends LangiumBaseParser {
         if (isKeyword(element)) {
             method = this.buildKeyword(ctx, element);
         } else if (isAction(element)) {
-            method = this.buildAction(ctx, element);
+            method = this.buildAction(element);
         } else if (isAssignment(element)) {
             method = this.buildElement(ctx, element.terminal);
         } else if (isCrossReference(element)) {
@@ -164,7 +164,7 @@ export class LangiumParser extends LangiumBaseParser {
         return () => methods.forEach(e => e());
     }
 
-    protected buildAction(ctx: RuleContext, action: Action): Method {
+    protected buildAction(action: Action): Method {
         return () => this.action(action.type, action);
     }
 
@@ -188,9 +188,8 @@ export class LangiumParser extends LangiumBaseParser {
     }
 
     protected buildKeyword(ctx: RuleContext, keyword: Keyword): Method {
-        const validName = replaceTokens(keyword.value) + 'Keyword';
         const idx = ctx.consume++;
-        const token = this.tokens.get(validName);
+        const token = this.tokens.get(keyword.value);
         if (!token) {
             throw new Error();
         }
