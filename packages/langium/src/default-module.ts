@@ -15,6 +15,7 @@ import { DefaultDocumentSymbolProvider } from './lsp/document-symbol-provider';
 import { DefaultGoToResolverProvider } from './lsp/goto';
 import { DefaultReferenceFinder } from './lsp/reference-finder';
 import { LangiumParser } from './parser/langium-parser';
+import { DefaultTokenBuilder } from './parser/token-builder';
 import { DefaultValueConverter } from './parser/value-converter';
 import { DefaultLinker } from './references/linker';
 import { DefaultNameProvider } from './references/naming';
@@ -33,7 +34,8 @@ export function createDefaultModule(context: DefaultModuleContext = {}): Module<
     return {
         parser: {
             LangiumParser: (injector) => new LangiumParser(injector),
-            ValueConverter: () => new DefaultValueConverter()
+            ValueConverter: () => new DefaultValueConverter(),
+            TokenBuilder: () => new DefaultTokenBuilder()
         },
         documents: {
             DocumentBuilder: (injector) => new DefaultDocumentBuilder(injector),

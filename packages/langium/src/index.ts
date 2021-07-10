@@ -13,7 +13,6 @@ export * from './generator/node-processor';
 export * from './generator/template-string';
 export * from './grammar/generated/ast';
 export * from './grammar/generated/module';
-export * from './grammar/generated/parser';
 export * from './grammar/grammar-access';
 export * from './grammar/grammar-util';
 export * from './grammar/langium-grammar-module';

@@ -23,14 +23,11 @@ import { References } from './references/references';
 import { ValidationRegistry } from './validation/validation-registry';
 import { DocumentValidator } from './validation/document-validator';
 import { Grammar } from './grammar/generated/ast';
-import { TokenType } from 'chevrotain';
 import { LangiumParser } from './parser/langium-parser';
+import { TokenBuilder } from './parser/token-builder';
 import { LanguageMetaData } from './grammar/language-meta-data';
 
 export type LangiumGeneratedServices = {
-    parser: {
-        Tokens: TokenType[]
-    }
     Grammar: Grammar
     AstReflection: AstReflection
     LanguageMetaData: LanguageMetaData
@@ -52,6 +49,7 @@ export type LangiumDefaultServices = {
     parser: {
         ValueConverter: ValueConverter
         LangiumParser: LangiumParser
+        TokenBuilder: TokenBuilder
     }
     documents: {
         DocumentBuilder: DocumentBuilder

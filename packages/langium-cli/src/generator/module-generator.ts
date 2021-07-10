@@ -20,7 +20,6 @@ export function generateModule(grammar: langium.Grammar, config: LangiumConfig):
     }
     node.append(
         'import { ', grammar.name, "AstReflection } from './ast';", NL,
-        "import { tokens } from './parser';", NL,
         "import { grammar } from './grammar';", NL, NL
     );
 
@@ -33,12 +32,7 @@ export function generateModule(grammar: langium.Grammar, config: LangiumConfig):
 
     node.append('export const ', grammar.name, 'GeneratedModule: Module<LangiumServices, LangiumGeneratedServices> = {', NL);
     node.indent(moduleNode => {
-        moduleNode.append('parser: {', NL);
-        moduleNode.indent(parserNode => {
-            parserNode.append('Tokens: () => tokens', NL);
-        });
         moduleNode.append(
-            '},', NL,
             'Grammar: () => grammar(),', NL,
             'AstReflection: () => new ', grammar.name, 'AstReflection(),', NL,
             'LanguageMetaData: () => languageMetaData', NL

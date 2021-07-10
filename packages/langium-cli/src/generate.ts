@@ -8,8 +8,6 @@ import fs from 'fs-extra';
 import path from 'path';
 import { LangiumConfig, RelativePath } from './package';
 import { createLangiumGrammarServices, LangiumDocumentConfiguration, isGrammar } from 'langium';
-import { generateGrammarAccess } from './generator/grammar-access-generator';
-import { generateParser } from './generator/parser-generator';
 import { generateAst } from './generator/ast-generator';
 import { generateModule } from './generator/module-generator';
 import { generateTextMate } from './generator/textmate-generator';
@@ -65,7 +63,6 @@ export function generate(config: LangiumConfig): boolean {
 
     const serializedGrammar = serializeGrammar(services, grammar, config);
     writeWithFail(path.join(output, 'grammar.ts'), serializedGrammar);
-
 
     const genModule = generateModule(grammar, config);
     writeWithFail(path.join(output, 'module.ts'), genModule);
