@@ -3,7 +3,7 @@
  * DO NOT EDIT MANUALLY!
  ******************************************************************************/
 
-export class LangiumGrammarLanguageMetaData {
-    languageId = 'langium';
-    extensions = ['langium'];
+export class ArithmeticsLanguageMetaData {
+    languageId = 'arithmetics';
+    extensions = ['.calc'];
 }

@@ -6,6 +6,7 @@
 import { LangiumGeneratedServices, LangiumServices, Module } from 'langium';
 import { StatemachineAstReflection } from './ast';
 import { StatemachineGrammarAccess } from './grammar-access';
+import { StatemachineLanguageMetaData } from './meta-data';
 import { Parser } from './parser';
 
 export const StatemachineGeneratedModule: Module<LangiumServices, LangiumGeneratedServices> = {
@@ -13,5 +14,6 @@ export const StatemachineGeneratedModule: Module<LangiumServices, LangiumGenerat
         LangiumParser: (injector) => new Parser(injector)
     },
     GrammarAccess: () => new StatemachineGrammarAccess(),
-    AstReflection: () => new StatemachineAstReflection()
+    AstReflection: () => new StatemachineAstReflection(),
+    LanguageMetaData: () => new StatemachineLanguageMetaData()
 };
