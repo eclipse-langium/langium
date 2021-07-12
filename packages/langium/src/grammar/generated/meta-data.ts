@@ -5,5 +5,5 @@
 
 export class LangiumGrammarLanguageMetaData {
     languageId = 'langium';
-    extensions = ['langium'];
+    extensions = ['.langium'];
 }

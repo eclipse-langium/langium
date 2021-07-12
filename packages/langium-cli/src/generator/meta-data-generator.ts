@@ -13,8 +13,15 @@ export function generateMetaData(grammar: Grammar, config: LangiumConfig): strin
     node.append(generatedHeader, 'export class ', grammar.name, 'LanguageMetaData {', NL);
     node.indent(classBody => {
         classBody.append(`languageId = '${config.languageId}';`, NL);
-        classBody.append(`extensions = [${config.extensions && config.extensions.map(e => `'${e}'`).join(', ')}];`, NL);
+        classBody.append(`extensions = [${config.extensions && config.extensions.map(e => appendQuotesAndDot(e)).join(', ')}];`, NL);
     });
     node.append('}', NL);
     return processGeneratorNode(node);
+}
+
+function appendQuotesAndDot(input: string): string {
+    if (!input.startsWith('.')) {
+        input = '.' + input;
+    }
+    return `'${input}'`;
 }
