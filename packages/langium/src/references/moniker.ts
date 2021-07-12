@@ -33,10 +33,10 @@ export class DefaultMonikerProvider implements MonikerProvider {
 
     createMonikers(astNode: AstNode): Stream<LangiumMoniker> {
         const monikers: LangiumMoniker[] = [];
-        const languageScheme = astNode.$document?.languageId??'unknown';
+        const languageScheme = astNode.$document?.languageId ?? 'unknown';
         const refConverter = (refNode: AstNodeReference) => {
             const refAstNode = refNode.reference.ref;
-            if(!refAstNode)
+            if (!refAstNode)
                 return null;
             const refTargetDoc = getDocument(refAstNode);
             // Do not handle unresolved refs or local references
@@ -57,7 +57,7 @@ export class DefaultMonikerProvider implements MonikerProvider {
         streamAllContents(astNode).forEach(astNodeContent => {
             const astNode = astNodeContent.node;
             const name = this.nameProvider.getName(astNode);
-            const scope = (astNode?.$container)?UniquenessLevel.project:UniquenessLevel.document;
+            const scope = (astNode?.$container) ? UniquenessLevel.project : UniquenessLevel.document;
             // export everything that has a name by default
             if (name)
                 monikers.push({

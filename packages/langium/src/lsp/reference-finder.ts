@@ -10,7 +10,7 @@ import { NameProvider } from '../references/naming';
 import { References } from '../references/references';
 import { LangiumServices } from '../services';
 import { AstNode, CstNode } from '../syntax-tree';
-import { findLeafNodeAtOffset, findLocalReferences } from '../utils/ast-util';
+import { findLeafNodeAtOffset, findLocalReferences, getDocument } from '../utils/ast-util';
 import { flatten, toRange } from '../utils/cst-util';
 
 export interface ReferenceFinder {
@@ -31,7 +31,7 @@ export class DefaultReferenceFinder implements ReferenceFinder {
         if (!rootNode) {
             return [];
         }
-        const refs: CstNode[] = [];
+        const refs: Array<{ doc: LangiumDocument, node: CstNode }> = [];
         const selectedNode = findLeafNodeAtOffset(rootNode, document.offsetAt(params.position));
         if (!selectedNode) {
             return [];
@@ -39,17 +39,18 @@ export class DefaultReferenceFinder implements ReferenceFinder {
         const targetAstNode = this.references.findDeclaration(selectedNode)?.element;
         if (targetAstNode) {
             if (includeDeclaration) {
+                const declDoc = getDocument(targetAstNode);
                 const nameNode = this.findNameNode(targetAstNode, selectedNode.text);
                 if (nameNode)
-                    refs.push(nameNode);
+                    refs.push({ doc: declDoc, node: nameNode });
             }
             findLocalReferences(targetAstNode, rootNode.element).forEach((element) => {
-                refs.push(element.$refNode);
+                refs.push({ doc: document, node: element.$refNode });
             });
         }
-        return refs.map(node => Location.create(
-            document.uri,
-            toRange(node, document)
+        return refs.map(ref => Location.create(
+            ref.doc.uri,
+            toRange(ref.node, ref.doc)
         ));
     }
 

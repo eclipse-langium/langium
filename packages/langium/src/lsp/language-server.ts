@@ -52,11 +52,13 @@ export function startLanguageServer(services: LangiumServices): void {
         if (params.capabilities.workspace?.configuration) {
             try {
                 // experimental
-                const indexer = services.index.IndexManager;
-                if (params.workspaceFolders)
-                    indexer.initializeWorspace(params.workspaceFolders);
-                else if (params.rootUri)
-                    indexer.initializeRoot(params.rootUri);
+                indexWorkspace(() => {
+                    const indexer = services.index.IndexManager;
+                    if (params.workspaceFolders)
+                        indexer.initializeWorspace(params.workspaceFolders);
+                    else if (params.rootUri)
+                        indexer.initializeRoot(params.rootUri);
+                });
             } catch (e) {
                 console.error(e);
             }
@@ -85,6 +87,14 @@ export function startLanguageServer(services: LangiumServices): void {
 
     // Listen on the connection.
     connection.listen();
+}
+
+async function indexWorkspace(callback: () => void) {
+    new Promise(resolve => {
+        callback();
+        resolve('resolved');
+    }
+    );
 }
 
 export function addCompletionHandler(connection: Connection, services: LangiumServices): void {

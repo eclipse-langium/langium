@@ -13,7 +13,7 @@ export interface AstNodePathComputer {
 }
 
 export interface AstNodeLocator {
-    astNode(document: LangiumDocument, path: string): AstNode;
+    astNode(document: LangiumDocument, path: string): AstNode | undefined;
 }
 export class DefaultAstNodeLocator implements AstNodeLocator, AstNodePathComputer {
     protected segmentSeparator = '/';
@@ -29,9 +29,16 @@ export class DefaultAstNodeLocator implements AstNodeLocator, AstNodePathCompute
         return path.join(this.segmentSeparator);
     }
 
-    astNode(document: LangiumDocument, path: string): AstNode {
-        //const segments = path.split(this.segmentSeparator);
-        return undefined!;
+    astNode(document: LangiumDocument, path: string): AstNode | undefined {
+        const segments = path.split(this.segmentSeparator);
+        return segments.reduce((previousValue, currentValue) => {
+            if(currentValue.length === 0)
+                return previousValue;
+            const propertyIndx = currentValue.split('@');
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const value = (previousValue as any)[propertyIndx[0]];
+            return (propertyIndx.length === 2) ? value[propertyIndx[1]] : value;
+        }, document.parseResult?.value);
     }
 
     protected pathSegment(node: AstNode, container: AstNode): string {
