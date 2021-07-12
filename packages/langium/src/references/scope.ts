@@ -11,12 +11,15 @@ import { NameProvider } from './naming';
 import { LangiumServices } from '../services';
 import { LangiumDocument, PrecomputedScopes } from '../documents/document';
 import { IndexManager } from '../index/workspace-index-manager';
+import { AstNodePathComputer } from '../index/ast-node-locator';
 
 export interface AstNodeDescription {
     node?: AstNode
     name: string // QualifiedName?
     type: string // AstNodeType?
     documentUri: string // DocumentUri?
+    /* navigation path inside a document */
+    path: string
 }
 
 export interface Scope {
@@ -112,9 +115,11 @@ export interface ScopeComputation {
 
 export class DefaultScopeComputation implements ScopeComputation {
     protected readonly nameProvider: NameProvider;
+    protected readonly astNodePath: AstNodePathComputer;
 
     constructor(services: LangiumServices) {
         this.nameProvider = services.references.NameProvider;
+        this.astNodePath = services.index.AstNodePathComputer;
     }
 
     computeScope(document: LangiumDocument): PrecomputedScopes {
@@ -142,7 +147,8 @@ export class DefaultScopeComputation implements ScopeComputation {
             node,
             name,
             type: node.$type,
-            documentUri: document.uri
+            documentUri: document.uri,
+            path: this.astNodePath.astNodePath(node)
         };
     }
 

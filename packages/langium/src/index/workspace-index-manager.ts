@@ -7,8 +7,9 @@
 import { existsSync, readdirSync, readFileSync } from 'fs';
 import { resolve } from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
-import { WorkspaceFolder } from 'vscode-languageserver';
+import { MonikerKind, WorkspaceFolder } from 'vscode-languageserver';
 import { LangiumDocument, LangiumDocumentConfiguration } from '../documents/document';
+import { LangiumMoniker } from '../references/moniker';
 import { AstNodeDescription } from '../references/scope';
 import { LangiumServices } from '../services';
 
@@ -19,6 +20,7 @@ export interface IndexManager {
     update(document: LangiumDocument): void;
     /* Use stream? */
     allElements(): AstNodeDescription[];
+    documentDescriptions(): ReadonlyMap<string, LangiumMoniker[]>;
 }
 
 // don't know how to trac this.simpleIndex inside DefaultIndexManager
@@ -26,9 +28,14 @@ export class DefaultIndexManager implements IndexManager {
     protected readonly services: LangiumServices
 
     simpleIndex: Map<string, AstNodeDescription[]> = new Map<string, AstNodeDescription[]>();
+    monikerIndex: Map<string, LangiumMoniker[]> = new Map<string, LangiumMoniker[]>();
 
     constructor(services: LangiumServices) {
         this.services = services;
+    }
+
+    documentDescriptions(): ReadonlyMap<string, LangiumMoniker[]> {
+        return this.monikerIndex;
     }
 
     allElements(): AstNodeDescription[] {
@@ -40,11 +47,9 @@ export class DefaultIndexManager implements IndexManager {
     }
 
     initializeRoot(rootUri: string): void {
-        console.log('Root update request for: ' + rootUri);
         this.traverseFolder(fileURLToPath(rootUri), 'langium');
     }
     update(document: LangiumDocument): void {
-        console.log('Update request for: ' + document.uri);
         this.processDocument(document);
     }
 
@@ -87,6 +92,16 @@ export class DefaultIndexManager implements IndexManager {
             let indexData: AstNodeDescription[] = [];
             for (const data of document.precomputedScopes?.values()) {
                 indexData = data;
+            }
+            if (document.parseResult?.value) {
+                const imports: LangiumMoniker[] = [];
+                this.services.references.MonikerProvider.createMonikers(document.parseResult.value).forEach(moniker => {
+                    // track only imports for now
+                    if(moniker.kind === MonikerKind.import) {
+                        imports.push(moniker);
+                    }
+                });
+                this.monikerIndex.set(document.uri, imports);
             }
             this.simpleIndex.set(document.uri, indexData);
         }

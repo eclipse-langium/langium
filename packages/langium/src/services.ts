@@ -29,6 +29,7 @@ import { LanguageMetaData } from './grammar/language-meta-data';
 import { CodeActionProvider} from './lsp/code-action';
 import { MonikerProvider } from './references/moniker';
 import { IndexManager } from './index/workspace-index-manager';
+import { AstNodePathComputer } from './index/ast-node-locator';
 
 export type LangiumGeneratedServices = {
     Grammar: Grammar
@@ -62,6 +63,7 @@ export type LangiumDefaultServices = {
     lsp: LangiumLspServices
     index: {
         IndexManager: IndexManager
+        AstNodePathComputer: AstNodePathComputer
     }
     references: {
         Linker: Linker

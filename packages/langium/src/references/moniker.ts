@@ -5,16 +5,17 @@
  ******************************************************************************/
 
 import { Moniker, MonikerKind, UniquenessLevel } from 'vscode-languageserver';
+import { AstNodePathComputer } from '../index/ast-node-locator';
 import { LangiumServices } from '../services';
 import { AstNode } from '../syntax-tree';
-import { AstNodeReference, streamAllContents, streamReferences } from '../utils/ast-util';
+import { AstNodeReference, getDocument, streamAllContents, streamReferences } from '../utils/ast-util';
 import { stream, Stream } from '../utils/stream';
 import { NameProvider } from './naming';
 /**
  * Moniker POC
  */
 export interface MonikerProvider {
-    createMonikers(astNode: AstNode): Stream<Moniker>;
+    createMonikers(astNode: AstNode): Stream<LangiumMoniker>;
 }
 
 export interface LangiumMoniker extends Moniker {
@@ -23,28 +24,33 @@ export interface LangiumMoniker extends Moniker {
 
 export class DefaultMonikerProvider implements MonikerProvider {
     protected readonly nameProvider: NameProvider;
+    protected readonly astNodePath: AstNodePathComputer;
 
     constructor(services: LangiumServices) {
         this.nameProvider = services.references.NameProvider;
+        this.astNodePath = services.index.AstNodePathComputer;
     }
 
     createMonikers(astNode: AstNode): Stream<LangiumMoniker> {
         const monikers: LangiumMoniker[] = [];
         const languageScheme = astNode.$document?.languageId??'unknown';
         const refConverter = (refNode: AstNodeReference) => {
-            const astNode = refNode.reference.ref;
-            // Do not handle unresolved refs or local references
-            if (!astNode || astNode.$document?.uri === refNode.container.$document?.uri)
+            const refAstNode = refNode.reference.ref;
+            if(!refAstNode)
                 return null;
-            const name = this.nameProvider.getName(astNode);
+            const refTargetDoc = getDocument(refAstNode);
+            // Do not handle unresolved refs or local references
+            if (refTargetDoc?.uri === getDocument(refNode.container)?.uri)
+                return null;
+            const path = refTargetDoc?.uri + '#' + this.astNodePath.astNodePath(refAstNode);
             // export everything that has a name by default
-            if (name)
+            if (path)
                 return {
-                    identifier: name,
+                    identifier: path,
                     scheme: languageScheme,
                     unique: UniquenessLevel.document,
                     kind: MonikerKind.import,
-                    type: astNode.$type
+                    type: refAstNode.$type
                 };
             return null;
         };
