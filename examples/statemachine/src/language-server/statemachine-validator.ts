@@ -15,7 +15,7 @@ export class StatemachineValidationRegistry extends ValidationRegistry {
         super(services);
         const validator = services.validation.StatemachineValidator;
         const checks: StatemachineChecks = {
-            State: validator.checkStateNameStartsWithLowerCase
+            State: validator.checkStateNameStartsWithCapital
         };
         this.register(checks, validator);
     }
@@ -23,11 +23,11 @@ export class StatemachineValidationRegistry extends ValidationRegistry {
 
 export class StatemachineValidator {
 
-    checkStateNameStartsWithLowerCase(state: State, accept: ValidationAcceptor): void {
+    checkStateNameStartsWithCapital(state: State, accept: ValidationAcceptor): void {
         if (state.name) {
             const firstChar = state.name.substring(0, 1);
-            if (firstChar.toLowerCase() !== firstChar) {
-                accept('warning', 'State name should start with a lower case letter.', { node: state, property: 'name' });
+            if (firstChar.toUpperCase() !== firstChar) {
+                accept('warning', 'State name should start with a capital letter.', { node: state, property: 'name' });
             }
         }
     }
