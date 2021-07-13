@@ -4,10 +4,7 @@
       "rootDir": "src",
       "outDir": "out"
     },
-    "references": [
-      { "path": "../../packages/langium" },
-      { "path": "../cli-util" }
-    ],
+    "references": [{ "path": "../../packages/langium" }],
     "include": [
       "src/**/*"
     ],

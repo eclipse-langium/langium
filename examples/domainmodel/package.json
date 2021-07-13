@@ -55,7 +55,6 @@
         "colors": "^1.4.0",
         "commander": "^8.0.0",
         "langium": "0.1.0",
-        "cli-util": "0.0.1",
         "vscode-languageclient": "^7.0.0",
         "vscode-languageserver": "^7.0.0"
     },

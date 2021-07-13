@@ -32,7 +32,7 @@ export function extractGrammar(fileName: string, configFileName: string, service
         console.error(`Failed to parse the grammar file ${fileName}`);
         process.exit(1);
     }
- 
+
     const validationErrors = new DefaultDocumentValidator(services)
         .validateDocument(document)
         .filter(e => e.severity === 1);
@@ -46,5 +46,5 @@ export function extractGrammar(fileName: string, configFileName: string, service
         process.exit(1);
     }
 
-    return document.parseResult!.value as Grammar;
+    return document.parseResult?.value as Grammar;
 }

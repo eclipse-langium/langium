@@ -6,7 +6,7 @@
 
 import { Command } from 'commander';
 import { createDomainModelServices } from '../language-server/domain-model-module';
-import { extractGrammar } from 'cli-util';
+import { extractGrammar } from './cli-util';
 import { DomainModelGenerator } from './generator';
 
 const program = new Command();
