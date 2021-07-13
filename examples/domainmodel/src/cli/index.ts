@@ -6,6 +6,7 @@
 
 import { Command } from 'commander';
 import { createDomainModelServices } from '../language-server/domain-model-module';
+import { DomainModelLanguageMetaData } from '../language-server/generated/meta-data';
 import { extractGrammar } from './cli-util';
 import { DomainModelGenerator } from './generator';
 
@@ -21,7 +22,8 @@ program
     .option('-d, --destination <dir>', 'destination directory of generating')
     .description('generate Java classes from .dmodel file')
     .action((fileName: string, opts: GenerateOptions) => {
-        const grammar = extractGrammar(fileName, './package.json', createDomainModelServices());
+        const metaData = new DomainModelLanguageMetaData();
+        const grammar = extractGrammar(fileName, metaData.languageId, metaData.extensions, createDomainModelServices());
         new DomainModelGenerator(grammar, fileName, opts.destination).generate();
     });
 

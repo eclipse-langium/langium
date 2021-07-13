@@ -7,13 +7,8 @@
 import * as fs from 'fs';
 import colors from 'colors';
 import { DefaultDocumentValidator, Grammar, LangiumDocumentConfiguration, LangiumServices } from 'langium';
-import { Package } from 'langium-cli/src/package';
 
-export function extractGrammar(fileName: string, configFileName: string, services: LangiumServices): Grammar {
-    const packageContent = fs.readFileSync(configFileName).toString();
-    const pack = <Package>JSON.parse(packageContent);
-
-    const extensions = pack.langium.extensions;
+export function extractGrammar(fileName: string, languageId: string, extensions: string[], services: LangiumServices): Grammar {
     if (!new RegExp(`^.*${extensions?.join('|')}$`).test(fileName)) {
         console.error(`Please, choose a file with one of these extensions: ${extensions}.`);
         process.exit(1);
@@ -25,7 +20,6 @@ export function extractGrammar(fileName: string, configFileName: string, service
     }
     const fileContent = fs.readFileSync(fileName).toString();
 
-    const languageId = pack.langium.languageId ? pack.langium.languageId : 'dummy-language-id';
     const document = LangiumDocumentConfiguration.create(`file:${fileName}`, languageId, 0, fileContent);
     services.documents.DocumentBuilder.build(document);
     if (!document.parseResult) {
