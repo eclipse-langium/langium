@@ -7,7 +7,7 @@
 import * as fs from 'fs';
 import _ from 'lodash';
 import { CompositeGeneratorNode, Grammar, IndentNode, NL, processGeneratorNode } from 'langium';
-import { AbstractElement, Domainmodel, Entity, Feature, isDomainmodel, isEntity, isPackageDeclaration, Type } from './language-server/generated/ast';
+import { AbstractElement, Domainmodel, Entity, Feature, isDomainmodel, isEntity, isPackageDeclaration, Type } from '../language-server/generated/ast';
 
 export class DomainModelGenerator {
     private domainmodel: Domainmodel;
