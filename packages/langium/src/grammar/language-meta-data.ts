@@ -6,5 +6,5 @@
 
 export interface LanguageMetaData {
     languageId: string;
-    extensions: string[];
+    fileExtensions: string[];
 }

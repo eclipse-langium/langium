@@ -21,9 +21,15 @@ export function generateModule(grammar: langium.Grammar, config: LangiumConfig):
     node.append(
         'import { ', grammar.name, "AstReflection } from './ast';", NL,
         'import { ', grammar.name, "GrammarAccess } from './grammar-access';", NL,
-        'import { ', grammar.name, "LanguageMetaData } from './meta-data';", NL,
         "import { Parser } from './parser';", NL, NL
     );
+
+    node.append('const metaData = {', NL);
+    node.indent(metaData => {
+        metaData.append(`languageId: '${config.languageId}',`, NL);
+        metaData.append(`fileExtensions: [${config.extensions && config.extensions.map(e => appendQuotesAndDot(e)).join(', ')}]`, NL);
+    });
+    node.append('};', NL, NL);
 
     node.append('export const ', grammar.name, 'GeneratedModule: Module<LangiumServices, LangiumGeneratedServices> = {', NL);
     node.indent(moduleNode => {
@@ -35,10 +41,17 @@ export function generateModule(grammar: langium.Grammar, config: LangiumConfig):
             '},', NL,
             'GrammarAccess: () => new ', grammar.name, 'GrammarAccess(),', NL,
             'AstReflection: () => new ', grammar.name, 'AstReflection(),', NL,
-            'LanguageMetaData: () => new ', grammar.name, 'LanguageMetaData()', NL
+            'LanguageMetaData: () => metaData', NL
         );
     });
     node.append('};', NL);
 
     return processGeneratorNode(node);
+}
+
+function appendQuotesAndDot(input: string): string {
+    if (!input.startsWith('.')) {
+        input = '.' + input;
+    }
+    return `'${input}'`;
 }

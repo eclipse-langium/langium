@@ -7,8 +7,12 @@ import { Module } from '../../dependency-injection';
 import { LangiumGeneratedServices, LangiumServices } from '../../services';
 import { LangiumGrammarAstReflection } from './ast';
 import { LangiumGrammarGrammarAccess } from './grammar-access';
-import { LangiumGrammarLanguageMetaData } from './meta-data';
 import { Parser } from './parser';
+
+const metaData = {
+    languageId: 'langium',
+    fileExtensions: ['.langium']
+};
 
 export const LangiumGrammarGeneratedModule: Module<LangiumServices, LangiumGeneratedServices> = {
     parser: {
@@ -16,5 +20,5 @@ export const LangiumGrammarGeneratedModule: Module<LangiumServices, LangiumGener
     },
     GrammarAccess: () => new LangiumGrammarGrammarAccess(),
     AstReflection: () => new LangiumGrammarAstReflection(),
-    LanguageMetaData: () => new LangiumGrammarLanguageMetaData()
+    LanguageMetaData: () => metaData
 };
