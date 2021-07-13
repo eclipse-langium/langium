@@ -32,7 +32,7 @@
         "src"
     ],
     "bin": {
-        "cli": "./bin/cli.js"
+        "domainmodel-cli": "./bin/cli.js"
     },
     "main": "./out/extension.js",
     "langium": {
