@@ -6,7 +6,7 @@
 
 import * as fs from 'fs';
 import colors from 'colors';
-import { DefaultDocumentValidator, Grammar, LangiumDocument, LangiumDocumentConfiguration, LangiumServices } from 'langium';
+import { AstNode, DefaultDocumentValidator, LangiumDocument, LangiumDocumentConfiguration, LangiumServices } from 'langium';
 
 export function extractDocument(fileName: string, languageId: string, extensions: string[], services: LangiumServices): LangiumDocument {
     if (!new RegExp(`^.*${extensions?.join('|')}$`).test(fileName)) {
@@ -43,6 +43,6 @@ export function extractDocument(fileName: string, languageId: string, extensions
     return document;
 }
 
-export function extractGrammar(fileName: string, languageId: string, extensions: string[], services: LangiumServices): Grammar {
-    return extractDocument(fileName, languageId, extensions, services).parseResult?.value as Grammar;
+export function extractAstNode<T extends AstNode>(fileName: string, languageId: string, extensions: string[], services: LangiumServices): T {
+    return extractDocument(fileName, languageId, extensions, services).parseResult?.value as T;
 }
