@@ -4,12 +4,15 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import colors from 'colors';
 import { Command } from 'commander';
 import { createDomainModelServices } from '../language-server/domain-model-module';
 import { Domainmodel } from '../language-server/generated/ast';
 import { DomainModelLanguageMetaData } from '../language-server/generated/meta-data';
 import { extractAstNode } from './cli-util';
 import { DomainModelGenerator } from './generator';
+
+const metaData = new DomainModelLanguageMetaData();
 
 const program = new Command();
 
@@ -19,13 +22,13 @@ program
 
 program
     .command('generate')
-    .argument('<file>', 'the .dmodel file')
+    .argument('<file>', `possible file extensions: ${metaData.extensions.join(', ')}`)
     .option('-d, --destination <dir>', 'destination directory of generating')
-    .description('generate Java classes from .dmodel file')
+    .description('generates Java classes by Entity description')
     .action((fileName: string, opts: GenerateOptions) => {
-        const metaData = new DomainModelLanguageMetaData();
         const domainmodel = extractAstNode<Domainmodel>(fileName, metaData.languageId, metaData.extensions, createDomainModelServices());
-        new DomainModelGenerator(domainmodel, fileName, opts.destination).generate();
+        const generatedDirPath = new DomainModelGenerator(domainmodel, fileName, opts.destination).generate();
+        console.log(colors.green('Java classes generated successfully:'), colors.yellow(generatedDirPath));
     });
 
 program.parse(process.argv);

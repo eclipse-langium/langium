@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import * as fs from 'fs';
+import fs from 'fs';
 import _ from 'lodash';
 import { CompositeGeneratorNode, IndentNode, NL, processGeneratorNode } from 'langium';
 import { AbstractElement, Domainmodel, Entity, Feature, isEntity, isPackageDeclaration, Type } from '../language-server/generated/ast';
@@ -20,8 +20,9 @@ export class DomainModelGenerator {
         this.path = fileName.replace(/\..*$/, '').replaceAll(/[.-]/g, '');
     }
 
-    public generate(): void {
+    public generate(): string {
         this.generateAbstractElements(this.domainmodel.elements, this.path);
+        return `${this.destination}/${this.path}`;
     }
 
     private generateAbstractElements(elements: Array<AbstractElement | Type>, path: string): void {
