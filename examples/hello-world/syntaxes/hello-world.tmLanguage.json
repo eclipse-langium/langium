@@ -1,0 +1,48 @@
+{
+  "name": "hello-world",
+  "scopeName": "source.hello-world",
+  "fileTypes": [
+    ".hello"
+  ],
+  "patterns": [
+    {
+      "name": "keyword.control.hello-world",
+      "match": "\\b(Hello|person)\\b"
+    },
+    {
+      "name": "keyword.symbol.hello-world",
+      "match": "(\\!)"
+    }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.block.hello-world",
+          "begin": "/\\*",
+          "beginCaptures": {
+            "0": {
+              "name": "punctuation.definition.comment.hello-world"
+            }
+          },
+          "end": "\\*/",
+          "endCaptures": {
+            "0": {
+              "name": "punctuation.definition.comment.hello-world"
+            }
+          }
+        },
+        {
+          "begin": "(^\\s+)?(?=//)",
+          "beginCaptures": {
+            "1": {
+              "name": "punctuation.whitespace.comment.leading.cs"
+            }
+          },
+          "end": "(?=$)",
+          "name": "comment.line.hello-world"
+        }
+      ]
+    }
+  }
+}

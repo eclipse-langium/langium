@@ -7,6 +7,7 @@
         { "path": "packages/generator-langium" },
         { "path": "examples/arithmetics" },
         { "path": "examples/domainmodel" },
-        { "path": "examples/statemachine" }
+        { "path": "examples/statemachine" },
+        { "path": "examples/hello-world" }
     ]
  }
