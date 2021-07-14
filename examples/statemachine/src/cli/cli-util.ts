@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import * as fs from 'fs';
+import fs from 'fs';
 import colors from 'colors';
 import { AstNode, DefaultDocumentValidator, LangiumDocument, LangiumDocumentConfiguration, LangiumServices } from 'langium';
 
@@ -18,7 +18,7 @@ export function extractDocument(fileName: string, languageId: string, extensions
         console.error(`File ${fileName} doesn't exist.`);
         process.exit(1);
     }
-    const fileContent = fs.readFileSync(fileName).toString();
+    const fileContent = fs.readFileSync(fileName, 'utf-8');
 
     const document = LangiumDocumentConfiguration.create(`file:${fileName}`, languageId, 0, fileContent);
     services.documents.DocumentBuilder.build(document);

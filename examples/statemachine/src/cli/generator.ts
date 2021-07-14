@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import * as fs from 'fs';
+import fs from 'fs';
 import { CompositeGeneratorNode, NL, processGeneratorNode } from 'langium';
 import { State, Statemachine } from '../language-server/generated/ast';
 
@@ -19,14 +19,10 @@ export class StatemachineGenerator {
 
         const fileNameSeq = fileName.replace(/\..*$/, '').replaceAll(/[.-]/g, '').split('/');
         this.fileName = `${fileNameSeq.pop() ?? 'statemachine'}.cpp`;
-        if (destination) {
-            this.destination = destination;
-        } else {
-            this.destination = `./${fileNameSeq.join('/')}/generated`;
-        }
+        this.destination = destination ?? `./${fileNameSeq.join('/')}/generated`;
     }
 
-    public generate(): void {
+    public generate(): string {
         this.fileNode.append('#include <iostream>', NL);
         this.fileNode.append('#include <map>', NL);
         this.fileNode.append('#include <string>', NL, NL);
@@ -57,7 +53,9 @@ export class StatemachineGenerator {
         if (!fs.existsSync(this.destination)) {
             fs.mkdirSync(this.destination, { recursive: true });
         }
-        fs.writeFileSync(`${this.destination}/${this.fileName}`, processGeneratorNode(this.fileNode));
+        const generatedFilePath = `${this.destination}/${this.fileName}`;
+        fs.writeFileSync(generatedFilePath, processGeneratorNode(this.fileNode));
+        return generatedFilePath;
     }
 
     private generateStateClass(): void {
