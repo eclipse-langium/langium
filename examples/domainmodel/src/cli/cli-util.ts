@@ -6,9 +6,9 @@
 
 import * as fs from 'fs';
 import colors from 'colors';
-import { DefaultDocumentValidator, Grammar, LangiumDocumentConfiguration, LangiumServices } from 'langium';
+import { DefaultDocumentValidator, Grammar, LangiumDocument, LangiumDocumentConfiguration, LangiumServices } from 'langium';
 
-export function extractGrammar(fileName: string, languageId: string, extensions: string[], services: LangiumServices): Grammar {
+export function extractDocument(fileName: string, languageId: string, extensions: string[], services: LangiumServices): LangiumDocument {
     if (!new RegExp(`^.*${extensions?.join('|')}$`).test(fileName)) {
         console.error(`Please, choose a file with one of these extensions: ${extensions}.`);
         process.exit(1);
@@ -40,5 +40,9 @@ export function extractGrammar(fileName: string, languageId: string, extensions:
         process.exit(1);
     }
 
-    return document.parseResult?.value as Grammar;
+    return document;
+}
+
+export function extractGrammar(fileName: string, languageId: string, extensions: string[], services: LangiumServices): Grammar {
+    return extractDocument(fileName, languageId, extensions, services).parseResult?.value as Grammar;
 }

@@ -6,20 +6,16 @@
 
 import * as fs from 'fs';
 import _ from 'lodash';
-import { CompositeGeneratorNode, Grammar, IndentNode, NL, processGeneratorNode } from 'langium';
-import { AbstractElement, Domainmodel, Entity, Feature, isDomainmodel, isEntity, isPackageDeclaration, Type } from '../language-server/generated/ast';
+import { CompositeGeneratorNode, IndentNode, NL, processGeneratorNode } from 'langium';
+import { AbstractElement, Domainmodel, Entity, Feature, isEntity, isPackageDeclaration, Type } from '../language-server/generated/ast';
 
 export class DomainModelGenerator {
     private domainmodel: Domainmodel;
     private destination: string;
     private path: string;
 
-    constructor(grammar: Grammar, fileName: string, destination = '.') {
-        if (!isDomainmodel(grammar)) {
-            console.error('Please, apply this generator to Domainmodel file');
-            process.exit(1);
-        }
-        this.domainmodel = grammar;
+    constructor(domainmodel: Domainmodel, fileName: string, destination = '.') {
+        this.domainmodel = domainmodel;
         this.destination = destination;
         this.path = fileName.replace(/\..*$/, '').replaceAll(/[.-]/g, '');
     }
@@ -52,10 +48,8 @@ export class DomainModelGenerator {
         fileNode.append(`class ${entity.name}${maybeExtends} {`, NL);
         fileNode.indent(classBody => {
             const featureData = entity.features.map(f => this.generateFeature(f, classBody));
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            featureData.forEach(([generateField, _1, _2]) => generateField());
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            featureData.forEach(([_0, generateSetter, generateGetter]) => { generateSetter(); generateGetter(); } );
+            featureData.forEach(([generateField, , ]) => generateField());
+            featureData.forEach(([, generateSetter, generateGetter]) => { generateSetter(); generateGetter(); } );
         });
         fileNode.append('}', NL);
     }
