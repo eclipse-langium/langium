@@ -24,10 +24,10 @@ export function generateModule(grammar: langium.Grammar, config: LangiumConfig):
         "import { Parser } from './parser';", NL, NL
     );
 
-    node.append('const metaData = {', NL);
+    node.append('export const languageMetaData = {', NL);
     node.indent(metaData => {
         metaData.append(`languageId: '${config.languageId}',`, NL);
-        metaData.append(`fileExtensions: [${config.extensions && config.extensions.map(e => appendQuotesAndDot(e)).join(', ')}]`, NL);
+        metaData.append(`fileExtensions: [${config.fileExtensions && config.fileExtensions.map(e => appendQuotesAndDot(e)).join(', ')}]`, NL);
     });
     node.append('};', NL, NL);
 
@@ -41,7 +41,7 @@ export function generateModule(grammar: langium.Grammar, config: LangiumConfig):
             '},', NL,
             'GrammarAccess: () => new ', grammar.name, 'GrammarAccess(),', NL,
             'AstReflection: () => new ', grammar.name, 'AstReflection(),', NL,
-            'LanguageMetaData: () => metaData', NL
+            'LanguageMetaData: () => languageMetaData', NL
         );
     });
     node.append('};', NL);

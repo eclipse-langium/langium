@@ -16,7 +16,7 @@ export interface LangiumConfig {
     /** Path to the grammar file */
     grammar?: string
     /** File extensions with leading `.` */
-    extensions?: string[]
+    fileExtensions?: string[]
     /** Main output directory for TypeScript code */
     out?: string
     /** Enable generating a TextMate syntax highlighting file */

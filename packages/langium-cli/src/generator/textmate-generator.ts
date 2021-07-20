@@ -49,7 +49,7 @@ export function generateTextMate(grammar: langium.Grammar, config: LangiumConfig
     const json: TextMateGrammar = {
         name: config.languageId,
         scopeName: `source.${config.languageId}`,
-        fileTypes: config.extensions ?? [],
+        fileTypes: config.fileExtensions ?? [],
         patterns: getPatterns(grammar, config),
         repository: getRepository(grammar, config)
     };

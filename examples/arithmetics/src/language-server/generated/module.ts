@@ -8,7 +8,7 @@ import { ArithmeticsAstReflection } from './ast';
 import { ArithmeticsGrammarAccess } from './grammar-access';
 import { Parser } from './parser';
 
-const metaData = {
+export const languageMetaData = {
     languageId: 'arithmetics',
     fileExtensions: ['.calc']
 };
@@ -19,5 +19,5 @@ export const ArithmeticsGeneratedModule: Module<LangiumServices, LangiumGenerate
     },
     GrammarAccess: () => new ArithmeticsGrammarAccess(),
     AstReflection: () => new ArithmeticsAstReflection(),
-    LanguageMetaData: () => metaData
+    LanguageMetaData: () => languageMetaData
 };
