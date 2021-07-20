@@ -37,7 +37,7 @@
     "langium": {
         "languageId": "arithmetics",
         "grammar": "src/language-server/arithmetics.langium",
-        "extensions": [".calc"],
+        "fileExtensions": [".calc"],
         "out": "src/language-server/generated",
         "textMate": {
             "out": "syntaxes/arithmetics.tmLanguage.json"

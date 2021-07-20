@@ -9,7 +9,7 @@ import { LangiumGrammarAstReflection } from './ast';
 import { LangiumGrammarGrammarAccess } from './grammar-access';
 import { Parser } from './parser';
 
-const metaData = {
+export const languageMetaData = {
     languageId: 'langium',
     fileExtensions: ['.langium']
 };
@@ -20,5 +20,5 @@ export const LangiumGrammarGeneratedModule: Module<LangiumServices, LangiumGener
     },
     GrammarAccess: () => new LangiumGrammarGrammarAccess(),
     AstReflection: () => new LangiumGrammarAstReflection(),
-    LanguageMetaData: () => metaData
+    LanguageMetaData: () => languageMetaData
 };

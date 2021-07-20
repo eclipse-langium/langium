@@ -8,7 +8,7 @@ import { StatemachineAstReflection } from './ast';
 import { StatemachineGrammarAccess } from './grammar-access';
 import { Parser } from './parser';
 
-const metaData = {
+export const languageMetaData = {
     languageId: 'statemachine',
     fileExtensions: ['.statemachine']
 };
@@ -19,5 +19,5 @@ export const StatemachineGeneratedModule: Module<LangiumServices, LangiumGenerat
     },
     GrammarAccess: () => new StatemachineGrammarAccess(),
     AstReflection: () => new StatemachineAstReflection(),
-    LanguageMetaData: () => metaData
+    LanguageMetaData: () => languageMetaData
 };

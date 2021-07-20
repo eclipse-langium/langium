@@ -8,7 +8,7 @@ import { DomainModelAstReflection } from './ast';
 import { DomainModelGrammarAccess } from './grammar-access';
 import { Parser } from './parser';
 
-const metaData = {
+export const languageMetaData = {
     languageId: 'domain-model',
     fileExtensions: ['.dmodel']
 };
@@ -19,5 +19,5 @@ export const DomainModelGeneratedModule: Module<LangiumServices, LangiumGenerate
     },
     GrammarAccess: () => new DomainModelGrammarAccess(),
     AstReflection: () => new DomainModelAstReflection(),
-    LanguageMetaData: () => metaData
+    LanguageMetaData: () => languageMetaData
 };

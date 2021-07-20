@@ -31,7 +31,7 @@
   "langium": {
     "languageId": "langium",
     "grammar": "src/grammar/langium-grammar.langium",
-    "extensions": [
+    "fileExtensions": [
       "langium"
     ],
     "out": "src/grammar/generated",
