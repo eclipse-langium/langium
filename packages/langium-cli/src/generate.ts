@@ -56,7 +56,12 @@ export function generate(config: LangiumConfig): boolean {
 
     const output = path.join(relPath, config.out ?? 'src/generated');
     console.log(`${getTime()}Writing generated files to ${output.white.bold}`);
-    mkdirWithFail(output);
+    if (rmdirWithFail(output)) {
+        return false;
+    }
+    if (mkdirWithFail(output)) {
+        return false;
+    }
 
     const genAst = generateAst(grammar, config);
     writeWithFail(path.join(output, 'ast.ts'), genAst);
@@ -78,11 +83,23 @@ export function generate(config: LangiumConfig): boolean {
     return true;
 }
 
-function mkdirWithFail(path: string): void {
+function rmdirWithFail(path: string): boolean {
+    try {
+        fs.removeSync(path);
+        return false;
+    } catch (e) {
+        console.error(`${getTime()}Failed to delete directory ${path.red.bold}`, e);
+        return true;
+    }
+}
+
+function mkdirWithFail(path: string): boolean {
     try {
         fs.mkdirsSync(path);
+        return false;
     } catch (e) {
         console.error(`${getTime()}Failed to create directory ${path.red.bold}`, e);
+        return true;
     }
 }
 
