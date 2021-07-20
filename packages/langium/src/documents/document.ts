@@ -11,7 +11,7 @@ import { ParseResult } from '../parser/langium-parser';
 import { AstNodeDescription } from '../references/scope';
 
 export interface LangiumDocument extends TextDocument {
-    parseResult?: ParseResult<AstNode>
+    parseResult?: ParseResult
     precomputedScopes?: PrecomputedScopes
 }
 

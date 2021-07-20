@@ -10,7 +10,7 @@
                     "description": "The relative file path to the .langium grammar file",
                     "type": "string"
                 },
-                "extensions": {
+                "fileExtensions": {
                     "description": "The file extensions used by the DSL",
                     "type": "array",
                     "items": [
@@ -47,7 +47,7 @@
             },
             "required": [
                 "grammar",
-                "extensions",
+                "fileExtensions",
                 "languageId"
             ]
         }

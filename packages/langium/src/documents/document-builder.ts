@@ -6,13 +6,18 @@
 
 import { Connection, Diagnostic } from 'vscode-languageserver/node';
 import { DocumentValidator } from '../validation/document-validator';
-import { LangiumParser } from '../parser/langium-parser';
+import { LangiumParser, ParseResult } from '../parser/langium-parser';
 import { ScopeComputation } from '../references/scope';
 import { LangiumServices } from '../services';
 import { LangiumDocument } from './document';
 
 export interface DocumentBuilder {
-    build(document: LangiumDocument, diagnostics?: Diagnostic[]): void
+    build(document: LangiumDocument): BuildResult
+}
+
+export interface BuildResult {
+    readonly parseResult: ParseResult
+    readonly diagnostics: Diagnostic[]
 }
 
 export class DefaultDocumentBuilder implements DocumentBuilder {
@@ -28,20 +33,26 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
         this.documentValidator = services.validation.DocumentValidator;
     }
 
-    build(document: LangiumDocument, diagnostics?: Diagnostic[]): void {
+    build(document: LangiumDocument): BuildResult {
         const parseResult = this.parser.parse(document);
         document.parseResult = parseResult;
         this.process(document);
-        if (diagnostics || this.connection) {
-            const docDiagnostics = this.documentValidator.validateDocument(document);
-            if (diagnostics) {
-                diagnostics.push(...docDiagnostics);
-            }
-            if (this.connection) {
-                // Send the computed diagnostics to VS Code.
-                this.connection.sendDiagnostics({ uri: document.uri, diagnostics: docDiagnostics });
-            }
+        let diagnostics: Diagnostic[] | undefined;
+        const validator = this.documentValidator;
+        if (this.connection) {
+            diagnostics = validator.validateDocument(document);
+            // Send the computed diagnostics to VS Code.
+            this.connection.sendDiagnostics({ uri: document.uri, diagnostics });
         }
+        return {
+            parseResult,
+            get diagnostics() {
+                if (!diagnostics) {
+                    diagnostics = validator.validateDocument(document);
+                }
+                return diagnostics;
+            }
+        };
     }
 
     /**

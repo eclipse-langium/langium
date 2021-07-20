@@ -17,7 +17,7 @@ import { LangiumServices } from '../services';
 import { getContainerOfType } from '../utils/ast-util';
 import { ValueConverter } from './value-converter';
 
-export type ParseResult<T> = {
+export type ParseResult<T = AstNode> = {
     value: T,
     parserErrors: IRecognitionException[],
     lexerErrors: ILexingError[]
@@ -66,7 +66,7 @@ export class LangiumParser {
         return this.wrapper.DEFINE_RULE(name, this.startImplementation(type, implementation).bind(this));
     }
 
-    parse(input: string | LangiumDocument): ParseResult<AstNode> {
+    parse(input: string | LangiumDocument): ParseResult {
         this.wrapper.selfAnalysis();
         const text = typeof input === 'string' ? input : input.getText();
         this.nodeBuilder.buildRootNode(text);
