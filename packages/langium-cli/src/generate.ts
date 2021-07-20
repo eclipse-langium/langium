@@ -7,14 +7,14 @@
 import fs from 'fs-extra';
 import path from 'path';
 import { LangiumConfig, RelativePath } from './package';
-import { Grammar, createLangiumGrammarServices, LangiumDocumentConfiguration } from 'langium';
-import { Diagnostic } from 'vscode-languageserver-types';
+import { createLangiumGrammarServices, LangiumDocumentConfiguration, isGrammar } from 'langium';
 import { generateGrammarAccess } from './generator/grammar-access-generator';
 import { generateParser } from './generator/parser-generator';
 import { generateAst } from './generator/ast-generator';
 import { generateModule } from './generator/module-generator';
 import { generateTextMate } from './generator/textmate-generator';
 import { serializeGrammar } from './generator/grammar-serializer';
+import { getTime } from './generator/util';
 
 export type GenerateOptions = {
     file?: string;
@@ -34,9 +34,9 @@ export function generate(config: LangiumConfig): boolean {
         return false;
     }
     const document = LangiumDocumentConfiguration.create(`file:${config.grammar}`, 'langium', 0, grammarFileContent);
-    const diagnostics: Diagnostic[] = [];
-    services.documents.DocumentBuilder.build(document, diagnostics);
-    if (!document.parseResult) {
+    const buildResult = services.documents.DocumentBuilder.build(document);
+    const diagnostics = buildResult.diagnostics;
+    if (!isGrammar(buildResult.parseResult.value)) {
         console.error(getTime() + 'Failed to parse the grammar file: ' + config.grammar);
         return false;
     } else if (diagnostics?.length && diagnostics.some(e => e.severity === 1)) {
@@ -54,7 +54,7 @@ export function generate(config: LangiumConfig): boolean {
         console.error(`${getTime()}Langium generator ${'failed'.red.bold}.`);
         return false;
     }
-    const grammar = document.parseResult.value as Grammar;
+    const grammar = buildResult.parseResult.value;
 
     const output = path.join(relPath, config.out ?? 'src/generated');
     console.log(`${getTime()}Writing generated files to ${output.white.bold}`);
@@ -72,21 +72,16 @@ export function generate(config: LangiumConfig): boolean {
     const parser = generateParser(grammar, config);
     writeWithFail(path.join(output, 'parser.ts'), parser);
 
-    console.log('Generating dependency injection module...');
     const genModule = generateModule(grammar, config);
     writeWithFail(path.join(output, 'module.ts'), genModule);
 
     if (config.textMate) {
-        if (!config.languageId) {
-            console.error(getTime() + 'Language Id needs to be set in order to generate the textmate grammar.'.red);
-        } else {
-            const genTmGrammar = generateTextMate(grammar, config);
-            const textMatePath = path.join(relPath, config.textMate.out);
-            console.log(`${getTime()}Writing textmate grammar to ${textMatePath.white.bold}`);
-            const parentDir = path.dirname(textMatePath).split(path.sep).pop();
-            parentDir && mkdirWithFail(parentDir);
-            writeWithFail(textMatePath, genTmGrammar);
-        }
+        const genTmGrammar = generateTextMate(grammar, config);
+        const textMatePath = path.join(relPath, config.textMate.out);
+        console.log(`${getTime()}Writing textmate grammar to ${textMatePath.white.bold}`);
+        const parentDir = path.dirname(textMatePath).split(path.sep).pop();
+        parentDir && mkdirWithFail(parentDir);
+        writeWithFail(textMatePath, genTmGrammar);
     }
     return true;
 }
