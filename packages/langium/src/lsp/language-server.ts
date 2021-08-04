@@ -55,7 +55,7 @@ export function startLanguageServer(services: LangiumServices): void {
                 indexWorkspace(() => {
                     const indexer = services.index.IndexManager;
                     if (params.workspaceFolders)
-                        indexer.initializeWorspace(params.workspaceFolders);
+                        indexer.initializeWorkspace(params.workspaceFolders);
                     else if (params.rootUri)
                         indexer.initializeRoot(params.rootUri);
                 });

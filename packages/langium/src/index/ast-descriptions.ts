@@ -59,4 +59,19 @@ export class DefaultDescriptionsProvider implements AstNodeDescriptionProvider {
     }
 
 }
+export class DefaultReferenceDescriptionProvider implements AstReferenceDescriptionProvider {
 
+    protected readonly services: LangiumServices;
+
+    constructor(services: LangiumServices) { this.services = services; }
+
+    createDescriptions(document: LangiumDocument): AstNodeReferenceDescription[] {
+        const descr: AstNodeReferenceDescription[] = [];
+        const rooNode = document.parseResult?.value;
+        if (rooNode) {
+            // create ref descriptions
+        }
+        return descr;
+    }
+
+}

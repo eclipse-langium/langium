@@ -8,7 +8,7 @@ import { Connection, TextDocuments } from 'vscode-languageserver/node';
 import { Module } from './dependency-injection';
 import { LangiumDocumentConfiguration } from './documents/document';
 import { DefaultDocumentBuilder } from './documents/document-builder';
-import { DefaultDescriptionsProvider } from './index/ast-descriptions';
+import { DefaultDescriptionsProvider, DefaultReferenceDescriptionProvider } from './index/ast-descriptions';
 import { DefaultAstNodeLocator } from './index/ast-node-locator';
 import { DefaultIndexManager } from './index/workspace-index-manager';
 import { DefaultCompletionProvider } from './lsp/completion/completion-provider';
@@ -58,7 +58,9 @@ export function createDefaultModule(context: DefaultModuleContext = {}): Module<
         index: {
             IndexManager: (injector) => new DefaultIndexManager(injector),
             AstNodePathComputer: () => new DefaultAstNodeLocator(),
-            AstNodeDescriptionProvider: (injector) => new DefaultDescriptionsProvider(injector)
+            AstNodeLocator: () => new DefaultAstNodeLocator(),
+            AstNodeDescriptionProvider: (injector) => new DefaultDescriptionsProvider(injector),
+            AstReferenceDescriptionProvider: (injector) => new DefaultReferenceDescriptionProvider(injector)
         },
         references: {
             Linker: (injector) => new DefaultLinker(injector),

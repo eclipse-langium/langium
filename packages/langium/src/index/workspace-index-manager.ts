@@ -16,7 +16,7 @@ import { AstNodeReferenceDescription } from './ast-descriptions';
 
 export interface IndexManager {
     initializeRoot(rootUri: string): void;
-    initializeWorspace(folders: WorkspaceFolder[] | null): void;
+    initializeWorkspace(folders: WorkspaceFolder[] | null): void;
     update(document: LangiumDocument): void;
     /* Use streams? */
     allElements(): AstNodeDescription[];
@@ -59,7 +59,7 @@ export class DefaultIndexManager implements IndexManager {
         console.timeEnd(taskName);
     }
 
-    initializeWorspace(folders: WorkspaceFolder[] | null): void {
+    initializeWorkspace(folders: WorkspaceFolder[] | null): void {
         const taskName = this.langMetaData.languageId + ' - Workspace indexing.';
         console.time(taskName);
         folders?.forEach((folder) => {
@@ -102,21 +102,11 @@ export class DefaultIndexManager implements IndexManager {
     }
 
     protected processDocument(document: LangiumDocument): void {
-        if (!document.precomputedScopes) {
-            this.services.documents.DocumentBuilder.build(document);
-            this.services.references.ScopeComputation.computeScope(document);
+        const indexData: AstNodeDescription[] = this.services.index.AstNodeDescriptionProvider.createDescriptions(document);
+        for (const data of indexData) {
+            data.node = undefined; // clear reference to the AST Node
         }
-        if (document.precomputedScopes) {
-            const indexData: AstNodeDescription[] = this.services.index.AstNodeDescriptionProvider.createDescriptions(document);
-            for (const data of indexData) {
-                data.node = undefined; // clear reference to the AST Node
-            }
-            this.simpleIndex.set(document.uri, indexData);
-            if (document.parseResult?.value) {
-                const imports: AstNodeReferenceDescription[] = [];
-                // TODO create reference descriptions using Linker.linkCandidates
-                this.referenceIndex.set(document.uri, imports);
-            }
-        }
+        this.simpleIndex.set(document.uri, indexData);
+        this.referenceIndex.set(document.uri, this.services.index.AstReferenceDescriptionProvider.createDescriptions(document));
     }
 }
