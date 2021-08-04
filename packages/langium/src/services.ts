@@ -11,6 +11,7 @@ import { LangiumDocument } from './documents/document';
 import { DocumentBuilder } from './documents/document-builder';
 import { GrammarAccess } from './grammar/grammar-access';
 import { LanguageMetaData } from './grammar/language-meta-data';
+import { AstNodeDescriptionProvider } from './index/ast-descriptions';
 import { AstNodePathComputer } from './index/ast-node-locator';
 import { IndexManager } from './index/workspace-index-manager';
 import { CompletionProvider } from './lsp/completion/completion-provider';
@@ -71,6 +72,7 @@ export type LangiumDefaultServices = {
     index: {
         IndexManager: IndexManager
         AstNodePathComputer: AstNodePathComputer
+        AstNodeDescriptionProvider: AstNodeDescriptionProvider
     }
     references: {
         Linker: Linker

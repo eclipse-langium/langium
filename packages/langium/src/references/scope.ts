@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import { LangiumDocument, PrecomputedScopes } from '../documents/document';
-import { AstNodePathComputer } from '../index/ast-node-locator';
+import { AstNodeDescriptionProvider } from '../index/ast-descriptions';
 import { IndexManager } from '../index/workspace-index-manager';
 import { LangiumServices } from '../services';
 import { AstNode, AstReflection } from '../syntax-tree';
@@ -13,6 +13,7 @@ import { getDocument, streamAllContents } from '../utils/ast-util';
 import { EMPTY_STREAM, Stream, stream } from '../utils/stream';
 import { NameProvider } from './naming';
 
+// TODO Move to index folder?
 export interface AstNodeDescription {
     node?: AstNode
     type: string // AstNodeType?
@@ -20,10 +21,6 @@ export interface AstNodeDescription {
     documentUri: string // DocumentUri?
     /* navigation path inside a document */
     path: string
-}
-export interface AstNodeReferenceDescription {
-    sourcePath: string
-    targetPath: string
 }
 export interface Scope {
     getElement(name: string): AstNodeDescription | undefined
@@ -118,11 +115,11 @@ export interface ScopeComputation {
 
 export class DefaultScopeComputation implements ScopeComputation {
     protected readonly nameProvider: NameProvider;
-    protected readonly astNodePath: AstNodePathComputer;
+    protected readonly descriptions: AstNodeDescriptionProvider;
 
     constructor(services: LangiumServices) {
         this.nameProvider = services.references.NameProvider;
-        this.astNodePath = services.index.AstNodePathComputer;
+        this.descriptions = services.index.AstNodeDescriptionProvider;
     }
 
     computeScope(document: LangiumDocument): PrecomputedScopes {
@@ -137,22 +134,12 @@ export class DefaultScopeComputation implements ScopeComputation {
             if (container) {
                 const name = this.nameProvider.getName(node);
                 if (name) {
-                    const description = this.createDescription(node, name, document);
+                    const description = this.descriptions.createDescription(node, name, document);
                     this.addToContainer(description, container, scopes);
                 }
             }
         });
         return scopes;
-    }
-
-    protected createDescription(node: AstNode, name: string, document: LangiumDocument): AstNodeDescription {
-        return {
-            node,
-            name,
-            type: node.$type,
-            documentUri: document.uri,
-            path: this.astNodePath.astNodePath(node)
-        };
     }
 
     protected addToContainer(description: AstNodeDescription, container: AstNode, scopes: PrecomputedScopes): void {

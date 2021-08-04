@@ -10,8 +10,9 @@ import { fileURLToPath, pathToFileURL } from 'url';
 import { WorkspaceFolder } from 'vscode-languageserver';
 import { LangiumDocument, LangiumDocumentConfiguration } from '../documents/document';
 import { LanguageMetaData } from '../grammar/language-meta-data';
-import { AstNodeDescription, AstNodeReferenceDescription } from '../references/scope';
+import { AstNodeDescription } from '../references/scope';
 import { LangiumServices } from '../services';
+import { AstNodeReferenceDescription } from './ast-descriptions';
 
 export interface IndexManager {
     initializeRoot(rootUri: string): void;
@@ -106,18 +107,16 @@ export class DefaultIndexManager implements IndexManager {
             this.services.references.ScopeComputation.computeScope(document);
         }
         if (document.precomputedScopes) {
-            let indexData: AstNodeDescription[] = [];
-            // TODO Need a service for "Give me exported AstNodeDescription for a LangDocument"
-            for (const data of document.precomputedScopes?.values()) {
-                // TODO create new descriptions without having AstNode inside
-                indexData = data;
+            const indexData: AstNodeDescription[] = this.services.index.AstNodeDescriptionProvider.createDescriptions(document);
+            for (const data of indexData) {
+                data.node = undefined; // clear reference to the AST Node
             }
+            this.simpleIndex.set(document.uri, indexData);
             if (document.parseResult?.value) {
                 const imports: AstNodeReferenceDescription[] = [];
                 // TODO create reference descriptions using Linker.linkCandidates
                 this.referenceIndex.set(document.uri, imports);
             }
-            this.simpleIndex.set(document.uri, indexData);
         }
     }
 }
