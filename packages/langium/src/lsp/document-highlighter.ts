@@ -10,7 +10,7 @@ import { NameProvider } from '../references/naming';
 import { References } from '../references/references';
 import { LangiumServices } from '../services';
 import { AstNode, CstNode } from '../syntax-tree';
-import { findLeafNodeAtOffset, findLocalReferences } from '../utils/ast-util';
+import { findLeafNodeAtOffset, findLocalReferences, getDocument } from '../utils/ast-util';
 import { toRange } from '../utils/cst-util';
 
 export interface DocumentHighlighter {
@@ -38,9 +38,12 @@ export class DefaultDocumentHighlighter implements DocumentHighlighter {
         }
         const targetAstNode = this.references.findDeclaration(selectedNode)?.element;
         if (targetAstNode) {
-            const nameNode = this.findNameNode(targetAstNode);
-            if (nameNode)
-                refs.push(nameNode);
+            if (getDocument(targetAstNode).uri === document.uri) {
+                const nameNode = this.findNameNode(targetAstNode);
+                if (nameNode) {
+                    refs.push(nameNode);
+                }
+            }
             findLocalReferences(targetAstNode, rootNode.element).forEach((element) => {
                 refs.push(element.$refNode);
             });
