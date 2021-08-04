@@ -4,24 +4,27 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import { LangiumDocument, PrecomputedScopes } from '../documents/document';
+import { AstNodePathComputer } from '../index/ast-node-locator';
+import { IndexManager } from '../index/workspace-index-manager';
+import { LangiumServices } from '../services';
 import { AstNode, AstReflection } from '../syntax-tree';
 import { getDocument, streamAllContents } from '../utils/ast-util';
 import { EMPTY_STREAM, Stream, stream } from '../utils/stream';
 import { NameProvider } from './naming';
-import { LangiumServices } from '../services';
-import { LangiumDocument, PrecomputedScopes } from '../documents/document';
-import { IndexManager } from '../index/workspace-index-manager';
-import { AstNodePathComputer } from '../index/ast-node-locator';
 
 export interface AstNodeDescription {
     node?: AstNode
-    name: string // QualifiedName?
     type: string // AstNodeType?
+    name: string // QualifiedName?
     documentUri: string // DocumentUri?
     /* navigation path inside a document */
     path: string
 }
-
+export interface AstNodeReferenceDescription {
+    sourcePath: string
+    targetPath: string
+}
 export interface Scope {
     getElement(name: string): AstNodeDescription | undefined
     getAllElements(): Stream<AstNodeDescription>

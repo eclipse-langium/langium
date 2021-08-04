@@ -7,21 +7,28 @@
 import { AstReflection } from './syntax-tree';
 import { DocumentBuilder } from './documents/document-builder';
 import { Connection, TextDocuments } from 'vscode-languageserver/node';
-import { Linker } from './references/linker';
-import { NameProvider } from './references/naming';
-import { ScopeProvider, ScopeComputation } from './references/scope';
-import { JsonSerializer } from './serializer/json-serializer';
 import { LangiumDocument } from './documents/document';
-import { DocumentSymbolProvider } from './lsp/document-symbol-provider';
+import { DocumentBuilder } from './documents/document-builder';
+import { GrammarAccess } from './grammar/grammar-access';
+import { LanguageMetaData } from './grammar/language-meta-data';
+import { AstNodePathComputer } from './index/ast-node-locator';
+import { IndexManager } from './index/workspace-index-manager';
 import { CompletionProvider } from './lsp/completion/completion-provider';
 import { RuleInterpreter } from './lsp/completion/rule-interpreter';
-import { ValueConverter } from './parser/value-converter';
-import { ReferenceFinder } from './lsp/reference-finder';
-import { GoToResolver } from './lsp/goto';
 import { DocumentHighlighter } from './lsp/document-highlighter';
+import { DocumentSymbolProvider } from './lsp/document-symbol-provider';
+import { GoToResolver } from './lsp/goto';
+import { ReferenceFinder } from './lsp/reference-finder';
+import { LangiumParser } from './parser/langium-parser';
+import { ValueConverter } from './parser/value-converter';
+import { Linker } from './references/linker';
+import { NameProvider } from './references/naming';
 import { References } from './references/references';
-import { ValidationRegistry } from './validation/validation-registry';
+import { ScopeComputation, ScopeProvider } from './references/scope';
+import { JsonSerializer } from './serializer/json-serializer';
+import { AstReflection } from './syntax-tree';
 import { DocumentValidator } from './validation/document-validator';
+import { ValidationRegistry } from './validation/validation-registry';
 import { Grammar } from './grammar/generated/ast';
 import { LangiumParser } from './parser/langium-parser';
 import { TokenBuilder } from './parser/token-builder';
@@ -71,7 +78,6 @@ export type LangiumDefaultServices = {
         References: References
         ScopeProvider: ScopeProvider
         ScopeComputation: ScopeComputation
-        MonikerProvider: MonikerProvider
     }
     serializer: {
         JsonSerializer: JsonSerializer

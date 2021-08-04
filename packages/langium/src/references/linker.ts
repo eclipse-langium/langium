@@ -5,26 +5,38 @@
  ******************************************************************************/
 
 import { LangiumServices } from '../services';
-import { AstNode, AstReflection } from '../syntax-tree';
-import { ScopeProvider } from './scope';
+import { AstNode } from '../syntax-tree';
+import { AstNodeDescription, ScopeProvider } from './scope';
 
 export interface Linker {
     link(node: AstNode, referenceName: string, referenceId: string): AstNode | undefined;
+    // TODO should be a collection of AstNodeDescriptions
+    linkingCandiates(node: AstNode, referenceName: string, referenceId: string): AstNodeDescription | undefined;
 }
 
 export class DefaultLinker implements Linker {
     protected readonly scopeProvider: ScopeProvider;
-    protected readonly reflection: AstReflection;
 
     constructor(services: LangiumServices) {
         this.scopeProvider = services.references.ScopeProvider;
-        this.reflection = services.AstReflection;
     }
 
     link(node: AstNode, referenceName: string, referenceId: string): AstNode | undefined {
+        const description = this.linkingCandiates(node, referenceName, referenceId);
+        if (description)
+            return this.loadAstNode(description);
+        return undefined;
+    }
+
+    linkingCandiates(node: AstNode, referenceName: string, referenceId: string): AstNodeDescription | undefined {
         const scope = this.scopeProvider.getScope(node, referenceId);
-        const description = scope.getElement(referenceName);
-        // TODO resolve the node if necessary
-        return description?.node;
+        return scope.getElement(referenceName);
+    }
+
+    loadAstNode(nodeDescription: AstNodeDescription): AstNode | undefined {
+        if (nodeDescription.node)
+            return nodeDescription.node;
+        // TODO create parse document return the astnode
+        return undefined;
     }
 }

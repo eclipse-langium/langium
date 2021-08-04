@@ -7,21 +7,19 @@
 import { existsSync, readdirSync, readFileSync } from 'fs';
 import { extname, resolve } from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
-import { MonikerKind, WorkspaceFolder } from 'vscode-languageserver';
+import { WorkspaceFolder } from 'vscode-languageserver';
 import { LangiumDocument, LangiumDocumentConfiguration } from '../documents/document';
 import { LanguageMetaData } from '../grammar/language-meta-data';
-import { LangiumMoniker } from '../references/moniker';
-import { AstNodeDescription } from '../references/scope';
+import { AstNodeDescription, AstNodeReferenceDescription } from '../references/scope';
 import { LangiumServices } from '../services';
 
 export interface IndexManager {
-    // initialize(workspace: RemoteWorkspace): void;
     initializeRoot(rootUri: string): void;
     initializeWorspace(folders: WorkspaceFolder[] | null): void;
     update(document: LangiumDocument): void;
-    /* Use stream? */
+    /* Use streams? */
     allElements(): AstNodeDescription[];
-    documentDescriptions(): ReadonlyMap<string, LangiumMoniker[]>;
+    documentDescriptions(): ReadonlyMap<string, AstNodeReferenceDescription[]>;
 }
 
 // don't know how to trac this.simpleIndex inside DefaultIndexManager
@@ -30,15 +28,15 @@ export class DefaultIndexManager implements IndexManager {
     protected readonly langMetaData: LanguageMetaData
 
     simpleIndex: Map<string, AstNodeDescription[]> = new Map<string, AstNodeDescription[]>();
-    monikerIndex: Map<string, LangiumMoniker[]> = new Map<string, LangiumMoniker[]>();
+    referenceIndex: Map<string, AstNodeReferenceDescription[]> = new Map<string, AstNodeReferenceDescription[]>();
 
     constructor(services: LangiumServices) {
         this.services = services;
         this.langMetaData = this.services.LanguageMetaData;
     }
 
-    documentDescriptions(): ReadonlyMap<string, LangiumMoniker[]> {
-        return this.monikerIndex;
+    documentDescriptions(): ReadonlyMap<string, AstNodeReferenceDescription[]> {
+        return this.referenceIndex;
     }
 
     allElements(): AstNodeDescription[] {
@@ -50,7 +48,7 @@ export class DefaultIndexManager implements IndexManager {
     }
 
     initializeRoot(rootUri: string): void {
-        this.traverseFolder(fileURLToPath(rootUri), this.langMetaData.extensions);
+        this.traverseFolder(fileURLToPath(rootUri), this.langMetaData.fileExtensions);
     }
 
     update(document: LangiumDocument): void {
@@ -64,7 +62,7 @@ export class DefaultIndexManager implements IndexManager {
         const taskName = this.langMetaData.languageId + ' - Workspace indexing.';
         console.time(taskName);
         folders?.forEach((folder) => {
-            this.traverseFolder(fileURLToPath(folder.uri), this.langMetaData.extensions);
+            this.traverseFolder(fileURLToPath(folder.uri), this.langMetaData.fileExtensions);
         });
         console.timeEnd(taskName);
     }
@@ -109,18 +107,15 @@ export class DefaultIndexManager implements IndexManager {
         }
         if (document.precomputedScopes) {
             let indexData: AstNodeDescription[] = [];
+            // TODO Need a service for "Give me exported AstNodeDescription for a LangDocument"
             for (const data of document.precomputedScopes?.values()) {
+                // TODO create new descriptions without having AstNode inside
                 indexData = data;
             }
             if (document.parseResult?.value) {
-                const imports: LangiumMoniker[] = [];
-                this.services.references.MonikerProvider.createMonikers(document.parseResult.value).forEach(moniker => {
-                    // track only imports for now
-                    if (moniker.kind === MonikerKind.import) {
-                        imports.push(moniker);
-                    }
-                });
-                this.monikerIndex.set(document.uri, imports);
+                const imports: AstNodeReferenceDescription[] = [];
+                // TODO create reference descriptions using Linker.linkCandidates
+                this.referenceIndex.set(document.uri, imports);
             }
             this.simpleIndex.set(document.uri, indexData);
         }
