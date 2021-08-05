@@ -97,7 +97,11 @@ export class DefaultIndexManager implements IndexManager {
         // TODO check open not dirty documents first
         const fileContent = readFileSync(filePath).toString();
         const langId = this.langMetaData.languageId;
-        const document = LangiumDocumentConfiguration.create(pathToFileURL(filePath).toString(), langId, 0, fileContent);
+        // TODO extract this tto service. Same as in linker.ts loadAstNode()
+        const document: LangiumDocument = LangiumDocumentConfiguration.create(pathToFileURL(filePath).toString(), langId, 0, fileContent);
+        const parseResult = this.services.parser.LangiumParser.parse(document);
+        document.parseResult = parseResult;
+        // end
         this.processDocument(document);
     }
 

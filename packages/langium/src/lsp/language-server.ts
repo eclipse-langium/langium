@@ -69,6 +69,7 @@ export function startLanguageServer(services: LangiumServices): void {
     const documents = services.documents.TextDocuments;
     const documentBuilder = services.documents.DocumentBuilder;
     documents.onDidChangeContent(change => {
+        console.debug('Documents in service:' + documents.keys().length);
         documentBuilder.build(change.document);
         if (change.document.parseResult?.value) {
             services.index.IndexManager.update(change.document);

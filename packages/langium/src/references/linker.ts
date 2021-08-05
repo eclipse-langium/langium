@@ -52,6 +52,8 @@ export class DefaultLinker implements Linker {
             // Just a dirty implementation. We need a service loading document bei URI
             const fileContent = readFileSync(fileURLToPath(nodeDescription.documentUri)).toString();
             const langId = this.services.LanguageMetaData.languageId;
+            // FIXME This is currently problematic, becuase we create new Ast objects for each cross ref,
+            // hence astNode === astNode will not work wenn comapring them in e.g. document Highlighting
             const document = LangiumDocumentConfiguration.create(nodeDescription.documentUri, langId, 0, fileContent);
             const parseResult = this.services.parser.LangiumParser.parse(document);
             document.parseResult = parseResult;
