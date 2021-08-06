@@ -12,7 +12,7 @@ import {
     DocumentHighlightParams, DocumentSymbol, DocumentSymbolParams, InitializeParams, InitializeResult,
     Location, LocationLink, ReferenceParams, TextDocumentPositionParams, TextDocumentSyncKind
 } from 'vscode-languageserver/node';
-import { LangiumDocument } from '../documents/document';
+import { invalidateAllDocument, invalidateDocument, LangiumDocument } from '../documents/document';
 import { LangiumServices } from '../services';
 
 export function startLanguageServer(services: LangiumServices): void {
@@ -70,12 +70,16 @@ export function startLanguageServer(services: LangiumServices): void {
     const documentBuilder = services.documents.DocumentBuilder;
     documents.onDidChangeContent(change => {
         console.debug('Documents in service:' + documents.keys().length);
+        invalidateDocument(change.document.uri);
         documentBuilder.build(change.document);
         if (change.document.parseResult?.value) {
             services.index.IndexManager.update(change.document);
         }
     });
-
+    documents.onDidClose(() => {
+        if(documents.keys().length === 0)
+            invalidateAllDocument();
+    });
     addCompletionHandler(connection, services);
     addFindReferencesHandler(connection, services);
     addDocumentSymbolHandler(connection, services);

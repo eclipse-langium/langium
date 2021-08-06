@@ -6,7 +6,7 @@
 
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
-import { LangiumDocumentConfiguration } from '../documents/document';
+import { createOrGetDocument, LangiumDocumentConfiguration } from '../documents/document';
 import { LangiumServices } from '../services';
 import { AstNode } from '../syntax-tree';
 import { AstNodeDescription, ScopeProvider } from './scope';
@@ -41,24 +41,14 @@ export class DefaultLinker implements Linker {
     loadAstNode(nodeDescription: AstNodeDescription): AstNode | undefined {
         if (nodeDescription.node)
             return nodeDescription.node;
-        // TODO create parse document return the astnode
-        const docs = this.services.documents.TextDocuments;
-        if (docs.keys().includes(nodeDescription.documentUri)) {
-            // look up opened documents
-            const langDoc = docs.get(nodeDescription.documentUri);
-            if (langDoc)
-                return this.services.index.AstNodeLocator.astNode(langDoc, nodeDescription.path);
-        } else {
-            // Just a dirty implementation. We need a service loading document bei URI
-            const fileContent = readFileSync(fileURLToPath(nodeDescription.documentUri)).toString();
+        const doc = createOrGetDocument(nodeDescription.documentUri, this.services.documents.TextDocuments, (uri: string) => {
+            const fileContent = readFileSync(fileURLToPath(uri)).toString();
             const langId = this.services.LanguageMetaData.languageId;
-            // FIXME This is currently problematic, becuase we create new Ast objects for each cross ref,
-            // hence astNode === astNode will not work wenn comapring them in e.g. document Highlighting
-            const document = LangiumDocumentConfiguration.create(nodeDescription.documentUri, langId, 0, fileContent);
+            const document = LangiumDocumentConfiguration.create(uri, langId, 0, fileContent);
             const parseResult = this.services.parser.LangiumParser.parse(document);
             document.parseResult = parseResult;
-            return this.services.index.AstNodeLocator.astNode(document, nodeDescription.path);
-        }
-        return undefined;
+            return document;
+        });
+        return this.services.index.AstNodeLocator.astNode(doc, nodeDescription.path);
     }
 }
