@@ -8,7 +8,7 @@ import 'colors';
 import fs from 'fs-extra';
 import { Command } from 'commander';
 import { validate } from 'jsonschema';
-import { generate, GenerateOptions } from './generate';
+import { generate, GenerateOptions, GeneratorResult } from './generate';
 import { cliVersion, elapsedTime, getTime, schema } from './generator/util';
 import { LangiumConfig, loadConfigs, RelativePath } from './package';
 import path from 'path';
@@ -27,7 +27,7 @@ program
 
 program.parse(process.argv);
 
-function forEachConfig(options: GenerateOptions, callback: (config: LangiumConfig) => boolean): void {
+async function forEachConfig(options: GenerateOptions, callback: (config: LangiumConfig) => Promise<GeneratorResult>): Promise<void> {
     const configs = loadConfigs(options.file);
     if (!configs.length) {
         console.error('Could not find a langium configuration. Please add a langium-config.json to your project or a langium section to your package.json.'.red);
@@ -38,23 +38,23 @@ function forEachConfig(options: GenerateOptions, callback: (config: LangiumConfi
         console.error('Your langium configuration is invalid.'.red);
         process.exit(1);
     }
-
+    const allSuccessful = (await Promise.all(configs.map(callback))).every(e => e === 'success');
     if (options.watch) {
-        if (configs.every(callback)) {
+        if (allSuccessful) {
             console.log(`${getTime()}Langium generator finished ${'successfully'.green.bold} in: ${elapsedTime()}ms`);
         }
         console.log(getTime() + 'Langium generator will continue running in watch mode');
         configs.forEach(e => {
             const grammarPath = path.join(e[RelativePath], e.grammar);
-            fs.watchFile(grammarPath, () => {
+            fs.watchFile(grammarPath, async () => {
                 console.log(getTime() + 'File change detected. Starting compilation...');
                 elapsedTime();
-                if (callback(e)) {
+                if (await callback(e) === 'success') {
                     console.log(`${getTime()}Langium generator finished ${'successfully'.green.bold} in: ${elapsedTime()}ms`);
                 }
             });
         });
-    } else if (configs.some(e => !callback(e))) {
+    } else if (!allSuccessful) {
         process.exit(1);
     } else {
         console.log(`${getTime()}Langium generator finished ${'successfully'.green.bold} in: ${elapsedTime()}ms`);
