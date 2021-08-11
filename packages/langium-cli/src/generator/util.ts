@@ -8,6 +8,7 @@ import * as langium from 'langium';
 import { CompositeGeneratorNode, GeneratorNode, NL, stream } from 'langium';
 import fs from 'fs-extra';
 import path from 'path';
+import * as readline from 'readline';
 
 let start = process.hrtime();
 
@@ -63,6 +64,31 @@ function collectElementKeywords(element: langium.AbstractElement, keywords: Set<
     } else if (langium.isKeyword(element)) {
         keywords.add(element.value);
     }
+}
+
+export function getUserInput(text: string): Promise<string> {
+    return new Promise(resolve => {
+        const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+        rl.question(text, answer => {
+            resolve(answer);
+            rl.close();
+        });
+    });
+}
+
+export async function getUserChoice<R extends string>(text: string, values: R[], defaultValue: R, lowerCase = true): Promise<R> {
+    const prompt = text + ' ' + values.map(v => v === defaultValue ? `[${v}]` : v).join('/') + ': ';
+    const answer = await getUserInput(prompt);
+    if (!answer) {
+        return defaultValue;
+    }
+    const lcAnswer = lowerCase ? answer.toLowerCase() : answer;
+    for (const value of values) {
+        if (value.startsWith(lcAnswer)) {
+            return value;
+        }
+    }
+    return defaultValue;
 }
 
 export const cliVersion = getLangiumCliVersion();
