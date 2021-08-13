@@ -78,7 +78,7 @@ export function startLanguageServer(services: LangiumServices): void {
     });
     documents.onDidClose(() => {
         if(documents.keys().length === 0)
-            invalidateAllDocument();
+            invalidateAllDocument(); // clean up all cached document
     });
     addCompletionHandler(connection, services);
     addFindReferencesHandler(connection, services);
@@ -97,7 +97,7 @@ export function startLanguageServer(services: LangiumServices): void {
 async function indexWorkspace(callback: () => void) {
     new Promise(resolve => {
         callback();
-        resolve('resolved');
+        resolve(null);
     }
     );
 }

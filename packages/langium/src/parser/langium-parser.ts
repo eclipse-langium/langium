@@ -12,7 +12,7 @@ import { AstNode, CompositeCstNode, CstNode, LeafCstNode, Reference } from '../s
 import { CompositeCstNodeImpl, CstNodeBuilder, LeafCstNodeImpl } from './cst-node-builder';
 import { Linker } from '../references/linker';
 import { LangiumServices } from '../services';
-import { getContainerOfType } from '../utils/ast-util';
+import { getContainerOfType, getDocument } from '../utils/ast-util';
 import { ValueConverter } from './value-converter';
 
 export type ParseResult<T = AstNode> = {
@@ -287,7 +287,7 @@ export class LangiumParser {
             $refNode: refNode,
             $refName: text,
             get ref() {
-                if (reference._ref === undefined) {
+                if (reference._ref === undefined || getDocument(reference._ref).outdated) {
                     // TODO handle linking errors
                     reference._ref = link(node, text, crossRefId);
                 }

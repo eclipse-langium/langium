@@ -13,6 +13,7 @@ import { AstNodeDescription } from '../references/scope';
 export interface LangiumDocument extends TextDocument {
     parseResult?: ParseResult
     precomputedScopes?: PrecomputedScopes
+    outdated?: boolean;
 }
 
 export type PrecomputedScopes = Map<AstNode, AstNodeDescription[]>
@@ -48,11 +49,14 @@ export function createOrGetDocument(uri: string, opened: TextDocuments<LangiumDo
 }
 
 export function invalidateDocument(uri: string): void {
-    // TODO Mark references to this document as invalid
-    precomputedDocuments.delete(uri);
+    const exists = precomputedDocuments.get(uri);
+    if(exists) {
+        exists.outdated = true;
+        precomputedDocuments.delete(uri);
+    }
 }
 
 export function invalidateAllDocument(): void {
-    // TODO Mark references to this document as invalid
+    precomputedDocuments.forEach((doc) => doc.outdated = true);
     precomputedDocuments.clear();
 }
