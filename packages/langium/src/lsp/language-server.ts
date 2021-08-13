@@ -75,9 +75,15 @@ export function startLanguageServer(services: LangiumServices): void {
         if (change.document.parseResult?.value) {
             services.index.IndexManager.update(change.document);
         }
+        documents.all().filter(doc => isAffected(doc, change.document.uri)).forEach(
+            doc => {
+                documentBuilder.build(doc);
+                services.index.IndexManager.update(doc);
+            }
+        );
     });
     documents.onDidClose(() => {
-        if(documents.keys().length === 0)
+        if (documents.keys().length === 0)
             invalidateAllDocument(); // clean up all cached document
     });
     addCompletionHandler(connection, services);
@@ -92,6 +98,10 @@ export function startLanguageServer(services: LangiumServices): void {
 
     // Listen on the connection.
     connection.listen();
+}
+
+function isAffected(document: LangiumDocument, changedUri: string): boolean {
+    return changedUri !== document.uri;
 }
 
 async function indexWorkspace(callback: () => void) {

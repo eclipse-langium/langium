@@ -13,6 +13,7 @@ import { LangiumDocument } from './document';
 
 export interface DocumentBuilder {
     build(document: LangiumDocument): BuildResult
+    validate(document: LangiumDocument): Diagnostic[] | undefined
 }
 
 export interface BuildResult {
@@ -37,13 +38,8 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
         const parseResult = this.parser.parse(document);
         document.parseResult = parseResult;
         this.process(document);
-        let diagnostics: Diagnostic[] | undefined;
+        let diagnostics: Diagnostic[] | undefined = this.validate(document);
         const validator = this.documentValidator;
-        if (this.connection) {
-            diagnostics = validator.validateDocument(document);
-            // Send the computed diagnostics to VS Code.
-            this.connection.sendDiagnostics({ uri: document.uri, diagnostics });
-        }
         return {
             parseResult,
             get diagnostics() {
@@ -55,6 +51,16 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
         };
     }
 
+    validate(document: LangiumDocument): Diagnostic[] | undefined {
+        let diagnostics: Diagnostic[] | undefined;
+        const validator = this.documentValidator;
+        if (this.connection) {
+            diagnostics = validator.validateDocument(document);
+            // Send the computed diagnostics to VS Code.
+            this.connection.sendDiagnostics({ uri: document.uri, diagnostics });
+        }
+        return diagnostics;
+    }
     /**
      * Process the document by running precomputations. The default implementation precomputes the scope.
      */
