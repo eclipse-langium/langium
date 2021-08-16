@@ -9,24 +9,17 @@ import _ from 'lodash';
 import { CompositeGeneratorNode, IndentNode, NL, processGeneratorNode } from 'langium';
 import { AbstractElement, Domainmodel, Entity, Feature, isEntity, isPackageDeclaration, Type } from '../language-server/generated/ast';
 
-export class DomainModelGenerator {
-    private domainmodel: Domainmodel;
-    private destination: string;
-    private path: string;
+export function generateJava(domainmodel: Domainmodel, fileName: string, destination: string = '.') {
+    const path = fileName.replace(/\..*$/, '').replaceAll(/[.-]/g, '');
 
-    constructor(domainmodel: Domainmodel, fileName: string, destination = '.') {
-        this.domainmodel = domainmodel;
-        this.destination = destination;
-        this.path = fileName.replace(/\..*$/, '').replaceAll(/[.-]/g, '');
-    }
+    generateAbstractElements(destination, domainmodel.elements, path);
+    return `${destination}/${path}`;
+}
 
-    public generate(): string {
-        this.generateAbstractElements(this.domainmodel.elements, this.path);
-        return `${this.destination}/${this.path}`;
-    }
+function generateAbstractElements(destination: string, elements: Array<AbstractElement | Type>, path: string): void {
 
-    private generateAbstractElements(elements: Array<AbstractElement | Type>, path: string): void {
-        const fullPath = `${this.destination}/${path}`;
+    function generateAbstractElementsInternal(elements: Array<AbstractElement | Type>, path: string) {
+        const fullPath = `${destination}/${path}`;
         if (!fs.existsSync(fullPath)) {
             fs.mkdirSync(fullPath, { recursive: true });
         }
@@ -34,51 +27,53 @@ export class DomainModelGenerator {
         const packagePath = path.replaceAll('/', '.').replace(/^\.+/, '');
         for (const elem of elements) {
             if (isPackageDeclaration(elem)) {
-                this.generateAbstractElements(elem.elements, `${path}/${elem.name.replaceAll('.', '/')}`);
+                generateAbstractElementsInternal(elem.elements, `${path}/${elem.name.replaceAll('.', '/')}`);
             } else if (isEntity(elem)) {
                 const fileNode = new CompositeGeneratorNode();
                 fileNode.append(`package ${packagePath};`, NL, NL);
-                this.generateEntity(elem, fileNode);
+                generateEntity(elem, fileNode);
                 fs.writeFileSync(`${fullPath}/${elem.name}.java`, processGeneratorNode(fileNode));
             }
         }
     }
 
-    private generateEntity(entity: Entity, fileNode: CompositeGeneratorNode): void {
-        const maybeExtends = entity.superType ? ` extends ${entity.superType.$refName}` : '';
-        fileNode.append(`class ${entity.name}${maybeExtends} {`, NL);
-        fileNode.indent(classBody => {
-            const featureData = entity.features.map(f => this.generateFeature(f, classBody));
-            featureData.forEach(([generateField, , ]) => generateField());
-            featureData.forEach(([, generateSetter, generateGetter]) => { generateSetter(); generateGetter(); } );
-        });
-        fileNode.append('}', NL);
-    }
+    generateAbstractElementsInternal(elements, path);
+}
 
-    private generateFeature(feature: Feature, classBody: IndentNode): [() => void, () => void, () => void] {
-        const name = feature.name;
-        const type = feature.type.$refName + (feature.many ? '[]' : '');
+function generateEntity(entity: Entity, fileNode: CompositeGeneratorNode): void {
+    const maybeExtends = entity.superType ? ` extends ${entity.superType.$refName}` : '';
+    fileNode.append(`class ${entity.name}${maybeExtends} {`, NL);
+    fileNode.indent(classBody => {
+        const featureData = entity.features.map(f => generateFeature(f, classBody));
+        featureData.forEach(([generateField, , ]) => generateField());
+        featureData.forEach(([, generateSetter, generateGetter]) => { generateSetter(); generateGetter(); } );
+    });
+    fileNode.append('}', NL);
+}
 
-        return [
-            () => { // generate the field
-                classBody.append(`private ${type} ${name};`, NL);
-            },
-            () => { // generate the setter
-                classBody.append(NL);
-                classBody.append(`public void set${_.upperFirst(name)}(${type} ${name}) {`, NL);
-                classBody.indent(methodBody => {
-                    methodBody.append(`this.${name} = ${name};`, NL);
-                });
-                classBody.append('}', NL);
-            },
-            () => { // generate the getter
-                classBody.append(NL);
-                classBody.append(`public ${type} get${_.upperFirst(name)}() {`, NL);
-                classBody.indent(methodBody => {
-                    methodBody.append(`return ${name};`, NL);
-                });
-                classBody.append('}', NL);
-            }
-        ];
-    }
+function generateFeature(feature: Feature, classBody: IndentNode): [() => void, () => void, () => void] {
+    const name = feature.name;
+    const type = feature.type.$refName + (feature.many ? '[]' : '');
+
+    return [
+        () => { // generate the field
+            classBody.append(`private ${type} ${name};`, NL);
+        },
+        () => { // generate the setter
+            classBody.append(NL);
+            classBody.append(`public void set${_.upperFirst(name)}(${type} ${name}) {`, NL);
+            classBody.indent(methodBody => {
+                methodBody.append(`this.${name} = ${name};`, NL);
+            });
+            classBody.append('}', NL);
+        },
+        () => { // generate the getter
+            classBody.append(NL);
+            classBody.append(`public ${type} get${_.upperFirst(name)}() {`, NL);
+            classBody.indent(methodBody => {
+                methodBody.append(`return ${name};`, NL);
+            });
+            classBody.append('}', NL);
+        }
+    ];
 }
