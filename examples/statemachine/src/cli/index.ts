@@ -7,12 +7,10 @@
 import colors from 'colors';
 import { Command } from 'commander';
 import { Statemachine } from '../language-server/generated/ast';
-import { StatemachineLanguageMetaData } from '../language-server/generated/meta-data';
+import { languageMetaData } from '../language-server/generated/module';
 import { createStatemachineServices } from '../language-server/statemachine-module';
 import { extractAstNode } from './cli-util';
-import { StatemachineGenerator } from './generator';
-
-const metaData = new StatemachineLanguageMetaData();
+import { generateCpp } from './generator';
 
 const program = new Command();
 
@@ -22,12 +20,12 @@ program
 
 program
     .command('generate')
-    .argument('<file>', `possible file extensions: ${metaData.extensions.join(', ')}`)
+    .argument('<file>', `possible file extensions: ${languageMetaData.fileExtensions.join(', ')}`)
     .option('-d, --destination <dir>', 'destination directory of generating')
     .description('generates a C++ CLI to walk over states')
     .action((fileName: string, opts: GenerateOptions) => {
-        const statemachine = extractAstNode<Statemachine>(fileName, metaData.languageId, metaData.extensions, createStatemachineServices());
-        const generatedFilePath = new StatemachineGenerator(statemachine, fileName, opts.destination).generate();
+        const statemachine = extractAstNode<Statemachine>(fileName, languageMetaData.languageId, languageMetaData.fileExtensions, createStatemachineServices());
+        const generatedFilePath = generateCpp(statemachine, fileName, opts.destination);
         console.log(colors.green('C++ code generated successfully:'), colors.yellow(generatedFilePath));
     });
 
