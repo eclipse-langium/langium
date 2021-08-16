@@ -8,11 +8,9 @@ import colors from 'colors';
 import { Command } from 'commander';
 import { createDomainModelServices } from '../language-server/domain-model-module';
 import { Domainmodel } from '../language-server/generated/ast';
-import { DomainModelLanguageMetaData } from '../language-server/generated/meta-data';
+import { languageMetaData } from '../language-server/generated/module';
 import { extractAstNode } from './cli-util';
 import { DomainModelGenerator } from './generator';
-
-const metaData = new DomainModelLanguageMetaData();
 
 const program = new Command();
 
@@ -22,11 +20,11 @@ program
 
 program
     .command('generate')
-    .argument('<file>', `possible file extensions: ${metaData.extensions.join(', ')}`)
+    .argument('<file>', `possible file extensions: ${languageMetaData.fileExtensions.join(', ')}`)
     .option('-d, --destination <dir>', 'destination directory of generating')
     .description('generates Java classes by Entity description')
     .action((fileName: string, opts: GenerateOptions) => {
-        const domainmodel = extractAstNode<Domainmodel>(fileName, metaData.languageId, metaData.extensions, createDomainModelServices());
+        const domainmodel = extractAstNode<Domainmodel>(fileName, languageMetaData.languageId, languageMetaData.fileExtensions, createDomainModelServices());
         const generatedDirPath = new DomainModelGenerator(domainmodel, fileName, opts.destination).generate();
         console.log(colors.green('Java classes generated successfully:'), colors.yellow(generatedDirPath));
     });
