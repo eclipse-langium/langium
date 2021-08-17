@@ -7,16 +7,17 @@
 import fs from 'fs';
 import { CompositeGeneratorNode, NL, processGeneratorNode } from 'langium';
 import { State, Statemachine } from '../language-server/generated/ast';
+import path from 'path';
 
 export function generateCpp(statemachine: Statemachine, fileName: string, destination: string | undefined): string {
-    const fileNameSeq = fileName.replace(/\..*$/, '').replaceAll(/[.-]/g, '').split('/');
-    ctx = {
+    fileName = fileName.replace(/\..*$/, '').replaceAll(/[.-]/g, '');
+    const ctx = <GeneratorContext>{
         statemachine,
-        fileName: `${fileNameSeq.pop() ?? 'statemachine'}.cpp`,
-        destination: destination ?? `./${fileNameSeq.join('/')}/generated`,
+        fileName: `${path.basename(fileName) ?? 'statemachine'}.cpp`,
+        destination: destination ?? `./${path.dirname(fileName)}/generated`,
         fileNode: new CompositeGeneratorNode()
     };
-    return generate();
+    return generate(ctx);
 }
 
 interface GeneratorContext {
@@ -26,35 +27,33 @@ interface GeneratorContext {
     fileNode: CompositeGeneratorNode
 }
 
-let ctx: GeneratorContext;
-
-function generate(): string {
+function generate(ctx: GeneratorContext): string {
     ctx.fileNode.append('#include <iostream>', NL);
     ctx.fileNode.append('#include <map>', NL);
     ctx.fileNode.append('#include <string>', NL, NL);
 
     ctx.fileNode.append(`class ${ctx.statemachine.name};`, NL, NL);
 
-    generateStateClass();
+    generateStateClass(ctx);
     ctx.fileNode.append(NL, NL);
 
-    generateStatemachineClass();
+    generateStatemachineClass(ctx);
     ctx.fileNode.append(NL);
 
     ctx.statemachine.states.forEach(state => {
         ctx.fileNode.append(NL);
-        generateStateDeclaration(state);
+        generateStateDeclaration(ctx, state);
     });
 
     ctx.statemachine.states.forEach(state => {
         ctx.fileNode.append(NL);
-        generateStateDefinition(state);
+        generateStateDefinition(ctx, state);
     });
     ctx.fileNode.append(NL);
 
     ctx.fileNode.append(`typedef void (${ctx.statemachine.name}::*Event)();`, NL, NL);
 
-    generateMain();
+    generateMain(ctx);
 
     if (!fs.existsSync(ctx.destination)) {
         fs.mkdirSync(ctx.destination, { recursive: true });
@@ -64,7 +63,7 @@ function generate(): string {
     return generatedFilePath;
 }
 
-function generateStateClass(): void {
+function generateStateClass(ctx: GeneratorContext): void {
     ctx.fileNode.append('class State {', NL);
     ctx.fileNode.append('protected:', NL);
     ctx.fileNode.indent(classBodyProtected => {
@@ -98,7 +97,7 @@ function generateStateClass(): void {
     ctx.fileNode.append('};', NL);
 }
 
-function generateStatemachineClass() {
+function generateStatemachineClass(ctx: GeneratorContext) {
     ctx.fileNode.append(`class ${ctx.statemachine.name} {`, NL);
     ctx.fileNode.append('private:', NL);
     ctx.fileNode.indent(classBodyPrivate => {
@@ -154,7 +153,7 @@ function generateStatemachineClass() {
     ctx.fileNode.append('};', NL);
 }
 
-function generateStateDeclaration(state: State) {
+function generateStateDeclaration(ctx: GeneratorContext, state: State) {
     ctx.fileNode.append(`class ${state.name} : public State {`, NL);
     ctx.fileNode.append('public:', NL);
     ctx.fileNode.indent(classBodyPublic => {
@@ -164,7 +163,7 @@ function generateStateDeclaration(state: State) {
     ctx.fileNode.append('};', NL);
 }
 
-function generateStateDefinition(state: State) {
+function generateStateDefinition(ctx: GeneratorContext, state: State) {
     ctx.fileNode.append(`// ${state.name}`, NL);
     for (const transition of state.transitions) {
         ctx.fileNode.append(`void ${state.name}::${transition.event.$refName}() {`, NL);
@@ -175,7 +174,7 @@ function generateStateDefinition(state: State) {
     }
 }
 
-function generateMain() {
+function generateMain(ctx: GeneratorContext) {
     ctx.fileNode.append('int main() {', NL);
     ctx.fileNode.indent(mainBody => {
         mainBody.append(`${ctx.statemachine.name} *statemachine = new ${ctx.statemachine.name}(new ${ctx.statemachine.init.$refName});`, NL, NL);

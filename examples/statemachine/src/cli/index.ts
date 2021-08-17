@@ -26,7 +26,7 @@ program
     .action((fileName: string, opts: GenerateOptions) => {
         const statemachine = extractAstNode<Statemachine>(fileName, languageMetaData.languageId, languageMetaData.fileExtensions, createStatemachineServices());
         const generatedFilePath = generateCpp(statemachine, fileName, opts.destination);
-        console.log(colors.green('C++ code generated successfully:'), colors.yellow(generatedFilePath));
+        console.log(colors.green(`C++ code generated successfully: ${generatedFilePath}`));
     });
 
 program.parse(process.argv);
