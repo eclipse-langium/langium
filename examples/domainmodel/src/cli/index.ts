@@ -26,7 +26,7 @@ program
     .action((fileName: string, opts: GenerateOptions) => {
         const domainmodel = extractAstNode<Domainmodel>(fileName, languageMetaData.languageId, languageMetaData.fileExtensions, createDomainModelServices());
         const generatedDirPath = generateJava(domainmodel, fileName, opts.destination);
-        console.log(colors.green('Java classes generated successfully:'), colors.yellow(generatedDirPath));
+        console.log(colors.green(`Java classes generated successfully: ${colors.yellow(generatedDirPath)}`));
     });
 
 program.parse(process.argv);

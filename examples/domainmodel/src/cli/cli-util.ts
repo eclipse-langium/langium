@@ -11,12 +11,12 @@ import path from 'path';
 
 export function extractDocument(fileName: string, languageId: string, extensions: string[], services: LangiumServices): LangiumDocument {
     if (!extensions.includes(path.extname(fileName))) {
-        console.error(`Please, choose a file with one of these extensions: ${extensions}.`);
+        console.error(colors.yellow(`Please, choose a file with one of these extensions: ${extensions}.`));
         process.exit(1);
     }
 
     if (!fs.existsSync(fileName)) {
-        console.error(`File ${fileName} doesn't exist.`);
+        console.error(colors.red(`File ${fileName} doesn't exist.`));
         process.exit(1);
     }
     const fileContent = fs.readFileSync(fileName, 'utf-8');
@@ -26,7 +26,7 @@ export function extractDocument(fileName: string, languageId: string, extensions
     const buildResult = services.documents.DocumentBuilder.build(document);
     const validationErrors = buildResult.diagnostics.filter(e => e.severity === 1);
     if (validationErrors.length > 0) {
-        console.error('There are validation errors:');
+        console.error(colors.red('There are validation errors:'));
         for (const validationError of validationErrors) {
             console.error(colors.red(
                 `line ${validationError.range.start.line}: ${validationError.message} [${document.getText(validationError.range)}]`
