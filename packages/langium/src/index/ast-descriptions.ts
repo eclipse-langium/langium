@@ -4,17 +4,21 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import { Range } from 'vscode-languageserver-textdocument';
 import { LangiumDocument } from '../documents/document';
 import { AstNodeDescription } from '../references/scope';
 import { LangiumServices } from '../services';
-import { AstNode } from '../syntax-tree';
+import { AstNode, CstNode } from '../syntax-tree';
 import { AstNodeReference, getDocument, streamAllContents, streamContents, streamReferences } from '../utils/ast-util';
 
 export interface AstNodeReferenceDescription {
+    sourceUri: string // URI of the document that holds a reference
     sourcePath: string // Path to AstNode that holds a reference
     sourceFeature: string // Coresponding property name inside the source AstNode. E.g. Feature:type -> StringType
     targetUri: string // target document uri
     targetPath: string // how to find target AstNode inside the document
+    startPosition: { line: number, character: number } // Text document position start
+    endPosition: { line: number, character: number } //  Text document position end
 }
 
 export interface AstNodeDescriptionProvider {
@@ -74,13 +78,18 @@ export class DefaultReferenceDescriptionProvider implements AstReferenceDescript
             const refConverter = (refNode: AstNodeReference) => {
                 const refAstNodeDescr = this.services.references.Linker.linkingCandiates(refNode.container, refNode.reference.$refName, `${refNode.container.$type}:${refNode.property}`);
                 // Do not handle unresolved refs or local references
-                if (!refAstNodeDescr || refAstNodeDescr.documentUri === getDocument(refNode.container)?.uri)
+                const docUri = getDocument(refNode.container)?.uri;
+                if (!refAstNodeDescr || refAstNodeDescr.documentUri === docUri)
                     return null;
+                const range = toRange(refNode.reference.$refNode, document);
                 return {
+                    sourceUri: docUri,
                     sourcePath: this.services.index.AstNodePathComputer.astNodePath(refNode.container),
                     sourceFeature: refNode.property,
                     targetUri: refAstNodeDescr.documentUri,
-                    targetPath: refAstNodeDescr.path
+                    targetPath: refAstNodeDescr.path,
+                    startPosition: { line: range.start.line, character: range.start.character },
+                    endPosition: { line: range.end.line, character: range.end.character }
                 };
             };
             streamAllContents(rootNode).forEach(astNodeContent => {
@@ -94,5 +103,11 @@ export class DefaultReferenceDescriptionProvider implements AstReferenceDescript
         }
         return descr;
     }
-
+}
+// Can't import from cst-util: getting TypeError
+function toRange(node: CstNode, document: LangiumDocument): Range {
+    return {
+        start: document.positionAt(node.offset),
+        end: document.positionAt(node.offset + node.length)
+    };
 }

@@ -8,6 +8,8 @@ import { AstNode, CstNode, LeafCstNode, Reference } from '../syntax-tree';
 import { Stream, StreamImpl, DONE_RESULT, TreeStream, TreeStreamImpl, stream } from '../utils/stream';
 import { LangiumDocument } from '../documents/document';
 import { CompositeCstNodeImpl, LeafCstNodeImpl } from '../parser/cst-node-builder';
+import { AstNodeReferenceDescription } from '../index/ast-descriptions';
+import { IndexManager } from '../index/workspace-index-manager';
 
 export type Mutable<T> = {
     -readonly [P in keyof T]: T[P]
@@ -177,4 +179,17 @@ export function findLocalReferences(targetNode: AstNode, lookup: AstNode): Strea
     };
     streamAllContents(lookup).forEach(process);
     return stream(refs);
+}
+
+export function findAllReferences(targetNode: AstNode, astNodePath: string, referenceLookUp: IndexManager): Stream<AstNodeReferenceDescription> {
+    const targetDocUri = getDocument(targetNode).uri;
+    const result: AstNodeReferenceDescription[] = [];
+    referenceLookUp.documentDescriptions().forEach((docRefs: AstNodeReferenceDescription[]) => {
+        docRefs.forEach((refDescr)=> {
+            if(refDescr.targetUri === targetDocUri && refDescr.targetPath === astNodePath) {
+                result.push(refDescr);
+            }
+        });
+    });
+    return stream(result);
 }
