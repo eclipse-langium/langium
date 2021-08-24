@@ -6,7 +6,7 @@
 
 import { Connection, Diagnostic } from 'vscode-languageserver/node';
 import { DocumentValidator } from '../validation/document-validator';
-import { LangiumBaseParser, ParseResult } from '../parser/langium-base-parser';
+import { LangiumParser, ParseResult } from '../parser/langium-parser';
 import { ScopeComputation } from '../references/scope';
 import { LangiumServices } from '../services';
 import { LangiumDocument } from './document';
@@ -22,7 +22,7 @@ export interface BuildResult {
 
 export class DefaultDocumentBuilder implements DocumentBuilder {
     protected readonly connection?: Connection;
-    protected readonly parser: LangiumBaseParser;
+    protected readonly parser: LangiumParser;
     protected readonly scopeComputation: ScopeComputation;
     protected readonly documentValidator: DocumentValidator;
 
