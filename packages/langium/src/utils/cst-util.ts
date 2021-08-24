@@ -8,7 +8,7 @@ import { Range } from 'vscode-languageserver';
 import { LangiumDocument } from '../documents/document';
 import { AstNode, CstNode, LeafCstNode } from '../syntax-tree';
 import { CompositeCstNodeImpl, LeafCstNodeImpl } from '../parser/cst-node-builder';
-import { DatatypeSymbol } from '../parser/langium-base-parser';
+import { DatatypeSymbol } from '../parser/langium-parser';
 
 export function flatten(node: CstNode): LeafCstNode[] {
     if (node instanceof LeafCstNodeImpl) {
