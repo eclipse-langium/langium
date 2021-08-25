@@ -25,6 +25,7 @@ import { References } from './references/references';
 import { ValidationRegistry } from './validation/validation-registry';
 import { DocumentValidator } from './validation/document-validator';
 import { LanguageMetaData } from './grammar/language-meta-data';
+import { CodeActionProvider} from './lsp/code-action';
 
 export type LangiumGeneratedServices = {
     parser: {
@@ -45,6 +46,7 @@ export type LangiumLspServices = {
     DocumentSymbolProvider: DocumentSymbolProvider
     GoToResolver: GoToResolver
     ReferenceFinder: ReferenceFinder
+    CodeActionProvider?: CodeActionProvider
 }
 
 export type LangiumDefaultServices = {
