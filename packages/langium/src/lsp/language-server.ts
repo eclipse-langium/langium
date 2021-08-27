@@ -37,7 +37,9 @@ export function startLanguageServer(services: LangiumServices): void {
                 codeActionProvider: services.lsp.CodeActionProvider ? {} : undefined,
                 // hoverProvider needs to be created for mouse-over events, etc.
                 hoverProvider: false,
-                monikerProvider: {}
+                renameProvider: {
+                    prepareProvider: true
+                }
             }
         };
 
@@ -72,6 +74,7 @@ export function startLanguageServer(services: LangiumServices): void {
     addGotoDefinition(connection, services);
     addDocumentHighlightsHandler(connection, services);
     addCodeActionHandler(connection, services);
+    addRenameHandler(connection, services);
 
     // Make the text document manager listen on the connection for open, change and close text document events.
     documents.listen(connection);
@@ -114,7 +117,7 @@ export function addCodeActionHandler(connection: Connection, services: LangiumSe
     if (!codeActionProvider) {
         return;
     }
-    connection.onCodeAction((params: CodeActionParams): Array< Command | CodeAction > | null => {
+    connection.onCodeAction((params: CodeActionParams): Array<Command | CodeAction> | null => {
         const document = paramsDocument(params, services);
         if (document) {
             return codeActionProvider.getCodeActions(document, params);
@@ -159,6 +162,18 @@ export function addDocumentHighlightsHandler(connection: Connection, services: L
         } else {
             return [];
         }
+    });
+}
+
+export function addRenameHandler(connection: Connection, services: LangiumServices): void {
+    const renameHandler = services.lsp.RenameHandler;
+    connection.onRenameRequest(params => {
+        const document = paramsDocument(params, services);
+        return document ? renameHandler.renameElement(document, params) : undefined;
+    });
+    connection.onPrepareRename(params => {
+        const document = paramsDocument(params, services);
+        return document ? renameHandler.prepareRename(document, params) : undefined;
     });
 }
 

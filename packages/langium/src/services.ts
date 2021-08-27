@@ -15,6 +15,7 @@ import { DocumentHighlighter } from './lsp/document-highlighter';
 import { DocumentSymbolProvider } from './lsp/document-symbol-provider';
 import { GoToResolver } from './lsp/goto';
 import { ReferenceFinder } from './lsp/reference-finder';
+import { RenameHandler } from './lsp/rename-refactoring';
 import { TokenBuilder } from './parser/token-builder';
 import { ValueConverter } from './parser/value-converter';
 import { References } from './references/references';
@@ -36,6 +37,7 @@ export type LangiumLspServices = {
     GoToResolver: GoToResolver
     ReferenceFinder: ReferenceFinder
     CodeActionProvider?: CodeActionProvider
+    RenameHandler: RenameHandler
 }
 
 export type LangiumDefaultServices = {
