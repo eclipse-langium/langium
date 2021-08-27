@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { Range } from 'vscode-languageserver-textdocument';
+import { Range } from 'vscode-languageserver';
 import { LangiumDocument } from '../documents/document';
 import { AstNodeDescription } from '../references/scope';
 import { LangiumServices } from '../services';
@@ -14,7 +14,6 @@ import { AstNodeReference, getDocument, streamAllContents, streamContents, strea
 export interface AstNodeReferenceDescription {
     sourceUri: string // URI of the document that holds a reference
     sourcePath: string // Path to AstNode that holds a reference
-    sourceFeature: string // Coresponding property name inside the source AstNode. E.g. Feature:type -> StringType
     targetUri: string // target document uri
     targetPath: string // how to find target AstNode inside the document
     startPosition: { line: number, character: number } // Text document position start
