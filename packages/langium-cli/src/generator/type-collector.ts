@@ -448,7 +448,8 @@ function liftFields(interfaces: Interface[]): void {
         if (first) {
             const removal: Field[] = [];
             for (const field of first.fields) {
-                if (subInterfaces.every(e => e.fields.some(f => f.name === field.name))) {
+                const fieldTypeSet = new Set(field.types);
+                if (subInterfaces.every(e => e.fields.some(f => f.name === field.name && _.isEqual(new Set(f.types), fieldTypeSet)))) {
                     if (!interfaceType.fields.some(e => e.name === field.name)) {
                         interfaceType.fields.push(field);
                     }
