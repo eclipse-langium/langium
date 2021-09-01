@@ -4,28 +4,70 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { createLangiumGrammarServices, LangiumDocumentConfiguration, ParserRule } from '../../../lib';
+import { createLangiumGrammarServices } from '../../../src';
+import { expectCompletion } from '../../../src/test';
+import { expectFunction } from '../../fixture';
+
+const text = `
+<|>gramm<|>ar g hid<|>den(hiddenTerminal)
+X: name="X";
+terminal hiddenTerminal: /x/;
+`;
+
+const completion = expectCompletion(createLangiumGrammarServices(), expectFunction);
 
 describe('Completion Provider', () => {
-    test('case insensitive prefix matching', () => {
-        const services = createLangiumGrammarServices();
-        const model = `grammar g
+
+    test('Finds starting rule', () => {
+        completion({
+            text,
+            index: 0,
+            expectedItems: ['grammar']
+        });
+    });
+
+    test('Finds grammar keyword inside grammar keyword', () => {
+        completion({
+            text,
+            index: 1,
+            expectedItems: ['grammar']
+        });
+    });
+
+    test('Finds hidden keyword', () => {
+        completion({
+            text,
+            index: 2,
+            expectedItems: ['hidden', '(']
+        });
+    });
+
+    test('Does case insensitive prefix matching', () => {
+        const model = `
+        grammar g
         Aaaa: name="A";
         aaaa: name="a";
         Bbbb: name="B";
-        C: a=aa;`;
-        const document = LangiumDocumentConfiguration.create('', 'langium', 0, model);
-        const parser = services.parser.LangiumParser;
-        const parseResult = parser.parse(document);
-        expect(parseResult.lexerErrors.length).toBe(0);
-        expect(parseResult.parserErrors.length).toBe(0);
-        document.parseResult = parseResult;
-        document.precomputedScopes = services.references.ScopeComputation.computeScope(document);
-        const rootNode = parseResult.value;
-        const completionProvider =services.lsp.completion.CompletionProvider;
-        const completions = completionProvider.getCompletion(rootNode, model.lastIndexOf('aa') + 2);
-        expect(completions.items.some(e=>e.label === 'Aaaa' && e.detail === ParserRule)).toBe(true);
-        expect(completions.items.some(e=>e.label === 'aaaa' && e.detail === ParserRule)).toBe(true);
-        expect(completions.items.some(e=>e.label === 'Bbbb')).toBe(false);
+        C: a=aa<|>aa;`;
+        // We expect 'Aaaa' and 'aaaa' but not 'Bbbb'
+        completion({
+            text: model,
+            index: 0,
+            expectedItems: [
+                'Aaaa',
+                'aaaa',
+                '<',
+                '?',
+                '*',
+                '+',
+                '=>',
+                '->',
+                '(',
+                '{',
+                '&',
+                '|',
+                ';'
+            ]
+        });
     });
 });

@@ -6,7 +6,7 @@
 
 import { findAssignment } from '../grammar/grammar-util';
 import { LangiumServices } from '../services';
-import { CstNode } from '../syntax-tree';
+import { CstNode, Reference } from '../syntax-tree';
 import { isReference } from '../utils/ast-util';
 import { findRelevantNode } from '../utils/cst-util';
 import { NameProvider } from './naming';
@@ -36,23 +36,38 @@ export class DefaultReferences implements References {
             if (assignment && nodeElem) {
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const reference = (nodeElem as any)[assignment.feature] as unknown;
+
                 if (isReference(reference)) {
-                    const ref = reference.ref;
-                    if (ref && ref.$cstNode) {
-                        const targetNode = this.nameProvider.getNameNode(ref);
-                        if (!targetNode) {
-                            return ref.$cstNode;
-                        }
-                        else {
-                            return targetNode;
+                    return this.processReference(reference);
+                }
+                else if (Array.isArray(reference)) {
+                    for (const ref of reference) {
+                        if (isReference(ref)) {
+                            const target = this.processReference(ref);
+                            if (target && target.text === sourceCstNode.text) return target;
                         }
                     }
-                } else {
+                }
+                else {
                     const nameNode = this.nameProvider.getNameNode(nodeElem);
                     if (nameNode === sourceCstNode) {
                         return sourceCstNode;
                     }
                 }
+            }
+        }
+        return undefined;
+    }
+
+    private processReference(reference: Reference): CstNode | undefined {
+        const ref = reference.ref;
+        if (ref && ref.$cstNode) {
+            const targetNode = this.nameProvider.getNameNode(ref);
+            if (!targetNode) {
+                return ref.$cstNode;
+            }
+            else {
+                return targetNode;
             }
         }
         return undefined;

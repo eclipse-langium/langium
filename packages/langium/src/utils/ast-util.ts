@@ -147,7 +147,7 @@ export function findLeafNodeAtOffset(node: CstNode, offset: number): LeafCstNode
     if (node instanceof LeafCstNodeImpl) {
         return node;
     } else if (node instanceof CompositeCstNodeImpl) {
-        const children = node.children.filter(e => e.offset < offset).reverse();
+        const children = node.children.filter(e => e.offset <= offset).reverse();
         for (const child of children) {
             const result = findLeafNodeAtOffset(child, offset);
             if (result) {

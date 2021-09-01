@@ -1,6 +1,6 @@
 {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
-    "definitions": {
+    "$defs": {
         "config": {
             "type": "object",
             "description": "A langium cli configuration",
@@ -54,13 +54,13 @@
     },
     "anyOf": [
         {
-            "$ref": "#/definitions/config"
+            "$ref": "#/$defs/config"
         },
         {
             "type": "array",
             "description": "An array of langium configurations.",
             "items": {
-                "$ref": "#/definitions/config"
+                "$ref": "#/$defs/config"
             }
         }
     ]

@@ -1,0 +1,8 @@
+{
+    "preset": "ts-jest",
+    "roots": [
+        "<rootDir>/test"
+    ],
+    "collectCoverageFrom": ["src/**/{!(generated),}/*"],
+    "testEnvironment": "node"
+}
