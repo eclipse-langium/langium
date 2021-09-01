@@ -88,6 +88,35 @@
 				"--extensionDevelopmentPath=${workspaceFolder}/packages/langium-vscode",
 				"--extensionTestsPath=${workspaceFolder}/out/test/suite/index"
 			]
+		},
+		{
+			"type": "node",
+			"request": "launch",
+			"name": "Jest Langium: Run All",
+			"program": "${workspaceFolder}/node_modules/jest/bin/jest.js",
+			"args": [
+				"--config=${workspaceFolder}/packages/langium/jest.config.json",
+				"--verbose",
+				"-i",
+				"--no-cache",
+			],
+			"console": "integratedTerminal",
+			"internalConsoleOptions": "neverOpen"
+		},
+		{
+			"type": "node",
+			"request": "launch",
+			"name": "Jest Langium: Run Selected File",
+			"program": "${workspaceFolder}/node_modules/jest/bin/jest.js",
+			"args": [
+				"${fileBasename}",
+				"--config=${workspaceFolder}/packages/langium/jest.config.json",
+				"--verbose",
+				"-i",
+				"--no-cache",
+			],
+			"console": "integratedTerminal",
+			"internalConsoleOptions": "neverOpen"
 		}
     ]
 }

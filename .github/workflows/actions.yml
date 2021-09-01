@@ -13,10 +13,10 @@ jobs:
     - name: Use Node.js
       uses: actions/setup-node@v2
       with:
-        node-version: '15'
+        node-version: '16'
     - name: Build
       shell: bash
       run: |
         npm install
-        npm test --workspace=langium --workspace=langium-cli
-        npm run lint --workspaces
+        npm test
+        npm run lint

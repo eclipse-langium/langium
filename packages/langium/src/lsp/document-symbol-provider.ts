@@ -50,18 +50,21 @@ export class DefaultDocumentSymbolProvider implements DocumentSymbolProvider {
                 children: this.getChildSymbols(document, astNode)
             }];
         } else {
-            return this.getChildSymbols(document, astNode);
+            return this.getChildSymbols(document, astNode) || [];
         }
     }
 
-    protected getChildSymbols(document: LangiumDocument, astNode: AstNode): DocumentSymbol[] {
+    protected getChildSymbols(document: LangiumDocument, astNode: AstNode): DocumentSymbol[] | undefined {
         const children: DocumentSymbol[] = [];
 
         for (const child of streamContents(astNode)) {
             const result = this.getSymbol(document, child.node);
             children.push(...result);
         }
-        return children;
+        if (children.length > 0) {
+            return children;
+        }
+        return undefined;
     }
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars

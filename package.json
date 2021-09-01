@@ -6,6 +6,7 @@
     "build": "tsc -b tsconfig.build.json",
     "watch": "tsc -b tsconfig.build.json -w",
     "lint": "npm run lint --workspaces",
+    "test": "npm run test --workspace=langium",
     "langium:generate": "npm run langium:generate --workspace=langium --workspace=domainmodel --workspace=arithmetics --workspace=statemachine",
     "prepare": "npm run clean && npm run build"
   },

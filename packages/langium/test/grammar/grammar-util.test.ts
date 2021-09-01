@@ -4,7 +4,8 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { createLangiumGrammarServices, getEntryRule, replaceTokens } from '../../lib';
+import { getEntryRule, replaceTokens } from '../../lib';
+import { grammar } from '../../src/grammar/generated/grammar';
 
 describe('Token replacement', () => {
 
@@ -33,6 +34,5 @@ describe('Token replacement', () => {
 });
 
 test('Langium grammar entry rule', () => {
-    const grammar = createLangiumGrammarServices().Grammar;
-    expect(getEntryRule(grammar)?.name).toBe('Grammar');
+    expect(getEntryRule(grammar())?.name).toBe('Grammar');
 });
