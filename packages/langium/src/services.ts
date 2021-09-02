@@ -26,6 +26,7 @@ import { Grammar } from './grammar/generated/ast';
 import { LangiumParser } from './parser/langium-parser';
 import { TokenBuilder } from './parser/token-builder';
 import { LanguageMetaData } from './grammar/language-meta-data';
+import { CodeActionProvider} from './lsp/code-action';
 
 export type LangiumGeneratedServices = {
     Grammar: Grammar
@@ -43,6 +44,7 @@ export type LangiumLspServices = {
     DocumentSymbolProvider: DocumentSymbolProvider
     GoToResolver: GoToResolver
     ReferenceFinder: ReferenceFinder
+    CodeActionProvider?: CodeActionProvider
 }
 
 export type LangiumDefaultServices = {

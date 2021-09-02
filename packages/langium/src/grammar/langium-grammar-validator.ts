@@ -34,13 +34,19 @@ export class LangiumGrammarValidationRegistry extends ValidationRegistry {
     }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-namespace
+export namespace IssueCodes {
+    export const GrammarNameUppercase = 'grammar-name-uppercase';
+    export const RuleNameUppercase = 'rule-name-uppercase';
+}
+
 export class LangiumGrammarValidator {
 
     checkGrammarName(grammar: Grammar, accept: ValidationAcceptor): void {
         if (grammar.name) {
             const firstChar = grammar.name.substring(0, 1);
             if (firstChar.toUpperCase() !== firstChar) {
-                accept('warning', 'Grammar name should start with an upper case letter.', { node: grammar, property: 'name' });
+                accept('warning', 'Grammar name should start with an upper case letter.', { node: grammar, property: 'name', code: IssueCodes.GrammarNameUppercase });
             }
         }
     }
@@ -101,7 +107,7 @@ export class LangiumGrammarValidator {
         if (rule.name) {
             const firstChar = rule.name.substring(0, 1);
             if (firstChar.toUpperCase() !== firstChar) {
-                accept('warning', 'Rule name should start with an upper case letter.', { node: rule, property: 'name' });
+                accept('warning', 'Rule name should start with an upper case letter.', { node: rule, property: 'name', code: IssueCodes.RuleNameUppercase });
             }
         }
     }

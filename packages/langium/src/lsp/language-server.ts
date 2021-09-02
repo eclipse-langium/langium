@@ -5,6 +5,9 @@
  ******************************************************************************/
 
 import {
+    CodeAction,
+    CodeActionParams,
+    Command,
     CompletionList, Connection,
     DocumentHighlightParams, DocumentSymbol, DocumentSymbolParams, InitializeParams, InitializeResult,
     Location, LocationLink, ReferenceParams, TextDocumentPositionParams, TextDocumentSyncKind
@@ -31,6 +34,7 @@ export function startLanguageServer(services: LangiumServices): void {
                 documentSymbolProvider: {},
                 definitionProvider: {},
                 documentHighlightProvider: {},
+                codeActionProvider: services.lsp.CodeActionProvider ? {} : undefined,
                 // hoverProvider needs to be created for mouse-over events, etc.
                 hoverProvider: false
             }
@@ -56,6 +60,7 @@ export function startLanguageServer(services: LangiumServices): void {
     addDocumentSymbolHandler(connection, services);
     addGotoDefinition(connection, services);
     addDocumentHighlightsHandler(connection, services);
+    addCodeActionHandler(connection, services);
 
     // Make the text document manager listen on the connection for open, change and close text document events.
     documents.listen(connection);
@@ -94,6 +99,21 @@ export function addFindReferencesHandler(connection: Connection, services: Langi
         const document = paramsDocument(params, services);
         if (document) {
             return referenceFinder.findReferences(document, params, params.context.includeDeclaration);
+        } else {
+            return [];
+        }
+    });
+}
+
+export function addCodeActionHandler(connection: Connection, services: LangiumServices): void {
+    const codeActionProvider = services.lsp.CodeActionProvider;
+    if (!codeActionProvider) {
+        return;
+    }
+    connection.onCodeAction((params: CodeActionParams): Array< Command | CodeAction > | null => {
+        const document = paramsDocument(params, services);
+        if (document) {
+            return codeActionProvider.getCodeActions(document, params);
         } else {
             return [];
         }
