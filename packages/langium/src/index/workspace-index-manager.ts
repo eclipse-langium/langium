@@ -4,9 +4,9 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import { URI } from 'vscode-uri';
 import { existsSync, readdirSync } from 'fs';
 import { extname, resolve } from 'path';
-import { fileURLToPath, pathToFileURL } from 'url';
 import { WorkspaceFolder } from 'vscode-languageserver';
 import { LangiumDocument } from '../documents/document';
 import { LanguageMetaData } from '../grammar/language-meta-data';
@@ -23,7 +23,6 @@ export interface IndexManager {
     documentDescriptions(): ReadonlyMap<string, AstNodeReferenceDescription[]>;
 }
 
-// don't know how to trac this.simpleIndex inside DefaultIndexManager
 export class DefaultIndexManager implements IndexManager {
     protected readonly services: LangiumServices
     protected readonly langMetaData: LanguageMetaData
@@ -49,7 +48,7 @@ export class DefaultIndexManager implements IndexManager {
     }
 
     initializeRoot(rootUri: string): void {
-        this.traverseFolder(fileURLToPath(rootUri), this.langMetaData.fileExtensions);
+        this.traverseFolder(URI.parse(rootUri).fsPath, this.langMetaData.fileExtensions);
     }
 
     update(document: LangiumDocument): void {
@@ -63,7 +62,7 @@ export class DefaultIndexManager implements IndexManager {
         const taskName = this.langMetaData.languageId + ' - Workspace indexing.';
         console.time(taskName);
         folders?.forEach((folder) => {
-            this.traverseFolder(fileURLToPath(folder.uri), this.langMetaData.fileExtensions);
+            this.traverseFolder(URI.parse(folder.uri).fsPath, this.langMetaData.fileExtensions);
         });
         console.timeEnd(taskName);
     }
@@ -81,7 +80,7 @@ export class DefaultIndexManager implements IndexManager {
             const uri = resolve(folderPath, dir.name);
             if (dir.isDirectory()) {
                 this.traverseFolder(uri, fileExt);
-            } else if (fileExt.indexOf(extname(uri)) >= 0) {
+            } else if (fileExt.includes(extname(uri))) {
                 this.processLanguageFile(uri);
             }
         }
@@ -93,9 +92,8 @@ export class DefaultIndexManager implements IndexManager {
             || filePath.endsWith('out');
     }
 
-    protected processLanguageFile(uri: string): void {
-        const fileUri = pathToFileURL(uri).toString();
-        const document = this.services.documents.Documents.createOrGetDocument(fileUri);
+    protected processLanguageFile(filePath: string): void {
+        const document = this.services.documents.Documents.createOrGetDocument(URI.file(filePath).toString());
         this.processDocument(document);
     }
 

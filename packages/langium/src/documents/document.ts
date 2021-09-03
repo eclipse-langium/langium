@@ -11,7 +11,7 @@ import { AstNode } from '../syntax-tree';
 import { LangiumParser, ParseResult } from '../parser/langium-parser';
 import { AstNodeDescription } from '../references/scope';
 import { LangiumServices, LanguageMetaData, Stream, stream } from '..';
-import { fileURLToPath } from 'url';
+import { URI } from 'vscode-uri';
 
 export interface LangiumDocument {
     parseResult?: ParseResult
@@ -35,7 +35,7 @@ export class DefaultTextDocumentFactory implements TextDocumentFactory {
     }
 
     create(uri: string): TextDocument {
-        const content = fs.readFileSync(fileURLToPath(uri), 'utf-8');
+        const content = fs.readFileSync(URI.parse(uri).fsPath, 'utf-8');
         return TextDocument.create(uri, this.languageMetaData.languageId, 0, content);
     }
 
