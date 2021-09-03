@@ -182,7 +182,7 @@ export function findLocalReferences(targetNode: AstNode, lookup: AstNode): Strea
 }
 
 export function findAllReferences(targetNode: AstNode, astNodePath: string, referenceLookUp: IndexManager): Stream<AstNodeReferenceDescription> {
-    const targetDocUri = getDocument(targetNode).uri;
+    const targetDocUri = getDocument(targetNode).textDocument.uri;
     const result: AstNodeReferenceDescription[] = [];
     referenceLookUp.documentDescriptions().forEach((docRefs: AstNodeReferenceDescription[]) => {
         docRefs.forEach((refDescr)=> {

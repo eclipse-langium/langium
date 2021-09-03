@@ -40,7 +40,7 @@ export class DefaultDescriptionsProvider implements AstNodeDescriptionProvider {
             node,
             name,
             type: node.$type,
-            documentUri: document.uri,
+            documentUri: document.textDocument.uri,
             path: this.services.index.AstNodePathComputer.astNodePath(node)
         };
     }
@@ -77,7 +77,7 @@ export class DefaultReferenceDescriptionProvider implements AstReferenceDescript
             const refConverter = (refNode: AstNodeReference) => {
                 const refAstNodeDescr = this.services.references.Linker.linkingCandiates(refNode.container, refNode.reference.$refName, `${refNode.container.$type}:${refNode.property}`);
                 // Do not handle unresolved refs or local references
-                const docUri = getDocument(refNode.container)?.uri;
+                const docUri = getDocument(refNode.container)?.textDocument?.uri;
                 if (!refAstNodeDescr || refAstNodeDescr.documentUri === docUri)
                     return null;
                 const range = toRange(refNode.reference.$refNode, document);
@@ -106,7 +106,7 @@ export class DefaultReferenceDescriptionProvider implements AstReferenceDescript
 // Can't import from cst-util: getting TypeError
 function toRange(node: CstNode, document: LangiumDocument): Range {
     return {
-        start: document.positionAt(node.offset),
-        end: document.positionAt(node.offset + node.length)
+        start: document.textDocument.positionAt(node.offset),
+        end: document.textDocument.positionAt(node.offset + node.length)
     };
 }

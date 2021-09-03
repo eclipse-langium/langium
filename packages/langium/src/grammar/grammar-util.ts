@@ -5,7 +5,8 @@
  ******************************************************************************/
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { LangiumDocumentConfiguration } from '../documents/document';
+import { TextDocument } from 'vscode-languageserver-textdocument';
+import { LangiumDocument } from '..';
 import * as ast from '../grammar/generated/ast';
 import { CompositeCstNodeImpl } from '../parser/cst-node-builder';
 import { AstNode, CstNode } from '../syntax-tree';
@@ -255,7 +256,11 @@ export function loadGrammar(json: string): ast.Grammar {
         throw new Error('Could not load grammar from specified json input.');
     }
     const grammar = astNode as Mutable<ast.Grammar>;
-    const document = LangiumDocumentConfiguration.create('', 'langium', 0, '');
+    const textDocument = TextDocument.create('', 'langium', 0, '');
+    const document: LangiumDocument = {
+        outdated: false,
+        textDocument
+    };
     document.parseResult = {
         lexerErrors: [],
         parserErrors: [],

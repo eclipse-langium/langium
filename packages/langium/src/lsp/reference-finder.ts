@@ -38,7 +38,7 @@ export class DefaultReferenceFinder implements ReferenceFinder {
             return [];
         }
         const refs: Array<{ docUri: string, range: Range }> = [];
-        const selectedNode = findLeafNodeAtOffset(rootNode, document.offsetAt(params.position));
+        const selectedNode = findLeafNodeAtOffset(rootNode, document.textDocument.offsetAt(params.position));
         if (!selectedNode) {
             return [];
         }
@@ -48,10 +48,10 @@ export class DefaultReferenceFinder implements ReferenceFinder {
                 const declDoc = getDocument(targetAstNode);
                 const nameNode = this.findNameNode(targetAstNode, selectedNode.text);
                 if (nameNode)
-                    refs.push({ docUri: declDoc.uri, range: toRange(nameNode, declDoc) });
+                    refs.push({ docUri: declDoc.textDocument.uri, range: toRange(nameNode, declDoc) });
             }
             findLocalReferences(targetAstNode, rootNode.element).forEach((element) => {
-                refs.push({ docUri: document.uri, range: toRange(element.$refNode, document) });
+                refs.push({ docUri: document.textDocument.uri, range: toRange(element.$refNode, document) });
             });
             findAllReferences(targetAstNode, this.nodePath.astNodePath(targetAstNode), this.index).forEach((refDescr) => {
                 refs.push({ docUri: refDescr.sourceUri, range: Range.create(refDescr.startPosition, refDescr.endPosition) });

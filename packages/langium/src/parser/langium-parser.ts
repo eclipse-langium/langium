@@ -63,7 +63,7 @@ export class LangiumParser {
 
     parse(input: string | LangiumDocument): ParseResult {
         this.wrapper.selfAnalysis();
-        const text = typeof input === 'string' ? input : input.getText();
+        const text = typeof input === 'string' ? input : input.textDocument.getText();
         this.nodeBuilder.buildRootNode(text);
         const lexerResult = this.lexer.tokenize(text);
         this.wrapper.input = lexerResult.tokens;

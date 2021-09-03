@@ -4,59 +4,114 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { TextDocument, TextDocumentContentChangeEvent } from 'vscode-languageserver-textdocument';
-import { TextDocuments, TextDocumentsConfiguration } from 'vscode-languageserver/node';
+import fs from 'fs';
+import { TextDocument } from 'vscode-languageserver-textdocument';
+import { TextDocuments } from 'vscode-languageserver/node';
 import { AstNode } from '../syntax-tree';
-import { ParseResult } from '../parser/langium-parser';
+import { LangiumParser, ParseResult } from '../parser/langium-parser';
 import { AstNodeDescription } from '../references/scope';
+import { LangiumServices, LanguageMetaData, Stream, stream } from '..';
+import { fileURLToPath } from 'url';
 
-export interface LangiumDocument extends TextDocument {
+export interface LangiumDocument {
     parseResult?: ParseResult
     precomputedScopes?: PrecomputedScopes
-    outdated?: boolean;
+    outdated: boolean
+    textDocument: TextDocument
 }
 
 export type PrecomputedScopes = Map<AstNode, AstNodeDescription[]>
 
-export const LangiumDocumentConfiguration: TextDocumentsConfiguration<LangiumDocument> = {
-    create(uri: string, languageId: string, version: number, content: string): LangiumDocument {
-        return TextDocument.create(uri, languageId, version, content);
-    },
-    update(document: LangiumDocument, changes: TextDocumentContentChangeEvent[], version: number): LangiumDocument {
-        return TextDocument.update(document, changes, version);
-    }
-};
-
-/**
- * TODO: This map should be in sync with TextDocuments service in sense that:
- *   - A LangiumDocument only contains in TextDocuments or precomputedDocuments but never both
- *   - A LangiumDocument is properly unloaded and all references to it are invalidated when switching
- *     from precomputedDocuments to TextDocuments (i.e. user opens a precomuted LangiumDocument)
- *   - Think about to do it better than what follows below
- */
-const precomputedDocuments: Map<string, LangiumDocument> = new Map<string, LangiumDocument>();
-
-export function createOrGetDocument(uri: string, opened: TextDocuments<LangiumDocument>, creator: (uri: string) => LangiumDocument): LangiumDocument {
-    const openedDoc = opened.get(uri);
-    if (openedDoc)
-        return openedDoc;
-    let precomputedDoc = precomputedDocuments.get(uri);
-    if (!precomputedDoc) {
-        precomputedDoc = creator(uri);
-        precomputedDocuments.set(uri, precomputedDoc);
-    }
-    return precomputedDoc;
+export interface TextDocumentFactory {
+    create(uri: string): TextDocument;
 }
 
-export function invalidateDocument(uri: string): void {
-    const exists = precomputedDocuments.get(uri);
-    if(exists) {
-        exists.outdated = true;
-        precomputedDocuments.delete(uri);
+export class DefaultTextDocumentFactory implements TextDocumentFactory {
+
+    protected readonly languageMetaData: LanguageMetaData;
+
+    constructor(services: LangiumServices) {
+        this.languageMetaData = services.LanguageMetaData;
+    }
+
+    create(uri: string): TextDocument {
+        const content = fs.readFileSync(fileURLToPath(uri), 'utf-8');
+        return TextDocument.create(uri, this.languageMetaData.languageId, 0, content);
+    }
+
+}
+
+export interface DocumentFactory {
+    create(textDocument: TextDocument): LangiumDocument;
+}
+
+export class DefaultDocumentFactory implements DocumentFactory {
+
+    protected readonly parser: LangiumParser;
+
+    constructor(services: LangiumServices) {
+        this.parser = services.parser.LangiumParser;
+    }
+
+    create(textDocument: TextDocument): LangiumDocument {
+        const doc: LangiumDocument = {
+            outdated: false,
+            textDocument
+        };
+        const parseResult = this.parser.parse(doc);
+        doc.parseResult = parseResult;
+        return doc;
     }
 }
 
-export function invalidateAllDocument(): void {
-    precomputedDocuments.forEach((doc) => doc.outdated = true);
-    precomputedDocuments.clear();
+export interface Documents {
+    readonly all: Stream<LangiumDocument>
+    createOrGetDocument(uri: string): LangiumDocument;
+    invalidateDocument(uri: string): void;
+    invalidateAllDocuments(): void;
+}
+
+export class DefaultDocuments implements Documents {
+
+    protected readonly documentMap: Map<string, LangiumDocument> = new Map();
+    protected readonly textDocuments: TextDocuments<TextDocument>;
+    protected readonly textDocumentFactory: TextDocumentFactory;
+    protected readonly langiumDocumentFactory: DocumentFactory;
+
+    constructor(services: LangiumServices) {
+        this.textDocuments = services.documents.TextDocuments;
+        this.textDocumentFactory = services.documents.TextDocumentFactory;
+        this.langiumDocumentFactory = services.documents.DocumentFactory;
+    }
+
+    get all(): Stream<LangiumDocument> {
+        return stream(this.documentMap.values());
+    }
+
+    createOrGetDocument(uri: string): LangiumDocument {
+        let langiumDoc = this.documentMap.get(uri);
+        if (langiumDoc) {
+            return langiumDoc;
+        }
+        let textDoc = this.textDocuments.get(uri);
+        if (!textDoc) {
+            textDoc = this.textDocumentFactory.create(uri);
+        }
+        langiumDoc = this.langiumDocumentFactory.create(textDoc);
+        this.documentMap.set(uri, langiumDoc);
+        return langiumDoc;
+    }
+
+    invalidateDocument(uri: string): void {
+        const langiumDoc = this.documentMap.get(uri);
+        if (langiumDoc) {
+            langiumDoc.outdated = true;
+            this.documentMap.delete(uri);
+        }
+    }
+
+    invalidateAllDocuments(): void {
+        this.documentMap.forEach(doc => doc.outdated = true);
+        this.documentMap.clear();
+    }
 }

@@ -4,9 +4,10 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import { TextDocument } from 'vscode-languageserver-textdocument';
 import { Connection, TextDocuments } from 'vscode-languageserver/node';
 import { Module } from './dependency-injection';
-import { LangiumDocumentConfiguration } from './documents/document';
+import { DefaultDocumentFactory, DefaultDocuments, DefaultTextDocumentFactory } from './documents/document';
 import { DefaultDocumentBuilder } from './documents/document-builder';
 import { DefaultDescriptionsProvider, DefaultReferenceDescriptionProvider } from './index/ast-descriptions';
 import { DefaultAstNodeLocator } from './index/ast-node-locator';
@@ -41,8 +42,11 @@ export function createDefaultModule(context: DefaultModuleContext = {}): Module<
             TokenBuilder: () => new DefaultTokenBuilder()
         },
         documents: {
+            Documents: (injector) => new DefaultDocuments(injector),
+            DocumentFactory: (injector) => new DefaultDocumentFactory(injector),
             DocumentBuilder: (injector) => new DefaultDocumentBuilder(injector),
-            TextDocuments: () => new TextDocuments(LangiumDocumentConfiguration)
+            TextDocuments: () => new TextDocuments(TextDocument),
+            TextDocumentFactory: (injector) => new DefaultTextDocumentFactory(injector),
         },
         lsp: {
             completion: {

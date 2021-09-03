@@ -35,13 +35,15 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
     }
 
     build(document: LangiumDocument): BuildResult {
-        const parseResult = this.parser.parse(document);
-        document.parseResult = parseResult;
+        if (!document.parseResult) {
+            const parseResult = this.parser.parse(document);
+            document.parseResult = parseResult;
+        }
         this.process(document);
-        let diagnostics: Diagnostic[] | undefined = this.validate(document);
+        let diagnostics: Diagnostic[] | undefined = this.connection ? this.validate(document) : undefined;
         const validator = this.documentValidator;
         return {
-            parseResult,
+            parseResult: document.parseResult,
             get diagnostics() {
                 if (!diagnostics) {
                     diagnostics = validator.validateDocument(document);
@@ -57,7 +59,7 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
         if (this.connection) {
             diagnostics = validator.validateDocument(document);
             // Send the computed diagnostics to VS Code.
-            this.connection.sendDiagnostics({ uri: document.uri, diagnostics });
+            this.connection.sendDiagnostics({ uri: document.textDocument.uri, diagnostics });
         }
         return diagnostics;
     }

@@ -32,7 +32,7 @@ export class DefaultGoToResolverProvider implements GoToResolver {
         const targetCstNodes: Array<{ source: CstNode, target: CstNode, targetDocument: LangiumDocument }> = [];
         if (rootNode && rootNode.$cstNode) {
             const cst = rootNode.$cstNode;
-            const sourceCstNode = findLeafNodeAtOffset(cst, document.offsetAt(params.position));
+            const sourceCstNode = findLeafNodeAtOffset(cst, document.textDocument.offsetAt(params.position));
             if (sourceCstNode) {
                 const targetNode = this.references.findDeclaration(sourceCstNode);
                 if (targetNode?.element) {
@@ -44,7 +44,7 @@ export class DefaultGoToResolverProvider implements GoToResolver {
             }
         }
         return targetCstNodes.map(link => LocationLink.create(
-            link.targetDocument.uri,
+            link.targetDocument.textDocument.uri,
             toRange(this.findActualNodeFor(link.target) ?? link.target, link.targetDocument),
             toRange(link.target, link.targetDocument),
             toRange(link.source, document)

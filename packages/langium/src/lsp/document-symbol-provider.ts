@@ -40,12 +40,12 @@ export class DefaultDocumentSymbolProvider implements DocumentSymbolProvider {
                 kind: this.getSymbolKind(astNode.$type),
                 name: name ?? nameNode.text,
                 range: {
-                    start: document.positionAt(node.offset),
-                    end: document.positionAt(node.offset + node.length)
+                    start: document.textDocument.positionAt(node.offset),
+                    end: document.textDocument.positionAt(node.offset + node.length)
                 },
                 selectionRange: {
-                    start: document.positionAt(nameNode.offset),
-                    end: document.positionAt(nameNode.offset + nameNode.length)
+                    start: document.textDocument.positionAt(nameNode.offset),
+                    end: document.textDocument.positionAt(nameNode.offset + nameNode.length)
                 },
                 children: this.getChildSymbols(document, astNode)
             }];

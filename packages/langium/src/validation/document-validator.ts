@@ -36,8 +36,8 @@ export class DefaultDocumentValidator {
             const diagnostic: Diagnostic = {
                 severity: DiagnosticSeverity.Error,
                 range: {
-                    start: document.positionAt(lexerError.offset),
-                    end: document.positionAt(lexerError.offset + lexerError.length)
+                    start: document.textDocument.positionAt(lexerError.offset),
+                    end: document.textDocument.positionAt(lexerError.offset + lexerError.length)
                 },
                 message: lexerError.message
             };
@@ -50,8 +50,8 @@ export class DefaultDocumentValidator {
             const diagnostic: Diagnostic = {
                 severity: DiagnosticSeverity.Error,
                 range: {
-                    start: document.positionAt(token.startOffset),
-                    end: document.positionAt(token.startOffset + token.image.length)
+                    start: document.textDocument.positionAt(token.startOffset),
+                    end: document.textDocument.positionAt(token.startOffset + token.image.length)
                 },
                 message: parserError.message
             };
@@ -125,8 +125,8 @@ export function getDiagnosticRange<N extends AstNode>(info: DiagnosticInfo<N>, d
     const start = cstNode.offset;
     const end = start + cstNode.length;
     return {
-        start: document.positionAt(start),
-        end: document.positionAt(end)
+        start: document.textDocument.positionAt(start),
+        end: document.textDocument.positionAt(end)
     };
 }
 

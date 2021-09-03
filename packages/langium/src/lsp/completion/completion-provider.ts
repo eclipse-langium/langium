@@ -41,7 +41,7 @@ export class DefaultCompletionProvider {
         const items: CompletionItem[] = [];
         const acceptor = (value: string | AstNode | AstNodeDescription, item?: Partial<CompletionItem>) => {
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            const completionItem = this.fillCompletionItem(root.$document!, offset, value, item);
+            const completionItem = this.fillCompletionItem(root.$document!.textDocument, offset, value, item);
             if (completionItem) {
                 items.push(completionItem);
             }
@@ -117,8 +117,12 @@ export class DefaultCompletionProvider {
         const parserRule = getContainerOfType(crossRef, ast.isParserRule);
         if (assignment && parserRule) {
             const scope = this.scopeProvider.getScope(context, `${getTypeNameAtElement(parserRule, assignment)}:${assignment.feature}`);
+            const duplicateStore = new Set<string>();
             scope.getAllElements().forEach(e => {
-                acceptor(e, { kind: CompletionItemKind.Reference, detail: e.type, sortText: '0' });
+                if (!duplicateStore.has(e.name)) {
+                    acceptor(e, { kind: CompletionItemKind.Reference, detail: e.type, sortText: '0' });
+                    duplicateStore.add(e.name);
+                }
             });
         }
     }

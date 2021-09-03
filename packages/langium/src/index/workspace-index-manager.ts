@@ -4,11 +4,11 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { existsSync, readdirSync, readFileSync } from 'fs';
+import { existsSync, readdirSync } from 'fs';
 import { extname, resolve } from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
 import { WorkspaceFolder } from 'vscode-languageserver';
-import { LangiumDocument, LangiumDocumentConfiguration } from '../documents/document';
+import { LangiumDocument } from '../documents/document';
 import { LanguageMetaData } from '../grammar/language-meta-data';
 import { AstNodeDescription } from '../references/scope';
 import { LangiumServices } from '../services';
@@ -53,7 +53,7 @@ export class DefaultIndexManager implements IndexManager {
     }
 
     update(document: LangiumDocument): void {
-        const taskName = this.langMetaData.languageId + ' - Document indexing for: ' + document.uri.split('/').pop();
+        const taskName = this.langMetaData.languageId + ' - Document indexing for: ' + document.textDocument.uri.split('/').pop();
         console.time(taskName);
         this.processDocument(document);
         console.timeEnd(taskName);
@@ -77,12 +77,12 @@ export class DefaultIndexManager implements IndexManager {
         if (this.skip(folderPath))
             return;
         const subFolders = readdirSync(folderPath, { withFileTypes: true });
-        for (const dirent of subFolders) {
-            const res = resolve(folderPath, dirent.name);
-            if (dirent.isDirectory()) {
-                this.traverseFolder(res, fileExt);
-            } else if (fileExt.indexOf(extname(res)) >= 0) {
-                this.processLanguageFile(res);
+        for (const dir of subFolders) {
+            const uri = resolve(folderPath, dir.name);
+            if (dir.isDirectory()) {
+                this.traverseFolder(uri, fileExt);
+            } else if (fileExt.indexOf(extname(uri)) >= 0) {
+                this.processLanguageFile(uri);
             }
         }
     }
@@ -93,15 +93,9 @@ export class DefaultIndexManager implements IndexManager {
             || filePath.endsWith('out');
     }
 
-    protected processLanguageFile(filePath: string): void {
-        // TODO check open not dirty documents first
-        const fileContent = readFileSync(filePath).toString();
-        const langId = this.langMetaData.languageId;
-        // TODO extract this tto service. Same as in linker.ts loadAstNode()
-        const document: LangiumDocument = LangiumDocumentConfiguration.create(pathToFileURL(filePath).toString(), langId, 0, fileContent);
-        const parseResult = this.services.parser.LangiumParser.parse(document);
-        document.parseResult = parseResult;
-        // end
+    protected processLanguageFile(uri: string): void {
+        const fileUri = pathToFileURL(uri).toString();
+        const document = this.services.documents.Documents.createOrGetDocument(fileUri);
         this.processDocument(document);
     }
 
@@ -110,7 +104,7 @@ export class DefaultIndexManager implements IndexManager {
         for (const data of indexData) {
             data.node = undefined; // clear reference to the AST Node
         }
-        this.simpleIndex.set(document.uri, indexData);
-        this.referenceIndex.set(document.uri, this.services.index.AstReferenceDescriptionProvider.createDescriptions(document));
+        this.simpleIndex.set(document.textDocument.uri, indexData);
+        this.referenceIndex.set(document.textDocument.uri, this.services.index.AstReferenceDescriptionProvider.createDescriptions(document));
     }
 }

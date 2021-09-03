@@ -7,12 +7,13 @@
 import fs from 'fs-extra';
 import path from 'path';
 import { LangiumConfig, RelativePath } from './package';
-import { createLangiumGrammarServices, LangiumDocumentConfiguration, isGrammar } from 'langium';
+import { createLangiumGrammarServices, isGrammar } from 'langium';
 import { generateAst } from './generator/ast-generator';
 import { generateModule } from './generator/module-generator';
 import { generateTextMate } from './generator/textmate-generator';
 import { serializeGrammar } from './generator/grammar-serializer';
 import { getTime, getUserChoice } from './generator/util';
+import { pathToFileURL } from 'url';
 
 export type GenerateOptions = {
     file?: string;
@@ -25,15 +26,8 @@ const services = createLangiumGrammarServices();
 
 export async function generate(config: LangiumConfig): Promise<GeneratorResult> {
     const relPath = config[RelativePath];
-
-    let grammarFileContent: string;
-    try {
-        grammarFileContent = await fs.readFile(path.join(relPath, config.grammar), 'utf-8');
-    } catch (e) {
-        console.error(`${getTime()}Failed to read grammar file at ${path.join(relPath, config.grammar).red.bold}`, e);
-        return 'failure';
-    }
-    const document = LangiumDocumentConfiguration.create(`file:${config.grammar}`, 'langium', 0, grammarFileContent);
+    const absGrammarPath = pathToFileURL(path.join(relPath, config.grammar)).toString();
+    const document = services.documents.Documents.createOrGetDocument(absGrammarPath);
     const buildResult = services.documents.DocumentBuilder.build(document);
     const diagnostics = buildResult.diagnostics;
     if (!isGrammar(buildResult.parseResult.value)) {

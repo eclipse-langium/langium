@@ -4,9 +4,6 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { readFileSync } from 'fs';
-import { fileURLToPath } from 'url';
-import { createOrGetDocument, LangiumDocumentConfiguration } from '../documents/document';
 import { LangiumServices } from '../services';
 import { AstNode } from '../syntax-tree';
 import { AstNodeDescription, ScopeProvider } from './scope';
@@ -41,14 +38,7 @@ export class DefaultLinker implements Linker {
     loadAstNode(nodeDescription: AstNodeDescription): AstNode | undefined {
         if (nodeDescription.node)
             return nodeDescription.node;
-        const doc = createOrGetDocument(nodeDescription.documentUri, this.services.documents.TextDocuments, (uri: string) => {
-            const fileContent = readFileSync(fileURLToPath(uri)).toString();
-            const langId = this.services.LanguageMetaData.languageId;
-            const document = LangiumDocumentConfiguration.create(uri, langId, 0, fileContent);
-            const parseResult = this.services.parser.LangiumParser.parse(document);
-            document.parseResult = parseResult;
-            return document;
-        });
+        const doc = this.services.documents.Documents.createOrGetDocument(nodeDescription.documentUri);
         return this.services.index.AstNodeLocator.astNode(doc, nodeDescription.path);
     }
 }

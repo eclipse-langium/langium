@@ -32,13 +32,13 @@ export class DefaultDocumentHighlighter implements DocumentHighlighter {
             return [];
         }
         const refs: CstNode[] = [];
-        const selectedNode = findLeafNodeAtOffset(rootNode, document.offsetAt(params.position));
+        const selectedNode = findLeafNodeAtOffset(rootNode, document.textDocument.offsetAt(params.position));
         if (!selectedNode) {
             return [];
         }
         const targetAstNode = this.references.findDeclaration(selectedNode)?.element;
         if (targetAstNode) {
-            if (getDocument(targetAstNode).uri === document.uri) {
+            if (getDocument(targetAstNode).textDocument.uri === document.textDocument.uri) {
                 const nameNode = this.findNameNode(targetAstNode);
                 if (nameNode) {
                     refs.push(nameNode);
@@ -49,7 +49,7 @@ export class DefaultDocumentHighlighter implements DocumentHighlighter {
             });
         }
         return refs.map(node => vscodeLanguageserver.Location.create(
-            document.uri,
+            document.textDocument.uri,
             toRange(node, document)
         ));
     }
