@@ -1,6 +1,7 @@
 # Langium
 [![npm](https://img.shields.io/npm/v/langium)](https://www.npmjs.com/package/langium)
 [![Build](https://github.com/langium/langium/actions/workflows/build.yml/badge.svg)](https://github.com/langium/langium/actions/workflows/build.yml)
+[![Gitpod Ready-to-Code](https://img.shields.io/badge/Gitpod-ready--to--code-blue?logo=gitpod)](https://gitpod.io/#https://github.com/langium/langium)
 
 Langium is a language engineering tool with built-in support for the [Language Server Protocol](https://microsoft.github.io/language-server-protocol/). Here are some key facts:
 
@@ -19,4 +20,6 @@ The main goal of Langium is to lower the barrier of creating a DSL / low-code pl
 
 ## How?
 
-Langium is available as [npm package](https://www.npmjs.com/package/langium). Please read the package documentation to get started.
+Langium is available as [npm package](https://www.npmjs.com/package/langium).
+
+Please read the [Contribution Guide](./CONTRIBUTING.md) if you want to contribute to Langium.
