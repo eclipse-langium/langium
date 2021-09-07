@@ -34,11 +34,11 @@ export interface ReferenceDescriptionProvider {
 export class DefaultAstNodeDescriptionsProvider implements AstNodeDescriptionProvider {
 
     protected readonly astNodeLocator: AstNodeLocator;
-    protected readonly nameProvidder: NameProvider;
+    protected readonly nameProvider: NameProvider;
 
     constructor(services: LangiumServices) {
         this.astNodeLocator = services.index.AstNodeLocator;
-        this.nameProvidder = services.references.NameProvider;
+        this.nameProvider = services.references.NameProvider;
     }
 
     createDescription(node: AstNode, name: string, document: LangiumDocument): AstNodeDescription {
@@ -55,12 +55,12 @@ export class DefaultAstNodeDescriptionsProvider implements AstNodeDescriptionPro
         const descr: AstNodeDescription[] = [];
         const rooNode = document.parseResult?.value;
         if (rooNode) {
-            const name = this.nameProvidder.getName(rooNode);
+            const name = this.nameProvider.getName(rooNode);
             if (name) {
                 descr.push(this.createDescription(rooNode, name, document));
             }
             streamContents(rooNode).forEach(content => {
-                const name = this.nameProvidder.getName(content.node);
+                const name = this.nameProvider.getName(content.node);
                 if (name) {
                     descr.push(this.createDescription(content.node, name, document));
                 }

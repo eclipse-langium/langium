@@ -65,19 +65,7 @@ export function startLanguageServer(services: LangiumServices): void {
     const documents = services.documents.TextDocuments;
     const documentBuilder = services.documents.DocumentBuilder;
     documents.onDidChangeContent(change => {
-        console.debug('Documents in service:' + documents.keys().length);
-        langiumDocs.invalidateDocument(change.document.uri);
-        const newDocument = langiumDocs.createOrGetDocument(change.document.uri);
-        if (newDocument.parseResult?.value) {
-            services.index.IndexManager.update(newDocument);
-        }
-        langiumDocs.all.filter(doc => isAffected(doc, change.document.uri)).forEach(
-            doc => {
-                documentBuilder.build(doc);
-                services.index.IndexManager.update(doc);
-            }
-        );
-        documentBuilder.build(newDocument);
+        documentBuilder.documentChanged(change.document.uri);
     });
     documents.onDidClose(() => {
         if (documents.keys().length === 0)
@@ -95,10 +83,6 @@ export function startLanguageServer(services: LangiumServices): void {
 
     // Listen on the connection.
     connection.listen();
-}
-
-function isAffected(document: LangiumDocument, changedUri: string): boolean {
-    return changedUri !== document.textDocument.uri;
 }
 
 export function addCompletionHandler(connection: Connection, services: LangiumServices): void {

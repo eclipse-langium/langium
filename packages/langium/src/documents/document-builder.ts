@@ -9,11 +9,13 @@ import { DocumentValidator } from '../validation/document-validator';
 import { LangiumParser, ParseResult } from '../parser/langium-parser';
 import { ScopeComputation } from '../references/scope';
 import { LangiumServices } from '../services';
-import { LangiumDocument } from './document';
+import { LangiumDocument, LangiumDocuments } from './document';
+import { IndexManager } from '../index/index-manager';
 
 export interface DocumentBuilder {
     build(document: LangiumDocument): BuildResult
     validate(document: LangiumDocument): Diagnostic[] | undefined
+    documentChanged(uri: string): void;
 }
 
 export interface BuildResult {
@@ -26,12 +28,16 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
     protected readonly parser: LangiumParser;
     protected readonly scopeComputation: ScopeComputation;
     protected readonly documentValidator: DocumentValidator;
+    protected readonly langiumDocuments: LangiumDocuments;
+    protected readonly indexManager: IndexManager;
 
     constructor(services: LangiumServices) {
         this.connection = services.lsp.Connection;
         this.parser = services.parser.LangiumParser;
         this.scopeComputation = services.references.ScopeComputation;
         this.documentValidator = services.validation.DocumentValidator;
+        this.langiumDocuments = services.documents.LangiumDocuments;
+        this.indexManager = services.index.IndexManager;
     }
 
     build(document: LangiumDocument): BuildResult {
@@ -63,6 +69,22 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
         }
         return diagnostics;
     }
+
+    documentChanged(uri: string): void {
+        this.langiumDocuments.invalidateDocument(uri);
+        const newDocument = this.langiumDocuments.createOrGetDocument(uri);
+        if (newDocument.parseResult?.value) {
+            this.indexManager.update(newDocument);
+        }
+        this.langiumDocuments.all.filter(doc => isAffected(doc, uri)).forEach(
+            doc => {
+                this.build(doc);
+                this.indexManager.update(doc);
+            }
+        );
+        this.build(newDocument);
+    }
+
     /**
      * Process the document by running precomputations. The default implementation precomputes the scope.
      */
@@ -70,4 +92,7 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
         document.precomputedScopes = this.scopeComputation.computeScope(document);
     }
 
+}
+function isAffected(document: LangiumDocument, changedUri: string): boolean {
+    return changedUri !== document.textDocument.uri;
 }

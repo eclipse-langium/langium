@@ -7,13 +7,15 @@
 import { LangiumDocuments } from '../documents/document';
 import { AstNodeLocator } from '../index/ast-node-locator';
 import { LangiumServices } from '../services';
-import { AstNode } from '../syntax-tree';
+import { AstNode, CstNode, Reference } from '../syntax-tree';
+import { getDocument } from '../utils/ast-util';
 import { AstNodeDescription, ScopeProvider } from './scope';
 
 export interface Linker {
     link(node: AstNode, referenceName: string, referenceId: string): AstNode | undefined;
     // TODO should be a collection of AstNodeDescriptions?
     getCandidate(node: AstNode, referenceName: string, referenceId: string): AstNodeDescription | undefined;
+    buildReference(node: AstNode, refNode: CstNode, text: string, crossRefId: string): Reference;
 }
 
 export class DefaultLinker implements Linker {
@@ -44,5 +46,21 @@ export class DefaultLinker implements Linker {
             return nodeDescription.node;
         const doc = this.langiumDocuments().createOrGetDocument(nodeDescription.documentUri);
         return this.astNodeLocator.getAstNode(doc, nodeDescription.path);
+    }
+
+    buildReference(node: AstNode, refNode: CstNode, text: string, crossRefId: string): Reference {
+        const link = this.link.bind(this);
+        const reference: Reference & { _ref?: AstNode } = {
+            $refNode: refNode,
+            $refName: text,
+            get ref() {
+                if (reference._ref === undefined || !getDocument(reference._ref).valid) {
+                    // TODO handle linking errors
+                    reference._ref = link(node, text, crossRefId);
+                }
+                return reference._ref;
+            }
+        };
+        return reference;
     }
 }
