@@ -6,10 +6,10 @@
 
 import { Connection, TextDocuments } from 'vscode-languageserver';
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { AstReflection, CompletionProvider, DocumentBuilder, DocumentFactory, Documents, DocumentValidator, Grammar, JsonSerializer, LangiumParser, LanguageMetaData, Linker, NameProvider, RuleInterpreter, ScopeComputation, ScopeProvider, TextDocumentFactory, ValidationRegistry } from '.';
-import { AstNodeDescriptionProvider, AstReferenceDescriptionProvider } from './index/ast-descriptions';
-import { AstNodeLocator, AstNodePathComputer } from './index/ast-node-locator';
-import { IndexManager } from './index/workspace-index-manager';
+import { AstReflection, CompletionProvider, DocumentBuilder, LangiumDocumentFactory, LangiumDocuments, DocumentValidator, Grammar, JsonSerializer, LangiumParser, LanguageMetaData, Linker, NameProvider, RuleInterpreter, ScopeComputation, ScopeProvider, TextDocumentFactory, ValidationRegistry } from '.';
+import { AstNodeDescriptionProvider, ReferenceDescriptionProvider } from './index/ast-descriptions';
+import { AstNodeLocator } from './index/ast-node-locator';
+import { IndexManager } from './index/index-manager';
 import { CodeActionProvider } from './lsp/code-action';
 import { DocumentHighlighter } from './lsp/document-highlighter';
 import { DocumentSymbolProvider } from './lsp/document-symbol-provider';
@@ -46,18 +46,17 @@ export type LangiumDefaultServices = {
     }
     documents: {
         DocumentBuilder: DocumentBuilder
-        Documents: Documents
+        LangiumDocuments: LangiumDocuments
+        LangiumDocumentFactory: LangiumDocumentFactory
         TextDocuments: TextDocuments<TextDocument>
         TextDocumentFactory: TextDocumentFactory
-        DocumentFactory: DocumentFactory
     }
     lsp: LangiumLspServices
     index: {
         IndexManager: IndexManager
-        AstNodePathComputer: AstNodePathComputer
         AstNodeLocator: AstNodeLocator
         AstNodeDescriptionProvider: AstNodeDescriptionProvider
-        AstReferenceDescriptionProvider: AstReferenceDescriptionProvider
+        ReferenceDescriptionProvider: ReferenceDescriptionProvider
     }
     references: {
         Linker: Linker

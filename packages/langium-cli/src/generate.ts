@@ -27,7 +27,7 @@ const services = createLangiumGrammarServices();
 export async function generate(config: LangiumConfig): Promise<GeneratorResult> {
     const relPath = config[RelativePath];
     const absGrammarPath = pathToFileURL(path.join(relPath, config.grammar)).toString();
-    const document = services.documents.Documents.createOrGetDocument(absGrammarPath);
+    const document = services.documents.LangiumDocuments.createOrGetDocument(absGrammarPath);
     const buildResult = services.documents.DocumentBuilder.build(document);
     const diagnostics = buildResult.diagnostics;
     if (!isGrammar(buildResult.parseResult.value)) {

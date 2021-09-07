@@ -7,11 +7,11 @@
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { Connection, TextDocuments } from 'vscode-languageserver/node';
 import { Module } from './dependency-injection';
-import { DefaultDocumentFactory, DefaultDocuments, DefaultTextDocumentFactory } from './documents/document';
+import { DefaultLangiumDocumentFactory, DefaultLangiumDocuments, DefaultTextDocumentFactory } from './documents/document';
 import { DefaultDocumentBuilder } from './documents/document-builder';
-import { DefaultDescriptionsProvider, DefaultReferenceDescriptionProvider } from './index/ast-descriptions';
+import { DefaultAstNodeDescriptionsProvider, DefaultReferenceDescriptionProvider } from './index/ast-descriptions';
 import { DefaultAstNodeLocator } from './index/ast-node-locator';
-import { DefaultIndexManager } from './index/workspace-index-manager';
+import { DefaultIndexManager } from './index/index-manager';
 import { DefaultCompletionProvider } from './lsp/completion/completion-provider';
 import { RuleInterpreter } from './lsp/completion/rule-interpreter';
 import { DefaultDocumentHighlighter } from './lsp/document-highlighter';
@@ -42,8 +42,8 @@ export function createDefaultModule(context: DefaultModuleContext = {}): Module<
             TokenBuilder: () => new DefaultTokenBuilder()
         },
         documents: {
-            Documents: (injector) => new DefaultDocuments(injector),
-            DocumentFactory: (injector) => new DefaultDocumentFactory(injector),
+            LangiumDocuments: (injector) => new DefaultLangiumDocuments(injector),
+            LangiumDocumentFactory: (injector) => new DefaultLangiumDocumentFactory(injector),
             DocumentBuilder: (injector) => new DefaultDocumentBuilder(injector),
             TextDocuments: () => new TextDocuments(TextDocument),
             TextDocumentFactory: (injector) => new DefaultTextDocumentFactory(injector),
@@ -61,10 +61,9 @@ export function createDefaultModule(context: DefaultModuleContext = {}): Module<
         },
         index: {
             IndexManager: (injector) => new DefaultIndexManager(injector),
-            AstNodePathComputer: () => new DefaultAstNodeLocator(),
             AstNodeLocator: () => new DefaultAstNodeLocator(),
-            AstNodeDescriptionProvider: (injector) => new DefaultDescriptionsProvider(injector),
-            AstReferenceDescriptionProvider: (injector) => new DefaultReferenceDescriptionProvider(injector)
+            AstNodeDescriptionProvider: (injector) => new DefaultAstNodeDescriptionsProvider(injector),
+            ReferenceDescriptionProvider: (injector) => new DefaultReferenceDescriptionProvider(injector)
         },
         references: {
             Linker: (injector) => new DefaultLinker(injector),

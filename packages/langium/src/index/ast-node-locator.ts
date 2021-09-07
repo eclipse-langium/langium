@@ -8,17 +8,15 @@ import { LangiumDocument } from '../documents/document';
 import { findAssignment, isArray } from '../grammar/grammar-util';
 import { AstNode } from '../syntax-tree';
 
-export interface AstNodePathComputer {
-    astNodePath(node: AstNode): string;
+export interface AstNodeLocator {
+    getAstNodePath(node: AstNode): string;
+    getAstNode(document: LangiumDocument, path: string): AstNode | undefined;
 }
 
-export interface AstNodeLocator {
-    astNode(document: LangiumDocument, path: string): AstNode | undefined;
-}
-export class DefaultAstNodeLocator implements AstNodeLocator, AstNodePathComputer {
+export class DefaultAstNodeLocator implements AstNodeLocator {
     protected segmentSeparator = '/';
 
-    astNodePath(node: AstNode): string {
+    getAstNodePath(node: AstNode): string {
         let container: AstNode | undefined = node.$container;
         const path: string[] = [''];
         while (container) {
@@ -29,7 +27,7 @@ export class DefaultAstNodeLocator implements AstNodeLocator, AstNodePathCompute
         return path.join(this.segmentSeparator);
     }
 
-    astNode(document: LangiumDocument, path: string): AstNode | undefined {
+    getAstNode(document: LangiumDocument, path: string): AstNode | undefined {
         const segments = path.split(this.segmentSeparator);
         return segments.reduce((previousValue, currentValue) => {
             if(currentValue.length === 0)

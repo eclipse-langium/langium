@@ -14,16 +14,16 @@ import { LangiumServices, LanguageMetaData, Stream, stream } from '..';
 import { URI } from 'vscode-uri';
 
 export interface LangiumDocument {
-    parseResult?: ParseResult
+    parseResult: ParseResult
     precomputedScopes?: PrecomputedScopes
-    outdated: boolean
+    valid: boolean
     textDocument: TextDocument
 }
 
 export type PrecomputedScopes = Map<AstNode, AstNodeDescription[]>
 
 export interface TextDocumentFactory {
-    create(uri: string): TextDocument;
+    fromUri(uri: string): TextDocument;
 }
 
 export class DefaultTextDocumentFactory implements TextDocumentFactory {
@@ -34,18 +34,18 @@ export class DefaultTextDocumentFactory implements TextDocumentFactory {
         this.languageMetaData = services.LanguageMetaData;
     }
 
-    create(uri: string): TextDocument {
+    fromUri(uri: string): TextDocument {
         const content = fs.readFileSync(URI.parse(uri).fsPath, 'utf-8');
         return TextDocument.create(uri, this.languageMetaData.languageId, 0, content);
     }
 
 }
 
-export interface DocumentFactory {
-    create(textDocument: TextDocument): LangiumDocument;
+export interface LangiumDocumentFactory {
+    fromTextDocument(textDocument: TextDocument): LangiumDocument;
 }
 
-export class DefaultDocumentFactory implements DocumentFactory {
+export class DefaultLangiumDocumentFactory implements LangiumDocumentFactory {
 
     protected readonly parser: LangiumParser;
 
@@ -53,10 +53,11 @@ export class DefaultDocumentFactory implements DocumentFactory {
         this.parser = services.parser.LangiumParser;
     }
 
-    create(textDocument: TextDocument): LangiumDocument {
+    fromTextDocument(textDocument: TextDocument): LangiumDocument {
         const doc: LangiumDocument = {
-            outdated: false,
-            textDocument
+            valid: true,
+            textDocument,
+            parseResult: undefined!
         };
         const parseResult = this.parser.parse(doc);
         doc.parseResult = parseResult;
@@ -64,24 +65,24 @@ export class DefaultDocumentFactory implements DocumentFactory {
     }
 }
 
-export interface Documents {
+export interface LangiumDocuments {
     readonly all: Stream<LangiumDocument>
     createOrGetDocument(uri: string): LangiumDocument;
     invalidateDocument(uri: string): void;
     invalidateAllDocuments(): void;
 }
 
-export class DefaultDocuments implements Documents {
+export class DefaultLangiumDocuments implements LangiumDocuments {
 
     protected readonly documentMap: Map<string, LangiumDocument> = new Map();
     protected readonly textDocuments: TextDocuments<TextDocument>;
     protected readonly textDocumentFactory: TextDocumentFactory;
-    protected readonly langiumDocumentFactory: DocumentFactory;
+    protected readonly langiumDocumentFactory: LangiumDocumentFactory;
 
     constructor(services: LangiumServices) {
         this.textDocuments = services.documents.TextDocuments;
         this.textDocumentFactory = services.documents.TextDocumentFactory;
-        this.langiumDocumentFactory = services.documents.DocumentFactory;
+        this.langiumDocumentFactory = services.documents.LangiumDocumentFactory;
     }
 
     get all(): Stream<LangiumDocument> {
@@ -95,9 +96,9 @@ export class DefaultDocuments implements Documents {
         }
         let textDoc = this.textDocuments.get(uri);
         if (!textDoc) {
-            textDoc = this.textDocumentFactory.create(uri);
+            textDoc = this.textDocumentFactory.fromUri(uri);
         }
-        langiumDoc = this.langiumDocumentFactory.create(textDoc);
+        langiumDoc = this.langiumDocumentFactory.fromTextDocument(textDoc);
         this.documentMap.set(uri, langiumDoc);
         return langiumDoc;
     }
@@ -105,13 +106,13 @@ export class DefaultDocuments implements Documents {
     invalidateDocument(uri: string): void {
         const langiumDoc = this.documentMap.get(uri);
         if (langiumDoc) {
-            langiumDoc.outdated = true;
+            langiumDoc.valid = false;
             this.documentMap.delete(uri);
         }
     }
 
     invalidateAllDocuments(): void {
-        this.documentMap.forEach(doc => doc.outdated = true);
+        this.documentMap.forEach(doc => doc.valid = false);
         this.documentMap.clear();
     }
 }

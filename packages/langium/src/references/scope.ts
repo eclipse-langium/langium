@@ -6,7 +6,7 @@
 
 import { LangiumDocument, PrecomputedScopes } from '../documents/document';
 import { AstNodeDescriptionProvider } from '../index/ast-descriptions';
-import { IndexManager } from '../index/workspace-index-manager';
+import { IndexManager } from '../index/index-manager';
 import { LangiumServices } from '../services';
 import { AstNode, AstReflection } from '../syntax-tree';
 import { getDocument, streamAllContents } from '../utils/ast-util';
@@ -22,6 +22,7 @@ export interface AstNodeDescription {
     /* navigation path inside a document */
     path: string
 }
+
 export interface Scope {
     getElement(name: string): AstNodeDescription | undefined
     getAllElements(): Stream<AstNodeDescription>
@@ -96,7 +97,7 @@ export class DefaultScopeProvider implements ScopeProvider {
             currentNode = currentNode.$container;
         } while (currentNode);
 
-        let result: Scope = this.getGlobalScope();
+        let result: Scope = this.getGlobalScope(referenceType);
         for (let i = scopes.length - 1; i >= 0; i--) {
             result = new SimpleScope(scopes[i], result);
         }
@@ -104,8 +105,8 @@ export class DefaultScopeProvider implements ScopeProvider {
     }
 
     // TODO use the global scope (index) as outermost scope
-    protected getGlobalScope(): Scope {
-        return new SimpleScope(stream(this.globalScope.allElements()));
+    protected getGlobalScope(referenceType: string): Scope {
+        return new SimpleScope(this.globalScope.allElements(referenceType));
     }
 }
 

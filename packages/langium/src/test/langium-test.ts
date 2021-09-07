@@ -17,7 +17,7 @@ export function parseHelper(services: LangiumServices): (input: string) => Build
     return input => {
         const randomNumber = Math.floor(Math.random() * 10000000) + 1000000;
         const textDocument = TextDocument.create(`file:/${randomNumber}${metaData.fileExtensions[0]}`, metaData.languageId, 0, input);
-        const document: LangiumDocument = services.documents.DocumentFactory.create(textDocument);
+        const document: LangiumDocument = services.documents.LangiumDocumentFactory.fromTextDocument(textDocument);
         const buildResult = documentBuilder.build(document);
         return buildResult;
     };

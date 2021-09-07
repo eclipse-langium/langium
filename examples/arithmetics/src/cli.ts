@@ -33,7 +33,7 @@ program
         }
 
         const arithmeticsServices = createArithmeticsServices();
-        const document = arithmeticsServices.documents.Documents.createOrGetDocument(fileName);
+        const document = arithmeticsServices.documents.LangiumDocuments.createOrGetDocument(fileName);
         arithmeticsServices.documents.DocumentBuilder.build(document);
         if (!document.parseResult) {
             console.error(`Failed to parse the grammar file ${fileName}`);

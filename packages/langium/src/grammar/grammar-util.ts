@@ -6,7 +6,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { LangiumDocument } from '..';
+import { LangiumDocument } from '../documents/document';
 import * as ast from '../grammar/generated/ast';
 import { CompositeCstNodeImpl } from '../parser/cst-node-builder';
 import { AstNode, CstNode } from '../syntax-tree';
@@ -258,13 +258,13 @@ export function loadGrammar(json: string): ast.Grammar {
     const grammar = astNode as Mutable<ast.Grammar>;
     const textDocument = TextDocument.create('', 'langium', 0, '');
     const document: LangiumDocument = {
-        outdated: false,
-        textDocument
-    };
-    document.parseResult = {
-        lexerErrors: [],
-        parserErrors: [],
-        value: grammar
+        valid: true,
+        textDocument,
+        parseResult: {
+            lexerErrors: [],
+            parserErrors: [],
+            value: grammar
+        }
     };
     grammar.$document = document;
     document.precomputedScopes = services.references.ScopeComputation.computeScope(document);

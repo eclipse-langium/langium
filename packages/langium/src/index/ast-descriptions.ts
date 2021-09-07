@@ -4,20 +4,22 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { Range } from 'vscode-languageserver';
 import { LangiumDocument } from '../documents/document';
+import { Linker } from '../references/linker';
+import { NameProvider } from '../references/naming';
 import { AstNodeDescription } from '../references/scope';
 import { LangiumServices } from '../services';
-import { AstNode, CstNode } from '../syntax-tree';
+import { AstNode } from '../syntax-tree';
 import { AstNodeReference, getDocument, streamAllContents, streamContents, streamReferences } from '../utils/ast-util';
+import { AstNodeLocator } from './ast-node-locator';
 
-export interface AstNodeReferenceDescription {
+export interface ReferenceDescription {
     sourceUri: string // URI of the document that holds a reference
     sourcePath: string // Path to AstNode that holds a reference
     targetUri: string // target document uri
     targetPath: string // how to find target AstNode inside the document
-    startPosition: { line: number, character: number } // Text document position start
-    endPosition: { line: number, character: number } //  Text document position end
+    start: number
+    end: number
 }
 
 export interface AstNodeDescriptionProvider {
@@ -25,15 +27,19 @@ export interface AstNodeDescriptionProvider {
     createDescriptions(document: LangiumDocument): AstNodeDescription[];
 }
 
-export interface AstReferenceDescriptionProvider {
-    createDescriptions(document: LangiumDocument): AstNodeReferenceDescription[];
+export interface ReferenceDescriptionProvider {
+    createDescriptions(document: LangiumDocument): ReferenceDescription[];
 }
 
-export class DefaultDescriptionsProvider implements AstNodeDescriptionProvider {
+export class DefaultAstNodeDescriptionsProvider implements AstNodeDescriptionProvider {
 
-    protected readonly services: LangiumServices;
+    protected readonly astNodeLocator: AstNodeLocator;
+    protected readonly nameProvidder: NameProvider;
 
-    constructor(services: LangiumServices) { this.services = services; }
+    constructor(services: LangiumServices) {
+        this.astNodeLocator = services.index.AstNodeLocator;
+        this.nameProvidder = services.references.NameProvider;
+    }
 
     createDescription(node: AstNode, name: string, document: LangiumDocument): AstNodeDescription {
         return {
@@ -41,7 +47,7 @@ export class DefaultDescriptionsProvider implements AstNodeDescriptionProvider {
             name,
             type: node.$type,
             documentUri: document.textDocument.uri,
-            path: this.services.index.AstNodePathComputer.astNodePath(node)
+            path: this.astNodeLocator.getAstNodePath(node)
         };
     }
 
@@ -49,12 +55,12 @@ export class DefaultDescriptionsProvider implements AstNodeDescriptionProvider {
         const descr: AstNodeDescription[] = [];
         const rooNode = document.parseResult?.value;
         if (rooNode) {
-            const name = this.services.references.NameProvider.getName(rooNode);
+            const name = this.nameProvidder.getName(rooNode);
             if (name) {
                 descr.push(this.createDescription(rooNode, name, document));
             }
             streamContents(rooNode).forEach(content => {
-                const name = this.services.references.NameProvider.getName(content.node);
+                const name = this.nameProvidder.getName(content.node);
                 if (name) {
                     descr.push(this.createDescription(content.node, name, document));
                 }
@@ -64,31 +70,33 @@ export class DefaultDescriptionsProvider implements AstNodeDescriptionProvider {
     }
 }
 
-export class DefaultReferenceDescriptionProvider implements AstReferenceDescriptionProvider {
+export class DefaultReferenceDescriptionProvider implements ReferenceDescriptionProvider {
 
-    protected readonly services: LangiumServices;
+    protected readonly linker: Linker;
+    protected readonly nodeLocator: AstNodeLocator;
 
-    constructor(services: LangiumServices) { this.services = services; }
+    constructor(services: LangiumServices) {
+        this.linker = services.references.Linker;
+        this.nodeLocator = services.index.AstNodeLocator;
+    }
 
-    createDescriptions(document: LangiumDocument): AstNodeReferenceDescription[] {
-        const descr: AstNodeReferenceDescription[] = [];
+    createDescriptions(document: LangiumDocument): ReferenceDescription[] {
+        const descr: ReferenceDescription[] = [];
         const rootNode = document.parseResult?.value;
         if (rootNode) {
-            const refConverter = (refNode: AstNodeReference) => {
-                const refAstNodeDescr = this.services.references.Linker.linkingCandiates(refNode.container, refNode.reference.$refName, `${refNode.container.$type}:${refNode.property}`);
+            const refConverter = (refNode: AstNodeReference): ReferenceDescription | undefined => {
+                const refAstNodeDescr = this.linker.getCandidate(refNode.container, refNode.reference.$refName, `${refNode.container.$type}:${refNode.property}`);
                 // Do not handle unresolved refs or local references
                 const docUri = getDocument(refNode.container)?.textDocument?.uri;
                 if (!refAstNodeDescr || refAstNodeDescr.documentUri === docUri)
-                    return null;
-                const range = toRange(refNode.reference.$refNode, document);
+                    return undefined;
                 return {
                     sourceUri: docUri,
-                    sourcePath: this.services.index.AstNodePathComputer.astNodePath(refNode.container),
-                    sourceFeature: refNode.property,
+                    sourcePath: this.nodeLocator.getAstNodePath(refNode.container),
                     targetUri: refAstNodeDescr.documentUri,
                     targetPath: refAstNodeDescr.path,
-                    startPosition: { line: range.start.line, character: range.start.character },
-                    endPosition: { line: range.end.line, character: range.end.character }
+                    start: refNode.reference.$refNode.offset,
+                    end: refNode.reference.$refNode.offset + refNode.reference.$refNode.length
                 };
             };
             streamAllContents(rootNode).forEach(astNodeContent => {
@@ -102,11 +110,4 @@ export class DefaultReferenceDescriptionProvider implements AstReferenceDescript
         }
         return descr;
     }
-}
-// Can't import from cst-util: getting TypeError
-function toRange(node: CstNode, document: LangiumDocument): Range {
-    return {
-        start: document.textDocument.positionAt(node.offset),
-        end: document.textDocument.positionAt(node.offset + node.length)
-    };
 }

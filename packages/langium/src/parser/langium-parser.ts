@@ -287,7 +287,7 @@ export class LangiumParser {
             $refNode: refNode,
             $refName: text,
             get ref() {
-                if (reference._ref === undefined || getDocument(reference._ref).outdated) {
+                if (reference._ref === undefined || !getDocument(reference._ref).valid) {
                     // TODO handle linking errors
                     reference._ref = link(node, text, crossRefId);
                 }

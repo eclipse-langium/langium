@@ -59,6 +59,7 @@
         "@typescript-eslint/indent": "error",                       // consistent indentation
         "@typescript-eslint/no-explicit-any": "error",              // don't use :any type
         "@typescript-eslint/no-misused-new": "error",               // no constructors for interfaces or new for classes
+        "@typescript-eslint/no-non-null-assertion": "off",
         "@typescript-eslint/no-parameter-properties": "error",      // no property definitions in class constructors
         "@typescript-eslint/no-var-requires": "error",              // use import instead of require
         "@typescript-eslint/prefer-for-of": "error",                // prefer for-of loop over arrays

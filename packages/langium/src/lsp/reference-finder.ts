@@ -6,13 +6,13 @@
 
 import { Location, Range, TextDocumentPositionParams } from 'vscode-languageserver';
 import { LangiumDocument } from '../documents/document';
-import { AstNodePathComputer } from '../index/ast-node-locator';
-import { IndexManager } from '../index/workspace-index-manager';
+import { AstNodeLocator } from '../index/ast-node-locator';
+import { IndexManager } from '../index/index-manager';
 import { NameProvider } from '../references/naming';
 import { References } from '../references/references';
 import { LangiumServices } from '../services';
 import { AstNode, CstNode } from '../syntax-tree';
-import { findAllReferences, findLeafNodeAtOffset, findLocalReferences, getDocument } from '../utils/ast-util';
+import { findLeafNodeAtOffset, findLocalReferences, getDocument } from '../utils/ast-util';
 import { flatten, toRange } from '../utils/cst-util';
 
 export interface ReferenceFinder {
@@ -23,13 +23,13 @@ export class DefaultReferenceFinder implements ReferenceFinder {
     protected readonly nameProvider: NameProvider;
     protected readonly references: References;
     protected readonly index: IndexManager;
-    protected readonly nodePath: AstNodePathComputer;
+    protected readonly nodeLocator: AstNodeLocator;
 
     constructor(services: LangiumServices) {
         this.nameProvider = services.references.NameProvider;
         this.references = services.references.References;
         this.index = services.index.IndexManager;
-        this.nodePath = services.index.AstNodePathComputer;
+        this.nodeLocator = services.index.AstNodeLocator;
     }
 
     findReferences(document: LangiumDocument, params: TextDocumentPositionParams, includeDeclaration: boolean): Location[] {
@@ -53,8 +53,9 @@ export class DefaultReferenceFinder implements ReferenceFinder {
             findLocalReferences(targetAstNode, rootNode.element).forEach((element) => {
                 refs.push({ docUri: document.textDocument.uri, range: toRange(element.$refNode, document) });
             });
-            findAllReferences(targetAstNode, this.nodePath.astNodePath(targetAstNode), this.index).forEach((refDescr) => {
-                refs.push({ docUri: refDescr.sourceUri, range: Range.create(refDescr.startPosition, refDescr.endPosition) });
+            this.index.findAllReferences(targetAstNode, this.nodeLocator.getAstNodePath(targetAstNode)).forEach((refDescr) => {
+                const range = Range.create(document.textDocument.positionAt(refDescr.start), document.textDocument.positionAt(refDescr.end));
+                refs.push({ docUri: refDescr.sourceUri, range });
             });
         }
         return refs.map(ref => Location.create(
