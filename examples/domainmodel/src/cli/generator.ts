@@ -10,7 +10,7 @@ import { CompositeGeneratorNode, IndentNode, NL, processGeneratorNode } from 'la
 import { AbstractElement, Domainmodel, Entity, Feature, isEntity, isPackageDeclaration, Type } from '../language-server/generated/ast';
 
 export function generateJava(domainmodel: Domainmodel, fileName: string, destination: string = '.') {
-    const path = fileName.replace(/\..*$/, '').replaceAll(/[.-]/g, '');
+    const path = fileName.replace(/\..*$/, '').replace(/[.-]/g, '');
 
     generateAbstractElements(destination, domainmodel.elements, path);
     return `${destination}/${path}`;
@@ -24,10 +24,10 @@ function generateAbstractElements(destination: string, elements: Array<AbstractE
             fs.mkdirSync(fullPath, { recursive: true });
         }
 
-        const packagePath = path.replaceAll('/', '.').replace(/^\.+/, '');
+        const packagePath = path.replace(/\//g, '.').replace(/^\.+/, '');
         for (const elem of elements) {
             if (isPackageDeclaration(elem)) {
-                generateAbstractElementsInternal(elem.elements, `${path}/${elem.name.replaceAll('.', '/')}`);
+                generateAbstractElementsInternal(elem.elements, `${path}/${elem.name.replace(/\./g, '/')}`);
             } else if (isEntity(elem)) {
                 const fileNode = new CompositeGeneratorNode();
                 fileNode.append(`package ${packagePath};`, NL, NL);
