@@ -69,7 +69,6 @@ export interface LangiumDocuments {
     readonly all: Stream<LangiumDocument>
     getOrCreateDocument(uri: string): LangiumDocument;
     invalidateDocument(uri: string): void;
-    invalidateAllDocuments(): void;
 }
 
 export class DefaultLangiumDocuments implements LangiumDocuments {
@@ -109,10 +108,5 @@ export class DefaultLangiumDocuments implements LangiumDocuments {
             langiumDoc.valid = false;
             this.documentMap.delete(uri);
         }
-    }
-
-    invalidateAllDocuments(): void {
-        this.documentMap.forEach(doc => doc.valid = false);
-        this.documentMap.clear();
     }
 }

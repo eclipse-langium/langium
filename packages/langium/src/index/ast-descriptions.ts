@@ -14,11 +14,17 @@ import { AstNodeReference, getDocument, streamAllContents, streamContents, strea
 import { AstNodeLocator } from './ast-node-locator';
 
 export interface ReferenceDescription {
-    sourceUri: string // URI of the document that holds a reference
-    sourcePath: string // Path to AstNode that holds a reference
-    targetUri: string // target document uri
-    targetPath: string // how to find target AstNode inside the document
+    /** URI of the document that holds a reference */
+    sourceUri: string
+    /** Path to AstNode that holds a reference */
+    sourcePath: string
+    /**  target document uri */
+    targetUri: string
+    /** how to find target AstNode inside the document */
+    targetPath: string
+    /** start offset of the reference text */
     start: number
+    /** end offset of the reference text */
     end: number
 }
 

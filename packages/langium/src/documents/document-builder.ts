@@ -14,7 +14,20 @@ import { IndexManager } from '../index/index-manager';
 
 export interface DocumentBuilder {
     build(document: LangiumDocument): BuildResult
+    /**
+     * Validates a document and creates diagnostic information.
+    * @param document to be validated
+    * @returns Diagnostic array or undefined if no validation issues found
+    */
     validate(document: LangiumDocument): Diagnostic[] | undefined
+    /**
+     * This method is called when a document change is detected.
+     * Implementation should updates the state of that `LangiumDocument` and make sure
+     * that the index information of the affected documents are also updated.
+     * @param uri of the document that was changed
+     * @see IndexManager.update()
+     * @see LangiumDocuments.invalidateDocument()
+     */
     documentChanged(uri: string): void;
 }
 

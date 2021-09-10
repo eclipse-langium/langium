@@ -9,7 +9,22 @@ import { findAssignment, isArray } from '../grammar/grammar-util';
 import { AstNode } from '../syntax-tree';
 
 export interface AstNodeLocator {
+    /**
+     * Creates a path represented by a `string` that identifies an `AstNode` inside its document.
+     * It must be possible to retrieve exactly the same `AstNode` from the document using this path.
+     * @param node The `AstNode` to create the path for.
+     * @returns a path represented by a `string` that identifies `node` inside its document.
+     * @see AstNodeLocator.getAstNode
+     */
     getAstNodePath(node: AstNode): string;
+
+    /**
+     * Locates an `AstNode` inside a document by following the given path.
+     * @param document Document to look up
+     * @param path describes how to locate an `AstNode` inside the given `document`.
+     * @returns `AstNode` located under the given path
+     * @see AstNodeLocator.getAstNodePath
+     */
     getAstNode(document: LangiumDocument, path: string): AstNode | undefined;
 }
 

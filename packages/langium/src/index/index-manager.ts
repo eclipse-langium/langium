@@ -19,10 +19,37 @@ import { getDocument } from '../utils/ast-util';
 import { AstReflection } from '..';
 
 export interface IndexManager {
-    initializeRoot(rootUri: string): void;
+    /**
+     * Does the initial indexing of workspace folders.
+     * Collects information about exported and referenced AstNodes in
+     * each language file and stores it locally.
+     *
+     * @param folders one or more workspace folders to be indexed. Does nothing if
+     * the parameter is `null`
+     */
     initializeWorkspace(folders: WorkspaceFolder[] | null): void;
+
+    /**
+     * Updates the information about a Document inside the index.
+     *
+     * @param document document to be updated
+     */
     update(document: LangiumDocument): void;
-    allElements(referenceType?: string): Stream<AstNodeDescription>;
+
+    /**
+     * @param nodeType The `AstNodeDescription.type` to filter with. Normally `AstNodeDescription.type` is equal to `AstNode.$type`
+     * @returns a `Stream` of existing `AstNodeDescription`s filtered by their type
+     */
+    allElements(nodeType?: string): Stream<AstNodeDescription>;
+
+    /**
+     * Returns all known references that are pointing to the given `targetNode`.
+     *
+     * @param targetNode the `AstNode` to look up references for
+     * @param astNodePath the path the points to the `targetNode` inside the document. See also `AstNodeLocator`
+     *
+     * @returns a `Stream` of references that are targeting the `targetNode`
+     */
     findAllReferences(targetNode: AstNode, astNodePath: string): Stream<ReferenceDescription>;
 }
 
@@ -58,25 +85,18 @@ export class DefaultIndexManager implements IndexManager {
         return stream(result);
     }
 
-    allElements(referenceType?: string): Stream<AstNodeDescription> {
-        return stream(Array.from(this.simpleIndex.values()).flat().filter(e => referenceType ? this.astReflection.isSubtype(e.type, referenceType) : true));
+    allElements(nodeType?: string): Stream<AstNodeDescription> {
+        return stream(Array.from(this.simpleIndex.values()).flat().filter(e => nodeType ? this.astReflection.isSubtype(e.type, nodeType) : true));
     }
 
     update(document: LangiumDocument): void {
         this.processDocument(document);
     }
 
-    initializeRoot(rootUri: string): void {
-        this.traverseFolder(URI.parse(rootUri).fsPath, this.languageMetaData.fileExtensions);
-    }
-
     initializeWorkspace(folders: WorkspaceFolder[] | null): void {
-        const taskName = this.languageMetaData.languageId + ' - Workspace indexing.';
-        console.time(taskName);
         folders?.forEach((folder) => {
             this.traverseFolder(URI.parse(folder.uri).fsPath, this.languageMetaData.fileExtensions);
         });
-        console.timeEnd(taskName);
     }
 
     /* sync access for now */

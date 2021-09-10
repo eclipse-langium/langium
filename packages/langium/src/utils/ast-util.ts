@@ -159,7 +159,7 @@ export function findLeafNodeAtOffset(node: CstNode, offset: number): LeafCstNode
 }
 
 /**
- * Returns a Stream of referenses to targetNode from the AstNode tree
+ * Returns a Stream of references to targetNode from the AstNode tree
  *
  * @param targetNode AstNode we are looking for
  * @param lookup AstNode where we are looking for references. This node
