@@ -22,7 +22,6 @@ export interface IndexManager {
     initializeRoot(rootUri: string): void;
     initializeWorkspace(folders: WorkspaceFolder[] | null): void;
     update(document: LangiumDocument): void;
-    /* Use streams? */
     allElements(referenceType?: string): Stream<AstNodeDescription>;
     findAllReferences(targetNode: AstNode, astNodePath: string): Stream<ReferenceDescription>;
 }
@@ -44,10 +43,6 @@ export class DefaultIndexManager implements IndexManager {
         this.langiumDocuments = () => services.documents.LangiumDocuments;
         this.astNodeDescriptionProvider = () => services.index.AstNodeDescriptionProvider;
         this.referenceDescriptionProvider = () => services.index.ReferenceDescriptionProvider;
-    }
-
-    documentDescriptions(): ReadonlyMap<string, ReferenceDescription[]> {
-        return this.referenceIndex;
     }
 
     findAllReferences(targetNode: AstNode, astNodePath: string): Stream<ReferenceDescription> {
@@ -110,7 +105,7 @@ export class DefaultIndexManager implements IndexManager {
     }
 
     protected processLanguageFile(filePath: string): void {
-        const document = this.langiumDocuments().createOrGetDocument(URI.file(filePath).toString());
+        const document = this.langiumDocuments().getOrCreateDocument(URI.file(filePath).toString());
         this.processDocument(document);
     }
 

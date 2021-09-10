@@ -61,15 +61,10 @@ export function startLanguageServer(services: LangiumServices): void {
         return result;
     });
 
-    const langiumDocs = services.documents.LangiumDocuments;
     const documents = services.documents.TextDocuments;
     const documentBuilder = services.documents.DocumentBuilder;
     documents.onDidChangeContent(change => {
         documentBuilder.documentChanged(change.document.uri);
-    });
-    documents.onDidClose(() => {
-        if (documents.keys().length === 0)
-            langiumDocs.invalidateAllDocuments(); // clean up all cached document
     });
     addCompletionHandler(connection, services);
     addFindReferencesHandler(connection, services);
@@ -169,5 +164,5 @@ export function addDocumentHighlightsHandler(connection: Connection, services: L
 
 function paramsDocument(params: TextDocumentPositionParams | DocumentSymbolParams, services: LangiumServices): LangiumDocument | undefined {
     const uri = params.textDocument.uri;
-    return services.documents.LangiumDocuments.createOrGetDocument(uri);
+    return services.documents.LangiumDocuments.getOrCreateDocument(uri);
 }

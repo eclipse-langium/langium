@@ -9,7 +9,7 @@ import { Connection, TextDocuments } from 'vscode-languageserver/node';
 import { Module } from './dependency-injection';
 import { DefaultLangiumDocumentFactory, DefaultLangiumDocuments, DefaultTextDocumentFactory } from './documents/document';
 import { DefaultDocumentBuilder } from './documents/document-builder';
-import { DefaultAstNodeDescriptionsProvider, DefaultReferenceDescriptionProvider } from './index/ast-descriptions';
+import { DefaultAstNodeDescriptionProvider, DefaultReferenceDescriptionProvider } from './index/ast-descriptions';
 import { DefaultAstNodeLocator } from './index/ast-node-locator';
 import { DefaultIndexManager } from './index/index-manager';
 import { DefaultCompletionProvider } from './lsp/completion/completion-provider';
@@ -62,7 +62,7 @@ export function createDefaultModule(context: DefaultModuleContext = {}): Module<
         index: {
             IndexManager: (injector) => new DefaultIndexManager(injector),
             AstNodeLocator: () => new DefaultAstNodeLocator(),
-            AstNodeDescriptionProvider: (injector) => new DefaultAstNodeDescriptionsProvider(injector),
+            AstNodeDescriptionProvider: (injector) => new DefaultAstNodeDescriptionProvider(injector),
             ReferenceDescriptionProvider: (injector) => new DefaultReferenceDescriptionProvider(injector)
         },
         references: {

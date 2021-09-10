@@ -41,10 +41,8 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
     }
 
     build(document: LangiumDocument): BuildResult {
-        if (!document.parseResult) {
-            const parseResult = this.parser.parse(document);
-            document.parseResult = parseResult;
-        }
+        const parseResult = this.parser.parse(document);
+        document.parseResult = parseResult;
         this.process(document);
         let diagnostics: Diagnostic[] | undefined = this.connection ? this.validate(document) : undefined;
         const validator = this.documentValidator;
@@ -72,11 +70,11 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
 
     documentChanged(uri: string): void {
         this.langiumDocuments.invalidateDocument(uri);
-        const newDocument = this.langiumDocuments.createOrGetDocument(uri);
-        if (newDocument.parseResult?.value) {
+        const newDocument = this.langiumDocuments.getOrCreateDocument(uri);
+        if (newDocument.parseResult.value) {
             this.indexManager.update(newDocument);
         }
-        this.langiumDocuments.all.filter(doc => isAffected(doc, uri)).forEach(
+        this.langiumDocuments.all.filter(doc => this.isAffected(doc, uri)).forEach(
             doc => {
                 this.build(doc);
                 this.indexManager.update(doc);
@@ -92,7 +90,7 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
         document.precomputedScopes = this.scopeComputation.computeScope(document);
     }
 
-}
-function isAffected(document: LangiumDocument, changedUri: string): boolean {
-    return changedUri !== document.textDocument.uri;
+    protected isAffected(document: LangiumDocument, changedUri: string): boolean {
+        return changedUri !== document.textDocument.uri;
+    }
 }

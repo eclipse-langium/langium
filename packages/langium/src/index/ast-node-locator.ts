@@ -36,7 +36,7 @@ export class DefaultAstNodeLocator implements AstNodeLocator {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const value = (previousValue as any)[propertyIndx[0]];
             return (propertyIndx.length === 2) ? value[propertyIndx[1]] : value;
-        }, document.parseResult?.value);
+        }, document.parseResult.value);
     }
 
     protected pathSegment(node: AstNode, container: AstNode): string {

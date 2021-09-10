@@ -67,7 +67,7 @@ export class DefaultLangiumDocumentFactory implements LangiumDocumentFactory {
 
 export interface LangiumDocuments {
     readonly all: Stream<LangiumDocument>
-    createOrGetDocument(uri: string): LangiumDocument;
+    getOrCreateDocument(uri: string): LangiumDocument;
     invalidateDocument(uri: string): void;
     invalidateAllDocuments(): void;
 }
@@ -89,7 +89,7 @@ export class DefaultLangiumDocuments implements LangiumDocuments {
         return stream(this.documentMap.values());
     }
 
-    createOrGetDocument(uri: string): LangiumDocument {
+    getOrCreateDocument(uri: string): LangiumDocument {
         let langiumDoc = this.documentMap.get(uri);
         if (langiumDoc) {
             return langiumDoc;

@@ -31,7 +31,7 @@ export interface ReferenceDescriptionProvider {
     createDescriptions(document: LangiumDocument): ReferenceDescription[];
 }
 
-export class DefaultAstNodeDescriptionsProvider implements AstNodeDescriptionProvider {
+export class DefaultAstNodeDescriptionProvider implements AstNodeDescriptionProvider {
 
     protected readonly astNodeLocator: AstNodeLocator;
     protected readonly nameProvider: NameProvider;
@@ -53,7 +53,7 @@ export class DefaultAstNodeDescriptionsProvider implements AstNodeDescriptionPro
 
     createDescriptions(document: LangiumDocument): AstNodeDescription[] {
         const descr: AstNodeDescription[] = [];
-        const rooNode = document.parseResult?.value;
+        const rooNode = document.parseResult.value;
         if (rooNode) {
             const name = this.nameProvider.getName(rooNode);
             if (name) {
@@ -82,7 +82,7 @@ export class DefaultReferenceDescriptionProvider implements ReferenceDescription
 
     createDescriptions(document: LangiumDocument): ReferenceDescription[] {
         const descr: ReferenceDescription[] = [];
-        const rootNode = document.parseResult?.value;
+        const rootNode = document.parseResult.value;
         if (rootNode) {
             const refConverter = (refNode: AstNodeReference): ReferenceDescription | undefined => {
                 const refAstNodeDescr = this.linker.getCandidate(refNode.container, refNode.reference.$refName, `${refNode.container.$type}:${refNode.property}`);
