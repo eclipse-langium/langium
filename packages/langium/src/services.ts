@@ -4,29 +4,20 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { AstReflection } from './syntax-tree';
-import { DocumentBuilder } from './documents/document-builder';
-import { Connection, TextDocuments } from 'vscode-languageserver/node';
-import { Linker } from './references/linker';
-import { NameProvider } from './references/naming';
-import { ScopeProvider, ScopeComputation } from './references/scope';
-import { JsonSerializer } from './serializer/json-serializer';
-import { LangiumDocument } from './documents/document';
-import { DocumentSymbolProvider } from './lsp/document-symbol-provider';
-import { CompletionProvider } from './lsp/completion/completion-provider';
-import { RuleInterpreter } from './lsp/completion/rule-interpreter';
-import { ValueConverter } from './parser/value-converter';
-import { ReferenceFinder } from './lsp/reference-finder';
-import { GoToResolver } from './lsp/goto';
+import { Connection, TextDocuments } from 'vscode-languageserver';
+import { TextDocument } from 'vscode-languageserver-textdocument';
+import { AstReflection, CompletionProvider, DocumentBuilder, LangiumDocumentFactory, LangiumDocuments, DocumentValidator, Grammar, JsonSerializer, LangiumParser, LanguageMetaData, Linker, NameProvider, RuleInterpreter, ScopeComputation, ScopeProvider, TextDocumentFactory, ValidationRegistry } from '.';
+import { AstNodeDescriptionProvider, ReferenceDescriptionProvider } from './index/ast-descriptions';
+import { AstNodeLocator } from './index/ast-node-locator';
+import { IndexManager } from './index/index-manager';
+import { CodeActionProvider } from './lsp/code-action';
 import { DocumentHighlighter } from './lsp/document-highlighter';
-import { References } from './references/references';
-import { ValidationRegistry } from './validation/validation-registry';
-import { DocumentValidator } from './validation/document-validator';
-import { Grammar } from './grammar/generated/ast';
-import { LangiumParser } from './parser/langium-parser';
+import { DocumentSymbolProvider } from './lsp/document-symbol-provider';
+import { GoToResolver } from './lsp/goto';
+import { ReferenceFinder } from './lsp/reference-finder';
 import { TokenBuilder } from './parser/token-builder';
-import { LanguageMetaData } from './grammar/language-meta-data';
-import { CodeActionProvider} from './lsp/code-action';
+import { ValueConverter } from './parser/value-converter';
+import { References } from './references/references';
 
 export type LangiumGeneratedServices = {
     Grammar: Grammar
@@ -55,9 +46,18 @@ export type LangiumDefaultServices = {
     }
     documents: {
         DocumentBuilder: DocumentBuilder
-        TextDocuments: TextDocuments<LangiumDocument>
+        LangiumDocuments: LangiumDocuments
+        LangiumDocumentFactory: LangiumDocumentFactory
+        TextDocuments: TextDocuments<TextDocument>
+        TextDocumentFactory: TextDocumentFactory
     }
     lsp: LangiumLspServices
+    index: {
+        IndexManager: IndexManager
+        AstNodeLocator: AstNodeLocator
+        AstNodeDescriptionProvider: AstNodeDescriptionProvider
+        ReferenceDescriptionProvider: ReferenceDescriptionProvider
+    }
     references: {
         Linker: Linker
         NameProvider: NameProvider

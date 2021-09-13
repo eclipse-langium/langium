@@ -6,13 +6,13 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { EmbeddedActionsParser, ILexingError, IOrAlt, IRecognitionException, IToken, Lexer, TokenType } from 'chevrotain';
-import { AbstractElement, Action, isAssignment, isCrossReference } from '../grammar/generated/ast';
 import { LangiumDocument } from '../documents/document';
-import { AstNode, CompositeCstNode, CstNode, LeafCstNode, Reference } from '../syntax-tree';
-import { CompositeCstNodeImpl, CstNodeBuilder, LeafCstNodeImpl } from './cst-node-builder';
+import { AbstractElement, Action, isAssignment, isCrossReference } from '../grammar/generated/ast';
 import { Linker } from '../references/linker';
 import { LangiumServices } from '../services';
+import { AstNode, CompositeCstNode, CstNode, LeafCstNode } from '../syntax-tree';
 import { getContainerOfType } from '../utils/ast-util';
+import { CompositeCstNodeImpl, CstNodeBuilder, LeafCstNodeImpl } from './cst-node-builder';
 import { ValueConverter } from './value-converter';
 
 export type ParseResult<T = AstNode> = {
@@ -63,7 +63,7 @@ export class LangiumParser {
 
     parse(input: string | LangiumDocument): ParseResult {
         this.wrapper.selfAnalysis();
-        const text = typeof input === 'string' ? input : input.getText();
+        const text = typeof input === 'string' ? input : input.textDocument.getText();
         this.nodeBuilder.buildRootNode(text);
         const lexerResult = this.lexer.tokenize(text);
         this.wrapper.input = lexerResult.tokens;
@@ -257,7 +257,7 @@ export class LangiumParser {
         const feature = assignment.feature.replace(/\^/g, '');
         let item: unknown;
         if (crossRefId && typeof value === 'string') {
-            item = this.buildReference(obj, cstNode, value, crossRefId);
+            item = this.linker.buildReference(obj, cstNode, value, crossRefId);
         } else if (cstNode && typeof value === 'string') {
             item = this.converter.convert(value, cstNode);
         } else {
@@ -279,22 +279,6 @@ export class LangiumParser {
                 obj[feature].push(item);
             }
         }
-    }
-
-    private buildReference(node: AstNode, refNode: CstNode, text: string, crossRefId: string): Reference {
-        const link = this.linker.link.bind(this.linker);
-        const reference: Reference & { _ref?: AstNode } = {
-            $refNode: refNode,
-            $refName: text,
-            get ref() {
-                if (reference._ref === undefined) {
-                    // TODO handle linking errors
-                    reference._ref = link(node, text, crossRefId);
-                }
-                return reference._ref;
-            }
-        };
-        return reference;
     }
 
     private assignWithoutOverride(target: any, source: any): any {

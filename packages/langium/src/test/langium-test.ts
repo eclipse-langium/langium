@@ -5,7 +5,8 @@
  ******************************************************************************/
 
 import { CompletionItem, DocumentSymbol, Range } from 'vscode-languageserver';
-import { LangiumDocument, LangiumDocumentConfiguration } from '../documents/document';
+import { TextDocument } from 'vscode-languageserver-textdocument';
+import { LangiumDocument } from '../documents/document';
 import { BuildResult } from '../documents/document-builder';
 import { LangiumServices } from '../services';
 import { getDocument } from '../utils/ast-util';
@@ -15,7 +16,8 @@ export function parseHelper(services: LangiumServices): (input: string) => Build
     const documentBuilder = services.documents.DocumentBuilder;
     return input => {
         const randomNumber = Math.floor(Math.random() * 10000000) + 1000000;
-        const document = LangiumDocumentConfiguration.create(`file:/${randomNumber}${metaData.fileExtensions[0]}`, metaData.languageId, 0, input);
+        const textDocument = TextDocument.create(`file:/${randomNumber}${metaData.fileExtensions[0]}`, metaData.languageId, 0, input);
+        const document: LangiumDocument = services.documents.LangiumDocumentFactory.fromTextDocument(textDocument);
         const buildResult = documentBuilder.build(document);
         return buildResult;
     };
@@ -93,17 +95,17 @@ export function expectGoToDefinition(services: LangiumServices, cb: ExpectFuncti
         const { output, indices, ranges } = replaceIndices(expectedGoToDefinition);
         const document = parseDocument(services, output);
         const goToResolver = services.lsp.GoToResolver;
-        const position = document.positionAt(indices[expectedGoToDefinition.index]);
+        const position = document.textDocument.positionAt(indices[expectedGoToDefinition.index]);
         const textPos = {
             textDocument: {
-                uri: document.uri
+                uri: document.textDocument.uri
             },
             position: position
         };
         const locationLink = goToResolver.goToDefinition(document, textPos);
         const expectedRange: Range = {
-            start: document.positionAt(ranges[expectedGoToDefinition.rangeIndex][0]),
-            end: document.positionAt(ranges[expectedGoToDefinition.rangeIndex][1])
+            start: document.textDocument.positionAt(ranges[expectedGoToDefinition.rangeIndex][0]),
+            end: document.textDocument.positionAt(ranges[expectedGoToDefinition.rangeIndex][1])
         };
         cb(locationLink.length, 1);
         cb(locationLink[0].targetSelectionRange, expectedRange);

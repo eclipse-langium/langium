@@ -132,7 +132,7 @@ export function resolveAllReferences(node: AstNode): { unresolved: AstNodeRefere
     };
     const process = (n: AstNodeContent) => {
         streamReferences(n.node).forEach(r => {
-            const value = r.reference.ref;
+            const value = r.reference.ref; // Ref get links to a AstNode
             if (value === undefined) {
                 result.unresolved.push(r);
             }
@@ -159,7 +159,7 @@ export function findLeafNodeAtOffset(node: CstNode, offset: number): LeafCstNode
 }
 
 /**
- * Returns a Stream of referenses to targetNode from the AstNode tree
+ * Returns a Stream of references to targetNode from the AstNode tree
  *
  * @param targetNode AstNode we are looking for
  * @param lookup AstNode where we are looking for references. This node

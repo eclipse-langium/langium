@@ -4,18 +4,23 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import { LangiumDocument, PrecomputedScopes } from '../documents/document';
+import { AstNodeDescriptionProvider } from '../index/ast-descriptions';
+import { IndexManager } from '../index/index-manager';
+import { LangiumServices } from '../services';
 import { AstNode, AstReflection } from '../syntax-tree';
 import { getDocument, streamAllContents } from '../utils/ast-util';
 import { EMPTY_STREAM, Stream, stream } from '../utils/stream';
 import { NameProvider } from './naming';
-import { LangiumServices } from '../services';
-import { LangiumDocument, PrecomputedScopes } from '../documents/document';
 
+// TODO Move to index folder?
 export interface AstNodeDescription {
     node?: AstNode
-    name: string // QualifiedName?
     type: string // AstNodeType?
+    name: string // QualifiedName?
     documentUri: string // DocumentUri?
+    /* navigation path inside a document */
+    path: string
 }
 
 export interface Scope {
@@ -67,9 +72,11 @@ export interface ScopeProvider {
 
 export class DefaultScopeProvider implements ScopeProvider {
     protected readonly reflection: AstReflection;
+    protected readonly globalScope: IndexManager;
 
     constructor(services: LangiumServices) {
         this.reflection = services.AstReflection;
+        this.globalScope = services.index.IndexManager;
     }
 
     getScope(node: AstNode, referenceId: string): Scope {
@@ -90,12 +97,16 @@ export class DefaultScopeProvider implements ScopeProvider {
             currentNode = currentNode.$container;
         } while (currentNode);
 
-        // TODO use the global scope (index) as outermost scope
-        let result: Scope = EMPTY_SCOPE;
+        let result: Scope = this.getGlobalScope(referenceType);
         for (let i = scopes.length - 1; i >= 0; i--) {
             result = new SimpleScope(scopes[i], result);
         }
         return result;
+    }
+
+    // TODO use the global scope (index) as outermost scope
+    protected getGlobalScope(referenceType: string): Scope {
+        return new SimpleScope(this.globalScope.allElements(referenceType));
     }
 }
 
@@ -105,9 +116,11 @@ export interface ScopeComputation {
 
 export class DefaultScopeComputation implements ScopeComputation {
     protected readonly nameProvider: NameProvider;
+    protected readonly descriptions: AstNodeDescriptionProvider;
 
     constructor(services: LangiumServices) {
         this.nameProvider = services.references.NameProvider;
+        this.descriptions = services.index.AstNodeDescriptionProvider;
     }
 
     computeScope(document: LangiumDocument): PrecomputedScopes {
@@ -122,21 +135,12 @@ export class DefaultScopeComputation implements ScopeComputation {
             if (container) {
                 const name = this.nameProvider.getName(node);
                 if (name) {
-                    const description = this.createDescription(node, name, document);
+                    const description = this.descriptions.createDescription(node, name, document);
                     this.addToContainer(description, container, scopes);
                 }
             }
         });
         return scopes;
-    }
-
-    protected createDescription(node: AstNode, name: string, document: LangiumDocument): AstNodeDescription {
-        return {
-            node,
-            name,
-            type: node.$type,
-            documentUri: document.uri
-        };
     }
 
     protected addToContainer(description: AstNodeDescription, container: AstNode, scopes: PrecomputedScopes): void {

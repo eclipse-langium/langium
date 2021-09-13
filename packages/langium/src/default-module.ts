@@ -4,10 +4,14 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import { TextDocument } from 'vscode-languageserver-textdocument';
 import { Connection, TextDocuments } from 'vscode-languageserver/node';
 import { Module } from './dependency-injection';
-import { LangiumDocumentConfiguration } from './documents/document';
+import { DefaultLangiumDocumentFactory, DefaultLangiumDocuments, DefaultTextDocumentFactory } from './documents/document';
 import { DefaultDocumentBuilder } from './documents/document-builder';
+import { DefaultAstNodeDescriptionProvider, DefaultReferenceDescriptionProvider } from './index/ast-descriptions';
+import { DefaultAstNodeLocator } from './index/ast-node-locator';
+import { DefaultIndexManager } from './index/index-manager';
 import { DefaultCompletionProvider } from './lsp/completion/completion-provider';
 import { RuleInterpreter } from './lsp/completion/rule-interpreter';
 import { DefaultDocumentHighlighter } from './lsp/document-highlighter';
@@ -38,8 +42,11 @@ export function createDefaultModule(context: DefaultModuleContext = {}): Module<
             TokenBuilder: () => new DefaultTokenBuilder()
         },
         documents: {
+            LangiumDocuments: (injector) => new DefaultLangiumDocuments(injector),
+            LangiumDocumentFactory: (injector) => new DefaultLangiumDocumentFactory(injector),
             DocumentBuilder: (injector) => new DefaultDocumentBuilder(injector),
-            TextDocuments: () => new TextDocuments(LangiumDocumentConfiguration)
+            TextDocuments: () => new TextDocuments(TextDocument),
+            TextDocumentFactory: (injector) => new DefaultTextDocumentFactory(injector),
         },
         lsp: {
             completion: {
@@ -51,6 +58,12 @@ export function createDefaultModule(context: DefaultModuleContext = {}): Module<
             ReferenceFinder:  (injector) => new DefaultReferenceFinder(injector),
             GoToResolver: (injector) => new DefaultGoToResolverProvider(injector),
             DocumentHighlighter: (injector) => new DefaultDocumentHighlighter(injector)
+        },
+        index: {
+            IndexManager: (injector) => new DefaultIndexManager(injector),
+            AstNodeLocator: () => new DefaultAstNodeLocator(),
+            AstNodeDescriptionProvider: (injector) => new DefaultAstNodeDescriptionProvider(injector),
+            ReferenceDescriptionProvider: (injector) => new DefaultReferenceDescriptionProvider(injector)
         },
         references: {
             Linker: (injector) => new DefaultLinker(injector),

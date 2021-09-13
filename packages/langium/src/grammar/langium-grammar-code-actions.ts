@@ -48,9 +48,9 @@ export class LangiumGrammarCodeActionProvider implements CodeActionProvider {
             isPreferred: true,
             edit: {
                 changes: {
-                    [document.uri]: [{
+                    [document.textDocument.uri]: [{
                         range,
-                        newText: document.getText(range).toUpperCase()
+                        newText: document.textDocument.getText(range).toUpperCase()
                     }]
                 }
             }

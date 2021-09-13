@@ -36,9 +36,11 @@ export function startLanguageServer(services: LangiumServices): void {
                 documentHighlightProvider: {},
                 codeActionProvider: services.lsp.CodeActionProvider ? {} : undefined,
                 // hoverProvider needs to be created for mouse-over events, etc.
-                hoverProvider: false
+                hoverProvider: false,
+                monikerProvider: {}
             }
         };
+
         if (hasWorkspaceFolderCapability) {
             result.capabilities.workspace = {
                 workspaceFolders: {
@@ -46,15 +48,24 @@ export function startLanguageServer(services: LangiumServices): void {
                 }
             };
         }
+
+        if (params.capabilities.workspace?.configuration) {
+            try {
+                // experimental
+                if (params.workspaceFolders)
+                    services.index.IndexManager.initializeWorkspace(params.workspaceFolders);
+            } catch (e) {
+                console.error(e);
+            }
+        }
         return result;
     });
 
     const documents = services.documents.TextDocuments;
     const documentBuilder = services.documents.DocumentBuilder;
     documents.onDidChangeContent(change => {
-        documentBuilder.build(change.document);
+        documentBuilder.documentChanged(change.document.uri);
     });
-
     addCompletionHandler(connection, services);
     addFindReferencesHandler(connection, services);
     addDocumentSymbolHandler(connection, services);
@@ -74,17 +85,10 @@ export function addCompletionHandler(connection: Connection, services: LangiumSe
     connection.onCompletion(
         (_textDocumentPosition: TextDocumentPositionParams): CompletionList => {
             const document = paramsDocument(_textDocumentPosition, services);
-            if (document) {
-                const text = document.getText();
-                const offset = document.offsetAt(_textDocumentPosition.position);
-                const parser = services.parser.LangiumParser;
-                const parseResult = parser.parse(text);
-                const rootNode = parseResult.value;
-                (rootNode as { $document: LangiumDocument }).$document = document;
-                document.parseResult = parseResult;
-                document.precomputedScopes = services.references.ScopeComputation.computeScope(document);
+            if (document && document.parseResult) {
+                const offset = document.textDocument.offsetAt(_textDocumentPosition.position);
                 const completionProvider = services.lsp.completion.CompletionProvider;
-                const assist = completionProvider.getCompletion(rootNode, offset);
+                const assist = completionProvider.getCompletion(document.parseResult?.value, offset);
                 return assist;
             } else {
                 return CompletionList.create();
@@ -160,5 +164,5 @@ export function addDocumentHighlightsHandler(connection: Connection, services: L
 
 function paramsDocument(params: TextDocumentPositionParams | DocumentSymbolParams, services: LangiumServices): LangiumDocument | undefined {
     const uri = params.textDocument.uri;
-    return services.documents.TextDocuments.get(uri);
+    return services.documents.LangiumDocuments.getOrCreateDocument(uri);
 }

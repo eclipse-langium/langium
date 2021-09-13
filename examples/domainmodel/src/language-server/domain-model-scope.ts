@@ -24,7 +24,7 @@ export class DomainModelScopeComputation extends DefaultScopeComputation {
         const localDescriptions: AstNodeDescription[] = [];
         for (const element of container.elements) {
             if (isType(element)) {
-                const description = this.createDescription(element, element.name, document);
+                const description = this.descriptions.createDescription(element, element.name, document);
                 localDescriptions.push(description);
             } else if (isPackageDeclaration(element)) {
                 const nestedDescriptions = this.processContainer(element, scopes, document);
@@ -42,7 +42,7 @@ export class DomainModelScopeComputation extends DefaultScopeComputation {
     protected createQualifiedDescription(pack: PackageDeclaration, description: AstNodeDescription, document: LangiumDocument): AstNodeDescription {
         const name = pack.name + '.' + description.name;
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        return this.createDescription(description.node!, name, document);
+        return this.descriptions.createDescription(description.node!, name, document);
     }
 
 }
