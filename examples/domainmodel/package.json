@@ -26,6 +26,14 @@
     "activationEvents": [
         "onLanguage:domain-model"
     ],
+    "files": [
+        "bin",
+        "out",
+        "src"
+    ],
+    "bin": {
+        "domainmodel-cli": "./bin/cli"
+    },
     "main": "./out/extension.js",
     "langium": {
         "languageId": "domain-model",
@@ -44,7 +52,10 @@
         "langium:generate": "langium generate"
     },
     "dependencies": {
+        "colors": "^1.4.0",
+        "commander": "^8.0.0",
         "langium": "0.1.0",
+        "lodash": "^4.17.21",
         "vscode-languageclient": "^7.0.0",
         "vscode-languageserver": "^7.0.0"
     },

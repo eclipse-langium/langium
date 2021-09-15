@@ -7,3 +7,4 @@ out/
 node_modules/
 *.vsix
 *.tsbuildinfo
+examples/*/example/generated

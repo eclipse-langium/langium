@@ -16,7 +16,7 @@ package foo.bar {
 
 package baz {
     entity E3 {
-        this: E4
+        that: E4
         other: foo.bar.E2
         nested: nested.E5
     }
