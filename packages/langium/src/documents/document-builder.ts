@@ -84,9 +84,7 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
     documentChanged(uri: string): void {
         this.langiumDocuments.invalidateDocument(uri);
         const newDocument = this.langiumDocuments.getOrCreateDocument(uri);
-        if (newDocument.parseResult.value) {
-            this.indexManager.update(newDocument);
-        }
+        this.indexManager.update(newDocument);
         this.langiumDocuments.all.filter(doc => this.isAffected(doc, uri)).forEach(
             doc => {
                 this.build(doc);

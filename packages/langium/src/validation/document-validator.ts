@@ -27,9 +27,6 @@ export class DefaultDocumentValidator {
     validateDocument(document: LangiumDocument): Diagnostic[] {
         const parseResult = document.parseResult;
         const diagnostics: Diagnostic[] = [];
-        if (!parseResult) {
-            return diagnostics;
-        }
 
         // Process lexer errors
         for (const lexerError of parseResult.lexerErrors) {

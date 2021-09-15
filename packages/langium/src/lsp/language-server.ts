@@ -85,10 +85,10 @@ export function addCompletionHandler(connection: Connection, services: LangiumSe
     connection.onCompletion(
         (_textDocumentPosition: TextDocumentPositionParams): CompletionList => {
             const document = paramsDocument(_textDocumentPosition, services);
-            if (document && document.parseResult) {
+            if (document) {
                 const offset = document.textDocument.offsetAt(_textDocumentPosition.position);
                 const completionProvider = services.lsp.completion.CompletionProvider;
-                const assist = completionProvider.getCompletion(document.parseResult?.value, offset);
+                const assist = completionProvider.getCompletion(document.parseResult.value, offset);
                 return assist;
             } else {
                 return CompletionList.create();
