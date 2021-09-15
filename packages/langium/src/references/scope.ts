@@ -4,6 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import { URI } from 'vscode-uri';
 import { LangiumDocument, PrecomputedScopes } from '../documents/document';
 import { AstNodeDescriptionProvider } from '../index/ast-descriptions';
 import { IndexManager } from '../index/index-manager';
@@ -16,10 +17,13 @@ import { NameProvider } from './naming';
 // TODO Move to index folder?
 export interface AstNodeDescription {
     node?: AstNode
-    type: string // AstNodeType?
-    name: string // QualifiedName?
-    documentUri: string // DocumentUri?
-    /* navigation path inside a document */
+    /** `$type` property value of the AST node */
+    type: string
+    /** Name of the AST node */
+    name: string
+    /** URI to the source document of the AST node */
+    documentUri: URI
+    /** Navigation path inside a document */
     path: string
 }
 

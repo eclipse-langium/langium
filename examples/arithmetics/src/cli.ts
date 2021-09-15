@@ -4,8 +4,10 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import * as fs from 'fs';
+import fs from 'fs';
+import path from 'path';
 import colors from 'colors';
+import { URI } from 'vscode-uri';
 import { Command } from 'commander';
 import { Grammar, DefaultDocumentValidator } from 'langium';
 import { createArithmeticsServices } from './language-server/arithmetics-module';
@@ -33,7 +35,7 @@ program
         }
 
         const arithmeticsServices = createArithmeticsServices();
-        const document = arithmeticsServices.documents.LangiumDocuments.getOrCreateDocument(fileName);
+        const document = arithmeticsServices.documents.LangiumDocuments.getOrCreateDocument(URI.file(path.resolve(fileName)));
         arithmeticsServices.documents.DocumentBuilder.build(document);
         if (!document.parseResult) {
             console.error(`Failed to parse the grammar file ${fileName}`);

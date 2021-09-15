@@ -18,12 +18,13 @@ export interface LangiumDocument {
     precomputedScopes?: PrecomputedScopes
     valid: boolean
     textDocument: TextDocument
+    uri: URI
 }
 
 export type PrecomputedScopes = Map<AstNode, AstNodeDescription[]>
 
 export interface TextDocumentFactory {
-    fromUri(uri: string): TextDocument;
+    fromUri(uri: URI): TextDocument;
 }
 
 export class DefaultTextDocumentFactory implements TextDocumentFactory {
@@ -34,9 +35,9 @@ export class DefaultTextDocumentFactory implements TextDocumentFactory {
         this.languageMetaData = services.LanguageMetaData;
     }
 
-    fromUri(uri: string): TextDocument {
-        const content = fs.readFileSync(URI.parse(uri).fsPath, 'utf-8');
-        return TextDocument.create(uri, this.languageMetaData.languageId, 0, content);
+    fromUri(uri: URI): TextDocument {
+        const content = fs.readFileSync(uri.fsPath, 'utf-8');
+        return TextDocument.create(uri.toString(), this.languageMetaData.languageId, 0, content);
     }
 
 }
@@ -57,6 +58,7 @@ export class DefaultLangiumDocumentFactory implements LangiumDocumentFactory {
         const doc: LangiumDocument = {
             valid: true,
             textDocument,
+            uri: URI.parse(textDocument.uri),
             parseResult: undefined!
         };
         const parseResult = this.parser.parse(doc);
@@ -67,8 +69,8 @@ export class DefaultLangiumDocumentFactory implements LangiumDocumentFactory {
 
 export interface LangiumDocuments {
     readonly all: Stream<LangiumDocument>
-    getOrCreateDocument(uri: string): LangiumDocument;
-    invalidateDocument(uri: string): void;
+    getOrCreateDocument(uri: URI): LangiumDocument;
+    invalidateDocument(uri: URI): void;
 }
 
 export class DefaultLangiumDocuments implements LangiumDocuments {
@@ -88,25 +90,27 @@ export class DefaultLangiumDocuments implements LangiumDocuments {
         return stream(this.documentMap.values());
     }
 
-    getOrCreateDocument(uri: string): LangiumDocument {
-        let langiumDoc = this.documentMap.get(uri);
+    getOrCreateDocument(uri: URI): LangiumDocument {
+        const uriString = uri.toString();
+        let langiumDoc = this.documentMap.get(uriString);
         if (langiumDoc) {
             return langiumDoc;
         }
-        let textDoc = this.textDocuments.get(uri);
+        let textDoc = this.textDocuments.get(uriString);
         if (!textDoc) {
             textDoc = this.textDocumentFactory.fromUri(uri);
         }
         langiumDoc = this.langiumDocumentFactory.fromTextDocument(textDoc);
-        this.documentMap.set(uri, langiumDoc);
+        this.documentMap.set(uriString, langiumDoc);
         return langiumDoc;
     }
 
-    invalidateDocument(uri: string): void {
-        const langiumDoc = this.documentMap.get(uri);
+    invalidateDocument(uri: URI): void {
+        const uriString = uri.toString();
+        const langiumDoc = this.documentMap.get(uriString);
         if (langiumDoc) {
             langiumDoc.valid = false;
-            this.documentMap.delete(uri);
+            this.documentMap.delete(uriString);
         }
     }
 }

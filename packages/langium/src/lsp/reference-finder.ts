@@ -5,6 +5,7 @@
  ******************************************************************************/
 
 import { Location, Range, TextDocumentPositionParams } from 'vscode-languageserver';
+import { URI } from 'vscode-uri';
 import { LangiumDocument } from '../documents/document';
 import { NameProvider } from '../references/naming';
 import { References } from '../references/references';
@@ -31,7 +32,7 @@ export class DefaultReferenceFinder implements ReferenceFinder {
         if (!rootNode) {
             return [];
         }
-        const refs: Array<{ docUri: string, range: Range }> = [];
+        const refs: Array<{ docUri: URI, range: Range }> = [];
         const selectedNode = findLeafNodeAtOffset(rootNode, document.textDocument.offsetAt(params.position));
         if (!selectedNode) {
             return [];
@@ -42,11 +43,11 @@ export class DefaultReferenceFinder implements ReferenceFinder {
                 const declDoc = getDocument(targetAstNode);
                 const nameNode = this.findNameNode(targetAstNode, selectedNode.text);
                 if (nameNode)
-                    refs.push({ docUri: declDoc.textDocument.uri, range: toRange(nameNode, declDoc) });
+                    refs.push({ docUri: declDoc.uri, range: toRange(nameNode, declDoc) });
             }
             this.references.findReferences(targetAstNode).forEach(reference => {
                 if (isReference(reference)) {
-                    refs.push({ docUri: document.textDocument.uri, range: toRange(reference.$refNode, document) });
+                    refs.push({ docUri: document.uri, range: toRange(reference.$refNode, document) });
                 } else {
                     const range = Range.create(document.textDocument.positionAt(reference.start), document.textDocument.positionAt(reference.end));
                     refs.push({ docUri: reference.sourceUri, range });
@@ -54,7 +55,7 @@ export class DefaultReferenceFinder implements ReferenceFinder {
             });
         }
         return refs.map(ref => Location.create(
-            ref.docUri,
+            ref.docUri.toString(),
             ref.range
         ));
     }

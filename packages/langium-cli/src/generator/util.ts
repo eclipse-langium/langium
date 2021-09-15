@@ -28,7 +28,7 @@ function padZeroes(i: number): string {
 }
 
 function getLangiumCliVersion(): string {
-    const ownPackagePath = path.join(__dirname, '..', '..', 'package.json');
+    const ownPackagePath = path.resolve(__dirname, '..', '..', 'package.json');
     const pack = fs.readJsonSync(ownPackagePath, { encoding: 'utf-8' });
     return pack.version;
 }
@@ -93,4 +93,4 @@ export async function getUserChoice<R extends string>(text: string, values: R[],
 
 export const cliVersion = getLangiumCliVersion();
 export const generatedHeader = getGeneratedHeader();
-export const schema = fs.readJsonSync(path.join(__dirname, '../../schema.json'), { encoding: 'utf-8' });
+export const schema = fs.readJsonSync(path.resolve(__dirname, '../../schema.json'), { encoding: 'utf-8' });

@@ -6,6 +6,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { TextDocument } from 'vscode-languageserver-textdocument';
+import { URI } from 'vscode-uri';
 import { LangiumDocument } from '../documents/document';
 import * as ast from '../grammar/generated/ast';
 import { CompositeCstNodeImpl } from '../parser/cst-node-builder';
@@ -260,6 +261,7 @@ export function loadGrammar(json: string): ast.Grammar {
     const document: LangiumDocument = {
         valid: true,
         textDocument,
+        uri: URI.from({ scheme: 'memory', path: 'grammar.langium' }),
         parseResult: {
             lexerErrors: [],
             parserErrors: [],

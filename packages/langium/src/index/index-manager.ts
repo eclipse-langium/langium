@@ -4,9 +4,9 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import fs from 'fs';
+import path from 'path';
 import { URI } from 'vscode-uri';
-import { existsSync, readdirSync } from 'fs';
-import { extname, resolve } from 'path';
 import { WorkspaceFolder } from 'vscode-languageserver';
 import { LangiumDocument, LangiumDocuments } from '../documents/document';
 import { LanguageMetaData } from '../grammar/language-meta-data';
@@ -73,11 +73,11 @@ export class DefaultIndexManager implements IndexManager {
     }
 
     findAllReferences(targetNode: AstNode, astNodePath: string): Stream<ReferenceDescription> {
-        const targetDocUri = getDocument(targetNode).textDocument.uri;
+        const targetDocUri = getDocument(targetNode).uri;
         const result: ReferenceDescription[] = [];
         this.referenceIndex.forEach((docRefs: ReferenceDescription[]) => {
             docRefs.forEach((refDescr) => {
-                if (refDescr.targetUri === targetDocUri && refDescr.targetPath === astNodePath) {
+                if (refDescr.targetUri.toString() === targetDocUri.toString() && refDescr.targetPath === astNodePath) {
                     result.push(refDescr);
                 }
             });
@@ -97,35 +97,36 @@ export class DefaultIndexManager implements IndexManager {
         const documents: LangiumDocument[] = [];
         const collector = (document: LangiumDocument) => {documents.push(document);};
         folders?.forEach((folder) => {
-            this.traverseFolder(URI.parse(folder.uri).fsPath, this.languageMetaData.fileExtensions, collector);
+            this.traverseFolder(URI.parse(folder.uri), this.languageMetaData.fileExtensions, collector);
         });
         this.processDocuments(documents);
     }
 
     /* sync access for now */
-    protected traverseFolder(folderPath: string, fileExt: string[], documentAcceptor: (document: LangiumDocument) => void): void {
-        if (!existsSync(folderPath)) {
+    protected traverseFolder(folderPath: URI, fileExt: string[], documentAcceptor: (document: LangiumDocument) => void): void {
+        const fsPath = folderPath.fsPath;
+        if (!fs.existsSync(fsPath)) {
             console.error(`File ${folderPath} doesn't exist.`);
             return;
         }
         if (this.skip(folderPath))
             return;
-        const subFolders = readdirSync(folderPath, { withFileTypes: true });
+        const subFolders = fs.readdirSync(fsPath, { withFileTypes: true });
         for (const dir of subFolders) {
-            const uri = resolve(folderPath, dir.name);
+            const uri = URI.file(path.resolve(fsPath, dir.name));
             if (dir.isDirectory()) {
                 this.traverseFolder(uri, fileExt, documentAcceptor);
-            } else if (fileExt.includes(extname(uri))) {
-                const document = this.langiumDocuments().getOrCreateDocument(URI.file(uri).toString());
+            } else if (fileExt.includes(path.extname(uri.path))) {
+                const document = this.langiumDocuments().getOrCreateDocument(uri);
                 documentAcceptor(document);
             }
         }
     }
 
     // do smart filtering here
-    protected skip(filePath: string): boolean {
-        return filePath.endsWith('node_modules')
-            || filePath.endsWith('out');
+    protected skip(filePath: URI): boolean {
+        return filePath.path.endsWith('node_modules')
+            || filePath.path.endsWith('out');
     }
 
     protected processDocuments(documents: LangiumDocument[]): void {

@@ -4,6 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import { URI } from 'vscode-uri';
 import { LangiumDocument } from '../documents/document';
 import { Linker } from '../references/linker';
 import { NameProvider } from '../references/naming';
@@ -15,11 +16,11 @@ import { AstNodeLocator } from './ast-node-locator';
 
 export interface ReferenceDescription {
     /** URI of the document that holds a reference */
-    sourceUri: string
+    sourceUri: URI
     /** Path to AstNode that holds a reference */
     sourcePath: string
     /**  target document uri */
-    targetUri: string
+    targetUri: URI
     /** how to find target AstNode inside the document */
     targetPath: string
     /** start offset of the reference text */
@@ -52,7 +53,7 @@ export class DefaultAstNodeDescriptionProvider implements AstNodeDescriptionProv
             node,
             name,
             type: node.$type,
-            documentUri: document.textDocument.uri,
+            documentUri: document.uri,
             path: this.astNodeLocator.getAstNodePath(node)
         };
     }
@@ -90,8 +91,8 @@ export class DefaultReferenceDescriptionProvider implements ReferenceDescription
         const refConverter = (refNode: AstNodeReference): ReferenceDescription | undefined => {
             const refAstNodeDescr = this.linker.getCandidate(refNode.container, refNode.reference.$refName, `${refNode.container.$type}:${refNode.property}`);
             // Do not handle unresolved refs or local references
-            const docUri = getDocument(refNode.container)?.textDocument?.uri;
-            if (!refAstNodeDescr || refAstNodeDescr.documentUri === docUri)
+            const docUri = getDocument(refNode.container).uri;
+            if (!refAstNodeDescr || refAstNodeDescr.documentUri.toString() === docUri.toString())
                 return undefined;
             return {
                 sourceUri: docUri,
