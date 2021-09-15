@@ -12,6 +12,7 @@ import {
     DocumentHighlightParams, DocumentSymbol, DocumentSymbolParams, FoldingRange, FoldingRangeParams, InitializeParams, InitializeResult,
     Location, LocationLink, ReferenceParams, TextDocumentPositionParams, TextDocumentSyncKind
 } from 'vscode-languageserver/node';
+import { URI } from 'vscode-uri';
 import { LangiumDocument } from '../documents/document';
 import { LangiumServices } from '../services';
 
@@ -67,7 +68,7 @@ export function startLanguageServer(services: LangiumServices): void {
     const documents = services.documents.TextDocuments;
     const documentBuilder = services.documents.DocumentBuilder;
     documents.onDidChangeContent(change => {
-        documentBuilder.documentChanged(change.document.uri);
+        documentBuilder.documentChanged(URI.parse(change.document.uri));
     });
     addCompletionHandler(connection, services);
     addFindReferencesHandler(connection, services);
@@ -192,6 +193,6 @@ export function addRenameHandler(connection: Connection, services: LangiumServic
 }
 
 function paramsDocument(params: TextDocumentPositionParams | DocumentSymbolParams, services: LangiumServices): LangiumDocument | undefined {
-    const uri = params.textDocument.uri;
+    const uri = URI.parse(params.textDocument.uri);
     return services.documents.LangiumDocuments.getOrCreateDocument(uri);
 }

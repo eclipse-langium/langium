@@ -11,6 +11,7 @@ import { ScopeComputation } from '../references/scope';
 import { LangiumServices } from '../services';
 import { LangiumDocument, LangiumDocuments } from './document';
 import { IndexManager } from '../index/index-manager';
+import { URI } from 'vscode-uri';
 
 export interface DocumentBuilder {
     build(document: LangiumDocument): BuildResult
@@ -28,7 +29,7 @@ export interface DocumentBuilder {
      * @see IndexManager.update()
      * @see LangiumDocuments.invalidateDocument()
      */
-    documentChanged(uri: string): void;
+    documentChanged(uri: URI): void;
 }
 
 export interface BuildResult {
@@ -81,7 +82,7 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
         return diagnostics;
     }
 
-    documentChanged(uri: string): void {
+    documentChanged(uri: URI): void {
         this.langiumDocuments.invalidateDocument(uri);
         const newDocument = this.langiumDocuments.getOrCreateDocument(uri);
         this.indexManager.update(newDocument);
@@ -101,7 +102,7 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
         document.precomputedScopes = this.scopeComputation.computeScope(document);
     }
 
-    protected isAffected(document: LangiumDocument, changedUri: string): boolean {
-        return changedUri !== document.textDocument.uri;
+    protected isAffected(document: LangiumDocument, changedUri: URI): boolean {
+        return changedUri.toString() !== document.uri.toString();
     }
 }

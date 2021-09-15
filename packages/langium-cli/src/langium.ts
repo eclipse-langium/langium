@@ -45,7 +45,7 @@ async function forEachConfig(options: GenerateOptions, callback: (config: Langiu
         }
         console.log(getTime() + 'Langium generator will continue running in watch mode');
         configs.forEach(e => {
-            const grammarPath = path.join(e[RelativePath], e.grammar);
+            const grammarPath = path.resolve(e[RelativePath], e.grammar);
             fs.watchFile(grammarPath, async () => {
                 console.log(getTime() + 'File change detected. Starting compilation...');
                 elapsedTime();

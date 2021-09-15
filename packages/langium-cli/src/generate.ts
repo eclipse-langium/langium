@@ -8,12 +8,12 @@ import fs from 'fs-extra';
 import path from 'path';
 import { LangiumConfig, RelativePath } from './package';
 import { createLangiumGrammarServices, isGrammar } from 'langium';
+import { URI } from 'vscode-uri';
 import { generateAst } from './generator/ast-generator';
 import { generateModule } from './generator/module-generator';
 import { generateTextMate } from './generator/textmate-generator';
 import { serializeGrammar } from './generator/grammar-serializer';
 import { getTime, getUserChoice } from './generator/util';
-import { pathToFileURL } from 'url';
 
 export type GenerateOptions = {
     file?: string;
@@ -26,7 +26,7 @@ const services = createLangiumGrammarServices();
 
 export async function generate(config: LangiumConfig): Promise<GeneratorResult> {
     const relPath = config[RelativePath];
-    const absGrammarPath = pathToFileURL(path.join(relPath, config.grammar)).toString();
+    const absGrammarPath = URI.file(path.resolve(relPath, config.grammar));
     const document = services.documents.LangiumDocuments.getOrCreateDocument(absGrammarPath);
     const buildResult = services.documents.DocumentBuilder.build(document);
     const diagnostics = buildResult.diagnostics;
@@ -50,7 +50,7 @@ export async function generate(config: LangiumConfig): Promise<GeneratorResult> 
     }
     const grammar = buildResult.parseResult.value;
 
-    const output = path.join(relPath, config.out ?? 'src/generated');
+    const output = path.resolve(relPath, config.out ?? 'src/generated');
     console.log(`${getTime()}Writing generated files to ${output.white.bold}`);
 
     if (await rmdirWithFail(output, ['ast.ts', 'grammar.ts', 'grammar-access.ts', 'parser.ts', 'module.ts'])) {
@@ -61,17 +61,17 @@ export async function generate(config: LangiumConfig): Promise<GeneratorResult> 
     }
 
     const genAst = generateAst(grammar, config);
-    await writeWithFail(path.join(output, 'ast.ts'), genAst);
+    await writeWithFail(path.resolve(output, 'ast.ts'), genAst);
 
     const serializedGrammar = serializeGrammar(services, grammar, config);
-    await writeWithFail(path.join(output, 'grammar.ts'), serializedGrammar);
+    await writeWithFail(path.resolve(output, 'grammar.ts'), serializedGrammar);
 
     const genModule = generateModule(grammar, config);
-    await writeWithFail(path.join(output, 'module.ts'), genModule);
+    await writeWithFail(path.resolve(output, 'module.ts'), genModule);
 
     if (config.textMate) {
         const genTmGrammar = generateTextMate(grammar, config);
-        const textMatePath = path.join(relPath, config.textMate.out);
+        const textMatePath = path.resolve(relPath, config.textMate.out);
         console.log(`${getTime()}Writing textmate grammar to ${textMatePath.white.bold}`);
         const parentDir = path.dirname(textMatePath).split(path.sep).pop();
         parentDir && await mkdirWithFail(parentDir);

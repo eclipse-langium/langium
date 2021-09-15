@@ -8,6 +8,7 @@ import fs from 'fs';
 import colors from 'colors';
 import { AstNode, LangiumDocument, LangiumServices } from 'langium';
 import path from 'path';
+import { URI } from 'vscode-uri';
 import { createDomainModelServices } from '../language-server/domain-model-module';
 
 export function extractDocument(fileName: string, languageId: string, extensions: string[], services: LangiumServices): LangiumDocument {
@@ -22,7 +23,7 @@ export function extractDocument(fileName: string, languageId: string, extensions
     }
 
     const domainModelServices = createDomainModelServices();
-    const document = domainModelServices.documents.LangiumDocuments.getOrCreateDocument(path.resolve(fileName));
+    const document = domainModelServices.documents.LangiumDocuments.getOrCreateDocument(URI.file(path.resolve(fileName)));
     
     const buildResult = services.documents.DocumentBuilder.build(document);
     const validationErrors = buildResult.diagnostics.filter(e => e.severity === 1);
