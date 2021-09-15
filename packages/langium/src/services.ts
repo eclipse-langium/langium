@@ -17,8 +17,10 @@ import { GoToResolver } from './lsp/goto';
 import { ReferenceFinder } from './lsp/reference-finder';
 import { RenameHandler } from './lsp/rename-refactoring';
 import { TokenBuilder } from './parser/token-builder';
-import { ValueConverter } from './parser/value-converter';
+import { FoldingRangeProvider } from './lsp/folding-range-provider';
+import { GrammarConfig } from './grammar/grammar-config';
 import { References } from './references/references';
+import { ValueConverter } from './parser/value-converter';
 
 export type LangiumGeneratedServices = {
     Grammar: Grammar
@@ -34,6 +36,7 @@ export type LangiumLspServices = {
     Connection?: Connection
     DocumentHighlighter: DocumentHighlighter
     DocumentSymbolProvider: DocumentSymbolProvider
+    FoldingRangeProvider: FoldingRangeProvider
     GoToResolver: GoToResolver
     ReferenceFinder: ReferenceFinder
     CodeActionProvider?: CodeActionProvider
@@ -42,6 +45,7 @@ export type LangiumLspServices = {
 
 export type LangiumDefaultServices = {
     parser: {
+        GrammarConfig: GrammarConfig
         ValueConverter: ValueConverter
         LangiumParser: LangiumParser
         TokenBuilder: TokenBuilder

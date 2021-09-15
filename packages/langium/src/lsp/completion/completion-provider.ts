@@ -64,7 +64,7 @@ export class DefaultCompletionProvider {
                     features.push(...partialMatches);
                     features.push(...notMatchingFeatures.flatMap(e => findNextFeatures([e])));
                 }
-                if (node.length + node.offset > offset) {
+                if (node.range.end > offset) {
                     features.push(node.feature);
                 }
                 stream(features).distinct(e => {

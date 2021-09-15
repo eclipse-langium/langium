@@ -16,6 +16,7 @@ import { DefaultCompletionProvider } from './lsp/completion/completion-provider'
 import { RuleInterpreter } from './lsp/completion/rule-interpreter';
 import { DefaultDocumentHighlighter } from './lsp/document-highlighter';
 import { DefaultDocumentSymbolProvider } from './lsp/document-symbol-provider';
+import { DefaultFoldingRangeProvider } from './lsp/folding-range-provider';
 import { DefaultGoToResolverProvider } from './lsp/goto';
 import { DefaultReferenceFinder } from './lsp/reference-finder';
 import { DefaultRenameHandler } from './lsp/rename-refactoring';
@@ -38,6 +39,9 @@ export type DefaultModuleContext = {
 export function createDefaultModule(context: DefaultModuleContext = {}): Module<LangiumServices, LangiumDefaultServices> {
     return {
         parser: {
+            GrammarConfig: () => ({
+                multilineCommentRules: ['ML_COMMENT']
+            }),
             LangiumParser: (injector) => createLangiumParser(injector),
             ValueConverter: () => new DefaultValueConverter(),
             TokenBuilder: () => new DefaultTokenBuilder()
@@ -56,7 +60,8 @@ export function createDefaultModule(context: DefaultModuleContext = {}): Module<
             },
             Connection: () => context.connection,
             DocumentSymbolProvider: (injector) => new DefaultDocumentSymbolProvider(injector),
-            ReferenceFinder:  (injector) => new DefaultReferenceFinder(injector),
+            FoldingRangeProvider: (injector) => new DefaultFoldingRangeProvider(injector),
+            ReferenceFinder: (injector) => new DefaultReferenceFinder(injector),
             GoToResolver: (injector) => new DefaultGoToResolverProvider(injector),
             DocumentHighlighter: (injector) => new DefaultDocumentHighlighter(injector),
             RenameHandler: (injector) => new DefaultRenameHandler(injector)
