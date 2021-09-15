@@ -1,7 +1,6 @@
-datatype String
-
 entity Blog {
     title: String
+    date: complex.Date
     many posts: Post
 }
 

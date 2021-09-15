@@ -31,8 +31,9 @@ export class DefaultLinker implements Linker {
 
     link(node: AstNode, referenceName: string, referenceId: string): AstNode | undefined {
         const description = this.getCandidate(node, referenceName, referenceId);
-        if (description)
+        if (description) {
             return this.loadAstNode(description);
+        }
         return undefined;
     }
 

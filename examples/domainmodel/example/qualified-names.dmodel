@@ -11,6 +11,7 @@ package foo.bar {
         next: E2
         other: baz.E3
         nested: baz.nested.E5
+        time: big.Int
     }
 }
 

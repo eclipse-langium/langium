@@ -76,8 +76,8 @@ export class DefaultIndexManager implements IndexManager {
         const targetDocUri = getDocument(targetNode).textDocument.uri;
         const result: ReferenceDescription[] = [];
         this.referenceIndex.forEach((docRefs: ReferenceDescription[]) => {
-            docRefs.forEach((refDescr)=> {
-                if(refDescr.targetUri === targetDocUri && refDescr.targetPath === astNodePath) {
+            docRefs.forEach((refDescr) => {
+                if (refDescr.targetUri === targetDocUri && refDescr.targetPath === astNodePath) {
                     result.push(refDescr);
                 }
             });
@@ -90,17 +90,20 @@ export class DefaultIndexManager implements IndexManager {
     }
 
     update(document: LangiumDocument): void {
-        this.processDocument(document);
+        this.processDocuments([document]);
     }
 
     initializeWorkspace(folders: WorkspaceFolder[] | null): void {
+        const documents: LangiumDocument[] = [];
+        const collector = (document: LangiumDocument) => {documents.push(document);};
         folders?.forEach((folder) => {
-            this.traverseFolder(URI.parse(folder.uri).fsPath, this.languageMetaData.fileExtensions);
+            this.traverseFolder(URI.parse(folder.uri).fsPath, this.languageMetaData.fileExtensions, collector);
         });
+        this.processDocuments(documents);
     }
 
     /* sync access for now */
-    protected traverseFolder(folderPath: string, fileExt: string[]): void {
+    protected traverseFolder(folderPath: string, fileExt: string[], documentAcceptor: (document: LangiumDocument) => void): void {
         if (!existsSync(folderPath)) {
             console.error(`File ${folderPath} doesn't exist.`);
             return;
@@ -111,9 +114,10 @@ export class DefaultIndexManager implements IndexManager {
         for (const dir of subFolders) {
             const uri = resolve(folderPath, dir.name);
             if (dir.isDirectory()) {
-                this.traverseFolder(uri, fileExt);
+                this.traverseFolder(uri, fileExt, documentAcceptor);
             } else if (fileExt.includes(extname(uri))) {
-                this.processLanguageFile(uri);
+                const document = this.langiumDocuments().getOrCreateDocument(URI.file(uri).toString());
+                documentAcceptor(document);
             }
         }
     }
@@ -124,17 +128,18 @@ export class DefaultIndexManager implements IndexManager {
             || filePath.endsWith('out');
     }
 
-    protected processLanguageFile(filePath: string): void {
-        const document = this.langiumDocuments().getOrCreateDocument(URI.file(filePath).toString());
-        this.processDocument(document);
-    }
-
-    protected processDocument(document: LangiumDocument): void {
-        const indexData: AstNodeDescription[] = this.astNodeDescriptionProvider().createDescriptions(document);
-        for (const data of indexData) {
-            data.node = undefined; // clear reference to the AST Node
-        }
-        this.simpleIndex.set(document.textDocument.uri, indexData);
-        this.referenceIndex.set(document.textDocument.uri, this.referenceDescriptionProvider().createDescriptions(document));
+    protected processDocuments(documents: LangiumDocument[]): void {
+        // first: build exported object data
+        documents.forEach((document) => {
+            const indexData: AstNodeDescription[] = this.astNodeDescriptionProvider().createDescriptions(document);
+            for (const data of indexData) {
+                data.node = undefined; // clear reference to the AST Node
+            }
+            this.simpleIndex.set(document.textDocument.uri, indexData);
+        });
+        // second: link everything
+        documents.forEach((document) => {
+            this.referenceIndex.set(document.textDocument.uri, this.referenceDescriptionProvider().createDescriptions(document));
+        });
     }
 }
