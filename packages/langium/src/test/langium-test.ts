@@ -25,7 +25,7 @@ export function parseHelper(services: LangiumServices): (input: string) => Build
 
 export type ExpectFunction = (actual: unknown, expected: unknown) => void;
 
-interface ExpectedBase {
+export interface ExpectedBase {
     text: string
     indexMarker?: string
     rangeStartMarker?: string
@@ -36,23 +36,36 @@ export interface ExpectedSymbols extends ExpectedBase {
     expectedSymbols: DocumentSymbol[]
 }
 
-export function expectSymbols(services: LangiumServices, cb: ExpectFunction): (input: ExpectedSymbols) => void {
+export function expectSymbols(services: LangiumServices, expectEqual: ExpectFunction): (input: ExpectedSymbols) => void {
     return (input) => {
         const document = parseDocument(services, input.text);
-        if (!document.parseResult) {
-            throw new Error('Could not parse document');
-        }
         const symbolProvider = services.lsp.DocumentSymbolProvider;
         const symbols = symbolProvider.getSymbols(document);
-        cb(symbols.length, input.expectedSymbols.length);
+        expectEqual(symbols.length, input.expectedSymbols.length);
         for (let i = 0; i < input.expectedSymbols.length; i++) {
             const expected = input.expectedSymbols[i];
             const item = symbols[i];
             if (typeof expected === 'string') {
-                cb(item.name, expected);
+                expectEqual(item.name, expected);
             } else {
-                cb(item, expected);
+                expectEqual(item, expected);
             }
+        }
+    };
+}
+
+export function expectFoldings(services: LangiumServices, expectEqual: ExpectFunction): (input: ExpectedBase) => void {
+    return (input) => {
+        const { output, ranges } = replaceIndices(input);
+        const document = parseDocument(services, output);
+        const foldingRangeProvider = services.lsp.FoldingRangeProvider;
+        const foldings = foldingRangeProvider.getFoldingRanges(document).sort((a, b) => a.startLine - b.startLine);
+        expectEqual(foldings.length, ranges.length);
+        for (let i = 0; i < ranges.length; i++) {
+            const expected = ranges[i];
+            const item = foldings[i];
+            expectEqual(item.startLine, document.textDocument.positionAt(expected[0]).line);
+            expectEqual(item.endLine, document.textDocument.positionAt(expected[1]).line);
         }
     };
 }
@@ -62,24 +75,21 @@ export interface ExpectedCompletion extends ExpectedBase {
     expectedItems: Array<string | CompletionItem>
 }
 
-export function expectCompletion(services: LangiumServices, cb: ExpectFunction): (completion: ExpectedCompletion) => void {
+export function expectCompletion(services: LangiumServices, expectEqual: ExpectFunction): (completion: ExpectedCompletion) => void {
     return (expectedCompletion) => {
         const { output, indices } = replaceIndices(expectedCompletion);
         const document = parseDocument(services, output);
-        if (!document.parseResult) {
-            throw new Error('Could not parse document');
-        }
         const completionProvider = services.lsp.completion.CompletionProvider;
-        const completions = completionProvider.getCompletion(document.parseResult.value, indices[expectedCompletion.index]);
+        const completions = completionProvider.getCompletion(document.parseResult!.value, indices[expectedCompletion.index]);
         const items = completions.items.sort((a, b) => a.sortText?.localeCompare(b.sortText || '0') || 0);
-        cb(items.length, expectedCompletion.expectedItems.length);
+        expectEqual(items.length, expectedCompletion.expectedItems.length);
         for (let i = 0; i < expectedCompletion.expectedItems.length; i++) {
             const expected = expectedCompletion.expectedItems[i];
             const completion = items[i];
             if (typeof expected === 'string') {
-                cb(completion.label, expected);
+                expectEqual(completion.label, expected);
             } else {
-                cb(completion, expected);
+                expectEqual(completion, expected);
             }
         }
     };
@@ -90,7 +100,7 @@ export interface ExpectedGoToDefinition extends ExpectedBase {
     rangeIndex: number
 }
 
-export function expectGoToDefinition(services: LangiumServices, cb: ExpectFunction): (expectedGoToDefinition: ExpectedGoToDefinition) => void {
+export function expectGoToDefinition(services: LangiumServices, expectEqual: ExpectFunction): (expectedGoToDefinition: ExpectedGoToDefinition) => void {
     return (expectedGoToDefinition) => {
         const { output, indices, ranges } = replaceIndices(expectedGoToDefinition);
         const document = parseDocument(services, output);
@@ -107,14 +117,18 @@ export function expectGoToDefinition(services: LangiumServices, cb: ExpectFuncti
             start: document.textDocument.positionAt(ranges[expectedGoToDefinition.rangeIndex][0]),
             end: document.textDocument.positionAt(ranges[expectedGoToDefinition.rangeIndex][1])
         };
-        cb(locationLink.length, 1);
-        cb(locationLink[0].targetSelectionRange, expectedRange);
+        expectEqual(locationLink.length, 1);
+        expectEqual(locationLink[0].targetSelectionRange, expectedRange);
     };
 }
 
 function parseDocument(services: LangiumServices, input: string): LangiumDocument {
     const buildResult = parseHelper(services)(input);
-    return getDocument(buildResult.parseResult.value);
+    const document = getDocument(buildResult.parseResult.value);
+    if (!document.parseResult) {
+        throw new Error('Could not parse document');
+    }
+    return document;
 }
 
 function replaceIndices(base: ExpectedBase): { output: string, indices: number[], ranges: Array<[number, number]> } {

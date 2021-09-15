@@ -8,11 +8,11 @@
 import { EmbeddedActionsParser, ILexingError, IOrAlt, IRecognitionException, IToken, Lexer, TokenType } from 'chevrotain';
 import { LangiumDocument } from '../documents/document';
 import { AbstractElement, Action, isAssignment, isCrossReference } from '../grammar/generated/ast';
+import { AstNode, CompositeCstNode, CstNode, LeafCstNode } from '../syntax-tree';
+import { CompositeCstNodeImpl, CstNodeBuilder, LeafCstNodeImpl, RootCstNodeImpl } from './cst-node-builder';
 import { Linker } from '../references/linker';
 import { LangiumServices } from '../services';
-import { AstNode, CompositeCstNode, CstNode, LeafCstNode } from '../syntax-tree';
 import { getContainerOfType } from '../utils/ast-util';
-import { CompositeCstNodeImpl, CstNodeBuilder, LeafCstNodeImpl } from './cst-node-builder';
 import { ValueConverter } from './value-converter';
 
 export type ParseResult<T = AstNode> = {
@@ -79,23 +79,26 @@ export class LangiumParser {
         };
     }
 
-    private addHiddenTokens(node: CompositeCstNode, tokens: IToken[]): void {
+    private addHiddenTokens(node: RootCstNodeImpl, tokens: IToken[]): void {
         for (const token of tokens) {
-            this.addHiddenToken(node, new LeafCstNodeImpl(token.startOffset, token.image.length, token.tokenType, true));
+            const hiddenNode = new LeafCstNodeImpl(token.startOffset, token.image.length, token.tokenType, true);
+            hiddenNode.root = node;
+            this.addHiddenToken(node, hiddenNode);
         }
     }
 
     private addHiddenToken(node: CompositeCstNode, token: LeafCstNode): void {
-        if (node.offset >= token.offset + token.length) {
+        const { start, end } = node.range;
+        const { start: tokenStart, end: tokenEnd } = token.range;
+        if (start >= tokenEnd) {
             node.children.unshift(token);
-        } else if (node.offset + node.length <= token.offset) {
+        } else if (end <= tokenStart) {
             node.children.push(token);
         } else {
-            const tokenEnd = token.offset + token.length;
             for (let i = 0; i < node.children.length; i++) {
                 const child = node.children[i];
-                const childEnd = child.offset + child.length;
-                if (child instanceof CompositeCstNodeImpl && token.offset > child.offset && tokenEnd < childEnd) {
+                const { start: childStart, end: childEnd } = child.range;
+                if (child instanceof CompositeCstNodeImpl && tokenStart > childStart && tokenEnd < childEnd) {
                     this.addHiddenToken(child, token);
                     return;
                 } else if (tokenEnd <= child.offset) {

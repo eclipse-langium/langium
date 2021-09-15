@@ -6,7 +6,7 @@
 
 import { IToken, TokenType } from 'chevrotain';
 import { AbstractElement } from '../grammar/generated/ast';
-import { AstNode, CompositeCstNode, CstNode, LeafCstNode } from '../syntax-tree';
+import { AstNode, CompositeCstNode, CstNode, CstRange, LeafCstNode } from '../syntax-tree';
 
 export class CstNodeBuilder {
 
@@ -71,8 +71,13 @@ export abstract class AbstractCstNode implements CstNode {
     }
 
     get text(): string {
+        const { start, end } = this.range;
+        return this.root.text.substring(start, end);
+    }
+
+    get range(): CstRange {
         const offset = this.offset;
-        return this.root.text.substring(offset, offset + this.length);
+        return { start: offset, end: offset + this.length };
     }
 }
 
@@ -122,6 +127,16 @@ export class CompositeCstNodeImpl extends AbstractCstNode implements CompositeCs
             return Math.max(last.offset + last.length - this.offset, 0);
         } else {
             return 0;
+        }
+    }
+
+    get range(): CstRange {
+        if (this.children.length > 0) {
+            const first = this.children[0];
+            const last = this.children[this.children.length - 1];
+            return { start: first.offset, end: Math.max(last.range.end, first.offset) };
+        } else {
+            return { start: 0, end: 0 };
         }
     }
 

@@ -30,10 +30,16 @@ export interface AstReflection {
     isSubtype(subtype: string, supertype: string): boolean
 }
 
+export interface CstRange {
+    start: number;
+    end: number;
+}
+
 export interface CstNode {
     readonly parent?: CompositeCstNode;
     readonly offset: number;
     readonly length: number;
+    readonly range: CstRange;
     readonly text: string;
     readonly root: CompositeCstNode;
     readonly feature: AbstractElement;

@@ -13,7 +13,7 @@ const text = `
  grammar g hidden(hiddenTerminal)
  X: name="X";
  terminal hiddenTerminal: /x/;
- `;
+ `.trim();
 
 const symbols = expectSymbols(createLangiumGrammarServices(), expectFunction);
 
@@ -26,20 +26,20 @@ describe('Document symbols', () => {
                 {
                     name: 'g',
                     kind: SymbolKind.Field,
-                    range: Range.create(Position.create(0, 0), Position.create(4, 1)),
-                    selectionRange: Range.create(Position.create(1, 9), Position.create(1, 10)),
+                    range: Range.create(Position.create(0, 0), Position.create(2, 30)),
+                    selectionRange: Range.create(Position.create(0, 8), Position.create(0, 9)),
                     children: [
                         {
                             name: 'X',
                             kind: SymbolKind.Field,
-                            range: Range.create(Position.create(2, 1), Position.create(2, 13)),
-                            selectionRange: Range.create(Position.create(2, 1), Position.create(2, 2))
+                            range: Range.create(Position.create(1, 1), Position.create(1, 13)),
+                            selectionRange: Range.create(Position.create(1, 1), Position.create(1, 2))
                         },
                         {
                             name: 'hiddenTerminal',
                             kind: SymbolKind.Field,
-                            range: Range.create(Position.create(3, 1), Position.create(3, 30)),
-                            selectionRange: Range.create(Position.create(3, 10), Position.create(3, 24))
+                            range: Range.create(Position.create(2, 1), Position.create(2, 30)),
+                            selectionRange: Range.create(Position.create(2, 10), Position.create(2, 24))
                         }
                     ]
                 }

@@ -9,7 +9,7 @@ import {
     CodeActionParams,
     Command,
     CompletionList, Connection,
-    DocumentHighlightParams, DocumentSymbol, DocumentSymbolParams, InitializeParams, InitializeResult,
+    DocumentHighlightParams, DocumentSymbol, DocumentSymbolParams, FoldingRange, FoldingRangeParams, InitializeParams, InitializeResult,
     Location, LocationLink, ReferenceParams, TextDocumentPositionParams, TextDocumentSyncKind
 } from 'vscode-languageserver/node';
 import { LangiumDocument } from '../documents/document';
@@ -35,6 +35,7 @@ export function startLanguageServer(services: LangiumServices): void {
                 definitionProvider: {},
                 documentHighlightProvider: {},
                 codeActionProvider: services.lsp.CodeActionProvider ? {} : undefined,
+                foldingRangeProvider: {},
                 // hoverProvider needs to be created for mouse-over events, etc.
                 hoverProvider: false,
                 renameProvider: {
@@ -73,6 +74,7 @@ export function startLanguageServer(services: LangiumServices): void {
     addDocumentSymbolHandler(connection, services);
     addGotoDefinition(connection, services);
     addDocumentHighlightsHandler(connection, services);
+    addFoldingRangeHandler(connection, services);
     addCodeActionHandler(connection, services);
     addRenameHandler(connection, services);
 
@@ -159,6 +161,18 @@ export function addDocumentHighlightsHandler(connection: Connection, services: L
         const document = paramsDocument(params, services);
         if (document) {
             return documentHighlighter.findHighlights(document, params);
+        } else {
+            return [];
+        }
+    });
+}
+
+export function addFoldingRangeHandler(connection: Connection, services: LangiumServices): void {
+    const foldingRangeProvider = services.lsp.FoldingRangeProvider;
+    connection.onFoldingRanges((params: FoldingRangeParams): FoldingRange[] => {
+        const document = paramsDocument(params, services);
+        if (document) {
+            return foldingRangeProvider.getFoldingRanges(document);
         } else {
             return [];
         }
