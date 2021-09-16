@@ -8,7 +8,7 @@ import { TokenType } from 'chevrotain';
 import { AbstractElement, Action, Alternatives, CrossReference, Grammar, Group, isAction, isAlternatives, isAssignment, isCrossReference, isGroup, isKeyword, isParserRule, isRuleCall, isTerminalRule, isUnorderedGroup, Keyword, ParserRule, RuleCall, UnorderedGroup } from '../grammar/generated/ast';
 import { Cardinality, getTypeName, isArrayOperator, isDataTypeRule } from '../grammar/grammar-util';
 import { LangiumServices } from '../services';
-import { getContainerOfType, streamAllContents } from '../utils/ast-util';
+import { hasContainerOfType, streamAllContents } from '../utils/ast-util';
 import { stream } from '../utils/stream';
 import { DatatypeSymbol, LangiumParser } from './langium-parser';
 
@@ -132,7 +132,7 @@ function buildRuleCall(ctx: RuleContext, ruleCall: RuleCall): Method {
     const rule = ruleCall.rule.ref;
     if (isParserRule(rule)) {
         const idx = ctx.subrule++;
-        if (getContainerOfType(ruleCall, isAssignment)) {
+        if (hasContainerOfType(ruleCall, isAssignment) || isDataTypeRule(rule)) {
             return () => ctx.parser.subrule(idx, getRule(ctx, rule.name), ruleCall);
         } else {
             return () => ctx.parser.unassignedSubrule(idx, getRule(ctx, rule.name), ruleCall);
