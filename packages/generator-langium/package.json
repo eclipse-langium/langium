@@ -2,6 +2,9 @@
   "name": "generator-langium",
   "version": "0.1.0",
   "description": "Yeoman generator for Langium - the language engineering tool",
+  "engines": {
+    "node": ">=12.10.0"
+  },
   "keywords": [
     "yeoman-generator",
     "language",
@@ -33,7 +36,7 @@
   },
   "devDependencies": {
     "@types/lodash": "^4.14.170",
-    "@types/node": "^14.14.31",
+    "@types/node": "^12.12.6",
     "@types/yeoman-generator": "^5.0.0",
     "@typescript-eslint/eslint-plugin": "^4.15.2",
     "@typescript-eslint/parser": "^4.15.2",

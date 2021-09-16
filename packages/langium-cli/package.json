@@ -2,6 +2,9 @@
   "name": "langium-cli",
   "version": "0.1.0",
   "description": "CLI for Langium - the language engineering tool",
+  "engines": {
+    "node": ">=12.0.0"
+  },
   "keywords": [
     "cli",
     "dsl",
@@ -39,7 +42,7 @@
   "devDependencies": {
     "@types/fs-extra": "^9.0.11",
     "@types/jest": "^26.0.20",
-    "@types/node": "^14.14.31",
+    "@types/node": "^12.12.6",
     "@typescript-eslint/eslint-plugin": "^4.15.2",
     "@typescript-eslint/parser": "^4.15.2",
     "eslint": "^7.20.0",

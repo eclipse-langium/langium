@@ -1,6 +1,10 @@
 {
   "name": "langium-workspaces",
   "private": true,
+  "engineStrict": true,
+  "engines": {
+    "npm": "^7.7.0"
+  },
   "scripts": {
     "clean": "rimraf \"packages/**/lib\" \"packages/**/*.tsbuildinfo\"",
     "build": "tsc -b tsconfig.build.json",
