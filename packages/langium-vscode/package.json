@@ -16,13 +16,14 @@
     "languages": [{
       "id": "langium",
       "extensions": [ ".langium" ],
-      "aliases": [ "Langium" ]
+      "aliases": [ "Langium" ],
+      "configuration": "./data/langium.configuration.json"
     }],
     "grammars": [
       {
         "language": "langium",
         "scopeName": "source.langium",
-        "path": "./syntaxes/langium.tmLanguage.json"
+        "path": "./data/langium.tmLanguage.json"
       }
     ]
   },
