@@ -7,6 +7,7 @@
 import Generator from 'yeoman-generator';
 import _ from 'lodash';
 import path from 'path';
+import 'colors';
 
 const TEMPLATE_DIR = '../langium-template';
 const USER_DIR = '.';
@@ -27,6 +28,15 @@ interface Answers {
     fileExtensions: string;
 }
 
+function printLogo(log: (message: string) => void): void {
+    log('\u001b[36m┌─────┐ ─┐');
+    log('\u001b[36;1m┌───┐    │  ╶─╮ ┌─╮ ╭─╮ \u001b[36m╷ ╷ ╷ ┌─┬─╮');
+    log('\u001b[36;1m│ ,´     │  ╭─┤ │ │ │ │ \u001b[36m│ │ │ │ │ │');
+    log('\u001b[36;1m│╱       ╰─ ╰─┘ ╵ ╵ ╰─┤ \u001b[36m╵ ╰─╯ ╵ ╵ ╵');
+    log('\u001b[36;1m`                   ╶─╯');
+    log('');
+}
+
 class LangiumGenerator extends Generator {
     private answers: Answers;
 
@@ -35,6 +45,7 @@ class LangiumGenerator extends Generator {
     }
 
     async prompting(): Promise<void> {
+        printLogo(this.log);
         this.answers = await this.prompt([
             {
                 type: 'input',
