@@ -18,6 +18,7 @@ import { DefaultDocumentHighlighter } from './lsp/document-highlighter';
 import { DefaultDocumentSymbolProvider } from './lsp/document-symbol-provider';
 import { DefaultGoToResolverProvider } from './lsp/goto';
 import { DefaultReferenceFinder } from './lsp/reference-finder';
+import { DefaultRenameHandler } from './lsp/rename-refactoring';
 import { createLangiumParser } from './parser/langium-parser-builder';
 import { DefaultTokenBuilder } from './parser/token-builder';
 import { DefaultValueConverter } from './parser/value-converter';
@@ -57,7 +58,8 @@ export function createDefaultModule(context: DefaultModuleContext = {}): Module<
             DocumentSymbolProvider: (injector) => new DefaultDocumentSymbolProvider(injector),
             ReferenceFinder:  (injector) => new DefaultReferenceFinder(injector),
             GoToResolver: (injector) => new DefaultGoToResolverProvider(injector),
-            DocumentHighlighter: (injector) => new DefaultDocumentHighlighter(injector)
+            DocumentHighlighter: (injector) => new DefaultDocumentHighlighter(injector),
+            RenameHandler: (injector) => new DefaultRenameHandler(injector)
         },
         index: {
             IndexManager: (injector) => new DefaultIndexManager(injector),
