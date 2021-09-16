@@ -24,13 +24,23 @@ export function isReference(obj: unknown): obj is Reference {
 export function getContainerOfType<T extends AstNode>(node: AstNode | undefined, typePredicate: (n: AstNode) => n is T): T | undefined {
     let item = node;
     while (item) {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         if (typePredicate(item)) {
             return item;
         }
         item = item.$container;
     }
     return undefined;
+}
+
+export function hasContainerOfType(node: AstNode | undefined, predicate: (n: AstNode) => boolean): boolean {
+    let item = node;
+    while (item) {
+        if (predicate(item)) {
+            return true;
+        }
+        item = item.$container;
+    }
+    return false;
 }
 
 export function getDocument(node: AstNode): LangiumDocument {
