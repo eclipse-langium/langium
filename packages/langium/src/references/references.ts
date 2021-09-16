@@ -5,9 +5,12 @@
  ******************************************************************************/
 
 import { findAssignment } from '../grammar/grammar-util';
+import { ReferenceDescription } from '../index/ast-descriptions';
+import { AstNodeLocator } from '../index/ast-node-locator';
+import { IndexManager } from '../index/index-manager';
 import { LangiumServices } from '../services';
-import { CstNode, Reference } from '../syntax-tree';
-import { isReference } from '../utils/ast-util';
+import { AstNode, CstNode, Reference } from '../syntax-tree';
+import { findLocalReferences, isReference } from '../utils/ast-util';
 import { findRelevantNode } from '../utils/cst-util';
 import { NameProvider } from './naming';
 
@@ -17,16 +20,28 @@ export interface References {
      * If the CstNode is a reference node the target CstNode will be returned.
      * If the CstNode is a significant node of the CstNode this CstNode will be returned.
      *
-     * @param sourceCstNode CstNode we that point to a AstNode
+     * @param sourceCstNode CstNode that points to a AstNode
      */
     findDeclaration(sourceCstNode: CstNode): CstNode | undefined;
+    /**
+     * Finds all references to the target node as references (local references) or reference descriptions.
+     *
+     * @param targetNode Specified target node whose references should be returned
+     */
+    findReferences(targetNode: AstNode): FoundReference[];
 }
+
+export type FoundReference = Reference | ReferenceDescription;
 
 export class DefaultReferences implements References {
     protected readonly nameProvider: NameProvider;
+    protected readonly index: IndexManager;
+    protected readonly nodeLocator: AstNodeLocator;
 
     constructor(services: LangiumServices) {
         this.nameProvider = services.references.NameProvider;
+        this.index = services.index.IndexManager;
+        this.nodeLocator = services.index.AstNodeLocator;
     }
 
     findDeclaration(sourceCstNode: CstNode): CstNode | undefined {
@@ -57,6 +72,17 @@ export class DefaultReferences implements References {
             }
         }
         return undefined;
+    }
+
+    findReferences(targetNode: AstNode): FoundReference[] {
+        const references: FoundReference[] = [];
+        if (targetNode) {
+            references.push(
+                ...findLocalReferences(targetNode),
+                ...this.index.findAllReferences(targetNode, this.nodeLocator.getAstNodePath(targetNode))
+            );
+        }
+        return references;
     }
 
     private processReference(reference: Reference): CstNode | undefined {

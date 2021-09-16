@@ -4,8 +4,12 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import { DiagnosticTag } from 'vscode-languageserver-types';
+import { References } from '../references/references';
+import { LangiumServices } from '../services';
+import { streamAllContents } from '../utils/ast-util';
 import { ValidationAcceptor, ValidationCheck, ValidationRegistry } from '../validation/validation-registry';
-import { AbstractRule, Grammar, isTerminalRule, Keyword, LangiumGrammarAstType, ParserRule, TerminalRule, UnorderedGroup } from './generated/ast';
+import { AbstractRule, Grammar, isParserRule, isRuleCall, isTerminalRule, Keyword, LangiumGrammarAstType, ParserRule, TerminalRule, UnorderedGroup } from './generated/ast';
 import { getEntryRule, isDataTypeRule } from './grammar-util';
 import { LangiumGrammarServices } from './langium-grammar-module';
 
@@ -27,7 +31,8 @@ export class LangiumGrammarValidationRegistry extends ValidationRegistry {
                 validator.checkGrammarName,
                 validator.checkFirstGrammarRule,
                 validator.checkUniqueRuleName,
-                validator.checkGrammarHiddenTokens
+                validator.checkGrammarHiddenTokens,
+                validator.checkGrammarForUnusedRules
             ]
         };
         this.register(checks, validator);
@@ -41,6 +46,12 @@ export namespace IssueCodes {
 }
 
 export class LangiumGrammarValidator {
+
+    protected readonly references: References;
+
+    constructor(services: LangiumServices) {
+        this.references = services.references.References;
+    }
 
     checkGrammarName(grammar: Grammar, accept: ValidationAcceptor): void {
         if (grammar.name) {
@@ -101,6 +112,37 @@ export class LangiumGrammarValidator {
                 }
             }
         }
+    }
+
+    checkGrammarForUnusedRules(grammar: Grammar, accept: ValidationAcceptor): void {
+        const visitedSet = new Set<string>();
+        const entry = getEntryRule(grammar);
+        if (entry) {
+            this.ruleDfs(entry, visitedSet);
+            visitedSet.add(entry.name);
+        }
+        for (const rule of grammar.rules) {
+            if (isTerminalRule(rule) && grammar.hiddenTokens.some(e => e.ref === rule)) {
+                continue;
+            }
+            if (!visitedSet.has(rule.name)) {
+                accept('hint', 'This rule is declared but never referenced.', { node: rule, property: 'name', tags: [DiagnosticTag.Unnecessary] });
+            }
+        }
+    }
+
+    private ruleDfs(rule: ParserRule, visitedSet: Set<string>): void {
+        streamAllContents(rule).forEach(content => {
+            if (isRuleCall(content.node)) {
+                const refRule = content.node.rule.ref;
+                if (refRule && !visitedSet.has(refRule.name)) {
+                    visitedSet.add(refRule.name);
+                    if (isParserRule(refRule)) {
+                        this.ruleDfs(refRule, visitedSet);
+                    }
+                }
+            }
+        });
     }
 
     checkRuleName(rule: AbstractRule, accept: ValidationAcceptor): void {
