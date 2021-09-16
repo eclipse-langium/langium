@@ -159,22 +159,21 @@ export function findLeafNodeAtOffset(node: CstNode, offset: number): LeafCstNode
 }
 
 /**
- * Returns a Stream of references to targetNode from the AstNode tree
+ * Returns a Stream of references to the target node from the AstNode tree
  *
  * @param targetNode AstNode we are looking for
- * @param lookup AstNode where we are looking for references. This node
- *      can be RootAstNode but must not. It also must not be from the same
- *      Document as the targetNode.
+ * @param lookup AstNode where we search for references. If not provided, the root node of the document is used as the default value
  */
-export function findLocalReferences(targetNode: AstNode, lookup: AstNode): Stream<Reference> {
+export function findLocalReferences(targetNode: AstNode, lookup = getDocument(targetNode).parseResult.value): Stream<Reference> {
     const refs: Reference[] = [];
-    const process = (node: AstNodeContent) => {
-        streamReferences(node.node).forEach((refNode: AstNodeReference) => {
+    const process = (node: AstNode) => {
+        streamReferences(node).forEach((refNode: AstNodeReference) => {
             if (refNode.reference.ref === targetNode) {
                 refs.push(refNode.reference);
             }
         });
     };
-    streamAllContents(lookup).forEach(process);
+    process(lookup);
+    streamAllContents(lookup).forEach(content => process(content.node));
     return stream(refs);
 }

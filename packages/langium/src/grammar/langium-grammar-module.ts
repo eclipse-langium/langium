@@ -23,7 +23,7 @@ export type LangiumGrammarServices = LangiumServices & LangiumGrammarAddedServic
 export const LangiumGrammarModule: Module<LangiumGrammarServices, PartialLangiumServices & LangiumGrammarAddedServices> = {
     validation: {
         ValidationRegistry: (injector) => new LangiumGrammarValidationRegistry(injector),
-        LangiumGrammarValidator: () => new LangiumGrammarValidator()
+        LangiumGrammarValidator: (injector) => new LangiumGrammarValidator(injector)
     },
     lsp: {
         FoldingRangeProvider: (injector) => new LangiumGrammarFoldingRangeProvider(injector),
