@@ -33,7 +33,7 @@ export class DefaultReferenceFinder implements ReferenceFinder {
     }
 
     findReferences(document: LangiumDocument, params: TextDocumentPositionParams, includeDeclaration: boolean): Location[] {
-        const rootNode = document.parseResult?.value?.$cstNode;
+        const rootNode = document.parseResult.value.$cstNode;
         if (!rootNode) {
             return [];
         }

@@ -124,11 +124,8 @@ export class DefaultScopeComputation implements ScopeComputation {
     }
 
     computeScope(document: LangiumDocument): PrecomputedScopes {
-        const rootNode = document.parseResult?.value;
+        const rootNode = document.parseResult.value;
         const scopes = new Map();
-        if (!rootNode) {
-            return scopes;
-        }
         streamAllContents(rootNode).forEach(content => {
             const { node } = content;
             const container = node.$container;

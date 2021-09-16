@@ -14,7 +14,7 @@ export class DomainModelScopeComputation extends DefaultScopeComputation {
     }
 
     computeScope(document: LangiumDocument): PrecomputedScopes {
-        const model = document.parseResult?.value as Domainmodel;
+        const model = document.parseResult.value as Domainmodel;
         const scopes = new Map();
         this.processContainer(model, scopes, document);
         return scopes;

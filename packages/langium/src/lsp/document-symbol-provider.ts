@@ -24,11 +24,7 @@ export class DefaultDocumentSymbolProvider implements DocumentSymbolProvider {
     }
 
     getSymbols(document: LangiumDocument): DocumentSymbol[] {
-        if (document.parseResult) {
-            return this.getSymbol(document, document.parseResult.value);
-        } else {
-            return [];
-        }
+        return this.getSymbol(document, document.parseResult.value);
     }
 
     protected getSymbol(document: LangiumDocument, astNode: AstNode): DocumentSymbol[] {

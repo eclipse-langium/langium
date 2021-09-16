@@ -60,18 +60,16 @@ export class DefaultAstNodeDescriptionProvider implements AstNodeDescriptionProv
     createDescriptions(document: LangiumDocument): AstNodeDescription[] {
         const descr: AstNodeDescription[] = [];
         const rooNode = document.parseResult.value;
-        if (rooNode) {
-            const name = this.nameProvider.getName(rooNode);
-            if (name) {
-                descr.push(this.createDescription(rooNode, name, document));
-            }
-            streamContents(rooNode).forEach(content => {
-                const name = this.nameProvider.getName(content.node);
-                if (name) {
-                    descr.push(this.createDescription(content.node, name, document));
-                }
-            });
+        const name = this.nameProvider.getName(rooNode);
+        if (name) {
+            descr.push(this.createDescription(rooNode, name, document));
         }
+        streamContents(rooNode).forEach(content => {
+            const name = this.nameProvider.getName(content.node);
+            if (name) {
+                descr.push(this.createDescription(content.node, name, document));
+            }
+        });
         return descr;
     }
 }
@@ -89,31 +87,29 @@ export class DefaultReferenceDescriptionProvider implements ReferenceDescription
     createDescriptions(document: LangiumDocument): ReferenceDescription[] {
         const descr: ReferenceDescription[] = [];
         const rootNode = document.parseResult.value;
-        if (rootNode) {
-            const refConverter = (refNode: AstNodeReference): ReferenceDescription | undefined => {
-                const refAstNodeDescr = this.linker.getCandidate(refNode.container, refNode.reference.$refName, `${refNode.container.$type}:${refNode.property}`);
-                // Do not handle unresolved refs or local references
-                const docUri = getDocument(refNode.container)?.textDocument?.uri;
-                if (!refAstNodeDescr || refAstNodeDescr.documentUri === docUri)
-                    return undefined;
-                return {
-                    sourceUri: docUri,
-                    sourcePath: this.nodeLocator.getAstNodePath(refNode.container),
-                    targetUri: refAstNodeDescr.documentUri,
-                    targetPath: refAstNodeDescr.path,
-                    start: refNode.reference.$refNode.offset,
-                    end: refNode.reference.$refNode.offset + refNode.reference.$refNode.length
-                };
+        const refConverter = (refNode: AstNodeReference): ReferenceDescription | undefined => {
+            const refAstNodeDescr = this.linker.getCandidate(refNode.container, refNode.reference.$refName, `${refNode.container.$type}:${refNode.property}`);
+            // Do not handle unresolved refs or local references
+            const docUri = getDocument(refNode.container)?.textDocument?.uri;
+            if (!refAstNodeDescr || refAstNodeDescr.documentUri === docUri)
+                return undefined;
+            return {
+                sourceUri: docUri,
+                sourcePath: this.nodeLocator.getAstNodePath(refNode.container),
+                targetUri: refAstNodeDescr.documentUri,
+                targetPath: refAstNodeDescr.path,
+                start: refNode.reference.$refNode.offset,
+                end: refNode.reference.$refNode.offset + refNode.reference.$refNode.length
             };
-            streamAllContents(rootNode).forEach(astNodeContent => {
-                const astNode = astNodeContent.node;
-                streamReferences(astNode).forEach(ref => {
-                    const refDescr = refConverter(ref);
-                    if (refDescr)
-                        descr.push(refDescr);
-                });
+        };
+        streamAllContents(rootNode).forEach(astNodeContent => {
+            const astNode = astNodeContent.node;
+            streamReferences(astNode).forEach(ref => {
+                const refDescr = refConverter(ref);
+                if (refDescr)
+                    descr.push(refDescr);
             });
-        }
+        });
         return descr;
     }
 }

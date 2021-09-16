@@ -27,7 +27,7 @@ export class DefaultDocumentHighlighter implements DocumentHighlighter {
     }
 
     findHighlights(document: LangiumDocument, params: vscodeLanguageserver.DocumentHighlightParams): vscodeLanguageserver.Location[] {
-        const rootNode = document.parseResult?.value?.$cstNode;
+        const rootNode = document.parseResult.value.$cstNode;
         if (!rootNode) {
             return [];
         }
