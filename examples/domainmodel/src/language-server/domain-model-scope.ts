@@ -5,6 +5,7 @@
  ******************************************************************************/
 
 import { AstNodeDescription, DefaultScopeComputation, LangiumDocument, LangiumServices, PrecomputedScopes } from 'langium';
+import { DomainModelNameProvider } from './domain-model-naming';
 import { Domainmodel, isType, PackageDeclaration, isPackageDeclaration } from './generated/ast';
 
 export class DomainModelScopeComputation extends DefaultScopeComputation {
@@ -40,7 +41,7 @@ export class DomainModelScopeComputation extends DefaultScopeComputation {
     }
 
     protected createQualifiedDescription(pack: PackageDeclaration, description: AstNodeDescription, document: LangiumDocument): AstNodeDescription {
-        const name = pack.name + '.' + description.name;
+        const name = (this.nameProvider as DomainModelNameProvider).getQualifiedName(pack.name, description.name);
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         return this.descriptions.createDescription(description.node!, name, document);
     }

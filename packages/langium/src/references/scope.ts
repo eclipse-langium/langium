@@ -104,7 +104,6 @@ export class DefaultScopeProvider implements ScopeProvider {
         return result;
     }
 
-    // TODO use the global scope (index) as outermost scope
     protected getGlobalScope(referenceType: string): Scope {
         return new SimpleScope(this.globalScope.allElements(referenceType));
     }

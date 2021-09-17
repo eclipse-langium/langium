@@ -33,19 +33,19 @@ export class DefaultAstNodeLocator implements AstNodeLocator {
 
     getAstNodePath(node: AstNode): string {
         let container: AstNode | undefined = node.$container;
-        const path: string[] = [''];
+        const path: string[] = [];
         while (container) {
             path.push(this.pathSegment(node, container));
             node = container;
             container = container.$container;
         }
-        return path.join(this.segmentSeparator);
+        return this.segmentSeparator + path.reverse().join(this.segmentSeparator);
     }
 
     getAstNode(document: LangiumDocument, path: string): AstNode | undefined {
         const segments = path.split(this.segmentSeparator);
         return segments.reduce((previousValue, currentValue) => {
-            if(currentValue.length === 0)
+            if(!previousValue || currentValue.length === 0)
                 return previousValue;
             const propertyIndx = currentValue.split('@');
             // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -1,7 +1,8 @@
 {
     "preset": "ts-jest",
     "roots": [
-        "<rootDir>/test"
+        "<rootDir>/packages/langium/test",
+        "<rootDir>/examples/domainmodel/test"
     ],
     "collectCoverageFrom": ["src/**/{!(generated),}/*"],
     "testEnvironment": "node"

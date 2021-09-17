@@ -122,7 +122,7 @@ export function expectGoToDefinition(services: LangiumServices, expectEqual: Exp
     };
 }
 
-function parseDocument(services: LangiumServices, input: string): LangiumDocument {
+export function parseDocument(services: LangiumServices, input: string): LangiumDocument {
     const buildResult = parseHelper(services)(input);
     const document = getDocument(buildResult.parseResult.value);
     if (!document.parseResult) {
