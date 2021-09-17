@@ -19,9 +19,12 @@ export function parseHelper<T extends AstNode = AstNode>(services: LangiumServic
     const documentBuilder = services.documents.DocumentBuilder;
     return async input => {
         const randomNumber = Math.floor(Math.random() * 10000000) + 1000000;
-        const textDocument = TextDocument.create(`file:/${randomNumber}${metaData.fileExtensions[0]}`, metaData.languageId, 0, input);
+        const textDocument = TextDocument.create(`file:///${randomNumber}${metaData.fileExtensions[0]}`, metaData.languageId, 0, input);
+        // For now we have to add the newly created document to the list of documents manually
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (services.documents.TextDocuments as any)._documents[textDocument.uri] = textDocument;
         const document = services.documents.LangiumDocumentFactory.fromTextDocument<T>(textDocument);
-        const buildResult = await  documentBuilder.build(document);
+        const buildResult = await documentBuilder.build(document);
         return buildResult as BuildResult<T>;
     };
 }
@@ -160,7 +163,7 @@ function replaceIndices(base: ExpectedBase): { output: string, indices: number[]
     const indexMarker = base.indexMarker || '<|>';
     const rangeStartMarker = base.rangeStartMarker || '<|';
     const rangeEndMarker = base.rangeEndMarker || '|>';
-    const regex =  new RegExp(`${escapeRegExp(indexMarker)}|${escapeRegExp(rangeStartMarker)}|${escapeRegExp(rangeEndMarker)}`);
+    const regex = new RegExp(`${escapeRegExp(indexMarker)}|${escapeRegExp(rangeStartMarker)}|${escapeRegExp(rangeEndMarker)}`);
 
     let matched = true;
     let input = base.text;

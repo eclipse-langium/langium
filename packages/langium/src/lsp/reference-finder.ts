@@ -56,7 +56,7 @@ export class DefaultReferenceFinder implements ReferenceFinder {
                 if (isReference(reference)) {
                     refs.push({ docUri: document.uri, range: toRange(reference.$refNode, document) });
                 } else {
-                    const range = Range.create(document.textDocument.positionAt(reference.start), document.textDocument.positionAt(reference.end));
+                    const range = reference.segment.range;
                     refs.push({ docUri: reference.sourceUri, range });
                 }
             });

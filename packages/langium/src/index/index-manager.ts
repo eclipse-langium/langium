@@ -32,11 +32,11 @@ export interface IndexManager {
     /**
      * Updates the information about a Document inside the index.
      *
-     * @param document document to be updated
+     * @param document document(s) to be updated
      * @param cancelToken allows to cancel the current operation
      * @throws `OperationCanceled` if a user action occurs during execution
      */
-    update(document: LangiumDocument, cancelToken?: CancellationToken): Promise<void>;
+    update(document: LangiumDocument | LangiumDocument[], cancelToken?: CancellationToken): Promise<void>;
 
     /**
      * Returns all documents that could be affected by the specified document.
@@ -55,7 +55,7 @@ export interface IndexManager {
      * Returns all known references that are pointing to the given `targetNode`.
      *
      * @param targetNode the `AstNode` to look up references for
-     * @param astNodePath the path the points to the `targetNode` inside the document. See also `AstNodeLocator`
+     * @param astNodePath the path that points to the `targetNode` inside the document. See also `AstNodeLocator`
      *
      * @returns a `Stream` of references that are targeting the `targetNode`
      */
@@ -112,8 +112,8 @@ export class DefaultIndexManager implements IndexManager {
         }
     }
 
-    update(document: LangiumDocument, cancelToken = CancellationToken.None): Promise<void> {
-        return this.processDocuments([document], cancelToken);
+    update(document: LangiumDocument | LangiumDocument[], cancelToken = CancellationToken.None): Promise<void> {
+        return this.processDocuments(Array.isArray(document) ? document : [document], cancelToken);
     }
 
     getAffectedDocuments(document: LangiumDocument): Stream<LangiumDocument> {

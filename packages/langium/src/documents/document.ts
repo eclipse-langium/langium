@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import fs from 'fs';
-import { TextDocument } from 'vscode-languageserver-textdocument';
+import { Range, TextDocument } from 'vscode-languageserver-textdocument';
 import { TextDocuments } from 'vscode-languageserver/node';
 import { AstNode, Reference } from '../syntax-tree';
 import { LangiumParser, ParseResult } from '../parser/langium-parser';
@@ -24,7 +24,28 @@ export enum DocumentState {
     Validated = 4
 }
 
-// = 'changed' | 'parsed' | 'processed' | 'indexed' | 'validated';
+export interface DocumentSegment {
+    readonly range: Range
+    readonly offset: number
+    readonly length: number
+    readonly end: number
+}
+
+export function toDocumentSegment(document: TextDocument, start: number, end: number): DocumentSegment {
+    const startPos = document.positionAt(start);
+    const endPos = document.positionAt(end);
+    return {
+        range: {
+            start: startPos,
+            end: endPos
+        },
+        offset: start,
+        end: end,
+        get length() {
+            return end - start;
+        }
+    };
+}
 
 export interface LangiumDocument<T extends AstNode = AstNode> {
     parseResult: ParseResult<T>
