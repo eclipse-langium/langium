@@ -52,7 +52,7 @@
   "repository": "github:langium/langium",
   "bugs": "https://github.com/langium/langium/issues",
   "author": {
-      "name": "TypeFox",
-      "url": "https://www.typefox.io"
+    "name": "TypeFox",
+    "url": "https://www.typefox.io"
   }
 }
