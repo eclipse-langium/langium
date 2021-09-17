@@ -6,14 +6,14 @@
 
 import { CancellationToken } from 'vscode-languageserver';
 import { URI } from 'vscode-uri';
-import { interruptAndCheck } from '..';
-import { LangiumDocument } from '../documents/document';
+import { DocumentSegment, LangiumDocument, toDocumentSegment } from '../documents/document';
 import { Linker } from '../references/linker';
 import { NameProvider } from '../references/naming';
 import { AstNodeDescription } from '../references/scope';
 import { LangiumServices } from '../services';
 import { AstNode } from '../syntax-tree';
 import { AstNodeReference, getDocument, streamAllContents, streamContents, streamReferences } from '../utils/ast-util';
+import { interruptAndCheck } from '../utils/promise-util';
 import { AstNodeLocator } from './ast-node-locator';
 
 export interface ReferenceDescription {
@@ -21,14 +21,14 @@ export interface ReferenceDescription {
     sourceUri: URI
     /** Path to AstNode that holds a reference */
     sourcePath: string
-    /**  target document uri */
+    /** Target document uri */
     targetUri: URI
-    /** how to find target AstNode inside the document */
+    /** Path to the target AstNode inside the document */
     targetPath: string
-    /** start offset of the reference text */
-    start: number
-    /** end offset of the reference text */
-    end: number
+    /** Segment of the reference text. */
+    segment: DocumentSegment
+    /** Marks a local reference i.e. a cross reference inside a document.   */
+    local?: boolean
 }
 
 export interface AstNodeDescriptionProvider {
@@ -93,17 +93,19 @@ export class DefaultReferenceDescriptionProvider implements ReferenceDescription
         const rootNode = document.parseResult.value;
         const refConverter = (refNode: AstNodeReference): ReferenceDescription | undefined => {
             const refAstNodeDescr = this.linker.getCandidate(refNode.container, refNode.reference.$refName, `${refNode.container.$type}:${refNode.property}`);
-            // Do not handle unresolved refs or local references
-            const docUri = getDocument(refNode.container).uri;
-            if (!refAstNodeDescr || refAstNodeDescr.documentUri.toString() === docUri.toString())
+            // Do not handle unresolved refs
+            if (!refAstNodeDescr)
                 return undefined;
+            const doc = getDocument(refNode.container);
+            const docUri = doc.uri;
+            const refNodeRange = refNode.reference.$refNode.range;
             return {
                 sourceUri: docUri,
                 sourcePath: this.nodeLocator.getAstNodePath(refNode.container),
                 targetUri: refAstNodeDescr.documentUri,
                 targetPath: refAstNodeDescr.path,
-                start: refNode.reference.$refNode.offset,
-                end: refNode.reference.$refNode.offset + refNode.reference.$refNode.length
+                segment: toDocumentSegment(doc.textDocument, refNodeRange.start, refNodeRange.end),
+                local: refAstNodeDescr.documentUri.toString() === docUri.toString()
             };
         };
         for (const astNodeContent of streamAllContents(rootNode)) {

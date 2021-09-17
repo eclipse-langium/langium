@@ -10,8 +10,9 @@ import { AstNodeLocator } from '../index/ast-node-locator';
 import { IndexManager } from '../index/index-manager';
 import { LangiumServices } from '../services';
 import { AstNode, CstNode, Reference } from '../syntax-tree';
-import { findLocalReferences, isReference } from '../utils/ast-util';
+import { isReference } from '../utils/ast-util';
 import { findRelevantNode } from '../utils/cst-util';
+import { Stream } from '../utils/stream';
 import { NameProvider } from './naming';
 
 export interface References {
@@ -28,10 +29,8 @@ export interface References {
      *
      * @param targetNode Specified target node whose references should be returned
      */
-    findReferences(targetNode: AstNode): FoundReference[];
+    findReferences(targetNode: AstNode): Stream<ReferenceDescription>;
 }
-
-export type FoundReference = Reference | ReferenceDescription;
 
 export class DefaultReferences implements References {
     protected readonly nameProvider: NameProvider;
@@ -76,18 +75,11 @@ export class DefaultReferences implements References {
         return undefined;
     }
 
-    findReferences(targetNode: AstNode): FoundReference[] {
-        const references: FoundReference[] = [];
-        if (targetNode) {
-            references.push(
-                ...findLocalReferences(targetNode),
-                ...this.index.findAllReferences(targetNode, this.nodeLocator.getAstNodePath(targetNode))
-            );
-        }
-        return references;
+    findReferences(targetNode: AstNode): Stream<ReferenceDescription> {
+        return this.index.findAllReferences(targetNode, this.nodeLocator.getAstNodePath(targetNode));
     }
 
-    private processReference(reference: Reference): CstNode | undefined {
+    protected processReference(reference: Reference): CstNode | undefined {
         const ref = reference.ref;
         if (ref && ref.$cstNode) {
             const targetNode = this.nameProvider.getNameNode(ref);

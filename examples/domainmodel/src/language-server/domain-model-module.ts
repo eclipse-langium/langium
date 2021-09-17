@@ -22,7 +22,7 @@ export type DomainModelServices = LangiumServices & DomainModelAddedServices
 export const DomainModelModule: Module<DomainModelServices, PartialLangiumServices & DomainModelAddedServices> = {
     references: {
         ScopeComputation: (injector) => new DomainModelScopeComputation(injector),
-        NameProvider:  () => new DomainModelNameProvider()
+        NameProvider: () => new DomainModelNameProvider()
     },
     validation: {
         ValidationRegistry: (injector) => new DomainModelValidationRegistry(injector),
