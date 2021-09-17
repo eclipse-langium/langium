@@ -6,6 +6,9 @@
   ],
   "patterns": [
     {
+      "include": "#comments"
+    },
+    {
       "name": "keyword.control.statemachine",
       "match": "\\b(actions|commands|end|events|initialState|state|statemachine)\\b"
     },
@@ -33,10 +36,10 @@
           }
         },
         {
-          "begin": "(^\\s+)?(?=//)",
+          "begin": "//",
           "beginCaptures": {
             "1": {
-              "name": "punctuation.whitespace.comment.leading.cs"
+              "name": "punctuation.whitespace.comment.leading.statemachine"
             }
           },
           "end": "(?=$)",

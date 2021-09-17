@@ -6,6 +6,9 @@
   ],
   "patterns": [
     {
+      "include": "#comments"
+    },
+    {
       "name": "keyword.control.domain-model",
       "match": "\\b(datatype|entity|extends|many|package)\\b"
     },
@@ -33,10 +36,10 @@
           }
         },
         {
-          "begin": "(^\\s+)?(?=//)",
+          "begin": "//",
           "beginCaptures": {
             "1": {
-              "name": "punctuation.whitespace.comment.leading.cs"
+              "name": "punctuation.whitespace.comment.leading.domain-model"
             }
           },
           "end": "(?=$)",

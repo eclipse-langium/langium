@@ -44,6 +44,10 @@ export function isDataTypeRule(rule: ast.ParserRule): boolean {
     return false;
 }
 
+export function isCommentTerminal(terminalRule: ast.TerminalRule): boolean {
+    return terminalRule.$container.hiddenTokens.some(e => e.ref === terminalRule) && !' '.match(terminalRule.regex);
+}
+
 interface RuleWithAlternatives {
     alternatives: ast.AbstractElement;
 }
