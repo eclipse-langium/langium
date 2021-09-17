@@ -9,7 +9,7 @@ import _ from 'lodash';
 import { CompositeGeneratorNode, IndentNode, NL, processGeneratorNode } from 'langium';
 import { AbstractElement, Domainmodel, Entity, Feature, isEntity, isPackageDeclaration, Type } from '../language-server/generated/ast';
 
-export function generateJava(domainmodel: Domainmodel, fileName: string, destination: string = '.') {
+export function generateJava(domainmodel: Domainmodel, fileName: string, destination = '.'): string {
     const path = fileName.replace(/\..*$/, '').replace(/[.-]/g, '');
 
     generateAbstractElements(destination, domainmodel.elements, path);
