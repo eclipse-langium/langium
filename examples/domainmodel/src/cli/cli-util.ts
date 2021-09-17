@@ -24,7 +24,7 @@ export function extractDocument(fileName: string, languageId: string, extensions
 
     const domainModelServices = createDomainModelServices();
     const document = domainModelServices.documents.LangiumDocuments.getOrCreateDocument(URI.file(path.resolve(fileName)));
-    
+
     const buildResult = services.documents.DocumentBuilder.build(document);
     const validationErrors = buildResult.diagnostics.filter(e => e.severity === 1);
     if (validationErrors.length > 0) {
