@@ -569,7 +569,7 @@ export const grammar = (): Grammar => loaded || (loaded = loadGrammar(`{
     {
       "$type": "TerminalRule",
       "name": "COMMENT",
-      "regex": "\\\\/(\\\\*[\\\\s\\\\S]*?\\\\*\\\\/|\\\\/[^\\\\n\\\\r]*)"
+      "regex": "\\\\/\\\\*[\\\\s\\\\S]*?\\\\*\\\\/|\\\\/\\\\/[^\\\\n\\\\r]*"
     }
   ],
   "name": "Arithmetics",

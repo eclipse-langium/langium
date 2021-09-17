@@ -5,6 +5,7 @@
  ******************************************************************************/
 
 import * as langium from 'langium';
+import { getCommentParts, isCommentTerminal, isTerminalRule } from 'langium';
 import { LangiumConfig } from '../package';
 import { collectKeywords } from './util';
 
@@ -59,41 +60,54 @@ export function generateTextMate(grammar: langium.Grammar, config: LangiumConfig
 
 function getPatterns(grammar: langium.Grammar, config: LangiumConfig): Pattern[] {
     const patterns: Pattern[] = [];
+    patterns.push({
+        include: '#comments'
+    });
     patterns.push(getKeywordControl(grammar, config));
     patterns.push(getKeywordSymbols(grammar, config));
     return patterns;
 }
 
 function getRepository(grammar: langium.Grammar, config: LangiumConfig): Repository {
+    const commentPatterns: Pattern[] = [];
+    for (const rule of grammar.rules) {
+        if (isTerminalRule(rule) && isCommentTerminal(rule)) {
+            const parts = getCommentParts(rule.regex);
+            for (const part of parts) {
+                if (part.end) {
+                    commentPatterns.push({
+                        'name': `comment.block.${config.languageId}`,
+                        'begin': part.start,
+                        'beginCaptures': {
+                            '0': {
+                                'name': `punctuation.definition.comment.${config.languageId}`
+                            }
+                        },
+                        'end': part.end,
+                        'endCaptures': {
+                            '0': {
+                                'name': `punctuation.definition.comment.${config.languageId}`
+                            }
+                        }
+                    });
+                } else {
+                    commentPatterns.push({
+                        'begin': part.start,
+                        'beginCaptures': {
+                            '1': {
+                                'name': `punctuation.whitespace.comment.leading.${config.languageId}`
+                            }
+                        },
+                        'end': '(?=$)',
+                        'name': `comment.line.${config.languageId}`
+                    });
+                }
+            }
+        }
+    }
     const repository: Repository = {
         'comments': {
-            'patterns': [
-                {
-                    'name': `comment.block.${config.languageId}`,
-                    'begin': '/\\*',
-                    'beginCaptures': {
-                        '0': {
-                            'name': `punctuation.definition.comment.${config.languageId}`
-                        }
-                    },
-                    'end': '\\*/',
-                    'endCaptures': {
-                        '0': {
-                            'name': `punctuation.definition.comment.${config.languageId}`
-                        }
-                    }
-                },
-                {
-                    'begin': '(^\\s+)?(?=//)',
-                    'beginCaptures': {
-                        '1': {
-                            'name': 'punctuation.whitespace.comment.leading.cs'
-                        }
-                    },
-                    'end': '(?=$)',
-                    'name': `comment.line.${config.languageId}`
-                }
-            ]
+            'patterns': commentPatterns
         }
     };
 
@@ -102,7 +116,7 @@ function getRepository(grammar: langium.Grammar, config: LangiumConfig): Reposit
 
 function getKeywordControl(grammar: langium.Grammar, pack: LangiumConfig): Pattern {
     const regex = /[A-Za-z]+/;
-    const keywords = collectKeywords(grammar).filter(kw => regex.test(kw)).map(kw => kw.replace(/'/g, ''));
+    const keywords = collectKeywords(grammar).filter(kw => regex.test(kw));
     return {
         'name': `keyword.control.${pack.languageId}`,
         'match': `\\b(${keywords.join('|')})\\b`
@@ -110,7 +124,7 @@ function getKeywordControl(grammar: langium.Grammar, pack: LangiumConfig): Patte
 }
 function getKeywordSymbols(grammar: langium.Grammar, pack: LangiumConfig): Pattern {
     const regex = /\W/;
-    const keywordsFiltered = collectKeywords(grammar).map(kw => kw.replace(/'/g, '')).filter(kw => regex.test(kw));
+    const keywordsFiltered = collectKeywords(grammar).filter(kw => regex.test(kw));
     const keywords = keywordsFiltered.map(kw => `\\${kw}`);
     return {
         'name': `keyword.symbol.${pack.languageId}`,

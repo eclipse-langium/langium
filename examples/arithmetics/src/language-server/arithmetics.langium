@@ -40,4 +40,4 @@ terminal ID: /[_a-zA-Z][\w_]*/;
 terminal NUMBER returns number: /[0-9]+(\.[0-9])?/;
 
 // This is both a single line AND multi line comment
-terminal COMMENT: /\/(\*[\s\S]*?\*\/|\/[^\n\r]*)/;
+terminal COMMENT: /\/\*[\s\S]*?\*\/|\/\/[^\n\r]*/;

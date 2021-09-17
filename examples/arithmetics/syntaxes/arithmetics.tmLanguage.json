@@ -36,10 +36,10 @@
           }
         },
         {
-          "begin": "(^\\s+)?(?=//)",
+          "begin": "//",
           "beginCaptures": {
             "1": {
-              "name": "punctuation.whitespace.comment.leading.cs"
+              "name": "punctuation.whitespace.comment.leading.arithmetics"
             }
           },
           "end": "(?=$)",

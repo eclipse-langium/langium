@@ -4,6 +4,116 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import { RegExpParser, BaseRegExpVisitor, Set, Group, Character } from 'regexp-to-ast';
+
+const regexParser = new RegExpParser();
+
+class CommentRegexVisitor extends BaseRegExpVisitor {
+
+    private isStarting = true;
+    startRegex: string;
+    private endRegexStack: string[] = [];
+    multiline = false;
+    regex: string;
+
+    get endRegex(): string {
+        return this.endRegexStack.join('');
+    }
+
+    reset(regex: string): void {
+        this.multiline = false;
+        this.regex = regex;
+        this.startRegex = '';
+        this.isStarting = true;
+        this.endRegexStack = [];
+    }
+
+    visitGroup(node: Group) {
+        if (node.quantifier) {
+            this.isStarting = false;
+            this.endRegexStack = [];
+        }
+    }
+
+    visitCharacter(node: Character): void {
+        const char = String.fromCharCode(node.value);
+        if (!this.multiline && char === '\n') {
+            this.multiline = true;
+        }
+        if (node.quantifier) {
+            this.isStarting = false;
+            this.endRegexStack = [];
+        } else {
+            const escapedChar = escapeRegExp(char);
+            this.endRegexStack.push(escapedChar);
+            if (this.isStarting) {
+                this.startRegex += escapedChar;
+            }
+        }
+    }
+
+    visitSet(node: Set): void {
+        if (!this.multiline) {
+            const set = this.regex.substring(node.loc.begin, node.loc.end);
+            const regex = new RegExp(set);
+            this.multiline = !!'\n'.match(regex);
+        }
+        if (node.quantifier) {
+            this.isStarting = false;
+            this.endRegexStack = [];
+        } else {
+            const set = this.regex.substring(node.loc.begin, node.loc.end);
+            this.endRegexStack.push(set);
+            if (this.isStarting) {
+                this.startRegex += set;
+            }
+        }
+    }
+}
+
+const visitor = new CommentRegexVisitor();
+
+export function getCommentParts(regex: RegExp | string): Array<{ start: string, end: string }> {
+    try {
+        if (typeof regex !== 'string') {
+            regex = regex.source;
+        }
+        regex = `/${regex}/`;
+        const pattern = regexParser.pattern(regex);
+        const parts: Array<{ start: string, end: string }> = [];
+        for (const alternative of pattern.value.value) {
+            visitor.reset(regex);
+            visitor.visit(alternative);
+            parts.push({
+                start: visitor.startRegex,
+                end: visitor.endRegex
+            });
+        }
+        return parts;
+    } catch {
+        return [];
+    }
+}
+
+export function isMultilineComment(regex: RegExp | string): boolean {
+    try {
+        if (typeof regex !== 'string') {
+            regex = regex.source;
+        }
+        regex = `/${regex}/`;
+        visitor.reset(regex);
+        // Parsing the pattern might fail (since it's user code)
+        visitor.visit(regexParser.pattern(regex));
+        return visitor.multiline;
+    } catch {
+        return false;
+    }
+}
+
+function escapeRegExp(value: string): string {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 /**
  * Determines whether the given input has a partial match with the specified regex.
  * @param regex The regex to partially match against

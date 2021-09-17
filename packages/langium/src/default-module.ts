@@ -9,6 +9,7 @@ import { Connection, TextDocuments } from 'vscode-languageserver/node';
 import { Module } from './dependency-injection';
 import { DefaultLangiumDocumentFactory, DefaultLangiumDocuments, DefaultTextDocumentFactory } from './documents/document';
 import { DefaultDocumentBuilder } from './documents/document-builder';
+import { createGrammarConfig } from './grammar/grammar-config';
 import { DefaultAstNodeDescriptionProvider, DefaultReferenceDescriptionProvider } from './index/ast-descriptions';
 import { DefaultAstNodeLocator } from './index/ast-node-locator';
 import { DefaultIndexManager } from './index/index-manager';
@@ -39,9 +40,7 @@ export type DefaultModuleContext = {
 export function createDefaultModule(context: DefaultModuleContext = {}): Module<LangiumServices, LangiumDefaultServices> {
     return {
         parser: {
-            GrammarConfig: () => ({
-                multilineCommentRules: ['ML_COMMENT']
-            }),
+            GrammarConfig: (injector) => createGrammarConfig(injector),
             LangiumParser: (injector) => createLangiumParser(injector),
             ValueConverter: () => new DefaultValueConverter(),
             TokenBuilder: () => new DefaultTokenBuilder()

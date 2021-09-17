@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { partialMatches } from '../../src';
+import { getCommentParts, isMultilineComment, partialMatches } from '../../src';
 
 describe('partial regex', () => {
 
@@ -68,4 +68,62 @@ describe('partial regex', () => {
         expect(partialMatches(/^ab/, 'b')).toBeFalsy();
     });
 
+});
+
+describe('multiline comment detection', () => {
+
+    test('single character string should be not multiline comment', () => {
+        expect(isMultilineComment('x')).toBeFalsy();
+    });
+
+    test('single character regex should be not multiline comment', () => {
+        expect(isMultilineComment(/x/)).toBeFalsy();
+    });
+
+    test('single newline character should be multiline comment', () => {
+        expect(isMultilineComment(/\n/)).toBeTruthy();
+    });
+
+    test('JS style singleline comment should not be multiline comment', () => {
+        expect(isMultilineComment(/\/\/[^\n\r]*/)).toBeFalsy();
+    });
+
+    test('JS style multiline comment should be multiline comment', () => {
+        expect(isMultilineComment(/\/\*[\s\S]*?\*\//)).toBeTruthy();
+    });
+
+});
+
+describe('comment start/end parts', () => {
+
+    test('JS style singleline comment should start with //', () => {
+        expect(getCommentParts(/\/\/[^\n\r]*/)).toEqual([{
+            start: '//',
+            end: ''
+        }]);
+    });
+
+    test('JS style multiline comment should start with /* and end with */', () => {
+        expect(getCommentParts(/\/\*[\s\S]*?\*\//)).toEqual([{
+            start: '/\\*',
+            end: '\\*/'
+        }]);
+    });
+
+    test('JS style combined comment should contain both /* */ and // parts', () => {
+        expect(getCommentParts(/\/\*[\s\S]*?\*\/|\/\/[^\n\r]*/)).toEqual([{
+            start: '/\\*',
+            end: '\\*/'
+        }, {
+            start: '//',
+            end: ''
+        }]);
+    });
+
+    test('Shell style single line comment starts with #', () => {
+        expect(getCommentParts(/#[^\n\r]*/)).toEqual([{
+            start: '#',
+            end: ''
+        }]);
+    });
 });
