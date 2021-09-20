@@ -10,7 +10,7 @@ import { State, Statemachine } from '../language-server/generated/ast';
 import path from 'path';
 
 export function generateCpp(statemachine: Statemachine, fileName: string, destination: string | undefined): string {
-    fileName = fileName.replace(/\..*$/, '').replaceAll(/[.-]/g, '');
+    fileName = fileName.replace(/\..*$/, '').replace(/[.-]/g, '');
     const ctx = <GeneratorContext>{
         statemachine,
         fileName: `${path.basename(fileName) ?? 'statemachine'}.cpp`,

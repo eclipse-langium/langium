@@ -31,7 +31,7 @@
         "src"
     ],
     "bin": {
-        "statemachine-cli": "./bin/cli.js"
+        "statemachine-cli": "./bin/cli"
     },
     "main": "./out/extension.js",
     "scripts": {
