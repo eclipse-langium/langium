@@ -14,7 +14,6 @@ export function toQualifiedName(pack: PackageDeclaration, childName: string): st
 export class DomainModelNameProvider extends DefaultNameProvider {
 
     /**
-     *
      * @param qualifier if the qualifier is a `string`, simple string concatenation is done: `qualifier.name`.
      *      if the qualifier is a `PackageDeclaration` fully qualified name is created: `package1.package2.name`.
      * @param name simple name
