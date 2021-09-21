@@ -26,15 +26,6 @@
         "onLanguage:statemachine"
     ],
     "main": "./out/extension.js",
-    "langium": {
-        "languageId": "statemachine",
-        "grammar": "src/language-server/statemachine.langium",
-        "fileExtensions": [".statemachine"],
-        "out": "src/language-server/generated",
-        "textMate": {
-            "out": "./syntaxes/statemachine.tmLanguage.json"
-        }
-    },
     "scripts": {
         "vscode:prepublish": "npm run build && npm run lint",
         "build": "tsc",

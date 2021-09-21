@@ -28,15 +28,6 @@
     "publish:next": "npm --no-git-tag-version version \"$(semver $npm_package_version -i minor)-next.$(git rev-parse --short HEAD)\" && npm publish --tag next",
     "publish:latest": "npm publish --tag latest"
   },
-  "langium": {
-    "languageId": "langium",
-    "grammar": "src/grammar/langium-grammar.langium",
-    "fileExtensions": [
-      "langium"
-    ],
-    "out": "src/grammar/generated",
-    "langiumInternal": true
-  },
   "dependencies": {
     "chevrotain": "^7.1.2",
     "vscode-uri": "^3.0.2",
