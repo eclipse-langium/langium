@@ -93,4 +93,4 @@ export async function getUserChoice<R extends string>(text: string, values: R[],
 
 export const cliVersion = getLangiumCliVersion();
 export const generatedHeader = getGeneratedHeader();
-export const schema = fs.readJsonSync(path.resolve(__dirname, '../../schema.json'), { encoding: 'utf-8' });
+export const schema = fs.readJsonSync(path.resolve(__dirname, '../../langium-config-schema.json'), { encoding: 'utf-8' });
