@@ -83,16 +83,19 @@ export async function generate(config: LangiumConfig): Promise<GeneratorResult> 
 async function rmdirWithFail(dirPath: string, expectedFiles?: string[]): Promise<boolean> {
     try {
         let deleteDir = true;
-        if (expectedFiles) {
-            const existingFiles = await fs.readdir(dirPath);
-            const unexpectedFiles = existingFiles.filter(file => !expectedFiles.includes(path.basename(file)));
-            if (unexpectedFiles.length > 0) {
-                console.log(`${getTime()}Found unexpected files in the generated directory: ${unexpectedFiles.map(e => e.yellow).join(', ')}`);
-                deleteDir = await getUserChoice(`${getTime()}Do you want to delete the files?`, ['yes', 'no'], 'yes') === 'yes';
+        const dirExists = await fs.pathExists(dirPath);
+        if(dirExists) {
+            if (expectedFiles) {
+                const existingFiles = await fs.readdir(dirPath);
+                const unexpectedFiles = existingFiles.filter(file => !expectedFiles.includes(path.basename(file)));
+                if (unexpectedFiles.length > 0) {
+                    console.log(`${getTime()}Found unexpected files in the generated directory: ${unexpectedFiles.map(e => e.yellow).join(', ')}`);
+                    deleteDir = await getUserChoice(`${getTime()}Do you want to delete the files?`, ['yes', 'no'], 'yes') === 'yes';
+                }
             }
-        }
-        if (deleteDir) {
-            await fs.remove(dirPath);
+            if (deleteDir) {
+                await fs.remove(dirPath);
+            }
         }
         return false;
     } catch (e) {

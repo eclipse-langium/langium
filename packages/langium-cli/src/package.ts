@@ -51,9 +51,6 @@ export function loadConfigs(file: string | undefined): LangiumConfig[] {
         console.error(getTime() + 'Failed to read config file.', e);
         process.exit(1);
     }
-    if (typeof obj === 'object' && obj && 'langium' in obj) {
-        obj = obj.langium;
-    }
     if (Array.isArray(obj)) { // We have an array of configs in our 'langium-config.json'
         return obj.map(e => {
             e[RelativePath] = relativePath;

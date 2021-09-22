@@ -1,0 +1,9 @@
+{
+    "languageId": "arithmetics",
+    "grammar": "src/language-server/arithmetics.langium",
+    "fileExtensions": [".calc"],
+    "out": "src/language-server/generated",
+    "textMate": {
+        "out": "syntaxes/arithmetics.tmLanguage.json"
+    }
+}

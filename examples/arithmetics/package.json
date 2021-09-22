@@ -34,15 +34,6 @@
         "cli": "./bin/cli.js"
     },
     "main": "./out/extension.js",
-    "langium": {
-        "languageId": "arithmetics",
-        "grammar": "src/language-server/arithmetics.langium",
-        "fileExtensions": [".calc"],
-        "out": "src/language-server/generated",
-        "textMate": {
-            "out": "syntaxes/arithmetics.tmLanguage.json"
-        }
-    },
     "scripts": {
         "vscode:prepublish": "npm run build && npm run lint",
         "build": "tsc",
