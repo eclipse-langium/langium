@@ -8,7 +8,7 @@ import fs from 'fs';
 import _ from 'lodash';
 import { CompositeGeneratorNode, IndentNode, NL, processGeneratorNode } from 'langium';
 import { AbstractElement, Domainmodel, Entity, Feature, isEntity, isPackageDeclaration, Type } from '../language-server/generated/ast';
-import { extractAstNode, setRootFolder } from './cli-util';
+import { extractAstNode, extractDestinationAndName, setRootFolder } from './cli-util';
 import { createDomainModelServices } from '../language-server/domain-model-module';
 import { languageMetaData } from '../language-server/generated/module';
 import colors from 'colors';
@@ -28,10 +28,8 @@ export type GenerateOptions = {
 }
 
 export function generateJava(domainmodel: Domainmodel, fileName: string, destination?: string): string {
-    fileName = fileName.replace(/\..*$/, '').replace(/[.-]/g, '');
-    const filePath = path.basename(fileName);
-
-    return generateAbstractElements(destination ?? `./${path.dirname(fileName)}/generated`, domainmodel.elements, filePath);
+    const data = extractDestinationAndName(fileName, destination);
+    return generateAbstractElements(data.destination, domainmodel.elements, data.name);
 }
 
 function generateAbstractElements(destination: string, elements: Array<AbstractElement | Type>, filePath: string): string {

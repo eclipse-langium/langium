@@ -54,3 +54,16 @@ export async function setRootFolder(fileName: string, services: LangiumServices,
     });
     await services.index.IndexManager.initializeWorkspace(folders);
 }
+
+interface FilePathData {
+    destination: string,
+    name: string
+}
+
+export function extractDestinationAndName(filePath: string, destination: string | undefined): FilePathData {
+    filePath = filePath.replace(/\..*$/, '').replace(/[.-]/g, '');
+    return {
+        destination: destination ?? path.join(path.dirname(filePath), 'generated'),
+        name: path.basename(filePath)
+    };
+}

@@ -41,3 +41,16 @@ export async function extractDocument(fileName: string, extensions: string[], se
 export async function extractAstNode<T extends AstNode>(fileName: string, extensions: string[], services: LangiumServices): Promise<T> {
     return (await extractDocument(fileName, extensions, services)).parseResult?.value as T;
 }
+
+interface FilePathData {
+    destination: string,
+    name: string
+}
+
+export function extractDestinationAndName(filePath: string, destination: string | undefined): FilePathData {
+    filePath = filePath.replace(/\..*$/, '').replace(/[.-]/g, '');
+    return {
+        destination: destination ?? path.join(path.dirname(filePath), 'generated'),
+        name: path.basename(filePath)
+    };
+}
