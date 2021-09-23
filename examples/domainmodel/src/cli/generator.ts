@@ -8,12 +8,14 @@ import fs from 'fs';
 import _ from 'lodash';
 import { CompositeGeneratorNode, IndentNode, NL, processGeneratorNode } from 'langium';
 import { AbstractElement, Domainmodel, Entity, Feature, isEntity, isPackageDeclaration, Type } from '../language-server/generated/ast';
+import path from 'path';
 
 export function generateJava(domainmodel: Domainmodel, fileName: string, destination = '.'): string {
-    const path = fileName.replace(/\..*$/, '').replace(/[.-]/g, '');
+    fileName = fileName.replace(/\..*$/, '').replace(/[.-]/g, '');
+    const filePath = `${path.dirname(fileName)}/generated/${path.basename(fileName)}`;
 
-    generateAbstractElements(destination, domainmodel.elements, path);
-    return `${destination}/${path}`;
+    generateAbstractElements(destination, domainmodel.elements, filePath);
+    return `${destination}/${filePath}/`;
 }
 
 function generateAbstractElements(destination: string, elements: Array<AbstractElement | Type>, path: string): void {

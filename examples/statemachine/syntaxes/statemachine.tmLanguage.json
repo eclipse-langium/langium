@@ -7,7 +7,7 @@
   "patterns": [
     {
       "name": "keyword.control.statemachine",
-      "match": "\\b(actions|commands|end|events|resetEvents|state)\\b"
+      "match": "\\b(actions|commands|end|events|initialState|state|statemachine)\\b"
     },
     {
       "name": "keyword.symbol.statemachine",

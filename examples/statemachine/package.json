@@ -25,6 +25,14 @@
     "activationEvents": [
         "onLanguage:statemachine"
     ],
+    "files": [
+        "bin",
+        "out",
+        "src"
+    ],
+    "bin": {
+        "statemachine-cli": "./bin/cli"
+    },
     "main": "./out/extension.js",
     "scripts": {
         "vscode:prepublish": "npm run build && npm run lint",
@@ -34,7 +42,10 @@
         "langium:generate": "langium generate"
     },
     "dependencies": {
+        "colors": "^1.4.0",
+        "commander": "^8.0.0",
         "langium": "0.1.0",
+        "lodash": "^4.17.21",
         "vscode-languageclient": "^7.0.0",
         "vscode-languageserver": "^7.0.0"
     },

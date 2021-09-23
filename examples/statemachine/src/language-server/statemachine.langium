@@ -1,18 +1,18 @@
 grammar Statemachine
 hidden(WS, SL_COMMENT, ML_COMMENT)
 
-Statemachine :
-	{Statemachine}
-	('events' events+=Event+ 'end')?
-	('resetEvents' resetEvents+=[Event]+ 'end')?
-	('commands'	commands+=Command+ 'end')?
+Statemachine:
+	'statemachine' name=ID
+	('events' events+=Event+)?
+	('commands'	commands+=Command+)?
+	'initialState' init=[State]
 	states+=State*;
 
 Event:
-	name=ID code=ID;
+	name=ID;
 
 Command:
-	name=ID code=ID;
+	name=ID;
 
 State:
 	'state' name=ID

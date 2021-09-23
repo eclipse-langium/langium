@@ -9,7 +9,6 @@ import { AstNode, AstReflection, Reference, isAstNode } from 'langium';
 
 export interface Command extends AstNode {
     readonly $container: Statemachine;
-    code: string
     name: string
 }
 
@@ -21,7 +20,6 @@ export function isCommand(item: unknown): item is Command {
 
 export interface Event extends AstNode {
     readonly $container: Statemachine;
-    code: string
     name: string
 }
 
@@ -47,7 +45,8 @@ export function isState(item: unknown): item is State {
 export interface Statemachine extends AstNode {
     commands: Array<Command>
     events: Array<Event>
-    resetEvents: Array<Reference<Event>>
+    init: Reference<State>
+    name: string
     states: Array<State>
 }
 
@@ -71,7 +70,7 @@ export function isTransition(item: unknown): item is Transition {
 
 export type StatemachineAstType = 'Command' | 'Event' | 'State' | 'Statemachine' | 'Transition';
 
-export type StatemachineAstReference = 'State:actions' | 'Statemachine:resetEvents' | 'Transition:event' | 'Transition:state';
+export type StatemachineAstReference = 'State:actions' | 'Statemachine:init' | 'Transition:event' | 'Transition:state';
 
 export class StatemachineAstReflection implements AstReflection {
 
@@ -99,8 +98,8 @@ export class StatemachineAstReflection implements AstReflection {
             case 'State:actions': {
                 return Command;
             }
-            case 'Statemachine:resetEvents': {
-                return Event;
+            case 'Statemachine:init': {
+                return State;
             }
             case 'Transition:event': {
                 return Event;

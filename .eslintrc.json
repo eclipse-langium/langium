@@ -14,7 +14,7 @@
         "header"
     ],
     "ignorePatterns": [
-        "**/{node_modules,lib}"
+        "**/{node_modules,lib,bin}"
     ],
     "rules": {
         // List of [ESLint rules](https://eslint.org/docs/rules/)
