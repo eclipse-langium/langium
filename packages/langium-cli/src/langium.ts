@@ -37,7 +37,7 @@ async function forEachConfig(options: GenerateOptions, callback: (config: Langiu
         nestedErrors: true
     });
     if (!validation.valid) {
-        console.error('Your langium configuration is invalid.'.red);
+        console.error('Error: Your Langium configuration is invalid.'.red);
         const errors = validation.errors.filter(error => error.path.length > 0);
         errors.forEach(error => {
             console.error(`--> ${error.stack}`);
