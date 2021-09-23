@@ -61,7 +61,11 @@
     "webpack": "^5.39.1",
     "webpack-cli": "^4.7.2"
   },
-  "repository": "github:langium/langium",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/langium/langium",
+    "directory": "packages/langium-vscode"
+  },
   "bugs": "https://github.com/langium/langium/issues",
   "author": {
       "name": "TypeFox",
