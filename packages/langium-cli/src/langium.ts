@@ -33,9 +33,15 @@ async function forEachConfig(options: GenerateOptions, callback: (config: Langiu
         console.error('Could not find a langium configuration. Please add a langium-config.json to your project or a langium section to your package.json.'.red);
         process.exit(1);
     }
-    const validation = validate(configs, schema);
+    const validation = validate(configs, schema, {
+        nestedErrors: true
+    });
     if (!validation.valid) {
-        console.error('Your langium configuration is invalid.'.red);
+        console.error('Error: Your Langium configuration is invalid.'.red);
+        const errors = validation.errors.filter(error => error.path.length > 0);
+        errors.forEach(error => {
+            console.error(`--> ${error.stack}`);
+        });
         process.exit(1);
     }
     const allSuccessful = (await Promise.all(configs.map(callback))).every(e => e === 'success');
