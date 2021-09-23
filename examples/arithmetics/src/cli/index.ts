@@ -10,8 +10,8 @@ import colors from 'colors';
 import { URI } from 'vscode-uri';
 import { Command } from 'commander';
 import { Grammar, DefaultDocumentValidator } from 'langium';
-import { createArithmeticsServices } from './language-server/arithmetics-module';
-import { isModule } from './language-server/generated/ast';
+import { createArithmeticsServices } from '../language-server/arithmetics-module';
+import { isModule } from '../language-server/generated/ast';
 import { ArithmeticsInterpreter } from './interpreter';
 
 const program = new Command();
