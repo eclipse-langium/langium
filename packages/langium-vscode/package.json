@@ -25,6 +25,12 @@
         "scopeName": "source.langium",
         "path": "./data/langium.tmLanguage.json"
       }
+    ],
+    "jsonValidation": [
+      {
+        "fileMatch": "langium-config.json",
+        "url": "./data/langium-config-schema.json"
+      }
     ]
   },
   "activationEvents": [
@@ -32,6 +38,8 @@
   ],
   "main": "out/extension.js",
   "scripts": {
+    "prepare": "npm run copy-schema",
+    "copy-schema": "cpy ../langium-cli/langium-config-schema.json ./data",
     "vscode:prepublish": "npm run clean && npm run lint && webpack --mode=production",
     "clean": "rimraf out",
     "build": "webpack",
