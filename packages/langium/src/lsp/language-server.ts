@@ -5,16 +5,18 @@
  ******************************************************************************/
 
 import {
+    AbstractCancellationTokenSource,
     CodeAction,
     CodeActionParams,
     Command,
     CompletionList, Connection,
-    DocumentHighlightParams, DocumentSymbol, DocumentSymbolParams, FoldingRange, FoldingRangeParams, InitializeParams, InitializeResult,
+    DocumentHighlightParams, DocumentSymbol, DocumentSymbolParams, FoldingRange, FoldingRangeParams, InitializeResult,
     Location, LocationLink, ReferenceParams, TextDocumentPositionParams, TextDocumentSyncKind
 } from 'vscode-languageserver/node';
 import { URI } from 'vscode-uri';
 import { LangiumDocument } from '../documents/document';
 import { LangiumServices } from '../services';
+import { OperationCanceled, startCancelableOperation } from '../utils/promise-util';
 
 export function startLanguageServer(services: LangiumServices): void {
     const connection = services.lsp.Connection;
@@ -22,7 +24,7 @@ export function startLanguageServer(services: LangiumServices): void {
         throw new Error('Starting a language server requires the languageServer.Connection service to be set.');
     }
 
-    connection.onInitialize((params: InitializeParams) => {
+    connection.onInitialize(async params => {
         const capabilities = params.capabilities;
         const hasWorkspaceFolderCapability = !!capabilities.workspace?.workspaceFolders;
 
@@ -56,7 +58,7 @@ export function startLanguageServer(services: LangiumServices): void {
             try {
                 // experimental
                 if (params.workspaceFolders)
-                    services.index.IndexManager.initializeWorkspace(params.workspaceFolders);
+                    await services.index.IndexManager.initializeWorkspace(params.workspaceFolders);
             } catch (e) {
                 console.error(e);
             }
@@ -66,8 +68,19 @@ export function startLanguageServer(services: LangiumServices): void {
 
     const documents = services.documents.TextDocuments;
     const documentBuilder = services.documents.DocumentBuilder;
-    documents.onDidChangeContent(change => {
-        documentBuilder.documentChanged(URI.parse(change.document.uri));
+    let changeTokenSource: AbstractCancellationTokenSource;
+    let changePromise: Promise<void> | undefined;
+    documents.onDidChangeContent(async change => {
+        changeTokenSource?.cancel();
+        if (changePromise) {
+            await changePromise;
+        }
+        changeTokenSource = startCancelableOperation();
+        changePromise = documentBuilder.documentChanged(URI.parse(change.document.uri), changeTokenSource.token).catch(err => {
+            if (err !== OperationCanceled) {
+                throw err;
+            }
+        });
     });
     addCompletionHandler(connection, services);
     addFindReferencesHandler(connection, services);

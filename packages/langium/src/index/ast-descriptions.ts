@@ -4,7 +4,9 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import { CancellationToken } from 'vscode-languageserver';
 import { URI } from 'vscode-uri';
+import { interruptAndCheck } from '..';
 import { LangiumDocument } from '../documents/document';
 import { Linker } from '../references/linker';
 import { NameProvider } from '../references/naming';
@@ -30,12 +32,12 @@ export interface ReferenceDescription {
 }
 
 export interface AstNodeDescriptionProvider {
-    createDescription(node: AstNode, name: string, document: LangiumDocument): AstNodeDescription;
-    createDescriptions(document: LangiumDocument): AstNodeDescription[];
+    createDescription(node: AstNode, name: string, document: LangiumDocument, cancelToken?: CancellationToken): AstNodeDescription;
+    createDescriptions(document: LangiumDocument, cancelToken?: CancellationToken): Promise<AstNodeDescription[]>;
 }
 
 export interface ReferenceDescriptionProvider {
-    createDescriptions(document: LangiumDocument): ReferenceDescription[];
+    createDescriptions(document: LangiumDocument, cancelToken?: CancellationToken): Promise<ReferenceDescription[]>;
 }
 
 export class DefaultAstNodeDescriptionProvider implements AstNodeDescriptionProvider {
@@ -58,19 +60,20 @@ export class DefaultAstNodeDescriptionProvider implements AstNodeDescriptionProv
         };
     }
 
-    createDescriptions(document: LangiumDocument): AstNodeDescription[] {
+    async createDescriptions(document: LangiumDocument, cancelToken = CancellationToken.None): Promise<AstNodeDescription[]> {
         const descr: AstNodeDescription[] = [];
-        const rooNode = document.parseResult.value;
-        const name = this.nameProvider.getName(rooNode);
+        const rootNode = document.parseResult.value;
+        const name = this.nameProvider.getName(rootNode);
         if (name) {
-            descr.push(this.createDescription(rooNode, name, document));
+            descr.push(this.createDescription(rootNode, name, document));
         }
-        streamContents(rooNode).forEach(content => {
+        for (const content of streamContents(rootNode)) {
+            await interruptAndCheck(cancelToken);
             const name = this.nameProvider.getName(content.node);
             if (name) {
                 descr.push(this.createDescription(content.node, name, document));
             }
-        });
+        }
         return descr;
     }
 }
@@ -85,7 +88,7 @@ export class DefaultReferenceDescriptionProvider implements ReferenceDescription
         this.nodeLocator = services.index.AstNodeLocator;
     }
 
-    createDescriptions(document: LangiumDocument): ReferenceDescription[] {
+    async createDescriptions(document: LangiumDocument, cancelToken = CancellationToken.None): Promise<ReferenceDescription[]> {
         const descr: ReferenceDescription[] = [];
         const rootNode = document.parseResult.value;
         const refConverter = (refNode: AstNodeReference): ReferenceDescription | undefined => {
@@ -103,14 +106,15 @@ export class DefaultReferenceDescriptionProvider implements ReferenceDescription
                 end: refNode.reference.$refNode.offset + refNode.reference.$refNode.length
             };
         };
-        streamAllContents(rootNode).forEach(astNodeContent => {
+        for (const astNodeContent of streamAllContents(rootNode)) {
+            await interruptAndCheck(cancelToken);
             const astNode = astNodeContent.node;
             streamReferences(astNode).forEach(ref => {
                 const refDescr = refConverter(ref);
                 if (refDescr)
                     descr.push(refDescr);
             });
-        });
+        }
         return descr;
     }
 }

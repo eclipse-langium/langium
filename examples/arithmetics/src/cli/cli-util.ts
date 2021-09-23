@@ -10,7 +10,7 @@ import { AstNode, LangiumDocument, LangiumServices } from 'langium';
 import path from 'path';
 import { URI } from 'vscode-uri';
 
-export function extractDocument<T extends AstNode>(fileName: string, extensions: string[], services: LangiumServices): LangiumDocument<T> {
+export async function extractDocument<T extends AstNode>(fileName: string, extensions: string[], services: LangiumServices): Promise<LangiumDocument<T>> {
     if (!extensions.includes(path.extname(fileName))) {
         console.error(colors.yellow(`Please, choose a file with one of these extensions: ${extensions}.`));
         process.exit(1);
@@ -22,7 +22,7 @@ export function extractDocument<T extends AstNode>(fileName: string, extensions:
     }
 
     const document = services.documents.LangiumDocuments.getOrCreateDocument(URI.file(path.resolve(fileName)));
-    const buildResult = services.documents.DocumentBuilder.build(document);
+    const buildResult = await services.documents.DocumentBuilder.build(document);
 
     const validationErrors = buildResult.diagnostics.filter(e => e.severity === 1);
     if (validationErrors.length > 0) {
@@ -38,6 +38,6 @@ export function extractDocument<T extends AstNode>(fileName: string, extensions:
     return document as LangiumDocument<T>;
 }
 
-export function extractAstNode<T extends AstNode>(fileName: string, extensions: string[], services: LangiumServices): T {
-    return extractDocument<T>(fileName, extensions, services).parseResult?.value;
+export async function extractAstNode<T extends AstNode>(fileName: string, extensions: string[], services: LangiumServices): Promise<T> {
+    return (await extractDocument(fileName, extensions, services)).parseResult.value as T;
 }

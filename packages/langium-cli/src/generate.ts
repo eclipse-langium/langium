@@ -31,9 +31,9 @@ export async function generate(config: LangiumConfig): Promise<GeneratorResult> 
     const absGrammarPath = URI.file(path.resolve(relPath, config.grammar));
     services.documents.LangiumDocuments.invalidateDocument(absGrammarPath);
     const document = services.documents.LangiumDocuments.getOrCreateDocument(absGrammarPath);
-    const buildResult = services.documents.DocumentBuilder.build(document);
+    const buildResult = await services.documents.DocumentBuilder.build(document);
     const diagnostics = buildResult.diagnostics;
-    if (!isGrammar(buildResult.parseResult.value)) {
+    if (!isGrammar(document.parseResult.value)) {
         console.error(getTime() + 'Failed to parse the grammar file: ' + config.grammar);
         return 'failure';
     } else if (diagnostics?.length && diagnostics.some(e => e.severity === 1)) {
@@ -51,7 +51,7 @@ export async function generate(config: LangiumConfig): Promise<GeneratorResult> 
         console.error(`${getTime()}Langium generator ${'failed'.red.bold}.`);
         return 'failure';
     }
-    const grammar = buildResult.parseResult.value;
+    const grammar = document.parseResult.value;
 
     // Create and validate the in-memory parser
     const parserAnalysis = validateParser(grammar, config);

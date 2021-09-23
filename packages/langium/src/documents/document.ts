@@ -7,18 +7,44 @@
 import fs from 'fs';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { TextDocuments } from 'vscode-languageserver/node';
-import { AstNode } from '../syntax-tree';
+import { AstNode, Reference } from '../syntax-tree';
 import { LangiumParser, ParseResult } from '../parser/langium-parser';
 import { AstNodeDescription } from '../references/scope';
-import { LangiumServices, LanguageMetaData, Stream, stream } from '..';
 import { URI } from 'vscode-uri';
+import { Mutable } from '../utils/ast-util';
+import { LanguageMetaData } from '../grammar/language-meta-data';
+import { LangiumServices } from '../services';
+import { stream, Stream } from '../utils/stream';
+
+export enum DocumentState {
+    Changed = 0,
+    Parsed = 1,
+    Indexed = 2,
+    Processed = 3,
+    Validated = 4
+}
+
+// = 'changed' | 'parsed' | 'processed' | 'indexed' | 'validated';
 
 export interface LangiumDocument<T extends AstNode = AstNode> {
     parseResult: ParseResult<T>
     precomputedScopes?: PrecomputedScopes
-    valid: boolean
+    state: DocumentState
     textDocument: TextDocument
     uri: URI
+    references: Reference[]
+}
+
+export function documentFromText<T extends AstNode = AstNode>(textDocument: TextDocument, parseResult: ParseResult<T>): LangiumDocument<T> {
+    const doc = {
+        parseResult,
+        textDocument,
+        uri: URI.parse(textDocument.uri),
+        state: DocumentState.Parsed,
+        references: []
+    };
+    (parseResult.value as Mutable<AstNode>).$document = doc;
+    return doc;
 }
 
 export type PrecomputedScopes = Map<AstNode, AstNodeDescription[]>
@@ -55,15 +81,7 @@ export class DefaultLangiumDocumentFactory implements LangiumDocumentFactory {
     }
 
     fromTextDocument<T extends AstNode = AstNode>(textDocument: TextDocument): LangiumDocument<T> {
-        const doc: LangiumDocument<T> = {
-            valid: true,
-            textDocument,
-            uri: URI.parse(textDocument.uri),
-            parseResult: undefined!
-        };
-        const parseResult = this.parser.parse<T>(doc);
-        doc.parseResult = parseResult;
-        return doc;
+        return documentFromText<T>(textDocument, this.parser.parse(textDocument.getText()));
     }
 }
 
@@ -109,7 +127,7 @@ export class DefaultLangiumDocuments implements LangiumDocuments {
         const uriString = uri.toString();
         const langiumDoc = this.documentMap.get(uriString);
         if (langiumDoc) {
-            langiumDoc.valid = false;
+            langiumDoc.state = DocumentState.Changed;
             this.documentMap.delete(uriString);
         }
     }

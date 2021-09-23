@@ -12,8 +12,8 @@ import { createStatemachineServices } from '../language-server/statemachine-modu
 import { extractAstNode } from './cli-util';
 import { generateCpp } from './generator';
 
-export const generateAction = (fileName: string, opts: GenerateOptions): void => {
-    const statemachine = extractAstNode<Statemachine>(fileName, languageMetaData.fileExtensions, createStatemachineServices());
+export const generateAction = async (fileName: string, opts: GenerateOptions): Promise<void> => {
+    const statemachine = await extractAstNode<Statemachine>(fileName, languageMetaData.fileExtensions, createStatemachineServices());
     const generatedFilePath = generateCpp(statemachine, fileName, opts.destination);
     console.log(colors.green(`C++ code generated successfully: ${generatedFilePath}`));
 };

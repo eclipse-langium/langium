@@ -18,31 +18,31 @@ const completion = expectCompletion(createLangiumGrammarServices(), expectFuncti
 
 describe('Completion Provider', () => {
 
-    test('Finds starting rule', () => {
-        completion({
+    test('Finds starting rule', async () => {
+        await completion({
             text,
             index: 0,
             expectedItems: ['grammar']
         });
     });
 
-    test('Finds grammar keyword inside grammar keyword', () => {
-        completion({
+    test('Finds grammar keyword inside grammar keyword', async () => {
+        await completion({
             text,
             index: 1,
             expectedItems: ['grammar']
         });
     });
 
-    test('Finds hidden keyword', () => {
-        completion({
+    test('Finds hidden keyword', async () => {
+        await completion({
             text,
             index: 2,
             expectedItems: ['hidden', '(']
         });
     });
 
-    test('Does case insensitive prefix matching', () => {
+    test('Does case insensitive prefix matching', async () => {
         const model = `
         grammar g
         Aaaa: name="A";
@@ -50,7 +50,7 @@ describe('Completion Provider', () => {
         Bbbb: name="B";
         C: a=aa<|>aa;`;
         // We expect 'Aaaa' and 'aaaa' but not 'Bbbb'
-        completion({
+        await completion({
             text: model,
             index: 0,
             expectedItems: [

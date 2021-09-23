@@ -12,14 +12,14 @@ import { LangiumServices } from '../services';
 import { AstNode } from '../syntax-tree';
 import { getDocument } from '../utils/ast-util';
 
-export function parseHelper<T extends AstNode = AstNode>(services: LangiumServices): (input: string) => BuildResult<T> {
+export function parseHelper<T extends AstNode = AstNode>(services: LangiumServices): (input: string) => Promise<BuildResult<T>> {
     const metaData = services.LanguageMetaData;
     const documentBuilder = services.documents.DocumentBuilder;
-    return input => {
+    return async input => {
         const randomNumber = Math.floor(Math.random() * 10000000) + 1000000;
         const textDocument = TextDocument.create(`file:/${randomNumber}${metaData.fileExtensions[0]}`, metaData.languageId, 0, input);
         const document = services.documents.LangiumDocumentFactory.fromTextDocument<T>(textDocument);
-        const buildResult = documentBuilder.build(document);
+        const buildResult = await  documentBuilder.build(document);
         return buildResult as BuildResult<T>;
     };
 }
@@ -37,9 +37,9 @@ export interface ExpectedSymbols extends ExpectedBase {
     expectedSymbols: DocumentSymbol[]
 }
 
-export function expectSymbols(services: LangiumServices, expectEqual: ExpectFunction): (input: ExpectedSymbols) => void {
-    return (input) => {
-        const document = parseDocument(services, input.text);
+export function expectSymbols(services: LangiumServices, expectEqual: ExpectFunction): (input: ExpectedSymbols) => Promise<void> {
+    return async input => {
+        const document = await parseDocument(services, input.text);
         const symbolProvider = services.lsp.DocumentSymbolProvider;
         const symbols = symbolProvider.getSymbols(document);
         expectEqual(symbols.length, input.expectedSymbols.length);
@@ -55,10 +55,10 @@ export function expectSymbols(services: LangiumServices, expectEqual: ExpectFunc
     };
 }
 
-export function expectFoldings(services: LangiumServices, expectEqual: ExpectFunction): (input: ExpectedBase) => void {
-    return (input) => {
+export function expectFoldings(services: LangiumServices, expectEqual: ExpectFunction): (input: ExpectedBase) => Promise<void> {
+    return async input => {
         const { output, ranges } = replaceIndices(input);
-        const document = parseDocument(services, output);
+        const document = await parseDocument(services, output);
         const foldingRangeProvider = services.lsp.FoldingRangeProvider;
         const foldings = foldingRangeProvider.getFoldingRanges(document).sort((a, b) => a.startLine - b.startLine);
         expectEqual(foldings.length, ranges.length);
@@ -76,10 +76,10 @@ export interface ExpectedCompletion extends ExpectedBase {
     expectedItems: Array<string | CompletionItem>
 }
 
-export function expectCompletion(services: LangiumServices, expectEqual: ExpectFunction): (completion: ExpectedCompletion) => void {
-    return (expectedCompletion) => {
+export function expectCompletion(services: LangiumServices, expectEqual: ExpectFunction): (completion: ExpectedCompletion) => Promise<void> {
+    return async expectedCompletion => {
         const { output, indices } = replaceIndices(expectedCompletion);
-        const document = parseDocument(services, output);
+        const document = await parseDocument(services, output);
         const completionProvider = services.lsp.completion.CompletionProvider;
         const completions = completionProvider.getCompletion(document.parseResult!.value, indices[expectedCompletion.index]);
         const items = completions.items.sort((a, b) => a.sortText?.localeCompare(b.sortText || '0') || 0);
@@ -101,10 +101,10 @@ export interface ExpectedGoToDefinition extends ExpectedBase {
     rangeIndex: number
 }
 
-export function expectGoToDefinition(services: LangiumServices, expectEqual: ExpectFunction): (expectedGoToDefinition: ExpectedGoToDefinition) => void {
-    return (expectedGoToDefinition) => {
+export function expectGoToDefinition(services: LangiumServices, expectEqual: ExpectFunction): (expectedGoToDefinition: ExpectedGoToDefinition) => Promise<void> {
+    return async expectedGoToDefinition => {
         const { output, indices, ranges } = replaceIndices(expectedGoToDefinition);
-        const document = parseDocument(services, output);
+        const document = await parseDocument(services, output);
         const goToResolver = services.lsp.GoToResolver;
         const position = document.textDocument.positionAt(indices[expectedGoToDefinition.index]);
         const textPos = {
@@ -126,10 +126,10 @@ export interface ExpectedHover extends ExpectedBase {
     hover?: string
 }
 
-export function expectHover(services: LangiumServices, cb: ExpectFunction): (expectedHover: ExpectedHover) => void {
-    return (expectedHover) => {
+export function expectHover(services: LangiumServices, cb: ExpectFunction): (expectedHover: ExpectedHover) => Promise<void> {
+    return async expectedHover => {
         const { output, indices } = replaceIndices(expectedHover);
-        const document = parseDocument(services, output);
+        const document = await parseDocument(services, output);
         const hoverProvider = services.lsp.HoverProvider;
         const position = document.textDocument.positionAt(indices[expectedHover.index]);
         const hover = hoverProvider.getHoverContent(document, {
@@ -148,9 +148,9 @@ function getHoverContent(hover?: Hover): string | undefined {
     return;
 }
 
-export function parseDocument<T extends AstNode = AstNode>(services: LangiumServices, input: string): LangiumDocument<T> {
-    const buildResult = parseHelper<T>(services)(input);
-    const document = getDocument<T>(buildResult.parseResult.value);
+export async function parseDocument<T extends AstNode = AstNode>(services: LangiumServices, input: string): Promise<LangiumDocument<T>> {
+    const buildResult = await parseHelper<T>(services)(input);
+    const document = getDocument<T>(buildResult.document.parseResult.value);
     if (!document.parseResult) {
         throw new Error('Could not parse document');
     }

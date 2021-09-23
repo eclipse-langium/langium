@@ -7,16 +7,16 @@
 import fs from 'fs';
 import path from 'path';
 import { URI } from 'vscode-uri';
-import { WorkspaceFolder } from 'vscode-languageserver';
-import { LangiumDocument, LangiumDocuments } from '../documents/document';
+import { CancellationToken, WorkspaceFolder } from 'vscode-languageserver';
+import { DocumentState, LangiumDocument, LangiumDocuments } from '../documents/document';
 import { LanguageMetaData } from '../grammar/language-meta-data';
 import { AstNodeDescription } from '../references/scope';
 import { LangiumServices } from '../services';
 import { AstNodeDescriptionProvider, ReferenceDescription, ReferenceDescriptionProvider } from './ast-descriptions';
-import { AstNode } from '../syntax-tree';
+import { AstNode, AstReflection } from '../syntax-tree';
 import { stream, Stream } from '../utils/stream';
 import { getDocument } from '../utils/ast-util';
-import { AstReflection } from '..';
+import { interruptAndCheck } from '../utils/promise-util';
 
 export interface IndexManager {
     /**
@@ -27,14 +27,23 @@ export interface IndexManager {
      * @param folders one or more workspace folders to be indexed. Does nothing if
      * the parameter is `null`
      */
-    initializeWorkspace(folders: WorkspaceFolder[] | null): void;
+    initializeWorkspace(folders: WorkspaceFolder[]): Promise<void>;
 
     /**
      * Updates the information about a Document inside the index.
      *
      * @param document document to be updated
+     * @param cancelToken allows to cancel the current operation
+     * @throws `OperationCanceled` if a user action occurs during execution
      */
-    update(document: LangiumDocument): void;
+    update(document: LangiumDocument, cancelToken?: CancellationToken): Promise<void>;
+
+    /**
+     * Returns all documents that could be affected by the specified document.
+     *
+     * @param document The document which may affect other documents.
+     */
+    getAffectedDocuments(document: LangiumDocument): Stream<LangiumDocument>;
 
     /**
      * @param nodeType The `AstNodeDescription.type` to filter with. Normally `AstNodeDescription.type` is equal to `AstNode.$type`
@@ -64,6 +73,8 @@ export class DefaultIndexManager implements IndexManager {
     simpleIndex: Map<string, AstNodeDescription[]> = new Map<string, AstNodeDescription[]>();
     referenceIndex: Map<string, ReferenceDescription[]> = new Map<string, ReferenceDescription[]>();
 
+    protected readonly globalScopeCache = new Map<string, AstNodeDescription[]>();
+
     constructor(services: LangiumServices) {
         this.astReflection = services.AstReflection;
         this.languageMetaData = services.LanguageMetaData;
@@ -86,24 +97,42 @@ export class DefaultIndexManager implements IndexManager {
     }
 
     allElements(nodeType?: string): Stream<AstNodeDescription> {
-        return stream(Array.from(this.simpleIndex.values()).flat().filter(e => nodeType ? this.astReflection.isSubtype(e.type, nodeType) : true));
+        nodeType = nodeType ?? '';
+        if (!this.globalScopeCache.has('')) {
+            this.globalScopeCache.set('', Array.from(this.simpleIndex.values()).flat());
+        }
+
+        const cached = this.globalScopeCache.get(nodeType);
+        if (cached) {
+            return stream(cached);
+        } else {
+            const elements = this.globalScopeCache.get('')!.filter(e => nodeType ? this.astReflection.isSubtype(e.type, nodeType) : true);
+            this.globalScopeCache.set(nodeType, elements);
+            return stream(elements);
+        }
     }
 
-    update(document: LangiumDocument): void {
-        this.processDocuments([document]);
+    update(document: LangiumDocument, cancelToken = CancellationToken.None): Promise<void> {
+        return this.processDocuments([document], cancelToken);
     }
 
-    initializeWorkspace(folders: WorkspaceFolder[] | null): void {
+    getAffectedDocuments(document: LangiumDocument): Stream<LangiumDocument> {
+        return this.langiumDocuments().all.filter(e => this.isAffected(e, document));
+    }
+
+    protected isAffected(document: LangiumDocument, changed: LangiumDocument): boolean {
+        return changed.uri.toString() !== document.uri.toString();
+    }
+
+    async initializeWorkspace(folders: WorkspaceFolder[]): Promise<void> {
         const documents: LangiumDocument[] = [];
         const collector = (document: LangiumDocument) => {documents.push(document);};
-        folders?.forEach((folder) => {
-            this.traverseFolder(URI.parse(folder.uri), this.languageMetaData.fileExtensions, collector);
-        });
-        this.processDocuments(documents);
+        await Promise.all(folders.map(async folder => this.traverseFolder(URI.parse(folder.uri), this.languageMetaData.fileExtensions, collector)));
+        await this.processDocuments(documents);
     }
 
     /* sync access for now */
-    protected traverseFolder(folderPath: URI, fileExt: string[], documentAcceptor: (document: LangiumDocument) => void): void {
+    protected async traverseFolder(folderPath: URI, fileExt: string[], documentAcceptor: (document: LangiumDocument) => void): Promise<void> {
         const fsPath = folderPath.fsPath;
         if (!fs.existsSync(fsPath)) {
             console.error(`File ${folderPath} doesn't exist.`);
@@ -111,11 +140,11 @@ export class DefaultIndexManager implements IndexManager {
         }
         if (this.skip(folderPath))
             return;
-        const subFolders = fs.readdirSync(fsPath, { withFileTypes: true });
+        const subFolders = await fs.promises.readdir(fsPath, { withFileTypes: true });
         for (const dir of subFolders) {
             const uri = URI.file(path.resolve(fsPath, dir.name));
             if (dir.isDirectory()) {
-                this.traverseFolder(uri, fileExt, documentAcceptor);
+                await this.traverseFolder(uri, fileExt, documentAcceptor);
             } else if (fileExt.includes(path.extname(uri.path))) {
                 const document = this.langiumDocuments().getOrCreateDocument(uri);
                 documentAcceptor(document);
@@ -129,18 +158,23 @@ export class DefaultIndexManager implements IndexManager {
             || filePath.path.endsWith('out');
     }
 
-    protected processDocuments(documents: LangiumDocument[]): void {
+    protected async processDocuments(documents: LangiumDocument[], cancelToken = CancellationToken.None): Promise<void> {
+        this.globalScopeCache.clear();
         // first: build exported object data
-        documents.forEach((document) => {
-            const indexData: AstNodeDescription[] = this.astNodeDescriptionProvider().createDescriptions(document);
+        for (const document of documents) {
+            const indexData: AstNodeDescription[] = await this.astNodeDescriptionProvider().createDescriptions(document, cancelToken);
             for (const data of indexData) {
                 data.node = undefined; // clear reference to the AST Node
             }
             this.simpleIndex.set(document.textDocument.uri, indexData);
-        });
+            await interruptAndCheck(cancelToken);
+        }
+        await interruptAndCheck(cancelToken);
         // second: link everything
-        documents.forEach((document) => {
-            this.referenceIndex.set(document.textDocument.uri, this.referenceDescriptionProvider().createDescriptions(document));
-        });
+        for (const document of documents) {
+            this.referenceIndex.set(document.textDocument.uri, await this.referenceDescriptionProvider().createDescriptions(document, cancelToken));
+            await interruptAndCheck(cancelToken);
+            document.state = DocumentState.Indexed;
+        }
     }
 }

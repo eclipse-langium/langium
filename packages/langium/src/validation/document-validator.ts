@@ -5,16 +5,23 @@
  ******************************************************************************/
 
 import { Range } from 'vscode-languageserver-textdocument';
-import { Diagnostic, DiagnosticSeverity } from 'vscode-languageserver/node';
+import { CancellationToken, Diagnostic, DiagnosticSeverity } from 'vscode-languageserver';
 import { LangiumDocument } from '../documents/document';
 import { findNodeForFeature } from '../grammar/grammar-util';
 import { LangiumServices } from '../services';
 import { AstNode } from '../syntax-tree';
 import { resolveAllReferences, streamAllContents } from '../utils/ast-util';
 import { DiagnosticInfo, ValidationAcceptor, ValidationRegistry } from './validation-registry';
+import { interruptAndCheck } from '../utils/promise-util';
 
 export interface DocumentValidator {
-    validateDocument(document: LangiumDocument): Diagnostic[];
+    /**
+     * Validates the whole specified document.
+     * @param document specified document to validate
+     * @param cancelToken allows to cancel the current operation
+     * @throws `OperationCanceled` if a user action occurs during execution
+     */
+    validateDocument(document: LangiumDocument, cancelToken?: CancellationToken): Promise<Diagnostic[]>;
 }
 
 export class DefaultDocumentValidator {
@@ -24,9 +31,11 @@ export class DefaultDocumentValidator {
         this.validationRegistry = services.validation.ValidationRegistry;
     }
 
-    validateDocument(document: LangiumDocument): Diagnostic[] {
+    async validateDocument(document: LangiumDocument, cancelToken = CancellationToken.None): Promise<Diagnostic[]> {
         const parseResult = document.parseResult;
         const diagnostics: Diagnostic[] = [];
+
+        await interruptAndCheck(cancelToken);
 
         // Process lexer errors
         for (const lexerError of parseResult.lexerErrors) {
@@ -56,7 +65,10 @@ export class DefaultDocumentValidator {
         }
 
         // Process unresolved references
-        const resolveResult = resolveAllReferences(parseResult.value);
+        const resolveResult = await resolveAllReferences(parseResult.value, cancelToken);
+
+        await interruptAndCheck(cancelToken);
+
         for (const unresolved of resolveResult.unresolved) {
             const message = `Could not resolve reference to '${unresolved.reference.$refName}'.`;
             const info: DiagnosticInfo<AstNode> = {
@@ -69,25 +81,30 @@ export class DefaultDocumentValidator {
         }
 
         // Process custom validations
-        diagnostics.push(...this.validateAst(parseResult.value, document));
+        diagnostics.push(...await this.validateAst(parseResult.value, document, cancelToken));
+
+        await interruptAndCheck(cancelToken);
 
         return diagnostics;
     }
 
-    protected validateAst(rootNode: AstNode, document: LangiumDocument): Diagnostic[] {
+    protected async validateAst(rootNode: AstNode, document: LangiumDocument, cancelToken = CancellationToken.None): Promise<Diagnostic[]> {
         const validationItems: Diagnostic[] = [];
         const acceptor: ValidationAcceptor = <N extends AstNode>(severity: 'error' | 'warning' | 'info' | 'hint', message: string, info: DiagnosticInfo<N>) => {
             validationItems.push(this.toDiagnostic(severity, message, info, document));
         };
 
-        const runChecks = (node: AstNode) => {
+        const runChecks = async (node: AstNode) => {
             const checks = this.validationRegistry.getChecks(node.$type);
             for (const check of checks) {
-                check(node, acceptor);
+                await check(node, acceptor, cancelToken);
             }
         };
-        runChecks(rootNode);
-        streamAllContents(rootNode).map(c => c.node).forEach(runChecks);
+        await runChecks(rootNode);
+        await Promise.all(streamAllContents(rootNode).map(async c => {
+            await interruptAndCheck(cancelToken);
+            await runChecks(c.node);
+        }));
         return validationItems;
     }
 

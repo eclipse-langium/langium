@@ -4,6 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import { CancellationToken } from 'vscode-jsonrpc';
 import { URI } from 'vscode-uri';
 import { LangiumDocument, PrecomputedScopes } from '../documents/document';
 import { AstNodeDescriptionProvider } from '../index/ast-descriptions';
@@ -11,6 +12,7 @@ import { IndexManager } from '../index/index-manager';
 import { LangiumServices } from '../services';
 import { AstNode, AstReflection } from '../syntax-tree';
 import { getDocument, streamAllContents } from '../utils/ast-util';
+import { interruptAndCheck } from '../utils/promise-util';
 import { EMPTY_STREAM, Stream, stream } from '../utils/stream';
 import { NameProvider } from './naming';
 
@@ -114,7 +116,13 @@ export class DefaultScopeProvider implements ScopeProvider {
 }
 
 export interface ScopeComputation {
-    computeScope(document: LangiumDocument): PrecomputedScopes;
+    /**
+     * Computes the scope for a document
+     * @param document specified document for scope computation
+     * @param cancelToken allows to cancel the current operation
+     * @throws `OperationCanceled` if a user action occurs during execution
+     */
+    computeScope(document: LangiumDocument, cancelToken?: CancellationToken): Promise<PrecomputedScopes>;
 }
 
 export class DefaultScopeComputation implements ScopeComputation {
@@ -126,10 +134,11 @@ export class DefaultScopeComputation implements ScopeComputation {
         this.descriptions = services.index.AstNodeDescriptionProvider;
     }
 
-    computeScope(document: LangiumDocument): PrecomputedScopes {
+    async computeScope(document: LangiumDocument, cancelToken = CancellationToken.None): Promise<PrecomputedScopes> {
         const rootNode = document.parseResult.value;
-        const scopes = new Map();
-        streamAllContents(rootNode).forEach(content => {
+        const scopes = new Map<AstNode, AstNodeDescription[]>();
+        for (const content of streamAllContents(rootNode)) {
+            interruptAndCheck(cancelToken);
             const { node } = content;
             const container = node.$container;
             if (container) {
@@ -139,7 +148,7 @@ export class DefaultScopeComputation implements ScopeComputation {
                     this.addToContainer(description, container, scopes);
                 }
             }
-        });
+        }
         return scopes;
     }
 

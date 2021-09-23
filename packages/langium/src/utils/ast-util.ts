@@ -8,6 +8,8 @@ import { AstNode, CstNode, LeafCstNode, Reference } from '../syntax-tree';
 import { Stream, StreamImpl, DONE_RESULT, TreeStream, TreeStreamImpl, stream } from '../utils/stream';
 import { LangiumDocument } from '../documents/document';
 import { CompositeCstNodeImpl, LeafCstNodeImpl } from '../parser/cst-node-builder';
+import { CancellationToken } from 'vscode-languageserver';
+import { interruptAndCheck } from './promise-util';
 
 export type Mutable<T> = {
     -readonly [P in keyof T]: T[P]
@@ -136,7 +138,7 @@ export function streamReferences(node: AstNode): Stream<AstNodeReference> {
     });
 }
 
-export function resolveAllReferences(node: AstNode): { unresolved: AstNodeReference[] } {
+export async function resolveAllReferences(node: AstNode, cancelToken = CancellationToken.None): Promise<{ unresolved: AstNodeReference[] }> {
     const result: { unresolved: AstNodeReference[] } = {
         unresolved: []
     };
@@ -149,7 +151,10 @@ export function resolveAllReferences(node: AstNode): { unresolved: AstNodeRefere
         });
     };
     process({ node } as AstNodeContent);
-    streamAllContents(node).forEach(process);
+    for (const content of streamAllContents(node)) {
+        await interruptAndCheck(cancelToken);
+        process(content);
+    }
     return result;
 }
 

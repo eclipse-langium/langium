@@ -24,7 +24,7 @@ const foldings = expectFoldings(createLangiumGrammarServices(), expectFunction);
 
 describe('Folding range provider', () => {
 
-    test('Should correctly provide a folding range for the X rule and multiline comment', () => {
-        foldings({ text });
+    test('Should correctly provide a folding range for the X rule and multiline comment', async () => {
+        await foldings({ text });
     });
 });
