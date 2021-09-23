@@ -24,7 +24,7 @@ program
     .option('-d, --destination <dir>', 'destination directory of generating')
     .description('generates a C++ CLI to walk over states')
     .action((fileName: string, opts: GenerateOptions) => {
-        const statemachine = extractAstNode<Statemachine>(fileName, languageMetaData.languageId, languageMetaData.fileExtensions, createStatemachineServices());
+        const statemachine = extractAstNode<Statemachine>(fileName, languageMetaData.fileExtensions, createStatemachineServices());
         const generatedFilePath = generateCpp(statemachine, fileName, opts.destination);
         console.log(colors.green(`C++ code generated successfully: ${generatedFilePath}`));
     });

@@ -24,7 +24,7 @@ program
     .option('-d, --destination <dir>', 'destination directory of generating')
     .description('generates Java classes by Entity description')
     .action((fileName: string, opts: GenerateOptions) => {
-        const domainmodel = extractAstNode<Domainmodel>(fileName, languageMetaData.languageId, languageMetaData.fileExtensions, createDomainModelServices());
+        const domainmodel = extractAstNode<Domainmodel>(fileName, languageMetaData.fileExtensions, createDomainModelServices());
         const generatedDirPath = generateJava(domainmodel, fileName, opts.destination);
         console.log(colors.green(`Java classes generated successfully: ${colors.yellow(generatedDirPath)}`));
     });

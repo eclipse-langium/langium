@@ -8,9 +8,9 @@ import fs from 'fs';
 import colors from 'colors';
 import { AstNode, LangiumDocument, LangiumServices } from 'langium';
 import path from 'path';
-import { createStatemachineServices } from '../language-server/statemachine-module';
+import { URI } from 'vscode-uri';
 
-export function extractDocument(fileName: string, languageId: string, extensions: string[], services: LangiumServices): LangiumDocument {
+export function extractDocument(fileName: string, extensions: string[], services: LangiumServices): LangiumDocument {
     if (!extensions.includes(path.extname(fileName))) {
         console.error(colors.yellow(`Please, choose a file with one of these extensions: ${extensions}.`));
         process.exit(1);
@@ -21,10 +21,9 @@ export function extractDocument(fileName: string, languageId: string, extensions
         process.exit(1);
     }
 
-    const domainModelServices = createStatemachineServices();
-    const document = domainModelServices.documents.LangiumDocuments.getOrCreateDocument(path.resolve(fileName));
-
+    const document = services.documents.LangiumDocuments.getOrCreateDocument(URI.file(path.resolve(fileName)));
     const buildResult = services.documents.DocumentBuilder.build(document);
+
     const validationErrors = buildResult.diagnostics.filter(e => e.severity === 1);
     if (validationErrors.length > 0) {
         console.error(colors.red('There are validation errors:'));
@@ -39,6 +38,6 @@ export function extractDocument(fileName: string, languageId: string, extensions
     return document;
 }
 
-export function extractAstNode<T extends AstNode>(fileName: string, languageId: string, extensions: string[], services: LangiumServices): T {
-    return extractDocument(fileName, languageId, extensions, services).parseResult?.value as T;
+export function extractAstNode<T extends AstNode>(fileName: string, extensions: string[], services: LangiumServices): T {
+    return extractDocument(fileName, extensions, services).parseResult?.value as T;
 }
