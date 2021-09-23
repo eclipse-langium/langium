@@ -10,7 +10,7 @@ import { createArithmeticsServices } from '../language-server/arithmetics-module
 import { Module } from '../language-server/generated/ast';
 import { languageMetaData } from '../language-server/generated/module';
 import { extractDocument } from './cli-util';
-import { ArithmeticsInterpreter } from './interpreter';
+import { interpretEvaluations } from './interpreter';
 
 const program = new Command();
 
@@ -25,7 +25,7 @@ program
     .action((fileName: string) => {
         const document = extractDocument(fileName, languageMetaData.fileExtensions, createArithmeticsServices());
         const module = document.parseResult?.value as Module;
-        for (const [evaluation, value] of new ArithmeticsInterpreter().eval(module)) {
+        for (const [evaluation, value] of interpretEvaluations(module)) {
             const cstNode = evaluation.expression.$cstNode;
             if (cstNode) {
                 const line = document.textDocument.positionAt(cstNode.offset).line + 1;

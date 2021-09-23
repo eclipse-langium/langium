@@ -6,86 +6,94 @@
 
 import { AbstractDefinition, Definition, Evaluation, Expression, isAddition, isDefinition, isDivision, isEvaluation, isFunctionCall, isMultiplication, isNumberLiteral, isSubtraction, Module, Statement } from '../language-server/generated/ast';
 
-export class ArithmeticsInterpreter {
+export function interpretEvaluations(module: Module): Map<Evaluation, number> {
+    const ctx = <InterpreterContext>{
+        module,
+        context: new Map<string, number | Definition>(),
+        result: new Map<Evaluation, number>()
+    };
+    return evaluate(ctx);
+}
+
+interface InterpreterContext {
+    module: Module,
     // variable name --> value
-    private context: Map<string, number | Definition>;
+    context: Map<string, number | Definition>,
     // expression --> value
-    private result = new Map<Evaluation, number>();
+    result: Map<Evaluation, number>
+}
 
-    constructor(context: Map<string, number | Definition> = new Map<string, number | Definition>()) {
-        this.context = context;
+function evaluate(ctx: InterpreterContext): Map<Evaluation, number> {
+    ctx.module.statements.forEach(stmt => evalStatement(ctx, stmt));
+    return ctx.result;
+}
+
+function evalStatement(ctx: InterpreterContext, stmt: Statement): void {
+    if (isDefinition(stmt)) {
+        evalDefinition(ctx, stmt);
+    } else if (isEvaluation(stmt)) {
+        evalEvaluation(ctx, stmt);
+    } else {
+        console.error('Impossible type of Statement.');
     }
+}
 
-    public eval(module: Module): Map<Evaluation, number> {
-        module.statements.forEach(stmt => this.evalStatement(stmt));
-        return this.result;
+function evalDefinition(ctx: InterpreterContext, def: Definition): void {
+    ctx.context.set(def.name, def.args.length > 0 ? def : evalExpression(ctx, def.expr));
+}
+
+function evalEvaluation(ctx: InterpreterContext, evaluation: Evaluation): void {
+    ctx.result.set(evaluation, evalExpression(ctx, evaluation.expression));
+}
+
+function evalExpression(ctx: InterpreterContext, expr: Expression): number {
+    if (isAddition(expr)) {
+        const left = evalExpression(ctx, expr.left);
+        const right = evalExpression(ctx, expr.right);
+        return right !== undefined ? left + right : left;
     }
-
-    private evalStatement(stmt: Statement): void {
-        if (isDefinition(stmt)) {
-            this.evalDefinition(stmt);
-        } else if (isEvaluation(stmt)) {
-            this.evalEvaluation(stmt);
-        }
+    if (isSubtraction(expr)) {
+        const left = evalExpression(ctx, expr.left);
+        const right = evalExpression(ctx, expr.right);
+        return right !== undefined ? left - right : left;
     }
-
-    private evalDefinition(def: Definition): void {
-        this.context.set(def.name, def.args.length > 0 ? def : this.evalExpression(def.expr));
+    if (isMultiplication(expr)) {
+        const left = evalExpression(ctx, expr.left);
+        const right = evalExpression(ctx, expr.right);
+        return right !== undefined ? left * right : left;
     }
-
-    private evalEvaluation(evaluation: Evaluation): void {
-        this.result.set(evaluation, this.evalExpression(evaluation.expression));
+    if (isDivision(expr)) {
+        const left = evalExpression(ctx, expr.left);
+        const right = evalExpression(ctx, expr.right);
+        return right ? left / right : left;
     }
+    if (isNumberLiteral(expr)) {
+        return +expr.value;
+    }
+    if (isFunctionCall(expr)) {
+        const valueOrDef = ctx.context.get((expr.func.ref as AbstractDefinition).name) as number | Definition;
+        if (!isDefinition(valueOrDef)) {
+            return valueOrDef;
+        }
+        if (valueOrDef.args.length !== expr.args.length) {
+            console.error('Function definition and its call have different number of arguments: ' + valueOrDef.name);
+            process.exit(1);
+        }
 
-    public evalExpression(expr: Expression): number {
-        if (isAddition(expr)) {
-            const left = this.evalExpression(expr.left);
-            const right = this.evalExpression(expr.right);
-            return right !== undefined ? left + right : left;
+        const backupContext = new Map<string, number | Definition>();
+        for (let i = 0; i < valueOrDef.args.length; i += 1) {
+            backupContext.set(valueOrDef.args[i].name, evalExpression(ctx, expr.args[i]));
         }
-        if (isSubtraction(expr)) {
-            const left = this.evalExpression(expr.left);
-            const right = this.evalExpression(expr.right);
-            return right !== undefined ? left - right : left;
-        }
-        if (isMultiplication(expr)) {
-            const left = this.evalExpression(expr.left);
-            const right = this.evalExpression(expr.right);
-            return right !== undefined ? left * right : left;
-        }
-        if (isDivision(expr)) {
-            const left = this.evalExpression(expr.left);
-            const right = this.evalExpression(expr.right);
-            return right ? left / right : left;
-        }
-        if (isNumberLiteral(expr)) {
-            return +expr.value;
-        }
-        if (isFunctionCall(expr)) {
-            const valueOrDef = this.context.get((expr.func.ref as AbstractDefinition).name) as number | Definition;
-            if (!isDefinition(valueOrDef)) {
-                return valueOrDef;
+        for (const [variable, value] of ctx.context) {
+            if (!backupContext.has(variable)) {
+                backupContext.set(variable, value);
             }
-            if (valueOrDef.args.length !== expr.args.length) {
-                console.error('Function definition and its call have different number of arguments: ' + valueOrDef.name);
-                process.exit(1);
-            }
-
-            const backupContext = new Map<string, number | Definition>();
-            for (let i = 0; i < valueOrDef.args.length; i += 1) {
-                backupContext.set(valueOrDef.args[i].name, this.evalExpression(expr.args[i]));
-            }
-            for (const [variable, value] of this.context) {
-                if (!backupContext.has(variable)) {
-                    backupContext.set(variable, value);
-                }
-            }
-            const funcCallRes = this.evalExpression(valueOrDef.expr);
-            this.context = backupContext;
-            return funcCallRes;
         }
-
-        console.error('Impossible type of Expression.');
-        process.exit(1);
+        const funcCallRes = evalExpression(ctx, valueOrDef.expr);
+        ctx.context = backupContext;
+        return funcCallRes;
     }
+
+    console.error('Impossible type of Expression.');
+    process.exit(1);
 }
