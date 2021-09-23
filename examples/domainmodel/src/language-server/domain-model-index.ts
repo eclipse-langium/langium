@@ -4,7 +4,8 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { AstNodeDescription, DefaultAstNodeDescriptionProvider, LangiumDocument, LangiumServices, streamAllContents } from 'langium';
+import { AstNodeDescription, DefaultAstNodeDescriptionProvider, interruptAndCheck, LangiumDocument, LangiumServices, streamAllContents } from 'langium';
+import { CancellationToken } from 'vscode-languageserver';
 import { DomainModelNameProvider } from './domain-model-naming';
 import { isPackageDeclaration, isType, PackageDeclaration } from './generated/ast';
 
@@ -17,9 +18,10 @@ export class DomainModelDescriptionProvider extends DefaultAstNodeDescriptionPro
     /**
      * Exports only types (`DataType or `Entity`) with their qualified names.
      */
-    createDescriptions(document: LangiumDocument): AstNodeDescription[] {
+    async createDescriptions(document: LangiumDocument, cancelToken = CancellationToken.None): Promise<AstNodeDescription[]> {
         const descr: AstNodeDescription[] = [];
-        streamAllContents(document.parseResult.value).forEach(content => {
+        for (const content of streamAllContents(document.parseResult.value)) {
+            await interruptAndCheck(cancelToken);
             const modelNode = content.node;
             if (isType(modelNode)) {
                 let name = this.nameProvider.getName(modelNode);
@@ -30,7 +32,7 @@ export class DomainModelDescriptionProvider extends DefaultAstNodeDescriptionPro
                     descr.push(this.createDescription(modelNode, name, document));
                 }
             }
-        });
+        }
         return descr;
     }
 }

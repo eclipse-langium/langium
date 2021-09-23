@@ -4,14 +4,14 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { URI } from 'vscode-uri';
-import { LangiumDocument } from '../documents/document';
+import { documentFromText, PrecomputedScopes } from '../documents/document';
 import * as ast from '../grammar/generated/ast';
 import { CompositeCstNodeImpl } from '../parser/cst-node-builder';
+import { AstNodeDescription } from '../references/scope';
+import { LangiumServices } from '../services';
 import { AstNode, CstNode } from '../syntax-tree';
-import { getContainerOfType, Mutable, streamAllContents } from '../utils/ast-util';
+import { getContainerOfType, getDocument, Mutable, streamAllContents } from '../utils/ast-util';
 import { createLangiumGrammarServices } from './langium-grammar-module';
 
 type FeatureValue = {
@@ -261,18 +261,36 @@ export function loadGrammar(json: string): ast.Grammar {
         throw new Error('Could not load grammar from specified json input.');
     }
     const grammar = astNode as Mutable<ast.Grammar>;
-    const textDocument = TextDocument.create('', 'langium', 0, '');
-    const document: LangiumDocument = {
-        valid: true,
-        textDocument,
-        uri: URI.from({ scheme: 'memory', path: 'grammar.langium' }),
-        parseResult: {
-            lexerErrors: [],
-            parserErrors: [],
-            value: grammar
-        }
-    };
+    const textDocument = TextDocument.create('memory://grammar.langium', 'langium', 0, '');
+    const document = documentFromText(textDocument, {
+        lexerErrors: [],
+        parserErrors: [],
+        value: grammar
+    });
     grammar.$document = document;
-    document.precomputedScopes = services.references.ScopeComputation.computeScope(document);
+    document.precomputedScopes = computeGrammarScope(services, grammar);
     return grammar;
+}
+
+export function computeGrammarScope(services: LangiumServices, grammar: ast.Grammar): PrecomputedScopes {
+    const nameProvider = services.references.NameProvider;
+    const descriptions = services.index.AstNodeDescriptionProvider;
+    const document = getDocument(grammar);
+    const scopes = new Map<AstNode, AstNodeDescription[]>();
+    for (const content of streamAllContents(grammar)) {
+        const { node } = content;
+        const container = node.$container;
+        if (container) {
+            const name = nameProvider.getName(node);
+            if (name) {
+                const description = descriptions.createDescription(node, name, document);
+                if (scopes.has(container)) {
+                    scopes.get(container)?.push(description);
+                } else {
+                    scopes.set(container, [description]);
+                }
+            }
+        }
+    }
+    return scopes;
 }

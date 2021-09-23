@@ -4,7 +4,8 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { AstNodeDescription, DefaultScopeComputation, LangiumDocument, LangiumServices, PrecomputedScopes } from 'langium';
+import { AstNodeDescription, DefaultScopeComputation, interruptAndCheck, LangiumDocument, LangiumServices, PrecomputedScopes } from 'langium';
+import { CancellationToken } from 'vscode-jsonrpc';
 import { DomainModelNameProvider } from './domain-model-naming';
 import { Domainmodel, isType, PackageDeclaration, isPackageDeclaration } from './generated/ast';
 
@@ -14,21 +15,22 @@ export class DomainModelScopeComputation extends DefaultScopeComputation {
         super(services);
     }
 
-    computeScope(document: LangiumDocument): PrecomputedScopes {
+    async computeScope(document: LangiumDocument, cancelToken = CancellationToken.None): Promise<PrecomputedScopes> {
         const model = document.parseResult.value as Domainmodel;
         const scopes = new Map();
-        this.processContainer(model, scopes, document);
+        await this.processContainer(model, scopes, document, cancelToken);
         return scopes;
     }
 
-    protected processContainer(container: Domainmodel | PackageDeclaration, scopes: PrecomputedScopes, document: LangiumDocument): AstNodeDescription[] {
+    protected async processContainer(container: Domainmodel | PackageDeclaration, scopes: PrecomputedScopes, document: LangiumDocument, cancelToken: CancellationToken): Promise<AstNodeDescription[]> {
         const localDescriptions: AstNodeDescription[] = [];
         for (const element of container.elements) {
+            interruptAndCheck(cancelToken);
             if (isType(element)) {
                 const description = this.descriptions.createDescription(element, element.name, document);
                 localDescriptions.push(description);
             } else if (isPackageDeclaration(element)) {
-                const nestedDescriptions = this.processContainer(element, scopes, document);
+                const nestedDescriptions = await this.processContainer(element, scopes, document, cancelToken);
                 for (const description of nestedDescriptions) {
                     // Add qualified names to the container
                     const qualified = this.createQualifiedDescription(element, description, document);

@@ -24,32 +24,32 @@ const gotoDefinition = expectGoToDefinition(createLangiumGrammarServices(), expe
 
 describe('GoToResolver', () => {
 
-    test('Must find SL_COMMENT inside of array of cross references', () => {
-        gotoDefinition({
+    test('Must find SL_COMMENT inside of array of cross references', async () => {
+        await gotoDefinition({
             text,
             index: 0,
             rangeIndex: 0
         });
     });
 
-    test('Entity must find itself when referenced from start of other location', () => {
-        gotoDefinition({
+    test('Entity must find itself when referenced from start of other location', async () => {
+        await gotoDefinition({
             text,
             index: 1,
             rangeIndex: 1
         });
     });
 
-    test('Entity must find itself when referenced from within other location', () => {
-        gotoDefinition({
+    test('Entity must find itself when referenced from within other location', async () => {
+        await gotoDefinition({
             text,
             index: 2,
             rangeIndex: 1
         });
     });
 
-    test('Entity must find itself when referenced from source location', () => {
-        gotoDefinition({
+    test('Entity must find itself when referenced from source location', async () => {
+        await gotoDefinition({
             text,
             index: 3,
             rangeIndex: 1

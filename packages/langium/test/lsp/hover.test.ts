@@ -21,16 +21,16 @@ const hover = expectHover(createLangiumGrammarServices(), expectFunction);
 
 describe('Hover', () => {
 
-    test('Hovering over X definition shows the comment hovering', () => {
-        hover({
+    test('Hovering over X definition shows the comment hovering', async () => {
+        await hover({
             text,
             index: 0,
             hover: "Hi I am Rule 'X'"
         });
     });
 
-    test('Hovering over X reference shows the comment hovering', () => {
-        hover({
+    test('Hovering over X reference shows the comment hovering', async () => {
+        await hover({
             text,
             index: 1,
             hover: "Hi I am Rule 'X'"

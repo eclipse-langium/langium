@@ -4,7 +4,22 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import { createArithmeticsServices } from '../language-server/arithmetics-module';
 import { AbstractDefinition, Definition, Evaluation, Expression, isAddition, isDefinition, isDivision, isEvaluation, isFunctionCall, isMultiplication, isNumberLiteral, isSubtraction, Module, Statement } from '../language-server/generated/ast';
+import { languageMetaData } from '../language-server/generated/module';
+import { extractDocument } from './cli-util';
+
+export const evalAction = async (fileName: string): Promise<void> => {
+    const document = await extractDocument<Module>(fileName, languageMetaData.fileExtensions, createArithmeticsServices());
+    const module = document.parseResult.value;
+    for (const [evaluation, value] of interpretEvaluations(module)) {
+        const cstNode = evaluation.expression.$cstNode;
+        if (cstNode) {
+            const line = document.textDocument.positionAt(cstNode.offset).line + 1;
+            console.log(`line ${line}:`, cstNode.text.green, '===>', value);
+        }
+    }
+};
 
 export function interpretEvaluations(module: Module): Map<Evaluation, number> {
     const ctx = <InterpreterContext>{

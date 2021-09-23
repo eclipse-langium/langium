@@ -19,8 +19,8 @@ const symbols = expectSymbols(createLangiumGrammarServices(), expectFunction);
 
 describe('Document symbols', () => {
 
-    test('Should show all document symbols', () => {
-        symbols({
+    test('Should show all document symbols', async () => {
+        await symbols({
             text,
             expectedSymbols: [
                 {

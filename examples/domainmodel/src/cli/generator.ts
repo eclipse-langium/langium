@@ -8,7 +8,24 @@ import fs from 'fs';
 import _ from 'lodash';
 import { CompositeGeneratorNode, IndentNode, NL, processGeneratorNode } from 'langium';
 import { AbstractElement, Domainmodel, Entity, Feature, isEntity, isPackageDeclaration, Type } from '../language-server/generated/ast';
+import { extractAstNode, setRootFolder } from './cli-util';
+import { createDomainModelServices } from '../language-server/domain-model-module';
+import { languageMetaData } from '../language-server/generated/module';
+import colors from 'colors';
 import path from 'path';
+
+export const generateAction = async (fileName: string, opts: GenerateOptions): Promise<void> => {
+    const services = createDomainModelServices();
+    await setRootFolder(fileName, services, opts.root);
+    const domainmodel = await extractAstNode<Domainmodel>(fileName, languageMetaData.fileExtensions, services);
+    const generatedDirPath = generateJava(domainmodel, fileName, opts.destination);
+    console.log(colors.green(`Java classes generated successfully: ${colors.yellow(generatedDirPath)}`));
+};
+
+export type GenerateOptions = {
+    destination?: string;
+    root?: string;
+}
 
 export function generateJava(domainmodel: Domainmodel, fileName: string, destination?: string): string {
     fileName = fileName.replace(/\..*$/, '').replace(/[.-]/g, '');

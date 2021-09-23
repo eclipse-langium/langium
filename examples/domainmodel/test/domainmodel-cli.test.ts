@@ -8,7 +8,7 @@ import path from 'path';
 import fs from 'fs';
 import { exec, ExecException } from 'child_process';
 import 'jest-expect-message';
-import { generateAction } from '../src/cli/index';
+import { generateAction } from '../src/cli/generator';
 
 describe('Test the domainmodel CLI', () => {
     let fullPath: string;
@@ -35,8 +35,8 @@ describe('Test the domainmodel CLI', () => {
         expect(barDirContent.includes('E2.java')).toBe(true);
     }
 
-    test('Test action without CLI', () => {
-        generateAction(rawfileName, { destination });
+    test('Test action without CLI', async () => {
+        await generateAction(rawfileName, { destination });
         commonExpectations();
     });
 

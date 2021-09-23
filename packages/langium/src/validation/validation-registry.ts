@@ -4,9 +4,10 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { CodeDescription, DiagnosticRelatedInformation, DiagnosticTag, integer, Range } from 'vscode-languageserver/node';
+import { CancellationToken, CodeDescription, DiagnosticRelatedInformation, DiagnosticTag, integer, Range } from 'vscode-languageserver';
 import { LangiumServices } from '../services';
 import { AstNode, AstReflection, Properties } from '../syntax-tree';
+import { MaybePromise } from '../utils/promise-util';
 
 export type DiagnosticInfo<N extends AstNode> = {
     /** The AST node to which the diagnostic is attached. */
@@ -32,7 +33,7 @@ export type DiagnosticInfo<N extends AstNode> = {
 export type ValidationAcceptor = <N extends AstNode>(severity: 'error' | 'warning' | 'info' | 'hint', message: string, info: DiagnosticInfo<N>) => void
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type ValidationCheck = (node: any, accept: ValidationAcceptor) => void;
+export type ValidationCheck = (node: any, accept: ValidationAcceptor, cancelToken: CancellationToken) => MaybePromise<void>;
 
 export class ValidationRegistry {
     private readonly validationChecks = new Map<string, ValidationCheck[]>();
@@ -55,9 +56,9 @@ export class ValidationRegistry {
     }
 
     protected wrapValidationException(check: ValidationCheck, thisObj: unknown): ValidationCheck {
-        return (node, accept) => {
+        return (node, accept, cancelToken) => {
             try {
-                check.call(thisObj, node, accept);
+                check.call(thisObj, node, accept, cancelToken);
             } catch (e) {
                 console.error('An exception occured executing a validation.', e);
             }

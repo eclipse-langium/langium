@@ -6,7 +6,7 @@
         "<rootDir>/examples/domainmodel/test",
         "<rootDir>/examples/statemachine/test"
     ],
-    "collectCoverageFrom": ["src/**/{!(generated),}/*"],
+    "collectCoverageFrom": ["packages/langium/src/**/{!(generated),}/*"],
     "testEnvironment": "node",
     "setupFilesAfterEnv": ["jest-expect-message"]
 }

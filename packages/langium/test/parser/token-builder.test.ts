@@ -6,26 +6,31 @@
 
 import { TokenType } from '@chevrotain/types';
 import { createLangiumGrammarServices, Grammar } from '../../src';
-import {  parseHelper } from '../../src/test';
+import { parseHelper } from '../../src/test';
 
 const services = createLangiumGrammarServices();
 const tokenBuilder = services.parser.TokenBuilder;
 
-const text = `
-grammar test
-
-Main: {Main} 'A' 'AB' 'ABC';
-terminal AB: /ABD?/;
-`;
-const grammar = parseHelper<Grammar>(services)(text).parseResult.value;
-
-const tokens = tokenBuilder.buildTokens(grammar);
-const aToken = tokens[2]; // 'A' keyword
-const abToken = tokens[1]; // 'AB' keyword
-const abcToken = tokens[0]; // 'ABC' keyword
-const abTerminalToken = tokens[3]; // 'AB' terminal
+let aToken: TokenType; // 'A' keyword
+let abToken: TokenType; // 'AB' keyword
+let abcToken: TokenType; // 'ABC' keyword
+let abTerminalToken: TokenType; // 'AB' terminal
 
 describe('tokenBuilder#longerAlts', () => {
+
+    beforeAll(async () => {
+        const text = `
+        grammar test
+        Main: {Main} 'A' 'AB' 'ABC';
+        terminal AB: /ABD?/;
+        `;
+        const grammar = (await parseHelper<Grammar>(services)(text)).document.parseResult.value;
+        const tokens = tokenBuilder.buildTokens(grammar);
+        aToken = tokens[2];
+        abToken = tokens[1];
+        abcToken = tokens[0];
+        abTerminalToken = tokens[3];
+    });
 
     test('should create longer alts for keywords # 1', () => {
         expect(Array.isArray(aToken.LONGER_ALT)).toBeTruthy();
