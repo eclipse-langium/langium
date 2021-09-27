@@ -24,6 +24,7 @@ export * from './lsp/language-server';
 export * from './validation/document-validator';
 export * from './validation/validation-registry';
 export * from './parser/langium-parser';
+export * from './parser/parser-config';
 export * from './references/linker';
 export * from './references/naming';
 export * from './references/scope';
