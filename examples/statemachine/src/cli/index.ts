@@ -12,25 +12,29 @@ import { createStatemachineServices } from '../language-server/statemachine-modu
 import { extractAstNode } from './cli-util';
 import { generateCpp } from './generator';
 
-const program = new Command();
-
-program
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    .version(require('../../package.json').version);
-
-program
-    .command('generate')
-    .argument('<file>', `possible file extensions: ${languageMetaData.fileExtensions.join(', ')}`)
-    .option('-d, --destination <dir>', 'destination directory of generating')
-    .description('generates a C++ CLI to walk over states')
-    .action((fileName: string, opts: GenerateOptions) => {
-        const statemachine = extractAstNode<Statemachine>(fileName, languageMetaData.fileExtensions, createStatemachineServices());
-        const generatedFilePath = generateCpp(statemachine, fileName, opts.destination);
-        console.log(colors.green(`C++ code generated successfully: ${generatedFilePath}`));
-    });
-
-program.parse(process.argv);
+export const generateAction = (fileName: string, opts: GenerateOptions): void => {
+    const statemachine = extractAstNode<Statemachine>(fileName, languageMetaData.fileExtensions, createStatemachineServices());
+    const generatedFilePath = generateCpp(statemachine, fileName, opts.destination);
+    console.log(colors.green(`C++ code generated successfully: ${generatedFilePath}`));
+};
 
 export type GenerateOptions = {
     destination?: string;
+}
+
+export default function(): void {
+    const program = new Command();
+
+    program
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        .version(require('../../package.json').version);
+
+    program
+        .command('generate')
+        .argument('<file>', `possible file extensions: ${languageMetaData.fileExtensions.join(', ')}`)
+        .option('-d, --destination <dir>', 'destination directory of generating')
+        .description('generates a C++ CLI to walk over states')
+        .action(generateAction);
+
+    program.parse(process.argv);
 }

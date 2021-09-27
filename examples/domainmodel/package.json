@@ -40,8 +40,7 @@
         "build": "tsc",
         "watch": "tsc -watch",
         "lint": "eslint src --ext ts",
-        "langium:generate": "langium generate",
-        "test": "jest --coverage --config=../../jest.config.json"
+        "langium:generate": "langium generate"
     },
     "dependencies": {
         "colors": "^1.4.0",

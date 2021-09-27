@@ -10,19 +10,21 @@
     "build": "tsc -b tsconfig.build.json",
     "watch": "tsc -b tsconfig.build.json -w",
     "lint": "npm run lint --workspaces",
-    "test": "npm run test --workspace=langium  --workspace=domainmodel",
+    "test": "jest --coverage",
     "langium:generate": "npm run langium:generate --workspace=langium --workspace=domainmodel --workspace=arithmetics --workspace=statemachine",
     "prepare": "npm run clean && npm run build",
     "dev-build": "npm run dev-clean && npm install && npm link ./packages/langium && npm link ./packages/langium-cli && npm link ./packages/generator-langium",
     "dev-clean": "rimraf ./packages/**/node_modules && npm uninstall -g langium-workspaces langium-cli generator-langium langium && npm unlink langium-workspaces langium-cli generator-langium langium"
   },
   "devDependencies": {
+    "@types/jest-expect-message": "^1.0.3",
     "@typescript-eslint/eslint-plugin": "^4.22.1",
+    "cpy-cli": "^3.1.1",
     "eslint": "^7.25.0",
     "eslint-plugin-header": "^3.1.1",
     "jest": "^26.6.3",
+    "jest-expect-message": "^1.0.2",
     "rimraf": "^3.0.2",
-    "cpy-cli": "^3.1.1",
     "ts-jest": "^26.5.2"
   },
   "workspaces": [

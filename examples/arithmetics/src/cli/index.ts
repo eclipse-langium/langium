@@ -12,26 +12,30 @@ import { languageMetaData } from '../language-server/generated/module';
 import { extractDocument } from './cli-util';
 import { interpretEvaluations } from './interpreter';
 
-const program = new Command();
-
-program
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    .version(require('../../package.json').version);
-
-program
-    .command('eval')
-    .argument('<file>', `possible file extensions: ${languageMetaData.fileExtensions.join(', ')}`)
-    .description('calculates Evaluations in the source file')
-    .action((fileName: string) => {
-        const document = extractDocument(fileName, languageMetaData.fileExtensions, createArithmeticsServices());
-        const module = document.parseResult?.value as Module;
-        for (const [evaluation, value] of interpretEvaluations(module)) {
-            const cstNode = evaluation.expression.$cstNode;
-            if (cstNode) {
-                const line = document.textDocument.positionAt(cstNode.offset).line + 1;
-                console.log(`line ${line}:`, colors.green(cstNode.text), '===>', value);
-            }
+export const evalAction = (fileName: string): void => {
+    const document = extractDocument(fileName, languageMetaData.fileExtensions, createArithmeticsServices());
+    const module = document.parseResult?.value as Module;
+    for (const [evaluation, value] of interpretEvaluations(module)) {
+        const cstNode = evaluation.expression.$cstNode;
+        if (cstNode) {
+            const line = document.textDocument.positionAt(cstNode.offset).line + 1;
+            console.log(`line ${line}:`, colors.green(cstNode.text), '===>', value);
         }
-    });
+    }
+};
 
-program.parse(process.argv);
+export default function(): void {
+    const program = new Command();
+
+    program
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        .version(require('../../package.json').version);
+
+    program
+        .command('eval')
+        .argument('<file>', `possible file extensions: ${languageMetaData.fileExtensions.join(', ')}`)
+        .description('calculates Evaluations in the source file')
+        .action(evalAction);
+
+    program.parse(process.argv);
+}

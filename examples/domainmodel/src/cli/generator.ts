@@ -10,36 +10,36 @@ import { CompositeGeneratorNode, IndentNode, NL, processGeneratorNode } from 'la
 import { AbstractElement, Domainmodel, Entity, Feature, isEntity, isPackageDeclaration, Type } from '../language-server/generated/ast';
 import path from 'path';
 
-export function generateJava(domainmodel: Domainmodel, fileName: string, destination = '.'): string {
+export function generateJava(domainmodel: Domainmodel, fileName: string, destination?: string): string {
     fileName = fileName.replace(/\..*$/, '').replace(/[.-]/g, '');
-    const filePath = `${path.dirname(fileName)}/generated/${path.basename(fileName)}`;
+    const filePath = path.basename(fileName);
 
-    generateAbstractElements(destination, domainmodel.elements, filePath);
-    return `${destination}/${filePath}/`;
+    return generateAbstractElements(destination ?? `./${path.dirname(fileName)}/generated`, domainmodel.elements, filePath);
 }
 
-function generateAbstractElements(destination: string, elements: Array<AbstractElement | Type>, path: string): void {
+function generateAbstractElements(destination: string, elements: Array<AbstractElement | Type>, filePath: string): string {
 
-    function generateAbstractElementsInternal(elements: Array<AbstractElement | Type>, path: string) {
-        const fullPath = `${destination}/${path}`;
+    function generateAbstractElementsInternal(elements: Array<AbstractElement | Type>, filePath: string): string {
+        const fullPath = path.join(destination, filePath);
         if (!fs.existsSync(fullPath)) {
             fs.mkdirSync(fullPath, { recursive: true });
         }
 
-        const packagePath = path.replace(/\//g, '.').replace(/^\.+/, '');
+        const packagePath = filePath.replace(/\//g, '.').replace(/^\.+/, '');
         for (const elem of elements) {
             if (isPackageDeclaration(elem)) {
-                generateAbstractElementsInternal(elem.elements, `${path}/${elem.name.replace(/\./g, '/')}`);
+                generateAbstractElementsInternal(elem.elements, path.join(filePath, elem.name.replace(/\./g, '/')));
             } else if (isEntity(elem)) {
                 const fileNode = new CompositeGeneratorNode();
                 fileNode.append(`package ${packagePath};`, NL, NL);
                 generateEntity(elem, fileNode);
-                fs.writeFileSync(`${fullPath}/${elem.name}.java`, processGeneratorNode(fileNode));
+                fs.writeFileSync(path.join(fullPath, `${elem.name}.java`), processGeneratorNode(fileNode));
             }
         }
+        return fullPath;
     }
 
-    generateAbstractElementsInternal(elements, path);
+    return generateAbstractElementsInternal(elements, filePath);
 }
 
 function generateEntity(entity: Entity, fileNode: CompositeGeneratorNode): void {
