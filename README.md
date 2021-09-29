@@ -1,13 +1,27 @@
-# Langium
-[![npm](https://img.shields.io/npm/v/langium)](https://www.npmjs.com/package/langium)
-[![Build](https://github.com/langium/langium/actions/workflows/build.yml/badge.svg)](https://github.com/langium/langium/actions/workflows/build.yml)
-[![Gitpod Ready-to-Code](https://img.shields.io/badge/Gitpod-ready--to--code-blue?logo=gitpod)](https://gitpod.io/#https://github.com/langium/langium)
+<div id="langium-logo" align="center">
+    <a href="https://github.com/langium/langium">
+		<img alt="Langium Logo" width="800" src="https://user-images.githubusercontent.com/4377073/135283991-90ef7724-649d-440a-8720-df13c23bda82.png">
+	</a>
+    <h3>
+        Next-gen language engineering framework 
+    </h3>
+</div>
+
+<div id="badges" align="center">
+
+  [![npm](https://img.shields.io/npm/v/langium)](https://www.npmjs.com/package/langium)
+  [![Build](https://github.com/langium/langium/actions/workflows/build.yml/badge.svg)](https://github.com/langium/langium/actions/workflows/build.yml)
+  [![Gitpod Ready-to-Code](https://img.shields.io/badge/Gitpod-ready--to--code-blue?logo=gitpod)](https://gitpod.io/#https://github.com/langium/langium)
+
+</div>
+
+<hr>
 
 Langium is a language engineering tool with built-in support for the [Language Server Protocol](https://microsoft.github.io/language-server-protocol/). Here are some key facts:
 
  * Simple and direct integration with the [VS Code extension API](https://code.visualstudio.com/api/language-extensions/overview)
  * Implemented in [TypeScript](https://www.typescriptlang.org/), runs in [NodeJS](https://nodejs.org/)
- * Generates a parser and abstract syntax tree from a grammar declaration
+ * Generates an abstract syntax tree from a grammar declaration
  * The parser is based on [Chevrotain](https://chevrotain.io/)
  * Grammar declaration language similar to [Xtext](https://www.eclipse.org/Xtext/documentation/301_grammarlanguage.html)
  * High out-of-the-box functionality, high extensibility
