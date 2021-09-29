@@ -60,10 +60,6 @@
                             "description": "Enable computation of CST nodes location",
                             "type": "string"
                         },
-                        "errorMessageProvider": {
-                            "description": "A custom error message provider",
-                            "type": "object"
-                        },
                         "traceInitPerf": {
                             "description": "A flag to print performance tracing logs during parser initialization",
                             "type": ["boolean", "number"]
