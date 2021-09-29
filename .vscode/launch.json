@@ -80,16 +80,6 @@
 			]
 		},
 		{
-			"name": "Run Hello World Extension",
-			"type": "extensionHost",
-			"request": "launch",
-            "runtimeExecutable": "${execPath}",
-			"args": [
-				"${workspaceFolder}/examples/hello-world/example",
-				"--extensionDevelopmentPath=${workspaceFolder}/examples/hello-world"
-			]
-		},
-		{
 			"name": "Extension Tests",
 			"type": "extensionHost",
 			"request": "launch",

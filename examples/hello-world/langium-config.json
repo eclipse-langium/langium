@@ -1,9 +1,0 @@
-{
-    "languageId": "hello-world",
-    "grammar": "src/language-server/hello-world.langium",
-    "fileExtensions": [".hello"],
-    "out": "src/language-server/generated",
-    "textMate": {
-        "out": "./syntaxes/hello-world.tmLanguage.json"
-    }   
-}
