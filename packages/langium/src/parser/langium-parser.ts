@@ -32,7 +32,7 @@ export class LangiumParser {
     private readonly lexer: Lexer;
     private readonly nodeBuilder = new CstNodeBuilder();
     private readonly wrapper: ChevrotainWrapper;
-    private readonly config: IParserConfig;
+    private readonly config: IParserConfig | undefined;
     private stack: any[] = [];
     private mainRule!: RuleResult;
 
@@ -305,8 +305,12 @@ class ChevrotainWrapper extends EmbeddedActionsParser {
 
     private analysed = false;
 
-    constructor(tokens: TokenType[], config: IParserConfig) {
-        super(tokens, config);
+    constructor(tokens: TokenType[], config?: IParserConfig) {
+        super(tokens, {
+            recoveryEnabled: true,
+            nodeLocationTracking: 'onlyOffset',
+            ...config
+        });
     }
 
     get IS_RECORDING(): boolean {

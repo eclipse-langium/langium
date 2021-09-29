@@ -3,7 +3,7 @@
  * DO NOT EDIT MANUALLY!
  ******************************************************************************/
 
-import { LanguageMetaData, defaultParserConfig } from '../..';
+import { LanguageMetaData } from '../..';
 import { Module } from '../../dependency-injection';
 import { LangiumGeneratedServices, LangiumServices } from '../../services';
 import { LangiumGrammarAstReflection } from './ast';
@@ -18,7 +18,5 @@ export const LangiumGrammarGeneratedModule: Module<LangiumServices, LangiumGener
     Grammar: () => grammar(),
     AstReflection: () => new LangiumGrammarAstReflection(),
     LanguageMetaData: () => languageMetaData,
-    parser: {
-        ParserConfig: () => defaultParserConfig
-    }
+    parser: {}
 };

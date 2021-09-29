@@ -15,11 +15,11 @@ export function generateModule(grammar: langium.Grammar, config: LangiumConfig):
 
     node.append(generatedHeader);
     if (config.langiumInternal) {
-        node.append(`import { LanguageMetaData, ${parserConfig ? 'IParserConfig' : 'defaultParserConfig'} } from '../..';`, NL);
+        node.append(`import { LanguageMetaData${parserConfig ? ', IParserConfig' : ''} } from '../..';`, NL);
         node.append("import { Module } from '../../dependency-injection';", NL);
         node.contents.push("import { LangiumGeneratedServices, LangiumServices } from '../../services';", NL);
     } else {
-        node.append(`import { LangiumGeneratedServices, LangiumServices, LanguageMetaData, Module, ${parserConfig ? 'IParserConfig' : 'defaultParserConfig'} } from 'langium';`, NL);
+        node.append(`import { LangiumGeneratedServices, LangiumServices, LanguageMetaData, Module${parserConfig ? ', IParserConfig' : ''} } from 'langium';`, NL);
     }
     node.append(
         'import { ', grammar.name, "AstReflection } from './ast';", NL,
@@ -51,11 +51,14 @@ export function generateModule(grammar: langium.Grammar, config: LangiumConfig):
             'Grammar: () => grammar(),', NL,
             'AstReflection: () => new ', grammar.name, 'AstReflection(),', NL,
             'LanguageMetaData: () => languageMetaData,', NL,
-            'parser: {', NL
+            'parser: {',
         );
-        moduleNode.indent(parserGroupNode => {
-            parserGroupNode.append(`ParserConfig: () => ${parserConfig ? 'parserConfig' : 'defaultParserConfig'}`, NL);
-        });
+        if (parserConfig) {
+            moduleNode.append(NL);
+            moduleNode.indent(parserGroupNode => {
+                parserGroupNode.append('ParserConfig: () => parserConfig', NL);
+            });
+        }
         moduleNode.append('}', NL);
     });
     node.append('};', NL);

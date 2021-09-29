@@ -27,7 +27,7 @@ export type LangiumGeneratedServices = {
     AstReflection: AstReflection
     LanguageMetaData: LanguageMetaData
     parser: {
-        ParserConfig: IParserConfig
+        ParserConfig?: IParserConfig
     }
 }
 

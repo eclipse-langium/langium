@@ -3,7 +3,7 @@
  * DO NOT EDIT MANUALLY!
  ******************************************************************************/
 
-import { LangiumGeneratedServices, LangiumServices, LanguageMetaData, Module, defaultParserConfig } from 'langium';
+import { LangiumGeneratedServices, LangiumServices, LanguageMetaData, Module } from 'langium';
 import { StatemachineAstReflection } from './ast';
 import { grammar } from './grammar';
 
@@ -16,7 +16,5 @@ export const StatemachineGeneratedModule: Module<LangiumServices, LangiumGenerat
     Grammar: () => grammar(),
     AstReflection: () => new StatemachineAstReflection(),
     LanguageMetaData: () => languageMetaData,
-    parser: {
-        ParserConfig: () => defaultParserConfig
-    }
+    parser: {}
 };

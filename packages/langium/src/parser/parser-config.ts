@@ -4,11 +4,4 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { IParserConfig } from 'chevrotain';
-
 export { IParserConfig } from 'chevrotain';
-
-export const defaultParserConfig: IParserConfig = {
-    recoveryEnabled: true,
-    nodeLocationTracking: 'onlyOffset'
-};
