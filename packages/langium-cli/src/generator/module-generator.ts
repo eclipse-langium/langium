@@ -10,14 +10,16 @@ import { LangiumConfig } from '../package';
 import { generatedHeader } from './util';
 
 export function generateModule(grammar: langium.Grammar, config: LangiumConfig): string {
+    const parserConfig = config.chevrotainParserConfig;
     const node = new CompositeGeneratorNode();
+
     node.append(generatedHeader);
     if (config.langiumInternal) {
-        node.append(`import { LanguageMetaData, ${config.parserConfig ? 'ParserConfig' : 'defaultParserConfig'} } from '../..';`, NL);
+        node.append(`import { LanguageMetaData, ${parserConfig ? 'IParserConfig' : 'defaultParserConfig'} } from '../..';`, NL);
         node.append("import { Module } from '../../dependency-injection';", NL);
         node.contents.push("import { LangiumGeneratedServices, LangiumServices } from '../../services';", NL);
     } else {
-        node.append(`import { LangiumGeneratedServices, LangiumServices, LanguageMetaData, Module, ${config.parserConfig ? 'ParserConfig' : 'defaultParserConfig'} } from 'langium';`, NL);
+        node.append(`import { LangiumGeneratedServices, LangiumServices, LanguageMetaData, Module, ${parserConfig ? 'IParserConfig' : 'defaultParserConfig'} } from 'langium';`, NL);
     }
     node.append(
         'import { ', grammar.name, "AstReflection } from './ast';", NL,
@@ -31,19 +33,14 @@ export function generateModule(grammar: langium.Grammar, config: LangiumConfig):
     });
     node.append('};', NL, NL);
 
-    if (config.parserConfig) {
-        node.append('export const parserConfig: ParserConfig = {', NL);
+    if (parserConfig) {
+        node.append('export const parserConfig: IParserConfig = {', NL);
         node.indent(configNode => {
-            const chevrotainConfig = config.parserConfig!.chevrotainConfig;
-            configNode.append('chevrotainConfig: {', NL);
-            configNode.indent(chevrotainConfigNode =>
-                Object.keys(chevrotainConfig).forEach(key => {
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    const value = (chevrotainConfig as any)[key];
-                    chevrotainConfigNode.append(`${key}: ${typeof value === 'string' ? `'${value}'` : value},`, NL);
-                })
-            );
-            configNode.append('}', NL);
+            Object.keys(parserConfig).forEach(key => {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const value = (parserConfig as any)[key];
+                configNode.append(`${key}: ${typeof value === 'string' ? `'${value}'` : value},`, NL);
+            });
         });
         node.append('};', NL, NL);
     }
@@ -54,7 +51,7 @@ export function generateModule(grammar: langium.Grammar, config: LangiumConfig):
             'Grammar: () => grammar(),', NL,
             'AstReflection: () => new ', grammar.name, 'AstReflection(),', NL,
             'LanguageMetaData: () => languageMetaData,', NL,
-            `ParserConfig: () => ${config.parserConfig ? 'parserConfig' : 'defaultParserConfig'}`, NL
+            `ParserConfig: () => ${parserConfig ? 'parserConfig' : 'defaultParserConfig'}`, NL
         );
     });
     node.append('};', NL);

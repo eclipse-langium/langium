@@ -6,7 +6,7 @@
 
 import { Connection, TextDocuments } from 'vscode-languageserver';
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { AstReflection, CompletionProvider, DocumentBuilder, LangiumDocumentFactory, LangiumDocuments, DocumentValidator, Grammar, JsonSerializer, LangiumParser, LanguageMetaData, Linker, NameProvider, RuleInterpreter, ScopeComputation, ScopeProvider, TextDocumentFactory, ValidationRegistry, ParserConfig } from '.';
+import { AstReflection, CompletionProvider, DocumentBuilder, LangiumDocumentFactory, LangiumDocuments, DocumentValidator, Grammar, JsonSerializer, LangiumParser, LanguageMetaData, Linker, NameProvider, RuleInterpreter, ScopeComputation, ScopeProvider, TextDocumentFactory, ValidationRegistry, IParserConfig } from '.';
 import { AstNodeDescriptionProvider, ReferenceDescriptionProvider } from './index/ast-descriptions';
 import { AstNodeLocator } from './index/ast-node-locator';
 import { IndexManager } from './index/index-manager';
@@ -26,7 +26,7 @@ export type LangiumGeneratedServices = {
     Grammar: Grammar
     AstReflection: AstReflection
     LanguageMetaData: LanguageMetaData
-    ParserConfig: ParserConfig
+    ParserConfig: IParserConfig
 }
 
 export type LangiumLspServices = {

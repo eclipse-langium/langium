@@ -3,7 +3,7 @@
  * DO NOT EDIT MANUALLY!
  ******************************************************************************/
 
-import { LangiumGeneratedServices, LangiumServices, LanguageMetaData, Module, ParserConfig } from 'langium';
+import { LangiumGeneratedServices, LangiumServices, LanguageMetaData, Module, IParserConfig } from 'langium';
 import { DomainModelAstReflection } from './ast';
 import { grammar } from './grammar';
 
@@ -12,12 +12,10 @@ export const languageMetaData: LanguageMetaData = {
     fileExtensions: ['.dmodel']
 };
 
-export const parserConfig: ParserConfig = {
-    chevrotainConfig: {
-        recoveryEnabled: true,
-        nodeLocationTracking: 'onlyOffset',
-        maxLookahead: 4,
-    }
+export const parserConfig: IParserConfig = {
+    recoveryEnabled: true,
+    nodeLocationTracking: 'onlyOffset',
+    maxLookahead: 3,
 };
 
 export const DomainModelGeneratedModule: Module<LangiumServices, LangiumGeneratedServices> = {

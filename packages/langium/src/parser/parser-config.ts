@@ -8,10 +8,7 @@ import { IParserConfig } from 'chevrotain';
 
 export { IParserConfig } from 'chevrotain';
 
-export interface ParserConfig {
-    chevrotainConfig: IParserConfig
-}
-
-export const defaultParserConfig: ParserConfig = {
-    chevrotainConfig: { recoveryEnabled: true, nodeLocationTracking: 'onlyOffset' }
+export const defaultParserConfig: IParserConfig = {
+    recoveryEnabled: true,
+    nodeLocationTracking: 'onlyOffset'
 };

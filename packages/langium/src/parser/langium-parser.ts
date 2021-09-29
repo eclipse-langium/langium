@@ -14,7 +14,7 @@ import { Linker } from '../references/linker';
 import { LangiumServices } from '../services';
 import { getContainerOfType } from '../utils/ast-util';
 import { ValueConverter } from './value-converter';
-import { ParserConfig } from './parser-config';
+import { IParserConfig } from './parser-config';
 
 export type ParseResult<T = AstNode> = {
     value: T,
@@ -32,7 +32,7 @@ export class LangiumParser {
     private readonly lexer: Lexer;
     private readonly nodeBuilder = new CstNodeBuilder();
     private readonly wrapper: ChevrotainWrapper;
-    private readonly config: ParserConfig;
+    private readonly config: IParserConfig;
     private stack: any[] = [];
     private mainRule!: RuleResult;
 
@@ -305,8 +305,8 @@ class ChevrotainWrapper extends EmbeddedActionsParser {
 
     private analysed = false;
 
-    constructor(tokens: TokenType[], config: ParserConfig) {
-        super(tokens, config.chevrotainConfig);
+    constructor(tokens: TokenType[], config: IParserConfig) {
+        super(tokens, config);
     }
 
     get IS_RECORDING(): boolean {

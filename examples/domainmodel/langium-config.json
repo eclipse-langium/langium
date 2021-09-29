@@ -6,11 +6,9 @@
     "textMate": {
         "out": "syntaxes/domain-model.tmLanguage.json"
     },
-    "parserConfig": {
-      "chevrotainConfig": { 
-          "recoveryEnabled": true,
-          "nodeLocationTracking": "onlyOffset",
-          "maxLookahead": 3
-      }
+    "chevrotainParserConfig": {
+        "recoveryEnabled": true,
+        "nodeLocationTracking": "onlyOffset",
+        "maxLookahead": 3
     }
 }
