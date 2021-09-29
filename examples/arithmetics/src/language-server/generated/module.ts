@@ -16,5 +16,7 @@ export const ArithmeticsGeneratedModule: Module<LangiumServices, LangiumGenerate
     Grammar: () => grammar(),
     AstReflection: () => new ArithmeticsAstReflection(),
     LanguageMetaData: () => languageMetaData,
-    ParserConfig: () => defaultParserConfig
+    parser: {
+        ParserConfig: () => defaultParserConfig
+    }
 };

@@ -41,7 +41,7 @@ export class LangiumParser {
     }
 
     constructor(services: LangiumServices, tokens: TokenType[]) {
-        this.config = services.ParserConfig;
+        this.config = services.parser.ParserConfig;
         this.wrapper = new ChevrotainWrapper(tokens, this.config);
         this.linker = services.references.Linker;
         this.converter = services.parser.ValueConverter;

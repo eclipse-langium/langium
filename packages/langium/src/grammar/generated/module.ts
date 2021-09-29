@@ -18,5 +18,7 @@ export const LangiumGrammarGeneratedModule: Module<LangiumServices, LangiumGener
     Grammar: () => grammar(),
     AstReflection: () => new LangiumGrammarAstReflection(),
     LanguageMetaData: () => languageMetaData,
-    ParserConfig: () => defaultParserConfig
+    parser: {
+        ParserConfig: () => defaultParserConfig
+    }
 };

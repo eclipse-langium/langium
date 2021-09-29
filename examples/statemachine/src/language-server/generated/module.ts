@@ -16,5 +16,7 @@ export const StatemachineGeneratedModule: Module<LangiumServices, LangiumGenerat
     Grammar: () => grammar(),
     AstReflection: () => new StatemachineAstReflection(),
     LanguageMetaData: () => languageMetaData,
-    ParserConfig: () => defaultParserConfig
+    parser: {
+        ParserConfig: () => defaultParserConfig
+    }
 };

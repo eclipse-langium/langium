@@ -22,5 +22,7 @@ export const DomainModelGeneratedModule: Module<LangiumServices, LangiumGenerate
     Grammar: () => grammar(),
     AstReflection: () => new DomainModelAstReflection(),
     LanguageMetaData: () => languageMetaData,
-    ParserConfig: () => parserConfig
+    parser: {
+        ParserConfig: () => parserConfig
+    }
 };

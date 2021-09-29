@@ -51,8 +51,12 @@ export function generateModule(grammar: langium.Grammar, config: LangiumConfig):
             'Grammar: () => grammar(),', NL,
             'AstReflection: () => new ', grammar.name, 'AstReflection(),', NL,
             'LanguageMetaData: () => languageMetaData,', NL,
-            `ParserConfig: () => ${parserConfig ? 'parserConfig' : 'defaultParserConfig'}`, NL
+            'parser: {', NL
         );
+        moduleNode.indent(parserGroupNode => {
+            parserGroupNode.append(`ParserConfig: () => ${parserConfig ? 'parserConfig' : 'defaultParserConfig'}`, NL);
+        });
+        moduleNode.append('}', NL);
     });
     node.append('};', NL);
 
