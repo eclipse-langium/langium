@@ -8,21 +8,15 @@ import path from 'path';
 import fs from 'fs';
 import { exec, ExecException } from 'child_process';
 import 'jest-expect-message';
+import { generateAction } from '../src/cli/index';
 
 describe('Test the domainmodel CLI', () => {
     let fullPath: string;
-    let fileName = path.join(__dirname, '../example/qualified-names.dmodel');
+    const rawfileName = path.join(__dirname, '../example/qualified-names.dmodel');
     const destination = 'domainmodel-example-test';
 
-    test('Generator command returns code 0 and creates expected files', async () => {
-        const result = await cli(['generate', fileName, `-d ${destination}`]);
-        if(result.code !== 0) {
-            console.log('Error code:', result.code);
-            console.log('Error message:', result.error);
-        }
-        expect(result.code, 'Result code should be 0').toBe(0);
-
-        fileName = fileName.replace(/\..*$/, '').replace(/[.-]/g, '');
+    function commonExpectations() {
+        const fileName = rawfileName.replace(/\..*$/, '').replace(/[.-]/g, '');
         fullPath = path.join(destination, path.basename(fileName));
         const generatedDirExists = fs.existsSync(fullPath);
         expect(generatedDirExists, 'Destination folder should exist').toBe(true);
@@ -39,9 +33,24 @@ describe('Test the domainmodel CLI', () => {
         const barDirContent = fs.readdirSync(path.join(fullPath, 'foo', 'bar'));
         expect(barDirContent.length, 'There should be 1 element in bar folder').toBe(1);
         expect(barDirContent.includes('E2.java')).toBe(true);
+    }
+
+    test('Test action without CLI', () => {
+        generateAction(rawfileName, { destination });
+        commonExpectations();
     });
 
-    afterAll(() => {
+    test('Via CLI: Generator command returns code 0 and creates expected files', async () => {
+        const result = await cli(['generate', rawfileName, `-d ${destination}`]);
+        if(result.code !== 0) {
+            console.log('Error code:', result.code);
+            console.log('Error message:', result.error);
+        }
+        expect(result.code, 'Result code should be 0').toBe(0);
+        commonExpectations();
+    });
+
+    afterEach(() => {
         fs.rmdirSync(destination, { recursive: true });
     });
 
