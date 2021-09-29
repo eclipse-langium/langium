@@ -11,7 +11,7 @@ import { extractDestinationAndName } from './cli-util';
 
 export function generateJavaScript(model: Model, filePath: string, destination: string | undefined): string {
     const data = extractDestinationAndName(filePath, destination);
-    const generatedFilePath = `${data.destination}/${data.name}.js`;
+    const generatedFilePath = `${data.destination}${data.name}.js`;
 
     const fileNode = new CompositeGeneratorNode();
     fileNode.append('"use strict";', NL, NL);
