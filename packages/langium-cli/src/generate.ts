@@ -14,6 +14,7 @@ import { generateModule } from './generator/module-generator';
 import { generateTextMate } from './generator/textmate-generator';
 import { serializeGrammar } from './generator/grammar-serializer';
 import { getTime, getUserChoice } from './generator/util';
+import { validateParser } from './parser-validation';
 
 export type GenerateOptions = {
     file?: string;
@@ -25,6 +26,7 @@ export type GeneratorResult = 'success' | 'failure';
 const services = createLangiumGrammarServices();
 
 export async function generate(config: LangiumConfig): Promise<GeneratorResult> {
+    // Load, parse and validate the grammar
     const relPath = config[RelativePath];
     const absGrammarPath = URI.file(path.resolve(relPath, config.grammar));
     services.documents.LangiumDocuments.invalidateDocument(absGrammarPath);
@@ -51,6 +53,14 @@ export async function generate(config: LangiumConfig): Promise<GeneratorResult> 
     }
     const grammar = buildResult.parseResult.value;
 
+    // Create and validate the in-memory parser
+    const parserAnalysis = validateParser(grammar, config);
+    if (parserAnalysis instanceof Error) {
+        console.error(parserAnalysis.toString().red);
+        return 'failure';
+    }
+
+    // Generate the output files
     const output = path.resolve(relPath, config.out ?? 'src/generated');
     console.log(`${getTime()}Writing generated files to ${output.white.bold}`);
 
