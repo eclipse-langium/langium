@@ -58,7 +58,7 @@ function generate(ctx: GeneratorContext): string {
     if (!fs.existsSync(ctx.destination)) {
         fs.mkdirSync(ctx.destination, { recursive: true });
     }
-    const generatedFilePath = `${ctx.destination}/${ctx.fileName}`;
+    const generatedFilePath = path.join(ctx.destination, ctx.fileName);
     fs.writeFileSync(generatedFilePath, processGeneratorNode(ctx.fileNode));
     return generatedFilePath;
 }
