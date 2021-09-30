@@ -63,7 +63,6 @@ export class LangiumParser {
     }
 
     parse(input: string | LangiumDocument): ParseResult {
-        this.wrapper.selfAnalysis();
         const text = typeof input === 'string' ? input : input.textDocument.getText();
         this.nodeBuilder.buildRootNode(text);
         const lexerResult = this.lexer.tokenize(text);
@@ -129,11 +128,11 @@ export class LangiumParser {
         };
     }
 
-    or(idx: number, choices: Array<() => void>): void {
+    alternatives(idx: number, choices: Array<() => void>): void {
         this.wrapper.wrapOr(idx, choices);
     }
 
-    option(idx: number, callback: () => void): void {
+    optional(idx: number, callback: () => void): void {
         this.wrapper.wrapOption(idx, callback);
     }
 
@@ -293,7 +292,17 @@ export class LangiumParser {
         }
         return target;
     }
+
+    finalize(): void {
+        this.wrapper.wrapSelfAnalysis();
+    }
 }
+
+const defaultConfig: IParserConfig = {
+    recoveryEnabled: true,
+    nodeLocationTracking: 'onlyOffset',
+    skipValidations: true
+};
 
 /**
  * This class wraps the embedded actions parser of chevrotain and exposes protected methods.
@@ -301,12 +310,9 @@ export class LangiumParser {
  */
 class ChevrotainWrapper extends EmbeddedActionsParser {
 
-    private analysed = false;
-
     constructor(tokens: TokenType[], config?: IParserConfig) {
         super(tokens, {
-            recoveryEnabled: true,
-            nodeLocationTracking: 'onlyOffset',
+            ...defaultConfig,
             ...config
         });
     }
@@ -319,11 +325,8 @@ class ChevrotainWrapper extends EmbeddedActionsParser {
         return this.RULE(name, impl);
     }
 
-    selfAnalysis(): void {
-        if (!this.analysed) {
-            this.performSelfAnalysis();
-            this.analysed = true;
-        }
+    wrapSelfAnalysis(): void {
+        this.performSelfAnalysis();
     }
 
     wrapConsume(idx: number, tokenType: TokenType): IToken {

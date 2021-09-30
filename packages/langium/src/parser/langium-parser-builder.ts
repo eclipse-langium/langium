@@ -13,7 +13,7 @@ import { stream } from '../utils/stream';
 import { DatatypeSymbol, LangiumParser } from './langium-parser';
 
 type RuleContext = {
-    option: number,
+    optional: number,
     consume: number,
     subrule: number,
     many: number,
@@ -43,6 +43,7 @@ export function createLangiumParser(services: LangiumServices): LangiumParser {
         rules
     };
     buildParserRules(parserContext, grammar);
+    parser.finalize();
     return parser;
 }
 
@@ -64,7 +65,7 @@ function buildParserRules(parserContext: ParserContext, grammar: Grammar): void 
         const ctx: RuleContext = {
             ...parserContext,
             consume: 1,
-            option: 1,
+            optional: 1,
             subrule: 1,
             many: 1,
             or: 1
@@ -157,7 +158,7 @@ function buildAlternatives(ctx: RuleContext, alternatives: Alternatives): Method
         }
 
         const idx = ctx.or++;
-        return () => ctx.parser.or(idx, methods);
+        return () => ctx.parser.alternatives(idx, methods);
     }
 }
 
@@ -218,8 +219,8 @@ function wrap(ctx: RuleContext, method: Method, cardinality: Cardinality): Metho
         const idx = ctx.many++;
         return () => ctx.parser.atLeastOne(idx, method);
     } else if (cardinality === '?') {
-        const idx = ctx.option++;
-        return () => ctx.parser.option(idx, method);
+        const idx = ctx.optional++;
+        return () => ctx.parser.optional(idx, method);
     } else {
         throw new Error();
     }

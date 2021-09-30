@@ -21,7 +21,6 @@ program
     .option('-f, --file <file>', 'the configuration file or package.json setting up the generator')
     .option('-w, --watch', 'enables watch mode', false)
     .action((options: GenerateOptions) => {
-        elapsedTime();
         forEachConfig(options, generate);
     });
 
@@ -47,7 +46,7 @@ async function forEachConfig(options: GenerateOptions, callback: (config: Langiu
     const allSuccessful = (await Promise.all(configs.map(callback))).every(e => e === 'success');
     if (options.watch) {
         if (allSuccessful) {
-            console.log(`${getTime()}Langium generator finished ${'successfully'.green.bold} in: ${elapsedTime()}ms`);
+            console.log(`${getTime()}Langium generator finished ${'successfully'.green.bold} in ${elapsedTime()}ms`);
         }
         console.log(getTime() + 'Langium generator will continue running in watch mode');
         configs.forEach(e => {
@@ -56,13 +55,13 @@ async function forEachConfig(options: GenerateOptions, callback: (config: Langiu
                 console.log(getTime() + 'File change detected. Starting compilation...');
                 elapsedTime();
                 if (await callback(e) === 'success') {
-                    console.log(`${getTime()}Langium generator finished ${'successfully'.green.bold} in: ${elapsedTime()}ms`);
+                    console.log(`${getTime()}Langium generator finished ${'successfully'.green.bold} in ${elapsedTime()}ms`);
                 }
             });
         });
     } else if (!allSuccessful) {
         process.exit(1);
     } else {
-        console.log(`${getTime()}Langium generator finished ${'successfully'.green.bold} in: ${elapsedTime()}ms`);
+        console.log(`${getTime()}Langium generator finished ${'successfully'.green.bold} in ${elapsedTime()}ms`);
     }
 }
