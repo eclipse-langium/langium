@@ -9,14 +9,14 @@ import { LangiumDocument } from '../documents/document';
 import { AstNode, CstNode, LeafCstNode } from '../syntax-tree';
 import { CompositeCstNodeImpl, LeafCstNodeImpl } from '../parser/cst-node-builder';
 import { DatatypeSymbol } from '../parser/langium-parser';
-import { EMPTY_STREAM, stream, TreeStream, TreeStreamImpl } from './stream';
+import { TreeStream, TreeStreamImpl } from './stream';
 
 export function streamCst(node: CstNode): TreeStream<CstNode> {
     return new TreeStreamImpl(node, element => {
         if (element instanceof CompositeCstNodeImpl) {
-            return stream(element.children);
+            return element.children;
         } else {
-            return EMPTY_STREAM;
+            return [];
         }
     });
 }

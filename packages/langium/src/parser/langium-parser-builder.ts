@@ -61,7 +61,7 @@ function getToken(ctx: ParserContext, name: string): TokenType {
 
 function buildParserRules(parserContext: ParserContext, grammar: Grammar): void {
     let first = true;
-    for (const rule of stream(grammar.rules).filterType(isParserRule)) {
+    for (const rule of stream(grammar.rules).filter(isParserRule)) {
         const ctx: RuleContext = {
             ...parserContext,
             consume: 1,
