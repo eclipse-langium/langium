@@ -5,5 +5,10 @@
     "out": "src/language-server/generated",
     "textMate": {
         "out": "syntaxes/domain-model.tmLanguage.json"
+    },
+    "chevrotainParserConfig": {
+        "recoveryEnabled": true,
+        "nodeLocationTracking": "onlyOffset",
+        "maxLookahead": 3
     }
 }

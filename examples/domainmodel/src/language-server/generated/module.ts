@@ -3,17 +3,26 @@
  * DO NOT EDIT MANUALLY!
  ******************************************************************************/
 
-import { LangiumGeneratedServices, LangiumServices, Module } from 'langium';
+import { LangiumGeneratedServices, LangiumServices, LanguageMetaData, Module, IParserConfig } from 'langium';
 import { DomainModelAstReflection } from './ast';
 import { grammar } from './grammar';
 
-export const languageMetaData = {
+export const languageMetaData: LanguageMetaData = {
     languageId: 'domain-model',
     fileExtensions: ['.dmodel']
+};
+
+export const parserConfig: IParserConfig = {
+    recoveryEnabled: true,
+    nodeLocationTracking: 'onlyOffset',
+    maxLookahead: 3,
 };
 
 export const DomainModelGeneratedModule: Module<LangiumServices, LangiumGeneratedServices> = {
     Grammar: () => grammar(),
     AstReflection: () => new DomainModelAstReflection(),
-    LanguageMetaData: () => languageMetaData
+    LanguageMetaData: () => languageMetaData,
+    parser: {
+        ParserConfig: () => parserConfig
+    }
 };

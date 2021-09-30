@@ -40,6 +40,37 @@
                         "out"
                     ]
                 },
+                "chevrotainParserConfig": {
+                    "description": "An object to describe the Chevrotain parser configuration",
+                    "type": "object",
+                    "properties": {
+                        "recoveryEnabled": {
+                            "description": "Is the error recovery / fault tolerance of the Chevrotain Parser enabled",
+                            "type": "boolean"
+                        },
+                        "maxLookahead": {
+                            "description": "Maximum number of tokens the parser will use to choose between alternatives",
+                            "type": "number"
+                        },
+                        "dynamicTokensEnabled": {
+                            "description": "A flag to support Dynamically defined Tokens",
+                            "type": "boolean"
+                        },
+                        "nodeLocationTracking": {
+                            "description": "Enable computation of CST nodes location",
+                            "type": "string"
+                        },
+                        "traceInitPerf": {
+                            "description": "A flag to print performance tracing logs during parser initialization",
+                            "type": ["boolean", "number"]
+                        },
+                        "skipValidations": {
+                            "description": "A flag to avoid running the grammar validations during Parser initialization",
+                            "type": "boolean"
+                        }
+                    },
+                    "required": []
+                },
                 "langiumInternal": {
                     "description": "A flag to determine whether langium uses itself to bootstrap",
                     "type": "boolean"

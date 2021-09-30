@@ -5,6 +5,7 @@
  ******************************************************************************/
 
 import fs from 'fs-extra';
+import { IParserConfig } from 'langium';
 import path from 'path';
 import { getTime } from './generator/util';
 
@@ -32,6 +33,8 @@ export interface LangiumConfig {
         /** Output path to syntax highlighting file */
         out: string
     }
+    /** Configure the chevrotain parser */
+    chevrotainParserConfig?: IParserConfig,
     /** The following option is meant to be used only by Langium itself */
     langiumInternal?: boolean
 }
