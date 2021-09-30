@@ -31,7 +31,7 @@
         "src"
     ],
     "bin": {
-        "cli": "./bin/cli.js"
+        "arithmetics-cli": "./bin/cli"
     },
     "main": "./out/extension.js",
     "scripts": {
