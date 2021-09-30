@@ -8,7 +8,7 @@ import { Lexer, TokenPattern, TokenType } from 'chevrotain';
 import { Grammar, isKeyword, isTerminalRule, Keyword, TerminalRule } from '../grammar/generated/ast';
 import { streamAllContents } from '../utils/ast-util';
 import { partialMatches } from '../utils/regex-util';
-import { stream, toArray } from '../utils/stream';
+import { stream } from '../utils/stream';
 
 export interface TokenBuilder {
     buildTokens(grammar: Grammar): TokenType[];
@@ -23,7 +23,7 @@ export class DefaultTokenBuilder implements TokenBuilder {
     buildTokens(grammar: Grammar): TokenType[] {
         const tokenMap = new Map<string, TokenType>();
         const terminalsTokens: TokenType[] = [];
-        const terminals = Array.from(stream(grammar.rules).filterType(isTerminalRule));
+        const terminals = Array.from(stream(grammar.rules).filter(isTerminalRule));
         for (const terminal of terminals) {
             const token = this.buildTerminalToken(grammar, terminal);
             terminalsTokens.push(token);
@@ -31,7 +31,7 @@ export class DefaultTokenBuilder implements TokenBuilder {
         }
 
         const tokens: TokenType[] = [];
-        const keywords = toArray(streamAllContents(grammar).map(e => e.node).filterType(isKeyword).distinct(e => e.value))
+        const keywords = streamAllContents(grammar).map(e => e.node).filter(isKeyword).distinct(e => e.value).toArray()
             // Sort keywords by descending length
             .sort((a, b) => b.value.length - a.value.length);
 

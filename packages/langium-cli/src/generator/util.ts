@@ -47,7 +47,7 @@ function getGeneratedHeader(): GeneratorNode {
 export function collectKeywords(grammar: langium.Grammar): string[] {
     const keywords = new Set<string>();
 
-    for (const rule of stream(grammar.rules).filterType(langium.isParserRule)) {
+    for (const rule of stream(grammar.rules).filter(langium.isParserRule)) {
         collectElementKeywords(rule.alternatives, keywords);
     }
 

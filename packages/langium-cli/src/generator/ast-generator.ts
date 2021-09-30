@@ -30,7 +30,7 @@ export function generateAst(grammar: Grammar, config: LangiumConfig): string {
     for (const type of types) {
         fileNode.append(type.toString(), NL);
     }
-    for (const primitiveRule of stream(grammar.rules).filterType(isParserRule).filter(e => isDataTypeRule(e))) {
+    for (const primitiveRule of stream(grammar.rules).filter(isParserRule).filter(e => isDataTypeRule(e))) {
         fileNode.append(buildDatatype(primitiveRule), NL, NL);
     }
 
@@ -41,7 +41,7 @@ export function generateAst(grammar: Grammar, config: LangiumConfig): string {
 
 function buildDatatype(rule: ParserRule): GeneratorNode {
     if (isAlternatives(rule.alternatives) && rule.alternatives.elements.every(e => isKeyword(e))) {
-        return `export type ${rule.name} = ${stream(rule.alternatives.elements).filterType(isKeyword).map(e => `'${e.value}'`).join(' | ')}`;
+        return `export type ${rule.name} = ${stream(rule.alternatives.elements).filter(isKeyword).map(e => `'${e.value}'`).join(' | ')}`;
     } else {
         return `export type ${rule.name} = ${rule.type ?? 'string'}`;
     }
