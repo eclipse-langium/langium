@@ -32,7 +32,6 @@ export class LangiumParser {
     private readonly lexer: Lexer;
     private readonly nodeBuilder = new CstNodeBuilder();
     private readonly wrapper: ChevrotainWrapper;
-    private readonly config: IParserConfig | undefined;
     private stack: any[] = [];
     private mainRule!: RuleResult;
 
@@ -41,8 +40,7 @@ export class LangiumParser {
     }
 
     constructor(services: LangiumServices, tokens: TokenType[]) {
-        this.config = services.parser.ParserConfig;
-        this.wrapper = new ChevrotainWrapper(tokens, this.config);
+        this.wrapper = new ChevrotainWrapper(tokens, services.parser.ParserConfig);
         this.linker = services.references.Linker;
         this.converter = services.parser.ValueConverter;
         this.lexer = new Lexer(tokens);
