@@ -43,7 +43,7 @@ export function hasContainerOfType(node: AstNode | undefined, predicate: (n: Ast
     return false;
 }
 
-export function getDocument(node: AstNode): LangiumDocument {
+export function getDocument<T extends AstNode = AstNode>(node: AstNode): LangiumDocument<T> {
     let n = node;
     while (!n.$document && n.$container) {
         n = n.$container;
@@ -51,7 +51,7 @@ export function getDocument(node: AstNode): LangiumDocument {
     if (!n.$document) {
         throw new Error('AST node has no document.');
     }
-    return n.$document;
+    return n.$document as LangiumDocument<T>;
 }
 
 export interface AstNodeContent {

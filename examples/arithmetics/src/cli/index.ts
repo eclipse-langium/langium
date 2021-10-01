@@ -13,8 +13,8 @@ import { extractDocument } from './cli-util';
 import { interpretEvaluations } from './interpreter';
 
 export const evalAction = (fileName: string): void => {
-    const document = extractDocument(fileName, languageMetaData.fileExtensions, createArithmeticsServices());
-    const module = document.parseResult?.value as Module;
+    const document = extractDocument<Module>(fileName, languageMetaData.fileExtensions, createArithmeticsServices());
+    const module = document.parseResult?.value;
     for (const [evaluation, value] of interpretEvaluations(module)) {
         const cstNode = evaluation.expression.$cstNode;
         if (cstNode) {

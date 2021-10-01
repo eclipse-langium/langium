@@ -10,7 +10,7 @@ import { AstNode, LangiumDocument, LangiumServices } from 'langium';
 import path from 'path';
 import { URI } from 'vscode-uri';
 
-export function extractDocument(fileName: string, extensions: string[], services: LangiumServices): LangiumDocument {
+export function extractDocument<T extends AstNode>(fileName: string, extensions: string[], services: LangiumServices): LangiumDocument<T> {
     if (!extensions.includes(path.extname(fileName))) {
         console.error(colors.yellow(`Please, choose a file with one of these extensions: ${extensions}.`));
         process.exit(1);
@@ -35,7 +35,7 @@ export function extractDocument(fileName: string, extensions: string[], services
         process.exit(1);
     }
 
-    return document;
+    return document as LangiumDocument<T>;
 }
 
 export function extractAstNode<T extends AstNode>(fileName: string, extensions: string[], services: LangiumServices): T {
