@@ -58,7 +58,7 @@ function generateAbstractElements(destination: string, elements: Array<AbstractE
 }
 
 function generateEntity(entity: Entity, fileNode: CompositeGeneratorNode): void {
-    const maybeExtends = entity.superType ? ` extends ${entity.superType.$refName}` : '';
+    const maybeExtends = entity.superType ? ` extends ${entity.superType.$refText}` : '';
     fileNode.append(`class ${entity.name}${maybeExtends} {`, NL);
     fileNode.indent(classBody => {
         const featureData = entity.features.map(f => generateFeature(f, classBody));
@@ -70,7 +70,7 @@ function generateEntity(entity: Entity, fileNode: CompositeGeneratorNode): void 
 
 function generateFeature(feature: Feature, classBody: IndentNode): [() => void, () => void, () => void] {
     const name = feature.name;
-    const type = feature.type.$refName + (feature.many ? '[]' : '');
+    const type = feature.type.$refText + (feature.many ? '[]' : '');
 
     return [
         () => { // generate the field

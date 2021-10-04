@@ -7,7 +7,7 @@
 import { CancellationToken } from 'vscode-languageserver';
 import { URI } from 'vscode-uri';
 import { DocumentSegment, LangiumDocument, toDocumentSegment } from '../documents/document';
-import { Linker } from '../references/linker';
+import { Linker, getReferenceId, isLinkingError } from '../references/linker';
 import { NameProvider } from '../references/naming';
 import { AstNodeDescription } from '../references/scope';
 import { LangiumServices } from '../services';
@@ -92,9 +92,9 @@ export class DefaultReferenceDescriptionProvider implements ReferenceDescription
         const descr: ReferenceDescription[] = [];
         const rootNode = document.parseResult.value;
         const refConverter = (refNode: AstNodeReference): ReferenceDescription | undefined => {
-            const refAstNodeDescr = this.linker.getCandidate(refNode.container, refNode.reference.$refName, `${refNode.container.$type}:${refNode.property}`);
+            const refAstNodeDescr = this.linker.getCandidate(refNode.container, getReferenceId(refNode.container.$type, refNode.property), refNode.reference.$refText);
             // Do not handle unresolved refs
-            if (!refAstNodeDescr)
+            if (isLinkingError(refAstNodeDescr))
                 return undefined;
             const doc = getDocument(refNode.container);
             const docUri = doc.uri;

@@ -8,7 +8,7 @@ import { LangiumDocument, LangiumDocuments } from '../documents/document';
 import { AstNodeLocator } from '../index/ast-node-locator';
 import { LangiumServices } from '../services';
 import { AstNode, CstNode, Reference } from '../syntax-tree';
-import { getDocument } from '../utils/ast-util';
+import { getDocument, isAstNode } from '../utils/ast-util';
 import { AstNodeDescription, ScopeProvider } from './scope';
 
 export interface Linker {
@@ -17,14 +17,48 @@ export interface Linker {
      * @param document A LangiumDocument which shall be unlinked.
      */
     unlink(document: LangiumDocument): void;
-    link(node: AstNode, referenceName: string, referenceId: string): AstNode | undefined;
-    // TODO should be a collection of AstNodeDescriptions?
-    getCandidate(node: AstNode, referenceName: string, referenceId: string): AstNodeDescription | undefined;
-    buildReference(node: AstNode, refNode: CstNode, text: string, crossRefId: string): Reference;
+    getLinkedNode(node: AstNode, refId: string, refText: string): AstNode | LinkingError;
+    getCandidate(node: AstNode, refId: string, refText: string): AstNodeDescription | LinkingError;
+
+    /**
+     * Creates a cross reference node being aware of its containing AstNode, the corresponding CstNode,
+     *  the cross reference text denoting the target AstNode being already extracted of the document text,
+     *  as well as the unique cross reference identifier.
+     *
+     * Default behavior:
+     *
+     * The returned Reference's 'ref' property pointing to the target AstNode is populated lazily on its
+     *  first visit.
+     *
+     * If the target AstNode cannot be resolved on the first visit, an error indicator will be installed
+     *  and further resolution attempts will *not* be performed.
+     *
+     * @param node the containing AstNode
+     * @param refNode the corresponding CstNode
+     * @param refId the cross reference identifier like '<entityTypeName>:<propertyName>'
+     * @param refText the cross reference text denoting the target AstNode
+     * @returns the desired Reference node, whose behavior wrt. resolving the cross reference is implementation specific.
+     */
+    buildReference(node: AstNode, refNode: CstNode, refId: string, refText: string): Reference;
+}
+
+export function getReferenceId(containerTypeName: string, propertyName: string): string {
+    return `${containerTypeName}:${propertyName}`;
+}
+
+export interface LinkingError {
+    cause: 'noDescription' | 'nodeLocatingFailure',
+    refId: string,
+    refText: string,
+    targetDescription?: AstNodeDescription
+}
+
+export function isLinkingError(obj: unknown): obj is LinkingError {
+    return typeof obj === 'object' && obj !== null && typeof (obj as LinkingError).cause === 'string';
 }
 
 interface DefaultReference extends Reference {
-    _ref?: AstNode;
+    _ref?: AstNode | LinkingError;
 }
 
 export class DefaultLinker implements Linker {
@@ -38,17 +72,37 @@ export class DefaultLinker implements Linker {
         this.astNodeLocator = services.index.AstNodeLocator;
     }
 
-    link(node: AstNode, referenceName: string, referenceId: string): AstNode | undefined {
-        const description = this.getCandidate(node, referenceName, referenceId);
-        if (description) {
-            return this.loadAstNode(description);
+    getLinkedNode(node: AstNode, refId: string, refText: string): AstNode | LinkingError {
+        const description = this.getCandidate(node, refId, refText);
+        if (isLinkingError(description)) {
+            return description;
+        } else {
+            const linkedNode = this.loadAstNode(description);
+            if (linkedNode !== undefined) {
+                return linkedNode;
+            } else {
+                return {
+                    cause: 'nodeLocatingFailure',
+                    refId,
+                    refText,
+                    targetDescription: description
+                };
+            }
         }
-        return undefined;
     }
 
-    getCandidate(node: AstNode, referenceName: string, referenceId: string): AstNodeDescription | undefined {
-        const scope = this.scopeProvider.getScope(node, referenceId);
-        return scope.getElement(referenceName);
+    getCandidate(node: AstNode, refId: string, refText: string): AstNodeDescription | LinkingError {
+        const scope = this.scopeProvider.getScope(node, refId);
+        const description = scope.getElement(refText);
+        if (description !== undefined) {
+            return description;
+        } else {
+            return {
+                cause: 'noDescription',
+                refId,
+                refText
+            };
+        }
     }
 
     loadAstNode(nodeDescription: AstNodeDescription): AstNode | undefined {
@@ -65,18 +119,18 @@ export class DefaultLinker implements Linker {
         document.references = [];
     }
 
-    buildReference(node: AstNode, refNode: CstNode, text: string, crossRefId: string): Reference {
-        const link = this.link.bind(this);
+    buildReference(node: AstNode, refNode: CstNode, refId: string, refText: string): Reference {
+        // see behavior description in doc of Linker, update that on changes in here
+        const getLinkedNode = this.getLinkedNode.bind(this);
         const reference: DefaultReference = {
             $refNode: refNode,
-            $refName: text,
+            $refText: refText,
             get ref() {
                 if (this._ref === undefined) {
-                    // TODO handle linking errors
-                    this._ref = link(node, text, crossRefId);
+                    this._ref = getLinkedNode(node, refId, refText);
                     getDocument(node).references.push(this);
                 }
-                return this._ref;
+                return isAstNode(this._ref) ? this._ref : undefined;
             }
         };
         return reference;

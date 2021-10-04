@@ -4,8 +4,8 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { AstNode } from '../syntax-tree';
-import { Linker } from '../references/linker';
+import { AstNode, Reference } from '../syntax-tree';
+import { Linker, getReferenceId } from '../references/linker';
 import { LangiumServices } from '../services';
 import { isAstNode, isReference } from '../utils/ast-util';
 
@@ -43,7 +43,7 @@ export class DefaultJsonSerializer {
                 }
                 // If it is a reference, just return the name
                 if (isReference(item)) {
-                    return { $refName: item.$refName };
+                    return { $refText: item.$refText } as Reference; // surprisingly this cast works at the time of writing, although $refNode is absent
                 }
                 let newItem: Record<string, unknown> | unknown[];
                 // If it is an array, replicate the array.
@@ -69,16 +69,16 @@ export class DefaultJsonSerializer {
     }
 
     protected revive(object: AstNode): AstNode {
-        const link = this.linker.link.bind(this.linker);
+        const getLinkedNode = this.linker.getLinkedNode.bind(this.linker);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const internalRevive = (value: Record<string, any>, container?: unknown, propName?: string) => {
             if (value && typeof value === 'object' && value !== null) {
                 if (Array.isArray(value)) {
                     for (const item of value) {
                         if (isReference(item) && isAstNode(container)) {
-                            const referenceId = `${container.$type}:${propName}`;
+                            const refId = getReferenceId(container.$type, propName!);
                             Object.defineProperty(item, 'ref', {
-                                get: () => link(container as AstNode, item.$refName, referenceId)
+                                get: () => getLinkedNode(container as AstNode, refId, item.$refText)
                             });
                         } else if (typeof item === 'object' && item !== null) {
                             internalRevive(item, item);
@@ -89,9 +89,9 @@ export class DefaultJsonSerializer {
                     for (const [name, item] of Object.entries(value)) {
                         if (typeof item === 'object' && item !== null) {
                             if (isReference(item)) {
-                                const referenceId = `${value.$type}:${name}`;
+                                const refId = getReferenceId(value.$type, name);
                                 Object.defineProperty(item, 'ref', {
-                                    get: () => link(value as AstNode, item.$refName, referenceId)
+                                    get: () => getLinkedNode(value as AstNode, refId, item.$refText)
                                 });
                             } else if (Array.isArray(item)) {
                                 internalRevive(item, value, name);

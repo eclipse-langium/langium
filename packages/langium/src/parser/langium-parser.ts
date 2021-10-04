@@ -260,7 +260,7 @@ export class LangiumParser {
         const feature = assignment.feature.replace(/\^/g, '');
         let item: unknown;
         if (crossRefId && typeof value === 'string') {
-            item = this.linker.buildReference(obj, cstNode, value, crossRefId);
+            item = this.linker.buildReference(obj, cstNode, crossRefId, value);
         } else if (cstNode && typeof value === 'string') {
             item = this.converter.convert(value, cstNode);
         } else {

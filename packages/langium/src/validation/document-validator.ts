@@ -70,7 +70,7 @@ export class DefaultDocumentValidator {
         await interruptAndCheck(cancelToken);
 
         for (const unresolved of resolveResult.unresolved) {
-            const message = `Could not resolve reference to '${unresolved.reference.$refName}'.`;
+            const message = `Could not resolve reference to '${unresolved.reference.$refText}'.`;
             const info: DiagnosticInfo<AstNode> = {
                 node: unresolved.container,
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
