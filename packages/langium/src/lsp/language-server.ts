@@ -37,8 +37,7 @@ export function startLanguageServer(services: LangiumServices): void {
                 documentHighlightProvider: {},
                 codeActionProvider: services.lsp.CodeActionProvider ? {} : undefined,
                 foldingRangeProvider: {},
-                // hoverProvider needs to be created for mouse-over events, etc.
-                hoverProvider: false,
+                hoverProvider: {},
                 renameProvider: {
                     prepareProvider: true
                 }
@@ -78,6 +77,7 @@ export function startLanguageServer(services: LangiumServices): void {
     addFoldingRangeHandler(connection, services);
     addCodeActionHandler(connection, services);
     addRenameHandler(connection, services);
+    addHoverHandler(connection, services);
 
     // Make the text document manager listen on the connection for open, change and close text document events.
     documents.listen(connection);
@@ -165,6 +165,14 @@ export function addDocumentHighlightsHandler(connection: Connection, services: L
         } else {
             return [];
         }
+    });
+}
+
+export function addHoverHandler(connection: Connection, services: LangiumServices): void {
+    const hoverProvider = services.lsp.HoverProvider;
+    connection.onHover(params => {
+        const document = paramsDocument(params, services);
+        return document && hoverProvider.getHoverContent(document, params);
     });
 }
 
