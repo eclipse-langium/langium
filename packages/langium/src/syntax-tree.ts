@@ -44,6 +44,7 @@ export interface CstNode {
     readonly root: CompositeCstNode;
     readonly feature: AbstractElement;
     readonly element: AstNode;
+    readonly hidden: boolean;
 }
 
 export interface CompositeCstNode extends CstNode {
@@ -51,6 +52,5 @@ export interface CompositeCstNode extends CstNode {
 }
 
 export interface LeafCstNode extends CstNode {
-    readonly hidden: boolean;
     readonly tokenType: TokenType;
 }

@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { CompletionItem, DocumentSymbol, Range } from 'vscode-languageserver';
+import { CompletionItem, DocumentSymbol, Hover, MarkupContent, Range } from 'vscode-languageserver';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { LangiumDocument } from '../documents/document';
 import { BuildResult } from '../documents/document-builder';
@@ -108,9 +108,7 @@ export function expectGoToDefinition(services: LangiumServices, expectEqual: Exp
         const goToResolver = services.lsp.GoToResolver;
         const position = document.textDocument.positionAt(indices[expectedGoToDefinition.index]);
         const textPos = {
-            textDocument: {
-                uri: document.textDocument.uri
-            },
+            textDocument: document.textDocument,
             position: position
         };
         const locationLink = goToResolver.goToDefinition(document, textPos);
@@ -121,6 +119,33 @@ export function expectGoToDefinition(services: LangiumServices, expectEqual: Exp
         expectEqual(locationLink.length, 1);
         expectEqual(locationLink[0].targetSelectionRange, expectedRange);
     };
+}
+
+export interface ExpectedHover extends ExpectedBase {
+    index: number
+    hover?: string
+}
+
+export function expectHover(services: LangiumServices, cb: ExpectFunction): (expectedHover: ExpectedHover) => void {
+    return (expectedHover) => {
+        const { output, indices } = replaceIndices(expectedHover);
+        const document = parseDocument(services, output);
+        const hoverProvider = services.lsp.HoverProvider;
+        const position = document.textDocument.positionAt(indices[expectedHover.index]);
+        const hover = hoverProvider.getHoverContent(document, {
+            position,
+            textDocument: document.textDocument
+        });
+        const hoverContent = getHoverContent(hover);
+        cb(hoverContent, expectedHover.hover);
+    };
+}
+
+function getHoverContent(hover?: Hover): string | undefined {
+    if (hover && MarkupContent.is(hover.contents)) {
+        return hover.contents.value;
+    }
+    return;
 }
 
 export function parseDocument<T extends AstNode = AstNode>(services: LangiumServices, input: string): LangiumDocument<T> {

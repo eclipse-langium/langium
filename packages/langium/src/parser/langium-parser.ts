@@ -97,8 +97,8 @@ export class LangiumParser {
         } else {
             for (let i = 0; i < node.children.length; i++) {
                 const child = node.children[i];
-                const { start: childStart, end: childEnd } = child.range;
-                if (child instanceof CompositeCstNodeImpl && tokenStart > childStart && tokenEnd < childEnd) {
+                const { end: childEnd } = child.range;
+                if (child instanceof CompositeCstNodeImpl && tokenEnd < childEnd) {
                     this.addHiddenToken(child, token);
                     return;
                 } else if (tokenEnd <= child.offset) {

@@ -51,3 +51,18 @@ export function findRelevantNode(cstNode: CstNode): AstNode | undefined {
     } while (n);
     return undefined;
 }
+
+export function findCommentNode(cstNode: CstNode | undefined, commentNames: string[]): CstNode | undefined {
+    let lastNode: CstNode | undefined;
+    if (cstNode instanceof CompositeCstNodeImpl) {
+        for (const node of cstNode.children) {
+            if (!node.hidden) {
+                break;
+            }
+            if (node instanceof LeafCstNodeImpl && commentNames.includes(node.tokenType.name)) {
+                lastNode = node;
+            }
+        }
+    }
+    return lastNode;
+}

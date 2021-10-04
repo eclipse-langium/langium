@@ -39,18 +39,15 @@ export class CstNodeBuilder {
         return leafNode;
     }
 
-    construct(item: { $cstNode: CstNode }): void {
-        this.current.element = <AstNode>item;
-        item.$cstNode = this.reduce(this.current);
-        this.nodeStack.pop();
-    }
-
-    private reduce(node: CstNode): CstNode {
-        if (node instanceof CompositeCstNodeImpl && node.children.length === 1 && node.children[0].element === node.element) {
-            return this.reduce(node.children[0]);
-        } else {
-            return node;
+    construct(item: { $type: string | symbol | undefined, $cstNode: CstNode }): void {
+        const current: CstNode = this.current;
+        // The specified item could be a datatype ($type is symbol) or a fragment ($type is undefined)
+        // Only if the $type is a string, we actually assign the element
+        if (typeof item.$type === 'string') {
+            this.current.element = <AstNode>item;
         }
+        item.$cstNode = current;
+        this.nodeStack.pop();
     }
 }
 
@@ -61,6 +58,10 @@ export abstract class AbstractCstNode implements CstNode {
     feature!: AbstractElement;
     root!: RootCstNodeImpl;
     private _element!: AstNode;
+
+    get hidden(): boolean {
+        return false;
+    }
 
     get element(): AstNode {
         return this._element ?? this.parent?.element;
@@ -115,29 +116,44 @@ export class LeafCstNodeImpl extends AbstractCstNode implements LeafCstNode {
 export class CompositeCstNodeImpl extends AbstractCstNode implements CompositeCstNode {
     get offset(): number {
         if (this.children.length > 0) {
-            return this.children[0].offset;
+            return this.firstNonHiddenNode.offset;
         } else {
             return 0;
         }
     }
 
     get length(): number {
-        if (this.children.length > 0) {
-            const last = this.children[this.children.length - 1];
-            return Math.max(last.offset + last.length - this.offset, 0);
-        } else {
-            return 0;
-        }
+        const range = this.range;
+        return range.end - range.start;
     }
 
     get range(): CstRange {
         if (this.children.length > 0) {
-            const first = this.children[0];
-            const last = this.children[this.children.length - 1];
+            const first = this.firstNonHiddenNode;
+            const last = this.lastNonHiddenNode;
             return { start: first.offset, end: Math.max(last.range.end, first.offset) };
         } else {
             return { start: 0, end: 0 };
         }
+    }
+
+    private get firstNonHiddenNode(): CstNode {
+        for (const child of this.children) {
+            if (!child.hidden) {
+                return child;
+            }
+        }
+        throw new Error('Composite node contains only hidden nodes');
+    }
+
+    private get lastNonHiddenNode(): CstNode {
+        for (let i = this.children.length - 1; i >= 0; i--) {
+            const child = this.children[i];
+            if (!child.hidden) {
+                return child;
+            }
+        }
+        throw new Error('Composite node contains only hidden nodes');
     }
 
     readonly children: CstNode[] = new CstNodeContainer(this);

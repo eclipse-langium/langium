@@ -19,6 +19,7 @@ import { DefaultDocumentHighlighter } from './lsp/document-highlighter';
 import { DefaultDocumentSymbolProvider } from './lsp/document-symbol-provider';
 import { DefaultFoldingRangeProvider } from './lsp/folding-range-provider';
 import { DefaultGoToResolverProvider } from './lsp/goto';
+import { MultilineCommentHoverProvider } from './lsp/hover-provider';
 import { DefaultReferenceFinder } from './lsp/reference-finder';
 import { DefaultRenameHandler } from './lsp/rename-refactoring';
 import { createLangiumParser } from './parser/langium-parser-builder';
@@ -59,6 +60,7 @@ export function createDefaultModule(context: DefaultModuleContext = {}): Module<
             },
             Connection: () => context.connection,
             DocumentSymbolProvider: (injector) => new DefaultDocumentSymbolProvider(injector),
+            HoverProvider: (injector) => new MultilineCommentHoverProvider(injector),
             FoldingRangeProvider: (injector) => new DefaultFoldingRangeProvider(injector),
             ReferenceFinder: (injector) => new DefaultReferenceFinder(injector),
             GoToResolver: (injector) => new DefaultGoToResolverProvider(injector),

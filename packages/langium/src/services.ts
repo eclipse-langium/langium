@@ -17,6 +17,7 @@ import { GoToResolver } from './lsp/goto';
 import { ReferenceFinder } from './lsp/reference-finder';
 import { RenameHandler } from './lsp/rename-refactoring';
 import { TokenBuilder } from './parser/token-builder';
+import { HoverProvider } from './lsp/hover-provider';
 import { FoldingRangeProvider } from './lsp/folding-range-provider';
 import { GrammarConfig } from './grammar/grammar-config';
 import { References } from './references/references';
@@ -39,6 +40,7 @@ export type LangiumLspServices = {
     Connection?: Connection
     DocumentHighlighter: DocumentHighlighter
     DocumentSymbolProvider: DocumentSymbolProvider
+    HoverProvider: HoverProvider
     FoldingRangeProvider: FoldingRangeProvider
     GoToResolver: GoToResolver
     ReferenceFinder: ReferenceFinder
