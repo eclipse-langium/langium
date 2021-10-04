@@ -20,7 +20,7 @@ export function isAstNode(obj: unknown): obj is AstNode {
 }
 
 export function isReference(obj: unknown): obj is Reference {
-    return typeof obj === 'object' && obj !== null && typeof (obj as Reference).$refName === 'string';
+    return typeof obj === 'object' && obj !== null && typeof (obj as Reference).$refText === 'string';
 }
 
 export function getContainerOfType<T extends AstNode>(node: AstNode | undefined, typePredicate: (n: AstNode) => n is T): T | undefined {

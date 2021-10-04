@@ -159,7 +159,7 @@ function generateStateDeclaration(ctx: GeneratorContext, state: State) {
     ctx.fileNode.append('public:', NL);
     ctx.fileNode.indent(classBodyPublic => {
         classBodyPublic.append(`std::string get_name() override { return "${state.name}"; }`, NL);
-        state.transitions.forEach(transition => classBodyPublic.append(`void ${transition.event.$refName}() override;`, NL));
+        state.transitions.forEach(transition => classBodyPublic.append(`void ${transition.event.$refText}() override;`, NL));
     });
     ctx.fileNode.append('};', NL);
 }
@@ -167,9 +167,9 @@ function generateStateDeclaration(ctx: GeneratorContext, state: State) {
 function generateStateDefinition(ctx: GeneratorContext, state: State) {
     ctx.fileNode.append(`// ${state.name}`, NL);
     for (const transition of state.transitions) {
-        ctx.fileNode.append(`void ${state.name}::${transition.event.$refName}() {`, NL);
+        ctx.fileNode.append(`void ${state.name}::${transition.event.$refText}() {`, NL);
         ctx.fileNode.indent(transitionBody => {
-            transitionBody.append(`statemachine->transition_to(new ${transition.state.$refName});`, NL);
+            transitionBody.append(`statemachine->transition_to(new ${transition.state.$refText});`, NL);
         });
         ctx.fileNode.append('}', NL, NL);
     }
@@ -178,7 +178,7 @@ function generateStateDefinition(ctx: GeneratorContext, state: State) {
 function generateMain(ctx: GeneratorContext) {
     ctx.fileNode.append('int main() {', NL);
     ctx.fileNode.indent(mainBody => {
-        mainBody.append(`${ctx.statemachine.name} *statemachine = new ${ctx.statemachine.name}(new ${ctx.statemachine.init.$refName});`, NL, NL);
+        mainBody.append(`${ctx.statemachine.name} *statemachine = new ${ctx.statemachine.name}(new ${ctx.statemachine.init.$refText});`, NL, NL);
 
         mainBody.append('static std::map<std::string, Event> event_by_name;', NL);
         for (const event of ctx.statemachine.events) {

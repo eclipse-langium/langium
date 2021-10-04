@@ -11,13 +11,13 @@ export const grammar = (): Grammar => loaded || (loaded = loadGrammar(`{
   "usedGrammars": [],
   "hiddenTokens": [
     {
-      "$refName": "WS"
+      "$refText": "WS"
     },
     {
-      "$refName": "SL_COMMENT"
+      "$refText": "SL_COMMENT"
     },
     {
-      "$refName": "ML_COMMENT"
+      "$refText": "ML_COMMENT"
     }
   ],
   "metamodelDeclarations": [],
@@ -43,7 +43,7 @@ export const grammar = (): Grammar => loaded || (loaded = loadGrammar(`{
               "$type": "RuleCall",
               "arguments": [],
               "rule": {
-                "$refName": "ID"
+                "$refText": "ID"
               }
             }
           },
@@ -63,7 +63,7 @@ export const grammar = (): Grammar => loaded || (loaded = loadGrammar(`{
                   "$type": "RuleCall",
                   "arguments": [],
                   "rule": {
-                    "$refName": "Event"
+                    "$refText": "Event"
                   }
                 },
                 "cardinality": "+"
@@ -87,7 +87,7 @@ export const grammar = (): Grammar => loaded || (loaded = loadGrammar(`{
                   "$type": "RuleCall",
                   "arguments": [],
                   "rule": {
-                    "$refName": "Command"
+                    "$refText": "Command"
                   }
                 },
                 "cardinality": "+"
@@ -106,7 +106,7 @@ export const grammar = (): Grammar => loaded || (loaded = loadGrammar(`{
             "terminal": {
               "$type": "CrossReference",
               "type": {
-                "$refName": "State"
+                "$refText": "State"
               }
             }
           },
@@ -118,7 +118,7 @@ export const grammar = (): Grammar => loaded || (loaded = loadGrammar(`{
               "$type": "RuleCall",
               "arguments": [],
               "rule": {
-                "$refName": "State"
+                "$refText": "State"
               }
             },
             "cardinality": "*"
@@ -139,7 +139,7 @@ export const grammar = (): Grammar => loaded || (loaded = loadGrammar(`{
           "$type": "RuleCall",
           "arguments": [],
           "rule": {
-            "$refName": "ID"
+            "$refText": "ID"
           }
         },
         "elements": []
@@ -158,7 +158,7 @@ export const grammar = (): Grammar => loaded || (loaded = loadGrammar(`{
           "$type": "RuleCall",
           "arguments": [],
           "rule": {
-            "$refName": "ID"
+            "$refText": "ID"
           }
         },
         "elements": []
@@ -185,7 +185,7 @@ export const grammar = (): Grammar => loaded || (loaded = loadGrammar(`{
               "$type": "RuleCall",
               "arguments": [],
               "rule": {
-                "$refName": "ID"
+                "$refText": "ID"
               }
             }
           },
@@ -208,7 +208,7 @@ export const grammar = (): Grammar => loaded || (loaded = loadGrammar(`{
                 "terminal": {
                   "$type": "CrossReference",
                   "type": {
-                    "$refName": "Command"
+                    "$refText": "Command"
                   }
                 },
                 "cardinality": "+"
@@ -228,7 +228,7 @@ export const grammar = (): Grammar => loaded || (loaded = loadGrammar(`{
               "$type": "RuleCall",
               "arguments": [],
               "rule": {
-                "$refName": "Transition"
+                "$refText": "Transition"
               }
             },
             "cardinality": "*"
@@ -255,7 +255,7 @@ export const grammar = (): Grammar => loaded || (loaded = loadGrammar(`{
             "terminal": {
               "$type": "CrossReference",
               "type": {
-                "$refName": "Event"
+                "$refText": "Event"
               }
             },
             "elements": []
@@ -271,7 +271,7 @@ export const grammar = (): Grammar => loaded || (loaded = loadGrammar(`{
             "terminal": {
               "$type": "CrossReference",
               "type": {
-                "$refName": "State"
+                "$refText": "State"
               }
             }
           }

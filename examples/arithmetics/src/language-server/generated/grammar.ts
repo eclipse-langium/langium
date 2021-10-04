@@ -11,13 +11,13 @@ export const grammar = (): Grammar => loaded || (loaded = loadGrammar(`{
   "usedGrammars": [],
   "hiddenTokens": [
     {
-      "$refName": "WS"
+      "$refText": "WS"
     },
     {
-      "$refName": "SL_COMMENT"
+      "$refText": "SL_COMMENT"
     },
     {
-      "$refName": "ML_COMMENT"
+      "$refText": "ML_COMMENT"
     }
   ],
   "metamodelDeclarations": [],
@@ -43,7 +43,7 @@ export const grammar = (): Grammar => loaded || (loaded = loadGrammar(`{
               "$type": "RuleCall",
               "arguments": [],
               "rule": {
-                "$refName": "ID"
+                "$refText": "ID"
               }
             }
           },
@@ -55,7 +55,7 @@ export const grammar = (): Grammar => loaded || (loaded = loadGrammar(`{
               "$type": "RuleCall",
               "arguments": [],
               "rule": {
-                "$refName": "Statement"
+                "$refText": "Statement"
               }
             },
             "elements": [],
@@ -76,7 +76,7 @@ export const grammar = (): Grammar => loaded || (loaded = loadGrammar(`{
             "$type": "RuleCall",
             "arguments": [],
             "rule": {
-              "$refName": "Definition"
+              "$refText": "Definition"
             },
             "elements": []
           },
@@ -84,7 +84,7 @@ export const grammar = (): Grammar => loaded || (loaded = loadGrammar(`{
             "$type": "RuleCall",
             "arguments": [],
             "rule": {
-              "$refName": "Evaluation"
+              "$refText": "Evaluation"
             },
             "elements": []
           }
@@ -112,7 +112,7 @@ export const grammar = (): Grammar => loaded || (loaded = loadGrammar(`{
               "$type": "RuleCall",
               "arguments": [],
               "rule": {
-                "$refName": "ID"
+                "$refText": "ID"
               }
             }
           },
@@ -132,7 +132,7 @@ export const grammar = (): Grammar => loaded || (loaded = loadGrammar(`{
                   "$type": "RuleCall",
                   "arguments": [],
                   "rule": {
-                    "$refName": "DeclaredParameter"
+                    "$refText": "DeclaredParameter"
                   }
                 }
               },
@@ -152,7 +152,7 @@ export const grammar = (): Grammar => loaded || (loaded = loadGrammar(`{
                       "$type": "RuleCall",
                       "arguments": [],
                       "rule": {
-                        "$refName": "DeclaredParameter"
+                        "$refText": "DeclaredParameter"
                       }
                     }
                   }
@@ -178,7 +178,7 @@ export const grammar = (): Grammar => loaded || (loaded = loadGrammar(`{
               "$type": "RuleCall",
               "arguments": [],
               "rule": {
-                "$refName": "Expression"
+                "$refText": "Expression"
               }
             }
           },
@@ -202,7 +202,7 @@ export const grammar = (): Grammar => loaded || (loaded = loadGrammar(`{
           "$type": "RuleCall",
           "arguments": [],
           "rule": {
-            "$refName": "ID"
+            "$refText": "ID"
           }
         },
         "elements": []
@@ -220,7 +220,7 @@ export const grammar = (): Grammar => loaded || (loaded = loadGrammar(`{
             "$type": "RuleCall",
             "arguments": [],
             "rule": {
-              "$refName": "Definition"
+              "$refText": "Definition"
             },
             "elements": []
           },
@@ -228,7 +228,7 @@ export const grammar = (): Grammar => loaded || (loaded = loadGrammar(`{
             "$type": "RuleCall",
             "arguments": [],
             "rule": {
-              "$refName": "DeclaredParameter"
+              "$refText": "DeclaredParameter"
             },
             "elements": []
           }
@@ -251,7 +251,7 @@ export const grammar = (): Grammar => loaded || (loaded = loadGrammar(`{
               "$type": "RuleCall",
               "arguments": [],
               "rule": {
-                "$refName": "Expression"
+                "$refText": "Expression"
               }
             },
             "elements": []
@@ -272,7 +272,7 @@ export const grammar = (): Grammar => loaded || (loaded = loadGrammar(`{
         "$type": "RuleCall",
         "arguments": [],
         "rule": {
-          "$refName": "Addition"
+          "$refText": "Addition"
         },
         "elements": []
       }
@@ -290,7 +290,7 @@ export const grammar = (): Grammar => loaded || (loaded = loadGrammar(`{
             "$type": "RuleCall",
             "arguments": [],
             "rule": {
-              "$refName": "Multiplication"
+              "$refText": "Multiplication"
             },
             "elements": []
           },
@@ -342,7 +342,7 @@ export const grammar = (): Grammar => loaded || (loaded = loadGrammar(`{
                   "$type": "RuleCall",
                   "arguments": [],
                   "rule": {
-                    "$refName": "Multiplication"
+                    "$refText": "Multiplication"
                   }
                 }
               }
@@ -365,7 +365,7 @@ export const grammar = (): Grammar => loaded || (loaded = loadGrammar(`{
             "$type": "RuleCall",
             "arguments": [],
             "rule": {
-              "$refName": "PrimaryExpression"
+              "$refText": "PrimaryExpression"
             },
             "elements": []
           },
@@ -417,7 +417,7 @@ export const grammar = (): Grammar => loaded || (loaded = loadGrammar(`{
                   "$type": "RuleCall",
                   "arguments": [],
                   "rule": {
-                    "$refName": "PrimaryExpression"
+                    "$refText": "PrimaryExpression"
                   }
                 }
               }
@@ -448,7 +448,7 @@ export const grammar = (): Grammar => loaded || (loaded = loadGrammar(`{
                 "$type": "RuleCall",
                 "arguments": [],
                 "rule": {
-                  "$refName": "Expression"
+                  "$refText": "Expression"
                 }
               },
               {
@@ -473,7 +473,7 @@ export const grammar = (): Grammar => loaded || (loaded = loadGrammar(`{
                   "$type": "RuleCall",
                   "arguments": [],
                   "rule": {
-                    "$refName": "NUMBER"
+                    "$refText": "NUMBER"
                   }
                 }
               }
@@ -494,7 +494,7 @@ export const grammar = (): Grammar => loaded || (loaded = loadGrammar(`{
                 "terminal": {
                   "$type": "CrossReference",
                   "type": {
-                    "$refName": "AbstractDefinition"
+                    "$refText": "AbstractDefinition"
                   }
                 }
               },
@@ -514,7 +514,7 @@ export const grammar = (): Grammar => loaded || (loaded = loadGrammar(`{
                       "$type": "RuleCall",
                       "arguments": [],
                       "rule": {
-                        "$refName": "Expression"
+                        "$refText": "Expression"
                       }
                     }
                   },
@@ -534,7 +534,7 @@ export const grammar = (): Grammar => loaded || (loaded = loadGrammar(`{
                           "$type": "RuleCall",
                           "arguments": [],
                           "rule": {
-                            "$refName": "Expression"
+                            "$refText": "Expression"
                           }
                         }
                       }
