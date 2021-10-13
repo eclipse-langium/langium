@@ -13,8 +13,8 @@ import { AstNodeDescription } from '../references/scope';
 import { LangiumServices, LanguageMetaData, Stream, stream } from '..';
 import { URI } from 'vscode-uri';
 
-export interface LangiumDocument {
-    parseResult: ParseResult
+export interface LangiumDocument<T extends AstNode = AstNode> {
+    parseResult: ParseResult<T>
     precomputedScopes?: PrecomputedScopes
     valid: boolean
     textDocument: TextDocument
@@ -43,7 +43,7 @@ export class DefaultTextDocumentFactory implements TextDocumentFactory {
 }
 
 export interface LangiumDocumentFactory {
-    fromTextDocument(textDocument: TextDocument): LangiumDocument;
+    fromTextDocument<T extends AstNode = AstNode>(textDocument: TextDocument): LangiumDocument<T>;
 }
 
 export class DefaultLangiumDocumentFactory implements LangiumDocumentFactory {
@@ -54,14 +54,14 @@ export class DefaultLangiumDocumentFactory implements LangiumDocumentFactory {
         this.parser = services.parser.LangiumParser;
     }
 
-    fromTextDocument(textDocument: TextDocument): LangiumDocument {
-        const doc: LangiumDocument = {
+    fromTextDocument<T extends AstNode = AstNode>(textDocument: TextDocument): LangiumDocument<T> {
+        const doc: LangiumDocument<T> = {
             valid: true,
             textDocument,
             uri: URI.parse(textDocument.uri),
             parseResult: undefined!
         };
-        const parseResult = this.parser.parse(doc);
+        const parseResult = this.parser.parse<T>(doc);
         doc.parseResult = parseResult;
         return doc;
     }

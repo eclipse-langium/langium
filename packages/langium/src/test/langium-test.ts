@@ -9,17 +9,18 @@ import { TextDocument } from 'vscode-languageserver-textdocument';
 import { LangiumDocument } from '../documents/document';
 import { BuildResult } from '../documents/document-builder';
 import { LangiumServices } from '../services';
+import { AstNode } from '../syntax-tree';
 import { getDocument } from '../utils/ast-util';
 
-export function parseHelper(services: LangiumServices): (input: string) => BuildResult {
+export function parseHelper<T extends AstNode = AstNode>(services: LangiumServices): (input: string) => BuildResult<T> {
     const metaData = services.LanguageMetaData;
     const documentBuilder = services.documents.DocumentBuilder;
     return input => {
         const randomNumber = Math.floor(Math.random() * 10000000) + 1000000;
         const textDocument = TextDocument.create(`file:/${randomNumber}${metaData.fileExtensions[0]}`, metaData.languageId, 0, input);
-        const document: LangiumDocument = services.documents.LangiumDocumentFactory.fromTextDocument(textDocument);
+        const document = services.documents.LangiumDocumentFactory.fromTextDocument<T>(textDocument);
         const buildResult = documentBuilder.build(document);
-        return buildResult;
+        return buildResult as BuildResult<T>;
     };
 }
 
@@ -122,9 +123,9 @@ export function expectGoToDefinition(services: LangiumServices, expectEqual: Exp
     };
 }
 
-export function parseDocument(services: LangiumServices, input: string): LangiumDocument {
-    const buildResult = parseHelper(services)(input);
-    const document = getDocument(buildResult.parseResult.value);
+export function parseDocument<T extends AstNode = AstNode>(services: LangiumServices, input: string): LangiumDocument<T> {
+    const buildResult = parseHelper<T>(services)(input);
+    const document = getDocument<T>(buildResult.parseResult.value);
     if (!document.parseResult) {
         throw new Error('Could not parse document');
     }

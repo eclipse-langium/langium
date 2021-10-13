@@ -62,7 +62,7 @@ export class LangiumParser {
         return this.wrapper.DEFINE_RULE(name, this.startImplementation(type, implementation).bind(this));
     }
 
-    parse(input: string | LangiumDocument): ParseResult {
+    parse<T extends AstNode = AstNode>(input: string | LangiumDocument<T>): ParseResult<T> {
         const text = typeof input === 'string' ? input : input.textDocument.getText();
         this.nodeBuilder.buildRootNode(text);
         const lexerResult = this.lexer.tokenize(text);

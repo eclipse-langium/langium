@@ -12,6 +12,7 @@ import { LangiumServices } from '../services';
 import { LangiumDocument, LangiumDocuments } from './document';
 import { IndexManager } from '../index/index-manager';
 import { URI } from 'vscode-uri';
+import { AstNode } from '../syntax-tree';
 
 export interface DocumentBuilder {
     build(document: LangiumDocument): BuildResult
@@ -32,8 +33,8 @@ export interface DocumentBuilder {
     documentChanged(uri: URI): void;
 }
 
-export interface BuildResult {
-    readonly parseResult: ParseResult
+export interface BuildResult<T = AstNode> {
+    readonly parseResult: ParseResult<T>
     readonly diagnostics: Diagnostic[]
 }
 
