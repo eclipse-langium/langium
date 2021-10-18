@@ -1,5 +1,5 @@
 grammar Arithmetics
-hidden(WS, COMMENT)
+hidden(WS, SL_COMMENT, ML_COMMENT)
 
 Module:
 	'module' name=ID
@@ -39,5 +39,5 @@ terminal WS: /\s+/;
 terminal ID: /[_a-zA-Z][\w_]*/;
 terminal NUMBER returns number: /[0-9]+(\.[0-9])?/;
 
-// This is both a single line AND multi line comment
-terminal COMMENT: /\/\*[\s\S]*?\*\/|\/\/[^\n\r]*/;
+terminal ML_COMMENT: /\/\*[\s\S]*?\*\//;
+terminal SL_COMMENT: /\/\/[^\n\r]*/;

@@ -5,10 +5,10 @@
  ******************************************************************************/
 
 import { Lexer, TokenPattern, TokenType } from 'chevrotain';
-import { Grammar, isKeyword, isTerminalRule, TerminalRule } from '../grammar/generated/ast';
+import { Grammar, isKeyword, isTerminalRule, Keyword, TerminalRule } from '../grammar/generated/ast';
 import { streamAllContents } from '../utils/ast-util';
 import { partialMatches } from '../utils/regex-util';
-import { stream } from '../utils/stream';
+import { stream, toArray } from '../utils/stream';
 
 export interface TokenBuilder {
     buildTokens(grammar: Grammar): TokenType[];
@@ -16,34 +16,32 @@ export interface TokenBuilder {
 
 export class DefaultTokenBuilder implements TokenBuilder {
 
+    // We need suffixes for terminals and keywords which have the same name
+    protected readonly KEYWORD_SUFFIX = '_KEYWORD';
+    protected readonly TERMINAL_SUFFIX = '_TERMINAL';
+
     buildTokens(grammar: Grammar): TokenType[] {
-        const map = new Map<string, TokenType>();
+        const tokenMap = new Map<string, TokenType>();
+        const terminalsTokens: TokenType[] = [];
         const terminals = Array.from(stream(grammar.rules).filterType(isTerminalRule));
         for (const terminal of terminals) {
             const token = this.buildTerminalToken(grammar, terminal);
-            map.set(terminal.name, token);
+            terminalsTokens.push(token);
+            tokenMap.set(terminal.name + this.TERMINAL_SUFFIX, token);
         }
 
         const tokens: TokenType[] = [];
-        const keywordTokens = new Map<string, TokenType>();
+        const keywords = toArray(streamAllContents(grammar).map(e => e.node).filterType(isKeyword).distinct(e => e.value))
+            // Sort keywords by descending length
+            .sort((a, b) => b.value.length - a.value.length);
 
-        streamAllContents(grammar).forEach(e => {
-            const node = e.node;
-            if (isKeyword(node)) {
-                const keyword = this.buildKeywordToken(node.value, terminals, map);
-                keywordTokens.set(node.value, keyword);
-            }
-        });
+        for (const keyword of keywords) {
+            const keywordToken = this.buildKeywordToken(keyword, keywords, terminals, tokenMap);
+            tokens.push(keywordToken);
+            tokenMap.set(keyword.value + this.KEYWORD_SUFFIX, keywordToken);
+        }
 
-        let sortedKeywords = Array.from(keywordTokens.values());
-        sortedKeywords = sortedKeywords.sort((a, b) => a.name.localeCompare(b.name)).sort((a, b) => {
-            const ap = a.PATTERN as string;
-            const bp = b.PATTERN as string;
-            return bp.length - ap.length;
-        });
-        tokens.push(...sortedKeywords);
-
-        for (const terminalToken of map.values()) {
+        for (const terminalToken of terminalsTokens) {
             const pattern = terminalToken.PATTERN;
             if (typeof pattern === 'object' && pattern && 'test' in pattern && pattern.test(' ')) {
                 tokens.unshift(terminalToken);
@@ -74,21 +72,29 @@ export class DefaultTokenBuilder implements TokenBuilder {
         return token;
     }
 
-    protected buildKeywordToken(keyword: string, terminals: TerminalRule[], tokenMap: Map<string, TokenType>): TokenType {
-        const longerAlt = this.findLongerAlt(keyword, terminals, tokenMap);
-        return { name: keyword, PATTERN: this.buildKeywordPattern(keyword), LONGER_ALT: longerAlt };
+    protected buildKeywordToken(keyword: Keyword, keywords: Keyword[], terminals: TerminalRule[], tokenMap: Map<string, TokenType>): TokenType {
+        const longerAlt = this.findLongerAlt(keyword, keywords, terminals, tokenMap);
+        return { name: keyword.value, PATTERN: this.buildKeywordPattern(keyword), LONGER_ALT: longerAlt };
     }
 
-    protected buildKeywordPattern(keyword: string): TokenPattern {
-        return keyword;
+    protected buildKeywordPattern(keyword: Keyword): TokenPattern {
+        return keyword.value;
     }
 
-    protected findLongerAlt(keyword: string, terminals: TerminalRule[], tokenMap: Map<string, TokenType>): TokenType | undefined {
-        for (const terminal of terminals) {
-            if (partialMatches('^' + terminal.regex, keyword)) {
-                return tokenMap.get(terminal.name);
+    protected findLongerAlt(keyword: Keyword, keywords: Keyword[], terminals: TerminalRule[], tokenMap: Map<string, TokenType>): TokenType[] {
+        const longerAlts: TokenType[] = [];
+        for (const otherKeyword of keywords) {
+            const tokenType = tokenMap.get(otherKeyword.value + this.KEYWORD_SUFFIX);
+            if (tokenType && otherKeyword.value.length > keyword.value.length && otherKeyword.value.startsWith(keyword.value)) {
+                longerAlts.push(tokenType);
             }
         }
-        return undefined;
+        for (const terminal of terminals) {
+            const tokenType = tokenMap.get(terminal.name + this.TERMINAL_SUFFIX);
+            if (tokenType && partialMatches('^' + terminal.regex + '$', keyword.value)) {
+                longerAlts.push(tokenType);
+            }
+        }
+        return longerAlts;
     }
 }

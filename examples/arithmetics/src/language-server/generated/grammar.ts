@@ -14,7 +14,10 @@ export const grammar = (): Grammar => loaded || (loaded = loadGrammar(`{
       "$refName": "WS"
     },
     {
-      "$refName": "COMMENT"
+      "$refName": "SL_COMMENT"
+    },
+    {
+      "$refName": "ML_COMMENT"
     }
   ],
   "metamodelDeclarations": [],
@@ -568,8 +571,13 @@ export const grammar = (): Grammar => loaded || (loaded = loadGrammar(`{
     },
     {
       "$type": "TerminalRule",
-      "name": "COMMENT",
-      "regex": "\\\\/\\\\*[\\\\s\\\\S]*?\\\\*\\\\/|\\\\/\\\\/[^\\\\n\\\\r]*"
+      "name": "ML_COMMENT",
+      "regex": "\\\\/\\\\*[\\\\s\\\\S]*?\\\\*\\\\/"
+    },
+    {
+      "$type": "TerminalRule",
+      "name": "SL_COMMENT",
+      "regex": "\\\\/\\\\/[^\\\\n\\\\r]*"
     }
   ],
   "name": "Arithmetics",

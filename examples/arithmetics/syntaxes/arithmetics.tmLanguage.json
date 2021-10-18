@@ -6,6 +6,9 @@
   ],
   "patterns": [
     {
+      "include": "#comments"
+    },
+    {
       "name": "keyword.control.arithmetics",
       "match": "\\b(def|module)\\b"
     },
