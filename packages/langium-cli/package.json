@@ -16,7 +16,8 @@
   "files": [
     "bin",
     "lib",
-    "src"
+    "src",
+    "langium-config-schema.json"
   ],
   "bin": {
     "langium": "./bin/langium.js"
