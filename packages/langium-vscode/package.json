@@ -3,12 +3,17 @@
   "publisher": "langium",
   "version": "0.1.0",
   "displayName": "Langium",
-  "description": "VS Code extension for Langium",
+  "description": "Support for the Langium Grammar Language",
   "categories": [
     "Programming Languages",
     "Other"
   ],
   "license": "MIT",
+  "icon": "data/langium-logo.png",
+  "galleryBanner": {
+    "color": "#262626",
+    "theme": "dark"
+  },
   "engines": {
     "vscode": "^1.53.0"
   },
