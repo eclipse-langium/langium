@@ -4,9 +4,10 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { CodeAction, CodeActionParams, Command } from 'vscode-languageserver';
+import { CancellationToken, CodeAction, CodeActionParams, Command,  } from 'vscode-languageserver';
 import { LangiumDocument } from '../documents/document';
+import { Response } from './lsp-util';
 
 export interface CodeActionProvider {
-    getCodeActions(document: LangiumDocument, params: CodeActionParams): Array<Command | CodeAction> | null;
+    getCodeActions(document: LangiumDocument, params: CodeActionParams, cancelToken?: CancellationToken): Response<Array<Command | CodeAction> | undefined>;
 }

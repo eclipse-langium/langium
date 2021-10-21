@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { Range, RenameParams, TextDocumentPositionParams, TextEdit, WorkspaceEdit } from 'vscode-languageserver';
+import { CancellationToken, Range, RenameParams, TextDocumentPositionParams, TextEdit, WorkspaceEdit } from 'vscode-languageserver';
 import { Position } from 'vscode-languageserver-textdocument';
 import { LangiumDocument } from '../documents/document';
 import { isNamed, NameProvider } from '../references/naming';
@@ -13,11 +13,12 @@ import { LangiumServices } from '../services';
 import { CstNode } from '../syntax-tree';
 import { findLeafNodeAtOffset } from '../utils/ast-util';
 import { toRange } from '../utils/cst-util';
+import { AsyncResponse, Response } from './lsp-util';
 import { ReferenceFinder } from './reference-finder';
 
 export interface RenameHandler {
-    renameElement(document: LangiumDocument, params: RenameParams): WorkspaceEdit | undefined;
-    prepareRename(document: LangiumDocument, params: TextDocumentPositionParams): Range | undefined;
+    renameElement(document: LangiumDocument, params: RenameParams, cancelToken?: CancellationToken): Response<WorkspaceEdit | undefined>;
+    prepareRename(document: LangiumDocument, params: TextDocumentPositionParams, cancelToken?: CancellationToken): Response<Range | undefined>;
 }
 
 export class DefaultRenameHandler implements RenameHandler {
@@ -32,17 +33,24 @@ export class DefaultRenameHandler implements RenameHandler {
         this.nameProvider = services.references.NameProvider;
     }
 
-    renameElement(document: LangiumDocument, params: RenameParams): WorkspaceEdit | undefined {
+    async renameElement(document: LangiumDocument, params: RenameParams): AsyncResponse<WorkspaceEdit | undefined> {
         const changes: Record<string, TextEdit[]> = {};
-        this.referenceFinder.findReferences(document, params, true).forEach(location => {
-            changes[location.uri]
-                ? changes[location.uri].push(TextEdit.replace(location.range, params.newName))
-                : changes[location.uri] = [TextEdit.replace(location.range, params.newName)];
+        const references = await this.referenceFinder.findReferences(document, { ...params, context: { includeDeclaration: true } });
+        if (!Array.isArray(references)) {
+            return undefined;
+        }
+        references.forEach(location => {
+            const change = TextEdit.replace(location.range, params.newName);
+            if (changes[location.uri]) {
+                changes[location.uri].push(change);
+            } else {
+                changes[location.uri] = [change];
+            }
         });
         return { changes };
     }
 
-    prepareRename(document: LangiumDocument, params: TextDocumentPositionParams): Range | undefined {
+    prepareRename(document: LangiumDocument, params: TextDocumentPositionParams): Response<Range | undefined> {
         return this.renameNodeRange(document, params.position);
     }
 

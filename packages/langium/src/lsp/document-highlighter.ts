@@ -4,17 +4,18 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import * as vscodeLanguageserver from 'vscode-languageserver';
+import { CancellationToken, DocumentHighlight, DocumentHighlightKind, DocumentHighlightParams } from 'vscode-languageserver';
 import { LangiumDocument } from '../documents/document';
 import { NameProvider } from '../references/naming';
 import { References } from '../references/references';
 import { LangiumServices } from '../services';
-import { AstNode, CstNode } from '../syntax-tree';
+import { AstNode, CstNode, Reference } from '../syntax-tree';
 import { findLeafNodeAtOffset, findLocalReferences, getDocument } from '../utils/ast-util';
 import { toRange } from '../utils/cst-util';
+import { Response } from './lsp-util';
 
 export interface DocumentHighlighter {
-    findHighlights(document: LangiumDocument, params: vscodeLanguageserver.DocumentHighlightParams): vscodeLanguageserver.Location[];
+    findHighlights(document: LangiumDocument, params: DocumentHighlightParams, cancelToken?: CancellationToken): Response<DocumentHighlight[] | undefined>;
 }
 
 export class DefaultDocumentHighlighter implements DocumentHighlighter {
@@ -26,37 +27,50 @@ export class DefaultDocumentHighlighter implements DocumentHighlighter {
         this.nameProvider = services.references.NameProvider;
     }
 
-    findHighlights(document: LangiumDocument, params: vscodeLanguageserver.DocumentHighlightParams): vscodeLanguageserver.Location[] {
+    findHighlights(document: LangiumDocument, params: DocumentHighlightParams): Response<DocumentHighlight[] | undefined> {
         const rootNode = document.parseResult.value.$cstNode;
         if (!rootNode) {
-            return [];
+            return undefined;
         }
-        const refs: CstNode[] = [];
         const selectedNode = findLeafNodeAtOffset(rootNode, document.textDocument.offsetAt(params.position));
         if (!selectedNode) {
-            return [];
+            return undefined;
         }
         const targetAstNode = this.references.findDeclaration(selectedNode)?.element;
         if (targetAstNode) {
+            const refs: Array<[CstNode, DocumentHighlightKind]> = [];
             if (getDocument(targetAstNode).uri.toString() === document.uri.toString()) {
                 const nameNode = this.findNameNode(targetAstNode);
                 if (nameNode) {
-                    refs.push(nameNode);
+                    refs.push([nameNode, this.getHighlightKind(nameNode)]);
                 }
             }
-            findLocalReferences(targetAstNode, rootNode.element).forEach((element) => {
-                refs.push(element.$refNode);
+            findLocalReferences(targetAstNode, rootNode.element).forEach(ref => {
+                refs.push([ref.$refNode, this.getHighlightKind(ref.$refNode, ref)]);
             });
+            return refs.map(([node, kind]) =>
+                DocumentHighlight.create(toRange(node, document), kind)
+            );
         }
-        return refs.map(node => vscodeLanguageserver.Location.create(
-            document.textDocument.uri,
-            toRange(node, document)
-        ));
+        return undefined;
     }
+
     protected findNameNode(node: AstNode): CstNode | undefined {
         const nameNode = this.nameProvider.getNameNode(node);
         if (nameNode)
             return nameNode;
         return node.$cstNode;
     }
+
+    /**
+     * Override this method to determine the highlight kind of the given CST node.
+     */
+    protected getHighlightKind(node: CstNode, reference?: Reference<AstNode>): DocumentHighlightKind {
+        if (reference) {
+            return DocumentHighlightKind.Read;
+        } else {
+            return DocumentHighlightKind.Text;
+        }
+    }
+
 }

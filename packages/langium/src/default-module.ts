@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { Connection, TextDocuments } from 'vscode-languageserver/node';
+import { Connection, TextDocuments } from 'vscode-languageserver';
 import { Module } from './dependency-injection';
 import { DefaultLangiumDocumentFactory, DefaultLangiumDocuments, DefaultTextDocumentFactory } from './documents/document';
 import { DefaultDocumentBuilder } from './documents/document-builder';

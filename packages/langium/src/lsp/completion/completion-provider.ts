@@ -4,8 +4,9 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { CompletionItem, CompletionItemKind, CompletionList } from 'vscode-languageserver';
+import { CancellationToken, CompletionItem, CompletionItemKind, CompletionList, CompletionParams } from 'vscode-languageserver';
 import { TextDocument, TextEdit } from 'vscode-languageserver-textdocument';
+import { LangiumDocument } from '../..';
 import * as ast from '../../grammar/generated/ast';
 import { getTypeNameAtElement } from '../../grammar/grammar-util';
 import { isNamed } from '../../references/naming';
@@ -15,13 +16,14 @@ import { AstNode, CstNode } from '../../syntax-tree';
 import { getContainerOfType, isAstNode, findLeafNodeAtOffset } from '../../utils/ast-util';
 import { findRelevantNode, flatten } from '../../utils/cst-util';
 import { stream } from '../../utils/stream';
+import { Response } from '../lsp-util';
 import { findFirstFeatures, findNextFeatures } from './follow-element-computation';
 import { RuleInterpreter } from './rule-interpreter';
 
 export type CompletionAcceptor = (value: string | AstNode | AstNodeDescription, item?: Partial<CompletionItem>) => void
 
 export interface CompletionProvider {
-    getCompletion(root: AstNode, offset: number): CompletionList
+    getCompletion(document: LangiumDocument, offset: number, params: CompletionParams, cancelToken?: CancellationToken): Response<CompletionList>
 }
 
 export class DefaultCompletionProvider {
@@ -36,12 +38,12 @@ export class DefaultCompletionProvider {
         this.grammar = services.Grammar;
     }
 
-    getCompletion(root: AstNode, offset: number): CompletionList {
+    getCompletion(document: LangiumDocument, offset: number): Response<CompletionList> {
+        const root = document.parseResult.value;
         const cst = root.$cstNode;
         const items: CompletionItem[] = [];
         const acceptor = (value: string | AstNode | AstNodeDescription, item?: Partial<CompletionItem>) => {
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            const completionItem = this.fillCompletionItem(root.$document!.textDocument, offset, value, item);
+            const completionItem = this.fillCompletionItem(document.textDocument, offset, value, item);
             if (completionItem) {
                 items.push(completionItem);
             }

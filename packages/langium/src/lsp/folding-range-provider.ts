@@ -4,16 +4,17 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { FoldingRange, FoldingRangeKind } from 'vscode-languageserver';
+import { CancellationToken, FoldingRange, FoldingRangeKind, FoldingRangeParams } from 'vscode-languageserver';
 import { LangiumDocument } from '../documents/document';
 import { LeafCstNodeImpl } from '../parser/cst-node-builder';
 import { LangiumServices } from '../services';
 import { AstNode, CstNode } from '../syntax-tree';
 import { AstNodeContent, streamAllContents } from '../utils/ast-util';
 import { streamCst } from '../utils/cst-util';
+import { Response } from './lsp-util';
 
 export interface FoldingRangeProvider {
-    getFoldingRanges(document: LangiumDocument): FoldingRange[]
+    getFoldingRanges(document: LangiumDocument, params: FoldingRangeParams, cancelToken?: CancellationToken): Response<FoldingRange[]>;
 }
 
 export type FoldingRangeAcceptor = (foldingRange: FoldingRange) => void;
@@ -26,7 +27,7 @@ export class DefaultFoldingRangeProvider implements FoldingRangeProvider {
         this.commentNames = services.parser.GrammarConfig.multilineCommentRules;
     }
 
-    getFoldingRanges(document: LangiumDocument): FoldingRange[] {
+    getFoldingRanges(document: LangiumDocument): Response<FoldingRange[]> {
         const foldings: FoldingRange[] = [];
         const acceptor: FoldingRangeAcceptor = (foldingRange) => foldings.push(foldingRange);
         this.collectFolding(document, acceptor);

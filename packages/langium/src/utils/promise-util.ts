@@ -42,7 +42,7 @@ export function setInterruptionPeriod(period: number): void {
  * a `CancellationToken`. This means that the promise returned by such a service is rejected with
  * this symbol as rejection reason.
  */
-export const OperationCanceled = Symbol('OperationCanceled');
+export const OperationCanceled = Symbol('OperationCancelled');
 
 /**
  * This function does two things:
