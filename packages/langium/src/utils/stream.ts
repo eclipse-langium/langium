@@ -27,9 +27,27 @@ export interface Stream<T> extends Iterable<T> {
     isEmpty(): boolean;
 
     /**
+     * Determines the number of elements in this stream.
+     */
+    count(): number;
+
+    /**
      * Collects all elements of this stream into an array.
      */
     toArray(): T[];
+
+    /**
+     * Collects all elements of this stream into a Set.
+     */
+    toSet(): Set<T>;
+
+    /**
+     * Collects all elements of this stream into a Map, applying the provided functions to determine keys and values.
+     *
+     * @param keyFn The function to derive map keys. If omitted, the stream elements are used as keys.
+     * @param valueFn The function to derive map values. If omitted, the stream elements are used as values.
+     */
+    toMap<K = T, V = T>(keyFn?: (e: T) => K, valueFn?: (e: T) => V): Map<K, V>;
 
     /**
      * Returns a string representation of a stream.
@@ -193,6 +211,14 @@ export interface Stream<T> extends Iterable<T> {
     tail(skipCount?: number): Stream<T>;
 
     /**
+     * Returns a stream consisting of the elements of this stream, truncated to be no longer than `maxSize`
+     * in length.
+     *
+     * @param maxSize The number of elements the stream should be limited to
+     */
+    limit(maxSize: number): Stream<T>;
+
+    /**
      * Returns a stream containing only the distinct elements from this stream. Equality is determined
      * with the same rules as a standard `Set`.
      *
@@ -235,6 +261,17 @@ export class StreamImpl<S, T> implements Stream<T> {
         return !!iterator.next().done;
     }
 
+    count(): number {
+        const iterator = this.iterator();
+        let count = 0;
+        let next = iterator.next();
+        while (!next.done) {
+            count++;
+            next = iterator.next();
+        }
+        return count;
+    }
+
     toArray(): T[] {
         const result: T[] = [];
         const iterator = this.iterator();
@@ -246,6 +283,18 @@ export class StreamImpl<S, T> implements Stream<T> {
             }
         } while (!next.done);
         return result;
+    }
+
+    toSet(): Set<T> {
+        return new Set(this);
+    }
+
+    toMap<K = T, V = T>(keyFn?: (e: T) => K, valueFn?: (e: T) => V): Map<K, V> {
+        const entryStream = this.map(element => <[K, V]>[
+            keyFn ? keyFn(element) : element,
+            valueFn ? valueFn(element) : element
+        ]);
+        return new Map(entryStream);
     }
 
     toString(): string {
@@ -530,6 +579,19 @@ export class StreamImpl<S, T> implements Stream<T> {
         );
     }
 
+    limit(maxSize: number): Stream<T> {
+        return new StreamImpl<{ size: number, state: S }, T>(
+            () => ({ size: 0, state: this.startFn() }),
+            state => {
+                state.size++;
+                if (state.size > maxSize) {
+                    return DONE_RESULT;
+                }
+                return this.nextFn(state.state);
+            }
+        );
+    }
+
     distinct<Key = T>(by?: (element: T) => Key): Stream<T> {
         const set = new Set<T | Key>();
         return this.filter(e => {
@@ -560,7 +622,7 @@ function toString(item: unknown): string {
 }
 
 function isIterable<T>(obj: unknown): obj is Iterable<T> {
-    return typeof (obj as Iterable<T>)[Symbol.iterator] === 'function';
+    return !!obj && typeof (obj as Iterable<T>)[Symbol.iterator] === 'function';
 }
 
 /**
@@ -575,27 +637,63 @@ export const EMPTY_STREAM: Stream<any> = new StreamImpl<undefined, any>(() => un
 export const DONE_RESULT: IteratorReturnResult<undefined> = Object.freeze({ done: true, value: undefined });
 
 /**
- * Create a stream from an iterable or array-like.
+ * Create a stream from one or more iterables or array-likes.
  */
-export function stream<T>(collection: Iterable<T> | ArrayLike<T>): Stream<T> {
-    if (collection instanceof StreamImpl) {
-        return collection;
-    }
-    if (isIterable(collection)) {
-        return new StreamImpl<Iterator<T>, T>(
-            () => collection[Symbol.iterator](),
-            (iterator) => iterator.next()
-        );
-    }
-    if (typeof collection.length === 'number') {
-        return new StreamImpl<{ index: number }, T>(
-            () => ({ index: 0 }),
-            (state) => {
-                if (state.index < collection.length) {
-                    return { done: false, value: collection[state.index++] };
-                } else {
-                    return DONE_RESULT;
+export function stream<T>(...collections: Array<Iterable<T> | ArrayLike<T>>): Stream<T> {
+    if (collections.length === 1) {
+        const collection = collections[0];
+        if (collection instanceof StreamImpl) {
+            return collection;
+        }
+        if (isIterable(collection)) {
+            return new StreamImpl<Iterator<T, undefined>, T>(
+                () => collection[Symbol.iterator](),
+                (iterator) => iterator.next()
+            );
+        }
+        if (typeof collection.length === 'number') {
+            return new StreamImpl<{ index: number }, T>(
+                () => ({ index: 0 }),
+                (state) => {
+                    if (state.index < collection.length) {
+                        return { done: false, value: collection[state.index++] };
+                    } else {
+                        return DONE_RESULT;
+                    }
                 }
+            );
+        }
+    }
+    if (collections.length > 1) {
+        type State = { collIndex: number, iterator?: Iterator<T, undefined>, array?: ArrayLike<T>, arrIndex: number };
+        return new StreamImpl<State, T>(
+            () => ({ collIndex: 0, arrIndex: 0 }),
+            (state) => {
+                do {
+                    if (state.iterator) {
+                        const next = state.iterator.next();
+                        if (!next.done) {
+                            return next;
+                        }
+                        state.iterator = undefined;
+                    }
+                    if (state.array) {
+                        if (state.arrIndex < state.array.length) {
+                            return { done: false, value: state.array[state.arrIndex++] };
+                        }
+                        state.array = undefined;
+                        state.arrIndex = 0;
+                    }
+                    if (state.collIndex < collections.length) {
+                        const collection = collections[state.collIndex++];
+                        if (isIterable(collection)) {
+                            state.iterator = collection[Symbol.iterator]();
+                        } else if (collection && typeof collection.length === 'number') {
+                            state.array = collection;
+                        }
+                    }
+                } while (state.iterator || state.array || state.collIndex < collections.length);
+                return DONE_RESULT;
             }
         );
     }
