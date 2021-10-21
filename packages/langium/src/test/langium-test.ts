@@ -4,7 +4,9 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { CompletionItem, DocumentSymbol, Hover, MarkupContent, Range } from 'vscode-languageserver';
+import {
+    CompletionItem, DocumentSymbol, MarkupContent, Range, ResponseError, TextDocumentIdentifier, TextDocumentPositionParams
+} from 'vscode-languageserver';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { LangiumDocument } from '../documents/document';
 import { BuildResult } from '../documents/document-builder';
@@ -41,7 +43,10 @@ export function expectSymbols(services: LangiumServices, expectEqual: ExpectFunc
     return async input => {
         const document = await parseDocument(services, input.text);
         const symbolProvider = services.lsp.DocumentSymbolProvider;
-        const symbols = symbolProvider.getSymbols(document);
+        const symbols = await symbolProvider.getSymbols(document, textDocumentParams(document));
+        if (isError(symbols)) {
+            _throw(symbols);
+        }
         expectEqual(symbols.length, input.expectedSymbols.length);
         for (let i = 0; i < input.expectedSymbols.length; i++) {
             const expected = input.expectedSymbols[i];
@@ -60,7 +65,11 @@ export function expectFoldings(services: LangiumServices, expectEqual: ExpectFun
         const { output, ranges } = replaceIndices(input);
         const document = await parseDocument(services, output);
         const foldingRangeProvider = services.lsp.FoldingRangeProvider;
-        const foldings = foldingRangeProvider.getFoldingRanges(document).sort((a, b) => a.startLine - b.startLine);
+        const foldings = await foldingRangeProvider.getFoldingRanges(document, textDocumentParams(document));
+        if (isError(foldings)) {
+            _throw(foldings);
+        }
+        foldings.sort((a, b) => a.startLine - b.startLine);
         expectEqual(foldings.length, ranges.length);
         for (let i = 0; i < ranges.length; i++) {
             const expected = ranges[i];
@@ -69,6 +78,10 @@ export function expectFoldings(services: LangiumServices, expectEqual: ExpectFun
             expectEqual(item.endLine, document.textDocument.positionAt(expected[1]).line);
         }
     };
+}
+
+function textDocumentParams(document: LangiumDocument): { textDocument: TextDocumentIdentifier } {
+    return { textDocument: { uri: document.textDocument.uri } };
 }
 
 export interface ExpectedCompletion extends ExpectedBase {
@@ -81,7 +94,11 @@ export function expectCompletion(services: LangiumServices, expectEqual: ExpectF
         const { output, indices } = replaceIndices(expectedCompletion);
         const document = await parseDocument(services, output);
         const completionProvider = services.lsp.completion.CompletionProvider;
-        const completions = completionProvider.getCompletion(document.parseResult!.value, indices[expectedCompletion.index]);
+        const offset = indices[expectedCompletion.index];
+        const completions = await completionProvider.getCompletion(document, offset, textDocumentPositionParams(document, offset));
+        if (isError(completions)) {
+            _throw(completions);
+        }
         const items = completions.items.sort((a, b) => a.sortText?.localeCompare(b.sortText || '0') || 0);
         expectEqual(items.length, expectedCompletion.expectedItems.length);
         for (let i = 0; i < expectedCompletion.expectedItems.length; i++) {
@@ -106,12 +123,10 @@ export function expectGoToDefinition(services: LangiumServices, expectEqual: Exp
         const { output, indices, ranges } = replaceIndices(expectedGoToDefinition);
         const document = await parseDocument(services, output);
         const goToResolver = services.lsp.GoToResolver;
-        const position = document.textDocument.positionAt(indices[expectedGoToDefinition.index]);
-        const textPos = {
-            textDocument: document.textDocument,
-            position: position
-        };
-        const locationLink = goToResolver.goToDefinition(document, textPos);
+        const locationLink = await goToResolver.goToDefinition(document, textDocumentPositionParams(document, indices[expectedGoToDefinition.index])) ?? [];
+        if (isError(locationLink)) {
+            _throw(locationLink);
+        }
         const expectedRange: Range = {
             start: document.textDocument.positionAt(ranges[expectedGoToDefinition.rangeIndex][0]),
             end: document.textDocument.positionAt(ranges[expectedGoToDefinition.rangeIndex][1])
@@ -131,21 +146,17 @@ export function expectHover(services: LangiumServices, cb: ExpectFunction): (exp
         const { output, indices } = replaceIndices(expectedHover);
         const document = await parseDocument(services, output);
         const hoverProvider = services.lsp.HoverProvider;
-        const position = document.textDocument.positionAt(indices[expectedHover.index]);
-        const hover = hoverProvider.getHoverContent(document, {
-            position,
-            textDocument: document.textDocument
-        });
-        const hoverContent = getHoverContent(hover);
+        const hover = await hoverProvider.getHoverContent(document, textDocumentPositionParams(document, indices[expectedHover.index]));
+        if (isError(hover)) {
+            _throw(hover);
+        }
+        const hoverContent = hover && MarkupContent.is(hover.contents) ? hover.contents.value : undefined;
         cb(hoverContent, expectedHover.hover);
     };
 }
 
-function getHoverContent(hover?: Hover): string | undefined {
-    if (hover && MarkupContent.is(hover.contents)) {
-        return hover.contents.value;
-    }
-    return;
+function textDocumentPositionParams(document: LangiumDocument, offset: number): TextDocumentPositionParams {
+    return { textDocument: { uri: document.textDocument.uri }, position: document.textDocument.positionAt(offset) };
 }
 
 export async function parseDocument<T extends AstNode = AstNode>(services: LangiumServices, input: string): Promise<LangiumDocument<T>> {
@@ -197,4 +208,15 @@ function replaceIndices(base: ExpectedBase): { output: string, indices: number[]
 
 function escapeRegExp(input: string): string {
     return input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function _throw(result: ResponseError<void>): never {
+    const error = new Error(result.message);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (error as any).code = result.code;
+    throw error;
+}
+
+function isError(result: unknown): result is ResponseError<void> {
+    return typeof result === 'object' && result !== null && typeof (result as ResponseError<void>).code === 'number';
 }

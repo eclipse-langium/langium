@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { Hover, HoverParams } from 'vscode-languageserver';
+import { CancellationToken, Hover, HoverParams } from 'vscode-languageserver';
 import { LangiumDocument } from '../documents/document';
 import { GrammarConfig } from '../grammar/grammar-config';
 import { References } from '../references/references';
@@ -12,9 +12,10 @@ import { LangiumServices } from '../services';
 import { AstNode } from '../syntax-tree';
 import { findLeafNodeAtOffset } from '../utils/ast-util';
 import { findCommentNode } from '../utils/cst-util';
+import { Response } from './lsp-util';
 
 export interface HoverProvider {
-    getHoverContent(document: LangiumDocument, params: HoverParams): Hover | undefined;
+    getHoverContent(document: LangiumDocument, params: HoverParams, cancelToken?: CancellationToken): Response<Hover | undefined>;
 }
 
 export abstract class AstNodeHoverProvider implements HoverProvider {
@@ -25,7 +26,7 @@ export abstract class AstNodeHoverProvider implements HoverProvider {
         this.references = services.references.References;
     }
 
-    getHoverContent(document: LangiumDocument, params: HoverParams): Hover | undefined {
+    getHoverContent(document: LangiumDocument, params: HoverParams): Response<Hover | undefined> {
         const rootNode = document.parseResult?.value?.$cstNode;
         if (rootNode) {
             const offset = document.textDocument.offsetAt(params.position);
@@ -37,10 +38,10 @@ export abstract class AstNodeHoverProvider implements HoverProvider {
                 }
             }
         }
-        return;
+        return undefined;
     }
 
-    abstract getAstNodeHoverContent(node: AstNode): Hover | undefined;
+    protected abstract getAstNodeHoverContent(node: AstNode): Response<Hover | undefined>;
 
 }
 
@@ -54,7 +55,7 @@ export class MultilineCommentHoverProvider extends AstNodeHoverProvider {
         this.grammarConfig = services.parser.GrammarConfig;
     }
 
-    getAstNodeHoverContent(node: AstNode): Hover | undefined {
+    protected getAstNodeHoverContent(node: AstNode): Response<Hover | undefined> {
         const lastNode = findCommentNode(node.$cstNode, this.grammarConfig.multilineCommentRules);
         let content: string | undefined;
         if (lastNode) {
@@ -74,7 +75,7 @@ export class MultilineCommentHoverProvider extends AstNodeHoverProvider {
         return undefined;
     }
 
-    getCommentContent(commentText: string): string {
+    protected getCommentContent(commentText: string): string {
         const split = commentText.split('\n').map(e => {
             e = e.trim();
             if (e.startsWith('*')) {

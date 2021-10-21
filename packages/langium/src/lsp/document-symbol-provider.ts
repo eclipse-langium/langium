@@ -4,15 +4,16 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { DocumentSymbol, SymbolKind } from 'vscode-languageserver';
+import { CancellationToken, DocumentSymbol, DocumentSymbolParams,  SymbolKind } from 'vscode-languageserver';
 import { LangiumDocument } from '../documents/document';
 import { NameProvider } from '../references/naming';
 import { LangiumServices } from '../services';
 import { AstNode } from '../syntax-tree';
 import { streamContents } from '../utils/ast-util';
+import { Response } from './lsp-util';
 
 export interface DocumentSymbolProvider {
-    getSymbols(document: LangiumDocument): DocumentSymbol[];
+    getSymbols(document: LangiumDocument, params: DocumentSymbolParams, cancelToken?: CancellationToken): Response<DocumentSymbol[]>;
 }
 
 export class DefaultDocumentSymbolProvider implements DocumentSymbolProvider {
@@ -23,7 +24,7 @@ export class DefaultDocumentSymbolProvider implements DocumentSymbolProvider {
         this.nameProvider = services.references.NameProvider;
     }
 
-    getSymbols(document: LangiumDocument): DocumentSymbol[] {
+    getSymbols(document: LangiumDocument): Response<DocumentSymbol[]> {
         return this.getSymbol(document, document.parseResult.value);
     }
 

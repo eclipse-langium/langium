@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { LocationLink, TextDocumentPositionParams } from 'vscode-languageserver';
+import { CancellationToken, DefinitionParams, LocationLink } from 'vscode-languageserver';
 import { LangiumDocument } from '../documents/document';
 import { NameProvider } from '../references/naming';
 import { References } from '../references/references';
@@ -12,9 +12,10 @@ import { LangiumServices } from '../services';
 import { CstNode } from '../syntax-tree';
 import { findLeafNodeAtOffset, getDocument } from '../utils/ast-util';
 import { toRange } from '../utils/cst-util';
+import { Response } from './lsp-util';
 
 export interface GoToResolver {
-    goToDefinition(document: LangiumDocument, position: TextDocumentPositionParams): LocationLink[]
+    goToDefinition(document: LangiumDocument, params: DefinitionParams, cancelToken?: CancellationToken): Response<LocationLink[] | undefined>;
 }
 
 export class DefaultGoToResolverProvider implements GoToResolver {
@@ -27,7 +28,7 @@ export class DefaultGoToResolverProvider implements GoToResolver {
         this.references = services.references.References;
     }
 
-    goToDefinition(document: LangiumDocument, params: TextDocumentPositionParams): LocationLink[] {
+    goToDefinition(document: LangiumDocument, params: DefinitionParams): Response<LocationLink[] | undefined> {
         const rootNode = document.parseResult.value;
         const targetCstNodes: Array<{ source: CstNode, target: CstNode, targetDocument: LangiumDocument }> = [];
         if (rootNode.$cstNode) {

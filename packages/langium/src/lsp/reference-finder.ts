@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { Location, Range, TextDocumentPositionParams } from 'vscode-languageserver';
+import { CancellationToken, Location, Range, ReferenceParams } from 'vscode-languageserver';
 import { URI } from 'vscode-uri';
 import { LangiumDocument } from '../documents/document';
 import { NameProvider } from '../references/naming';
@@ -13,9 +13,10 @@ import { LangiumServices } from '../services';
 import { AstNode, CstNode } from '../syntax-tree';
 import { findLeafNodeAtOffset, getDocument, isReference } from '../utils/ast-util';
 import { flatten, toRange } from '../utils/cst-util';
+import { Response } from './lsp-util';
 
 export interface ReferenceFinder {
-    findReferences(document: LangiumDocument, params: TextDocumentPositionParams, includeDeclaration: boolean): Location[];
+    findReferences(document: LangiumDocument, params: ReferenceParams, cancelToken?: CancellationToken): Response<Location[]>;
 }
 
 export class DefaultReferenceFinder implements ReferenceFinder {
@@ -27,7 +28,7 @@ export class DefaultReferenceFinder implements ReferenceFinder {
         this.references = services.references.References;
     }
 
-    findReferences(document: LangiumDocument, params: TextDocumentPositionParams, includeDeclaration: boolean): Location[] {
+    findReferences(document: LangiumDocument, params: ReferenceParams): Response<Location[]> {
         const rootNode = document.parseResult.value.$cstNode;
         if (!rootNode) {
             return [];
@@ -39,7 +40,7 @@ export class DefaultReferenceFinder implements ReferenceFinder {
         }
         const targetAstNode = this.references.findDeclaration(selectedNode)?.element;
         if (targetAstNode) {
-            if (includeDeclaration) {
+            if (params.context.includeDeclaration) {
                 const declDoc = getDocument(targetAstNode);
                 const nameNode = this.findNameNode(targetAstNode, selectedNode.text);
                 if (nameNode)

@@ -5,18 +5,14 @@
  ******************************************************************************/
 
 import {
-    AbstractCancellationTokenSource,
-    CodeAction,
-    CodeActionParams,
-    Command,
-    CompletionList, Connection,
-    DocumentHighlightParams, DocumentSymbol, DocumentSymbolParams, FoldingRange, FoldingRangeParams, InitializeResult,
-    Location, LocationLink, ReferenceParams, TextDocumentPositionParams, TextDocumentSyncKind
-} from 'vscode-languageserver/node';
+    AbstractCancellationTokenSource, CancellationToken, Connection, HandlerResult, InitializeResult,
+    LSPErrorCodes, RequestHandler, ResponseError, TextDocumentIdentifier, TextDocuments, TextDocumentSyncKind
+} from 'vscode-languageserver';
+import { TextDocument } from 'vscode-languageserver-textdocument';
 import { URI } from 'vscode-uri';
 import { LangiumDocument } from '../documents/document';
 import { LangiumServices } from '../services';
-import { OperationCanceled, startCancelableOperation } from '../utils/promise-util';
+import { OperationCanceled as OperationCancelled, startCancelableOperation } from '../utils/promise-util';
 
 export function startLanguageServer(services: LangiumServices): void {
     const connection = services.lsp.Connection;
@@ -67,25 +63,12 @@ export function startLanguageServer(services: LangiumServices): void {
     });
 
     const documents = services.documents.TextDocuments;
-    const documentBuilder = services.documents.DocumentBuilder;
-    let changeTokenSource: AbstractCancellationTokenSource;
-    let changePromise: Promise<void> | undefined;
-    documents.onDidChangeContent(async change => {
-        changeTokenSource?.cancel();
-        if (changePromise) {
-            await changePromise;
-        }
-        changeTokenSource = startCancelableOperation();
-        changePromise = documentBuilder.documentChanged(URI.parse(change.document.uri), changeTokenSource.token).catch(err => {
-            if (err !== OperationCanceled) {
-                throw err;
-            }
-        });
-    });
+
+    addDocumentsHandler(documents, services);
     addCompletionHandler(connection, services);
     addFindReferencesHandler(connection, services);
     addDocumentSymbolHandler(connection, services);
-    addGotoDefinition(connection, services);
+    addGotoDefinitionHandler(connection, services);
     addDocumentHighlightsHandler(connection, services);
     addFoldingRangeHandler(connection, services);
     addCodeActionHandler(connection, services);
@@ -95,37 +78,47 @@ export function startLanguageServer(services: LangiumServices): void {
     // Make the text document manager listen on the connection for open, change and close text document events.
     documents.listen(connection);
 
-    // Listen on the connection.
+    // Start listening for incoming messages from the client.
     connection.listen();
 }
 
-export function addCompletionHandler(connection: Connection, services: LangiumServices): void {
-    // TODO create an extensible service API for completion
-    connection.onCompletion(
-        (_textDocumentPosition: TextDocumentPositionParams): CompletionList => {
-            const document = paramsDocument(_textDocumentPosition, services);
-            if (document) {
-                const offset = document.textDocument.offsetAt(_textDocumentPosition.position);
-                const completionProvider = services.lsp.completion.CompletionProvider;
-                const assist = completionProvider.getCompletion(document.parseResult.value, offset);
-                return assist;
-            } else {
-                return CompletionList.create();
+export function addDocumentsHandler(documents: TextDocuments<TextDocument>, services: LangiumServices): void {
+    const documentBuilder = services.documents.DocumentBuilder;
+    let changeTokenSource: AbstractCancellationTokenSource;
+    let changePromise: Promise<void> | undefined;
+    documents.onDidChangeContent(async change => {
+        changeTokenSource?.cancel();
+        if (changePromise) {
+            await changePromise;
+        }
+        changeTokenSource = startCancelableOperation();
+        try {
+            changePromise = documentBuilder.documentChanged(URI.parse(change.document.uri), changeTokenSource.token);
+        } catch (err) {
+            if (err !== OperationCancelled) {
+                throw err;
             }
         }
-    );
+    });
+}
+
+export function addCompletionHandler(connection: Connection, services: LangiumServices): void {
+    const completionProvider = services.lsp.completion.CompletionProvider;
+    connection.onCompletion(createHandler(
+        (document, params, cancelToken) => {
+            const offset = document.textDocument.offsetAt(params.position);
+            return completionProvider.getCompletion(document, offset, params, cancelToken);
+        },
+        services
+    ));
 }
 
 export function addFindReferencesHandler(connection: Connection, services: LangiumServices): void {
     const referenceFinder = services.lsp.ReferenceFinder;
-    connection.onReferences((params: ReferenceParams): Location[] => {
-        const document = paramsDocument(params, services);
-        if (document) {
-            return referenceFinder.findReferences(document, params, params.context.includeDeclaration);
-        } else {
-            return [];
-        }
-    });
+    connection.onReferences(createHandler(
+        (document, params, cancelToken) => referenceFinder.findReferences(document, params, cancelToken),
+        services
+    ));
 }
 
 export function addCodeActionHandler(connection: Connection, services: LangiumServices): void {
@@ -133,87 +126,89 @@ export function addCodeActionHandler(connection: Connection, services: LangiumSe
     if (!codeActionProvider) {
         return;
     }
-    connection.onCodeAction((params: CodeActionParams): Array<Command | CodeAction> | null => {
-        const document = paramsDocument(params, services);
-        if (document) {
-            return codeActionProvider.getCodeActions(document, params);
-        } else {
-            return [];
-        }
-    });
+    connection.onCodeAction(createHandler(
+        (document, params, cancelToken) => codeActionProvider.getCodeActions(document, params, cancelToken),
+        services
+    ));
 }
 
 export function addDocumentSymbolHandler(connection: Connection, services: LangiumServices): void {
     const symbolProvider = services.lsp.DocumentSymbolProvider;
-    connection.onDocumentSymbol((params: DocumentSymbolParams): DocumentSymbol[] => {
-        const document = paramsDocument(params, services);
-        if (document) {
-            return symbolProvider.getSymbols(document);
-        } else {
-            return [];
-        }
-    });
+    connection.onDocumentSymbol(createHandler(
+        (document, params, cancelToken) => symbolProvider.getSymbols(document, params, cancelToken),
+        services
+    ));
 }
 
-export function addGotoDefinition(connection: Connection, services: LangiumServices): void {
-    connection.onDefinition(
-        (_textDocumentPosition: TextDocumentPositionParams): LocationLink[] => {
-            const document = paramsDocument(_textDocumentPosition, services);
-            if (document) {
-                return services.lsp.GoToResolver.goToDefinition(document, _textDocumentPosition);
-            }
-            else {
-                return [];
-            }
-        }
-    );
+export function addGotoDefinitionHandler(connection: Connection, services: LangiumServices): void {
+    connection.onDefinition(createHandler(
+        (document, params, cancelToken) => services.lsp.GoToResolver.goToDefinition(document, params, cancelToken),
+        services
+    ));
 }
 
 export function addDocumentHighlightsHandler(connection: Connection, services: LangiumServices): void {
     const documentHighlighter = services.lsp.DocumentHighlighter;
-    connection.onDocumentHighlight((params: DocumentHighlightParams): Location[] => {
-        const document = paramsDocument(params, services);
-        if (document) {
-            return documentHighlighter.findHighlights(document, params);
-        } else {
-            return [];
-        }
-    });
+    connection.onDocumentHighlight(createHandler(
+        (document, params, cancelToken) => documentHighlighter.findHighlights(document, params, cancelToken),
+        services
+    ));
 }
 
 export function addHoverHandler(connection: Connection, services: LangiumServices): void {
     const hoverProvider = services.lsp.HoverProvider;
-    connection.onHover(params => {
-        const document = paramsDocument(params, services);
-        return document && hoverProvider.getHoverContent(document, params);
-    });
+    connection.onHover(createHandler(
+        (document, params, cancelToken) => hoverProvider.getHoverContent(document, params, cancelToken),
+        services
+    ));
 }
 
 export function addFoldingRangeHandler(connection: Connection, services: LangiumServices): void {
     const foldingRangeProvider = services.lsp.FoldingRangeProvider;
-    connection.onFoldingRanges((params: FoldingRangeParams): FoldingRange[] => {
-        const document = paramsDocument(params, services);
-        if (document) {
-            return foldingRangeProvider.getFoldingRanges(document);
-        } else {
-            return [];
-        }
-    });
+    connection.onFoldingRanges(createHandler(
+        (document, params, cancelToken) => foldingRangeProvider.getFoldingRanges(document, params, cancelToken),
+        services
+    ));
 }
 
 export function addRenameHandler(connection: Connection, services: LangiumServices): void {
     const renameHandler = services.lsp.RenameHandler;
-    connection.onRenameRequest(params => {
-        const document = paramsDocument(params, services);
-        return document ? renameHandler.renameElement(document, params) : undefined;
-    });
-    connection.onPrepareRename(params => {
-        const document = paramsDocument(params, services);
-        return document ? renameHandler.prepareRename(document, params) : undefined;
-    });
+    connection.onRenameRequest(createHandler(
+        (document, params, cancelToken) => renameHandler.renameElement(document, params, cancelToken),
+        services
+    ));
+    connection.onPrepareRename(createHandler(
+        (document, params, cancelToken) => renameHandler.prepareRename(document, params, cancelToken),
+        services
+    ));
 }
 
-function paramsDocument(params: TextDocumentPositionParams | DocumentSymbolParams, services: LangiumServices): LangiumDocument | undefined {
+export function createHandler<P extends { textDocument: TextDocumentIdentifier }, R, E = void>(
+    serviceCall: (document: LangiumDocument, params: P, cancelToken: CancellationToken) => HandlerResult<R, E>,
+    services: LangiumServices
+): RequestHandler<P, R | null, E> {
+    return async (params: P, cancelToken: CancellationToken) => {
+        const document = paramsDocument(params, services);
+        if (!document) {
+            return null;
+        }
+        try {
+            return await serviceCall(document, params, cancelToken);
+        } catch (err) {
+            return responseError<E>(err);
+        }
+    };
+}
+
+function paramsDocument(params: { textDocument: TextDocumentIdentifier }, services: LangiumServices): LangiumDocument | undefined {
     const uri = URI.parse(params.textDocument.uri);
     return services.documents.LangiumDocuments.getOrCreateDocument(uri);
+}
+
+function responseError<E = void>(err: unknown): ResponseError<E> {
+    if (err === OperationCancelled) {
+        return new ResponseError(LSPErrorCodes.RequestCancelled, 'The request has been cancelled.');
+    } else {
+        throw err;
+    }
 }
