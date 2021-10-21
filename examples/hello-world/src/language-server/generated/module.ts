@@ -3,17 +3,18 @@
  * DO NOT EDIT MANUALLY!
  ******************************************************************************/
 
-import { LangiumGeneratedServices, LangiumServices, Module } from 'langium';
+import { LangiumGeneratedServices, LangiumServices, LanguageMetaData, Module } from 'langium';
 import { HelloWorldAstReflection } from './ast';
-import { HelloWorldGrammarAccess } from './grammar-access';
-import { HelloWorldLanguageMetaData } from './meta-data';
-import { Parser } from './parser';
+import { grammar } from './grammar';
+
+export const languageMetaData: LanguageMetaData = {
+    languageId: 'hello-world',
+    fileExtensions: ['.hello']
+};
 
 export const HelloWorldGeneratedModule: Module<LangiumServices, LangiumGeneratedServices> = {
-    parser: {
-        LangiumParser: (injector) => new Parser(injector)
-    },
-    GrammarAccess: () => new HelloWorldGrammarAccess(),
+    Grammar: () => grammar(),
     AstReflection: () => new HelloWorldAstReflection(),
-    LanguageMetaData: () => new HelloWorldLanguageMetaData()
+    LanguageMetaData: () => languageMetaData,
+    parser: {}
 };

@@ -5,7 +5,8 @@
 
 import { loadGrammar, Grammar } from 'langium';
 
-const grammar = (): Grammar => loadGrammar(`{
+let loaded: Grammar | undefined;
+export const grammar = (): Grammar => loaded || (loaded = loadGrammar(`{
   "$type": "Grammar",
   "usedGrammars": [],
   "hiddenTokens": [
@@ -159,6 +160,4 @@ const grammar = (): Grammar => loadGrammar(`{
   ],
   "name": "HelloWorld",
   "definesHiddenTokens": true
-}`);
-
-export default grammar;
+}`));

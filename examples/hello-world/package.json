@@ -25,6 +25,14 @@
     "activationEvents": [
         "onLanguage:hello-world"
     ],
+    "files": [
+        "bin",
+        "out",
+        "src"
+    ],
+    "bin": {
+        "hello-world-cli": "./bin/cli"
+    },
     "main": "./out/extension.js",
     "langium": {
         "languageId": "hello-world",
@@ -43,6 +51,8 @@
         "langium:generate": "langium generate"
     },
     "dependencies": {
+        "colors": "^1.4.0",
+        "commander": "^8.0.0",
         "langium": "^0.1.0",
         "vscode-languageclient": "^7.0.0",
         "vscode-languageserver": "^7.0.0"
