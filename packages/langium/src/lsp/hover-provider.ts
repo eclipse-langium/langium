@@ -12,10 +12,16 @@ import { LangiumServices } from '../services';
 import { AstNode } from '../syntax-tree';
 import { findLeafNodeAtOffset } from '../utils/ast-util';
 import { findCommentNode } from '../utils/cst-util';
-import { Response } from './lsp-util';
+import { MaybePromise } from '../utils/promise-util';
 
 export interface HoverProvider {
-    getHoverContent(document: LangiumDocument, params: HoverParams, cancelToken?: CancellationToken): Response<Hover | undefined>;
+    /**
+     * Handle a hover request.
+     *
+     * @throws `OperationCancelled` if cancellation is detected during execution
+     * @throws `ResponseError` if an error is detected that should be sent as response to the client
+     */
+    getHoverContent(document: LangiumDocument, params: HoverParams, cancelToken?: CancellationToken): MaybePromise<Hover | undefined>;
 }
 
 export abstract class AstNodeHoverProvider implements HoverProvider {
@@ -26,7 +32,7 @@ export abstract class AstNodeHoverProvider implements HoverProvider {
         this.references = services.references.References;
     }
 
-    getHoverContent(document: LangiumDocument, params: HoverParams): Response<Hover | undefined> {
+    getHoverContent(document: LangiumDocument, params: HoverParams): MaybePromise<Hover | undefined> {
         const rootNode = document.parseResult?.value?.$cstNode;
         if (rootNode) {
             const offset = document.textDocument.offsetAt(params.position);
@@ -41,7 +47,7 @@ export abstract class AstNodeHoverProvider implements HoverProvider {
         return undefined;
     }
 
-    protected abstract getAstNodeHoverContent(node: AstNode): Response<Hover | undefined>;
+    protected abstract getAstNodeHoverContent(node: AstNode): MaybePromise<Hover | undefined>;
 
 }
 
@@ -55,7 +61,7 @@ export class MultilineCommentHoverProvider extends AstNodeHoverProvider {
         this.grammarConfig = services.parser.GrammarConfig;
     }
 
-    protected getAstNodeHoverContent(node: AstNode): Response<Hover | undefined> {
+    protected getAstNodeHoverContent(node: AstNode): MaybePromise<Hover | undefined> {
         const lastNode = findCommentNode(node.$cstNode, this.grammarConfig.multilineCommentRules);
         let content: string | undefined;
         if (lastNode) {

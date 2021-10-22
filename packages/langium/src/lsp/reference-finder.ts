@@ -13,10 +13,16 @@ import { LangiumServices } from '../services';
 import { AstNode, CstNode } from '../syntax-tree';
 import { findLeafNodeAtOffset, getDocument, isReference } from '../utils/ast-util';
 import { flatten, toRange } from '../utils/cst-util';
-import { Response } from './lsp-util';
+import { MaybePromise } from '../utils/promise-util';
 
 export interface ReferenceFinder {
-    findReferences(document: LangiumDocument, params: ReferenceParams, cancelToken?: CancellationToken): Response<Location[]>;
+    /**
+     * Handle a find references request.
+     *
+     * @throws `OperationCancelled` if cancellation is detected during execution
+     * @throws `ResponseError` if an error is detected that should be sent as response to the client
+     */
+    findReferences(document: LangiumDocument, params: ReferenceParams, cancelToken?: CancellationToken): MaybePromise<Location[]>;
 }
 
 export class DefaultReferenceFinder implements ReferenceFinder {
@@ -28,7 +34,7 @@ export class DefaultReferenceFinder implements ReferenceFinder {
         this.references = services.references.References;
     }
 
-    findReferences(document: LangiumDocument, params: ReferenceParams): Response<Location[]> {
+    findReferences(document: LangiumDocument, params: ReferenceParams): MaybePromise<Location[]> {
         const rootNode = document.parseResult.value.$cstNode;
         if (!rootNode) {
             return [];

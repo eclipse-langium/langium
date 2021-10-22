@@ -13,12 +13,25 @@ import { LangiumServices } from '../services';
 import { CstNode } from '../syntax-tree';
 import { findLeafNodeAtOffset } from '../utils/ast-util';
 import { toRange } from '../utils/cst-util';
-import { AsyncResponse, Response } from './lsp-util';
+import { MaybePromise } from '../utils/promise-util';
 import { ReferenceFinder } from './reference-finder';
 
 export interface RenameHandler {
-    renameElement(document: LangiumDocument, params: RenameParams, cancelToken?: CancellationToken): Response<WorkspaceEdit | undefined>;
-    prepareRename(document: LangiumDocument, params: TextDocumentPositionParams, cancelToken?: CancellationToken): Response<Range | undefined>;
+    /**
+     * Handle a rename request.
+     *
+     * @throws `OperationCancelled` if cancellation is detected during execution
+     * @throws `ResponseError` if an error is detected that should be sent as response to the client
+     */
+    renameElement(document: LangiumDocument, params: RenameParams, cancelToken?: CancellationToken): MaybePromise<WorkspaceEdit | undefined>;
+
+    /**
+     * Handle a prepare rename request.
+     *
+     * @throws `OperationCancelled` if cancellation is detected during execution
+     * @throws `ResponseError` if an error is detected that should be sent as response to the client
+     */
+    prepareRename(document: LangiumDocument, params: TextDocumentPositionParams, cancelToken?: CancellationToken): MaybePromise<Range | undefined>;
 }
 
 export class DefaultRenameHandler implements RenameHandler {
@@ -33,7 +46,7 @@ export class DefaultRenameHandler implements RenameHandler {
         this.nameProvider = services.references.NameProvider;
     }
 
-    async renameElement(document: LangiumDocument, params: RenameParams): AsyncResponse<WorkspaceEdit | undefined> {
+    async renameElement(document: LangiumDocument, params: RenameParams): Promise<WorkspaceEdit | undefined> {
         const changes: Record<string, TextEdit[]> = {};
         const references = await this.referenceFinder.findReferences(document, { ...params, context: { includeDeclaration: true } });
         if (!Array.isArray(references)) {
@@ -50,7 +63,7 @@ export class DefaultRenameHandler implements RenameHandler {
         return { changes };
     }
 
-    prepareRename(document: LangiumDocument, params: TextDocumentPositionParams): Response<Range | undefined> {
+    prepareRename(document: LangiumDocument, params: TextDocumentPositionParams): MaybePromise<Range | undefined> {
         return this.renameNodeRange(document, params.position);
     }
 

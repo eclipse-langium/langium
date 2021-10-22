@@ -19,20 +19,22 @@ import { AstNode } from '../syntax-tree';
 export interface DocumentBuilder {
     /**
      * Inserts the document into the index and rebuilds affected documents
+     *
      * @param document which should be built
      * @param cancelToken allows to cancel the current operation
-     * @throws `OperationCanceled` if a user action occurs during execution
+     * @throws `OperationCancelled` if cancellation is detected during execution
      */
     build(document: LangiumDocument, cancelToken?: CancellationToken): Promise<BuildResult>
     /**
      * This method is called when a document change is detected.
      * Implementation should updates the state of that `LangiumDocument` and make sure
      * that the index information of the affected documents are also updated.
+     *
      * @param uri of the document that was changed
      * @param cancelToken allows to cancel the current operation
      * @see IndexManager.update()
      * @see LangiumDocuments.invalidateDocument()
-     * @throws `OperationCanceled` if a user action occurs during execution
+     * @throws `OperationCancelled` if cancellation is detected during execution
      */
     documentChanged(uri: URI, cancelToken?: CancellationToken): Promise<void>;
 }

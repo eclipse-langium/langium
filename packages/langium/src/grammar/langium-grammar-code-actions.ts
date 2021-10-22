@@ -9,12 +9,12 @@ import { CodeActionParams } from 'vscode-languageserver-protocol';
 import { Command, CodeAction } from 'vscode-languageserver-types';
 import { LangiumDocument } from '../documents/document';
 import { CodeActionProvider } from '../lsp/code-action';
-import { Response } from '../lsp/lsp-util';
+import { MaybePromise } from '../utils/promise-util';
 import { IssueCodes } from './langium-grammar-validator';
 
 export class LangiumGrammarCodeActionProvider implements CodeActionProvider {
 
-    getCodeActions(document: LangiumDocument, params: CodeActionParams): Response<Array<Command | CodeAction>> {
+    getCodeActions(document: LangiumDocument, params: CodeActionParams): MaybePromise<Array<Command | CodeAction>> {
         const result: CodeAction[] = [];
         for (const diagnostic of params.context.diagnostics) {
             const codeAction = this.createCodeAction(diagnostic, document);

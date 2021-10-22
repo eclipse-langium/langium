@@ -12,10 +12,16 @@ import { LangiumServices } from '../services';
 import { CstNode } from '../syntax-tree';
 import { findLeafNodeAtOffset, getDocument } from '../utils/ast-util';
 import { toRange } from '../utils/cst-util';
-import { Response } from './lsp-util';
+import { MaybePromise } from '../utils/promise-util';
 
 export interface GoToResolver {
-    goToDefinition(document: LangiumDocument, params: DefinitionParams, cancelToken?: CancellationToken): Response<LocationLink[] | undefined>;
+    /**
+     * Handle a go to definition request.
+     *
+     * @throws `OperationCancelled` if cancellation is detected during execution
+     * @throws `ResponseError` if an error is detected that should be sent as response to the client
+     */
+    goToDefinition(document: LangiumDocument, params: DefinitionParams, cancelToken?: CancellationToken): MaybePromise<LocationLink[] | undefined>;
 }
 
 export class DefaultGoToResolverProvider implements GoToResolver {
@@ -28,7 +34,7 @@ export class DefaultGoToResolverProvider implements GoToResolver {
         this.references = services.references.References;
     }
 
-    goToDefinition(document: LangiumDocument, params: DefinitionParams): Response<LocationLink[] | undefined> {
+    goToDefinition(document: LangiumDocument, params: DefinitionParams): MaybePromise<LocationLink[] | undefined> {
         const rootNode = document.parseResult.value;
         const targetCstNodes: Array<{ source: CstNode, target: CstNode, targetDocument: LangiumDocument }> = [];
         if (rootNode.$cstNode) {

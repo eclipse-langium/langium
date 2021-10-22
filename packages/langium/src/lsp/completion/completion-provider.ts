@@ -6,7 +6,7 @@
 
 import { CancellationToken, CompletionItem, CompletionItemKind, CompletionList, CompletionParams } from 'vscode-languageserver';
 import { TextDocument, TextEdit } from 'vscode-languageserver-textdocument';
-import { LangiumDocument } from '../..';
+import { LangiumDocument } from '../../documents/document';
 import * as ast from '../../grammar/generated/ast';
 import { getTypeNameAtElement } from '../../grammar/grammar-util';
 import { isNamed } from '../../references/naming';
@@ -15,15 +15,21 @@ import { LangiumServices } from '../../services';
 import { AstNode, CstNode } from '../../syntax-tree';
 import { getContainerOfType, isAstNode, findLeafNodeAtOffset } from '../../utils/ast-util';
 import { findRelevantNode, flatten } from '../../utils/cst-util';
+import { MaybePromise } from '../../utils/promise-util';
 import { stream } from '../../utils/stream';
-import { Response } from '../lsp-util';
 import { findFirstFeatures, findNextFeatures } from './follow-element-computation';
 import { RuleInterpreter } from './rule-interpreter';
 
 export type CompletionAcceptor = (value: string | AstNode | AstNodeDescription, item?: Partial<CompletionItem>) => void
 
 export interface CompletionProvider {
-    getCompletion(document: LangiumDocument, offset: number, params: CompletionParams, cancelToken?: CancellationToken): Response<CompletionList>
+    /**
+     * Handle a completion request.
+     *
+     * @throws `OperationCancelled` if cancellation is detected during execution
+     * @throws `ResponseError` if an error is detected that should be sent as response to the client
+     */
+    getCompletion(document: LangiumDocument, offset: number, params: CompletionParams, cancelToken?: CancellationToken): MaybePromise<CompletionList>
 }
 
 export class DefaultCompletionProvider {
@@ -38,7 +44,7 @@ export class DefaultCompletionProvider {
         this.grammar = services.Grammar;
     }
 
-    getCompletion(document: LangiumDocument, offset: number): Response<CompletionList> {
+    getCompletion(document: LangiumDocument, offset: number): MaybePromise<CompletionList> {
         const root = document.parseResult.value;
         const cst = root.$cstNode;
         const items: CompletionItem[] = [];
