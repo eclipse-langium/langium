@@ -12,7 +12,7 @@ import { TextDocument } from 'vscode-languageserver-textdocument';
 import { URI } from 'vscode-uri';
 import { LangiumDocument } from '../documents/document';
 import { LangiumServices } from '../services';
-import { OperationCanceled as OperationCancelled, startCancelableOperation } from '../utils/promise-util';
+import { OperationCancelled, startCancelableOperation } from '../utils/promise-util';
 
 export function startLanguageServer(services: LangiumServices): void {
     const connection = services.lsp.Connection;
@@ -208,7 +208,9 @@ function paramsDocument(params: { textDocument: TextDocumentIdentifier }, servic
 function responseError<E = void>(err: unknown): ResponseError<E> {
     if (err === OperationCancelled) {
         return new ResponseError(LSPErrorCodes.RequestCancelled, 'The request has been cancelled.');
-    } else {
-        throw err;
     }
+    if (err instanceof ResponseError) {
+        return err;
+    }
+    throw err;
 }

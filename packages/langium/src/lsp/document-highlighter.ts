@@ -12,10 +12,16 @@ import { LangiumServices } from '../services';
 import { AstNode, CstNode, Reference } from '../syntax-tree';
 import { findLeafNodeAtOffset, findLocalReferences, getDocument } from '../utils/ast-util';
 import { toRange } from '../utils/cst-util';
-import { Response } from './lsp-util';
+import { MaybePromise } from '../utils/promise-util';
 
 export interface DocumentHighlighter {
-    findHighlights(document: LangiumDocument, params: DocumentHighlightParams, cancelToken?: CancellationToken): Response<DocumentHighlight[] | undefined>;
+    /**
+     * Handle a document highlight request.
+     *
+     * @throws `OperationCancelled` if cancellation is detected during execution
+     * @throws `ResponseError` if an error is detected that should be sent as response to the client
+     */
+    findHighlights(document: LangiumDocument, params: DocumentHighlightParams, cancelToken?: CancellationToken): MaybePromise<DocumentHighlight[] | undefined>;
 }
 
 export class DefaultDocumentHighlighter implements DocumentHighlighter {
@@ -27,7 +33,7 @@ export class DefaultDocumentHighlighter implements DocumentHighlighter {
         this.nameProvider = services.references.NameProvider;
     }
 
-    findHighlights(document: LangiumDocument, params: DocumentHighlightParams): Response<DocumentHighlight[] | undefined> {
+    findHighlights(document: LangiumDocument, params: DocumentHighlightParams): MaybePromise<DocumentHighlight[] | undefined> {
         const rootNode = document.parseResult.value.$cstNode;
         if (!rootNode) {
             return undefined;

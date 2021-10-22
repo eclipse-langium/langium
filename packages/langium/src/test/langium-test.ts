@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import {
-    CompletionItem, DocumentSymbol, MarkupContent, Range, ResponseError, TextDocumentIdentifier, TextDocumentPositionParams
+    CompletionItem, DocumentSymbol, MarkupContent, Range, TextDocumentIdentifier, TextDocumentPositionParams
 } from 'vscode-languageserver';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { LangiumDocument } from '../documents/document';
@@ -44,9 +44,6 @@ export function expectSymbols(services: LangiumServices, expectEqual: ExpectFunc
         const document = await parseDocument(services, input.text);
         const symbolProvider = services.lsp.DocumentSymbolProvider;
         const symbols = await symbolProvider.getSymbols(document, textDocumentParams(document));
-        if (isError(symbols)) {
-            _throw(symbols);
-        }
         expectEqual(symbols.length, input.expectedSymbols.length);
         for (let i = 0; i < input.expectedSymbols.length; i++) {
             const expected = input.expectedSymbols[i];
@@ -66,9 +63,6 @@ export function expectFoldings(services: LangiumServices, expectEqual: ExpectFun
         const document = await parseDocument(services, output);
         const foldingRangeProvider = services.lsp.FoldingRangeProvider;
         const foldings = await foldingRangeProvider.getFoldingRanges(document, textDocumentParams(document));
-        if (isError(foldings)) {
-            _throw(foldings);
-        }
         foldings.sort((a, b) => a.startLine - b.startLine);
         expectEqual(foldings.length, ranges.length);
         for (let i = 0; i < ranges.length; i++) {
@@ -96,9 +90,6 @@ export function expectCompletion(services: LangiumServices, expectEqual: ExpectF
         const completionProvider = services.lsp.completion.CompletionProvider;
         const offset = indices[expectedCompletion.index];
         const completions = await completionProvider.getCompletion(document, offset, textDocumentPositionParams(document, offset));
-        if (isError(completions)) {
-            _throw(completions);
-        }
         const items = completions.items.sort((a, b) => a.sortText?.localeCompare(b.sortText || '0') || 0);
         expectEqual(items.length, expectedCompletion.expectedItems.length);
         for (let i = 0; i < expectedCompletion.expectedItems.length; i++) {
@@ -124,9 +115,6 @@ export function expectGoToDefinition(services: LangiumServices, expectEqual: Exp
         const document = await parseDocument(services, output);
         const goToResolver = services.lsp.GoToResolver;
         const locationLink = await goToResolver.goToDefinition(document, textDocumentPositionParams(document, indices[expectedGoToDefinition.index])) ?? [];
-        if (isError(locationLink)) {
-            _throw(locationLink);
-        }
         const expectedRange: Range = {
             start: document.textDocument.positionAt(ranges[expectedGoToDefinition.rangeIndex][0]),
             end: document.textDocument.positionAt(ranges[expectedGoToDefinition.rangeIndex][1])
@@ -147,9 +135,6 @@ export function expectHover(services: LangiumServices, cb: ExpectFunction): (exp
         const document = await parseDocument(services, output);
         const hoverProvider = services.lsp.HoverProvider;
         const hover = await hoverProvider.getHoverContent(document, textDocumentPositionParams(document, indices[expectedHover.index]));
-        if (isError(hover)) {
-            _throw(hover);
-        }
         const hoverContent = hover && MarkupContent.is(hover.contents) ? hover.contents.value : undefined;
         cb(hoverContent, expectedHover.hover);
     };
@@ -208,15 +193,4 @@ function replaceIndices(base: ExpectedBase): { output: string, indices: number[]
 
 function escapeRegExp(input: string): string {
     return input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
-function _throw(result: ResponseError<void>): never {
-    const error = new Error(result.message);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (error as any).code = result.code;
-    throw error;
-}
-
-function isError(result: unknown): result is ResponseError<void> {
-    return typeof result === 'object' && result !== null && typeof (result as ResponseError<void>).code === 'number';
 }

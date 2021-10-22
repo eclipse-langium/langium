@@ -4,10 +4,16 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { CancellationToken, CodeAction, CodeActionParams, Command,  } from 'vscode-languageserver';
+import { CancellationToken, CodeAction, CodeActionParams, Command } from 'vscode-languageserver';
 import { LangiumDocument } from '../documents/document';
-import { Response } from './lsp-util';
+import { MaybePromise } from '../utils/promise-util';
 
 export interface CodeActionProvider {
-    getCodeActions(document: LangiumDocument, params: CodeActionParams, cancelToken?: CancellationToken): Response<Array<Command | CodeAction> | undefined>;
+    /**
+     * Handle a code action request.
+     *
+     * @throws `OperationCancelled` if cancellation is detected during execution
+     * @throws `ResponseError` if an error is detected that should be sent as response to the client
+     */
+    getCodeActions(document: LangiumDocument, params: CodeActionParams, cancelToken?: CancellationToken): MaybePromise<Array<Command | CodeAction> | undefined>;
 }

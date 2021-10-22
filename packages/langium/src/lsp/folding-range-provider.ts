@@ -11,10 +11,16 @@ import { LangiumServices } from '../services';
 import { AstNode, CstNode } from '../syntax-tree';
 import { AstNodeContent, streamAllContents } from '../utils/ast-util';
 import { streamCst } from '../utils/cst-util';
-import { Response } from './lsp-util';
+import { MaybePromise } from '../utils/promise-util';
 
 export interface FoldingRangeProvider {
-    getFoldingRanges(document: LangiumDocument, params: FoldingRangeParams, cancelToken?: CancellationToken): Response<FoldingRange[]>;
+    /**
+     * Handle a folding range request.
+     *
+     * @throws `OperationCancelled` if cancellation is detected during execution
+     * @throws `ResponseError` if an error is detected that should be sent as response to the client
+     */
+    getFoldingRanges(document: LangiumDocument, params: FoldingRangeParams, cancelToken?: CancellationToken): MaybePromise<FoldingRange[]>;
 }
 
 export type FoldingRangeAcceptor = (foldingRange: FoldingRange) => void;
@@ -27,7 +33,7 @@ export class DefaultFoldingRangeProvider implements FoldingRangeProvider {
         this.commentNames = services.parser.GrammarConfig.multilineCommentRules;
     }
 
-    getFoldingRanges(document: LangiumDocument): Response<FoldingRange[]> {
+    getFoldingRanges(document: LangiumDocument): MaybePromise<FoldingRange[]> {
         const foldings: FoldingRange[] = [];
         const acceptor: FoldingRangeAcceptor = (foldingRange) => foldings.push(foldingRange);
         this.collectFolding(document, acceptor);
