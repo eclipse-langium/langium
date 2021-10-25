@@ -5,12 +5,13 @@
  ******************************************************************************/
 
 import { DiagnosticTag } from 'vscode-languageserver-types';
+import { findFirstFeaturesIfNoCyclicDef } from '../lsp/completion/follow-element-computation';
 import { References } from '../references/references';
 import { LangiumServices } from '../services';
 import { streamAllContents } from '../utils/ast-util';
 import { ValidationAcceptor, ValidationCheck, ValidationRegistry } from '../validation/validation-registry';
 import { AbstractRule, Grammar, isParserRule, isRuleCall, isTerminalRule, Keyword, LangiumGrammarAstType, ParserRule, TerminalRule, UnorderedGroup } from './generated/ast';
-import { getEntryRule, isDataTypeRule } from './grammar-util';
+import { getEntryRule } from './grammar-util';
 import { LangiumGrammarServices } from './langium-grammar-module';
 
 type LangiumGrammarChecks = { [type in LangiumGrammarAstType]?: ValidationCheck | ValidationCheck[] }
@@ -21,18 +22,19 @@ export class LangiumGrammarValidationRegistry extends ValidationRegistry {
         const validator = services.validation.LangiumGrammarValidator;
         const checks: LangiumGrammarChecks = {
             AbstractRule: validator.checkRuleName,
-            ParserRule: [
-                validator.checkParserRuleDataType
-            ],
+            // ParserRule: [
+            //     validator.checkParserRuleDataType
+            // ],
             TerminalRule: validator.checkTerminalRuleReturnType,
             Keyword: validator.checkKeyword,
             UnorderedGroup: validator.checkUnorderedGroup,
             Grammar: [
                 validator.checkGrammarName,
-                validator.checkFirstGrammarRule,
+                // validator.checkFirstGrammarRule,
                 validator.checkUniqueRuleName,
                 validator.checkGrammarHiddenTokens,
-                validator.checkGrammarForUnusedRules
+                validator.checkGrammarForUnusedRules,
+                validator.checkGrammarForCyclicDefinitions
             ]
         };
         this.register(checks, validator);
@@ -62,18 +64,18 @@ export class LangiumGrammarValidator {
         }
     }
 
-    checkFirstGrammarRule(grammar: Grammar, accept: ValidationAcceptor): void {
-        const firstRule = getEntryRule(grammar);
-        if (firstRule) {
-            if (isDataTypeRule(firstRule)) {
-                accept('error', 'The entry rule cannot be a data type rule.', { node: firstRule, property: 'name' });
-            } else if (firstRule.fragment) {
-                accept('error', 'The entry rule cannot be a fragment.', { node: firstRule, property: 'name' });
-            }
-        } else {
-            accept('error', 'This grammar is missing an entry parser rule.', { node: grammar, property: 'name' });
-        }
-    }
+    // checkFirstGrammarRule(grammar: Grammar, accept: ValidationAcceptor): void {
+    //     const firstRule = getEntryRule(grammar);
+    //     if (firstRule) {
+    //         if (isDataTypeRule(firstRule)) {
+    //             accept('error', 'The entry rule cannot be a data type rule.', { node: firstRule, property: 'name' });
+    //         } else if (firstRule.fragment) {
+    //             accept('error', 'The entry rule cannot be a fragment.', { node: firstRule, property: 'name' });
+    //         }
+    //     } else {
+    //         accept('error', 'This grammar is missing an entry parser rule.', { node: grammar, property: 'name' });
+    //     }
+    // }
 
     checkUniqueRuleName(grammar: Grammar, accept: ValidationAcceptor): void {
         const ruleMap = new Map<string, AbstractRule[]>();
@@ -145,6 +147,14 @@ export class LangiumGrammarValidator {
         });
     }
 
+    checkGrammarForCyclicDefinitions(grammar: Grammar, accept: ValidationAcceptor): void {
+        grammar.rules.forEach(rule => {
+            if (isParserRule(rule) && findFirstFeaturesIfNoCyclicDef(rule.alternatives) === undefined) {
+                accept('error', 'This rule has a cyclic definition or uses such rule', { node: rule, property: 'name' });
+            }
+        });
+    }
+
     checkRuleName(rule: AbstractRule, accept: ValidationAcceptor): void {
         if (rule.name) {
             const firstChar = rule.name.substring(0, 1);
@@ -168,15 +178,15 @@ export class LangiumGrammarValidator {
         accept('error', 'Unordered groups are currently not supported', { node: unorderedGroup });
     }
 
-    checkParserRuleDataType(rule: ParserRule, accept: ValidationAcceptor): void {
-        const hasDatatypeReturnType = rule.type && isPrimitiveType(rule.type);
-        const isDataType = isDataTypeRule(rule);
-        if (!hasDatatypeReturnType && isDataType) {
-            accept('error', 'This parser rule does not create an object. Add a primitive return type or an action to the start of the rule to force object instantiation.', { node: rule, property: 'name' });
-        } else if (hasDatatypeReturnType && !isDataType) {
-            accept('error', 'Normal parser rules are not allowed to return a primitive value. Use a datatype rule for that.', { node: rule, property: 'type' });
-        }
-    }
+    // checkParserRuleDataType(rule: ParserRule, accept: ValidationAcceptor): void {
+    //     const hasDatatypeReturnType = rule.type && isPrimitiveType(rule.type);
+    //     const isDataType = isDataTypeRule(rule);
+    //     if (!hasDatatypeReturnType && isDataType) {
+    //         accept('error', 'This parser rule does not create an object. Add a primitive return type or an action to the start of the rule to force object instantiation.', { node: rule, property: 'name' });
+    //     } else if (hasDatatypeReturnType && !isDataType) {
+    //         accept('error', 'Normal parser rules are not allowed to return a primitive value. Use a datatype rule for that.', { node: rule, property: 'type' });
+    //     }
+    // }
 
     checkTerminalRuleReturnType(rule: TerminalRule, accept: ValidationAcceptor): void {
         if (rule.type && !isPrimitiveType(rule.type)) {

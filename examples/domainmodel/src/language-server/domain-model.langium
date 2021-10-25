@@ -5,7 +5,13 @@ Domainmodel:
     (elements+=AbstractElement)*;
 
 AbstractElement:
-    PackageDeclaration | Type;
+    PackageDeclaration | Type | R;
+
+R:
+    'a'? T 'a' | 'b';
+
+T:
+    '('? R ')';
 
 PackageDeclaration:
     'package' name=QualifiedName '{'

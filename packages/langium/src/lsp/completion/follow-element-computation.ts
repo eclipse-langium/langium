@@ -125,3 +125,58 @@ function findNextFeaturesInGroup(group: ast.Group, index: number, cardinalities:
     } while (firstFeature);
     return features;
 }
+
+export function findFirstFeaturesIfNoCyclicDef(feature: ast.AbstractElement | undefined, cardinalities?: Map<ast.AbstractElement, Cardinality>, visited?: Set<ast.AbstractElement>): ast.AbstractElement[] | undefined {
+    if (feature === undefined) return [];
+
+    const card = cardinalities ?? new Map();
+    const vis = visited ?? new Set();
+
+    if (vis.has(feature)) {
+        console.log('CRASH', feature.$cstNode?.text);
+        return undefined;
+    }
+
+    vis.add(feature);
+    if (ast.isGroup(feature)) {
+        return findNextFeaturesInGroupIfNoCyclicDef(feature, 0, card, vis)
+            ?.map(e => modifyCardinality(e, feature.cardinality, card));
+    } else if (ast.isAlternatives(feature)) {
+        const alternativesFirstFeatures = feature.elements.flatMap(e => findFirstFeaturesIfNoCyclicDef(e, card, vis));
+        return alternativesFirstFeatures.every((e): e is ast.AbstractElement => !!e) ?
+            alternativesFirstFeatures.map(e => modifyCardinality(e, feature.cardinality, card)) :
+            undefined;
+    } else if (ast.isUnorderedGroup(feature)) {
+        // TODO: Do we want to continue supporting unordered groups?
+        return [];
+    } else if (ast.isAssignment(feature)) {
+        return findFirstFeaturesIfNoCyclicDef(feature.terminal, card, vis)
+            ?.map(e => modifyCardinality(e, feature.cardinality, card));
+    } else if (ast.isAction(feature)) {
+        return findNextFeaturesInternal([feature], card)
+            .map(e => modifyCardinality(e, feature.cardinality, card));
+    } else if (ast.isRuleCall(feature) && ast.isParserRule(feature.rule.ref)) {
+        return findFirstFeaturesIfNoCyclicDef(feature.rule.ref.alternatives, card, vis)
+            ?.map(e => modifyCardinality(e, feature.cardinality, card));
+    } else {
+        return [feature];
+    }
+}
+
+function findNextFeaturesInGroupIfNoCyclicDef(group: ast.Group, index: number, cardinalities: Map<ast.AbstractElement, Cardinality>, visited?: Set<ast.AbstractElement>): ast.AbstractElement[] | undefined{
+    const features: ast.AbstractElement[] = [];
+    let firstFeature: ast.AbstractElement;
+    do {
+        firstFeature = group.elements[index++];
+        const firstFeatures = findFirstFeaturesIfNoCyclicDef(firstFeature, cardinalities, visited);
+        if (firstFeatures) {
+            features.push(...firstFeatures);
+        } else {
+            return undefined;
+        }
+        if (!isOptional(firstFeature?.cardinality ?? cardinalities.get(firstFeature))) {
+            break;
+        }
+    } while (firstFeature);
+    return features;
+}
