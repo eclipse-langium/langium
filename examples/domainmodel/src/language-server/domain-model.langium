@@ -13,13 +13,19 @@ R:
 T:
     '('? R ')';
 
+TT:
+    '('? RR ')';
+
+RR:
+    'a'? TT 'a' | 'b';
+
 PackageDeclaration:
     'package' name=QualifiedName '{'
         (elements+=AbstractElement)*
     '}';
 
 Type:
-    DataType | Entity;
+    DataType | Entity | TT;
 
 DataType:
     'datatype' name=ID;

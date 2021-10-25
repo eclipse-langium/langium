@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import { DiagnosticTag } from 'vscode-languageserver-types';
-import { findFirstFeaturesIfNoCyclicDef } from '../lsp/completion/follow-element-computation';
+import { extractCyclicDef } from '../lsp/completion/follow-element-computation';
 import { References } from '../references/references';
 import { LangiumServices } from '../services';
 import { streamAllContents } from '../utils/ast-util';
@@ -148,10 +148,9 @@ export class LangiumGrammarValidator {
     }
 
     checkGrammarForCyclicDefinitions(grammar: Grammar, accept: ValidationAcceptor): void {
-        grammar.rules.forEach(rule => {
-            if (isParserRule(rule) && findFirstFeaturesIfNoCyclicDef(rule.alternatives) === undefined) {
-                accept('error', 'This rule has a cyclic definition or uses such rule', { node: rule, property: 'name' });
-            }
+        extractCyclicDef(grammar.rules.filter(isParserRule)).forEach(cyclicRule => {
+            console.log(cyclicRule.rule.name, cyclicRule.path);
+            accept('error', 'This rule has a cyclic definition or uses such rule.', { node: cyclicRule.rule, property: 'name' });
         });
     }
 
