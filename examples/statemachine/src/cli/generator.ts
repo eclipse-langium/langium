@@ -7,14 +7,15 @@
 import fs from 'fs';
 import { CompositeGeneratorNode, NL, processGeneratorNode } from 'langium';
 import { State, Statemachine } from '../language-server/generated/ast';
+import { extractDestinationAndName } from './cli-util';
 import path from 'path';
 
-export function generateCpp(statemachine: Statemachine, fileName: string, destination: string | undefined): string {
-    fileName = fileName.replace(/\..*$/, '').replace(/[.-]/g, '');
+export function generateCpp(statemachine: Statemachine, filePath: string, destination: string | undefined): string {
+    const data = extractDestinationAndName(filePath, destination);
     const ctx = <GeneratorContext>{
         statemachine,
-        fileName: `${path.basename(fileName) ?? 'statemachine'}.cpp`,
-        destination: destination ?? `./${path.dirname(fileName)}/generated`,
+        fileName: `${data.name}.cpp`,
+        destination: data.destination,
         fileNode: new CompositeGeneratorNode()
     };
     return generate(ctx);
