@@ -6,7 +6,7 @@
 
 import fs from 'fs';
 import path from 'path';
-import { URI } from 'vscode-uri';
+import { URI, Utils } from 'vscode-uri';
 import { CancellationToken, WorkspaceFolder } from 'vscode-languageserver';
 import { DocumentState, LangiumDocument, LangiumDocuments } from '../documents/document';
 import { LanguageMetaData } from '../grammar/language-meta-data';
@@ -23,10 +23,17 @@ export interface IndexManager {
      * Collects information about exported and referenced AstNodes in
      * each language file and stores it locally.
      *
-     * @param folders one or more workspace folders to be indexed. Does nothing if
-     * the parameter is `null`
+     * @param folders one or more workspace folders to be indexed.
      */
     initializeWorkspace(folders: WorkspaceFolder[]): Promise<void>;
+
+    /**
+     * Deletes the specified document uris from the index.
+     * Necessary when documents are deleted and not referenceable anymore.
+     *
+     * @param uris The document uris to delete.
+     */
+    remove(uris: URI[]): void;
 
     /**
      * Updates the information about a Document inside the index.
@@ -35,14 +42,14 @@ export interface IndexManager {
      * @param cancelToken allows to cancel the current operation
      * @throws `OperationCanceled` if a user action occurs during execution
      */
-    update(document: LangiumDocument | LangiumDocument[], cancelToken?: CancellationToken): Promise<void>;
+    update(documents: LangiumDocument[], cancelToken?: CancellationToken): Promise<void>;
 
     /**
-     * Returns all documents that could be affected by the specified document.
+     * Returns all documents that could be affected by the specified document URIs.
      *
-     * @param document The document which may affect other documents.
+     * @param uris The document URIs which may affect other documents.
      */
-    getAffectedDocuments(document: LangiumDocument): Stream<LangiumDocument>;
+    getAffectedDocuments(uris: URI[]): Stream<LangiumDocument>;
 
     /**
      * @param nodeType The `AstNodeDescription.type` to filter with. Normally `AstNodeDescription.type` is equal to `AstNode.$type`
@@ -111,24 +118,40 @@ export class DefaultIndexManager implements IndexManager {
         }
     }
 
-    update(document: LangiumDocument | LangiumDocument[], cancelToken = CancellationToken.None): Promise<void> {
-        return this.processDocuments(Array.isArray(document) ? document : [document], cancelToken);
-    }
-
-    getAffectedDocuments(document: LangiumDocument): Stream<LangiumDocument> {
-        return this.langiumDocuments().all.filter(e => this.isAffected(e, document));
-    }
-
-    protected isAffected(document: LangiumDocument, changed: LangiumDocument): boolean {
-        const changedUriString = changed.uri.toString();
-        if (changedUriString === document.uri.toString()) {
-            return false;
+    remove(uris: URI[]): void {
+        for (const uri of uris) {
+            const uriString = uri.toString();
+            this.simpleIndex.delete(uriString);
+            this.referenceIndex.delete(uriString);
         }
+    }
+
+    update(documents: LangiumDocument[], cancelToken = CancellationToken.None): Promise<void> {
+        return this.processDocuments(documents, cancelToken);
+    }
+
+    getAffectedDocuments(uris: URI[]): Stream<LangiumDocument> {
+        return this.langiumDocuments().all.filter(e => {
+            if (uris.some(uri => e.uri.toString() === uri.toString())) {
+                return false;
+            }
+            for (const uri of uris) {
+                if (this.isAffected(e, uri)) {
+                    return true;
+                }
+            }
+            return false;
+        });
+    }
+
+    protected isAffected(document: LangiumDocument, changed: URI): boolean {
+        const changedUriString = changed.toString();
+        const documentUri = document.uri.toString();
         // The document is affected if it contains linking errors
         if (document.references.some(e => e.error)) {
             return true;
         }
-        const references = this.referenceIndex.get(document.uri.toString());
+        const references = this.referenceIndex.get(documentUri);
         // ...or if it contains a reference to the changed file
         if (references) {
             return references.filter(e => !e.local).some(e => e.targetUri.toString() === changedUriString);
@@ -143,7 +166,6 @@ export class DefaultIndexManager implements IndexManager {
         await this.processDocuments(documents);
     }
 
-    /* sync access for now */
     protected async traverseFolder(folderPath: URI, fileExt: string[], documentAcceptor: (document: LangiumDocument) => void): Promise<void> {
         const fsPath = folderPath.fsPath;
         if (!fs.existsSync(fsPath)) {
@@ -166,8 +188,8 @@ export class DefaultIndexManager implements IndexManager {
 
     // do smart filtering here
     protected skip(filePath: URI): boolean {
-        return filePath.path.endsWith('node_modules')
-            || filePath.path.endsWith('out');
+        const base = Utils.basename(filePath);
+        return base.startsWith('.') || ['node_modules', 'out'].includes(base);
     }
 
     protected async processDocuments(documents: LangiumDocument[], cancelToken = CancellationToken.None): Promise<void> {
@@ -181,8 +203,7 @@ export class DefaultIndexManager implements IndexManager {
             this.simpleIndex.set(document.textDocument.uri, indexData);
             await interruptAndCheck(cancelToken);
         }
-        await interruptAndCheck(cancelToken);
-        // second: link everything
+        // second: create reference descriptions
         for (const document of documents) {
             this.referenceIndex.set(document.textDocument.uri, await this.referenceDescriptionProvider().createDescriptions(document, cancelToken));
             await interruptAndCheck(cancelToken);

@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import {
-    AbstractCancellationTokenSource, CancellationToken, Connection, HandlerResult, InitializeResult,
+    AbstractCancellationTokenSource, CancellationToken, Connection, FileChangeType, HandlerResult, InitializeResult,
     LSPErrorCodes, RequestHandler, ResponseError, TextDocumentIdentifier, TextDocuments, TextDocumentSyncKind
 } from 'vscode-languageserver';
 import { TextDocument } from 'vscode-languageserver-textdocument';
@@ -52,7 +52,6 @@ export function startLanguageServer(services: LangiumServices): void {
 
         if (params.capabilities.workspace?.configuration) {
             try {
-                // experimental
                 if (params.workspaceFolders)
                     await services.index.IndexManager.initializeWorkspace(params.workspaceFolders);
             } catch (e) {
@@ -64,7 +63,7 @@ export function startLanguageServer(services: LangiumServices): void {
 
     const documents = services.documents.TextDocuments;
 
-    addDocumentsHandler(documents, services);
+    addDocumentsHandler(connection, documents, services);
     addCompletionHandler(connection, services);
     addFindReferencesHandler(connection, services);
     addDocumentSymbolHandler(connection, services);
@@ -82,23 +81,33 @@ export function startLanguageServer(services: LangiumServices): void {
     connection.listen();
 }
 
-export function addDocumentsHandler(documents: TextDocuments<TextDocument>, services: LangiumServices): void {
+export function addDocumentsHandler(connection: Connection, documents: TextDocuments<TextDocument>, services: LangiumServices): void {
     const documentBuilder = services.documents.DocumentBuilder;
     let changeTokenSource: AbstractCancellationTokenSource;
     let changePromise: Promise<void> | undefined;
-    documents.onDidChangeContent(async change => {
+
+    async function onDidChange(changed: URI[], deleted?: URI[]): Promise<void> {
         changeTokenSource?.cancel();
         if (changePromise) {
             await changePromise;
         }
         changeTokenSource = startCancelableOperation();
-        try {
-            changePromise = documentBuilder.documentChanged(URI.parse(change.document.uri), changeTokenSource.token);
-        } catch (err) {
-            if (err !== OperationCancelled) {
-                throw err;
-            }
-        }
+        changePromise = documentBuilder
+            .update(changed, deleted ?? [], changeTokenSource.token)
+            .catch(err => {
+                if (err !== OperationCancelled) {
+                    console.error('Error: ', err);
+                }
+            });
+    }
+
+    documents.onDidChangeContent(async change => {
+        onDidChange([URI.parse(change.document.uri)]);
+    });
+    connection.onDidChangeWatchedFiles(async params => {
+        const changedUris = params.changes.filter(e => e.type !== FileChangeType.Deleted).map(e => URI.parse(e.uri));
+        const deletedUris = params.changes.filter(e => e.type === FileChangeType.Deleted).map(e => URI.parse(e.uri));
+        onDidChange(changedUris, deletedUris);
     });
 }
 

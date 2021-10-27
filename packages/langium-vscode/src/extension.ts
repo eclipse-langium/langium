@@ -6,7 +6,6 @@
 
 import * as vscode from 'vscode';
 import * as path from 'path';
-import { workspace } from 'vscode';
 import {
 	LanguageClient, LanguageClientOptions, ServerOptions, TransportKind
 } from 'vscode-languageclient/node';
@@ -44,13 +43,16 @@ function startLanguageClient(context: vscode.ExtensionContext): LanguageClient {
 	  }
 	};
 
+	const fileSystemWatcher = vscode.workspace.createFileSystemWatcher('**/*.langium');
+	context.subscriptions.push(fileSystemWatcher);
+
 	// Options to control the language client
 	const clientOptions: LanguageClientOptions = {
 	  // Register the server for langium documents
 	  documentSelector: [{ scheme: 'file', language: 'langium' }],
 	  synchronize: {
 		// Notify the server about file changes to langium files contained in the workspace
-		fileEvents: workspace.createFileSystemWatcher('**/*.langium')
+		fileEvents: fileSystemWatcher
 	  }
 	};
 
