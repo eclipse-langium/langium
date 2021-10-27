@@ -19,6 +19,9 @@ TT:
 RR:
     'a'? TT 'a' | 'b';
 
+X:
+    X;
+
 PackageDeclaration:
     'package' name=QualifiedName '{'
         (elements+=AbstractElement)*

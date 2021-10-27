@@ -149,8 +149,7 @@ export class LangiumGrammarValidator {
 
     checkGrammarForCyclicDefinitions(grammar: Grammar, accept: ValidationAcceptor): void {
         extractCyclicDef(grammar.rules.filter(isParserRule)).forEach(cyclicRule => {
-            console.log(cyclicRule.rule.name, cyclicRule.path);
-            accept('error', 'This rule has a cyclic definition or uses such rule.', { node: cyclicRule.rule, property: 'name' });
+            accept('error', `This rule has a cyclic definition or uses such rule: ${cyclicRule.path}.`, { node: cyclicRule.rule, property: 'name' });
         });
     }
 

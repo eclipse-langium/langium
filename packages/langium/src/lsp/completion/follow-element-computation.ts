@@ -6,7 +6,7 @@
 
 import * as ast from '../../grammar/generated/ast';
 import { Cardinality, isArray, isOptional } from '../../grammar/grammar-util';
-
+import _ from 'lodash';
 /**
  * Calculates any features that can follow the given feature stack.
  * This also includes features following optional features and features from previously called rules that could follow the last feature.
@@ -126,11 +126,18 @@ function findNextFeaturesInGroup(group: ast.Group, index: number, cardinalities:
     return features;
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 
 interface RuleMem {
     isCyclic: boolean,
+    path?: ast.AbstractElement[],
     firstFeatures?: ast.AbstractElement[]
+}
+
+interface ExtractCyclicData {
+    mem: Map<ast.ParserRule, RuleMem>,
+    cardinalities: Map<ast.AbstractElement, Cardinality>,
+    visited: ast.AbstractElement[]
 }
 
 interface CyclicRule {
@@ -139,65 +146,89 @@ interface CyclicRule {
 }
 
 export function extractCyclicDef(rules: ast.AbstractRule[]): CyclicRule[] {
-    const mem: Map<ast.ParserRule, RuleMem> = new Map();
-    const res: CyclicRule[] = [];
-    rules.filter(ast.isParserRule).forEach(rule => {
-        if (!mem.has(rule)) {
-            const firstFeatures = findFirstFeaturesWithCyclicDef(rule.alternatives, mem, new Map(), new Set());
-            mem.set(rule, firstFeatures === undefined ? {isCyclic: true } : { isCyclic: false, firstFeatures });
+    const parserRules: ast.ParserRule[] = rules.filter(ast.isParserRule);
+
+    return parserRules.reduce((res, rule) => {
+        const data: ExtractCyclicData = { mem: new Map(), cardinalities: new Map(), visited: [] };
+        if (!data.mem.has(rule)) {
+            const firstFeatures = findFirstFeaturesWithCyclicDef(rule.alternatives, data);
+            data.mem.set(rule, firstFeatures === undefined ?
+                { isCyclic: true, path: data.visited } :
+                { isCyclic: false, firstFeatures });
         }
-        if (mem.get(rule)?.isCyclic) {
-            const path = rule.name;
-            res.push({rule, path});
+        if (data.mem.get(rule)?.isCyclic) {
+            res.push({rule, path: formatCyclicPath(rule.name, data.mem.get(rule)?.path, parserRules.map(rule => rule.name))});
         }
-    });
-    return res;
+        return res;
+    }, <CyclicRule[]>[]);
 }
 
-function findFirstFeaturesWithCyclicDef(feature: ast.AbstractElement, mem: Map<ast.ParserRule, RuleMem>, cardinalities: Map<ast.AbstractElement, Cardinality>, visited: Set<ast.AbstractElement>): ast.AbstractElement[] | undefined {
+function formatCyclicPath(entryRuleName: string, path: ast.AbstractElement[] | undefined, ruleNames: string[]): string {
+    const splitter = ' > ';
+    const stringPath = (path ?? [])
+        .map(feature => feature.$cstNode?.text)
+        .filter(name => ruleNames.includes(name ?? ''));
+    return [entryRuleName, stringPath.join(splitter)].join(splitter);
+}
+
+function findFirstFeaturesWithCyclicDef(feature: ast.AbstractElement, data: ExtractCyclicData): ast.AbstractElement[] | undefined {
     if (!feature) return [];
 
-    if (visited.has(feature)) return undefined;
-    visited.add(feature);
+    if (data.visited.includes(feature)) {
+        data.visited.push(feature);
+        return undefined;
+    }
+    data.visited.push(feature);
 
     if (ast.isGroup(feature)) {
         const firstFeatures: ast.AbstractElement[] = [];
         let index = 0;
         let firstFeatureInGroup: ast.AbstractElement;
         do {
-            firstFeatureInGroup = (feature as ast.Group).elements[index++];
-            const currFirstFeatures = findFirstFeaturesWithCyclicDef(firstFeatureInGroup, mem, cardinalities, visited);
+            firstFeatureInGroup = feature.elements[index++];
+            const currFirstFeatures = findFirstFeaturesWithCyclicDef(firstFeatureInGroup, data);
             if (!currFirstFeatures) return undefined;
             firstFeatures.push(...currFirstFeatures);
-        } while (firstFeatureInGroup && isOptional(firstFeatureInGroup.cardinality ?? cardinalities.get(firstFeatureInGroup)));
-        return firstFeatures?.map(e => modifyCardinality(e, feature.cardinality, cardinalities));
+        } while (firstFeatureInGroup && isOptional(firstFeatureInGroup.cardinality ?? data.cardinalities.get(firstFeatureInGroup)));
+        return firstFeatures?.map(e => modifyCardinality(e, feature.cardinality, data.cardinalities));
     }
     if (ast.isAlternatives(feature)) {
-        const alternativesFirstFeatures = feature.elements.map(e => findFirstFeaturesWithCyclicDef(e, mem, cardinalities, visited));
-        return alternativesFirstFeatures.every((altFeatures): altFeatures is ast.AbstractElement[] => !!altFeatures) ?
-            alternativesFirstFeatures.flatMap(altFeatures => altFeatures.map(e => modifyCardinality(e, feature.cardinality, cardinalities))) :
-            undefined;
+        const firstFeatures: ast.AbstractElement[] = [];
+        let index = 0;
+        let backupVisited: ast.AbstractElement[];
+        let altFeature: ast.AbstractElement;
+        do {
+            backupVisited = _.cloneDeep(data.visited);
+            altFeature = feature.elements[index++];
+            const currFirstFeatures = findFirstFeaturesWithCyclicDef(altFeature, data);
+            if (!currFirstFeatures) {
+                return undefined;
+            }
+            firstFeatures.push(...currFirstFeatures);
+            data.visited = backupVisited;
+        } while (index < feature.elements.length);
+        return firstFeatures?.map(e => modifyCardinality(e, feature.cardinality, data.cardinalities));
     }
     if (ast.isUnorderedGroup(feature)) {
         // TODO: Do we want to continue supporting unordered groups?
         return [];
     }
     if (ast.isAction(feature)) {
-        return findNextFeaturesInternal([feature], cardinalities)
-            .map(e => modifyCardinality(e, feature.cardinality, cardinalities));
+        return findNextFeaturesInternal([feature], data.cardinalities)
+            .map(e => modifyCardinality(e, feature.cardinality, data.cardinalities));
     }
     if (ast.isAssignment(feature)) {
-        return findFirstFeaturesWithCyclicDef(feature.terminal, mem, cardinalities, visited)
-            ?.map(e => modifyCardinality(e, feature.cardinality, cardinalities));
+        return findFirstFeaturesWithCyclicDef(feature.terminal, data)
+            ?.map(e => modifyCardinality(e, feature.cardinality, data.cardinalities));
     }
     if (ast.isRuleCall(feature) && ast.isParserRule(feature.rule.ref)) {
         const refRule = feature.rule.ref;
-        if (!mem.has(refRule)) {
-            const firstFeatures = findFirstFeaturesWithCyclicDef(refRule.alternatives, mem, cardinalities, visited)
-                ?.map(e => modifyCardinality(e, feature.cardinality, cardinalities));
-            mem.set(refRule, firstFeatures === undefined ? {isCyclic: true } : { isCyclic: false, firstFeatures });
+        if (!data.mem.has(refRule)) {
+            const firstFeatures = findFirstFeaturesWithCyclicDef(refRule.alternatives, data)
+                ?.map(e => modifyCardinality(e, feature.cardinality, data.cardinalities));
+            data.mem.set(refRule, firstFeatures === undefined ? {isCyclic: true, path: data.visited } : { isCyclic: false, firstFeatures });
         }
-        return mem.get(refRule)?.firstFeatures;
+        return data.mem.get(refRule)?.firstFeatures;
     }
     return [feature];
 }
