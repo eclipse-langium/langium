@@ -18,6 +18,7 @@ const CLOSE = ' %>';
 const EXTENSION_NAME = 'extension-name';
 const RAW_LANGUAGE_NAME = 'RawLanguageName';
 const FILE_EXTENSION = 'file-extension';
+const FILE_EXTENSION_GLOB = 'file-glob-extension';
 
 const LANGUAGE_NAME = 'LanguageName';
 const LANGUAGE_ID = 'language-id';
@@ -78,21 +79,12 @@ class LangiumGenerator extends Generator {
     }
 
     writing(): void {
-        this.answers.fileExtensions =
-            '[' +
-            [
-                ...new Set(
-                    this.answers.fileExtensions
-                        .split(/\s*,\s*/)
-                        .map(
-                            (fileExtension: string) =>
-                                '".' +
-                                _.trim(fileExtension).replace(/\./, '') +
-                                '"'
-                        )
-                ),
-            ].join(', ') +
-            ']';
+        const fileExtensions = [...new Set(this.answers.fileExtensions.split(',').map(ext => {
+            return ext.trim().replace('.', '');
+        }))];
+        this.answers.fileExtensions = `[${fileExtensions.map(ext => `".${ext}"`).join(', ')}]`;
+
+        const fileExtensionGlob = fileExtensions.length > 1 ? `{${fileExtensions.join(',')}}` : fileExtensions[0];
 
         this.answers.rawLanguageName = this.answers.rawLanguageName.replace(
             /(?![\w| |\-|_])./g,
@@ -114,6 +106,7 @@ class LangiumGenerator extends Generator {
                         [EXTENSION_NAME, this.answers.extensionName],
                         [RAW_LANGUAGE_NAME, this.answers.rawLanguageName],
                         [FILE_EXTENSION, this.answers.fileExtensions],
+                        [FILE_EXTENSION_GLOB, fileExtensionGlob],
                         [LANGUAGE_NAME, languageName],
                         [LANGUAGE_ID, languageId],
                     ].reduce(

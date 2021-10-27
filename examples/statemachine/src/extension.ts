@@ -6,7 +6,6 @@
 
 import * as vscode from 'vscode';
 import * as path from 'path';
-import { workspace } from 'vscode';
 import {
     LanguageClient, LanguageClientOptions, ServerOptions, TransportKind
 } from 'vscode-languageclient/node';
@@ -39,12 +38,15 @@ function startLanguageClient(context: vscode.ExtensionContext): LanguageClient {
         debug: { module: serverModule, transport: TransportKind.ipc, options: debugOptions }
     };
 
+    const fileSystemWatcher = vscode.workspace.createFileSystemWatcher('**/*.statemachine');
+    context.subscriptions.push(fileSystemWatcher);
+
     // Options to control the language client
     const clientOptions: LanguageClientOptions = {
         documentSelector: [{ scheme: 'file', language: 'statemachine' }],
         synchronize: {
             // Notify the server about file changes to files contained in the workspace
-            fileEvents: workspace.createFileSystemWatcher('**/*.[".statemachine"]')
+            fileEvents: fileSystemWatcher
         }
     };
 

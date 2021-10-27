@@ -27,16 +27,17 @@ export interface DocumentBuilder {
     build(document: LangiumDocument, cancelToken?: CancellationToken): Promise<BuildResult>
     /**
      * This method is called when a document change is detected.
-     * Implementation should updates the state of that `LangiumDocument` and make sure
+     * Implementation should update the state of associated `LangiumDocument` instances and make sure
      * that the index information of the affected documents are also updated.
      *
-     * @param uri of the document that was changed
+     * @param changed URIs of changed/created documents
+     * @param deleted URIs of deleted documents
      * @param cancelToken allows to cancel the current operation
      * @see IndexManager.update()
      * @see LangiumDocuments.invalidateDocument()
      * @throws `OperationCancelled` if cancellation is detected during execution
      */
-    documentChanged(uri: URI, cancelToken?: CancellationToken): Promise<void>;
+    update(changed: URI[], deleted: URI[], cancelToken?: CancellationToken): Promise<void>;
 }
 
 export interface BuildResult<T extends AstNode = AstNode> {
@@ -64,7 +65,7 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
     }
 
     async build(document: LangiumDocument, cancelToken = CancellationToken.None): Promise<BuildResult> {
-        await this.buildDocument(document, cancelToken);
+        await this.buildDocuments([document], cancelToken);
         return {
             document,
             diagnostics: await this.validate(document, cancelToken, true)
@@ -76,40 +77,51 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
         const validator = this.documentValidator;
         if (this.connection || forceDiagnostics) {
             diagnostics = await validator.validateDocument(document, cancelToken);
-            await interruptAndCheck(cancelToken);
             if (this.connection) {
                 // Send the computed diagnostics to VS Code.
                 this.connection.sendDiagnostics({ uri: document.textDocument.uri, diagnostics });
             }
-            await interruptAndCheck(cancelToken);
             document.state = DocumentState.Validated;
         }
         return diagnostics;
     }
 
-    async documentChanged(uri: URI, cancelToken = CancellationToken.None): Promise<void> {
-        this.langiumDocuments.invalidateDocument(uri);
-        const newDocument = this.langiumDocuments.getOrCreateDocument(uri);
+    async update(changed: URI[], deleted: URI[], cancelToken = CancellationToken.None): Promise<void> {
+        for (const deletedDocument of deleted) {
+            this.langiumDocuments.invalidateDocument(deletedDocument);
+        }
+        this.indexManager.remove(deleted);
+        for (const changedUri of changed) {
+            this.langiumDocuments.invalidateDocument(changedUri);
+        }
+        // Only interrupt execution after everything has been invalidated
         await interruptAndCheck(cancelToken);
-        await this.buildDocument(newDocument, cancelToken);
+        const changedDocuments = changed.map(e => this.langiumDocuments.getOrCreateDocument(e));
+        const rebuildDocuments = this.collectDocuments(changedDocuments, deleted);
+        await this.buildDocuments(rebuildDocuments, cancelToken);
     }
 
-    protected async buildDocument(document: LangiumDocument, cancelToken: CancellationToken): Promise<void> {
-        const affectedDocuments = this.indexManager.getAffectedDocuments(document).toArray();
-        affectedDocuments.forEach(e => {
+    protected collectDocuments(changed: LangiumDocument[], deleted: URI[]): LangiumDocument[] {
+        const allUris = changed.map(e => e.uri).concat(deleted);
+        const affected = this.indexManager.getAffectedDocuments(allUris).toArray();
+        affected.forEach(e => {
             this.linker.unlink(e);
             e.state = DocumentState.Indexed;
         });
-        const relevantDocuments = Array.from(new Set([
-            document,
-            ...affectedDocuments,
+        const docSet = new Set([
+            ...changed,
+            ...affected,
             // Also include all documents haven't completed the document lifecycle yet
             ...this.langiumDocuments.all.filter(e => e.state < DocumentState.Validated)
-        ]));
-        await this.runCancelable(relevantDocuments, DocumentState.Indexed, cancelToken, doc => this.indexManager.update(doc, cancelToken));
-        await this.runCancelable(relevantDocuments, DocumentState.Processed, cancelToken, doc => this.process(doc, cancelToken));
-        await this.runCancelable(relevantDocuments, DocumentState.Linked, cancelToken, doc => this.linker.link(doc, cancelToken));
-        await this.runCancelable(relevantDocuments, DocumentState.Validated, cancelToken, doc => this.validate(doc, cancelToken));
+        ]);
+        return Array.from(docSet);
+    }
+
+    protected async buildDocuments(documents: LangiumDocument[], cancelToken: CancellationToken): Promise<void> {
+        await this.indexManager.update(documents.filter(e => e.state < DocumentState.Indexed), cancelToken);
+        await this.runCancelable(documents, DocumentState.Processed, cancelToken, doc => this.process(doc, cancelToken));
+        await this.runCancelable(documents, DocumentState.Linked, cancelToken, doc => this.linker.link(doc, cancelToken));
+        await this.runCancelable(documents, DocumentState.Validated, cancelToken, doc => this.validate(doc, cancelToken));
     }
 
     protected async runCancelable(documents: LangiumDocument[], targetState: DocumentState, cancelToken: CancellationToken, callback: (document: LangiumDocument) => MaybePromise<unknown>): Promise<void> {
