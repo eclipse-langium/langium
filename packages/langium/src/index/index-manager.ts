@@ -120,7 +120,20 @@ export class DefaultIndexManager implements IndexManager {
     }
 
     protected isAffected(document: LangiumDocument, changed: LangiumDocument): boolean {
-        return changed.uri.toString() !== document.uri.toString();
+        const changedUriString = changed.uri.toString();
+        if (changedUriString === document.uri.toString()) {
+            return false;
+        }
+        // The document is affected if it contains linking errors
+        if (document.references.some(e => e.error)) {
+            return true;
+        }
+        const references = this.referenceIndex.get(document.uri.toString());
+        // ...or if it contains a reference to the changed file
+        if (references) {
+            return references.filter(e => !e.local).some(e => e.targetUri.toString() === changedUriString);
+        }
+        return false;
     }
 
     async initializeWorkspace(folders: WorkspaceFolder[]): Promise<void> {

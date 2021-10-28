@@ -82,7 +82,7 @@ export function toDocumentSegment(document: TextDocument, start: number, end: nu
 }
 
 export function documentFromText<T extends AstNode = AstNode>(textDocument: TextDocument, parseResult: ParseResult<T>): LangiumDocument<T> {
-    const doc = {
+    const doc: LangiumDocument<T> = {
         parseResult,
         textDocument,
         uri: URI.parse(textDocument.uri),
