@@ -10,7 +10,7 @@ import { LangiumDocument } from '../documents/document';
 import { findNodeForFeature } from '../grammar/grammar-util';
 import { LangiumServices } from '../services';
 import { AstNode } from '../syntax-tree';
-import { resolveAllReferences, streamAllContents } from '../utils/ast-util';
+import { streamAllContents } from '../utils/ast-util';
 import { DiagnosticInfo, ValidationAcceptor, ValidationRegistry } from './validation-registry';
 import { interruptAndCheck } from '../utils/promise-util';
 
@@ -65,23 +65,24 @@ export class DefaultDocumentValidator {
         }
 
         // Process unresolved references
-        const resolveResult = await resolveAllReferences(parseResult.value, cancelToken);
-
-        await interruptAndCheck(cancelToken);
-
-        for (const unresolved of resolveResult.unresolved) {
-            const message = `Could not resolve reference to '${unresolved.reference.$refText}'.`;
-            const info: DiagnosticInfo<AstNode> = {
-                node: unresolved.container,
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                property: unresolved.property as any,
-                index: unresolved.index
-            };
-            diagnostics.push(this.toDiagnostic('error', message, info, document));
+        for (const reference of document.references) {
+            const linkingError = reference.error;
+            if (linkingError) {
+                const info: DiagnosticInfo<AstNode, string> = {
+                    node: linkingError.container,
+                    property: linkingError.property,
+                    index: linkingError.index
+                };
+                diagnostics.push(this.toDiagnostic('error', linkingError.message, info, document));
+            }
         }
 
         // Process custom validations
-        diagnostics.push(...await this.validateAst(parseResult.value, document, cancelToken));
+        try {
+            diagnostics.push(...await this.validateAst(parseResult.value, document, cancelToken));
+        } catch (err) {
+            console.error('An error occurred during validation:', err);
+        }
 
         await interruptAndCheck(cancelToken);
 
@@ -108,7 +109,7 @@ export class DefaultDocumentValidator {
         return validationItems;
     }
 
-    protected toDiagnostic<N extends AstNode>(severity: 'error' | 'warning' | 'info' | 'hint', message: string, info: DiagnosticInfo<N>, document: LangiumDocument): Diagnostic {
+    protected toDiagnostic<N extends AstNode>(severity: 'error' | 'warning' | 'info' | 'hint', message: string, info: DiagnosticInfo<N, string>, document: LangiumDocument): Diagnostic {
         return {
             message,
             range: getDiagnosticRange(info, document),
@@ -122,7 +123,7 @@ export class DefaultDocumentValidator {
     }
 }
 
-export function getDiagnosticRange<N extends AstNode>(info: DiagnosticInfo<N>, document: LangiumDocument): Range {
+export function getDiagnosticRange<N extends AstNode>(info: DiagnosticInfo<N, string>, document: LangiumDocument): Range {
     if (info.range) {
         return info.range;
     }

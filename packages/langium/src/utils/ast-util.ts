@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { AstNode, CstNode, LeafCstNode, Reference } from '../syntax-tree';
+import { AstNode, AstNodeDescription, CstNode, LeafCstNode, LinkingError, Reference, ReferenceInfo } from '../syntax-tree';
 import { Stream, StreamImpl, DONE_RESULT, TreeStream, TreeStreamImpl, stream } from '../utils/stream';
 import { LangiumDocument } from '../documents/document';
 import { CompositeCstNodeImpl, LeafCstNodeImpl } from '../parser/cst-node-builder';
@@ -21,6 +21,20 @@ export function isAstNode(obj: unknown): obj is AstNode {
 
 export function isReference(obj: unknown): obj is Reference {
     return typeof obj === 'object' && obj !== null && typeof (obj as Reference).$refText === 'string';
+}
+
+export function isAstNodeDescription(obj: unknown): obj is AstNodeDescription {
+    return typeof obj === 'object' && obj !== null
+        && typeof (obj as AstNodeDescription).name === 'string'
+        && typeof (obj as AstNodeDescription).type === 'string'
+        && typeof (obj as AstNodeDescription).path === 'string';
+}
+
+export function isLinkingError(obj: unknown): obj is LinkingError {
+    return typeof obj === 'object' && obj !== null
+        && isAstNode((obj as LinkingError).container)
+        && isReference((obj as LinkingError).reference)
+        && typeof (obj as LinkingError).message === 'string';
 }
 
 export function getContainerOfType<T extends AstNode>(node: AstNode | undefined, typePredicate: (n: AstNode) => n is T): T | undefined {
@@ -99,16 +113,9 @@ export function streamAllContents(node: AstNode): TreeStream<AstNodeContent> {
     return new TreeStreamImpl(root, content => streamContents(content.node));
 }
 
-export interface AstNodeReference {
-    reference: Reference
-    container: AstNode
-    property: string
-    index?: number
-}
-
-export function streamReferences(node: AstNode): Stream<AstNodeReference> {
+export function streamReferences(node: AstNode): Stream<ReferenceInfo> {
     type State = { keys: string[], keyIndex: number, arrayIndex: number };
-    return new StreamImpl<State, AstNodeReference>(() => ({
+    return new StreamImpl<State, ReferenceInfo>(() => ({
         keys: Object.keys(node),
         keyIndex: 0,
         arrayIndex: 0
@@ -138,16 +145,10 @@ export function streamReferences(node: AstNode): Stream<AstNodeReference> {
     });
 }
 
-export async function resolveAllReferences(node: AstNode, cancelToken = CancellationToken.None): Promise<{ unresolved: AstNodeReference[] }> {
-    const result: { unresolved: AstNodeReference[] } = {
-        unresolved: []
-    };
+export async function resolveAllReferences(node: AstNode, cancelToken = CancellationToken.None): Promise<void> {
     const process = (n: AstNodeContent) => {
         streamReferences(n.node).forEach(r => {
-            const value = r.reference.ref; // Ref get links to a AstNode
-            if (value === undefined) {
-                result.unresolved.push(r);
-            }
+            r.reference.ref; // Invoke the getter to link the target AstNode
         });
     };
     process({ node } as AstNodeContent);
@@ -155,7 +156,6 @@ export async function resolveAllReferences(node: AstNode, cancelToken = Cancella
         await interruptAndCheck(cancelToken);
         process(content);
     }
-    return result;
 }
 
 export function findLeafNodeAtOffset(node: CstNode, offset: number): LeafCstNode | undefined {
@@ -182,9 +182,9 @@ export function findLeafNodeAtOffset(node: CstNode, offset: number): LeafCstNode
 export function findLocalReferences(targetNode: AstNode, lookup = getDocument(targetNode).parseResult.value): Stream<Reference> {
     const refs: Reference[] = [];
     const process = (node: AstNode) => {
-        streamReferences(node).forEach((refNode: AstNodeReference) => {
-            if (refNode.reference.ref === targetNode) {
-                refs.push(refNode.reference);
+        streamReferences(node).forEach(refInfo => {
+            if (refInfo.reference.ref === targetNode) {
+                refs.push(refInfo.reference);
             }
         });
     };

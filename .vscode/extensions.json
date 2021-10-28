@@ -1,0 +1,6 @@
+{
+    "recommendations": [
+        "langium.langium-vscode",
+        "dbaeumer.vscode-eslint"
+    ]
+}

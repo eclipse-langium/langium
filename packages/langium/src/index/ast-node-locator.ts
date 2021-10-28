@@ -21,8 +21,8 @@ export interface AstNodeLocator {
     /**
      * Locates an `AstNode` inside a document by following the given path.
      * @param document Document to look up
-     * @param path describes how to locate an `AstNode` inside the given `document`.
-     * @returns `AstNode` located under the given path
+     * @param path Describes how to locate an `AstNode` inside the given `document`.
+     * @returns The `AstNode` located under the given path, or `undefined` if the path cannot be resolved.
      * @see AstNodeLocator.getAstNodePath
      */
     getAstNode(document: LangiumDocument, path: string): AstNode | undefined;

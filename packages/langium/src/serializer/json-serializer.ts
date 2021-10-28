@@ -69,17 +69,17 @@ export class DefaultJsonSerializer {
     }
 
     protected revive(object: AstNode): AstNode {
-        const getLinkedNode = this.linker.getLinkedNode.bind(this.linker);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const internalRevive = (value: Record<string, any>, container?: unknown, propName?: string) => {
             if (value && typeof value === 'object' && value !== null) {
                 if (Array.isArray(value)) {
-                    for (const item of value) {
+                    // eslint-disable-next-line @typescript-eslint/prefer-for-of
+                    for (let i = 0; i < value.length; i++) {
+                        const item = value[i];
                         if (isReference(item) && isAstNode(container)) {
                             const refId = getReferenceId(container.$type, propName!);
-                            Object.defineProperty(item, 'ref', {
-                                get: () => getLinkedNode(container as AstNode, refId, item.$refText)
-                            });
+                            const reference = this.linker.buildReference(container as AstNode, item.$refNode, refId, item.$refText);
+                            value[i] = reference;
                         } else if (typeof item === 'object' && item !== null) {
                             internalRevive(item, item);
                             item.$container = container;
@@ -90,9 +90,8 @@ export class DefaultJsonSerializer {
                         if (typeof item === 'object' && item !== null) {
                             if (isReference(item)) {
                                 const refId = getReferenceId(value.$type, name);
-                                Object.defineProperty(item, 'ref', {
-                                    get: () => getLinkedNode(value as AstNode, refId, item.$refText)
-                                });
+                                const reference = this.linker.buildReference(value as AstNode, item.$refNode, refId, item.$refText);
+                                value[name] = reference;
                             } else if (Array.isArray(item)) {
                                 internalRevive(item, value, name);
                             } else {

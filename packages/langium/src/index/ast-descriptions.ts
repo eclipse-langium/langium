@@ -7,12 +7,11 @@
 import { CancellationToken } from 'vscode-languageserver';
 import { URI } from 'vscode-uri';
 import { DocumentSegment, LangiumDocument, toDocumentSegment } from '../documents/document';
-import { Linker, getReferenceId, isLinkingError } from '../references/linker';
+import { Linker, getReferenceId } from '../references/linker';
 import { NameProvider } from '../references/naming';
-import { AstNodeDescription } from '../references/scope';
 import { LangiumServices } from '../services';
-import { AstNode } from '../syntax-tree';
-import { AstNodeReference, getDocument, streamAllContents, streamContents, streamReferences } from '../utils/ast-util';
+import { AstNode, AstNodeDescription, ReferenceInfo } from '../syntax-tree';
+import { getDocument, isLinkingError, streamAllContents, streamContents, streamReferences } from '../utils/ast-util';
 import { interruptAndCheck } from '../utils/promise-util';
 import { AstNodeLocator } from './ast-node-locator';
 
@@ -91,17 +90,17 @@ export class DefaultReferenceDescriptionProvider implements ReferenceDescription
     async createDescriptions(document: LangiumDocument, cancelToken = CancellationToken.None): Promise<ReferenceDescription[]> {
         const descr: ReferenceDescription[] = [];
         const rootNode = document.parseResult.value;
-        const refConverter = (refNode: AstNodeReference): ReferenceDescription | undefined => {
-            const refAstNodeDescr = this.linker.getCandidate(refNode.container, getReferenceId(refNode.container.$type, refNode.property), refNode.reference.$refText);
+        const refConverter = (refInfo: ReferenceInfo): ReferenceDescription | undefined => {
+            const refAstNodeDescr = this.linker.getCandidate(refInfo.container, getReferenceId(refInfo.container.$type, refInfo.property), refInfo.reference);
             // Do not handle unresolved refs
             if (isLinkingError(refAstNodeDescr))
                 return undefined;
-            const doc = getDocument(refNode.container);
+            const doc = getDocument(refInfo.container);
             const docUri = doc.uri;
-            const refNodeRange = refNode.reference.$refNode.range;
+            const refNodeRange = refInfo.reference.$refNode.range;
             return {
                 sourceUri: docUri,
-                sourcePath: this.nodeLocator.getAstNodePath(refNode.container),
+                sourcePath: this.nodeLocator.getAstNodePath(refInfo.container),
                 targetUri: refAstNodeDescr.documentUri,
                 targetPath: refAstNodeDescr.path,
                 segment: toDocumentSegment(doc.textDocument, refNodeRange.start, refNodeRange.end),

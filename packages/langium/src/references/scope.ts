@@ -5,29 +5,15 @@
  ******************************************************************************/
 
 import { CancellationToken } from 'vscode-jsonrpc';
-import { URI } from 'vscode-uri';
 import { LangiumDocument, PrecomputedScopes } from '../documents/document';
 import { AstNodeDescriptionProvider } from '../index/ast-descriptions';
 import { IndexManager } from '../index/index-manager';
 import { LangiumServices } from '../services';
-import { AstNode, AstReflection } from '../syntax-tree';
+import { AstNode, AstNodeDescription, AstReflection } from '../syntax-tree';
 import { getDocument, streamAllContents } from '../utils/ast-util';
 import { interruptAndCheck } from '../utils/promise-util';
 import { EMPTY_STREAM, Stream, stream } from '../utils/stream';
 import { NameProvider } from './naming';
-
-// TODO Move to index folder?
-export interface AstNodeDescription {
-    node?: AstNode
-    /** `$type` property value of the AST node */
-    type: string
-    /** Name of the AST node */
-    name: string
-    /** URI to the source document of the AST node */
-    documentUri: URI
-    /** Navigation path inside a document */
-    path: string
-}
 
 export interface Scope {
     getElement(name: string): AstNodeDescription | undefined
