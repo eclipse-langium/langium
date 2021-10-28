@@ -7,22 +7,56 @@
 import fs from 'fs';
 import { Range, TextDocument } from 'vscode-languageserver-textdocument';
 import { TextDocuments } from 'vscode-languageserver/node';
-import { AstNode, Reference } from '../syntax-tree';
+import { AstNode, AstNodeDescription, Reference } from '../syntax-tree';
 import { LangiumParser, ParseResult } from '../parser/langium-parser';
-import { AstNodeDescription } from '../references/scope';
 import { URI } from 'vscode-uri';
 import { Mutable } from '../utils/ast-util';
 import { LanguageMetaData } from '../grammar/language-meta-data';
 import { LangiumServices } from '../services';
 import { stream, Stream } from '../utils/stream';
 
-export enum DocumentState {
-    Changed = 0,
-    Parsed = 1,
-    Indexed = 2,
-    Processed = 3,
-    Validated = 4
+/**
+ * A Langium document holds the parse result (AST and CST) and any additional state that is derived
+ * from the AST, e.g. the result of scope precomputation.
+ */
+export interface LangiumDocument<T extends AstNode = AstNode> {
+    /** The Uniform Resource Identifier (URI) of the document */
+    uri: URI;
+    /** The text document used to convert between offsets and positions */
+    textDocument: TextDocument;
+    /** The current state of the document */
+    state: DocumentState;
+    /** The parse result holds the Abstract Syntax Tree (AST) and potentially also parser / lexer errors */
+    parseResult: ParseResult<T>;
+    /** Result of the scope precomputation phase */
+    precomputedScopes?: PrecomputedScopes;
+    /** An array of all cross-references found in the AST while linking */
+    references: Reference[];
 }
+
+/**
+ * A document is subject to several phases that are run in predefined order. Any state value implies that
+ * smaller state values are finished as well.
+ */
+export enum DocumentState {
+    /** The text content has changed and needs to be parsed again. */
+    Changed = 0,
+    /** An AST has been created from the text content. */
+    Parsed = 1,
+    /** The `IndexManager` service has processed this document. */
+    Indexed = 2,
+    /** Pre-processing steps such as scope precomputation have been executed. */
+    Processed = 3,
+    /** The `Linker` service has processed this document. */
+    Linked = 4,
+    /** The `DocumentValidator` service has processed this document. */
+    Validated = 5
+}
+
+/**
+ * Result of the scope precomputation phase (`ScopeComputation` service).
+ */
+export type PrecomputedScopes = Map<AstNode, AstNodeDescription[]>
 
 export interface DocumentSegment {
     readonly range: Range
@@ -47,15 +81,6 @@ export function toDocumentSegment(document: TextDocument, start: number, end: nu
     };
 }
 
-export interface LangiumDocument<T extends AstNode = AstNode> {
-    parseResult: ParseResult<T>
-    precomputedScopes?: PrecomputedScopes
-    state: DocumentState
-    textDocument: TextDocument
-    uri: URI
-    references: Reference[]
-}
-
 export function documentFromText<T extends AstNode = AstNode>(textDocument: TextDocument, parseResult: ParseResult<T>): LangiumDocument<T> {
     const doc = {
         parseResult,
@@ -67,8 +92,6 @@ export function documentFromText<T extends AstNode = AstNode>(textDocument: Text
     (parseResult.value as Mutable<AstNode>).$document = doc;
     return doc;
 }
-
-export type PrecomputedScopes = Map<AstNode, AstNodeDescription[]>
 
 export interface TextDocumentFactory {
     fromUri(uri: URI): TextDocument;
@@ -109,6 +132,7 @@ export class DefaultLangiumDocumentFactory implements LangiumDocumentFactory {
 export interface LangiumDocuments {
     readonly all: Stream<LangiumDocument>
     getOrCreateDocument(uri: URI): LangiumDocument;
+    hasDocument(uri: URI): boolean;
     invalidateDocument(uri: URI): void;
 }
 
@@ -142,6 +166,10 @@ export class DefaultLangiumDocuments implements LangiumDocuments {
         langiumDoc = this.langiumDocumentFactory.fromTextDocument(textDoc);
         this.documentMap.set(uriString, langiumDoc);
         return langiumDoc;
+    }
+
+    hasDocument(uri: URI): boolean {
+        return this.documentMap.has(uri.toString());
     }
 
     invalidateDocument(uri: URI): void {

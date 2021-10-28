@@ -8,9 +8,8 @@ import { TextDocument } from 'vscode-languageserver-textdocument';
 import { documentFromText, PrecomputedScopes } from '../documents/document';
 import * as ast from '../grammar/generated/ast';
 import { CompositeCstNodeImpl } from '../parser/cst-node-builder';
-import { AstNodeDescription } from '../references/scope';
 import { LangiumServices } from '../services';
-import { AstNode, CstNode } from '../syntax-tree';
+import { AstNode, AstNodeDescription, CstNode } from '../syntax-tree';
 import { getContainerOfType, getDocument, Mutable, streamAllContents } from '../utils/ast-util';
 import { createLangiumGrammarServices } from './langium-grammar-module';
 

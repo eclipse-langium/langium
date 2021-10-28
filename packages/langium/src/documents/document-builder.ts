@@ -107,7 +107,8 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
             ...this.langiumDocuments.all.filter(e => e.state < DocumentState.Validated)
         ]));
         await this.runCancelable(relevantDocuments, DocumentState.Indexed, cancelToken, doc => this.indexManager.update(doc, cancelToken));
-        await this.runCancelable(relevantDocuments, DocumentState.Processed, cancelToken, doc => this.process(doc));
+        await this.runCancelable(relevantDocuments, DocumentState.Processed, cancelToken, doc => this.process(doc, cancelToken));
+        await this.runCancelable(relevantDocuments, DocumentState.Linked, cancelToken, doc => this.linker.link(doc, cancelToken));
         await this.runCancelable(relevantDocuments, DocumentState.Validated, cancelToken, doc => this.validate(doc, cancelToken));
     }
 
@@ -121,8 +122,8 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
     /**
      * Process the document by running precomputations. The default implementation precomputes the scope.
      */
-    protected async process(document: LangiumDocument): Promise<void> {
-        document.precomputedScopes = await this.scopeComputation.computeScope(document);
+    protected async process(document: LangiumDocument, cancelToken: CancellationToken): Promise<void> {
+        document.precomputedScopes = await this.scopeComputation.computeScope(document, cancelToken);
         document.state = DocumentState.Processed;
     }
 }

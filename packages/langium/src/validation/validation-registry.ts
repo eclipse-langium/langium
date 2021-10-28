@@ -9,11 +9,11 @@ import { LangiumServices } from '../services';
 import { AstNode, AstReflection, Properties } from '../syntax-tree';
 import { MaybePromise } from '../utils/promise-util';
 
-export type DiagnosticInfo<N extends AstNode> = {
+export type DiagnosticInfo<N extends AstNode, P = Properties<N>> = {
     /** The AST node to which the diagnostic is attached. */
     node: N,
     /** If a property name is given, the diagnostic is resticted to the corresponding text region. */
-    property?: Properties<N>,
+    property?: P,
     /** In case of a multi-value property (array), an index can be given to select a specific element. */
     index?: number,
     /** If you want to create a diagnostic independent to any property, use the range property. */
