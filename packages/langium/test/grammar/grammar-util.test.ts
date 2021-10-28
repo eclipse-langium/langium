@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { getEntryRule, replaceTokens } from '../../lib';
+import { getEntryRule, replaceTokens } from '../../src';
 import { grammar } from '../../src/grammar/generated/grammar';
 
 describe('Token replacement', () => {

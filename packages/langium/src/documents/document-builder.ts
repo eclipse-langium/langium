@@ -95,7 +95,7 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
     }
 
     protected async buildDocument(document: LangiumDocument, cancelToken: CancellationToken): Promise<void> {
-        const affectedDocuments = this.indexManager.getAffectedDocuments(document);
+        const affectedDocuments = this.indexManager.getAffectedDocuments(document).toArray();
         affectedDocuments.forEach(e => {
             this.linker.unlink(e);
             e.state = DocumentState.Indexed;

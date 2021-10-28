@@ -66,7 +66,7 @@ export interface DocumentSegment {
 }
 
 export function documentFromText<T extends AstNode = AstNode>(textDocument: TextDocument, parseResult: ParseResult<T>): LangiumDocument<T> {
-    const doc = {
+    const doc: LangiumDocument<T> = {
         parseResult,
         textDocument,
         uri: URI.parse(textDocument.uri),
