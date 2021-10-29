@@ -6,7 +6,6 @@
 
 import * as ast from '../../grammar/generated/ast';
 import { Cardinality, isArray, isOptional } from '../../grammar/grammar-util';
-import _ from 'lodash';
 /**
  * Calculates any features that can follow the given feature stack.
  * This also includes features following optional features and features from previously called rules that could follow the last feature.
@@ -198,7 +197,8 @@ function findFirstFeaturesWithCyclicDef(feature: ast.AbstractElement, data: Extr
         let backupVisited: ast.AbstractElement[];
         let altFeature: ast.AbstractElement;
         do {
-            backupVisited = _.cloneDeep(data.visited);
+            backupVisited = [];
+            data.visited.forEach(feature => backupVisited.push(feature));
             altFeature = feature.elements[index++];
             const currFirstFeatures = findFirstFeaturesWithCyclicDef(altFeature, data);
             if (!currFirstFeatures) {
