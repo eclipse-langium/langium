@@ -12,7 +12,7 @@ import { References } from '../references/references';
 import { LangiumServices } from '../services';
 import { AstNode, CstNode } from '../syntax-tree';
 import { findLeafNodeAtOffset, getDocument, isReference } from '../utils/ast-util';
-import { flatten, toRange } from '../utils/cst-util';
+import { flatten } from '../utils/cst-util';
 import { MaybePromise } from '../utils/promise-util';
 
 export interface ReferenceFinder {
@@ -50,11 +50,11 @@ export class DefaultReferenceFinder implements ReferenceFinder {
                 const declDoc = getDocument(targetAstNode);
                 const nameNode = this.findNameNode(targetAstNode, selectedNode.text);
                 if (nameNode)
-                    refs.push({ docUri: declDoc.uri, range: toRange(nameNode, declDoc) });
+                    refs.push({ docUri: declDoc.uri, range: nameNode.range });
             }
             this.references.findReferences(targetAstNode).forEach(reference => {
                 if (isReference(reference)) {
-                    refs.push({ docUri: document.uri, range: toRange(reference.$refNode, document) });
+                    refs.push({ docUri: document.uri, range: reference.$refNode.range });
                 } else {
                     const range = reference.segment.range;
                     refs.push({ docUri: reference.sourceUri, range });

@@ -106,8 +106,7 @@ export function addCompletionHandler(connection: Connection, services: LangiumSe
     const completionProvider = services.lsp.completion.CompletionProvider;
     connection.onCompletion(createHandler(
         (document, params, cancelToken) => {
-            const offset = document.textDocument.offsetAt(params.position);
-            return completionProvider.getCompletion(document, offset, params, cancelToken);
+            return completionProvider.getCompletion(document, params, cancelToken);
         },
         services
     ));

@@ -11,7 +11,6 @@ import { References } from '../references/references';
 import { LangiumServices } from '../services';
 import { CstNode } from '../syntax-tree';
 import { findLeafNodeAtOffset, getDocument } from '../utils/ast-util';
-import { toRange } from '../utils/cst-util';
 import { MaybePromise } from '../utils/promise-util';
 
 export interface GoToResolver {
@@ -52,9 +51,9 @@ export class DefaultGoToResolverProvider implements GoToResolver {
         }
         return targetCstNodes.map(link => LocationLink.create(
             link.targetDocument.textDocument.uri,
-            toRange(this.findActualNodeFor(link.target) ?? link.target, link.targetDocument),
-            toRange(link.target, link.targetDocument),
-            toRange(link.source, document)
+            (this.findActualNodeFor(link.target) ?? link.target).range,
+            link.target.range,
+            link.source.range
         ));
     }
     protected findActualNodeFor(cstNode: CstNode): CstNode | undefined {

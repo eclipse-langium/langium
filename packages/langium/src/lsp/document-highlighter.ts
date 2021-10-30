@@ -11,7 +11,6 @@ import { References } from '../references/references';
 import { LangiumServices } from '../services';
 import { AstNode, CstNode, Reference } from '../syntax-tree';
 import { findLeafNodeAtOffset, findLocalReferences, getDocument } from '../utils/ast-util';
-import { toRange } from '../utils/cst-util';
 import { MaybePromise } from '../utils/promise-util';
 
 export interface DocumentHighlighter {
@@ -55,7 +54,7 @@ export class DefaultDocumentHighlighter implements DocumentHighlighter {
                 refs.push([ref.$refNode, this.getHighlightKind(ref.$refNode, ref)]);
             });
             return refs.map(([node, kind]) =>
-                DocumentHighlight.create(toRange(node, document), kind)
+                DocumentHighlight.create(node.range, kind)
             );
         }
         return undefined;

@@ -5,11 +5,12 @@
  ******************************************************************************/
 
 import { Range } from 'vscode-languageserver';
-import { LangiumDocument } from '../documents/document';
 import { AstNode, CstNode, LeafCstNode } from '../syntax-tree';
 import { CompositeCstNodeImpl, LeafCstNodeImpl } from '../parser/cst-node-builder';
 import { DatatypeSymbol } from '../parser/langium-parser';
 import { TreeStream, TreeStreamImpl } from './stream';
+import { IToken } from '@chevrotain/types';
+import { DocumentSegment } from '../documents/document';
 
 export function streamCst(node: CstNode): TreeStream<CstNode> {
     return new TreeStreamImpl(node, element => {
@@ -31,11 +32,28 @@ export function flatten(node: CstNode): LeafCstNode[] {
     }
 }
 
-export function toRange(node: CstNode, document: LangiumDocument): Range {
-    const { start, end } = node.range;
+export function tokenToRange(token: IToken): Range {
+    // Chevrotain uses 1-based indices everywhere
+    // So we subtract 1 from every value to align with the LSP
     return {
-        start: document.textDocument.positionAt(start),
-        end: document.textDocument.positionAt(end)
+        start: {
+            character: token.startColumn! - 1,
+            line: token.startLine! - 1
+        },
+        end: {
+            character: token.endColumn!, // endColumn uses the correct index
+            line: token.endLine! - 1
+        }
+    };
+}
+
+export function toDocumentSegment(node: CstNode): DocumentSegment {
+    const { offset, end, range } = node;
+    return {
+        range,
+        offset,
+        end,
+        length: end - offset
     };
 }
 

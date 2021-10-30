@@ -15,6 +15,7 @@ import { LangiumServices } from '../services';
 import { getContainerOfType } from '../utils/ast-util';
 import { ValueConverter } from './value-converter';
 import { IParserConfig } from './parser-config';
+import { tokenToRange } from '../utils/cst-util';
 
 export type ParseResult<T = AstNode> = {
     value: T,
@@ -81,23 +82,23 @@ export class LangiumParser {
 
     private addHiddenTokens(node: RootCstNodeImpl, tokens: IToken[]): void {
         for (const token of tokens) {
-            const hiddenNode = new LeafCstNodeImpl(token.startOffset, token.image.length, token.tokenType, true);
+            const hiddenNode = new LeafCstNodeImpl(token.startOffset, token.image.length, tokenToRange(token), token.tokenType, true);
             hiddenNode.root = node;
             this.addHiddenToken(node, hiddenNode);
         }
     }
 
     private addHiddenToken(node: CompositeCstNode, token: LeafCstNode): void {
-        const { start, end } = node.range;
-        const { start: tokenStart, end: tokenEnd } = token.range;
-        if (start >= tokenEnd) {
+        const { offset, end } = node;
+        const { offset: tokenStart, end: tokenEnd } = token;
+        if (offset >= tokenEnd) {
             node.children.unshift(token);
         } else if (end <= tokenStart) {
             node.children.push(token);
         } else {
             for (let i = 0; i < node.children.length; i++) {
                 const child = node.children[i];
-                const { end: childEnd } = child.range;
+                const childEnd = child.end;
                 if (child instanceof CompositeCstNodeImpl && tokenEnd < childEnd) {
                     this.addHiddenToken(child, token);
                     return;
@@ -300,7 +301,7 @@ export class LangiumParser {
 
 const defaultConfig: IParserConfig = {
     recoveryEnabled: true,
-    nodeLocationTracking: 'onlyOffset',
+    nodeLocationTracking: 'full',
     skipValidations: true
 };
 

@@ -15,7 +15,7 @@ export const evalAction = async (fileName: string): Promise<void> => {
     for (const [evaluation, value] of interpretEvaluations(module)) {
         const cstNode = evaluation.expression.$cstNode;
         if (cstNode) {
-            const line = document.textDocument.positionAt(cstNode.offset).line + 1;
+            const line = cstNode.range.start.line + 1;
             console.log(`line ${line}:`, cstNode.text.green, '===>', value);
         }
     }
