@@ -6,12 +6,13 @@
 
 import { CancellationToken } from 'vscode-languageserver';
 import { URI } from 'vscode-uri';
-import { DocumentSegment, LangiumDocument, toDocumentSegment } from '../documents/document';
+import { DocumentSegment, LangiumDocument } from '../documents/document';
 import { Linker, getReferenceId } from '../references/linker';
 import { NameProvider } from '../references/naming';
 import { LangiumServices } from '../services';
 import { AstNode, AstNodeDescription, ReferenceInfo } from '../syntax-tree';
 import { getDocument, isLinkingError, streamAllContents, streamContents, streamReferences } from '../utils/ast-util';
+import { toDocumentSegment } from '../utils/cst-util';
 import { interruptAndCheck } from '../utils/promise-util';
 import { AstNodeLocator } from './ast-node-locator';
 
@@ -97,13 +98,13 @@ export class DefaultReferenceDescriptionProvider implements ReferenceDescription
                 return undefined;
             const doc = getDocument(refInfo.container);
             const docUri = doc.uri;
-            const refNodeRange = refInfo.reference.$refNode.range;
+            const refCstNode = refInfo.reference.$refNode;
             return {
                 sourceUri: docUri,
                 sourcePath: this.nodeLocator.getAstNodePath(refInfo.container),
                 targetUri: refAstNodeDescr.documentUri,
                 targetPath: refAstNodeDescr.path,
-                segment: toDocumentSegment(doc.textDocument, refNodeRange.start, refNodeRange.end),
+                segment: toDocumentSegment(refCstNode),
                 local: refAstNodeDescr.documentUri.toString() === docUri.toString()
             };
         };

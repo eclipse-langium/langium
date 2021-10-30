@@ -109,19 +109,19 @@ export class DefaultFoldingRangeProvider implements FoldingRangeProvider {
     }
 
     protected toFoldingRange(document: LangiumDocument, node: CstNode, kind?: string): FoldingRange | undefined {
-        const { start, end } = node.range;
-        const startPosition = document.textDocument.positionAt(start);
-        let endPosition = document.textDocument.positionAt(end);
+        const range = node.range;
+        const start = range.start;
+        let end = range.end;
         // Don't generate foldings for nodes that are less than 3 lines
-        if (endPosition.line - startPosition.line < 2) {
+        if (end.line - start.line < 2) {
             return undefined;
         }
         // As we don't want to hide the end token like 'if { ... --> } <--',
         // we simply select the end of the previous line as the end position
         if (!this.includeLastFoldingLine(node, kind)) {
-            endPosition = document.textDocument.positionAt(document.textDocument.offsetAt({ line: endPosition.line, character: 0 }) - 1);
+            end = document.textDocument.positionAt(document.textDocument.offsetAt({ line: end.line, character: 0 }) - 1);
         }
-        return FoldingRange.create(startPosition.line, endPosition.line, startPosition.character, endPosition.character, kind);
+        return FoldingRange.create(start.line, end.line, start.character, end.character, kind);
     }
 
     /**

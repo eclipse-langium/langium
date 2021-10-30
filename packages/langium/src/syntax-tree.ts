@@ -6,7 +6,7 @@
 
 import { TokenType } from 'chevrotain';
 import { URI } from 'vscode-uri';
-import { LangiumDocument } from './documents/document';
+import { DocumentSegment, LangiumDocument } from './documents/document';
 import { AbstractElement } from './grammar/generated/ast';
 
 /**
@@ -90,15 +90,9 @@ export interface AstReflection {
 /**
  * A node in the Concrete Syntax Tree (CST).
  */
-export interface CstNode {
+export interface CstNode extends DocumentSegment {
     /** The container node in the CST */
     readonly parent?: CompositeCstNode;
-    /** Offset in the document text */
-    readonly offset: number;
-    /** Length of the text range */
-    readonly length: number;
-    /** Start and end offsets of the text range */
-    readonly range: CstRange;
     /** The actual text */
     readonly text: string;
     /** The root CST node */

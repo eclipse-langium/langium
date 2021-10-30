@@ -5,8 +5,10 @@
  ******************************************************************************/
 
 import { IToken, TokenType } from 'chevrotain';
+import { Position, Range } from 'vscode-languageserver-types';
 import { AbstractElement } from '../grammar/generated/ast';
-import { AstNode, CompositeCstNode, CstNode, CstRange, LeafCstNode } from '../syntax-tree';
+import { AstNode, CompositeCstNode, CstNode, LeafCstNode } from '../syntax-tree';
+import { tokenToRange } from '../utils/cst-util';
 
 export class CstNodeBuilder {
 
@@ -32,7 +34,7 @@ export class CstNodeBuilder {
     }
 
     buildLeafNode(token: IToken, feature: AbstractElement): LeafCstNode {
-        const leafNode = new LeafCstNodeImpl(token.startOffset, token.image.length, token.tokenType, false);
+        const leafNode = new LeafCstNodeImpl(token.startOffset, token.image.length, tokenToRange(token), token.tokenType, false);
         leafNode.feature = feature;
         leafNode.root = this.rootNode;
         this.current.children.push(leafNode);
@@ -54,6 +56,8 @@ export class CstNodeBuilder {
 export abstract class AbstractCstNode implements CstNode {
     abstract get offset(): number;
     abstract get length(): number;
+    abstract get end(): number;
+    abstract get range(): Range;
     parent?: CompositeCstNode;
     feature!: AbstractElement;
     root!: RootCstNodeImpl;
@@ -72,13 +76,7 @@ export abstract class AbstractCstNode implements CstNode {
     }
 
     get text(): string {
-        const { start, end } = this.range;
-        return this.root.text.substring(start, end);
-    }
-
-    get range(): CstRange {
-        const offset = this.offset;
-        return { start: offset, end: offset + this.length };
+        return this.root.text.substring(this.offset, this.end);
     }
 }
 
@@ -91,6 +89,10 @@ export class LeafCstNodeImpl extends AbstractCstNode implements LeafCstNode {
         return this._length;
     }
 
+    get end(): number {
+        return this._offset + this._length;
+    }
+
     get hidden(): boolean {
         return this._hidden;
     }
@@ -99,17 +101,23 @@ export class LeafCstNodeImpl extends AbstractCstNode implements LeafCstNode {
         return this._tokenType;
     }
 
+    get range(): Range {
+        return this._range;
+    }
+
     private _hidden: boolean;
     private _offset: number;
     private _length: number;
+    private _range: Range;
     private _tokenType: TokenType;
 
-    constructor(offset: number, length: number, tokenType: TokenType, hidden = false) {
+    constructor(offset: number, length: number, range: Range, tokenType: TokenType, hidden = false) {
         super();
         this._hidden = hidden;
         this._offset = offset;
         this._tokenType = tokenType;
         this._length = length;
+        this._range = range;
     }
 }
 
@@ -123,17 +131,24 @@ export class CompositeCstNodeImpl extends AbstractCstNode implements CompositeCs
     }
 
     get length(): number {
-        const range = this.range;
-        return range.end - range.start;
+        return this.end - this.offset;
     }
 
-    get range(): CstRange {
+    get end(): number {
         if (this.children.length > 0) {
-            const first = this.firstNonHiddenNode;
-            const last = this.lastNonHiddenNode;
-            return { start: first.offset, end: Math.max(last.range.end, first.offset) };
+            return this.lastNonHiddenNode.end;
         } else {
-            return { start: 0, end: 0 };
+            return 0;
+        }
+    }
+
+    get range(): Range {
+        if (this.children.length > 0) {
+            const { range: firstRange } = this.firstNonHiddenNode;
+            const { range: lastRange } = this.lastNonHiddenNode;
+            return { start: firstRange.start, end: lastRange.end.line < firstRange.start.line ? firstRange.start : lastRange.end };
+        } else {
+            return { start: Position.create(0, 0), end: Position.create(0, 0) };
         }
     }
 

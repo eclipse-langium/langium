@@ -12,7 +12,6 @@ import { References } from '../references/references';
 import { LangiumServices } from '../services';
 import { CstNode } from '../syntax-tree';
 import { findLeafNodeAtOffset } from '../utils/ast-util';
-import { toRange } from '../utils/cst-util';
 import { MaybePromise } from '../utils/promise-util';
 import { ReferenceFinder } from './reference-finder';
 
@@ -78,7 +77,7 @@ export class DefaultRenameHandler implements RenameHandler {
             const isCrossRef = this.references.findDeclaration(leafNode);
             // return range if selected CstNode is the name node or it is a crosslink which points to a declaration
             if (isCrossRef || this.isNameNode(leafNode)) {
-                return toRange(leafNode, doc);
+                return leafNode.range;
             }
         }
         return undefined;

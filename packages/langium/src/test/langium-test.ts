@@ -92,7 +92,7 @@ export function expectCompletion(services: LangiumServices, expectEqual: ExpectF
         const document = await parseDocument(services, output);
         const completionProvider = services.lsp.completion.CompletionProvider;
         const offset = indices[expectedCompletion.index];
-        const completions = await completionProvider.getCompletion(document, offset, textDocumentPositionParams(document, offset));
+        const completions = await completionProvider.getCompletion(document, textDocumentPositionParams(document, offset));
         const items = completions.items.sort((a, b) => a.sortText?.localeCompare(b.sortText || '0') || 0);
         expectEqual(items.length, expectedCompletion.expectedItems.length);
         for (let i = 0; i < expectedCompletion.expectedItems.length; i++) {

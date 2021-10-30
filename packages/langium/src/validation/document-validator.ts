@@ -13,6 +13,7 @@ import { AstNode } from '../syntax-tree';
 import { streamAllContents } from '../utils/ast-util';
 import { DiagnosticInfo, ValidationAcceptor, ValidationRegistry } from './validation-registry';
 import { interruptAndCheck } from '../utils/promise-util';
+import { tokenToRange } from '..';
 
 export interface DocumentValidator {
     /**
@@ -42,8 +43,14 @@ export class DefaultDocumentValidator {
             const diagnostic: Diagnostic = {
                 severity: DiagnosticSeverity.Error,
                 range: {
-                    start: document.textDocument.positionAt(lexerError.offset),
-                    end: document.textDocument.positionAt(lexerError.offset + lexerError.length)
+                    start: {
+                        line: lexerError.line - 1,
+                        character: lexerError.column - 1
+                    },
+                    end: {
+                        line: lexerError.line - 1,
+                        character: lexerError.column + lexerError.length - 1
+                    }
                 },
                 message: lexerError.message
             };
@@ -55,10 +62,7 @@ export class DefaultDocumentValidator {
             const token = parserError.token;
             const diagnostic: Diagnostic = {
                 severity: DiagnosticSeverity.Error,
-                range: {
-                    start: document.textDocument.positionAt(token.startOffset),
-                    end: document.textDocument.positionAt(token.startOffset + token.image.length)
-                },
+                range: tokenToRange(token),
                 message: parserError.message
             };
             diagnostics.push(diagnostic);
@@ -73,7 +77,7 @@ export class DefaultDocumentValidator {
                     property: linkingError.property,
                     index: linkingError.index
                 };
-                diagnostics.push(this.toDiagnostic('error', linkingError.message, info, document));
+                diagnostics.push(this.toDiagnostic('error', linkingError.message, info));
             }
         }
 
@@ -92,7 +96,7 @@ export class DefaultDocumentValidator {
     protected async validateAst(rootNode: AstNode, document: LangiumDocument, cancelToken = CancellationToken.None): Promise<Diagnostic[]> {
         const validationItems: Diagnostic[] = [];
         const acceptor: ValidationAcceptor = <N extends AstNode>(severity: 'error' | 'warning' | 'info' | 'hint', message: string, info: DiagnosticInfo<N>) => {
-            validationItems.push(this.toDiagnostic(severity, message, info, document));
+            validationItems.push(this.toDiagnostic(severity, message, info));
         };
 
         const runChecks = async (node: AstNode) => {
@@ -109,10 +113,10 @@ export class DefaultDocumentValidator {
         return validationItems;
     }
 
-    protected toDiagnostic<N extends AstNode>(severity: 'error' | 'warning' | 'info' | 'hint', message: string, info: DiagnosticInfo<N, string>, document: LangiumDocument): Diagnostic {
+    protected toDiagnostic<N extends AstNode>(severity: 'error' | 'warning' | 'info' | 'hint', message: string, info: DiagnosticInfo<N, string>): Diagnostic {
         return {
             message,
-            range: getDiagnosticRange(info, document),
+            range: getDiagnosticRange(info),
             severity: toDiagnosticSeverity(severity),
             code: info.code,
             codeDescription: info.codeDescription,
@@ -123,7 +127,7 @@ export class DefaultDocumentValidator {
     }
 }
 
-export function getDiagnosticRange<N extends AstNode>(info: DiagnosticInfo<N, string>, document: LangiumDocument): Range {
+export function getDiagnosticRange<N extends AstNode>(info: DiagnosticInfo<N, string>): Range {
     if (info.range) {
         return info.range;
     }
@@ -137,11 +141,7 @@ export function getDiagnosticRange<N extends AstNode>(info: DiagnosticInfo<N, st
             end: { line: 0, character: 0 }
         };
     }
-    const { start, end } = cstNode.range;
-    return {
-        start: document.textDocument.positionAt(start),
-        end: document.textDocument.positionAt(end)
-    };
+    return cstNode.range;
 }
 
 export function toDiagnosticSeverity(severity: 'error' | 'warning' | 'info' | 'hint'): DiagnosticSeverity {

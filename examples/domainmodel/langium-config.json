@@ -8,7 +8,7 @@
     },
     "chevrotainParserConfig": {
         "recoveryEnabled": true,
-        "nodeLocationTracking": "onlyOffset",
+        "nodeLocationTracking": "full",
         "maxLookahead": 3
     }
 }

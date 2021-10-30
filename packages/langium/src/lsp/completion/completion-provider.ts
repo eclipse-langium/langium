@@ -29,10 +29,10 @@ export interface CompletionProvider {
      * @throws `OperationCancelled` if cancellation is detected during execution
      * @throws `ResponseError` if an error is detected that should be sent as response to the client
      */
-    getCompletion(document: LangiumDocument, offset: number, params: CompletionParams, cancelToken?: CancellationToken): MaybePromise<CompletionList>
+    getCompletion(document: LangiumDocument, params: CompletionParams, cancelToken?: CancellationToken): MaybePromise<CompletionList>
 }
 
-export class DefaultCompletionProvider {
+export class DefaultCompletionProvider implements CompletionProvider {
 
     protected readonly scopeProvider: ScopeProvider;
     protected readonly ruleInterpreter: RuleInterpreter;
@@ -44,10 +44,11 @@ export class DefaultCompletionProvider {
         this.grammar = services.Grammar;
     }
 
-    getCompletion(document: LangiumDocument, offset: number): MaybePromise<CompletionList> {
+    getCompletion(document: LangiumDocument, params: CompletionParams): MaybePromise<CompletionList> {
         const root = document.parseResult.value;
         const cst = root.$cstNode;
         const items: CompletionItem[] = [];
+        const offset = document.textDocument.offsetAt(params.position);
         const acceptor = (value: string | AstNode | AstNodeDescription, item?: Partial<CompletionItem>) => {
             const completionItem = this.fillCompletionItem(document.textDocument, offset, value, item);
             if (completionItem) {
@@ -72,7 +73,7 @@ export class DefaultCompletionProvider {
                     features.push(...partialMatches);
                     features.push(...notMatchingFeatures.flatMap(e => findNextFeatures([e])));
                 }
-                if (node.range.end > offset) {
+                if (node.end > offset) {
                     features.push(node.feature);
                 }
                 stream(features).distinct(e => {
