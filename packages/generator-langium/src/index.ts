@@ -70,9 +70,9 @@ class LangiumGenerator extends Generator {
                     'File extensions of your language, separated by commas:',
                 default: '.hello',
                 validate: (input: string): boolean | string =>
-                    /^\.?[a-z]+(\s*,\s*\.?[a-z]+)*$/.test(input)
+                    /^\.?\w+(\s*,\s*\.?\w+)*$/.test(input)
                         ? true
-                        : 'The file extension can start with . and must contain only lowercase letters. Extensions must be separated by commas.',
+                        : 'The file extension can start with . and must contain only letters and digits. Extensions must be separated by commas.',
             },
         ]);
     }
