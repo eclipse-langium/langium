@@ -1,7 +1,12 @@
-# Change Log
+# Langium Change Log
 
-## v0.2.0
+We maintain separate change logs for the individual packages:
 
-<a name="breaking_changes_0.2.0">[Breaking Changes:](#breaking_changes_0.2.0)</a>
+ * [langium](./packages/langium/CHANGELOG.md) &ndash; Core package
+ * [langium-cli](./packages/langium-cli/CHANGELOG.md) &ndash; CLI for processing Langium grammars
+ * [langium-vscode](./packages/langium/CHANGELOG.md) &ndash; VS Code extension for the grammar language
+ * [generator-langium](./packages/langium/CHANGELOG.md) &ndash; Yeoman generator for creating new projects
 
-- [langium-cli] The `extensions` field in langium configs was renamed to `fileExtensions`. [#173](https://github.com/langium/langium/pull/173)
+## Closed Issues and PRs
+
+ * [v0.2.0](https://github.com/langium/langium/milestone/1?closed=1)
