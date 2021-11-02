@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import { DiagnosticTag } from 'vscode-languageserver-types';
-import { extractCyclicDef } from '../lsp/completion/follow-element-computation';
+import { extractLeftRecursion } from '../lsp/completion/follow-element-computation';
 import { References } from '../references/references';
 import { LangiumServices } from '../services';
 import { streamAllContents } from '../utils/ast-util';
@@ -34,7 +34,7 @@ export class LangiumGrammarValidationRegistry extends ValidationRegistry {
                 validator.checkUniqueRuleName,
                 validator.checkGrammarHiddenTokens,
                 validator.checkGrammarForUnusedRules,
-                validator.checkGrammarForCyclicDefinitions
+                validator.checkGrammarForLeftRecursion
             ]
         };
         this.register(checks, validator);
@@ -147,9 +147,9 @@ export class LangiumGrammarValidator {
         });
     }
 
-    checkGrammarForCyclicDefinitions(grammar: Grammar, accept: ValidationAcceptor): void {
-        extractCyclicDef(grammar.rules).forEach(cyclicRule => {
-            accept('error', `This rule has a cyclic definition or uses such rule: ${cyclicRule.path.join(' > ')}.`, { node: cyclicRule.rule, property: 'name' });
+    checkGrammarForLeftRecursion(grammar: Grammar, accept: ValidationAcceptor): void {
+        extractLeftRecursion(grammar.rules).forEach(leftRecRule => {
+            accept('error', `This rule is left recursive: ${leftRecRule.path.join(' > ')}.`, { node: leftRecRule.rule, property: 'name' });
         });
     }
 

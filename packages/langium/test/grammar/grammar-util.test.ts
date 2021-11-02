@@ -6,7 +6,7 @@
 
 import { getEntryRule, replaceTokens } from '../../src';
 import { grammar } from '../../src/grammar/generated/grammar';
-import { createLangiumGrammarServices, extractCyclicDef, Grammar } from '../../src';
+import { createLangiumGrammarServices, extractLeftRecursion, Grammar } from '../../src';
 import { parseHelper } from '../../src/test';
 
 describe('Token replacement', () => {
@@ -41,19 +41,19 @@ test('Langium grammar entry rule', () => {
 
 const services = createLangiumGrammarServices();
 
-function extractCyclicPath(grammar: Grammar): string[] {
-    return extractCyclicDef(grammar.rules).map(cyclicRule => cyclicRule.path.join(' > '));
+function extractLeftRecursionPath(grammar: Grammar): string[] {
+    return extractLeftRecursion(grammar.rules).map(cyclicRule => cyclicRule.path.join(' > '));
 }
 
 describe('Left recursion detection', () => {
 
-    test('should detect direct left recursion (the production has only yourself', async () => {
+    test('should detect direct left recursion (the production has only yourself)', async () => {
         const text = `
             grammar test
             X: X;
         `;
         const grammar = (await parseHelper<Grammar>(services)(text)).document.parseResult.value;
-        expect(extractCyclicPath(grammar)).toStrictEqual<string[]>(
+        expect(extractLeftRecursionPath(grammar)).toStrictEqual<string[]>(
             ['X > X > X']);
     });
 
@@ -63,7 +63,7 @@ describe('Left recursion detection', () => {
             X: X 'a';
         `;
         const grammar = (await parseHelper<Grammar>(services)(text)).document.parseResult.value;
-        expect(extractCyclicPath(grammar)).toStrictEqual<string[]>(
+        expect(extractLeftRecursionPath(grammar)).toStrictEqual<string[]>(
             ['X > X']);
     });
 
@@ -75,7 +75,7 @@ describe('Left recursion detection', () => {
             X2: X0 'x2';
         `;
         const grammar = (await parseHelper<Grammar>(services)(text)).document.parseResult.value;
-        expect(extractCyclicPath(grammar)).toStrictEqual<string[]>([
+        expect(extractLeftRecursionPath(grammar)).toStrictEqual<string[]>([
             'X0 > X1 > X2 > X0',
             'X1 > X2 > X0 > X1',
             'X2 > X0 > X1 > X2'
@@ -88,7 +88,7 @@ describe('Left recursion detection', () => {
             X: 'a'? X 'a';
         `;
         const grammar = (await parseHelper<Grammar>(services)(text)).document.parseResult.value;
-        expect(extractCyclicPath(grammar)).toStrictEqual<string[]>([
+        expect(extractLeftRecursionPath(grammar)).toStrictEqual<string[]>([
             'X > X'
         ]);
     });
@@ -101,7 +101,7 @@ describe('Left recursion detection', () => {
             X2: 'c'? X0 'x2';
         `;
         const grammar = (await parseHelper<Grammar>(services)(text)).document.parseResult.value;
-        expect(extractCyclicPath(grammar)).toStrictEqual<string[]>([
+        expect(extractLeftRecursionPath(grammar)).toStrictEqual<string[]>([
             'X0 > X1 > X2 > X0',
             'X1 > X2 > X0 > X1',
             'X2 > X0 > X1 > X2'
@@ -114,7 +114,7 @@ describe('Left recursion detection', () => {
             X: X? 'a';
         `;
         const grammar = (await parseHelper<Grammar>(services)(text)).document.parseResult.value;
-        expect(extractCyclicPath(grammar)).toStrictEqual<string[]>([
+        expect(extractLeftRecursionPath(grammar)).toStrictEqual<string[]>([
             'X > X'
         ]);
     });
@@ -127,7 +127,7 @@ describe('Left recursion detection', () => {
             X2: X0? 'x2';
         `;
         const grammar = (await parseHelper<Grammar>(services)(text)).document.parseResult.value;
-        expect(extractCyclicPath(grammar)).toStrictEqual<string[]>([
+        expect(extractLeftRecursionPath(grammar)).toStrictEqual<string[]>([
 
         ]);
     });
@@ -143,7 +143,7 @@ describe('Left recursion detection', () => {
             terminal ID: /[_a-zA-Z][\\w_]*/;
         `;
         const grammar = (await parseHelper<Grammar>(services)(text)).document.parseResult.value;
-        expect(extractCyclicPath(grammar)).toStrictEqual<string[]>([
+        expect(extractLeftRecursionPath(grammar)).toStrictEqual<string[]>([
             'R > T > R',
             'T > R > T'
         ]);
@@ -162,7 +162,7 @@ describe('Left recursion detection', () => {
             terminal ID: /[_a-zA-Z][\\w_]*/;
         `;
         const grammar = (await parseHelper<Grammar>(services)(text)).document.parseResult.value;
-        expect(extractCyclicPath(grammar)).toStrictEqual<string[]>([
+        expect(extractLeftRecursionPath(grammar)).toStrictEqual<string[]>([
             'R > T > R',
             'T > R > T',
             'RR > TT > RR',
@@ -178,6 +178,6 @@ describe('Left recursion detection', () => {
             terminal INT returns number: /[0-9]+/;
         `;
         const grammar = (await parseHelper<Grammar>(services)(text)).document.parseResult.value;
-        expect(extractCyclicPath(grammar)).toStrictEqual<string[]>([]);
+        expect(extractLeftRecursionPath(grammar)).toStrictEqual<string[]>([]);
     });
 });

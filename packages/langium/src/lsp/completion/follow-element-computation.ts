@@ -133,18 +133,18 @@ interface RuleMem {
     firstFeatures?: ast.AbstractElement[]
 }
 
-interface ExtractCyclicData {
+interface ExtractLeftRecData {
     mem: Map<ast.ParserRule, RuleMem>,
     cardinalities: Map<ast.AbstractElement, Cardinality>,
     visited: ast.AbstractElement[]
 }
 
-interface CyclicRule {
+interface LeftRecRule {
     rule: ast.ParserRule,
     path: string[]
 }
 
-export function extractCyclicDef(rules: ast.AbstractRule[]): CyclicRule[] {
+export function extractLeftRecursion(rules: ast.AbstractRule[]): LeftRecRule[] {
     const parserRules: ast.ParserRule[] = [];
     const parserRulesNames: string[] = [];
     rules.forEach(rule => {
@@ -155,9 +155,9 @@ export function extractCyclicDef(rules: ast.AbstractRule[]): CyclicRule[] {
     });
 
     return parserRules.reduce((res, rule) => {
-        const data: ExtractCyclicData = { mem: new Map(), cardinalities: new Map(), visited: [] };
+        const data: ExtractLeftRecData = { mem: new Map(), cardinalities: new Map(), visited: [] };
         if (!data.mem.has(rule)) {
-            const firstFeatures = findFirstFeaturesWithCyclicDef(rule.alternatives, data);
+            const firstFeatures = findFirstFeaturesWithLeftRec(rule.alternatives, data);
             data.mem.set(rule, firstFeatures === undefined ?
                 { isCyclic: true, visited: data.visited } :
                 { isCyclic: false, firstFeatures });
@@ -171,7 +171,7 @@ export function extractCyclicDef(rules: ast.AbstractRule[]): CyclicRule[] {
             }
         }
         return res;
-    }, <CyclicRule[]>[]);
+    }, <LeftRecRule[]>[]);
 }
 
 function getPathByVisited(entryRuleName: string, visited: ast.AbstractElement[], ruleNames: string[]): string[] {
@@ -187,7 +187,7 @@ function getPathByVisited(entryRuleName: string, visited: ast.AbstractElement[],
     return path;
 }
 
-function findFirstFeaturesWithCyclicDef(feature: ast.AbstractElement, data: ExtractCyclicData): ast.AbstractElement[] | undefined {
+function findFirstFeaturesWithLeftRec(feature: ast.AbstractElement, data: ExtractLeftRecData): ast.AbstractElement[] | undefined {
     if (!feature) return [];
 
     if (data.visited.includes(feature)) {
@@ -202,7 +202,7 @@ function findFirstFeaturesWithCyclicDef(feature: ast.AbstractElement, data: Extr
         let firstFeatureInGroup: ast.AbstractElement;
         do {
             firstFeatureInGroup = feature.elements[index++];
-            const currFirstFeatures = findFirstFeaturesWithCyclicDef(firstFeatureInGroup, data);
+            const currFirstFeatures = findFirstFeaturesWithLeftRec(firstFeatureInGroup, data);
             if (!currFirstFeatures) return undefined;
             firstFeatures.push(...currFirstFeatures);
         } while (firstFeatureInGroup && isOptional(firstFeatureInGroup.cardinality ?? data.cardinalities.get(firstFeatureInGroup)));
@@ -217,7 +217,7 @@ function findFirstFeaturesWithCyclicDef(feature: ast.AbstractElement, data: Extr
             backupVisited = [];
             data.visited.forEach(feature => backupVisited.push(feature));
             altFeature = feature.elements[index++];
-            const currFirstFeatures = findFirstFeaturesWithCyclicDef(altFeature, data);
+            const currFirstFeatures = findFirstFeaturesWithLeftRec(altFeature, data);
             if (!currFirstFeatures) {
                 return undefined;
             }
@@ -235,13 +235,13 @@ function findFirstFeaturesWithCyclicDef(feature: ast.AbstractElement, data: Extr
             .map(e => modifyCardinality(e, feature.cardinality, data.cardinalities));
     }
     if (ast.isAssignment(feature)) {
-        return findFirstFeaturesWithCyclicDef(feature.terminal, data)
+        return findFirstFeaturesWithLeftRec(feature.terminal, data)
             ?.map(e => modifyCardinality(e, feature.cardinality, data.cardinalities));
     }
     if (ast.isRuleCall(feature) && ast.isParserRule(feature.rule.ref)) {
         const refRule = feature.rule.ref;
         if (!data.mem.has(refRule)) {
-            const firstFeatures = findFirstFeaturesWithCyclicDef(refRule.alternatives, data)
+            const firstFeatures = findFirstFeaturesWithLeftRec(refRule.alternatives, data)
                 ?.map(e => modifyCardinality(e, feature.cardinality, data.cardinalities));
             data.mem.set(refRule, firstFeatures === undefined ? {isCyclic: true, visited: data.visited } : { isCyclic: false, firstFeatures });
         }
