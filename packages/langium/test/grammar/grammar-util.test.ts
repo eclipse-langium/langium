@@ -45,9 +45,9 @@ function extractLeftRecursionPath(grammar: Grammar): string[] {
     return extractLeftRecursion(grammar.rules).map(cyclicRule => cyclicRule.path.join(' > '));
 }
 
-describe('Left recursion detection', () => {
+describe('Direct left recursion detection', () => {
 
-    test('should detect direct left recursion (the production has only yourself)', async () => {
+    test('should detect with the only one rule call', async () => {
         const text = `
             grammar test
             X: X;
@@ -57,80 +57,123 @@ describe('Left recursion detection', () => {
             ['X > X > X']);
     });
 
-    test('should detect direct left recursion with a terminal', async () => {
+    test('should detect with a terminal on the right', async () => {
         const text = `
             grammar test
             X: X 'a';
         `;
         const grammar = (await parseHelper<Grammar>(services)(text)).document.parseResult.value;
         expect(extractLeftRecursionPath(grammar)).toStrictEqual<string[]>(
-            ['X > X']);
+            ['X > X > X']);
     });
 
-    test('should detect indirect left recursion', async () => {
+    test('should detect with the only one rule call and first optional terminal', async () => {
         const text = `
             grammar test
-            X0: X1 'x0';
-            X1: X2 'x1';
-            X2: X0 'x2';
+            X: 'a'? X;
         `;
         const grammar = (await parseHelper<Grammar>(services)(text)).document.parseResult.value;
-        expect(extractLeftRecursionPath(grammar)).toStrictEqual<string[]>([
-            'X0 > X1 > X2 > X0',
-            'X1 > X2 > X0 > X1',
-            'X2 > X0 > X1 > X2'
-        ]);
+        expect(extractLeftRecursionPath(grammar)).toStrictEqual<string[]>(
+            ['X > X > X']);
     });
 
-    test('should detect direct left recursion with first optional terminal', async () => {
+    test('should detect with a terminal on the right and first optional terminal', async () => {
         const text = `
             grammar test
             X: 'a'? X 'a';
         `;
         const grammar = (await parseHelper<Grammar>(services)(text)).document.parseResult.value;
-        expect(extractLeftRecursionPath(grammar)).toStrictEqual<string[]>([
-            'X > X'
-        ]);
+        expect(extractLeftRecursionPath(grammar)).toStrictEqual<string[]>(
+            ['X > X > X']);
     });
 
-    test('should detect indirect left recursion with first optional terminal', async () => {
+    test('should detect with the only one rule call and first optional self-call', async () => {
         const text = `
             grammar test
-            X0: 'a'? X1 'x0';
-            X1: 'b'? X2 'x1';
-            X2: 'c'? X0 'x2';
+            X: X? X;
         `;
         const grammar = (await parseHelper<Grammar>(services)(text)).document.parseResult.value;
         expect(extractLeftRecursionPath(grammar)).toStrictEqual<string[]>([
-            'X0 > X1 > X2 > X0',
-            'X1 > X2 > X0 > X1',
-            'X2 > X0 > X1 > X2'
+            'X > X > X',
+            'X > X > X'
         ]);
     });
 
-    test('should detect direct left recursion with first optional self-call', async () => {
+    test('should detect with a terminal on the right and first optional self-call', async () => {
         const text = `
             grammar test
-            X: X? 'a';
+            X: X? X 'a';
         `;
         const grammar = (await parseHelper<Grammar>(services)(text)).document.parseResult.value;
         expect(extractLeftRecursionPath(grammar)).toStrictEqual<string[]>([
-            'X > X'
+            'X > X > X',
+            'X > X > X'
         ]);
     });
+});
 
-    test('should detect indirect left recursion with first optional self-call', async () => {
+describe('Indirect left recursion detection', () => {
+
+    test('should detect with the only one rule call', async () => {
         const text = `
             grammar test
-            X1: 'b'? X2 'x1';
-            X0: 'a'? X1 'x0';
-            X2: X0? 'x2';
+            R: T;
+            T: R;
         `;
         const grammar = (await parseHelper<Grammar>(services)(text)).document.parseResult.value;
         expect(extractLeftRecursionPath(grammar)).toStrictEqual<string[]>([
-
+            'R > T > R',
+            'T > R > T'
         ]);
     });
+
+    test('should detect with a terminal on the right', async () => {
+        const text = `
+            grammar test
+            R: T 'r';
+            T: X 't';
+            X: R 'x';
+        `;
+        const grammar = (await parseHelper<Grammar>(services)(text)).document.parseResult.value;
+        expect(extractLeftRecursionPath(grammar)).toStrictEqual<string[]>([
+            'R > T > X > R',
+            'T > X > R > T',
+            'X > R > T > X'
+        ]);
+    });
+
+    test('should detect with first optional terminal', async () => {
+        const text = `
+            grammar test
+            R: 'r'? T 'r';
+            T: 't'? X 't';
+            X: 'x'? R 'x';
+        `;
+        const grammar = (await parseHelper<Grammar>(services)(text)).document.parseResult.value;
+        expect(extractLeftRecursionPath(grammar)).toStrictEqual<string[]>([
+            'R > T > X > R',
+            'T > X > R > T',
+            'X > R > T > X'
+        ]);
+    });
+
+    test('should detect with first optional self-call', async () => {
+        const text = `
+            grammar test
+            R: 'r'? T 'r';
+            T: 't'? X 't';
+            X: R? R 'x';
+        `;
+        const grammar = (await parseHelper<Grammar>(services)(text)).document.parseResult.value;
+        expect(extractLeftRecursionPath(grammar)).toStrictEqual<string[]>([
+            'R > T > X > R',
+            'T > X > R > T',
+            'X > R > T > X'
+        ]);
+    });
+});
+
+describe('Detection of left recursion in real life examples ', () => {
 
     test('should return only cycle path (no entry rules)', async () => {
         const text = `
@@ -170,7 +213,7 @@ describe('Left recursion detection', () => {
         ]);
     });
 
-    test('shouldn\'t detect left recursion', async () => {
+    test('shouldn\'t detect any recursion as left recursion ', async () => {
         const text = `
             grammar test
             Expression: '(' Expression ')' | INT;
