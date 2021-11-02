@@ -33,14 +33,22 @@ export function isArrayOperator(operator?: Operator): boolean {
     return operator === '+=';
 }
 
-export function isDataTypeRule(rule: ast.ParserRule): boolean {
-    const features = Array.from(findAllFeatures(rule).byFeature.keys());
-    const onlyRuleCallsAndKeywords = features.every(e => ast.isRuleCall(e) || ast.isKeyword(e) || ast.isGroup(e) || ast.isAlternatives(e) || ast.isUnorderedGroup(e));
-    if (onlyRuleCallsAndKeywords) {
-        const ruleCallWithParserRule = features.filter(e => ast.isRuleCall(e) && ast.isParserRule(e.rule.ref) && !isDataTypeRule(e.rule.ref));
-        return ruleCallWithParserRule.length === 0;
+export function isDataTypeRule(rule: ast.ParserRule, visited: Map<ast.ParserRule, boolean | undefined> = new Map()): boolean {
+    if (visited.has(rule)) {
+        const status = visited.get(rule);
+        if (status === undefined) { // got a cycle reference
+            visited.set(rule, false);
+            return false;
+        }
+        return status;
     }
-    return false;
+    visited.set(rule, undefined);
+    const features = Array.from(findAllFeatures(rule).byFeature.keys());
+    const onlyRuleCallsAndKeywords = features.every(e => ast.isRuleCall(e) && e.rule.ref?.name !== rule.name || ast.isKeyword(e) || ast.isGroup(e) || ast.isAlternatives(e) || ast.isUnorderedGroup(e));
+    visited.set(rule, onlyRuleCallsAndKeywords ?
+        !features.some(e => ast.isRuleCall(e) && ast.isParserRule(e.rule.ref) && !isDataTypeRule(e.rule.ref, visited)) :
+        false);
+    return visited.get(rule)!;
 }
 
 export function isCommentTerminal(terminalRule: ast.TerminalRule): boolean {
