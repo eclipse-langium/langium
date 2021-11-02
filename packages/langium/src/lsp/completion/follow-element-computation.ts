@@ -129,7 +129,7 @@ function findNextFeaturesInGroup(group: ast.Group, index: number, cardinalities:
 
 interface RuleMem {
     isCyclic: boolean,
-    path?: ast.AbstractElement[],
+    visited?: ast.AbstractElement[],
     firstFeatures?: ast.AbstractElement[]
 }
 
@@ -141,33 +141,50 @@ interface ExtractCyclicData {
 
 interface CyclicRule {
     rule: ast.ParserRule,
-    path: string
+    path: string[]
 }
 
 export function extractCyclicDef(rules: ast.AbstractRule[]): CyclicRule[] {
-    const parserRules: ast.ParserRule[] = rules.filter(ast.isParserRule);
+    const parserRules: ast.ParserRule[] = [];
+    const parserRulesNames: string[] = [];
+    rules.forEach(rule => {
+        if (ast.isParserRule(rule)) {
+            parserRules.push(rule);
+            parserRulesNames.push(rule.name);
+        }
+    });
 
     return parserRules.reduce((res, rule) => {
         const data: ExtractCyclicData = { mem: new Map(), cardinalities: new Map(), visited: [] };
         if (!data.mem.has(rule)) {
             const firstFeatures = findFirstFeaturesWithCyclicDef(rule.alternatives, data);
             data.mem.set(rule, firstFeatures === undefined ?
-                { isCyclic: true, path: data.visited } :
+                { isCyclic: true, visited: data.visited } :
                 { isCyclic: false, firstFeatures });
         }
         if (data.mem.get(rule)?.isCyclic) {
-            res.push({rule, path: formatCyclicPath(rule.name, data.mem.get(rule)?.path, parserRules.map(rule => rule.name))});
+            const visited = data.mem.get(rule)?.visited ?? [];
+            const path = getPathByVisited(rule.name, visited, parserRulesNames);
+            // collects only rules, that create a cycle
+            if (path.length > 1 && path[0] === path[path.length - 1]) {
+                res.push({rule, path});
+            }
         }
         return res;
     }, <CyclicRule[]>[]);
 }
 
-function formatCyclicPath(entryRuleName: string, path: ast.AbstractElement[] | undefined, ruleNames: string[]): string {
-    const splitter = ' > ';
-    const stringPath = (path ?? [])
-        .map(feature => feature.$cstNode?.text)
-        .filter(name => ruleNames.includes(name ?? ''));
-    return [entryRuleName, stringPath.join(splitter)].join(splitter);
+function getPathByVisited(entryRuleName: string, visited: ast.AbstractElement[], ruleNames: string[]): string[] {
+    const path: string[] = [entryRuleName];
+    visited
+        .forEach(feature => {
+            const featureText = feature.$cstNode?.text ?? '';
+            if (ruleNames.includes(featureText)) {
+                path.push(featureText);
+            }
+        });
+    ruleNames;
+    return path;
 }
 
 function findFirstFeaturesWithCyclicDef(feature: ast.AbstractElement, data: ExtractCyclicData): ast.AbstractElement[] | undefined {
@@ -226,7 +243,7 @@ function findFirstFeaturesWithCyclicDef(feature: ast.AbstractElement, data: Extr
         if (!data.mem.has(refRule)) {
             const firstFeatures = findFirstFeaturesWithCyclicDef(refRule.alternatives, data)
                 ?.map(e => modifyCardinality(e, feature.cardinality, data.cardinalities));
-            data.mem.set(refRule, firstFeatures === undefined ? {isCyclic: true, path: data.visited } : { isCyclic: false, firstFeatures });
+            data.mem.set(refRule, firstFeatures === undefined ? {isCyclic: true, visited: data.visited } : { isCyclic: false, firstFeatures });
         }
         return data.mem.get(refRule)?.firstFeatures;
     }
