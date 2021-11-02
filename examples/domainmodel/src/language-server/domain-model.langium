@@ -5,22 +5,7 @@ Domainmodel:
     (elements+=AbstractElement)*;
 
 AbstractElement:
-    PackageDeclaration | Type | R;
-
-R:
-    'a'? T 'a' | 'b';
-
-T:
-    '('? R ')';
-
-TT:
-    '('? RR ')';
-
-RR:
-    'a'? TT 'a' | 'b';
-
-X:
-    X;
+    PackageDeclaration | Type;
 
 PackageDeclaration:
     'package' name=QualifiedName '{'
@@ -28,7 +13,7 @@ PackageDeclaration:
     '}';
 
 Type:
-    DataType | Entity | TT;
+    DataType | Entity;
 
 DataType:
     'datatype' name=ID;
