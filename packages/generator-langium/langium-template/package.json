@@ -1,7 +1,7 @@
 {
     "name": "<%= extension-name %>",
     "displayName": "<%= extension-name %>",
-    "description": "description",
+    "description": "Please enter a brief description here",
     "version": "0.0.1",
     "engines": {
         "vscode": "^1.56.0"
@@ -39,7 +39,8 @@
         "build": "tsc -b tsconfig.json",
         "watch": "tsc -b tsconfig.json --watch",
         "lint": "eslint src --ext ts",
-        "langium:generate": "langium generate"
+        "langium:generate": "langium generate",
+        "langium:watch": "langium generate --watch"
     },
     "dependencies": {
         "colors": "^1.4.0",

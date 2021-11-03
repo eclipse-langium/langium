@@ -10,7 +10,7 @@ export function generateJavaScript(model: Model, filePath: string, destination: 
 
     const fileNode = new CompositeGeneratorNode();
     fileNode.append('"use strict";', NL, NL);
-    model.greetings.forEach(greeting => fileNode.append(`console.log('Hello, ${greeting.person.$refName}!');`, NL));
+    model.greetings.forEach(greeting => fileNode.append(`console.log('Hello, ${greeting.person.$refText}!');`, NL));
 
     if (!fs.existsSync(data.destination)) {
         fs.mkdirSync(data.destination, { recursive: true });
