@@ -1,5 +1,11 @@
 # Change Log of `generator-langium`
 
+## v0.2.1 (Nov. 2021)
+
+ * Fixed an outdated TypeScript reference in `src/cli/generator.ts` that led to a compile error.
+ * Added `langium:watch` script to run the Langium CLI automatically when the grammar declaration is changed.
+ * Updated `langium-quickstart.md` with information about the CLI.
+
 ## v0.2.0 (Nov. 2021)
 
 ### Added CLI Example
