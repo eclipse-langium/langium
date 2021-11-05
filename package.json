@@ -13,6 +13,7 @@
     "test": "jest --coverage",
     "langium:generate": "npm run langium:generate --workspace=langium --workspace=domainmodel --workspace=arithmetics --workspace=statemachine",
     "prepare": "npm run clean && npm run build",
+    "prepackage": "npm install && npm run langium:generate && npm run build",
     "dev-build": "npm run dev-clean && npm install && npm link ./packages/langium && npm link ./packages/langium-cli && npm link ./packages/generator-langium",
     "dev-clean": "rimraf ./packages/**/node_modules && npm uninstall -g langium-workspaces langium-cli generator-langium langium && npm unlink langium-workspaces langium-cli generator-langium langium"
   },
