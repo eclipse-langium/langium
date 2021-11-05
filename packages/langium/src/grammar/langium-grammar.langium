@@ -1,12 +1,12 @@
-grammar LangiumGrammar hidden(WS, SL_COMMENT, ML_COMMENT)
+grammar LangiumGrammar
 
-terminal WS         : /\s+/;
+hidden terminal WS         : /\s+/;
 terminal ID returns string: /\^?[_a-zA-Z][\w_]*/;
 terminal INT returns number: /[0-9]+/;
 terminal string: /"[^"]*"|'[^']*'/;
 
-terminal ML_COMMENT: /\/\*[\s\S]*?\*\//;
-terminal SL_COMMENT: /\/\/[^\n\r]*/;
+hidden terminal ML_COMMENT: /\/\*[\s\S]*?\*\//;
+hidden terminal SL_COMMENT: /\/\/[^\n\r]*/;
 
 Grammar:
 	'grammar' name=ID ('with' usedGrammars+=[Grammar|ID] (',' usedGrammars+=[Grammar|ID])*)?
@@ -102,9 +102,6 @@ ParenthesizedCondition returns Condition:
 ParameterReference:
 	parameter=[Parameter|ID];
 
-TerminalRuleCall:
-	rule=[AbstractRule|ID];
-
 PredicatedKeyword returns Keyword:
 	(predicated?='=>' | firstSetPredicated?='->') value=string;
 
@@ -135,40 +132,43 @@ ParenthesizedElement returns AbstractElement:
 PredicatedGroup returns Group:
 	(predicated?='=>' | firstSetPredicated?='->') '(' elements+=Alternatives ')';
 
-TerminalRule :
-	'terminal' (^fragment?='fragment' name=ID | name=ID ('returns' type=ID)?) ':'
-		regex=RegexLiteral
+TerminalRule:
+	^hidden?='hidden'? 'terminal' (^fragment?='fragment' name=ID | name=ID ('returns' type=ID)?) ':'
+		^terminal=TerminalAlternatives
 	';';
 
 terminal RegexLiteral returns string: /\/(?![*+?])(?:[^\r\n\[/\\]|\\.|\[(?:[^\r\n\]\\]|\\.)*\])+\//;
 
-TerminalAlternatives:
+TerminalAlternatives returns AbstractElement:
 	TerminalGroup ({TerminalAlternatives.elements+=current} '|' elements+=TerminalGroup)*;
 
-TerminalGroup:
+TerminalGroup returns AbstractElement:
 	TerminalToken ({TerminalGroup.elements+=current} elements+=TerminalToken+)?;
 
-TerminalToken:
+TerminalToken returns AbstractElement:
 	TerminalTokenElement cardinality=('?'|'*'|'+')?;
 
-TerminalTokenElement:
-	CharacterRange | TerminalRuleCall | ParenthesizedTerminalElement | AbstractNegatedToken | Wildcard;
+TerminalTokenElement returns AbstractElement:
+	CharacterRange | TerminalRuleCall | ParenthesizedTerminalElement | NegatedToken | UntilToken | RegexToken | Wildcard;
 
-ParenthesizedTerminalElement returns TerminalAlternatives:
+ParenthesizedTerminalElement returns AbstractElement:
 	'(' TerminalAlternatives ')';
 
-AbstractNegatedToken:
-	NegatedToken | UntilToken;
+TerminalRuleCall returns AbstractElement:
+	{TerminalRuleCall} rule=[TerminalRule|ID];
 
-NegatedToken:
-	'!' ^terminal=TerminalTokenElement;
+NegatedToken returns AbstractElement:
+	{NegatedToken} '!' ^terminal=TerminalTokenElement;
 
-UntilToken:
-	'->' ^terminal=TerminalTokenElement;
+UntilToken returns AbstractElement:
+	{UntilToken} '->' ^terminal=TerminalTokenElement;
 
-Wildcard:
+RegexToken returns AbstractElement:
+	{RegexToken} regex=RegexLiteral;
+
+Wildcard returns AbstractElement:
 	{Wildcard} '.';
 
-CharacterRange:
-	left=Keyword ('..' right=Keyword)?;
+CharacterRange returns AbstractElement:
+	{CharacterRange} left=Keyword ('..' right=Keyword)?;
 

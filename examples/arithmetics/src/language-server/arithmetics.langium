@@ -1,5 +1,4 @@
 grammar Arithmetics
-hidden(WS, SL_COMMENT, ML_COMMENT)
 
 Module:
 	'module' name=ID
@@ -35,9 +34,9 @@ PrimaryExpression returns Expression:
 	{NumberLiteral} value=NUMBER |
 	{FunctionCall} func=[AbstractDefinition] ('(' args+=Expression (',' args+=Expression)* ')')?;
 
-terminal WS: /\s+/;
+hidden terminal WS: /\s+/;
 terminal ID: /[_a-zA-Z][\w_]*/;
 terminal NUMBER returns number: /[0-9]+(\.[0-9])?/;
 
-terminal ML_COMMENT: /\/\*[\s\S]*?\*\//;
-terminal SL_COMMENT: /\/\/[^\n\r]*/;
+hidden terminal ML_COMMENT: /\/\*[\s\S]*?\*\//;
+hidden terminal SL_COMMENT: /\/\/[^\n\r]*/;
