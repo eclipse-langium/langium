@@ -15,6 +15,16 @@
     {
       "name": "keyword.symbol.domain-model",
       "match": "(\\:|\\.|\\{|\\})"
+    },
+    {
+      "name": "string.quoted.double.domain-model",
+      "begin": "\"",
+      "end": "\""
+    },
+    {
+      "name": "string.quoted.single.domain-model",
+      "begin": "'",
+      "end": "'"
     }
   ],
   "repository": {
