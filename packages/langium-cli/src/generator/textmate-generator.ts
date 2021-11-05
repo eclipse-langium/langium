@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import * as langium from 'langium';
-import { getCommentParts, isCommentTerminal, isTerminalRule } from 'langium';
+import { getTerminalParts, isCommentTerminal, isTerminalRule } from 'langium';
 import { LangiumConfig } from '../package';
 import { collectKeywords } from './util';
 
@@ -65,6 +65,7 @@ function getPatterns(grammar: langium.Grammar, config: LangiumConfig): Pattern[]
     });
     patterns.push(getKeywordControl(grammar, config));
     patterns.push(getKeywordSymbols(grammar, config));
+    patterns.push(...getStringPatterns(grammar, config));
     return patterns;
 }
 
@@ -72,7 +73,7 @@ function getRepository(grammar: langium.Grammar, config: LangiumConfig): Reposit
     const commentPatterns: Pattern[] = [];
     for (const rule of grammar.rules) {
         if (isTerminalRule(rule) && isCommentTerminal(rule)) {
-            const parts = getCommentParts(rule.regex);
+            const parts = getTerminalParts(rule.regex);
             for (const part of parts) {
                 if (part.end) {
                     commentPatterns.push({
@@ -132,3 +133,33 @@ function getKeywordSymbols(grammar: langium.Grammar, pack: LangiumConfig): Patte
     };
 }
 
+function getStringPatterns(grammar: langium.Grammar, pack: LangiumConfig): Pattern[] {
+    const terminals = langium.stream(grammar.rules).filter(langium.isTerminalRule);
+    const stringTerminal = terminals.find(e => e.name.toLowerCase() === 'string');
+    const stringPatterns: Pattern[] = [];
+    if (stringTerminal) {
+        const parts = getTerminalParts(stringTerminal.regex);
+        for (const part of parts) {
+            if (part.end) {
+                stringPatterns.push({
+                    'name': `string.quoted.${delimiterName(part.start)}.${pack.languageId}`,
+                    'begin': part.start,
+                    'end': part.end
+                });
+            }
+        }
+    }
+    return stringPatterns;
+}
+
+function delimiterName(delimiter: string): string {
+    if (delimiter === "'") {
+        return 'single';
+    } else if (delimiter === '"') {
+        return 'double';
+    } else if (delimiter === '`') {
+        return 'backtick';
+    } else {
+        return 'delimiter';
+    }
+}

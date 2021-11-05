@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { getCommentParts, isMultilineComment, partialMatches } from '../../src';
+import { getTerminalParts, isMultilineComment, partialMatches } from '../../src';
 
 describe('partial regex', () => {
 
@@ -97,21 +97,21 @@ describe('multiline comment detection', () => {
 describe('comment start/end parts', () => {
 
     test('JS style singleline comment should start with //', () => {
-        expect(getCommentParts(/\/\/[^\n\r]*/)).toEqual([{
+        expect(getTerminalParts(/\/\/[^\n\r]*/)).toEqual([{
             start: '//',
             end: ''
         }]);
     });
 
     test('JS style multiline comment should start with /* and end with */', () => {
-        expect(getCommentParts(/\/\*[\s\S]*?\*\//)).toEqual([{
+        expect(getTerminalParts(/\/\*[\s\S]*?\*\//)).toEqual([{
             start: '/\\*',
             end: '\\*/'
         }]);
     });
 
     test('JS style combined comment should contain both /* */ and // parts', () => {
-        expect(getCommentParts(/\/\*[\s\S]*?\*\/|\/\/[^\n\r]*/)).toEqual([{
+        expect(getTerminalParts(/\/\*[\s\S]*?\*\/|\/\/[^\n\r]*/)).toEqual([{
             start: '/\\*',
             end: '\\*/'
         }, {
@@ -121,7 +121,7 @@ describe('comment start/end parts', () => {
     });
 
     test('Shell style single line comment starts with #', () => {
-        expect(getCommentParts(/#[^\n\r]*/)).toEqual([{
+        expect(getTerminalParts(/#[^\n\r]*/)).toEqual([{
             start: '#',
             end: ''
         }]);

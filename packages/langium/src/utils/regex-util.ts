@@ -73,7 +73,7 @@ class CommentRegexVisitor extends BaseRegExpVisitor {
 
 const visitor = new CommentRegexVisitor();
 
-export function getCommentParts(regex: RegExp | string): Array<{ start: string, end: string }> {
+export function getTerminalParts(regex: RegExp | string): Array<{ start: string, end: string }> {
     try {
         if (typeof regex !== 'string') {
             regex = regex.source;
