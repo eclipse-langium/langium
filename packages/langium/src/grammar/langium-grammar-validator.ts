@@ -7,13 +7,13 @@
 import { DiagnosticTag } from 'vscode-languageserver-types';
 import { References } from '../references/references';
 import { LangiumServices } from '../services';
-import { streamAllContents } from '../utils/ast-util';
+import { getContainerOfType, streamAllContents } from '../utils/ast-util';
 import { ValidationAcceptor, ValidationCheck, ValidationRegistry } from '../validation/validation-registry';
-import { AbstractRule, Grammar, isParserRule, isRuleCall, isTerminalRule, Keyword, LangiumGrammarAstType, ParserRule, TerminalRule, UnorderedGroup } from './generated/ast';
-import { getEntryRule, isDataTypeRule } from './grammar-util';
+import { getEntryRule, isDataTypeRule, terminalRegex } from './grammar-util';
 import { LangiumGrammarServices } from './langium-grammar-module';
+import * as ast from './generated/ast';
 
-type LangiumGrammarChecks = { [type in LangiumGrammarAstType]?: ValidationCheck | ValidationCheck[] }
+type LangiumGrammarChecks = { [type in ast.LangiumGrammarAstType]?: ValidationCheck | ValidationCheck[] }
 
 export class LangiumGrammarValidationRegistry extends ValidationRegistry {
     constructor(services: LangiumGrammarServices) {
@@ -24,7 +24,11 @@ export class LangiumGrammarValidationRegistry extends ValidationRegistry {
             ParserRule: [
                 validator.checkParserRuleDataType
             ],
-            TerminalRule: validator.checkTerminalRuleReturnType,
+            TerminalRule: [
+                validator.checkTerminalRuleReturnType,
+                validator.checkHiddenTerminalRule,
+                validator.checkEmptyTerminalRule
+            ],
             Keyword: validator.checkKeyword,
             UnorderedGroup: validator.checkUnorderedGroup,
             Grammar: [
@@ -33,7 +37,10 @@ export class LangiumGrammarValidationRegistry extends ValidationRegistry {
                 validator.checkUniqueRuleName,
                 validator.checkGrammarHiddenTokens,
                 validator.checkGrammarForUnusedRules
-            ]
+            ],
+            CharacterRange: validator.checkInvalidCharacterRange,
+            RuleCall: validator.checkUsedHiddenTerminalRule,
+            TerminalRuleCall: validator.checkUsedHiddenTerminalRule
         };
         this.register(checks, validator);
     }
@@ -43,6 +50,8 @@ export class LangiumGrammarValidationRegistry extends ValidationRegistry {
 export namespace IssueCodes {
     export const GrammarNameUppercase = 'grammar-name-uppercase';
     export const RuleNameUppercase = 'rule-name-uppercase';
+    export const HiddenGrammarTokens = 'hidden-grammar-tokens';
+    export const UseRegexTokens = 'use-regex-tokens';
 }
 
 export class LangiumGrammarValidator {
@@ -53,7 +62,7 @@ export class LangiumGrammarValidator {
         this.references = services.references.References;
     }
 
-    checkGrammarName(grammar: Grammar, accept: ValidationAcceptor): void {
+    checkGrammarName(grammar: ast.Grammar, accept: ValidationAcceptor): void {
         if (grammar.name) {
             const firstChar = grammar.name.substring(0, 1);
             if (firstChar.toUpperCase() !== firstChar) {
@@ -62,7 +71,7 @@ export class LangiumGrammarValidator {
         }
     }
 
-    checkFirstGrammarRule(grammar: Grammar, accept: ValidationAcceptor): void {
+    checkFirstGrammarRule(grammar: ast.Grammar, accept: ValidationAcceptor): void {
         const firstRule = getEntryRule(grammar);
         if (firstRule) {
             if (isDataTypeRule(firstRule)) {
@@ -75,8 +84,8 @@ export class LangiumGrammarValidator {
         }
     }
 
-    checkUniqueRuleName(grammar: Grammar, accept: ValidationAcceptor): void {
-        const ruleMap = new Map<string, AbstractRule[]>();
+    checkUniqueRuleName(grammar: ast.Grammar, accept: ValidationAcceptor): void {
+        const ruleMap = new Map<string, ast.AbstractRule[]>();
         const message = "A rule's name has to be unique.";
         for (const rule of grammar.rules) {
             const lowerCaseName = rule.name.toLowerCase();
@@ -96,25 +105,62 @@ export class LangiumGrammarValidator {
         }
     }
 
-    checkGrammarHiddenTokens(grammar: Grammar, accept: ValidationAcceptor): void {
-        if (grammar.hiddenTokens && grammar.hiddenTokens.length > 0) {
-            for (let i = 0; i < grammar.hiddenTokens.length; i++) {
-                const hiddenToken = grammar.hiddenTokens[i];
-                if (!hiddenToken.ref) {
-                    continue;
-                }
-                if (isTerminalRule(hiddenToken.ref)) {
-                    if (hiddenToken.ref.fragment) {
-                        accept('error', 'Cannot use terminal fragments as hidden tokens.', { node: grammar, property: 'hiddenTokens', index: i });
-                    }
-                } else if (hiddenToken.ref) {
-                    accept('error', 'Only terminal rules may be used as hidden tokens.', { node: grammar, property: 'hiddenTokens', index: i });
-                }
+    checkGrammarHiddenTokens(grammar: ast.Grammar, accept: ValidationAcceptor): void {
+        if (grammar.definesHiddenTokens) {
+            accept('error', 'Hidden terminals are declared at the terminal definition.', { node: grammar, property: 'definesHiddenTokens', code: IssueCodes.HiddenGrammarTokens});
+        }
+    }
+
+    checkHiddenTerminalRule(terminalRule: ast.TerminalRule, accept: ValidationAcceptor): void {
+        if (terminalRule.hidden && terminalRule.fragment) {
+            accept('error', 'Cannot use terminal fragments as hidden tokens.', { node: terminalRule, property: 'hidden' });
+        }
+    }
+
+    checkEmptyTerminalRule(terminalRule: ast.TerminalRule, accept: ValidationAcceptor): void {
+        try {
+            const regex = terminalRegex(terminalRule);
+            if (new RegExp(regex).test('')) {
+                accept('error', 'This terminal could match an empty string.', { node: terminalRule, property: 'name' });
+            }
+        } catch {
+            // In case the terminal can't be transformed into a regex, we throw an error
+            // As this indicates unresolved cross references or parser errors, we can ignore this here
+        }
+    }
+
+    checkUsedHiddenTerminalRule(ruleCall: ast.RuleCall | ast.TerminalRuleCall, accept: ValidationAcceptor): void {
+        const parentRule = getContainerOfType(ruleCall, (n): n is ast.TerminalRule | ast.ParserRule => ast.isTerminalRule(n) || ast.isParserRule(n));
+        if (parentRule) {
+            if ('hidden' in parentRule && parentRule?.hidden) {
+                return;
+            }
+            const ref = ruleCall.rule.ref;
+            if (ast.isTerminalRule(ref) && ref.hidden) {
+                accept('error', 'Cannot use hidden terminal in non-hidden rule', { node: ruleCall, property: 'rule' });
             }
         }
     }
 
-    checkGrammarForUnusedRules(grammar: Grammar, accept: ValidationAcceptor): void {
+    checkInvalidCharacterRange(range: ast.CharacterRange, accept: ValidationAcceptor): void {
+        if (range.right) {
+            const message = 'Character ranges cannot use more than one character';
+            let invalid = false;
+            if (range.left.value.length > 1) {
+                invalid = true;
+                accept('error', message, { node: range.left, property: 'value' });
+            }
+            if (range.right.value.length > 1) {
+                invalid = true;
+                accept('error', message, { node: range.right, property: 'value' });
+            }
+            if (!invalid) {
+                accept('hint', 'Consider using regex instead of character ranges', { node: range, code: IssueCodes.UseRegexTokens });
+            }
+        }
+    }
+
+    checkGrammarForUnusedRules(grammar: ast.Grammar, accept: ValidationAcceptor): void {
         const visitedSet = new Set<string>();
         const entry = getEntryRule(grammar);
         if (entry) {
@@ -122,7 +168,7 @@ export class LangiumGrammarValidator {
             visitedSet.add(entry.name);
         }
         for (const rule of grammar.rules) {
-            if (isTerminalRule(rule) && grammar.hiddenTokens.some(e => e.ref === rule)) {
+            if (ast.isTerminalRule(rule) && rule.hidden) {
                 continue;
             }
             if (!visitedSet.has(rule.name)) {
@@ -131,13 +177,13 @@ export class LangiumGrammarValidator {
         }
     }
 
-    private ruleDfs(rule: ParserRule, visitedSet: Set<string>): void {
+    private ruleDfs(rule: ast.ParserRule, visitedSet: Set<string>): void {
         streamAllContents(rule).forEach(content => {
-            if (isRuleCall(content.node)) {
+            if (ast.isRuleCall(content.node)) {
                 const refRule = content.node.rule.ref;
                 if (refRule && !visitedSet.has(refRule.name)) {
                     visitedSet.add(refRule.name);
-                    if (isParserRule(refRule)) {
+                    if (ast.isParserRule(refRule)) {
                         this.ruleDfs(refRule, visitedSet);
                     }
                 }
@@ -145,7 +191,7 @@ export class LangiumGrammarValidator {
         });
     }
 
-    checkRuleName(rule: AbstractRule, accept: ValidationAcceptor): void {
+    checkRuleName(rule: ast.AbstractRule, accept: ValidationAcceptor): void {
         if (rule.name) {
             const firstChar = rule.name.substring(0, 1);
             if (firstChar.toUpperCase() !== firstChar) {
@@ -154,7 +200,7 @@ export class LangiumGrammarValidator {
         }
     }
 
-    checkKeyword(keyword: Keyword, accept: ValidationAcceptor): void {
+    checkKeyword(keyword: ast.Keyword, accept: ValidationAcceptor): void {
         if (keyword.value.length === 0) {
             accept('error', 'Keywords cannot be empty.', { node: keyword });
         } else if (keyword.value.trim().length === 0) {
@@ -164,11 +210,11 @@ export class LangiumGrammarValidator {
         }
     }
 
-    checkUnorderedGroup(unorderedGroup: UnorderedGroup, accept: ValidationAcceptor): void {
+    checkUnorderedGroup(unorderedGroup: ast.UnorderedGroup, accept: ValidationAcceptor): void {
         accept('error', 'Unordered groups are currently not supported', { node: unorderedGroup });
     }
 
-    checkParserRuleDataType(rule: ParserRule, accept: ValidationAcceptor): void {
+    checkParserRuleDataType(rule: ast.ParserRule, accept: ValidationAcceptor): void {
         const hasDatatypeReturnType = rule.type && isPrimitiveType(rule.type);
         const isDataType = isDataTypeRule(rule);
         if (!hasDatatypeReturnType && isDataType) {
@@ -178,7 +224,7 @@ export class LangiumGrammarValidator {
         }
     }
 
-    checkTerminalRuleReturnType(rule: TerminalRule, accept: ValidationAcceptor): void {
+    checkTerminalRuleReturnType(rule: ast.TerminalRule, accept: ValidationAcceptor): void {
         if (rule.type && !isPrimitiveType(rule.type)) {
             accept('error', "Terminal rules can only return primitive types like 'string', 'boolean', 'number' or 'date'.", { node: rule, property: 'type' });
         }

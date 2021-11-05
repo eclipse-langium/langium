@@ -12,6 +12,7 @@ import { LangiumServices } from '../services';
 import { AstNode, AstNodeDescription, CstNode } from '../syntax-tree';
 import { getContainerOfType, getDocument, Mutable, streamAllContents } from '../utils/ast-util';
 import { createLangiumGrammarServices } from './langium-grammar-module';
+import { escapeRegExp } from '../utils/regex-util';
 
 type FeatureValue = {
     feature: ast.AbstractElement;
@@ -44,7 +45,7 @@ export function isDataTypeRule(rule: ast.ParserRule): boolean {
 }
 
 export function isCommentTerminal(terminalRule: ast.TerminalRule): boolean {
-    return terminalRule.$container.hiddenTokens.some(e => e.ref === terminalRule) && !' '.match(terminalRule.regex);
+    return terminalRule.hidden && !' '.match(terminalRegex(terminalRule));
 }
 
 interface RuleWithAlternatives {
@@ -232,6 +233,76 @@ export function getActionAtElement(element: ast.AbstractElement): ast.Action | u
     } else {
         return undefined;
     }
+}
+
+export function terminalRegex(terminalRule: ast.TerminalRule): string {
+    return abstractElementToRegex(terminalRule.terminal);
+}
+
+// Using [\s\S]* allows to match everything, compared to . which doesn't match line terminators
+const WILDCARD = /[\s\S]/.source;
+
+function abstractElementToRegex(element: ast.AbstractElement): string {
+    if (ast.isTerminalAlternatives(element)) {
+        return terminalAlternativesToRegex(element);
+    } else if (ast.isTerminalGroup(element)) {
+        return terminalGroupToRegex(element);
+    } else if (ast.isCharacterRange(element)) {
+        return characterRangeToRegex(element);
+    } else if (ast.isTerminalRuleCall(element)) {
+        const rule = element.rule.ref;
+        if (!rule) {
+            throw new Error('Missing rule reference.');
+        }
+        return withCardinality(terminalRegex(rule), element.cardinality, true);
+    } else if (ast.isNegatedToken(element)) {
+        return negateTokenToRegex(element);
+    } else if (ast.isUntilToken(element)) {
+        return untilTokenToRegex(element);
+    } else if (ast.isRegexToken(element)) {
+        return withCardinality(element.regex, element.cardinality, true);
+    } else if (ast.isWildcard(element)) {
+        return withCardinality(WILDCARD, element.cardinality);
+    } else {
+        throw new Error('Invalid terminal element.');
+    }
+}
+
+function terminalAlternativesToRegex(alternatives: ast.TerminalAlternatives): string {
+    return withCardinality(`(${alternatives.elements.map(abstractElementToRegex).join('|')})`, alternatives.cardinality);
+}
+
+function terminalGroupToRegex(group: ast.TerminalGroup): string {
+    return withCardinality(group.elements.map(abstractElementToRegex).join(''), group.cardinality);
+}
+
+function untilTokenToRegex(until: ast.UntilToken): string {
+    return withCardinality(`${WILDCARD}*?${abstractElementToRegex(until.terminal)}`, until.cardinality);
+}
+
+function negateTokenToRegex(negate: ast.NegatedToken): string {
+    return withCardinality(`(?!${abstractElementToRegex(negate.terminal)})${WILDCARD}*?`, negate.cardinality, true);
+}
+
+function characterRangeToRegex(range: ast.CharacterRange): string {
+    if (range.right) {
+        return withCardinality(`[${keywordToRegex(range.left)}-${keywordToRegex(range.right)}]`, range.cardinality);
+    }
+    return withCardinality(keywordToRegex(range.left), range.cardinality, true);
+}
+
+function keywordToRegex(keyword: ast.Keyword): string {
+    return escapeRegExp(keyword.value);
+}
+
+function withCardinality(regex: string, cardinality?: string, wrap = false): string {
+    if (cardinality) {
+        if (wrap) {
+            regex = `(${regex})`;
+        }
+        return `${regex}${cardinality}`;
+    }
+    return regex;
 }
 
 export function getTypeName(rule: ast.AbstractRule | undefined): string {

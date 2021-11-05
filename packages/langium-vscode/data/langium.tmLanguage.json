@@ -68,36 +68,13 @@
             "patterns": [
                 {
                     "name": "string.regex.ts",
-                    "begin": "(?<=[=(:,\\[?+!]|return|case|=>|&&|\\|\\||\\*\\/)\\s*(/)(?![/*])(?=(?:[^/\\\\\\[]|\\\\.|\\[([^\\]\\\\]|\\\\.)+\\])+/(?![/*])[gimy]*(?!\\s*[a-zA-Z0-9_$]))",
-                    "beginCaptures": {
-                        "1": {
-                            "name": "punctuation.definition.string.begin.ts"
-                        }
-                    },
-                    "end": "(/)([gimuy]*)",
-                    "endCaptures": {
-                        "1": {
-                            "name": "punctuation.definition.string.end.ts"
-                        },
-                        "2": {
-                            "name": "keyword.other.ts"
-                        }
-                    },
-                    "patterns": [
-                        {
-                            "include": "#regexp"
-                        }
-                    ]
-                },
-                {
-                    "name": "string.regex.ts",
-                    "begin": "/(?![/*])(?=(?:[^/\\\\\\[]|\\\\.|\\[([^\\]\\\\]|\\\\.)+\\])+/(?![/*])[gimy]*(?!\\s*[a-zA-Z0-9_$]))",
+                    "begin": "/(?![/*])(?=(?:[^/\\\\\\[]|\\\\.|\\[([^\\]\\\\]|\\\\.)+\\])+/(?![/*]))",
                     "beginCaptures": {
                         "0": {
                             "name": "punctuation.definition.string.begin.ts"
                         }
                     },
-                    "end": "(/)([gimuy]*)",
+                    "end": "/",
                     "endCaptures": {
                         "1": {
                             "name": "punctuation.definition.string.end.ts"

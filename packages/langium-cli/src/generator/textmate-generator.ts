@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import * as langium from 'langium';
-import { escapeRegExp, getTerminalParts, isCommentTerminal, isTerminalRule } from 'langium';
+import { escapeRegExp, getTerminalParts, isCommentTerminal, isTerminalRule, terminalRegex } from 'langium';
 import { LangiumConfig } from '../package';
 import { collectKeywords } from './util';
 
@@ -72,7 +72,7 @@ function getRepository(grammar: langium.Grammar, config: LangiumConfig): Reposit
     const commentPatterns: Pattern[] = [];
     for (const rule of grammar.rules) {
         if (isTerminalRule(rule) && isCommentTerminal(rule)) {
-            const parts = getTerminalParts(rule.regex);
+            const parts = getTerminalParts(terminalRegex(rule));
             for (const part of parts) {
                 if (part.end) {
                     commentPatterns.push({
@@ -129,7 +129,7 @@ function getStringPatterns(grammar: langium.Grammar, pack: LangiumConfig): Patte
     const stringTerminal = terminals.find(e => e.name.toLowerCase() === 'string');
     const stringPatterns: Pattern[] = [];
     if (stringTerminal) {
-        const parts = getTerminalParts(stringTerminal.regex);
+        const parts = getTerminalParts(terminalRegex(stringTerminal));
         for (const part of parts) {
             if (part.end) {
                 stringPatterns.push({

@@ -13,6 +13,7 @@ import { BuildResult } from '../documents/document-builder';
 import { LangiumServices } from '../services';
 import { AstNode } from '../syntax-tree';
 import { getDocument } from '../utils/ast-util';
+import { escapeRegExp } from '../utils/regex-util';
 
 export function parseHelper<T extends AstNode = AstNode>(services: LangiumServices): (input: string) => Promise<BuildResult<T>> {
     const metaData = services.LanguageMetaData;
@@ -192,8 +193,4 @@ function replaceIndices(base: ExpectedBase): { output: string, indices: number[]
     }
 
     return {output: input, indices, ranges: ranges.sort((a, b) => a[0] - b[0]) };
-}
-
-function escapeRegExp(input: string): string {
-    return input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }

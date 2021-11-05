@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import * as ast from '../../grammar/generated/ast';
-import { isDataTypeRule } from '../../grammar/grammar-util';
+import { isDataTypeRule, terminalRegex } from '../../grammar/grammar-util';
 import { CstNode } from '../../syntax-tree';
 import { findFirstFeatures, findNextFeatures } from './follow-element-computation';
 
@@ -73,7 +73,7 @@ export class RuleInterpreter {
             // We have to take keywords into account
             // e.g. most keywords are valid IDs as well
             // Only return 'full' if this terminal does not match a keyword. TODO
-            return node.text.match(new RegExp(rule.regex)) !== null ? 'both' : 'none';
+            return node.text.match(terminalRegex(rule)) !== null ? 'both' : 'none';
         } else {
             return 'none';
         }

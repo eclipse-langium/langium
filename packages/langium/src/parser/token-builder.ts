@@ -5,6 +5,7 @@
  ******************************************************************************/
 
 import { Lexer, TokenPattern, TokenType } from 'chevrotain';
+import { terminalRegex } from '..';
 import { Grammar, isKeyword, isTerminalRule, Keyword, TerminalRule } from '../grammar/generated/ast';
 import { streamAllContents } from '../utils/ast-util';
 import { partialMatches } from '../utils/regex-util';
@@ -25,7 +26,7 @@ export class DefaultTokenBuilder implements TokenBuilder {
         const terminalsTokens: TokenType[] = [];
         const terminals = Array.from(stream(grammar.rules).filter(isTerminalRule));
         for (const terminal of terminals) {
-            const token = this.buildTerminalToken(grammar, terminal);
+            const token = this.buildTerminalToken(terminal);
             terminalsTokens.push(token);
             tokenMap.set(terminal.name + this.TERMINAL_SUFFIX, token);
         }
@@ -53,17 +54,18 @@ export class DefaultTokenBuilder implements TokenBuilder {
         return tokens;
     }
 
-    protected buildTerminalToken(grammar: Grammar, terminal: TerminalRule): TokenType {
+    protected buildTerminalToken(terminal: TerminalRule): TokenType {
         let group: string | undefined;
-        if (grammar.hiddenTokens && grammar.hiddenTokens.map(e => e.ref).includes(terminal)) {
-            if (new RegExp(terminal.regex).test(' ')) { // Only skip tokens that are able to accept whitespace
+        const regex = terminalRegex(terminal);
+        if (terminal.hidden) {
+            if (new RegExp(regex).test(' ')) { // Only skip tokens that are able to accept whitespace
                 group = Lexer.SKIPPED;
             } else {
                 group = 'hidden';
             }
         }
 
-        const token = { name: terminal.name, GROUP: group, PATTERN: new RegExp(terminal.regex) };
+        const token = { name: terminal.name, GROUP: group, PATTERN: new RegExp(regex) };
         if (!group) {
             // 'undefined' is not a valid value for `GROUP`
             // Therefore, we have to delete it
@@ -91,7 +93,7 @@ export class DefaultTokenBuilder implements TokenBuilder {
         }
         for (const terminal of terminals) {
             const tokenType = tokenMap.get(terminal.name + this.TERMINAL_SUFFIX);
-            if (tokenType && partialMatches('^' + terminal.regex + '$', keyword.value)) {
+            if (tokenType && partialMatches('^' + terminalRegex(terminal) + '$', keyword.value)) {
                 longerAlts.push(tokenType);
             }
         }
