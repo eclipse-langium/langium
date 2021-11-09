@@ -13,10 +13,6 @@
       "match": "\\b(datatype|entity|extends|many|package)\\b"
     },
     {
-      "name": "keyword.symbol.domain-model",
-      "match": "(\\:|\\.|\\{|\\})"
-    },
-    {
       "name": "string.quoted.double.domain-model",
       "begin": "\"",
       "end": "\""

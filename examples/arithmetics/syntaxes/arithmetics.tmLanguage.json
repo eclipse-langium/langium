@@ -11,10 +11,6 @@
     {
       "name": "keyword.control.arithmetics",
       "match": "\\b(def|module)\\b"
-    },
-    {
-      "name": "keyword.symbol.arithmetics",
-      "match": "(\\-|\\,|\\;|\\:|\\(|\\)|\\*|\\/|\\+)"
     }
   ],
   "repository": {

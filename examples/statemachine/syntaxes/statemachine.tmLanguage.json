@@ -13,10 +13,6 @@
       "match": "\\b(actions|commands|end|events|initialState|state|statemachine)\\b"
     },
     {
-      "name": "keyword.symbol.statemachine",
-      "match": "(\\{|\\}|\\=>)"
-    },
-    {
       "name": "string.quoted.double.statemachine",
       "begin": "\"",
       "end": "\""
