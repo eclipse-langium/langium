@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import * as langium from 'langium';
-import { getTerminalParts, isCommentTerminal, isTerminalRule } from 'langium';
+import { escapeRegExp, getTerminalParts, isCommentTerminal, isTerminalRule } from 'langium';
 import { LangiumConfig } from '../package';
 import { collectKeywords } from './util';
 
@@ -63,8 +63,7 @@ function getPatterns(grammar: langium.Grammar, config: LangiumConfig): Pattern[]
     patterns.push({
         include: '#comments'
     });
-    patterns.push(getKeywordControl(grammar, config));
-    patterns.push(getKeywordSymbols(grammar, config));
+    patterns.push(getControlKeywords(grammar, config));
     patterns.push(...getStringPatterns(grammar, config));
     return patterns;
 }
@@ -115,21 +114,13 @@ function getRepository(grammar: langium.Grammar, config: LangiumConfig): Reposit
     return repository;
 }
 
-function getKeywordControl(grammar: langium.Grammar, pack: LangiumConfig): Pattern {
-    const regex = /[A-Za-z]+/;
-    const keywords = collectKeywords(grammar).filter(kw => regex.test(kw));
+function getControlKeywords(grammar: langium.Grammar, pack: LangiumConfig): Pattern {
+    const regex = /[A-Za-z]/;
+    const controlKeywords = collectKeywords(grammar).filter(kw => regex.test(kw));
+    const keywords = controlKeywords.map(escapeRegExp);
     return {
         'name': `keyword.control.${pack.languageId}`,
         'match': `\\b(${keywords.join('|')})\\b`
-    };
-}
-function getKeywordSymbols(grammar: langium.Grammar, pack: LangiumConfig): Pattern {
-    const regex = /\W/;
-    const keywordsFiltered = collectKeywords(grammar).filter(kw => regex.test(kw));
-    const keywords = keywordsFiltered.map(kw => `\\${kw}`);
-    return {
-        'name': `keyword.symbol.${pack.languageId}`,
-        'match': `(${keywords.join('|')})`
     };
 }
 

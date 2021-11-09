@@ -110,7 +110,7 @@ export function isMultilineComment(regex: RegExp | string): boolean {
     }
 }
 
-function escapeRegExp(value: string): string {
+export function escapeRegExp(value: string): string {
     return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
