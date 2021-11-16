@@ -6,7 +6,6 @@
 
 import { CancellationToken, Connection, Diagnostic } from 'vscode-languageserver';
 import { DocumentValidator } from '../validation/document-validator';
-import { LangiumParser } from '../parser/langium-parser';
 import { ScopeComputation } from '../references/scope';
 import { LangiumServices } from '../services';
 import { DocumentState, LangiumDocument, LangiumDocuments } from './document';
@@ -47,7 +46,6 @@ export interface BuildResult<T extends AstNode = AstNode> {
 
 export class DefaultDocumentBuilder implements DocumentBuilder {
     protected readonly connection?: Connection;
-    protected readonly parser: LangiumParser;
     protected readonly scopeComputation: ScopeComputation;
     protected readonly documentValidator: DocumentValidator;
     protected readonly langiumDocuments: LangiumDocuments;
@@ -56,7 +54,6 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
 
     constructor(services: LangiumServices) {
         this.connection = services.lsp.Connection;
-        this.parser = services.parser.LangiumParser;
         this.linker = services.references.Linker;
         this.scopeComputation = services.references.ScopeComputation;
         this.documentValidator = services.validation.DocumentValidator;

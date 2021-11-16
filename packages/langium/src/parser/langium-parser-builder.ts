@@ -60,7 +60,6 @@ function getToken(ctx: ParserContext, name: string): TokenType {
 }
 
 function buildParserRules(parserContext: ParserContext, grammar: Grammar): void {
-    let first = true;
     for (const rule of stream(grammar.rules).filter(isParserRule)) {
         const ctx: RuleContext = {
             ...parserContext,
@@ -70,23 +69,10 @@ function buildParserRules(parserContext: ParserContext, grammar: Grammar): void 
             many: 1,
             or: 1
         };
-        buildRule(ctx, rule, first);
-        first = false;
+        const method = (rule.entry ? ctx.parser.MAIN_RULE : ctx.parser.DEFINE_RULE).bind(ctx.parser);
+        const type = rule.fragment ? undefined : isDataTypeRule(rule) ? DatatypeSymbol : getTypeName(rule);
+        ctx.rules.set(rule.name, method(rule.name, type, buildRuleContent(ctx, rule)));
     }
-}
-
-function buildRule(ctx: RuleContext, rule: ParserRule, first: boolean): void {
-    const method = (first ? ctx.parser.MAIN_RULE : ctx.parser.DEFINE_RULE).bind(ctx.parser);
-    let type: string | symbol | undefined;
-    if (!rule.fragment) {
-        if (isDataTypeRule(rule)) {
-            type = DatatypeSymbol;
-        } else {
-            type = getTypeName(rule);
-        }
-    }
-
-    ctx.rules.set(rule.name, method(rule.name, type, buildRuleContent(ctx, rule)));
 }
 
 function buildRuleContent(ctx: RuleContext, rule: ParserRule): () => unknown {
