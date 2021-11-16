@@ -321,7 +321,9 @@ export function getRuleType(rule: ast.AbstractRule | undefined): string {
 }
 
 export function getEntryRule(grammar: ast.Grammar): ast.ParserRule | undefined {
-    return grammar.rules.find(e => ast.isParserRule(e)) as ast.ParserRule;
+    const entryRules = grammar.rules.filter(e => ast.isParserRule(e) && e.entry) as ast.ParserRule[];
+    // returns undefined if more than 1 entry rules are found
+    return entryRules.length !== 1 ? undefined : entryRules[0];
 }
 
 export function loadGrammar(json: string): ast.Grammar {
