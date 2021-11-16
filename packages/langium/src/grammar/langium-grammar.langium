@@ -8,7 +8,7 @@ terminal string: /"[^"]*"|'[^']*'/;
 hidden terminal ML_COMMENT: /\/\*[\s\S]*?\*\//;
 hidden terminal SL_COMMENT: /\/\/[^\n\r]*/;
 
-Grammar:
+entry Grammar:
 	'grammar' name=ID ('with' usedGrammars+=[Grammar|ID] (',' usedGrammars+=[Grammar|ID])*)?
 	(definesHiddenTokens?='hidden' '(' (hiddenTokens+=[AbstractRule|ID] (',' hiddenTokens+=[AbstractRule|ID])*)? ')')?
 	metamodelDeclarations+=AbstractMetamodelDeclaration*
@@ -31,7 +31,7 @@ Annotation:
 
 ParserRule :
 	(
-	  ^fragment?='fragment' RuleNameAndParams (wildcard?='*' | ('returns' type=ID)?)
+	  (^entry?='entry' | ^fragment?='fragment') RuleNameAndParams (wildcard?='*' | ('returns' type=ID)?)
 	| RuleNameAndParams ('returns' type=ID)?
 	)
 	(definesHiddenTokens?='hidden' '(' (hiddenTokens+=[AbstractRule|ID] (',' hiddenTokens+=[AbstractRule|ID])*)? ')')? ':'
