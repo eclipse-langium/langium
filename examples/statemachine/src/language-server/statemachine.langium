@@ -1,6 +1,6 @@
 grammar Statemachine
 
-Statemachine:
+entry Statemachine:
 	'statemachine' name=ID
 	('events' events+=Event+)?
 	('commands'	commands+=Command+)?

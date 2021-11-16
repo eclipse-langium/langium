@@ -17,6 +17,7 @@ export const grammar = (): Grammar => loaded || (loaded = loadGrammar(`{
       "parameters": [],
       "name": "Domainmodel",
       "hiddenTokens": [],
+      "entry": true,
       "alternatives": {
         "$type": "Assignment",
         "feature": "elements",

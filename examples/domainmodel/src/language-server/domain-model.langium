@@ -1,6 +1,6 @@
 grammar DomainModel
 
-Domainmodel:
+entry Domainmodel:
     (elements+=AbstractElement)*;
 
 AbstractElement:
