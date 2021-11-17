@@ -40,6 +40,8 @@ export class LangiumGrammarCodeActionProvider implements CodeActionProvider {
                 return this.fixRegexTokens(diagnostic, document);
             case IssueCodes.MakeRuleEntry:
                 return this.addEntryKeyword(diagnostic, document);
+            case IssueCodes.CrossRefSyntaxFix:
+                return this.fixCrossRefSyntax(diagnostic, document);
             default:
                 return undefined;
         }
@@ -113,6 +115,23 @@ export class LangiumGrammarCodeActionProvider implements CodeActionProvider {
             }
         }
         return undefined;
+    }
+
+    private fixCrossRefSyntax(diagnostic: Diagnostic, document: LangiumDocument): CodeAction {
+        return {
+            title: 'Replace \'|\' with \':\'',
+            kind: CodeActionKind.QuickFix,
+            diagnostics: [diagnostic],
+            isPreferred: true,
+            edit: {
+                changes: {
+                    [document.textDocument.uri]: [{
+                        range: diagnostic.range,
+                        newText: document.textDocument.getText(diagnostic.range).replace(/\|/, ':')
+                    }]
+                }
+            }
+        };
     }
 
     private fixHiddenTerminals(diagnostic: Diagnostic, document: LangiumDocument): CodeAction {

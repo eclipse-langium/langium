@@ -40,7 +40,8 @@ export class LangiumGrammarValidationRegistry extends ValidationRegistry {
             ],
             CharacterRange: validator.checkInvalidCharacterRange,
             RuleCall: validator.checkUsedHiddenTerminalRule,
-            TerminalRuleCall: validator.checkUsedHiddenTerminalRule
+            TerminalRuleCall: validator.checkUsedHiddenTerminalRule,
+            CrossReference: validator.checkCrossReferenceSyntax
         };
         this.register(checks, validator);
     }
@@ -53,6 +54,7 @@ export namespace IssueCodes {
     export const HiddenGrammarTokens = 'hidden-grammar-tokens';
     export const UseRegexTokens = 'use-regex-tokens';
     export const MakeRuleEntry = 'entry-rule-token-syntax';
+    export const CrossRefSyntaxFix = 'cross-ref-syntax-fix';
 }
 
 export class LangiumGrammarValidator {
@@ -143,6 +145,12 @@ export class LangiumGrammarValidator {
             if (ast.isTerminalRule(ref) && ref.hidden) {
                 accept('error', 'Cannot use hidden terminal in non-hidden rule', { node: ruleCall, property: 'rule' });
             }
+        }
+    }
+
+    checkCrossReferenceSyntax(crossRef: ast.CrossReference, accept: ValidationAcceptor): void {
+        if (crossRef.terminal && crossRef.$cstNode?.text.includes('|')) {
+            accept('error', '\'|\' is depreceted. Please, use \':\' instead.', { node: crossRef, code: IssueCodes.CrossRefSyntaxFix });
         }
     }
 
