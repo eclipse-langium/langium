@@ -38,6 +38,8 @@ export class LangiumGrammarCodeActionProvider implements CodeActionProvider {
                 return this.fixHiddenTerminals(diagnostic, document);
             case IssueCodes.UseRegexTokens:
                 return this.fixRegexTokens(diagnostic, document);
+            case IssueCodes.MakeRuleEntry:
+                return this.addEntryKeyword(diagnostic, document);
             default:
                 return undefined;
         }
@@ -61,6 +63,23 @@ export class LangiumGrammarCodeActionProvider implements CodeActionProvider {
                     [document.textDocument.uri]: [{
                         range,
                         newText: document.textDocument.getText(range).toUpperCase()
+                    }]
+                }
+            }
+        };
+    }
+
+    private addEntryKeyword(diagnostic: Diagnostic, document: LangiumDocument): CodeAction | undefined {
+        return {
+            title: 'Add entry keyword',
+            kind: CodeActionKind.QuickFix,
+            diagnostics: [diagnostic],
+            isPreferred: true,
+            edit: {
+                changes: {
+                    [document.textDocument.uri]: [{
+                        range: {start: diagnostic.range.start, end: diagnostic.range.start},
+                        newText: 'entry '
                     }]
                 }
             }
