@@ -18,12 +18,12 @@ DataType:
     'datatype' name=ID;
 
 Entity:
-    'entity' name=ID ('extends' superType=[Entity|QualifiedName])? '{'
+    'entity' name=ID ('extends' superType=[Entity:QualifiedName])? '{'
         (features+=Feature)*
     '}';
 
 Feature:
-    (many?='many')? name=ID ':' type=[Type|QualifiedName];
+    (many?='many')? name=ID ':' type=[Type:QualifiedName];
 
 QualifiedName returns string:
     ID ('.' ID)*;
