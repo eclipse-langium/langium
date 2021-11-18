@@ -2003,8 +2003,13 @@ export const grammar = (): Grammar => loaded || (loaded = loadGrammar(`{
                 "$type": "Alternatives",
                 "elements": [
                   {
-                    "$type": "Keyword",
-                    "value": "|",
+                    "$type": "Assignment",
+                    "feature": "deprecatedSyntax",
+                    "operator": "?=",
+                    "terminal": {
+                      "$type": "Keyword",
+                      "value": "|"
+                    },
                     "elements": []
                   },
                   {

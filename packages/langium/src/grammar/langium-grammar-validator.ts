@@ -53,8 +53,8 @@ export namespace IssueCodes {
     export const RuleNameUppercase = 'rule-name-uppercase';
     export const HiddenGrammarTokens = 'hidden-grammar-tokens';
     export const UseRegexTokens = 'use-regex-tokens';
-    export const MakeRuleEntry = 'entry-rule-token-syntax';
-    export const CrossRefSyntaxFix = 'cross-ref-syntax-fix';
+    export const EntryRuleTokenSyntax = 'entry-rule-token-syntax';
+    export const CrossRefTokenSyntax = 'cross-ref-token-syntax';
 }
 
 export class LangiumGrammarValidator {
@@ -79,7 +79,7 @@ export class LangiumGrammarValidator {
         if (entryRules.length === 0) {
             const possibleEntryRule = grammar.rules.find(e => ast.isParserRule(e) && !isDataTypeRule(e));
             if (possibleEntryRule) {
-                accept('error', 'The grammar is missing an entry parser rule. This rule can be an entry one.', { node: possibleEntryRule, property: 'name', code: IssueCodes.MakeRuleEntry });
+                accept('error', 'The grammar is missing an entry parser rule. This rule can be an entry one.', { node: possibleEntryRule, property: 'name', code: IssueCodes.EntryRuleTokenSyntax });
             } else {
                 accept('error', 'This grammar is missing an entry parser rule.', { node: grammar, property: 'name' });
             }
@@ -149,8 +149,8 @@ export class LangiumGrammarValidator {
     }
 
     checkCrossReferenceSyntax(crossRef: ast.CrossReference, accept: ValidationAcceptor): void {
-        if (crossRef.terminal && crossRef.$cstNode?.text.includes('|')) {
-            accept('error', '\'|\' is depreceted. Please, use \':\' instead.', { node: crossRef, code: IssueCodes.CrossRefSyntaxFix });
+        if (crossRef.deprecatedSyntax) {
+            accept('error', "'|' is deprecated. Please, use ':' instead.", { node: crossRef, property: 'deprecatedSyntax', code: IssueCodes.CrossRefTokenSyntax });
         }
     }
 

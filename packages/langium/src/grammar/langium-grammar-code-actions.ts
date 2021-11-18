@@ -38,9 +38,9 @@ export class LangiumGrammarCodeActionProvider implements CodeActionProvider {
                 return this.fixHiddenTerminals(diagnostic, document);
             case IssueCodes.UseRegexTokens:
                 return this.fixRegexTokens(diagnostic, document);
-            case IssueCodes.MakeRuleEntry:
+            case IssueCodes.EntryRuleTokenSyntax:
                 return this.addEntryKeyword(diagnostic, document);
-            case IssueCodes.CrossRefSyntaxFix:
+            case IssueCodes.CrossRefTokenSyntax:
                 return this.fixCrossRefSyntax(diagnostic, document);
             default:
                 return undefined;
@@ -119,7 +119,7 @@ export class LangiumGrammarCodeActionProvider implements CodeActionProvider {
 
     private fixCrossRefSyntax(diagnostic: Diagnostic, document: LangiumDocument): CodeAction {
         return {
-            title: 'Replace \'|\' with \':\'',
+            title: "Replace '|' with ':'",
             kind: CodeActionKind.QuickFix,
             diagnostics: [diagnostic],
             isPreferred: true,
@@ -127,7 +127,7 @@ export class LangiumGrammarCodeActionProvider implements CodeActionProvider {
                 changes: {
                     [document.textDocument.uri]: [{
                         range: diagnostic.range,
-                        newText: document.textDocument.getText(diagnostic.range).replace(/\|/, ':')
+                        newText: ':'
                     }]
                 }
             }
