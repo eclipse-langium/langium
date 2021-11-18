@@ -33,7 +33,7 @@ export class LangiumGrammarValidationRegistry extends ValidationRegistry {
             UnorderedGroup: validator.checkUnorderedGroup,
             Grammar: [
                 validator.checkGrammarName,
-                validator.checkFirstGrammarRule,
+                validator.checkEntryGrammarRule,
                 validator.checkUniqueRuleName,
                 validator.checkGrammarHiddenTokens,
                 validator.checkGrammarForUnusedRules
@@ -52,6 +52,7 @@ export namespace IssueCodes {
     export const RuleNameUppercase = 'rule-name-uppercase';
     export const HiddenGrammarTokens = 'hidden-grammar-tokens';
     export const UseRegexTokens = 'use-regex-tokens';
+    export const MakeRuleEntry = 'entry-rule-token-syntax';
 }
 
 export class LangiumGrammarValidator {
@@ -71,16 +72,19 @@ export class LangiumGrammarValidator {
         }
     }
 
-    checkFirstGrammarRule(grammar: ast.Grammar, accept: ValidationAcceptor): void {
-        const firstRule = getEntryRule(grammar);
-        if (firstRule) {
-            if (isDataTypeRule(firstRule)) {
-                accept('error', 'The entry rule cannot be a data type rule.', { node: firstRule, property: 'name' });
-            } else if (firstRule.fragment) {
-                accept('error', 'The entry rule cannot be a fragment.', { node: firstRule, property: 'name' });
+    checkEntryGrammarRule(grammar: ast.Grammar, accept: ValidationAcceptor): void {
+        const entryRules = grammar.rules.filter(e => ast.isParserRule(e) && e.entry) as ast.ParserRule[];
+        if (entryRules.length === 0) {
+            const possibleEntryRule = grammar.rules.find(e => ast.isParserRule(e) && !isDataTypeRule(e));
+            if (possibleEntryRule) {
+                accept('error', 'The grammar is missing an entry parser rule. This rule can be an entry one.', { node: possibleEntryRule, property: 'name', code: IssueCodes.MakeRuleEntry });
+            } else {
+                accept('error', 'This grammar is missing an entry parser rule.', { node: grammar, property: 'name' });
             }
-        } else {
-            accept('error', 'This grammar is missing an entry parser rule.', { node: grammar, property: 'name' });
+        } else if (entryRules.length > 1) {
+            entryRules.forEach(rule => accept('error', 'The entry rule has to be unique.', { node: rule, property: 'name' }));
+        } else if (isDataTypeRule(entryRules[0])) {
+            accept('error', 'The entry rule cannot be a data type rule.', { node: entryRules[0], property: 'name' });
         }
     }
 

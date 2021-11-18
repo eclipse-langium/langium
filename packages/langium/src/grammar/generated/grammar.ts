@@ -77,6 +77,7 @@ export const grammar = (): Grammar => loaded || (loaded = loadGrammar(`{
       "parameters": [],
       "name": "Grammar",
       "hiddenTokens": [],
+      "entry": true,
       "alternatives": {
         "$type": "Group",
         "elements": [
@@ -474,14 +475,29 @@ export const grammar = (): Grammar => loaded || (loaded = loadGrammar(`{
                 "$type": "Group",
                 "elements": [
                   {
-                    "$type": "Assignment",
-                    "feature": "fragment",
-                    "operator": "?=",
-                    "terminal": {
-                      "$type": "Keyword",
-                      "value": "fragment"
-                    },
-                    "elements": []
+                    "$type": "Alternatives",
+                    "elements": [
+                      {
+                        "$type": "Assignment",
+                        "feature": "entry",
+                        "operator": "?=",
+                        "terminal": {
+                          "$type": "Keyword",
+                          "value": "entry"
+                        },
+                        "elements": []
+                      },
+                      {
+                        "$type": "Assignment",
+                        "feature": "fragment",
+                        "operator": "?=",
+                        "terminal": {
+                          "$type": "Keyword",
+                          "value": "fragment"
+                        },
+                        "elements": []
+                      }
+                    ]
                   },
                   {
                     "$type": "RuleCall",

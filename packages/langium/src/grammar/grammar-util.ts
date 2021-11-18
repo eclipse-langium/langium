@@ -321,7 +321,7 @@ export function getRuleType(rule: ast.AbstractRule | undefined): string {
 }
 
 export function getEntryRule(grammar: ast.Grammar): ast.ParserRule | undefined {
-    return grammar.rules.find(e => ast.isParserRule(e)) as ast.ParserRule;
+    return grammar.rules.find(e => ast.isParserRule(e) && e.entry) as ast.ParserRule;
 }
 
 export function loadGrammar(json: string): ast.Grammar {

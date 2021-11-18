@@ -1,6 +1,6 @@
 grammar Arithmetics
 
-Module:
+entry Module:
 	'module' name=ID
 	(statements+=Statement)*;
 

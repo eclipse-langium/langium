@@ -299,6 +299,7 @@ export function isReferencedMetamodel(item: unknown): item is ReferencedMetamode
 export interface ParserRule extends AbstractRule {
     alternatives: AbstractElement
     definesHiddenTokens: boolean
+    entry: boolean
     hiddenTokens: Array<Reference<AbstractRule>>
     parameters: Array<Parameter>
     wildcard: boolean
