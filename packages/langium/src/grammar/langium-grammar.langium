@@ -9,8 +9,8 @@ hidden terminal ML_COMMENT: /\/\*[\s\S]*?\*\//;
 hidden terminal SL_COMMENT: /\/\/[^\n\r]*/;
 
 entry Grammar:
-	'grammar' name=ID ('with' usedGrammars+=[Grammar|ID] (',' usedGrammars+=[Grammar|ID])*)?
-	(definesHiddenTokens?='hidden' '(' (hiddenTokens+=[AbstractRule|ID] (',' hiddenTokens+=[AbstractRule|ID])*)? ')')?
+	'grammar' name=ID ('with' usedGrammars+=[Grammar:ID] (',' usedGrammars+=[Grammar:ID])*)?
+	(definesHiddenTokens?='hidden' '(' (hiddenTokens+=[AbstractRule:ID] (',' hiddenTokens+=[AbstractRule:ID])*)? ')')?
 	metamodelDeclarations+=AbstractMetamodelDeclaration*
 	(rules+=AbstractRule)+;
 
@@ -34,7 +34,7 @@ ParserRule :
 	  (^entry?='entry' | ^fragment?='fragment') RuleNameAndParams (wildcard?='*' | ('returns' type=ID)?)
 	| RuleNameAndParams ('returns' type=ID)?
 	)
-	(definesHiddenTokens?='hidden' '(' (hiddenTokens+=[AbstractRule|ID] (',' hiddenTokens+=[AbstractRule|ID])*)? ')')? ':'
+	(definesHiddenTokens?='hidden' '(' (hiddenTokens+=[AbstractRule:ID] (',' hiddenTokens+=[AbstractRule:ID])*)? ')')? ':'
 		alternatives=Alternatives
 	';';
 
@@ -75,10 +75,10 @@ Keyword:
 	value=string;
 
 RuleCall:
-	rule=[AbstractRule|ID] ('<' arguments+=NamedArgument (',' arguments+=NamedArgument)* '>')?;
+	rule=[AbstractRule:ID] ('<' arguments+=NamedArgument (',' arguments+=NamedArgument)* '>')?;
 
 NamedArgument:
-	( parameter=[Parameter|ID] calledByName?= '=')?
+	( parameter=[Parameter:ID] calledByName?= '=')?
 	( value=Disjunction );
 
 LiteralCondition:
@@ -100,13 +100,13 @@ ParenthesizedCondition returns Condition:
 	'(' Disjunction ')';
 
 ParameterReference:
-	parameter=[Parameter|ID];
+	parameter=[Parameter:ID];
 
 PredicatedKeyword returns Keyword:
 	(predicated?='=>' | firstSetPredicated?='->') value=string;
 
 PredicatedRuleCall returns RuleCall:
-	(predicated?='=>' | firstSetPredicated?='->') rule=[AbstractRule|ID] ('<' arguments+=NamedArgument (',' arguments+=NamedArgument)* '>')?;
+	(predicated?='=>' | firstSetPredicated?='->') rule=[AbstractRule:ID] ('<' arguments+=NamedArgument (',' arguments+=NamedArgument)* '>')?;
 
 Assignment returns AbstractElement:
 	{Assignment} (predicated?='=>' | firstSetPredicated?='->')? feature=ID operator=('+='|'='|'?=') ^terminal=AssignableTerminal;
@@ -121,7 +121,7 @@ AssignableAlternatives returns AbstractElement:
 	AssignableTerminal ({Alternatives.elements+=current} ('|' elements+=AssignableTerminal)+)?;
 
 CrossReference returns AbstractElement:
-	{CrossReference} '[' type=[ParserRule|ID] ('|' ^terminal=CrossReferenceableTerminal )? ']';
+	{CrossReference} '[' type=[ParserRule:ID] ((deprecatedSyntax?='|' | ':') ^terminal=CrossReferenceableTerminal )? ']';
 
 CrossReferenceableTerminal returns AbstractElement:
 	Keyword | RuleCall;
@@ -155,7 +155,7 @@ ParenthesizedTerminalElement returns AbstractElement:
 	'(' TerminalAlternatives ')';
 
 TerminalRuleCall returns AbstractElement:
-	{TerminalRuleCall} rule=[TerminalRule|ID];
+	{TerminalRuleCall} rule=[TerminalRule:ID];
 
 NegatedToken returns AbstractElement:
 	{NegatedToken} '!' ^terminal=TerminalTokenElement;

@@ -2000,9 +2000,24 @@ export const grammar = (): Grammar => loaded || (loaded = loadGrammar(`{
             "$type": "Group",
             "elements": [
               {
-                "$type": "Keyword",
-                "value": "|",
-                "elements": []
+                "$type": "Alternatives",
+                "elements": [
+                  {
+                    "$type": "Assignment",
+                    "feature": "deprecatedSyntax",
+                    "operator": "?=",
+                    "terminal": {
+                      "$type": "Keyword",
+                      "value": "|"
+                    },
+                    "elements": []
+                  },
+                  {
+                    "$type": "Keyword",
+                    "value": ":",
+                    "elements": []
+                  }
+                ]
               },
               {
                 "$type": "Assignment",

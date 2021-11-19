@@ -151,6 +151,7 @@ export function isCharacterRange(item: unknown): item is CharacterRange {
 }
 
 export interface CrossReference extends AbstractElement {
+    deprecatedSyntax: boolean
     terminal: AbstractElement
     type: Reference<ParserRule>
 }

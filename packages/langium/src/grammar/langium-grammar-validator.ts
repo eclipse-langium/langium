@@ -40,7 +40,8 @@ export class LangiumGrammarValidationRegistry extends ValidationRegistry {
             ],
             CharacterRange: validator.checkInvalidCharacterRange,
             RuleCall: validator.checkUsedHiddenTerminalRule,
-            TerminalRuleCall: validator.checkUsedHiddenTerminalRule
+            TerminalRuleCall: validator.checkUsedHiddenTerminalRule,
+            CrossReference: validator.checkCrossReferenceSyntax
         };
         this.register(checks, validator);
     }
@@ -52,7 +53,8 @@ export namespace IssueCodes {
     export const RuleNameUppercase = 'rule-name-uppercase';
     export const HiddenGrammarTokens = 'hidden-grammar-tokens';
     export const UseRegexTokens = 'use-regex-tokens';
-    export const MakeRuleEntry = 'entry-rule-token-syntax';
+    export const EntryRuleTokenSyntax = 'entry-rule-token-syntax';
+    export const CrossRefTokenSyntax = 'cross-ref-token-syntax';
 }
 
 export class LangiumGrammarValidator {
@@ -77,7 +79,7 @@ export class LangiumGrammarValidator {
         if (entryRules.length === 0) {
             const possibleEntryRule = grammar.rules.find(e => ast.isParserRule(e) && !isDataTypeRule(e));
             if (possibleEntryRule) {
-                accept('error', 'The grammar is missing an entry parser rule. This rule can be an entry one.', { node: possibleEntryRule, property: 'name', code: IssueCodes.MakeRuleEntry });
+                accept('error', 'The grammar is missing an entry parser rule. This rule can be an entry one.', { node: possibleEntryRule, property: 'name', code: IssueCodes.EntryRuleTokenSyntax });
             } else {
                 accept('error', 'This grammar is missing an entry parser rule.', { node: grammar, property: 'name' });
             }
@@ -143,6 +145,12 @@ export class LangiumGrammarValidator {
             if (ast.isTerminalRule(ref) && ref.hidden) {
                 accept('error', 'Cannot use hidden terminal in non-hidden rule', { node: ruleCall, property: 'rule' });
             }
+        }
+    }
+
+    checkCrossReferenceSyntax(crossRef: ast.CrossReference, accept: ValidationAcceptor): void {
+        if (crossRef.deprecatedSyntax) {
+            accept('error', "'|' is deprecated. Please, use ':' instead.", { node: crossRef, property: 'deprecatedSyntax', code: IssueCodes.CrossRefTokenSyntax });
         }
     }
 
