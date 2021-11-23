@@ -6,7 +6,7 @@
 
 import fs from 'fs';
 import { Range, TextDocument } from 'vscode-languageserver-textdocument';
-import { TextDocuments } from 'vscode-languageserver/node';
+import { Diagnostic, TextDocuments } from 'vscode-languageserver/node';
 import { AstNode, AstNodeDescription, Reference } from '../syntax-tree';
 import { ParseResult } from '../parser/langium-parser';
 import { URI } from 'vscode-uri';
@@ -32,6 +32,8 @@ export interface LangiumDocument<T extends AstNode = AstNode> {
     precomputedScopes?: PrecomputedScopes;
     /** An array of all cross-references found in the AST while linking */
     references: Reference[];
+    /** Result of the validation phase */
+    diagnostics?: Diagnostic[]
 }
 
 /**
@@ -63,6 +65,10 @@ export interface DocumentSegment {
     readonly offset: number
     readonly length: number
     readonly end: number
+}
+
+export function equalURI(uri1: URI, uri2: URI): boolean {
+    return uri1.toString() === uri2.toString();
 }
 
 export function documentFromText<T extends AstNode = AstNode>(textDocument: TextDocument, parseResult: ParseResult<T>): LangiumDocument<T> {
