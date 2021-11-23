@@ -21,7 +21,8 @@ export interface DocumentBuilder {
      * @param cancelToken allows to cancel the current operation
      * @throws `OperationCancelled` if cancellation is detected during execution
      */
-    build(document: LangiumDocument, cancelToken?: CancellationToken): Promise<BuildResult>
+    build<T extends AstNode>(document: LangiumDocument<T>, cancelToken?: CancellationToken): Promise<BuildResult<T>>;
+
     /**
      * This method is called when a document change is detected.
      * Implementation should update the state of associated `LangiumDocument` instances and make sure
@@ -35,7 +36,21 @@ export interface DocumentBuilder {
      * @throws `OperationCancelled` if cancellation is detected during execution
      */
     update(changed: URI[], deleted: URI[], cancelToken?: CancellationToken): Promise<void>;
+
+    /**
+     * Notify the given callback when a document update was triggered, but before any document
+     * is rebuilt. Listeners to this event should not perform any long-running task.
+     */
+    onUpdate(callback: DocumentUpdateListener): void;
+
+    /**
+     * Notify the given callback when a set of documents has been built reaching a desired target state.
+     */
+    onBuildPhase(targetState: DocumentState, callback: DocumentBuildListener): void;
 }
+
+export type DocumentUpdateListener = (changed: URI[], deleted: URI[]) => void
+export type DocumentBuildListener = (built: LangiumDocument[], cancelToken: CancellationToken) => Promise<void>
 
 export interface BuildResult<T extends AstNode = AstNode> {
     readonly document: LangiumDocument<T>
@@ -47,6 +62,8 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
     protected readonly langiumDocuments: LangiumDocuments;
     protected readonly indexManager: IndexManager;
     protected readonly serviceRegistry: ServiceRegistry;
+    protected readonly updateListeners: DocumentUpdateListener[] = [];
+    protected readonly buildPhaseListeners: Map<DocumentState, DocumentBuildListener[]> = new Map();
 
     constructor(services: LangiumSharedServices) {
         this.connection = services.lsp.Connection;
@@ -55,7 +72,7 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
         this.serviceRegistry = services.ServiceRegistry;
     }
 
-    async build(document: LangiumDocument, cancelToken = CancellationToken.None): Promise<BuildResult> {
+    async build<T extends AstNode>(document: LangiumDocument<T>, cancelToken = CancellationToken.None): Promise<BuildResult<T>> {
         await this.buildDocuments([document], cancelToken);
         return {
             document,
@@ -66,15 +83,25 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
     protected async validate(document: LangiumDocument, cancelToken = CancellationToken.None, forceDiagnostics = false): Promise<Diagnostic[]> {
         let diagnostics: Diagnostic[] = [];
         const validator = this.serviceRegistry.getService(document.uri).validation.DocumentValidator;
-        if (this.connection || forceDiagnostics) {
+        if (forceDiagnostics || this.shouldValidate(document)) {
             diagnostics = await validator.validateDocument(document, cancelToken);
             if (this.connection) {
                 // Send the computed diagnostics to VS Code.
                 this.connection.sendDiagnostics({ uri: document.textDocument.uri, diagnostics });
             }
+            document.diagnostics = diagnostics;
             document.state = DocumentState.Validated;
         }
         return diagnostics;
+    }
+
+    /**
+     * Determine whether the given document should be validated during a build. The default
+     * implementation validates whenever a client connection is available.
+     */
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    protected shouldValidate(document: LangiumDocument): boolean {
+        return this.connection !== undefined;
     }
 
     async update(changed: URI[], deleted: URI[], cancelToken = CancellationToken.None): Promise<void> {
@@ -85,11 +112,18 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
         for (const changedUri of changed) {
             this.langiumDocuments.invalidateDocument(changedUri);
         }
-        // Only interrupt execution after everything has been invalidated
+        for (const listener of this.updateListeners) {
+            listener(changed, deleted);
+        }
+        // Only interrupt execution after everything has been invalidated and update listeners have been notified
         await interruptAndCheck(cancelToken);
         const changedDocuments = changed.map(e => this.langiumDocuments.getOrCreateDocument(e));
         const rebuildDocuments = this.collectDocuments(changedDocuments, deleted);
         await this.buildDocuments(rebuildDocuments, cancelToken);
+    }
+
+    onUpdate(callback: DocumentUpdateListener): void {
+        this.updateListeners.push(callback);
     }
 
     protected collectDocuments(changed: LangiumDocument[], deleted: URI[]): LangiumDocument[] {
@@ -111,6 +145,7 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
 
     protected async buildDocuments(documents: LangiumDocument[], cancelToken: CancellationToken): Promise<void> {
         await this.indexManager.update(documents.filter(e => e.state < DocumentState.Indexed), cancelToken);
+        await this.notifyBuildPhase(documents, DocumentState.Indexed, cancelToken);
         await this.runCancelable(documents, DocumentState.Processed, cancelToken, doc => this.process(doc, cancelToken));
         await this.runCancelable(documents, DocumentState.Linked, cancelToken, doc => {
             const linker = this.serviceRegistry.getService(doc.uri).references.Linker;
@@ -123,6 +158,25 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
         for (const document of documents.filter(e => e.state < targetState)) {
             await interruptAndCheck(cancelToken);
             await callback(document);
+        }
+        await this.notifyBuildPhase(documents, targetState, cancelToken);
+    }
+
+    onBuildPhase(targetState: DocumentState, callback: DocumentBuildListener): void {
+        if (this.buildPhaseListeners.has(targetState)) {
+            this.buildPhaseListeners.get(targetState)!.push(callback);
+        } else {
+            this.buildPhaseListeners.set(targetState, [callback]);
+        }
+    }
+
+    protected async notifyBuildPhase(documents: LangiumDocument[], state: DocumentState, cancelToken: CancellationToken): Promise<void> {
+        const listeners = this.buildPhaseListeners.get(state);
+        if (listeners) {
+            for (const listener of listeners) {
+                await interruptAndCheck(cancelToken);
+                await listener(documents, cancelToken);
+            }
         }
     }
 

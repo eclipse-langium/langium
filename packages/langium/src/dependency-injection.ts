@@ -35,8 +35,8 @@ export type Module<I, T = I> = {
  * @param module3 (optional) third Module
  * @returns a new object of type I
  */
-export function inject<I1, I2, I3, I extends I1 & I2 & I3>(module1: Module<I, I1>, module2?: Module<I, I2>, module3?: Module<I, I3>): I {
-    const module = [module1, module2, module3].reduce(_merge, {}) as Module<I>;
+export function inject<I1, I2, I3, I4, I extends I1 & I2 & I3 & I4>(module1: Module<I, I1>, module2?: Module<I, I2>, module3?: Module<I, I3>, module4?: Module<I, I4>): I {
+    const module = [module1, module2, module3, module4].reduce(_merge, {}) as Module<I>;
     return _inject(module);
 }
 
