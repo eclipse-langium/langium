@@ -118,10 +118,43 @@ function getControlKeywords(grammar: langium.Grammar, pack: LangiumConfig): Patt
     const regex = /[A-Za-z]/;
     const controlKeywords = collectKeywords(grammar).filter(kw => regex.test(kw));
     const keywords = controlKeywords.map(escapeRegExp);
+    const groups = groupKeywords(keywords);
     return {
         'name': `keyword.control.${pack.languageId}`,
-        'match': `\\b(${keywords.join('|')})\\b`
+        'match': groups.join('|')
     };
+}
+
+function groupKeywords(keywords: string[]): string[] {
+    const groups: {
+        letter: string[],
+        leftSpecial: string[],
+        rightSpecial: string[],
+        special: string[]
+    } = {letter: [], leftSpecial: [], rightSpecial: [], special: []};
+
+    keywords.forEach(keyword => {
+        if (/\w/.test(keyword[0])) {
+            if (/\w/.test(keyword[keyword.length - 1])) {
+                groups.letter.push(keyword);
+            } else {
+                groups.rightSpecial.push(keyword);
+            }
+        } else {
+            if ((/\w/).test(keyword[keyword.length - 1])) {
+                groups.leftSpecial.push(keyword);
+            } else {
+                groups.special.push(keyword);
+            }
+        }
+    });
+
+    const res = [];
+    if (groups.letter.length) res.push(`\\b(${groups.letter.join('|')})\\b`);
+    if (groups.leftSpecial.length) res.push(`\\B(${groups.leftSpecial.join('|')})\\b`);
+    if (groups.rightSpecial.length) res.push(`\\b(${groups.rightSpecial.join('|')})\\B`);
+    if (groups.special.length) res.push(`\\B(${groups.special.join('|')})\\B`);
+    return res;
 }
 
 function getStringPatterns(grammar: langium.Grammar, pack: LangiumConfig): Pattern[] {
