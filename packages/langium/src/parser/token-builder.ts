@@ -80,6 +80,13 @@ export class DefaultTokenBuilder implements TokenBuilder {
     }
 
     protected buildKeywordPattern(keyword: Keyword): TokenPattern {
+        if (/\w+/.test(keyword.value)) {
+            const regexLetters: string[] = [];
+            for (const letter of keyword.value) {
+                regexLetters.push(`[${letter.toLowerCase()}${letter.toUpperCase()}]`);
+            }
+            return new RegExp(regexLetters.join(''));
+        }
         return keyword.value;
     }
 
