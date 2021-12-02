@@ -12,7 +12,7 @@ import { partialMatches } from '../utils/regex-util';
 import { stream } from '../utils/stream';
 
 export interface TokenBuilder {
-    buildTokens(grammar: Grammar): TokenType[];
+    buildTokens(grammar: Grammar, caseInsensitive: boolean): TokenType[];
 }
 
 export class DefaultTokenBuilder implements TokenBuilder {
@@ -21,7 +21,7 @@ export class DefaultTokenBuilder implements TokenBuilder {
     protected readonly KEYWORD_SUFFIX = '_KEYWORD';
     protected readonly TERMINAL_SUFFIX = '_TERMINAL';
 
-    buildTokens(grammar: Grammar): TokenType[] {
+    buildTokens(grammar: Grammar, caseInsensitive: boolean): TokenType[] {
         const tokenMap = new Map<string, TokenType>();
         const terminalsTokens: TokenType[] = [];
         const terminals = Array.from(stream(grammar.rules).filter(isTerminalRule));
@@ -37,7 +37,7 @@ export class DefaultTokenBuilder implements TokenBuilder {
             .sort((a, b) => b.value.length - a.value.length);
 
         for (const keyword of keywords) {
-            const keywordToken = this.buildKeywordToken(keyword, keywords, terminals, tokenMap);
+            const keywordToken = this.buildKeywordToken(keyword, keywords, terminals, tokenMap, caseInsensitive);
             tokens.push(keywordToken);
             tokenMap.set(keyword.value + this.KEYWORD_SUFFIX, keywordToken);
         }
@@ -74,13 +74,13 @@ export class DefaultTokenBuilder implements TokenBuilder {
         return token;
     }
 
-    protected buildKeywordToken(keyword: Keyword, keywords: Keyword[], terminals: TerminalRule[], tokenMap: Map<string, TokenType>): TokenType {
+    protected buildKeywordToken(keyword: Keyword, keywords: Keyword[], terminals: TerminalRule[], tokenMap: Map<string, TokenType>, caseInsensitive: boolean): TokenType {
         const longerAlt = this.findLongerAlt(keyword, keywords, terminals, tokenMap);
-        return { name: keyword.value, PATTERN: this.buildKeywordPattern(keyword), LONGER_ALT: longerAlt };
+        return { name: keyword.value, PATTERN: this.buildKeywordPattern(keyword, caseInsensitive), LONGER_ALT: longerAlt };
     }
 
-    protected buildKeywordPattern(keyword: Keyword): TokenPattern {
-        if (/\w+/.test(keyword.value)) {
+    protected buildKeywordPattern(keyword: Keyword, caseInsensitive: boolean): TokenPattern {
+        if (caseInsensitive && /\w+/.test(keyword.value)) {
             const regexLetters: string[] = [];
             for (const letter of keyword.value) {
                 regexLetters.push(`[${letter.toLowerCase()}${letter.toUpperCase()}]`);

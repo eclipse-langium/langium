@@ -40,7 +40,8 @@ export function generateModule(grammars: langium.Grammar[], config: LangiumConfi
         node.append('export const ', grammar.name, 'LanguageMetaData: LanguageMetaData = {', NL);
         node.indent(metaData => {
             metaData.append(`languageId: '${config.id}',`, NL);
-            metaData.append(`fileExtensions: [${config.fileExtensions && config.fileExtensions.map(e => appendQuotesAndDot(e)).join(', ')}]`, NL);
+            metaData.append(`fileExtensions: [${config.fileExtensions && config.fileExtensions.map(e => appendQuotesAndDot(e)).join(', ')}],`, NL);
+            metaData.append(`caseInsensitive: ${config.caseInsensitive ? true : false}`, NL);
         });
         node.append('};', NL, NL);
     }

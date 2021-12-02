@@ -9,7 +9,8 @@ import { DomainModelGrammar } from './grammar';
 
 export const DomainModelLanguageMetaData: LanguageMetaData = {
     languageId: 'domain-model',
-    fileExtensions: ['.dmodel']
+    fileExtensions: ['.dmodel'],
+    caseInsensitive: false
 };
 
 export const parserConfig: IParserConfig = {

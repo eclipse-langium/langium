@@ -69,6 +69,10 @@
                                 }
                             ]
                         },
+                        "caseInsensitive": {
+                            "description": "Enable case-insensitive keywords parsing",
+                            "type": "boolean"
+                        },        
                         "textMate": {
                             "description": "An object to describe the textMate grammar properties",
                             "type": "object",
