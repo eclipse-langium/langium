@@ -8,7 +8,7 @@ import { Lexer, TokenPattern, TokenType } from 'chevrotain';
 import { terminalRegex } from '..';
 import { Grammar, isKeyword, isTerminalRule, Keyword, TerminalRule } from '../grammar/generated/ast';
 import { streamAllContents } from '../utils/ast-util';
-import { partialMatches } from '../utils/regex-util';
+import { getCaseInsensitivePattern, partialMatches } from '../utils/regex-util';
 import { stream } from '../utils/stream';
 
 export interface TokenBuilder {
@@ -80,14 +80,9 @@ export class DefaultTokenBuilder implements TokenBuilder {
     }
 
     protected buildKeywordPattern(keyword: Keyword, caseInsensitive: boolean): TokenPattern {
-        if (caseInsensitive && /\w+/.test(keyword.value)) {
-            const regexLetters: string[] = [];
-            for (const letter of keyword.value) {
-                regexLetters.push(`[${letter.toLowerCase()}${letter.toUpperCase()}]`);
-            }
-            return new RegExp(regexLetters.join(''));
-        }
-        return keyword.value;
+        return caseInsensitive && /\w+/.test(keyword.value) ?
+            new RegExp(getCaseInsensitivePattern(keyword.value)) :
+            keyword.value;
     }
 
     protected findLongerAlt(keyword: Keyword, keywords: Keyword[], terminals: TerminalRule[], tokenMap: Map<string, TokenType>): TokenType[] {

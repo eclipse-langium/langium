@@ -114,6 +114,17 @@ export function escapeRegExp(value: string): string {
     return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+export function getCaseInsensitivePattern(keyword: string): string {
+    if (/\w+/.test(keyword)) {
+        const regexLetters: string[] = [];
+        for (const letter of keyword) {
+            regexLetters.push(`[${letter.toLowerCase()}${letter.toUpperCase()}]`);
+        }
+        return regexLetters.join('');
+    }
+    return keyword;
+}
+
 /**
  * Determines whether the given input has a partial match with the specified regex.
  * @param regex The regex to partially match against
