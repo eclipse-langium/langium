@@ -6,13 +6,13 @@
     "npm": "^7.7.0"
   },
   "scripts": {
+    "prepare": "npm run clean && npm run build && npm run build --workspace=langium-vscode",
     "clean": "rimraf \"packages/**/lib\" \"packages/**/*.tsbuildinfo\"",
     "build": "tsc -b tsconfig.build.json",
     "watch": "tsc -b tsconfig.build.json -w",
     "lint": "npm run lint --workspaces",
     "test": "jest --coverage",
     "langium:generate": "npm run langium:generate --workspace=langium --workspace=domainmodel --workspace=arithmetics --workspace=statemachine",
-    "prepare": "npm run clean && npm run build",
     "dev-build": "npm run dev-clean && npm install && npm link ./packages/langium && npm link ./packages/langium-cli && npm link ./packages/generator-langium",
     "dev-clean": "rimraf ./packages/**/node_modules && npm uninstall -g langium-workspaces langium-cli generator-langium langium && npm unlink langium-workspaces langium-cli generator-langium langium"
   },

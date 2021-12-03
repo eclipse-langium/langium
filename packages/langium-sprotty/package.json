@@ -29,7 +29,7 @@
   },
   "dependencies": {
     "langium": "0.2.0",
-    "sprotty-protocol": "next"
+    "sprotty-protocol": "^0.11.0"
   },
   "devDependencies": {
     "@types/jest": "^26.0.20",

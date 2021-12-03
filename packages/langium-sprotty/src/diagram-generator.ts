@@ -9,18 +9,28 @@ import { CancellationToken } from 'vscode-languageserver';
 import { AstNode, LangiumDocument, LangiumDocuments, LangiumServices } from 'langium';
 import { GeneratorArguments, IDiagramGenerator, SModelRoot } from 'sprotty-protocol';
 
+/**
+ * Additional arguments that can be passed to `LangiumDiagramGenerator` implementations.
+ * If any of these are missing, they are added so the implementations can rely on a `LangiumDocument` etc.
+ */
 export interface LangiumDiagramGeneratorArguments extends GeneratorArguments {
     document?: LangiumDocument;
     cancelToken?: CancellationToken;
     idCache?: IdCache;
 }
 
+/**
+ * Context data for generating diagram models.
+ */
 export interface GeneratorContext<T extends AstNode = AstNode> extends LangiumDiagramGeneratorArguments {
     document: LangiumDocument<T>;
     cancelToken: CancellationToken;
     idCache: IdCache;
 }
 
+/**
+ * Abstract superclass for diagram model generators.
+ */
 export abstract class LangiumDiagramGenerator implements IDiagramGenerator {
 
     protected readonly langiumDocuments: LangiumDocuments;
@@ -29,6 +39,9 @@ export abstract class LangiumDiagramGenerator implements IDiagramGenerator {
         this.langiumDocuments = services.documents.LangiumDocuments;
     }
 
+    /**
+     * Builds a `GeneratorContext` and calls `generateRoot` with it.
+     */
     generate(args: LangiumDiagramGeneratorArguments): SModelRoot | Promise<SModelRoot> {
         if (!args.document) {
             const sourceUri = args.options.sourceUri as string;
@@ -46,6 +59,9 @@ export abstract class LangiumDiagramGenerator implements IDiagramGenerator {
         return this.generateRoot(args as GeneratorContext);
     }
 
+    /**
+     * Implement this method to generate a diagram model tree, represented by its root element.
+     */
     protected abstract generateRoot(args: GeneratorContext): SModelRoot | Promise<SModelRoot>;
 
 }

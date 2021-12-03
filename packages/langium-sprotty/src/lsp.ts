@@ -20,6 +20,10 @@ export namespace DiagramDidCloseNotification {
     export const type = new NotificationType<string>('diagram/didClose');
 }
 
+/**
+ * Adds JSON-RPC handlers for `DiagramActionNotification` and `DiagramDidCloseNotification` received
+ * from the client.
+ */
 export function addDiagramHandler(connection: Connection, services: LangiumSprottyServices): void {
     const diagramServerManager = services.diagram.DiagramServerManager;
     connection.onNotification(DiagramActionNotification.type, message => {
