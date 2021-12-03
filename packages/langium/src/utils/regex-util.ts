@@ -115,14 +115,11 @@ export function escapeRegExp(value: string): string {
 }
 
 export function getCaseInsensitivePattern(keyword: string): string {
-    if (/^\w+$/.test(keyword)) {
-        const regexLetters: string[] = [];
-        for (const letter of keyword) {
-            regexLetters.push(`[${letter.toLowerCase()}${letter.toUpperCase()}]`);
-        }
-        return regexLetters.join('');
+    const regexLetters: string[] = [];
+    for (const letter of keyword) {
+        regexLetters.push(/\w/.test(letter) ? `[${letter.toLowerCase()}${letter.toUpperCase()}]` : escapeRegExp(letter));
     }
-    return keyword;
+    return regexLetters.join('');
 }
 
 /**
