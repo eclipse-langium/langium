@@ -11,6 +11,12 @@ import { DocumentState, equalURI, interruptAndCheck, LangiumDocument, stream } f
 import { LangiumSprottyServices } from './sprotty-services';
 import { LangiumDiagramGeneratorArguments } from './diagram-generator';
 
+/**
+ * A `DiagramServer` instance can handle exactly one client diagram. The host application
+ * can open multiple diagrams with different IDs. This service manages the `DiagramServer`
+ * instances, creating one instance for each received `clientId` and discarding it when the
+ * client closes the respective diagram.
+ */
 export interface DiagramServerManager {
     /**
      * Called when an action message is sent from the client to the server.

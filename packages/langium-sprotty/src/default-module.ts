@@ -10,6 +10,9 @@ import { DefaultDiagramServerManager } from './diagram-server-manager';
 import { DiagramActionNotification } from './lsp';
 import { LangiumSprottyServices, DefaultSprottyServices } from './sprotty-services';
 
+/**
+ * Default implementations of services for the integration of Langium and Sprotty.
+ */
 export const DefaultSprottyModule: Module<LangiumSprottyServices, DefaultSprottyServices> = {
     diagram: {
         diagramServerFactory: services => {

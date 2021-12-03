@@ -8,10 +8,16 @@ import { LangiumServices } from 'langium';
 import { DiagramServer, DiagramServices } from 'sprotty-protocol';
 import { DiagramServerManager } from './diagram-server-manager';
 
+/**
+ * Services required by the Sprotty diagram server to generate diagram models from a Langium AST.
+ */
 export type SprottyDiagramServices = {
     diagram: DiagramServices
 }
 
+/**
+ * Services provided by the `DefaultSprottyModule` for the integration of Langium and Sprotty.
+ */
 export type DefaultSprottyServices = {
     diagram: {
         diagramServerFactory: (clientId: string) => DiagramServer,
@@ -19,4 +25,7 @@ export type DefaultSprottyServices = {
     }
 }
 
+/**
+ * Extension of the `LangiumServices` with all services required for the integration of Langium and Sprotty.
+ */
 export type LangiumSprottyServices = LangiumServices & SprottyDiagramServices & DefaultSprottyServices
