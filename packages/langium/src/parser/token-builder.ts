@@ -12,7 +12,7 @@ import { getCaseInsensitivePattern, partialMatches } from '../utils/regex-util';
 import { stream } from '../utils/stream';
 
 export interface TokenBuilder {
-    buildTokens(grammar: Grammar, caseInsensitive: boolean): TokenType[];
+    buildTokens(grammar: Grammar, caseInsensitive?: boolean): TokenType[];
 }
 
 export class DefaultTokenBuilder implements TokenBuilder {
@@ -21,7 +21,7 @@ export class DefaultTokenBuilder implements TokenBuilder {
     protected readonly KEYWORD_SUFFIX = '_KEYWORD';
     protected readonly TERMINAL_SUFFIX = '_TERMINAL';
 
-    buildTokens(grammar: Grammar, caseInsensitive: boolean): TokenType[] {
+    buildTokens(grammar: Grammar, caseInsensitive = false): TokenType[] {
         const tokenMap = new Map<string, TokenType>();
         const terminalsTokens: TokenType[] = [];
         const terminals = Array.from(stream(grammar.rules).filter(isTerminalRule));
