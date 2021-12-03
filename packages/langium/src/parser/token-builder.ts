@@ -80,7 +80,7 @@ export class DefaultTokenBuilder implements TokenBuilder {
     }
 
     protected buildKeywordPattern(keyword: Keyword, caseInsensitive: boolean): TokenPattern {
-        return caseInsensitive && /\w+/.test(keyword.value) ?
+        return caseInsensitive && /^\w+$/.test(keyword.value) ?
             new RegExp(getCaseInsensitivePattern(keyword.value)) :
             keyword.value;
     }
