@@ -9,7 +9,7 @@ import { parseDocument } from 'langium/lib/test';
 import { createDomainModelServices } from '../src/language-server/domain-model-module';
 import { Domainmodel } from '../src/language-server/generated/ast';
 
-const services = createDomainModelServices();
+const services = createDomainModelServices().ServiceRegistry.all[0];
 
 const datatypeFile = `
 datatype String
@@ -41,13 +41,13 @@ describe('Cross references from declaration', () => {
 async function getReferences(): Promise<ReferenceDescription[]> {
     const datatypeDoc: LangiumDocument = await parseDocument(services, datatypeFile);
     const referencingDoc: LangiumDocument = await parseDocument(services, referencingFile);
-    services.index.IndexManager.update([referencingDoc, datatypeDoc]);
+    services.shared.workspace.IndexManager.update([referencingDoc, datatypeDoc]);
     const model = (datatypeDoc.parseResult.value as Domainmodel);
 
     const stringType = model.elements[0];
 
     const allRefs: ReferenceDescription[] = [];
-    services.index.IndexManager.findAllReferences(stringType, createPath(stringType))
+    services.shared.workspace.IndexManager.findAllReferences(stringType, createPath(stringType))
         .forEach((ref) => allRefs.push(ref));
     return allRefs;
 }

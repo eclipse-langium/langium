@@ -4,20 +4,20 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { GeneratorNode, Grammar, IndentNode, CompositeGeneratorNode, NL, processGeneratorNode, stream, isAlternatives, isKeyword, isParserRule, isDataTypeRule, ParserRule, streamAllContents, isCrossReference } from 'langium';
+import { GeneratorNode, Grammar, IndentNode, CompositeGeneratorNode, NL, processGeneratorNode, stream, isAlternatives, isKeyword, isParserRule, isDataTypeRule, ParserRule, streamAllContents, isCrossReference, LangiumServices } from 'langium';
 import { LangiumConfig } from '../package';
 import { collectAst, Interface } from './type-collector';
 import { generatedHeader } from './util';
 
-export function generateAst(grammar: Grammar, config: LangiumConfig): string {
-    const types = collectAst(grammar);
+export function generateAst(services: LangiumServices, grammars: Grammar[], config: LangiumConfig): string {
+    const types = collectAst(services.shared.workspace.LangiumDocuments, grammars);
     const fileNode = new CompositeGeneratorNode();
     fileNode.append(
         generatedHeader,
         '/* eslint-disable @typescript-eslint/array-type */', NL,
         '/* eslint-disable @typescript-eslint/no-empty-interface */', NL,
     );
-    const crossRef = hasCrossReferences(grammar);
+    const crossRef = grammars.some(grammar => hasCrossReferences(grammar));
     if (config.langiumInternal) {
         fileNode.append(
             `import { AstNode, AstReflection${crossRef ? ', Reference' : ''} } from '../../syntax-tree';`, NL,
@@ -30,11 +30,11 @@ export function generateAst(grammar: Grammar, config: LangiumConfig): string {
     for (const type of types) {
         fileNode.append(type.toString(), NL);
     }
-    for (const primitiveRule of stream(grammar.rules).filter(isParserRule).filter(e => isDataTypeRule(e))) {
+    for (const primitiveRule of stream(grammars.flatMap(e => e.rules)).distinct().filter(isParserRule).filter(e => isDataTypeRule(e))) {
         fileNode.append(buildDatatype(primitiveRule), NL, NL);
     }
 
-    fileNode.append(generateAstReflection(grammar, types));
+    fileNode.append(generateAstReflection(config, types));
 
     return processGeneratorNode(fileNode);
 }
@@ -63,18 +63,18 @@ type CrossReferenceType = {
     referenceType: string
 }
 
-function generateAstReflection(grammar: Grammar, interfaces: Interface[]): GeneratorNode {
+function generateAstReflection(config: LangiumConfig, interfaces: Interface[]): GeneratorNode {
     const reflectionNode = new CompositeGeneratorNode();
     const crossReferenceTypes = buildCrossReferenceTypes(interfaces);
 
     reflectionNode.append(
-        'export type ', grammar.name, 'AstType = ',
+        'export type ', config.projectName, 'AstType = ',
         interfaces.map(t => `'${t.name}'`).join(' | '),
         ';', NL, NL,
-        'export type ', grammar.name, 'AstReference = ',
+        'export type ', config.projectName, 'AstReference = ',
         crossReferenceTypes.map(e => `'${e.type}:${e.feature}'`).join(' | ') || 'never',
         ';', NL, NL,
-        'export class ', grammar.name, 'AstReflection implements AstReflection {', NL, NL
+        'export class ', config.projectName, 'AstReflection implements AstReflection {', NL, NL
     );
 
     reflectionNode.indent(classBody => {
@@ -90,14 +90,14 @@ function generateAstReflection(grammar: Grammar, interfaces: Interface[]): Gener
             '}', NL, NL,
             'isSubtype(subtype: string, supertype: string): boolean {', NL,
             buildIsSubtypeMethod(interfaces), '}', NL, NL,
-            'getReferenceType(referenceId: ', grammar.name, 'AstReference): string {', NL,
+            'getReferenceType(referenceId: ', config.projectName, 'AstReference): string {', NL,
             buildReferenceTypeMethod(interfaces), '}', NL,
         );
     });
 
     reflectionNode.append(
         '}', NL, NL,
-        'export const reflection = new ', grammar.name, 'AstReflection();', NL
+        'export const reflection = new ', config.projectName, 'AstReflection();', NL
     );
 
     return reflectionNode;

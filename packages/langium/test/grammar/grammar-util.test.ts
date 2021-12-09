@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import { createLangiumGrammarServices, getEntryRule, Grammar, isTerminalRule, replaceTokens, stream, terminalRegex, TerminalRule } from '../../src';
-import { grammar } from '../../src/grammar/generated/grammar';
+import { LangiumGrammarGrammar } from '../../src/grammar/generated/grammar';
 import { parseHelper } from '../../src/test';
 
 describe('Token replacement', () => {
@@ -35,7 +35,7 @@ describe('Token replacement', () => {
 });
 
 test('Langium grammar entry rule', () => {
-    expect(getEntryRule(grammar())?.name).toBe('Grammar');
+    expect(getEntryRule(LangiumGrammarGrammar())?.name).toBe('Grammar');
 });
 
 describe('TerminalRule to regex', () => {
@@ -76,7 +76,6 @@ describe('TerminalRule to regex', () => {
     test('Should create negated token', async () => {
         const terminal = await getTerminal("terminal X: !'a';");
         const regex = new RegExp(`^${terminalRegex(terminal)}$`);
-        console.log(regex);
         expect('a').not.toMatch(regex);
         expect('b').toMatch(regex);
         expect('c').toMatch(regex);
@@ -105,7 +104,7 @@ describe('TerminalRule to regex', () => {
         expect('a some value b').toMatch(regex);
     });
 
-    const services = createLangiumGrammarServices();
+    const services = createLangiumGrammarServices().ServiceRegistry.all[0];
     const parse = parseHelper<Grammar>(services);
 
     async function getTerminal(input: string, name?: string): Promise<TerminalRule> {

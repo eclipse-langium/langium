@@ -67,8 +67,8 @@ export class DefaultScopeProvider implements ScopeProvider {
     protected readonly globalScope: IndexManager;
 
     constructor(services: LangiumServices) {
-        this.reflection = services.AstReflection;
-        this.globalScope = services.index.IndexManager;
+        this.reflection = services.shared.AstReflection;
+        this.globalScope = services.shared.workspace.IndexManager;
     }
 
     getScope(node: AstNode, referenceId: string): Scope {

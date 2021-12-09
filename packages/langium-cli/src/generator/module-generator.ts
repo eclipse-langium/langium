@@ -6,10 +6,10 @@
 
 import * as langium from 'langium';
 import { CompositeGeneratorNode, NL, processGeneratorNode } from 'langium';
-import { LangiumConfig } from '../package';
+import { LangiumConfig, LangiumLanguageConfig } from '../package';
 import { generatedHeader } from './util';
 
-export function generateModule(grammar: langium.Grammar, config: LangiumConfig): string {
+export function generateModule(grammars: langium.Grammar[], config: LangiumConfig, grammarConfigMap: Map<langium.Grammar, LangiumLanguageConfig>): string {
     const parserConfig = config.chevrotainParserConfig;
     const node = new CompositeGeneratorNode();
 
@@ -17,53 +17,97 @@ export function generateModule(grammar: langium.Grammar, config: LangiumConfig):
     if (config.langiumInternal) {
         node.append(`import { LanguageMetaData${parserConfig ? ', IParserConfig' : ''} } from '../..';`, NL);
         node.append("import { Module } from '../../dependency-injection';", NL);
-        node.contents.push("import { LangiumGeneratedServices, LangiumServices } from '../../services';", NL);
+        node.contents.push("import { LangiumGeneratedServices, LangiumGeneratedSharedServices, LangiumSharedServices, LangiumServices } from '../../services';", NL);
     } else {
-        node.append(`import { LangiumGeneratedServices, LangiumServices, LanguageMetaData, Module${parserConfig ? ', IParserConfig' : ''} } from 'langium';`, NL);
+        node.append(`import { LangiumGeneratedServices, LangiumGeneratedSharedServices, LangiumSharedServices, LangiumServices, LanguageMetaData, Module${parserConfig ? ', IParserConfig' : ''} } from 'langium';`, NL);
     }
+
     node.append(
-        'import { ', grammar.name, "AstReflection } from './ast';", NL,
-        "import { grammar } from './grammar';", NL, NL
+        'import { ', config.projectName, "AstReflection } from './ast';", NL,
+        'import { '
     );
+    for (let i = 0; i < grammars.length; i++) {
+        const grammar = grammars[i];
+        node.append(grammar.name, 'Grammar');
+        if (i < grammars.length - 1) {
+            node.append(', ');
+        }
+    }
+    node.append(" } from './grammar';", NL, NL);
 
-    node.append('export const languageMetaData: LanguageMetaData = {', NL);
-    node.indent(metaData => {
-        metaData.append(`languageId: '${config.languageId}',`, NL);
-        metaData.append(`fileExtensions: [${config.fileExtensions && config.fileExtensions.map(e => appendQuotesAndDot(e)).join(', ')}]`, NL);
-    });
-    node.append('};', NL, NL);
-
-    if (parserConfig) {
-        node.append('export const parserConfig: IParserConfig = {', NL);
-        node.indent(configNode => {
-            Object.keys(parserConfig).forEach(key => {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const value = (parserConfig as any)[key];
-                configNode.append(`${key}: ${typeof value === 'string' ? `'${value}'` : value},`, NL);
-            });
+    for (const grammar of grammars) {
+        const config = grammarConfigMap.get(grammar)!;
+        node.append('export const ', grammar.name, 'LanguageMetaData: LanguageMetaData = {', NL);
+        node.indent(metaData => {
+            metaData.append(`languageId: '${config.id}',`, NL);
+            metaData.append(`fileExtensions: [${config.fileExtensions && config.fileExtensions.map(e => appendQuotesAndDot(e)).join(', ')}]`, NL);
         });
         node.append('};', NL, NL);
     }
 
-    node.append('export const ', grammar.name, 'GeneratedModule: Module<LangiumServices, LangiumGeneratedServices> = {', NL);
+    let needsGeneralParserConfig = false;
+    for (const grammar of grammars) {
+        const grammarConfig = grammarConfigMap.get(grammar)!;
+        const grammarParserConfig = grammarConfig.chevrotainParserConfig;
+        if (grammarParserConfig) {
+            node.append('export const ', grammar.name, 'ParserConfig: IParserConfig = ', generateParserConfig(grammarParserConfig));
+        } else {
+            needsGeneralParserConfig = true;
+        }
+    }
+
+    if (needsGeneralParserConfig && parserConfig) {
+        node.append('export const parserConfig: IParserConfig = ', generateParserConfig(parserConfig));
+    }
+
+    node.append('export const ', config.projectName, 'GeneratedSharedModule: Module<LangiumSharedServices, LangiumGeneratedSharedServices> = {', NL);
     node.indent(moduleNode => {
         moduleNode.append(
-            'Grammar: () => grammar(),', NL,
-            'AstReflection: () => new ', grammar.name, 'AstReflection(),', NL,
-            'LanguageMetaData: () => languageMetaData,', NL,
-            'parser: {',
+            'AstReflection: () => new ', config.projectName, 'AstReflection()', NL
         );
-        if (parserConfig) {
-            moduleNode.append(NL);
-            moduleNode.indent(parserGroupNode => {
-                parserGroupNode.append('ParserConfig: () => parserConfig', NL);
-            });
-        }
-        moduleNode.append('}', NL);
     });
-    node.append('};', NL);
+    node.append('};', NL, NL);
+
+    for (let i = 0; i < grammars.length; i++) {
+        const grammar = grammars[i];
+        const grammarConfig = grammarConfigMap.get(grammar)!;
+        node.append('export const ', grammar.name, 'GeneratedModule: Module<LangiumServices, LangiumGeneratedServices> = {', NL);
+        node.indent(moduleNode => {
+            moduleNode.append(
+                'Grammar: () => ', grammar.name, 'Grammar(),', NL,
+                'LanguageMetaData: () => ', grammar.name, 'LanguageMetaData,', NL,
+                'parser: {'
+            );
+            if (parserConfig) {
+                moduleNode.append(NL);
+                moduleNode.indent(parserGroupNode => {
+                    const parserConfigName = grammarConfig.chevrotainParserConfig
+                        ? grammar.name + 'ParserConfig'
+                        : 'parserConfig';
+                    parserGroupNode.append('ParserConfig: () => ', parserConfigName,  NL);
+                });
+            }
+            moduleNode.append('}', NL);
+        });
+        node.append('};', NL);
+        if (i < grammars.length - 1) {
+            node.append(NL);
+        }
+    }
 
     return processGeneratorNode(node);
+}
+
+function generateParserConfig(config: langium.IParserConfig): CompositeGeneratorNode {
+    const node = new CompositeGeneratorNode();
+    node.append('{', NL);
+    node.indent(configNode => {
+        for (const [key, value] of Object.entries(config)) {
+            configNode.append(`${key}: ${typeof value === 'string' ? `'${value}'` : value},`, NL);
+        }
+    });
+    node.append('};', NL, NL);
+    return node;
 }
 
 function appendQuotesAndDot(input: string): string {

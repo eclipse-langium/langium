@@ -6,7 +6,7 @@
 
 import * as langium from 'langium';
 import { escapeRegExp, getTerminalParts, isCommentTerminal, isTerminalRule, terminalRegex } from 'langium';
-import { LangiumConfig } from '../package';
+import { LangiumLanguageConfig } from '../package';
 import { collectKeywords } from './util';
 
 export interface TextMateGrammar {
@@ -46,10 +46,10 @@ export interface Captures {
     [captureId: string]: Pattern;
 }
 
-export function generateTextMate(grammar: langium.Grammar, config: LangiumConfig): string {
+export function generateTextMate(grammar: langium.Grammar, config: LangiumLanguageConfig): string {
     const json: TextMateGrammar = {
-        name: config.languageId,
-        scopeName: `source.${config.languageId}`,
+        name: config.id,
+        scopeName: `source.${config.id}`,
         fileTypes: config.fileExtensions ?? [],
         patterns: getPatterns(grammar, config),
         repository: getRepository(grammar, config)
@@ -58,7 +58,7 @@ export function generateTextMate(grammar: langium.Grammar, config: LangiumConfig
     return JSON.stringify(json, null, 2);
 }
 
-function getPatterns(grammar: langium.Grammar, config: LangiumConfig): Pattern[] {
+function getPatterns(grammar: langium.Grammar, config: LangiumLanguageConfig): Pattern[] {
     const patterns: Pattern[] = [];
     patterns.push({
         include: '#comments'
@@ -68,7 +68,7 @@ function getPatterns(grammar: langium.Grammar, config: LangiumConfig): Pattern[]
     return patterns;
 }
 
-function getRepository(grammar: langium.Grammar, config: LangiumConfig): Repository {
+function getRepository(grammar: langium.Grammar, config: LangiumLanguageConfig): Repository {
     const commentPatterns: Pattern[] = [];
     for (const rule of grammar.rules) {
         if (isTerminalRule(rule) && isCommentTerminal(rule)) {
@@ -76,17 +76,17 @@ function getRepository(grammar: langium.Grammar, config: LangiumConfig): Reposit
             for (const part of parts) {
                 if (part.end) {
                     commentPatterns.push({
-                        'name': `comment.block.${config.languageId}`,
+                        'name': `comment.block.${config.id}`,
                         'begin': part.start,
                         'beginCaptures': {
                             '0': {
-                                'name': `punctuation.definition.comment.${config.languageId}`
+                                'name': `punctuation.definition.comment.${config.id}`
                             }
                         },
                         'end': part.end,
                         'endCaptures': {
                             '0': {
-                                'name': `punctuation.definition.comment.${config.languageId}`
+                                'name': `punctuation.definition.comment.${config.id}`
                             }
                         }
                     });
@@ -95,11 +95,11 @@ function getRepository(grammar: langium.Grammar, config: LangiumConfig): Reposit
                         'begin': part.start,
                         'beginCaptures': {
                             '1': {
-                                'name': `punctuation.whitespace.comment.leading.${config.languageId}`
+                                'name': `punctuation.whitespace.comment.leading.${config.id}`
                             }
                         },
                         'end': '(?=$)',
-                        'name': `comment.line.${config.languageId}`
+                        'name': `comment.line.${config.id}`
                     });
                 }
             }
@@ -114,17 +114,17 @@ function getRepository(grammar: langium.Grammar, config: LangiumConfig): Reposit
     return repository;
 }
 
-function getControlKeywords(grammar: langium.Grammar, pack: LangiumConfig): Pattern {
+function getControlKeywords(grammar: langium.Grammar, pack: LangiumLanguageConfig): Pattern {
     const regex = /[A-Za-z]/;
     const controlKeywords = collectKeywords(grammar).filter(kw => regex.test(kw));
     const keywords = controlKeywords.map(escapeRegExp);
     return {
-        'name': `keyword.control.${pack.languageId}`,
+        'name': `keyword.control.${pack.id}`,
         'match': `\\b(${keywords.join('|')})\\b`
     };
 }
 
-function getStringPatterns(grammar: langium.Grammar, pack: LangiumConfig): Pattern[] {
+function getStringPatterns(grammar: langium.Grammar, pack: LangiumLanguageConfig): Pattern[] {
     const terminals = langium.stream(grammar.rules).filter(langium.isTerminalRule);
     const stringTerminal = terminals.find(e => e.name.toLowerCase() === 'string');
     const stringPatterns: Pattern[] = [];
@@ -133,7 +133,7 @@ function getStringPatterns(grammar: langium.Grammar, pack: LangiumConfig): Patte
         for (const part of parts) {
             if (part.end) {
                 stringPatterns.push({
-                    'name': `string.quoted.${delimiterName(part.start)}.${pack.languageId}`,
+                    'name': `string.quoted.${delimiterName(part.start)}.${pack.id}`,
                     'begin': part.start,
                     'end': part.end
                 });

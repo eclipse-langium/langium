@@ -19,18 +19,6 @@ export function isAbstractElement(item: unknown): item is AbstractElement {
     return reflection.isInstance(item, AbstractElement);
 }
 
-export interface AbstractMetamodelDeclaration extends AstNode {
-    readonly $container: Grammar;
-    alias: string
-    ePackage: string
-}
-
-export const AbstractMetamodelDeclaration = 'AbstractMetamodelDeclaration';
-
-export function isAbstractMetamodelDeclaration(item: unknown): item is AbstractMetamodelDeclaration {
-    return reflection.isInstance(item, AbstractMetamodelDeclaration);
-}
-
 export interface AbstractRule extends AstNode {
     readonly $container: Grammar;
     fragment: boolean
@@ -67,7 +55,7 @@ export function isCondition(item: unknown): item is Condition {
 export interface Grammar extends AstNode {
     definesHiddenTokens: boolean
     hiddenTokens: Array<Reference<AbstractRule>>
-    metamodelDeclarations: Array<AbstractMetamodelDeclaration>
+    imports: Array<GrammarImport>
     name: string
     rules: Array<AbstractRule>
     usedGrammars: Array<Reference<Grammar>>
@@ -77,6 +65,17 @@ export const Grammar = 'Grammar';
 
 export function isGrammar(item: unknown): item is Grammar {
     return reflection.isInstance(item, Grammar);
+}
+
+export interface GrammarImport extends AstNode {
+    readonly $container: Grammar;
+    path: string
+}
+
+export const GrammarImport = 'GrammarImport';
+
+export function isGrammarImport(item: unknown): item is GrammarImport {
+    return reflection.isInstance(item, GrammarImport);
 }
 
 export interface NamedArgument extends AstNode {
@@ -278,25 +277,6 @@ export function isWildcard(item: unknown): item is Wildcard {
     return reflection.isInstance(item, Wildcard);
 }
 
-export interface GeneratedMetamodel extends AbstractMetamodelDeclaration {
-    name: string
-}
-
-export const GeneratedMetamodel = 'GeneratedMetamodel';
-
-export function isGeneratedMetamodel(item: unknown): item is GeneratedMetamodel {
-    return reflection.isInstance(item, GeneratedMetamodel);
-}
-
-export interface ReferencedMetamodel extends AbstractMetamodelDeclaration {
-}
-
-export const ReferencedMetamodel = 'ReferencedMetamodel';
-
-export function isReferencedMetamodel(item: unknown): item is ReferencedMetamodel {
-    return reflection.isInstance(item, ReferencedMetamodel);
-}
-
 export interface ParserRule extends AbstractRule {
     alternatives: AbstractElement
     definesHiddenTokens: boolean
@@ -375,14 +355,14 @@ export function isParameterReference(item: unknown): item is ParameterReference 
     return reflection.isInstance(item, ParameterReference);
 }
 
-export type LangiumGrammarAstType = 'AbstractElement' | 'AbstractMetamodelDeclaration' | 'AbstractRule' | 'Annotation' | 'Condition' | 'Grammar' | 'NamedArgument' | 'Parameter' | 'Action' | 'Alternatives' | 'Assignment' | 'CharacterRange' | 'CrossReference' | 'Group' | 'Keyword' | 'NegatedToken' | 'RegexToken' | 'RuleCall' | 'TerminalAlternatives' | 'TerminalGroup' | 'TerminalRuleCall' | 'UnorderedGroup' | 'UntilToken' | 'Wildcard' | 'GeneratedMetamodel' | 'ReferencedMetamodel' | 'ParserRule' | 'TerminalRule' | 'Conjunction' | 'Disjunction' | 'LiteralCondition' | 'Negation' | 'ParameterReference';
+export type LangiumGrammarAstType = 'AbstractElement' | 'AbstractRule' | 'Annotation' | 'Condition' | 'Grammar' | 'GrammarImport' | 'NamedArgument' | 'Parameter' | 'Action' | 'Alternatives' | 'Assignment' | 'CharacterRange' | 'CrossReference' | 'Group' | 'Keyword' | 'NegatedToken' | 'RegexToken' | 'RuleCall' | 'TerminalAlternatives' | 'TerminalGroup' | 'TerminalRuleCall' | 'UnorderedGroup' | 'UntilToken' | 'Wildcard' | 'ParserRule' | 'TerminalRule' | 'Conjunction' | 'Disjunction' | 'LiteralCondition' | 'Negation' | 'ParameterReference';
 
 export type LangiumGrammarAstReference = 'Grammar:hiddenTokens' | 'Grammar:usedGrammars' | 'NamedArgument:parameter' | 'CrossReference:type' | 'RuleCall:rule' | 'TerminalRuleCall:rule' | 'ParserRule:hiddenTokens' | 'ParameterReference:parameter';
 
 export class LangiumGrammarAstReflection implements AstReflection {
 
     getAllTypes(): string[] {
-        return ['AbstractElement', 'AbstractMetamodelDeclaration', 'AbstractRule', 'Annotation', 'Condition', 'Grammar', 'NamedArgument', 'Parameter', 'Action', 'Alternatives', 'Assignment', 'CharacterRange', 'CrossReference', 'Group', 'Keyword', 'NegatedToken', 'RegexToken', 'RuleCall', 'TerminalAlternatives', 'TerminalGroup', 'TerminalRuleCall', 'UnorderedGroup', 'UntilToken', 'Wildcard', 'GeneratedMetamodel', 'ReferencedMetamodel', 'ParserRule', 'TerminalRule', 'Conjunction', 'Disjunction', 'LiteralCondition', 'Negation', 'ParameterReference'];
+        return ['AbstractElement', 'AbstractRule', 'Annotation', 'Condition', 'Grammar', 'GrammarImport', 'NamedArgument', 'Parameter', 'Action', 'Alternatives', 'Assignment', 'CharacterRange', 'CrossReference', 'Group', 'Keyword', 'NegatedToken', 'RegexToken', 'RuleCall', 'TerminalAlternatives', 'TerminalGroup', 'TerminalRuleCall', 'UnorderedGroup', 'UntilToken', 'Wildcard', 'ParserRule', 'TerminalRule', 'Conjunction', 'Disjunction', 'LiteralCondition', 'Negation', 'ParameterReference'];
     }
 
     isInstance(node: unknown, type: string): boolean {
@@ -411,10 +391,6 @@ export class LangiumGrammarAstReflection implements AstReflection {
             case UntilToken:
             case Wildcard: {
                 return this.isSubtype(AbstractElement, supertype);
-            }
-            case GeneratedMetamodel:
-            case ReferencedMetamodel: {
-                return this.isSubtype(AbstractMetamodelDeclaration, supertype);
             }
             case ParserRule:
             case TerminalRule: {

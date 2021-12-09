@@ -20,7 +20,8 @@ Model: value=<|>Ent<|>ity;
 <|Ent<|>ity|>: name=ID;
 `.trim();
 
-const gotoDefinition = expectGoToDefinition(createLangiumGrammarServices(), expectFunction);
+const grammarServices = createLangiumGrammarServices().ServiceRegistry.all[0];
+const gotoDefinition = expectGoToDefinition(grammarServices, expectFunction);
 
 describe('GoToResolver', () => {
 

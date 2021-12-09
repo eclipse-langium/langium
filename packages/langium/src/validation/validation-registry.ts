@@ -40,7 +40,7 @@ export class ValidationRegistry {
     private readonly reflection: AstReflection;
 
     constructor(services: LangiumServices) {
-        this.reflection = services.AstReflection;
+        this.reflection = services.shared.AstReflection;
     }
 
     register(checksRecord: { [type: string]: ValidationCheck | ValidationCheck[] | undefined }, thisObj: ThisParameterType<unknown> = this): void {

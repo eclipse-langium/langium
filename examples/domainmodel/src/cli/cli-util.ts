@@ -22,8 +22,8 @@ export async function extractDocument<T extends AstNode>(fileName: string, exten
         process.exit(1);
     }
 
-    const document = services.documents.LangiumDocuments.getOrCreateDocument(URI.file(path.resolve(fileName)));
-    const buildResult = await services.documents.DocumentBuilder.build(document);
+    const document = services.shared.workspace.LangiumDocuments.getOrCreateDocument(URI.file(path.resolve(fileName)));
+    const buildResult = await services.shared.workspace.DocumentBuilder.build(document);
 
     const validationErrors = buildResult.diagnostics.filter(e => e.severity === 1);
     if (validationErrors.length > 0) {
@@ -52,7 +52,7 @@ export async function setRootFolder(fileName: string, services: LangiumServices,
         name: path.basename(root),
         uri: path.resolve(root)
     });
-    await services.index.IndexManager.initializeWorkspace(folders);
+    await services.shared.workspace.IndexManager.initializeWorkspace(folders);
 }
 
 interface FilePathData {

@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { documentFromText, PrecomputedScopes } from '../documents/document';
+import { documentFromText, LangiumDocuments, PrecomputedScopes } from '../documents/document';
 import * as ast from '../grammar/generated/ast';
 import { CompositeCstNodeImpl } from '../parser/cst-node-builder';
 import { LangiumServices } from '../services';
@@ -13,6 +13,7 @@ import { AstNode, AstNodeDescription, CstNode } from '../syntax-tree';
 import { getContainerOfType, getDocument, Mutable, streamAllContents } from '../utils/ast-util';
 import { createLangiumGrammarServices } from './langium-grammar-module';
 import { escapeRegExp } from '../utils/regex-util';
+import { URI, Utils } from 'vscode-uri';
 
 type FeatureValue = {
     feature: ast.AbstractElement;
@@ -324,8 +325,51 @@ export function getEntryRule(grammar: ast.Grammar): ast.ParserRule | undefined {
     return grammar.rules.find(e => ast.isParserRule(e) && e.entry) as ast.ParserRule;
 }
 
+export function resolveImport(documents: LangiumDocuments, imp: ast.GrammarImport): ast.Grammar | undefined {
+    if (imp.path === undefined || imp.path.length === 0) {
+        return undefined;
+    }
+    const uri = Utils.dirname(getDocument(imp).uri);
+    let grammarPath = imp.path;
+    if (!grammarPath.endsWith('.langium')) {
+        grammarPath += '.langium';
+    }
+    const resolvedUri = Utils.resolvePath(uri, grammarPath);
+    try {
+        const resolvedDocument = documents.getOrCreateDocument(resolvedUri);
+        const node = resolvedDocument.parseResult.value;
+        if (ast.isGrammar(node)) {
+            return node;
+        }
+    } catch {
+        // NOOP
+    }
+    return undefined;
+}
+
+export function resolveTransitiveImports(documents: LangiumDocuments, grammar: ast.Grammar): ast.Grammar[] {
+    return resolveTransitiveImportsInternal(documents, grammar);
+}
+
+function resolveTransitiveImportsInternal(documents: LangiumDocuments, grammar: ast.Grammar, initialGrammar = grammar, visited: Set<URI> = new Set(), grammars: Set<ast.Grammar> = new Set()): ast.Grammar[] {
+    const doc = getDocument(grammar);
+    if (initialGrammar !== grammar) {
+        grammars.add(grammar);
+    }
+    if (!visited.has(doc.uri)) {
+        visited.add(doc.uri);
+        for (const imp of grammar.imports) {
+            const importedGrammar = resolveImport(documents, imp);
+            if (importedGrammar) {
+                resolveTransitiveImportsInternal(documents, importedGrammar, initialGrammar, visited, grammars);
+            }
+        }
+    }
+    return Array.from(grammars);
+}
+
 export function loadGrammar(json: string): ast.Grammar {
-    const services = createLangiumGrammarServices();
+    const services = createLangiumGrammarServices().ServiceRegistry.all[0];
     const astNode = services.serializer.JsonSerializer.deserialize(json);
     if (!ast.isGrammar(astNode)) {
         throw new Error('Could not load grammar from specified json input.');

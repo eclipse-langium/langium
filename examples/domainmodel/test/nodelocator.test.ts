@@ -9,7 +9,7 @@ import { parseDocument } from 'langium/lib/test';
 import { createDomainModelServices } from '../src/language-server/domain-model-module';
 import { Domainmodel } from '../src/language-server/generated/ast';
 
-const services = createDomainModelServices();
+const services = createDomainModelServices().ServiceRegistry.all[0];
 
 const datatypeFile = `
 datatype Int

@@ -4,13 +4,14 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { Module, inject } from '../dependency-injection';
+import { Module } from '../dependency-injection';
 import { LangiumGrammarValidationRegistry, LangiumGrammarValidator } from './langium-grammar-validator';
-import { PartialLangiumServices, LangiumServices } from '../services';
-import { DefaultModuleContext, createDefaultModule } from '../default-module';
-import { LangiumGrammarGeneratedModule } from './generated/module';
+import { PartialLangiumServices, LangiumServices, LangiumSharedServices } from '../services';
+import { SharedModuleContext } from '../default-module';
+import { LangiumGrammarGeneratedModule, LangiumGrammarGeneratedSharedModule } from './generated/module';
 import { LangiumGrammarFoldingRangeProvider } from './lsp/langium-grammar-folding-range-provider';
 import { LangiumGrammarCodeActionProvider } from './langium-grammar-code-actions';
+import { createSharedModule, injectService } from '..';
 
 export type LangiumGrammarAddedServices = {
     validation: {
@@ -31,10 +32,9 @@ export const LangiumGrammarModule: Module<LangiumGrammarServices, PartialLangium
     }
 };
 
-export function createLangiumGrammarServices(context?: DefaultModuleContext): LangiumGrammarServices {
-    return inject(
-        createDefaultModule(context),
-        LangiumGrammarGeneratedModule,
-        LangiumGrammarModule
-    );
+export function createLangiumGrammarServices(context?: SharedModuleContext): LangiumSharedServices {
+    return injectService(createSharedModule(context), LangiumGrammarGeneratedSharedModule, {
+        generated: LangiumGrammarGeneratedModule,
+        module: LangiumGrammarModule
+    });
 }

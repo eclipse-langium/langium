@@ -4,14 +4,17 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import path from 'path';
 import { DiagnosticTag } from 'vscode-languageserver-types';
 import { References } from '../references/references';
 import { LangiumServices } from '../services';
-import { getContainerOfType, streamAllContents } from '../utils/ast-util';
+import { getContainerOfType, getDocument, streamAllContents } from '../utils/ast-util';
 import { ValidationAcceptor, ValidationCheck, ValidationRegistry } from '../validation/validation-registry';
-import { getEntryRule, isDataTypeRule, terminalRegex } from './grammar-util';
+import { getEntryRule, isDataTypeRule, resolveImport, resolveTransitiveImports, terminalRegex } from './grammar-util';
 import { LangiumGrammarServices } from './langium-grammar-module';
 import * as ast from './generated/ast';
+import { LangiumDocument, LangiumDocuments } from '../documents/document';
+import { Utils } from 'vscode-uri';
 
 type LangiumGrammarChecks = { [type in ast.LangiumGrammarAstType]?: ValidationCheck | ValidationCheck[] }
 
@@ -36,8 +39,10 @@ export class LangiumGrammarValidationRegistry extends ValidationRegistry {
                 validator.checkEntryGrammarRule,
                 validator.checkUniqueRuleName,
                 validator.checkGrammarHiddenTokens,
-                validator.checkGrammarForUnusedRules
+                validator.checkGrammarForUnusedRules,
+                validator.checkGrammarImports
             ],
+            GrammarImport: validator.checkPackageImport,
             CharacterRange: validator.checkInvalidCharacterRange,
             RuleCall: validator.checkUsedHiddenTerminalRule,
             TerminalRuleCall: validator.checkUsedHiddenTerminalRule,
@@ -55,14 +60,18 @@ export namespace IssueCodes {
     export const UseRegexTokens = 'use-regex-tokens';
     export const EntryRuleTokenSyntax = 'entry-rule-token-syntax';
     export const CrossRefTokenSyntax = 'cross-ref-token-syntax';
+    export const MissingImport = 'missing-import';
+    export const UnnecessaryFileExtension = 'unnecessary-file-extension';
 }
 
 export class LangiumGrammarValidator {
 
     protected readonly references: References;
+    protected readonly documents: LangiumDocuments
 
     constructor(services: LangiumServices) {
         this.references = services.references.References;
+        this.documents = services.shared.workspace.LangiumDocuments;
     }
 
     checkGrammarName(grammar: ast.Grammar, accept: ValidationAcceptor): void {
@@ -151,6 +160,50 @@ export class LangiumGrammarValidator {
     checkCrossReferenceSyntax(crossRef: ast.CrossReference, accept: ValidationAcceptor): void {
         if (crossRef.deprecatedSyntax) {
             accept('error', "'|' is deprecated. Please, use ':' instead.", { node: crossRef, property: 'deprecatedSyntax', code: IssueCodes.CrossRefTokenSyntax });
+        }
+    }
+
+    checkPackageImport(imp: ast.GrammarImport, accept: ValidationAcceptor): void {
+        const resolvedGrammar = resolveImport(this.documents, imp);
+        if (resolvedGrammar === undefined) {
+            accept('error', 'Import cannot be resolved.', { node: imp, property: 'path' });
+        } else if (imp.path.endsWith('.langium')) {
+            accept('warning', 'Imports do not need file extensions.', { node: imp, property: 'path', code: IssueCodes.UnnecessaryFileExtension });
+        }
+    }
+
+    checkGrammarImports(grammar: ast.Grammar, accept: ValidationAcceptor): void {
+        // Compute transitive grammar dependencies once for each grammar
+        const importedGrammars = new Set(resolveTransitiveImports(this.documents, grammar).map(e => getDocument(e)));
+        streamAllContents(grammar).map(e => e.node).forEach(e => {
+            if (ast.isRuleCall(e) || ast.isTerminalRuleCall(e)) {
+                this.checkRuleCallImport(e, importedGrammars, accept);
+            }
+        });
+    }
+
+    private checkRuleCallImport(ruleCall: ast.RuleCall | ast.TerminalRuleCall, importedDocuments: Set<LangiumDocument>, accept: ValidationAcceptor): void {
+        const ref = ruleCall.rule.ref;
+        if (ref) {
+            const refDoc = getDocument(ref);
+            const document = getDocument(ruleCall);
+            const grammar = document.parseResult.value;
+            // Only check if the rule is sourced from another document
+            if (ast.isGrammar(grammar) && refDoc !== document && !importedDocuments.has(refDoc)) {
+                let relative = path.relative(Utils.dirname(document.uri).fsPath, refDoc.uri.fsPath);
+                if (relative.endsWith('.langium')) {
+                    relative = relative.substring(0, relative.length - '.langium'.length);
+                }
+                if (!relative.startsWith('.')) {
+                    relative = './' + relative;
+                }
+                accept('error', `Referenced rule "${ruleCall.rule.$refText}" is not imported.`, {
+                    node: ruleCall,
+                    property: 'rule',
+                    code: IssueCodes.MissingImport,
+                    data: relative
+                });
+            }
         }
     }
 

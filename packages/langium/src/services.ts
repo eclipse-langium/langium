@@ -22,10 +22,10 @@ import { FoldingRangeProvider } from './lsp/folding-range-provider';
 import { GrammarConfig } from './grammar/grammar-config';
 import { References } from './references/references';
 import { ValueConverter } from './parser/value-converter';
+import { ServiceRegistry } from './service-registry';
 
 export type LangiumGeneratedServices = {
     Grammar: Grammar
-    AstReflection: AstReflection
     LanguageMetaData: LanguageMetaData
     parser: {
         ParserConfig?: IParserConfig
@@ -37,7 +37,6 @@ export type LangiumLspServices = {
         CompletionProvider: CompletionProvider
         RuleInterpreter: RuleInterpreter
     }
-    Connection?: Connection
     DocumentHighlighter: DocumentHighlighter
     DocumentSymbolProvider: DocumentSymbolProvider
     HoverProvider: HoverProvider
@@ -48,6 +47,33 @@ export type LangiumLspServices = {
     RenameHandler: RenameHandler
 }
 
+export type LangiumGeneratedSharedServices = {
+    AstReflection: AstReflection
+}
+
+export type LangiumDefaultSharedServices = {
+    ServiceRegistry: ServiceRegistry
+    lsp: {
+        Connection?: Connection
+    }
+    workspace: {
+        DocumentBuilder: DocumentBuilder
+        LangiumDocuments: LangiumDocuments
+        LangiumDocumentFactory: LangiumDocumentFactory
+        TextDocuments: TextDocuments<TextDocument>
+        TextDocumentFactory: TextDocumentFactory
+        IndexManager: IndexManager
+    }
+}
+
+/**
+ * The shared services are a set of services that are used by every language within a Langium project.
+ *
+ * Not only do they use the same implementation of different services, they reuse the same instances.
+ * This is necessary to enable features like cross references across different languages.
+ */
+export type LangiumSharedServices = LangiumDefaultSharedServices & LangiumGeneratedSharedServices
+
 export type LangiumDefaultServices = {
     parser: {
         GrammarConfig: GrammarConfig
@@ -55,16 +81,8 @@ export type LangiumDefaultServices = {
         LangiumParser: LangiumParser
         TokenBuilder: TokenBuilder
     }
-    documents: {
-        DocumentBuilder: DocumentBuilder
-        LangiumDocuments: LangiumDocuments
-        LangiumDocumentFactory: LangiumDocumentFactory
-        TextDocuments: TextDocuments<TextDocument>
-        TextDocumentFactory: TextDocumentFactory
-    }
     lsp: LangiumLspServices
     index: {
-        IndexManager: IndexManager
         AstNodeLocator: AstNodeLocator
         AstNodeDescriptionProvider: AstNodeDescriptionProvider
         ReferenceDescriptionProvider: ReferenceDescriptionProvider
@@ -83,6 +101,7 @@ export type LangiumDefaultServices = {
         DocumentValidator: DocumentValidator
         ValidationRegistry: ValidationRegistry
     }
+    shared: LangiumSharedServices
 }
 
 export type LangiumServices = LangiumGeneratedServices & LangiumDefaultServices
@@ -90,7 +109,7 @@ export type LangiumServices = LangiumGeneratedServices & LangiumDefaultServices
 // We basically look into T to see whether its type definition contains any methods. (with T[keyof T])
 // If it does, it's one of our services and therefore should not be partialized.
 // eslint-disable-next-line @typescript-eslint/ban-types
-type DeepPartial<T> = T[keyof T] extends Function ? T : {
+export type DeepPartial<T> = T[keyof T] extends Function ? T : {
     [P in keyof T]?: DeepPartial<T[P]>;
 }
 

@@ -8,7 +8,7 @@
 			"name": "Bootstrap",
 			"request": "launch",
 			"runtimeArgs": [
-				"../langium-cli/lib/langium",
+				"${workspaceFolder}/packages/langium-cli/lib/langium",
 				"generate"
 			],
 			"runtimeExecutable": "node",

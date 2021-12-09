@@ -8,7 +8,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
-import { inject, Module } from '../src/dependency-injection';
+import { inject, Module } from '../src';
 
 describe('A dependency type', () => {
 

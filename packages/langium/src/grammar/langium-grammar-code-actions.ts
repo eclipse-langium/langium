@@ -6,7 +6,7 @@
 
 import { CodeActionKind, Diagnostic } from 'vscode-languageserver';
 import { CodeActionParams } from 'vscode-languageserver-protocol';
-import { Command, CodeAction, TextEdit } from 'vscode-languageserver-types';
+import { Command, CodeAction, TextEdit, Position } from 'vscode-languageserver-types';
 import { LangiumDocument } from '../documents/document';
 import { CodeActionProvider } from '../lsp/code-action';
 import { MaybePromise } from '../utils/promise-util';
@@ -15,6 +15,7 @@ import { findLeafNodeAtOffset, getContainerOfType } from '../utils/ast-util';
 import { escapeRegExp } from '../utils/regex-util';
 import { findNodeForFeature } from './grammar-util';
 import * as ast from './generated/ast';
+import { EOL } from 'os';
 
 export class LangiumGrammarCodeActionProvider implements CodeActionProvider {
 
@@ -42,9 +43,72 @@ export class LangiumGrammarCodeActionProvider implements CodeActionProvider {
                 return this.addEntryKeyword(diagnostic, document);
             case IssueCodes.CrossRefTokenSyntax:
                 return this.fixCrossRefSyntax(diagnostic, document);
+            case IssueCodes.MissingImport:
+                return this.fixMissingImport(diagnostic, document);
+            case IssueCodes.UnnecessaryFileExtension:
+                return this.fixUnnecessaryFileExtension(diagnostic, document);
             default:
                 return undefined;
         }
+    }
+
+    private fixUnnecessaryFileExtension(diagnostic: Diagnostic, document: LangiumDocument): CodeAction {
+        const end = {...diagnostic.range.end};
+        end.character -= 1;
+        const start = {...end};
+        start.character -= '.langium'.length;
+        return {
+            title: 'Remove file extension',
+            kind: CodeActionKind.QuickFix,
+            diagnostics: [diagnostic],
+            isPreferred: true,
+            edit: {
+                changes: {
+                    [document.textDocument.uri]: [{
+                        range: {
+                            start,
+                            end
+                        },
+                        newText: ''
+                    }]
+                }
+            }
+        };
+    }
+
+    private fixMissingImport(diagnostic: Diagnostic, document: LangiumDocument): CodeAction | undefined {
+        let position: Position;
+        const grammar = document.parseResult.value as ast.Grammar;
+        const imports = grammar.imports;
+        const rules = grammar.rules;
+        if (imports.length > 0) { // Find first import
+            position = imports[0].$cstNode!.range.start;
+        } else if (rules.length > 0) { // Find first rule
+            position = rules[0].$cstNode!.range.start;
+        } else {
+            return undefined;
+        }
+        const path = diagnostic.data;
+        if (typeof path === 'string') {
+            return {
+                title: `Add import to '${path}'`,
+                kind: CodeActionKind.QuickFix,
+                diagnostics: [diagnostic],
+                isPreferred: true,
+                edit: {
+                    changes: {
+                        [document.textDocument.uri]: [{
+                            range: {
+                                start: position,
+                                end: position
+                            },
+                            newText: `import '${path}';${EOL}`
+                        }]
+                    }
+                }
+            };
+        }
+        return undefined;
     }
 
     private makeUpperCase(diagnostic: Diagnostic, document: LangiumDocument): CodeAction {

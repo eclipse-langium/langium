@@ -5,15 +5,13 @@
  ******************************************************************************/
 
 import { CancellationToken, Connection, Diagnostic } from 'vscode-languageserver';
-import { DocumentValidator } from '../validation/document-validator';
-import { ScopeComputation } from '../references/scope';
-import { LangiumServices } from '../services';
+import { LangiumSharedServices } from '../services';
 import { DocumentState, LangiumDocument, LangiumDocuments } from './document';
 import { IndexManager } from '../index/index-manager';
 import { URI } from 'vscode-uri';
 import { interruptAndCheck, MaybePromise } from '../utils/promise-util';
-import { Linker } from '../references/linker';
 import { AstNode } from '../syntax-tree';
+import { ServiceRegistry } from '../service-registry';
 
 export interface DocumentBuilder {
     /**
@@ -46,19 +44,15 @@ export interface BuildResult<T extends AstNode = AstNode> {
 
 export class DefaultDocumentBuilder implements DocumentBuilder {
     protected readonly connection?: Connection;
-    protected readonly scopeComputation: ScopeComputation;
-    protected readonly documentValidator: DocumentValidator;
     protected readonly langiumDocuments: LangiumDocuments;
     protected readonly indexManager: IndexManager;
-    protected readonly linker: Linker;
+    protected readonly serviceRegistry: ServiceRegistry;
 
-    constructor(services: LangiumServices) {
+    constructor(services: LangiumSharedServices) {
         this.connection = services.lsp.Connection;
-        this.linker = services.references.Linker;
-        this.scopeComputation = services.references.ScopeComputation;
-        this.documentValidator = services.validation.DocumentValidator;
-        this.langiumDocuments = services.documents.LangiumDocuments;
-        this.indexManager = services.index.IndexManager;
+        this.langiumDocuments = services.workspace.LangiumDocuments;
+        this.indexManager = services.workspace.IndexManager;
+        this.serviceRegistry = services.ServiceRegistry;
     }
 
     async build(document: LangiumDocument, cancelToken = CancellationToken.None): Promise<BuildResult> {
@@ -71,7 +65,7 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
 
     protected async validate(document: LangiumDocument, cancelToken = CancellationToken.None, forceDiagnostics = false): Promise<Diagnostic[]> {
         let diagnostics: Diagnostic[] = [];
-        const validator = this.documentValidator;
+        const validator = this.serviceRegistry.getService(document.uri).validation.DocumentValidator;
         if (this.connection || forceDiagnostics) {
             diagnostics = await validator.validateDocument(document, cancelToken);
             if (this.connection) {
@@ -102,7 +96,8 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
         const allUris = changed.map(e => e.uri).concat(deleted);
         const affected = this.indexManager.getAffectedDocuments(allUris).toArray();
         affected.forEach(e => {
-            this.linker.unlink(e);
+            const linker = this.serviceRegistry.getService(e.uri).references.Linker;
+            linker.unlink(e);
             e.state = DocumentState.Indexed;
         });
         const docSet = new Set([
@@ -117,7 +112,10 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
     protected async buildDocuments(documents: LangiumDocument[], cancelToken: CancellationToken): Promise<void> {
         await this.indexManager.update(documents.filter(e => e.state < DocumentState.Indexed), cancelToken);
         await this.runCancelable(documents, DocumentState.Processed, cancelToken, doc => this.process(doc, cancelToken));
-        await this.runCancelable(documents, DocumentState.Linked, cancelToken, doc => this.linker.link(doc, cancelToken));
+        await this.runCancelable(documents, DocumentState.Linked, cancelToken, doc => {
+            const linker = this.serviceRegistry.getService(doc.uri).references.Linker;
+            linker.link(doc, cancelToken);
+        });
         await this.runCancelable(documents, DocumentState.Validated, cancelToken, doc => this.validate(doc, cancelToken));
     }
 
@@ -132,7 +130,8 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
      * Process the document by running precomputations. The default implementation precomputes the scope.
      */
     protected async process(document: LangiumDocument, cancelToken: CancellationToken): Promise<void> {
-        document.precomputedScopes = await this.scopeComputation.computeScope(document, cancelToken);
+        const scopeComputation = this.serviceRegistry.getService(document.uri).references.ScopeComputation;
+        document.precomputedScopes = await scopeComputation.computeScope(document, cancelToken);
         document.state = DocumentState.Processed;
     }
 }

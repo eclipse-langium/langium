@@ -17,7 +17,8 @@ const text = `
   Y: value=<|>X;
   `;
 
-const hover = expectHover(createLangiumGrammarServices(), expectFunction);
+const grammarServices = createLangiumGrammarServices().ServiceRegistry.all[0];
+const hover = expectHover(grammarServices, expectFunction);
 
 describe('Hover', () => {
 

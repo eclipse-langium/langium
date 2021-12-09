@@ -9,13 +9,13 @@ import path from 'path';
 import { URI, Utils } from 'vscode-uri';
 import { CancellationToken, WorkspaceFolder } from 'vscode-languageserver';
 import { DocumentState, LangiumDocument, LangiumDocuments } from '../documents/document';
-import { LanguageMetaData } from '../grammar/language-meta-data';
-import { LangiumServices } from '../services';
-import { AstNodeDescriptionProvider, ReferenceDescription, ReferenceDescriptionProvider } from './ast-descriptions';
-import { AstNode, AstNodeDescription, AstReflection } from '../syntax-tree';
+import { ReferenceDescription } from './ast-descriptions';
+import { AstNode, AstNodeDescription } from '../syntax-tree';
 import { stream, Stream } from '../utils/stream';
 import { getDocument } from '../utils/ast-util';
 import { interruptAndCheck } from '../utils/promise-util';
+import { ServiceRegistry } from '../service-registry';
+import { AstReflection, LangiumSharedServices } from '..';
 
 export interface IndexManager {
     /**
@@ -70,10 +70,9 @@ export interface IndexManager {
 
 export class DefaultIndexManager implements IndexManager {
 
+    protected readonly serviceRegistry: ServiceRegistry;
+
     protected readonly langiumDocuments: () => LangiumDocuments;
-    protected readonly astNodeDescriptionProvider: () => AstNodeDescriptionProvider;
-    protected readonly referenceDescriptionProvider: () => ReferenceDescriptionProvider;
-    protected readonly languageMetaData: LanguageMetaData;
     protected readonly astReflection: AstReflection;
 
     simpleIndex: Map<string, AstNodeDescription[]> = new Map<string, AstNodeDescription[]>();
@@ -81,12 +80,10 @@ export class DefaultIndexManager implements IndexManager {
 
     protected readonly globalScopeCache = new Map<string, AstNodeDescription[]>();
 
-    constructor(services: LangiumServices) {
+    constructor(services: LangiumSharedServices) {
+        this.serviceRegistry = services.ServiceRegistry;
         this.astReflection = services.AstReflection;
-        this.languageMetaData = services.LanguageMetaData;
-        this.langiumDocuments = () => services.documents.LangiumDocuments;
-        this.astNodeDescriptionProvider = () => services.index.AstNodeDescriptionProvider;
-        this.referenceDescriptionProvider = () => services.index.ReferenceDescriptionProvider;
+        this.langiumDocuments = () => services.workspace.LangiumDocuments;
     }
 
     findAllReferences(targetNode: AstNode, astNodePath: string): Stream<ReferenceDescription> {
@@ -161,8 +158,9 @@ export class DefaultIndexManager implements IndexManager {
 
     async initializeWorkspace(folders: WorkspaceFolder[]): Promise<void> {
         const documents: LangiumDocument[] = [];
-        const collector = (document: LangiumDocument) => {documents.push(document);};
-        await Promise.all(folders.map(async folder => this.traverseFolder(URI.parse(folder.uri), this.languageMetaData.fileExtensions, collector)));
+        const collector = (document: LangiumDocument) => documents.push(document);
+        const allFileExtensions = this.serviceRegistry.all.flatMap(e => e.LanguageMetaData.fileExtensions);
+        await Promise.all(folders.map(async folder => this.traverseFolder(URI.parse(folder.uri), allFileExtensions, collector)));
         await this.processDocuments(documents);
     }
 
@@ -196,7 +194,8 @@ export class DefaultIndexManager implements IndexManager {
         this.globalScopeCache.clear();
         // first: build exported object data
         for (const document of documents) {
-            const indexData: AstNodeDescription[] = await this.astNodeDescriptionProvider().createDescriptions(document, cancelToken);
+            const services = this.serviceRegistry.getService(document.uri);
+            const indexData: AstNodeDescription[] = await services.index.AstNodeDescriptionProvider.createDescriptions(document, cancelToken);
             for (const data of indexData) {
                 data.node = undefined; // clear reference to the AST Node
             }
@@ -205,7 +204,8 @@ export class DefaultIndexManager implements IndexManager {
         }
         // second: create reference descriptions
         for (const document of documents) {
-            this.referenceIndex.set(document.textDocument.uri, await this.referenceDescriptionProvider().createDescriptions(document, cancelToken));
+            const services = this.serviceRegistry.getService(document.uri);
+            this.referenceIndex.set(document.textDocument.uri, await services.index.ReferenceDescriptionProvider.createDescriptions(document, cancelToken));
             await interruptAndCheck(cancelToken);
             document.state = DocumentState.Indexed;
         }

@@ -6,10 +6,11 @@
 
 import _ from 'lodash';
 import * as langium from 'langium';
-import { getRuleType, getTypeName, isDataTypeRule, isParserRule } from 'langium';
+import { getDocument, getRuleType, getTypeName, isDataTypeRule, isParserRule, LangiumDocuments, resolveImport } from 'langium';
 import { CompositeGeneratorNode, IndentNode, NL } from 'langium';
 import { processGeneratorNode } from 'langium';
 import { Cardinality, isOptional } from 'langium';
+import { URI } from 'vscode-uri';
 
 type TypeAlternative = {
     name: string,
@@ -129,10 +130,10 @@ class TypeTree {
     }
 }
 
-export function collectAst(grammar: langium.Grammar): Interface[] {
+export function collectAst(documents: LangiumDocuments, grammars: langium.Grammar[]): Interface[] {
     const state = createState();
 
-    const parserRules = grammar.rules.filter(e => langium.isParserRule(e) && !e.fragment && !isDataTypeRule(e)).map(e => e as langium.ParserRule);
+    const parserRules = collectAllParserRules(documents, grammars);
 
     const allTypes: TypeAlternative[] = [];
     for (const rule of parserRules) {
@@ -144,6 +145,27 @@ export function collectAst(grammar: langium.Grammar): Interface[] {
     }
 
     return calculateAst(allTypes);
+}
+
+function collectAllParserRules(documents: LangiumDocuments, grammars: langium.Grammar[], rules: Set<langium.ParserRule> = new Set(), visited: Set<URI> = new Set()): langium.ParserRule[] {
+
+    for (const grammar of grammars) {
+        const doc = getDocument(grammar);
+        if (visited.has(doc.uri)) {
+            continue;
+        }
+        visited.add(doc.uri);
+        for (const rule of grammar.rules) {
+            if (langium.isParserRule(rule) && !rule.fragment && !isDataTypeRule(rule)) {
+                rules.add(rule);
+            }
+        }
+
+        const importedGrammars = grammar.imports.map(e => resolveImport(documents, e)!);
+        collectAllParserRules(documents, importedGrammars, rules, visited);
+    }
+
+    return Array.from(rules);
 }
 
 function createState(type?: TypeAlternative): CollectorState {

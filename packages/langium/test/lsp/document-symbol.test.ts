@@ -15,7 +15,8 @@ const text = `
  terminal hiddenTerminal: /x/;
  `.trim();
 
-const symbols = expectSymbols(createLangiumGrammarServices(), expectFunction);
+const grammarServices = createLangiumGrammarServices().ServiceRegistry.all[0];
+const symbols = expectSymbols(grammarServices, expectFunction);
 
 describe('Document symbols', () => {
 

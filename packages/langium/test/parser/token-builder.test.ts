@@ -8,8 +8,8 @@ import { TokenType } from '@chevrotain/types';
 import { createLangiumGrammarServices, Grammar } from '../../src';
 import { parseHelper } from '../../src/test';
 
-const services = createLangiumGrammarServices();
-const tokenBuilder = services.parser.TokenBuilder;
+const grammarServices = createLangiumGrammarServices().ServiceRegistry.all[0];
+const tokenBuilder = grammarServices.parser.TokenBuilder;
 
 let aToken: TokenType; // 'A' keyword
 let abToken: TokenType; // 'AB' keyword
@@ -24,7 +24,7 @@ describe('tokenBuilder#longerAlts', () => {
         Main: {Main} 'A' 'AB' 'ABC';
         terminal AB: /ABD?/;
         `;
-        const grammar = (await parseHelper<Grammar>(services)(text)).document.parseResult.value;
+        const grammar = (await parseHelper<Grammar>(grammarServices)(text)).document.parseResult.value;
         const tokens = tokenBuilder.buildTokens(grammar);
         aToken = tokens[2];
         abToken = tokens[1];

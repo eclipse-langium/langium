@@ -6,7 +6,7 @@
 
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { Connection, TextDocuments } from 'vscode-languageserver';
-import { Module } from './dependency-injection';
+import { inject, Module } from './dependency-injection';
 import { DefaultLangiumDocumentFactory, DefaultLangiumDocuments, DefaultTextDocumentFactory } from './documents/document';
 import { DefaultDocumentBuilder } from './documents/document-builder';
 import { createGrammarConfig } from './grammar/grammar-config';
@@ -30,15 +30,61 @@ import { DefaultNameProvider } from './references/naming';
 import { DefaultReferences } from './references/references';
 import { DefaultScopeComputation, DefaultScopeProvider } from './references/scope';
 import { DefaultJsonSerializer } from './serializer/json-serializer';
-import { LangiumDefaultServices, LangiumServices } from './services';
+import { LangiumDefaultServices, LangiumDefaultSharedServices, LangiumGeneratedServices, LangiumGeneratedSharedServices, LangiumServices, LangiumSharedServices } from './services';
 import { DefaultDocumentValidator } from './validation/document-validator';
 import { ValidationRegistry } from './validation/validation-registry';
+import { createSingleServiceRegistry, ExtensionServiceRegistry } from './service-registry';
 
-export type DefaultModuleContext = {
+export interface SharedModuleContext {
     connection?: Connection
 }
 
-export function createDefaultModule(context: DefaultModuleContext = {}): Module<LangiumServices, LangiumDefaultServices> {
+export interface CombinedServices {
+    generated: Module<LangiumServices, LangiumGeneratedServices>
+    module: Module<LangiumServices, unknown>
+}
+
+export function injectService(
+    sharedModule: Module<LangiumSharedServices, LangiumDefaultSharedServices>,
+    generatedSharedModule: Module<LangiumSharedServices, LangiumGeneratedSharedServices>,
+    ...combinedServices: CombinedServices[]): LangiumSharedServices {
+    const shared = inject(sharedModule, generatedSharedModule);
+    if (combinedServices.length === 1) {
+        const module = combinedServices[0];
+        const single = inject(createDefaultModule(shared), module.generated, module.module);
+        shared.ServiceRegistry = createSingleServiceRegistry(single);
+    } else if (combinedServices.length > 1) {
+        const registry = new ExtensionServiceRegistry();
+        shared.ServiceRegistry = registry;
+        const defaultModule = createDefaultModule(shared);
+        for (const combinedService of combinedServices) {
+            const service = inject(defaultModule, combinedService.generated, combinedService.module);
+            for (const fileExtension of service.LanguageMetaData.fileExtensions) {
+                registry.add(fileExtension, service);
+            }
+        }
+    }
+    return shared;
+}
+
+export function createSharedModule(context: SharedModuleContext = {}): Module<LangiumSharedServices, LangiumDefaultSharedServices> {
+    return {
+        ServiceRegistry: () => undefined!,
+        lsp: {
+            Connection: () => context.connection
+        },
+        workspace: {
+            LangiumDocuments: (injector) => new DefaultLangiumDocuments(injector),
+            LangiumDocumentFactory: (injector) => new DefaultLangiumDocumentFactory(injector),
+            DocumentBuilder: (injector) => new DefaultDocumentBuilder(injector),
+            TextDocuments: () => new TextDocuments(TextDocument),
+            TextDocumentFactory: (injector) => new DefaultTextDocumentFactory(injector),
+            IndexManager: (injector) => new DefaultIndexManager(injector)
+        }
+    };
+}
+
+export function createDefaultModule(shared: LangiumSharedServices): Module<LangiumServices, LangiumDefaultServices> {
     return {
         parser: {
             GrammarConfig: (injector) => createGrammarConfig(injector),
@@ -46,19 +92,11 @@ export function createDefaultModule(context: DefaultModuleContext = {}): Module<
             ValueConverter: () => new DefaultValueConverter(),
             TokenBuilder: () => new DefaultTokenBuilder()
         },
-        documents: {
-            LangiumDocuments: (injector) => new DefaultLangiumDocuments(injector),
-            LangiumDocumentFactory: (injector) => new DefaultLangiumDocumentFactory(injector),
-            DocumentBuilder: (injector) => new DefaultDocumentBuilder(injector),
-            TextDocuments: () => new TextDocuments(TextDocument),
-            TextDocumentFactory: (injector) => new DefaultTextDocumentFactory(injector),
-        },
         lsp: {
             completion: {
                 CompletionProvider: (injector) => new DefaultCompletionProvider(injector),
                 RuleInterpreter: () => new RuleInterpreter()
             },
-            Connection: () => context.connection,
             DocumentSymbolProvider: (injector) => new DefaultDocumentSymbolProvider(injector),
             HoverProvider: (injector) => new MultilineCommentHoverProvider(injector),
             FoldingRangeProvider: (injector) => new DefaultFoldingRangeProvider(injector),
@@ -68,7 +106,6 @@ export function createDefaultModule(context: DefaultModuleContext = {}): Module<
             RenameHandler: (injector) => new DefaultRenameHandler(injector)
         },
         index: {
-            IndexManager: (injector) => new DefaultIndexManager(injector),
             AstNodeLocator: () => new DefaultAstNodeLocator(),
             AstNodeDescriptionProvider: (injector) => new DefaultAstNodeDescriptionProvider(injector),
             ReferenceDescriptionProvider: (injector) => new DefaultReferenceDescriptionProvider(injector)
@@ -86,6 +123,7 @@ export function createDefaultModule(context: DefaultModuleContext = {}): Module<
         validation: {
             DocumentValidator: (injector) => new DefaultDocumentValidator(injector),
             ValidationRegistry: (injector) => new ValidationRegistry(injector)
-        }
+        },
+        shared: () => shared
     };
 }
