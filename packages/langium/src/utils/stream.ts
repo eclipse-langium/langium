@@ -19,7 +19,7 @@ export interface Stream<T> extends Iterable<T> {
     /**
      * Returns an iterator for this stream. This is the same as calling the `Symbol.iterator` function property.
      */
-    iterator(): Iterator<T, undefined>;
+    iterator(): IterableIterator<T>;
 
     /**
      * Determines whether this stream contains no elements.
@@ -195,7 +195,7 @@ export interface Stream<T> extends Iterable<T> {
      *
      * @param depth The maximum recursion depth. Defaults to 1.
      */
-    flat(depth?: number): Stream<T>;
+    flat<D extends number = 1>(depth?: D): FlatStream<T, D>;
 
     /**
      * Returns the first element in the stream, or `undefined` if the stream is empty.
@@ -229,6 +229,13 @@ export interface Stream<T> extends Iterable<T> {
 
 }
 
+export type FlatStream<T, Depth extends number> = {
+    'done': Stream<T>,
+    'recur': T extends Array<infer InnerArr>
+        ? FlatStream<InnerArr, [-1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20][Depth]>
+        : Stream<T>
+}[Depth extends 0 ? 'done' : 'recur'];
+
 /**
  * The default implementation of `Stream` works with two input functions:
  *  - The first function creates the initial state of an iteration.
@@ -243,7 +250,7 @@ export class StreamImpl<S, T> implements Stream<T> {
         this.nextFn = nextFn;
     }
 
-    iterator(): Iterator<T, undefined> {
+    iterator(): IterableIterator<T> {
         const iterator = {
             state: this.startFn(),
             next: () => this.nextFn(iterator.state),
@@ -522,11 +529,14 @@ export class StreamImpl<S, T> implements Stream<T> {
         );
     }
 
-    flat(depth = 1): Stream<T> {
-        if (depth <= 0) {
-            return this;
+    flat<D extends number = 1>(depth?: D): FlatStream<T, D> {
+        if (depth === undefined) {
+            depth = 1 as D;
         }
-        const stream = depth > 1 ? this.flat(depth - 1) as StreamImpl<S, T> : this;
+        if (depth <= 0) {
+            return this as unknown as FlatStream<T, D>;
+        }
+        const stream = depth > 1 ? this.flat(depth - 1) as StreamImpl<S, unknown> : this;
         type FlatMapState = { this: S, iterator?: Iterator<T, undefined> }
         return new StreamImpl<FlatMapState, T>(
             () => ({ this: stream.startFn() }),
@@ -551,7 +561,7 @@ export class StreamImpl<S, T> implements Stream<T> {
                 } while (state.iterator);
                 return DONE_RESULT;
             }
-        );
+        ) as unknown as FlatStream<T, D>;
     }
 
     head(): T | undefined {
@@ -643,7 +653,7 @@ export function stream<T>(...collections: Array<Iterable<T> | ArrayLike<T>>): St
     if (collections.length === 1) {
         const collection = collections[0];
         if (collection instanceof StreamImpl) {
-            return collection;
+            return collection as Stream<T>;
         }
         if (isIterable(collection)) {
             return new StreamImpl<Iterator<T, undefined>, T>(
@@ -703,7 +713,7 @@ export function stream<T>(...collections: Array<Iterable<T> | ArrayLike<T>>): St
 /**
  * A tree iterator adds the ability to prune the current iteration.
  */
-export interface TreeIterator<T> extends Iterator<T> {
+export interface TreeIterator<T> extends IterableIterator<T> {
     /**
      * Skip the whole subtree below the last returned element. The iteration continues as if that
      * element had no children.
