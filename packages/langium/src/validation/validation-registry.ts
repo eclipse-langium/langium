@@ -7,6 +7,7 @@
 import { CancellationToken, CodeDescription, DiagnosticRelatedInformation, DiagnosticTag, integer, Range } from 'vscode-languageserver';
 import { LangiumServices } from '../services';
 import { AstNode, AstReflection, Properties } from '../syntax-tree';
+import { MultiMap } from '../utils/collections';
 import { MaybePromise } from '../utils/promise-util';
 
 export type DiagnosticInfo<N extends AstNode, P = Properties<N>> = {
@@ -36,7 +37,7 @@ export type ValidationAcceptor = <N extends AstNode>(severity: 'error' | 'warnin
 export type ValidationCheck = (node: any, accept: ValidationAcceptor, cancelToken: CancellationToken) => MaybePromise<void>;
 
 export class ValidationRegistry {
-    private readonly validationChecks = new Map<string, ValidationCheck[]>();
+    private readonly validationChecks = new MultiMap<string, ValidationCheck>();
     private readonly reflection: AstReflection;
 
     constructor(services: LangiumServices) {
@@ -68,18 +69,13 @@ export class ValidationRegistry {
     protected doRegister(type: string, check: ValidationCheck): void {
         for (const subtype of this.reflection.getAllTypes()) {
             if (this.reflection.isSubtype(subtype, type)) {
-                let checkArray = this.validationChecks.get(subtype);
-                if (!checkArray) {
-                    checkArray = [];
-                    this.validationChecks.set(subtype, checkArray);
-                }
-                checkArray.push(check);
+                this.validationChecks.add(subtype, check);
             }
         }
     }
 
-    getChecks(type: string): ValidationCheck[] {
-        return this.validationChecks.get(type) ?? [];
+    getChecks(type: string): readonly ValidationCheck[] {
+        return this.validationChecks.get(type);
     }
 
 }

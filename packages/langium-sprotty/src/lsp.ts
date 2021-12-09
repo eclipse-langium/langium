@@ -11,7 +11,6 @@ import { ActionMessage } from 'sprotty-protocol';
 import { OperationCancelled } from 'langium';
 import { LangiumSprottyServices } from './sprotty-services';
 
-/* eslint-disable @typescript-eslint/no-namespace */
 export namespace DiagramActionNotification {
     export const type = new NotificationType<ActionMessage>('diagram/accept');
 }

@@ -14,6 +14,7 @@ import { getEntryRule, isDataTypeRule, resolveImport, resolveTransitiveImports, 
 import { LangiumGrammarServices } from './langium-grammar-module';
 import * as ast from './generated/ast';
 import { LangiumDocument, LangiumDocuments } from '../documents/document';
+import { MultiMap } from '../utils/collections';
 import { Utils } from 'vscode-uri';
 
 type LangiumGrammarChecks = { [type in ast.LangiumGrammarAstType]?: ValidationCheck | ValidationCheck[] }
@@ -52,7 +53,6 @@ export class LangiumGrammarValidationRegistry extends ValidationRegistry {
     }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace IssueCodes {
     export const GrammarNameUppercase = 'grammar-name-uppercase';
     export const RuleNameUppercase = 'rule-name-uppercase';
@@ -100,21 +100,15 @@ export class LangiumGrammarValidator {
     }
 
     checkUniqueRuleName(grammar: ast.Grammar, accept: ValidationAcceptor): void {
-        const ruleMap = new Map<string, ast.AbstractRule[]>();
-        const message = "A rule's name has to be unique.";
+        const ruleMap = new MultiMap<string, ast.AbstractRule>();
         for (const rule of grammar.rules) {
-            const lowerCaseName = rule.name.toLowerCase();
-            const existing = ruleMap.get(lowerCaseName);
-            if (existing) {
-                existing.push(rule);
-            } else {
-                ruleMap.set(lowerCaseName, [rule]);
-            }
+            ruleMap.add(rule.name.toLowerCase(), rule);
         }
-        for (const rules of ruleMap.values()) {
+        for (const name of ruleMap.keys()) {
+            const rules = ruleMap.get(name);
             if (rules.length > 1) {
                 rules.forEach(e => {
-                    accept('error', message, { node: e, property: 'name' });
+                    accept('error', "A rule's name has to be unique.", { node: e, property: 'name' });
                 });
             }
         }

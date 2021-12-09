@@ -776,3 +776,38 @@ export class TreeStreamImpl<T>
         return iterator;
     }
 }
+
+/**
+ * A set of utility functions that reduce a stream to a single value.
+ */
+export namespace Reduction {
+
+    /**
+     * Compute the sum of a number stream.
+     */
+    export function sum(stream: Stream<number>): number {
+        return stream.reduce((a, b) => a + b, 0);
+    }
+
+    /**
+     * Compute the product of a number stream.
+     */
+    export function product(stream: Stream<number>): number {
+        return stream.reduce((a, b) => a * b, 0);
+    }
+
+    /**
+     * Compute the minimum of a number stream. Returns `undefined` if the stream is empty.
+     */
+    export function min(stream: Stream<number>): number | undefined {
+        return stream.reduce((a, b) => Math.min(a, b));
+    }
+
+    /**
+     * Compute the maximum of a number stream. Returns `undefined` if the stream is empty.
+     */
+    export function max(stream: Stream<number>): number | undefined {
+        return stream.reduce((a, b) => Math.max(a, b));
+    }
+
+}

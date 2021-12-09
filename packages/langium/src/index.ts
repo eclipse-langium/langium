@@ -31,6 +31,7 @@ export * from './services';
 export * from './syntax-tree';
 export * from './service-registry';
 export * from './utils/ast-util';
+export * from './utils/collections';
 export * from './utils/cst-util';
 export * from './utils/promise-util';
 export * from './utils/regex-util';

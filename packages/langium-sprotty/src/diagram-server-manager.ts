@@ -29,7 +29,7 @@ export interface DiagramServerManager {
     removeClient(clientId: string): void
 }
 
-export class DefaultDiagramServerManager {
+export class DefaultDiagramServerManager implements DiagramServerManager {
 
     protected readonly connection?: Connection;
     protected readonly diagramGenerator: IDiagramGenerator;

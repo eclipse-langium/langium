@@ -4,7 +4,11 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { GeneratorNode, Grammar, IndentNode, CompositeGeneratorNode, NL, processGeneratorNode, stream, isAlternatives, isKeyword, isParserRule, isDataTypeRule, ParserRule, streamAllContents, isCrossReference, LangiumServices } from 'langium';
+import {
+    GeneratorNode, Grammar, IndentNode, CompositeGeneratorNode, NL, processGeneratorNode, stream,
+    isAlternatives, isKeyword, isParserRule, isDataTypeRule, ParserRule, streamAllContents,
+    isCrossReference, MultiMap, LangiumServices
+} from 'langium';
 import { LangiumConfig } from '../package';
 import { collectAst, Interface } from './type-collector';
 import { generatedHeader } from './util';
@@ -148,7 +152,8 @@ function buildIsSubtypeMethod(interfaces: Interface[]): GeneratorNode {
     methodNode.indent(switchNode => {
         const groups = groupBySupertypes(interfaces.filter(e => e.superTypes.length > 0));
 
-        for (const [superTypes, typeGroup] of groups.entries()) {
+        for (const superTypes of groups.keys()) {
+            const typeGroup = groups.get(superTypes);
             for (const typeItem of typeGroup) {
                 switchNode.append(`case ${typeItem.name}:`, NL);
             }
@@ -170,16 +175,10 @@ function buildIsSubtypeMethod(interfaces: Interface[]): GeneratorNode {
     return methodNode;
 }
 
-function groupBySupertypes(interfaces: Interface[]): Map<string, Interface[]> {
-    const map = new Map<string, Interface[]>();
+function groupBySupertypes(interfaces: Interface[]): MultiMap<string, Interface> {
+    const map = new MultiMap<string, Interface>();
     for (const item of interfaces) {
-        const key = item.superTypes.join(':');
-        const collection = map.get(key);
-        if (!collection) {
-            map.set(key, [item]);
-        } else {
-            collection.push(item);
-        }
+        map.add(item.superTypes.join(':'), item);
     }
     return map;
 }
