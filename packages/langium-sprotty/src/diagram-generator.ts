@@ -54,7 +54,7 @@ export abstract class LangiumDiagramGenerator implements IDiagramGenerator {
             args.cancelToken = CancellationToken.None;
         }
         if (!args.idCache) {
-            args.idCache = new IdCache();
+            args.idCache = new IdCacheImpl();
         }
         return this.generateRoot(args as GeneratorContext);
     }
@@ -75,16 +75,45 @@ export abstract class LangiumDiagramGenerator implements IDiagramGenerator {
  *
  * This class makes sure these IDs are unique, and allows to look them up for a given model element in
  * order to establish cross references in the SModel, e.g. for `sourceId` and `targetId` of an SEdge.
+ *
+ * Default implementation: `IdCacheImpl`
  */
-export class IdCache<T = AstNode> {
+export interface IdCache<T = AstNode> {
+
+    /**
+     * Create a unique ID based on the given proposal and optionally associated with a source element.
+     * _Note:_ For a consistent mapping of source elements to diagram model elements, the proposed IDs
+     * should already be as unique as possible.
+     *
+     * @param idProposal A proposed string to use as ID. This will become a prefix of the actually assigned ID.
+     * @param element If present, the created ID is associated to this source element so it can be queried
+     *        with `getId` afterwards.
+     */
+    uniqueId(idProposal: string, element?: T): string;
+
+    /**
+     * Returns `true` if the given ID has already been assigned with a previous call to `uniqueId`,
+     * and `false` otherwise.
+     *
+     * @param id The ID string to test
+     */
+    isIdAlreadyUsed(id: string): boolean;
+
+    /**
+     * Return a previously assigned ID of the given element, if present. IDs can be assigned to source
+     * elements by passing these elements as arguments to `uniqueId`.
+     *
+     * @param element A source element to look up.
+     */
+    getId(element: T | undefined): string | undefined;
+
+}
+
+export class IdCacheImpl<T = AstNode> implements IdCache<T> {
 
     protected readonly id2element: Map<string, T> = new Map();
     protected readonly element2id: Map<T, string> = new Map();
     protected readonly otherIds: Set<string> = new Set();
-
-    isIdAlreadyUsed(id: string): boolean {
-        return this.id2element.has(id) || this.otherIds.has(id);
-    }
 
     uniqueId(idProposal: string, element?: T): string {
         let proposedId = idProposal;
@@ -103,6 +132,10 @@ export class IdCache<T = AstNode> {
             this.otherIds.add(proposedId);
         }
         return proposedId;
+    }
+
+    isIdAlreadyUsed(id: string): boolean {
+        return this.id2element.has(id) || this.otherIds.has(id);
     }
 
     getId(element: T | undefined): string | undefined {

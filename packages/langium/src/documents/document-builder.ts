@@ -12,6 +12,7 @@ import { URI } from 'vscode-uri';
 import { interruptAndCheck, MaybePromise } from '../utils/promise-util';
 import { AstNode } from '../syntax-tree';
 import { ServiceRegistry } from '../service-registry';
+import { MultiMap } from '../utils/collections';
 
 export interface DocumentBuilder {
     /**
@@ -63,7 +64,7 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
     protected readonly indexManager: IndexManager;
     protected readonly serviceRegistry: ServiceRegistry;
     protected readonly updateListeners: DocumentUpdateListener[] = [];
-    protected readonly buildPhaseListeners: Map<DocumentState, DocumentBuildListener[]> = new Map();
+    protected readonly buildPhaseListeners: MultiMap<DocumentState, DocumentBuildListener> = new MultiMap();
 
     constructor(services: LangiumSharedServices) {
         this.connection = services.lsp.Connection;
@@ -163,20 +164,14 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
     }
 
     onBuildPhase(targetState: DocumentState, callback: DocumentBuildListener): void {
-        if (this.buildPhaseListeners.has(targetState)) {
-            this.buildPhaseListeners.get(targetState)!.push(callback);
-        } else {
-            this.buildPhaseListeners.set(targetState, [callback]);
-        }
+        this.buildPhaseListeners.add(targetState, callback);
     }
 
     protected async notifyBuildPhase(documents: LangiumDocument[], state: DocumentState, cancelToken: CancellationToken): Promise<void> {
         const listeners = this.buildPhaseListeners.get(state);
-        if (listeners) {
-            for (const listener of listeners) {
-                await interruptAndCheck(cancelToken);
-                await listener(documents, cancelToken);
-            }
+        for (const listener of listeners) {
+            await interruptAndCheck(cancelToken);
+            await listener(documents, cancelToken);
         }
     }
 
