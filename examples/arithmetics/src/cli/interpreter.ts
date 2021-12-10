@@ -6,11 +6,14 @@
 
 import { createArithmeticsServices } from '../language-server/arithmetics-module';
 import { AbstractDefinition, Definition, Evaluation, Expression, isAddition, isDefinition, isDivision, isEvaluation, isFunctionCall, isMultiplication, isNumberLiteral, isSubtraction, Module, Statement } from '../language-server/generated/ast';
-import { languageMetaData } from '../language-server/generated/module';
+import { ArithmeticsLanguageMetaData } from '../language-server/generated/module';
 import { extractDocument } from './cli-util';
+import { URI } from 'vscode-uri';
 
 export const evalAction = async (fileName: string): Promise<void> => {
-    const document = await extractDocument<Module>(fileName, languageMetaData.fileExtensions, createArithmeticsServices());
+    const fileUri = URI.file(fileName);
+    const services = createArithmeticsServices().ServiceRegistry.getService(fileUri);
+    const document = await extractDocument<Module>(fileName, ArithmeticsLanguageMetaData.fileExtensions, services);
     const module = document.parseResult.value;
     for (const [evaluation, value] of interpretEvaluations(module)) {
         const cstNode = evaluation.expression.$cstNode;

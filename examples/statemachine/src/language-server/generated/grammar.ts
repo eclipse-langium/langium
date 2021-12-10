@@ -5,12 +5,12 @@
 
 import { loadGrammar, Grammar } from 'langium';
 
-let loaded: Grammar | undefined;
-export const grammar = (): Grammar => loaded || (loaded = loadGrammar(`{
+let loadedStatemachineGrammar: Grammar | undefined;
+export const StatemachineGrammar = (): Grammar => loadedStatemachineGrammar ||(loadedStatemachineGrammar = loadGrammar(`{
   "$type": "Grammar",
   "usedGrammars": [],
   "hiddenTokens": [],
-  "metamodelDeclarations": [],
+  "imports": [],
   "rules": [
     {
       "$type": "ParserRule",

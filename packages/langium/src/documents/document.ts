@@ -8,12 +8,12 @@ import fs from 'fs';
 import { Range, TextDocument } from 'vscode-languageserver-textdocument';
 import { TextDocuments } from 'vscode-languageserver/node';
 import { AstNode, AstNodeDescription, Reference } from '../syntax-tree';
-import { LangiumParser, ParseResult } from '../parser/langium-parser';
+import { ParseResult } from '../parser/langium-parser';
 import { URI } from 'vscode-uri';
 import { Mutable } from '../utils/ast-util';
-import { LanguageMetaData } from '../grammar/language-meta-data';
-import { LangiumServices } from '../services';
+import { LangiumSharedServices } from '../services';
 import { stream, Stream } from '../utils/stream';
+import { ServiceRegistry } from '../service-registry';
 
 /**
  * A Langium document holds the parse result (AST and CST) and any additional state that is derived
@@ -83,15 +83,16 @@ export interface TextDocumentFactory {
 
 export class DefaultTextDocumentFactory implements TextDocumentFactory {
 
-    protected readonly languageMetaData: LanguageMetaData;
+    protected readonly serviceRegistry: ServiceRegistry;
 
-    constructor(services: LangiumServices) {
-        this.languageMetaData = services.LanguageMetaData;
+    constructor(services: LangiumSharedServices) {
+        this.serviceRegistry = services.ServiceRegistry;
     }
 
     fromUri(uri: URI): TextDocument {
         const content = fs.readFileSync(uri.fsPath, 'utf-8');
-        return TextDocument.create(uri.toString(), this.languageMetaData.languageId, 0, content);
+        const services = this.serviceRegistry.getService(uri);
+        return TextDocument.create(uri.toString(), services.LanguageMetaData.languageId, 0, content);
     }
 
 }
@@ -102,14 +103,15 @@ export interface LangiumDocumentFactory {
 
 export class DefaultLangiumDocumentFactory implements LangiumDocumentFactory {
 
-    protected readonly parser: LangiumParser;
+    protected readonly serviceRegistry: ServiceRegistry;
 
-    constructor(services: LangiumServices) {
-        this.parser = services.parser.LangiumParser;
+    constructor(services: LangiumSharedServices) {
+        this.serviceRegistry = services.ServiceRegistry;
     }
 
     fromTextDocument<T extends AstNode = AstNode>(textDocument: TextDocument): LangiumDocument<T> {
-        return documentFromText<T>(textDocument, this.parser.parse(textDocument.getText()));
+        const services = this.serviceRegistry.getService(URI.parse(textDocument.uri));
+        return documentFromText<T>(textDocument, services.parser.LangiumParser.parse(textDocument.getText()));
     }
 }
 
@@ -127,10 +129,10 @@ export class DefaultLangiumDocuments implements LangiumDocuments {
     protected readonly textDocumentFactory: TextDocumentFactory;
     protected readonly langiumDocumentFactory: LangiumDocumentFactory;
 
-    constructor(services: LangiumServices) {
-        this.textDocuments = services.documents.TextDocuments;
-        this.textDocumentFactory = services.documents.TextDocumentFactory;
-        this.langiumDocumentFactory = services.documents.LangiumDocumentFactory;
+    constructor(services: LangiumSharedServices) {
+        this.textDocuments = services.workspace.TextDocuments;
+        this.textDocumentFactory = services.workspace.TextDocumentFactory;
+        this.langiumDocumentFactory = services.workspace.LangiumDocumentFactory;
     }
 
     get all(): Stream<LangiumDocument> {

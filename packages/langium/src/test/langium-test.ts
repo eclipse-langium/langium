@@ -17,14 +17,14 @@ import { escapeRegExp } from '../utils/regex-util';
 
 export function parseHelper<T extends AstNode = AstNode>(services: LangiumServices): (input: string) => Promise<BuildResult<T>> {
     const metaData = services.LanguageMetaData;
-    const documentBuilder = services.documents.DocumentBuilder;
+    const documentBuilder = services.shared.workspace.DocumentBuilder;
     return async input => {
         const randomNumber = Math.floor(Math.random() * 10000000) + 1000000;
         const textDocument = TextDocument.create(`file:///${randomNumber}${metaData.fileExtensions[0]}`, metaData.languageId, 0, input);
         // For now we have to add the newly created document to the list of documents manually
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (services.documents.TextDocuments as any)._documents[textDocument.uri] = textDocument;
-        const document = services.documents.LangiumDocumentFactory.fromTextDocument<T>(textDocument);
+        (services.shared.workspace.TextDocuments as any)._documents[textDocument.uri] = textDocument;
+        const document = services.shared.workspace.LangiumDocumentFactory.fromTextDocument<T>(textDocument);
         const buildResult = await documentBuilder.build(document);
         return buildResult as BuildResult<T>;
     };

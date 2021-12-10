@@ -1,11 +1,14 @@
 {
-    "languageId": "domain-model",
-    "grammar": "src/language-server/domain-model.langium",
-    "fileExtensions": [".dmodel"],
+    "projectName": "DomainModel",
+    "languages": [{
+        "id": "domain-model",
+        "grammar": "src/language-server/domain-model.langium",
+        "fileExtensions": [".dmodel"],
+        "textMate": {
+            "out": "syntaxes/domain-model.tmLanguage.json"
+        }
+    }],
     "out": "src/language-server/generated",
-    "textMate": {
-        "out": "syntaxes/domain-model.tmLanguage.json"
-    },
     "chevrotainParserConfig": {
         "recoveryEnabled": true,
         "nodeLocationTracking": "full",

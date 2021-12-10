@@ -3,18 +3,21 @@
  * DO NOT EDIT MANUALLY!
  ******************************************************************************/
 
-import { LangiumGeneratedServices, LangiumServices, LanguageMetaData, Module } from 'langium';
+import { LangiumGeneratedServices, LangiumGeneratedSharedServices, LangiumSharedServices, LangiumServices, LanguageMetaData, Module } from 'langium';
 import { ArithmeticsAstReflection } from './ast';
-import { grammar } from './grammar';
+import { ArithmeticsGrammar } from './grammar';
 
-export const languageMetaData: LanguageMetaData = {
+export const ArithmeticsLanguageMetaData: LanguageMetaData = {
     languageId: 'arithmetics',
     fileExtensions: ['.calc']
 };
 
+export const ArithmeticsGeneratedSharedModule: Module<LangiumSharedServices, LangiumGeneratedSharedServices> = {
+    AstReflection: () => new ArithmeticsAstReflection()
+};
+
 export const ArithmeticsGeneratedModule: Module<LangiumServices, LangiumGeneratedServices> = {
-    Grammar: () => grammar(),
-    AstReflection: () => new ArithmeticsAstReflection(),
-    LanguageMetaData: () => languageMetaData,
+    Grammar: () => ArithmeticsGrammar(),
+    LanguageMetaData: () => ArithmeticsLanguageMetaData,
     parser: {}
 };

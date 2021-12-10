@@ -11,20 +11,13 @@ hidden terminal SL_COMMENT: /\/\/[^\n\r]*/;
 entry Grammar:
 	'grammar' name=ID ('with' usedGrammars+=[Grammar:ID] (',' usedGrammars+=[Grammar:ID])*)?
 	(definesHiddenTokens?='hidden' '(' (hiddenTokens+=[AbstractRule:ID] (',' hiddenTokens+=[AbstractRule:ID])*)? ')')?
-	metamodelDeclarations+=AbstractMetamodelDeclaration*
+	imports+=GrammarImport*
 	(rules+=AbstractRule)+;
 
 AbstractRule : ParserRule | TerminalRule;
 
-AbstractMetamodelDeclaration :
-	GeneratedMetamodel | ReferencedMetamodel;
-
-GeneratedMetamodel :
-	'generate' name=ID ePackage=string ('as' alias=ID)?;
-
-ReferencedMetamodel :
-	'import' ePackage=string ('as' alias=ID)?;
-
+GrammarImport:
+	'import' path=string ';';
 
 Annotation:
 	'@' name = ID;

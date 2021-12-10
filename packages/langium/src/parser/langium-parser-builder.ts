@@ -49,13 +49,13 @@ export function createLangiumParser(services: LangiumServices): LangiumParser {
 
 function getRule(ctx: ParserContext, name: string): Method {
     const rule = ctx.rules.get(name);
-    if (!rule) throw new Error();
+    if (!rule) throw new Error(`Rule "${name}" not found."`);
     return rule;
 }
 
 function getToken(ctx: ParserContext, name: string): TokenType {
     const token = ctx.tokens.get(name);
-    if (!token) throw new Error();
+    if (!token) throw new Error(`Token "${name}" not found."`);
     return token;
 }
 

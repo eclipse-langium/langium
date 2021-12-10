@@ -6,12 +6,12 @@
 import { loadGrammar } from '../grammar-util';
 import { Grammar } from './ast';
 
-let loaded: Grammar | undefined;
-export const grammar = (): Grammar => loaded || (loaded = loadGrammar(`{
+let loadedLangiumGrammarGrammar: Grammar | undefined;
+export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar ||(loadedLangiumGrammarGrammar = loadGrammar(`{
   "$type": "Grammar",
   "usedGrammars": [],
   "hiddenTokens": [],
-  "metamodelDeclarations": [],
+  "imports": [],
   "rules": [
     {
       "$type": "TerminalRule",
@@ -236,13 +236,13 @@ export const grammar = (): Grammar => loaded || (loaded = loadGrammar(`{
           },
           {
             "$type": "Assignment",
-            "feature": "metamodelDeclarations",
+            "feature": "imports",
             "operator": "+=",
             "terminal": {
               "$type": "RuleCall",
               "arguments": [],
               "rule": {
-                "$refText": "AbstractMetamodelDeclaration"
+                "$refText": "GrammarImport"
               }
             },
             "cardinality": "*"
@@ -294,97 +294,7 @@ export const grammar = (): Grammar => loaded || (loaded = loadGrammar(`{
     {
       "$type": "ParserRule",
       "parameters": [],
-      "name": "AbstractMetamodelDeclaration",
-      "hiddenTokens": [],
-      "alternatives": {
-        "$type": "Alternatives",
-        "elements": [
-          {
-            "$type": "RuleCall",
-            "arguments": [],
-            "rule": {
-              "$refText": "GeneratedMetamodel"
-            },
-            "elements": []
-          },
-          {
-            "$type": "RuleCall",
-            "arguments": [],
-            "rule": {
-              "$refText": "ReferencedMetamodel"
-            },
-            "elements": []
-          }
-        ]
-      }
-    },
-    {
-      "$type": "ParserRule",
-      "parameters": [],
-      "name": "GeneratedMetamodel",
-      "hiddenTokens": [],
-      "alternatives": {
-        "$type": "Group",
-        "elements": [
-          {
-            "$type": "Keyword",
-            "value": "generate",
-            "elements": []
-          },
-          {
-            "$type": "Assignment",
-            "feature": "name",
-            "operator": "=",
-            "terminal": {
-              "$type": "RuleCall",
-              "arguments": [],
-              "rule": {
-                "$refText": "ID"
-              }
-            }
-          },
-          {
-            "$type": "Assignment",
-            "feature": "ePackage",
-            "operator": "=",
-            "terminal": {
-              "$type": "RuleCall",
-              "arguments": [],
-              "rule": {
-                "$refText": "string"
-              }
-            }
-          },
-          {
-            "$type": "Group",
-            "elements": [
-              {
-                "$type": "Keyword",
-                "value": "as",
-                "elements": []
-              },
-              {
-                "$type": "Assignment",
-                "feature": "alias",
-                "operator": "=",
-                "terminal": {
-                  "$type": "RuleCall",
-                  "arguments": [],
-                  "rule": {
-                    "$refText": "ID"
-                  }
-                }
-              }
-            ],
-            "cardinality": "?"
-          }
-        ]
-      }
-    },
-    {
-      "$type": "ParserRule",
-      "parameters": [],
-      "name": "ReferencedMetamodel",
+      "name": "GrammarImport",
       "hiddenTokens": [],
       "alternatives": {
         "$type": "Group",
@@ -396,7 +306,7 @@ export const grammar = (): Grammar => loaded || (loaded = loadGrammar(`{
           },
           {
             "$type": "Assignment",
-            "feature": "ePackage",
+            "feature": "path",
             "operator": "=",
             "terminal": {
               "$type": "RuleCall",
@@ -407,27 +317,8 @@ export const grammar = (): Grammar => loaded || (loaded = loadGrammar(`{
             }
           },
           {
-            "$type": "Group",
-            "elements": [
-              {
-                "$type": "Keyword",
-                "value": "as",
-                "elements": []
-              },
-              {
-                "$type": "Assignment",
-                "feature": "alias",
-                "operator": "=",
-                "terminal": {
-                  "$type": "RuleCall",
-                  "arguments": [],
-                  "rule": {
-                    "$refText": "ID"
-                  }
-                }
-              }
-            ],
-            "cardinality": "?"
+            "$type": "Keyword",
+            "value": ";"
           }
         ]
       }

@@ -5,18 +5,21 @@
 
 import { LanguageMetaData } from '../..';
 import { Module } from '../../dependency-injection';
-import { LangiumGeneratedServices, LangiumServices } from '../../services';
+import { LangiumGeneratedServices, LangiumGeneratedSharedServices, LangiumSharedServices, LangiumServices } from '../../services';
 import { LangiumGrammarAstReflection } from './ast';
-import { grammar } from './grammar';
+import { LangiumGrammarGrammar } from './grammar';
 
-export const languageMetaData: LanguageMetaData = {
+export const LangiumGrammarLanguageMetaData: LanguageMetaData = {
     languageId: 'langium',
     fileExtensions: ['.langium']
 };
 
+export const LangiumGrammarGeneratedSharedModule: Module<LangiumSharedServices, LangiumGeneratedSharedServices> = {
+    AstReflection: () => new LangiumGrammarAstReflection()
+};
+
 export const LangiumGrammarGeneratedModule: Module<LangiumServices, LangiumGeneratedServices> = {
-    Grammar: () => grammar(),
-    AstReflection: () => new LangiumGrammarAstReflection(),
-    LanguageMetaData: () => languageMetaData,
+    Grammar: () => LangiumGrammarGrammar(),
+    LanguageMetaData: () => LangiumGrammarLanguageMetaData,
     parser: {}
 };

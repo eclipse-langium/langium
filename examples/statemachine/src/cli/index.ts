@@ -7,13 +7,16 @@
 import colors from 'colors';
 import { Command } from 'commander';
 import { Statemachine } from '../language-server/generated/ast';
-import { languageMetaData } from '../language-server/generated/module';
+import { StatemachineLanguageMetaData } from '../language-server/generated/module';
 import { createStatemachineServices } from '../language-server/statemachine-module';
 import { extractAstNode } from './cli-util';
 import { generateCpp } from './generator';
+import { URI } from 'vscode-uri';
 
 export const generateAction = async (fileName: string, opts: GenerateOptions): Promise<void> => {
-    const statemachine = await extractAstNode<Statemachine>(fileName, languageMetaData.fileExtensions, createStatemachineServices());
+    const fileUri = URI.file(fileName);
+    const services = createStatemachineServices().ServiceRegistry.getService(fileUri);
+    const statemachine = await extractAstNode<Statemachine>(fileName, StatemachineLanguageMetaData.fileExtensions, services);
     const generatedFilePath = generateCpp(statemachine, fileName, opts.destination);
     console.log(colors.green(`C++ code generated successfully: ${generatedFilePath}`));
 };
@@ -31,7 +34,7 @@ export default function(): void {
 
     program
         .command('generate')
-        .argument('<file>', `possible file extensions: ${languageMetaData.fileExtensions.join(', ')}`)
+        .argument('<file>', `possible file extensions: ${StatemachineLanguageMetaData.fileExtensions.join(', ')}`)
         .option('-d, --destination <dir>', 'destination directory of generating')
         .description('generates a C++ CLI to walk over states')
         .action(generateAction);

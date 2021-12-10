@@ -28,10 +28,6 @@ program.parse(process.argv);
 
 async function forEachConfig(options: GenerateOptions, callback: (config: LangiumConfig) => Promise<GeneratorResult>): Promise<void> {
     const configs = loadConfigs(options.file);
-    if (!configs.length) {
-        console.error('Could not find a langium configuration. Please add a langium-config.json to your project or a langium section to your package.json.'.red);
-        process.exit(1);
-    }
     const validation = validate(configs, schema, {
         nestedErrors: true
     });
@@ -43,18 +39,18 @@ async function forEachConfig(options: GenerateOptions, callback: (config: Langiu
         });
         process.exit(1);
     }
-    const allSuccessful = (await Promise.all(configs.map(callback))).every(e => e === 'success');
+    const allSuccessful = await callback(configs) === 'success';
     if (options.watch) {
         if (allSuccessful) {
             console.log(`${getTime()}Langium generator finished ${'successfully'.green.bold} in ${elapsedTime()}ms`);
         }
         console.log(getTime() + 'Langium generator will continue running in watch mode');
-        configs.forEach(e => {
-            const grammarPath = path.resolve(e[RelativePath], e.grammar);
+        configs.languages.forEach(e => {
+            const grammarPath = path.resolve(configs[RelativePath], e.grammar);
             fs.watchFile(grammarPath, async () => {
                 console.log(getTime() + 'File change detected. Starting compilation...');
                 elapsedTime();
-                if (await callback(e) === 'success') {
+                if (await callback(configs) === 'success') {
                     console.log(`${getTime()}Langium generator finished ${'successfully'.green.bold} in ${elapsedTime()}ms`);
                 }
             });

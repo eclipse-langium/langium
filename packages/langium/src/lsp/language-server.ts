@@ -11,10 +11,11 @@ import {
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { URI } from 'vscode-uri';
 import { LangiumDocument } from '../documents/document';
-import { LangiumServices } from '../services';
+import { LangiumServices, LangiumSharedServices } from '../services';
 import { OperationCancelled, startCancelableOperation } from '../utils/promise-util';
 
-export function startLanguageServer(services: LangiumServices): void {
+export function startLanguageServer(services: LangiumSharedServices): void {
+    const all: LangiumServices[] = services.ServiceRegistry.all;
     const connection = services.lsp.Connection;
     if (!connection) {
         throw new Error('Starting a language server requires the languageServer.Connection service to be set.');
@@ -33,7 +34,7 @@ export function startLanguageServer(services: LangiumServices): void {
                 documentSymbolProvider: {},
                 definitionProvider: {},
                 documentHighlightProvider: {},
-                codeActionProvider: services.lsp.CodeActionProvider ? {} : undefined,
+                codeActionProvider: all.some(e => e.lsp.CodeActionProvider !== undefined) ? {} : undefined,
                 foldingRangeProvider: {},
                 hoverProvider: {},
                 renameProvider: {
@@ -53,7 +54,7 @@ export function startLanguageServer(services: LangiumServices): void {
         if (params.capabilities.workspace?.configuration) {
             try {
                 if (params.workspaceFolders)
-                    await services.index.IndexManager.initializeWorkspace(params.workspaceFolders);
+                    await services.workspace.IndexManager.initializeWorkspace(params.workspaceFolders);
             } catch (e) {
                 console.error(e);
             }
@@ -61,7 +62,7 @@ export function startLanguageServer(services: LangiumServices): void {
         return result;
     });
 
-    const documents = services.documents.TextDocuments;
+    const documents = services.workspace.TextDocuments;
 
     addDocumentsHandler(connection, documents, services);
     addCompletionHandler(connection, services);
@@ -81,8 +82,8 @@ export function startLanguageServer(services: LangiumServices): void {
     connection.listen();
 }
 
-export function addDocumentsHandler(connection: Connection, documents: TextDocuments<TextDocument>, services: LangiumServices): void {
-    const documentBuilder = services.documents.DocumentBuilder;
+export function addDocumentsHandler(connection: Connection, documents: TextDocuments<TextDocument>, services: LangiumSharedServices): void {
+    const documentBuilder = services.workspace.DocumentBuilder;
     let changeTokenSource: AbstractCancellationTokenSource;
     let changePromise: Promise<void> | undefined;
 
@@ -111,106 +112,96 @@ export function addDocumentsHandler(connection: Connection, documents: TextDocum
     });
 }
 
-export function addCompletionHandler(connection: Connection, services: LangiumServices): void {
-    const completionProvider = services.lsp.completion.CompletionProvider;
+export function addCompletionHandler(connection: Connection, services: LangiumSharedServices): void {
     connection.onCompletion(createHandler(
-        (document, params, cancelToken) => {
-            return completionProvider.getCompletion(document, params, cancelToken);
+        (services, document, params, cancelToken) => {
+            return services.lsp.completion.CompletionProvider.getCompletion(document, params, cancelToken);
         },
         services
     ));
 }
 
-export function addFindReferencesHandler(connection: Connection, services: LangiumServices): void {
-    const referenceFinder = services.lsp.ReferenceFinder;
+export function addFindReferencesHandler(connection: Connection, services: LangiumSharedServices): void {
     connection.onReferences(createHandler(
-        (document, params, cancelToken) => referenceFinder.findReferences(document, params, cancelToken),
+        (services, document, params, cancelToken) => services.lsp.ReferenceFinder.findReferences(document, params, cancelToken),
         services
     ));
 }
 
-export function addCodeActionHandler(connection: Connection, services: LangiumServices): void {
-    const codeActionProvider = services.lsp.CodeActionProvider;
-    if (!codeActionProvider) {
-        return;
-    }
+export function addCodeActionHandler(connection: Connection, services: LangiumSharedServices): void {
     connection.onCodeAction(createHandler(
-        (document, params, cancelToken) => codeActionProvider.getCodeActions(document, params, cancelToken),
+        (services, document, params, cancelToken) => services.lsp.CodeActionProvider?.getCodeActions(document, params, cancelToken),
         services
     ));
 }
 
-export function addDocumentSymbolHandler(connection: Connection, services: LangiumServices): void {
-    const symbolProvider = services.lsp.DocumentSymbolProvider;
+export function addDocumentSymbolHandler(connection: Connection, services: LangiumSharedServices): void {
     connection.onDocumentSymbol(createHandler(
-        (document, params, cancelToken) => symbolProvider.getSymbols(document, params, cancelToken),
+        (services, document, params, cancelToken) => services.lsp.DocumentSymbolProvider.getSymbols(document, params, cancelToken),
         services
     ));
 }
 
-export function addGotoDefinitionHandler(connection: Connection, services: LangiumServices): void {
+export function addGotoDefinitionHandler(connection: Connection, services: LangiumSharedServices): void {
     connection.onDefinition(createHandler(
-        (document, params, cancelToken) => services.lsp.GoToResolver.goToDefinition(document, params, cancelToken),
+        (services, document, params, cancelToken) => services.lsp.GoToResolver.goToDefinition(document, params, cancelToken),
         services
     ));
 }
 
-export function addDocumentHighlightsHandler(connection: Connection, services: LangiumServices): void {
-    const documentHighlighter = services.lsp.DocumentHighlighter;
+export function addDocumentHighlightsHandler(connection: Connection, services: LangiumSharedServices): void {
     connection.onDocumentHighlight(createHandler(
-        (document, params, cancelToken) => documentHighlighter.findHighlights(document, params, cancelToken),
+        (services, document, params, cancelToken) => services.lsp.DocumentHighlighter.findHighlights(document, params, cancelToken),
         services
     ));
 }
 
-export function addHoverHandler(connection: Connection, services: LangiumServices): void {
-    const hoverProvider = services.lsp.HoverProvider;
+export function addHoverHandler(connection: Connection, services: LangiumSharedServices): void {
     connection.onHover(createHandler(
-        (document, params, cancelToken) => hoverProvider.getHoverContent(document, params, cancelToken),
+        (services, document, params, cancelToken) => services.lsp.HoverProvider.getHoverContent(document, params, cancelToken),
         services
     ));
 }
 
-export function addFoldingRangeHandler(connection: Connection, services: LangiumServices): void {
-    const foldingRangeProvider = services.lsp.FoldingRangeProvider;
+export function addFoldingRangeHandler(connection: Connection, services: LangiumSharedServices): void {
     connection.onFoldingRanges(createHandler(
-        (document, params, cancelToken) => foldingRangeProvider.getFoldingRanges(document, params, cancelToken),
+        (services, document, params, cancelToken) => services.lsp.FoldingRangeProvider.getFoldingRanges(document, params, cancelToken),
         services
     ));
 }
 
-export function addRenameHandler(connection: Connection, services: LangiumServices): void {
-    const renameHandler = services.lsp.RenameHandler;
+export function addRenameHandler(connection: Connection, services: LangiumSharedServices): void {
     connection.onRenameRequest(createHandler(
-        (document, params, cancelToken) => renameHandler.renameElement(document, params, cancelToken),
+        (services, document, params, cancelToken) => services.lsp.RenameHandler.renameElement(document, params, cancelToken),
         services
     ));
     connection.onPrepareRename(createHandler(
-        (document, params, cancelToken) => renameHandler.prepareRename(document, params, cancelToken),
+        (services, document, params, cancelToken) => services.lsp.RenameHandler.prepareRename(document, params, cancelToken),
         services
     ));
 }
 
 export function createHandler<P extends { textDocument: TextDocumentIdentifier }, R, E = void>(
-    serviceCall: (document: LangiumDocument, params: P, cancelToken: CancellationToken) => HandlerResult<R, E>,
-    services: LangiumServices
+    serviceCall: (services: LangiumServices, document: LangiumDocument, params: P, cancelToken: CancellationToken) => HandlerResult<R, E>,
+    services: LangiumSharedServices
 ): RequestHandler<P, R | null, E> {
     return async (params: P, cancelToken: CancellationToken) => {
-        const document = paramsDocument(params, services);
+        const uri = URI.parse(params.textDocument.uri);
+        const concreteServices = services.ServiceRegistry.getService(uri);
+        if (!concreteServices) {
+            console.error(`Could not find service instance for uri: '${uri.toString()}'`);
+            return null;
+        }
+        const document = services.workspace.LangiumDocuments.getOrCreateDocument(uri);
         if (!document) {
             return null;
         }
         try {
-            return await serviceCall(document, params, cancelToken);
+            return await serviceCall(concreteServices, document, params, cancelToken);
         } catch (err) {
             return responseError<E>(err);
         }
     };
-}
-
-function paramsDocument(params: { textDocument: TextDocumentIdentifier }, services: LangiumServices): LangiumDocument | undefined {
-    const uri = URI.parse(params.textDocument.uri);
-    return services.documents.LangiumDocuments.getOrCreateDocument(uri);
 }
 
 function responseError<E = void>(err: unknown): ResponseError<E> {

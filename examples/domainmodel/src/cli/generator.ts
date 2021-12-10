@@ -10,14 +10,16 @@ import { CompositeGeneratorNode, IndentNode, NL, processGeneratorNode } from 'la
 import { AbstractElement, Domainmodel, Entity, Feature, isEntity, isPackageDeclaration, Type } from '../language-server/generated/ast';
 import { extractAstNode, extractDestinationAndName, setRootFolder } from './cli-util';
 import { createDomainModelServices } from '../language-server/domain-model-module';
-import { languageMetaData } from '../language-server/generated/module';
+import { DomainModelLanguageMetaData } from '../language-server/generated/module';
+import { URI } from 'vscode-uri';
 import colors from 'colors';
 import path from 'path';
 
 export const generateAction = async (fileName: string, opts: GenerateOptions): Promise<void> => {
-    const services = createDomainModelServices();
+    const fileUri = URI.file(fileName);
+    const services = createDomainModelServices().ServiceRegistry.getService(fileUri);
     await setRootFolder(fileName, services, opts.root);
-    const domainmodel = await extractAstNode<Domainmodel>(fileName, languageMetaData.fileExtensions, services);
+    const domainmodel = await extractAstNode<Domainmodel>(fileName, DomainModelLanguageMetaData.fileExtensions, services);
     const generatedDirPath = generateJava(domainmodel, fileName, opts.destination);
     console.log(colors.green(`Java classes generated successfully: ${colors.yellow(generatedDirPath)}`));
 };

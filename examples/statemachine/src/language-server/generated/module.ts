@@ -3,18 +3,21 @@
  * DO NOT EDIT MANUALLY!
  ******************************************************************************/
 
-import { LangiumGeneratedServices, LangiumServices, LanguageMetaData, Module } from 'langium';
+import { LangiumGeneratedServices, LangiumGeneratedSharedServices, LangiumSharedServices, LangiumServices, LanguageMetaData, Module } from 'langium';
 import { StatemachineAstReflection } from './ast';
-import { grammar } from './grammar';
+import { StatemachineGrammar } from './grammar';
 
-export const languageMetaData: LanguageMetaData = {
+export const StatemachineLanguageMetaData: LanguageMetaData = {
     languageId: 'statemachine',
     fileExtensions: ['.statemachine']
 };
 
+export const StatemachineGeneratedSharedModule: Module<LangiumSharedServices, LangiumGeneratedSharedServices> = {
+    AstReflection: () => new StatemachineAstReflection()
+};
+
 export const StatemachineGeneratedModule: Module<LangiumServices, LangiumGeneratedServices> = {
-    Grammar: () => grammar(),
-    AstReflection: () => new StatemachineAstReflection(),
-    LanguageMetaData: () => languageMetaData,
+    Grammar: () => StatemachineGrammar(),
+    LanguageMetaData: () => StatemachineLanguageMetaData,
     parser: {}
 };

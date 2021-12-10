@@ -14,7 +14,8 @@ X: name="X";
 terminal hiddenTerminal: /x/;
 `;
 
-const completion = expectCompletion(createLangiumGrammarServices(), expectFunction);
+const grammarServices = createLangiumGrammarServices().ServiceRegistry.all[0];
+const completion = expectCompletion(grammarServices, expectFunction);
 
 describe('Completion Provider', () => {
 

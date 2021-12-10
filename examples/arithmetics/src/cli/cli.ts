@@ -6,7 +6,7 @@
 
 import 'colors';
 import { Command } from 'commander';
-import { languageMetaData } from '../language-server/generated/module';
+import { ArithmeticsLanguageMetaData } from '../language-server/generated/module';
 import { evalAction } from './interpreter';
 
 const program = new Command();
@@ -17,7 +17,7 @@ program
 
 program
     .command('eval')
-    .argument('<file>', `possible file extensions: ${languageMetaData.fileExtensions.join(', ')}`)
+    .argument('<file>', `possible file extensions: ${ArithmeticsLanguageMetaData.fileExtensions.join(', ')}`)
     .description('calculates Evaluations in the source file')
     .action(evalAction);
 

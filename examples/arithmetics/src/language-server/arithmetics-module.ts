@@ -4,8 +4,8 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { createDefaultModule, DefaultModuleContext, inject, LangiumServices, Module, PartialLangiumServices } from 'langium';
-import { ArithmeticsGeneratedModule } from './generated/module';
+import { createSharedModule, injectService, LangiumServices, LangiumSharedServices, Module, PartialLangiumServices, SharedModuleContext } from 'langium';
+import { ArithmeticsGeneratedModule, ArithmeticsGeneratedSharedModule } from './generated/module';
 import { ArithmeticsValidationRegistry, ArithmeticsValidator } from './arithmetics-validator';
 
 export type ArithmeticsAddedServices = {
@@ -23,10 +23,13 @@ export const ArithmeticsModule: Module<ArithmeticsServices, PartialLangiumServic
     }
 };
 
-export function createArithmeticsServices(context?: DefaultModuleContext): ArithmeticsServices {
-    return inject(
-        createDefaultModule(context),
-        ArithmeticsGeneratedModule,
-        ArithmeticsModule
+export function createArithmeticsServices(context?: SharedModuleContext): LangiumSharedServices {
+    return injectService(
+        createSharedModule(context),
+        ArithmeticsGeneratedSharedModule,
+        {
+            generated: ArithmeticsGeneratedModule,
+            module: ArithmeticsModule
+        }
     );
 }

@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import { Command } from 'commander';
-import { languageMetaData } from '../language-server/generated/module';
+import { DomainModelLanguageMetaData } from '../language-server/generated/module';
 import { generateAction } from './generator';
 
 const program = new Command();
@@ -16,7 +16,7 @@ program
 
 program
     .command('generate')
-    .argument('<file>', `possible file extensions: ${languageMetaData.fileExtensions.join(', ')}`)
+    .argument('<file>', `possible file extensions: ${DomainModelLanguageMetaData.fileExtensions.join(', ')}`)
     .option('-d, --destination <dir>', 'destination directory of generating')
     .option('-r, --root <dir>', 'source root folder')
     .description('generates Java classes by Entity description')
