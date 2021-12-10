@@ -157,7 +157,7 @@ function groupKeywords(keywords: string[]): string[] {
     return res;
 }
 
-function getStringPatterns(grammar: langium.Grammar, pack: LangiumConfig): Pattern[] {
+function getStringPatterns(grammar: langium.Grammar, pack: LangiumLanguageConfig): Pattern[] {
     const terminals = langium.stream(grammar.rules).filter(langium.isTerminalRule);
     const stringTerminal = terminals.find(e => e.name.toLowerCase() === 'string');
     const stringPatterns: Pattern[] = [];
