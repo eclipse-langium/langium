@@ -145,8 +145,9 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
     }
 
     protected async buildDocuments(documents: LangiumDocument[], cancelToken: CancellationToken): Promise<void> {
-        await this.indexManager.update(documents.filter(e => e.state < DocumentState.Indexed), cancelToken);
-        await this.notifyBuildPhase(documents, DocumentState.Indexed, cancelToken);
+        const toBeIndexed = documents.filter(e => e.state < DocumentState.Indexed);
+        await this.indexManager.update(toBeIndexed, cancelToken);
+        await this.notifyBuildPhase(toBeIndexed, DocumentState.Indexed, cancelToken);
         await this.runCancelable(documents, DocumentState.Processed, cancelToken, doc => this.process(doc, cancelToken));
         await this.runCancelable(documents, DocumentState.Linked, cancelToken, doc => {
             const linker = this.serviceRegistry.getService(doc.uri).references.Linker;
@@ -156,11 +157,12 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
     }
 
     protected async runCancelable(documents: LangiumDocument[], targetState: DocumentState, cancelToken: CancellationToken, callback: (document: LangiumDocument) => MaybePromise<unknown>): Promise<void> {
-        for (const document of documents.filter(e => e.state < targetState)) {
+        const filtered = documents.filter(e => e.state < targetState);
+        for (const document of filtered) {
             await interruptAndCheck(cancelToken);
             await callback(document);
         }
-        await this.notifyBuildPhase(documents, targetState, cancelToken);
+        await this.notifyBuildPhase(filtered, targetState, cancelToken);
     }
 
     onBuildPhase(targetState: DocumentState, callback: DocumentBuildListener): void {

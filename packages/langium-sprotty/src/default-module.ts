@@ -5,22 +5,34 @@
  ******************************************************************************/
 
 import { Module } from 'langium';
-import { DiagramServer } from 'sprotty-protocol';
+import { DiagramOptions, DiagramServer } from 'sprotty-protocol';
 import { DefaultDiagramServerManager } from './diagram-server-manager';
 import { DiagramActionNotification } from './lsp';
-import { LangiumSprottyServices, DefaultSprottyServices } from './sprotty-services';
+import { LangiumSprottyServices, LangiumSprottySharedServices, SprottySharedServices } from './sprotty-services';
+import { URI } from 'vscode-uri';
+
+export const defaultDiagramServerFactory =
+(services: LangiumSprottySharedServices): ((clientId: string, options?: DiagramOptions) => DiagramServer) => {
+    const connection = services.lsp.Connection;
+    const serviceRegistry = services.ServiceRegistry;
+    return (clientId, options) => {
+        const sourceUri = options?.sourceUri;
+        if (!sourceUri) {
+            throw new Error("Missing 'sourceUri' option in request.");
+        }
+        const language = serviceRegistry.getService(URI.parse(sourceUri as string)) as LangiumSprottyServices;
+        return new DiagramServer(async action => {
+            connection?.sendNotification(DiagramActionNotification.type, { clientId, action });
+        }, language.diagram);
+    };
+};
 
 /**
- * Default implementations of services for the integration of Langium and Sprotty.
+ * Default implementations of shared services for the integration of Langium and Sprotty.
  */
-export const DefaultSprottyModule: Module<LangiumSprottyServices, DefaultSprottyServices> = {
+export const SprottySharedModule: Module<LangiumSprottySharedServices, SprottySharedServices> = {
     diagram: {
-        diagramServerFactory: services => {
-            const connection = services.lsp.Connection;
-            return clientId => new DiagramServer(async action => {
-                connection?.sendNotification(DiagramActionNotification.type, { clientId, action });
-            }, services.diagram);
-        },
+        diagramServerFactory: defaultDiagramServerFactory,
         DiagramServerManager: services => new DefaultDiagramServerManager(services)
     }
 };

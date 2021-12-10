@@ -4,8 +4,8 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { LangiumServices } from 'langium';
-import { DiagramServer, DiagramServices } from 'sprotty-protocol';
+import { LangiumServices, LangiumSharedServices } from 'langium';
+import { DiagramOptions, DiagramServer, DiagramServices } from 'sprotty-protocol';
 import { DiagramServerManager } from './diagram-server-manager';
 
 /**
@@ -16,16 +16,21 @@ export type SprottyDiagramServices = {
 }
 
 /**
- * Services provided by the `DefaultSprottyModule` for the integration of Langium and Sprotty.
+ * Extension of the `LangiumServices` with the diagram-related services.
  */
-export type DefaultSprottyServices = {
+export type LangiumSprottyServices = LangiumServices & SprottyDiagramServices
+
+/**
+ * Services provided by the `SprottySharedModule` for the integration of Langium and Sprotty.
+ */
+export type SprottySharedServices = {
     diagram: {
-        diagramServerFactory: (clientId: string) => DiagramServer,
+        diagramServerFactory: (clientId: string, options?: DiagramOptions) => DiagramServer,
         DiagramServerManager: DiagramServerManager
     }
 }
 
 /**
- * Extension of the `LangiumServices` with all services required for the integration of Langium and Sprotty.
+ * Extension of the `LangiumSharedServices` with the diagram-related shared services.
  */
-export type LangiumSprottyServices = LangiumServices & SprottyDiagramServices & DefaultSprottyServices
+export type LangiumSprottySharedServices = LangiumSharedServices & SprottySharedServices

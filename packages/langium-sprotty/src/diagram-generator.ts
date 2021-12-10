@@ -36,7 +36,7 @@ export abstract class LangiumDiagramGenerator implements IDiagramGenerator {
     protected readonly langiumDocuments: LangiumDocuments;
 
     constructor(services: LangiumServices) {
-        this.langiumDocuments = services.documents.LangiumDocuments;
+        this.langiumDocuments = services.shared.workspace.LangiumDocuments;
     }
 
     /**
