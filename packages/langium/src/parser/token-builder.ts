@@ -12,7 +12,7 @@ import { getCaseInsensitivePattern, partialMatches } from '../utils/regex-util';
 import { stream } from '../utils/stream';
 
 export interface TokenBuilder {
-    buildTokens(grammar: Grammar, caseInsensitive?: boolean): TokenType[];
+    buildTokens(grammar: Grammar, options?: { caseInsensitive?: boolean }): TokenType[];
 }
 
 export class DefaultTokenBuilder implements TokenBuilder {
@@ -21,7 +21,7 @@ export class DefaultTokenBuilder implements TokenBuilder {
     protected readonly KEYWORD_SUFFIX = '_KEYWORD';
     protected readonly TERMINAL_SUFFIX = '_TERMINAL';
 
-    buildTokens(grammar: Grammar, caseInsensitive = false): TokenType[] {
+    buildTokens(grammar: Grammar, options?: { caseInsensitive?: boolean }): TokenType[] {
         const tokenMap = new Map<string, TokenType>();
         const terminalsTokens: TokenType[] = [];
         const terminals = Array.from(stream(grammar.rules).filter(isTerminalRule));
@@ -37,7 +37,7 @@ export class DefaultTokenBuilder implements TokenBuilder {
             .sort((a, b) => b.value.length - a.value.length);
 
         for (const keyword of keywords) {
-            const keywordToken = this.buildKeywordToken(keyword, keywords, terminals, tokenMap, caseInsensitive);
+            const keywordToken = this.buildKeywordToken(keyword, keywords, terminals, tokenMap, !!options?.caseInsensitive);
             tokens.push(keywordToken);
             tokenMap.set(keyword.value + this.KEYWORD_SUFFIX, keywordToken);
         }

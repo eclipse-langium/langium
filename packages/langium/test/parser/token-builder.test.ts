@@ -72,7 +72,7 @@ describe('tokenBuilder#caseInsensitivePattern', () => {
         terminal AB: /ABD?/;
         `;
         const grammar = (await parseHelper<Grammar>(grammarServices)(text)).document.parseResult.value;
-        const tokens = tokenBuilder.buildTokens(grammar, true);
+        const tokens = tokenBuilder.buildTokens(grammar, { caseInsensitive: true });
         const patterns = tokens.map(token => token.PATTERN);
 
         implementPattern = patterns[0];

@@ -31,7 +31,7 @@ type Method = () => void;
 export function createLangiumParser(services: LangiumServices): LangiumParser {
     const grammar = services.Grammar;
     const tokens = new Map<string, TokenType>();
-    const buildTokens = services.parser.TokenBuilder.buildTokens(grammar, services.LanguageMetaData.caseInsensitive);
+    const buildTokens = services.parser.TokenBuilder.buildTokens(grammar, { caseInsensitive: services.LanguageMetaData.caseInsensitive });
     buildTokens.forEach(e => {
         tokens.set(e.name, e);
     });
