@@ -78,21 +78,6 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
               "$refText": "Evaluation"
             },
             "elements": []
-          },
-          {
-            "$type": "Keyword",
-            "value": "@Implement",
-            "elements": []
-          },
-          {
-            "$type": "Keyword",
-            "value": "\\\\strange\\\\",
-            "elements": []
-          },
-          {
-            "$type": "Keyword",
-            "value": "xx^(#*&^)$#*%*!^)}{:>:<Q",
-            "elements": []
           }
         ]
       }

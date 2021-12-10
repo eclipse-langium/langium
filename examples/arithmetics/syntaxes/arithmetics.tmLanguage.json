@@ -10,7 +10,7 @@
     },
     {
       "name": "keyword.control.arithmetics",
-      "match": "\\b([dD][eE][fF]|[mM][oO][dD][uU][lL][eE]|[xX][xX]\\^\\(#\\*&\\^\\)\\$#\\*%\\*!\\^\\)\\}\\{:>:<[qQ])\\b|\\B(@[iI][mM][pP][lL][eE][mM][eE][nN][tT])\\b|\\B(\\\\[sS][tT][rR][aA][nN][gG][eE]\\\\)\\B"
+      "match": "\\b([dD][eE][fF]|[mM][oO][dD][uU][lL][eE])\\b"
     }
   ],
   "repository": {

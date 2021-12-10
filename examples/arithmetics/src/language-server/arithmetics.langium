@@ -5,7 +5,7 @@ entry Module:
 	(statements+=Statement)*;
 
 Statement:
-	Definition | Evaluation | '@Implement' | '\strange\' | 'xx^(#*&^)$#*%*!^)}{:>:<Q';
+	Definition | Evaluation;
 
 Definition:
 	'def' name=ID ('(' args+=DeclaredParameter (',' args+=DeclaredParameter)* ')')?
