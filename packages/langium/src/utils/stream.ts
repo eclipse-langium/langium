@@ -231,10 +231,12 @@ export interface Stream<T> extends Iterable<T> {
 
 export type FlatStream<T, Depth extends number> = {
     'done': Stream<T>,
-    'recur': T extends Array<infer InnerArr>
-        ? FlatStream<InnerArr, [-1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20][Depth]>
+    'recur': T extends Iterable<infer Content>
+        ? FlatStream<Content, MinusOne<Depth>>
         : Stream<T>
 }[Depth extends 0 ? 'done' : 'recur'];
+
+export type MinusOne<N extends number> = [-1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20][N];
 
 /**
  * The default implementation of `Stream` works with two input functions:
