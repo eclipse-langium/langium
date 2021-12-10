@@ -6,10 +6,11 @@
 
 import { CancellationToken, Connection } from 'vscode-languageserver';
 import { URI } from 'vscode-uri';
-import { ActionMessage, DiagramServer, IDiagramGenerator } from 'sprotty-protocol';
-import { DocumentState, equalURI, interruptAndCheck, LangiumDocument, stream } from 'langium';
-import { LangiumSprottyServices } from './sprotty-services';
+import { ActionMessage, DiagramOptions, DiagramServer, isRequestAction, RejectAction, RequestModelAction } from 'sprotty-protocol';
+import { DocumentState, equalURI, interruptAndCheck, LangiumDocument, ServiceRegistry, stream } from 'langium';
+import { LangiumSprottyServices, LangiumSprottySharedServices } from './sprotty-services';
 import { LangiumDiagramGeneratorArguments } from './diagram-generator';
+import { DiagramActionNotification } from './lsp';
 
 /**
  * A `DiagramServer` instance can handle exactly one client diagram. The host application
@@ -32,19 +33,19 @@ export interface DiagramServerManager {
 export class DefaultDiagramServerManager implements DiagramServerManager {
 
     protected readonly connection?: Connection;
-    protected readonly diagramGenerator: IDiagramGenerator;
-    protected readonly diagramServerFactory: (clientId: string) => DiagramServer;
+    protected readonly serviceRegistry: ServiceRegistry;
+    protected readonly diagramServerFactory: (clientId: string, options?: DiagramOptions) => DiagramServer;
     protected readonly diagramServerMap: Map<string, DiagramServer> = new Map();
 
     private changedUris: URI[] = [];
     private outdatedDocuments: Map<LangiumDocument, DiagramServer> = new Map();
 
-    constructor(services: LangiumSprottyServices) {
+    constructor(services: LangiumSprottySharedServices) {
         this.connection = services.lsp.Connection;
-        this.diagramGenerator = services.diagram.DiagramGenerator;
+        this.serviceRegistry = services.ServiceRegistry;
         this.diagramServerFactory = services.diagram.diagramServerFactory;
-        services.documents.DocumentBuilder.onUpdate((changed, deleted) => this.documentsUpdated(changed, deleted));
-        services.documents.DocumentBuilder.onBuildPhase(DocumentState.Validated, (built, ct) => this.documentsBuilt(built, ct));
+        services.workspace.DocumentBuilder.onUpdate((changed, deleted) => this.documentsUpdated(changed, deleted));
+        services.workspace.DocumentBuilder.onBuildPhase(DocumentState.Validated, (built, ct) => this.documentsBuilt(built, ct));
     }
 
     /**
@@ -86,7 +87,9 @@ export class DefaultDiagramServerManager implements DiagramServerManager {
             await interruptAndCheck(cancelToken);
             const [firstEntry] = documents;
             const [document, diagramServer] = firstEntry;
-            const model = await this.diagramGenerator.generate(<LangiumDiagramGeneratorArguments>{
+            const language = this.serviceRegistry.getService(document.uri) as LangiumSprottyServices;
+            const diagramGenerator = language.diagram.DiagramGenerator;
+            const model = await diagramGenerator.generate(<LangiumDiagramGeneratorArguments>{
                 document,
                 options: diagramServer.state.options ?? {},
                 state: diagramServer.state,
@@ -99,14 +102,24 @@ export class DefaultDiagramServerManager implements DiagramServerManager {
     }
 
     acceptAction({ clientId, action }: ActionMessage): Promise<void> {
-        let diagramServer = this.diagramServerMap.get(clientId);
-        if (!diagramServer) {
-            diagramServer = this.diagramServerFactory(clientId);
-            this.diagramServerMap.set(clientId, diagramServer);
-        }
         try {
+            let diagramServer = this.diagramServerMap.get(clientId);
+            if (!diagramServer) {
+                const options = (action as RequestModelAction).options;
+                diagramServer = this.diagramServerFactory(clientId, options);
+                this.diagramServerMap.set(clientId, diagramServer);
+            }
             return diagramServer.accept(action);
         } catch (err) {
+            if (err instanceof Error && isRequestAction(action)) {
+                const rejectAction: RejectAction = {
+                    kind: RejectAction.KIND,
+                    responseId: action.requestId,
+                    message: err.message,
+                    detail: err.stack
+                };
+                this.connection?.sendNotification(DiagramActionNotification.type, { clientId, action: rejectAction });
+            }
             return Promise.reject(err);
         }
     }

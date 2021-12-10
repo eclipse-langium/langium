@@ -9,7 +9,7 @@ import {
 } from 'vscode-languageserver';
 import { ActionMessage } from 'sprotty-protocol';
 import { OperationCancelled } from 'langium';
-import { LangiumSprottyServices } from './sprotty-services';
+import { LangiumSprottySharedServices } from './sprotty-services';
 
 export namespace DiagramActionNotification {
     export const type = new NotificationType<ActionMessage>('diagram/accept');
@@ -23,7 +23,7 @@ export namespace DiagramDidCloseNotification {
  * Adds JSON-RPC handlers for `DiagramActionNotification` and `DiagramDidCloseNotification` received
  * from the client.
  */
-export function addDiagramHandler(connection: Connection, services: LangiumSprottyServices): void {
+export function addDiagramHandler(connection: Connection, services: LangiumSprottySharedServices): void {
     const diagramServerManager = services.diagram.DiagramServerManager;
     connection.onNotification(DiagramActionNotification.type, message => {
         diagramServerManager.acceptAction(message)
