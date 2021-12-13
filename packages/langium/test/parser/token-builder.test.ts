@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { TokenType } from '@chevrotain/types';
+import { TokenPattern, TokenType } from '@chevrotain/types';
 import { createLangiumGrammarServices, Grammar } from '../../src';
 import { parseHelper } from '../../src/test';
 
@@ -50,6 +50,66 @@ describe('tokenBuilder#longerAlts', () => {
 
     test('should create no longer alts for terminals', () => {
         expect(abTerminalToken.LONGER_ALT).toBeUndefined();
+    });
+
+});
+
+let implementPattern: TokenPattern | undefined;
+let strangePattern: TokenPattern | undefined;
+let abcPattern: TokenPattern | undefined;
+let abPattern: TokenPattern | undefined;
+let aPattern: TokenPattern | undefined;
+let booleanTerminalPattern: TokenPattern | undefined;
+let abTerminalPattern: TokenPattern | undefined;
+
+describe('tokenBuilder#caseInsensitivePattern', () => {
+    beforeAll(async () => {
+        const text = `
+        grammar test
+        Main: 'A' 'ab' 'AbC' | Implement | '\\strange\\';
+        Implement: '@implement' AB;
+        terminal BOOLEAN returns boolean: /true|false/;
+        terminal AB: /ABD?/;
+        `;
+        const grammar = (await parseHelper<Grammar>(grammarServices)(text)).document.parseResult.value;
+        const tokens = tokenBuilder.buildTokens(grammar, { caseInsensitive: true });
+        const patterns = tokens.map(token => token.PATTERN);
+
+        implementPattern = patterns[0];
+        strangePattern = patterns[1];
+        abcPattern = patterns[2];
+        abPattern = patterns[3];
+        aPattern = patterns[4];
+        booleanTerminalPattern = patterns[5];
+        abTerminalPattern = patterns[6];
+    });
+
+    test('should create from keyword with special symbols', () => {
+        expect(implementPattern).toEqual(new RegExp(/@[iI][mM][pP][lL][eE][mM][eE][nN][tT]/));
+    });
+
+    test('should create from keyword with special escape symbols', () => {
+        expect(strangePattern).toEqual(new RegExp(/\\[sS][tT][rR][aA][nN][gG][eE]\\/));
+    });
+
+    test('should create from mixed-case word', () => {
+        expect(abcPattern).toEqual(new RegExp(/[aA][bB][cC]/));
+    });
+
+    test('should create from lower-case word', () => {
+        expect(abPattern).toEqual(new RegExp(/[aA][bB]/));
+    });
+
+    test('should create from upper-case word', () => {
+        expect(aPattern).toEqual(new RegExp(/[aA]/));
+    });
+
+    test('should ignore terminals', () => {
+        expect(booleanTerminalPattern).toEqual(new RegExp(/true|false/));
+    });
+
+    test('should ignore terminals with ?', () => {
+        expect(abTerminalPattern).toEqual(new RegExp(/ABD?/));
     });
 
 });

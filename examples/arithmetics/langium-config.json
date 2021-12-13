@@ -4,6 +4,7 @@
         "id": "arithmetics",
         "grammar": "src/language-server/arithmetics.langium",
         "fileExtensions": [".calc"],
+        "caseInsensitive": true,
         "textMate": {
             "out": "syntaxes/arithmetics.tmLanguage.json"
         }

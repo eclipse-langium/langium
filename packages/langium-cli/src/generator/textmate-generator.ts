@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import * as langium from 'langium';
-import { escapeRegExp, getTerminalParts, isCommentTerminal, isTerminalRule, terminalRegex } from 'langium';
+import { escapeRegExp, getCaseInsensitivePattern, getTerminalParts, isCommentTerminal, isTerminalRule, terminalRegex } from 'langium';
 import { LangiumLanguageConfig } from '../package';
 import { collectKeywords } from './util';
 
@@ -117,15 +117,14 @@ function getRepository(grammar: langium.Grammar, config: LangiumLanguageConfig):
 function getControlKeywords(grammar: langium.Grammar, pack: LangiumLanguageConfig): Pattern {
     const regex = /[A-Za-z]/;
     const controlKeywords = collectKeywords(grammar).filter(kw => regex.test(kw));
-    const keywords = controlKeywords.map(escapeRegExp);
-    const groups = groupKeywords(keywords);
+    const groups = groupKeywords(controlKeywords, pack.caseInsensitive);
     return {
         'name': `keyword.control.${pack.id}`,
         'match': groups.join('|')
     };
 }
 
-function groupKeywords(keywords: string[]): string[] {
+function groupKeywords(keywords: string[], caseInsensitive: boolean | undefined): string[] {
     const groups: {
         letter: string[],
         leftSpecial: string[],
@@ -134,17 +133,18 @@ function groupKeywords(keywords: string[]): string[] {
     } = {letter: [], leftSpecial: [], rightSpecial: [], special: []};
 
     keywords.forEach(keyword => {
+        const keywordPattern = caseInsensitive ? getCaseInsensitivePattern(keyword) : escapeRegExp(keyword);
         if (/\w/.test(keyword[0])) {
             if (/\w/.test(keyword[keyword.length - 1])) {
-                groups.letter.push(keyword);
+                groups.letter.push(keywordPattern);
             } else {
-                groups.rightSpecial.push(keyword);
+                groups.rightSpecial.push(keywordPattern);
             }
         } else {
             if ((/\w/).test(keyword[keyword.length - 1])) {
-                groups.leftSpecial.push(keyword);
+                groups.leftSpecial.push(keywordPattern);
             } else {
-                groups.special.push(keyword);
+                groups.special.push(keywordPattern);
             }
         }
     });

@@ -8,11 +8,11 @@ import { Lexer, TokenPattern, TokenType } from 'chevrotain';
 import { terminalRegex } from '..';
 import { Grammar, isKeyword, isTerminalRule, Keyword, TerminalRule } from '../grammar/generated/ast';
 import { streamAllContents } from '../utils/ast-util';
-import { partialMatches } from '../utils/regex-util';
+import { getCaseInsensitivePattern, partialMatches } from '../utils/regex-util';
 import { stream } from '../utils/stream';
 
 export interface TokenBuilder {
-    buildTokens(grammar: Grammar): TokenType[];
+    buildTokens(grammar: Grammar, options?: { caseInsensitive?: boolean }): TokenType[];
 }
 
 export class DefaultTokenBuilder implements TokenBuilder {
@@ -21,7 +21,7 @@ export class DefaultTokenBuilder implements TokenBuilder {
     protected readonly KEYWORD_SUFFIX = '_KEYWORD';
     protected readonly TERMINAL_SUFFIX = '_TERMINAL';
 
-    buildTokens(grammar: Grammar): TokenType[] {
+    buildTokens(grammar: Grammar, options?: { caseInsensitive?: boolean }): TokenType[] {
         const tokenMap = new Map<string, TokenType>();
         const terminalsTokens: TokenType[] = [];
         const terminals = Array.from(stream(grammar.rules).filter(isTerminalRule));
@@ -37,7 +37,7 @@ export class DefaultTokenBuilder implements TokenBuilder {
             .sort((a, b) => b.value.length - a.value.length);
 
         for (const keyword of keywords) {
-            const keywordToken = this.buildKeywordToken(keyword, keywords, terminals, tokenMap);
+            const keywordToken = this.buildKeywordToken(keyword, keywords, terminals, tokenMap, !!options?.caseInsensitive);
             tokens.push(keywordToken);
             tokenMap.set(keyword.value + this.KEYWORD_SUFFIX, keywordToken);
         }
@@ -74,13 +74,15 @@ export class DefaultTokenBuilder implements TokenBuilder {
         return token;
     }
 
-    protected buildKeywordToken(keyword: Keyword, keywords: Keyword[], terminals: TerminalRule[], tokenMap: Map<string, TokenType>): TokenType {
+    protected buildKeywordToken(keyword: Keyword, keywords: Keyword[], terminals: TerminalRule[], tokenMap: Map<string, TokenType>, caseInsensitive: boolean): TokenType {
         const longerAlt = this.findLongerAlt(keyword, keywords, terminals, tokenMap);
-        return { name: keyword.value, PATTERN: this.buildKeywordPattern(keyword), LONGER_ALT: longerAlt };
+        return { name: keyword.value, PATTERN: this.buildKeywordPattern(keyword, caseInsensitive), LONGER_ALT: longerAlt };
     }
 
-    protected buildKeywordPattern(keyword: Keyword): TokenPattern {
-        return keyword.value;
+    protected buildKeywordPattern(keyword: Keyword, caseInsensitive: boolean): TokenPattern {
+        return caseInsensitive ?
+            new RegExp(getCaseInsensitivePattern(keyword.value)) :
+            keyword.value;
     }
 
     protected findLongerAlt(keyword: Keyword, keywords: Keyword[], terminals: TerminalRule[], tokenMap: Map<string, TokenType>): TokenType[] {

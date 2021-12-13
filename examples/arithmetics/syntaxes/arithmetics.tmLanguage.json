@@ -10,7 +10,7 @@
     },
     {
       "name": "keyword.control.arithmetics",
-      "match": "\\b(def|module)\\b"
+      "match": "\\b([dD][eE][fF]|[mM][oO][dD][uU][lL][eE])\\b"
     }
   ],
   "repository": {
