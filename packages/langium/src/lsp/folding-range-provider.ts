@@ -5,13 +5,13 @@
  ******************************************************************************/
 
 import { CancellationToken, FoldingRange, FoldingRangeKind, FoldingRangeParams } from 'vscode-languageserver';
-import { LangiumDocument } from '../documents/document';
 import { LeafCstNodeImpl } from '../parser/cst-node-builder';
 import { LangiumServices } from '../services';
 import { AstNode, CstNode } from '../syntax-tree';
 import { AstNodeContent, streamAllContents } from '../utils/ast-util';
 import { streamCst } from '../utils/cst-util';
 import { MaybePromise } from '../utils/promise-util';
+import { LangiumDocument } from '../workspace/documents';
 
 export interface FoldingRangeProvider {
     /**

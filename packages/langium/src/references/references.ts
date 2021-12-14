@@ -5,14 +5,14 @@
  ******************************************************************************/
 
 import { findAssignment } from '../grammar/grammar-util';
-import { ReferenceDescription } from '../index/ast-descriptions';
-import { AstNodeLocator } from '../index/ast-node-locator';
-import { IndexManager } from '../index/index-manager';
 import { LangiumServices } from '../services';
 import { AstNode, CstNode, Reference } from '../syntax-tree';
 import { isReference } from '../utils/ast-util';
 import { findRelevantNode } from '../utils/cst-util';
 import { Stream } from '../utils/stream';
+import { ReferenceDescription } from '../workspace/ast-descriptions';
+import { AstNodeLocator } from '../workspace/ast-node-locator';
+import { IndexManager } from '../workspace/index-manager';
 import { NameProvider } from './naming';
 
 export interface References {

@@ -87,7 +87,10 @@ export class DefaultDiagramServerManager implements DiagramServerManager {
             await interruptAndCheck(cancelToken);
             const [firstEntry] = documents;
             const [document, diagramServer] = firstEntry;
-            const language = this.serviceRegistry.getService(document.uri) as LangiumSprottyServices;
+            const language = this.serviceRegistry.getServices(document.uri) as LangiumSprottyServices;
+            if (!language.diagram) {
+                throw new Error(`The '${language.LanguageMetaData.languageId}' language does not support diagrams.`);
+            }
             const diagramGenerator = language.diagram.DiagramGenerator;
             const model = await diagramGenerator.generate(<LangiumDiagramGeneratorArguments>{
                 document,

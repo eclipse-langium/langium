@@ -4,14 +4,13 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { Module } from '../dependency-injection';
-import { LangiumGrammarValidationRegistry, LangiumGrammarValidator } from './langium-grammar-validator';
-import { PartialLangiumServices, LangiumServices, LangiumSharedServices } from '../services';
-import { SharedModuleContext } from '../default-module';
+import { createDefaultModule, createDefaultSharedModule, DefaultSharedModuleContext } from '../default-module';
+import { inject, Module } from '../dependency-injection';
+import { LangiumServices, LangiumSharedServices, PartialLangiumServices } from '../services';
 import { LangiumGrammarGeneratedModule, LangiumGrammarGeneratedSharedModule } from './generated/module';
-import { LangiumGrammarFoldingRangeProvider } from './lsp/langium-grammar-folding-range-provider';
 import { LangiumGrammarCodeActionProvider } from './langium-grammar-code-actions';
-import { createSharedModule, injectService } from '..';
+import { LangiumGrammarValidationRegistry, LangiumGrammarValidator } from './langium-grammar-validator';
+import { LangiumGrammarFoldingRangeProvider } from './lsp/langium-grammar-folding-range-provider';
 
 export type LangiumGrammarAddedServices = {
     validation: {
@@ -32,9 +31,19 @@ export const LangiumGrammarModule: Module<LangiumGrammarServices, PartialLangium
     }
 };
 
-export function createLangiumGrammarServices(context?: SharedModuleContext): LangiumSharedServices {
-    return injectService(createSharedModule(context), LangiumGrammarGeneratedSharedModule, {
-        generated: LangiumGrammarGeneratedModule,
-        module: LangiumGrammarModule
-    });
+export function createLangiumGrammarServices(context?: DefaultSharedModuleContext): {
+    shared: LangiumSharedServices,
+    grammar: LangiumGrammarServices
+} {
+    const shared = inject(
+        createDefaultSharedModule(context),
+        LangiumGrammarGeneratedSharedModule
+    );
+    const grammar = inject(
+        createDefaultModule({ shared }),
+        LangiumGrammarGeneratedModule,
+        LangiumGrammarModule
+    );
+    shared.ServiceRegistry.register(grammar);
+    return { shared, grammar };
 }

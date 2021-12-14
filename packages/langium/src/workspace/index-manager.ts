@@ -6,16 +6,16 @@
 
 import fs from 'fs';
 import path from 'path';
-import { URI, Utils } from 'vscode-uri';
 import { CancellationToken, WorkspaceFolder } from 'vscode-languageserver';
-import { DocumentState, LangiumDocument, LangiumDocuments } from '../documents/document';
-import { ReferenceDescription } from './ast-descriptions';
-import { AstNode, AstNodeDescription } from '../syntax-tree';
-import { stream, Stream } from '../utils/stream';
+import { URI, Utils } from 'vscode-uri';
+import { ServiceRegistry } from '../service-registry';
+import { LangiumSharedServices } from '../services';
+import { AstNode, AstNodeDescription, AstReflection } from '../syntax-tree';
 import { getDocument } from '../utils/ast-util';
 import { interruptAndCheck } from '../utils/promise-util';
-import { ServiceRegistry } from '../service-registry';
-import { AstReflection, LangiumSharedServices } from '..';
+import { stream, Stream } from '../utils/stream';
+import { ReferenceDescription } from './ast-descriptions';
+import { DocumentState, LangiumDocument, LangiumDocuments } from './documents';
 
 export interface IndexManager {
     /**
@@ -194,7 +194,7 @@ export class DefaultIndexManager implements IndexManager {
         this.globalScopeCache.clear();
         // first: build exported object data
         for (const document of documents) {
-            const services = this.serviceRegistry.getService(document.uri);
+            const services = this.serviceRegistry.getServices(document.uri);
             const indexData: AstNodeDescription[] = await services.index.AstNodeDescriptionProvider.createDescriptions(document, cancelToken);
             for (const data of indexData) {
                 data.node = undefined; // clear reference to the AST Node
@@ -204,7 +204,7 @@ export class DefaultIndexManager implements IndexManager {
         }
         // second: create reference descriptions
         for (const document of documents) {
-            const services = this.serviceRegistry.getService(document.uri);
+            const services = this.serviceRegistry.getServices(document.uri);
             this.referenceIndex.set(document.textDocument.uri, await services.index.ReferenceDescriptionProvider.createDescriptions(document, cancelToken));
             await interruptAndCheck(cancelToken);
             document.state = DocumentState.Indexed;

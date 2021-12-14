@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { createSharedModule, LangiumServices, Module, PartialLangiumServices, injectService, SharedModuleContext, LangiumSharedServices } from 'langium';
+import { LangiumServices, Module, PartialLangiumServices, LangiumSharedServices, DefaultSharedModuleContext, inject, createDefaultSharedModule, createDefaultModule } from 'langium';
 import { DomainModelGeneratedModule, DomainModelGeneratedSharedModule } from './generated/module';
 import { DomainModelValidationRegistry, DomainModelValidator } from './domain-model-validator';
 import { DomainModelScopeComputation } from './domain-model-scope';
@@ -33,13 +33,19 @@ export const DomainModelModule: Module<DomainModelServices, PartialLangiumServic
     }
 };
 
-export function createDomainModelServices(context?: SharedModuleContext): LangiumSharedServices {
-    return injectService(
-        createSharedModule(context),
-        DomainModelGeneratedSharedModule,
-        {
-            generated: DomainModelGeneratedModule,
-            module: DomainModelModule
-        }
+export function createDomainModelServices(context?: DefaultSharedModuleContext): {
+    shared: LangiumSharedServices,
+    domainmodel: DomainModelServices
+} {
+    const shared = inject(
+        createDefaultSharedModule(context),
+        DomainModelGeneratedSharedModule
     );
+    const domainmodel = inject(
+        createDefaultModule({ shared }),
+        DomainModelGeneratedModule,
+        DomainModelModule
+    );
+    shared.ServiceRegistry.register(domainmodel);
+    return { shared, domainmodel };
 }

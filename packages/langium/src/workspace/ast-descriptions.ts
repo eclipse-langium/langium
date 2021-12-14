@@ -6,8 +6,7 @@
 
 import { CancellationToken } from 'vscode-languageserver';
 import { URI } from 'vscode-uri';
-import { DocumentSegment, LangiumDocument } from '../documents/document';
-import { Linker, getReferenceId } from '../references/linker';
+import { getReferenceId, Linker } from '../references/linker';
 import { NameProvider } from '../references/naming';
 import { LangiumServices } from '../services';
 import { AstNode, AstNodeDescription, ReferenceInfo } from '../syntax-tree';
@@ -15,6 +14,7 @@ import { getDocument, isLinkingError, streamAllContents, streamContents, streamR
 import { toDocumentSegment } from '../utils/cst-util';
 import { interruptAndCheck } from '../utils/promise-util';
 import { AstNodeLocator } from './ast-node-locator';
+import { DocumentSegment, LangiumDocument } from './documents';
 
 export interface ReferenceDescription {
     /** URI of the document that holds a reference */

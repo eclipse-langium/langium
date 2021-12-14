@@ -5,13 +5,13 @@
  ******************************************************************************/
 
 import { CancellationToken, DefinitionParams, LocationLink } from 'vscode-languageserver';
-import { LangiumDocument } from '../documents/document';
 import { NameProvider } from '../references/naming';
 import { References } from '../references/references';
 import { LangiumServices } from '../services';
 import { CstNode } from '../syntax-tree';
 import { findLeafNodeAtOffset, getDocument } from '../utils/ast-util';
 import { MaybePromise } from '../utils/promise-util';
+import { LangiumDocument } from '../workspace/documents';
 
 export interface GoToResolver {
     /**

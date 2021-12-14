@@ -5,9 +5,9 @@
  ******************************************************************************/
 
 import {
-    createLangiumParser, createSharedModule, Grammar, injectService, IParserConfig, LangiumGeneratedServices,
-    LangiumGeneratedSharedServices,
-    LangiumServices, LangiumSharedServices, Module
+    createDefaultModule, createDefaultSharedModule, createLangiumParser, Grammar, inject,
+    IParserConfig, LangiumGeneratedServices, LangiumGeneratedSharedServices, LangiumServices,
+    LangiumSharedServices, Module
 } from 'langium';
 import { LangiumConfig } from './package';
 
@@ -28,10 +28,8 @@ export function validateParser(grammar: Grammar, config: LangiumConfig): Error |
             ParserConfig: () => parserConfig
         }
     };
-    const services = injectService(createSharedModule(), generatedSharedModule, {
-        generated: generatedModule,
-        module: {}
-    }).ServiceRegistry.all[0];
+    const shared = inject(createDefaultSharedModule(), generatedSharedModule);
+    const services = inject(createDefaultModule({ shared }), generatedModule);
     try {
         createLangiumParser(services);
         return undefined;

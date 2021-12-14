@@ -5,15 +5,15 @@
  ******************************************************************************/
 
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { documentFromText, LangiumDocuments, PrecomputedScopes } from '../documents/document';
+import { URI, Utils } from 'vscode-uri';
 import * as ast from '../grammar/generated/ast';
 import { CompositeCstNodeImpl } from '../parser/cst-node-builder';
 import { LangiumServices } from '../services';
 import { AstNode, AstNodeDescription, CstNode } from '../syntax-tree';
 import { getContainerOfType, getDocument, Mutable, streamAllContents } from '../utils/ast-util';
-import { createLangiumGrammarServices } from './langium-grammar-module';
 import { escapeRegExp } from '../utils/regex-util';
-import { URI, Utils } from 'vscode-uri';
+import { documentFromText, LangiumDocuments, PrecomputedScopes } from '../workspace/documents';
+import { createLangiumGrammarServices } from './langium-grammar-module';
 
 type FeatureValue = {
     feature: ast.AbstractElement;
@@ -369,7 +369,7 @@ function resolveTransitiveImportsInternal(documents: LangiumDocuments, grammar: 
 }
 
 export function loadGrammar(json: string): ast.Grammar {
-    const services = createLangiumGrammarServices().ServiceRegistry.all[0];
+    const services = createLangiumGrammarServices().grammar;
     const astNode = services.serializer.JsonSerializer.deserialize(json);
     if (!ast.isGrammar(astNode)) {
         throw new Error('Could not load grammar from specified json input.');

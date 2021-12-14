@@ -4,10 +4,10 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { TokenType } from 'chevrotain';
-import { URI } from 'vscode-uri';
-import { DocumentSegment, LangiumDocument } from './documents/document';
-import { AbstractElement } from './grammar/generated/ast';
+import type { TokenType } from 'chevrotain';
+import type { URI } from 'vscode-uri';
+import type { AbstractElement } from './grammar/generated/ast';
+import type { DocumentSegment, LangiumDocument } from './workspace/documents';
 
 /**
  * A node in the Abstract Syntax Tree (AST).
@@ -78,7 +78,8 @@ export interface LinkingError extends ReferenceInfo {
 }
 
 /**
- * Service used for generic access to the structure of the AST.
+ * Service used for generic access to the structure of the AST. This service is shared between
+ * all involved languages, so it operates on the superset of types of these languages.
  */
 export interface AstReflection {
     getAllTypes(): string[]

@@ -5,14 +5,14 @@
  ******************************************************************************/
 
 import { CancellationToken } from 'vscode-jsonrpc';
-import { LangiumDocument, PrecomputedScopes } from '../documents/document';
-import { AstNodeDescriptionProvider } from '../index/ast-descriptions';
-import { IndexManager } from '../index/index-manager';
 import { LangiumServices } from '../services';
 import { AstNode, AstNodeDescription, AstReflection } from '../syntax-tree';
 import { getDocument, streamAllContents } from '../utils/ast-util';
 import { interruptAndCheck } from '../utils/promise-util';
 import { EMPTY_STREAM, Stream, stream } from '../utils/stream';
+import { AstNodeDescriptionProvider } from '../workspace/ast-descriptions';
+import { LangiumDocument, PrecomputedScopes } from '../workspace/documents';
+import { IndexManager } from '../workspace/index-manager';
 import { NameProvider } from './naming';
 
 export interface Scope {

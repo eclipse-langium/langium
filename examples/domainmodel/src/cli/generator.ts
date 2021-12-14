@@ -11,13 +11,11 @@ import { AbstractElement, Domainmodel, Entity, Feature, isEntity, isPackageDecla
 import { extractAstNode, extractDestinationAndName, setRootFolder } from './cli-util';
 import { createDomainModelServices } from '../language-server/domain-model-module';
 import { DomainModelLanguageMetaData } from '../language-server/generated/module';
-import { URI } from 'vscode-uri';
 import colors from 'colors';
 import path from 'path';
 
 export const generateAction = async (fileName: string, opts: GenerateOptions): Promise<void> => {
-    const fileUri = URI.file(fileName);
-    const services = createDomainModelServices().ServiceRegistry.getService(fileUri);
+    const services = createDomainModelServices().domainmodel;
     await setRootFolder(fileName, services, opts.root);
     const domainmodel = await extractAstNode<Domainmodel>(fileName, DomainModelLanguageMetaData.fileExtensions, services);
     const generatedDirPath = generateJava(domainmodel, fileName, opts.destination);

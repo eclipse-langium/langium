@@ -11,8 +11,8 @@ import { createStatemachineServices } from './statemachine-module';
 // Create a connection to the client
 const connection = createConnection(ProposedFeatures.all);
 
-// Inject the language services
-const services = createStatemachineServices({ connection });
+// Inject the shared services and language-specific services
+const { shared } = createStatemachineServices({ connection });
 
-// Start the language server with the language-specific services
-startLanguageServer(services);
+// Start the language server with the shared services
+startLanguageServer(shared);

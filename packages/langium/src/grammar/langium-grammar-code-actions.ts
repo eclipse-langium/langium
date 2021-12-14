@@ -4,18 +4,18 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import { EOL } from 'os';
 import { CodeActionKind, Diagnostic } from 'vscode-languageserver';
 import { CodeActionParams } from 'vscode-languageserver-protocol';
-import { Command, CodeAction, TextEdit, Position } from 'vscode-languageserver-types';
-import { LangiumDocument } from '../documents/document';
+import { CodeAction, Command, Position, TextEdit } from 'vscode-languageserver-types';
 import { CodeActionProvider } from '../lsp/code-action';
-import { MaybePromise } from '../utils/promise-util';
-import { IssueCodes } from './langium-grammar-validator';
 import { findLeafNodeAtOffset, getContainerOfType } from '../utils/ast-util';
+import { MaybePromise } from '../utils/promise-util';
 import { escapeRegExp } from '../utils/regex-util';
-import { findNodeForFeature } from './grammar-util';
+import { LangiumDocument } from '../workspace/documents';
 import * as ast from './generated/ast';
-import { EOL } from 'os';
+import { findNodeForFeature } from './grammar-util';
+import { IssueCodes } from './langium-grammar-validator';
 
 export class LangiumGrammarCodeActionProvider implements CodeActionProvider {
 

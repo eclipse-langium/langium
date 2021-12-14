@@ -104,7 +104,7 @@ describe('TerminalRule to regex', () => {
         expect('a some value b').toMatch(regex);
     });
 
-    const services = createLangiumGrammarServices().ServiceRegistry.all[0];
+    const services = createLangiumGrammarServices().grammar;
     const parse = parseHelper<Grammar>(services);
 
     async function getTerminal(input: string, name?: string): Promise<TerminalRule> {

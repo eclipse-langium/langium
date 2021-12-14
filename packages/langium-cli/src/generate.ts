@@ -5,15 +5,18 @@
  ******************************************************************************/
 
 import fs from 'fs-extra';
+import {
+    AbstractRule, BuildResult, createLangiumGrammarServices, getDocument, Grammar, isGrammar,
+    isParserRule, LangiumDocument, resolveImport, resolveTransitiveImports
+} from 'langium';
 import path from 'path';
-import { LangiumConfig, LangiumLanguageConfig, RelativePath } from './package';
-import { AbstractRule, BuildResult, createLangiumGrammarServices, getDocument, Grammar, isGrammar, isParserRule, LangiumDocument, resolveImport, resolveTransitiveImports } from 'langium';
 import { URI, Utils } from 'vscode-uri';
 import { generateAst } from './generator/ast-generator';
+import { serializeGrammar } from './generator/grammar-serializer';
 import { generateModule } from './generator/module-generator';
 import { generateTextMate } from './generator/textmate-generator';
-import { serializeGrammar } from './generator/grammar-serializer';
 import { getTime, getUserChoice } from './generator/util';
+import { LangiumConfig, LangiumLanguageConfig, RelativePath } from './package';
 import { validateParser } from './parser-validation';
 
 export type GenerateOptions = {
@@ -23,8 +26,8 @@ export type GenerateOptions = {
 
 export type GeneratorResult = 'success' | 'failure';
 
-const services = createLangiumGrammarServices();
-const documents = services.workspace.LangiumDocuments;
+const { shared: sharedServices, grammar: grammarServices } = createLangiumGrammarServices();
+const documents = sharedServices.workspace.LangiumDocuments;
 
 function eagerLoad(document: LangiumDocument, uris: Set<string> = new Set()): URI[] {
     const uriString = document.uri.toString();
@@ -82,20 +85,19 @@ function embedReferencedRules(grammar: Grammar, map: Map<Grammar, AbstractRule[]
 }
 
 async function buildAll(config: LangiumConfig): Promise<Map<string, BuildResult>> {
-    const all = services.workspace.LangiumDocuments.all;
-    for (const doc of all) {
-        services.workspace.LangiumDocuments.invalidateDocument(doc.uri);
+    for (const doc of documents.all) {
+        documents.invalidateDocument(doc.uri);
     }
     const map = new Map<string, BuildResult>();
     const relPath = config[RelativePath];
     for (const languageConfig of config.languages) {
         const absGrammarPath = URI.file(path.resolve(relPath, languageConfig.grammar));
-        const document = services.workspace.LangiumDocuments.getOrCreateDocument(absGrammarPath);
+        const document = documents.getOrCreateDocument(absGrammarPath);
         const allUris = eagerLoad(document);
-        await services.workspace.DocumentBuilder.update(allUris, []);
+        await sharedServices.workspace.DocumentBuilder.update(allUris, []);
     }
-    for (const doc of services.workspace.LangiumDocuments.all) {
-        const buildResult = await services.workspace.DocumentBuilder.build(doc);
+    for (const doc of documents.all) {
+        const buildResult = await sharedServices.workspace.DocumentBuilder.build(doc);
         map.set(doc.uri.fsPath, buildResult);
     }
     return map;
@@ -166,12 +168,10 @@ export async function generate(config: LangiumConfig): Promise<GeneratorResult> 
         return 'failure';
     }
 
-    const langiumServices = services.ServiceRegistry.getService(URI.file('/grammar.langium'));
-
-    const genAst = generateAst(langiumServices, grammars, config);
+    const genAst = generateAst(grammarServices, grammars, config);
     await writeWithFail(path.resolve(output, 'ast.ts'), genAst);
 
-    const serializedGrammar = serializeGrammar(langiumServices, grammars, config);
+    const serializedGrammar = serializeGrammar(grammarServices, grammars, config);
     await writeWithFail(path.resolve(output, 'grammar.ts'), serializedGrammar);
 
     const genModule = generateModule(grammars, config, configMap);

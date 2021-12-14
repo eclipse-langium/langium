@@ -10,12 +10,12 @@ import {
 } from 'vscode-languageserver';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { URI } from 'vscode-uri';
-import { LangiumDocument } from '../documents/document';
 import { LangiumServices, LangiumSharedServices } from '../services';
 import { OperationCancelled, startCancelableOperation } from '../utils/promise-util';
+import { LangiumDocument } from '../workspace/documents';
 
 export function startLanguageServer(services: LangiumSharedServices): void {
-    const all: LangiumServices[] = services.ServiceRegistry.all;
+    const languages: readonly LangiumServices[] = services.ServiceRegistry.all;
     const connection = services.lsp.Connection;
     if (!connection) {
         throw new Error('Starting a language server requires the languageServer.Connection service to be set.');
@@ -34,7 +34,7 @@ export function startLanguageServer(services: LangiumSharedServices): void {
                 documentSymbolProvider: {},
                 definitionProvider: {},
                 documentHighlightProvider: {},
-                codeActionProvider: all.some(e => e.lsp.CodeActionProvider !== undefined) ? {} : undefined,
+                codeActionProvider: languages.some(e => e.lsp.CodeActionProvider !== undefined) ? {} : undefined,
                 foldingRangeProvider: {},
                 hoverProvider: {},
                 renameProvider: {
@@ -183,21 +183,21 @@ export function addRenameHandler(connection: Connection, services: LangiumShared
 
 export function createHandler<P extends { textDocument: TextDocumentIdentifier }, R, E = void>(
     serviceCall: (services: LangiumServices, document: LangiumDocument, params: P, cancelToken: CancellationToken) => HandlerResult<R, E>,
-    services: LangiumSharedServices
+    sharedServices: LangiumSharedServices
 ): RequestHandler<P, R | null, E> {
     return async (params: P, cancelToken: CancellationToken) => {
         const uri = URI.parse(params.textDocument.uri);
-        const concreteServices = services.ServiceRegistry.getService(uri);
-        if (!concreteServices) {
+        const language = sharedServices.ServiceRegistry.getServices(uri);
+        if (!language) {
             console.error(`Could not find service instance for uri: '${uri.toString()}'`);
             return null;
         }
-        const document = services.workspace.LangiumDocuments.getOrCreateDocument(uri);
+        const document = sharedServices.workspace.LangiumDocuments.getOrCreateDocument(uri);
         if (!document) {
             return null;
         }
         try {
-            return await serviceCall(concreteServices, document, params, cancelToken);
+            return await serviceCall(language, document, params, cancelToken);
         } catch (err) {
             return responseError<E>(err);
         }

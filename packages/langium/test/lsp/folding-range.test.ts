@@ -20,7 +20,7 @@ const text = `
   terminal hiddenTerminal: /x/;
   `;
 
-const grammarServices = createLangiumGrammarServices().ServiceRegistry.all[0];
+const grammarServices = createLangiumGrammarServices().grammar;
 const foldings = expectFoldings(grammarServices, expectFunction);
 
 describe('Folding range provider', () => {

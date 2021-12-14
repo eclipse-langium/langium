@@ -5,14 +5,14 @@
  ******************************************************************************/
 
 import { CancellationToken, Connection, Diagnostic } from 'vscode-languageserver';
-import { LangiumSharedServices } from '../services';
-import { DocumentState, LangiumDocument, LangiumDocuments } from './document';
-import { IndexManager } from '../index/index-manager';
 import { URI } from 'vscode-uri';
-import { interruptAndCheck, MaybePromise } from '../utils/promise-util';
-import { AstNode } from '../syntax-tree';
 import { ServiceRegistry } from '../service-registry';
+import { LangiumSharedServices } from '../services';
+import { AstNode } from '../syntax-tree';
 import { MultiMap } from '../utils/collections';
+import { interruptAndCheck, MaybePromise } from '../utils/promise-util';
+import { IndexManager } from '../workspace/index-manager';
+import { DocumentState, LangiumDocument, LangiumDocuments } from './documents';
 
 export interface DocumentBuilder {
     /**
@@ -83,7 +83,7 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
 
     protected async validate(document: LangiumDocument, cancelToken = CancellationToken.None, forceDiagnostics = false): Promise<Diagnostic[]> {
         let diagnostics: Diagnostic[] = [];
-        const validator = this.serviceRegistry.getService(document.uri).validation.DocumentValidator;
+        const validator = this.serviceRegistry.getServices(document.uri).validation.DocumentValidator;
         if (forceDiagnostics || this.shouldValidate(document)) {
             diagnostics = await validator.validateDocument(document, cancelToken);
             if (this.connection) {
@@ -131,7 +131,7 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
         const allUris = changed.map(e => e.uri).concat(deleted);
         const affected = this.indexManager.getAffectedDocuments(allUris).toArray();
         affected.forEach(e => {
-            const linker = this.serviceRegistry.getService(e.uri).references.Linker;
+            const linker = this.serviceRegistry.getServices(e.uri).references.Linker;
             linker.unlink(e);
             e.state = DocumentState.Indexed;
         });
@@ -145,15 +145,22 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
     }
 
     protected async buildDocuments(documents: LangiumDocument[], cancelToken: CancellationToken): Promise<void> {
+        // 1. Indexing
         const toBeIndexed = documents.filter(e => e.state < DocumentState.Indexed);
         await this.indexManager.update(toBeIndexed, cancelToken);
         await this.notifyBuildPhase(toBeIndexed, DocumentState.Indexed, cancelToken);
-        await this.runCancelable(documents, DocumentState.Processed, cancelToken, doc => this.process(doc, cancelToken));
-        await this.runCancelable(documents, DocumentState.Linked, cancelToken, doc => {
-            const linker = this.serviceRegistry.getService(doc.uri).references.Linker;
-            linker.link(doc, cancelToken);
-        });
-        await this.runCancelable(documents, DocumentState.Validated, cancelToken, doc => this.validate(doc, cancelToken));
+        // 2. Preprocessing
+        await this.runCancelable(documents, DocumentState.Processed, cancelToken, doc =>
+            this.process(doc, cancelToken)
+        );
+        // 3. Linking
+        await this.runCancelable(documents, DocumentState.Linked, cancelToken, doc =>
+            this.serviceRegistry.getServices(doc.uri).references.Linker.link(doc, cancelToken)
+        );
+        // 4. Validation
+        await this.runCancelable(documents, DocumentState.Validated, cancelToken, doc =>
+            this.validate(doc, cancelToken)
+        );
     }
 
     protected async runCancelable(documents: LangiumDocument[], targetState: DocumentState, cancelToken: CancellationToken, callback: (document: LangiumDocument) => MaybePromise<unknown>): Promise<void> {
@@ -181,7 +188,7 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
      * Process the document by running precomputations. The default implementation precomputes the scope.
      */
     protected async process(document: LangiumDocument, cancelToken: CancellationToken): Promise<void> {
-        const scopeComputation = this.serviceRegistry.getService(document.uri).references.ScopeComputation;
+        const scopeComputation = this.serviceRegistry.getServices(document.uri).references.ScopeComputation;
         document.precomputedScopes = await scopeComputation.computeScope(document, cancelToken);
         document.state = DocumentState.Processed;
     }

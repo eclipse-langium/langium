@@ -4,9 +4,9 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { LangiumDocument } from '../documents/document';
 import { findAssignment, isArray } from '../grammar/grammar-util';
 import { AstNode } from '../syntax-tree';
+import { LangiumDocument } from './documents';
 
 export interface AstNodeLocator {
     /**

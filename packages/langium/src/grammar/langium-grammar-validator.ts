@@ -6,16 +6,16 @@
 
 import path from 'path';
 import { DiagnosticTag } from 'vscode-languageserver-types';
+import { Utils } from 'vscode-uri';
 import { References } from '../references/references';
 import { LangiumServices } from '../services';
 import { getContainerOfType, getDocument, streamAllContents } from '../utils/ast-util';
+import { MultiMap } from '../utils/collections';
 import { ValidationAcceptor, ValidationCheck, ValidationRegistry } from '../validation/validation-registry';
+import { LangiumDocument, LangiumDocuments } from '../workspace/documents';
+import * as ast from './generated/ast';
 import { getEntryRule, isDataTypeRule, resolveImport, resolveTransitiveImports, terminalRegex } from './grammar-util';
 import { LangiumGrammarServices } from './langium-grammar-module';
-import * as ast from './generated/ast';
-import { LangiumDocument, LangiumDocuments } from '../documents/document';
-import { MultiMap } from '../utils/collections';
-import { Utils } from 'vscode-uri';
 
 type LangiumGrammarChecks = { [type in ast.LangiumGrammarAstType]?: ValidationCheck | ValidationCheck[] }
 

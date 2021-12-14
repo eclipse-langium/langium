@@ -8,12 +8,12 @@ import {
     CompletionItem, DocumentSymbol, MarkupContent, Range, TextDocumentIdentifier, TextDocumentPositionParams
 } from 'vscode-languageserver';
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { LangiumDocument } from '../documents/document';
-import { BuildResult } from '../documents/document-builder';
 import { LangiumServices } from '../services';
 import { AstNode } from '../syntax-tree';
 import { getDocument } from '../utils/ast-util';
 import { escapeRegExp } from '../utils/regex-util';
+import { BuildResult } from '../workspace/document-builder';
+import { LangiumDocument } from '../workspace/documents';
 
 export function parseHelper<T extends AstNode = AstNode>(services: LangiumServices): (input: string) => Promise<BuildResult<T>> {
     const metaData = services.LanguageMetaData;
