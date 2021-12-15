@@ -11,11 +11,9 @@ import { StatemachineLanguageMetaData } from '../language-server/generated/modul
 import { createStatemachineServices } from '../language-server/statemachine-module';
 import { extractAstNode } from './cli-util';
 import { generateCpp } from './generator';
-import { URI } from 'vscode-uri';
 
 export const generateAction = async (fileName: string, opts: GenerateOptions): Promise<void> => {
-    const fileUri = URI.file(fileName);
-    const services = createStatemachineServices().ServiceRegistry.getService(fileUri);
+    const services = createStatemachineServices().statemachine;
     const statemachine = await extractAstNode<Statemachine>(fileName, StatemachineLanguageMetaData.fileExtensions, services);
     const generatedFilePath = generateCpp(statemachine, fileName, opts.destination);
     console.log(colors.green(`C++ code generated successfully: ${generatedFilePath}`));

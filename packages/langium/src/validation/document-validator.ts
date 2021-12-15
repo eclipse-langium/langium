@@ -4,16 +4,16 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { Range } from 'vscode-languageserver-textdocument';
 import { CancellationToken, Diagnostic, DiagnosticSeverity } from 'vscode-languageserver';
-import { LangiumDocument } from '../documents/document';
+import { Range } from 'vscode-languageserver-textdocument';
+import { tokenToRange } from '..';
 import { findNodeForFeature } from '../grammar/grammar-util';
 import { LangiumServices } from '../services';
 import { AstNode } from '../syntax-tree';
 import { streamAllContents } from '../utils/ast-util';
-import { DiagnosticInfo, ValidationAcceptor, ValidationRegistry } from './validation-registry';
 import { interruptAndCheck } from '../utils/promise-util';
-import { tokenToRange } from '..';
+import { LangiumDocument } from '../workspace/documents';
+import { DiagnosticInfo, ValidationAcceptor, ValidationRegistry } from './validation-registry';
 
 export interface DocumentValidator {
     /**

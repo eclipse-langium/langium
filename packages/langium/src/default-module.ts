@@ -4,15 +4,10 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { TextDocument } from 'vscode-languageserver-textdocument';
 import { Connection, TextDocuments } from 'vscode-languageserver';
-import { inject, Module } from './dependency-injection';
-import { DefaultLangiumDocumentFactory, DefaultLangiumDocuments, DefaultTextDocumentFactory } from './documents/document';
-import { DefaultDocumentBuilder } from './documents/document-builder';
+import { TextDocument } from 'vscode-languageserver-textdocument';
+import { Module } from './dependency-injection';
 import { createGrammarConfig } from './grammar/grammar-config';
-import { DefaultAstNodeDescriptionProvider, DefaultReferenceDescriptionProvider } from './index/ast-descriptions';
-import { DefaultAstNodeLocator } from './index/ast-node-locator';
-import { DefaultIndexManager } from './index/index-manager';
 import { DefaultCompletionProvider } from './lsp/completion/completion-provider';
 import { RuleInterpreter } from './lsp/completion/rule-interpreter';
 import { DefaultDocumentHighlighter } from './lsp/document-highlighter';
@@ -30,61 +25,28 @@ import { DefaultNameProvider } from './references/naming';
 import { DefaultReferences } from './references/references';
 import { DefaultScopeComputation, DefaultScopeProvider } from './references/scope';
 import { DefaultJsonSerializer } from './serializer/json-serializer';
-import { LangiumDefaultServices, LangiumDefaultSharedServices, LangiumGeneratedServices, LangiumGeneratedSharedServices, LangiumServices, LangiumSharedServices } from './services';
+import { DefaultServiceRegistry } from './service-registry';
+import { LangiumDefaultServices, LangiumDefaultSharedServices, LangiumServices, LangiumSharedServices } from './services';
 import { DefaultDocumentValidator } from './validation/document-validator';
 import { ValidationRegistry } from './validation/validation-registry';
-import { createSingleServiceRegistry, ExtensionServiceRegistry } from './service-registry';
+import { DefaultAstNodeDescriptionProvider, DefaultReferenceDescriptionProvider } from './workspace/ast-descriptions';
+import { DefaultAstNodeLocator } from './workspace/ast-node-locator';
+import { DefaultDocumentBuilder } from './workspace/document-builder';
+import { DefaultLangiumDocumentFactory, DefaultLangiumDocuments, DefaultTextDocumentFactory } from './workspace/documents';
+import { DefaultIndexManager } from './workspace/index-manager';
 
-export interface SharedModuleContext {
-    connection?: Connection
+/**
+ * Context required for creating the default language-specific dependency injection module.
+ */
+export interface DefaultModuleContext {
+    shared: LangiumSharedServices;
 }
 
-export interface CombinedServices {
-    generated: Module<LangiumServices, LangiumGeneratedServices>
-    module: Module<LangiumServices, unknown>
-}
-
-export function injectService(
-    sharedModule: Module<LangiumSharedServices, LangiumDefaultSharedServices>,
-    generatedSharedModule: Module<LangiumSharedServices, LangiumGeneratedSharedServices>,
-    ...combinedServices: CombinedServices[]): LangiumSharedServices {
-    const shared = inject(sharedModule, generatedSharedModule);
-    if (combinedServices.length === 1) {
-        const module = combinedServices[0];
-        const single = inject(createDefaultModule(shared), module.generated, module.module);
-        shared.ServiceRegistry = createSingleServiceRegistry(single);
-    } else if (combinedServices.length > 1) {
-        const registry = new ExtensionServiceRegistry();
-        shared.ServiceRegistry = registry;
-        const defaultModule = createDefaultModule(shared);
-        for (const combinedService of combinedServices) {
-            const service = inject(defaultModule, combinedService.generated, combinedService.module);
-            for (const fileExtension of service.LanguageMetaData.fileExtensions) {
-                registry.add(fileExtension, service);
-            }
-        }
-    }
-    return shared;
-}
-
-export function createSharedModule(context: SharedModuleContext = {}): Module<LangiumSharedServices, LangiumDefaultSharedServices> {
-    return {
-        ServiceRegistry: () => undefined!,
-        lsp: {
-            Connection: () => context.connection
-        },
-        workspace: {
-            LangiumDocuments: (injector) => new DefaultLangiumDocuments(injector),
-            LangiumDocumentFactory: (injector) => new DefaultLangiumDocumentFactory(injector),
-            DocumentBuilder: (injector) => new DefaultDocumentBuilder(injector),
-            TextDocuments: () => new TextDocuments(TextDocument),
-            TextDocumentFactory: (injector) => new DefaultTextDocumentFactory(injector),
-            IndexManager: (injector) => new DefaultIndexManager(injector)
-        }
-    };
-}
-
-export function createDefaultModule(shared: LangiumSharedServices): Module<LangiumServices, LangiumDefaultServices> {
+/**
+ * Create a dependency injection module for the default language-specific services. This is a
+ * set of services that are used by exactly one language.
+ */
+export function createDefaultModule(context: DefaultModuleContext): Module<LangiumServices, LangiumDefaultServices> {
     return {
         parser: {
             GrammarConfig: (injector) => createGrammarConfig(injector),
@@ -124,6 +86,34 @@ export function createDefaultModule(shared: LangiumSharedServices): Module<Langi
             DocumentValidator: (injector) => new DefaultDocumentValidator(injector),
             ValidationRegistry: (injector) => new ValidationRegistry(injector)
         },
-        shared: () => shared
+        shared: () => context.shared
+    };
+}
+
+/**
+ * Context required for creating the default shared dependeny injection module.
+ */
+export interface DefaultSharedModuleContext {
+    connection?: Connection;
+}
+
+/**
+ * Create a dependency injection module for the default shared services. This is the set of
+ * services that are shared between multiple languages.
+ */
+export function createDefaultSharedModule(context: DefaultSharedModuleContext = {}): Module<LangiumSharedServices, LangiumDefaultSharedServices> {
+    return {
+        ServiceRegistry: () => new DefaultServiceRegistry(),
+        lsp: {
+            Connection: () => context.connection
+        },
+        workspace: {
+            LangiumDocuments: (injector) => new DefaultLangiumDocuments(injector),
+            LangiumDocumentFactory: (injector) => new DefaultLangiumDocumentFactory(injector),
+            DocumentBuilder: (injector) => new DefaultDocumentBuilder(injector),
+            TextDocuments: () => new TextDocuments(TextDocument),
+            TextDocumentFactory: (injector) => new DefaultTextDocumentFactory(injector),
+            IndexManager: (injector) => new DefaultIndexManager(injector)
+        }
     };
 }

@@ -1,22 +1,23 @@
-import fs from 'fs';
 import colors from 'colors';
+import fs from 'fs';
 import { AstNode, LangiumDocument, LangiumServices } from 'langium';
 import path from 'path';
 import { URI } from 'vscode-uri';
 
-export async function extractDocument(fileName: string, extensions: string[], services: LangiumServices): Promise<LangiumDocument> {
+export async function extractDocument(fileName: string, services: LangiumServices): Promise<LangiumDocument> {
+    const extensions = services.LanguageMetaData.fileExtensions;
     if (!extensions.includes(path.extname(fileName))) {
-        console.error(colors.yellow(`Please, choose a file with one of these extensions: ${extensions}.`));
+        console.error(colors.yellow(`Please choose a file with one of these extensions: ${extensions}.`));
         process.exit(1);
     }
 
     if (!fs.existsSync(fileName)) {
-        console.error(colors.red(`File ${fileName} doesn't exist.`));
+        console.error(colors.red(`File ${fileName} does not exist.`));
         process.exit(1);
     }
 
-    const document = services.documents.LangiumDocuments.getOrCreateDocument(URI.file(path.resolve(fileName)));
-    const buildResult = await services.documents.DocumentBuilder.build(document);
+    const document = services.shared.workspace.LangiumDocuments.getOrCreateDocument(URI.file(path.resolve(fileName)));
+    const buildResult = await services.shared.workspace.DocumentBuilder.build(document);
 
     const validationErrors = buildResult.diagnostics.filter(e => e.severity === 1);
     if (validationErrors.length > 0) {
@@ -32,8 +33,8 @@ export async function extractDocument(fileName: string, extensions: string[], se
     return document;
 }
 
-export async function extractAstNode<T extends AstNode>(fileName: string, extensions: string[], services: LangiumServices): Promise<T> {
-    return (await extractDocument(fileName, extensions, services)).parseResult?.value as T;
+export async function extractAstNode<T extends AstNode>(fileName: string, services: LangiumServices): Promise<T> {
+    return (await extractDocument(fileName, services)).parseResult?.value as T;
 }
 
 interface FilePathData {

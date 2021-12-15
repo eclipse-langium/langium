@@ -20,7 +20,10 @@ export const defaultDiagramServerFactory =
         if (!sourceUri) {
             throw new Error("Missing 'sourceUri' option in request.");
         }
-        const language = serviceRegistry.getService(URI.parse(sourceUri as string)) as LangiumSprottyServices;
+        const language = serviceRegistry.getServices(URI.parse(sourceUri as string)) as LangiumSprottyServices;
+        if (!language.diagram) {
+            throw new Error(`The '${language.LanguageMetaData.languageId}' language does not support diagrams.`);
+        }
         return new DiagramServer(async action => {
             connection?.sendNotification(DiagramActionNotification.type, { clientId, action });
         }, language.diagram);

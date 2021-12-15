@@ -4,11 +4,11 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { AstNode, AstNodeDescription, CstNode, LeafCstNode, LinkingError, Reference, ReferenceInfo } from '../syntax-tree';
-import { Stream, StreamImpl, DONE_RESULT, TreeStream, TreeStreamImpl, stream } from '../utils/stream';
-import { LangiumDocument } from '../documents/document';
-import { CompositeCstNodeImpl, LeafCstNodeImpl } from '../parser/cst-node-builder';
 import { CancellationToken } from 'vscode-languageserver';
+import { CompositeCstNodeImpl, LeafCstNodeImpl } from '../parser/cst-node-builder';
+import { AstNode, AstNodeDescription, CstNode, LeafCstNode, LinkingError, Reference, ReferenceInfo } from '../syntax-tree';
+import { DONE_RESULT, Stream, stream, StreamImpl, TreeStream, TreeStreamImpl } from '../utils/stream';
+import { LangiumDocument } from '../workspace/documents';
 import { interruptAndCheck } from './promise-util';
 
 export type Mutable<T> = {

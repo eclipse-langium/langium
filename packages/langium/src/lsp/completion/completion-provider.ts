@@ -6,17 +6,17 @@
 
 import { CancellationToken, CompletionItem, CompletionItemKind, CompletionList, CompletionParams } from 'vscode-languageserver';
 import { TextDocument, TextEdit } from 'vscode-languageserver-textdocument';
-import { LangiumDocument } from '../../documents/document';
 import * as ast from '../../grammar/generated/ast';
 import { getTypeNameAtElement } from '../../grammar/grammar-util';
 import { isNamed } from '../../references/naming';
 import { ScopeProvider } from '../../references/scope';
 import { LangiumServices } from '../../services';
 import { AstNode, AstNodeDescription, CstNode } from '../../syntax-tree';
-import { getContainerOfType, isAstNode, findLeafNodeAtOffset } from '../../utils/ast-util';
+import { findLeafNodeAtOffset, getContainerOfType, isAstNode } from '../../utils/ast-util';
 import { findRelevantNode, flatten } from '../../utils/cst-util';
 import { MaybePromise } from '../../utils/promise-util';
 import { stream } from '../../utils/stream';
+import { LangiumDocument } from '../../workspace/documents';
 import { findFirstFeatures, findNextFeatures } from './follow-element-computation';
 import { RuleInterpreter } from './rule-interpreter';
 

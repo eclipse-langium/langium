@@ -6,7 +6,6 @@
 
 import { CancellationToken, Location, Range, ReferenceParams } from 'vscode-languageserver';
 import { URI } from 'vscode-uri';
-import { LangiumDocument } from '../documents/document';
 import { NameProvider } from '../references/naming';
 import { References } from '../references/references';
 import { LangiumServices } from '../services';
@@ -14,6 +13,7 @@ import { AstNode, CstNode } from '../syntax-tree';
 import { findLeafNodeAtOffset, getDocument, isReference } from '../utils/ast-util';
 import { flatten } from '../utils/cst-util';
 import { MaybePromise } from '../utils/promise-util';
+import { LangiumDocument } from '../workspace/documents';
 
 export interface ReferenceFinder {
     /**

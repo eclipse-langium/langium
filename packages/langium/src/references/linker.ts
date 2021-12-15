@@ -5,13 +5,12 @@
  ******************************************************************************/
 
 import { CancellationToken } from 'vscode-languageserver';
-import { ReferenceInfo } from '..';
-import { LangiumDocument, LangiumDocuments } from '../documents/document';
-import { AstNodeLocator } from '../index/ast-node-locator';
 import { LangiumServices } from '../services';
-import { AstNode, AstNodeDescription, CstNode, LinkingError, Reference } from '../syntax-tree';
+import { AstNode, AstNodeDescription, CstNode, LinkingError, Reference, ReferenceInfo } from '../syntax-tree';
 import { isAstNode, isAstNodeDescription, isLinkingError, streamAllContents, streamReferences } from '../utils/ast-util';
 import { interruptAndCheck } from '../utils/promise-util';
+import { AstNodeLocator } from '../workspace/ast-node-locator';
+import { DocumentState, LangiumDocument, LangiumDocuments } from '../workspace/documents';
 import { ScopeProvider } from './scope';
 
 /**
@@ -96,6 +95,7 @@ export class DefaultLinker implements Linker {
             await interruptAndCheck(cancelToken);
             process(content.node);
         }
+        document.state = DocumentState.Linked;
     }
 
     protected doLink(info: ReferenceInfo, document: LangiumDocument): void {

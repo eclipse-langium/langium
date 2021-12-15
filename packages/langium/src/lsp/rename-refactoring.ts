@@ -6,13 +6,13 @@
 
 import { CancellationToken, Range, RenameParams, TextDocumentPositionParams, TextEdit, WorkspaceEdit } from 'vscode-languageserver';
 import { Position } from 'vscode-languageserver-textdocument';
-import { LangiumDocument } from '../documents/document';
 import { isNamed, NameProvider } from '../references/naming';
 import { References } from '../references/references';
 import { LangiumServices } from '../services';
 import { CstNode } from '../syntax-tree';
 import { findLeafNodeAtOffset } from '../utils/ast-util';
 import { MaybePromise } from '../utils/promise-util';
+import { LangiumDocument } from '../workspace/documents';
 import { ReferenceFinder } from './reference-finder';
 
 export interface RenameHandler {

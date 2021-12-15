@@ -5,8 +5,8 @@
  ******************************************************************************/
 
 import { CancellationToken, CodeAction, CodeActionParams, Command } from 'vscode-languageserver';
-import { LangiumDocument } from '../documents/document';
 import { MaybePromise } from '../utils/promise-util';
+import { LangiumDocument } from '../workspace/documents';
 
 export interface CodeActionProvider {
     /**

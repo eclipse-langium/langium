@@ -7,13 +7,13 @@
 import fs from 'fs';
 import { Range, TextDocument } from 'vscode-languageserver-textdocument';
 import { Diagnostic, TextDocuments } from 'vscode-languageserver/node';
-import { AstNode, AstNodeDescription, Reference } from '../syntax-tree';
-import { ParseResult } from '../parser/langium-parser';
 import { URI } from 'vscode-uri';
-import { Mutable } from '../utils/ast-util';
-import { LangiumSharedServices } from '../services';
-import { stream, Stream } from '../utils/stream';
+import { ParseResult } from '../parser/langium-parser';
 import { ServiceRegistry } from '../service-registry';
+import { LangiumSharedServices } from '../services';
+import { AstNode, AstNodeDescription, Reference } from '../syntax-tree';
+import { Mutable } from '../utils/ast-util';
+import { stream, Stream } from '../utils/stream';
 
 /**
  * A Langium document holds the parse result (AST and CST) and any additional state that is derived
@@ -97,7 +97,7 @@ export class DefaultTextDocumentFactory implements TextDocumentFactory {
 
     fromUri(uri: URI): TextDocument {
         const content = fs.readFileSync(uri.fsPath, 'utf-8');
-        const services = this.serviceRegistry.getService(uri);
+        const services = this.serviceRegistry.getServices(uri);
         return TextDocument.create(uri.toString(), services.LanguageMetaData.languageId, 0, content);
     }
 
@@ -116,7 +116,7 @@ export class DefaultLangiumDocumentFactory implements LangiumDocumentFactory {
     }
 
     fromTextDocument<T extends AstNode = AstNode>(textDocument: TextDocument): LangiumDocument<T> {
-        const services = this.serviceRegistry.getService(URI.parse(textDocument.uri));
+        const services = this.serviceRegistry.getServices(URI.parse(textDocument.uri));
         return documentFromText<T>(textDocument, services.parser.LangiumParser.parse(textDocument.getText()));
     }
 }

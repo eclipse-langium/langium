@@ -4,13 +4,13 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import { IToken } from '@chevrotain/types';
 import { Range } from 'vscode-languageserver';
-import { AstNode, CstNode, LeafCstNode } from '../syntax-tree';
 import { CompositeCstNodeImpl, LeafCstNodeImpl } from '../parser/cst-node-builder';
 import { DatatypeSymbol } from '../parser/langium-parser';
+import { AstNode, CstNode, LeafCstNode } from '../syntax-tree';
+import { DocumentSegment } from '../workspace/documents';
 import { TreeStream, TreeStreamImpl } from './stream';
-import { IToken } from '@chevrotain/types';
-import { DocumentSegment } from '../documents/document';
 
 export function streamCst(node: CstNode): TreeStream<CstNode> {
     return new TreeStreamImpl(node, element => {

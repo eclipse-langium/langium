@@ -6,16 +6,16 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { EmbeddedActionsParser, ILexingError, IOrAlt, IRecognitionException, IToken, Lexer, TokenType } from 'chevrotain';
-import { LangiumDocument } from '../documents/document';
 import { AbstractElement, Action, Assignment, isAssignment, isCrossReference } from '../grammar/generated/ast';
-import { AstNode, CompositeCstNode, CstNode, LeafCstNode } from '../syntax-tree';
-import { CompositeCstNodeImpl, CstNodeBuilder, LeafCstNodeImpl, RootCstNodeImpl } from './cst-node-builder';
 import { Linker } from '../references/linker';
 import { LangiumServices } from '../services';
+import { AstNode, CompositeCstNode, CstNode, LeafCstNode } from '../syntax-tree';
 import { getContainerOfType } from '../utils/ast-util';
-import { ValueConverter } from './value-converter';
-import { IParserConfig } from './parser-config';
 import { tokenToRange } from '../utils/cst-util';
+import { LangiumDocument } from '../workspace/documents';
+import { CompositeCstNodeImpl, CstNodeBuilder, LeafCstNodeImpl, RootCstNodeImpl } from './cst-node-builder';
+import { IParserConfig } from './parser-config';
+import { ValueConverter } from './value-converter';
 
 export type ParseResult<T = AstNode> = {
     value: T,

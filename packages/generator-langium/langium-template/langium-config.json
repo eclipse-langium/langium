@@ -1,9 +1,12 @@
 {
-    "languageId": "<%= language-id %>",
-    "grammar": "src/language-server/<%= language-id %>.langium",
-    "fileExtensions": <%= file-extension %>,
-    "out": "src/language-server/generated",
-    "textMate": {
-        "out": "syntaxes/<%= language-id %>.tmLanguage.json"
-    }
+    "projectName": "<%= LanguageName %>",
+    "languages": [{
+        "id": "<%= language-id %>",
+        "grammar": "src/language-server/<%= language-id %>.langium",
+        "fileExtensions": <%= file-extension %>,
+        "textMate": {
+            "out": "syntaxes/<%= language-id %>.tmLanguage.json"
+        }
+    }],
+    "out": "src/language-server/generated"
 }

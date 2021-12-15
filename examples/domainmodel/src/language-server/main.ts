@@ -9,5 +9,5 @@ import { createConnection, ProposedFeatures } from 'vscode-languageserver/node';
 import { createDomainModelServices } from './domain-model-module';
 
 const connection = createConnection(ProposedFeatures.all);
-const allServices = createDomainModelServices({ connection });
-startLanguageServer(allServices);
+const { shared } = createDomainModelServices({ connection });
+startLanguageServer(shared);

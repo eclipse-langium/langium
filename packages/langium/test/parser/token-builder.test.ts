@@ -8,7 +8,7 @@ import { TokenPattern, TokenType } from '@chevrotain/types';
 import { createLangiumGrammarServices, Grammar } from '../../src';
 import { parseHelper } from '../../src/test';
 
-const grammarServices = createLangiumGrammarServices().ServiceRegistry.all[0];
+const grammarServices = createLangiumGrammarServices().grammar;
 const tokenBuilder = grammarServices.parser.TokenBuilder;
 
 let aToken: TokenType; // 'A' keyword

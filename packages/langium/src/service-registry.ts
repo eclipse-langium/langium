@@ -7,50 +7,81 @@
 import { URI, Utils } from 'vscode-uri';
 import { LangiumServices } from './services';
 
+/**
+ * The service registry provides access to the language-specific services. These are resolved
+ * via the URI of a text document.
+ */
 export interface ServiceRegistry {
-    getService(uri: URI): LangiumServices
-    readonly all: LangiumServices[]
-}
 
-export function createSingleServiceRegistry(services: LangiumServices): ServiceRegistry {
-    return new DefaultServiceRegistry(services);
+    /**
+     * Register a language via its injected services.
+     */
+    register(language: LangiumServices): void;
+
+    /**
+     * Retrieve the language-specific services for the given URI. In case only one language is
+     * registered, it may be used regardless of the URI format.
+     */
+    getServices(uri: URI): LangiumServices;
+
+    /**
+     * The full set of registered language services.
+     */
+    readonly all: readonly LangiumServices[];
 }
 
 export class DefaultServiceRegistry implements ServiceRegistry {
 
-    services: LangiumServices
+    protected singleton?: LangiumServices;
+    protected map?: Record<string, LangiumServices>;
 
-    constructor(services?: LangiumServices) {
-        this.services = services!;
-    }
-
-    getService(): LangiumServices {
-        return this.services;
-    }
-
-    get all(): LangiumServices[] {
-        return [this.services];
-    }
-}
-
-export class ExtensionServiceRegistry implements ServiceRegistry {
-
-    protected map: Record<string, LangiumServices> = {}
-
-    add(ext: string, service: LangiumServices): void {
-        this.map[ext] = service;
-    }
-
-    getService(uri: URI): LangiumServices {
-        const ext = Utils.extname(uri);
-        if (ext in this.map) {
-            return this.map[ext];
-        } else {
-            throw new Error(`The service registry contains no service for extension '${ext}'.`);
+    register(language: LangiumServices): void {
+        if (!this.singleton && !this.map) {
+            // This is the first language to be registered; store it as singleton.
+            this.singleton = language;
+            return;
+        }
+        if (!this.map) {
+            this.map = {};
+            if (this.singleton) {
+                // Move the previous singleton instance to the new map.
+                for (const ext of this.singleton.LanguageMetaData.fileExtensions) {
+                    this.map[ext] = this.singleton;
+                }
+                this.singleton = undefined;
+            }
+        }
+        // Store the language services in the map.
+        for (const ext of language.LanguageMetaData.fileExtensions) {
+            if (this.map[ext] !== undefined && this.map[ext] !== language) {
+                console.warn(`The file extension ${ext} is used by multiple languages. It is now assigned to '${language.LanguageMetaData.languageId}'.`);
+            }
+            this.map[ext] = language;
         }
     }
 
-    get all(): LangiumServices[] {
-        return Object.values(this.map);
+    getServices(uri: URI): LangiumServices {
+        if (this.singleton !== undefined) {
+            return this.singleton;
+        }
+        if (this.map === undefined) {
+            throw new Error('The service registry is empty. Use `register` to register the services of a language.');
+        }
+        const ext = Utils.extname(uri);
+        const services = this.map[ext];
+        if (!services) {
+            throw new Error(`The service registry contains no services for the extension '${ext}'.`);
+        }
+        return services;
+    }
+
+    get all(): readonly LangiumServices[] {
+        if (this.singleton !== undefined) {
+            return [this.singleton];
+        }
+        if (this.map !== undefined) {
+            return Object.values(this.map);
+        }
+        return [];
     }
 }
