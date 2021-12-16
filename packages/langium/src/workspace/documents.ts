@@ -10,9 +10,10 @@ import { Diagnostic, TextDocuments } from 'vscode-languageserver/node';
 import { URI } from 'vscode-uri';
 import { ParseResult } from '../parser/langium-parser';
 import { ServiceRegistry } from '../service-registry';
-import { LangiumSharedServices } from '../services';
-import { AstNode, AstNodeDescription, Reference } from '../syntax-tree';
-import { Mutable } from '../utils/ast-util';
+import type { LangiumSharedServices } from '../services';
+import type { AstNode, AstNodeDescription, Reference } from '../syntax-tree';
+import type { Mutable } from '../utils/ast-util';
+import { MultiMap } from '../utils/collections';
 import { stream, Stream } from '../utils/stream';
 
 /**
@@ -57,8 +58,9 @@ export enum DocumentState {
 
 /**
  * Result of the scope precomputation phase (`ScopeComputation` service).
+ * It maps every AST node to the set of symbols that are visible in the subtree of that node.
  */
-export type PrecomputedScopes = Map<AstNode, AstNodeDescription[]>
+export type PrecomputedScopes = MultiMap<AstNode, AstNodeDescription>
 
 export interface DocumentSegment {
     readonly range: Range
@@ -71,18 +73,9 @@ export function equalURI(uri1: URI, uri2: URI): boolean {
     return uri1.toString() === uri2.toString();
 }
 
-export function documentFromText<T extends AstNode = AstNode>(textDocument: TextDocument, parseResult: ParseResult<T>): LangiumDocument<T> {
-    const doc: LangiumDocument<T> = {
-        parseResult,
-        textDocument,
-        uri: URI.parse(textDocument.uri),
-        state: DocumentState.Parsed,
-        references: []
-    };
-    (parseResult.value as Mutable<AstNode>).$document = doc;
-    return doc;
-}
-
+/**
+ * Shared service for creating `TextDocument` instances.
+ */
 export interface TextDocumentFactory {
     fromUri(uri: URI): TextDocument;
 }
@@ -96,15 +89,35 @@ export class DefaultTextDocumentFactory implements TextDocumentFactory {
     }
 
     fromUri(uri: URI): TextDocument {
-        const content = fs.readFileSync(uri.fsPath, 'utf-8');
+        const content = this.getContent(uri);
         const services = this.serviceRegistry.getServices(uri);
         return TextDocument.create(uri.toString(), services.LanguageMetaData.languageId, 0, content);
     }
 
+    protected getContent(uri: URI): string {
+        return fs.readFileSync(uri.fsPath, 'utf-8');
+    }
+
 }
 
+/**
+ * Shared service for creating `LangiumDocument` instances.
+ */
 export interface LangiumDocumentFactory {
-    fromTextDocument<T extends AstNode = AstNode>(textDocument: TextDocument): LangiumDocument<T>;
+    /**
+     * Create a Langium document from a `TextDocument` (usually associated with a file).
+     */
+    fromTextDocument<T extends AstNode = AstNode>(textDocument: TextDocument, uri?: URI): LangiumDocument<T>;
+
+    /**
+     * Create an Langium document from an in-memory string.
+     */
+    fromString<T extends AstNode = AstNode>(text: string, uri: URI): LangiumDocument<T>;
+
+    /**
+     * Create an Langium document from a model that has been constructed in memory.
+     */
+    fromModel<T extends AstNode = AstNode>(model: T, uri: URI): LangiumDocument<T>;
 }
 
 export class DefaultLangiumDocumentFactory implements LangiumDocumentFactory {
@@ -115,17 +128,85 @@ export class DefaultLangiumDocumentFactory implements LangiumDocumentFactory {
         this.serviceRegistry = services.ServiceRegistry;
     }
 
-    fromTextDocument<T extends AstNode = AstNode>(textDocument: TextDocument): LangiumDocument<T> {
-        const services = this.serviceRegistry.getServices(URI.parse(textDocument.uri));
-        return documentFromText<T>(textDocument, services.parser.LangiumParser.parse(textDocument.getText()));
+    fromTextDocument<T extends AstNode = AstNode>(textDocument: TextDocument, uri?: URI): LangiumDocument<T> {
+        return this.create<T>(textDocument, undefined, undefined, uri);
+    }
+
+    fromString<T extends AstNode = AstNode>(text: string, uri: URI): LangiumDocument<T> {
+        return this.create<T>(undefined, text, undefined, uri);
+    }
+
+    fromModel<T extends AstNode = AstNode>(model: T, uri: URI): LangiumDocument<T> {
+        return this.create<T>(undefined, undefined, model, uri);
+    }
+
+    protected create<T extends AstNode>(textDocument: TextDocument | undefined, text: string | undefined, model: T | undefined, uri: URI | undefined): LangiumDocument<T> {
+        if (uri === undefined) {
+            uri = URI.parse(textDocument!.uri);
+        }
+        const services = this.serviceRegistry.getServices(uri);
+        if (textDocument === undefined) {
+            textDocument = TextDocument.create(uri.toString(), services.LanguageMetaData.languageId, 0, text ?? '');
+        }
+        let parseResult: ParseResult<T>;
+        if (model === undefined) {
+            parseResult = services.parser.LangiumParser.parse<T>(textDocument.getText());
+        } else {
+            parseResult = { value: model, parserErrors: [], lexerErrors: [] };
+        }
+        return documentFromText<T>(textDocument, parseResult, uri);
     }
 }
 
+/**
+ * Convert a TextDocument and a ParseResult into a LangiumDocument.
+ */
+export function documentFromText<T extends AstNode = AstNode>(textDocument: TextDocument, parseResult: ParseResult<T>, uri?: URI): LangiumDocument<T> {
+    const doc: LangiumDocument<T> = {
+        parseResult,
+        textDocument,
+        uri: uri ?? URI.parse(textDocument.uri),
+        state: DocumentState.Parsed,
+        references: []
+    };
+    (parseResult.value as Mutable<AstNode>).$document = doc;
+    return doc;
+}
+
+/**
+ * Shared service that manages Langium documents.
+ */
 export interface LangiumDocuments {
+
+    /**
+     * A stream of all documents managed under this service.
+     */
     readonly all: Stream<LangiumDocument>
+
+    /**
+     * Manage a new document under this service.
+     * @throws an error if a document with the same URI is already present.
+     */
+    addDocument(document: LangiumDocument): void;
+
+    /**
+     * Retrieve the document with the given URI, if present. Otherwise create a new document
+     * and add it to the managed documents.
+     */
     getOrCreateDocument(uri: URI): LangiumDocument;
+
+    /**
+     * Returns `true` if a document with the given URI is managed under this service.
+     */
     hasDocument(uri: URI): boolean;
+
+    /**
+     * Remove the document with the given URI, if present, and mark it as `Changed`, meaning
+     * that its content is no longer valid. The next call to `getOrCreateDocument` with the same
+     * URI will create a new document instance.
+     */
     invalidateDocument(uri: URI): void;
+
 }
 
 export class DefaultLangiumDocuments implements LangiumDocuments {
@@ -145,17 +226,22 @@ export class DefaultLangiumDocuments implements LangiumDocuments {
         return stream(this.documentMap.values());
     }
 
+    addDocument(document: LangiumDocument): void {
+        const uriString = document.uri.toString();
+        if (this.documentMap.has(uriString)) {
+            throw new Error(`A document with the URI '${uriString}' is already present.`);
+        }
+        this.documentMap.set(uriString, document);
+    }
+
     getOrCreateDocument(uri: URI): LangiumDocument {
         const uriString = uri.toString();
         let langiumDoc = this.documentMap.get(uriString);
         if (langiumDoc) {
             return langiumDoc;
         }
-        let textDoc = this.textDocuments.get(uriString);
-        if (!textDoc) {
-            textDoc = this.textDocumentFactory.fromUri(uri);
-        }
-        langiumDoc = this.langiumDocumentFactory.fromTextDocument(textDoc);
+        const textDoc = this.textDocuments.get(uriString) ?? this.textDocumentFactory.fromUri(uri);
+        langiumDoc = this.langiumDocumentFactory.fromTextDocument(textDoc, uri);
         this.documentMap.set(uriString, langiumDoc);
         return langiumDoc;
     }

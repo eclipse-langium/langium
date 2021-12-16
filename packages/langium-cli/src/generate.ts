@@ -15,7 +15,7 @@ import { generateAst } from './generator/ast-generator';
 import { serializeGrammar } from './generator/grammar-serializer';
 import { generateModule } from './generator/module-generator';
 import { generateTextMate } from './generator/textmate-generator';
-import { getTime, getUserChoice } from './generator/util';
+import { getUserChoice, log } from './generator/util';
 import { LangiumConfig, LangiumLanguageConfig, RelativePath } from './package';
 import { validateParser } from './parser-validation';
 
@@ -103,9 +103,9 @@ async function buildAll(config: LangiumConfig): Promise<Map<string, BuildResult>
     return map;
 }
 
-export async function generate(config: LangiumConfig): Promise<GeneratorResult> {
+export async function generate(config: LangiumConfig, options: GenerateOptions): Promise<GeneratorResult> {
     if (!config.languages || config.languages.length === 0) {
-        console.error(`${getTime()}No languages specified in config.`);
+        log('error', options, 'No languages specified in config.');
         return 'failure';
     }
     const all = await buildAll(config);
@@ -114,13 +114,13 @@ export async function generate(config: LangiumConfig): Promise<GeneratorResult> 
     for (const [path, buildResult] of all) {
         const diagnostics = buildResult.diagnostics;
         for (const diagnostic of diagnostics) {
-            const message = `${Utils.basename(URI.file(path))}:${diagnostic.range.start.line}:${diagnostic.range.start.character} - ${diagnostic.message}`;
+            const message = `${Utils.basename(URI.file(path))}:${diagnostic.range.start.line + 1}:${diagnostic.range.start.character + 1} - ${diagnostic.message}`;
             if (diagnostic.severity === 1) {
-                console.error(message.red);
+                log('error', options, message.red);
             } else if (diagnostic.severity === 2) {
-                console.warn(message.yellow);
+                log('warn', options, message.yellow);
             } else {
-                console.log(message);
+                log('log', options, message);
             }
         }
         if (!hasErrors) {
@@ -129,7 +129,7 @@ export async function generate(config: LangiumConfig): Promise<GeneratorResult> 
     }
 
     if (hasErrors) {
-        console.error(`${getTime()}Langium generator ${'failed'.red.bold}.`);
+        log('error', options, `Langium generator ${'failed'.red.bold}.`);
         return 'failure';
     }
 
@@ -152,58 +152,56 @@ export async function generate(config: LangiumConfig): Promise<GeneratorResult> 
         // Create and validate the in-memory parser
         const parserAnalysis = validateParser(grammar, config);
         if (parserAnalysis instanceof Error) {
-            console.error(parserAnalysis.toString().red);
+            log('error', options, parserAnalysis.toString().red);
             return 'failure';
         }
     }
 
     // Generate the output files
     const output = path.resolve(relPath, config.out ?? 'src/generated');
-    console.log(`${getTime()}Writing generated files to ${output.white.bold}`);
+    log('log', options, `Writing generated files to ${output.white.bold}`);
 
-    if (await rmdirWithFail(output, ['ast.ts', 'grammar.ts', 'module.ts'])) {
+    if (await rmdirWithFail(output, ['ast.ts', 'grammar.ts', 'module.ts'], options)) {
         return 'failure';
     }
-    if (await mkdirWithFail(output)) {
+    if (await mkdirWithFail(output, options)) {
         return 'failure';
     }
 
     const genAst = generateAst(grammarServices, grammars, config);
-    await writeWithFail(path.resolve(output, 'ast.ts'), genAst);
+    await writeWithFail(path.resolve(output, 'ast.ts'), genAst, options);
 
     const serializedGrammar = serializeGrammar(grammarServices, grammars, config);
-    await writeWithFail(path.resolve(output, 'grammar.ts'), serializedGrammar);
+    await writeWithFail(path.resolve(output, 'grammar.ts'), serializedGrammar, options);
 
     const genModule = generateModule(grammars, config, configMap);
-    await writeWithFail(path.resolve(output, 'module.ts'), genModule);
+    await writeWithFail(path.resolve(output, 'module.ts'), genModule, options);
 
     for (const grammar of grammars) {
         const languageConfig = configMap.get(grammar);
         if (languageConfig?.textMate) {
             const genTmGrammar = generateTextMate(grammar, languageConfig);
             const textMatePath = path.resolve(relPath, languageConfig.textMate.out);
-            console.log(`${getTime()}Writing textmate grammar to ${textMatePath.white.bold}`);
+            log('log', options, `Writing textmate grammar to ${textMatePath.white.bold}`);
             const parentDir = path.dirname(textMatePath).split(path.sep).pop();
-            parentDir && await mkdirWithFail(parentDir);
-            await writeWithFail(textMatePath, genTmGrammar);
+            parentDir && await mkdirWithFail(parentDir, options);
+            await writeWithFail(textMatePath, genTmGrammar, options);
         }
     }
 
     return 'success';
 }
 
-async function rmdirWithFail(dirPath: string, expectedFiles?: string[]): Promise<boolean> {
+async function rmdirWithFail(dirPath: string, expectedFiles: string[], options: GenerateOptions): Promise<boolean> {
     try {
         let deleteDir = true;
         const dirExists = await fs.pathExists(dirPath);
-        if(dirExists) {
-            if (expectedFiles) {
-                const existingFiles = await fs.readdir(dirPath);
-                const unexpectedFiles = existingFiles.filter(file => !expectedFiles.includes(path.basename(file)));
-                if (unexpectedFiles.length > 0) {
-                    console.log(`${getTime()}Found unexpected files in the generated directory: ${unexpectedFiles.map(e => e.yellow).join(', ')}`);
-                    deleteDir = await getUserChoice(`${getTime()}Do you want to delete the files?`, ['yes', 'no'], 'yes') === 'yes';
-                }
+        if (dirExists) {
+            const existingFiles = await fs.readdir(dirPath);
+            const unexpectedFiles = existingFiles.filter(file => !expectedFiles.includes(path.basename(file)));
+            if (unexpectedFiles.length > 0) {
+                log('log', options, `Found unexpected files in the generated directory: ${unexpectedFiles.map(e => e.yellow).join(', ')}`);
+                deleteDir = await getUserChoice('Do you want to delete the files?', ['yes', 'no'], 'yes') === 'yes';
             }
             if (deleteDir) {
                 await fs.remove(dirPath);
@@ -211,25 +209,25 @@ async function rmdirWithFail(dirPath: string, expectedFiles?: string[]): Promise
         }
         return false;
     } catch (e) {
-        console.error(`${getTime()}Failed to delete directory ${dirPath.red.bold}`, e);
+        log('error', options, `Failed to delete directory ${dirPath.red.bold}`, e);
         return true;
     }
 }
 
-async function mkdirWithFail(path: string): Promise<boolean> {
+async function mkdirWithFail(path: string, options: GenerateOptions): Promise<boolean> {
     try {
         await fs.mkdirs(path);
         return false;
     } catch (e) {
-        console.error(`${getTime()}Failed to create directory ${path.red.bold}`, e);
+        log('error', options, `Failed to create directory ${path.red.bold}`, e);
         return true;
     }
 }
 
-async function writeWithFail(path: string, content: string): Promise<void> {
+async function writeWithFail(path: string, content: string, options: GenerateOptions): Promise<void> {
     try {
         await fs.writeFile(path, content);
     } catch (e) {
-        console.error(`${getTime()}Failed to write file to ${path.red.bold}`, e);
+        log('error', options, `Failed to write file to ${path.red.bold}`, e);
     }
 }

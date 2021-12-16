@@ -9,6 +9,16 @@ import { CompositeGeneratorNode, GeneratorNode, NL, stream } from 'langium';
 import fs from 'fs-extra';
 import path from 'path';
 import * as readline from 'readline';
+import type { GenerateOptions } from '../generate';
+
+//eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function log(level: 'log' | 'warn' | 'error', options: GenerateOptions, message: string, ...args: any[]): void {
+    if (options.watch) {
+        console[level](getTime() + message, ...args);
+    } else {
+        console[level](message, ...args);
+    }
+}
 
 let start = process.hrtime();
 
@@ -93,4 +103,4 @@ export async function getUserChoice<R extends string>(text: string, values: R[],
 
 export const cliVersion = getLangiumCliVersion();
 export const generatedHeader = getGeneratedHeader();
-export const schema = fs.readJsonSync(path.resolve(__dirname, '../../langium-config-schema.json'), { encoding: 'utf-8' });
+export const schema = fs.readJson(path.resolve(__dirname, '../../langium-config-schema.json'), { encoding: 'utf-8' });

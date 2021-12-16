@@ -1,12 +1,9 @@
+/******************************************************************************
+ * Copyright 2021 TypeFox GmbH
+ * This program and the accompanying materials are made available under the
+ * terms of the MIT License, which is available in the project root.
+ ******************************************************************************/
 grammar LangiumGrammar
-
-hidden terminal WS         : /\s+/;
-terminal ID returns string: /\^?[_a-zA-Z][\w_]*/;
-terminal INT returns number: /[0-9]+/;
-terminal string: /"[^"]*"|'[^']*'/;
-
-hidden terminal ML_COMMENT: /\/\*[\s\S]*?\*\//;
-hidden terminal SL_COMMENT: /\/\/[^\n\r]*/;
 
 entry Grammar:
 	'grammar' name=ID ('with' usedGrammars+=[Grammar:ID] (',' usedGrammars+=[Grammar:ID])*)?
@@ -17,10 +14,7 @@ entry Grammar:
 AbstractRule : ParserRule | TerminalRule;
 
 GrammarImport:
-	'import' path=string ';';
-
-Annotation:
-	'@' name = ID;
+	'import' path=STRING ';';
 
 ParserRule :
 	(
@@ -65,7 +59,7 @@ AbstractTerminal returns AbstractElement:
 	PredicatedGroup;
 
 Keyword:
-	value=string;
+	value=STRING;
 
 RuleCall:
 	rule=[AbstractRule:ID] ('<' arguments+=NamedArgument (',' arguments+=NamedArgument)* '>')?;
@@ -96,7 +90,7 @@ ParameterReference:
 	parameter=[Parameter:ID];
 
 PredicatedKeyword returns Keyword:
-	(predicated?='=>' | firstSetPredicated?='->') value=string;
+	(predicated?='=>' | firstSetPredicated?='->') value=STRING;
 
 PredicatedRuleCall returns RuleCall:
 	(predicated?='=>' | firstSetPredicated?='->') rule=[AbstractRule:ID] ('<' arguments+=NamedArgument (',' arguments+=NamedArgument)* '>')?;
@@ -165,3 +159,9 @@ Wildcard returns AbstractElement:
 CharacterRange returns AbstractElement:
 	{CharacterRange} left=Keyword ('..' right=Keyword)?;
 
+terminal ID: /\^?[_a-zA-Z][\w_]*/;
+terminal STRING: /"[^"]*"|'[^']*'/;
+
+hidden terminal WS: /\s+/;
+hidden terminal ML_COMMENT: /\/\*[\s\S]*?\*\//;
+hidden terminal SL_COMMENT: /\/\/[^\n\r]*/;

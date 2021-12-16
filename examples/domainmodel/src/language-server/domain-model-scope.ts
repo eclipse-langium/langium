@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { AstNodeDescription, DefaultScopeComputation, interruptAndCheck, LangiumDocument, LangiumServices, PrecomputedScopes } from 'langium';
+import { AstNode, AstNodeDescription, DefaultScopeComputation, interruptAndCheck, LangiumDocument, LangiumServices, MultiMap, PrecomputedScopes } from 'langium';
 import { CancellationToken } from 'vscode-jsonrpc';
 import { DomainModelNameProvider } from './domain-model-naming';
 import { Domainmodel, isType, PackageDeclaration, isPackageDeclaration } from './generated/ast';
@@ -17,7 +17,7 @@ export class DomainModelScopeComputation extends DefaultScopeComputation {
 
     async computeScope(document: LangiumDocument, cancelToken = CancellationToken.None): Promise<PrecomputedScopes> {
         const model = document.parseResult.value as Domainmodel;
-        const scopes = new Map();
+        const scopes = new MultiMap<AstNode, AstNodeDescription>();
         await this.processContainer(model, scopes, document, cancelToken);
         return scopes;
     }
@@ -38,7 +38,7 @@ export class DomainModelScopeComputation extends DefaultScopeComputation {
                 }
             }
         }
-        scopes.set(container, localDescriptions);
+        scopes.addAll(container, localDescriptions);
         return localDescriptions;
     }
 

@@ -21,6 +21,8 @@ export interface AstNode {
     readonly $cstNode?: CstNode;
     /** The document containing the AST; only the root node has a direct reference to the document. */
     readonly $document?: LangiumDocument;
+    /** The path of this node inside its document (see `AstNodeLocator` service). */
+    $path?: string;
 }
 
 /**

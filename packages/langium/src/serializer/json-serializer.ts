@@ -23,7 +23,7 @@ export class DefaultJsonSerializer {
     }
 
     serialize(node: AstNode, space?: string | number): string {
-        return JSON.stringify(this.decycle(node, '$container', '$document', '$cstNode'), undefined, space);
+        return JSON.stringify(this.decycle(node, '$container', '$document', '$cstNode', '$path'), undefined, space);
     }
 
     deserialize(content: string): AstNode {

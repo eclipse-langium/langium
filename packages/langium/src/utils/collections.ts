@@ -96,6 +96,18 @@ export class MultiMap<K, V> {
     }
 
     /**
+     * Add the given set of key / value pairs to the multimap.
+     */
+    addAll(key: K, values: Iterable<V>): this {
+        if (this.map.has(key)) {
+            this.map.get(key)!.push(...values);
+        } else {
+            this.map.set(key, Array.from(values));
+        }
+        return this;
+    }
+
+    /**
      * Invokes the given callback function for every key / value pair in the multimap.
      */
     forEach(callbackfn: (value: V, key: K, map: this) => void): void {

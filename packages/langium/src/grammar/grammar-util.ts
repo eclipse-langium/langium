@@ -11,6 +11,7 @@ import { CompositeCstNodeImpl } from '../parser/cst-node-builder';
 import { LangiumServices } from '../services';
 import { AstNode, AstNodeDescription, CstNode } from '../syntax-tree';
 import { getContainerOfType, getDocument, Mutable, streamAllContents } from '../utils/ast-util';
+import { MultiMap } from '../utils/collections';
 import { escapeRegExp } from '../utils/regex-util';
 import { documentFromText, LangiumDocuments, PrecomputedScopes } from '../workspace/documents';
 import { createLangiumGrammarServices } from './langium-grammar-module';
@@ -390,7 +391,7 @@ export function computeGrammarScope(services: LangiumServices, grammar: ast.Gram
     const nameProvider = services.references.NameProvider;
     const descriptions = services.index.AstNodeDescriptionProvider;
     const document = getDocument(grammar);
-    const scopes = new Map<AstNode, AstNodeDescription[]>();
+    const scopes = new MultiMap<AstNode, AstNodeDescription>();
     for (const content of streamAllContents(grammar)) {
         const { node } = content;
         const container = node.$container;
@@ -398,11 +399,7 @@ export function computeGrammarScope(services: LangiumServices, grammar: ast.Gram
             const name = nameProvider.getName(node);
             if (name) {
                 const description = descriptions.createDescription(node, name, document);
-                if (scopes.has(container)) {
-                    scopes.get(container)?.push(description);
-                } else {
-                    scopes.set(container, [description]);
-                }
+                scopes.add(container, description);
             }
         }
     }

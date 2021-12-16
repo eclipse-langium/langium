@@ -11,5 +11,6 @@ def t: 4;
 DEF func(t, x):
     t * t * t + x;
 
-func(t, x);
-func(x, t);
+// This language is case-insensitive regarding symbol names
+Func(T, X);
+Func(X, T);

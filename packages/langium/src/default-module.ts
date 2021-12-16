@@ -49,42 +49,42 @@ export interface DefaultModuleContext {
 export function createDefaultModule(context: DefaultModuleContext): Module<LangiumServices, LangiumDefaultServices> {
     return {
         parser: {
-            GrammarConfig: (injector) => createGrammarConfig(injector),
-            LangiumParser: (injector) => createLangiumParser(injector),
+            GrammarConfig: (services) => createGrammarConfig(services),
+            LangiumParser: (services) => createLangiumParser(services),
             ValueConverter: () => new DefaultValueConverter(),
             TokenBuilder: () => new DefaultTokenBuilder()
         },
         lsp: {
             completion: {
-                CompletionProvider: (injector) => new DefaultCompletionProvider(injector),
+                CompletionProvider: (services) => new DefaultCompletionProvider(services),
                 RuleInterpreter: () => new RuleInterpreter()
             },
-            DocumentSymbolProvider: (injector) => new DefaultDocumentSymbolProvider(injector),
-            HoverProvider: (injector) => new MultilineCommentHoverProvider(injector),
-            FoldingRangeProvider: (injector) => new DefaultFoldingRangeProvider(injector),
-            ReferenceFinder: (injector) => new DefaultReferenceFinder(injector),
-            GoToResolver: (injector) => new DefaultGoToResolverProvider(injector),
-            DocumentHighlighter: (injector) => new DefaultDocumentHighlighter(injector),
-            RenameHandler: (injector) => new DefaultRenameHandler(injector)
+            DocumentSymbolProvider: (services) => new DefaultDocumentSymbolProvider(services),
+            HoverProvider: (services) => new MultilineCommentHoverProvider(services),
+            FoldingRangeProvider: (services) => new DefaultFoldingRangeProvider(services),
+            ReferenceFinder: (services) => new DefaultReferenceFinder(services),
+            GoToResolver: (services) => new DefaultGoToResolverProvider(services),
+            DocumentHighlighter: (services) => new DefaultDocumentHighlighter(services),
+            RenameHandler: (services) => new DefaultRenameHandler(services)
         },
         index: {
             AstNodeLocator: () => new DefaultAstNodeLocator(),
-            AstNodeDescriptionProvider: (injector) => new DefaultAstNodeDescriptionProvider(injector),
-            ReferenceDescriptionProvider: (injector) => new DefaultReferenceDescriptionProvider(injector)
+            AstNodeDescriptionProvider: (services) => new DefaultAstNodeDescriptionProvider(services),
+            ReferenceDescriptionProvider: (services) => new DefaultReferenceDescriptionProvider(services)
         },
         references: {
-            Linker: (injector) => new DefaultLinker(injector),
+            Linker: (services) => new DefaultLinker(services),
             NameProvider: () => new DefaultNameProvider(),
-            ScopeProvider: (injector) => new DefaultScopeProvider(injector),
-            ScopeComputation: (injector) => new DefaultScopeComputation(injector),
-            References: (injector) => new DefaultReferences(injector)
+            ScopeProvider: (services) => new DefaultScopeProvider(services),
+            ScopeComputation: (services) => new DefaultScopeComputation(services),
+            References: (services) => new DefaultReferences(services)
         },
         serializer: {
-            JsonSerializer: (injector) => new DefaultJsonSerializer(injector)
+            JsonSerializer: (services) => new DefaultJsonSerializer(services)
         },
         validation: {
-            DocumentValidator: (injector) => new DefaultDocumentValidator(injector),
-            ValidationRegistry: (injector) => new ValidationRegistry(injector)
+            DocumentValidator: (services) => new DefaultDocumentValidator(services),
+            ValidationRegistry: (services) => new ValidationRegistry(services)
         },
         shared: () => context.shared
     };
@@ -108,12 +108,12 @@ export function createDefaultSharedModule(context: DefaultSharedModuleContext = 
             Connection: () => context.connection
         },
         workspace: {
-            LangiumDocuments: (injector) => new DefaultLangiumDocuments(injector),
-            LangiumDocumentFactory: (injector) => new DefaultLangiumDocumentFactory(injector),
-            DocumentBuilder: (injector) => new DefaultDocumentBuilder(injector),
+            LangiumDocuments: (services) => new DefaultLangiumDocuments(services),
+            LangiumDocumentFactory: (services) => new DefaultLangiumDocumentFactory(services),
+            DocumentBuilder: (services) => new DefaultDocumentBuilder(services),
             TextDocuments: () => new TextDocuments(TextDocument),
-            TextDocumentFactory: (injector) => new DefaultTextDocumentFactory(injector),
-            IndexManager: (injector) => new DefaultIndexManager(injector)
+            TextDocumentFactory: (services) => new DefaultTextDocumentFactory(services),
+            IndexManager: (services) => new DefaultIndexManager(services)
         }
     };
 }

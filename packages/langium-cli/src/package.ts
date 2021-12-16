@@ -5,9 +5,10 @@
  ******************************************************************************/
 
 import fs from 'fs-extra';
-import { IParserConfig } from 'langium';
+import type { IParserConfig } from 'langium';
 import path from 'path';
-import { getTime } from './generator/util';
+import type { GenerateOptions } from './generate';
+import { log } from './generator/util';
 
 export interface Package {
     name: string
@@ -47,21 +48,33 @@ export interface LangiumLanguageConfig {
     chevrotainParserConfig?: IParserConfig
 }
 
-export function loadConfigs(file: string | undefined): LangiumConfig {
-    let defaultPath = './langium-config.json';
-    if (!fs.existsSync(defaultPath)) {
-        defaultPath = './package.json';
+export async function loadConfigs(options: GenerateOptions): Promise<LangiumConfig[]> {
+    let filePath: string;
+    if (options.file) {
+        filePath = path.normalize(options.file);
+    } else {
+        let defaultFile = 'langium-config.json';
+        if (!fs.existsSync(defaultFile)) {
+            defaultFile = 'package.json';
+        }
+        filePath = path.normalize(defaultFile);
     }
-    const filePath = path.normalize(file ?? defaultPath);
     const relativePath = path.dirname(filePath);
-    console.log(`${getTime()}Reading config from ${filePath.white.bold}`);
-    let obj: LangiumConfig;
+    log('log', options, `Reading config from ${filePath.white.bold}`);
     try {
-        obj = fs.readJsonSync(filePath, { encoding: 'utf-8' });
-    } catch (e) {
-        console.error(getTime() + 'Failed to read config file.', e);
+        const obj = await fs.readJson(filePath, { encoding: 'utf-8' });
+        const config: LangiumConfig | LangiumConfig[] = path.basename(filePath) === 'package.json' ? obj.langium : obj;
+        if (Array.isArray(config)) {
+            config.forEach(c => {
+                c[RelativePath] = relativePath;
+            });
+            return config;
+        } else {
+            config[RelativePath] = relativePath;
+        }
+        return [config];
+    } catch (err) {
+        log('error', options, 'Failed to read config file.'.red, err);
         process.exit(1);
     }
-    obj[RelativePath] = relativePath;
-    return obj;
 }

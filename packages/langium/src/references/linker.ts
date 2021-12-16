@@ -6,7 +6,7 @@
 
 import { CancellationToken } from 'vscode-languageserver';
 import { LangiumServices } from '../services';
-import { AstNode, AstNodeDescription, CstNode, LinkingError, Reference, ReferenceInfo } from '../syntax-tree';
+import { AstNode, AstNodeDescription, AstReflection, CstNode, LinkingError, Reference, ReferenceInfo } from '../syntax-tree';
 import { isAstNode, isAstNodeDescription, isLinkingError, streamAllContents, streamReferences } from '../utils/ast-util';
 import { interruptAndCheck } from '../utils/promise-util';
 import { AstNodeLocator } from '../workspace/ast-node-locator';
@@ -75,11 +75,13 @@ interface DefaultReference extends Reference {
 }
 
 export class DefaultLinker implements Linker {
+    protected readonly reflection: AstReflection;
     protected readonly scopeProvider: ScopeProvider;
     protected readonly astNodeLocator: AstNodeLocator;
     protected readonly langiumDocuments: () => LangiumDocuments;
 
     constructor(services: LangiumServices) {
+        this.reflection = services.shared.AstReflection;
         this.langiumDocuments = () => services.shared.workspace.LangiumDocuments;
         this.scopeProvider = services.references.ScopeProvider;
         this.astNodeLocator = services.index.AstNodeLocator;
@@ -108,7 +110,7 @@ export class DefaultLinker implements Linker {
                 if (!isLinkingError(description) && this.langiumDocuments().hasDocument(description.documentUri)) {
                     // The target document is already loaded
                     const linkedNode = this.loadAstNode(description);
-                    ref._ref = linkedNode ?? this.createLinkingError(info, description);
+                    ref._ref = linkedNode ?? this.createLinkingError(info, refId, description);
                 } else {
                     // The target document is not loaded yet, or the target was not found in the scope
                     ref._ref = description;
@@ -134,7 +136,7 @@ export class DefaultLinker implements Linker {
     getCandidate(container: AstNode, refId: string, reference: Reference): AstNodeDescription | LinkingError {
         const scope = this.scopeProvider.getScope(container, refId);
         const description = scope.getElement(reference.$refText);
-        return description ?? this.createLinkingError({ container, property: getReferenceProperty(refId), reference });
+        return description ?? this.createLinkingError({ container, property: getReferenceProperty(refId), reference }, refId);
     }
 
     buildReference(node: AstNode, refNode: CstNode, refId: string, refText: string): Reference {
@@ -156,7 +158,7 @@ export class DefaultLinker implements Linker {
                     // A candidate has been found before, but it is not loaded yet.
                     const linkedNode = linker.loadAstNode(this._ref);
                     this._ref = linkedNode ??
-                        linker.createLinkingError({ container: node, property: getReferenceProperty(refId), reference }, this._ref);
+                        linker.createLinkingError({ container: node, property: getReferenceProperty(refId), reference }, refId, this._ref);
                 }
                 return isAstNode(this._ref) ? this._ref : undefined;
             },
@@ -176,7 +178,7 @@ export class DefaultLinker implements Linker {
             } else {
                 const linkedNode = this.loadAstNode(description);
                 return linkedNode ??
-                    this.createLinkingError({ container, property: getReferenceProperty(refId), reference }, description);
+                    this.createLinkingError({ container, property: getReferenceProperty(refId), reference }, refId, description);
             }
         } catch (err) {
             return {
@@ -196,10 +198,11 @@ export class DefaultLinker implements Linker {
         return this.astNodeLocator.getAstNode(doc, nodeDescription.path);
     }
 
-    protected createLinkingError(refInfo: ReferenceInfo, targetDescription?: AstNodeDescription): LinkingError {
+    protected createLinkingError(refInfo: ReferenceInfo, refId: string, targetDescription?: AstNodeDescription): LinkingError {
+        const referenceType = this.reflection.getReferenceType(refId);
         return {
             ...refInfo,
-            message: `Could not resolve reference to '${refInfo.reference.$refText}'.`,
+            message: `Could not resolve reference to ${referenceType} named '${refInfo.reference.$refText}'.`,
             targetDescription
         };
     }

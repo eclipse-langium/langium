@@ -40,7 +40,8 @@
         "build": "tsc",
         "watch": "tsc -watch",
         "lint": "eslint src --ext ts",
-        "langium:generate": "langium generate"
+        "langium:generate": "langium generate",
+        "langium:watch": "langium generate --watch"
     },
     "dependencies": {
         "colors": "^1.4.0",

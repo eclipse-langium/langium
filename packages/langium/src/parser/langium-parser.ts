@@ -12,7 +12,6 @@ import { LangiumServices } from '../services';
 import { AstNode, CompositeCstNode, CstNode, LeafCstNode } from '../syntax-tree';
 import { getContainerOfType } from '../utils/ast-util';
 import { tokenToRange } from '../utils/cst-util';
-import { LangiumDocument } from '../workspace/documents';
 import { CompositeCstNodeImpl, CstNodeBuilder, LeafCstNodeImpl, RootCstNodeImpl } from './cst-node-builder';
 import { IParserConfig } from './parser-config';
 import { ValueConverter } from './value-converter';
@@ -69,16 +68,12 @@ export class LangiumParser {
         return this.wrapper.DEFINE_RULE(name, this.startImplementation(type, implementation).bind(this));
     }
 
-    parse<T extends AstNode = AstNode>(input: string | LangiumDocument<T>): ParseResult<T> {
-        const text = typeof input === 'string' ? input : input.textDocument.getText();
-        this.nodeBuilder.buildRootNode(text);
-        const lexerResult = this.lexer.tokenize(text);
+    parse<T extends AstNode = AstNode>(input: string): ParseResult<T> {
+        this.nodeBuilder.buildRootNode(input);
+        const lexerResult = this.lexer.tokenize(input);
         this.wrapper.input = lexerResult.tokens;
         const result = this.mainRule.call(this.wrapper);
         this.addHiddenTokens(result.$cstNode, lexerResult.groups.hidden);
-        if (typeof input !== 'string') {
-            result.$document = input;
-        }
         return {
             value: result,
             lexerErrors: lexerResult.errors,
@@ -278,7 +273,8 @@ export class LangiumParser {
         const feature = assignment.feature.replace(/\^/g, '');
         let item: unknown;
         if (crossRefId && typeof value === 'string') {
-            item = this.linker.buildReference(obj, cstNode, crossRefId, value);
+            const refText = cstNode ? this.converter.convert(value, cstNode).toString() : value;
+            item = this.linker.buildReference(obj, cstNode, crossRefId, refText);
         } else if (cstNode && typeof value === 'string') {
             item = this.converter.convert(value, cstNode);
         } else {

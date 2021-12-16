@@ -8,6 +8,19 @@ import { MultiMap } from '../../src/utils/collections';
 
 describe('MultiMap', () => {
 
+    test('addAll when empty', () => {
+        const multimap = new MultiMap<string, string>();
+        multimap.addAll('a', ['foo', 'bar', 'baz']);
+        expect(multimap.size).toBe(3);
+    });
+
+    test('addAll when non-empty', () => {
+        const multimap = new MultiMap<string, string>();
+        multimap.add('a', 'foo');
+        multimap.addAll('a', ['bar', 'baz']);
+        expect(multimap.size).toBe(3);
+    });
+
     test('size', () => {
         const multimap = new MultiMap<string, string>();
         multimap.add('a', 'foo');

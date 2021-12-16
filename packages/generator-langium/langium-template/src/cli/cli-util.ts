@@ -24,7 +24,7 @@ export async function extractDocument(fileName: string, services: LangiumService
         console.error(colors.red('There are validation errors:'));
         for (const validationError of validationErrors) {
             console.error(colors.red(
-                `line ${validationError.range.start.line}: ${validationError.message} [${document.textDocument.getText(validationError.range)}]`
+                `line ${validationError.range.start.line + 1}: ${validationError.message} [${document.textDocument.getText(validationError.range)}]`
             ));
         }
         process.exit(1);

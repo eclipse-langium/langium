@@ -4,15 +4,17 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { findAssignment, isArray } from '../grammar/grammar-util';
+import { findAssignment } from '../grammar/grammar-util';
 import { AstNode } from '../syntax-tree';
 import { LangiumDocument } from './documents';
 
 export interface AstNodeLocator {
+
     /**
      * Creates a path represented by a `string` that identifies an `AstNode` inside its document.
      * It must be possible to retrieve exactly the same `AstNode` from the document using this path.
-     * @param node The `AstNode` to create the path for.
+     *
+     * @param node The `AstNode` for which to create the path.
      * @returns a path represented by a `string` that identifies `node` inside its document.
      * @see AstNodeLocator.getAstNode
      */
@@ -20,54 +22,66 @@ export interface AstNodeLocator {
 
     /**
      * Locates an `AstNode` inside a document by following the given path.
-     * @param document Document to look up
-     * @param path Describes how to locate an `AstNode` inside the given `document`.
+     *
+     * @param document The document in which to look up.
+     * @param path Describes how to locate the `AstNode` inside the given `document`.
      * @returns The `AstNode` located under the given path, or `undefined` if the path cannot be resolved.
      * @see AstNodeLocator.getAstNodePath
      */
     getAstNode(document: LangiumDocument, path: string): AstNode | undefined;
+
 }
 
 export class DefaultAstNodeLocator implements AstNodeLocator {
     protected segmentSeparator = '/';
+    protected indexSeparator = '@';
 
     getAstNodePath(node: AstNode): string {
-        let container: AstNode | undefined = node.$container;
-        const path: string[] = [];
-        while (container) {
-            path.push(this.pathSegment(node, container));
-            node = container;
-            container = container.$container;
+        if (node.$path) {
+            // If the node already has a path, use that (this can be used to locate without a CST)
+            return node.$path;
         }
-        return this.segmentSeparator + path.reverse().join(this.segmentSeparator);
+        // Otherwise concatenate the container's path with a new path segment
+        if (node.$container) {
+            const containerPath = this.getAstNodePath(node.$container);
+            const newSegment = this.getPathSegment(node, node.$container);
+            const nodePath = containerPath + this.segmentSeparator + newSegment;
+            node.$path = nodePath;
+            return nodePath;
+        }
+        return '';
     }
 
-    getAstNode(document: LangiumDocument, path: string): AstNode | undefined {
-        const segments = path.split(this.segmentSeparator);
-        return segments.reduce((previousValue, currentValue) => {
-            if(!previousValue || currentValue.length === 0)
-                return previousValue;
-            const propertyIndx = currentValue.split('@');
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const value = (previousValue as any)[propertyIndx[0]];
-            return (propertyIndx.length === 2) ? value[propertyIndx[1]] : value;
-        }, document.parseResult.value);
-    }
-
-    protected pathSegment(node: AstNode, container: AstNode): string {
+    protected getPathSegment(node: AstNode, container: AstNode): string {
         if (node.$cstNode) {
             const assignment = findAssignment(node.$cstNode);
             if (assignment) {
-                if (isArray(assignment.cardinality)) {
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    const value = (container as any)[assignment.feature] as AstNode[];
-                    const idx = value.indexOf(node);
-                    return assignment.feature + '@' + idx;
+                if (assignment.operator === '+=') {
+                    const array = (container as unknown as Record<string, AstNode[]>)[assignment.feature];
+                    const idx = array.indexOf(node);
+                    return assignment.feature + this.indexSeparator + idx;
                 }
                 return assignment.feature;
             }
         }
         return '<missing>';
     }
-}
 
+    getAstNode(document: LangiumDocument, path: string): AstNode | undefined {
+        const segments = path.split(this.segmentSeparator);
+        return segments.reduce((previousValue, currentValue) => {
+            if (!previousValue || currentValue.length === 0) {
+                return previousValue;
+            }
+            const propertyIndex = currentValue.indexOf(this.indexSeparator);
+            if (propertyIndex > 0) {
+                const property = currentValue.substring(0, propertyIndex);
+                const arrayIndex = parseInt(currentValue.substring(propertyIndex + 1));
+                const array = (previousValue as unknown as Record<string, AstNode[]>)[property];
+                return array[arrayIndex];
+            }
+            return (previousValue as unknown as Record<string, AstNode>)[currentValue];
+        }, document.parseResult.value);
+    }
+
+}
