@@ -4,27 +4,30 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { AbstractRule, isRuleCall } from '../grammar/generated/ast';
+import { AbstractRule, isCrossReference, isRuleCall } from '../grammar/generated/ast';
 import { CstNode } from '../syntax-tree';
 
 export interface ValueConverter {
     convert(input: string, cstNode: CstNode): ValueType;
 }
 
-export type ValueType = string | number | boolean | Date;
+export type ValueType = string | number | boolean | bigint | Date;
 
 export class DefaultValueConverter implements ValueConverter {
 
     convert(input: string, cstNode: CstNode): ValueType {
-        if (isRuleCall(cstNode.feature)) {
-            const rule = cstNode.feature.rule.ref;
+        let feature = cstNode.feature;
+        if (isCrossReference(feature)) {
+            feature = feature.terminal;
+        }
+        if (isRuleCall(feature)) {
+            const rule = feature.rule.ref;
             if (!rule) {
                 throw new Error('This cst node was not parsed by a rule.');
             }
             return this.runConverter(rule, input, cstNode);
-        } else {
-            return input;
         }
+        return input;
     }
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars

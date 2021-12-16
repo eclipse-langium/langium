@@ -18,6 +18,8 @@ export * from './lsp';
 export * from './parser/langium-parser';
 export * from './parser/langium-parser-builder';
 export * from './parser/parser-config';
+export * from './parser/token-builder';
+export * from './parser/value-converter';
 export * from './references/linker';
 export * from './references/naming';
 export * from './references/scope';
@@ -36,4 +38,4 @@ export * from './validation/validation-registry';
 export * from './workspace/ast-descriptions';
 export * from './workspace/document-builder';
 export * from './workspace/documents';
-
+export * from './workspace/index-manager';

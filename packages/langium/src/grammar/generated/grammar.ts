@@ -14,65 +14,6 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
   "imports": [],
   "rules": [
     {
-      "$type": "TerminalRule",
-      "hidden": true,
-      "name": "WS",
-      "terminal": {
-        "$type": "RegexToken",
-        "regex": "\\\\s+",
-        "elements": []
-      }
-    },
-    {
-      "$type": "TerminalRule",
-      "name": "ID",
-      "type": "string",
-      "terminal": {
-        "$type": "RegexToken",
-        "regex": "\\\\^?[_a-zA-Z][\\\\w_]*",
-        "elements": []
-      }
-    },
-    {
-      "$type": "TerminalRule",
-      "name": "INT",
-      "type": "number",
-      "terminal": {
-        "$type": "RegexToken",
-        "regex": "[0-9]+",
-        "elements": []
-      }
-    },
-    {
-      "$type": "TerminalRule",
-      "name": "string",
-      "terminal": {
-        "$type": "RegexToken",
-        "regex": "\\"[^\\"]*\\"|'[^']*'",
-        "elements": []
-      }
-    },
-    {
-      "$type": "TerminalRule",
-      "hidden": true,
-      "name": "ML_COMMENT",
-      "terminal": {
-        "$type": "RegexToken",
-        "regex": "\\\\/\\\\*[\\\\s\\\\S]*?\\\\*\\\\/",
-        "elements": []
-      }
-    },
-    {
-      "$type": "TerminalRule",
-      "hidden": true,
-      "name": "SL_COMMENT",
-      "terminal": {
-        "$type": "RegexToken",
-        "regex": "\\\\/\\\\/[^\\\\n\\\\r]*",
-        "elements": []
-      }
-    },
-    {
       "$type": "ParserRule",
       "parameters": [],
       "name": "Grammar",
@@ -312,41 +253,13 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
               "$type": "RuleCall",
               "arguments": [],
               "rule": {
-                "$refText": "string"
+                "$refText": "STRING"
               }
             }
           },
           {
             "$type": "Keyword",
             "value": ";"
-          }
-        ]
-      }
-    },
-    {
-      "$type": "ParserRule",
-      "parameters": [],
-      "name": "Annotation",
-      "hiddenTokens": [],
-      "alternatives": {
-        "$type": "Group",
-        "elements": [
-          {
-            "$type": "Keyword",
-            "value": "@",
-            "elements": []
-          },
-          {
-            "$type": "Assignment",
-            "feature": "name",
-            "operator": "=",
-            "terminal": {
-              "$type": "RuleCall",
-              "arguments": [],
-              "rule": {
-                "$refText": "ID"
-              }
-            }
           }
         ]
       }
@@ -1076,7 +989,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           "$type": "RuleCall",
           "arguments": [],
           "rule": {
-            "$refText": "string"
+            "$refText": "STRING"
           }
         },
         "elements": []
@@ -1521,7 +1434,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
               "$type": "RuleCall",
               "arguments": [],
               "rule": {
-                "$refText": "string"
+                "$refText": "STRING"
               }
             }
           }
@@ -2610,6 +2523,54 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "cardinality": "?"
           }
         ]
+      }
+    },
+    {
+      "$type": "TerminalRule",
+      "name": "ID",
+      "terminal": {
+        "$type": "RegexToken",
+        "regex": "\\\\^?[_a-zA-Z][\\\\w_]*",
+        "elements": []
+      }
+    },
+    {
+      "$type": "TerminalRule",
+      "name": "STRING",
+      "terminal": {
+        "$type": "RegexToken",
+        "regex": "\\"[^\\"]*\\"|'[^']*'",
+        "elements": []
+      }
+    },
+    {
+      "$type": "TerminalRule",
+      "hidden": true,
+      "name": "WS",
+      "terminal": {
+        "$type": "RegexToken",
+        "regex": "\\\\s+",
+        "elements": []
+      }
+    },
+    {
+      "$type": "TerminalRule",
+      "hidden": true,
+      "name": "ML_COMMENT",
+      "terminal": {
+        "$type": "RegexToken",
+        "regex": "\\\\/\\\\*[\\\\s\\\\S]*?\\\\*\\\\/",
+        "elements": []
+      }
+    },
+    {
+      "$type": "TerminalRule",
+      "hidden": true,
+      "name": "SL_COMMENT",
+      "terminal": {
+        "$type": "RegexToken",
+        "regex": "\\\\/\\\\/[^\\\\n\\\\r]*",
+        "elements": []
       }
     }
   ],

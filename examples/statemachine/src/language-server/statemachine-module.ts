@@ -33,7 +33,7 @@ export type StatemachineServices = LangiumServices & StatemachineAddedServices
  */
 export const StatemachineModule: Module<StatemachineServices, PartialLangiumServices & StatemachineAddedServices> = {
     validation: {
-        ValidationRegistry: (injector) => new StatemachineValidationRegistry(injector),
+        ValidationRegistry: (services) => new StatemachineValidationRegistry(services),
         StatemachineValidator: () => new StatemachineValidator()
     }
 };

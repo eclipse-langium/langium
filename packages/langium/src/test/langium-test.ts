@@ -7,7 +7,7 @@
 import {
     CompletionItem, DocumentSymbol, MarkupContent, Range, TextDocumentIdentifier, TextDocumentPositionParams
 } from 'vscode-languageserver';
-import { TextDocument } from 'vscode-languageserver-textdocument';
+import { URI } from 'vscode-uri';
 import { LangiumServices } from '../services';
 import { AstNode } from '../syntax-tree';
 import { getDocument } from '../utils/ast-util';
@@ -20,11 +20,8 @@ export function parseHelper<T extends AstNode = AstNode>(services: LangiumServic
     const documentBuilder = services.shared.workspace.DocumentBuilder;
     return async input => {
         const randomNumber = Math.floor(Math.random() * 10000000) + 1000000;
-        const textDocument = TextDocument.create(`file:///${randomNumber}${metaData.fileExtensions[0]}`, metaData.languageId, 0, input);
-        // For now we have to add the newly created document to the list of documents manually
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (services.shared.workspace.TextDocuments as any)._documents[textDocument.uri] = textDocument;
-        const document = services.shared.workspace.LangiumDocumentFactory.fromTextDocument<T>(textDocument);
+        const uri = URI.parse(`file:///${randomNumber}${metaData.fileExtensions[0]}`);
+        const document = services.shared.workspace.LangiumDocumentFactory.fromString<T>(input, uri);
         const buildResult = await documentBuilder.build(document);
         return buildResult as BuildResult<T>;
     };

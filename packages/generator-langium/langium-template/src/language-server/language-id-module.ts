@@ -27,7 +27,7 @@ export type <%= LanguageName %>Services = LangiumServices & <%= LanguageName %>A
  */
 export const <%= LanguageName %>Module: Module<<%= LanguageName %>Services, PartialLangiumServices & <%= LanguageName %>AddedServices> = {
     validation: {
-        ValidationRegistry: (injector) => new <%= LanguageName %>ValidationRegistry(injector),
+        ValidationRegistry: (services) => new <%= LanguageName %>ValidationRegistry(services),
         <%= LanguageName %>Validator: () => new <%= LanguageName %>Validator()
     }
 };

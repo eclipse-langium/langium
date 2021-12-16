@@ -32,16 +32,6 @@ export function isAbstractRule(item: unknown): item is AbstractRule {
     return reflection.isInstance(item, AbstractRule);
 }
 
-export interface Annotation extends AstNode {
-    name: string
-}
-
-export const Annotation = 'Annotation';
-
-export function isAnnotation(item: unknown): item is Annotation {
-    return reflection.isInstance(item, Annotation);
-}
-
 export interface Condition extends AstNode {
     readonly $container: NamedArgument | Disjunction | Conjunction | Negation;
 }
@@ -355,14 +345,14 @@ export function isParameterReference(item: unknown): item is ParameterReference 
     return reflection.isInstance(item, ParameterReference);
 }
 
-export type LangiumGrammarAstType = 'AbstractElement' | 'AbstractRule' | 'Annotation' | 'Condition' | 'Grammar' | 'GrammarImport' | 'NamedArgument' | 'Parameter' | 'Action' | 'Alternatives' | 'Assignment' | 'CharacterRange' | 'CrossReference' | 'Group' | 'Keyword' | 'NegatedToken' | 'RegexToken' | 'RuleCall' | 'TerminalAlternatives' | 'TerminalGroup' | 'TerminalRuleCall' | 'UnorderedGroup' | 'UntilToken' | 'Wildcard' | 'ParserRule' | 'TerminalRule' | 'Conjunction' | 'Disjunction' | 'LiteralCondition' | 'Negation' | 'ParameterReference';
+export type LangiumGrammarAstType = 'AbstractElement' | 'AbstractRule' | 'Condition' | 'Grammar' | 'GrammarImport' | 'NamedArgument' | 'Parameter' | 'Action' | 'Alternatives' | 'Assignment' | 'CharacterRange' | 'CrossReference' | 'Group' | 'Keyword' | 'NegatedToken' | 'RegexToken' | 'RuleCall' | 'TerminalAlternatives' | 'TerminalGroup' | 'TerminalRuleCall' | 'UnorderedGroup' | 'UntilToken' | 'Wildcard' | 'ParserRule' | 'TerminalRule' | 'Conjunction' | 'Disjunction' | 'LiteralCondition' | 'Negation' | 'ParameterReference';
 
 export type LangiumGrammarAstReference = 'Grammar:hiddenTokens' | 'Grammar:usedGrammars' | 'NamedArgument:parameter' | 'CrossReference:type' | 'RuleCall:rule' | 'TerminalRuleCall:rule' | 'ParserRule:hiddenTokens' | 'ParameterReference:parameter';
 
 export class LangiumGrammarAstReflection implements AstReflection {
 
     getAllTypes(): string[] {
-        return ['AbstractElement', 'AbstractRule', 'Annotation', 'Condition', 'Grammar', 'GrammarImport', 'NamedArgument', 'Parameter', 'Action', 'Alternatives', 'Assignment', 'CharacterRange', 'CrossReference', 'Group', 'Keyword', 'NegatedToken', 'RegexToken', 'RuleCall', 'TerminalAlternatives', 'TerminalGroup', 'TerminalRuleCall', 'UnorderedGroup', 'UntilToken', 'Wildcard', 'ParserRule', 'TerminalRule', 'Conjunction', 'Disjunction', 'LiteralCondition', 'Negation', 'ParameterReference'];
+        return ['AbstractElement', 'AbstractRule', 'Condition', 'Grammar', 'GrammarImport', 'NamedArgument', 'Parameter', 'Action', 'Alternatives', 'Assignment', 'CharacterRange', 'CrossReference', 'Group', 'Keyword', 'NegatedToken', 'RegexToken', 'RuleCall', 'TerminalAlternatives', 'TerminalGroup', 'TerminalRuleCall', 'UnorderedGroup', 'UntilToken', 'Wildcard', 'ParserRule', 'TerminalRule', 'Conjunction', 'Disjunction', 'LiteralCondition', 'Negation', 'ParameterReference'];
     }
 
     isInstance(node: unknown, type: string): boolean {

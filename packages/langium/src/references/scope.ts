@@ -7,7 +7,8 @@
 import { CancellationToken } from 'vscode-jsonrpc';
 import { LangiumServices } from '../services';
 import { AstNode, AstNodeDescription, AstReflection } from '../syntax-tree';
-import { getDocument, streamAllContents } from '../utils/ast-util';
+import { AstNodeContent, getDocument, streamAllContents } from '../utils/ast-util';
+import { MultiMap } from '../utils/collections';
 import { interruptAndCheck } from '../utils/promise-util';
 import { EMPTY_STREAM, Stream, stream } from '../utils/stream';
 import { AstNodeDescriptionProvider } from '../workspace/ast-descriptions';
@@ -23,10 +24,12 @@ export interface Scope {
 export class SimpleScope implements Scope {
     readonly elements: Stream<AstNodeDescription>;
     readonly outerScope?: Scope;
+    readonly caseInsensitive?: boolean;
 
-    constructor(elements: Stream<AstNodeDescription>, outerScope?: Scope) {
+    constructor(elements: Stream<AstNodeDescription>, outerScope?: Scope, options?: { caseInsensitive?: boolean }) {
         this.elements = elements;
         this.outerScope = outerScope;
+        this.caseInsensitive = options?.caseInsensitive;
     }
 
     getAllElements(): Stream<AstNodeDescription> {
@@ -38,7 +41,9 @@ export class SimpleScope implements Scope {
     }
 
     getElement(name: string): AstNodeDescription | undefined {
-        const local = this.elements.find(e => e.name === name);
+        const local = this.caseInsensitive
+            ? this.elements.find(e => e.name.toLowerCase() === name.toLowerCase())
+            : this.elements.find(e => e.name === name);
         if (local) {
             return local;
         }
@@ -64,11 +69,11 @@ export interface ScopeProvider {
 
 export class DefaultScopeProvider implements ScopeProvider {
     protected readonly reflection: AstReflection;
-    protected readonly globalScope: IndexManager;
+    protected readonly indexManager: IndexManager;
 
     constructor(services: LangiumServices) {
         this.reflection = services.shared.AstReflection;
-        this.globalScope = services.shared.workspace.IndexManager;
+        this.indexManager = services.shared.workspace.IndexManager;
     }
 
     getScope(node: AstNode, referenceId: string): Scope {
@@ -80,7 +85,7 @@ export class DefaultScopeProvider implements ScopeProvider {
             let currentNode: AstNode | undefined = node;
             do {
                 const allDescriptions = precomputed.get(currentNode);
-                if (allDescriptions) {
+                if (allDescriptions.length > 0) {
                     scopes.push(stream(allDescriptions).filter(
                         desc => this.reflection.isSubtype(desc.type, referenceType)));
                 }
@@ -90,13 +95,23 @@ export class DefaultScopeProvider implements ScopeProvider {
 
         let result: Scope = this.getGlobalScope(referenceType);
         for (let i = scopes.length - 1; i >= 0; i--) {
-            result = new SimpleScope(scopes[i], result);
+            result = this.createScope(scopes[i], result);
         }
         return result;
     }
 
+    /**
+     * Create a scope for the given precomputed stream of elements.
+     */
+    protected createScope(elements: Stream<AstNodeDescription>, outerScope: Scope): Scope {
+        return new SimpleScope(elements, outerScope);
+    }
+
+    /**
+     * Create a global scope filtered for the given reference type.
+     */
     protected getGlobalScope(referenceType: string): Scope {
-        return new SimpleScope(this.globalScope.allElements(referenceType));
+        return new SimpleScope(this.indexManager.allElements(referenceType));
     }
 }
 
@@ -121,27 +136,21 @@ export class DefaultScopeComputation implements ScopeComputation {
 
     async computeScope(document: LangiumDocument, cancelToken = CancellationToken.None): Promise<PrecomputedScopes> {
         const rootNode = document.parseResult.value;
-        const scopes = new Map<AstNode, AstNodeDescription[]>();
+        const scopes = new MultiMap<AstNode, AstNodeDescription>();
         for (const content of streamAllContents(rootNode)) {
             interruptAndCheck(cancelToken);
-            const { node } = content;
-            const container = node.$container;
-            if (container) {
-                const name = this.nameProvider.getName(node);
-                if (name) {
-                    const description = this.descriptions.createDescription(node, name, document);
-                    this.addToContainer(description, container, scopes);
-                }
-            }
+            this.processNode(content, document, scopes);
         }
         return scopes;
     }
 
-    protected addToContainer(description: AstNodeDescription, container: AstNode, scopes: PrecomputedScopes): void {
-        if (scopes.has(container)) {
-            scopes.get(container)?.push(description);
-        } else {
-            scopes.set(container, [description]);
+    protected processNode({ node }: AstNodeContent, document: LangiumDocument, scopes: PrecomputedScopes): void {
+        const container = node.$container;
+        if (container) {
+            const name = this.nameProvider.getName(node);
+            if (name) {
+                scopes.add(container, this.descriptions.createDescription(node, name, document));
+            }
         }
     }
 

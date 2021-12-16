@@ -15,7 +15,7 @@ import { ValidationAcceptor, ValidationCheck, ValidationRegistry } from '../vali
 import { LangiumDocument, LangiumDocuments } from '../workspace/documents';
 import * as ast from './generated/ast';
 import { getEntryRule, isDataTypeRule, resolveImport, resolveTransitiveImports, terminalRegex } from './grammar-util';
-import { LangiumGrammarServices } from './langium-grammar-module';
+import type { LangiumGrammarServices } from './langium-grammar-module';
 
 type LangiumGrammarChecks = { [type in ast.LangiumGrammarAstType]?: ValidationCheck | ValidationCheck[] }
 
@@ -191,7 +191,7 @@ export class LangiumGrammarValidator {
                 if (!relative.startsWith('.')) {
                     relative = './' + relative;
                 }
-                accept('error', `Referenced rule "${ruleCall.rule.$refText}" is not imported.`, {
+                accept('error', `Referenced rule "${ruleCall.rule.ref?.name}" is not imported.`, {
                     node: ruleCall,
                     property: 'rule',
                     code: IssueCodes.MissingImport,
