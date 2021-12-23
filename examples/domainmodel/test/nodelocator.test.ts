@@ -7,7 +7,7 @@
 import { AstNode, getDocument, LangiumDocument } from 'langium';
 import { parseDocument } from 'langium/lib/test';
 import { createDomainModelServices } from '../src/language-server/domain-model-module';
-import { Domainmodel } from '../src/language-server/generated/ast';
+import { Domainmodel, PackageDeclaration } from '../src/language-server/generated/ast';
 
 const services = createDomainModelServices().domainmodel;
 
@@ -25,12 +25,12 @@ describe('AstNode location', () => {
     test('Calculate path for nodes', async () => {
         const model = await getModel();
         expect(createPath(model.elements[0])).toEqual('/elements@0');
-        expect(createPath(model.elements[2].elements[1])).toEqual('/elements@2/elements@1');
+        expect(createPath((model.elements[2] as PackageDeclaration).elements[1])).toEqual('/elements@2/elements@1');
     });
     test('Locate node for path', async () => {
         const model = await getModel();
         expect(findNode(getDocument(model), '/elements@0')).toEqual(model.elements[0]);
-        expect(findNode(getDocument(model), '/elements@2/elements@0')).toEqual(model.elements[2].elements[0]);
+        expect(findNode(getDocument(model), '/elements@2/elements@0')).toEqual((model.elements[2] as PackageDeclaration).elements[0]);
     });
 });
 
