@@ -12,6 +12,7 @@ import { inject, Module } from '../src/dependency-injection';
 
 describe('A dependency type', () => {
 
+    // these tests ensure that values aren't proxied
     test('should be undefined', () => checkType(undefined));
     test('should be null', () => checkType(null));
     test('should be false', () => checkType(false));
@@ -58,9 +59,14 @@ describe('A non-cyclic dependency', () => {
         ).toBe(true);
     });
 
-    test('should be result on an idempotent api call', () => {
+    test('should be the same instance on subsequent api calls', () => {
         const api = inject({ dep: () => ({ }) });
         expect(api.dep).toBe(api.dep);
+    });
+
+    test('should be the same instance on subsequent deep api calls', () => {
+        const api = inject({ key: { dep: () => ({ }) }});
+        expect(api.key.dep).toBe(api.key.dep);
     });
 
 });
@@ -76,7 +82,7 @@ describe('A cyclic dependency', () => {
         expect(api.b.a()).toBe(api.a);
     });
 
-    test('should be result on an idempotent api call', () => {
+    test('should be the same instance on subsequent api calls', () => {
         const api = createA({ });
         expect(api.testee).not.toBeUndefined();
         expect(api.testee).toBe(api.testee);
@@ -135,8 +141,8 @@ describe('A cyclic dependency', () => {
 
     function createCycle<T>(testee: T): API<T> {
         return inject({
-            a: ({b}) => new A(b, testee),
-            b: (api) => new B(api)
+            a: (api: { b: B<T> }) => new A(api.b, testee),
+            b: (api: API<T>) => new B(api)
         });
     }
 
@@ -149,16 +155,6 @@ describe('A cyclic dependency', () => {
 });
 
 describe('The inject function', () => {
-
-    test('should work with arrays', () => {
-        const api = inject([
-            () => true,
-            () => 1
-        ]);
-        expect(api[0]).toBe(true);
-        expect(api[1]).toBe(1);
-        expect(api[2]).toBeUndefined();
-    });
 
     test('should work with objects', () => {
         const api = inject({
@@ -302,22 +298,6 @@ describe('The inject result', () => {
             }
         }
         expect(res).toEqual(['a', 'b']);
-    });
-
-    test('should throw error when used with for..of', () => {
-        const obj = inject([() => 1, () => 'a']);
-        expect(() => {
-            for (const _ of obj) {
-                // We expect an error here
-            }
-        }).toThrowError();
-    });
-
-    test('should work with ..in.. for array', () => {
-        const obj = inject([() => 1]);
-        expect(0 in obj).toBe(true);
-        expect(1 in obj).toBe(false);
-        expect(obj[0]).toBe(1);
     });
 
     test('should work with ..in.. for object', () => {

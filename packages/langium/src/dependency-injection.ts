@@ -4,40 +4,86 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
+// -- public types
 
-/**
- * A `Module<I>` is a description of possibly grouped service factories.
- *
- * Given a type I = { group: { service: A } },
- * Module<I> := { group: { service: (injector: I) => A } }
- *
- * Making `I` available during the creation of `I` allows us to create cyclic
- * dependencies.
- */
-export type Module<I, T = I> = {
-    [K in keyof T]: Module<I, T[K]> | ((injector: I) => T[K])
+export type Module<I = Services, G = I> = {
+    [K in keyof G]: ServiceFactory<I, G[K]> | Module<I, G[K]>
 }
 
+export type Services = Record<number | string | symbol, unknown>
+
+export type ServiceFactory<I, S> = (injector: I) => S
+
+export type Inject<M> = ValidateModules<M, Merge<InferInjectors<M>>, Merge<Containers<M>>>;
+
+// -- internal utility types
+
+type ValidateModules<M, I, C> = C; // TODO(@@dd): take M, I and C into account
+
+type Containers<M> =
+    M extends [infer HEAD, ...infer TAIL]
+        ? HEAD extends Module<any, infer G> ? [G, ...Containers<TAIL>] : never
+        : [];
+
+type InferInjectors<M> =
+    M extends [infer H, ...infer T]
+        ? [...FunctionArgs<Tuple<H[keyof H]>>, ...InferInjectors<Tuple<H[keyof H]>>, ...InferInjectors<T>]
+        : [];
+
+type FunctionArgs<V extends unknown[]> =
+    V extends [infer H, ...infer T]
+        ? H extends (...args: infer A) => unknown
+            ? A extends []
+                ? never
+                : [A[0], ...FunctionArgs<T>] // we consider only the first argument (the injector), the rest is ignored
+            : FunctionArgs<T> // if the head H is no function, check the tail T of the tuple
+        : [];
+
+// Tuple<A | B | C> = [A, B, C]
+type Tuple<U> = Join<U extends any ? () => U : never> extends () => infer E
+    ? [...Tuple<Exclude<U, E>>, E]
+    : [];
+
+// Join<A | B | C> = A & B & C, see https://fettblog.eu/typescript-union-to-intersection/
+type Join<U> = (U extends any ? (_: U) => 0 : never) extends (_: infer I) => 0
+    ? I
+    : never;
+
+type Merge<A extends unknown[]> = A extends [infer H, ...infer T]
+    ? H extends undefined | null | boolean | number | string | unknown[] | Function
+        ? Merge<T>
+        : T extends []
+            ? H
+            : Patch<H, Merge<T>>
+    : {}
+
+type Patch<T1, T2> =
+    T1 extends undefined | null | boolean | number | string | unknown[] ? T1 & T2 :
+    T2 extends undefined | null | boolean | number | string | unknown[] ? never :
+    T1 extends Function ? (T2 extends T1 ? T2 : never) : // TODO(@@dd): deep extends for functions (-> compare result + args pairwise)
+    T2 extends Function ? never : {
+        [K in keyof T1 | keyof T2]:
+            K extends keyof T1 & keyof T2 ? Patch<T1[K], T2[K]> :
+            K extends keyof T1 ? T1[K] :
+            K extends keyof T2 ? T2[K] : never
+    }
+
+// -- API
+
 /**
- * Given a set of modules, the inject function returns a lazily evaluted injector
- * that injects dependencies into the requested service when it is requested the
- * first time. Subsequent requests will return the same service.
+ * Given a sequence of modules, the inject function returns a lazily evaluted
+ * dependency injection container that injects dependencies into the requested
+ * service when it is requested the first time. Subsequent requests will return
+ * the same service.
  *
- * In the case of cyclic dependencies, an Error will be thrown. This can be fixed
- * by injecting a provider `() => T` instead of a `T`.
+ * In the case of cyclic dependencies, an Error will be thrown. This can be
+ * fixed by injecting a provider `() => T` instead of a `T`.
  *
- * Please note that the arguments may be objects or arrays. However, the result will
- * be an object. Using it with for..of will have no effect.
- *
- * @param module1 first Module
- * @param module2 (optional) second Module
- * @param module3 (optional) third Module
- * @param module4 (optional) fourth Module
- * @returns a new object of type I
+ * @param modules a list of modules (possibly empty)
+ * @returns a runtime container that provides types according to the given modules
  */
-export function inject<I1, I2, I3, I4, I extends I1 & I2 & I3 & I4>(module1: Module<I, I1>, module2?: Module<I, I2>, module3?: Module<I, I3>, module4?: Module<I, I4>): I {
-    const module = [module1, module2, module3, module4].reduce(_merge, {}) as Module<I>;
+export function inject<M extends Module[]>(...modules: M): Inject<M> {
+    const module = modules.reduce(_merge, {}) as Inject<M>;
     return _inject(module);
 }
 
@@ -45,7 +91,7 @@ export function inject<I1, I2, I3, I4, I extends I1 & I2 & I3 & I4>(module1: Mod
  * Helper function that returns an injector by creating a proxy.
  * Invariant: injector is of type I. If injector is undefined, then T = I.
  */
-function _inject<I, T>(module: Module<I, T>, injector?: any): T {
+function _inject<I extends Services, T extends Services>(module: Module<I, T>, injector?: any): T {
     const proxy: T = new Proxy({} as any, {
         deleteProperty: () => false,
         get: (obj, prop) => _resolve(obj, prop, module, injector || proxy),
@@ -74,16 +120,16 @@ const __requested__ = Symbol();
  * @returns the requested value `obj[prop]`
  * @throws Error if a dependency cycle is detected
  */
-function _resolve<I, T>(obj: any, prop: string | symbol | number, module: Module<I, T>, injector: I): T[keyof T] | undefined {
+function _resolve<I extends Services, T extends Services>(obj: any, prop: string | symbol | number, module: Module<I, T>, injector: I): T[keyof T] | undefined {
     if (prop in obj) {
         if (obj[prop] === __requested__) {
             throw new Error('Cycle detected. Please make "' + String(prop) + '" lazy. See https://langium.org/docs/di/cyclic-dependencies');
         }
         return obj[prop];
     } else if (prop in module) {
-        const value: Module<I, T[keyof T]> | ((injector: I) => T[keyof T]) = module[prop as keyof T];
+        const value = module[prop as keyof T];
         obj[prop] = __requested__;
-        obj[prop] = (typeof value === 'function') ? value(injector) : _inject(value, injector);
+        obj[prop] = (typeof value === 'function') ? value(injector) : _inject(value, injector); // TODO(@@dd): allow to direcly construct classes using new
         return obj[prop];
     } else {
         return undefined;
@@ -97,7 +143,7 @@ function _resolve<I, T>(obj: any, prop: string | symbol | number, module: Module
  * @param source the module which is read
  * @returns the target module
  */
-function _merge(target: Module<any>, source?: Module<any>): Module<unknown> {
+function _merge(target: Module<any>, source?: Module<any>): Module<Services> {
     if (source) {
         for (const [key, value2] of Object.entries(source)) {
             if (value2 !== undefined) {
