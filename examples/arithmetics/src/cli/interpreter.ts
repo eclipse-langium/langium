@@ -82,18 +82,11 @@ function evalExpression(ctx: InterpreterContext, expr: Expression): number {
             process.exit(1);
         }
 
-        const backupContext = new Map<string, number | Definition>();
+        const localContext = new Map<string, number | Definition>(ctx.context);
         for (let i = 0; i < valueOrDef.args.length; i += 1) {
-            backupContext.set(valueOrDef.args[i].name, evalExpression(ctx, expr.args[i]));
+            localContext.set(valueOrDef.args[i].name, evalExpression(ctx, expr.args[i]));
         }
-        for (const [variable, value] of ctx.context) {
-            if (!backupContext.has(variable)) {
-                backupContext.set(variable, value);
-            }
-        }
-        const funcCallRes = evalExpression(ctx, valueOrDef.expr);
-        ctx.context = backupContext;
-        return funcCallRes;
+        return evalExpression({module: ctx.module, context: localContext, result: ctx.result}, valueOrDef.expr);
     }
 
     console.error('Impossible type of Expression.');

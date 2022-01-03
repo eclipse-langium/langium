@@ -14,5 +14,4 @@ DEF func(t, x):
 // This language is case-insensitive regarding symbol names
 Func(T, X); // 67
 Func(X, T); // 31
-Func(T, X); // 67
-Func(X, T); // 31
+Func(T, Func(T, X)); // 131
