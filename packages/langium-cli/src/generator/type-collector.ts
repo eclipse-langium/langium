@@ -347,10 +347,8 @@ function calculateAst(alternatives: TypeAlternative[]): Interface[] {
     const flattened = flattenTypes(alternatives);
 
     for (const flat of flattened) {
-        if (flat.fields.length > 0 || flat.hasAction) {
-            const type = new Interface(flat.name, flat.super, flat.fields);
-            interfaces.push(type);
-        }
+        const type = new Interface(flat.name, flat.super, flat.fields);
+        interfaces.push(type);
         if (flat.ruleCalls.length > 0) {
             ruleCallAlternatives.push(flat);
         }
