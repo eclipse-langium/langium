@@ -289,41 +289,30 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
             "$type": "Group",
             "elements": [
               {
-                "$type": "Alternatives",
-                "elements": [
-                  {
-                    "$type": "Group",
-                    "elements": [
-                      {
-                        "$type": "Action",
-                        "type": "Addition",
-                        "feature": "left",
-                        "operator": "=",
-                        "elements": []
-                      },
-                      {
-                        "$type": "Keyword",
-                        "value": "+"
-                      }
-                    ]
-                  },
-                  {
-                    "$type": "Group",
-                    "elements": [
-                      {
-                        "$type": "Action",
-                        "type": "Subtraction",
-                        "feature": "left",
-                        "operator": "=",
-                        "elements": []
-                      },
-                      {
-                        "$type": "Keyword",
-                        "value": "-"
-                      }
-                    ]
-                  }
-                ]
+                "$type": "Action",
+                "type": "BinaryExpression",
+                "feature": "left",
+                "operator": "=",
+                "elements": []
+              },
+              {
+                "$type": "Assignment",
+                "feature": "operator",
+                "operator": "=",
+                "terminal": {
+                  "$type": "Alternatives",
+                  "elements": [
+                    {
+                      "$type": "Keyword",
+                      "value": "+",
+                      "elements": []
+                    },
+                    {
+                      "$type": "Keyword",
+                      "value": "-"
+                    }
+                  ]
+                }
               },
               {
                 "$type": "Assignment",
@@ -364,41 +353,30 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
             "$type": "Group",
             "elements": [
               {
-                "$type": "Alternatives",
-                "elements": [
-                  {
-                    "$type": "Group",
-                    "elements": [
-                      {
-                        "$type": "Action",
-                        "type": "Multiplication",
-                        "feature": "left",
-                        "operator": "=",
-                        "elements": []
-                      },
-                      {
-                        "$type": "Keyword",
-                        "value": "*"
-                      }
-                    ]
-                  },
-                  {
-                    "$type": "Group",
-                    "elements": [
-                      {
-                        "$type": "Action",
-                        "type": "Division",
-                        "feature": "left",
-                        "operator": "=",
-                        "elements": []
-                      },
-                      {
-                        "$type": "Keyword",
-                        "value": "/"
-                      }
-                    ]
-                  }
-                ]
+                "$type": "Action",
+                "type": "BinaryExpression",
+                "feature": "left",
+                "operator": "=",
+                "elements": []
+              },
+              {
+                "$type": "Assignment",
+                "feature": "operator",
+                "operator": "=",
+                "terminal": {
+                  "$type": "Alternatives",
+                  "elements": [
+                    {
+                      "$type": "Keyword",
+                      "value": "*",
+                      "elements": []
+                    },
+                    {
+                      "$type": "Keyword",
+                      "value": "/"
+                    }
+                  ]
+                }
               },
               {
                 "$type": "Assignment",

@@ -2,7 +2,7 @@ Module example1
 
 Def y: 1 + 3 - 99828932 / 2 + 2 - 1;
 
-DEF x: 12 / 3 - 1;
+DEF x: 12 / 3 - 1; // 3
 
 x * 2 - 4;
 
@@ -12,5 +12,7 @@ DEF func(t, x):
     t * t * t + x;
 
 // This language is case-insensitive regarding symbol names
-Func(T, X);
-Func(X, T);
+Func(T, X); // 67
+Func(X, T); // 31
+Func(T, X); // 67
+Func(X, T); // 31

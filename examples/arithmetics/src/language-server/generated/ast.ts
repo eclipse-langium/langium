@@ -19,7 +19,7 @@ export function isAbstractDefinition(item: unknown): item is AbstractDefinition 
 }
 
 export interface Expression extends AstNode {
-    readonly $container: Definition | Evaluation | Addition | Subtraction | Multiplication | Division | FunctionCall;
+    readonly $container: Definition | Evaluation | BinaryExpression | FunctionCall;
 }
 
 export const Expression = 'Expression';
@@ -69,26 +69,16 @@ export function isDefinition(item: unknown): item is Definition {
     return reflection.isInstance(item, Definition);
 }
 
-export interface Addition extends Expression {
+export interface BinaryExpression extends Expression {
     left: Expression
+    operator: '+' | '-' | '*' | '/'
     right: Expression
 }
 
-export const Addition = 'Addition';
+export const BinaryExpression = 'BinaryExpression';
 
-export function isAddition(item: unknown): item is Addition {
-    return reflection.isInstance(item, Addition);
-}
-
-export interface Division extends Expression {
-    left: Expression
-    right: Expression
-}
-
-export const Division = 'Division';
-
-export function isDivision(item: unknown): item is Division {
-    return reflection.isInstance(item, Division);
+export function isBinaryExpression(item: unknown): item is BinaryExpression {
+    return reflection.isInstance(item, BinaryExpression);
 }
 
 export interface FunctionCall extends Expression {
@@ -102,17 +92,6 @@ export function isFunctionCall(item: unknown): item is FunctionCall {
     return reflection.isInstance(item, FunctionCall);
 }
 
-export interface Multiplication extends Expression {
-    left: Expression
-    right: Expression
-}
-
-export const Multiplication = 'Multiplication';
-
-export function isMultiplication(item: unknown): item is Multiplication {
-    return reflection.isInstance(item, Multiplication);
-}
-
 export interface NumberLiteral extends Expression {
     value: number
 }
@@ -121,17 +100,6 @@ export const NumberLiteral = 'NumberLiteral';
 
 export function isNumberLiteral(item: unknown): item is NumberLiteral {
     return reflection.isInstance(item, NumberLiteral);
-}
-
-export interface Subtraction extends Expression {
-    left: Expression
-    right: Expression
-}
-
-export const Subtraction = 'Subtraction';
-
-export function isSubtraction(item: unknown): item is Subtraction {
-    return reflection.isInstance(item, Subtraction);
 }
 
 export interface Evaluation extends Statement {
@@ -144,14 +112,14 @@ export function isEvaluation(item: unknown): item is Evaluation {
     return reflection.isInstance(item, Evaluation);
 }
 
-export type ArithmeticsAstType = 'AbstractDefinition' | 'Expression' | 'Module' | 'Statement' | 'DeclaredParameter' | 'Definition' | 'Addition' | 'Division' | 'FunctionCall' | 'Multiplication' | 'NumberLiteral' | 'Subtraction' | 'Evaluation';
+export type ArithmeticsAstType = 'AbstractDefinition' | 'Expression' | 'Module' | 'Statement' | 'DeclaredParameter' | 'Definition' | 'BinaryExpression' | 'FunctionCall' | 'NumberLiteral' | 'Evaluation';
 
 export type ArithmeticsAstReference = 'FunctionCall:func';
 
 export class ArithmeticsAstReflection implements AstReflection {
 
     getAllTypes(): string[] {
-        return ['AbstractDefinition', 'Expression', 'Module', 'Statement', 'DeclaredParameter', 'Definition', 'Addition', 'Division', 'FunctionCall', 'Multiplication', 'NumberLiteral', 'Subtraction', 'Evaluation'];
+        return ['AbstractDefinition', 'Expression', 'Module', 'Statement', 'DeclaredParameter', 'Definition', 'BinaryExpression', 'FunctionCall', 'NumberLiteral', 'Evaluation'];
     }
 
     isInstance(node: unknown, type: string): boolean {
@@ -169,12 +137,9 @@ export class ArithmeticsAstReflection implements AstReflection {
             case Definition: {
                 return this.isSubtype(Statement, supertype) || this.isSubtype(AbstractDefinition, supertype);
             }
-            case Addition:
-            case Division:
+            case BinaryExpression:
             case FunctionCall:
-            case Multiplication:
-            case NumberLiteral:
-            case Subtraction: {
+            case NumberLiteral: {
                 return this.isSubtype(Expression, supertype);
             }
             case Evaluation: {
