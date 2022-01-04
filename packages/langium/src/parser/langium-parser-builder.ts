@@ -53,8 +53,10 @@ export function createLangiumParser(services: LangiumServices): LangiumParser {
     return parser;
 }
 
+const withRuleSuffix = (name: string) => name + ':RULE';
+
 function getRule(ctx: ParserContext, name: string): Rule {
-    const rule = ctx.rules.get(name);
+    const rule = ctx.rules.get(withRuleSuffix(name));
     if (!rule) throw new Error(`Rule "${name}" not found."`);
     return rule;
 }
@@ -77,7 +79,7 @@ function buildParserRules(parserContext: ParserContext, grammar: Grammar): void 
         };
         const method = (rule.entry ? ctx.parser.MAIN_RULE : ctx.parser.DEFINE_RULE).bind(ctx.parser);
         const type = rule.fragment ? undefined : isDataTypeRule(rule) ? DatatypeSymbol : getTypeName(rule);
-        ctx.rules.set(rule.name, method(rule.name, type, buildRuleContent(ctx, rule)));
+        ctx.rules.set(withRuleSuffix(rule.name), method(withRuleSuffix(rule.name), type, buildRuleContent(ctx, rule)));
     }
 }
 
