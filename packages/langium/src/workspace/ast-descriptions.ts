@@ -10,7 +10,7 @@ import { getReferenceId, Linker } from '../references/linker';
 import { NameProvider } from '../references/naming';
 import { LangiumServices } from '../services';
 import { AstNode, AstNodeDescription, ReferenceInfo } from '../syntax-tree';
-import { getDocument, isLinkingError, streamAllContents, streamContents, streamReferences } from '../utils/ast-util';
+import { getDocument, isLinkingError, streamAllContents, streamReferences } from '../utils/ast-util';
 import { toDocumentSegment } from '../utils/cst-util';
 import { interruptAndCheck } from '../utils/promise-util';
 import { AstNodeLocator } from './ast-node-locator';
@@ -67,7 +67,7 @@ export class DefaultAstNodeDescriptionProvider implements AstNodeDescriptionProv
         if (name) {
             descr.push(this.createDescription(rootNode, name, document));
         }
-        for (const content of streamContents(rootNode)) {
+        for (const content of streamAllContents(rootNode)) {
             await interruptAndCheck(cancelToken);
             const name = this.nameProvider.getName(content.node);
             if (name) {
