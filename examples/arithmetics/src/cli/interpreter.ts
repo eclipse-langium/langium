@@ -5,9 +5,9 @@
  ******************************************************************************/
 
 import { createArithmeticsServices } from '../language-server/arithmetics-module';
-import { AbstractDefinition, Definition, Evaluation, Expression, isAddition, isDefinition, isDivision, isEvaluation, isFunctionCall, isMultiplication, isNumberLiteral, isSubtraction, Module, Statement } from '../language-server/generated/ast';
+import { AbstractDefinition, Definition, Evaluation, Expression, isBinaryExpression, isDefinition, isEvaluation, isFunctionCall, isNumberLiteral, Module, Statement } from '../language-server/generated/ast';
 import { ArithmeticsLanguageMetaData } from '../language-server/generated/module';
-import { extractDocument } from './cli-util';
+import { applyOp, extractDocument } from './cli-util';
 
 export const evalAction = async (fileName: string): Promise<void> => {
     const services = createArithmeticsServices().arithmetics;
@@ -63,25 +63,11 @@ function evalEvaluation(ctx: InterpreterContext, evaluation: Evaluation): void {
 }
 
 function evalExpression(ctx: InterpreterContext, expr: Expression): number {
-    if (isAddition(expr)) {
+    if (isBinaryExpression(expr)) {
         const left = evalExpression(ctx, expr.left);
         const right = evalExpression(ctx, expr.right);
-        return right !== undefined ? left + right : left;
-    }
-    if (isSubtraction(expr)) {
-        const left = evalExpression(ctx, expr.left);
-        const right = evalExpression(ctx, expr.right);
-        return right !== undefined ? left - right : left;
-    }
-    if (isMultiplication(expr)) {
-        const left = evalExpression(ctx, expr.left);
-        const right = evalExpression(ctx, expr.right);
-        return right !== undefined ? left * right : left;
-    }
-    if (isDivision(expr)) {
-        const left = evalExpression(ctx, expr.left);
-        const right = evalExpression(ctx, expr.right);
-        return right ? left / right : left;
+        if (right === undefined) return left;
+        return applyOp(expr.operator)(left, right);
     }
     if (isNumberLiteral(expr)) {
         return +expr.value;
@@ -96,18 +82,11 @@ function evalExpression(ctx: InterpreterContext, expr: Expression): number {
             process.exit(1);
         }
 
-        const backupContext = new Map<string, number | Definition>();
+        const localContext = new Map<string, number | Definition>(ctx.context);
         for (let i = 0; i < valueOrDef.args.length; i += 1) {
-            backupContext.set(valueOrDef.args[i].name, evalExpression(ctx, expr.args[i]));
+            localContext.set(valueOrDef.args[i].name, evalExpression(ctx, expr.args[i]));
         }
-        for (const [variable, value] of ctx.context) {
-            if (!backupContext.has(variable)) {
-                backupContext.set(variable, value);
-            }
-        }
-        const funcCallRes = evalExpression(ctx, valueOrDef.expr);
-        ctx.context = backupContext;
-        return funcCallRes;
+        return evalExpression({module: ctx.module, context: localContext, result: ctx.result}, valueOrDef.expr);
     }
 
     console.error('Impossible type of Expression.');

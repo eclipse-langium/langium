@@ -24,10 +24,10 @@ Expression:
 	Addition;
 
 Addition returns Expression:
-	Multiplication (({Addition.left=current} '+' | {Subtraction.left=current} '-') right=Multiplication)*;
+	Multiplication ({BinaryExpression.left=current} operator=('+' | '-') right=Multiplication)*;
 
 Multiplication returns Expression:
-	PrimaryExpression (({Multiplication.left=current} '*' | {Division.left=current} '/') right=PrimaryExpression)*;
+	PrimaryExpression ({BinaryExpression.left=current} operator=('*' | '/') right=PrimaryExpression)*;
 
 PrimaryExpression returns Expression:
 	'(' Expression ')' |
