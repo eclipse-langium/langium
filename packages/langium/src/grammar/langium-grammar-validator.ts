@@ -14,7 +14,7 @@ import { MultiMap } from '../utils/collections';
 import { ValidationAcceptor, ValidationCheck, ValidationRegistry } from '../validation/validation-registry';
 import { LangiumDocument, LangiumDocuments } from '../workspace/documents';
 import * as ast from './generated/ast';
-import { getEntryRule, isDataTypeRule, resolveImport, resolveTransitiveImports, terminalRegex } from './grammar-util';
+import { findNameAssignment, getEntryRule, isDataTypeRule, resolveImport, resolveTransitiveImports, terminalRegex } from './grammar-util';
 import type { LangiumGrammarServices } from './langium-grammar-module';
 
 type LangiumGrammarChecks = { [type in ast.LangiumGrammarAstType]?: ValidationCheck | ValidationCheck[] }
@@ -51,7 +51,11 @@ export class LangiumGrammarValidationRegistry extends ValidationRegistry {
                 validator.checkRuleCallParameters
             ],
             TerminalRuleCall: validator.checkUsedHiddenTerminalRule,
-            CrossReference: validator.checkCrossReferenceSyntax
+            CrossReference: [
+                validator.checkCrossReferenceSyntax,
+                validator.checkCrossRefNameAssignment,
+                validator.checkCrossRefTerminalType
+            ]
         };
         this.register(checks, validator);
     }
@@ -318,6 +322,18 @@ export class LangiumGrammarValidator {
             }
         } else if (ast.isTerminalRule(rule) && ruleCall.arguments.length > 0) {
             accept('error', 'Terminal rules do not accept any arguments', { node: ruleCall });
+        }
+    }
+
+    checkCrossRefNameAssignment(reference: ast.CrossReference, accept: ValidationAcceptor): void {
+        if (!reference.terminal && reference.type.ref && !findNameAssignment(reference.type.ref)) {
+            accept('error', 'Cannot infer terminal or data type rule for cross reference.', { node: reference, property: 'type' });
+        }
+    }
+
+    checkCrossRefTerminalType(reference: ast.CrossReference, accept: ValidationAcceptor): void {
+        if (ast.isRuleCall(reference.terminal) && ast.isParserRule(reference.terminal.rule.ref) && !isDataTypeRule(reference.terminal.rule.ref)) {
+            accept('error', 'Parser rules cannot be used for cross references.', { node: reference.terminal, property: 'rule' });
         }
     }
 }

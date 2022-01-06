@@ -16,11 +16,6 @@ import { escapeRegExp } from '../utils/regex-util';
 import { documentFromText, LangiumDocuments, PrecomputedScopes } from '../workspace/documents';
 import { createLangiumGrammarServices } from './langium-grammar-module';
 
-type FeatureValue = {
-    feature: ast.AbstractElement;
-    kind: 'Keyword' | 'RuleCall' | 'Assignment' | 'CrossReference' | 'Action';
-}
-
 export type Cardinality = '?' | '*' | '+' | undefined;
 export type Operator = '=' | '+=' | '?=' | undefined;
 
@@ -37,118 +32,48 @@ export function isArrayOperator(operator?: Operator): boolean {
 }
 
 export function isDataTypeRule(rule: ast.ParserRule): boolean {
-    const features = Array.from(findAllFeatures(rule).byFeature.keys());
-    const onlyRuleCallsAndKeywords = features.every(e => ast.isRuleCall(e) || ast.isKeyword(e) || ast.isGroup(e) || ast.isAlternatives(e) || ast.isUnorderedGroup(e));
-    if (onlyRuleCallsAndKeywords) {
-        const ruleCallWithParserRule = features.filter(e => ast.isRuleCall(e) && ast.isParserRule(e.rule.ref) && !isDataTypeRule(e.rule.ref));
-        return ruleCallWithParserRule.length === 0;
+    return isDataTypeRuleInternal(rule, new Set());
+}
+
+function isDataTypeRuleInternal(rule: ast.ParserRule, visited: Set<ast.ParserRule>): boolean {
+    if (visited.has(rule)) {
+        return true;
     }
-    return false;
+    visited.add(rule);
+    for (const { node } of streamAllContents(rule)) {
+        if (ast.isRuleCall(node) && ast.isParserRule(node.rule.ref)) {
+            if (!isDataTypeRuleInternal(node.rule.ref, visited)) {
+                return false;
+            }
+        } else if (ast.isAssignment(node)) {
+            return false;
+        } else if (ast.isAction(node)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+export function findNameAssignment(rule: ast.ParserRule): ast.Assignment | undefined {
+    for (const { node } of streamAllContents(rule)) {
+        if (ast.isAssignment(node) && node.feature.toLowerCase() === 'name') {
+            return node;
+        } else if (ast.isRuleCall(node) && ast.isParserRule(node.rule.ref)) {
+            const parentAssignment = getContainerOfType(node, ast.isAssignment);
+            // No parent assignment implies unassigned rule call
+            if (!parentAssignment) {
+                const childNameAssignment = findNameAssignment(node.rule.ref);
+                if (childNameAssignment) {
+                    return childNameAssignment;
+                }
+            }
+        }
+    }
+    return undefined;
 }
 
 export function isCommentTerminal(terminalRule: ast.TerminalRule): boolean {
     return terminalRule.hidden && !' '.match(terminalRegex(terminalRule));
-}
-
-interface RuleWithAlternatives {
-    alternatives: ast.AbstractElement;
-}
-
-export function findAllFeatures(rule: RuleWithAlternatives): { byName: Map<string, FeatureValue>, byFeature: Map<ast.AbstractElement, string> } {
-    const map = new Map<string, FeatureValue>();
-    const featureMap = new Map<ast.AbstractElement, string>();
-    putFeature(rule.alternatives, undefined, map, featureMap);
-    const newMap = new Map<string, FeatureValue>();
-    for (const [key, value] of map.entries()) {
-        newMap.set(key.replace(/\^/g, ''), value);
-    }
-    const newFeatureMap = new Map<ast.AbstractElement, string>();
-    for (const [key, value] of featureMap.entries()) {
-        newFeatureMap.set(key, value.replace(/\^/g, ''));
-    }
-    return { byName: newMap, byFeature: newFeatureMap };
-}
-
-function putFeature(element: ast.AbstractElement, previous: string | undefined, byName: Map<string, FeatureValue>, byFeature: Map<ast.AbstractElement, string>) {
-    if (ast.isAssignment(element)) {
-        const fullName = (previous ?? '') + element.feature;
-        byName.set(fullName, { feature: element, kind: 'Assignment' });
-        byFeature.set(element, fullName);
-        putFeature(element.terminal, fullName, byName, byFeature);
-    } else if (ast.isRuleCall(element)) {
-        const name = (previous ?? '') + element.rule.ref?.name + 'RuleCall';
-        byName.set(name, { feature: element, kind: 'RuleCall' });
-        byFeature.set(element, name);
-    } else if (ast.isCrossReference(element)) {
-        const name = (previous ?? '') + element.type.ref?.name + 'CrossReference';
-        byName.set(name, { feature: element, kind: 'CrossReference' });
-        byFeature.set(element, name);
-    } else if (ast.isKeyword(element)) {
-        const validName = replaceTokens(element.value) + 'Keyword';
-        byName.set(validName, { feature: element, kind: 'Keyword' });
-        byFeature.set(element, validName);
-    } else if (ast.isAction(element)) {
-        const name = (previous ?? '') + element.type + (element.feature ?? '') + 'Action';
-        byName.set(name, { feature: element, kind: 'Action' });
-        byFeature.set(element, name);
-    } else if (ast.isAlternatives(element) || ast.isUnorderedGroup(element) || ast.isGroup(element)) {
-        for (const subFeature of element.elements) {
-            putFeature(subFeature, previous, byName, byFeature);
-        }
-    }
-}
-
-export function replaceTokens(input: string): string {
-    let result = input;
-    result = result.replace(/\s+/g, 'Whitespace');
-    result = result.replace(/:/g, 'Colon');
-    result = result.replace(/\./g, 'Dot');
-    result = result.replace(/\//g, 'Slash');
-    result = result.replace(/\\/g, 'Backslash');
-    result = result.replace(/,/g, 'Comma');
-    result = result.replace(/\(/g, 'ParenthesisOpen');
-    result = result.replace(/\)/g, 'ParenthesisClose');
-    result = result.replace(/\[/g, 'BracketOpen');
-    result = result.replace(/\]/g, 'BracketClose');
-    result = result.replace(/\{/g, 'CurlyOpen');
-    result = result.replace(/\}/g, 'CurlyClose');
-    result = result.replace(/\+/g, 'Plus');
-    result = result.replace(/\*/g, 'Asterisk');
-    result = result.replace(/\?/g, 'QuestionMark');
-    result = result.replace(/!/g, 'ExclamationMark');
-    result = result.replace(/\^/g, 'Caret');
-    result = result.replace(/</g, 'LessThan');
-    result = result.replace(/>/g, 'MoreThan');
-    result = result.replace(/&/g, 'Ampersand');
-    result = result.replace(/\|/g, 'Pipe');
-    result = result.replace(/=/g, 'Equals');
-    result = result.replace(/-/g, 'Dash');
-    result = result.replace(/_/g, 'Underscore');
-    result = result.replace(/;/g, 'Semicolon');
-    result = result.replace(/@/g, 'At');
-    result = result.replace(/%/g, 'Percent');
-    result = result.replace(/\$/g, 'Currency');
-    result = result.replace(/"/g, 'DoubleQuote');
-    result = result.replace(/'/g, 'SingleQuote');
-    result = result.replace(/#/g, 'Hash');
-    // The ß gets special treatment here, because its `toUpperCase` behavior is really weird.
-    result = result.replace(/ß/g, 'Eszett');
-    result = result[0].toUpperCase() + result.substring(1);
-    result = replaceUnicodeTokens(result);
-    return result;
-}
-
-export function replaceUnicodeTokens(input: string): string {
-    let output = '';
-    for (let i = 0; i < input.length; i++) {
-        const char = input.charCodeAt(i);
-        if (char < 65 || char > 90 && char < 97 || char > 122) {
-            output += `u${char}`;
-        } else {
-            output += input.charAt(i);
-        }
-    }
-    return output;
 }
 
 export function findNodeForFeature(node: CstNode | undefined, feature: string | undefined, index?: number): CstNode | undefined {

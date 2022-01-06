@@ -6,7 +6,7 @@
 
 import { IOrAlt, TokenType } from 'chevrotain';
 import { AbstractElement, Action, Alternatives, Condition, CrossReference, Grammar, Group, isAction, isAlternatives, isAssignment, isConjunction, isCrossReference, isDisjunction, isGroup, isKeyword, isLiteralCondition, isNegation, isParameterReference, isParserRule, isRuleCall, isTerminalRule, isUnorderedGroup, Keyword, NamedArgument, ParserRule, RuleCall, UnorderedGroup } from '../grammar/generated/ast';
-import { Cardinality, getTypeName, isArrayOperator, isDataTypeRule } from '../grammar/grammar-util';
+import { Cardinality, findNameAssignment, getTypeName, isArrayOperator, isDataTypeRule } from '../grammar/grammar-util';
 import { LangiumServices } from '../services';
 import { hasContainerOfType, streamAllContents } from '../utils/ast-util';
 import { stream } from '../utils/stream';
@@ -229,12 +229,17 @@ function buildAction(ctx: RuleContext, action: Action): Method {
     return () => ctx.parser.action(action.type, action);
 }
 
-function buildCrossReference(ctx: RuleContext, crossRef: CrossReference): Method {
-    const terminal = crossRef.terminal;
+function buildCrossReference(ctx: RuleContext, crossRef: CrossReference, terminal = crossRef.terminal): Method {
     if (!terminal) {
-        const idx = ctx.consume++;
-        const idToken = getToken(ctx, 'ID');
-        return () => ctx.parser.consume(idx, idToken, crossRef);
+        if (!crossRef.type.ref) {
+            throw new Error('Could not resolve reference to rule: ' + crossRef.type.$refText);
+        }
+        const assignment = findNameAssignment(crossRef.type.ref);
+        const assignTerminal = assignment?.terminal;
+        if (!assignTerminal) {
+            throw new Error('Could not find name assignment for rule: ' + crossRef.type.ref.name);
+        }
+        return buildCrossReference(ctx, crossRef, assignTerminal);
     } else if (isRuleCall(terminal) && isParserRule(terminal.rule.ref)) {
         const idx = ctx.subrule++;
         const name = terminal.rule.ref.name;
@@ -243,8 +248,13 @@ function buildCrossReference(ctx: RuleContext, crossRef: CrossReference): Method
         const idx = ctx.consume++;
         const terminalRule = getToken(ctx, terminal.rule.ref.name);
         return () => ctx.parser.consume(idx, terminalRule, crossRef);
-    } else {
-        throw new Error();
+    } else if (isKeyword(terminal)) {
+        const idx = ctx.consume++;
+        const keyword = getToken(ctx, terminal.value);
+        return () => ctx.parser.consume(idx, keyword, crossRef);
+    }
+    else {
+        throw new Error('Could not build cross reference parser');
     }
 }
 
@@ -252,7 +262,7 @@ function buildKeyword(ctx: RuleContext, keyword: Keyword): Method {
     const idx = ctx.consume++;
     const token = ctx.tokens.get(keyword.value);
     if (!token) {
-        throw new Error();
+        throw new Error('Could not find token for keyword: ' + keyword.value);
     }
     return () => ctx.parser.consume(idx, token, keyword);
 }
