@@ -20,6 +20,7 @@ import type { GoToResolver } from './lsp/goto';
 import type { HoverProvider } from './lsp/hover-provider';
 import type { ReferenceFinder } from './lsp/reference-finder';
 import type { RenameHandler } from './lsp/rename-refactoring';
+import type { SemanticTokenProvider } from './lsp/semantic-token-provider';
 import type { LangiumParser } from './parser/langium-parser';
 import type { IParserConfig } from './parser/parser-config';
 import type { TokenBuilder } from './parser/token-builder';
@@ -66,6 +67,7 @@ export type LangiumLspServices = {
     GoToResolver: GoToResolver
     ReferenceFinder: ReferenceFinder
     CodeActionProvider?: CodeActionProvider
+    SemanticTokenProvider?: SemanticTokenProvider
     RenameHandler: RenameHandler
 }
 

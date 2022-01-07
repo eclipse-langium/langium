@@ -16,3 +16,4 @@ export * from './hover-provider';
 export * from './language-server';
 export * from './reference-finder';
 export * from './rename-refactoring';
+export * from './semantic-token-provider';

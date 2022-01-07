@@ -164,6 +164,30 @@ export function findNodeForFeature(node: CstNode | undefined, feature: string | 
     return nodes[index];
 }
 
+export function findKeywordNode(node: CstNode | undefined, keyword: string): CstNode | undefined {
+    return findKeywordNodeInternal(node, keyword, node?.element);
+}
+
+export function findKeywordNodeInternal(node: CstNode | undefined, keyword: string, element: AstNode | undefined): CstNode | undefined {
+    if (!node || !element) {
+        return undefined;
+    }
+    if (ast.isKeyword(node.feature) && node.feature.value === keyword) {
+        return node;
+    }
+    if (node instanceof CompositeCstNodeImpl) {
+        for (const child of node.children) {
+            if (child.element === element) {
+                const childNode = findKeywordNodeInternal(child, keyword, element);
+                if (childNode) {
+                    return childNode;
+                }
+            }
+        }
+    }
+    return undefined;
+}
+
 /**
  * This `internal` declared method exists, as we want to find the first child with the specified feature.
  * When the own feature is named the same by accident, we will instead return the input value.
