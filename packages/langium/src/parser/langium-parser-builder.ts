@@ -4,8 +4,8 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { TokenType } from 'chevrotain';
-import { AbstractElement, Action, Alternatives, CrossReference, Grammar, Group, isAction, isAlternatives, isAssignment, isCrossReference, isGroup, isKeyword, isParserRule, isRuleCall, isTerminalRule, isUnorderedGroup, Keyword, ParserRule, RuleCall, UnorderedGroup } from '../grammar/generated/ast';
+import { IOrAlt, TokenType } from 'chevrotain';
+import { AbstractElement, Action, Alternatives, Condition, CrossReference, Grammar, Group, isAction, isAlternatives, isAssignment, isConjunction, isCrossReference, isDisjunction, isGroup, isKeyword, isLiteralCondition, isNegation, isParameterReference, isParserRule, isRuleCall, isTerminalRule, isUnorderedGroup, Keyword, NamedArgument, ParserRule, RuleCall, UnorderedGroup } from '../grammar/generated/ast';
 import { Cardinality, getTypeName, isArrayOperator, isDataTypeRule } from '../grammar/grammar-util';
 import { LangiumServices } from '../services';
 import { hasContainerOfType, streamAllContents } from '../utils/ast-util';
@@ -23,10 +23,16 @@ type RuleContext = {
 type ParserContext = {
     parser: LangiumParser
     tokens: Map<string, TokenType>
-    rules: Map<string, Method>
+    rules: Map<string, Rule>
 }
 
-type Method = () => void;
+type Rule = () => unknown;
+
+type Args = Record<string, boolean>;
+
+type Predicate = (args: Args) => boolean;
+
+type Method = (args: Args) => void;
 
 export function createLangiumParser(services: LangiumServices): LangiumParser {
     const grammar = services.Grammar;
@@ -35,7 +41,7 @@ export function createLangiumParser(services: LangiumServices): LangiumParser {
     buildTokens.forEach(e => {
         tokens.set(e.name, e);
     });
-    const rules = new Map<string, Method>();
+    const rules = new Map<string, Rule>();
     const parser = new LangiumParser(services, buildTokens);
     const parserContext: ParserContext = {
         parser,
@@ -47,7 +53,7 @@ export function createLangiumParser(services: LangiumServices): LangiumParser {
     return parser;
 }
 
-function getRule(ctx: ParserContext, name: string): Method {
+function getRule(ctx: ParserContext, name: string): Rule {
     const rule = ctx.rules.get(name);
     if (!rule) throw new Error(`Rule "${name}" not found."`);
     return rule;
@@ -75,7 +81,7 @@ function buildParserRules(parserContext: ParserContext, grammar: Grammar): void 
     }
 }
 
-function buildRuleContent(ctx: RuleContext, rule: ParserRule): () => unknown {
+function buildRuleContent(ctx: RuleContext, rule: ParserRule): Method {
     const method = buildElement(ctx, rule.alternatives);
     const arrays: string[] = [];
     streamAllContents(rule.alternatives).forEach(e => {
@@ -84,9 +90,9 @@ function buildRuleContent(ctx: RuleContext, rule: ParserRule): () => unknown {
             arrays.push(item.feature);
         }
     });
-    return () => {
+    return (args) => {
         ctx.parser.initializeElement(arrays);
-        method();
+        method(args);
         return ctx.parser.construct();
     };
 }
@@ -119,10 +125,11 @@ function buildRuleCall(ctx: RuleContext, ruleCall: RuleCall): Method {
     const rule = ruleCall.rule.ref;
     if (isParserRule(rule)) {
         const idx = ctx.subrule++;
+        const predicate = ruleCall.arguments.length > 0 ? buildRuleCallPredicate(rule, ruleCall.arguments) : () => ({});
         if (hasContainerOfType(ruleCall, isAssignment) || isDataTypeRule(rule)) {
-            return () => ctx.parser.subrule(idx, getRule(ctx, rule.name), ruleCall);
+            return (args) => ctx.parser.subrule(idx, getRule(ctx, rule.name), ruleCall, predicate(args));
         } else {
-            return () => ctx.parser.unassignedSubrule(idx, getRule(ctx, rule.name), ruleCall);
+            return (args) => ctx.parser.unassignedSubrule(idx, getRule(ctx, rule.name), ruleCall, predicate(args));
         }
     } else if (isTerminalRule(rule)) {
         const idx = ctx.consume++;
@@ -133,18 +140,73 @@ function buildRuleCall(ctx: RuleContext, ruleCall: RuleCall): Method {
     }
 }
 
+function buildRuleCallPredicate(rule: ParserRule, namedArgs: NamedArgument[]): (args: Args) => Args {
+    const predicates = namedArgs.map(e => buildPredicate(e.value));
+    return (args) => {
+        const ruleArgs: Args = {};
+        for (let i = 0; i < predicates.length; i++) {
+            const ruleTarget = rule.parameters[i];
+            const predicate = predicates[i];
+            ruleArgs[ruleTarget.name] = predicate(args);
+        }
+        return ruleArgs;
+    };
+}
+
+interface PredicatedMethod {
+    ALT: Method,
+    GATE?: Predicate
+}
+
+function buildPredicate(condition: Condition): Predicate {
+    if (isDisjunction(condition)) {
+        const left = buildPredicate(condition.left);
+        const right = buildPredicate(condition.right);
+        return (args) => (left(args) || right(args));
+    } else if (isConjunction(condition)) {
+        const left = buildPredicate(condition.left);
+        const right = buildPredicate(condition.right);
+        return (args) => (left(args) && right(args));
+    } else if (isNegation(condition)) {
+        const value = buildPredicate(condition.value);
+        return (args) => !value(args);
+    } else if (isParameterReference(condition)) {
+        const name = condition.parameter.ref!.name;
+        return (args) => args[name] === true;
+    } else if (isLiteralCondition(condition)) {
+        const value = !!condition.true;
+        return () => value;
+    }
+    throw new Error();
+}
+
 function buildAlternatives(ctx: RuleContext, alternatives: Alternatives): Method {
     if (alternatives.elements.length === 1) {
         return buildElement(ctx, alternatives.elements[0]);
     } else {
-        const methods: Method[] = [];
+        const methods: PredicatedMethod[] = [];
 
         for (const element of alternatives.elements) {
-            methods.push(buildElement(ctx, element));
+            const predicatedMethod: PredicatedMethod = {
+                ALT: buildElement(ctx, element)
+            };
+            if (isGroup(element) && element.guardCondition) {
+                predicatedMethod.GATE = buildPredicate(element.guardCondition);
+            }
+            methods.push(predicatedMethod);
         }
 
         const idx = ctx.or++;
-        return () => ctx.parser.alternatives(idx, methods);
+        return (args) => ctx.parser.alternatives(idx, methods.map(method => {
+            const alt: IOrAlt<unknown> = {
+                ALT: () => method.ALT(args)
+            };
+            const gate = method.GATE;
+            if (gate) {
+                alt.GATE = () => gate(args);
+            }
+            return alt;
+        }));
     }
 }
 
@@ -160,7 +222,7 @@ function buildGroup(ctx: RuleContext, group: Group): Method {
         methods.push(buildElement(ctx, element));
     }
 
-    return () => methods.forEach(e => e());
+    return (args) => methods.forEach(e => e(args));
 }
 
 function buildAction(ctx: RuleContext, action: Action): Method {
@@ -176,7 +238,7 @@ function buildCrossReference(ctx: RuleContext, crossRef: CrossReference): Method
     } else if (isRuleCall(terminal) && isParserRule(terminal.rule.ref)) {
         const idx = ctx.subrule++;
         const name = terminal.rule.ref.name;
-        return () => ctx.parser.subrule(idx, getRule(ctx, name), crossRef);
+        return (args) => ctx.parser.subrule(idx, getRule(ctx, name), crossRef, args);
     } else if (isRuleCall(terminal) && isTerminalRule(terminal.rule.ref)) {
         const idx = ctx.consume++;
         const terminalRule = getToken(ctx, terminal.rule.ref.name);
@@ -200,13 +262,13 @@ function wrap(ctx: RuleContext, method: Method, cardinality: Cardinality): Metho
         return method;
     } else if (cardinality === '*') {
         const idx = ctx.many++;
-        return () => ctx.parser.many(idx, method);
+        return (args) => ctx.parser.many(idx, () => method(args));
     } else if (cardinality === '+') {
         const idx = ctx.many++;
-        return () => ctx.parser.atLeastOne(idx, method);
+        return (args) => ctx.parser.atLeastOne(idx, () => method(args));
     } else if (cardinality === '?') {
         const idx = ctx.optional++;
-        return () => ctx.parser.optional(idx, method);
+        return (args) => ctx.parser.optional(idx, () => method(args));
     } else {
         throw new Error();
     }

@@ -9,7 +9,7 @@ import { AstNode, AstReflection, Reference } from '../../syntax-tree';
 import { isAstNode } from '../../utils/ast-util';
 
 export interface AbstractElement extends AstNode {
-    readonly $container: ParserRule | Alternatives | UnorderedGroup | Group | Assignment | CrossReference | TerminalRule | TerminalAlternatives | TerminalGroup | NegatedToken | UntilToken | CharacterRange;
+    readonly $container: ParserRule | Alternatives | Group | UnorderedGroup | Assignment | CrossReference | TerminalRule | TerminalAlternatives | TerminalGroup | NegatedToken | UntilToken | CharacterRange;
     cardinality: '?' | '*' | '+'
 }
 
@@ -33,7 +33,7 @@ export function isAbstractRule(item: unknown): item is AbstractRule {
 }
 
 export interface Condition extends AstNode {
-    readonly $container: NamedArgument | Disjunction | Conjunction | Negation;
+    readonly $container: Group | NamedArgument | Disjunction | Conjunction | Negation;
 }
 
 export const Condition = 'Condition';
@@ -154,6 +154,7 @@ export function isCrossReference(item: unknown): item is CrossReference {
 export interface Group extends AbstractElement {
     elements: Array<AbstractElement>
     firstSetPredicated: boolean
+    guardCondition: Condition
     predicated: boolean
 }
 

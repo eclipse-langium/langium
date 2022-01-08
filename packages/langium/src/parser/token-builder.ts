@@ -5,8 +5,8 @@
  ******************************************************************************/
 
 import { Lexer, TokenPattern, TokenType } from 'chevrotain';
-import { terminalRegex } from '..';
-import { Grammar, isKeyword, isTerminalRule, Keyword, TerminalRule } from '../grammar/generated/ast';
+import { Grammar, isKeyword, isParserRule, isTerminalRule, Keyword, TerminalRule } from '../grammar/generated/ast';
+import { terminalRegex } from '../grammar/grammar-util';
 import { streamAllContents } from '../utils/ast-util';
 import { getCaseInsensitivePattern, partialMatches } from '../utils/regex-util';
 import { stream } from '../utils/stream';
@@ -32,7 +32,9 @@ export class DefaultTokenBuilder implements TokenBuilder {
         }
 
         const tokens: TokenType[] = [];
-        const keywords = streamAllContents(grammar).map(e => e.node).filter(isKeyword).distinct(e => e.value).toArray()
+        // We filter by parser rules, since keywords in terminal rules get transformed into regex and are not actual tokens
+        const parserRuleKeywords = grammar.rules.filter(isParserRule).flatMap(rule => streamAllContents(rule).map(e => e.node).filter(isKeyword).toArray());
+        const keywords = stream(parserRuleKeywords).distinct(e => e.value).toArray()
             // Sort keywords by descending length
             .sort((a, b) => b.value.length - a.value.length);
 
