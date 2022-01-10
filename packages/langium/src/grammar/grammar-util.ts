@@ -348,8 +348,18 @@ export function resolveImport(documents: LangiumDocuments, imp: ast.GrammarImpor
     return undefined;
 }
 
-export function resolveTransitiveImports(documents: LangiumDocuments, grammar: ast.Grammar): ast.Grammar[] {
-    return resolveTransitiveImportsInternal(documents, grammar);
+export function resolveTransitiveImports(documents: LangiumDocuments, grammar: ast.Grammar | ast.GrammarImport): ast.Grammar[] {
+    if (ast.isGrammarImport(grammar)) {
+        const resolvedGrammar = resolveImport(documents, grammar);
+        if (resolvedGrammar) {
+            const transitiveGrammars = resolveTransitiveImportsInternal(documents, resolvedGrammar);
+            transitiveGrammars.push(resolvedGrammar);
+            return transitiveGrammars;
+        }
+        return [];
+    } else {
+        return resolveTransitiveImportsInternal(documents, grammar);
+    }
 }
 
 function resolveTransitiveImportsInternal(documents: LangiumDocuments, grammar: ast.Grammar, initialGrammar = grammar, visited: Set<URI> = new Set(), grammars: Set<ast.Grammar> = new Set()): ast.Grammar[] {
