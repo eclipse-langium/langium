@@ -41,6 +41,7 @@ export class LangiumGrammarValidationRegistry extends ValidationRegistry {
                 validator.checkEntryGrammarRule,
                 validator.checkUniqueRuleName,
                 validator.checkUniqueImportedRules,
+                validator.checkDuplicateImportedGrammar,
                 validator.checkGrammarHiddenTokens,
                 validator.checkGrammarForUnusedRules,
                 validator.checkGrammarImports
@@ -107,7 +108,7 @@ export class LangiumGrammarValidator {
     checkUniqueRuleName(grammar: ast.Grammar, accept: ValidationAcceptor): void {
         const ruleMap = new MultiMap<string, ast.AbstractRule>();
         for (const rule of grammar.rules) {
-            ruleMap.add(rule.name.toLowerCase(), rule);
+            ruleMap.add(rule.name, rule);
         }
         for (const name of ruleMap.keys()) {
             const rules = ruleMap.get(name);
@@ -121,7 +122,7 @@ export class LangiumGrammarValidator {
         const resolvedGrammars = resolveTransitiveImports(this.documents, grammar);
         for (const resolvedGrammar of resolvedGrammars) {
             for (const rule of resolvedGrammar.rules) {
-                importedRules.add(rule.name.toLowerCase());
+                importedRules.add(rule.name);
             }
         }
         for (const name of ruleMap.keys()) {
@@ -129,6 +130,26 @@ export class LangiumGrammarValidator {
                 const rules = ruleMap.get(name);
                 rules.forEach(e => {
                     accept('error', `A rule with the name '${e.name}' already exists in an imported grammar.`, { node: e, property: 'name' });
+                });
+            }
+        }
+    }
+
+    checkDuplicateImportedGrammar(grammar: ast.Grammar, accept: ValidationAcceptor): void {
+        const importMap = new MultiMap<ast.Grammar, ast.GrammarImport>();
+        for (const imp of grammar.imports) {
+            const resolvedGrammar = resolveImport(this.documents, imp);
+            if (resolvedGrammar) {
+                importMap.add(resolvedGrammar, imp);
+            }
+        }
+        for (const grammar of importMap.keys()) {
+            const imports = importMap.get(grammar);
+            if (imports.length > 1) {
+                imports.forEach((imp, i) => {
+                    if (i > 0) {
+                        accept('warning', 'The grammar is already being directly imported.', { node: imp, tags: [DiagnosticTag.Unnecessary] });
+                    }
                 });
             }
         }
@@ -171,9 +192,9 @@ export class LangiumGrammarValidator {
         const innerRules = inner.flatMap(e => e.rules);
         const duplicates = new Set<string>();
         for (const outerRule of outerRules) {
-            const outerName = outerRule.name.toLowerCase();
+            const outerName = outerRule.name;
             for (const innerRule of innerRules) {
-                const innerName = innerRule.name.toLowerCase();
+                const innerName = innerRule.name;
                 if (outerName === innerName) {
                     duplicates.add(innerRule.name);
                 }
