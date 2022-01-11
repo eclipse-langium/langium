@@ -118,7 +118,7 @@ export function addDocumentsHandler(connection: Connection, documents: TextDocum
 }
 
 export function addCompletionHandler(connection: Connection, services: LangiumSharedServices): void {
-    connection.onCompletion(createHandler(
+    connection.onCompletion(createRequestHandler(
         (services, document, params, cancelToken) => {
             return services.lsp.completion.CompletionProvider.getCompletion(document, params, cancelToken);
         },
@@ -127,60 +127,60 @@ export function addCompletionHandler(connection: Connection, services: LangiumSh
 }
 
 export function addFindReferencesHandler(connection: Connection, services: LangiumSharedServices): void {
-    connection.onReferences(createHandler(
+    connection.onReferences(createRequestHandler(
         (services, document, params, cancelToken) => services.lsp.ReferenceFinder.findReferences(document, params, cancelToken),
         services
     ));
 }
 
 export function addCodeActionHandler(connection: Connection, services: LangiumSharedServices): void {
-    connection.onCodeAction(createHandler(
+    connection.onCodeAction(createRequestHandler(
         (services, document, params, cancelToken) => services.lsp.CodeActionProvider?.getCodeActions(document, params, cancelToken),
         services
     ));
 }
 
 export function addDocumentSymbolHandler(connection: Connection, services: LangiumSharedServices): void {
-    connection.onDocumentSymbol(createHandler(
+    connection.onDocumentSymbol(createRequestHandler(
         (services, document, params, cancelToken) => services.lsp.DocumentSymbolProvider.getSymbols(document, params, cancelToken),
         services
     ));
 }
 
 export function addGotoDefinitionHandler(connection: Connection, services: LangiumSharedServices): void {
-    connection.onDefinition(createHandler(
+    connection.onDefinition(createRequestHandler(
         (services, document, params, cancelToken) => services.lsp.GoToResolver.goToDefinition(document, params, cancelToken),
         services
     ));
 }
 
 export function addDocumentHighlightsHandler(connection: Connection, services: LangiumSharedServices): void {
-    connection.onDocumentHighlight(createHandler(
+    connection.onDocumentHighlight(createRequestHandler(
         (services, document, params, cancelToken) => services.lsp.DocumentHighlighter.findHighlights(document, params, cancelToken),
         services
     ));
 }
 
 export function addHoverHandler(connection: Connection, services: LangiumSharedServices): void {
-    connection.onHover(createHandler(
+    connection.onHover(createRequestHandler(
         (services, document, params, cancelToken) => services.lsp.HoverProvider.getHoverContent(document, params, cancelToken),
         services
     ));
 }
 
 export function addFoldingRangeHandler(connection: Connection, services: LangiumSharedServices): void {
-    connection.onFoldingRanges(createHandler(
+    connection.onFoldingRanges(createRequestHandler(
         (services, document, params, cancelToken) => services.lsp.FoldingRangeProvider.getFoldingRanges(document, params, cancelToken),
         services
     ));
 }
 
 export function addRenameHandler(connection: Connection, services: LangiumSharedServices): void {
-    connection.onRenameRequest(createHandler(
+    connection.onRenameRequest(createRequestHandler(
         (services, document, params, cancelToken) => services.lsp.RenameHandler.renameElement(document, params, cancelToken),
         services
     ));
-    connection.onPrepareRename(createHandler(
+    connection.onPrepareRename(createRequestHandler(
         (services, document, params, cancelToken) => services.lsp.RenameHandler.prepareRename(document, params, cancelToken),
         services
     ));
@@ -239,7 +239,7 @@ export function createServerRequestHandler<P extends { textDocument: TextDocumen
     };
 }
 
-export function createHandler<P extends { textDocument: TextDocumentIdentifier }, R, E = void>(
+export function createRequestHandler<P extends { textDocument: TextDocumentIdentifier }, R, E = void>(
     serviceCall: (services: LangiumServices, document: LangiumDocument, params: P, cancelToken: CancellationToken) => HandlerResult<R, E>,
     sharedServices: LangiumSharedServices
 ): RequestHandler<P, R | null, E> {

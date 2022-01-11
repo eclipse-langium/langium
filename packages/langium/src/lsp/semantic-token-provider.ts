@@ -62,50 +62,71 @@ export const DefaultSemanticTokenOptions: SemanticTokensOptions = {
 };
 
 export interface SemanticTokenProvider {
-    semanticHighlight(document: LangiumDocument, params: SemanticTokensParams, cancelToken: CancellationToken): SemanticTokens
-    semanticHighlightRange(document: LangiumDocument, params: SemanticTokensRangeParams, cancelToken: CancellationToken): SemanticTokens
-    semanticHighlightDelta(document: LangiumDocument, params: SemanticTokensDeltaParams, cancelToken: CancellationToken): SemanticTokens | SemanticTokensDelta
+    semanticHighlight(document: LangiumDocument, params: SemanticTokensParams, cancelToken?: CancellationToken): SemanticTokens
+    semanticHighlightRange(document: LangiumDocument, params: SemanticTokensRangeParams, cancelToken?: CancellationToken): SemanticTokens
+    semanticHighlightDelta(document: LangiumDocument, params: SemanticTokensDeltaParams, cancelToken?: CancellationToken): SemanticTokens | SemanticTokensDelta
 }
 
-export type SemanticTokenAcceptor = (line: number, char: number, length: number, type: string, modifiers?: string[]) => void;
+export type SemanticTokenAcceptorOptions<N extends AstNode = AstNode> = ({
+    line: number
+    char: number,
+    length: number
+} | {
+    node: N,
+    feature: Properties<N>,
+    index?: number
+} | {
+    node: N,
+    keyword: string
+} | {
+    node: CstNode
+}) & {
+    type: string
+    modifier?: string | string[]
+}
 
+export type SemanticTokenAcceptor = <N extends AstNode = AstNode>(options: SemanticTokenAcceptorOptions<N>) => void;
+
+/**
+ * A basic super class for providing semantic token data.
+ * Users of Langium should extend this class to create their own `SemanticTokenProvider`.
+ *
+ * The entry method for generating semantic tokens based on an `AstNode` is the `highlightElement` method.
+ */
 export abstract class AbstractSemanticTokenProvider implements SemanticTokenProvider {
 
     protected tokenBuilder = new SemanticTokensBuilder();
-    protected acceptor: SemanticTokenAcceptor = (line, char, length, type, modifiers) => {
-        if (this.compareRange(line) !== 0) {
-            return;
+    protected acceptor: SemanticTokenAcceptor = options => {
+        if ('line' in options) {
+            this.highlightToken(options.line, options.char, options.length, options.type, options.modifier);
+        } else if ('keyword' in options) {
+            this.highlightKeyword(options.node, options.keyword, options.type, options.modifier);
+        } else if ('feature' in options) {
+            this.highlightFeature(options.node, options.feature, options.index, options.type, options.modifier);
+        } else {
+            this.highlightNode(options.node, options.type, options.modifier);
         }
-        const intType = AllSemanticTokenTypes[type];
-        let totalModifier = 0;
-        if (modifiers) {
-            for (const modifier of modifiers) {
-                const intModifier = AllSemanticTokenModifiers[modifier];
-                totalModifier |= intModifier;
-            }
-        }
-        this.tokenBuilder.push(line, char, length, intType, totalModifier);
     };
     protected range?: Range;
 
-    semanticHighlight(document: LangiumDocument, _params: SemanticTokensParams, cancelToken: CancellationToken): SemanticTokens {
+    semanticHighlight(document: LangiumDocument, _params: SemanticTokensParams, cancelToken = CancellationToken.None): SemanticTokens {
         this.range = undefined;
         this.resetTokensBuilder();
-        this.computeHighlighting(document, cancelToken);
+        this.computeHighlighting(document, this.acceptor, cancelToken);
         return this.tokenBuilder.build();
     }
 
-    semanticHighlightRange(document: LangiumDocument, params: SemanticTokensRangeParams, cancelToken: CancellationToken): SemanticTokens {
+    semanticHighlightRange(document: LangiumDocument, params: SemanticTokensRangeParams, cancelToken = CancellationToken.None): SemanticTokens {
         this.range = params.range;
         this.resetTokensBuilder();
-        this.computeHighlighting(document, cancelToken);
+        this.computeHighlighting(document, this.acceptor, cancelToken);
         return this.tokenBuilder.build();
     }
 
-    semanticHighlightDelta(document: LangiumDocument, params: SemanticTokensDeltaParams, cancelToken: CancellationToken): SemanticTokens | SemanticTokensDelta {
+    semanticHighlightDelta(document: LangiumDocument, params: SemanticTokensDeltaParams, cancelToken = CancellationToken.None): SemanticTokens | SemanticTokensDelta {
         this.range = undefined;
         this.tokenBuilder.previousResult(params.previousResultId);
-        this.computeHighlighting(document, cancelToken);
+        this.computeHighlighting(document, this.acceptor, cancelToken);
         return this.tokenBuilder.buildEdits();
     }
 
@@ -113,7 +134,7 @@ export abstract class AbstractSemanticTokenProvider implements SemanticTokenProv
         this.tokenBuilder.previousResult(Date.now().toString());
     }
 
-    protected computeHighlighting(document: LangiumDocument, cancelToken: CancellationToken): void {
+    protected computeHighlighting(document: LangiumDocument, acceptor: SemanticTokenAcceptor, cancelToken: CancellationToken): void {
         const root = document.parseResult.value;
         const treeIterator = streamAllContents(root).iterator();
         let result: IteratorResult<AstNodeContent>;
@@ -131,7 +152,7 @@ export abstract class AbstractSemanticTokenProvider implements SemanticTokenProv
                 } else if (comparedRange === -1) {
                     continue; // Current element is ending before range starts, skip to next element
                 }
-                if (this.highlightElement(node)) {
+                if (this.highlightElement(node, acceptor) === 'prune') {
                     treeIterator.prune();
                 }
             }
@@ -154,29 +175,45 @@ export abstract class AbstractSemanticTokenProvider implements SemanticTokenProv
     }
 
     /**
-	 * @return true to skip the children of this element, false otherwise
+	 * @return `'prune'` to skip the children of this element, nothing otherwise.
 	 */
-    protected highlightElement(_node: AstNode): boolean {
-        return false;
+    protected abstract highlightElement(node: AstNode, acceptor: SemanticTokenAcceptor): void | undefined | 'prune';
+
+    protected highlightToken(line: number, char: number, length: number, type: string, modifiers?: string | string[]): void {
+        if (this.compareRange(line) !== 0) {
+            return;
+        }
+        const intType = AllSemanticTokenTypes[type];
+        let totalModifier = 0;
+        if (modifiers !== undefined) {
+            if (typeof modifiers === 'string') {
+                modifiers = [modifiers];
+            }
+            for (const modifier of modifiers) {
+                const intModifier = AllSemanticTokenModifiers[modifier];
+                totalModifier |= intModifier;
+            }
+        }
+        this.tokenBuilder.push(line, char, length, intType, totalModifier);
     }
 
-    protected highlightFeature<N extends AstNode>(node: N, feature: Properties<N>, type: string, ...modifiers: string[]): void {
-        const featureNode = findNodeForFeature(node.$cstNode, feature as string);
+    protected highlightFeature<N extends AstNode>(node: N, feature: Properties<N>, index: number | undefined, type: string, modifiers?: string | string[]): void {
+        const featureNode = findNodeForFeature(node.$cstNode, feature as string, index);
         if (featureNode) {
-            this.highlightNode(featureNode, type, ...modifiers);
+            this.highlightNode(featureNode, type, modifiers);
         }
     }
 
-    protected highlightKeyword(node: AstNode, keyword: string, type: string, ...modifiers: string[]): void {
+    protected highlightKeyword(node: AstNode, keyword: string, type: string, modifiers?: string | string[]): void {
         const keywordNode = findKeywordNode(node.$cstNode, keyword);
         if (keywordNode) {
-            this.highlightNode(keywordNode, type, ...modifiers);
+            this.highlightNode(keywordNode, type, modifiers);
         }
     }
 
-    protected highlightNode(node: CstNode, type: string, ...modifiers: string[]): void {
+    protected highlightNode(node: CstNode, type: string, modifiers?: string | string[]): void {
         const nodeRange = node.range;
-        this.acceptor(
+        this.highlightToken(
             nodeRange.start.line,
             nodeRange.start.character,
             nodeRange.end.character - nodeRange.start.character,

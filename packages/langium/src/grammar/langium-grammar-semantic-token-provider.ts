@@ -5,28 +5,47 @@
  ******************************************************************************/
 
 import { SemanticTokenTypes } from 'vscode-languageserver';
-import { AbstractSemanticTokenProvider } from '../lsp/semantic-token-provider';
+import { AbstractSemanticTokenProvider, SemanticTokenAcceptor } from '../lsp/semantic-token-provider';
 import { AstNode } from '../syntax-tree';
 import { isAction, isAssignment, isParameter, isParameterReference, isParserRule, isTerminalRule } from './generated/ast';
 import { isDataTypeRule } from './grammar-util';
 
 export class LangiumGrammarSemanticTokenProvider extends AbstractSemanticTokenProvider {
 
-    protected highlightElement(node: AstNode): boolean {
+    protected highlightElement(node: AstNode, acceptor: SemanticTokenAcceptor): void {
         if (isAssignment(node)) {
-            this.highlightFeature(node, 'feature', SemanticTokenTypes.property);
+            acceptor({
+                node,
+                feature: 'feature',
+                type: SemanticTokenTypes.property
+            });
         } else if (isAction(node)) {
             if (node.feature) {
-                this.highlightFeature(node, 'feature', SemanticTokenTypes.property);
+                acceptor({
+                    node,
+                    feature: 'feature',
+                    type: SemanticTokenTypes.property
+                });
             }
         } else if ((isParserRule(node) && isDataTypeRule(node) || isTerminalRule(node)) && node.type) {
-            this.highlightFeature(node, 'type', SemanticTokenTypes.type);
+            acceptor({
+                node,
+                feature: 'type',
+                type: SemanticTokenTypes.type
+            });
         } else if (isParameter(node)) {
-            this.highlightFeature(node, 'name', SemanticTokenTypes.parameter);
+            acceptor({
+                node,
+                feature: 'name',
+                type: SemanticTokenTypes.parameter
+            });
         } else if (isParameterReference(node)) {
-            this.highlightFeature(node, 'parameter', SemanticTokenTypes.parameter);
+            acceptor({
+                node,
+                feature: 'parameter',
+                type: SemanticTokenTypes.parameter
+            });
         }
-        return false;
     }
 
 }

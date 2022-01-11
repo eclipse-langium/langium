@@ -12,6 +12,7 @@ import { LangiumServices } from '../services';
 import { AstNode, AstNodeDescription, CstNode } from '../syntax-tree';
 import { getContainerOfType, getDocument, Mutable, streamAllContents } from '../utils/ast-util';
 import { MultiMap } from '../utils/collections';
+import { streamCst } from '../utils/cst-util';
 import { escapeRegExp } from '../utils/regex-util';
 import { documentFromText, LangiumDocuments, PrecomputedScopes } from '../workspace/documents';
 import { createLangiumGrammarServices } from './langium-grammar-module';
@@ -165,6 +166,9 @@ export function findNodeForFeature(node: CstNode | undefined, feature: string | 
 }
 
 export function findKeywordNode(node: CstNode | undefined, keyword: string): CstNode | undefined {
+    if (node && ast.isKeyword(node.feature) && node.feature.value === keyword) {
+        return node;
+    }
     return findKeywordNodeInternal(node, keyword, node?.element);
 }
 
@@ -172,19 +176,21 @@ export function findKeywordNodeInternal(node: CstNode | undefined, keyword: stri
     if (!node || !element) {
         return undefined;
     }
-    if (ast.isKeyword(node.feature) && node.feature.value === keyword) {
-        return node;
-    }
-    if (node instanceof CompositeCstNodeImpl) {
-        for (const child of node.children) {
-            if (child.element === element) {
-                const childNode = findKeywordNodeInternal(child, keyword, element);
-                if (childNode) {
+    const treeIterator = streamCst(node).iterator();
+    let result: IteratorResult<CstNode>;
+    do {
+        result = treeIterator.next();
+        if (!result.done) {
+            const childNode = result.value;
+            if (childNode.element === element) {
+                if (ast.isKeyword(childNode.feature) && childNode.feature.value === keyword) {
                     return childNode;
                 }
+            } else {
+                treeIterator.prune();
             }
         }
-    }
+    } while (!result.done);
     return undefined;
 }
 
