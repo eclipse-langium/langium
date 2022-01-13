@@ -4,7 +4,6 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { findAssignment } from '../grammar/grammar-util';
 import { AstNode } from '../syntax-tree';
 import { LangiumDocument } from './documents';
 
@@ -37,34 +36,23 @@ export class DefaultAstNodeLocator implements AstNodeLocator {
     protected indexSeparator = '@';
 
     getAstNodePath(node: AstNode): string {
-        if (node.$path) {
-            // If the node already has a path, use that (this can be used to locate without a CST)
-            return node.$path;
-        }
-        // Otherwise concatenate the container's path with a new path segment
         if (node.$container) {
             const containerPath = this.getAstNodePath(node.$container);
-            const newSegment = this.getPathSegment(node, node.$container);
+            const newSegment = this.getPathSegment(node);
             const nodePath = containerPath + this.segmentSeparator + newSegment;
-            node.$path = nodePath;
             return nodePath;
         }
         return '';
     }
 
-    protected getPathSegment(node: AstNode, container: AstNode): string {
-        if (node.$cstNode) {
-            const assignment = findAssignment(node.$cstNode);
-            if (assignment) {
-                if (assignment.operator === '+=') {
-                    const array = (container as unknown as Record<string, AstNode[]>)[assignment.feature];
-                    const idx = array.indexOf(node);
-                    return assignment.feature + this.indexSeparator + idx;
-                }
-                return assignment.feature;
-            }
+    protected getPathSegment({ $containerProperty, $containerIndex }: AstNode): string {
+        if (!$containerProperty) {
+            throw new Error("Missing '$containerProperty' in AST node.");
         }
-        return '<missing>';
+        if ($containerIndex !== undefined) {
+            return $containerProperty + this.indexSeparator + $containerIndex;
+        }
+        return $containerProperty;
     }
 
     getAstNode(document: LangiumDocument, path: string): AstNode | undefined {

@@ -106,9 +106,9 @@ export class DefaultDocumentValidator {
             }
         };
         await runChecks(rootNode);
-        await Promise.all(streamAllContents(rootNode).map(async c => {
+        await Promise.all(streamAllContents(rootNode).map(async node => {
             await interruptAndCheck(cancelToken);
-            await runChecks(c.node);
+            await runChecks(node);
         }));
         return validationItems;
     }

@@ -8,7 +8,7 @@ import { CancellationToken, FoldingRange, FoldingRangeKind, FoldingRangeParams }
 import { LeafCstNodeImpl } from '../parser/cst-node-builder';
 import { LangiumServices } from '../services';
 import { AstNode, CstNode } from '../syntax-tree';
-import { AstNodeContent, streamAllContents } from '../utils/ast-util';
+import { streamAllContents } from '../utils/ast-util';
 import { streamCst } from '../utils/cst-util';
 import { MaybePromise } from '../utils/promise-util';
 import { LangiumDocument } from '../workspace/documents';
@@ -45,11 +45,11 @@ export class DefaultFoldingRangeProvider implements FoldingRangeProvider {
         if (root) {
             if (this.shouldProcessContent(root)) {
                 const treeIterator = streamAllContents(root).iterator();
-                let result: IteratorResult<AstNodeContent>;
+                let result: IteratorResult<AstNode>;
                 do {
                     result = treeIterator.next();
                     if (!result.done) {
-                        const node = result.value.node;
+                        const node = result.value;
                         if (this.shouldProcess(node)) {
                             this.collectObjectFolding(document, node, acceptor);
                         }

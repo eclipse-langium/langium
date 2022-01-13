@@ -4,12 +4,9 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { CancellationToken } from 'vscode-languageserver';
-import { CompositeCstNodeImpl, LeafCstNodeImpl } from '../parser/cst-node-builder';
-import { AstNode, AstNodeDescription, CstNode, LeafCstNode, LinkingError, Reference, ReferenceInfo } from '../syntax-tree';
+import { AstNode, AstNodeDescription, LinkingError, Reference, ReferenceInfo } from '../syntax-tree';
 import { DONE_RESULT, Stream, stream, StreamImpl, TreeStream, TreeStreamImpl } from '../utils/stream';
 import { LangiumDocument } from '../workspace/documents';
-import { interruptAndCheck } from './promise-util';
 
 export type Mutable<T> = {
     -readonly [P in keyof T]: T[P]
@@ -17,6 +14,29 @@ export type Mutable<T> = {
 
 export function isAstNode(obj: unknown): obj is AstNode {
     return typeof obj === 'object' && obj !== null && typeof (obj as AstNode).$type === 'string';
+}
+
+/**
+ * Link the `$container` and other related properties of every AST node that is directly contained
+ * in the given `node`.
+ */
+export function linkContentToContainer(node: AstNode): void {
+    for (const [name, value] of Object.entries(node)) {
+        if (!name.startsWith('$')) {
+            if (Array.isArray(value)) {
+                value.forEach((item, index) => {
+                    if (isAstNode(item)) {
+                        (item as Mutable<AstNode>).$container = node;
+                        (item as Mutable<AstNode>).$containerProperty = name;
+                        (item as Mutable<AstNode>).$containerIndex = index;
+                    }
+                });
+            } else if (isAstNode(value)) {
+                (value as Mutable<AstNode>).$container = node;
+                (value as Mutable<AstNode>).$containerProperty = name;
+            }
+        }
+    }
 }
 
 export function isReference(obj: unknown): obj is Reference {
@@ -37,6 +57,11 @@ export function isLinkingError(obj: unknown): obj is LinkingError {
         && typeof (obj as LinkingError).message === 'string';
 }
 
+/**
+ * Walk along the hierarchy of containers from the given AST node to the root and return the first
+ * node that matches the type predicate. If the start node itself matches, it is returned.
+ * If no container matches, `undefined` is returned.
+ */
 export function getContainerOfType<T extends AstNode>(node: AstNode | undefined, typePredicate: (n: AstNode) => n is T): T | undefined {
     let item = node;
     while (item) {
@@ -48,6 +73,10 @@ export function getContainerOfType<T extends AstNode>(node: AstNode | undefined,
     return undefined;
 }
 
+/**
+ * Walk along the hierarchy of containers from the given AST node to the root and check for existence
+ * of a container that matches the given predicate. The start node is included in the checks.
+ */
 export function hasContainerOfType(node: AstNode | undefined, predicate: (n: AstNode) => boolean): boolean {
     let item = node;
     while (item) {
@@ -59,6 +88,12 @@ export function hasContainerOfType(node: AstNode | undefined, predicate: (n: Ast
     return false;
 }
 
+/**
+ * Retrieve the document in which the given AST node is contained. A reference to the document is
+ * usually held by the root node of the AST.
+ *
+ * @throws an error if the node is not contained in a document.
+ */
 export function getDocument<T extends AstNode = AstNode>(node: AstNode): LangiumDocument<T> {
     let n = node;
     while (!n.$document && n.$container) {
@@ -70,15 +105,13 @@ export function getDocument<T extends AstNode = AstNode>(node: AstNode): Langium
     return n.$document as LangiumDocument<T>;
 }
 
-export interface AstNodeContent {
-    node: AstNode
-    property: string
-    index?: number
-}
-
-export function streamContents(node: AstNode): Stream<AstNodeContent> {
+/**
+ * Create a stream of all AST nodes that are directly contained in the given node. This includes
+ * single-valued as well as multi-valued (array) properties.
+ */
+export function streamContents(node: AstNode): Stream<AstNode> {
     type State = { keys: string[], keyIndex: number, arrayIndex: number };
-    return new StreamImpl<State, AstNodeContent>(() => ({
+    return new StreamImpl<State, AstNode>(() => ({
         keys: Object.keys(node),
         keyIndex: 0,
         arrayIndex: 0
@@ -90,13 +123,13 @@ export function streamContents(node: AstNode): Stream<AstNodeContent> {
                 const value = (node as any)[property];
                 if (isAstNode(value)) {
                     state.keyIndex++;
-                    return { done: false, value: { node: value, property } };
+                    return { done: false, value };
                 } else if (Array.isArray(value)) {
                     while (state.arrayIndex < value.length) {
                         const index = state.arrayIndex++;
                         const element = value[index];
                         if (isAstNode(element)) {
-                            return { done: false, value: { node: element, property, index } };
+                            return { done: false, value: element };
                         }
                     }
                     state.arrayIndex = 0;
@@ -108,11 +141,17 @@ export function streamContents(node: AstNode): Stream<AstNodeContent> {
     });
 }
 
-export function streamAllContents(node: AstNode): TreeStream<AstNodeContent> {
-    const root = { node } as AstNodeContent;
-    return new TreeStreamImpl(root, content => streamContents(content.node));
+/**
+ * Create a stream of all AST nodes that are directly and indirectly contained in the given root node.
+ */
+export function streamAllContents(root: AstNode): TreeStream<AstNode> {
+    return new TreeStreamImpl(root, node => streamContents(node));
 }
 
+/**
+ * Create a stream of all cross-references that are held by the given AST node. This includes
+ * single-valued as well as multi-valued (array) properties.
+ */
 export function streamReferences(node: AstNode): Stream<ReferenceInfo> {
     type State = { keys: string[], keyIndex: number, arrayIndex: number };
     return new StreamImpl<State, ReferenceInfo>(() => ({
@@ -145,34 +184,6 @@ export function streamReferences(node: AstNode): Stream<ReferenceInfo> {
     });
 }
 
-export async function resolveAllReferences(node: AstNode, cancelToken = CancellationToken.None): Promise<void> {
-    const process = (n: AstNodeContent) => {
-        streamReferences(n.node).forEach(r => {
-            r.reference.ref; // Invoke the getter to link the target AstNode
-        });
-    };
-    process({ node } as AstNodeContent);
-    for (const content of streamAllContents(node)) {
-        await interruptAndCheck(cancelToken);
-        process(content);
-    }
-}
-
-export function findLeafNodeAtOffset(node: CstNode, offset: number): LeafCstNode | undefined {
-    if (node instanceof LeafCstNodeImpl) {
-        return node;
-    } else if (node instanceof CompositeCstNodeImpl) {
-        const children = node.children.filter(e => e.offset <= offset).reverse();
-        for (const child of children) {
-            const result = findLeafNodeAtOffset(child, offset);
-            if (result) {
-                return result;
-            }
-        }
-    }
-    return undefined;
-}
-
 /**
  * Returns a Stream of references to the target node from the AstNode tree
  *
@@ -189,6 +200,6 @@ export function findLocalReferences(targetNode: AstNode, lookup = getDocument(ta
         });
     };
     process(lookup);
-    streamAllContents(lookup).forEach(content => process(content.node));
+    streamAllContents(lookup).forEach(node => process(node));
     return stream(refs);
 }

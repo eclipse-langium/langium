@@ -52,13 +52,7 @@ function buildDatatype(rule: ParserRule): GeneratorNode {
 }
 
 function hasCrossReferences(grammar: Grammar): boolean {
-    let result = false;
-    streamAllContents(grammar).forEach(e => {
-        if (isCrossReference(e.node)) {
-            result = true;
-        }
-    });
-    return result;
+    return !!streamAllContents(grammar).find(isCrossReference);
 }
 
 type CrossReferenceType = {

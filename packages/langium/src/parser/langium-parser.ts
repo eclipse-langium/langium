@@ -10,7 +10,7 @@ import { AbstractElement, Action, Assignment, isAssignment, isCrossReference } f
 import { Linker } from '../references/linker';
 import { LangiumServices } from '../services';
 import { AstNode, CompositeCstNode, CstNode, LeafCstNode } from '../syntax-tree';
-import { getContainerOfType } from '../utils/ast-util';
+import { getContainerOfType, linkContentToContainer } from '../utils/ast-util';
 import { tokenToRange } from '../utils/cst-util';
 import { CompositeCstNodeImpl, CstNodeBuilder, LeafCstNodeImpl, RootCstNodeImpl } from './cst-node-builder';
 import { IParserConfig } from './parser-config';
@@ -241,19 +241,7 @@ export class LangiumParser {
             return undefined;
         }
         const obj = this.current;
-        for (const [name, value] of Object.entries(obj)) {
-            if (!name.startsWith('$')) {
-                if (Array.isArray(value)) {
-                    for (const item of value) {
-                        if (item !== null && typeof item === 'object') {
-                            item.$container = obj;
-                        }
-                    }
-                } else if (obj !== null && typeof (value) === 'object') {
-                    (<any>value).$container = obj;
-                }
-            }
-        }
+        linkContentToContainer(obj);
         this.nodeBuilder.construct(obj);
         if (pop) {
             this.stack.pop();

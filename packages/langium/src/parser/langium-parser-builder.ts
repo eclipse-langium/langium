@@ -86,8 +86,7 @@ function buildParserRules(parserContext: ParserContext, grammar: Grammar): void 
 function buildRuleContent(ctx: RuleContext, rule: ParserRule): Method {
     const method = buildElement(ctx, rule.alternatives);
     const arrays: string[] = [];
-    streamAllContents(rule.alternatives).forEach(e => {
-        const item = e.node;
+    streamAllContents(rule.alternatives).forEach(item => {
         if (isAssignment(item) && isArrayOperator(item.operator)) {
             arrays.push(item.feature);
         }

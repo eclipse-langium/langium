@@ -9,8 +9,7 @@ import { GrammarConfig } from '../grammar/grammar-config';
 import { References } from '../references/references';
 import { LangiumServices } from '../services';
 import { AstNode } from '../syntax-tree';
-import { findLeafNodeAtOffset } from '../utils/ast-util';
-import { findCommentNode } from '../utils/cst-util';
+import { findCommentNode, findLeafNodeAtOffset } from '../utils/cst-util';
 import { MaybePromise } from '../utils/promise-util';
 import { LangiumDocument } from '../workspace/documents';
 

@@ -20,9 +20,8 @@ export class DomainModelDescriptionProvider extends DefaultAstNodeDescriptionPro
      */
     async createDescriptions(document: LangiumDocument, cancelToken = CancellationToken.None): Promise<AstNodeDescription[]> {
         const descr: AstNodeDescription[] = [];
-        for (const content of streamAllContents(document.parseResult.value)) {
+        for (const modelNode of streamAllContents(document.parseResult.value)) {
             await interruptAndCheck(cancelToken);
-            const modelNode = content.node;
             if (isType(modelNode)) {
                 let name = this.nameProvider.getName(modelNode);
                 if (name) {
