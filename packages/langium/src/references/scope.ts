@@ -7,7 +7,7 @@
 import { CancellationToken } from 'vscode-jsonrpc';
 import { LangiumServices } from '../services';
 import { AstNode, AstNodeDescription, AstReflection } from '../syntax-tree';
-import { AstNodeContent, getDocument, streamAllContents } from '../utils/ast-util';
+import { getDocument, streamAllContents } from '../utils/ast-util';
 import { MultiMap } from '../utils/collections';
 import { interruptAndCheck } from '../utils/promise-util';
 import { EMPTY_STREAM, Stream, stream } from '../utils/stream';
@@ -137,14 +137,14 @@ export class DefaultScopeComputation implements ScopeComputation {
     async computeScope(document: LangiumDocument, cancelToken = CancellationToken.None): Promise<PrecomputedScopes> {
         const rootNode = document.parseResult.value;
         const scopes = new MultiMap<AstNode, AstNodeDescription>();
-        for (const content of streamAllContents(rootNode)) {
+        for (const node of streamAllContents(rootNode)) {
             interruptAndCheck(cancelToken);
-            this.processNode(content, document, scopes);
+            this.processNode(node, document, scopes);
         }
         return scopes;
     }
 
-    protected processNode({ node }: AstNodeContent, document: LangiumDocument, scopes: PrecomputedScopes): void {
+    protected processNode(node: AstNode, document: LangiumDocument, scopes: PrecomputedScopes): void {
         const container = node.$container;
         if (container) {
             const name = this.nameProvider.getName(node);

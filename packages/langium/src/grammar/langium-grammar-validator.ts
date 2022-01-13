@@ -277,7 +277,7 @@ export class LangiumGrammarValidator {
     checkGrammarImports(grammar: ast.Grammar, accept: ValidationAcceptor): void {
         // Compute transitive grammar dependencies once for each grammar
         const importedGrammars = new Set(resolveTransitiveImports(this.documents, grammar).map(e => getDocument(e)));
-        streamAllContents(grammar).map(e => e.node).forEach(e => {
+        streamAllContents(grammar).forEach(e => {
             if (ast.isRuleCall(e) || ast.isTerminalRuleCall(e)) {
                 this.checkRuleCallImport(e, importedGrammars, accept);
             }
@@ -345,9 +345,9 @@ export class LangiumGrammarValidator {
     }
 
     private ruleDfs(rule: ast.ParserRule, visitedSet: Set<string>): void {
-        streamAllContents(rule).forEach(content => {
-            if (ast.isRuleCall(content.node)) {
-                const refRule = content.node.rule.ref;
+        streamAllContents(rule).forEach(node => {
+            if (ast.isRuleCall(node)) {
+                const refRule = node.rule.ref;
                 if (refRule && !visitedSet.has(refRule.name)) {
                     visitedSet.add(refRule.name);
                     if (ast.isParserRule(refRule)) {
@@ -384,7 +384,7 @@ export class LangiumGrammarValidator {
     checkRuleParametersUsed(rule: ast.ParserRule, accept: ValidationAcceptor): void {
         const parameters = rule.parameters;
         if (parameters.length > 0) {
-            const allReferences = streamAllContents(rule).map(e => e.node).filter(ast.isParameterReference);
+            const allReferences = streamAllContents(rule).filter(ast.isParameterReference);
             for (const parameter of parameters) {
                 if (!allReferences.some(e => e.parameter.ref === parameter)) {
                     accept('hint', `Parameter '${parameter.name}' is unused.`, {

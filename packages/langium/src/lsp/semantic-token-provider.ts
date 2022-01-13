@@ -9,7 +9,7 @@
 import { CancellationToken, Range, SemanticTokenModifiers, SemanticTokens, SemanticTokensBuilder, SemanticTokensDelta, SemanticTokensDeltaParams, SemanticTokensOptions, SemanticTokensParams, SemanticTokensRangeParams, SemanticTokenTypes } from 'vscode-languageserver';
 import { findKeywordNode, findNodeForFeature } from '../grammar/grammar-util';
 import { AstNode, CstNode, Properties } from '../syntax-tree';
-import { AstNodeContent, streamAllContents } from '../utils/ast-util';
+import { streamAllContents } from '../utils/ast-util';
 import { LangiumDocument } from '../workspace/documents';
 
 export const AllSemanticTokenTypes: Record<string, number> = {
@@ -137,14 +137,14 @@ export abstract class AbstractSemanticTokenProvider implements SemanticTokenProv
     protected computeHighlighting(document: LangiumDocument, acceptor: SemanticTokenAcceptor, cancelToken: CancellationToken): void {
         const root = document.parseResult.value;
         const treeIterator = streamAllContents(root).iterator();
-        let result: IteratorResult<AstNodeContent>;
+        let result: IteratorResult<AstNode>;
         do {
             result = treeIterator.next();
             if (!result.done) {
                 if (cancelToken.isCancellationRequested) {
                     break;
                 }
-                const node = result.value.node;
+                const node = result.value;
                 const nodeRange = node.$cstNode!.range;
                 const comparedRange = this.compareRange(nodeRange);
                 if (comparedRange === 1) {

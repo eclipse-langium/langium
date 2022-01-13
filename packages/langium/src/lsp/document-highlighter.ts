@@ -9,7 +9,8 @@ import { NameProvider } from '../references/naming';
 import { References } from '../references/references';
 import { LangiumServices } from '../services';
 import { AstNode, CstNode, Reference } from '../syntax-tree';
-import { findLeafNodeAtOffset, findLocalReferences, getDocument } from '../utils/ast-util';
+import { findLocalReferences, getDocument } from '../utils/ast-util';
+import { findLeafNodeAtOffset } from '../utils/cst-util';
 import { MaybePromise } from '../utils/promise-util';
 import { LangiumDocument } from '../workspace/documents';
 

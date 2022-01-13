@@ -55,7 +55,7 @@ export class DefaultDocumentSymbolProvider implements DocumentSymbolProvider {
         const children: DocumentSymbol[] = [];
 
         for (const child of streamContents(astNode)) {
-            const result = this.getSymbol(document, child.node);
+            const result = this.getSymbol(document, child);
             children.push(...result);
         }
         if (children.length > 0) {

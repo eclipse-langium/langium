@@ -41,7 +41,7 @@ function isDataTypeRuleInternal(rule: ast.ParserRule, visited: Set<ast.ParserRul
         return true;
     }
     visited.add(rule);
-    for (const { node } of streamAllContents(rule)) {
+    for (const node of streamAllContents(rule)) {
         if (ast.isRuleCall(node) && ast.isParserRule(node.rule.ref)) {
             if (!isDataTypeRuleInternal(node.rule.ref, visited)) {
                 return false;
@@ -56,7 +56,7 @@ function isDataTypeRuleInternal(rule: ast.ParserRule, visited: Set<ast.ParserRul
 }
 
 export function findNameAssignment(rule: ast.ParserRule): ast.Assignment | undefined {
-    for (const { node } of streamAllContents(rule)) {
+    for (const node of streamAllContents(rule)) {
         if (ast.isAssignment(node) && node.feature.toLowerCase() === 'name') {
             return node;
         } else if (ast.isRuleCall(node) && ast.isParserRule(node.rule.ref)) {
@@ -173,12 +173,7 @@ export function getActionAtElement(element: ast.AbstractElement): ast.Action | u
             if (ast.isAction(item)) {
                 return item;
             } else {
-                let action: ast.Action | undefined;
-                streamAllContents(elements[i]).forEach(e => {
-                    if (ast.isAction(e.node)) {
-                        action = e.node;
-                    }
-                });
+                const action = streamAllContents(elements[i]).find(ast.isAction);
                 if (action) {
                     return action;
                 }
@@ -357,8 +352,7 @@ export function computeGrammarScope(services: LangiumServices, grammar: ast.Gram
     const descriptions = services.index.AstNodeDescriptionProvider;
     const document = getDocument(grammar);
     const scopes = new MultiMap<AstNode, AstNodeDescription>();
-    for (const content of streamAllContents(grammar)) {
-        const { node } = content;
+    for (const node of streamAllContents(grammar)) {
         const container = node.$container;
         if (container) {
             const name = nameProvider.getName(node);

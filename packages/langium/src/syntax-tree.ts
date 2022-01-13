@@ -17,12 +17,14 @@ export interface AstNode {
     readonly $type: string;
     /** The container node in the AST; every node except the root node has a container. */
     readonly $container?: AstNode;
+    /** The property of the `$container` node that contains this node. This is either a direct reference or an array. */
+    readonly $containerProperty?: string;
+    /** In case `$containerProperty` is an array, the array index is stored here. */
+    readonly $containerIndex?: number;
     /** The Concrete Syntax Tree (CST) node of the text range from which this node was parsed. */
     readonly $cstNode?: CstNode;
     /** The document containing the AST; only the root node has a direct reference to the document. */
     readonly $document?: LangiumDocument;
-    /** The path of this node inside its document (see `AstNodeLocator` service). */
-    $path?: string;
 }
 
 /**

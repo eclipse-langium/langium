@@ -67,11 +67,11 @@ export class DefaultAstNodeDescriptionProvider implements AstNodeDescriptionProv
         if (name) {
             descr.push(this.createDescription(rootNode, name, document));
         }
-        for (const content of streamContents(rootNode)) {
+        for (const node of streamContents(rootNode)) {
             await interruptAndCheck(cancelToken);
-            const name = this.nameProvider.getName(content.node);
+            const name = this.nameProvider.getName(node);
             if (name) {
-                descr.push(this.createDescription(content.node, name, document));
+                descr.push(this.createDescription(node, name, document));
             }
         }
         return descr;
@@ -94,8 +94,9 @@ export class DefaultReferenceDescriptionProvider implements ReferenceDescription
         const refConverter = (refInfo: ReferenceInfo): ReferenceDescription | undefined => {
             const refAstNodeDescr = this.linker.getCandidate(refInfo.container, getReferenceId(refInfo.container.$type, refInfo.property), refInfo.reference);
             // Do not handle unresolved refs
-            if (isLinkingError(refAstNodeDescr))
+            if (isLinkingError(refAstNodeDescr)) {
                 return undefined;
+            }
             const doc = getDocument(refInfo.container);
             const docUri = doc.uri;
             const refCstNode = refInfo.reference.$refNode;
@@ -108,13 +109,13 @@ export class DefaultReferenceDescriptionProvider implements ReferenceDescription
                 local: refAstNodeDescr.documentUri.toString() === docUri.toString()
             };
         };
-        for (const astNodeContent of streamAllContents(rootNode)) {
+        for (const astNode of streamAllContents(rootNode)) {
             await interruptAndCheck(cancelToken);
-            const astNode = astNodeContent.node;
             streamReferences(astNode).forEach(ref => {
                 const refDescr = refConverter(ref);
-                if (refDescr)
+                if (refDescr) {
                     descr.push(refDescr);
+                }
             });
         }
         return descr;

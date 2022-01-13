@@ -93,9 +93,9 @@ export class DefaultLinker implements Linker {
         };
         const rootNode = document.parseResult.value;
         process(rootNode);
-        for (const content of streamAllContents(rootNode)) {
+        for (const node of streamAllContents(rootNode)) {
             await interruptAndCheck(cancelToken);
-            process(content.node);
+            process(node);
         }
         document.state = DocumentState.Linked;
     }

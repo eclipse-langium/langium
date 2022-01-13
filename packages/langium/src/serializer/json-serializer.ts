@@ -17,20 +17,21 @@ export interface JsonSerializer {
 export class DefaultJsonSerializer {
 
     private readonly linker: Linker;
+    protected ignoreProperties = ['$container', '$containerProperty', '$containerIndex', '$document', '$cstNode'];
 
     constructor(services: LangiumServices) {
         this.linker = services.references.Linker;
     }
 
     serialize(node: AstNode, space?: string | number): string {
-        return JSON.stringify(this.decycle(node, '$container', '$document', '$cstNode', '$path'), undefined, space);
+        return JSON.stringify(this.decycle(node, this.ignoreProperties), undefined, space);
     }
 
     deserialize(content: string): AstNode {
         return this.revive(JSON.parse(content));
     }
 
-    protected decycle(object: AstNode, ...ignore: string[]): unknown {
+    protected decycle(object: AstNode, ignore: string[]): unknown {
         const objects = new Set<unknown>(); // Keep references to each unique object
 
         const replace = (item: unknown) => {
@@ -71,33 +72,34 @@ export class DefaultJsonSerializer {
     protected revive(object: AstNode): AstNode {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const internalRevive = (value: Record<string, any>, container?: unknown, propName?: string) => {
-            if (value && typeof value === 'object' && value !== null) {
-                if (Array.isArray(value)) {
-                    // eslint-disable-next-line @typescript-eslint/prefer-for-of
-                    for (let i = 0; i < value.length; i++) {
-                        const item = value[i];
-                        if (isReference(item) && isAstNode(container)) {
-                            const refId = getReferenceId(container.$type, propName!);
-                            const reference = this.linker.buildReference(container as AstNode, item.$refNode, refId, item.$refText);
-                            value[i] = reference;
-                        } else if (typeof item === 'object' && item !== null) {
-                            internalRevive(item, item);
-                            item.$container = container;
-                        }
+            if (Array.isArray(value)) {
+                // eslint-disable-next-line @typescript-eslint/prefer-for-of
+                for (let i = 0; i < value.length; i++) {
+                    const item = value[i];
+                    if (isReference(item) && isAstNode(container)) {
+                        const refId = getReferenceId(container.$type, propName!);
+                        const reference = this.linker.buildReference(container, item.$refNode, refId, item.$refText);
+                        value[i] = reference;
+                    } else if (typeof item === 'object' && item !== null) {
+                        internalRevive(item);
+                        item.$container = container;
+                        item.$containerProperty = propName;
+                        item.$containerIndex = i;
                     }
-                } else {
-                    for (const [name, item] of Object.entries(value)) {
-                        if (typeof item === 'object' && item !== null) {
-                            if (isReference(item)) {
-                                const refId = getReferenceId(value.$type, name);
-                                const reference = this.linker.buildReference(value as AstNode, item.$refNode, refId, item.$refText);
-                                value[name] = reference;
-                            } else if (Array.isArray(item)) {
-                                internalRevive(item, value, name);
-                            } else {
-                                internalRevive(item);
-                                item.$container = value;
-                            }
+                }
+            } else if (typeof value === 'object' && value !== null) {
+                for (const [name, item] of Object.entries(value)) {
+                    if (typeof item === 'object' && item !== null) {
+                        if (isReference(item)) {
+                            const refId = getReferenceId(value.$type, name);
+                            const reference = this.linker.buildReference(value as AstNode, item.$refNode, refId, item.$refText);
+                            value[name] = reference;
+                        } else if (Array.isArray(item)) {
+                            internalRevive(item, value, name);
+                        } else {
+                            internalRevive(item);
+                            item.$container = value;
+                            item.$containerProperty = name;
                         }
                     }
                 }

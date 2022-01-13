@@ -33,7 +33,7 @@ export class DefaultTokenBuilder implements TokenBuilder {
 
         const tokens: TokenType[] = [];
         // We filter by parser rules, since keywords in terminal rules get transformed into regex and are not actual tokens
-        const parserRuleKeywords = grammar.rules.filter(isParserRule).flatMap(rule => streamAllContents(rule).map(e => e.node).filter(isKeyword).toArray());
+        const parserRuleKeywords = grammar.rules.filter(isParserRule).flatMap(rule => streamAllContents(rule).filter(isKeyword).toArray());
         const keywords = stream(parserRuleKeywords).distinct(e => e.value).toArray()
             // Sort keywords by descending length
             .sort((a, b) => b.value.length - a.value.length);
