@@ -32,7 +32,12 @@ Parameter:
 	name=ID;
 
 Alternatives returns AbstractElement:
-	UnorderedGroup ({Alternatives.elements+=current} ('|' elements+=UnorderedGroup)+)?;
+	ConditionalBranch ({Alternatives.elements+=current} ('|' elements+=ConditionalBranch)+)?;
+
+ConditionalBranch returns AbstractElement:
+	  UnorderedGroup
+	| {Group} '<' guardCondition=Disjunction '>' (elements+=AbstractToken)+
+;
 
 UnorderedGroup returns AbstractElement:
 	Group ({UnorderedGroup.elements+=current} ('&' elements+=Group)+)?;
@@ -72,10 +77,10 @@ LiteralCondition:
 	^true?='true' | 'false';
 
 Disjunction returns Condition:
-	Conjunction ({Disjunction.left=current} '|' right=Conjunction)?;
+	Conjunction ({Disjunction.left=current} '|' right=Conjunction)*;
 
 Conjunction returns Condition:
-	Negation ({Conjunction.left=current} '&' right=Negation)?;
+	Negation ({Conjunction.left=current} '&' right=Negation)*;
 
 Negation returns Condition:
 	Atom | {Negation} '!' value=Negation;

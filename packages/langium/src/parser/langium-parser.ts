@@ -26,6 +26,12 @@ export const DatatypeSymbol = Symbol('Datatype');
 
 type RuleResult = () => any;
 
+type Args = Record<string, boolean>;
+
+type RuleImpl = (args: Args) => any;
+
+type Alternatives = Array<IOrAlt<any>>;
+
 interface AssignmentElement {
     assignment?: Assignment
     crossRef: boolean
@@ -55,16 +61,16 @@ export class LangiumParser {
     MAIN_RULE(
         name: string,
         type: string | symbol | undefined,
-        implementation: () => unknown
-    ): () => unknown {
+        implementation: RuleImpl
+    ): RuleResult {
         return this.mainRule = this.DEFINE_RULE(name, type, implementation);
     }
 
     DEFINE_RULE(
         name: string,
         type: string | symbol | undefined,
-        implementation: () => unknown
-    ): () => unknown {
+        implementation: RuleImpl
+    ): RuleResult {
         return this.wrapper.DEFINE_RULE(name, this.startImplementation(type, implementation).bind(this));
     }
 
@@ -81,11 +87,13 @@ export class LangiumParser {
         };
     }
 
-    private addHiddenTokens(node: RootCstNodeImpl, tokens: IToken[]): void {
-        for (const token of tokens) {
-            const hiddenNode = new LeafCstNodeImpl(token.startOffset, token.image.length, tokenToRange(token), token.tokenType, true);
-            hiddenNode.root = node;
-            this.addHiddenToken(node, hiddenNode);
+    private addHiddenTokens(node: RootCstNodeImpl, tokens?: IToken[]): void {
+        if (tokens) {
+            for (const token of tokens) {
+                const hiddenNode = new LeafCstNodeImpl(token.startOffset, token.image.length, tokenToRange(token), token.tokenType, true);
+                hiddenNode.root = node;
+                this.addHiddenToken(node, hiddenNode);
+            }
         }
     }
 
@@ -111,14 +119,14 @@ export class LangiumParser {
         }
     }
 
-    private startImplementation($type: string | symbol | undefined, implementation: () => unknown): () => unknown {
-        return () => {
+    private startImplementation($type: string | symbol | undefined, implementation: RuleImpl): RuleImpl {
+        return (args) => {
             if (!this.wrapper.IS_RECORDING) {
                 this.stack.push({ $type });
             }
             let result: unknown;
             try {
-                result = implementation();
+                result = implementation(args);
             } catch (err) {
                 console.log('Parser exception thrown!', err);
                 result = undefined;
@@ -130,7 +138,7 @@ export class LangiumParser {
         };
     }
 
-    alternatives(idx: number, choices: Array<() => void>): void {
+    alternatives(idx: number, choices: Alternatives): void {
         this.wrapper.wrapOr(idx, choices);
     }
 
@@ -161,8 +169,8 @@ export class LangiumParser {
         }
     }
 
-    unassignedSubrule(idx: number, rule: RuleResult, feature: AbstractElement): void {
-        const result = this.subrule(idx, rule, feature);
+    unassignedSubrule(idx: number, rule: RuleResult, feature: AbstractElement, args: Args): void {
+        const result = this.subrule(idx, rule, feature, args);
         if (!this.wrapper.IS_RECORDING) {
             const resultKind = result.$type;
             const object = this.assignWithoutOverride(result, this.current);
@@ -175,12 +183,12 @@ export class LangiumParser {
         }
     }
 
-    subrule(idx: number, rule: RuleResult, feature: AbstractElement): any {
+    subrule(idx: number, rule: RuleResult, feature: AbstractElement, args: Args): any {
         let cstNode: CompositeCstNode | undefined;
         if (!this.wrapper.IS_RECORDING) {
             cstNode = this.nodeBuilder.buildCompositeNode(feature);
         }
-        const subruleResult = this.wrapper.wrapSubrule(idx, rule);
+        const subruleResult = this.wrapper.wrapSubrule(idx, rule, args);
         if (!this.wrapper.IS_RECORDING) {
             const { assignment, crossRef } = this.getAssignment(feature);
             if (assignment && cstNode) {
@@ -335,7 +343,7 @@ class ChevrotainWrapper extends EmbeddedActionsParser {
         return this.RECORDING_PHASE;
     }
 
-    DEFINE_RULE(name: string, impl: () => unknown): () => unknown {
+    DEFINE_RULE(name: string, impl: RuleImpl): RuleResult {
         return this.RULE(name, impl);
     }
 
@@ -347,12 +355,14 @@ class ChevrotainWrapper extends EmbeddedActionsParser {
         return this.consume(idx, tokenType);
     }
 
-    wrapSubrule(idx: number, rule: RuleResult): unknown {
-        return this.subrule(idx, rule);
+    wrapSubrule(idx: number, rule: RuleResult, args: Args): unknown {
+        return this.subrule(idx, rule, {
+            ARGS: [args]
+        });
     }
 
-    wrapOr(idx: number, choices: Array<() => void>): void {
-        this.or(idx, choices.map(e => <IOrAlt<any>>{ ALT: e }));
+    wrapOr(idx: number, choices: Alternatives): void {
+        this.or(idx, choices);
     }
 
     wrapOption(idx: number, callback: () => void): void {

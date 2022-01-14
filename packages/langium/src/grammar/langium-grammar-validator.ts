@@ -26,7 +26,8 @@ export class LangiumGrammarValidationRegistry extends ValidationRegistry {
         const checks: LangiumGrammarChecks = {
             AbstractRule: validator.checkRuleName,
             ParserRule: [
-                validator.checkParserRuleDataType
+                validator.checkParserRuleDataType,
+                validator.checkRuleParametersUsed
             ],
             TerminalRule: [
                 validator.checkTerminalRuleReturnType,
@@ -45,7 +46,10 @@ export class LangiumGrammarValidationRegistry extends ValidationRegistry {
             ],
             GrammarImport: validator.checkPackageImport,
             CharacterRange: validator.checkInvalidCharacterRange,
-            RuleCall: validator.checkUsedHiddenTerminalRule,
+            RuleCall: [
+                validator.checkUsedHiddenTerminalRule,
+                validator.checkRuleCallParameters
+            ],
             TerminalRuleCall: validator.checkUsedHiddenTerminalRule,
             CrossReference: validator.checkCrossReferenceSyntax
         };
@@ -273,6 +277,21 @@ export class LangiumGrammarValidator {
         accept('error', 'Unordered groups are currently not supported', { node: unorderedGroup });
     }
 
+    checkRuleParametersUsed(rule: ast.ParserRule, accept: ValidationAcceptor): void {
+        const parameters = rule.parameters;
+        if (parameters.length > 0) {
+            const allReferences = streamAllContents(rule).map(e => e.node).filter(ast.isParameterReference);
+            for (const parameter of parameters) {
+                if (!allReferences.some(e => e.parameter.ref === parameter)) {
+                    accept('hint', `Parameter '${parameter.name}' is unused.`, {
+                        node: parameter,
+                        tags: [DiagnosticTag.Unnecessary]
+                    });
+                }
+            }
+        }
+    }
+
     checkParserRuleDataType(rule: ast.ParserRule, accept: ValidationAcceptor): void {
         const hasDatatypeReturnType = rule.type && isPrimitiveType(rule.type);
         const isDataType = isDataTypeRule(rule);
@@ -286,6 +305,19 @@ export class LangiumGrammarValidator {
     checkTerminalRuleReturnType(rule: ast.TerminalRule, accept: ValidationAcceptor): void {
         if (rule.type && !isPrimitiveType(rule.type)) {
             accept('error', "Terminal rules can only return primitive types like 'string', 'boolean', 'number' or 'date'.", { node: rule, property: 'type' });
+        }
+    }
+
+    checkRuleCallParameters(ruleCall: ast.RuleCall, accept: ValidationAcceptor): void {
+        const rule = ruleCall.rule.ref;
+        if (ast.isParserRule(rule)) {
+            const expected = rule.parameters.length;
+            const given = ruleCall.arguments.length;
+            if (expected !== given) {
+                accept('error', `Rule '${rule.name}' expects ${expected} arguments, but got ${given}.`, { node: ruleCall });
+            }
+        } else if (ast.isTerminalRule(rule) && ruleCall.arguments.length > 0) {
+            accept('error', 'Terminal rules do not accept any arguments', { node: ruleCall });
         }
     }
 }

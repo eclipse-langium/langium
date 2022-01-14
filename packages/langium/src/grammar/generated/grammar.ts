@@ -603,7 +603,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "$type": "RuleCall",
             "arguments": [],
             "rule": {
-              "$refText": "UnorderedGroup"
+              "$refText": "ConditionalBranch"
             },
             "elements": []
           },
@@ -633,7 +633,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                       "$type": "RuleCall",
                       "arguments": [],
                       "rule": {
-                        "$refText": "UnorderedGroup"
+                        "$refText": "ConditionalBranch"
                       }
                     }
                   }
@@ -642,6 +642,70 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
               }
             ],
             "cardinality": "?"
+          }
+        ]
+      }
+    },
+    {
+      "$type": "ParserRule",
+      "parameters": [],
+      "name": "ConditionalBranch",
+      "hiddenTokens": [],
+      "type": "AbstractElement",
+      "alternatives": {
+        "$type": "Alternatives",
+        "elements": [
+          {
+            "$type": "RuleCall",
+            "arguments": [],
+            "rule": {
+              "$refText": "UnorderedGroup"
+            },
+            "elements": []
+          },
+          {
+            "$type": "Group",
+            "elements": [
+              {
+                "$type": "Action",
+                "type": "Group",
+                "elements": []
+              },
+              {
+                "$type": "Keyword",
+                "value": "<"
+              },
+              {
+                "$type": "Assignment",
+                "feature": "guardCondition",
+                "operator": "=",
+                "terminal": {
+                  "$type": "RuleCall",
+                  "arguments": [],
+                  "rule": {
+                    "$refText": "Disjunction"
+                  }
+                }
+              },
+              {
+                "$type": "Keyword",
+                "value": ">"
+              },
+              {
+                "$type": "Assignment",
+                "feature": "elements",
+                "operator": "+=",
+                "terminal": {
+                  "$type": "RuleCall",
+                  "arguments": [],
+                  "rule": {
+                    "$refText": "AbstractToken"
+                  }
+                },
+                "elements": [],
+                "cardinality": "+"
+              }
+            ]
           }
         ]
       }
@@ -1203,7 +1267,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                 }
               }
             ],
-            "cardinality": "?"
+            "cardinality": "*"
           }
         ]
       }
@@ -1252,7 +1316,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                 }
               }
             ],
-            "cardinality": "?"
+            "cardinality": "*"
           }
         ]
       }
