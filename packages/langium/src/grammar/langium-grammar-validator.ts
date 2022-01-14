@@ -11,6 +11,7 @@ import { References } from '../references/references';
 import { LangiumServices } from '../services';
 import { getContainerOfType, getDocument, streamAllContents } from '../utils/ast-util';
 import { MultiMap } from '../utils/collections';
+import { stream } from '../utils/stream';
 import { ValidationAcceptor, ValidationCheck, ValidationRegistry } from '../validation/validation-registry';
 import { LangiumDocument, LangiumDocuments } from '../workspace/documents';
 import * as ast from './generated/ast';
@@ -40,6 +41,8 @@ export class LangiumGrammarValidationRegistry extends ValidationRegistry {
                 validator.checkGrammarName,
                 validator.checkEntryGrammarRule,
                 validator.checkUniqueRuleName,
+                validator.checkUniqueImportedRules,
+                validator.checkDuplicateImportedGrammar,
                 validator.checkGrammarHiddenTokens,
                 validator.checkGrammarForUnusedRules,
                 validator.checkGrammarImports
@@ -107,10 +110,13 @@ export class LangiumGrammarValidator {
         }
     }
 
+    /**
+     * Check whether any rule defined in this grammar is a duplicate of an already defined rule or an imported rule
+     */
     checkUniqueRuleName(grammar: ast.Grammar, accept: ValidationAcceptor): void {
         const ruleMap = new MultiMap<string, ast.AbstractRule>();
         for (const rule of grammar.rules) {
-            ruleMap.add(rule.name.toLowerCase(), rule);
+            ruleMap.add(rule.name, rule);
         }
         for (const name of ruleMap.keys()) {
             const rules = ruleMap.get(name);
@@ -120,6 +126,89 @@ export class LangiumGrammarValidator {
                 });
             }
         }
+        const importedRules = new Set<string>();
+        const resolvedGrammars = resolveTransitiveImports(this.documents, grammar);
+        for (const resolvedGrammar of resolvedGrammars) {
+            for (const rule of resolvedGrammar.rules) {
+                importedRules.add(rule.name);
+            }
+        }
+        for (const name of ruleMap.keys()) {
+            if (importedRules.has(name)) {
+                const rules = ruleMap.get(name);
+                rules.forEach(e => {
+                    accept('error', `A rule with the name '${e.name}' already exists in an imported grammar.`, { node: e, property: 'name' });
+                });
+            }
+        }
+    }
+
+    checkDuplicateImportedGrammar(grammar: ast.Grammar, accept: ValidationAcceptor): void {
+        const importMap = new MultiMap<ast.Grammar, ast.GrammarImport>();
+        for (const imp of grammar.imports) {
+            const resolvedGrammar = resolveImport(this.documents, imp);
+            if (resolvedGrammar) {
+                importMap.add(resolvedGrammar, imp);
+            }
+        }
+        for (const grammar of importMap.keys()) {
+            const imports = importMap.get(grammar);
+            if (imports.length > 1) {
+                imports.forEach((imp, i) => {
+                    if (i > 0) {
+                        accept('warning', 'The grammar is already being directly imported.', { node: imp, tags: [DiagnosticTag.Unnecessary] });
+                    }
+                });
+            }
+        }
+    }
+
+    /**
+     * Compared to the validation above, this validation only checks whether two imported grammars export the same grammar rule.
+     */
+    checkUniqueImportedRules(grammar: ast.Grammar, accept: ValidationAcceptor): void {
+        const imports = new Map<ast.GrammarImport, ast.Grammar[]>();
+        for (const imp of grammar.imports) {
+            const importedGrammars = resolveTransitiveImports(this.documents, imp);
+            imports.set(imp, importedGrammars);
+        }
+        const allDuplicates = new MultiMap<ast.GrammarImport, string>();
+        for (const outerImport of grammar.imports) {
+            const outerGrammars = imports.get(outerImport)!;
+            for (const innerImport of grammar.imports) {
+                if (outerImport === innerImport) {
+                    continue;
+                }
+                const innerGrammars = imports.get(innerImport)!;
+                const duplicates = this.getDuplicateExportedRules(outerGrammars, innerGrammars);
+                for (const duplicate of duplicates) {
+                    allDuplicates.add(outerImport, duplicate);
+                }
+            }
+        }
+        for (const imp of grammar.imports) {
+            const duplicates = allDuplicates.get(imp);
+            if (duplicates.length > 0) {
+                accept('error', 'Some rules exported by this grammar are also included in other imports: ' + stream(duplicates).distinct().join(', '), { node: imp, property: 'path' });
+            }
+        }
+    }
+
+    private getDuplicateExportedRules(outer: ast.Grammar[], inner: ast.Grammar[]): Set<string> {
+        const exclusiveOuter = outer.filter(g => !inner.includes(g));
+        const outerRules = exclusiveOuter.flatMap(e => e.rules);
+        const innerRules = inner.flatMap(e => e.rules);
+        const duplicates = new Set<string>();
+        for (const outerRule of outerRules) {
+            const outerName = outerRule.name;
+            for (const innerRule of innerRules) {
+                const innerName = innerRule.name;
+                if (outerName === innerName) {
+                    duplicates.add(innerRule.name);
+                }
+            }
+        }
+        return duplicates;
     }
 
     checkGrammarHiddenTokens(grammar: ast.Grammar, accept: ValidationAcceptor): void {
