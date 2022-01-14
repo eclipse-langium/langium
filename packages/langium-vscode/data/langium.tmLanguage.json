@@ -13,11 +13,11 @@
         },
         {
             "name": "keyword.control.langium",
-            "match": "\\b(grammar|terminal|enum|entry|fragment|hidden|generate|as|with|import|returns)\\b"
+            "match": "\\b(grammar|terminal|entry|fragment|hidden|with|import|returns|current)\\b"
         },
         {
             "name": "constant.language.langium",
-            "match": "\\b(?i:true|false|number|string)\\b"
+            "match": "\\b(?i:true|false)\\b"
         },
         {
             "name": "keyword.symbol.langium",

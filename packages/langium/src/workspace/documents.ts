@@ -6,7 +6,7 @@
 
 import fs from 'fs';
 import { Range, TextDocument } from 'vscode-languageserver-textdocument';
-import { Diagnostic, TextDocuments } from 'vscode-languageserver/node';
+import { Diagnostic, TextDocuments } from 'vscode-languageserver';
 import { URI } from 'vscode-uri';
 import { ParseResult } from '../parser/langium-parser';
 import { ServiceRegistry } from '../service-registry';
