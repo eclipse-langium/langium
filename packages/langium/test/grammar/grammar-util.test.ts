@@ -4,32 +4,86 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { createLangiumGrammarServices, getEntryRule, Grammar, isTerminalRule, replaceTokens, stream, terminalRegex, TerminalRule } from '../../src';
+import { createLangiumGrammarServices, findNameAssignment, getEntryRule, Grammar, isDataTypeRule, isParserRule, isTerminalRule, ParserRule, stream, terminalRegex, TerminalRule } from '../../src';
 import { LangiumGrammarGrammar } from '../../src/grammar/generated/grammar';
 import { parseHelper } from '../../src/test';
 
-describe('Token replacement', () => {
+describe('Data type rules', () => {
 
-    test('should keep normal keywords', () => {
-        expect(replaceTokens('public')).toBe('Public');
+    const services = createLangiumGrammarServices();
+    const parser = parseHelper<Grammar>(services.grammar);
+    const grammar = `
+    grammar Test
+    terminal A: 'A';
+    entry Main: value=NormalDataTypeRule;
+    NormalDataTypeRule: A '.' A;
+    RecursiveDataTypeRule1: RecursiveDataTypeRule2? A;
+    RecursiveDataTypeRule2: RecursiveDataTypeRule1? A;
+    `;
+
+    let rules: ParserRule[] = [];
+
+    beforeAll(async () => {
+        rules = (await parser(grammar)).document.parseResult.value.rules
+            .filter(e => isParserRule(e))
+            .map(e => e as ParserRule);
     });
 
-    test('should replace whitespace', () => {
-        expect(replaceTokens('with value')).toBe('WithWhitespacevalue');
-        expect(replaceTokens('with    value')).toBe('WithWhitespacevalue');
-        expect(replaceTokens('with\tvalue')).toBe('WithWhitespacevalue');
+    test('Entry rule is not a data type rule', () => {
+        const main = rules[0];
+        expect(isDataTypeRule(main)).toBeFalsy();
     });
 
-    test('should replace special characters', () => {
-        expect(replaceTokens('/')).toBe('Slash');
-        expect(replaceTokens('\\')).toBe('Backslash');
-        expect(replaceTokens('#')).toBe('Hash');
-        expect(replaceTokens('!')).toBe('ExclamationMark');
+    test('Normal data type rule is correctly indentified', () => {
+        const normal = rules[1];
+        expect(isDataTypeRule(normal)).toBeTruthy();
     });
 
-    test('should replace other unicode characters', () => {
-        expect(replaceTokens('❤')).toBe('u10084');
-        expect(replaceTokens('Ö')).toBe('u214');
+    test('Recursive data type rules are correctly indentified', () => {
+        const recursive1 = rules[2];
+        const recursive2 = rules[3];
+        expect(isDataTypeRule(recursive1)).toBeTruthy();
+        expect(isDataTypeRule(recursive2)).toBeTruthy();
+    });
+
+});
+
+describe('Find name assignment in parser rules', () => {
+
+    const services = createLangiumGrammarServices();
+    const parser = parseHelper<Grammar>(services.grammar);
+    const grammar = `
+    grammar Test
+    terminal ID: 'ID';
+    DirectName: name=ID;
+    IndirectName: DirectName value=ID;
+    MissingName: value=ID;
+    `;
+
+    let rules: ParserRule[] = [];
+
+    beforeAll(async () => {
+        rules = (await parser(grammar)).document.parseResult.value.rules
+            .filter(e => isParserRule(e))
+            .map(e => e as ParserRule);
+    });
+
+    test('Should find direct name', () => {
+        const direct = rules[0];
+        const nameAssignment = findNameAssignment(direct);
+        expect(nameAssignment?.feature).toBe('name');
+    });
+
+    test('Should determine that name is missing', () => {
+        const indirect = rules[1];
+        const nameAssignment = findNameAssignment(indirect);
+        expect(nameAssignment?.feature).toBe('name');
+    });
+
+    test('Should determine that name is missing', () => {
+        const missing = rules[2];
+        const nameAssignment = findNameAssignment(missing);
+        expect(nameAssignment).toBe(undefined);
     });
 
 });
