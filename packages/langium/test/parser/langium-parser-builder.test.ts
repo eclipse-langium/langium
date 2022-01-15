@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { createDefaultModule, createDefaultSharedModule, createLangiumGrammarServices, createLangiumParser, Grammar, inject, IParserConfig, LangiumGeneratedServices, LangiumGeneratedSharedServices, LangiumParser, LangiumServices, LangiumSharedServices, Module, ParseResult } from '../../src';
+import { createDefaultModule, createDefaultSharedModule, createLangiumGrammarServices, createLangiumParser, Grammar, inject, IParserConfig, LangiumGeneratedServices, LangiumGeneratedSharedServices, LangiumParser, LangiumServices, LangiumSharedServices, Module } from '../../src';
 import { parseHelper } from '../../src/test';
 
 const grammarServices = createLangiumGrammarServices().grammar;
@@ -74,7 +74,7 @@ describe('Predicated grammar rules', () => {
 });
 
 describe('One name for terminal and non-terminal rules', () => {
-    let parseResult: ParseResult<Grammar>;
+    let grammar: Grammar;
     const content = `
     grammar Test
 
@@ -90,16 +90,13 @@ describe('One name for terminal and non-terminal rules', () => {
     `;
 
     beforeAll(async () => {
-        parseResult = (await helper(content)).document.parseResult;
-        parserFromGrammar(parseResult.value);
+        grammar = (await helper(content)).document.parseResult.value;
     });
 
-    test('Should have no lexer errors', () => {
-        expect(parseResult.lexerErrors).toEqual([]);
-    });
-
-    test('Should have no parser errors', () => {
-        expect(parseResult.parserErrors).toEqual([]);
+    test('Should work without Parser Definition Errors', () => {
+        expect(() => {
+            parserFromGrammar(grammar);
+        }).not.toThrow();
     });
 
 });
