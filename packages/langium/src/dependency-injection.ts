@@ -4,71 +4,155 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-// -- public types
+// ===============
+// =   EXAMPLE   =
+// ===============
 
-export type Module<I = Services, G = I> = {
-    [K in keyof G]: ServiceFactory<I, G[K]> | Module<I, G[K]>
+{
+    // -- TEST -->
+    class A { a = "" } // a class represents both, an object and a function
+    class B { b = "" }
+    const m1: Module<{g1: A, g2: B}> = {
+        g1: (injector) => new A()
+    }
+    const m2 = {
+        g2: (injector: {g2: B}) => new B()
+    }
+    const c = inject(m1, m2);
+    const aa: A = c.g1; // TODO(@@dd): BUG: actual: never, expected: A
+    const bb: B = c.g2;
+    console.log(c);
+
+    type Z = Inject<[typeof m1, typeof m2]>;
+    console.log(null as any as Z);
+    // <-- TEST --
+}
+{
+    // -- TEST -->
+    class A { a = "" } // a class represents both, an object and a function
+    class B extends A { b = "" }
+    const m1 = {
+        x: (i: {a: {b : true }}) => 1,
+        xx: (i: {a: { b: false}}) => 1,
+        y: {
+            g: (i: {b: 1}) => new A()
+        }
+    }
+    const m2 = {
+        y: {
+            g: (i: {c: ''}) => new B()
+        },
+        z: (i: {z: 'zzz'}) => ''
+    }
+    // [
+    //   {
+    //     a: { b: never /* true & false */ }
+    //     b: number
+    //     c: string
+    //     z: string
+    //   },
+    //   {
+    //     x: number
+    //     xx: number
+    //     y: {
+    //       g: { // A & B
+    //         a: string
+    //         b: string
+    //       }
+    //     }
+    //     z: string
+    //   }
+    //]
+    const i = inject(m1, m2);
+    console.log(i);
+    const s1: string = i.y.g.a;
+    const s2: string = i.y.g.b;
+    type Z<M> = _FunctionArgs<_Tuple<M[keyof M]>>;
+    let z: Z<typeof m1> = null as any;
+    console.log(z as any);
+    type Test = _Merge<_InferInjectors<[typeof m1, typeof m2]>>
+    console.log(null as any as Test);
+    // type MergeX<M extends unknown[]> = M[number];
+    // type TestX = _Merge<[{f: () => A}, {f: () => B}]>;
+    // <-- TEST --
 }
 
-export type Services = Record<number | string | symbol, unknown>
+// TODO(@@dd): the validity of the resulting container G is checked in the return type of inject
+export type Module<I, G = Services> = {
+    [K in keyof G]: ServiceFactory<I, G[K]> | Module<I, G[K]>
+};
 
-export type ServiceFactory<I, S> = (injector: I) => S
+export type Services = Record<number | string | symbol, unknown>;
 
-export type Inject<M> = ValidateModules<M, Merge<InferInjectors<M>>, Merge<Containers<M>>>;
+export type ServiceFactory<I, S> = (injector: I) => S;
 
-// -- internal utility types
+export type Inject<M extends Module<Services>[]> = _ValidateModules<M>;
 
-type ValidateModules<M, I, C> = C; // TODO(@@dd): take M, I and C into account
+// TODO(@@dd): use _InferInjector<M> and check if the injector matches the expected type for every module
+type _ValidateModules<M extends Module<Services>[]> = _InferContainer<_Merge<M>>/*
+    _Merge<_InferInjectors<M>> extends infer R
+        ? R extends any
+            ? _Merge<_Containers<M>>
+            : never
+        : never*/;
 
-type Containers<M> =
-    M extends [infer HEAD, ...infer TAIL]
-        ? HEAD extends Module<any, infer G> ? [G, ...Containers<TAIL>] : never
-        : [];
+type _InferContainer<M extends Module<Services>> = {
+    [K in keyof M]:
+        M[K] extends (...args: any[]) => infer R ? R : // `R extends unknown ? never : R` does not work
+        M[K] extends Module<Services> ? _InferContainer<M[K]> : never
+}
 
-type InferInjectors<M> =
+type _InferInjector<M extends Module<Services>[]> = _Merge<_InferInjectors<M>>;
+
+type _InferInjectors<M extends unknown[]> =
     M extends [infer H, ...infer T]
-        ? [...FunctionArgs<Tuple<H[keyof H]>>, ...InferInjectors<Tuple<H[keyof H]>>, ...InferInjectors<T>]
+        ? [..._FunctionArgs<_Tuple<H[keyof H]>>, ..._InferInjectors<_Tuple<H[keyof H]>>, ..._InferInjectors<T>]
         : [];
 
-type FunctionArgs<V extends unknown[]> =
+type _FunctionArgs<V extends unknown[]> =
     V extends [infer H, ...infer T]
         ? H extends (...args: infer A) => unknown
             ? A extends []
-                ? never
-                : [A[0], ...FunctionArgs<T>] // we consider only the first argument (the injector), the rest is ignored
-            : FunctionArgs<T> // if the head H is no function, check the tail T of the tuple
+                ? []
+                : [A[0], ..._FunctionArgs<T>] // we consider only the first argument (the injector), the rest is ignored
+            : _FunctionArgs<T> // if the head H is no function, check the tail T of the tuple
         : [];
 
 // Tuple<A | B | C> = [A, B, C]
-type Tuple<U> = Join<U extends any ? () => U : never> extends () => infer E
-    ? [...Tuple<Exclude<U, E>>, E]
+type _Tuple<U> = _Join<U extends any ? () => U : never> extends () => infer E
+    ? [..._Tuple<Exclude<U, E>>, E]
     : [];
 
 // Join<A | B | C> = A & B & C, see https://fettblog.eu/typescript-union-to-intersection/
-type Join<U> = (U extends any ? (_: U) => 0 : never) extends (_: infer I) => 0
+type _Join<U> = (U extends any ? (_: U) => 0 : never) extends (_: infer I) => 0
     ? I
     : never;
 
-type Merge<A extends unknown[]> = A extends [infer H, ...infer T]
-    ? H extends undefined | null | boolean | number | string | unknown[] | Function
-        ? Merge<T>
+type _Merge<A extends unknown[]> = A extends [infer H, ...infer T]
+    ? H extends undefined | null | boolean | number | string | unknown[] // | Function
+        ? _Merge<T>
         : T extends []
             ? H
-            : Patch<H, Merge<T>>
+            : _Patch<H, _Merge<T>>
     : {}
 
-type Patch<T1, T2> =
+type _Patch<T1, T2> =
     T1 extends undefined | null | boolean | number | string | unknown[] ? T1 & T2 :
     T2 extends undefined | null | boolean | number | string | unknown[] ? never :
-    T1 extends Function ? (T2 extends T1 ? T2 : never) : // TODO(@@dd): deep extends for functions (-> compare result + args pairwise)
+    T1 extends Function ? _PatchFunction<T1, T2> :
     T2 extends Function ? never : {
         [K in keyof T1 | keyof T2]:
-            K extends keyof T1 & keyof T2 ? Patch<T1[K], T2[K]> :
+            K extends keyof T1 & keyof T2 ? _Patch<T1[K], T2[K]> :
             K extends keyof T1 ? T1[K] :
             K extends keyof T2 ? T2[K] : never
-    }
+    };
 
-// -- API
+type _PatchFunction<F1, F2> =
+    F1 extends (...args: infer A1) => infer R1 ?
+    F2 extends (...args: infer A2) => infer R2 ?
+    R1 extends Function ? (...args: A2) => _PatchFunction<R1, R2> :
+    R2 extends Function ? never :
+    R2 extends R1 ? (...args: A2) => R2 : never : never : never;
 
 /**
  * Given a sequence of modules, the inject function returns a lazily evaluted
@@ -82,9 +166,9 @@ type Patch<T1, T2> =
  * @param modules a list of modules (possibly empty)
  * @returns a runtime container that provides types according to the given modules
  */
-export function inject<M extends Module[]>(...modules: M): Inject<M> {
+export function inject<M extends Module<Services>[]>(...modules: M): Inject<M> {
     const module = modules.reduce(_merge, {}) as Inject<M>;
-    return _inject(module);
+    return _inject(module); // TODO(@@dd): follow the types, the might be s.th. wrong in _InferContainer<M>
 }
 
 /**
