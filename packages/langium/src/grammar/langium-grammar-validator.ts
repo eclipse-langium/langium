@@ -51,7 +51,8 @@ export class LangiumGrammarValidationRegistry extends ValidationRegistry {
             CharacterRange: validator.checkInvalidCharacterRange,
             RuleCall: [
                 validator.checkUsedHiddenTerminalRule,
-                validator.checkRuleCallParameters
+                validator.checkUsedFragmentTerminalRule,
+                validator.checkRuleCallParameters,
             ],
             TerminalRuleCall: validator.checkUsedHiddenTerminalRule,
             CrossReference: [
@@ -238,12 +239,22 @@ export class LangiumGrammarValidator {
     checkUsedHiddenTerminalRule(ruleCall: ast.RuleCall | ast.TerminalRuleCall, accept: ValidationAcceptor): void {
         const parentRule = getContainerOfType(ruleCall, (n): n is ast.TerminalRule | ast.ParserRule => ast.isTerminalRule(n) || ast.isParserRule(n));
         if (parentRule) {
-            if ('hidden' in parentRule && parentRule?.hidden) {
+            if ('hidden' in parentRule && parentRule.hidden) {
                 return;
             }
             const ref = ruleCall.rule.ref;
             if (ast.isTerminalRule(ref) && ref.hidden) {
                 accept('error', 'Cannot use hidden terminal in non-hidden rule', { node: ruleCall, property: 'rule' });
+            }
+        }
+    }
+
+    checkUsedFragmentTerminalRule(ruleCall: ast.RuleCall, accept: ValidationAcceptor): void {
+        const terminal = ruleCall.rule.ref;
+        if (ast.isTerminalRule(terminal) && terminal.fragment) {
+            const parentRule = getContainerOfType(ruleCall, ast.isParserRule);
+            if (parentRule) {
+                accept('error', 'Cannot use terminal fragments as part of parser rules.', { node: ruleCall, property: 'rule' });
             }
         }
     }

@@ -9,14 +9,37 @@ import { createLangiumGrammarServices, Grammar } from '../../src';
 import { parseHelper } from '../../src/test';
 
 const grammarServices = createLangiumGrammarServices().grammar;
+const helper = parseHelper<Grammar>(grammarServices);
 const tokenBuilder = grammarServices.parser.TokenBuilder;
 
-let aToken: TokenType; // 'A' keyword
-let abToken: TokenType; // 'AB' keyword
-let abcToken: TokenType; // 'ABC' keyword
-let abTerminalToken: TokenType; // 'AB' terminal
+describe('tokenBuilder', () => {
+
+    let tokens: TokenType[];
+
+    beforeAll(async () => {
+        const text = `
+        grammar test
+        Main: value=AB;
+        terminal fragment Frag: 'B';
+        terminal AB: 'A' Frag;
+        `;
+        const grammar = (await helper(text)).document.parseResult.value;
+        tokens = tokenBuilder.buildTokens(grammar);
+    });
+
+    test('should only create non-fragment terminals', () => {
+        expect(tokens).toHaveLength(1);
+        expect(tokens[0].name).toMatch(/^AB/);
+    });
+
+});
 
 describe('tokenBuilder#longerAlts', () => {
+
+    let aToken: TokenType; // 'A' keyword
+    let abToken: TokenType; // 'AB' keyword
+    let abcToken: TokenType; // 'ABC' keyword
+    let abTerminalToken: TokenType; // 'AB' terminal
 
     beforeAll(async () => {
         const text = `
@@ -24,7 +47,7 @@ describe('tokenBuilder#longerAlts', () => {
         Main: {Main} 'A' 'AB' 'ABC';
         terminal AB: /ABD?/;
         `;
-        const grammar = (await parseHelper<Grammar>(grammarServices)(text)).document.parseResult.value;
+        const grammar = (await helper(text)).document.parseResult.value;
         const tokens = tokenBuilder.buildTokens(grammar);
         aToken = tokens[2];
         abToken = tokens[1];
@@ -54,15 +77,16 @@ describe('tokenBuilder#longerAlts', () => {
 
 });
 
-let implementPattern: TokenPattern | undefined;
-let strangePattern: TokenPattern | undefined;
-let abcPattern: TokenPattern | undefined;
-let abPattern: TokenPattern | undefined;
-let aPattern: TokenPattern | undefined;
-let booleanTerminalPattern: TokenPattern | undefined;
-let abTerminalPattern: TokenPattern | undefined;
-
 describe('tokenBuilder#caseInsensitivePattern', () => {
+
+    let implementPattern: TokenPattern | undefined;
+    let strangePattern: TokenPattern | undefined;
+    let abcPattern: TokenPattern | undefined;
+    let abPattern: TokenPattern | undefined;
+    let aPattern: TokenPattern | undefined;
+    let booleanTerminalPattern: TokenPattern | undefined;
+    let abTerminalPattern: TokenPattern | undefined;
+
     beforeAll(async () => {
         const text = `
         grammar test

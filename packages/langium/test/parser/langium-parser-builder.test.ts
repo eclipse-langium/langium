@@ -31,6 +31,7 @@ describe('Predicated grammar rules', () => {
     TestComplex<A, B, C>: <A & B & C> e=ID | <(B | C) & A> f=ID | <A | (C & false) | B> g=ID;
 
     terminal ID: '1';
+    hidden terminal WS: /\\s+/;
     `;
 
     beforeAll(async () => {
@@ -41,6 +42,11 @@ describe('Predicated grammar rules', () => {
     function hasProp(prop: string): void {
         const main = parser.parse(prop + '1').value;
         expect(main).toHaveProperty(prop);
+        ['a', 'b', 'c', 'd', 'e', 'f', 'g'].forEach(property => {
+            if (property !== prop) {
+                expect(main).not.toHaveProperty(property);
+            }
+        });
     }
 
     test('Should parse RuleA correctly', () => {

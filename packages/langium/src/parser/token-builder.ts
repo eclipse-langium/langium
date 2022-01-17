@@ -24,7 +24,7 @@ export class DefaultTokenBuilder implements TokenBuilder {
     buildTokens(grammar: Grammar, options?: { caseInsensitive?: boolean }): TokenType[] {
         const tokenMap = new Map<string, TokenType>();
         const terminalsTokens: TokenType[] = [];
-        const terminals = Array.from(stream(grammar.rules).filter(isTerminalRule));
+        const terminals = Array.from(stream(grammar.rules).filter(isTerminalRule)).filter(e => !e.fragment);
         for (const terminal of terminals) {
             const token = this.buildTerminalToken(terminal);
             terminalsTokens.push(token);
