@@ -5,9 +5,9 @@
  ******************************************************************************/
 
 import fs from 'fs';
+import path from 'path';
 import colors from 'colors';
 import { AstNode, LangiumDocument, LangiumServices } from 'langium';
-import path from 'path';
 import { URI } from 'vscode-uri';
 import { WorkspaceFolder } from 'vscode-languageserver';
 
