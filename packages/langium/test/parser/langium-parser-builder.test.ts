@@ -73,6 +73,34 @@ describe('Predicated grammar rules', () => {
 
 });
 
+describe('One name for terminal and non-terminal rules', () => {
+    let grammar: Grammar;
+    const content = `
+    grammar Test
+
+    entry Main: A | B | C;
+    
+    A: 'A' Bdata Cterm prop=B;
+    
+    B: Bdata Cterm 'A' prop=C;
+    Bdata returns string: 'B';
+    
+    C: Cterm 'A' Bdata prop=A;
+    terminal Cterm: /C/;    
+    `;
+
+    beforeAll(async () => {
+        grammar = (await helper(content)).document.parseResult.value;
+    });
+
+    test('Should work without Parser Definition Errors', () => {
+        expect(() => {
+            parserFromGrammar(grammar);
+        }).not.toThrow();
+    });
+
+});
+
 function parserFromGrammar(grammar: Grammar): LangiumParser {
     const parserConfig: IParserConfig = {
         skipValidations: false
