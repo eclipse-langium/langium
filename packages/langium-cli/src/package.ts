@@ -48,6 +48,11 @@ export interface LangiumLanguageConfig {
     chevrotainParserConfig?: IParserConfig
 }
 
+export function getFilePath(absPath: string, config: LangiumConfig): string {
+    const base = config[RelativePath] ?? process.cwd();
+    return path.relative(base, absPath);
+}
+
 export async function loadConfigs(options: GenerateOptions): Promise<LangiumConfig[]> {
     let filePath: string;
     if (options.file) {

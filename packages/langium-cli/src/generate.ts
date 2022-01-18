@@ -10,13 +10,13 @@ import {
     isParserRule, LangiumDocument, resolveImport, resolveTransitiveImports
 } from 'langium';
 import path from 'path';
-import { URI, Utils } from 'vscode-uri';
+import { URI } from 'vscode-uri';
 import { generateAst } from './generator/ast-generator';
 import { serializeGrammar } from './generator/grammar-serializer';
 import { generateModule } from './generator/module-generator';
 import { generateTextMate } from './generator/textmate-generator';
 import { getUserChoice, log } from './generator/util';
-import { LangiumConfig, LangiumLanguageConfig, RelativePath } from './package';
+import { getFilePath, LangiumConfig, LangiumLanguageConfig, RelativePath } from './package';
 import { validateParser } from './parser-validation';
 
 export type GenerateOptions = {
@@ -114,7 +114,7 @@ export async function generate(config: LangiumConfig, options: GenerateOptions):
     for (const [path, buildResult] of all) {
         const diagnostics = buildResult.diagnostics;
         for (const diagnostic of diagnostics) {
-            const message = `${Utils.basename(URI.file(path))}:${diagnostic.range.start.line + 1}:${diagnostic.range.start.character + 1} - ${diagnostic.message}`;
+            const message = `${getFilePath(path, config)}:${diagnostic.range.start.line + 1}:${diagnostic.range.start.character + 1} - ${diagnostic.message}`;
             if (diagnostic.severity === 1) {
                 log('error', options, message.red);
             } else if (diagnostic.severity === 2) {
@@ -150,7 +150,7 @@ export async function generate(config: LangiumConfig, options: GenerateOptions):
     for (const grammar of grammars) {
         embedReferencedRules(grammar, ruleMap);
         // Create and validate the in-memory parser
-        const parserAnalysis = validateParser(grammar, config);
+        const parserAnalysis = validateParser(grammar, config, configMap, documents);
         if (parserAnalysis instanceof Error) {
             log('error', options, parserAnalysis.toString().red);
             return 'failure';

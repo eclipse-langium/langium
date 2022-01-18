@@ -318,6 +318,17 @@ export class LangiumParser {
     finalize(): void {
         this.wrapper.wrapSelfAnalysis();
     }
+
+    get definitionErrors(): IParserDefinitionError[] {
+        return this.wrapper.definitionErrors;
+    }
+
+}
+
+export interface IParserDefinitionError {
+    message: string
+    type: number
+    ruleName?: string
 }
 
 const defaultConfig: IParserConfig = {
@@ -331,6 +342,9 @@ const defaultConfig: IParserConfig = {
  * This way, we can build the `LangiumParser` as a composition.
  */
 class ChevrotainWrapper extends EmbeddedActionsParser {
+
+    // This array is set in the base implementation of Chevrotain.
+    definitionErrors: IParserDefinitionError[];
 
     constructor(tokens: TokenType[], config?: IParserConfig) {
         super(tokens, {
