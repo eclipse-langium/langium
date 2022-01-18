@@ -31,9 +31,9 @@
     "publish:latest": "npm publish --tag latest"
   },
   "dependencies": {
-    "colors": "^1.4.0",
+    "chalk": "^4.1.2",
     "lodash": "^4.17.21",
-    "yeoman-generator": "^5.3.0"
+    "yeoman-generator": "^5.5.2"
   },
   "devDependencies": {
     "@types/lodash": "^4.14.170",
@@ -53,7 +53,7 @@
   },
   "bugs": "https://github.com/langium/langium/issues",
   "author": {
-      "name": "TypeFox",
-      "url": "https://www.typefox.io"
+    "name": "TypeFox",
+    "url": "https://www.typefox.io"
   }
 }

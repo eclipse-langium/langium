@@ -6,8 +6,8 @@
 
 import Generator from 'yeoman-generator';
 import _ from 'lodash';
+import chalk from 'chalk';
 import path from 'path';
-import 'colors';
 
 const TEMPLATE_DIR = '../langium-template';
 const USER_DIR = '.';
@@ -38,6 +38,10 @@ function printLogo(log: (message: string) => void): void {
     log('');
 }
 
+function description(...d: string[]): string {
+    return chalk.reset(chalk.dim(d.join(' ') + '\n')) + chalk.green('?');
+}
+
 class LangiumGenerator extends Generator {
     private answers: Answers;
 
@@ -51,12 +55,22 @@ class LangiumGenerator extends Generator {
             {
                 type: 'input',
                 name: 'extensionName',
+                prefix: description(
+                    'Welcome to Langium!',
+                    'This tool generates a VS Code extension with a "Hello World" language to get started quickly.',
+                    'The extension name is an identifier used in the extension marketplace or package registry.'
+                ),
                 message: 'Your extension name:',
                 default: 'hello-world',
             },
             {
                 type: 'input',
                 name: 'rawLanguageName',
+                prefix: description(
+                    'The language name is used to identify your language in VS Code.',
+                    'Please provide a name to be shown in the UI.',
+                    'CamelCase and kebab-case variants will be created and used in different parts of the extension and language server.'
+                ),
                 message: 'Your language name:',
                 default: 'Hello World',
                 validate: (input: string): boolean | string =>
@@ -67,13 +81,16 @@ class LangiumGenerator extends Generator {
             {
                 type: 'input',
                 name: 'fileExtensions',
-                message:
-                    'File extensions of your language, separated by commas:',
+                prefix: description(
+                    'Source files of your language are identified by their file name extension.',
+                    'You can specify multiple file extensions separated by commas.'
+                ),
+                message: 'File extensions:',
                 default: '.hello',
                 validate: (input: string): boolean | string =>
                     /^\.?\w+(\s*,\s*\.?\w+)*$/.test(input)
                         ? true
-                        : 'The file extension can start with . and must contain only letters and digits. Extensions must be separated by commas.',
+                        : 'A file extension can start with . and must contain only letters and digits. Extensions must be separated by commas.',
             },
         ]);
     }
