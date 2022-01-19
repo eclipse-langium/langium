@@ -8,7 +8,7 @@
 import { AstNode, AstReflection, Reference, isAstNode } from 'langium';
 
 export interface AbstractDefinition extends AstNode {
-    readonly $container: Module | Definition;
+    readonly $container: Definition | Module;
     name: string
 }
 
@@ -19,7 +19,7 @@ export function isAbstractDefinition(item: unknown): item is AbstractDefinition 
 }
 
 export interface Expression extends AstNode {
-    readonly $container: Definition | Evaluation | BinaryExpression | FunctionCall;
+    readonly $container: BinaryExpression | Definition | Evaluation | FunctionCall;
 }
 
 export const Expression = 'Expression';
@@ -40,7 +40,7 @@ export function isModule(item: unknown): item is Module {
 }
 
 export interface Statement extends AstNode {
-    readonly $container: Module | Definition;
+    readonly $container: Definition | Module;
 }
 
 export const Statement = 'Statement';
@@ -71,7 +71,7 @@ export function isDefinition(item: unknown): item is Definition {
 
 export interface BinaryExpression extends Expression {
     left: Expression
-    operator: '+' | '-' | '*' | '/'
+    operator: '*' | '+' | '-' | '/'
     right: Expression
 }
 
