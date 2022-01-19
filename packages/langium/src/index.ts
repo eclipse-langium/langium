@@ -39,3 +39,4 @@ export * from './workspace/ast-descriptions';
 export * from './workspace/document-builder';
 export * from './workspace/documents';
 export * from './workspace/index-manager';
+export * from './workspace/workspace-manager';
