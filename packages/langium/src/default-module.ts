@@ -34,6 +34,7 @@ import { DefaultAstNodeLocator } from './workspace/ast-node-locator';
 import { DefaultDocumentBuilder } from './workspace/document-builder';
 import { DefaultLangiumDocumentFactory, DefaultLangiumDocuments, DefaultTextDocumentFactory } from './workspace/documents';
 import { DefaultIndexManager } from './workspace/index-manager';
+import { DefaultWorkspaceManager } from './workspace/workspace-manager';
 
 /**
  * Context required for creating the default language-specific dependency injection module.
@@ -113,7 +114,8 @@ export function createDefaultSharedModule(context: DefaultSharedModuleContext = 
             DocumentBuilder: (services) => new DefaultDocumentBuilder(services),
             TextDocuments: () => new TextDocuments(TextDocument),
             TextDocumentFactory: (services) => new DefaultTextDocumentFactory(services),
-            IndexManager: (services) => new DefaultIndexManager(services)
+            IndexManager: (services) => new DefaultIndexManager(services),
+            WorkspaceManager: (services) => new DefaultWorkspaceManager(services)
         }
     };
 }

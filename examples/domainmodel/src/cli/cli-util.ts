@@ -52,7 +52,7 @@ export async function setRootFolder(fileName: string, services: LangiumServices,
         name: path.basename(root),
         uri: path.resolve(root)
     });
-    await services.shared.workspace.IndexManager.initializeWorkspace(folders);
+    await services.shared.workspace.WorkspaceManager.initializeWorkspace(folders);
 }
 
 interface FilePathData {

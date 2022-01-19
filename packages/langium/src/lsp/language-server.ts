@@ -23,13 +23,14 @@ export function startLanguageServer(services: LangiumSharedServices): void {
     }
 
     connection.onInitialize(async params => {
-        const capabilities = params.capabilities;
-        const hasWorkspaceFolderCapability = !!capabilities.workspace?.workspaceFolders;
-
         const result: InitializeResult = {
             capabilities: {
+                workspace: {
+                    workspaceFolders: {
+                        supported: true
+                    }
+                },
                 textDocumentSync: TextDocumentSyncKind.Incremental,
-                // Tell the client that this server supports code completion.
                 completionProvider: {},
                 referencesProvider: {}, // TODO enable workDoneProgress?
                 documentSymbolProvider: {},
@@ -47,21 +48,12 @@ export function startLanguageServer(services: LangiumSharedServices): void {
             }
         };
 
-        if (hasWorkspaceFolderCapability) {
-            result.capabilities.workspace = {
-                workspaceFolders: {
-                    supported: true
-                }
-            };
-        }
-
-        if (params.capabilities.workspace?.configuration) {
-            try {
-                if (params.workspaceFolders)
-                    await services.workspace.IndexManager.initializeWorkspace(params.workspaceFolders);
-            } catch (e) {
-                console.error(e);
+        try {
+            if (params.workspaceFolders) {
+                await services.workspace.WorkspaceManager.initializeWorkspace(params.workspaceFolders);
             }
+        } catch (err) {
+            console.error(err);
         }
         return result;
     });

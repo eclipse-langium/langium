@@ -4,10 +4,8 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import fs from 'fs';
-import path from 'path';
-import { CancellationToken, WorkspaceFolder } from 'vscode-languageserver';
-import { URI, Utils } from 'vscode-uri';
+import { CancellationToken } from 'vscode-languageserver';
+import { URI } from 'vscode-uri';
 import { ServiceRegistry } from '../service-registry';
 import { LangiumSharedServices } from '../services';
 import { AstNode, AstNodeDescription, AstReflection } from '../syntax-tree';
@@ -20,18 +18,9 @@ import { DocumentState, LangiumDocument, LangiumDocuments } from './documents';
 /**
  * The index manager is responsible for keeping metadata about symbols and cross-references
  * in the workspace. It is used to look up symbols in the global scope, mostly during linking
- * and completion.
+ * and completion. This service is shared between all languages of a language server.
  */
 export interface IndexManager {
-
-    /**
-     * Does the initial indexing of workspace folders.
-     * Collects information about exported and referenced AstNodes in
-     * each language file and stores it locally.
-     *
-     * @param folders The set of workspace folders to be indexed.
-     */
-    initializeWorkspace(folders: WorkspaceFolder[]): Promise<void>;
 
     /**
      * Deletes the specified document uris from the index.
@@ -130,8 +119,25 @@ export class DefaultIndexManager implements IndexManager {
         }
     }
 
-    update(documents: LangiumDocument[], cancelToken = CancellationToken.None): Promise<void> {
-        return this.processDocuments(documents, cancelToken);
+    async update(documents: LangiumDocument[], cancelToken = CancellationToken.None): Promise<void> {
+        this.globalScopeCache.clear();
+        // First: build exported object data
+        for (const document of documents) {
+            const services = this.serviceRegistry.getServices(document.uri);
+            const indexData: AstNodeDescription[] = await services.index.AstNodeDescriptionProvider.createDescriptions(document, cancelToken);
+            for (const data of indexData) {
+                data.node = undefined; // clear reference to the AST Node
+            }
+            this.simpleIndex.set(document.textDocument.uri, indexData);
+            await interruptAndCheck(cancelToken);
+        }
+        // Second: create reference descriptions
+        for (const document of documents) {
+            const services = this.serviceRegistry.getServices(document.uri);
+            this.referenceIndex.set(document.textDocument.uri, await services.index.ReferenceDescriptionProvider.createDescriptions(document, cancelToken));
+            await interruptAndCheck(cancelToken);
+            document.state = DocumentState.Indexed;
+        }
     }
 
     getAffectedDocuments(uris: URI[]): Stream<LangiumDocument> {
@@ -167,88 +173,4 @@ export class DefaultIndexManager implements IndexManager {
         return false;
     }
 
-    async initializeWorkspace(folders: WorkspaceFolder[]): Promise<void> {
-        const documents: LangiumDocument[] = [];
-        const allFileExtensions = this.serviceRegistry.all.flatMap(e => e.LanguageMetaData.fileExtensions);
-        const fileFilter = (uri: URI) => allFileExtensions.includes(path.extname(uri.path));
-        const collector = (document: LangiumDocument) => documents.push(document);
-        await Promise.all(
-            folders.map(folder => this.getRootFolder(folder))
-                .map(async folderPath => this.traverseFolder(folderPath, fileFilter, collector))
-        );
-        await this.loadAdditionalDocuments(folders, collector);
-        await this.processDocuments(documents);
-    }
-
-    /**
-     * Load all additional documents that shall be visible in the context of the given workspace
-     * folders and add them to the acceptor. This can be used to include built-in libraries of
-     * your language, which can be either loaded from provided files or constructed in memory.
-     */
-    protected loadAdditionalDocuments(_folders: WorkspaceFolder[], _acceptor: (document: LangiumDocument) => void): Promise<void> {
-        return Promise.resolve();
-    }
-
-    /**
-     * Determine the root folder of the source documents in the given workspace folder.
-     * The default implementation returns the URI of the workspace folder, but you can override
-     * this to return a subfolder like `src` instead.
-     */
-    protected getRootFolder(folder: WorkspaceFolder): URI {
-        return URI.parse(folder.uri);
-    }
-
-    /**
-     * Traverse the file system folder identified by the given URI and its subFolders. All
-     * contained files that match the filter are added to the acceptor.
-     */
-    protected async traverseFolder(folderPath: URI, fileFilter: (uri: URI) => boolean, acceptor: (document: LangiumDocument) => void): Promise<void> {
-        const fsPath = folderPath.fsPath;
-        if (!fs.existsSync(fsPath)) {
-            console.error(`File ${folderPath} doesn't exist.`);
-            return;
-        }
-        if (this.skipFolder(folderPath)) {
-            return;
-        }
-        const subFolders = await fs.promises.readdir(fsPath, { withFileTypes: true });
-        for (const dir of subFolders) {
-            const uri = URI.file(path.resolve(fsPath, dir.name));
-            if (dir.isDirectory()) {
-                await this.traverseFolder(uri, fileFilter, acceptor);
-            } else if (fileFilter(uri)) {
-                const document = this.langiumDocuments().getOrCreateDocument(uri);
-                acceptor(document);
-            }
-        }
-    }
-
-    /**
-     * Determine whether the folder with the given path shall be skipped while indexing the workspace.
-     */
-    protected skipFolder(folderPath: URI): boolean {
-        const base = Utils.basename(folderPath);
-        return base.startsWith('.') || base === 'node_modules' || base === 'out';
-    }
-
-    protected async processDocuments(documents: LangiumDocument[], cancelToken = CancellationToken.None): Promise<void> {
-        this.globalScopeCache.clear();
-        // first: build exported object data
-        for (const document of documents) {
-            const services = this.serviceRegistry.getServices(document.uri);
-            const indexData: AstNodeDescription[] = await services.index.AstNodeDescriptionProvider.createDescriptions(document, cancelToken);
-            for (const data of indexData) {
-                data.node = undefined; // clear reference to the AST Node
-            }
-            this.simpleIndex.set(document.textDocument.uri, indexData);
-            await interruptAndCheck(cancelToken);
-        }
-        // second: create reference descriptions
-        for (const document of documents) {
-            const services = this.serviceRegistry.getServices(document.uri);
-            this.referenceIndex.set(document.textDocument.uri, await services.index.ReferenceDescriptionProvider.createDescriptions(document, cancelToken));
-            await interruptAndCheck(cancelToken);
-            document.state = DocumentState.Indexed;
-        }
-    }
 }
