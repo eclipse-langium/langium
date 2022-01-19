@@ -9,8 +9,8 @@ import { AstNode, AstReflection, Reference } from '../../syntax-tree';
 import { isAstNode } from '../../utils/ast-util';
 
 export interface AbstractElement extends AstNode {
-    readonly $container: ParserRule | Alternatives | Group | UnorderedGroup | Assignment | CrossReference | TerminalRule | TerminalAlternatives | TerminalGroup | NegatedToken | UntilToken | CharacterRange;
-    cardinality: '?' | '*' | '+'
+    readonly $container: Alternatives | Assignment | CharacterRange | CrossReference | Group | NegatedToken | ParserRule | TerminalAlternatives | TerminalGroup | TerminalRule | UnorderedGroup | UntilToken;
+    cardinality: '*' | '+' | '?'
 }
 
 export const AbstractElement = 'AbstractElement';
@@ -33,7 +33,7 @@ export function isAbstractRule(item: unknown): item is AbstractRule {
 }
 
 export interface Condition extends AstNode {
-    readonly $container: Group | NamedArgument | Disjunction | Conjunction | Negation;
+    readonly $container: Conjunction | Disjunction | Group | NamedArgument | Negation;
 }
 
 export const Condition = 'Condition';
@@ -94,7 +94,7 @@ export function isParameter(item: unknown): item is Parameter {
 
 export interface Action extends AbstractElement {
     feature: string
-    operator: '=' | '+='
+    operator: '+=' | '='
     type: string
 }
 

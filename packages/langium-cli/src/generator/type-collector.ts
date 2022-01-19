@@ -6,7 +6,7 @@
 
 import _ from 'lodash';
 import * as langium from 'langium';
-import { getDocument, getRuleType, getTypeName, isDataTypeRule, isParserRule, LangiumDocuments, ParserRule, resolveImport } from 'langium';
+import { getDocument, getRuleType, getTypeName, isDataTypeRule, isParserRule, LangiumDocuments, ParserRule, resolveImport, stream } from 'langium';
 import { CompositeGeneratorNode, IndentNode, NL } from 'langium';
 import { processGeneratorNode } from 'langium';
 import { Cardinality, isOptional } from 'langium';
@@ -60,11 +60,12 @@ export class Interface {
         interfaceNode.contents.push('export interface ', this.name, ' extends ', superTypes.join(', '), ' {', NL);
         const fieldsNode = new IndentNode();
         if (this.containerTypes.length > 0) {
-            fieldsNode.contents.push('readonly $container: ', Array.from(new Set<string>(this.containerTypes)).join(' | '), ';', NL);
+            const containerTypes = stream(this.containerTypes).distinct().toArray().sort();
+            fieldsNode.contents.push('readonly $container: ', containerTypes.join(' | '), ';', NL);
         }
         for (const field of this.fields.sort((a, b) => a.name.localeCompare(b.name))) {
             const option = field.optional && field.reference && !field.array ? '?' : '';
-            let type = field.types.join(' | ');
+            let type = field.types.sort().join(' | ');
             type = field.reference ? 'Reference<' + type + '>' : type;
             type = field.array ? 'Array<' + type + '>' : type;
             fieldsNode.contents.push(field.name, option, ': ', type, NL);
@@ -259,7 +260,7 @@ function addAssignment(state: CollectorState, assignment: langium.Assignment): v
         name: assignment.feature,
         array: assignment.operator === '+=',
         optional: isOptional(assignment.cardinality) || isStateOptional(state),
-        types: assignment.operator === '?=' ? ['boolean'] : typeItems.types,
+        types: assignment.operator === '?=' ? ['boolean'] : Array.from(new Set(typeItems.types)),
         reference: typeItems.reference
     });
 }
@@ -328,7 +329,7 @@ function flattenTypes(alternatives: TypeAlternative[]): TypeAlternative[] {
                     for (const type of altField.types) {
                         typeSet.add(type);
                     }
-                    existingField.types = Array.from(typeSet.values());
+                    existingField.types = Array.from(typeSet);
                 } else {
                     fields.push({ ...altField });
                 }
