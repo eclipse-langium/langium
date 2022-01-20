@@ -6,7 +6,7 @@
 
 import _ from 'lodash';
 import * as langium from 'langium';
-import { getDocument, getRuleType, getTypeName, isDataTypeRule, isParserRule, LangiumDocuments, resolveImport } from 'langium';
+import { getDocument, getRuleType, getTypeName, isDataTypeRule, isParserRule, LangiumDocuments, ParserRule, resolveImport } from 'langium';
 import { CompositeGeneratorNode, IndentNode, NL } from 'langium';
 import { processGeneratorNode } from 'langium';
 import { Cardinality, isOptional } from 'langium';
@@ -37,7 +37,8 @@ type CollectorState = {
     tree: TypeTree;
     types: TypeAlternative[];
     cardinalities: Cardinality[];
-    lastRuleCall?: langium.RuleCall;
+    parserRule?: ParserRule;
+    currentType?: TypeAlternative;
 }
 
 export class Interface {
@@ -55,7 +56,7 @@ export class Interface {
 
     toString(): string {
         const interfaceNode = new CompositeGeneratorNode();
-        const superTypes = this.superTypes.length > 0 ? this.superTypes : [ 'AstNode' ];
+        const superTypes = this.superTypes.length > 0 ? this.superTypes : ['AstNode'];
         interfaceNode.contents.push('export interface ', this.name, ' extends ', superTypes.join(', '), ' {', NL);
         const fieldsNode = new IndentNode();
         if (this.containerTypes.length > 0) {
@@ -116,13 +117,7 @@ class TypeTree {
     }
 
     getLeafNodes(): TypeAlternative[] {
-        const leaves: TypeAlternative[] = [];
-        for (const [type, children] of this.descendents.entries()) {
-            if (children.length === 0) {
-                leaves.push(type);
-            }
-        }
-        return leaves;
+        return Array.from(this.descendents.keys());
     }
 
     hasLeaves(type: TypeAlternative): boolean {
@@ -138,12 +133,13 @@ export function collectAst(documents: LangiumDocuments, grammars: langium.Gramma
     const allTypes: TypeAlternative[] = [];
     for (const rule of parserRules) {
         state.tree = new TypeTree();
+        state.parserRule = rule;
         const type = simpleType(rule);
         state.tree.addRoot(type);
+        state.currentType = type;
         collectElement(state, type, rule.alternatives);
         allTypes.push(...state.tree.getLeafNodes());
     }
-
     return calculateAst(allTypes);
 }
 
@@ -176,9 +172,9 @@ function createState(type?: TypeAlternative): CollectorState {
     return state;
 }
 
-function simpleType(rule: langium.ParserRule): TypeAlternative {
+function simpleType(rule: langium.ParserRule | string): TypeAlternative {
     return {
-        name: getTypeName(rule),
+        name: isParserRule(rule) ? getTypeName(rule) : rule,
         super: [],
         fields: [],
         ruleCalls: [],
@@ -199,13 +195,14 @@ function isStateOptional(state: CollectorState): boolean {
 }
 
 function collectElement(state: CollectorState, type: TypeAlternative, element: langium.AbstractElement): void {
+    state.currentType = type;
     enterGroup(state, element.cardinality);
     if (isOptional(element.cardinality)) {
-        const [item] = state.tree.split(type, 2);
-        type = item;
+        const [item] = state.tree.split(state.currentType, 2);
+        state.currentType = item;
     }
     if (langium.isAlternatives(element)) {
-        const splits = state.tree.split(type, element.elements.length);
+        const splits = state.tree.split(state.currentType, element.elements.length);
         for (let i = 0; i < splits.length; i++) {
             const item = element.elements[i];
             const splitType = splits[i];
@@ -219,40 +216,46 @@ function collectElement(state: CollectorState, type: TypeAlternative, element: l
             }
         }
     } else if (langium.isAction(element)) {
-        addAction(state, type, element);
+        addAction(state, element);
     } else if (langium.isAssignment(element)) {
-        addAssignment(state, type, element);
+        addAssignment(state, element);
     } else if (langium.isRuleCall(element)) {
-        addRuleCall(state, type, element);
+        addRuleCall(state, element);
     }
     leaveGroup(state);
 }
 
-function addAction(state: CollectorState, type: TypeAlternative, action: langium.Action): void {
-    if (action.type !== type.name) {
-        type.super.push(type.name);
-    }
-    type.hasAction = true;
-    type.name = action.type;
-    if (action.feature && action.operator) {
-        if (state.lastRuleCall) {
-            type.fields.push({
+function addAction(state: CollectorState, action: langium.Action): void {
+    let newType: TypeAlternative;
+    const type = state.currentType;
+    if (type) {
+        if (action.type !== type.name) {
+            newType = simpleType(action.type);
+            newType.super.push(getTypeName(state.parserRule));
+            newType.hasAction = true;
+            state.tree.descendents.get(type)!.push(newType);
+            state.tree.descendents.set(newType, []);
+            state.currentType = newType;
+        } else {
+            newType = type;
+        }
+
+        if (action.feature && action.operator) {
+            newType.fields.push({
                 name: action.feature,
                 array: action.operator === '+=',
                 optional: false,
                 reference: false,
-                types: [getTypeName(state.lastRuleCall.rule?.ref)]
+                types: [getTypeName(state.parserRule)]
             });
-        } else {
-            throw new Error('Actions with features can only be called after an unassigned rule call');
         }
     }
 }
 
-function addAssignment(state: CollectorState, type: TypeAlternative, assignment: langium.Assignment): void {
+function addAssignment(state: CollectorState, assignment: langium.Assignment): void {
     const typeItems: TypeCollection = { types: [], reference: false };
     findTypes(assignment.terminal, typeItems);
-    type.fields.push({
+    state.currentType?.fields.push({
         name: assignment.feature,
         array: assignment.operator === '+=',
         optional: isOptional(assignment.cardinality) || isStateOptional(state),
@@ -284,21 +287,23 @@ function findInCollection(collection: langium.Alternatives | langium.Group | lan
     }
 }
 
-function addRuleCall(state: CollectorState, type: TypeAlternative, ruleCall: langium.RuleCall): void {
+function addRuleCall(state: CollectorState, ruleCall: langium.RuleCall): void {
     const rule = ruleCall.rule.ref;
-    // Add all fields of fragments to the current type
-    if (langium.isParserRule(rule) && rule.fragment) {
-        const fragmentType = simpleType(rule);
-        const fragmentState = createState(fragmentType);
-        collectElement(fragmentState, fragmentType, rule.alternatives);
-        const types = calculateAst(fragmentState.tree.getLeafNodes());
-        const foundType = types.find(e => e.name === rule.name);
-        if (foundType) {
-            type.fields.push(...foundType.fields);
+    const type = state.currentType;
+    if (type) {
+        // Add all fields of fragments to the current type
+        if (langium.isParserRule(rule) && rule.fragment) {
+            const fragmentType = simpleType(rule);
+            const fragmentState = createState(fragmentType);
+            collectElement(fragmentState, fragmentType, rule.alternatives);
+            const types = calculateAst(fragmentState.tree.getLeafNodes());
+            const foundType = types.find(e => e.name === rule.name);
+            if (foundType) {
+                type.fields.push(...foundType.fields);
+            }
+        } else if (langium.isParserRule(rule)) {
+            type.ruleCalls.push(getRuleType(rule));
         }
-    } else if (langium.isParserRule(rule)) {
-        type.ruleCalls.push(getRuleType(rule));
-        state.lastRuleCall = ruleCall;
     }
 }
 
