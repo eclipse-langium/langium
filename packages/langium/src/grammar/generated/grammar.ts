@@ -23,45 +23,27 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
         "$type": "Group",
         "elements": [
           {
-            "$type": "Keyword",
-            "value": "grammar",
-            "elements": []
-          },
-          {
-            "$type": "Assignment",
-            "feature": "name",
-            "operator": "=",
-            "terminal": {
-              "$type": "RuleCall",
-              "arguments": [],
-              "rule": {
-                "$refText": "ID"
-              }
-            }
-          },
-          {
             "$type": "Group",
             "elements": [
               {
-                "$type": "Keyword",
-                "value": "with",
+                "$type": "Assignment",
+                "feature": "isDeclared",
+                "operator": "?=",
+                "terminal": {
+                  "$type": "Keyword",
+                  "value": "grammar"
+                },
                 "elements": []
               },
               {
                 "$type": "Assignment",
-                "feature": "usedGrammars",
-                "operator": "+=",
+                "feature": "name",
+                "operator": "=",
                 "terminal": {
-                  "$type": "CrossReference",
-                  "type": {
-                    "$refText": "Grammar"
-                  },
-                  "terminal": {
-                    "$type": "RuleCall",
-                    "arguments": [],
-                    "rule": {
-                      "$refText": "ID"
-                    }
+                  "$type": "RuleCall",
+                  "arguments": [],
+                  "rule": {
+                    "$refText": "ID"
                   }
                 }
               },
@@ -70,7 +52,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                 "elements": [
                   {
                     "$type": "Keyword",
-                    "value": ",",
+                    "value": "with",
                     "elements": []
                   },
                   {
@@ -90,51 +72,6 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                         }
                       }
                     }
-                  }
-                ],
-                "cardinality": "*"
-              }
-            ],
-            "cardinality": "?"
-          },
-          {
-            "$type": "Group",
-            "elements": [
-              {
-                "$type": "Assignment",
-                "feature": "definesHiddenTokens",
-                "operator": "?=",
-                "terminal": {
-                  "$type": "Keyword",
-                  "value": "hidden"
-                },
-                "elements": []
-              },
-              {
-                "$type": "Keyword",
-                "value": "("
-              },
-              {
-                "$type": "Group",
-                "elements": [
-                  {
-                    "$type": "Assignment",
-                    "feature": "hiddenTokens",
-                    "operator": "+=",
-                    "terminal": {
-                      "$type": "CrossReference",
-                      "type": {
-                        "$refText": "AbstractRule"
-                      },
-                      "terminal": {
-                        "$type": "RuleCall",
-                        "arguments": [],
-                        "rule": {
-                          "$refText": "ID"
-                        }
-                      }
-                    },
-                    "elements": []
                   },
                   {
                     "$type": "Group",
@@ -146,12 +83,12 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                       },
                       {
                         "$type": "Assignment",
-                        "feature": "hiddenTokens",
+                        "feature": "usedGrammars",
                         "operator": "+=",
                         "terminal": {
                           "$type": "CrossReference",
                           "type": {
-                            "$refText": "AbstractRule"
+                            "$refText": "Grammar"
                           },
                           "terminal": {
                             "$type": "RuleCall",
@@ -169,8 +106,82 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                 "cardinality": "?"
               },
               {
-                "$type": "Keyword",
-                "value": ")"
+                "$type": "Group",
+                "elements": [
+                  {
+                    "$type": "Assignment",
+                    "feature": "definesHiddenTokens",
+                    "operator": "?=",
+                    "terminal": {
+                      "$type": "Keyword",
+                      "value": "hidden"
+                    },
+                    "elements": []
+                  },
+                  {
+                    "$type": "Keyword",
+                    "value": "("
+                  },
+                  {
+                    "$type": "Group",
+                    "elements": [
+                      {
+                        "$type": "Assignment",
+                        "feature": "hiddenTokens",
+                        "operator": "+=",
+                        "terminal": {
+                          "$type": "CrossReference",
+                          "type": {
+                            "$refText": "AbstractRule"
+                          },
+                          "terminal": {
+                            "$type": "RuleCall",
+                            "arguments": [],
+                            "rule": {
+                              "$refText": "ID"
+                            }
+                          }
+                        },
+                        "elements": []
+                      },
+                      {
+                        "$type": "Group",
+                        "elements": [
+                          {
+                            "$type": "Keyword",
+                            "value": ",",
+                            "elements": []
+                          },
+                          {
+                            "$type": "Assignment",
+                            "feature": "hiddenTokens",
+                            "operator": "+=",
+                            "terminal": {
+                              "$type": "CrossReference",
+                              "type": {
+                                "$refText": "AbstractRule"
+                              },
+                              "terminal": {
+                                "$type": "RuleCall",
+                                "arguments": [],
+                                "rule": {
+                                  "$refText": "ID"
+                                }
+                              }
+                            }
+                          }
+                        ],
+                        "cardinality": "*"
+                      }
+                    ],
+                    "cardinality": "?"
+                  },
+                  {
+                    "$type": "Keyword",
+                    "value": ")"
+                  }
+                ],
+                "cardinality": "?"
               }
             ],
             "cardinality": "?"

@@ -97,13 +97,15 @@ export class LangiumGrammarValidator {
 
     checkEntryGrammarRule(grammar: ast.Grammar, accept: ValidationAcceptor): void {
         const entryRules = grammar.rules.filter(e => ast.isParserRule(e) && e.entry) as ast.ParserRule[];
-        if (entryRules.length === 0) {
+        if (grammar.isDeclared && entryRules.length === 0) {
             const possibleEntryRule = grammar.rules.find(e => ast.isParserRule(e) && !isDataTypeRule(e));
             if (possibleEntryRule) {
                 accept('error', 'The grammar is missing an entry parser rule. This rule can be an entry one.', { node: possibleEntryRule, property: 'name', code: IssueCodes.EntryRuleTokenSyntax });
             } else {
                 accept('error', 'This grammar is missing an entry parser rule.', { node: grammar, property: 'name' });
             }
+        } else if(!grammar.isDeclared && entryRules.length === 1) {
+            accept('error', 'A rule marked as entry is illegal if the containing grammar is not declared.', { node: entryRules[0], property: 'name' });
         } else if (entryRules.length > 1) {
             entryRules.forEach(rule => accept('error', 'The entry rule has to be unique.', { node: rule, property: 'name' }));
         } else if (isDataTypeRule(entryRules[0])) {

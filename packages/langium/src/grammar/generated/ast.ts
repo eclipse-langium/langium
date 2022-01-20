@@ -46,6 +46,7 @@ export interface Grammar extends AstNode {
     definesHiddenTokens: boolean
     hiddenTokens: Array<Reference<AbstractRule>>
     imports: Array<GrammarImport>
+    isDeclared: boolean
     name: string
     rules: Array<AbstractRule>
     usedGrammars: Array<Reference<Grammar>>
