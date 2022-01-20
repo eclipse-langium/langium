@@ -105,7 +105,7 @@ export class LangiumGrammarValidator {
                 accept('error', 'This grammar is missing an entry parser rule.', { node: grammar, property: 'name' });
             }
         } else if(!grammar.isDeclared && entryRules.length >= 1) {
-            entryRules.forEach(rule => accept('error', 'Cannot declare entry rules for unnamed grammars.', { node: entryRules[0], property: 'name' }));
+            entryRules.forEach(rule => accept('error', 'Cannot declare entry rules for unnamed grammars.', { node: rule, property: 'name' }));
         } else if (entryRules.length > 1) {
             entryRules.forEach(rule => accept('error', 'The entry rule has to be unique.', { node: rule, property: 'name' }));
         } else if (isDataTypeRule(entryRules[0])) {
