@@ -141,12 +141,17 @@ export async function generate(config: LangiumConfig, options: GenerateOptions):
         const buildResult = all.get(absGrammarPath);
         if (buildResult) {
             const grammar = buildResult.document.parseResult.value as Grammar;
+            if(!grammar.isDeclared) {
+                log('error', options, `${absGrammarPath}: The entry grammar must start with the 'grammar' keyword.`.red);
+                return 'failure';
+            }
             grammars.push(grammar);
             configMap.set(grammar, languageConfig);
         }
     }
 
     const ruleMap = mapRules(grammars);
+
     for (const grammar of grammars) {
         embedReferencedRules(grammar, ruleMap);
         // Create and validate the in-memory parser
