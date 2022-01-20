@@ -2649,5 +2649,6 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       }
     }
   ],
+  "isDeclared": true,
   "name": "LangiumGrammar"
 }`));

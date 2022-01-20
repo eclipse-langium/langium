@@ -572,5 +572,6 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
       }
     }
   ],
+  "isDeclared": true,
   "name": "Arithmetics"
 }`));
