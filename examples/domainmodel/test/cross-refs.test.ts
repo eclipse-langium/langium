@@ -39,9 +39,10 @@ describe('Cross references from declaration', () => {
 });
 
 async function getReferences(): Promise<ReferenceDescription[]> {
-    const datatypeDoc: LangiumDocument = await parseDocument(services, datatypeFile);
-    const referencingDoc: LangiumDocument = await parseDocument(services, referencingFile);
-    services.shared.workspace.IndexManager.update([referencingDoc, datatypeDoc]);
+    const datatypeDoc: LangiumDocument<AstNode> = await parseDocument(services, datatypeFile);
+    const referencingDoc: LangiumDocument<AstNode> = await parseDocument(services, referencingFile);
+
+    await services.shared.workspace.DocumentBuilder.build([referencingDoc, datatypeDoc]);
     const model = (datatypeDoc.parseResult.value as Domainmodel);
 
     const stringType = model.elements[0];

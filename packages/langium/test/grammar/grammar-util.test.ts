@@ -24,7 +24,7 @@ describe('Data type rules', () => {
     let rules: ParserRule[] = [];
 
     beforeAll(async () => {
-        rules = (await parser(grammar)).document.parseResult.value.rules
+        rules = (await parser(grammar)).parseResult.value.rules
             .filter(e => isParserRule(e))
             .map(e => e as ParserRule);
     });
@@ -63,7 +63,7 @@ describe('Find name assignment in parser rules', () => {
     let rules: ParserRule[] = [];
 
     beforeAll(async () => {
-        rules = (await parser(grammar)).document.parseResult.value.rules
+        rules = (await parser(grammar)).parseResult.value.rules
             .filter(e => isParserRule(e))
             .map(e => e as ParserRule);
     });
@@ -166,7 +166,7 @@ describe('TerminalRule to regex', () => {
         grammar Test
         ${input}
         `;
-        const grammar = (await parse(text)).document.parseResult.value;
+        const grammar = (await parse(text)).parseResult.value;
         const terminals = stream(grammar.rules).filter(isTerminalRule);
         const terminal = name ? terminals.find(e => e.name === name) : terminals.head();
         if (!terminal) {

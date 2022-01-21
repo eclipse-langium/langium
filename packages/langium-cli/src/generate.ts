@@ -6,7 +6,7 @@
 
 import fs from 'fs-extra';
 import {
-    AbstractRule, BuildResult, createLangiumGrammarServices, getDocument, Grammar, isGrammar,
+    AbstractRule, createLangiumGrammarServices, getDocument, Grammar, isGrammar,
     isParserRule, LangiumDocument, resolveImport, resolveTransitiveImports
 } from 'langium';
 import path from 'path';
@@ -84,11 +84,11 @@ function embedReferencedRules(grammar: Grammar, map: Map<Grammar, AbstractRule[]
     }
 }
 
-async function buildAll(config: LangiumConfig): Promise<Map<string, BuildResult>> {
+async function buildAll(config: LangiumConfig): Promise<Map<string, LangiumDocument>> {
     for (const doc of documents.all) {
         documents.invalidateDocument(doc.uri);
     }
-    const map = new Map<string, BuildResult>();
+    const map = new Map<string, LangiumDocument>();
     const relPath = config[RelativePath];
     for (const languageConfig of config.languages) {
         const absGrammarPath = URI.file(path.resolve(relPath, languageConfig.grammar));
@@ -97,8 +97,8 @@ async function buildAll(config: LangiumConfig): Promise<Map<string, BuildResult>
         await sharedServices.workspace.DocumentBuilder.update(allUris, []);
     }
     for (const doc of documents.all) {
-        const buildResult = await sharedServices.workspace.DocumentBuilder.build(doc);
-        map.set(doc.uri.fsPath, buildResult);
+        await sharedServices.workspace.DocumentBuilder.build([doc]);
+        map.set(doc.uri.fsPath, doc);
     }
     return map;
 }
@@ -111,8 +111,8 @@ export async function generate(config: LangiumConfig, options: GenerateOptions):
     const all = await buildAll(config);
 
     let hasErrors = false;
-    for (const [path, buildResult] of all) {
-        const diagnostics = buildResult.diagnostics;
+    for (const [path, document] of all) {
+        const diagnostics = document.diagnostics ?? [];
         for (const diagnostic of diagnostics) {
             const message = `${getFilePath(path, config)}:${diagnostic.range.start.line + 1}:${diagnostic.range.start.character + 1} - ${diagnostic.message}`;
             if (diagnostic.severity === 1) {
@@ -138,9 +138,9 @@ export async function generate(config: LangiumConfig, options: GenerateOptions):
     const relPath = config[RelativePath];
     for (const languageConfig of config.languages) {
         const absGrammarPath = URI.file(path.resolve(relPath, languageConfig.grammar)).fsPath;
-        const buildResult = all.get(absGrammarPath);
-        if (buildResult) {
-            const grammar = buildResult.document.parseResult.value as Grammar;
+        const document = all.get(absGrammarPath);
+        if (document) {
+            const grammar = document.parseResult.value as Grammar;
             if(!grammar.isDeclared) {
                 log('error', options, `${absGrammarPath}: The entry grammar must start with the 'grammar' keyword.`.red);
                 return 'failure';

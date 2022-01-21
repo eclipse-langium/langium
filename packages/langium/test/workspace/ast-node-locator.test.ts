@@ -13,7 +13,7 @@ describe('DefaultAstNodeLocator', () => {
     const parser = parseHelper<Grammar>(grammarServices);
 
     test('computes correct paths', async () => {
-        const { document } = await parser(`
+        const document = await parser(`
             grammar Foo
             entry A: B | C;
             B: 'b';
@@ -27,7 +27,7 @@ describe('DefaultAstNodeLocator', () => {
     });
 
     test('resolves paths correctly', async () => {
-        const { document } = await parser(`
+        const document = await parser(`
             grammar Foo
             entry A: B | C;
             B: 'b';

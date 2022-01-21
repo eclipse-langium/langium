@@ -6,7 +6,6 @@
 
 import { CancellationToken } from 'vscode-languageserver';
 import { URI } from 'vscode-uri';
-import { getReferenceId, Linker } from '../references/linker';
 import { NameProvider } from '../references/naming';
 import { LangiumServices } from '../services';
 import { AstNode, AstNodeDescription, ReferenceInfo } from '../syntax-tree';
@@ -80,11 +79,9 @@ export class DefaultAstNodeDescriptionProvider implements AstNodeDescriptionProv
 
 export class DefaultReferenceDescriptionProvider implements ReferenceDescriptionProvider {
 
-    protected readonly linker: Linker;
     protected readonly nodeLocator: AstNodeLocator;
 
     constructor(services: LangiumServices) {
-        this.linker = services.references.Linker;
         this.nodeLocator = services.index.AstNodeLocator;
     }
 
@@ -92,9 +89,9 @@ export class DefaultReferenceDescriptionProvider implements ReferenceDescription
         const descr: ReferenceDescription[] = [];
         const rootNode = document.parseResult.value;
         const refConverter = (refInfo: ReferenceInfo): ReferenceDescription | undefined => {
-            const refAstNodeDescr = this.linker.getCandidate(refInfo.container, getReferenceId(refInfo.container.$type, refInfo.property), refInfo.reference);
-            // Do not handle unresolved refs
-            if (isLinkingError(refAstNodeDescr)) {
+            const refAstNodeDescr = refInfo.reference.$nodeDescription;
+            // Do not handle not yet linked references. Consider logging a warning or throw an exception when DocumentState is < than Linked
+            if (!refAstNodeDescr) {
                 return undefined;
             }
             const doc = getDocument(refInfo.container);
@@ -111,8 +108,8 @@ export class DefaultReferenceDescriptionProvider implements ReferenceDescription
         };
         for (const astNode of streamAllContents(rootNode)) {
             await interruptAndCheck(cancelToken);
-            streamReferences(astNode).forEach(ref => {
-                const refDescr = refConverter(ref);
+            streamReferences(astNode).filter(refInfo => !isLinkingError(refInfo)).forEach(refInfo => {
+                const refDescr = refConverter(refInfo);
                 if (refDescr) {
                     descr.push(refDescr);
                 }
