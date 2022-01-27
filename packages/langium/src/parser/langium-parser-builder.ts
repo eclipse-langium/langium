@@ -274,7 +274,7 @@ function buildKeyword(ctx: RuleContext, keyword: Keyword): Method {
     if (!token) {
         throw new Error('Could not find token for keyword: ' + keyword.value);
     }
-    token.name = token.name + ':KW';
+    if (!token.name.endsWith(':KW')) token.name += ':KW';
     return () => ctx.parser.consume(idx, token, keyword);
 }
 
