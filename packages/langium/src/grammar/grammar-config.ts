@@ -4,7 +4,6 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { withKeywordSuffix } from '../parser/langium-parser-builder';
 import { LangiumServices } from '../services';
 import { isMultilineComment } from '../utils/regex-util';
 import { isTerminalRule } from './generated/ast';
@@ -19,7 +18,7 @@ export function createGrammarConfig(services: LangiumServices): GrammarConfig {
     const grammar = services.Grammar;
     for (const rule of grammar.rules) {
         if (isTerminalRule(rule) && isCommentTerminal(rule) && isMultilineComment(terminalRegex(rule))) {
-            rules.push(withKeywordSuffix(rule.name));
+            rules.push(rule.name);
         }
     }
     return { multilineCommentRules: rules };
