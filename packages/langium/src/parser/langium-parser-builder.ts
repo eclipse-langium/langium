@@ -53,6 +53,7 @@ export function prepareLangiumParser(services: LangiumServices): LangiumParser {
     const tokens = new Map<string, TokenType>();
     const buildTokens = services.parser.TokenBuilder.buildTokens(grammar, { caseInsensitive: services.LanguageMetaData.caseInsensitive });
     buildTokens.forEach(e => {
+        e.name = withKeywordSuffix(e.name);
         tokens.set(e.name, e);
     });
     const rules = new Map<string, Rule>();
@@ -66,16 +67,16 @@ export function prepareLangiumParser(services: LangiumServices): LangiumParser {
     return parser;
 }
 
-const withRuleSuffix = (name: string) => name + ':RULE';
+export const withKeywordSuffix = (name: string): string => name + ':KW';
 
 function getRule(ctx: ParserContext, name: string): Rule {
-    const rule = ctx.rules.get(withRuleSuffix(name));
+    const rule = ctx.rules.get(name);
     if (!rule) throw new Error(`Rule "${name}" not found."`);
     return rule;
 }
 
 function getToken(ctx: ParserContext, name: string): TokenType {
-    const token = ctx.tokens.get(name);
+    const token = ctx.tokens.get(withKeywordSuffix(name));
     if (!token) throw new Error(`Token "${name}" not found."`);
     return token;
 }
@@ -92,7 +93,7 @@ function buildParserRules(parserContext: ParserContext, grammar: Grammar): void 
         };
         const method = (rule.entry ? ctx.parser.MAIN_RULE : ctx.parser.DEFINE_RULE).bind(ctx.parser);
         const type = rule.fragment ? undefined : isDataTypeRule(rule) ? DatatypeSymbol : getTypeName(rule);
-        ctx.rules.set(withRuleSuffix(rule.name), method(withRuleSuffix(rule.name), type, buildRuleContent(ctx, rule)));
+        ctx.rules.set(rule.name, method(rule.name, type, buildRuleContent(ctx, rule)));
     }
 }
 
@@ -274,7 +275,7 @@ function buildCrossReference(ctx: RuleContext, crossRef: CrossReference, termina
 
 function buildKeyword(ctx: RuleContext, keyword: Keyword): Method {
     const idx = ctx.consume++;
-    const token = ctx.tokens.get(keyword.value);
+    const token = ctx.tokens.get(withKeywordSuffix(keyword.value));
     if (!token) {
         throw new Error('Could not find token for keyword: ' + keyword.value);
     }
