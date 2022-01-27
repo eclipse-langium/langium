@@ -261,6 +261,7 @@ function buildCrossReference(ctx: RuleContext, crossRef: CrossReference, termina
     } else if (isKeyword(terminal)) {
         const idx = ctx.consume++;
         const keyword = getToken(ctx, terminal.value);
+        keyword.name = withKeywordSuffix(keyword.name);
         return () => ctx.parser.consume(idx, keyword, crossRef);
     }
     else {
@@ -268,13 +269,15 @@ function buildCrossReference(ctx: RuleContext, crossRef: CrossReference, termina
     }
 }
 
+const withKeywordSuffix = (name: string): string => name + (name.endsWith(':KW') ? '' : ':KW');
+
 function buildKeyword(ctx: RuleContext, keyword: Keyword): Method {
     const idx = ctx.consume++;
     const token = ctx.tokens.get(keyword.value);
     if (!token) {
         throw new Error('Could not find token for keyword: ' + keyword.value);
     }
-    if (!token.name.endsWith(':KW')) token.name += ':KW';
+    token.name = withKeywordSuffix(token.name);
     return () => ctx.parser.consume(idx, token, keyword);
 }
 
