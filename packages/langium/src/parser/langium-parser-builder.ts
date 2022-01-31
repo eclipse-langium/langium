@@ -4,11 +4,11 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { IOrAlt, TokenType } from 'chevrotain';
+import { IOrAlt, TokenType, TokenVocabulary } from 'chevrotain';
 import { AbstractElement, Action, Alternatives, Condition, CrossReference, Grammar, Group, isAction, isAlternatives, isAssignment, isConjunction, isCrossReference, isDisjunction, isGroup, isKeyword, isLiteralCondition, isNegation, isParameterReference, isParserRule, isRuleCall, isTerminalRule, isUnorderedGroup, Keyword, NamedArgument, ParserRule, RuleCall, UnorderedGroup } from '../grammar/generated/ast';
 import { Cardinality, findNameAssignment, getTypeName, isArrayOperator, isDataTypeRule } from '../grammar/grammar-util';
 import { LangiumServices } from '../services';
-import { hasContainerOfType, streamAllContents } from '../utils/ast-util';
+import { hasContainerOfType, isIMultiModeLexerDefinition, isTokenTypeDictionary, streamAllContents } from '../utils/ast-util';
 import { stream } from '../utils/stream';
 import { DatatypeSymbol, LangiumParser } from './langium-parser';
 
@@ -52,7 +52,8 @@ export function prepareLangiumParser(services: LangiumServices): LangiumParser {
     const grammar = services.Grammar;
     const tokens = new Map<string, TokenType>();
     const buildTokens = services.parser.TokenBuilder.buildTokens(grammar, { caseInsensitive: services.LanguageMetaData.caseInsensitive });
-    buildTokens.forEach(e => tokens.set(e.name, e));
+    toTokenTypeArray(buildTokens).forEach(e => tokens.set(e.name, e));
+
     const rules = new Map<string, Rule>();
     const parser = new LangiumParser(services, buildTokens);
     const parserContext: ParserContext = {
@@ -62,6 +63,12 @@ export function prepareLangiumParser(services: LangiumServices): LangiumParser {
     };
     buildParserRules(parserContext, grammar);
     return parser;
+}
+
+function toTokenTypeArray(buildTokens: TokenVocabulary): TokenType[] {
+    if (isTokenTypeDictionary(buildTokens)) return Object.values(buildTokens);
+    if (isIMultiModeLexerDefinition(buildTokens)) return Object.values(buildTokens.modes).flat();
+    return buildTokens;
 }
 
 function getRule(ctx: ParserContext, name: string): Rule {

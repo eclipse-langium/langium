@@ -4,6 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import { IMultiModeLexerDefinition, TokenType, TokenTypeDictionary, TokenVocabulary } from 'chevrotain';
 import { AstNode, AstNodeDescription, LinkingError, Reference, ReferenceInfo } from '../syntax-tree';
 import { DONE_RESULT, Stream, stream, StreamImpl, TreeStream, TreeStreamImpl } from '../utils/stream';
 import { LangiumDocument } from '../workspace/documents';
@@ -202,4 +203,25 @@ export function findLocalReferences(targetNode: AstNode, lookup = getDocument(ta
     process(lookup);
     streamAllContents(lookup).forEach(node => process(node));
     return stream(refs);
+}
+
+/**
+ * Returns a check whether the given TokenVocabulary is TokenType array
+ */
+export function isTokenTypeArray(tokenVocabulary: TokenVocabulary): tokenVocabulary is TokenType[] {
+    return Array.isArray(tokenVocabulary) && (tokenVocabulary.length === 0 || 'name' in tokenVocabulary[0]);
+}
+
+/**
+ * Returns a check whether the given TokenVocabulary is IMultiModeLexerDefinition
+ */
+export function isIMultiModeLexerDefinition(tokenVocabulary: TokenVocabulary): tokenVocabulary is IMultiModeLexerDefinition {
+    return tokenVocabulary && 'modes' in tokenVocabulary && 'defaultMode' in tokenVocabulary;
+}
+
+/**
+ * Returns a check whether the given TokenVocabulary is TokenTypeDictionary
+ */
+export function isTokenTypeDictionary(tokenVocabulary: TokenVocabulary): tokenVocabulary is TokenTypeDictionary {
+    return !isTokenTypeArray(tokenVocabulary) && !isIMultiModeLexerDefinition(tokenVocabulary);
 }

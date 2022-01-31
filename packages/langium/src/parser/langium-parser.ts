@@ -5,12 +5,12 @@
  ******************************************************************************/
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { defaultParserErrorProvider, EmbeddedActionsParser, ILexingError, IOrAlt, IParserErrorMessageProvider, IRecognitionException, IToken, Lexer, TokenType } from 'chevrotain';
+import { defaultParserErrorProvider, EmbeddedActionsParser, ILexingError, IOrAlt, IParserErrorMessageProvider, IRecognitionException, IToken, Lexer, TokenType, TokenVocabulary } from 'chevrotain';
 import { AbstractElement, Action, Assignment, isAssignment, isCrossReference } from '../grammar/generated/ast';
 import { Linker } from '../references/linker';
 import { LangiumServices } from '../services';
 import { AstNode, CompositeCstNode, CstNode, LeafCstNode } from '../syntax-tree';
-import { getContainerOfType, linkContentToContainer } from '../utils/ast-util';
+import { getContainerOfType, isTokenTypeDictionary, linkContentToContainer } from '../utils/ast-util';
 import { tokenToRange } from '../utils/cst-util';
 import { CompositeCstNodeImpl, CstNodeBuilder, LeafCstNodeImpl, RootCstNodeImpl } from './cst-node-builder';
 import { IParserConfig } from './parser-config';
@@ -51,11 +51,11 @@ export class LangiumParser {
         return this.stack[this.stack.length - 1];
     }
 
-    constructor(services: LangiumServices, tokens: TokenType[]) {
+    constructor(services: LangiumServices, tokens: TokenVocabulary) {
         this.wrapper = new ChevrotainWrapper(tokens, services.parser.ParserConfig);
         this.linker = services.references.Linker;
         this.converter = services.parser.ValueConverter;
-        this.lexer = new Lexer(tokens);
+        this.lexer = new Lexer(isTokenTypeDictionary(tokens) ? Object.values(tokens) : tokens);
     }
 
     MAIN_RULE(
@@ -380,7 +380,7 @@ class ChevrotainWrapper extends EmbeddedActionsParser {
     // This array is set in the base implementation of Chevrotain.
     definitionErrors: IParserDefinitionError[];
 
-    constructor(tokens: TokenType[], config?: IParserConfig) {
+    constructor(tokens: TokenVocabulary, config?: IParserConfig) {
         super(tokens, {
             ...defaultConfig,
             ...config
