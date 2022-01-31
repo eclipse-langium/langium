@@ -52,9 +52,7 @@ export function prepareLangiumParser(services: LangiumServices): LangiumParser {
     const grammar = services.Grammar;
     const tokens = new Map<string, TokenType>();
     const buildTokens = services.parser.TokenBuilder.buildTokens(grammar, { caseInsensitive: services.LanguageMetaData.caseInsensitive });
-    buildTokens.forEach(e => {
-        tokens.set(e.name, e);
-    });
+    buildTokens.forEach(e => tokens.set(e.name, e));
     const rules = new Map<string, Rule>();
     const parser = new LangiumParser(services, buildTokens);
     const parserContext: ParserContext = {
@@ -66,10 +64,8 @@ export function prepareLangiumParser(services: LangiumServices): LangiumParser {
     return parser;
 }
 
-const withRuleSuffix = (name: string) => name + ':RULE';
-
 function getRule(ctx: ParserContext, name: string): Rule {
-    const rule = ctx.rules.get(withRuleSuffix(name));
+    const rule = ctx.rules.get(name);
     if (!rule) throw new Error(`Rule "${name}" not found."`);
     return rule;
 }
@@ -92,7 +88,7 @@ function buildParserRules(parserContext: ParserContext, grammar: Grammar): void 
         };
         const method = (rule.entry ? ctx.parser.MAIN_RULE : ctx.parser.DEFINE_RULE).bind(ctx.parser);
         const type = rule.fragment ? undefined : isDataTypeRule(rule) ? DatatypeSymbol : getTypeName(rule);
-        ctx.rules.set(withRuleSuffix(rule.name), method(withRuleSuffix(rule.name), type, buildRuleContent(ctx, rule)));
+        ctx.rules.set(rule.name, method(rule.name, type, buildRuleContent(ctx, rule)));
     }
 }
 
@@ -265,6 +261,7 @@ function buildCrossReference(ctx: RuleContext, crossRef: CrossReference, termina
     } else if (isKeyword(terminal)) {
         const idx = ctx.consume++;
         const keyword = getToken(ctx, terminal.value);
+        keyword.name = withKeywordSuffix(keyword.name);
         return () => ctx.parser.consume(idx, keyword, crossRef);
     }
     else {
@@ -272,12 +269,15 @@ function buildCrossReference(ctx: RuleContext, crossRef: CrossReference, termina
     }
 }
 
+const withKeywordSuffix = (name: string): string => name.endsWith(':KW') ? name : name + ':KW';
+
 function buildKeyword(ctx: RuleContext, keyword: Keyword): Method {
     const idx = ctx.consume++;
     const token = ctx.tokens.get(keyword.value);
     if (!token) {
         throw new Error('Could not find token for keyword: ' + keyword.value);
     }
+    token.name = withKeywordSuffix(token.name);
     return () => ctx.parser.consume(idx, token, keyword);
 }
 
