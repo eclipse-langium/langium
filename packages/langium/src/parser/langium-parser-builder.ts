@@ -269,7 +269,7 @@ function buildCrossReference(ctx: RuleContext, crossRef: CrossReference, termina
     }
 }
 
-const withKeywordSuffix = (name: string): string => name + (name.endsWith(':KW') ? '' : ':KW');
+const withKeywordSuffix = (name: string): string => name.endsWith(':KW') ? name : name + ':KW';
 
 function buildKeyword(ctx: RuleContext, keyword: Keyword): Method {
     const idx = ctx.consume++;
