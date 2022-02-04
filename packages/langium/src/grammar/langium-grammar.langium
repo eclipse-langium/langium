@@ -11,7 +11,30 @@ entry Grammar:
         (definesHiddenTokens?='hidden' '(' (hiddenTokens+=[AbstractRule:ID] (',' hiddenTokens+=[AbstractRule:ID])*)? ')')?
     )?
 	imports+=GrammarImport*
-	(rules+=AbstractRule)+;
+	(rules+=AbstractRule | types+=TypeDeclaration)+;
+
+///////////////////////////////////////////////////////////////////////////////
+
+TypeDeclaration:
+	Interface;
+
+Interface:
+	'interface' name=ID
+	// superType can be Interface, not primitive return type or ParserRule without return name
+	('extends' superTypes+=ID (',' superTypes+=ID)*)?
+	SchemaType;
+
+fragment SchemaType:
+	'{' attributes+=TypeAttribute* '}' ';'?;
+
+TypeAttribute:
+	// type can be a primitive type, Interface, not primitive return type or ParserRule without return name 
+	name=ID (isOptional?='?')? ':' type=ID ';'?;
+
+// return type for terminals and datatype rules can be a primitive type
+// return type for parser rules can be Interface, ParserRule or any ID (what is condidered as type definition)
+
+///////////////////////////////////////////////////////////////////////////////
 
 AbstractRule : ParserRule | TerminalRule;
 

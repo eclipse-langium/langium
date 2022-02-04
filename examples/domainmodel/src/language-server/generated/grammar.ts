@@ -397,6 +397,7 @@ export const DomainModelGrammar = (): Grammar => loadedDomainModelGrammar ||(loa
       }
     }
   ],
+  "types": [],
   "isDeclared": true,
   "name": "DomainModel"
 }`));
