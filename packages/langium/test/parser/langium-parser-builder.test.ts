@@ -35,7 +35,7 @@ describe('Predicated grammar rules', () => {
     `;
 
     beforeAll(async () => {
-        grammar = (await helper(content)).document.parseResult.value;
+        grammar = (await helper(content)).parseResult.value;
         parser = parserFromGrammar(grammar);
     });
 
@@ -96,7 +96,7 @@ describe('One name for terminal and non-terminal rules', () => {
     `;
 
     beforeAll(async () => {
-        grammar = (await helper(content)).document.parseResult.value;
+        grammar = (await helper(content)).parseResult.value;
     });
 
     test('Should work without Parser Definition Errors', () => {

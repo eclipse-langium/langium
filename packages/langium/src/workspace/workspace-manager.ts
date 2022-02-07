@@ -10,8 +10,8 @@ import { WorkspaceFolder } from 'vscode-languageserver';
 import { URI, Utils } from 'vscode-uri';
 import { ServiceRegistry } from '../service-registry';
 import { LangiumSharedServices } from '../services';
+import { DocumentBuilder } from './document-builder';
 import { LangiumDocument, LangiumDocuments } from './documents';
-import { IndexManager } from './index-manager';
 
 /**
  * The workspace manager is responsible for finding source files in the workspace.
@@ -34,12 +34,12 @@ export class DefaultWorkspaceManager {
 
     protected readonly serviceRegistry: ServiceRegistry;
     protected readonly langiumDocuments: LangiumDocuments;
-    protected readonly indexManager: IndexManager;
+    protected readonly documentBuilder: DocumentBuilder;
 
     constructor(services: LangiumSharedServices) {
         this.serviceRegistry = services.ServiceRegistry;
         this.langiumDocuments = services.workspace.LangiumDocuments;
-        this.indexManager = services.workspace.IndexManager;
+        this.documentBuilder = services.workspace.DocumentBuilder;
     }
 
     async initializeWorkspace(folders: WorkspaceFolder[]): Promise<void> {
@@ -51,7 +51,7 @@ export class DefaultWorkspaceManager {
                 .map(async rf => this.traverseFolder(rf, fileExtensions, collector))
         );
         await this.loadAdditionalDocuments(folders, collector);
-        await this.indexManager.update(documents);
+        await this.documentBuilder.build(documents);
     }
 
     /**

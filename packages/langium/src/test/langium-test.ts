@@ -10,20 +10,18 @@ import {
 import { URI } from 'vscode-uri';
 import { LangiumServices } from '../services';
 import { AstNode } from '../syntax-tree';
-import { getDocument } from '../utils/ast-util';
 import { escapeRegExp } from '../utils/regex-util';
-import { BuildResult } from '../workspace/document-builder';
 import { LangiumDocument } from '../workspace/documents';
 
-export function parseHelper<T extends AstNode = AstNode>(services: LangiumServices): (input: string) => Promise<BuildResult<T>> {
+export function parseHelper<T extends AstNode = AstNode>(services: LangiumServices): (input: string) => Promise<LangiumDocument<T>> {
     const metaData = services.LanguageMetaData;
     const documentBuilder = services.shared.workspace.DocumentBuilder;
     return async input => {
         const randomNumber = Math.floor(Math.random() * 10000000) + 1000000;
         const uri = URI.parse(`file:///${randomNumber}${metaData.fileExtensions[0]}`);
         const document = services.shared.workspace.LangiumDocumentFactory.fromString<T>(input, uri);
-        const buildResult = await documentBuilder.build(document);
-        return buildResult as BuildResult<T>;
+        await documentBuilder.build([document]);
+        return document;
     };
 }
 
@@ -146,8 +144,7 @@ function textDocumentPositionParams(document: LangiumDocument, offset: number): 
 }
 
 export async function parseDocument<T extends AstNode = AstNode>(services: LangiumServices, input: string): Promise<LangiumDocument<T>> {
-    const buildResult = await parseHelper<T>(services)(input);
-    const document = getDocument<T>(buildResult.document.parseResult.value);
+    const document = await parseHelper<T>(services)(input);
     if (!document.parseResult) {
         throw new Error('Could not parse document');
     }
@@ -189,5 +186,5 @@ function replaceIndices(base: ExpectedBase): { output: string, indices: number[]
         }
     }
 
-    return {output: input, indices, ranges: ranges.sort((a, b) => a[0] - b[0]) };
+    return { output: input, indices, ranges: ranges.sort((a, b) => a[0] - b[0]) };
 }

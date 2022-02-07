@@ -71,7 +71,8 @@ export function getReferenceProperty(referenceId: string): string {
 }
 
 interface DefaultReference extends Reference {
-    _ref?: AstNode | AstNodeDescription | LinkingError;
+    _ref?: AstNode | LinkingError;
+    _nodeDescription?: AstNodeDescription;
 }
 
 export class DefaultLinker implements Linker {
@@ -107,13 +108,15 @@ export class DefaultLinker implements Linker {
             try {
                 const refId = getReferenceId(info.container.$type, info.property);
                 const description = this.getCandidate(info.container, refId, ref);
-                if (!isLinkingError(description) && this.langiumDocuments().hasDocument(description.documentUri)) {
-                    // The target document is already loaded
-                    const linkedNode = this.loadAstNode(description);
-                    ref._ref = linkedNode ?? this.createLinkingError(info, refId, description);
-                } else {
-                    // The target document is not loaded yet, or the target was not found in the scope
+                if (isLinkingError(description)) {
                     ref._ref = description;
+                } else {
+                    ref._nodeDescription = description;
+                    if (this.langiumDocuments().hasDocument(description.documentUri)) {
+                        // The target document is already loaded
+                        const linkedNode = this.loadAstNode(description);
+                        ref._ref = linkedNode ?? this.createLinkingError(info, refId, description);
+                    }
                 }
             } catch (err) {
                 ref._ref = {
@@ -129,6 +132,7 @@ export class DefaultLinker implements Linker {
     unlink(document: LangiumDocument): void {
         for (const ref of document.references) {
             delete (ref as DefaultReference)._ref;
+            delete (ref as DefaultReference)._nodeDescription;
         }
         document.references = [];
     }
@@ -149,20 +153,24 @@ export class DefaultLinker implements Linker {
 
             get ref() {
                 if (isAstNode(this._ref)) {
-                    // Most frequent case: the target is aready resolved.
+                    // Most frequent case: the target is already resolved.
                     return this._ref;
+                } else if (isAstNodeDescription(this._nodeDescription)) {
+                    // A candidate has been found before, but it is not loaded yet.
+                    const linkedNode = linker.loadAstNode(this._nodeDescription);
+                    this._ref = linkedNode ??
+                        linker.createLinkingError({ container: node, property: getReferenceProperty(refId), reference }, refId, this._nodeDescription);
                 } else if (this._ref === undefined) {
                     // The reference has not been linked yet, so do that now.
-                    this._ref = linker.getLinkedNode(node, refId, reference);
-                } else if (isAstNodeDescription(this._ref)) {
-                    // A candidate has been found before, but it is not loaded yet.
-                    const linkedNode = linker.loadAstNode(this._ref);
-                    this._ref = linkedNode ??
-                        linker.createLinkingError({ container: node, property: getReferenceProperty(refId), reference }, refId, this._ref);
+                    const refData = linker.getLinkedNode(node, refId, reference);
+                    this._ref = refData.node ?? refData.error;
+                    this._nodeDescription = refData.descr;
                 }
                 return isAstNode(this._ref) ? this._ref : undefined;
             },
-
+            get $nodeDescription() {
+                return this._nodeDescription;
+            },
             get error() {
                 return isLinkingError(this._ref) ? this._ref : undefined;
             }
@@ -170,22 +178,31 @@ export class DefaultLinker implements Linker {
         return reference;
     }
 
-    protected getLinkedNode(container: AstNode, refId: string, reference: Reference): AstNode | LinkingError {
+    protected getLinkedNode(container: AstNode, refId: string, reference: Reference): { node?: AstNode, descr?: AstNodeDescription, error?: LinkingError } {
         try {
             const description = this.getCandidate(container, refId, reference);
             if (isLinkingError(description)) {
-                return description;
-            } else {
-                const linkedNode = this.loadAstNode(description);
-                return linkedNode ??
-                    this.createLinkingError({ container, property: getReferenceProperty(refId), reference }, refId, description);
+                return { error: description };
+            }
+            const linkedNode = this.loadAstNode(description);
+            if (linkedNode) {
+                return { node: linkedNode, descr: description };
+            }
+            else {
+                return {
+                    descr: description,
+                    error:
+                        this.createLinkingError({ container, property: getReferenceProperty(refId), reference }, refId, description)
+                };
             }
         } catch (err) {
             return {
-                container,
-                property: getReferenceProperty(refId),
-                reference,
-                message: `An error occurred while resolving reference to '${reference.$refText}': ${err}`
+                error: {
+                    container,
+                    property: getReferenceProperty(refId),
+                    reference,
+                    message: `An error occurred while resolving reference to '${reference.$refText}': ${err}`
+                }
             };
         }
     }

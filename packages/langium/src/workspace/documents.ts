@@ -46,14 +46,16 @@ export enum DocumentState {
     Changed = 0,
     /** An AST has been created from the text content. */
     Parsed = 1,
-    /** The `IndexManager` service has processed this document. */
-    Indexed = 2,
+    /** The `IndexManager` service has processed AST nodes of this document. */
+    IndexedContent = 2,
     /** Pre-processing steps such as scope precomputation have been executed. */
     Processed = 3,
     /** The `Linker` service has processed this document. */
     Linked = 4,
+    /** The `IndexManager` service has processed AST node references of this document. */
+    IndexedReferences = 5,
     /** The `DocumentValidator` service has processed this document. */
-    Validated = 5
+    Validated = 6
 }
 
 /**

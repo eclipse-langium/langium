@@ -16,13 +16,13 @@ import { DocumentState, LangiumDocument, LangiumDocuments } from './documents';
 
 export interface DocumentBuilder {
     /**
-     * Inserts the document into the index and rebuilds affected documents
+     * Inserts the documents into the index and rebuilds affected documents
      *
-     * @param document which should be built
+     * @param documents which should be built
      * @param cancelToken allows to cancel the current operation
      * @throws `OperationCancelled` if cancellation is detected during execution
      */
-    build<T extends AstNode>(document: LangiumDocument<T>, cancelToken?: CancellationToken): Promise<BuildResult<T>>;
+    build<T extends AstNode>(documents: Array<LangiumDocument<T>>, cancelToken?: CancellationToken): Promise<void>;
 
     /**
      * This method is called when a document change is detected.
@@ -52,12 +52,6 @@ export interface DocumentBuilder {
 
 export type DocumentUpdateListener = (changed: URI[], deleted: URI[]) => void
 export type DocumentBuildListener = (built: LangiumDocument[], cancelToken: CancellationToken) => Promise<void>
-
-export interface BuildResult<T extends AstNode = AstNode> {
-    readonly document: LangiumDocument<T>
-    readonly diagnostics: Diagnostic[]
-}
-
 export class DefaultDocumentBuilder implements DocumentBuilder {
     protected readonly connection?: Connection;
     protected readonly langiumDocuments: LangiumDocuments;
@@ -73,12 +67,11 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
         this.serviceRegistry = services.ServiceRegistry;
     }
 
-    async build<T extends AstNode>(document: LangiumDocument<T>, cancelToken = CancellationToken.None): Promise<BuildResult<T>> {
-        await this.buildDocuments([document], cancelToken);
-        return {
-            document,
-            diagnostics: await this.validate(document, cancelToken, true)
-        };
+    async build<T extends AstNode>(documents: Array<LangiumDocument<T>>, cancelToken = CancellationToken.None): Promise<void> {
+        await this.buildDocuments(documents, cancelToken);
+        for (const document of documents) {
+            await this.validate(document, cancelToken, true);
+        }
     }
 
     protected async validate(document: LangiumDocument, cancelToken = CancellationToken.None, forceDiagnostics = false): Promise<Diagnostic[]> {
@@ -133,7 +126,7 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
         affected.forEach(e => {
             const linker = this.serviceRegistry.getServices(e.uri).references.Linker;
             linker.unlink(e);
-            e.state = DocumentState.Indexed;
+            e.state = Math.min(e.state, DocumentState.Processed); // need to re-index potentially linked references
         });
         const docSet = new Set([
             ...changed,
@@ -145,10 +138,10 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
     }
 
     protected async buildDocuments(documents: LangiumDocument[], cancelToken: CancellationToken): Promise<void> {
-        // 1. Indexing
-        const toBeIndexed = documents.filter(e => e.state < DocumentState.Indexed);
-        await this.indexManager.update(toBeIndexed, cancelToken);
-        await this.notifyBuildPhase(toBeIndexed, DocumentState.Indexed, cancelToken);
+        // 1. Index content
+        const toBeIndexed = documents.filter(e => e.state < DocumentState.IndexedContent);
+        await this.indexManager.updateContent(toBeIndexed, cancelToken);
+        await this.notifyBuildPhase(toBeIndexed, DocumentState.IndexedContent, cancelToken);
         // 2. Preprocessing
         await this.runCancelable(documents, DocumentState.Processed, cancelToken, doc =>
             this.process(doc, cancelToken)
@@ -157,7 +150,10 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
         await this.runCancelable(documents, DocumentState.Linked, cancelToken, doc =>
             this.serviceRegistry.getServices(doc.uri).references.Linker.link(doc, cancelToken)
         );
-        // 4. Validation
+        // 4. Index references
+        await this.indexManager.updateReferences(documents.filter(e => e.state < DocumentState.IndexedReferences), cancelToken);
+        await this.notifyBuildPhase(toBeIndexed, DocumentState.IndexedReferences, cancelToken);
+        // 5. Validation
         await this.runCancelable(documents, DocumentState.Validated, cancelToken, doc =>
             this.validate(doc, cancelToken)
         );

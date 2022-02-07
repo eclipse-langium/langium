@@ -23,7 +23,7 @@ describe('tokenBuilder', () => {
         terminal fragment Frag: 'B';
         terminal AB: 'A' Frag;
         `;
-        const grammar = (await helper(text)).document.parseResult.value;
+        const grammar = (await helper(text)).parseResult.value;
         tokens = tokenBuilder.buildTokens(grammar);
     });
 
@@ -47,7 +47,7 @@ describe('tokenBuilder#longerAlts', () => {
         Main: {Main} 'A' 'AB' 'ABC';
         terminal AB: /ABD?/;
         `;
-        const grammar = (await helper(text)).document.parseResult.value;
+        const grammar = (await helper(text)).parseResult.value;
         const tokens = tokenBuilder.buildTokens(grammar);
         aToken = tokens[2];
         abToken = tokens[1];
@@ -95,7 +95,7 @@ describe('tokenBuilder#caseInsensitivePattern', () => {
         terminal BOOLEAN returns boolean: /true|false/;
         terminal AB: /ABD?/;
         `;
-        const grammar = (await parseHelper<Grammar>(grammarServices)(text)).document.parseResult.value;
+        const grammar = (await parseHelper<Grammar>(grammarServices)(text)).parseResult.value;
         const tokens = tokenBuilder.buildTokens(grammar, { caseInsensitive: true });
         const patterns = tokens.map(token => token.PATTERN);
 
