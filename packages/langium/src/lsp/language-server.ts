@@ -6,13 +6,12 @@
 
 import {
     AbstractCancellationTokenSource, CancellationToken, Connection, FileChangeType, HandlerResult, InitializeResult,
-    LSPErrorCodes, RequestHandler, ResponseError, ServerRequestHandler, TextDocumentIdentifier, TextDocuments, TextDocumentSyncKind
+    LSPErrorCodes, RequestHandler, ResponseError, ServerRequestHandler, TextDocumentIdentifier, TextDocumentSyncKind
 } from 'vscode-languageserver';
-import { TextDocument } from 'vscode-languageserver-textdocument';
 import { URI } from 'vscode-uri';
 import { LangiumServices, LangiumSharedServices } from '../services';
 import { OperationCancelled, startCancelableOperation } from '../utils/promise-util';
-import { LangiumDocument } from '../workspace/documents';
+import { DocumentState, LangiumDocument } from '../workspace/documents';
 import { DefaultSemanticTokenOptions } from './semantic-token-provider';
 
 export function startLanguageServer(services: LangiumSharedServices): void {
@@ -58,9 +57,8 @@ export function startLanguageServer(services: LangiumSharedServices): void {
         return result;
     });
 
-    const documents = services.workspace.TextDocuments;
-
-    addDocumentsHandler(connection, documents, services);
+    addDocumentsHandler(connection, services);
+    addDiagnosticsHandler(connection, services);
     addCompletionHandler(connection, services);
     addFindReferencesHandler(connection, services);
     addDocumentSymbolHandler(connection, services);
@@ -73,13 +71,14 @@ export function startLanguageServer(services: LangiumSharedServices): void {
     addSemanticHighlighting(connection, services);
 
     // Make the text document manager listen on the connection for open, change and close text document events.
+    const documents = services.workspace.TextDocuments;
     documents.listen(connection);
 
     // Start listening for incoming messages from the client.
     connection.listen();
 }
 
-export function addDocumentsHandler(connection: Connection, documents: TextDocuments<TextDocument>, services: LangiumSharedServices): void {
+export function addDocumentsHandler(connection: Connection, services: LangiumSharedServices): void {
     const documentBuilder = services.workspace.DocumentBuilder;
     let changeTokenSource: AbstractCancellationTokenSource;
     let changePromise: Promise<void> | undefined;
@@ -99,6 +98,7 @@ export function addDocumentsHandler(connection: Connection, documents: TextDocum
             });
     }
 
+    const documents = services.workspace.TextDocuments;
     documents.onDidChangeContent(async change => {
         onDidChange([URI.parse(change.document.uri)]);
     });
@@ -106,6 +106,23 @@ export function addDocumentsHandler(connection: Connection, documents: TextDocum
         const changedUris = params.changes.filter(e => e.type !== FileChangeType.Deleted).map(e => URI.parse(e.uri));
         const deletedUris = params.changes.filter(e => e.type === FileChangeType.Deleted).map(e => URI.parse(e.uri));
         onDidChange(changedUris, deletedUris);
+    });
+}
+
+export function addDiagnosticsHandler(connection: Connection, services: LangiumSharedServices): void {
+    const documentBuilder = services.workspace.DocumentBuilder;
+    documentBuilder.onBuildPhase(DocumentState.Validated, async (documents, cancelToken) => {
+        for (const document of documents) {
+            if (document.diagnostics) {
+                connection.sendDiagnostics({
+                    uri: document.uri.toString(),
+                    diagnostics: document.diagnostics
+                });
+            }
+            if (cancelToken.isCancellationRequested) {
+                return;
+            }
+        }
     });
 }
 

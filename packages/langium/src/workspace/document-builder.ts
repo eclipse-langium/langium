@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { CancellationToken, Connection, Diagnostic } from 'vscode-languageserver';
+import { CancellationToken } from 'vscode-languageserver';
 import { URI } from 'vscode-uri';
 import { ServiceRegistry } from '../service-registry';
 import { LangiumSharedServices } from '../services';
@@ -14,15 +14,20 @@ import { interruptAndCheck, MaybePromise } from '../utils/promise-util';
 import { IndexManager } from '../workspace/index-manager';
 import { DocumentState, LangiumDocument, LangiumDocuments } from './documents';
 
+export interface BuildOptions {
+    validationChecks?: 'none' | 'all'
+}
+
 export interface DocumentBuilder {
     /**
-     * Inserts the documents into the index and rebuilds affected documents
+     * Execute all necessary build steps for the given documents.
      *
-     * @param documents which should be built
-     * @param cancelToken allows to cancel the current operation
-     * @throws `OperationCancelled` if cancellation is detected during execution
+     * @param documents Set of documents to be built.
+     * @param options Options for the document builder.
+     * @param cancelToken Indicates when to cancel the current operation.
+     * @throws `OperationCanceled` if a user action occurs during execution
      */
-    build<T extends AstNode>(documents: Array<LangiumDocument<T>>, cancelToken?: CancellationToken): Promise<void>;
+    build<T extends AstNode>(documents: Array<LangiumDocument<T>>, options?: BuildOptions, cancelToken?: CancellationToken): Promise<void>;
 
     /**
      * This method is called when a document change is detected.
@@ -53,7 +58,6 @@ export interface DocumentBuilder {
 export type DocumentUpdateListener = (changed: URI[], deleted: URI[]) => void
 export type DocumentBuildListener = (built: LangiumDocument[], cancelToken: CancellationToken) => Promise<void>
 export class DefaultDocumentBuilder implements DocumentBuilder {
-    protected readonly connection?: Connection;
     protected readonly langiumDocuments: LangiumDocuments;
     protected readonly indexManager: IndexManager;
     protected readonly serviceRegistry: ServiceRegistry;
@@ -61,41 +65,13 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
     protected readonly buildPhaseListeners: MultiMap<DocumentState, DocumentBuildListener> = new MultiMap();
 
     constructor(services: LangiumSharedServices) {
-        this.connection = services.lsp.Connection;
         this.langiumDocuments = services.workspace.LangiumDocuments;
         this.indexManager = services.workspace.IndexManager;
         this.serviceRegistry = services.ServiceRegistry;
     }
 
-    async build<T extends AstNode>(documents: Array<LangiumDocument<T>>, cancelToken = CancellationToken.None): Promise<void> {
-        await this.buildDocuments(documents, cancelToken);
-        for (const document of documents) {
-            await this.validate(document, cancelToken, true);
-        }
-    }
-
-    protected async validate(document: LangiumDocument, cancelToken = CancellationToken.None, forceDiagnostics = false): Promise<Diagnostic[]> {
-        let diagnostics: Diagnostic[] = [];
-        const validator = this.serviceRegistry.getServices(document.uri).validation.DocumentValidator;
-        if (forceDiagnostics || this.shouldValidate(document)) {
-            diagnostics = await validator.validateDocument(document, cancelToken);
-            if (this.connection) {
-                // Send the computed diagnostics to VS Code.
-                this.connection.sendDiagnostics({ uri: document.textDocument.uri, diagnostics });
-            }
-            document.diagnostics = diagnostics;
-            document.state = DocumentState.Validated;
-        }
-        return diagnostics;
-    }
-
-    /**
-     * Determine whether the given document should be validated during a build. The default
-     * implementation validates whenever a client connection is available.
-     */
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    protected shouldValidate(document: LangiumDocument): boolean {
-        return this.connection !== undefined;
+    async build<T extends AstNode>(documents: Array<LangiumDocument<T>>, options: BuildOptions = {}, cancelToken = CancellationToken.None): Promise<void> {
+        await this.buildDocuments(documents, options, cancelToken);
     }
 
     async update(changed: URI[], deleted: URI[], cancelToken = CancellationToken.None): Promise<void> {
@@ -113,7 +89,12 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
         await interruptAndCheck(cancelToken);
         const changedDocuments = changed.map(e => this.langiumDocuments.getOrCreateDocument(e));
         const rebuildDocuments = this.collectDocuments(changedDocuments, deleted);
-        await this.buildDocuments(rebuildDocuments, cancelToken);
+        const buildOptions: BuildOptions = {
+            // This method is meant to be called after receiving a change notification from the client,
+            // so we assume that we want diagnostics to be reported in the editor.
+            validationChecks: 'all'
+        };
+        await this.buildDocuments(rebuildDocuments, buildOptions, cancelToken);
     }
 
     onUpdate(callback: DocumentUpdateListener): void {
@@ -137,11 +118,11 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
         return Array.from(docSet);
     }
 
-    protected async buildDocuments(documents: LangiumDocument[], cancelToken: CancellationToken): Promise<void> {
+    protected async buildDocuments(documents: LangiumDocument[], options: BuildOptions, cancelToken: CancellationToken): Promise<void> {
         // 1. Index content
-        const toBeIndexed = documents.filter(e => e.state < DocumentState.IndexedContent);
-        await this.indexManager.updateContent(toBeIndexed, cancelToken);
-        await this.notifyBuildPhase(toBeIndexed, DocumentState.IndexedContent, cancelToken);
+        await this.runCancelable(documents, DocumentState.IndexedContent, cancelToken, doc =>
+            this.indexManager.updateContent(doc, cancelToken)
+        );
         // 2. Preprocessing
         await this.runCancelable(documents, DocumentState.Processed, cancelToken, doc =>
             this.process(doc, cancelToken)
@@ -151,10 +132,12 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
             this.serviceRegistry.getServices(doc.uri).references.Linker.link(doc, cancelToken)
         );
         // 4. Index references
-        await this.indexManager.updateReferences(documents.filter(e => e.state < DocumentState.IndexedReferences), cancelToken);
-        await this.notifyBuildPhase(toBeIndexed, DocumentState.IndexedReferences, cancelToken);
+        await this.runCancelable(documents, DocumentState.IndexedReferences, cancelToken, doc =>
+            this.indexManager.updateReferences(doc, cancelToken)
+        );
         // 5. Validation
-        await this.runCancelable(documents, DocumentState.Validated, cancelToken, doc =>
+        const validateDocs = documents.filter(doc => this.shouldValidate(doc, options));
+        await this.runCancelable(validateDocs, DocumentState.Validated, cancelToken, doc =>
             this.validate(doc, cancelToken)
         );
     }
@@ -173,6 +156,10 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
     }
 
     protected async notifyBuildPhase(documents: LangiumDocument[], state: DocumentState, cancelToken: CancellationToken): Promise<void> {
+        if (documents.length === 0) {
+            // Don't notify when no document has been processed
+            return;
+        }
         const listeners = this.buildPhaseListeners.get(state);
         for (const listener of listeners) {
             await interruptAndCheck(cancelToken);
@@ -182,10 +169,32 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
 
     /**
      * Process the document by running precomputations. The default implementation precomputes the scope.
+     *
+     * _Note:_ You should not resolve any cross-references during this phase. Cross-reference resolution depends
+     * on preprocessing to be completed.
      */
     protected async process(document: LangiumDocument, cancelToken: CancellationToken): Promise<void> {
         const scopeComputation = this.serviceRegistry.getServices(document.uri).references.ScopeComputation;
         document.precomputedScopes = await scopeComputation.computeScope(document, cancelToken);
         document.state = DocumentState.Processed;
     }
+
+    /**
+     * Determine whether the given document should be validated during a build. The default
+     * implementation checks the `validationChecks` property of the build options.
+     */
+    protected shouldValidate(_document: LangiumDocument, options: BuildOptions): boolean {
+        return options.validationChecks === 'all';
+    }
+
+    /**
+     * Run validation checks on the given document and store the resulting diagnostics in the document.
+     */
+    protected async validate(document: LangiumDocument, cancelToken: CancellationToken): Promise<void> {
+        const validator = this.serviceRegistry.getServices(document.uri).validation.DocumentValidator;
+        const diagnostics = await validator.validateDocument(document, cancelToken);
+        document.diagnostics = diagnostics;
+        document.state = DocumentState.Validated;
+    }
+
 }

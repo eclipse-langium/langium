@@ -36,15 +36,19 @@ export type Properties<N extends AstNode> = keyof Omit<N, keyof AstNode | number
  * A cross-reference in the AST. Cross-references may or may not be successfully resolved.
  */
 export interface Reference<T extends AstNode = AstNode> {
-    /** The target AST node of this reference. In case the reference cannot be resolved, the value is `undefined`. */
+    /**
+     * The target AST node of this reference. Accessing this property may trigger cross-reference
+     * resolution by the `Linker` in case it has not been done yet. If the reference cannot be resolved,
+     * the value is `undefined`.
+     */
     readonly ref?: T;
+
     /** If any problem occurred while resolving the reference, it is described by this property. */
     readonly error?: LinkingError;
     /** The CST node from which the reference was parsed */
     readonly $refNode: CstNode;
     /** The actual text used to look up in the surrounding scope */
     readonly $refText: string;
-
     /** The node description for the AstNode returned by `ref`  */
     readonly $nodeDescription?: AstNodeDescription;
 }
