@@ -40,8 +40,8 @@ PrimitiveType returns string:
 // return type for terminals and datatype rules: [primitive]
 // return type for parser rules: [Interface, ID]
 
-ReturnType returns string:
-	PrimitiveType | ID;
+ReturnType:
+	name=(PrimitiveType | ID);
 
 ///////////////////////////////////////////////////////////////////////////////
 

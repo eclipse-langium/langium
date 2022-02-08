@@ -260,7 +260,7 @@ function withCardinality(regex: string, cardinality?: string, wrap = false): str
 
 export function getTypeName(rule: ast.AbstractRule | undefined): string {
     if (rule) {
-        return rule.type ?? rule.name;
+        return rule.type?.name ?? rule.name;
     } else {
         throw new Error('Unknown rule type');
     }
@@ -268,7 +268,7 @@ export function getTypeName(rule: ast.AbstractRule | undefined): string {
 
 export function getRuleType(rule: ast.AbstractRule | undefined): string {
     if (ast.isParserRule(rule) && isDataTypeRule(rule) || ast.isTerminalRule(rule)) {
-        return rule.type ?? 'string';
+        return rule.type?.name ?? 'string';
     }
     return getTypeName(rule);
 }
@@ -375,9 +375,9 @@ export function processNodeWithNodeLocator(astNodeLocator: AstNodeLocator): (nod
             scopes.add(container, {
                 node,
                 type: 'Interface',
-                name: node.type ?? node.name,
+                name: node.type?.name ?? node.name,
                 documentUri: document.uri,
-                path: astNodeLocator.getAstNodePath(node)
+                path: astNodeLocator.getAstNodePath(node.type ?? node)
             });
         }
     };

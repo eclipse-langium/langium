@@ -291,7 +291,10 @@ export const StatemachineGrammar = (): Grammar => loadedStatemachineGrammar ||(l
     {
       "$type": "TerminalRule",
       "name": "INT",
-      "type": "number",
+      "type": {
+        "$type": "ReturnType",
+        "name": "number"
+      },
       "terminal": {
         "$type": "RegexToken",
         "regex": "[0-9]+",

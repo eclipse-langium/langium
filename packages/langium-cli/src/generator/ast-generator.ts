@@ -47,7 +47,7 @@ function buildDatatype(rule: ParserRule): GeneratorNode {
     if (isAlternatives(rule.alternatives) && rule.alternatives.elements.every(e => isKeyword(e))) {
         return `export type ${rule.name} = ${stream(rule.alternatives.elements).filter(isKeyword).map(e => `'${e.value}'`).join(' | ')}`;
     } else {
-        return `export type ${rule.name} = ${rule.type ?? 'string'}`;
+        return `export type ${rule.name} = ${rule.type?.name ?? 'string'}`;
     }
 }
 

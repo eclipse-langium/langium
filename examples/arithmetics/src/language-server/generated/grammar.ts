@@ -273,7 +273,10 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
       "parameters": [],
       "name": "Addition",
       "hiddenTokens": [],
-      "type": "Expression",
+      "type": {
+        "$type": "ReturnType",
+        "name": "Expression"
+      },
       "alternatives": {
         "$type": "Group",
         "elements": [
@@ -337,7 +340,10 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
       "parameters": [],
       "name": "Multiplication",
       "hiddenTokens": [],
-      "type": "Expression",
+      "type": {
+        "$type": "ReturnType",
+        "name": "Expression"
+      },
       "alternatives": {
         "$type": "Group",
         "elements": [
@@ -401,7 +407,10 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
       "parameters": [],
       "name": "PrimaryExpression",
       "hiddenTokens": [],
-      "type": "Expression",
+      "type": {
+        "$type": "ReturnType",
+        "name": "Expression"
+      },
       "alternatives": {
         "$type": "Alternatives",
         "elements": [
@@ -544,7 +553,10 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
     {
       "$type": "TerminalRule",
       "name": "NUMBER",
-      "type": "number",
+      "type": {
+        "$type": "ReturnType",
+        "name": "number"
+      },
       "terminal": {
         "$type": "RegexToken",
         "regex": "[0-9]+(\\\\.[0-9])?",
