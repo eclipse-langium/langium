@@ -20,7 +20,7 @@ TypeDeclaration:
 
 Interface:
 	'interface' name=ID
-	// superType can be Interface, not primitive return type or ParserRule without return name
+	// superType: [Interface, ParserRule, ReturnType (only ID)]
 	('extends' superTypes+=ID (',' superTypes+=ID)*)?
 	SchemaType;
 
@@ -28,11 +28,14 @@ fragment SchemaType:
 	'{' attributes+=TypeAttribute* '}' ';'?;
 
 TypeAttribute:
-	// type can be a primitive type, Interface, not primitive return type or ParserRule without return name 
+	// type: [Interface, ParserRule, ReturnType (primitive + ID)]
 	name=ID (isOptional?='?')? ':' type=ID ';'?;
 
-// return type for terminals and datatype rules can be a primitive type
-// return type for parser rules can be Interface, ParserRule or any ID (what is condidered as type definition)
+// return type for terminals and datatype rules: [primitive]
+// return type for parser rules: [Interface, ID]
+
+ReturnType returns string:
+	'string' | 'number' | 'boolean' | 'bigint' | 'Date' | ID;
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -43,8 +46,8 @@ GrammarImport:
 
 ParserRule :
 	(
-	  (^entry?='entry' | ^fragment?='fragment') RuleNameAndParams (wildcard?='*' | ('returns' type=ID)?)
-	| RuleNameAndParams ('returns' type=ID)?
+	  (^entry?='entry' | ^fragment?='fragment') RuleNameAndParams (wildcard?='*' | ('returns' type=ReturnType)?)
+	| RuleNameAndParams ('returns' type=ReturnType)?
 	)
 	(definesHiddenTokens?='hidden' '(' (hiddenTokens+=[AbstractRule:ID] (',' hiddenTokens+=[AbstractRule:ID])*)? ')')? ':'
 		alternatives=Alternatives
@@ -150,7 +153,7 @@ PredicatedGroup returns Group:
 	(predicated?='=>' | firstSetPredicated?='->') '(' elements+=Alternatives ')';
 
 TerminalRule:
-	^hidden?='hidden'? 'terminal' (^fragment?='fragment' name=ID | name=ID ('returns' type=ID)?) ':'
+	^hidden?='hidden'? 'terminal' (^fragment?='fragment' name=ID | name=ID ('returns' type=ReturnType)?) ':'
 		^terminal=TerminalAlternatives
 	';';
 

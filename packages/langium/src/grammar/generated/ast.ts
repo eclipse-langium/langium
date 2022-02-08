@@ -23,7 +23,7 @@ export interface AbstractRule extends AstNode {
     readonly $container: Grammar;
     fragment: boolean
     name: string
-    type: string
+    type: ReturnType
 }
 
 export const AbstractRule = 'AbstractRule';
@@ -382,6 +382,8 @@ export const Interface = 'Interface';
 export function isInterface(item: unknown): item is Interface {
     return reflection.isInstance(item, Interface);
 }
+
+export type ReturnType = string
 
 export type LangiumGrammarAstType = 'AbstractElement' | 'AbstractRule' | 'Condition' | 'Grammar' | 'GrammarImport' | 'NamedArgument' | 'Parameter' | 'TypeAttribute' | 'TypeDeclaration' | 'Action' | 'Alternatives' | 'Assignment' | 'CharacterRange' | 'CrossReference' | 'Group' | 'Keyword' | 'NegatedToken' | 'RegexToken' | 'RuleCall' | 'TerminalAlternatives' | 'TerminalGroup' | 'TerminalRuleCall' | 'UnorderedGroup' | 'UntilToken' | 'Wildcard' | 'ParserRule' | 'TerminalRule' | 'Conjunction' | 'Disjunction' | 'LiteralCondition' | 'Negation' | 'ParameterReference' | 'Interface';
 

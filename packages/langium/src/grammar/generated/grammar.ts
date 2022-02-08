@@ -427,6 +427,51 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
     {
       "$type": "ParserRule",
       "parameters": [],
+      "name": "ReturnType",
+      "hiddenTokens": [],
+      "type": "string",
+      "alternatives": {
+        "$type": "Alternatives",
+        "elements": [
+          {
+            "$type": "Keyword",
+            "value": "string",
+            "elements": []
+          },
+          {
+            "$type": "Keyword",
+            "value": "number",
+            "elements": []
+          },
+          {
+            "$type": "Keyword",
+            "value": "boolean",
+            "elements": []
+          },
+          {
+            "$type": "Keyword",
+            "value": "bigint",
+            "elements": []
+          },
+          {
+            "$type": "Keyword",
+            "value": "Date",
+            "elements": []
+          },
+          {
+            "$type": "RuleCall",
+            "arguments": [],
+            "rule": {
+              "$refText": "ID"
+            },
+            "elements": []
+          }
+        ]
+      }
+    },
+    {
+      "$type": "ParserRule",
+      "parameters": [],
       "name": "AbstractRule",
       "hiddenTokens": [],
       "alternatives": {
@@ -558,7 +603,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                               "$type": "RuleCall",
                               "arguments": [],
                               "rule": {
-                                "$refText": "ID"
+                                "$refText": "ReturnType"
                               }
                             }
                           }
@@ -596,7 +641,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                           "$type": "RuleCall",
                           "arguments": [],
                           "rule": {
-                            "$refText": "ID"
+                            "$refText": "ReturnType"
                           }
                         }
                       }
@@ -2326,7 +2371,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                           "$type": "RuleCall",
                           "arguments": [],
                           "rule": {
-                            "$refText": "ID"
+                            "$refText": "ReturnType"
                           }
                         }
                       }
