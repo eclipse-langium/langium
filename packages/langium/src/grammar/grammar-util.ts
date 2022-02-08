@@ -14,7 +14,8 @@ import { getContainerOfType, getDocument, Mutable, streamAllContents } from '../
 import { MultiMap } from '../utils/collections';
 import { streamCst } from '../utils/cst-util';
 import { escapeRegExp } from '../utils/regex-util';
-import { documentFromText, LangiumDocuments, PrecomputedScopes } from '../workspace/documents';
+import { AstNodeLocator } from '../workspace/ast-node-locator';
+import { documentFromText, LangiumDocument, LangiumDocuments, PrecomputedScopes } from '../workspace/documents';
 import { createLangiumGrammarServices } from './langium-grammar-module';
 
 export type Cardinality = '?' | '*' | '+' | undefined;
@@ -352,7 +353,9 @@ export function computeGrammarScope(services: LangiumServices, grammar: ast.Gram
     const descriptions = services.index.AstNodeDescriptionProvider;
     const document = getDocument(grammar);
     const scopes = new MultiMap<AstNode, AstNodeDescription>();
+    const processNode = processNodeWithNodeLocator(services.index.AstNodeLocator);
     for (const node of streamAllContents(grammar)) {
+        processNode(node, document, scopes);
         const container = node.$container;
         if (container) {
             const name = nameProvider.getName(node);
@@ -363,4 +366,19 @@ export function computeGrammarScope(services: LangiumServices, grammar: ast.Gram
         }
     }
     return scopes;
+}
+
+export function processNodeWithNodeLocator(astNodeLocator: AstNodeLocator): (node: AstNode, document: LangiumDocument, scopes: PrecomputedScopes) => void {
+    return (node: AstNode, document: LangiumDocument, scopes: PrecomputedScopes) => {
+        const container = node.$container;
+        if (container && ast.isParserRule(node)) {
+            scopes.add(container, {
+                node,
+                type: 'Interface',
+                name: node.type ?? node.name,
+                documentUri: document.uri,
+                path: astNodeLocator.getAstNodePath(node)
+            });
+        }
+    };
 }
