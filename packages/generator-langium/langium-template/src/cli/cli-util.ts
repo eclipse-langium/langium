@@ -17,9 +17,9 @@ export async function extractDocument(fileName: string, services: LangiumService
     }
 
     const document = services.shared.workspace.LangiumDocuments.getOrCreateDocument(URI.file(path.resolve(fileName)));
-    const buildResult = await services.shared.workspace.DocumentBuilder.build(document);
+    await services.shared.workspace.DocumentBuilder.build([document], { validationChecks: 'all' });
 
-    const validationErrors = buildResult.diagnostics.filter(e => e.severity === 1);
+    const validationErrors = (document.diagnostics ?? []).filter(e => e.severity === 1);
     if (validationErrors.length > 0) {
         console.error(colors.red('There are validation errors:'));
         for (const validationError of validationErrors) {

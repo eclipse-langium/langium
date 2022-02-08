@@ -1,5 +1,3 @@
-datatype String
-
 entity E1 {
     name: String
 }

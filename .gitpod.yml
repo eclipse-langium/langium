@@ -2,6 +2,10 @@ tasks:
   - before: npm install -g npm@^7.7.0
     init: npm install
 
+ports:
+  - port: 6000-6999
+    onOpen: ignore
+
 vscode:
   extensions:
     - langium.langium-vscode

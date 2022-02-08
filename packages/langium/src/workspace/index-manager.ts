@@ -10,7 +10,6 @@ import { ServiceRegistry } from '../service-registry';
 import { LangiumSharedServices } from '../services';
 import { AstNode, AstNodeDescription, AstReflection } from '../syntax-tree';
 import { getDocument } from '../utils/ast-util';
-import { interruptAndCheck } from '../utils/promise-util';
 import { stream, Stream } from '../utils/stream';
 import { ReferenceDescription } from './ast-descriptions';
 import { DocumentState, LangiumDocument, LangiumDocuments } from './documents';
@@ -31,22 +30,22 @@ export interface IndexManager {
     remove(uris: URI[]): void;
 
     /**
-     * Updates the information about a Document content inside the index.
+     * Updates the information about the exportable content of a document inside the index.
      *
-     * @param document document(s) to be updated
-     * @param cancelToken allows to cancel the current operation
+     * @param document Document to be updated
+     * @param cancelToken Indicates when to cancel the current operation.
      * @throws `OperationCanceled` if a user action occurs during execution
      */
-    updateContent(documents: LangiumDocument[], cancelToken?: CancellationToken): Promise<void>;
+    updateContent(document: LangiumDocument, cancelToken?: CancellationToken): Promise<void>;
 
     /**
-     * Updates the information about a Document references inside the index.
+     * Updates the information about the cross-references of a document inside the index.
      *
-     * @param document document(s) to be updated
-     * @param cancelToken allows to cancel the current operation
+     * @param document Document to be updated
+     * @param cancelToken Indicates when to cancel the current operation.
      * @throws `OperationCanceled` if a user action occurs during execution
      */
-    updateReferences(documents: LangiumDocument[], cancelToken?: CancellationToken): Promise<void>;
+    updateReferences(document: LangiumDocument, cancelToken?: CancellationToken): Promise<void>;
 
     /**
      * Returns all documents that could be affected by changes in the documents
@@ -128,29 +127,22 @@ export class DefaultIndexManager implements IndexManager {
         }
     }
 
-    async updateContent(documents: LangiumDocument[], cancelToken = CancellationToken.None): Promise<void> {
+    async updateContent(document: LangiumDocument, cancelToken = CancellationToken.None): Promise<void> {
         this.globalScopeCache.clear();
-        // build exported object data
-        for (const document of documents) {
-            const services = this.serviceRegistry.getServices(document.uri);
-            const indexData: AstNodeDescription[] = await services.index.AstNodeDescriptionProvider.createDescriptions(document, cancelToken);
-            for (const data of indexData) {
-                data.node = undefined; // clear reference to the AST Node
-            }
-            this.simpleIndex.set(document.textDocument.uri, indexData);
-            await interruptAndCheck(cancelToken);
-            document.state = DocumentState.IndexedContent;
+        const services = this.serviceRegistry.getServices(document.uri);
+        const indexData: AstNodeDescription[] = await services.index.AstNodeDescriptionProvider.createDescriptions(document, cancelToken);
+        for (const data of indexData) {
+            data.node = undefined; // clear reference to the AST Node
         }
+        this.simpleIndex.set(document.textDocument.uri, indexData);
+        document.state = DocumentState.IndexedContent;
     }
 
-    async updateReferences(documents: LangiumDocument[], cancelToken = CancellationToken.None): Promise<void> {
-        // create reference descriptions
-        for (const document of documents) {
-            const services = this.serviceRegistry.getServices(document.uri);
-            this.referenceIndex.set(document.textDocument.uri, await services.index.ReferenceDescriptionProvider.createDescriptions(document, cancelToken));
-            await interruptAndCheck(cancelToken);
-            document.state = DocumentState.IndexedReferences;
-        }
+    async updateReferences(document: LangiumDocument, cancelToken = CancellationToken.None): Promise<void> {
+        const services = this.serviceRegistry.getServices(document.uri);
+        const indexData: ReferenceDescription[] = await services.index.ReferenceDescriptionProvider.createDescriptions(document, cancelToken);
+        this.referenceIndex.set(document.textDocument.uri, indexData);
+        document.state = DocumentState.IndexedReferences;
     }
 
     getAffectedDocuments(uris: URI[]): Stream<LangiumDocument> {

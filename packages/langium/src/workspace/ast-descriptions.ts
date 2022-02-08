@@ -15,28 +15,37 @@ import { interruptAndCheck } from '../utils/promise-util';
 import { AstNodeLocator } from './ast-node-locator';
 import { DocumentSegment, LangiumDocument } from './documents';
 
-export interface ReferenceDescription {
-    /** URI of the document that holds a reference */
-    sourceUri: URI
-    /** Path to AstNode that holds a reference */
-    sourcePath: string
-    /** Target document uri */
-    targetUri: URI
-    /** Path to the target AstNode inside the document */
-    targetPath: string
-    /** Segment of the reference text. */
-    segment: DocumentSegment
-    /** Marks a local reference i.e. a cross reference inside a document.   */
-    local?: boolean
-}
-
+/**
+ * Creates descriptions of AST nodes to be used for cross-reference resolutions.
+ */
 export interface AstNodeDescriptionProvider {
-    createDescription(node: AstNode, name: string, document: LangiumDocument, cancelToken?: CancellationToken): AstNodeDescription;
-    createDescriptions(document: LangiumDocument, cancelToken?: CancellationToken): Promise<AstNodeDescription[]>;
-}
 
-export interface ReferenceDescriptionProvider {
-    createDescriptions(document: LangiumDocument, cancelToken?: CancellationToken): Promise<ReferenceDescription[]>;
+    /**
+     * Create a description for the given AST node. This service method is typically used while indexing
+     * the contents of a document and during scope precomputation.
+     *
+     * @param node An AST node.
+     * @param name The name to be used to refer to the AST node. Typically this is determined by the
+     *     `NameProvider` service, but alternative names may be provided according to the semantics
+     *     of your language.
+     * @param document The document containing the AST node. If omitted, it is taken from the root AST node.
+     */
+    createDescription(node: AstNode, name: string, document?: LangiumDocument): AstNodeDescription;
+
+    /**
+     * Create descriptions of all AST nodes that shall be exported from the given document. These descriptions
+     * are gathered by the `IndexManager` and stored in the global index so they can be referenced from other
+     * documents.
+     *
+     * _Note:_ You should not resolve any cross-references in this service method. Cross-reference resolution
+     * depends on the preprocessing phase to be completed, which runs after the initial indexing where this
+     * method is used.
+     *
+     * @param document The document in which to gather exported AST nodes.
+     * @param cancelToken Indicates when to cancel the current operation.
+     * @throws `OperationCanceled` if a user action occurs during execution
+     */
+    createDescriptions(document: LangiumDocument, cancelToken?: CancellationToken): Promise<AstNodeDescription[]>;
 }
 
 export class DefaultAstNodeDescriptionProvider implements AstNodeDescriptionProvider {
@@ -49,7 +58,7 @@ export class DefaultAstNodeDescriptionProvider implements AstNodeDescriptionProv
         this.nameProvider = services.references.NameProvider;
     }
 
-    createDescription(node: AstNode, name: string, document: LangiumDocument): AstNodeDescription {
+    createDescription(node: AstNode, name: string, document: LangiumDocument = getDocument(node)): AstNodeDescription {
         return {
             node,
             name,
@@ -75,6 +84,41 @@ export class DefaultAstNodeDescriptionProvider implements AstNodeDescriptionProv
         }
         return descr;
     }
+}
+
+/**
+ * Describes a cross-reference within a document or between two documents.
+ */
+export interface ReferenceDescription {
+    /** URI of the document that holds a reference */
+    sourceUri: URI
+    /** Path to AstNode that holds a reference */
+    sourcePath: string
+    /** Target document uri */
+    targetUri: URI
+    /** Path to the target AstNode inside the document */
+    targetPath: string
+    /** Segment of the reference text. */
+    segment: DocumentSegment
+    /** Marks a local reference i.e. a cross reference inside a document.   */
+    local?: boolean
+}
+
+/**
+ * Creates descriptions of all cross-references in a document. These are used by the `IndexManager`
+ * to determine which documents are affected and should be rebuilt when a document is changed.
+ */
+export interface ReferenceDescriptionProvider {
+    /**
+     * Create descriptions of all cross-references found in the given document. These descriptions are
+     * gathered by the `IndexManager` and stored in the global index so they can be considered when
+     * a document change is reported by the client.
+     *
+     * @param document The document in which to gather cross-references.
+     * @param cancelToken Indicates when to cancel the current operation.
+     * @throws `OperationCanceled` if a user action occurs during execution
+     */
+    createDescriptions(document: LangiumDocument, cancelToken?: CancellationToken): Promise<ReferenceDescription[]>;
 }
 
 export class DefaultReferenceDescriptionProvider implements ReferenceDescriptionProvider {
