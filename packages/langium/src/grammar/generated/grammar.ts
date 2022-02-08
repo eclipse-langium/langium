@@ -405,16 +405,41 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "value": ":"
           },
           {
-            "$type": "Assignment",
-            "feature": "type",
-            "operator": "=",
-            "terminal": {
-              "$type": "RuleCall",
-              "arguments": [],
-              "rule": {
-                "$refText": "ID"
+            "$type": "Alternatives",
+            "elements": [
+              {
+                "$type": "Assignment",
+                "feature": "primitiveType",
+                "operator": "=",
+                "terminal": {
+                  "$type": "RuleCall",
+                  "arguments": [],
+                  "rule": {
+                    "$refText": "PrimitiveType"
+                  }
+                },
+                "elements": []
+              },
+              {
+                "$type": "Assignment",
+                "feature": "type",
+                "operator": "=",
+                "terminal": {
+                  "$type": "CrossReference",
+                  "type": {
+                    "$refText": "AbstractType"
+                  },
+                  "terminal": {
+                    "$type": "RuleCall",
+                    "arguments": [],
+                    "rule": {
+                      "$refText": "ID"
+                    }
+                  }
+                },
+                "elements": []
               }
-            }
+            ]
           },
           {
             "$type": "Keyword",
@@ -427,7 +452,34 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
     {
       "$type": "ParserRule",
       "parameters": [],
-      "name": "ReturnType",
+      "name": "AbstractType",
+      "hiddenTokens": [],
+      "alternatives": {
+        "$type": "Alternatives",
+        "elements": [
+          {
+            "$type": "RuleCall",
+            "arguments": [],
+            "rule": {
+              "$refText": "Interface"
+            },
+            "elements": []
+          },
+          {
+            "$type": "RuleCall",
+            "arguments": [],
+            "rule": {
+              "$refText": "ParserRule"
+            },
+            "elements": []
+          }
+        ]
+      }
+    },
+    {
+      "$type": "ParserRule",
+      "parameters": [],
+      "name": "PrimitiveType",
       "hiddenTokens": [],
       "type": "string",
       "alternatives": {
@@ -450,12 +502,27 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           },
           {
             "$type": "Keyword",
-            "value": "bigint",
+            "value": "date",
             "elements": []
-          },
+          }
+        ]
+      }
+    },
+    {
+      "$type": "ParserRule",
+      "parameters": [],
+      "name": "ReturnType",
+      "hiddenTokens": [],
+      "type": "string",
+      "alternatives": {
+        "$type": "Alternatives",
+        "elements": [
           {
-            "$type": "Keyword",
-            "value": "Date",
+            "$type": "RuleCall",
+            "arguments": [],
+            "rule": {
+              "$refText": "PrimitiveType"
+            },
             "elements": []
           },
           {

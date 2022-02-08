@@ -28,14 +28,20 @@ fragment SchemaType:
 	'{' attributes+=TypeAttribute* '}' ';'?;
 
 TypeAttribute:
-	// type: [Interface, ParserRule, ReturnType (primitive + ID)]
-	name=ID (isOptional?='?')? ':' type=ID ';'?;
+	// primitiveType/type: [Interface, ParserRule, ReturnType (primitive + ID)]
+	name=ID (isOptional?='?')? ':' (primitiveType=PrimitiveType | type=[AbstractType:ID]) ';'?;
+
+AbstractType:
+	Interface | ParserRule;
+
+PrimitiveType returns string:
+	'string' | 'number' | 'boolean' | 'date';
 
 // return type for terminals and datatype rules: [primitive]
 // return type for parser rules: [Interface, ID]
 
 ReturnType returns string:
-	'string' | 'number' | 'boolean' | 'bigint' | 'Date' | ID;
+	PrimitiveType | ID;
 
 ///////////////////////////////////////////////////////////////////////////////
 
