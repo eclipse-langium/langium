@@ -9,7 +9,8 @@ import { LangiumServices } from '../services';
 import { AstNode } from '../syntax-tree';
 import { AstNodeLocator } from '../workspace/ast-node-locator';
 import { LangiumDocument, PrecomputedScopes } from '../workspace/documents';
-import { processNodeWithNodeLocator } from './grammar-util';
+import { isReturnType } from './generated/ast';
+import { processTypeNodeWithNodeLocator } from './grammar-util';
 
 export class LangiumGrammarScopeComputation extends DefaultScopeComputation {
     protected readonly astNodeLocator: AstNodeLocator;
@@ -20,7 +21,8 @@ export class LangiumGrammarScopeComputation extends DefaultScopeComputation {
     }
 
     protected processNode(node: AstNode, document: LangiumDocument, scopes: PrecomputedScopes): void {
-        processNodeWithNodeLocator(this.astNodeLocator)(node, document, scopes);
+        if (isReturnType(node)) return;
+        processTypeNodeWithNodeLocator(this.astNodeLocator)(node, document, scopes);
         super.processNode(node, document, scopes);
     }
 }

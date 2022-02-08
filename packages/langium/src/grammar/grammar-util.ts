@@ -353,9 +353,10 @@ export function computeGrammarScope(services: LangiumServices, grammar: ast.Gram
     const descriptions = services.index.AstNodeDescriptionProvider;
     const document = getDocument(grammar);
     const scopes = new MultiMap<AstNode, AstNodeDescription>();
-    const processNode = processNodeWithNodeLocator(services.index.AstNodeLocator);
+    const processTypeNode = processTypeNodeWithNodeLocator(services.index.AstNodeLocator);
     for (const node of streamAllContents(grammar)) {
-        processNode(node, document, scopes);
+        if (ast.isReturnType(node)) continue;
+        processTypeNode(node, document, scopes);
         const container = node.$container;
         if (container) {
             const name = nameProvider.getName(node);
@@ -368,16 +369,17 @@ export function computeGrammarScope(services: LangiumServices, grammar: ast.Gram
     return scopes;
 }
 
-export function processNodeWithNodeLocator(astNodeLocator: AstNodeLocator): (node: AstNode, document: LangiumDocument, scopes: PrecomputedScopes) => void {
+export function processTypeNodeWithNodeLocator(astNodeLocator: AstNodeLocator): (node: AstNode, document: LangiumDocument, scopes: PrecomputedScopes) => void {
     return (node: AstNode, document: LangiumDocument, scopes: PrecomputedScopes) => {
         const container = node.$container;
         if (container && ast.isParserRule(node)) {
+            const typeNode = node.type ?? node;
             scopes.add(container, {
-                node,
+                node: typeNode,
                 type: 'Interface',
-                name: node.type?.name ?? node.name,
+                name: typeNode.name,
                 documentUri: document.uri,
-                path: astNodeLocator.getAstNodePath(node.type ?? node)
+                path: astNodeLocator.getAstNodePath(typeNode)
             });
         }
     };
