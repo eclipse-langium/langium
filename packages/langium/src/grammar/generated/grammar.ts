@@ -217,74 +217,19 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
               },
               {
                 "$type": "Assignment",
-                "feature": "types",
+                "feature": "interfaces",
                 "operator": "+=",
                 "terminal": {
                   "$type": "RuleCall",
                   "arguments": [],
                   "rule": {
-                    "$refText": "TypeDeclaration"
+                    "$refText": "Interface"
                   }
                 },
                 "elements": []
               }
             ],
             "cardinality": "+"
-          }
-        ]
-      }
-    },
-    {
-      "$type": "ParserRule",
-      "parameters": [],
-      "name": "TypeDeclaration",
-      "hiddenTokens": [],
-      "alternatives": {
-        "$type": "Alternatives",
-        "elements": [
-          {
-            "$type": "RuleCall",
-            "arguments": [],
-            "rule": {
-              "$refText": "Interface"
-            },
-            "elements": []
-          },
-          {
-            "$type": "RuleCall",
-            "arguments": [],
-            "rule": {
-              "$refText": "X"
-            },
-            "elements": []
-          }
-        ]
-      }
-    },
-    {
-      "$type": "ParserRule",
-      "parameters": [],
-      "name": "X",
-      "hiddenTokens": [],
-      "alternatives": {
-        "$type": "Group",
-        "elements": [
-          {
-            "$type": "Keyword",
-            "value": "x",
-            "elements": []
-          },
-          {
-            "$type": "Assignment",
-            "feature": "name",
-            "operator": "=",
-            "terminal": {
-              "$type": "RuleCall",
-              "arguments": [],
-              "rule": {
-                "$refText": "ID"
-              }
-            }
           }
         ]
       }

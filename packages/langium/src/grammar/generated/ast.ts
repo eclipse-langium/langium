@@ -19,12 +19,7 @@ export function isAbstractElement(item: unknown): item is AbstractElement {
     return reflection.isInstance(item, AbstractElement);
 }
 
-export interface AbstractRule extends AstNode {
-    readonly $container: Grammar;
-    fragment: boolean
-    name: string
-    type: ReturnType
-}
+export type AbstractRule = TerminalRule | ParserRule;
 
 export const AbstractRule = 'AbstractRule';
 
@@ -32,9 +27,7 @@ export function isAbstractRule(item: unknown): item is AbstractRule {
     return reflection.isInstance(item, AbstractRule);
 }
 
-export interface AbstractType extends AstNode {
-    readonly $container: Grammar;
-}
+export type AbstractType = Interface | ParserRule;
 
 export const AbstractType = 'AbstractType';
 
@@ -56,10 +49,10 @@ export interface Grammar extends AstNode {
     definesHiddenTokens: boolean
     hiddenTokens: Array<Reference<AbstractRule>>
     imports: Array<GrammarImport>
+    interfaces: Array<Interface>
     isDeclared: boolean
     name: string
     rules: Array<AbstractRule>
-    types: Array<TypeDeclaration>
     usedGrammars: Array<Reference<Grammar>>
 }
 
@@ -105,7 +98,7 @@ export function isParameter(item: unknown): item is Parameter {
 }
 
 export interface ReturnType extends AstNode {
-    readonly $container: AbstractRule;
+    readonly $container: ParserRule | TerminalRule;
     name: PrimitiveType | string
 }
 
@@ -127,17 +120,6 @@ export const TypeAttribute = 'TypeAttribute';
 
 export function isTypeAttribute(item: unknown): item is TypeAttribute {
     return reflection.isInstance(item, TypeAttribute);
-}
-
-export interface TypeDeclaration extends AstNode {
-    readonly $container: Grammar;
-    name: string
-}
-
-export const TypeDeclaration = 'TypeDeclaration';
-
-export function isTypeDeclaration(item: unknown): item is TypeDeclaration {
-    return reflection.isInstance(item, TypeDeclaration);
 }
 
 export interface Action extends AbstractElement {
@@ -316,12 +298,15 @@ export function isWildcard(item: unknown): item is Wildcard {
     return reflection.isInstance(item, Wildcard);
 }
 
-export interface ParserRule extends AbstractType, AbstractRule {
+export interface ParserRule extends AstNode {
     alternatives: AbstractElement
     definesHiddenTokens: boolean
     entry: boolean
+    fragment: boolean
     hiddenTokens: Array<Reference<AbstractRule>>
+    name: string
     parameters: Array<Parameter>
+    type: ReturnType
     wildcard: boolean
 }
 
@@ -331,9 +316,12 @@ export function isParserRule(item: unknown): item is ParserRule {
     return reflection.isInstance(item, ParserRule);
 }
 
-export interface TerminalRule extends AbstractRule {
+export interface TerminalRule extends AstNode {
+    fragment: boolean
     hidden: boolean
+    name: string
     terminal: AbstractElement
+    type: ReturnType
 }
 
 export const TerminalRule = 'TerminalRule';
@@ -342,8 +330,9 @@ export function isTerminalRule(item: unknown): item is TerminalRule {
     return reflection.isInstance(item, TerminalRule);
 }
 
-export interface Interface extends TypeDeclaration, AbstractType {
+export interface Interface extends AstNode {
     attributes: Array<TypeAttribute>
+    name: string
     superTypes: Array<Reference<AbstractType>>
 }
 
@@ -405,25 +394,16 @@ export function isParameterReference(item: unknown): item is ParameterReference 
     return reflection.isInstance(item, ParameterReference);
 }
 
-export interface X extends TypeDeclaration {
-}
-
-export const X = 'X';
-
-export function isX(item: unknown): item is X {
-    return reflection.isInstance(item, X);
-}
-
 export type PrimitiveType = 'string' | 'number' | 'boolean' | 'date'
 
-export type LangiumGrammarAstType = 'AbstractElement' | 'AbstractRule' | 'AbstractType' | 'Condition' | 'Grammar' | 'GrammarImport' | 'NamedArgument' | 'Parameter' | 'ReturnType' | 'TypeAttribute' | 'TypeDeclaration' | 'Action' | 'Alternatives' | 'Assignment' | 'CharacterRange' | 'CrossReference' | 'Group' | 'Keyword' | 'NegatedToken' | 'RegexToken' | 'RuleCall' | 'TerminalAlternatives' | 'TerminalGroup' | 'TerminalRuleCall' | 'UnorderedGroup' | 'UntilToken' | 'Wildcard' | 'ParserRule' | 'TerminalRule' | 'Interface' | 'Conjunction' | 'Disjunction' | 'LiteralCondition' | 'Negation' | 'ParameterReference' | 'X';
+export type LangiumGrammarAstType = 'AbstractElement' | 'AbstractRule' | 'AbstractType' | 'Condition' | 'Grammar' | 'GrammarImport' | 'NamedArgument' | 'Parameter' | 'ReturnType' | 'TypeAttribute' | 'Action' | 'Alternatives' | 'Assignment' | 'CharacterRange' | 'CrossReference' | 'Group' | 'Keyword' | 'NegatedToken' | 'RegexToken' | 'RuleCall' | 'TerminalAlternatives' | 'TerminalGroup' | 'TerminalRuleCall' | 'UnorderedGroup' | 'UntilToken' | 'Wildcard' | 'ParserRule' | 'TerminalRule' | 'Interface' | 'Conjunction' | 'Disjunction' | 'LiteralCondition' | 'Negation' | 'ParameterReference';
 
 export type LangiumGrammarAstReference = 'Grammar:hiddenTokens' | 'Grammar:usedGrammars' | 'NamedArgument:parameter' | 'TypeAttribute:type' | 'CrossReference:type' | 'RuleCall:rule' | 'TerminalRuleCall:rule' | 'ParserRule:hiddenTokens' | 'Interface:superTypes' | 'ParameterReference:parameter';
 
 export class LangiumGrammarAstReflection implements AstReflection {
 
     getAllTypes(): string[] {
-        return ['AbstractElement', 'AbstractRule', 'AbstractType', 'Condition', 'Grammar', 'GrammarImport', 'NamedArgument', 'Parameter', 'ReturnType', 'TypeAttribute', 'TypeDeclaration', 'Action', 'Alternatives', 'Assignment', 'CharacterRange', 'CrossReference', 'Group', 'Keyword', 'NegatedToken', 'RegexToken', 'RuleCall', 'TerminalAlternatives', 'TerminalGroup', 'TerminalRuleCall', 'UnorderedGroup', 'UntilToken', 'Wildcard', 'ParserRule', 'TerminalRule', 'Interface', 'Conjunction', 'Disjunction', 'LiteralCondition', 'Negation', 'ParameterReference', 'X'];
+        return ['AbstractElement', 'AbstractRule', 'AbstractType', 'Condition', 'Grammar', 'GrammarImport', 'NamedArgument', 'Parameter', 'ReturnType', 'TypeAttribute', 'Action', 'Alternatives', 'Assignment', 'CharacterRange', 'CrossReference', 'Group', 'Keyword', 'NegatedToken', 'RegexToken', 'RuleCall', 'TerminalAlternatives', 'TerminalGroup', 'TerminalRuleCall', 'UnorderedGroup', 'UntilToken', 'Wildcard', 'ParserRule', 'TerminalRule', 'Interface', 'Conjunction', 'Disjunction', 'LiteralCondition', 'Negation', 'ParameterReference'];
     }
 
     isInstance(node: unknown, type: string): boolean {
@@ -460,7 +440,7 @@ export class LangiumGrammarAstReflection implements AstReflection {
                 return this.isSubtype(AbstractRule, supertype);
             }
             case Interface: {
-                return this.isSubtype(TypeDeclaration, supertype) || this.isSubtype(AbstractType, supertype);
+                return this.isSubtype(AbstractType, supertype);
             }
             case Conjunction:
             case Disjunction:
@@ -468,9 +448,6 @@ export class LangiumGrammarAstReflection implements AstReflection {
             case Negation:
             case ParameterReference: {
                 return this.isSubtype(Condition, supertype);
-            }
-            case X: {
-                return this.isSubtype(TypeDeclaration, supertype);
             }
             default: {
                 return false;

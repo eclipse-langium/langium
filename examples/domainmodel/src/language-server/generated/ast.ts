@@ -7,9 +7,7 @@
 /* eslint-disable @typescript-eslint/no-empty-interface */
 import { AstNode, AstReflection, Reference, isAstNode } from 'langium';
 
-export interface AbstractElement extends AstNode {
-    readonly $container: Domainmodel | PackageDeclaration;
-}
+export type AbstractElement = PackageDeclaration | Type;
 
 export const AbstractElement = 'AbstractElement';
 
@@ -40,7 +38,7 @@ export function isFeature(item: unknown): item is Feature {
     return reflection.isInstance(item, Feature);
 }
 
-export interface PackageDeclaration extends AbstractElement {
+export interface PackageDeclaration extends AstNode {
     elements: Array<AbstractElement>
     name: QualifiedName
 }
@@ -51,9 +49,7 @@ export function isPackageDeclaration(item: unknown): item is PackageDeclaration 
     return reflection.isInstance(item, PackageDeclaration);
 }
 
-export interface Type extends AbstractElement {
-    name: string
-}
+export type Type = DataType | Entity;
 
 export const Type = 'Type';
 
@@ -61,7 +57,8 @@ export function isType(item: unknown): item is Type {
     return reflection.isInstance(item, Type);
 }
 
-export interface DataType extends Type {
+export interface DataType extends AstNode {
+    name: string
 }
 
 export const DataType = 'DataType';
@@ -70,8 +67,9 @@ export function isDataType(item: unknown): item is DataType {
     return reflection.isInstance(item, DataType);
 }
 
-export interface Entity extends Type {
+export interface Entity extends AstNode {
     features: Array<Feature>
+    name: string
     superType?: Reference<Entity>
 }
 

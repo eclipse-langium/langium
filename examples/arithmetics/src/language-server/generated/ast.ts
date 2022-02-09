@@ -7,10 +7,7 @@
 /* eslint-disable @typescript-eslint/no-empty-interface */
 import { AstNode, AstReflection, Reference, isAstNode } from 'langium';
 
-export interface AbstractDefinition extends AstNode {
-    readonly $container: Definition | Module;
-    name: string
-}
+export type AbstractDefinition = Definition | DeclaredParameter;
 
 export const AbstractDefinition = 'AbstractDefinition';
 
@@ -49,7 +46,8 @@ export function isStatement(item: unknown): item is Statement {
     return reflection.isInstance(item, Statement);
 }
 
-export interface DeclaredParameter extends AbstractDefinition {
+export interface DeclaredParameter extends AstNode {
+    name: string
 }
 
 export const DeclaredParameter = 'DeclaredParameter';
@@ -58,9 +56,10 @@ export function isDeclaredParameter(item: unknown): item is DeclaredParameter {
     return reflection.isInstance(item, DeclaredParameter);
 }
 
-export interface Definition extends Statement, AbstractDefinition {
+export interface Definition extends Statement {
     args: Array<DeclaredParameter>
     expr: Expression
+    name: string
 }
 
 export const Definition = 'Definition';
