@@ -240,12 +240,53 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "name": "TypeDeclaration",
       "hiddenTokens": [],
       "alternatives": {
-        "$type": "RuleCall",
-        "arguments": [],
-        "rule": {
-          "$refText": "Interface"
-        },
-        "elements": []
+        "$type": "Alternatives",
+        "elements": [
+          {
+            "$type": "RuleCall",
+            "arguments": [],
+            "rule": {
+              "$refText": "Interface"
+            },
+            "elements": []
+          },
+          {
+            "$type": "RuleCall",
+            "arguments": [],
+            "rule": {
+              "$refText": "X"
+            },
+            "elements": []
+          }
+        ]
+      }
+    },
+    {
+      "$type": "ParserRule",
+      "parameters": [],
+      "name": "X",
+      "hiddenTokens": [],
+      "alternatives": {
+        "$type": "Group",
+        "elements": [
+          {
+            "$type": "Keyword",
+            "value": "x",
+            "elements": []
+          },
+          {
+            "$type": "Assignment",
+            "feature": "name",
+            "operator": "=",
+            "terminal": {
+              "$type": "RuleCall",
+              "arguments": [],
+              "rule": {
+                "$refText": "ID"
+              }
+            }
+          }
+        ]
       }
     },
     {
@@ -286,10 +327,9 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                 "feature": "superTypes",
                 "operator": "+=",
                 "terminal": {
-                  "$type": "RuleCall",
-                  "arguments": [],
-                  "rule": {
-                    "$refText": "ID"
+                  "$type": "CrossReference",
+                  "type": {
+                    "$refText": "AbstractType"
                   }
                 }
               },
@@ -306,10 +346,9 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                     "feature": "superTypes",
                     "operator": "+=",
                     "terminal": {
-                      "$type": "RuleCall",
-                      "arguments": [],
-                      "rule": {
-                        "$refText": "ID"
+                      "$type": "CrossReference",
+                      "type": {
+                        "$refText": "AbstractType"
                       }
                     }
                   }
@@ -428,13 +467,6 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                   "$type": "CrossReference",
                   "type": {
                     "$refText": "AbstractType"
-                  },
-                  "terminal": {
-                    "$type": "RuleCall",
-                    "arguments": [],
-                    "rule": {
-                      "$refText": "ID"
-                    }
                   }
                 },
                 "elements": []

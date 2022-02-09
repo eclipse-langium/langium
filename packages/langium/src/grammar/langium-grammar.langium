@@ -16,12 +16,15 @@ entry Grammar:
 ///////////////////////////////////////////////////////////////////////////////
 
 TypeDeclaration:
-	Interface;
+	Interface | X;
+
+X:
+	'x' name=ID;
 
 Interface:
 	'interface' name=ID
 	// superType: [Interface, ParserRule, ReturnType (only ID)]
-	('extends' superTypes+=ID (',' superTypes+=ID)*)?
+	('extends' superTypes+=[AbstractType] (',' superTypes+=[AbstractType])*)?
 	SchemaType;
 
 fragment SchemaType:
@@ -29,7 +32,7 @@ fragment SchemaType:
 
 TypeAttribute:
 	// primitiveType/type: [Interface, ParserRule, ReturnType (primitive + ID)]
-	name=ID (isOptional?='?')? ':' (primitiveType=PrimitiveType | type=[AbstractType:ID]) ';'?;
+	name=ID (isOptional?='?')? ':' (primitiveType=PrimitiveType | type=[AbstractType]) ';'?;
 
 AbstractType:
 	Interface | ParserRule;
