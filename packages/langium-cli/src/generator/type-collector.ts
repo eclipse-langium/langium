@@ -380,7 +380,6 @@ function calculateAst(alternatives: TypeAlternative[]): Interface[] {
         type.superTypes = Array.from(new Set(type.superTypes));
     }
     removeInvalidSuperTypes(interfaces);
-    liftFields(interfaces);
     buildContainerTypes(interfaces);
 
     return sortTypes(interfaces);
@@ -462,31 +461,6 @@ function shareAndLiftContainerTypes(connectedComponents: Interface[][]): void {
                 type.containerTypes = [];
             } else {
                 type.containerTypes = containerTypes;
-            }
-        }
-    }
-}
-
-function liftFields(interfaces: Interface[]): void {
-    for (const interfaceType of interfaces) {
-        const subInterfaces = interfaces.filter(e => e.superTypes.includes(interfaceType.name));
-        const first = subInterfaces[0];
-        if (first) {
-            const removal: Field[] = [];
-            for (const field of first.fields) {
-                const fieldTypeSet = new Set(field.types);
-                if (subInterfaces.every(e => e.fields.some(f => f.name === field.name && _.isEqual(new Set(f.types), fieldTypeSet)))) {
-                    if (!interfaceType.fields.some(e => e.name === field.name)) {
-                        interfaceType.fields.push(field);
-                    }
-                    removal.push(field);
-                }
-            }
-            for (const remove of removal) {
-                for (const subInterface of subInterfaces) {
-                    const index = subInterface.fields.findIndex(e => e.name === remove.name);
-                    subInterface.fields.splice(index, 1);
-                }
             }
         }
     }
