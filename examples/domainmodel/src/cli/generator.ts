@@ -5,14 +5,14 @@
  ******************************************************************************/
 
 import fs from 'fs';
+import path from 'path';
+import colors from 'colors';
 import _ from 'lodash';
 import { CompositeGeneratorNode, IndentNode, NL, processGeneratorNode } from 'langium';
 import { AbstractElement, Domainmodel, Entity, Feature, isEntity, isPackageDeclaration, Type } from '../language-server/generated/ast';
 import { extractAstNode, extractDestinationAndName, setRootFolder } from './cli-util';
 import { createDomainModelServices } from '../language-server/domain-model-module';
 import { DomainModelLanguageMetaData } from '../language-server/generated/module';
-import colors from 'colors';
-import path from 'path';
 
 export const generateAction = async (fileName: string, opts: GenerateOptions): Promise<void> => {
     const services = createDomainModelServices().domainmodel;

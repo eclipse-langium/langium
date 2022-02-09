@@ -43,11 +43,13 @@
         "langium:watch": "langium generate --watch"
     },
     "dependencies": {
+        "chevrotain": "^9.1.0",
         "colors": "^1.4.0",
         "commander": "^8.0.0",
         "langium": "^0.2.0",
         "vscode-languageclient": "^7.0.0",
-        "vscode-languageserver": "^7.0.0"
+        "vscode-languageserver": "^7.0.0",
+        "vscode-uri": "^3.0.2"
     },
     "devDependencies": {
         "@types/node": "^14.17.3",
