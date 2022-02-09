@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { EmbeddedActionsParser, ILexingError, IOrAlt, IRecognitionException, IToken, Lexer, TokenType } from 'chevrotain';
+import { defaultParserErrorProvider, EmbeddedActionsParser, ILexingError, IOrAlt, IParserErrorMessageProvider, IRecognitionException, IToken, Lexer, TokenType } from 'chevrotain';
 import { AbstractElement, Action, Assignment, isAssignment, isCrossReference } from '../grammar/generated/ast';
 import { Linker } from '../references/linker';
 import { LangiumServices } from '../services';
@@ -319,10 +319,56 @@ export interface IParserDefinitionError {
     ruleName?: string
 }
 
+export class LangiumParserErrorMessageProvider implements IParserErrorMessageProvider {
+
+    buildMismatchTokenMessage({ expected, actual }: {
+        expected: TokenType
+        actual: IToken
+        previous: IToken
+        ruleName: string
+    }): string {
+        const expectedMsg = expected.LABEL
+            ? '`' + expected.LABEL + '`'
+            : expected.name.endsWith(':KW')
+                ? `keyword '${expected.name.substring(0, expected.name.length - 3)}'`
+                : `token of type '${expected.name}'`;
+        return `Expecting ${expectedMsg} but found \`${actual.image}\`.`;
+    }
+
+    buildNotAllInputParsedMessage({ firstRedundant }: {
+        firstRedundant: IToken
+        ruleName: string
+    }): string {
+        return `Expecting end of file but found \`${firstRedundant.image}\`.`;
+    }
+
+    buildNoViableAltMessage(options: {
+        expectedPathsPerAlt: TokenType[][][]
+        actual: IToken[]
+        previous: IToken
+        customUserDescription: string
+        ruleName: string
+    }): string {
+        return defaultParserErrorProvider.buildNoViableAltMessage(options);
+    }
+
+    buildEarlyExitMessage(options: {
+        expectedIterationPaths: TokenType[][]
+        actual: IToken[]
+        previous: IToken
+        customUserDescription: string
+        ruleName: string
+    }): string {
+        return defaultParserErrorProvider.buildEarlyExitMessage(options);
+    }
+
+}
+
 const defaultConfig: IParserConfig = {
     recoveryEnabled: true,
     nodeLocationTracking: 'full',
-    skipValidations: true
+    skipValidations: true,
+    errorMessageProvider: new LangiumParserErrorMessageProvider()
 };
 
 /**
