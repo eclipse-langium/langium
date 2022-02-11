@@ -15,6 +15,14 @@ export function isAbstractElement(item: unknown): item is AbstractElement {
     return reflection.isInstance(item, AbstractElement);
 }
 
+export type Type = DataType | Entity;
+
+export const Type = 'Type';
+
+export function isType(item: unknown): item is Type {
+    return reflection.isInstance(item, Type);
+}
+
 export interface Domainmodel extends AstNode {
     elements: Array<AbstractElement>
 }
@@ -39,6 +47,7 @@ export function isFeature(item: unknown): item is Feature {
 }
 
 export interface PackageDeclaration extends AstNode {
+    readonly $container: Domainmodel | PackageDeclaration;
     elements: Array<AbstractElement>
     name: QualifiedName
 }
@@ -49,15 +58,8 @@ export function isPackageDeclaration(item: unknown): item is PackageDeclaration 
     return reflection.isInstance(item, PackageDeclaration);
 }
 
-export type Type = DataType | Entity;
-
-export const Type = 'Type';
-
-export function isType(item: unknown): item is Type {
-    return reflection.isInstance(item, Type);
-}
-
 export interface DataType extends AstNode {
+    readonly $container: Domainmodel | PackageDeclaration;
     name: string
 }
 
@@ -68,6 +70,7 @@ export function isDataType(item: unknown): item is DataType {
 }
 
 export interface Entity extends AstNode {
+    readonly $container: Domainmodel | PackageDeclaration;
     features: Array<Feature>
     name: string
     superType?: Reference<Entity>

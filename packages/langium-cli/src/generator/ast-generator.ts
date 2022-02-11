@@ -14,7 +14,7 @@ import { collectAst, Interface } from './type-collector';
 import { generatedHeader } from './util';
 
 export function generateAst(services: LangiumServices, grammars: Grammar[], config: LangiumConfig): string {
-    const types = collectAst(services.shared.workspace.LangiumDocuments, grammars);
+    const astSources = collectAst(services.shared.workspace.LangiumDocuments, grammars);
     const fileNode = new CompositeGeneratorNode();
     fileNode.append(
         generatedHeader,
@@ -31,14 +31,17 @@ export function generateAst(services: LangiumServices, grammars: Grammar[], conf
         fileNode.append(`import { AstNode, AstReflection${crossRef ? ', Reference' : ''}, isAstNode } from 'langium';`, NL, NL);
     }
 
-    for (const type of types) {
+    for (const type of astSources.types) {
         fileNode.append(type.toString(), NL);
+    }
+    for (const interfaceType of astSources.interfaces) {
+        fileNode.append(interfaceType.toString(), NL);
     }
     for (const primitiveRule of stream(grammars.flatMap(e => e.rules)).distinct().filter(isParserRule).filter(e => isDataTypeRule(e))) {
         fileNode.append(buildDatatype(primitiveRule), NL, NL);
     }
 
-    fileNode.append(generateAstReflection(config, types));
+    fileNode.append(generateAstReflection(config, astSources.sourceInterfaces));
 
     return processGeneratorNode(fileNode);
 }

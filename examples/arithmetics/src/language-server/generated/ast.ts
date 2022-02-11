@@ -15,14 +15,20 @@ export function isAbstractDefinition(item: unknown): item is AbstractDefinition 
     return reflection.isInstance(item, AbstractDefinition);
 }
 
-export interface Expression extends AstNode {
-    readonly $container: BinaryExpression | Definition | Evaluation | FunctionCall;
-}
+export type Expression = BinaryExpression | NumberLiteral | FunctionCall;
 
 export const Expression = 'Expression';
 
 export function isExpression(item: unknown): item is Expression {
     return reflection.isInstance(item, Expression);
+}
+
+export type Statement = Definition | Evaluation;
+
+export const Statement = 'Statement';
+
+export function isStatement(item: unknown): item is Statement {
+    return reflection.isInstance(item, Statement);
 }
 
 export interface Module extends AstNode {
@@ -36,17 +42,8 @@ export function isModule(item: unknown): item is Module {
     return reflection.isInstance(item, Module);
 }
 
-export interface Statement extends AstNode {
-    readonly $container: Definition | Module;
-}
-
-export const Statement = 'Statement';
-
-export function isStatement(item: unknown): item is Statement {
-    return reflection.isInstance(item, Statement);
-}
-
 export interface DeclaredParameter extends AstNode {
+    readonly $container: Definition | Module;
     name: string
 }
 
@@ -56,7 +53,8 @@ export function isDeclaredParameter(item: unknown): item is DeclaredParameter {
     return reflection.isInstance(item, DeclaredParameter);
 }
 
-export interface Definition extends Statement {
+export interface Definition extends AstNode {
+    readonly $container: Definition | Module;
     args: Array<DeclaredParameter>
     expr: Expression
     name: string
@@ -68,7 +66,8 @@ export function isDefinition(item: unknown): item is Definition {
     return reflection.isInstance(item, Definition);
 }
 
-export interface BinaryExpression extends Expression {
+export interface BinaryExpression extends AstNode {
+    readonly $container: BinaryExpression | Definition | Evaluation | FunctionCall;
     left: Expression
     operator: '*' | '+' | '-' | '/'
     right: Expression
@@ -80,7 +79,8 @@ export function isBinaryExpression(item: unknown): item is BinaryExpression {
     return reflection.isInstance(item, BinaryExpression);
 }
 
-export interface FunctionCall extends Expression {
+export interface FunctionCall extends AstNode {
+    readonly $container: BinaryExpression | Definition | Evaluation | FunctionCall;
     args: Array<Expression>
     func: Reference<AbstractDefinition>
 }
@@ -91,7 +91,8 @@ export function isFunctionCall(item: unknown): item is FunctionCall {
     return reflection.isInstance(item, FunctionCall);
 }
 
-export interface NumberLiteral extends Expression {
+export interface NumberLiteral extends AstNode {
+    readonly $container: BinaryExpression | Definition | Evaluation | FunctionCall;
     value: number
 }
 
@@ -101,7 +102,8 @@ export function isNumberLiteral(item: unknown): item is NumberLiteral {
     return reflection.isInstance(item, NumberLiteral);
 }
 
-export interface Evaluation extends Statement {
+export interface Evaluation extends AstNode {
+    readonly $container: Definition | Module;
     expression: Expression
 }
 

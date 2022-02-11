@@ -41,6 +41,33 @@ type CollectorState = {
     currentType?: TypeAlternative;
 }
 
+export type AstSources = {
+    interfaces: Interface[];
+    types: Type[];
+    sourceInterfaces: Interface[];
+}
+
+export class Type {
+    name: string;
+    alternatives: string[];
+
+    constructor(name: string, alternatives: string[]) {
+        this.name = name;
+        this.alternatives = alternatives;
+    }
+
+    toString(): string {
+        const typeNode = new CompositeGeneratorNode();
+        typeNode.contents.push(`export type ${this.name} = ${this.alternatives.join(' | ')};`, NL, NL);
+        typeNode.contents.push(`export const ${this.name} = '${this.name}';`, NL, NL);
+        typeNode.contents.push('export function is', this.name, '(item: unknown): item is ', this.name, ' {', NL);
+        const methodBody = new IndentNode();
+        methodBody.contents.push(`return reflection.isInstance(item, ${this.name});`, NL);
+        typeNode.contents.push(methodBody, '}', NL);
+        return processGeneratorNode(typeNode);
+    }
+}
+
 export class Interface {
     name: string;
     superTypes: string[];
@@ -126,22 +153,63 @@ class TypeTree {
     }
 }
 
-export function collectAst(documents: LangiumDocuments, grammars: langium.Grammar[]): Interface[] {
+// todo own class for CollectorState
+function createState(type?: TypeAlternative): CollectorState {
+    const state: CollectorState = { types: [], cardinalities: [], tree: new TypeTree() };
+    if (type) {
+        state.tree.addRoot(type);
+    }
+    return state;
+}
+
+function enterGroup(state: CollectorState, cardinality: Cardinality): void {
+    state.cardinalities.push(cardinality);
+}
+
+function leaveGroup(state: CollectorState): void {
+    state.cardinalities.pop();
+}
+
+function isStateOptional(state: CollectorState): boolean {
+    return state.cardinalities.some(e => isOptional(e));
+}
+
+export function collectAst(documents: LangiumDocuments, grammars: langium.Grammar[]): AstSources {
     const state = createState();
 
     const parserRules = collectAllParserRules(documents, grammars);
 
     const allTypes: TypeAlternative[] = [];
     for (const rule of parserRules) {
-        state.tree = new TypeTree();
         state.parserRule = rule;
-        const type = simpleType(rule);
+        const type = initType(rule);
+        state.tree = new TypeTree();
         state.tree.addRoot(type);
         state.currentType = type;
         collectElement(state, type, rule.alternatives);
         allTypes.push(...state.tree.getLeafNodes());
     }
-    return calculateAst(allTypes);
+
+    const interfaces = calculateAst(allTypes);
+    return extractTypes(interfaces);
+}
+
+function extractTypes(interfaces: Interface[]): AstSources {
+    const astSources: AstSources = { interfaces: [], types: [], sourceInterfaces: _.cloneDeep(interfaces) };
+    const typeNames: string[] = [];
+    for (const interfaceType of interfaces) {
+        if (interfaceType.fields.length === 0 && interfaceType.subTypes.length > 0) {
+            astSources.types.push(new Type(interfaceType.name, interfaceType.subTypes));
+            typeNames.push(interfaceType.name);
+
+        } else {
+            astSources.interfaces.push(interfaceType);
+        }
+    }
+    for (const interfaceType of astSources.interfaces) {
+        interfaceType.superTypes = interfaceType.superTypes.filter(superType => !typeNames.includes(superType));
+    }
+    return astSources;
 }
 
 function collectAllParserRules(documents: LangiumDocuments, grammars: langium.Grammar[], rules: Set<langium.ParserRule> = new Set(), visited: Set<URI> = new Set()): langium.ParserRule[] {
@@ -165,15 +233,7 @@ function collectAllParserRules(documents: LangiumDocuments, grammars: langium.Gr
     return Array.from(rules);
 }
 
-function createState(type?: TypeAlternative): CollectorState {
-    const state: CollectorState = { types: [], cardinalities: [], tree: new TypeTree() };
-    if (type) {
-        state.tree.addRoot(type);
-    }
-    return state;
-}
-
-function simpleType(rule: langium.ParserRule | string): TypeAlternative {
+function initType(rule: langium.ParserRule | string): TypeAlternative {
     return {
         name: isParserRule(rule) ? getTypeName(rule) : rule,
         super: [],
@@ -183,18 +243,7 @@ function simpleType(rule: langium.ParserRule | string): TypeAlternative {
     };
 }
 
-function enterGroup(state: CollectorState, cardinality: Cardinality): void {
-    state.cardinalities.push(cardinality);
-}
-
-function leaveGroup(state: CollectorState): void {
-    state.cardinalities.pop();
-}
-
-function isStateOptional(state: CollectorState): boolean {
-    return state.cardinalities.some(e => isOptional(e));
-}
-
+// collects all possible type branches of a given type ////////////////////////
 function collectElement(state: CollectorState, type: TypeAlternative, element: langium.AbstractElement): void {
     state.currentType = type;
     enterGroup(state, element.cardinality);
@@ -231,7 +280,7 @@ function addAction(state: CollectorState, action: langium.Action): void {
     const type = state.currentType;
     if (type) {
         if (action.type !== type.name) {
-            newType = simpleType(action.type);
+            newType = initType(action.type);
             newType.super.push(getTypeName(state.parserRule));
             newType.hasAction = true;
             state.tree.descendents.get(type)!.push(newType);
@@ -294,7 +343,7 @@ function addRuleCall(state: CollectorState, ruleCall: langium.RuleCall): void {
     if (type) {
         // Add all fields of fragments to the current type
         if (langium.isParserRule(rule) && rule.fragment) {
-            const fragmentType = simpleType(rule);
+            const fragmentType = initType(rule);
             const fragmentState = createState(fragmentType);
             collectElement(fragmentState, fragmentType, rule.alternatives);
             const types = calculateAst(fragmentState.tree.getLeafNodes());
@@ -306,6 +355,47 @@ function addRuleCall(state: CollectorState, ruleCall: langium.RuleCall): void {
             type.ruleCalls.push(getRuleType(rule));
         }
     }
+}
+///////////////////////////////////////////////////////////////////////////////
+
+// generates interfaces and types for the AST from all possible type branches /
+function calculateAst(alternatives: TypeAlternative[]): Interface[] {
+    const interfaces: Interface[] = [];
+    const ruleCallAlternatives: TypeAlternative[] = [];
+    const flattened = flattenTypes(alternatives);
+
+    for (const flat of flattened) {
+        const interfaceType = new Interface(flat.name, flat.super, flat.fields);
+        interfaces.push(interfaceType);
+        if (flat.ruleCalls.length > 0) {
+            ruleCallAlternatives.push(flat);
+        }
+        // all other cases assume we have a data type rule
+        // we do not generate an AST type for data type rules
+    }
+
+    for (const ruleCallType of ruleCallAlternatives) {
+        let exists = false;
+        for (const ruleCall of ruleCallType.ruleCalls) {
+            const calledInterface = interfaces.find(e => e.name === ruleCall);
+            if (calledInterface) {
+                if (calledInterface.name === ruleCallType.name) {
+                    exists = true;
+                } else {
+                    calledInterface.superTypes.push(ruleCallType.name);
+                }
+            }
+        }
+        if (!exists && !interfaces.some(e => e.name === ruleCallType.name)) {
+            interfaces.push(new Interface(ruleCallType.name, ruleCallType.super, []));
+        }
+    }
+    for (const interfaceType of interfaces) {
+        interfaceType.superTypes = Array.from(new Set(interfaceType.superTypes));
+    }
+    buildContainerTypes(interfaces);
+
+    return sortInterfaces(interfaces);
 }
 
 function flattenTypes(alternatives: TypeAlternative[]): TypeAlternative[] {
@@ -326,18 +416,14 @@ function flattenTypes(alternatives: TypeAlternative[]): TypeAlternative[] {
                 if (existingField) {
                     existingField.optional = existingField.optional && altField.optional;
                     const typeSet = new Set(existingField.types);
-                    for (const type of altField.types) {
-                        typeSet.add(type);
-                    }
+                    altField.types.forEach(type => typeSet.add(type));
                     existingField.types = Array.from(typeSet);
                 } else {
                     fields.push({ ...altField });
                 }
             }
             if (altFields.length === 0) {
-                for (const ruleCall of alt.ruleCalls) {
-                    ruleCalls.add(ruleCall);
-                }
+                alt.ruleCalls.forEach(ruleCall => ruleCalls.add(ruleCall));
             }
         }
         type.ruleCalls = Array.from(ruleCalls);
@@ -347,122 +433,54 @@ function flattenTypes(alternatives: TypeAlternative[]): TypeAlternative[] {
     return types;
 }
 
-function calculateAst(alternatives: TypeAlternative[]): Interface[] {
-    const interfaces: Interface[] = [];
-    const ruleCallAlternatives: TypeAlternative[] = [];
-    const flattened = flattenTypes(alternatives);
-
-    for (const flat of flattened) {
-        const type = new Interface(flat.name, flat.super, flat.fields);
-        interfaces.push(type);
-        if (flat.ruleCalls.length > 0) {
-            ruleCallAlternatives.push(flat);
-        }
-        // all other cases assume we have a data type rule
-        // we do not generate an AST type for data type rules
-    }
-
-    for (const ruleCallType of ruleCallAlternatives) {
-        let exists = false;
-        for (const ruleCall of ruleCallType.ruleCalls) {
-            const calledInterface = interfaces.find(e => e.name === ruleCall);
-            if (calledInterface && calledInterface.name === ruleCallType.name) {
-                exists = true;
-            } else if (calledInterface) {
-                calledInterface.superTypes.push(ruleCallType.name);
-            }
-        }
-        if (!exists && !interfaces.some(e => e.name === ruleCallType.name)) {
-            interfaces.push(new Interface(ruleCallType.name, ruleCallType.super, []));
-        }
-    }
-    for (const type of interfaces) {
-        type.superTypes = Array.from(new Set(type.superTypes));
-    }
-    removeInvalidSuperTypes(interfaces);
-    buildContainerTypes(interfaces);
-
-    return sortTypes(interfaces);
-}
-
-function removeInvalidSuperTypes(interfaces: Interface[]): void {
-    for (const type of interfaces) {
-        const toRemove: string[] = [];
-        for (const superType of type.superTypes) {
-            if (!interfaces.some(e => e.name === superType)) {
-                toRemove.push(superType);
-            }
-        }
-        type.superTypes = type.superTypes.filter(e => !toRemove.includes(e));
-    }
-}
-
 function buildContainerTypes(interfaces: Interface[]): void {
-    // 1st stage: collect container types
-    for (const type of interfaces) {
-        for (const field of type.fields.filter(e => !e.reference)) {
+    // 1st stage: collect container types & calculate sub-types
+    for (const interfaceType of interfaces) {
+        for (const field of interfaceType.fields.filter(e => !e.reference)) {
             for (const fieldTypeName of field.types) {
-                const fieldType = interfaces.find(e => e.name === fieldTypeName);
-                if (fieldType) {
-                    fieldType.containerTypes.push(type.name);
-                }
+                interfaces.find(e => e.name === fieldTypeName)
+                    ?.containerTypes.push(interfaceType.name);
             }
         }
+        for (const superTypeName of interfaceType.superTypes) {
+            interfaces.find(e => e.name === superTypeName)
+                ?.subTypes.push(interfaceType.name);
+        }
     }
+    // 2nd stage: share container types
     const connectedComponents: Interface[][] = [];
-    // 2nd stage: share container types and lift them in supertypes
-    calculateSubTypes(interfaces);
     calculateConnectedComponents(connectedComponents, interfaces);
     shareAndLiftContainerTypes(connectedComponents);
 }
 
-function calculateSubTypes(interfaces: Interface[]): void {
-    for (const type of interfaces) {
-        for (const superTypeName of type.superTypes) {
-            const superType = interfaces.find(e => e.name === superTypeName);
-            if (superType) {
-                superType.subTypes.push(type.name);
-            }
-        }
-        type.subTypes = Array.from(new Set<string>(type.subTypes));
-    }
-}
-
 function calculateConnectedComponents(connectedComponents: Interface[][], interfaces: Interface[]): void {
-    const visited: Set<string> = new Set();
-
-    function dfs(type: Interface): Interface[] {
-        let component: Interface[] = [type];
-        visited.add(type.name);
-        for (const nextTypeName of type.subTypes.concat(type.superTypes)) {
-            if (!visited.has(nextTypeName)) {
-                const superType = interfaces.find(e => e.name === nextTypeName);
-                if (superType) {
-                    component = component.concat(dfs(superType));
+    function dfs(typeInterface: Interface): Interface[] {
+        const component: Interface[] = [typeInterface];
+        visited.add(typeInterface.name);
+        for (const nextTypeInterfaceName of typeInterface.subTypes.concat(typeInterface.superTypes)) {
+            if (!visited.has(nextTypeInterfaceName)) {
+                const nextTypeInterface = interfaces.find(e => e.name === nextTypeInterfaceName);
+                if (nextTypeInterface) {
+                    component.push(...dfs(nextTypeInterface));
                 }
             }
         }
         return component;
     }
 
-    for (const type of interfaces) {
-        if (!visited.has(type.name)) {
-            connectedComponents.push(dfs(type));
+    const visited: Set<string> = new Set();
+    for (const typeInterface of interfaces) {
+        if (!visited.has(typeInterface.name)) {
+            connectedComponents.push(dfs(typeInterface));
         }
     }
 }
 
 function shareAndLiftContainerTypes(connectedComponents: Interface[][]): void {
     for (const component of connectedComponents) {
-        let containerTypes: string[] = [];
-        component.forEach(type => containerTypes = containerTypes.concat(type.containerTypes));
-        for (const type of component) {
-            if (type.superTypes.length > 0) {
-                type.containerTypes = [];
-            } else {
-                type.containerTypes = containerTypes;
-            }
-        }
+        const containerTypes: string[] = [];
+        component.forEach(type => containerTypes.push(...type.containerTypes));
+        component.forEach(type => type.containerTypes = containerTypes);
     }
 }
 
@@ -476,7 +494,7 @@ type TypeNode = {
  * @param interfaces The interfaces to sort topologically.
  * @returns A topologically sorted set of interfaces.
  */
-function sortTypes(interfaces: Interface[]): Interface[] {
+function sortInterfaces(interfaces: Interface[]): Interface[] {
     const nodes: TypeNode[] = interfaces
         .sort((a, b) => a.name.localeCompare(b.name))
         .map(e => <TypeNode>{ value: e, nodes: [] });
@@ -490,10 +508,11 @@ function sortTypes(interfaces: Interface[]): Interface[] {
         const n = s.shift()!;
         if (!l.includes(n)) {
             l.push(n);
-            for (const m of nodes.filter(e => e.nodes.includes(n))) {
-                s.push(m);
-            }
+            nodes
+                .filter(e => e.nodes.includes(n))
+                .forEach(m => s.push(m));
         }
     }
     return l.map(e => e.value);
 }
+///////////////////////////////////////////////////////////////////////////////

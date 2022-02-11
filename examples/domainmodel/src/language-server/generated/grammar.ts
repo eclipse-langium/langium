@@ -403,7 +403,7 @@ export const DomainModelGrammar = (): Grammar => loadedDomainModelGrammar ||(loa
       }
     }
   ],
-  "types": [],
+  "interfaces": [],
   "isDeclared": true,
   "name": "DomainModel"
 }`));

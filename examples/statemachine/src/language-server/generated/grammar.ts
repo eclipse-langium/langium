@@ -331,7 +331,7 @@ export const StatemachineGrammar = (): Grammar => loadedStatemachineGrammar ||(l
       }
     }
   ],
-  "types": [],
+  "interfaces": [],
   "isDeclared": true,
   "name": "Statemachine"
 }`));
