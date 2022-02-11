@@ -9,13 +9,13 @@ import { ArithmeticsAstType, isNumberLiteral, Definition, isFunctionCall, Expres
 import { ArithmeticsServices } from './arithmetics-module';
 import { applyOp } from '../cli/cli-util';
 
-type LangiumGrammarChecks = { [type in ArithmeticsAstType]?: ValidationCheck | ValidationCheck[] }
+type ArithmeticsChecks = { [type in ArithmeticsAstType]?: ValidationCheck | ValidationCheck[] }
 
 export class ArithmeticsValidationRegistry extends ValidationRegistry {
     constructor(services: ArithmeticsServices) {
         super(services);
         const validator = services.validation.ArithmeticsValidator;
-        const checks: LangiumGrammarChecks = {
+        const checks: ArithmeticsChecks = {
             BinaryExpression: validator.checkDivByZero,
             Definition: validator.checkNormalisable
         };
