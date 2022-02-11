@@ -4,7 +4,6 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import fs from 'fs';
 import { Range, TextDocument } from 'vscode-languageserver-textdocument';
 import { Diagnostic, TextDocuments } from 'vscode-languageserver';
 import { URI } from 'vscode-uri';
@@ -15,6 +14,7 @@ import type { AstNode, AstNodeDescription, Reference } from '../syntax-tree';
 import type { Mutable } from '../utils/ast-util';
 import { MultiMap } from '../utils/collections';
 import { stream, Stream } from '../utils/stream';
+import { FileSystemProvider } from './file-system-provider';
 
 /**
  * A Langium document holds the parse result (AST and CST) and any additional state that is derived
@@ -85,9 +85,11 @@ export interface TextDocumentFactory {
 export class DefaultTextDocumentFactory implements TextDocumentFactory {
 
     protected readonly serviceRegistry: ServiceRegistry;
+    protected readonly fileSystemProvider: FileSystemProvider;
 
     constructor(services: LangiumSharedServices) {
         this.serviceRegistry = services.ServiceRegistry;
+        this.fileSystemProvider = services.workspace.FileSystemProvider;
     }
 
     fromUri(uri: URI): TextDocument {
@@ -97,7 +99,7 @@ export class DefaultTextDocumentFactory implements TextDocumentFactory {
     }
 
     protected getContent(uri: URI): string {
-        return fs.readFileSync(uri.fsPath, 'utf-8');
+        return this.fileSystemProvider.readFileSync(uri);
     }
 
 }

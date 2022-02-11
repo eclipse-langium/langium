@@ -33,6 +33,7 @@ import { DefaultAstNodeDescriptionProvider, DefaultReferenceDescriptionProvider 
 import { DefaultAstNodeLocator } from './workspace/ast-node-locator';
 import { DefaultDocumentBuilder } from './workspace/document-builder';
 import { DefaultLangiumDocumentFactory, DefaultLangiumDocuments, DefaultTextDocumentFactory } from './workspace/documents';
+import { NodeFileSystemProvider } from './workspace/file-system-provider';
 import { DefaultIndexManager } from './workspace/index-manager';
 import { DefaultWorkspaceManager } from './workspace/workspace-manager';
 
@@ -115,7 +116,8 @@ export function createDefaultSharedModule(context: DefaultSharedModuleContext = 
             TextDocuments: () => new TextDocuments(TextDocument),
             TextDocumentFactory: (services) => new DefaultTextDocumentFactory(services),
             IndexManager: (services) => new DefaultIndexManager(services),
-            WorkspaceManager: (services) => new DefaultWorkspaceManager(services)
+            WorkspaceManager: (services) => new DefaultWorkspaceManager(services),
+            FileSystemProvider: () => new NodeFileSystemProvider()
         }
     };
 }

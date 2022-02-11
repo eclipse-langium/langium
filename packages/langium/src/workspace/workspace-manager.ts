@@ -4,7 +4,6 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import fs from 'fs';
 import path from 'path';
 import { WorkspaceFolder } from 'vscode-languageserver';
 import { URI, Utils } from 'vscode-uri';
@@ -12,6 +11,7 @@ import { ServiceRegistry } from '../service-registry';
 import { LangiumSharedServices } from '../services';
 import { DocumentBuilder } from './document-builder';
 import { LangiumDocument, LangiumDocuments } from './documents';
+import { FileSystemNode, FileSystemProvider } from './file-system-provider';
 
 /**
  * The workspace manager is responsible for finding source files in the workspace.
@@ -35,11 +35,13 @@ export class DefaultWorkspaceManager {
     protected readonly serviceRegistry: ServiceRegistry;
     protected readonly langiumDocuments: LangiumDocuments;
     protected readonly documentBuilder: DocumentBuilder;
+    protected readonly fileSystemProvider: FileSystemProvider;
 
     constructor(services: LangiumSharedServices) {
         this.serviceRegistry = services.ServiceRegistry;
         this.langiumDocuments = services.workspace.LangiumDocuments;
         this.documentBuilder = services.workspace.DocumentBuilder;
+        this.fileSystemProvider = services.workspace.FileSystemProvider;
     }
 
     async initializeWorkspace(folders: WorkspaceFolder[]): Promise<void> {
@@ -77,14 +79,13 @@ export class DefaultWorkspaceManager {
      * contained files that match the file extensions are added to the collector.
      */
     protected async traverseFolder(folderPath: URI, fileExtensions: string[], collector: (document: LangiumDocument) => void): Promise<void> {
-        const content = await this.getContent(folderPath);
+        const content = await this.fileSystemProvider.readDirectory(folderPath);
         for (const entry of content) {
             if (this.includeEntry(entry, fileExtensions)) {
-                const uri = Utils.resolvePath(folderPath, entry.name);
                 if (entry.isDirectory) {
-                    await this.traverseFolder(uri, fileExtensions, collector);
+                    await this.traverseFolder(entry.uri, fileExtensions, collector);
                 } else if (entry.isFile) {
-                    const document = this.langiumDocuments.getOrCreateDocument(uri);
+                    const document = this.langiumDocuments.getOrCreateDocument(entry.uri);
                     collector(document);
                 }
             }
@@ -92,40 +93,19 @@ export class DefaultWorkspaceManager {
     }
 
     /**
-     * Return the content metadata of the given folder. The default implementation reads this
-     * metadata from the file system.
-     */
-    protected async getContent(folderPath: URI): Promise<FolderEntry[]> {
-        const dirents = await fs.promises.readdir(folderPath.fsPath, { withFileTypes: true });
-        return dirents.map(dirent => ({
-            dirent, // Include the raw entry, it may be useful...
-            get isFile() { return dirent.isFile(); },
-            get isDirectory() { return dirent.isDirectory(); },
-            name: dirent.name,
-            container: folderPath
-        }));
-    }
-
-    /**
      * Determine whether the given folder entry shall be included while indexing the workspace.
      */
-    protected includeEntry(entry: FolderEntry, fileExtensions: string[]): boolean {
-        if (entry.name.startsWith('.')) {
+    protected includeEntry(entry: FileSystemNode, fileExtensions: string[]): boolean {
+        const name = Utils.basename(entry.uri);
+        if (name.startsWith('.')) {
             return false;
         }
         if (entry.isDirectory) {
-            return entry.name !== 'node_modules' && entry.name !== 'out';
+            return name !== 'node_modules' && name !== 'out';
         } else if (entry.isFile) {
-            return fileExtensions.includes(path.extname(entry.name));
+            return fileExtensions.includes(path.extname(name));
         }
         return false;
     }
 
-}
-
-export interface FolderEntry {
-    readonly isFile: boolean;
-    readonly isDirectory: boolean;
-    readonly name: string;
-    readonly container: URI;
 }

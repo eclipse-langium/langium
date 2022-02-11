@@ -38,6 +38,7 @@ import type { AstNodeDescriptionProvider, ReferenceDescriptionProvider } from '.
 import type { AstNodeLocator } from './workspace/ast-node-locator';
 import type { DocumentBuilder } from './workspace/document-builder';
 import type { LangiumDocumentFactory, LangiumDocuments, TextDocumentFactory } from './workspace/documents';
+import type { FileSystemProvider } from './workspace/file-system-provider';
 import type { IndexManager } from './workspace/index-manager';
 import type { WorkspaceManager } from './workspace/workspace-manager';
 
@@ -135,6 +136,7 @@ export type LangiumDefaultSharedServices = {
         TextDocuments: TextDocuments<TextDocument>
         TextDocumentFactory: TextDocumentFactory
         WorkspaceManager: WorkspaceManager
+        FileSystemProvider: FileSystemProvider
     }
 }
 
