@@ -16,6 +16,10 @@ export function isNamed(node: AstNode): node is NamedAstNode {
 }
 
 export interface NameProvider {
+    /**
+     * Returns the `name` of a given AstNode.
+     * @param node Specified `AstNode` whose name node shall be retrieved.
+     */
     getName(node: AstNode): string | undefined;
     /**
      * Returns the `CstNode` which contains the parsed value of the `name` assignment.

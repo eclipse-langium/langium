@@ -30,7 +30,7 @@ export interface WorkspaceManager {
 
 }
 
-export class DefaultWorkspaceManager {
+export class DefaultWorkspaceManager implements WorkspaceManager {
 
     protected readonly serviceRegistry: ServiceRegistry;
     protected readonly langiumDocuments: LangiumDocuments;

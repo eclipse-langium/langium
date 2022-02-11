@@ -8,6 +8,9 @@ import { AbstractRule, isCrossReference, isRuleCall } from '../grammar/generated
 import { CstNode } from '../syntax-tree';
 
 export interface ValueConverter {
+    /**
+     * Converts a string value into a CstNode corresponding type.
+     */
     convert(input: string, cstNode: CstNode): ValueType;
 }
 

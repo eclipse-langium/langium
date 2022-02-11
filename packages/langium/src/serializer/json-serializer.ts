@@ -10,7 +10,15 @@ import { LangiumServices } from '../services';
 import { isAstNode, isReference } from '../utils/ast-util';
 
 export interface JsonSerializer {
+    /**
+     * Serialize an `AstNode` into a JSON `string`. 
+     * @param node The `AstNode` to be serialized
+     * @param space Adds indentation, white space, and line break characters to the return-value JSON text to make it easier to read.
+     */
     serialize(node: AstNode, space?: string | number): string
+    /**
+     * Deserialize a JSON `string` into an `AstNode`.
+     */
     deserialize(content: string): AstNode
 }
 
