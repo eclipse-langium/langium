@@ -15,6 +15,9 @@ import { AstNodeLocator } from '../workspace/ast-node-locator';
 import { IndexManager } from '../workspace/index-manager';
 import { NameProvider } from './naming';
 
+/**
+ * Language-specific service for finding references and declaration of a given `CstNode`.
+ */
 export interface References {
 
     /**

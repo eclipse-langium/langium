@@ -12,9 +12,6 @@ import { getCaseInsensitivePattern, partialMatches } from '../utils/regex-util';
 import { stream } from '../utils/stream';
 
 export interface TokenBuilder {
-    /**
-     * Creates an array of `TokenType` from the grammar.
-     */
     buildTokens(grammar: Grammar, options?: { caseInsensitive?: boolean }): TokenType[];
 }
 

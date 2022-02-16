@@ -9,6 +9,9 @@ import { Linker, getReferenceId } from '../references/linker';
 import { LangiumServices } from '../services';
 import { isAstNode, isReference } from '../utils/ast-util';
 
+/**
+ * Utility service for transforming an `AstNode` into a JSON string and vice versa.
+ */
 export interface JsonSerializer {
     /**
      * Serialize an `AstNode` into a JSON `string`.

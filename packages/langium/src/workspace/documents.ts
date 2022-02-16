@@ -179,7 +179,7 @@ export function documentFromText<T extends AstNode = AstNode>(textDocument: Text
 }
 
 /**
- * Shared service that manages Langium documents.
+ * Shared service for managing Langium documents.
  */
 export interface LangiumDocuments {
 

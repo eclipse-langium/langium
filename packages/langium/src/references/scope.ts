@@ -84,7 +84,7 @@ export const EMPTY_SCOPE: Scope = {
 };
 
 /**
- * Determines the scope of target elements visible in a specific cross-reference context.
+ * Language-specific service for determining the scope of target elements visible in a specific cross-reference context.
  */
 export interface ScopeProvider {
     /**
@@ -147,7 +147,7 @@ export class DefaultScopeProvider implements ScopeProvider {
 }
 
 /**
- * This service is executed as part of the _preprocessing_ phase in the `DocumentBuilder`.
+ * Language-specific service for precomputing the scope for a document. This service is executed as part of the _preprocessing_ phase in the `DocumentBuilder`.
  */
 export interface ScopeComputation {
     /**

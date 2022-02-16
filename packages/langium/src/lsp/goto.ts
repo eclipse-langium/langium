@@ -14,6 +14,9 @@ import { findLeafNodeAtOffset } from '../utils/cst-util';
 import { MaybePromise } from '../utils/promise-util';
 import { LangiumDocument } from '../workspace/documents';
 
+/**
+ * Language-specific service for handling go to definition requests.
+ */
 export interface GoToResolver {
     /**
      * Handle a go to definition request.

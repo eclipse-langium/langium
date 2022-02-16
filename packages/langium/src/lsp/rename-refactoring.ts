@@ -15,6 +15,9 @@ import { MaybePromise } from '../utils/promise-util';
 import { LangiumDocument } from '../workspace/documents';
 import { ReferenceFinder } from './reference-finder';
 
+/**
+ * Language-specific service for handling rename requests and prepare rename requests.
+ */
 export interface RenameHandler {
     /**
      * Handle a rename request.

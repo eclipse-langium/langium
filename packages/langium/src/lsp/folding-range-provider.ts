@@ -13,6 +13,9 @@ import { streamCst } from '../utils/cst-util';
 import { MaybePromise } from '../utils/promise-util';
 import { LangiumDocument } from '../workspace/documents';
 
+/**
+ * Language-specific service for handling folding range requests.
+ */
 export interface FoldingRangeProvider {
     /**
      * Handle a folding range request.

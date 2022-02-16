@@ -7,6 +7,9 @@
 import { AbstractRule, isCrossReference, isRuleCall } from '../grammar/generated/ast';
 import { CstNode } from '../syntax-tree';
 
+/**
+ * Language-specific service for converting string values from the source text format into a value to be held in the AST.
+ */
 export interface ValueConverter {
     /**
      * Converts a string value from the source text format into a value to be held in the AST.

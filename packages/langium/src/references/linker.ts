@@ -14,7 +14,7 @@ import { DocumentState, LangiumDocument, LangiumDocuments } from '../workspace/d
 import { ScopeProvider } from './scope';
 
 /**
- * This service is responsible for resolving cross-references in the AST.
+ * Language-specific service for resolving cross-references in the AST.
  */
 export interface Linker {
     /**
