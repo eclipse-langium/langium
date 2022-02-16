@@ -227,6 +227,19 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                   }
                 },
                 "elements": []
+              },
+              {
+                "$type": "Assignment",
+                "feature": "types",
+                "operator": "+=",
+                "terminal": {
+                  "$type": "RuleCall",
+                  "arguments": [],
+                  "rule": {
+                    "$refText": "Type"
+                  }
+                },
+                "elements": []
               }
             ],
             "cardinality": "+"
@@ -389,39 +402,142 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "value": ":"
           },
           {
-            "$type": "Alternatives",
-            "elements": [
-              {
-                "$type": "Assignment",
-                "feature": "primitiveType",
-                "operator": "=",
-                "terminal": {
-                  "$type": "RuleCall",
-                  "arguments": [],
-                  "rule": {
-                    "$refText": "PrimitiveType"
-                  }
-                },
-                "elements": []
-              },
-              {
-                "$type": "Assignment",
-                "feature": "type",
-                "operator": "=",
-                "terminal": {
-                  "$type": "CrossReference",
-                  "type": {
-                    "$refText": "AbstractType"
-                  }
-                },
-                "elements": []
+            "$type": "Assignment",
+            "feature": "type",
+            "operator": "=",
+            "terminal": {
+              "$type": "RuleCall",
+              "arguments": [],
+              "rule": {
+                "$refText": "AtomType"
               }
-            ]
+            }
           },
           {
             "$type": "Keyword",
             "value": ";",
             "cardinality": "?"
+          }
+        ]
+      }
+    },
+    {
+      "$type": "ParserRule",
+      "parameters": [],
+      "name": "Type",
+      "hiddenTokens": [],
+      "alternatives": {
+        "$type": "Group",
+        "elements": [
+          {
+            "$type": "Keyword",
+            "value": "type",
+            "elements": []
+          },
+          {
+            "$type": "Assignment",
+            "feature": "name",
+            "operator": "=",
+            "terminal": {
+              "$type": "RuleCall",
+              "arguments": [],
+              "rule": {
+                "$refText": "ID"
+              }
+            }
+          },
+          {
+            "$type": "Keyword",
+            "value": "="
+          },
+          {
+            "$type": "Assignment",
+            "feature": "typeAlternatives",
+            "operator": "+=",
+            "terminal": {
+              "$type": "RuleCall",
+              "arguments": [],
+              "rule": {
+                "$refText": "AtomType"
+              }
+            }
+          },
+          {
+            "$type": "Group",
+            "elements": [
+              {
+                "$type": "Keyword",
+                "value": "|",
+                "elements": []
+              },
+              {
+                "$type": "Assignment",
+                "feature": "typeAlternatives",
+                "operator": "+=",
+                "terminal": {
+                  "$type": "RuleCall",
+                  "arguments": [],
+                  "rule": {
+                    "$refText": "AtomType"
+                  }
+                }
+              }
+            ],
+            "cardinality": "*"
+          },
+          {
+            "$type": "Keyword",
+            "value": ";",
+            "cardinality": "?"
+          }
+        ]
+      }
+    },
+    {
+      "$type": "ParserRule",
+      "parameters": [],
+      "name": "AtomType",
+      "hiddenTokens": [],
+      "alternatives": {
+        "$type": "Alternatives",
+        "elements": [
+          {
+            "$type": "Assignment",
+            "feature": "primitiveType",
+            "operator": "=",
+            "terminal": {
+              "$type": "Alternatives",
+              "elements": [
+                {
+                  "$type": "RuleCall",
+                  "arguments": [],
+                  "rule": {
+                    "$refText": "PrimitiveType"
+                  },
+                  "elements": []
+                },
+                {
+                  "$type": "RuleCall",
+                  "arguments": [],
+                  "rule": {
+                    "$refText": "Keyword"
+                  }
+                }
+              ]
+            },
+            "elements": []
+          },
+          {
+            "$type": "Assignment",
+            "feature": "referenceType",
+            "operator": "=",
+            "terminal": {
+              "$type": "CrossReference",
+              "type": {
+                "$refText": "AbstractType"
+              }
+            },
+            "elements": []
           }
         ]
       }
@@ -439,6 +555,14 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "arguments": [],
             "rule": {
               "$refText": "Interface"
+            },
+            "elements": []
+          },
+          {
+            "$type": "RuleCall",
+            "arguments": [],
+            "rule": {
+              "$refText": "Type"
             },
             "elements": []
           },
@@ -3059,6 +3183,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
     }
   ],
   "interfaces": [],
+  "types": [],
   "isDeclared": true,
   "name": "LangiumGrammar"
 }`));

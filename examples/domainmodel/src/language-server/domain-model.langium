@@ -23,7 +23,7 @@ Entity:
     '}';
 
 Feature:
-    (many?='many')? name=ID ':' type=[Type:QualifiedName];
+    (many?='many')? name=ID ':' ^type=[Type:QualifiedName];
 
 QualifiedName returns string:
     ID ('.' ID)*;

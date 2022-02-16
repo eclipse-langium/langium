@@ -11,13 +11,13 @@ entry Grammar:
         (definesHiddenTokens?='hidden' '(' (hiddenTokens+=[AbstractRule:ID] (',' hiddenTokens+=[AbstractRule:ID])*)? ')')?
     )?
 	imports+=GrammarImport*
-	(rules+=AbstractRule | interfaces+=Interface)+;
+	(rules+=AbstractRule | interfaces+=Interface | types+=Type)+;
 
 ///////////////////////////////////////////////////////////////////////////////
 
+// interface ///////
 Interface:
 	'interface' name=ID
-	// superType: [Interface, ParserRule, ReturnType (only ID)]
 	('extends' superTypes+=[AbstractType] (',' superTypes+=[AbstractType])*)?
 	SchemaType;
 
@@ -25,18 +25,24 @@ fragment SchemaType:
 	'{' attributes+=TypeAttribute* '}' ';'?;
 
 TypeAttribute:
-	// primitiveType/type: [Interface, ParserRule, ReturnType (primitive + ID)]
-	name=ID (isOptional?='?')? ':' (primitiveType=PrimitiveType | type=[AbstractType]) ';'?;
+	name=ID (isOptional?='?')? ':' ^type=AtomType ';'?;
+
+// type ////////////
+Type:
+	'type' name=ID '=' typeAlternatives+=AtomType ('|' typeAlternatives+=AtomType)* ';'?;
+
+// atom ////////////
+AtomType:
+		primitiveType=(PrimitiveType | Keyword)
+	| 	referenceType=[AbstractType];
 
 AbstractType:
-	Interface | ParserRule;
+	Interface | Type | ParserRule;
 
 PrimitiveType returns string:
 	'string' | 'number' | 'boolean' | 'date';
 
-// return type for terminals and datatype rules: [primitive]
-// return type for parser rules: [Interface, ID]
-
+// return type /////
 ReturnType:
 	name=(PrimitiveType | ID);
 
@@ -49,8 +55,8 @@ GrammarImport:
 
 ParserRule :
 	(
-	  (^entry?='entry' | ^fragment?='fragment') RuleNameAndParams (wildcard?='*' | ('returns' type=ReturnType)?)
-	| RuleNameAndParams ('returns' type=ReturnType)?
+	  (^entry?='entry' | ^fragment?='fragment') RuleNameAndParams (wildcard?='*' | ('returns' ^type=ReturnType)?)
+	| RuleNameAndParams ('returns' ^type=ReturnType)?
 	)
 	(definesHiddenTokens?='hidden' '(' (hiddenTokens+=[AbstractRule:ID] (',' hiddenTokens+=[AbstractRule:ID])*)? ')')? ':'
 		alternatives=Alternatives
@@ -84,7 +90,7 @@ AbstractTokenWithCardinality returns AbstractElement:
 	(Assignment | AbstractTerminal) cardinality=('?'|'*'|'+')?;
 
 Action returns AbstractElement:
-	{Action} '{' type=ID ('.' feature=ID operator=('='|'+=') 'current')? '}';
+	{Action} '{' ^type=ID ('.' feature=ID operator=('='|'+=') 'current')? '}';
 
 AbstractTerminal returns AbstractElement:
 	Keyword |
@@ -144,7 +150,7 @@ AssignableAlternatives returns AbstractElement:
 	AssignableTerminal ({Alternatives.elements+=current} ('|' elements+=AssignableTerminal)+)?;
 
 CrossReference returns AbstractElement:
-	{CrossReference} '[' type=[ParserRule:ID] ((deprecatedSyntax?='|' | ':') ^terminal=CrossReferenceableTerminal )? ']';
+	{CrossReference} '[' ^type=[ParserRule:ID] ((deprecatedSyntax?='|' | ':') ^terminal=CrossReferenceableTerminal )? ']';
 
 CrossReferenceableTerminal returns AbstractElement:
 	Keyword | RuleCall;
@@ -156,7 +162,7 @@ PredicatedGroup returns Group:
 	(predicated?='=>' | firstSetPredicated?='->') '(' elements+=Alternatives ')';
 
 TerminalRule:
-	^hidden?='hidden'? 'terminal' (^fragment?='fragment' name=ID | name=ID ('returns' type=ReturnType)?) ':'
+	^hidden?='hidden'? 'terminal' (^fragment?='fragment' name=ID | name=ID ('returns' ^type=ReturnType)?) ':'
 		^terminal=TerminalAlternatives
 	';';
 
