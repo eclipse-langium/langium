@@ -17,7 +17,7 @@ export interface JsonSerializer {
      */
     serialize(node: AstNode, space?: string | number): string
     /**
-     * Deserialize a JSON `string` into an `AstNode`.
+     * Deserialize (parse) a JSON `string` into an `AstNode`.
      */
     deserialize(content: string): AstNode
 }
