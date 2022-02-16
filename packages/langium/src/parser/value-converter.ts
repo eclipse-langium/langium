@@ -9,7 +9,7 @@ import { CstNode } from '../syntax-tree';
 
 export interface ValueConverter {
     /**
-     * Converts a string value into a CstNode corresponding type.
+     * Converts a string value from the source text format into a value to be held in the AST.
      */
     convert(input: string, cstNode: CstNode): ValueType;
 }
