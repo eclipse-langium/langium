@@ -31,15 +31,17 @@ export function isStatement(item: unknown): item is Statement {
     return reflection.isInstance(item, Statement);
 }
 
-export interface Module extends AstNode {
-    name: string
-    statements: Array<Statement>
+export interface BinaryExpression extends AstNode {
+    readonly $container: BinaryExpression | Definition | Evaluation | FunctionCall;
+    left: Expression
+    operator: '*' | '+' | '-' | '/'
+    right: Expression
 }
 
-export const Module = 'Module';
+export const BinaryExpression = 'BinaryExpression';
 
-export function isModule(item: unknown): item is Module {
-    return reflection.isInstance(item, Module);
+export function isBinaryExpression(item: unknown): item is BinaryExpression {
+    return reflection.isInstance(item, BinaryExpression);
 }
 
 export interface DeclaredParameter extends AstNode {
@@ -66,17 +68,15 @@ export function isDefinition(item: unknown): item is Definition {
     return reflection.isInstance(item, Definition);
 }
 
-export interface BinaryExpression extends AstNode {
-    readonly $container: BinaryExpression | Definition | Evaluation | FunctionCall;
-    left: Expression
-    operator: '*' | '+' | '-' | '/'
-    right: Expression
+export interface Evaluation extends AstNode {
+    readonly $container: Definition | Module;
+    expression: Expression
 }
 
-export const BinaryExpression = 'BinaryExpression';
+export const Evaluation = 'Evaluation';
 
-export function isBinaryExpression(item: unknown): item is BinaryExpression {
-    return reflection.isInstance(item, BinaryExpression);
+export function isEvaluation(item: unknown): item is Evaluation {
+    return reflection.isInstance(item, Evaluation);
 }
 
 export interface FunctionCall extends AstNode {
@@ -91,6 +91,17 @@ export function isFunctionCall(item: unknown): item is FunctionCall {
     return reflection.isInstance(item, FunctionCall);
 }
 
+export interface Module extends AstNode {
+    name: string
+    statements: Array<Statement>
+}
+
+export const Module = 'Module';
+
+export function isModule(item: unknown): item is Module {
+    return reflection.isInstance(item, Module);
+}
+
 export interface NumberLiteral extends AstNode {
     readonly $container: BinaryExpression | Definition | Evaluation | FunctionCall;
     value: number
@@ -102,25 +113,14 @@ export function isNumberLiteral(item: unknown): item is NumberLiteral {
     return reflection.isInstance(item, NumberLiteral);
 }
 
-export interface Evaluation extends AstNode {
-    readonly $container: Definition | Module;
-    expression: Expression
-}
-
-export const Evaluation = 'Evaluation';
-
-export function isEvaluation(item: unknown): item is Evaluation {
-    return reflection.isInstance(item, Evaluation);
-}
-
-export type ArithmeticsAstType = 'AbstractDefinition' | 'Expression' | 'Module' | 'Statement' | 'DeclaredParameter' | 'Definition' | 'BinaryExpression' | 'FunctionCall' | 'NumberLiteral' | 'Evaluation';
+export type ArithmeticsAstType = 'AbstractDefinition' | 'BinaryExpression' | 'DeclaredParameter' | 'Definition' | 'Evaluation' | 'Expression' | 'FunctionCall' | 'Module' | 'NumberLiteral' | 'Statement';
 
 export type ArithmeticsAstReference = 'FunctionCall:func';
 
 export class ArithmeticsAstReflection implements AstReflection {
 
     getAllTypes(): string[] {
-        return ['AbstractDefinition', 'Expression', 'Module', 'Statement', 'DeclaredParameter', 'Definition', 'BinaryExpression', 'FunctionCall', 'NumberLiteral', 'Evaluation'];
+        return ['AbstractDefinition', 'BinaryExpression', 'DeclaredParameter', 'Definition', 'Evaluation', 'Expression', 'FunctionCall', 'Module', 'NumberLiteral', 'Statement'];
     }
 
     isInstance(node: unknown, type: string): boolean {
@@ -132,16 +132,16 @@ export class ArithmeticsAstReflection implements AstReflection {
             return true;
         }
         switch (subtype) {
+            case BinaryExpression:
+            case FunctionCall:
+            case NumberLiteral: {
+                return this.isSubtype(Expression, supertype);
+            }
             case DeclaredParameter: {
                 return this.isSubtype(AbstractDefinition, supertype);
             }
             case Definition: {
                 return this.isSubtype(Statement, supertype) || this.isSubtype(AbstractDefinition, supertype);
-            }
-            case BinaryExpression:
-            case FunctionCall:
-            case NumberLiteral: {
-                return this.isSubtype(Expression, supertype);
             }
             case Evaluation: {
                 return this.isSubtype(Statement, supertype);
