@@ -47,17 +47,19 @@ export type AstResources = {
 export class Type {
     name: string;
     alternatives: string[];
+    noReflection: boolean;
 
-    constructor(name: string, alternatives: string[]) {
+    constructor(name: string, alternatives: string[], options?: { noReflection: boolean }) {
         this.name = name;
         this.alternatives = alternatives;
+        this.noReflection = options?.noReflection ?? false;
     }
 
     toString(): string {
         const typeNode = new CompositeGeneratorNode();
-        typeNode.contents.push(`export type ${this.name} = ${distictUniqueSorted(this.alternatives).join(' | ')};`, NL, NL);
+        typeNode.contents.push(`export type ${this.name} = ${distictUniqueSorted(this.alternatives).join(' | ')};`, NL);
 
-        pushReflectionInfo(this.name, typeNode);
+        if (!this.noReflection) pushReflectionInfo(this.name, typeNode);
         return processGeneratorNode(typeNode);
     }
 }
@@ -92,7 +94,7 @@ export class Interface {
             const optional = field.optional && field.reference && !field.array ? '?' : '';
             fieldsNode.contents.push(`${field.name}${optional}: ${type}`, NL);
         }
-        interfaceNode.contents.push(fieldsNode, '}', NL, NL);
+        interfaceNode.contents.push(fieldsNode, '}', NL);
 
         pushReflectionInfo(this.name, interfaceNode);
         return processGeneratorNode(interfaceNode);
@@ -104,7 +106,7 @@ function distictUniqueSorted<T>(list: T[], compareFn?: (a: T, b: T) => number): 
 }
 
 function pushReflectionInfo(name: string, node: CompositeGeneratorNode) {
-    node.contents.push(`export const ${name} = '${name}';`, NL, NL);
+    node.contents.push(NL, `export const ${name} = '${name}';`, NL, NL);
     node.contents.push(`export function is${name}(item: unknown): item is ${name} {`, NL);
     const methodBody = new IndentNode();
     methodBody.contents.push(`return reflection.isInstance(item, ${name});`, NL);
@@ -205,8 +207,18 @@ export function collectAst(documents: LangiumDocuments, grammars: langium.Gramma
     const interfaces = calculateAst(allTypes);
     buildContainerTypes(interfaces);
     sortInterfaces(interfaces);
-
     const astTypes = extractTypes(interfaces);
+
+    // get types from datatype rules
+    for (const rule of Array.from(astResources.datatypeRules)) {
+        if (langium.isAlternatives(rule.alternatives) && rule.alternatives.elements.every(e => langium.isKeyword(e))) {
+            const alternatives = stream(rule.alternatives.elements).filter(langium.isKeyword).map(e => `'${e.value}'`).toArray();
+            astTypes.types.push(new Type(rule.name, alternatives, { noReflection: true }));
+        } else {
+            astTypes.types.push(new Type(rule.name, [rule.type?.name ?? 'string'], { noReflection: true }));
+        }
+    }
+
     return astTypes;
 }
 

@@ -5,9 +5,7 @@
  ******************************************************************************/
 
 import {
-    GeneratorNode, Grammar, IndentNode, CompositeGeneratorNode, NL, processGeneratorNode, stream,
-    isAlternatives, isKeyword, isParserRule, isDataTypeRule, ParserRule, streamAllContents,
-    isCrossReference, MultiMap, LangiumServices
+    GeneratorNode, Grammar, IndentNode, CompositeGeneratorNode, NL, processGeneratorNode, streamAllContents, isCrossReference, MultiMap, LangiumServices
 } from 'langium';
 import { LangiumConfig } from '../package';
 import { collectAst, Interface } from './type-collector';
@@ -37,21 +35,9 @@ export function generateAst(services: LangiumServices, grammars: Grammar[], conf
     for (const interfaceType of astSources.interfaces) {
         fileNode.append(interfaceType.toString(), NL);
     }
-    for (const primitiveRule of stream(grammars.flatMap(e => e.rules)).distinct().filter(isParserRule).filter(e => isDataTypeRule(e))) {
-        fileNode.append(buildDatatype(primitiveRule), NL, NL);
-    }
-
     fileNode.append(generateAstReflection(config, astSources.sourceInterfaces));
 
     return processGeneratorNode(fileNode);
-}
-
-function buildDatatype(rule: ParserRule): GeneratorNode {
-    if (isAlternatives(rule.alternatives) && rule.alternatives.elements.every(e => isKeyword(e))) {
-        return `export type ${rule.name} = ${stream(rule.alternatives.elements).filter(isKeyword).map(e => `'${e.value}'`).join(' | ')}`;
-    } else {
-        return `export type ${rule.name} = ${rule.type?.name ?? 'string'}`;
-    }
 }
 
 function hasCrossReferences(grammar: Grammar): boolean {

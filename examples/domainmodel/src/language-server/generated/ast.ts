@@ -23,6 +23,8 @@ export function isType(item: unknown): item is Type {
     return reflection.isInstance(item, Type);
 }
 
+export type QualifiedName = string;
+
 export interface DataType extends AstNode {
     readonly $container: Domainmodel | PackageDeclaration;
     name: string
@@ -81,8 +83,6 @@ export const PackageDeclaration = 'PackageDeclaration';
 export function isPackageDeclaration(item: unknown): item is PackageDeclaration {
     return reflection.isInstance(item, PackageDeclaration);
 }
-
-export type QualifiedName = string
 
 export type DomainModelAstType = 'AbstractElement' | 'DataType' | 'Domainmodel' | 'Entity' | 'Feature' | 'PackageDeclaration' | 'Type';
 
