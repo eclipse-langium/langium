@@ -37,7 +37,7 @@ export type ValidationAcceptor = <N extends AstNode>(severity: 'error' | 'warnin
 export type ValidationCheck = (node: any, accept: ValidationAcceptor, cancelToken: CancellationToken) => MaybePromise<void>;
 
 /**
- * Manages a set of `ValidationCheck` defined inside of a `Validator` service.
+ * Manages a set of `ValidationCheck`s to be applied when documents are validated.
  */
 export class ValidationRegistry {
     private readonly validationChecks = new MultiMap<string, ValidationCheck>();
