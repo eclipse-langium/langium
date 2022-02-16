@@ -6,10 +6,7 @@
 
 import _ from 'lodash';
 import * as langium from 'langium';
-import { getDocument, getRuleType, getTypeName, isDataTypeRule, isParserRule, LangiumDocuments, ParserRule, resolveImport, stream } from 'langium';
-import { CompositeGeneratorNode, IndentNode, NL } from 'langium';
-import { processGeneratorNode } from 'langium';
-import { Cardinality, isOptional } from 'langium';
+import { CompositeGeneratorNode, getDocument, getRuleType, getTypeName, IndentNode, isDataTypeRule, isOptional, LangiumDocuments, NL, processGeneratorNode, resolveImport, stream } from 'langium';
 import { URI } from 'vscode-uri';
 
 type TypeAlternative = {
@@ -33,17 +30,10 @@ type TypeCollection = {
     reference: boolean
 }
 
-type CollectorState = {
-    tree: TypeTree;
-    types: TypeAlternative[];
-    cardinalities: Cardinality[];
-    parserRule?: ParserRule;
-    currentType?: TypeAlternative;
-}
-
-export type AstSources = {
+export type AstTypes = {
     interfaces: Interface[];
     types: Type[];
+    // todo remove sourceInterfaces
     sourceInterfaces: Interface[];
 }
 
@@ -58,12 +48,9 @@ export class Type {
 
     toString(): string {
         const typeNode = new CompositeGeneratorNode();
-        typeNode.contents.push(`export type ${this.name} = ${this.alternatives.join(' | ')};`, NL, NL);
-        typeNode.contents.push(`export const ${this.name} = '${this.name}';`, NL, NL);
-        typeNode.contents.push('export function is', this.name, '(item: unknown): item is ', this.name, ' {', NL);
-        const methodBody = new IndentNode();
-        methodBody.contents.push(`return reflection.isInstance(item, ${this.name});`, NL);
-        typeNode.contents.push(methodBody, '}', NL);
+        typeNode.contents.push(`export type ${this.name} = ${distictUniqueSorted(this.alternatives).join(' | ')};`, NL, NL);
+
+        pushReflectionInfo(this.name, typeNode);
         return processGeneratorNode(typeNode);
     }
 }
@@ -77,39 +64,47 @@ export class Interface {
 
     constructor(name: string, superTypes: string[], fields: Field[]) {
         this.name = name;
-        this.superTypes = Array.from(new Set<string>(superTypes));
+        this.superTypes = superTypes;
         this.fields = fields;
     }
 
     toString(): string {
         const interfaceNode = new CompositeGeneratorNode();
-        const superTypes = this.superTypes.length > 0 ? this.superTypes : ['AstNode'];
-        interfaceNode.contents.push('export interface ', this.name, ' extends ', superTypes.join(', '), ' {', NL);
+        const superTypes = this.superTypes.length > 0 ? distictUniqueSorted(this.superTypes) : ['AstNode'];
+        interfaceNode.contents.push(`export interface ${this.name} extends ${superTypes.join(', ')} {`, NL);
+
         const fieldsNode = new IndentNode();
         if (this.containerTypes.length > 0) {
-            const containerTypes = stream(this.containerTypes).distinct().toArray().sort();
-            fieldsNode.contents.push('readonly $container: ', containerTypes.join(' | '), ';', NL);
+            fieldsNode.contents.push(`readonly $container: ${distictUniqueSorted(this.containerTypes).join(' | ')};`, NL);
         }
-        for (const field of this.fields.sort((a, b) => a.name.localeCompare(b.name))) {
-            const option = field.optional && field.reference && !field.array ? '?' : '';
-            let type = field.types.sort().join(' | ');
-            type = field.reference ? 'Reference<' + type + '>' : type;
-            type = field.array ? 'Array<' + type + '>' : type;
-            fieldsNode.contents.push(field.name, option, ': ', type, NL);
+
+        for (const field of distictUniqueSorted(this.fields, (a, b) => a.name.localeCompare(b.name))) {
+            let type = distictUniqueSorted(field.types).join(' | ');
+            type = field.reference ? `Reference<${type}>` : type;
+            type = field.array ? `Array<${type}>` : type;
+            const optional = field.optional && field.reference && !field.array ? '?' : '';
+            fieldsNode.contents.push(`${field.name}${optional}: ${type}`, NL);
         }
         interfaceNode.contents.push(fieldsNode, '}', NL, NL);
-        interfaceNode.contents.push(`export const ${this.name} = '${this.name}';`, NL, NL);
-        interfaceNode.contents.push('export function is', this.name, '(item: unknown): item is ', this.name, ' {', NL);
-        const methodBody = new IndentNode();
-        methodBody.contents.push(`return reflection.isInstance(item, ${this.name});`, NL);
-        interfaceNode.contents.push(methodBody, '}', NL);
 
+        pushReflectionInfo(this.name, interfaceNode);
         return processGeneratorNode(interfaceNode);
     }
 }
 
-class TypeTree {
+function distictUniqueSorted<T>(list: T[], compareFn?: (a: T, b: T) => number): T[] {
+    return stream(list).distinct().toArray().sort(compareFn);
+}
 
+function pushReflectionInfo(name: string, node: CompositeGeneratorNode) {
+    node.contents.push(`export const ${name} = '${name}';`, NL, NL);
+    node.contents.push(`export function is${name}(item: unknown): item is ${name} {`, NL);
+    const methodBody = new IndentNode();
+    methodBody.contents.push(`return reflection.isInstance(item, ${name});`, NL);
+    node.contents.push(methodBody, '}', NL);
+}
+
+class TypeTree {
     descendents: Map<TypeAlternative, TypeAlternative[]> = new Map();
 
     addRoot(root: TypeAlternative): void {
@@ -153,29 +148,34 @@ class TypeTree {
     }
 }
 
-// todo own class for CollectorState
-function createState(type?: TypeAlternative): CollectorState {
-    const state: CollectorState = { types: [], cardinalities: [], tree: new TypeTree() };
-    if (type) {
-        state.tree.addRoot(type);
+class StateCollector {
+    tree: TypeTree = new TypeTree();
+    types: TypeAlternative[] = [];
+    cardinalities: langium.Cardinality[] = [];
+    parserRule?: langium.ParserRule;
+    currentType?: TypeAlternative;
+
+    constructor(type?: TypeAlternative) {
+        if (type) {
+            this.tree.addRoot(type);
+        }
     }
-    return state;
+
+    enterGroup(cardinality: langium.Cardinality): void {
+        this.cardinalities.push(cardinality);
+    }
+
+    leaveGroup(): void {
+        this.cardinalities.pop();
+    }
+
+    isOptional(): boolean {
+        return this.cardinalities.some(e => isOptional(e));
+    }
 }
 
-function enterGroup(state: CollectorState, cardinality: Cardinality): void {
-    state.cardinalities.push(cardinality);
-}
-
-function leaveGroup(state: CollectorState): void {
-    state.cardinalities.pop();
-}
-
-function isStateOptional(state: CollectorState): boolean {
-    return state.cardinalities.some(e => isOptional(e));
-}
-
-export function collectAst(documents: LangiumDocuments, grammars: langium.Grammar[]): AstSources {
-    const state = createState();
+export function collectAst(documents: LangiumDocuments, grammars: langium.Grammar[]): AstTypes {
+    const state = new StateCollector();
 
     const parserRules = collectAllParserRules(documents, grammars);
 
@@ -194,8 +194,8 @@ export function collectAst(documents: LangiumDocuments, grammars: langium.Gramma
     return extractTypes(interfaces);
 }
 
-function extractTypes(interfaces: Interface[]): AstSources {
-    const astSources: AstSources = { interfaces: [], types: [], sourceInterfaces: _.cloneDeep(interfaces) };
+function extractTypes(interfaces: Interface[]): AstTypes {
+    const astSources: AstTypes = { interfaces: [], types: [], sourceInterfaces: _.cloneDeep(interfaces) };
     const typeNames: string[] = [];
     for (const interfaceType of interfaces) {
         if (interfaceType.fields.length === 0 && interfaceType.subTypes.length > 0) {
@@ -211,6 +211,8 @@ function extractTypes(interfaces: Interface[]): AstSources {
     }
     return astSources;
 }
+
+///////////////////////////////////////////////////////////////////////////////
 
 function collectAllParserRules(documents: LangiumDocuments, grammars: langium.Grammar[], rules: Set<langium.ParserRule> = new Set(), visited: Set<URI> = new Set()): langium.ParserRule[] {
 
@@ -235,7 +237,7 @@ function collectAllParserRules(documents: LangiumDocuments, grammars: langium.Gr
 
 function initType(rule: langium.ParserRule | string): TypeAlternative {
     return {
-        name: isParserRule(rule) ? getTypeName(rule) : rule,
+        name: langium.isParserRule(rule) ? getTypeName(rule) : rule,
         super: [],
         fields: [],
         ruleCalls: [],
@@ -244,9 +246,9 @@ function initType(rule: langium.ParserRule | string): TypeAlternative {
 }
 
 // collects all possible type branches of a given type ////////////////////////
-function collectElement(state: CollectorState, type: TypeAlternative, element: langium.AbstractElement): void {
+function collectElement(state: StateCollector, type: TypeAlternative, element: langium.AbstractElement): void {
     state.currentType = type;
-    enterGroup(state, element.cardinality);
+    state.enterGroup(element.cardinality);
     if (isOptional(element.cardinality)) {
         const [item] = state.tree.split(state.currentType, 2);
         state.currentType = item;
@@ -272,10 +274,10 @@ function collectElement(state: CollectorState, type: TypeAlternative, element: l
     } else if (langium.isRuleCall(element)) {
         addRuleCall(state, element);
     }
-    leaveGroup(state);
+    state.leaveGroup();
 }
 
-function addAction(state: CollectorState, action: langium.Action): void {
+function addAction(state: StateCollector, action: langium.Action): void {
     let newType: TypeAlternative;
     const type = state.currentType;
     if (type) {
@@ -302,13 +304,13 @@ function addAction(state: CollectorState, action: langium.Action): void {
     }
 }
 
-function addAssignment(state: CollectorState, assignment: langium.Assignment): void {
+function addAssignment(state: StateCollector, assignment: langium.Assignment): void {
     const typeItems: TypeCollection = { types: [], reference: false };
     findTypes(assignment.terminal, typeItems);
     state.currentType?.fields.push({
         name: assignment.feature,
         array: assignment.operator === '+=',
-        optional: isOptional(assignment.cardinality) || isStateOptional(state),
+        optional: isOptional(assignment.cardinality) || state.isOptional(),
         types: assignment.operator === '?=' ? ['boolean'] : Array.from(new Set(typeItems.types)),
         reference: typeItems.reference
     });
@@ -320,7 +322,7 @@ function findTypes(terminal: langium.AbstractElement, types: TypeCollection): vo
     } else if (langium.isKeyword(terminal)) {
         types.types.push(`'${terminal.value}'`);
     } else if (langium.isRuleCall(terminal)) {
-        if (isParserRule(terminal.rule.ref) && isDataTypeRule(terminal.rule.ref)) {
+        if (langium.isParserRule(terminal.rule.ref) && isDataTypeRule(terminal.rule.ref)) {
             types.types.push(terminal.rule.ref.name);
         } else {
             types.types.push(getRuleType(terminal.rule.ref));
@@ -337,14 +339,14 @@ function findInCollection(collection: langium.Alternatives | langium.Group | lan
     }
 }
 
-function addRuleCall(state: CollectorState, ruleCall: langium.RuleCall): void {
+function addRuleCall(state: StateCollector, ruleCall: langium.RuleCall): void {
     const rule = ruleCall.rule.ref;
     const type = state.currentType;
     if (type) {
         // Add all fields of fragments to the current type
         if (langium.isParserRule(rule) && rule.fragment) {
             const fragmentType = initType(rule);
-            const fragmentState = createState(fragmentType);
+            const fragmentState = new StateCollector(fragmentType);
             collectElement(fragmentState, fragmentType, rule.alternatives);
             const types = calculateAst(fragmentState.tree.getLeafNodes());
             const foundType = types.find(e => e.name === rule.name);

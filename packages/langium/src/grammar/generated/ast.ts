@@ -16,7 +16,7 @@ export function isAbstractRule(item: unknown): item is AbstractRule {
     return reflection.isInstance(item, AbstractRule);
 }
 
-export type AbstractType = Interface | Type | ParserRule;
+export type AbstractType = Interface | ParserRule | Type;
 
 export const AbstractType = 'AbstractType';
 
@@ -24,7 +24,7 @@ export function isAbstractType(item: unknown): item is AbstractType {
     return reflection.isInstance(item, AbstractType);
 }
 
-export type Condition = LiteralCondition | Disjunction | Conjunction | Negation | ParameterReference;
+export type Condition = Conjunction | Disjunction | LiteralCondition | Negation | ParameterReference;
 
 export const Condition = 'Condition';
 

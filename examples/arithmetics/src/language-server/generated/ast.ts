@@ -7,7 +7,7 @@
 /* eslint-disable @typescript-eslint/no-empty-interface */
 import { AstNode, AstReflection, Reference, isAstNode } from 'langium';
 
-export type AbstractDefinition = Definition | DeclaredParameter;
+export type AbstractDefinition = DeclaredParameter | Definition;
 
 export const AbstractDefinition = 'AbstractDefinition';
 
@@ -15,7 +15,7 @@ export function isAbstractDefinition(item: unknown): item is AbstractDefinition 
     return reflection.isInstance(item, AbstractDefinition);
 }
 
-export type Expression = BinaryExpression | NumberLiteral | FunctionCall;
+export type Expression = BinaryExpression | FunctionCall | NumberLiteral;
 
 export const Expression = 'Expression';
 
