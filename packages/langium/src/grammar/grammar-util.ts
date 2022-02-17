@@ -56,19 +56,26 @@ function isDataTypeRuleInternal(rule: ast.ParserRule, visited: Set<ast.ParserRul
     return true;
 }
 
-export function findNameAssignment(rule: ast.ParserRule): ast.Assignment | undefined {
-    for (const node of streamAllContents(rule)) {
+export function findNameAssignment(type: ast.AbstractType): ast.Assignment | undefined {
+    for (const node of streamAllContents(type)) {
         if (ast.isAssignment(node) && node.feature.toLowerCase() === 'name') {
             return node;
         } else if (ast.isRuleCall(node) && ast.isParserRule(node.rule.ref)) {
-            const parentAssignment = getContainerOfType(node, ast.isAssignment);
-            // No parent assignment implies unassigned rule call
-            if (!parentAssignment) {
-                const childNameAssignment = findNameAssignment(node.rule.ref);
-                if (childNameAssignment) {
-                    return childNameAssignment;
-                }
-            }
+            return findNameAssignmentInternal(node, node.rule.ref);
+        } else if (ast.isAtomType(node) && node.refType.ref) {
+            return findNameAssignmentInternal(node, node.refType.ref);
+        }
+    }
+    return undefined;
+}
+
+function findNameAssignmentInternal(node: AstNode, refType: ast.AbstractType): ast.Assignment | undefined {
+    const parentAssignment = getContainerOfType(node, ast.isAssignment);
+    // No parent assignment implies unassigned rule call
+    if (!parentAssignment) {
+        const childNameAssignment = findNameAssignment(refType);
+        if (childNameAssignment) {
+            return childNameAssignment;
         }
     }
     return undefined;
@@ -258,19 +265,22 @@ function withCardinality(regex: string, cardinality?: string, wrap = false): str
     return regex;
 }
 
-export function getTypeName(rule: ast.AbstractRule | undefined): string {
-    if (rule) {
-        return rule.type?.name ?? rule.name;
-    } else {
-        throw new Error('Unknown rule type');
+export function getTypeName(type: ast.AbstractType | undefined): string {
+    if (ast.isParserRule(type)) {
+        return type.type?.name ?? type.name;
+    } else if (ast.isInterface(type) || ast.isType(type)) {
+        return type.name;
     }
+    throw new Error('Unknown type');
 }
 
 export function getRuleType(rule: ast.AbstractRule | undefined): string {
-    if (ast.isParserRule(rule) && isDataTypeRule(rule) || ast.isTerminalRule(rule)) {
+    if (ast.isTerminalRule(rule)) {
         return rule.type?.name ?? 'string';
+    } else if (ast.isParserRule(rule)) {
+        return isDataTypeRule(rule) ? rule.name : (rule.type?.name ?? rule.name);
     }
-    return getTypeName(rule);
+    throw new Error('Unknown rule type');
 }
 
 export function getEntryRule(grammar: ast.Grammar): ast.ParserRule | undefined {

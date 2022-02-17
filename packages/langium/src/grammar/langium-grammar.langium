@@ -38,8 +38,7 @@ AtomType:
 		) isArray?='[]'?
 	|	keywordType=Keyword;
 
-AbstractType:
-	Interface | Type | ParserRule;
+type AbstractType = Interface | Type | ParserRule;
 
 PrimitiveType returns string:
 	'string' | 'number' | 'boolean' | 'date';
@@ -152,7 +151,7 @@ AssignableAlternatives returns AbstractElement:
 	AssignableTerminal ({Alternatives.elements+=current} ('|' elements+=AssignableTerminal)+)?;
 
 CrossReference returns AbstractElement:
-	{CrossReference} '[' ^type=[ParserRule:ID] ((deprecatedSyntax?='|' | ':') ^terminal=CrossReferenceableTerminal )? ']';
+	{CrossReference} '[' ^type=[AbstractType] ((deprecatedSyntax?='|' | ':') ^terminal=CrossReferenceableTerminal )? ']';
 
 CrossReferenceableTerminal returns AbstractElement:
 	Keyword | RuleCall;

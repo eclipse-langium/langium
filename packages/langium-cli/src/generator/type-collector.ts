@@ -367,13 +367,9 @@ function findTypes(terminal: langium.AbstractElement, types: TypeCollection): vo
     } else if (langium.isKeyword(terminal)) {
         types.types.push(`'${terminal.value}'`);
     } else if (langium.isRuleCall(terminal)) {
-        if (langium.isParserRule(terminal.rule.ref) && isDataTypeRule(terminal.rule.ref)) {
-            types.types.push(terminal.rule.ref.name);
-        } else {
-            types.types.push(getRuleType(terminal.rule.ref));
-        }
+        types.types.push(getRuleType(terminal.rule.ref));
     } else if (langium.isCrossReference(terminal)) {
-        types.types.push(getRuleType(terminal.type.ref));
+        types.types.push(getTypeName(terminal.type.ref));
         types.reference = true;
     }
 }

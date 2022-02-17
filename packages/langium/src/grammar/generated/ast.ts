@@ -127,7 +127,7 @@ export interface CrossReference extends AbstractElement {
     readonly $container: Alternatives | Assignment | AtomType | CharacterRange | CrossReference | Group | NegatedToken | ParserRule | TerminalAlternatives | TerminalGroup | TerminalRule | UnorderedGroup | UntilToken;
     deprecatedSyntax: boolean
     terminal: AbstractElement
-    type: Reference<ParserRule>
+    type: Reference<AbstractType>
 }
 
 export const CrossReference = 'CrossReference';
@@ -511,7 +511,7 @@ export class LangiumGrammarAstReflection implements AstReflection {
                 return AbstractType;
             }
             case 'CrossReference:type': {
-                return ParserRule;
+                return AbstractType;
             }
             case 'Grammar:usedGrammars': {
                 return Grammar;
