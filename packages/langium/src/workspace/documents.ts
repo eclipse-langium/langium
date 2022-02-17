@@ -79,6 +79,9 @@ export function equalURI(uri1: URI, uri2: URI): boolean {
  * Shared service for creating `TextDocument` instances.
  */
 export interface TextDocumentFactory {
+    /**
+     * Creates a `TextDocument` from a given `URI`.
+     */
     fromUri(uri: URI): TextDocument;
 }
 
@@ -176,7 +179,7 @@ export function documentFromText<T extends AstNode = AstNode>(textDocument: Text
 }
 
 /**
- * Shared service that manages Langium documents.
+ * Shared service for managing Langium documents.
  */
 export interface LangiumDocuments {
 

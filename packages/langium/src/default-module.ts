@@ -92,7 +92,7 @@ export function createDefaultModule(context: DefaultModuleContext): Module<Langi
 }
 
 /**
- * Context required for creating the default shared dependeny injection module.
+ * Context required for creating the default shared dependency injection module.
  */
 export interface DefaultSharedModuleContext {
     connection?: Connection;

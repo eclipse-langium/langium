@@ -18,6 +18,9 @@ export interface BuildOptions {
     validationChecks?: 'none' | 'all'
 }
 
+/**
+ * Shared-service for building and updating `LangiumDocument`s.
+ */
 export interface DocumentBuilder {
     /**
      * Execute all necessary build steps for the given documents.

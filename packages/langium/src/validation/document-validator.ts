@@ -15,6 +15,9 @@ import { interruptAndCheck } from '../utils/promise-util';
 import { LangiumDocument } from '../workspace/documents';
 import { DiagnosticInfo, ValidationAcceptor, ValidationRegistry } from './validation-registry';
 
+/**
+ * Language-specific service for validating `LangiumDocument`s.
+ */
 export interface DocumentValidator {
     /**
      * Validates the whole specified document.

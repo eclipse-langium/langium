@@ -16,7 +16,7 @@ import { AstNodeLocator } from './ast-node-locator';
 import { DocumentSegment, LangiumDocument } from './documents';
 
 /**
- * Creates descriptions of AST nodes to be used for cross-reference resolutions.
+ * Language-specific service for creating descriptions of AST nodes to be used for cross-reference resolutions.
  */
 export interface AstNodeDescriptionProvider {
 
@@ -105,7 +105,7 @@ export interface ReferenceDescription {
 }
 
 /**
- * Creates descriptions of all cross-references in a document. These are used by the `IndexManager`
+ * Language-specific service to create descriptions of all cross-references in a document. These are used by the `IndexManager`
  * to determine which documents are affected and should be rebuilt when a document is changed.
  */
 export interface ReferenceDescriptionProvider {

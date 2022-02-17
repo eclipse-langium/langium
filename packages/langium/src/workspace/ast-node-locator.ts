@@ -7,6 +7,9 @@
 import { AstNode } from '../syntax-tree';
 import { LangiumDocument } from './documents';
 
+/**
+ * Language-specific service for locating an `AstNode` in a document.
+ */
 export interface AstNodeLocator {
 
     /**

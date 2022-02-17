@@ -36,6 +36,9 @@ export type ValidationAcceptor = <N extends AstNode>(severity: 'error' | 'warnin
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type ValidationCheck = (node: any, accept: ValidationAcceptor, cancelToken: CancellationToken) => MaybePromise<void>;
 
+/**
+ * Manages a set of `ValidationCheck`s to be applied when documents are validated.
+ */
 export class ValidationRegistry {
     private readonly validationChecks = new MultiMap<string, ValidationCheck>();
     private readonly reflection: AstReflection;

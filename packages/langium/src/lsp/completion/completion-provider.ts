@@ -22,6 +22,9 @@ import { RuleInterpreter } from './rule-interpreter';
 
 export type CompletionAcceptor = (value: string | AstNode | AstNodeDescription, item?: Partial<CompletionItem>) => void
 
+/**
+ * Language-specific service for handling completion requests.
+ */
 export interface CompletionProvider {
     /**
      * Handle a completion request.

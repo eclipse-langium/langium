@@ -14,6 +14,9 @@ import { findLeafNodeAtOffset } from '../utils/cst-util';
 import { MaybePromise } from '../utils/promise-util';
 import { LangiumDocument } from '../workspace/documents';
 
+/**
+ * Language-specific service for handling document highlight requests.
+ */
 export interface DocumentHighlighter {
     /**
      * Handle a document highlight request.

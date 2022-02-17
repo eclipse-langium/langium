@@ -15,6 +15,9 @@ import { findLeafNodeAtOffset, flatten } from '../utils/cst-util';
 import { MaybePromise } from '../utils/promise-util';
 import { LangiumDocument } from '../workspace/documents';
 
+/**
+ * Language-specific service for handling find references requests.
+ */
 export interface ReferenceFinder {
     /**
      * Handle a find references request.

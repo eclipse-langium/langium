@@ -15,7 +15,14 @@ export function isNamed(node: AstNode): node is NamedAstNode {
     return (node as NamedAstNode).name !== undefined;
 }
 
+/**
+ * Utility service for retrieving the `name` of an `AstNode` or the `CstNode` containing a `name`.
+ */
 export interface NameProvider {
+    /**
+     * Returns the `name` of a given AstNode.
+     * @param node Specified `AstNode` whose name node shall be retrieved.
+     */
     getName(node: AstNode): string | undefined;
     /**
      * Returns the `CstNode` which contains the parsed value of the `name` assignment.

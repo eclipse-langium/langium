@@ -13,6 +13,9 @@ import { findCommentNode, findLeafNodeAtOffset } from '../utils/cst-util';
 import { MaybePromise } from '../utils/promise-util';
 import { LangiumDocument } from '../workspace/documents';
 
+/**
+ * Language-specific service for handling hover requests.
+ */
 export interface HoverProvider {
     /**
      * Handle a hover request.

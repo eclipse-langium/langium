@@ -12,6 +12,9 @@ import { streamContents } from '../utils/ast-util';
 import { MaybePromise } from '../utils/promise-util';
 import { LangiumDocument } from '../workspace/documents';
 
+/**
+ * Language-specific service for handling document symbols requests.
+ */
 export interface DocumentSymbolProvider {
     /**
      * Handle a document symbols request.
