@@ -499,45 +499,71 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "name": "AtomType",
       "hiddenTokens": [],
       "alternatives": {
-        "$type": "Alternatives",
+        "$type": "Group",
         "elements": [
           {
             "$type": "Assignment",
-            "feature": "primitiveType",
-            "operator": "=",
+            "feature": "isRef",
+            "operator": "?=",
             "terminal": {
-              "$type": "Alternatives",
-              "elements": [
-                {
-                  "$type": "RuleCall",
-                  "arguments": [],
-                  "rule": {
-                    "$refText": "PrimitiveType"
-                  },
-                  "elements": []
-                },
-                {
-                  "$type": "RuleCall",
-                  "arguments": [],
-                  "rule": {
-                    "$refText": "Keyword"
-                  }
-                }
-              ]
+              "$type": "Keyword",
+              "value": "@"
             },
+            "cardinality": "?",
             "elements": []
           },
           {
-            "$type": "Assignment",
-            "feature": "referenceType",
-            "operator": "=",
-            "terminal": {
-              "$type": "CrossReference",
-              "type": {
-                "$refText": "AbstractType"
+            "$type": "Alternatives",
+            "elements": [
+              {
+                "$type": "Assignment",
+                "feature": "value",
+                "operator": "=",
+                "terminal": {
+                  "$type": "Alternatives",
+                  "elements": [
+                    {
+                      "$type": "RuleCall",
+                      "arguments": [],
+                      "rule": {
+                        "$refText": "PrimitiveType"
+                      },
+                      "elements": []
+                    },
+                    {
+                      "$type": "RuleCall",
+                      "arguments": [],
+                      "rule": {
+                        "$refText": "Keyword"
+                      }
+                    }
+                  ]
+                },
+                "elements": []
+              },
+              {
+                "$type": "Assignment",
+                "feature": "refValue",
+                "operator": "=",
+                "terminal": {
+                  "$type": "CrossReference",
+                  "type": {
+                    "$refText": "AbstractType"
+                  }
+                },
+                "elements": []
               }
+            ]
+          },
+          {
+            "$type": "Assignment",
+            "feature": "isArray",
+            "operator": "?=",
+            "terminal": {
+              "$type": "Keyword",
+              "value": "[]"
             },
-            "elements": []
+            "cardinality": "?"
           }
         ]
       }

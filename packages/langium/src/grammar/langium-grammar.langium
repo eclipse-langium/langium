@@ -33,8 +33,10 @@ Type:
 
 // atom ////////////
 AtomType:
-		primitiveType=(PrimitiveType | Keyword)
-	| 	referenceType=[AbstractType];
+	isRef?='@'? (
+		value=(PrimitiveType | Keyword)
+	| 	 refValue=[AbstractType]
+	) isArray?='[]'?;
 
 AbstractType:
 	Interface | Type | ParserRule;

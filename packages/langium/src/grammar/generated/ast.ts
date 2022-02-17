@@ -86,8 +86,10 @@ export function isAssignment(item: unknown): item is Assignment {
 
 export interface AtomType extends AstNode {
     readonly $container: Type | TypeAttribute;
-    primitiveType: Keyword | PrimitiveType
-    referenceType: Reference<AbstractType>
+    isArray: boolean
+    isRef: boolean
+    refValue: Reference<AbstractType>
+    value: Keyword | PrimitiveType
 }
 
 export const AtomType = 'AtomType';
@@ -444,7 +446,7 @@ export function isWildcard(item: unknown): item is Wildcard {
 
 export type LangiumGrammarAstType = 'AbstractElement' | 'AbstractRule' | 'AbstractType' | 'Action' | 'Alternatives' | 'Assignment' | 'AtomType' | 'CharacterRange' | 'Condition' | 'Conjunction' | 'CrossReference' | 'Disjunction' | 'Grammar' | 'GrammarImport' | 'Group' | 'Interface' | 'Keyword' | 'LiteralCondition' | 'NamedArgument' | 'NegatedToken' | 'Negation' | 'Parameter' | 'ParameterReference' | 'ParserRule' | 'RegexToken' | 'ReturnType' | 'RuleCall' | 'TerminalAlternatives' | 'TerminalGroup' | 'TerminalRule' | 'TerminalRuleCall' | 'Type' | 'TypeAttribute' | 'UnorderedGroup' | 'UntilToken' | 'Wildcard';
 
-export type LangiumGrammarAstReference = 'AtomType:referenceType' | 'CrossReference:type' | 'Grammar:usedGrammars' | 'Grammar:hiddenTokens' | 'Interface:superTypes' | 'NamedArgument:parameter' | 'ParameterReference:parameter' | 'ParserRule:hiddenTokens' | 'RuleCall:rule' | 'TerminalRuleCall:rule';
+export type LangiumGrammarAstReference = 'AtomType:refValue' | 'CrossReference:type' | 'Grammar:usedGrammars' | 'Grammar:hiddenTokens' | 'Interface:superTypes' | 'NamedArgument:parameter' | 'ParameterReference:parameter' | 'ParserRule:hiddenTokens' | 'RuleCall:rule' | 'TerminalRuleCall:rule';
 
 export class LangiumGrammarAstReflection implements AstReflection {
 
@@ -504,7 +506,7 @@ export class LangiumGrammarAstReflection implements AstReflection {
 
     getReferenceType(referenceId: LangiumGrammarAstReference): string {
         switch (referenceId) {
-            case 'AtomType:referenceType': {
+            case 'AtomType:refValue': {
                 return AbstractType;
             }
             case 'CrossReference:type': {
