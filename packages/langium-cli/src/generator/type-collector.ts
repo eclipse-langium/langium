@@ -47,19 +47,19 @@ export type AstResources = {
 export class Type {
     name: string;
     alternatives: string[];
-    noReflection: boolean;
+    reflection: boolean;
 
-    constructor(name: string, alternatives: string[], options?: { noReflection: boolean }) {
+    constructor(name: string, alternatives: string[], options?: { reflection: boolean }) {
         this.name = name;
         this.alternatives = alternatives;
-        this.noReflection = options?.noReflection ?? false;
+        this.reflection = options?.reflection ?? false;
     }
 
     toString(): string {
         const typeNode = new CompositeGeneratorNode();
         typeNode.contents.push(`export type ${this.name} = ${distictUniqueSorted(this.alternatives).join(' | ')};`, NL);
 
-        if (!this.noReflection) pushReflectionInfo(this.name, typeNode);
+        if (this.reflection) pushReflectionInfo(this.name, typeNode);
         return processGeneratorNode(typeNode);
     }
 }
@@ -88,10 +88,8 @@ export class Interface {
         }
 
         for (const field of distictUniqueSorted(this.fields, (a, b) => a.name.localeCompare(b.name))) {
-            let type = distictUniqueSorted(field.types).join(' | ');
-            type = field.reference ? `Reference<${type}>` : type;
-            type = field.array ? `Array<${type}>` : type;
             const optional = field.optional && field.reference && !field.array ? '?' : '';
+            const type = typeInfoToString(field.types, field.reference, field.array);
             fieldsNode.contents.push(`${field.name}${optional}: ${type}`, NL);
         }
         interfaceNode.contents.push(fieldsNode, '}', NL);
@@ -103,6 +101,13 @@ export class Interface {
 
 function distictUniqueSorted<T>(list: T[], compareFn?: (a: T, b: T) => number): T[] {
     return stream(list).distinct().toArray().sort(compareFn);
+}
+
+function typeInfoToString(types: string | string[], reference: boolean, array: boolean): string {
+    let res = Array.isArray(types) ? distictUniqueSorted(types).join(' | ') : types;
+    res = reference ? `Reference<${res}>` : res;
+    res = array ? `Array<${res}>` : res;
+    return res;
 }
 
 function pushReflectionInfo(name: string, node: CompositeGeneratorNode) {
@@ -192,7 +197,7 @@ export function collectAst(documents: LangiumDocuments, grammars: langium.Gramma
     // collect rules, types, interfaces from grammars
     const astResources = collectAllAstResources(documents, grammars);
 
-    // get interfaces/types from parser rules
+    // extract interfaces and types from parser rules
     const state = new StateCollector();
     const allTypes: TypeAlternative[] = [];
     for (const rule of Array.from(astResources.parserRules)) {
@@ -209,14 +214,39 @@ export function collectAst(documents: LangiumDocuments, grammars: langium.Gramma
     sortInterfaces(interfaces);
     const astTypes = extractTypes(interfaces);
 
-    // get types from datatype rules
+    // extract types from datatype rules
     for (const rule of Array.from(astResources.datatypeRules)) {
         if (langium.isAlternatives(rule.alternatives) && rule.alternatives.elements.every(e => langium.isKeyword(e))) {
             const alternatives = stream(rule.alternatives.elements).filter(langium.isKeyword).map(e => `'${e.value}'`).toArray();
-            astTypes.types.push(new Type(rule.name, alternatives, { noReflection: true }));
+            astTypes.types.push(new Type(rule.name, alternatives));
         } else {
-            astTypes.types.push(new Type(rule.name, [rule.type?.name ?? 'string'], { noReflection: true }));
+            astTypes.types.push(new Type(rule.name, [rule.type?.name ?? 'string']));
         }
+    }
+
+    function getOneType(type: langium.AtomType): string {
+        return type.refType?.ref?.name ?? type.primitiveType ?? `'${type.keywordType?.value}'`;
+    }
+
+    // add types
+    for (const type of Array.from(astResources.types)) {
+        const alternatives = type.typeAlternatives.map(e => typeInfoToString(getOneType(e), e.isRef, e.isArray));
+        const reflection = type.typeAlternatives.some(e =>
+            e.refType?.ref && langium.isParserRule(e.refType?.ref) && !isDataTypeRule(e.refType?.ref));
+        astTypes.types.push(new Type(type.name, alternatives, { reflection }));
+    }
+
+    // add interfaces
+    for (const interfaceType of Array.from(astResources.interfaces)) {
+        const superTypes = interfaceType.superTypes.map(e => e.ref?.name).filter(e => typeof e === 'string') as string[];
+        const fields: Field[] = interfaceType.attributes.map(e => <Field>{
+            name: e.name,
+            array: e.type.isArray,
+            optional: e.isOptional,
+            types: [getOneType(e.type)],
+            reference: e.type.isRef
+        });
+        astTypes.interfaces.push(new Interface(interfaceType.name, superTypes, fields));
     }
 
     return astTypes;
@@ -518,7 +548,7 @@ function extractTypes(interfaces: Interface[]): AstTypes {
     const typeNames: string[] = [];
     for (const interfaceType of interfaces) {
         if (interfaceType.fields.length === 0 && interfaceType.subTypes.length > 0) {
-            astTypes.types.push(new Type(interfaceType.name, interfaceType.subTypes));
+            astTypes.types.push(new Type(interfaceType.name, interfaceType.subTypes, { reflection: true }));
             typeNames.push(interfaceType.name);
         } else {
             astTypes.interfaces.push(interfaceType);

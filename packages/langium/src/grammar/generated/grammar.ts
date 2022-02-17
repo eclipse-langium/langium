@@ -499,71 +499,80 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "name": "AtomType",
       "hiddenTokens": [],
       "alternatives": {
-        "$type": "Group",
+        "$type": "Alternatives",
         "elements": [
           {
-            "$type": "Assignment",
-            "feature": "isRef",
-            "operator": "?=",
-            "terminal": {
-              "$type": "Keyword",
-              "value": "@"
-            },
-            "cardinality": "?",
-            "elements": []
-          },
-          {
-            "$type": "Alternatives",
+            "$type": "Group",
             "elements": [
               {
-                "$type": "Assignment",
-                "feature": "value",
-                "operator": "=",
-                "terminal": {
-                  "$type": "Alternatives",
-                  "elements": [
-                    {
+                "$type": "Alternatives",
+                "elements": [
+                  {
+                    "$type": "Assignment",
+                    "feature": "primitiveType",
+                    "operator": "=",
+                    "terminal": {
                       "$type": "RuleCall",
                       "arguments": [],
                       "rule": {
                         "$refText": "PrimitiveType"
-                      },
-                      "elements": []
-                    },
-                    {
-                      "$type": "RuleCall",
-                      "arguments": [],
-                      "rule": {
-                        "$refText": "Keyword"
                       }
-                    }
-                  ]
-                },
-                "elements": []
+                    },
+                    "elements": []
+                  },
+                  {
+                    "$type": "Group",
+                    "elements": [
+                      {
+                        "$type": "Assignment",
+                        "feature": "isRef",
+                        "operator": "?=",
+                        "terminal": {
+                          "$type": "Keyword",
+                          "value": "@"
+                        },
+                        "cardinality": "?",
+                        "elements": []
+                      },
+                      {
+                        "$type": "Assignment",
+                        "feature": "refType",
+                        "operator": "=",
+                        "terminal": {
+                          "$type": "CrossReference",
+                          "type": {
+                            "$refText": "AbstractType"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
               },
               {
                 "$type": "Assignment",
-                "feature": "refValue",
-                "operator": "=",
+                "feature": "isArray",
+                "operator": "?=",
                 "terminal": {
-                  "$type": "CrossReference",
-                  "type": {
-                    "$refText": "AbstractType"
-                  }
+                  "$type": "Keyword",
+                  "value": "[]"
                 },
-                "elements": []
+                "cardinality": "?"
               }
             ]
           },
           {
             "$type": "Assignment",
-            "feature": "isArray",
-            "operator": "?=",
+            "feature": "keywordType",
+            "operator": "=",
             "terminal": {
-              "$type": "Keyword",
-              "value": "[]"
+              "$type": "RuleCall",
+              "arguments": [],
+              "rule": {
+                "$refText": "Keyword"
+              }
             },
-            "cardinality": "?"
+            "elements": []
           }
         ]
       }
