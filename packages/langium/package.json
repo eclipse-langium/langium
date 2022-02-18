@@ -28,6 +28,7 @@
     "build": "tsc",
     "watch": "tsc --watch",
     "lint": "eslint src test --ext .ts",
+    "test:types": "tsd",
     "langium:generate": "langium generate",
     "publish:next": "npm --no-git-tag-version version \"$(semver $npm_package_version -i minor)-next.$(git rev-parse --short HEAD)\" && npm publish --tag next",
     "publish:latest": "npm publish --tag latest"
