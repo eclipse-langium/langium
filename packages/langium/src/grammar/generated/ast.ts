@@ -482,22 +482,22 @@ export class LangiumGrammarAstReflection implements AstReflection {
             case Wildcard: {
                 return this.isSubtype(AbstractElement, supertype);
             }
-            case Conjunction:
-            case Disjunction:
-            case LiteralCondition:
-            case Negation:
-            case ParameterReference: {
-                return this.isSubtype(Condition, supertype);
+            case ParserRule: {
+                return this.isSubtype(AbstractRule, supertype) || this.isSubtype(AbstractType, supertype);
+            }
+            case TerminalRule: {
+                return this.isSubtype(AbstractRule, supertype);
             }
             case Interface:
             case Type: {
                 return this.isSubtype(AbstractType, supertype);
             }
-            case ParserRule: {
-                return this.isSubtype(AbstractType, supertype) || this.isSubtype(AbstractRule, supertype);
-            }
-            case TerminalRule: {
-                return this.isSubtype(AbstractRule, supertype);
+            case LiteralCondition:
+            case Disjunction:
+            case Conjunction:
+            case Negation:
+            case ParameterReference: {
+                return this.isSubtype(Condition, supertype);
             }
             default: {
                 return false;

@@ -15,6 +15,8 @@ export function isAbstractElement(item: unknown): item is AbstractElement {
     return reflection.isInstance(item, AbstractElement);
 }
 
+export type QualifiedName = string;
+
 export type Type = DataType | Entity;
 
 export const Type = 'Type';
@@ -22,8 +24,6 @@ export const Type = 'Type';
 export function isType(item: unknown): item is Type {
     return reflection.isInstance(item, Type);
 }
-
-export type QualifiedName = string;
 
 export interface DataType extends AstNode {
     readonly $container: Domainmodel | PackageDeclaration;
@@ -103,13 +103,13 @@ export class DomainModelAstReflection implements AstReflection {
             return true;
         }
         switch (subtype) {
-            case DataType:
-            case Entity: {
-                return this.isSubtype(Type, supertype);
-            }
             case PackageDeclaration:
             case Type: {
                 return this.isSubtype(AbstractElement, supertype);
+            }
+            case DataType:
+            case Entity: {
+                return this.isSubtype(Type, supertype);
             }
             default: {
                 return false;

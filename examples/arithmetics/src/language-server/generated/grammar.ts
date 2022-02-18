@@ -202,33 +202,6 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
     {
       "$type": "ParserRule",
       "parameters": [],
-      "name": "AbstractDefinition",
-      "hiddenTokens": [],
-      "alternatives": {
-        "$type": "Alternatives",
-        "elements": [
-          {
-            "$type": "RuleCall",
-            "arguments": [],
-            "rule": {
-              "$refText": "Definition"
-            },
-            "elements": []
-          },
-          {
-            "$type": "RuleCall",
-            "arguments": [],
-            "rule": {
-              "$refText": "DeclaredParameter"
-            },
-            "elements": []
-          }
-        ]
-      }
-    },
-    {
-      "$type": "ParserRule",
-      "parameters": [],
       "name": "Evaluation",
       "hiddenTokens": [],
       "alternatives": {
@@ -585,7 +558,26 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
     }
   ],
   "interfaces": [],
-  "types": [],
+  "types": [
+    {
+      "$type": "Type",
+      "typeAlternatives": [
+        {
+          "$type": "AtomType",
+          "refType": {
+            "$refText": "Definition"
+          }
+        },
+        {
+          "$type": "AtomType",
+          "refType": {
+            "$refText": "DeclaredParameter"
+          }
+        }
+      ],
+      "name": "AbstractDefinition"
+    }
+  ],
   "isDeclared": true,
   "name": "Arithmetics"
 }`));

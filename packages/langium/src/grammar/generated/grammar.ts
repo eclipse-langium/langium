@@ -580,41 +580,6 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
     {
       "$type": "ParserRule",
       "parameters": [],
-      "name": "AbstractType",
-      "hiddenTokens": [],
-      "alternatives": {
-        "$type": "Alternatives",
-        "elements": [
-          {
-            "$type": "RuleCall",
-            "arguments": [],
-            "rule": {
-              "$refText": "Interface"
-            },
-            "elements": []
-          },
-          {
-            "$type": "RuleCall",
-            "arguments": [],
-            "rule": {
-              "$refText": "Type"
-            },
-            "elements": []
-          },
-          {
-            "$type": "RuleCall",
-            "arguments": [],
-            "rule": {
-              "$refText": "ParserRule"
-            },
-            "elements": []
-          }
-        ]
-      }
-    },
-    {
-      "$type": "ParserRule",
-      "parameters": [],
       "name": "PrimitiveType",
       "hiddenTokens": [],
       "type": {
@@ -3211,7 +3176,32 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
     }
   ],
   "interfaces": [],
-  "types": [],
+  "types": [
+    {
+      "$type": "Type",
+      "typeAlternatives": [
+        {
+          "$type": "AtomType",
+          "refType": {
+            "$refText": "Interface"
+          }
+        },
+        {
+          "$type": "AtomType",
+          "refType": {
+            "$refText": "Type"
+          }
+        },
+        {
+          "$type": "AtomType",
+          "refType": {
+            "$refText": "ParserRule"
+          }
+        }
+      ],
+      "name": "AbstractType"
+    }
+  ],
   "isDeclared": true,
   "name": "LangiumGrammar"
 }`));

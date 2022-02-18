@@ -45,7 +45,7 @@ export function isBinaryExpression(item: unknown): item is BinaryExpression {
 }
 
 export interface DeclaredParameter extends AstNode {
-    readonly $container: Definition | Module;
+    readonly $container: Definition;
     name: string
 }
 
@@ -56,7 +56,7 @@ export function isDeclaredParameter(item: unknown): item is DeclaredParameter {
 }
 
 export interface Definition extends AstNode {
-    readonly $container: Definition | Module;
+    readonly $container: Module;
     args: Array<DeclaredParameter>
     expr: Expression
     name: string
@@ -69,7 +69,7 @@ export function isDefinition(item: unknown): item is Definition {
 }
 
 export interface Evaluation extends AstNode {
-    readonly $container: Definition | Module;
+    readonly $container: Module;
     expression: Expression
 }
 
@@ -132,16 +132,16 @@ export class ArithmeticsAstReflection implements AstReflection {
             return true;
         }
         switch (subtype) {
-            case BinaryExpression:
-            case FunctionCall:
-            case NumberLiteral: {
-                return this.isSubtype(Expression, supertype);
+            case Definition: {
+                return this.isSubtype(AbstractDefinition, supertype) || this.isSubtype(Statement, supertype);
             }
             case DeclaredParameter: {
                 return this.isSubtype(AbstractDefinition, supertype);
             }
-            case Definition: {
-                return this.isSubtype(Statement, supertype) || this.isSubtype(AbstractDefinition, supertype);
+            case BinaryExpression:
+            case NumberLiteral:
+            case FunctionCall: {
+                return this.isSubtype(Expression, supertype);
             }
             case Evaluation: {
                 return this.isSubtype(Statement, supertype);
