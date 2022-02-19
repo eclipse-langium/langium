@@ -103,13 +103,13 @@ export class DomainModelAstReflection implements AstReflection {
             return true;
         }
         switch (subtype) {
-            case PackageDeclaration:
-            case Type: {
-                return this.isSubtype(AbstractElement, supertype);
-            }
             case DataType:
             case Entity: {
                 return this.isSubtype(Type, supertype);
+            }
+            case PackageDeclaration:
+            case Type: {
+                return this.isSubtype(AbstractElement, supertype);
             }
             default: {
                 return false;

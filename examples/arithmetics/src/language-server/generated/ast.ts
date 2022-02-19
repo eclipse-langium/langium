@@ -132,16 +132,16 @@ export class ArithmeticsAstReflection implements AstReflection {
             return true;
         }
         switch (subtype) {
-            case Definition: {
-                return this.isSubtype(AbstractDefinition, supertype) || this.isSubtype(Statement, supertype);
+            case BinaryExpression:
+            case FunctionCall:
+            case NumberLiteral: {
+                return this.isSubtype(Expression, supertype);
             }
             case DeclaredParameter: {
                 return this.isSubtype(AbstractDefinition, supertype);
             }
-            case BinaryExpression:
-            case NumberLiteral:
-            case FunctionCall: {
-                return this.isSubtype(Expression, supertype);
+            case Definition: {
+                return this.isSubtype(Statement, supertype) || this.isSubtype(AbstractDefinition, supertype);
             }
             case Evaluation: {
                 return this.isSubtype(Statement, supertype);

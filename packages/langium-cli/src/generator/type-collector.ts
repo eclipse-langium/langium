@@ -6,7 +6,7 @@
 
 import _ from 'lodash';
 import * as langium from 'langium';
-import { CompositeGeneratorNode, getDocument, getRuleType, getTypeName, IndentNode, isDataTypeRule, isOptional, LangiumDocuments, NL, processGeneratorNode, resolveImport, stream } from 'langium';
+import { CompositeGeneratorNode, getDocument, getRuleType, getTypeName, IndentNode, isDataTypeRule, isOptional, LangiumDocuments, MultiMap, NL, processGeneratorNode, resolveImport, stream } from 'langium';
 import { URI } from 'vscode-uri';
 
 type TypeAlternative = {
@@ -50,6 +50,7 @@ export class Type {
     name: string;
     alternatives: FieldType[];
     reflection: boolean;
+    superTypes: string[] = [];
 
     constructor(name: string, alternatives: FieldType[], options?: { reflection: boolean }) {
         this.name = name;
@@ -69,6 +70,7 @@ export class Type {
 export class Interface {
     name: string;
     superTypes: string[];
+    printingSuperTypes: string[];
     subTypes: string[] = [];
     containerTypes: string[] = [];
     fields: Field[];
@@ -76,12 +78,13 @@ export class Interface {
     constructor(name: string, superTypes: string[], fields: Field[]) {
         this.name = name;
         this.superTypes = superTypes;
+        this.printingSuperTypes = _.cloneDeep(superTypes);
         this.fields = fields;
     }
 
     toString(): string {
         const interfaceNode = new CompositeGeneratorNode();
-        const superTypes = this.superTypes.length > 0 ? distictUniqueSorted(this.superTypes) : ['AstNode'];
+        const superTypes = this.printingSuperTypes.length > 0 ? distictUniqueSorted(this.printingSuperTypes) : ['AstNode'];
         interfaceNode.contents.push(`export interface ${this.name} extends ${superTypes.join(', ')} {`, NL);
 
         const fieldsNode = new IndentNode();
@@ -223,20 +226,21 @@ export function collectAst(documents: LangiumDocuments, grammars: langium.Gramma
         astTypes.types.push(new Type(rule.name, [<FieldType>{ types, reference: false, array: false }]));
     }
 
-    function atomTypeToFieldType(type: langium.AtomType): FieldType {
-        return {
-            types: [type.refType?.ref?.name ?? type.primitiveType ?? `'${type.keywordType?.value}'`],
-            reference: type.isRef,
-            array: type.isArray
-        };
-    }
-
     // add types
+    const childToSuper = new MultiMap<string, string>();
     for (const type of Array.from(astResources.types)) {
         const alternatives = type.typeAlternatives.map(atomTypeToFieldType);
         const reflection = type.typeAlternatives.some(e =>
             e.refType?.ref && langium.isParserRule(e.refType?.ref) && !isDataTypeRule(e.refType?.ref));
         astTypes.types.push(new Type(type.name, alternatives, { reflection }));
+
+        type.typeAlternatives.filter(e => typeof e.refType?.ref?.name === 'string').map(e => childToSuper.add(e.refType.ref?.name as string, type.name));
+    }
+    for (const child of childToSuper.keys()) {
+        const childType = astTypes.types.find(e => e.name === child) ?? astTypes.interfaces.find(e => e.name === child);
+        if (childType) {
+            childToSuper.get(child).map(superType => childType.superTypes.push(superType));
+        }
     }
     astTypes.types.sort((a, b) => a.name.localeCompare(b.name));
 
@@ -557,17 +561,29 @@ function extractTypes(interfaces: Interface[]): AstTypes {
                 reference: false,
                 array: false
             });
-            astTypes.types.push(new Type(interfaceType.name, alternatives, { reflection: true }));
+            const type = new Type(interfaceType.name, alternatives, { reflection: true });
+            type.superTypes = interfaceType.superTypes;
+            astTypes.types.push(type);
             typeNames.push(interfaceType.name);
         } else {
             astTypes.interfaces.push(interfaceType);
         }
     }
-    // remove interfaces that became types from super types of their "former" children
+    // define printingSuperTypes containing intefaces that
+    // became types from super types of their "former" children
     for (const interfaceType of astTypes.interfaces) {
-        interfaceType.superTypes = interfaceType.superTypes.filter(superType => !typeNames.includes(superType));
+        interfaceType.printingSuperTypes = _.cloneDeep(interfaceType.superTypes)
+            .filter(superType => !typeNames.includes(superType));
     }
     return astTypes;
+}
+
+function atomTypeToFieldType(type: langium.AtomType): FieldType {
+    return {
+        types: [type.refType?.ref?.name ?? type.primitiveType ?? `'${type.keywordType?.value}'`],
+        reference: type.isRef,
+        array: type.isArray
+    };
 }
 
 /**

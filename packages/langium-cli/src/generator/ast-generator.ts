@@ -46,25 +46,17 @@ function hasCrossReferences(grammar: Grammar): boolean {
     return !!streamAllContents(grammar).find(isCrossReference);
 }
 
-type CrossReferenceType = {
-    type: string,
-    feature: string,
-    referenceType: string
-}
-
 function generateAstReflection(config: LangiumConfig, astTypes: AstTypes): GeneratorNode {
-    const reflectionNode = new CompositeGeneratorNode();
     const typeNames: string[] = astTypes.interfaces.map(t => `'${t.name}'`)
-        .concat(astTypes.types.map(t => `'${t.name}'`)).sort();
+        .concat(astTypes.types.map(t => `'${t.name}'`))
+        .sort();
     const crossReferenceTypes = buildCrossReferenceTypes(astTypes);
+    const reflectionNode = new CompositeGeneratorNode();
 
     reflectionNode.append(
-        `export type ${config.projectName}AstType = `,
-        typeNames.join(' | '),
-        ';', NL, NL,
+        `export type ${config.projectName}AstType = ${typeNames.join(' | ')};`, NL, NL,
         `export type ${config.projectName}AstReference = `,
-        crossReferenceTypes.map(e => `'${e.type}:${e.feature}'`).join(' | ') || 'never',
-        ';', NL, NL,
+        crossReferenceTypes.map(e => `'${e.type}:${e.feature}'`).join(' | ') || 'never', ';', NL, NL,
         `export class ${config.projectName}AstReflection implements AstReflection {`, NL, NL
     );
 
@@ -82,7 +74,7 @@ function generateAstReflection(config: LangiumConfig, astTypes: AstTypes): Gener
             'isSubtype(subtype: string, supertype: string): boolean {', NL,
             buildIsSubtypeMethod(astTypes), '}', NL, NL,
             `getReferenceType(referenceId: ${config.projectName}AstReference): string {`, NL,
-            buildReferenceTypeMethod(astTypes), '}', NL,
+            buildReferenceTypeMethod(crossReferenceTypes), '}', NL,
         );
     });
 
@@ -94,8 +86,7 @@ function generateAstReflection(config: LangiumConfig, astTypes: AstTypes): Gener
     return reflectionNode;
 }
 
-function buildReferenceTypeMethod(astTypes: AstTypes): GeneratorNode {
-    const crossReferenceTypes = buildCrossReferenceTypes(astTypes);
+function buildReferenceTypeMethod(crossReferenceTypes: CrossReferenceType[]): GeneratorNode {
     const typeSwitchNode = new IndentNode();
     typeSwitchNode.append('switch (referenceId) {', NL);
     typeSwitchNode.indent(caseNode => {
@@ -116,12 +107,21 @@ function buildReferenceTypeMethod(astTypes: AstTypes): GeneratorNode {
     return typeSwitchNode;
 }
 
+type CrossReferenceType = {
+    type: string,
+    feature: string,
+    referenceType: string
+}
+
 function buildCrossReferenceTypes(astTypes: AstTypes): CrossReferenceType[] {
     const crossReferences: CrossReferenceType[] = [];
     for (const typeInterface of astTypes.interfaces) {
         for (const field of typeInterface.fields.filter(e => e.type.reference)) {
-            const referenceType = Array.isArray(field.type.types) ? field.type.types[0] : field.type.types;
-            crossReferences.push({ type: typeInterface.name, feature: field.name, referenceType });
+            crossReferences.push({
+                type: typeInterface.name,
+                feature: field.name,
+                referenceType: field.type.types[0]
+            });
         }
     }
     return crossReferences;
@@ -163,20 +163,19 @@ function buildIsSubtypeMethod(astTypes: AstTypes): GeneratorNode {
     return methodNode;
 }
 
-function groupBySupertypes(astTypes: AstTypes): MultiMap<string, string> {
-    const superToChild = new MultiMap<string, string>();
-    for (const item of astTypes.interfaces.filter(e => e.superTypes.length > 0)) {
-        superToChild.add(item.superTypes.join(':'), item.name);
-    }
+type ChildToSuper = {
+    name: string,
+    superTypes: string[]
+}
 
-    const childToSuper = new MultiMap<string, string>();
-    for (const superType of astTypes.types) {
-        superType.alternatives.filter(e => !e.reference && !e.array).flatMap(e => e.types)
-            .forEach(child => childToSuper.add(child, superType.name));
-    }
-    for (const childType of childToSuper.keys()) {
-        const superTypes = childToSuper.get(childType);
-        superToChild.add(superTypes.join(':'), childType);
+function groupBySupertypes(astTypes: AstTypes): MultiMap<string, string> {
+    const allTypes: ChildToSuper[] = (astTypes.interfaces as ChildToSuper[])
+        .concat(astTypes.types)
+        .filter(e => e.superTypes.length > 0);
+
+    const superToChild = new MultiMap<string, string>();
+    for (const item of allTypes) {
+        superToChild.add(item.superTypes.join(':'), item.name);
     }
 
     return superToChild;
