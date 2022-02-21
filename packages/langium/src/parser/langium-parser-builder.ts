@@ -8,9 +8,9 @@ import { IOrAlt, TokenType, TokenTypeDictionary, TokenVocabulary } from 'chevrot
 import { AbstractElement, Action, Alternatives, Condition, CrossReference, Grammar, Group, isAction, isAlternatives, isAssignment, isConjunction, isCrossReference, isDisjunction, isGroup, isKeyword, isLiteralCondition, isNegation, isParameterReference, isParserRule, isRuleCall, isTerminalRule, isUnorderedGroup, Keyword, NamedArgument, ParserRule, RuleCall, UnorderedGroup } from '../grammar/generated/ast';
 import { Cardinality, findNameAssignment, getTypeName, isArrayOperator, isDataTypeRule } from '../grammar/grammar-util';
 import { LangiumServices } from '../services';
-import { hasContainerOfType, isIMultiModeLexerDefinition, isTokenTypeDictionary, streamAllContents } from '../utils/ast-util';
+import { hasContainerOfType, streamAllContents } from '../utils/ast-util';
 import { stream } from '../utils/stream';
-import { DatatypeSymbol, LangiumParser } from './langium-parser';
+import { DatatypeSymbol, isIMultiModeLexerDefinition, isTokenTypeDictionary, LangiumParser } from './langium-parser';
 
 type RuleContext = {
     optional: number,

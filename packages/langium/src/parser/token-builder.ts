@@ -23,15 +23,17 @@ export class DefaultTokenBuilder implements TokenBuilder {
 
         terminalTokens.forEach(terminalToken => {
             const pattern = terminalToken.PATTERN;
-            (typeof pattern === 'object' && pattern && 'test' in pattern && pattern.test(' ')) ?
-                tokens.unshift(terminalToken) :
+            if (typeof pattern === 'object' && pattern && 'test' in pattern && pattern.test(' ')) {
+                tokens.unshift(terminalToken);
+            } else {
                 tokens.push(terminalToken);
+            }
         });
         return tokens;
     }
 
     protected buildTerminalTokens(grammar: Grammar): TokenType[] {
-        return Array.from(stream(grammar.rules).filter(isTerminalRule)).filter(e => !e.fragment)
+        return grammar.rules.filter(isTerminalRule).filter(e => !e.fragment)
             .map(terminal => this.buildTerminalToken(terminal));
     }
 
@@ -57,8 +59,10 @@ export class DefaultTokenBuilder implements TokenBuilder {
 
     protected buildKeywordTokens(grammar: Grammar, terminalTokens: TokenType[], options?: { caseInsensitive?: boolean }): TokenType[] {
         // We filter by parser rules, since keywords in terminal rules get transformed into regex and are not actual tokens
-        const parserRuleKeywords = grammar.rules.filter(isParserRule).flatMap(rule => streamAllContents(rule).filter(isKeyword).toArray());
-        return stream(parserRuleKeywords).distinct(e => e.value).toArray()
+        const parserRuleKeywords = stream(grammar.rules)
+            .filter(isParserRule)
+            .flatMap(rule => streamAllContents(rule).filter(isKeyword));
+        return parserRuleKeywords.distinct(e => e.value).toArray()
             // Sort keywords by descending length
             .sort((a, b) => b.value.length - a.value.length)
             .reduce(

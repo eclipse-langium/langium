@@ -5,12 +5,12 @@
  ******************************************************************************/
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { defaultParserErrorProvider, EmbeddedActionsParser, ILexingError, IOrAlt, IParserErrorMessageProvider, IRecognitionException, IToken, Lexer, TokenType, TokenVocabulary } from 'chevrotain';
+import { defaultParserErrorProvider, EmbeddedActionsParser, ILexingError, IMultiModeLexerDefinition, IOrAlt, IParserErrorMessageProvider, IRecognitionException, IToken, Lexer, TokenType, TokenTypeDictionary, TokenVocabulary } from 'chevrotain';
 import { AbstractElement, Action, Assignment, isAssignment, isCrossReference } from '../grammar/generated/ast';
 import { Linker } from '../references/linker';
 import { LangiumServices } from '../services';
 import { AstNode, CompositeCstNode, CstNode, LeafCstNode } from '../syntax-tree';
-import { getContainerOfType, isTokenTypeDictionary, linkContentToContainer } from '../utils/ast-util';
+import { getContainerOfType, linkContentToContainer } from '../utils/ast-util';
 import { tokenToRange } from '../utils/cst-util';
 import { CompositeCstNodeImpl, CstNodeBuilder, LeafCstNodeImpl, RootCstNodeImpl } from './cst-node-builder';
 import { IParserConfig } from './parser-config';
@@ -424,4 +424,25 @@ class ChevrotainWrapper extends EmbeddedActionsParser {
     wrapAtLeastOne(idx: number, callback: () => void): void {
         this.atLeastOne(idx, callback);
     }
+}
+
+/**
+ * Returns a check whether the given TokenVocabulary is TokenType array
+ */
+export function isTokenTypeArray(tokenVocabulary: TokenVocabulary): tokenVocabulary is TokenType[] {
+    return Array.isArray(tokenVocabulary) && (tokenVocabulary.length === 0 || 'name' in tokenVocabulary[0]);
+}
+
+/**
+ * Returns a check whether the given TokenVocabulary is IMultiModeLexerDefinition
+ */
+export function isIMultiModeLexerDefinition(tokenVocabulary: TokenVocabulary): tokenVocabulary is IMultiModeLexerDefinition {
+    return tokenVocabulary && 'modes' in tokenVocabulary && 'defaultMode' in tokenVocabulary;
+}
+
+/**
+ * Returns a check whether the given TokenVocabulary is TokenTypeDictionary
+ */
+export function isTokenTypeDictionary(tokenVocabulary: TokenVocabulary): tokenVocabulary is TokenTypeDictionary {
+    return !isTokenTypeArray(tokenVocabulary) && !isIMultiModeLexerDefinition(tokenVocabulary);
 }
