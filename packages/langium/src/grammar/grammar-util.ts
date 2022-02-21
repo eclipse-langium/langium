@@ -58,25 +58,31 @@ function isDataTypeRuleInternal(rule: ast.ParserRule, visited: Set<ast.ParserRul
 }
 
 export function findNameAssignment(type: ast.AbstractType): ast.Assignment | undefined {
-    for (const node of streamAllContents(type)) {
-        if (ast.isAssignment(node) && node.feature.toLowerCase() === 'name') {
-            return node;
-        } else if (ast.isRuleCall(node) && ast.isParserRule(node.rule.ref)) {
-            return findNameAssignmentInternal(node, node.rule.ref);
-        } else if (ast.isAtomType(node) && node.refType.ref) {
-            return findNameAssignmentInternal(node, node.refType.ref);
-        }
-    }
-    return undefined;
+    return findNameAssignmentInternal(type, new Map());
 }
 
-function findNameAssignmentInternal(node: AstNode, refType: ast.AbstractType): ast.Assignment | undefined {
-    const parentAssignment = getContainerOfType(node, ast.isAssignment);
-    // No parent assignment implies unassigned rule call
-    if (!parentAssignment) {
-        const childNameAssignment = findNameAssignment(refType);
-        if (childNameAssignment) {
-            return childNameAssignment;
+function findNameAssignmentInternal(type: ast.AbstractType, cashed: Map<ast.AbstractType, ast.Assignment | undefined>): ast.Assignment | undefined {
+    function go(node: AstNode, refType: ast.AbstractType): ast.Assignment | undefined {
+        let childAssignment: ast.Assignment | undefined = undefined;
+        const parentAssignment = getContainerOfType(node, ast.isAssignment);
+        // No parent assignment implies unassigned rule call
+        if (!parentAssignment) {
+            childAssignment = findNameAssignmentInternal(refType, cashed);
+        }
+        cashed.set(type, childAssignment);
+        return childAssignment;
+    }
+
+    if (cashed.has(type)) return cashed.get(type);
+    cashed.set(type, undefined);
+    for (const node of streamAllContents(type)) {
+        if (ast.isAssignment(node) && node.feature.toLowerCase() === 'name') {
+            cashed.set(type, node);
+            return node;
+        } else if (ast.isRuleCall(node) && ast.isParserRule(node.rule.ref)) {
+            return go(node, node.rule.ref);
+        } else if (ast.isAtomType(node) && node.refType.ref) {
+            return go(node, node.refType.ref);
         }
     }
     return undefined;
