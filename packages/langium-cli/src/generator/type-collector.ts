@@ -6,7 +6,7 @@
 
 import _ from 'lodash';
 import * as langium from 'langium';
-import { CompositeGeneratorNode, getDocument, getRuleType, getTypeName, IndentNode, isDataTypeRule, isOptional, LangiumDocuments, MultiMap, NL, processGeneratorNode, resolveImport, stream } from 'langium';
+import { CompositeGeneratorNode, distictAndSorted, getDocument, getRuleType, getTypeName, IndentNode, isDataTypeRule, isOptional, LangiumDocuments, MultiMap, NL, processGeneratorNode, resolveImport, stream } from 'langium';
 import { URI } from 'vscode-uri';
 
 type TypeAlternative = {
@@ -60,7 +60,7 @@ export class Type {
 
     toString(): string {
         const typeNode = new CompositeGeneratorNode();
-        typeNode.contents.push(`export type ${this.name} = ${distictUniqueSorted(this.alternatives.map(typeFieldToString)).join(' | ')};`, NL);
+        typeNode.contents.push(`export type ${this.name} = ${distictAndSorted(this.alternatives.map(typeFieldToString)).join(' | ')};`, NL);
 
         if (this.reflection) pushReflectionInfo(this.name, typeNode);
         return processGeneratorNode(typeNode);
@@ -84,15 +84,15 @@ export class Interface {
 
     toString(): string {
         const interfaceNode = new CompositeGeneratorNode();
-        const superTypes = this.printingSuperTypes.length > 0 ? distictUniqueSorted(this.printingSuperTypes) : ['AstNode'];
+        const superTypes = this.printingSuperTypes.length > 0 ? distictAndSorted(this.printingSuperTypes) : ['AstNode'];
         interfaceNode.contents.push(`export interface ${this.name} extends ${superTypes.join(', ')} {`, NL);
 
         const fieldsNode = new IndentNode();
         if (this.containerTypes.length > 0) {
-            fieldsNode.contents.push(`readonly $container: ${distictUniqueSorted(this.containerTypes).join(' | ')};`, NL);
+            fieldsNode.contents.push(`readonly $container: ${distictAndSorted(this.containerTypes).join(' | ')};`, NL);
         }
 
-        for (const field of distictUniqueSorted(this.fields, (a, b) => a.name.localeCompare(b.name))) {
+        for (const field of distictAndSorted(this.fields, (a, b) => a.name.localeCompare(b.name))) {
             const optional = field.optional && field.type.reference && !field.type.array ? '?' : '';
             const type = typeFieldToString(field.type);
             fieldsNode.contents.push(`${field.name}${optional}: ${type}`, NL);
@@ -104,12 +104,8 @@ export class Interface {
     }
 }
 
-function distictUniqueSorted<T>(list: T[], compareFn?: (a: T, b: T) => number): T[] {
-    return stream(list).distinct().toArray().sort(compareFn);
-}
-
 function typeFieldToString(fieldType: FieldType): string {
-    let res = distictUniqueSorted(fieldType.types).join(' | ');
+    let res = distictAndSorted(fieldType.types).join(' | ');
     res = fieldType.reference ? `Reference<${res}>` : res;
     res = fieldType.array ? `Array<${res}>` : res;
     return res;
@@ -167,7 +163,7 @@ class TypeTree {
     }
 }
 
-class StateCollector {
+class TypeCollectorState {
     tree: TypeTree = new TypeTree();
     types: TypeAlternative[] = [];
     cardinalities: langium.Cardinality[] = [];
@@ -203,7 +199,7 @@ export function collectAst(documents: LangiumDocuments, grammars: langium.Gramma
     const astResources = collectAllAstResources(documents, grammars);
 
     // extract interfaces and types from parser rules
-    const state = new StateCollector();
+    const state = new TypeCollectorState();
     const allTypes: TypeAlternative[] = [];
     for (const rule of Array.from(astResources.parserRules)) {
         state.parserRule = rule;
@@ -270,7 +266,11 @@ function collectAllAstResources(documents: LangiumDocuments, grammars: langium.G
         visited.add(doc.uri);
         for (const rule of grammar.rules) {
             if (langium.isParserRule(rule) && !rule.fragment) {
-                isDataTypeRule(rule) ? astResources.datatypeRules.add(rule) : astResources.parserRules.add(rule);
+                if (isDataTypeRule(rule)) {
+                    astResources.datatypeRules.add(rule);
+                } else {
+                    astResources.parserRules.add(rule);
+                }
             }
         }
         grammar.interfaces.forEach(e => astResources.interfaces.add(e));
@@ -298,7 +298,7 @@ function initType(rule: langium.ParserRule | string): TypeAlternative {
  * @param type Element that collects a current type branch for the given element.
  * @param element The given AST element, from which it's necessary to extract the type.
  */
-function collectElement(state: StateCollector, type: TypeAlternative, element: langium.AbstractElement): void {
+function collectElement(state: TypeCollectorState, type: TypeAlternative, element: langium.AbstractElement): void {
     state.currentType = type;
     state.enterGroup(element.cardinality);
     if (isOptional(element.cardinality)) {
@@ -329,7 +329,7 @@ function collectElement(state: StateCollector, type: TypeAlternative, element: l
     state.leaveGroup();
 }
 
-function addAction(state: StateCollector, action: langium.Action): void {
+function addAction(state: TypeCollectorState, action: langium.Action): void {
     let newType: TypeAlternative;
     const type = state.currentType;
     if (type) {
@@ -358,7 +358,7 @@ function addAction(state: StateCollector, action: langium.Action): void {
     }
 }
 
-function addAssignment(state: StateCollector, assignment: langium.Assignment): void {
+function addAssignment(state: TypeCollectorState, assignment: langium.Assignment): void {
     const typeItems: TypeCollection = { types: [], reference: false };
     findTypes(assignment.terminal, typeItems);
     state.currentType?.fields.push({
@@ -391,14 +391,14 @@ function findInCollection(collection: langium.Alternatives | langium.Group | lan
     }
 }
 
-function addRuleCall(state: StateCollector, ruleCall: langium.RuleCall): void {
+function addRuleCall(state: TypeCollectorState, ruleCall: langium.RuleCall): void {
     const rule = ruleCall.rule.ref;
     const type = state.currentType;
     if (type) {
         // Add all fields of fragments to the current type
         if (langium.isParserRule(rule) && rule.fragment) {
             const fragmentType = initType(rule);
-            const fragmentState = new StateCollector(fragmentType);
+            const fragmentState = new TypeCollectorState(fragmentType);
             collectElement(fragmentState, fragmentType, rule.alternatives);
             const types = calculateAst(fragmentState.tree.getLeafNodes());
             const foundType = types.find(e => e.name === rule.name);

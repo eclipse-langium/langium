@@ -14,15 +14,16 @@ import { processTypeNodeWithNodeLocator } from './grammar-util';
 
 export class LangiumGrammarScopeComputation extends DefaultScopeComputation {
     protected readonly astNodeLocator: AstNodeLocator;
+    protected readonly processTypeNode: (node: AstNode, document: LangiumDocument, scopes: PrecomputedScopes) => void;
 
     constructor(services: LangiumServices) {
         super(services);
-        this.astNodeLocator = services.index.AstNodeLocator;
+        this.processTypeNode = processTypeNodeWithNodeLocator(services.index.AstNodeLocator);
     }
 
     protected processNode(node: AstNode, document: LangiumDocument, scopes: PrecomputedScopes): void {
         if (isReturnType(node)) return;
-        processTypeNodeWithNodeLocator(this.astNodeLocator)(node, document, scopes);
+        this.processTypeNode(node, document, scopes);
         super.processNode(node, document, scopes);
     }
 }

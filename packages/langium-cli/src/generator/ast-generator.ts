@@ -116,7 +116,7 @@ type CrossReferenceType = {
 function buildCrossReferenceTypes(astTypes: AstTypes): CrossReferenceType[] {
     const crossReferences: CrossReferenceType[] = [];
     for (const typeInterface of astTypes.interfaces) {
-        for (const field of typeInterface.fields.filter(e => e.type.reference)) {
+        for (const field of typeInterface.fields.filter(e => e.type.reference).sort((a, b) => a.name.localeCompare(b.name))) {
             crossReferences.push({
                 type: typeInterface.name,
                 feature: field.name,
@@ -124,7 +124,7 @@ function buildCrossReferenceTypes(astTypes: AstTypes): CrossReferenceType[] {
             });
         }
     }
-    return crossReferences;
+    return crossReferences.sort((a, b) => a.type.localeCompare(b.type));
 }
 
 function buildIsSubtypeMethod(astTypes: AstTypes): GeneratorNode {

@@ -13,9 +13,6 @@ entry Grammar:
 	imports+=GrammarImport*
 	(rules+=AbstractRule | interfaces+=Interface | types+=Type)+;
 
-///////////////////////////////////////////////////////////////////////////////
-
-// interface ///////
 Interface:
 	'interface' name=ID
 	('extends' superTypes+=[AbstractType] (',' superTypes+=[AbstractType])*)?
@@ -27,11 +24,9 @@ fragment SchemaType:
 TypeAttribute:
 	name=ID (isOptional?='?')? ':' ^type=AtomType ';'?;
 
-// type ////////////
 Type:
 	'type' name=ID '=' typeAlternatives+=AtomType ('|' typeAlternatives+=AtomType)* ';'?;
 
-// atom ////////////
 AtomType:
 		(	primitiveType=PrimitiveType
 		| 	isRef?='@'? refType=[AbstractType]
@@ -43,11 +38,8 @@ type AbstractType = Interface | Type | ParserRule;
 PrimitiveType returns string:
 	'string' | 'number' | 'boolean' | 'date';
 
-// return type /////
 ReturnType:
 	name=(PrimitiveType | ID);
-
-///////////////////////////////////////////////////////////////////////////////
 
 AbstractRule : ParserRule | TerminalRule;
 

@@ -14,6 +14,7 @@ import { getContainerOfType, getDocument, Mutable, streamAllContents } from '../
 import { MultiMap } from '../utils/collections';
 import { streamCst } from '../utils/cst-util';
 import { escapeRegExp } from '../utils/regex-util';
+import { stream } from '../utils/stream';
 import { AstNodeLocator } from '../workspace/ast-node-locator';
 import { documentFromText, LangiumDocument, LangiumDocuments, PrecomputedScopes } from '../workspace/documents';
 import { createLangiumGrammarServices } from './langium-grammar-module';
@@ -79,6 +80,10 @@ function findNameAssignmentInternal(node: AstNode, refType: ast.AbstractType): a
         }
     }
     return undefined;
+}
+
+export function distictAndSorted<T>(list: T[], compareFn?: (a: T, b: T) => number): T[] {
+    return stream(list).distinct().toArray().sort(compareFn);
 }
 
 export function isCommentTerminal(terminalRule: ast.TerminalRule): boolean {
