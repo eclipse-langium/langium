@@ -134,9 +134,17 @@ export interface CompositeCstNode extends CstNode {
     children: CstNode[];
 }
 
+export function isCompositeCstNode(node: CstNode): node is CompositeCstNode {
+    return typeof node === 'object' && !!node && 'children' in node;
+}
+
 /**
  * A leaf CST node corresponds to a token in the input token stream.
  */
 export interface LeafCstNode extends CstNode {
     readonly tokenType: TokenType;
+}
+
+export function isLeafCstNode(node: CstNode): node is LeafCstNode {
+    return typeof node === 'object' && !!node && 'tokenType' in node;
 }

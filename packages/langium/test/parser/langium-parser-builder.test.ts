@@ -12,7 +12,6 @@ const helper = parseHelper<Grammar>(grammarServices);
 
 describe('Predicated grammar rules with alternatives', () => {
 
-    let grammar: Grammar;
     let parser: LangiumParser;
     const content = `
     grammar TestGrammar
@@ -35,7 +34,7 @@ describe('Predicated grammar rules with alternatives', () => {
     `;
 
     beforeAll(async () => {
-        grammar = (await helper(content)).parseResult.value;
+        const grammar = (await helper(content)).parseResult.value;
         parser = parserFromGrammar(grammar);
     });
 
@@ -192,7 +191,8 @@ describe('One name for terminal and non-terminal rules', () => {
     Bdata returns string: 'B';
     
     C: Cterm 'A' Bdata prop=A;
-    terminal Cterm: /C/;    
+    terminal Cterm: /C/;
+    hidden terminal WS: /\\s+/;
     `;
 
     beforeAll(async () => {
@@ -205,6 +205,58 @@ describe('One name for terminal and non-terminal rules', () => {
         }).not.toThrow();
     });
 
+});
+
+describe('Parser calls value converter', () => {
+
+    let parser: LangiumParser;
+    const content = `
+    grammar TestGrammar
+    entry Main: value=(QFN|Number);
+
+    QFN returns string: ID ('.' QFN)?;
+    terminal ID: /\\^?[_a-zA-Z][\\w_]*/;
+
+	Number returns number: INT ('.' INT)?;
+	terminal INT returns number: /[0-9]+/;
+
+    hidden terminal WS: /\\s+/;
+    hidden terminal ML_COMMENT: /\\/\\*[\\s\\S]*?\\*\\//;
+    `;
+
+    beforeAll(async () => {
+        const grammar = (await helper(content)).parseResult.value;
+        parser = parserFromGrammar(grammar);
+    });
+
+    function expectValue(input: string, value: unknown): void {
+        const main = parser.parse(input).value as unknown as { value: string };
+        expect(main.value).toBe(value);
+    }
+
+    test('Should parse ID inside of data type rule correctly', () => {
+        expectValue('^x', 'x');
+    });
+
+    test('Should parse FQN correctly', () => {
+        expectValue('^x.y.^z', 'x.y.z');
+    });
+
+    test('Should parse FQN with whitespace correctly', () => {
+        expectValue('^x. y . ^z', 'x.y.z');
+    });
+
+    test('Should parse FQN with comment correctly', () => {
+        expectValue('^x./* test */y.^z', 'x.y.z');
+    });
+
+    test('Should parse integer correctly', () => {
+        expectValue('123', 123);
+    });
+
+    test('Should parse float correctly', () => {
+        expectValue('123.5', 123.5);
+    });
 });
 
 function parserFromGrammar(grammar: Grammar): LangiumParser {
