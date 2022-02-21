@@ -1403,7 +1403,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                   "$type": "RuleCall",
                   "arguments": [],
                   "rule": {
-                    "$refText": "ID"
+                    "$refText": "FeatureName"
                   }
                 }
               },
@@ -2145,7 +2145,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
               "$type": "RuleCall",
               "arguments": [],
               "rule": {
-                "$refText": "ID"
+                "$refText": "FeatureName"
               }
             }
           },
@@ -3122,6 +3122,107 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
               }
             ],
             "cardinality": "?"
+          }
+        ]
+      }
+    },
+    {
+      "$type": "ParserRule",
+      "parameters": [],
+      "name": "FeatureName",
+      "hiddenTokens": [],
+      "type": {
+        "$type": "ReturnType",
+        "name": "string"
+      },
+      "alternatives": {
+        "$type": "Alternatives",
+        "elements": [
+          {
+            "$type": "Keyword",
+            "value": "current",
+            "elements": []
+          },
+          {
+            "$type": "Keyword",
+            "value": "entry",
+            "elements": []
+          },
+          {
+            "$type": "Keyword",
+            "value": "extends",
+            "elements": []
+          },
+          {
+            "$type": "Keyword",
+            "value": "false",
+            "elements": []
+          },
+          {
+            "$type": "Keyword",
+            "value": "fragment",
+            "elements": []
+          },
+          {
+            "$type": "Keyword",
+            "value": "grammar",
+            "elements": []
+          },
+          {
+            "$type": "Keyword",
+            "value": "hidden",
+            "elements": []
+          },
+          {
+            "$type": "Keyword",
+            "value": "import",
+            "elements": []
+          },
+          {
+            "$type": "Keyword",
+            "value": "interface",
+            "elements": []
+          },
+          {
+            "$type": "Keyword",
+            "value": "returns",
+            "elements": []
+          },
+          {
+            "$type": "Keyword",
+            "value": "terminal",
+            "elements": []
+          },
+          {
+            "$type": "Keyword",
+            "value": "true",
+            "elements": []
+          },
+          {
+            "$type": "Keyword",
+            "value": "type",
+            "elements": []
+          },
+          {
+            "$type": "Keyword",
+            "value": "with",
+            "elements": []
+          },
+          {
+            "$type": "RuleCall",
+            "arguments": [],
+            "rule": {
+              "$refText": "PrimitiveType"
+            },
+            "elements": []
+          },
+          {
+            "$type": "RuleCall",
+            "arguments": [],
+            "rule": {
+              "$refText": "ID"
+            },
+            "elements": []
           }
         ]
       }

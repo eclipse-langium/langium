@@ -32,6 +32,8 @@ export function isCondition(item: unknown): item is Condition {
     return reflection.isInstance(item, Condition);
 }
 
+export type FeatureName = string;
+
 export type PrimitiveType = 'boolean' | 'date' | 'number' | 'string';
 
 export interface AbstractElement extends AstNode {
@@ -47,7 +49,7 @@ export function isAbstractElement(item: unknown): item is AbstractElement {
 
 export interface Action extends AbstractElement {
     readonly $container: Alternatives | Assignment | AtomType | CharacterRange | CrossReference | Group | NegatedToken | ParserRule | TerminalAlternatives | TerminalGroup | TerminalRule | UnorderedGroup | UntilToken;
-    feature: string
+    feature: FeatureName
     operator: '+=' | '='
     type: string
 }
@@ -71,7 +73,7 @@ export function isAlternatives(item: unknown): item is Alternatives {
 
 export interface Assignment extends AbstractElement {
     readonly $container: Alternatives | Assignment | AtomType | CharacterRange | CrossReference | Group | NegatedToken | ParserRule | TerminalAlternatives | TerminalGroup | TerminalRule | UnorderedGroup | UntilToken;
-    feature: string
+    feature: FeatureName
     firstSetPredicated: boolean
     operator: '+=' | '=' | '?='
     predicated: boolean
