@@ -6,7 +6,7 @@
 
 import _ from 'lodash';
 import * as langium from 'langium';
-import { CompositeGeneratorNode, distictAndSorted, getDocument, getRuleType, getTypeName, IndentNode, isDataTypeRule, isOptional, LangiumDocuments, MultiMap, NL, processGeneratorNode, resolveImport, stream } from 'langium';
+import { CompositeGeneratorNode, getDocument, getRuleType, getTypeName, IndentNode, isDataTypeRule, isOptional, LangiumDocuments, MultiMap, NL, processGeneratorNode, resolveImport, stream } from 'langium';
 import { URI } from 'vscode-uri';
 
 type TypeAlternative = {
@@ -102,6 +102,10 @@ export class Interface {
         pushReflectionInfo(this.name, interfaceNode);
         return processGeneratorNode(interfaceNode);
     }
+}
+
+function distictAndSorted<T>(list: T[], compareFn?: (a: T, b: T) => number): T[] {
+    return Array.from(new Set(list)).sort(compareFn);
 }
 
 function typeFieldToString(fieldType: FieldType): string {
