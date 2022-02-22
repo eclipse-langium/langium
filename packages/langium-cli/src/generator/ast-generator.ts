@@ -5,16 +5,14 @@
  ******************************************************************************/
 
 import {
-    GeneratorNode, Grammar, IndentNode, CompositeGeneratorNode, NL, processGeneratorNode, stream,
-    isAlternatives, isKeyword, isParserRule, isDataTypeRule, ParserRule, streamAllContents,
-    isCrossReference, MultiMap, LangiumServices
+    GeneratorNode, Grammar, IndentNode, CompositeGeneratorNode, NL, processGeneratorNode, streamAllContents, isCrossReference, MultiMap, LangiumServices
 } from 'langium';
 import { LangiumConfig } from '../package';
-import { collectAst, Interface } from './type-collector';
+import { AstTypes, collectAst } from './type-collector';
 import { generatedHeader } from './util';
 
 export function generateAst(services: LangiumServices, grammars: Grammar[], config: LangiumConfig): string {
-    const types = collectAst(services.shared.workspace.LangiumDocuments, grammars);
+    const astTypes = collectAst(services.shared.workspace.LangiumDocuments, grammars);
     const fileNode = new CompositeGeneratorNode();
     fileNode.append(
         generatedHeader,
@@ -31,54 +29,41 @@ export function generateAst(services: LangiumServices, grammars: Grammar[], conf
         fileNode.append(`import { AstNode, AstReflection${crossRef ? ', Reference' : ''}, isAstNode } from 'langium';`, NL, NL);
     }
 
-    for (const type of types) {
+    for (const type of astTypes.types) {
         fileNode.append(type.toString(), NL);
     }
-    for (const primitiveRule of stream(grammars.flatMap(e => e.rules)).distinct().filter(isParserRule).filter(e => isDataTypeRule(e))) {
-        fileNode.append(buildDatatype(primitiveRule), NL, NL);
+    for (const interfaceType of astTypes.interfaces) {
+        fileNode.append(interfaceType.toString(), NL);
     }
 
-    fileNode.append(generateAstReflection(config, types));
+    astTypes.types =  astTypes.types.filter(e => e.reflection);
+    fileNode.append(generateAstReflection(config, astTypes));
 
     return processGeneratorNode(fileNode);
-}
-
-function buildDatatype(rule: ParserRule): GeneratorNode {
-    if (isAlternatives(rule.alternatives) && rule.alternatives.elements.every(e => isKeyword(e))) {
-        return `export type ${rule.name} = ${stream(rule.alternatives.elements).filter(isKeyword).map(e => `'${e.value}'`).join(' | ')}`;
-    } else {
-        return `export type ${rule.name} = ${rule.type ?? 'string'}`;
-    }
 }
 
 function hasCrossReferences(grammar: Grammar): boolean {
     return !!streamAllContents(grammar).find(isCrossReference);
 }
 
-type CrossReferenceType = {
-    type: string,
-    feature: string,
-    referenceType: string
-}
-
-function generateAstReflection(config: LangiumConfig, interfaces: Interface[]): GeneratorNode {
+function generateAstReflection(config: LangiumConfig, astTypes: AstTypes): GeneratorNode {
+    const typeNames: string[] = astTypes.interfaces.map(t => `'${t.name}'`)
+        .concat(astTypes.types.map(t => `'${t.name}'`))
+        .sort();
+    const crossReferenceTypes = buildCrossReferenceTypes(astTypes);
     const reflectionNode = new CompositeGeneratorNode();
-    const crossReferenceTypes = buildCrossReferenceTypes(interfaces);
 
     reflectionNode.append(
-        'export type ', config.projectName, 'AstType = ',
-        interfaces.map(t => `'${t.name}'`).join(' | '),
-        ';', NL, NL,
-        'export type ', config.projectName, 'AstReference = ',
-        crossReferenceTypes.map(e => `'${e.type}:${e.feature}'`).join(' | ') || 'never',
-        ';', NL, NL,
-        'export class ', config.projectName, 'AstReflection implements AstReflection {', NL, NL
+        `export type ${config.projectName}AstType = ${typeNames.join(' | ')};`, NL, NL,
+        `export type ${config.projectName}AstReference = `,
+        crossReferenceTypes.map(e => `'${e.type}:${e.feature}'`).join(' | ') || 'never', ';', NL, NL,
+        `export class ${config.projectName}AstReflection implements AstReflection {`, NL, NL
     );
 
     reflectionNode.indent(classBody => {
         classBody.append('getAllTypes(): string[] {', NL);
         classBody.indent(allTypes => {
-            allTypes.append('return [', interfaces.map(t => `'${t.name}'`).join(', '), '];', NL);
+            allTypes.append(`return [${typeNames.join(', ')}];`, NL);
         });
         classBody.append('}', NL, NL, 'isInstance(node: unknown, type: string): boolean {', NL);
         classBody.indent(isInstance => {
@@ -87,22 +72,21 @@ function generateAstReflection(config: LangiumConfig, interfaces: Interface[]): 
         classBody.append(
             '}', NL, NL,
             'isSubtype(subtype: string, supertype: string): boolean {', NL,
-            buildIsSubtypeMethod(interfaces), '}', NL, NL,
-            'getReferenceType(referenceId: ', config.projectName, 'AstReference): string {', NL,
-            buildReferenceTypeMethod(interfaces), '}', NL,
+            buildIsSubtypeMethod(astTypes), '}', NL, NL,
+            `getReferenceType(referenceId: ${config.projectName}AstReference): string {`, NL,
+            buildReferenceTypeMethod(crossReferenceTypes), '}', NL,
         );
     });
 
     reflectionNode.append(
         '}', NL, NL,
-        'export const reflection = new ', config.projectName, 'AstReflection();', NL
+        `export const reflection = new ${config.projectName}AstReflection();`, NL
     );
 
     return reflectionNode;
 }
 
-function buildReferenceTypeMethod(interfaces: Interface[]): GeneratorNode {
-    const crossReferenceTypes = buildCrossReferenceTypes(interfaces);
+function buildReferenceTypeMethod(crossReferenceTypes: CrossReferenceType[]): GeneratorNode {
     const typeSwitchNode = new IndentNode();
     typeSwitchNode.append('switch (referenceId) {', NL);
     typeSwitchNode.indent(caseNode => {
@@ -123,17 +107,27 @@ function buildReferenceTypeMethod(interfaces: Interface[]): GeneratorNode {
     return typeSwitchNode;
 }
 
-function buildCrossReferenceTypes(interfaces: Interface[]): CrossReferenceType[] {
-    const crossReferences: CrossReferenceType[] = [];
-    for (const type of interfaces) {
-        for (const field of type.fields.filter(e => e.reference)) {
-            crossReferences.push({ type: type.name, feature: field.name, referenceType: field.types[0] });
-        }
-    }
-    return crossReferences;
+type CrossReferenceType = {
+    type: string,
+    feature: string,
+    referenceType: string
 }
 
-function buildIsSubtypeMethod(interfaces: Interface[]): GeneratorNode {
+function buildCrossReferenceTypes(astTypes: AstTypes): CrossReferenceType[] {
+    const crossReferences: CrossReferenceType[] = [];
+    for (const typeInterface of astTypes.interfaces) {
+        for (const field of typeInterface.fields.filter(e => e.type.reference).sort((a, b) => a.name.localeCompare(b.name))) {
+            crossReferences.push({
+                type: typeInterface.name,
+                feature: field.name,
+                referenceType: field.type.types[0]
+            });
+        }
+    }
+    return crossReferences.sort((a, b) => a.type.localeCompare(b.type));
+}
+
+function buildIsSubtypeMethod(astTypes: AstTypes): GeneratorNode {
     const methodNode = new IndentNode();
     methodNode.append('if (subtype === supertype) {', NL);
     methodNode.indent(ifNode => {
@@ -144,17 +138,17 @@ function buildIsSubtypeMethod(interfaces: Interface[]): GeneratorNode {
         'switch (subtype) {', NL
     );
     methodNode.indent(switchNode => {
-        const groups = groupBySupertypes(interfaces.filter(e => e.superTypes.length > 0));
+        const groups = groupBySupertypes(astTypes);
 
         for (const superTypes of groups.keys()) {
             const typeGroup = groups.get(superTypes);
-            for (const typeItem of typeGroup) {
-                switchNode.append(`case ${typeItem.name}:`, NL);
+            for (const typeName of typeGroup) {
+                switchNode.append(`case ${typeName}:`, NL);
             }
             switchNode.contents.pop();
             switchNode.append(' {', NL);
             switchNode.indent(caseNode => {
-                caseNode.append('return ', superTypes.split(':').map(e => `this.isSubtype(${e}, supertype)`).join(' || '), ';');
+                caseNode.append(`return ${superTypes.split(':').map(e => `this.isSubtype(${e}, supertype)`).join(' || ')};`);
             });
             switchNode.append(NL, '}', NL);
         }
@@ -169,10 +163,20 @@ function buildIsSubtypeMethod(interfaces: Interface[]): GeneratorNode {
     return methodNode;
 }
 
-function groupBySupertypes(interfaces: Interface[]): MultiMap<string, Interface> {
-    const map = new MultiMap<string, Interface>();
-    for (const item of interfaces) {
-        map.add(item.superTypes.join(':'), item);
+type ChildToSuper = {
+    name: string,
+    superTypes: string[]
+}
+
+function groupBySupertypes(astTypes: AstTypes): MultiMap<string, string> {
+    const allTypes: ChildToSuper[] = (astTypes.interfaces as ChildToSuper[])
+        .concat(astTypes.types)
+        .filter(e => e.superTypes.length > 0);
+
+    const superToChild = new MultiMap<string, string>();
+    for (const item of allTypes) {
+        superToChild.add(item.superTypes.join(':'), item.name);
     }
-    return map;
+
+    return superToChild;
 }

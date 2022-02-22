@@ -305,7 +305,10 @@ export const DomainModelGrammar = (): Grammar => loadedDomainModelGrammar ||(loa
       "parameters": [],
       "name": "QualifiedName",
       "hiddenTokens": [],
-      "type": "string",
+      "type": {
+        "$type": "ReturnType",
+        "name": "string"
+      },
       "alternatives": {
         "$type": "Group",
         "elements": [
@@ -360,7 +363,10 @@ export const DomainModelGrammar = (): Grammar => loadedDomainModelGrammar ||(loa
     {
       "$type": "TerminalRule",
       "name": "INT",
-      "type": "number",
+      "type": {
+        "$type": "ReturnType",
+        "name": "number"
+      },
       "terminal": {
         "$type": "RegexToken",
         "regex": "[0-9]+",
@@ -397,6 +403,8 @@ export const DomainModelGrammar = (): Grammar => loadedDomainModelGrammar ||(loa
       }
     }
   ],
+  "interfaces": [],
+  "types": [],
   "isDeclared": true,
   "name": "DomainModel"
 }`));

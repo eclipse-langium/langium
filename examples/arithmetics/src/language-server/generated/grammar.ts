@@ -202,33 +202,6 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
     {
       "$type": "ParserRule",
       "parameters": [],
-      "name": "AbstractDefinition",
-      "hiddenTokens": [],
-      "alternatives": {
-        "$type": "Alternatives",
-        "elements": [
-          {
-            "$type": "RuleCall",
-            "arguments": [],
-            "rule": {
-              "$refText": "Definition"
-            },
-            "elements": []
-          },
-          {
-            "$type": "RuleCall",
-            "arguments": [],
-            "rule": {
-              "$refText": "DeclaredParameter"
-            },
-            "elements": []
-          }
-        ]
-      }
-    },
-    {
-      "$type": "ParserRule",
-      "parameters": [],
       "name": "Evaluation",
       "hiddenTokens": [],
       "alternatives": {
@@ -273,7 +246,10 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
       "parameters": [],
       "name": "Addition",
       "hiddenTokens": [],
-      "type": "Expression",
+      "type": {
+        "$type": "ReturnType",
+        "name": "Expression"
+      },
       "alternatives": {
         "$type": "Group",
         "elements": [
@@ -337,7 +313,10 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
       "parameters": [],
       "name": "Multiplication",
       "hiddenTokens": [],
-      "type": "Expression",
+      "type": {
+        "$type": "ReturnType",
+        "name": "Expression"
+      },
       "alternatives": {
         "$type": "Group",
         "elements": [
@@ -401,7 +380,10 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
       "parameters": [],
       "name": "PrimaryExpression",
       "hiddenTokens": [],
-      "type": "Expression",
+      "type": {
+        "$type": "ReturnType",
+        "name": "Expression"
+      },
       "alternatives": {
         "$type": "Alternatives",
         "elements": [
@@ -544,7 +526,10 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
     {
       "$type": "TerminalRule",
       "name": "NUMBER",
-      "type": "number",
+      "type": {
+        "$type": "ReturnType",
+        "name": "number"
+      },
       "terminal": {
         "$type": "RegexToken",
         "regex": "[0-9]+(\\\\.[0-9])?",
@@ -570,6 +555,27 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
         "regex": "\\\\/\\\\/[^\\\\n\\\\r]*",
         "elements": []
       }
+    }
+  ],
+  "interfaces": [],
+  "types": [
+    {
+      "$type": "Type",
+      "typeAlternatives": [
+        {
+          "$type": "AtomType",
+          "refType": {
+            "$refText": "Definition"
+          }
+        },
+        {
+          "$type": "AtomType",
+          "refType": {
+            "$refText": "DeclaredParameter"
+          }
+        }
+      ],
+      "name": "AbstractDefinition"
     }
   ],
   "isDeclared": true,

@@ -399,7 +399,7 @@ export class LangiumGrammarValidator {
     }
 
     checkParserRuleDataType(rule: ast.ParserRule, accept: ValidationAcceptor): void {
-        const hasDatatypeReturnType = rule.type && isPrimitiveType(rule.type);
+        const hasDatatypeReturnType = rule.type?.name && isPrimitiveType(rule.type.name);
         const isDataType = isDataTypeRule(rule);
         if (!hasDatatypeReturnType && isDataType) {
             accept('error', 'This parser rule does not create an object. Add a primitive return type or an action to the start of the rule to force object instantiation.', { node: rule, property: 'name' });
@@ -409,7 +409,7 @@ export class LangiumGrammarValidator {
     }
 
     checkTerminalRuleReturnType(rule: ast.TerminalRule, accept: ValidationAcceptor): void {
-        if (rule.type && !isPrimitiveType(rule.type)) {
+        if (rule.type?.name && !isPrimitiveType(rule.type.name)) {
             accept('error', "Terminal rules can only return primitive types like 'string', 'boolean', 'number' or 'date'.", { node: rule, property: 'type' });
         }
     }

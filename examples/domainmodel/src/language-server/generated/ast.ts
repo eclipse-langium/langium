@@ -7,14 +7,33 @@
 /* eslint-disable @typescript-eslint/no-empty-interface */
 import { AstNode, AstReflection, Reference, isAstNode } from 'langium';
 
-export interface AbstractElement extends AstNode {
-    readonly $container: Domainmodel | PackageDeclaration;
-}
+export type AbstractElement = PackageDeclaration | Type;
 
 export const AbstractElement = 'AbstractElement';
 
 export function isAbstractElement(item: unknown): item is AbstractElement {
     return reflection.isInstance(item, AbstractElement);
+}
+
+export type QualifiedName = string;
+
+export type Type = DataType | Entity;
+
+export const Type = 'Type';
+
+export function isType(item: unknown): item is Type {
+    return reflection.isInstance(item, Type);
+}
+
+export interface DataType extends AstNode {
+    readonly $container: Domainmodel | PackageDeclaration;
+    name: string
+}
+
+export const DataType = 'DataType';
+
+export function isDataType(item: unknown): item is DataType {
+    return reflection.isInstance(item, DataType);
 }
 
 export interface Domainmodel extends AstNode {
@@ -25,6 +44,19 @@ export const Domainmodel = 'Domainmodel';
 
 export function isDomainmodel(item: unknown): item is Domainmodel {
     return reflection.isInstance(item, Domainmodel);
+}
+
+export interface Entity extends AstNode {
+    readonly $container: Domainmodel | PackageDeclaration;
+    features: Array<Feature>
+    name: string
+    superType?: Reference<Entity>
+}
+
+export const Entity = 'Entity';
+
+export function isEntity(item: unknown): item is Entity {
+    return reflection.isInstance(item, Entity);
 }
 
 export interface Feature extends AstNode {
@@ -40,7 +72,8 @@ export function isFeature(item: unknown): item is Feature {
     return reflection.isInstance(item, Feature);
 }
 
-export interface PackageDeclaration extends AbstractElement {
+export interface PackageDeclaration extends AstNode {
+    readonly $container: Domainmodel | PackageDeclaration;
     elements: Array<AbstractElement>
     name: QualifiedName
 }
@@ -51,46 +84,14 @@ export function isPackageDeclaration(item: unknown): item is PackageDeclaration 
     return reflection.isInstance(item, PackageDeclaration);
 }
 
-export interface Type extends AbstractElement {
-    name: string
-}
+export type DomainModelAstType = 'AbstractElement' | 'DataType' | 'Domainmodel' | 'Entity' | 'Feature' | 'PackageDeclaration' | 'Type';
 
-export const Type = 'Type';
-
-export function isType(item: unknown): item is Type {
-    return reflection.isInstance(item, Type);
-}
-
-export interface DataType extends Type {
-}
-
-export const DataType = 'DataType';
-
-export function isDataType(item: unknown): item is DataType {
-    return reflection.isInstance(item, DataType);
-}
-
-export interface Entity extends Type {
-    features: Array<Feature>
-    superType?: Reference<Entity>
-}
-
-export const Entity = 'Entity';
-
-export function isEntity(item: unknown): item is Entity {
-    return reflection.isInstance(item, Entity);
-}
-
-export type QualifiedName = string
-
-export type DomainModelAstType = 'AbstractElement' | 'Domainmodel' | 'Feature' | 'PackageDeclaration' | 'Type' | 'DataType' | 'Entity';
-
-export type DomainModelAstReference = 'Feature:type' | 'Entity:superType';
+export type DomainModelAstReference = 'Entity:superType' | 'Feature:type';
 
 export class DomainModelAstReflection implements AstReflection {
 
     getAllTypes(): string[] {
-        return ['AbstractElement', 'Domainmodel', 'Feature', 'PackageDeclaration', 'Type', 'DataType', 'Entity'];
+        return ['AbstractElement', 'DataType', 'Domainmodel', 'Entity', 'Feature', 'PackageDeclaration', 'Type'];
     }
 
     isInstance(node: unknown, type: string): boolean {
@@ -102,13 +103,13 @@ export class DomainModelAstReflection implements AstReflection {
             return true;
         }
         switch (subtype) {
-            case PackageDeclaration:
-            case Type: {
-                return this.isSubtype(AbstractElement, supertype);
-            }
             case DataType:
             case Entity: {
                 return this.isSubtype(Type, supertype);
+            }
+            case PackageDeclaration:
+            case Type: {
+                return this.isSubtype(AbstractElement, supertype);
             }
             default: {
                 return false;
@@ -118,11 +119,11 @@ export class DomainModelAstReflection implements AstReflection {
 
     getReferenceType(referenceId: DomainModelAstReference): string {
         switch (referenceId) {
-            case 'Feature:type': {
-                return Type;
-            }
             case 'Entity:superType': {
                 return Entity;
+            }
+            case 'Feature:type': {
+                return Type;
             }
             default: {
                 throw new Error(`${referenceId} is not a valid reference id.`);

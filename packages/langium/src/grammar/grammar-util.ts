@@ -14,7 +14,8 @@ import { getContainerOfType, getDocument, Mutable, streamAllContents } from '../
 import { MultiMap } from '../utils/collections';
 import { streamCst } from '../utils/cst-util';
 import { escapeRegExp } from '../utils/regex-util';
-import { documentFromText, LangiumDocuments, PrecomputedScopes } from '../workspace/documents';
+import { AstNodeLocator } from '../workspace/ast-node-locator';
+import { documentFromText, LangiumDocument, LangiumDocuments, PrecomputedScopes } from '../workspace/documents';
 import { createLangiumGrammarServices } from './langium-grammar-module';
 
 export type Cardinality = '?' | '*' | '+' | undefined;
@@ -55,19 +56,32 @@ function isDataTypeRuleInternal(rule: ast.ParserRule, visited: Set<ast.ParserRul
     return true;
 }
 
-export function findNameAssignment(rule: ast.ParserRule): ast.Assignment | undefined {
-    for (const node of streamAllContents(rule)) {
+export function findNameAssignment(type: ast.AbstractType): ast.Assignment | undefined {
+    return findNameAssignmentInternal(type, new Map());
+}
+
+function findNameAssignmentInternal(type: ast.AbstractType, cashed: Map<ast.AbstractType, ast.Assignment | undefined>): ast.Assignment | undefined {
+    function go(node: AstNode, refType: ast.AbstractType): ast.Assignment | undefined {
+        let childAssignment: ast.Assignment | undefined = undefined;
+        const parentAssignment = getContainerOfType(node, ast.isAssignment);
+        // No parent assignment implies unassigned rule call
+        if (!parentAssignment) {
+            childAssignment = findNameAssignmentInternal(refType, cashed);
+        }
+        cashed.set(type, childAssignment);
+        return childAssignment;
+    }
+
+    if (cashed.has(type)) return cashed.get(type);
+    cashed.set(type, undefined);
+    for (const node of streamAllContents(type)) {
         if (ast.isAssignment(node) && node.feature.toLowerCase() === 'name') {
+            cashed.set(type, node);
             return node;
         } else if (ast.isRuleCall(node) && ast.isParserRule(node.rule.ref)) {
-            const parentAssignment = getContainerOfType(node, ast.isAssignment);
-            // No parent assignment implies unassigned rule call
-            if (!parentAssignment) {
-                const childNameAssignment = findNameAssignment(node.rule.ref);
-                if (childNameAssignment) {
-                    return childNameAssignment;
-                }
-            }
+            return go(node, node.rule.ref);
+        } else if (ast.isAtomType(node) && node.refType.ref) {
+            return go(node, node.refType.ref);
         }
     }
     return undefined;
@@ -257,19 +271,22 @@ function withCardinality(regex: string, cardinality?: string, wrap = false): str
     return regex;
 }
 
-export function getTypeName(rule: ast.AbstractRule | undefined): string {
-    if (rule) {
-        return rule.type ?? rule.name;
-    } else {
-        throw new Error('Unknown rule type');
+export function getTypeName(type: ast.AbstractType | undefined): string {
+    if (ast.isParserRule(type)) {
+        return type.type?.name ?? type.name;
+    } else if (ast.isInterface(type) || ast.isType(type)) {
+        return type.name;
     }
+    throw new Error('Unknown type');
 }
 
 export function getRuleType(rule: ast.AbstractRule | undefined): string {
-    if (ast.isParserRule(rule) && isDataTypeRule(rule) || ast.isTerminalRule(rule)) {
-        return rule.type ?? 'string';
+    if (ast.isTerminalRule(rule)) {
+        return rule.type?.name ?? 'string';
+    } else if (ast.isParserRule(rule)) {
+        return isDataTypeRule(rule) ? rule.name : (rule.type?.name ?? rule.name);
     }
-    return getTypeName(rule);
+    throw new Error('Unknown rule type');
 }
 
 export function getEntryRule(grammar: ast.Grammar): ast.ParserRule | undefined {
@@ -352,7 +369,10 @@ export function computeGrammarScope(services: LangiumServices, grammar: ast.Gram
     const descriptions = services.index.AstNodeDescriptionProvider;
     const document = getDocument(grammar);
     const scopes = new MultiMap<AstNode, AstNodeDescription>();
+    const processTypeNode = processTypeNodeWithNodeLocator(services.index.AstNodeLocator);
     for (const node of streamAllContents(grammar)) {
+        if (ast.isReturnType(node)) continue;
+        processTypeNode(node, document, scopes);
         const container = node.$container;
         if (container) {
             const name = nameProvider.getName(node);
@@ -363,4 +383,20 @@ export function computeGrammarScope(services: LangiumServices, grammar: ast.Gram
         }
     }
     return scopes;
+}
+
+export function processTypeNodeWithNodeLocator(astNodeLocator: AstNodeLocator): (node: AstNode, document: LangiumDocument, scopes: PrecomputedScopes) => void {
+    return (node: AstNode, document: LangiumDocument, scopes: PrecomputedScopes) => {
+        const container = node.$container;
+        if (container && ast.isParserRule(node)) {
+            const typeNode = node.type ?? node;
+            scopes.add(container, {
+                node: typeNode,
+                type: 'Interface',
+                name: typeNode.name,
+                documentUri: document.uri,
+                path: astNodeLocator.getAstNodePath(typeNode)
+            });
+        }
+    };
 }

@@ -14,8 +14,7 @@ Definition:
 DeclaredParameter:
 	name=ID;
 
-AbstractDefinition:
-	Definition | DeclaredParameter;
+type AbstractDefinition = Definition | DeclaredParameter;
 
 Evaluation:
 	expression=Expression ';';

@@ -11,7 +11,35 @@ entry Grammar:
         (definesHiddenTokens?='hidden' '(' (hiddenTokens+=[AbstractRule:ID] (',' hiddenTokens+=[AbstractRule:ID])*)? ')')?
     )?
 	imports+=GrammarImport*
-	(rules+=AbstractRule)+;
+	(rules+=AbstractRule | interfaces+=Interface | types+=Type)+;
+
+Interface:
+	'interface' name=ID
+	('extends' superTypes+=[AbstractType] (',' superTypes+=[AbstractType])*)?
+	SchemaType;
+
+fragment SchemaType:
+	'{' attributes+=TypeAttribute* '}' ';'?;
+
+TypeAttribute:
+	name=ID (isOptional?='?')? ':' type=AtomType ';'?;
+
+Type:
+	'type' name=ID '=' typeAlternatives+=AtomType ('|' typeAlternatives+=AtomType)* ';'?;
+
+AtomType:
+		(	primitiveType=PrimitiveType
+		| 	isRef?='@'? refType=[AbstractType]
+		) isArray?='[]'?
+	|	keywordType=Keyword;
+
+type AbstractType = Interface | Type | ParserRule;
+
+PrimitiveType returns string:
+	'string' | 'number' | 'boolean' | 'date';
+
+ReturnType:
+	name=(PrimitiveType | ID);
 
 AbstractRule : ParserRule | TerminalRule;
 
@@ -20,8 +48,8 @@ GrammarImport:
 
 ParserRule :
 	(
-	  (^entry?='entry' | ^fragment?='fragment') RuleNameAndParams (wildcard?='*' | ('returns' type=ID)?)
-	| RuleNameAndParams ('returns' type=ID)?
+	  (entry?='entry' | fragment?='fragment') RuleNameAndParams (wildcard?='*' | ('returns' type=ReturnType)?)
+	| RuleNameAndParams ('returns' type=ReturnType)?
 	)
 	(definesHiddenTokens?='hidden' '(' (hiddenTokens+=[AbstractRule:ID] (',' hiddenTokens+=[AbstractRule:ID])*)? ')')? ':'
 		alternatives=Alternatives
@@ -55,7 +83,7 @@ AbstractTokenWithCardinality returns AbstractElement:
 	(Assignment | AbstractTerminal) cardinality=('?'|'*'|'+')?;
 
 Action returns AbstractElement:
-	{Action} '{' type=ID ('.' feature=ID operator=('='|'+=') 'current')? '}';
+	{Action} '{' type=ID ('.' feature=FeatureName operator=('='|'+=') 'current')? '}';
 
 AbstractTerminal returns AbstractElement:
 	Keyword |
@@ -76,7 +104,7 @@ NamedArgument:
 	( value=Disjunction );
 
 LiteralCondition:
-	^true?='true' | 'false';
+	true?='true' | 'false';
 
 Disjunction returns Condition:
 	Conjunction ({Disjunction.left=current} '|' right=Conjunction)*;
@@ -103,7 +131,7 @@ PredicatedRuleCall returns RuleCall:
 	(predicated?='=>' | firstSetPredicated?='->') rule=[AbstractRule:ID] ('<' arguments+=NamedArgument (',' arguments+=NamedArgument)* '>')?;
 
 Assignment returns AbstractElement:
-	{Assignment} (predicated?='=>' | firstSetPredicated?='->')? feature=ID operator=('+='|'='|'?=') ^terminal=AssignableTerminal;
+	{Assignment} (predicated?='=>' | firstSetPredicated?='->')? feature=FeatureName operator=('+='|'='|'?=') terminal=AssignableTerminal;
 
 AssignableTerminal returns AbstractElement:
 	Keyword | RuleCall | ParenthesizedAssignableElement | CrossReference;
@@ -115,7 +143,7 @@ AssignableAlternatives returns AbstractElement:
 	AssignableTerminal ({Alternatives.elements+=current} ('|' elements+=AssignableTerminal)+)?;
 
 CrossReference returns AbstractElement:
-	{CrossReference} '[' type=[ParserRule:ID] ((deprecatedSyntax?='|' | ':') ^terminal=CrossReferenceableTerminal )? ']';
+	{CrossReference} '[' type=[AbstractType] ((deprecatedSyntax?='|' | ':') terminal=CrossReferenceableTerminal )? ']';
 
 CrossReferenceableTerminal returns AbstractElement:
 	Keyword | RuleCall;
@@ -127,8 +155,8 @@ PredicatedGroup returns Group:
 	(predicated?='=>' | firstSetPredicated?='->') '(' elements+=Alternatives ')';
 
 TerminalRule:
-	^hidden?='hidden'? 'terminal' (^fragment?='fragment' name=ID | name=ID ('returns' type=ID)?) ':'
-		^terminal=TerminalAlternatives
+	hidden?='hidden'? 'terminal' (fragment?='fragment' name=ID | name=ID ('returns' type=ReturnType)?) ':'
+		terminal=TerminalAlternatives
 	';';
 
 terminal RegexLiteral returns string: /\/(?![*+?])(?:[^\r\n\[/\\]|\\.|\[(?:[^\r\n\]\\]|\\.)*\])+\//;
@@ -152,10 +180,10 @@ TerminalRuleCall returns AbstractElement:
 	{TerminalRuleCall} rule=[TerminalRule:ID];
 
 NegatedToken returns AbstractElement:
-	{NegatedToken} '!' ^terminal=TerminalTokenElement;
+	{NegatedToken} '!' terminal=TerminalTokenElement;
 
 UntilToken returns AbstractElement:
-	{UntilToken} '->' ^terminal=TerminalTokenElement;
+	{UntilToken} '->' terminal=TerminalTokenElement;
 
 RegexToken returns AbstractElement:
 	{RegexToken} regex=RegexLiteral;
@@ -165,6 +193,9 @@ Wildcard returns AbstractElement:
 
 CharacterRange returns AbstractElement:
 	{CharacterRange} left=Keyword ('..' right=Keyword)?;
+
+FeatureName returns string:
+	'current' | 'entry' | 'extends' | 'false' | 'fragment' | 'grammar' | 'hidden' | 'import' | 'interface' | 'returns' | 'terminal' | 'true' | 'type' | 'with' | PrimitiveType | ID;
 
 terminal ID: /\^?[_a-zA-Z][\w_]*/;
 terminal STRING: /"[^"]*"|'[^']*'/;

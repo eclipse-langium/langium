@@ -44,7 +44,7 @@ export class DefaultValueConverter implements ValueConverter {
             case 'ID': return convertID(input);
             case 'REGEXLITERAL': return convertString(input);
         }
-        switch (rule.type.toLowerCase()) {
+        switch (rule.type?.name?.toLowerCase()) {
             case 'number': return convertNumber(input);
             case 'boolean': return convertBoolean(input);
             default: return input;
