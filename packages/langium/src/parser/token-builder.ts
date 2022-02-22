@@ -41,40 +41,35 @@ export class DefaultTokenBuilder implements TokenBuilder {
         let group: string | undefined;
         const regex = terminalRegex(terminal);
         if (terminal.hidden) {
-            if (new RegExp(regex).test(' ')) { // Only skip tokens that are able to accept whitespace
-                group = Lexer.SKIPPED;
-            } else {
-                group = 'hidden';
-            }
+            // Only skip tokens that are able to accept whitespace
+            group = new RegExp(regex).test(' ') ? Lexer.SKIPPED : 'hidden';
         }
 
         const token = { name: terminal.name, GROUP: group, PATTERN: new RegExp(regex) };
         if (!group) {
-            // 'undefined' is not a valid value for `GROUP`
-            // Therefore, we have to delete it
+            // 'undefined' is not a valid value for `GROUP`; therefore, we have to delete it
             delete token.GROUP;
         }
         return token;
     }
 
     protected buildKeywordTokens(grammar: Grammar, terminalTokens: TokenType[], options?: { caseInsensitive?: boolean }): TokenType[] {
-        // We filter by parser rules, since keywords in terminal rules get transformed into regex and are not actual tokens
-        const parserRuleKeywords = stream(grammar.rules)
+        return stream(grammar.rules)
+            // We filter by parser rules, since keywords in terminal rules get transformed into regex and are not actual tokens
             .filter(isParserRule)
-            .flatMap(rule => streamAllContents(rule).filter(isKeyword));
-        return parserRuleKeywords.distinct(e => e.value).toArray()
+            .flatMap(rule => streamAllContents(rule).filter(isKeyword))
+            .distinct(e => e.value).toArray()
             // Sort keywords by descending length
             .sort((a, b) => b.value.length - a.value.length)
-            .reduce(
-                (keywordTokens: TokenType[], keyword: Keyword) => {
-                    keywordTokens.push(this.buildKeywordToken(keyword, keywordTokens, terminalTokens, !!options?.caseInsensitive));
-                    return keywordTokens;
-                }, []);
+            .map(keyword => this.buildKeywordToken(keyword, terminalTokens, !!options?.caseInsensitive));
     }
 
-    protected buildKeywordToken(keyword: Keyword, keywordTokens: TokenType[], terminalTokens: TokenType[], caseInsensitive: boolean): TokenType {
-        const longerAlt = this.findLongerAlt(keyword, keywordTokens, terminalTokens);
-        return { name: keyword.value, PATTERN: this.buildKeywordPattern(keyword, caseInsensitive), LONGER_ALT: longerAlt };
+    protected buildKeywordToken(keyword: Keyword, terminalTokens: TokenType[], caseInsensitive: boolean): TokenType {
+        return {
+            name: keyword.value,
+            PATTERN: this.buildKeywordPattern(keyword, caseInsensitive),
+            LONGER_ALT: this.findLongerAlt(keyword, terminalTokens)
+        };
     }
 
     protected buildKeywordPattern(keyword: Keyword, caseInsensitive: boolean): TokenPattern {
@@ -83,19 +78,13 @@ export class DefaultTokenBuilder implements TokenBuilder {
             keyword.value;
     }
 
-    protected findLongerAlt(keyword: Keyword, keywordTokens: TokenType[], terminalTokens: TokenType[]): TokenType[] {
-        const longerAlts: TokenType[] = [];
-        keywordTokens.forEach(token => {
-            if (token.name.length > keyword.value.length && token.name.startsWith(keyword.value)) {
-                longerAlts.push(token);
-            }
-        });
-        terminalTokens.forEach(token => {
+    protected findLongerAlt(keyword: Keyword, terminalTokens: TokenType[]): TokenType[] {
+        return terminalTokens.reduce((longerAlts: TokenType[], token: TokenType) => {
             const pattern = token?.PATTERN as RegExp;
             if (pattern?.source && partialMatches('^' + pattern.source + '$', keyword.value)) {
                 longerAlts.push(token);
             }
-        });
-        return longerAlts;
+            return longerAlts;
+        }, []);
     }
 }
