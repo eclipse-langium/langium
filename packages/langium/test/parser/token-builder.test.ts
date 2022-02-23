@@ -24,7 +24,7 @@ describe('tokenBuilder', () => {
         terminal AB: 'A' Frag;
         `;
         const grammar = (await helper(text)).parseResult.value;
-        tokens = tokenBuilder.buildTokens(grammar);
+        tokens = tokenBuilder.buildTokens(grammar) as TokenType[];
     });
 
     test('should only create non-fragment terminals', () => {
@@ -48,7 +48,7 @@ describe('tokenBuilder#longerAlts', () => {
         terminal AB: /ABD?/;
         `;
         const grammar = (await helper(text)).parseResult.value;
-        const tokens = tokenBuilder.buildTokens(grammar);
+        const tokens = tokenBuilder.buildTokens(grammar) as TokenType[];
         aToken = tokens[2];
         abToken = tokens[1];
         abcToken = tokens[0];
@@ -58,13 +58,13 @@ describe('tokenBuilder#longerAlts', () => {
     test('should create longer alts for keywords # 1', () => {
         expect(Array.isArray(aToken.LONGER_ALT)).toBeTruthy();
         const longerAlts = aToken.LONGER_ALT as TokenType[];
-        expect(longerAlts).toEqual([abcToken, abToken, abTerminalToken]);
+        expect(longerAlts).toEqual([abTerminalToken]);
     });
 
     test('should create longer alts for keywords # 2', () => {
         expect(Array.isArray(abToken.LONGER_ALT)).toBeTruthy();
         const longerAlts = abToken.LONGER_ALT as TokenType[];
-        expect(longerAlts).toEqual([abcToken, abTerminalToken]);
+        expect(longerAlts).toEqual([abTerminalToken]);
     });
 
     test('should create no longer alts for longest keyword', () => {
@@ -96,7 +96,7 @@ describe('tokenBuilder#caseInsensitivePattern', () => {
         terminal AB: /ABD?/;
         `;
         const grammar = (await parseHelper<Grammar>(grammarServices)(text)).parseResult.value;
-        const tokens = tokenBuilder.buildTokens(grammar, { caseInsensitive: true });
+        const tokens = tokenBuilder.buildTokens(grammar, { caseInsensitive: true }) as TokenType[];
         const patterns = tokens.map(token => token.PATTERN);
 
         implementPattern = patterns[0];

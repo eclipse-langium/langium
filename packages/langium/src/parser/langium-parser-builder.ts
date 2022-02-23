@@ -4,13 +4,13 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { IOrAlt, TokenType } from 'chevrotain';
+import { IOrAlt, TokenType, TokenTypeDictionary, TokenVocabulary } from 'chevrotain';
 import { AbstractElement, Action, Alternatives, Condition, CrossReference, Grammar, Group, isAction, isAlternatives, isAssignment, isConjunction, isCrossReference, isDisjunction, isGroup, isKeyword, isLiteralCondition, isNegation, isParameterReference, isParserRule, isRuleCall, isTerminalRule, isUnorderedGroup, Keyword, NamedArgument, ParserRule, RuleCall, UnorderedGroup } from '../grammar/generated/ast';
 import { Cardinality, findNameAssignment, getTypeName, isArrayOperator, isDataTypeRule } from '../grammar/grammar-util';
 import { LangiumServices } from '../services';
 import { hasContainerOfType, streamAllContents } from '../utils/ast-util';
 import { stream } from '../utils/stream';
-import { DatatypeSymbol, LangiumParser } from './langium-parser';
+import { DatatypeSymbol, isIMultiModeLexerDefinition, isTokenTypeDictionary, LangiumParser } from './langium-parser';
 
 type RuleContext = {
     optional: number,
@@ -22,7 +22,7 @@ type RuleContext = {
 
 type ParserContext = {
     parser: LangiumParser
-    tokens: Map<string, TokenType>
+    tokens: TokenTypeDictionary
     rules: Map<string, Rule>
 }
 
@@ -50,9 +50,9 @@ export function createLangiumParser(services: LangiumServices): LangiumParser {
  */
 export function prepareLangiumParser(services: LangiumServices): LangiumParser {
     const grammar = services.Grammar;
-    const tokens = new Map<string, TokenType>();
     const buildTokens = services.parser.TokenBuilder.buildTokens(grammar, { caseInsensitive: services.LanguageMetaData.caseInsensitive });
-    buildTokens.forEach(e => tokens.set(e.name, e));
+    const tokens = toTokenTypeDictionary(buildTokens);
+
     const rules = new Map<string, Rule>();
     const parser = new LangiumParser(services, buildTokens);
     const parserContext: ParserContext = {
@@ -64,6 +64,14 @@ export function prepareLangiumParser(services: LangiumServices): LangiumParser {
     return parser;
 }
 
+function toTokenTypeDictionary(buildTokens: TokenVocabulary): TokenTypeDictionary {
+    if (isTokenTypeDictionary(buildTokens)) return buildTokens;
+    const tokens = isIMultiModeLexerDefinition(buildTokens) ? Object.values(buildTokens.modes).flat() : buildTokens;
+    const res: TokenTypeDictionary = {};
+    tokens.forEach(token => res[token.name] = token);
+    return res;
+}
+
 function getRule(ctx: ParserContext, name: string): Rule {
     const rule = ctx.rules.get(name);
     if (!rule) throw new Error(`Rule "${name}" not found."`);
@@ -71,7 +79,7 @@ function getRule(ctx: ParserContext, name: string): Rule {
 }
 
 function getToken(ctx: ParserContext, name: string): TokenType {
-    const token = ctx.tokens.get(name);
+    const token = ctx.tokens[name];
     if (!token) throw new Error(`Token "${name}" not found."`);
     return token;
 }
@@ -273,7 +281,7 @@ const withKeywordSuffix = (name: string): string => name.endsWith(':KW') ? name 
 
 function buildKeyword(ctx: RuleContext, keyword: Keyword): Method {
     const idx = ctx.consume++;
-    const token = ctx.tokens.get(keyword.value);
+    const token = ctx.tokens[keyword.value];
     if (!token) {
         throw new Error('Could not find token for keyword: ' + keyword.value);
     }

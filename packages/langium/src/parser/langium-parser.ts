@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { defaultParserErrorProvider, EmbeddedActionsParser, ILexingError, IOrAlt, IParserErrorMessageProvider, IRecognitionException, IToken, Lexer, TokenType } from 'chevrotain';
+import { defaultParserErrorProvider, EmbeddedActionsParser, ILexingError, IMultiModeLexerDefinition, IOrAlt, IParserErrorMessageProvider, IRecognitionException, IToken, Lexer, TokenType, TokenTypeDictionary, TokenVocabulary } from 'chevrotain';
 import { AbstractElement, Action, Assignment, isAssignment, isCrossReference } from '../grammar/generated/ast';
 import { Linker } from '../references/linker';
 import { LangiumServices } from '../services';
@@ -51,11 +51,11 @@ export class LangiumParser {
         return this.stack[this.stack.length - 1];
     }
 
-    constructor(services: LangiumServices, tokens: TokenType[]) {
+    constructor(services: LangiumServices, tokens: TokenVocabulary) {
         this.wrapper = new ChevrotainWrapper(tokens, services.parser.ParserConfig);
         this.linker = services.references.Linker;
         this.converter = services.parser.ValueConverter;
-        this.lexer = new Lexer(tokens);
+        this.lexer = new Lexer(isTokenTypeDictionary(tokens) ? Object.values(tokens) : tokens);
     }
 
     MAIN_RULE(
@@ -380,7 +380,7 @@ class ChevrotainWrapper extends EmbeddedActionsParser {
     // This array is set in the base implementation of Chevrotain.
     definitionErrors: IParserDefinitionError[];
 
-    constructor(tokens: TokenType[], config?: IParserConfig) {
+    constructor(tokens: TokenVocabulary, config?: IParserConfig) {
         super(tokens, {
             ...defaultConfig,
             ...config
@@ -424,4 +424,25 @@ class ChevrotainWrapper extends EmbeddedActionsParser {
     wrapAtLeastOne(idx: number, callback: () => void): void {
         this.atLeastOne(idx, callback);
     }
+}
+
+/**
+ * Returns a check whether the given TokenVocabulary is TokenType array
+ */
+export function isTokenTypeArray(tokenVocabulary: TokenVocabulary): tokenVocabulary is TokenType[] {
+    return Array.isArray(tokenVocabulary) && (tokenVocabulary.length === 0 || 'name' in tokenVocabulary[0]);
+}
+
+/**
+ * Returns a check whether the given TokenVocabulary is IMultiModeLexerDefinition
+ */
+export function isIMultiModeLexerDefinition(tokenVocabulary: TokenVocabulary): tokenVocabulary is IMultiModeLexerDefinition {
+    return tokenVocabulary && 'modes' in tokenVocabulary && 'defaultMode' in tokenVocabulary;
+}
+
+/**
+ * Returns a check whether the given TokenVocabulary is TokenTypeDictionary
+ */
+export function isTokenTypeDictionary(tokenVocabulary: TokenVocabulary): tokenVocabulary is TokenTypeDictionary {
+    return !isTokenTypeArray(tokenVocabulary) && !isIMultiModeLexerDefinition(tokenVocabulary);
 }
