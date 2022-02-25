@@ -227,9 +227,68 @@ function buildAlternatives(ctx: RuleContext, alternatives: Alternatives): Method
     }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function buildUnorderedGroup(ctx: RuleContext, group: UnorderedGroup): Method {
-    throw new Error('Unordered groups are not supported (yet)');
+    if (group.elements.length === 1) {
+        return buildElement(ctx, group.elements[0]);
+    }
+    const methods: PredicatedMethod[] = [];
+
+    for (const element of group.elements) {
+        const predicatedMethod: PredicatedMethod = {
+            // Since we handle the guard condition in the alternative already
+            // We can ignore the group guard condition inside
+            ALT: buildElement(ctx, element, true)
+        };
+        const guard = getGuardCondition(element);
+        if (guard) {
+            predicatedMethod.GATE = buildPredicate(guard);
+        }
+        methods.push(predicatedMethod);
+    }
+
+    const orIdx = ctx.or++;
+
+    const idFunc = (groupIdx: number, lParser: LangiumParser) => {
+        const stackId = lParser.getRuleStack().join('-');
+        return `uGroup_${groupIdx}_${stackId}`;
+    };
+    const alternatives: Method = (args) => ctx.parser.alternatives(orIdx, methods.map((method, idx) => {
+        const alt: IOrAlt<unknown> = {ALT: ()=> { true; }};
+        const parser = ctx.parser;
+        alt.ALT = () => {
+            method.ALT(args);
+            if(!parser.isRecording()) {
+                const key = idFunc(orIdx, parser);
+                if (!parser.unorderedGroups.get(key)) {
+                    // init after clear state
+                    parser.unorderedGroups.set(key, []);
+                }
+                const groupState = parser.unorderedGroups.get(key)!;
+                if(typeof groupState?.[idx] === 'undefined') {
+                    // Not accessed yet
+                    groupState[idx] = true;
+                }
+            }
+        };
+        const gate = method.GATE;
+        if (gate) {
+            alt.GATE = () => gate(args);
+        } else {
+            alt.GATE = () => {
+                const trackedAlternatives = parser.unorderedGroups.get(idFunc(orIdx, parser));
+                const allow = (typeof trackedAlternatives === 'undefined') || !trackedAlternatives[idx];
+                return allow;
+            };
+        }
+        return alt;
+    }));
+    const wrapped = wrap(ctx, getGuardCondition(group), alternatives, '*');
+    return (args) => {
+        wrapped(args);
+        if(!ctx.parser.isRecording()) {
+            ctx.parser.unorderedGroups.delete(idFunc(orIdx, ctx.parser));
+        }
+    };
 }
 
 function buildGroup(ctx: RuleContext, group: Group): Method {
@@ -358,3 +417,10 @@ function wrap(ctx: RuleContext, guard: Condition | undefined, method: Method, ca
         assertUnreachable(cardinality);
     }
 }
+/*
+function uniqueId(ctx: RuleContext, group: UnorderedGroup): string {
+    const ruleStack = ctx.parser.getRuleStack();
+    const stackId = ruleStack[ruleStack.length - 1];
+    return `${group.$containerIndex}_${stackId??-1}_${ruleStack.length}`;
+}
+*/

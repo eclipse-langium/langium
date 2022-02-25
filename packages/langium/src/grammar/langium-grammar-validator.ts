@@ -43,7 +43,7 @@ export class LangiumGrammarValidationRegistry extends ValidationRegistry {
                 validator.checkEmptyTerminalRule
             ],
             Keyword: validator.checkKeyword,
-            UnorderedGroup: validator.checkUnorderedGroup,
+            //UnorderedGroup: validator.checkUnorderedGroup,
             Grammar: [
                 validator.checkGrammarName,
                 validator.checkEntryGrammarRule,
@@ -534,10 +534,11 @@ export class LangiumGrammarValidator {
         }
     }
 
-    checkUnorderedGroup(unorderedGroup: ast.UnorderedGroup, accept: ValidationAcceptor): void {
-        accept('error', 'Unordered groups are currently not supported', { node: unorderedGroup });
-    }
-
+    /*
+        checkUnorderedGroup(unorderedGroup: ast.UnorderedGroup, accept: ValidationAcceptor): void {
+           accept('error', 'Unordered groups are currently not supported', { node: unorderedGroup });
+        }
+    */
     checkRuleParametersUsed(rule: ast.ParserRule, accept: ValidationAcceptor): void {
         const parameters = rule.parameters;
         if (parameters.length > 0) {

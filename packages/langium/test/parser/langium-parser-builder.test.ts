@@ -178,6 +178,111 @@ describe('Predicated groups', () => {
 
 });
 
+describe('Handle unordered group', () => {
+    let grammar: Grammar;
+    const content = `
+    grammar TestUnorderedGroup
+    
+    entry Lib:
+	    books+=Book*;
+    
+    Book: 
+        'book' name=STRING 
+        (
+              ("description" descr=STRING)
+            & ("edition" version=STRING)
+            & ("author" author=STRING)
+        )
+    ;
+    hidden terminal WS: /\\s+/;
+    terminal STRING: /"[^"]*"|'[^']*'/;
+    `;
+
+    beforeAll(async () => {
+        grammar = (await helper(content)).parseResult.value;
+    });
+
+    let parser: LangiumParser;
+    test('Should work without Parser Definition Errors', () => {
+        expect(() => {
+            parser = parserFromGrammar(grammar);
+        }).not.toThrow();
+        expect(parser).not.toBeUndefined();
+    });
+
+    test('Should parse documents without Errors', () => {
+        // declared order
+        let book = (parseAndCheck(
+            `
+            book "MyBook"
+
+            description "Cool book"
+            edition "second"
+            author "me"
+            `,  parser) as any).books[0];
+        expect((book as any).version).toBe('second');
+        expect((book as any).descr).toBe('Cool book');
+        expect((book as any).author).toBe('me');
+
+        // swapped order
+        book = (parseAndCheck(
+            `
+            book "MyBook"
+
+            edition "second"
+            description "Cool book"
+            author "me"
+            `,  parser) as any).books[0];
+        expect((book as any).version).toBe('second');
+        expect((book as any).author).toBe('me');
+        expect((book as any).descr).toBe('Cool book');
+    });
+
+    test('Should not parse documents with duplicates', () => {
+        // duplicate description
+        const parsed = parser!.parse<AstNode>(
+            `book "MyBook"
+
+            edition "second"
+            description "Cool book"
+            description "New description"
+            author "foo"
+            `);
+        expect(parsed.parserErrors.length).toBe(2);
+    });
+
+    test('Should parse multiple instances', () => {
+        // duplicate description
+        const lib = (parseAndCheck(
+            `
+            book "MyBook"
+
+            edition "second"
+            description "Cool book"
+            author "foo"
+            
+            book "MyBook2"
+
+            edition "second2"
+            description "Cool book2"
+            author "foo2"
+            
+            `, parser) as any);
+        expect(lib.parserErrors).toBeUndefined();
+        expect(lib.books).not.toBeUndefined();
+        expect(lib.books.length).toBe(2);
+    });
+
+});
+
+function parseAndCheck(model: string, parser: LangiumParser): AstNode {
+    const result = parser!.parse<AstNode>(model);
+    expect(result.lexerErrors.length).toBe(0);
+    expect(result.parserErrors.length).toBe(0);
+    expect(result.value).not.toBeUndefined();
+    return result.value;
+}
+
 describe('One name for terminal and non-terminal rules', () => {
     let grammar: Grammar;
     const content = `
