@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { createDefaultModule, createDefaultSharedModule, createLangiumGrammarServices, createLangiumParser, Grammar, inject, interpretAstReflection, IParserConfig, LangiumGeneratedServices, LangiumGeneratedSharedServices, LangiumParser, LangiumServices, LangiumSharedServices, Module } from '../../src';
+import { AstNode, createDefaultModule, createDefaultSharedModule, createLangiumGrammarServices, createLangiumParser, Grammar, inject, interpretAstReflection, IParserConfig, LangiumGeneratedServices, LangiumGeneratedSharedServices, LangiumParser, LangiumServices, LangiumSharedServices, Module } from '../../src';
 import { parseHelper } from '../../src/test';
 
 const grammarServices = createLangiumGrammarServices().grammar;
@@ -211,31 +211,38 @@ describe('Handle unordered group', () => {
     });
 
     test('Should parse documents without Errors', () => {
+        type bookType = { version?: string, author?: string, descr?: string }
         // declared order
-        let book = (parseAndCheck(
+        let parsedNode = parseAndCheck(
             `
             book "MyBook"
 
             description "Cool book"
             edition "second"
             author "me"
-            `,  parser) as any).books[0];
-        expect((book as any).version).toBe('second');
-        expect((book as any).descr).toBe('Cool book');
-        expect((book as any).author).toBe('me');
+            `, parser) as { books?: string | string[] };
+        expect(parsedNode?.books).toBeDefined();
+
+        let book: bookType = parsedNode?.books![0] as bookType;
+        expect(book.version).toBe('second');
+        expect(book.descr).toBe('Cool book');
+        expect(book.author).toBe('me');
+
+        parsedNode = parseAndCheck(
+            `
+            book "MyBook"
+            
+            edition "second"
+            description "Cool book"
+            author "me"
+            `, parser) as { books?: string | string[] };
+        expect(parsedNode?.books).toBeDefined();
 
         // swapped order
-        book = (parseAndCheck(
-            `
-            book "MyBook"
-
-            edition "second"
-            description "Cool book"
-            author "me"
-            `,  parser) as any).books[0];
-        expect((book as any).version).toBe('second');
-        expect((book as any).author).toBe('me');
-        expect((book as any).descr).toBe('Cool book');
+        book = parsedNode?.books![0] as bookType;
+        expect(book.version).toBe('second');
+        expect(book.author).toBe('me');
+        expect(book.descr).toBe('Cool book');
     });
 
     test('Should not parse documents with duplicates', () => {
@@ -267,10 +274,10 @@ describe('Handle unordered group', () => {
             description "Cool book2"
             author "foo2"
             
-            `, parser) as any);
+            `, parser) as { parserErrors?: string | string[], books?: string[] });
         expect(lib.parserErrors).toBeUndefined();
         expect(lib.books).not.toBeUndefined();
-        expect(lib.books.length).toBe(2);
+        expect(lib.books?.length).toBe(2);
     });
 
 });

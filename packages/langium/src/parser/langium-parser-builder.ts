@@ -276,7 +276,7 @@ function buildUnorderedGroup(ctx: RuleContext, group: UnorderedGroup): Method {
         } else {
             alt.GATE = () => {
                 const trackedAlternatives = parser.unorderedGroups.get(idFunc(orIdx, parser));
-                const allow = (typeof trackedAlternatives === 'undefined') || !trackedAlternatives[idx];
+                const allow = !trackedAlternatives?.[idx];
                 return allow;
             };
         }
@@ -417,10 +417,3 @@ function wrap(ctx: RuleContext, guard: Condition | undefined, method: Method, ca
         assertUnreachable(cardinality);
     }
 }
-/*
-function uniqueId(ctx: RuleContext, group: UnorderedGroup): string {
-    const ruleStack = ctx.parser.getRuleStack();
-    const stackId = ruleStack[ruleStack.length - 1];
-    return `${group.$containerIndex}_${stackId??-1}_${ruleStack.length}`;
-}
-*/

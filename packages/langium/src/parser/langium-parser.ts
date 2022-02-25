@@ -346,7 +346,7 @@ export class LangiumParser {
         return this.wrapper.IS_RECORDING;
     }
 
-    get unorderedGroups():  Map<string, boolean[]> {
+    get unorderedGroups(): Map<string, boolean[]> {
         return this._unorderedGroups;
     }
 }

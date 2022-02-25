@@ -6,6 +6,7 @@
 
 import { createLangiumGrammarServices } from '../../src';
 import { Assignment, CrossReference, Grammar, Group, ParserRule } from '../../src/grammar/generated/ast';
+import { IssueCodes } from '../../src/grammar/langium-grammar-validator';
 import { expectError, expectNoIssues, expectWarning, validationHelper, ValidationResult } from '../../src/test';
 
 const services = createLangiumGrammarServices();
@@ -129,5 +130,30 @@ describe('Check grammar with primitives', () => {
 
     test('No validation errors in grammar', () => {
         expectNoIssues(validationResult);
+    });
+});
+
+describe('Grammar Validator tests', () => {
+
+    test('Unsupported optional element in unordered group error', async () => {
+        const text = `
+        grammar TestUnorderedGroup
+        
+        entry Book: 
+            'book' name=STRING 
+            (
+                  ("description" descr=STRING)
+                & ("edition" version=STRING)?
+                & ("author" author=STRING)
+            )
+        ;
+        hidden terminal WS: /\\s+/;
+        terminal STRING: /"[^"]*"|'[^']*'/;
+        `;
+
+        const validation = await validate(text);
+        expect(validation.diagnostics.length).toBe(1);
+        const range = { start: { character: 18, line: 7 }, end: { character: 45, line: 7 } };
+        expectError(validation, 'Optional elements in Unordered groups are currently not supported', { range, code: IssueCodes.OptionalUnorderedGroup } );
     });
 });
