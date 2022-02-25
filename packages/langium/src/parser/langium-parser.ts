@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { defaultParserErrorProvider, EmbeddedActionsParser, ILexingError, IMultiModeLexerDefinition, IOrAlt, IParserErrorMessageProvider, IRecognitionException, IToken, Lexer, TokenType, TokenTypeDictionary, TokenVocabulary } from 'chevrotain';
+import { defaultParserErrorProvider, DSLMethodOpts, EmbeddedActionsParser, ILexingError, IMultiModeLexerDefinition, IOrAlt, IParserErrorMessageProvider, IRecognitionException, IToken, Lexer, TokenType, TokenTypeDictionary, TokenVocabulary } from 'chevrotain';
 import { AbstractElement, Action, Assignment, isAssignment, isCrossReference } from '../grammar/generated/ast';
 import { Linker } from '../references/linker';
 import { LangiumServices } from '../services';
@@ -142,15 +142,15 @@ export class LangiumParser {
         this.wrapper.wrapOr(idx, choices);
     }
 
-    optional(idx: number, callback: () => void): void {
+    optional(idx: number, callback: DSLMethodOpts<unknown>): void {
         this.wrapper.wrapOption(idx, callback);
     }
 
-    many(idx: number, callback: () => void): void {
+    many(idx: number, callback: DSLMethodOpts<unknown>): void {
         this.wrapper.wrapMany(idx, callback);
     }
 
-    atLeastOne(idx: number, callback: () => void): void {
+    atLeastOne(idx: number, callback: DSLMethodOpts<unknown>): void {
         this.wrapper.wrapAtLeastOne(idx, callback);
     }
 
@@ -413,15 +413,15 @@ class ChevrotainWrapper extends EmbeddedActionsParser {
         this.or(idx, choices);
     }
 
-    wrapOption(idx: number, callback: () => void): void {
+    wrapOption(idx: number, callback: DSLMethodOpts<unknown>): void {
         this.option(idx, callback);
     }
 
-    wrapMany(idx: number, callback: () => void): void {
+    wrapMany(idx: number, callback: DSLMethodOpts<unknown>): void {
         this.many(idx, callback);
     }
 
-    wrapAtLeastOne(idx: number, callback: () => void): void {
+    wrapAtLeastOne(idx: number, callback: DSLMethodOpts<unknown>): void {
         this.atLeastOne(idx, callback);
     }
 }

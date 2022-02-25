@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { IOrAlt, TokenType, TokenTypeDictionary, TokenVocabulary } from 'chevrotain';
+import { EMPTY_ALT, IOrAlt, TokenType, TokenTypeDictionary, TokenVocabulary } from 'chevrotain';
 import { AbstractElement, Action, Alternatives, Condition, CrossReference, Grammar, Group, isAction, isAlternatives, isAssignment, isConjunction, isCrossReference, isDisjunction, isGroup, isKeyword, isLiteralCondition, isNegation, isParameterReference, isParserRule, isRuleCall, isTerminalRule, isUnorderedGroup, Keyword, NamedArgument, ParserRule, RuleCall, UnorderedGroup } from '../grammar/generated/ast';
 import { Cardinality, findNameAssignment, getTypeName, isArrayOperator, isDataTypeRule } from '../grammar/grammar-util';
 import { LangiumServices } from '../services';
@@ -115,7 +115,7 @@ function buildRuleContent(ctx: RuleContext, rule: ParserRule): Method {
     };
 }
 
-function buildElement(ctx: RuleContext, element: AbstractElement): Method {
+function buildElement(ctx: RuleContext, element: AbstractElement, ignoreGuard = false): Method {
     let method: Method;
     if (isKeyword(element)) {
         method = buildKeyword(ctx, element);
@@ -136,7 +136,7 @@ function buildElement(ctx: RuleContext, element: AbstractElement): Method {
     } else {
         throw new Error();
     }
-    return wrap(ctx, method, element.cardinality);
+    return wrap(ctx, ignoreGuard ? undefined : getGuardCondition(element), method, element.cardinality);
 }
 
 function buildRuleCall(ctx: RuleContext, ruleCall: RuleCall): Method {
@@ -206,10 +206,13 @@ function buildAlternatives(ctx: RuleContext, alternatives: Alternatives): Method
 
         for (const element of alternatives.elements) {
             const predicatedMethod: PredicatedMethod = {
-                ALT: buildElement(ctx, element)
+                // Since we handle the guard condition in the alternative already
+                // We can ignore the group guard condition inside
+                ALT: buildElement(ctx, element, true)
             };
-            if (isGroup(element) && element.guardCondition) {
-                predicatedMethod.GATE = buildPredicate(element.guardCondition);
+            const guard = getGuardCondition(element);
+            if (guard) {
+                predicatedMethod.GATE = buildPredicate(guard);
             }
             methods.push(predicatedMethod);
         }
@@ -241,6 +244,13 @@ function buildGroup(ctx: RuleContext, group: Group): Method {
     }
 
     return (args) => methods.forEach(e => e(args));
+}
+
+function getGuardCondition(element: AbstractElement): Condition | undefined {
+    if (isGroup(element)) {
+        return element.guardCondition;
+    }
+    return undefined;
 }
 
 function buildAction(ctx: RuleContext, action: Action): Method {
@@ -289,18 +299,64 @@ function buildKeyword(ctx: RuleContext, keyword: Keyword): Method {
     return () => ctx.parser.consume(idx, token, keyword);
 }
 
-function wrap(ctx: RuleContext, method: Method, cardinality: Cardinality): Method {
+function wrap(ctx: RuleContext, guard: Condition | undefined, method: Method, cardinality: Cardinality): Method {
+    const gate = guard && buildPredicate(guard);
+
     if (!cardinality) {
-        return method;
-    } else if (cardinality === '*') {
+        if (gate) {
+            const idx = ctx.or++;
+            return (args) => ctx.parser.alternatives(idx, [
+                {
+                    ALT: () => method(args),
+                    GATE: () => gate(args)
+                },
+                {
+                    ALT: EMPTY_ALT(),
+                    GATE: () => !gate(args)
+                }
+            ]);
+        } else {
+            return method;
+        }
+    }
+
+    if (cardinality === '*') {
         const idx = ctx.many++;
-        return (args) => ctx.parser.many(idx, () => method(args));
+        return (args) => ctx.parser.many(idx, {
+            DEF: () => method(args),
+            GATE: gate ? () => gate(args) : undefined
+        });
     } else if (cardinality === '+') {
         const idx = ctx.many++;
-        return (args) => ctx.parser.atLeastOne(idx, () => method(args));
+        if (gate) {
+            const orIdx = ctx.or++;
+            // In the case of a guard condition for the `+` group
+            // We combine it with an empty alternative
+            // If the condition returns true, it needs to parse at least a single iteration
+            // If its false, it is not allowed to parse anything
+            return (args) => ctx.parser.alternatives(orIdx, [
+                {
+                    ALT: () => ctx.parser.atLeastOne(idx, {
+                        DEF: () => method(args)
+                    }),
+                    GATE: () => gate(args)
+                },
+                {
+                    ALT: EMPTY_ALT(),
+                    GATE: () => !gate(args)
+                }
+            ]);
+        } else {
+            return (args) => ctx.parser.atLeastOne(idx, {
+                DEF: () => method(args),
+            });
+        }
     } else if (cardinality === '?') {
         const idx = ctx.optional++;
-        return (args) => ctx.parser.optional(idx, () => method(args));
+        return (args) => ctx.parser.optional(idx, {
+            DEF: () => method(args),
+            GATE: gate ? () => gate(args) : undefined
+        });
     } else {
         throw new Error();
     }
