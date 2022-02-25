@@ -10,7 +10,7 @@ import { parseHelper } from '../../src/test';
 const grammarServices = createLangiumGrammarServices().grammar;
 const helper = parseHelper<Grammar>(grammarServices);
 
-describe('Predicated grammar rules', () => {
+describe('Predicated grammar rules with alternatives', () => {
 
     let grammar: Grammar;
     let parser: LangiumParser;
@@ -75,6 +75,106 @@ describe('Predicated grammar rules', () => {
 
     test('Should parse RuleG correctly', () => {
         hasProp('g');
+    });
+
+});
+
+describe('Predicated groups', () => {
+
+    let grammar: Grammar;
+    let parser: LangiumParser;
+    const content = `
+    grammar TestGrammar
+
+    entry Main:
+        'simple1' Simple<true, true> |
+        'simple2' Simple<false, false> |
+        'simple3' Simple<false, true> |
+        'nested1' Nested<true, true> |
+        'nested2' Nested<true, false> |
+        'nested3' Nested<false, true> |
+        'optional:false' Optional<false> |
+        'optional:true' Optional<true> |
+        'plus:false' AtLeastOne<false> |
+        'plus:true' AtLeastOne<true> |
+        'star:false' Many<false> |
+        'star:true' Many<true>
+    ;
+
+    Simple<A, B>: (<A> a=ID) (<B> b=ID);
+    Nested<A, B>: (<A> a=ID (<B> b=ID));
+    Optional<A>: (<A> a=ID)?;
+    AtLeastOne<A>: (<A> a+=ID)+;
+    Many<A>: (<A> a+=ID)*;
+
+    terminal ID: 'x';
+    hidden terminal WS: /\\s+/;
+    `;
+
+    beforeAll(async () => {
+        grammar = (await helper(content)).parseResult.value;
+        parser = parserFromGrammar(grammar);
+    });
+
+    function expectCorrectParse(text: string, a: number, b = 0): void {
+        const result = parser.parse(text);
+        expect(result.parserErrors.length).toBe(0);
+        const main = result.value as { a?: string | string[], b?: string | string[] };
+        const mainA = typeof main.a === 'string' ? 1 : Array.isArray(main.a) ? main.a.length : 0;
+        const mainB = typeof main.b === 'string' ? 1 : Array.isArray(main.b) ? main.b.length : 0;
+        expect(mainA).toBe(a);
+        expect(mainB).toBe(b);
+    }
+
+    function expectErrorneousParse(text: string): void {
+        const result = parser.parse(text);
+        expect(result.parserErrors.length).toBeGreaterThan(0);
+    }
+
+    test('Should parse simple correctly', () => {
+        expectCorrectParse('simple1 x x', 1, 1);
+        expectErrorneousParse('simple1');
+        expectErrorneousParse('simple1 x');
+        expectCorrectParse('simple2', 0, 0);
+        expectErrorneousParse('simple2 x');
+        expectErrorneousParse('simple2 x x');
+        expectCorrectParse('simple3 x', 0, 1);
+        expectErrorneousParse('simple3');
+        expectErrorneousParse('simple3 x x');
+    });
+
+    test('Should parse nested correctly', () => {
+        expectCorrectParse('nested1 x x', 1, 1);
+        expectErrorneousParse('nested1');
+        expectErrorneousParse('nested1 x');
+        expectCorrectParse('nested2 x', 1, 0);
+        expectErrorneousParse('nested2 x x');
+        expectCorrectParse('nested3', 0, 0);
+        expectErrorneousParse('nested3 x');
+        expectErrorneousParse('nested3 x x');
+    });
+
+    test('Should parse "optional" correctly', () => {
+        expectCorrectParse('optional:false', 0);
+        expectErrorneousParse('optional:false x');
+        expectCorrectParse('optional:true', 0);
+        expectCorrectParse('optional:true x', 1);
+    });
+
+    test('Should parse "plus" correctly', () => {
+        expectCorrectParse('plus:false', 0);
+        expectErrorneousParse('plus:false x');
+        expectErrorneousParse('plus:false xxx');
+        expectCorrectParse('plus:true xxxx', 4);
+        expectErrorneousParse('plus:true');
+    });
+
+    test('Should parse "star" correctly', () => {
+        expectCorrectParse('star:false', 0);
+        expectErrorneousParse('star:false x');
+        expectErrorneousParse('star:false xxx');
+        expectCorrectParse('star:true xxxx', 4);
+        expectCorrectParse('star:true', 0);
     });
 
 });
