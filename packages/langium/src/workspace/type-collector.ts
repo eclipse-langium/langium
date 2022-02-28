@@ -5,9 +5,15 @@
  ******************************************************************************/
 
 import _ from 'lodash';
-import * as langium from 'langium';
-import { CompositeGeneratorNode, getDocument, getRuleType, getTypeName, IndentNode, isDataTypeRule, isOptional, LangiumDocuments, MultiMap, NL, processGeneratorNode, resolveImport, stream } from 'langium';
 import { URI } from 'vscode-uri';
+import { Cardinality, getRuleType, getTypeName, isDataTypeRule, isOptional, resolveImport } from '../grammar/grammar-util';
+import { AbstractElement, Action, Alternatives, Assignment, AtomType, Grammar, Group, Interface, isAction, isAlternatives, isAssignment, isCrossReference, isGroup, isKeyword, isParserRule, isRuleCall, isUnorderedGroup, ParserRule, RuleCall, Type, UnorderedGroup } from '../grammar/generated/ast';
+import { CompositeGeneratorNode, IndentNode, NL } from '../generator/generator-node';
+import { processGeneratorNode } from '../generator/node-processor';
+import { LangiumDocuments } from './documents';
+import { stream } from '../utils/stream';
+import { MultiMap } from '../utils/collections';
+import { getDocument } from '../utils/ast-util';
 
 type TypeAlternative = {
     name: string,
@@ -34,19 +40,24 @@ type TypeCollection = {
     reference: boolean
 }
 
+type AstResources = {
+    parserRules: Set<ParserRule>,
+    datatypeRules: Set<ParserRule>,
+    interfaces: Set<Interface>,
+    types: Set<Type>
+}
+
 export type AstTypes = {
-    interfaces: Interface[];
-    types: Type[];
+    interfaces: InterfaceType[];
+    types: TypeType[];
 }
 
-export type AstResources = {
-    parserRules: Set<langium.ParserRule>,
-    datatypeRules: Set<langium.ParserRule>,
-    interfaces: Set<langium.Interface>,
-    types: Set<langium.Type>
+export type InferredDeclaredTypes = {
+    inferred: AstTypes,
+    declared: AstTypes
 }
 
-export class Type {
+export class TypeType {
     name: string;
     alternatives: FieldType[];
     reflection: boolean;
@@ -67,7 +78,7 @@ export class Type {
     }
 }
 
-export class Interface {
+export class InterfaceType {
     name: string;
     superTypes: string[];
     printingSuperTypes: string[];
@@ -170,8 +181,8 @@ class TypeTree {
 class TypeCollectorState {
     tree: TypeTree = new TypeTree();
     types: TypeAlternative[] = [];
-    cardinalities: langium.Cardinality[] = [];
-    parserRule?: langium.ParserRule;
+    cardinalities: Cardinality[] = [];
+    parserRule?: ParserRule;
     currentType?: TypeAlternative;
 
     constructor(type?: TypeAlternative) {
@@ -180,7 +191,7 @@ class TypeCollectorState {
         }
     }
 
-    enterGroup(cardinality: langium.Cardinality): void {
+    enterGroup(cardinality: Cardinality): void {
         this.cardinalities.push(cardinality);
     }
 
@@ -194,14 +205,38 @@ class TypeCollectorState {
 }
 
 /**
- * The types collector entry point. Collects types for the generated AST.
+ * Collects all types for the generated AST. The types collector entry point.
  * @param documents Documents to resolve imports that were used in the given grammars.
  * @param grammars Grammars for which it's necessary to build an AST.
  */
-export function collectAst(documents: LangiumDocuments, grammars: langium.Grammar[]): AstTypes {
-    // collect rules, types, interfaces from grammars
-    const astResources = collectAllAstResources(documents, grammars);
+export function collectAst(documents: LangiumDocuments, grammars: Grammar[]): AstTypes {
+    const astResources = collectAllAstResources(grammars, documents);
+    const inferred = collectInferredTypes(astResources);
+    const declared = collectDeclaredTypes(astResources, inferred);
 
+    const interfaces = inferred.interfaces.concat(declared.interfaces);
+    const types = inferred.types.concat(declared.types);
+
+    sortInterfaces(interfaces);
+    types.sort((a, b) => a.name.localeCompare(b.name));
+
+    return { interfaces, types };
+}
+
+/**
+ * Collects declared and inferred types for the generated AST separately. The types collector entry point.
+ * @param grammars Grammars that necessary to validate.
+ */
+export function collectAstForValidation(grammar: Grammar): InferredDeclaredTypes {
+    const astResources = collectAllAstResources([grammar]);
+    const inferred = collectInferredTypes(astResources);
+    return {
+        inferred,
+        declared: collectDeclaredTypes(astResources, inferred)
+    };
+}
+
+function collectInferredTypes(astResources: AstResources): AstTypes {
     // extract interfaces and types from parser rules
     const state = new TypeCollectorState();
     const allTypes: TypeAlternative[] = [];
@@ -216,34 +251,21 @@ export function collectAst(documents: LangiumDocuments, grammars: langium.Gramma
     }
     const interfaces = calculateAst(allTypes);
     buildContainerTypes(interfaces);
-    const astTypes = extractTypes(interfaces);
+    const inferredTypes = extractTypes(interfaces);
 
     // extract types from datatype rules
     for (const rule of Array.from(astResources.datatypeRules)) {
-        const types = langium.isAlternatives(rule.alternatives) && rule.alternatives.elements.every(e => langium.isKeyword(e)) ?
-            stream(rule.alternatives.elements).filter(langium.isKeyword).map(e => `'${e.value}'`).toArray() :
+        const types = isAlternatives(rule.alternatives) && rule.alternatives.elements.every(e => isKeyword(e)) ?
+            stream(rule.alternatives.elements).filter(isKeyword).map(e => `'${e.value}'`).toArray() :
             [rule.type?.name ?? 'string'];
-        astTypes.types.push(new Type(rule.name, [<FieldType>{ types, reference: false, array: false }]));
+        inferredTypes.types.push(new TypeType(rule.name, [<FieldType>{ types, reference: false, array: false }]));
     }
 
-    // add types
-    const childToSuper = new MultiMap<string, string>();
-    for (const type of Array.from(astResources.types)) {
-        const alternatives = type.typeAlternatives.map(atomTypeToFieldType);
-        const reflection = type.typeAlternatives.some(e =>
-            e.refType?.ref && langium.isParserRule(e.refType?.ref) && !isDataTypeRule(e.refType?.ref));
-        astTypes.types.push(new Type(type.name, alternatives, { reflection }));
+    return inferredTypes;
+}
 
-        type.typeAlternatives.filter(e => typeof e.refType?.ref?.name === 'string').map(e => childToSuper.add(e.refType.ref?.name as string, type.name));
-    }
-    for (const child of childToSuper.keys()) {
-        const childType = astTypes.types.find(e => e.name === child) ?? astTypes.interfaces.find(e => e.name === child);
-        if (childType) {
-            childToSuper.get(child).map(superType => childType.superTypes.push(superType));
-        }
-    }
-    astTypes.types.sort((a, b) => a.name.localeCompare(b.name));
-
+function collectDeclaredTypes(astResources: AstResources, inferredTypes: AstTypes): AstTypes {
+    const declaredTypes: AstTypes = {types: [], interfaces: []};
     // add interfaces
     for (const interfaceType of Array.from(astResources.interfaces)) {
         const superTypes = interfaceType.superTypes.map(e => e.ref?.name).filter(e => typeof e === 'string') as string[];
@@ -252,14 +274,37 @@ export function collectAst(documents: LangiumDocuments, grammars: langium.Gramma
             optional: e.isOptional,
             type: atomTypeToFieldType(e.type)
         });
-        astTypes.interfaces.push(new Interface(interfaceType.name, superTypes, fields));
+        declaredTypes.interfaces.push(new InterfaceType(interfaceType.name, superTypes, fields));
     }
-    sortInterfaces(astTypes.interfaces);
 
-    return astTypes;
+    // add types
+    const childToSuper = new MultiMap<string, string>();
+    for (const type of Array.from(astResources.types)) {
+        const alternatives = type.typeAlternatives.map(atomTypeToFieldType);
+        const reflection = type.typeAlternatives.some(e =>
+            e.refType?.ref && isParserRule(e.refType?.ref) && !isDataTypeRule(e.refType?.ref));
+        declaredTypes.types.push(new TypeType(type.name, alternatives, { reflection }));
+
+        for (const maybeRef of type.typeAlternatives) {
+            if (typeof maybeRef.refType?.ref?.name === 'string') {
+                childToSuper.add(maybeRef.refType.ref?.name, type.name);
+            }
+        }
+    }
+    for (const child of childToSuper.keys()) {
+        const childType = inferredTypes.types.find(e => e.name === child) ??
+            inferredTypes.interfaces.find(e => e.name === child) ??
+            declaredTypes.types.find(e => e.name === child) ??
+            declaredTypes.interfaces.find(e => e.name === child);
+        if (childType) {
+            childToSuper.get(child).map(superType => childType.superTypes.push(superType));
+        }
+    }
+
+    return declaredTypes;
 }
 
-function collectAllAstResources(documents: LangiumDocuments, grammars: langium.Grammar[], visited: Set<URI> = new Set(),
+function collectAllAstResources(grammars: Grammar[], documents?: LangiumDocuments, visited: Set<URI> = new Set(),
     astResources: AstResources = { parserRules: new Set(), datatypeRules: new Set(), interfaces: new Set(), types: new Set() }): AstResources {
 
     for (const grammar of grammars) {
@@ -269,7 +314,7 @@ function collectAllAstResources(documents: LangiumDocuments, grammars: langium.G
         }
         visited.add(doc.uri);
         for (const rule of grammar.rules) {
-            if (langium.isParserRule(rule) && !rule.fragment) {
+            if (isParserRule(rule) && !rule.fragment) {
                 if (isDataTypeRule(rule)) {
                     astResources.datatypeRules.add(rule);
                 } else {
@@ -280,15 +325,17 @@ function collectAllAstResources(documents: LangiumDocuments, grammars: langium.G
         grammar.interfaces.forEach(e => astResources.interfaces.add(e));
         grammar.types.forEach(e => astResources.types.add(e));
 
-        const importedGrammars = grammar.imports.map(e => resolveImport(documents, e)!);
-        collectAllAstResources(documents, importedGrammars, visited, astResources);
+        if (documents) {
+            const importedGrammars = grammar.imports.map(e => resolveImport(documents, e)!);
+            collectAllAstResources(importedGrammars, documents, visited, astResources);
+        }
     }
     return astResources;
 }
 
-function initType(rule: langium.ParserRule | string): TypeAlternative {
+function initType(rule: ParserRule | string): TypeAlternative {
     return {
-        name: langium.isParserRule(rule) ? getTypeName(rule) : rule,
+        name: isParserRule(rule) ? getTypeName(rule) : rule,
         super: [],
         fields: [],
         ruleCalls: [],
@@ -302,38 +349,38 @@ function initType(rule: langium.ParserRule | string): TypeAlternative {
  * @param type Element that collects a current type branch for the given element.
  * @param element The given AST element, from which it's necessary to extract the type.
  */
-function collectElement(state: TypeCollectorState, type: TypeAlternative, element: langium.AbstractElement): void {
+function collectElement(state: TypeCollectorState, type: TypeAlternative, element: AbstractElement): void {
     state.currentType = type;
     state.enterGroup(element.cardinality);
     if (isOptional(element.cardinality)) {
         const [item] = state.tree.split(state.currentType, 2);
         state.currentType = item;
     }
-    if (langium.isAlternatives(element)) {
+    if (isAlternatives(element)) {
         const splits = state.tree.split(state.currentType, element.elements.length);
         for (let i = 0; i < splits.length; i++) {
             const item = element.elements[i];
             const splitType = splits[i];
             collectElement(state, splitType, item);
         }
-    } else if (langium.isGroup(element) || langium.isUnorderedGroup(element)) {
+    } else if (isGroup(element) || isUnorderedGroup(element)) {
         for (const item of element.elements) {
             const leaves = state.tree.getLeafNodesOf(type);
             for (const leaf of leaves) {
                 collectElement(state, leaf, item);
             }
         }
-    } else if (langium.isAction(element)) {
+    } else if (isAction(element)) {
         addAction(state, element);
-    } else if (langium.isAssignment(element)) {
+    } else if (isAssignment(element)) {
         addAssignment(state, element);
-    } else if (langium.isRuleCall(element)) {
+    } else if (isRuleCall(element)) {
         addRuleCall(state, element);
     }
     state.leaveGroup();
 }
 
-function addAction(state: TypeCollectorState, action: langium.Action): void {
+function addAction(state: TypeCollectorState, action: Action): void {
     let newType: TypeAlternative;
     const type = state.currentType;
     if (type) {
@@ -362,7 +409,7 @@ function addAction(state: TypeCollectorState, action: langium.Action): void {
     }
 }
 
-function addAssignment(state: TypeCollectorState, assignment: langium.Assignment): void {
+function addAssignment(state: TypeCollectorState, assignment: Assignment): void {
     const typeItems: TypeCollection = { types: [], reference: false };
     findTypes(assignment.terminal, typeItems);
     state.currentType?.fields.push({
@@ -376,31 +423,31 @@ function addAssignment(state: TypeCollectorState, assignment: langium.Assignment
     });
 }
 
-function findTypes(terminal: langium.AbstractElement, types: TypeCollection): void {
-    if (langium.isAlternatives(terminal) || langium.isUnorderedGroup(terminal) || langium.isGroup(terminal)) {
+function findTypes(terminal: AbstractElement, types: TypeCollection): void {
+    if (isAlternatives(terminal) || isUnorderedGroup(terminal) || isGroup(terminal)) {
         findInCollection(terminal, types);
-    } else if (langium.isKeyword(terminal)) {
+    } else if (isKeyword(terminal)) {
         types.types.push(`'${terminal.value}'`);
-    } else if (langium.isRuleCall(terminal)) {
+    } else if (isRuleCall(terminal)) {
         types.types.push(getRuleType(terminal.rule.ref));
-    } else if (langium.isCrossReference(terminal)) {
+    } else if (isCrossReference(terminal)) {
         types.types.push(getTypeName(terminal.type.ref));
         types.reference = true;
     }
 }
 
-function findInCollection(collection: langium.Alternatives | langium.Group | langium.UnorderedGroup, types: TypeCollection): void {
+function findInCollection(collection: Alternatives | Group | UnorderedGroup, types: TypeCollection): void {
     for (const element of collection.elements) {
         findTypes(element, types);
     }
 }
 
-function addRuleCall(state: TypeCollectorState, ruleCall: langium.RuleCall): void {
+function addRuleCall(state: TypeCollectorState, ruleCall: RuleCall): void {
     const rule = ruleCall.rule.ref;
     const type = state.currentType;
     if (type) {
         // Add all fields of fragments to the current type
-        if (langium.isParserRule(rule) && rule.fragment) {
+        if (isParserRule(rule) && rule.fragment) {
             const fragmentType = initType(rule);
             const fragmentState = new TypeCollectorState(fragmentType);
             collectElement(fragmentState, fragmentType, rule.alternatives);
@@ -409,7 +456,7 @@ function addRuleCall(state: TypeCollectorState, ruleCall: langium.RuleCall): voi
             if (foundType) {
                 type.fields.push(...foundType.fields);
             }
-        } else if (langium.isParserRule(rule)) {
+        } else if (isParserRule(rule)) {
             type.ruleCalls.push(getRuleType(rule));
         }
     }
@@ -421,13 +468,13 @@ function addRuleCall(state: TypeCollectorState, ruleCall: langium.RuleCall): voi
  * @param alternatives The type branches that will be squashed in interfaces.
  * @returns Interfaces.
  */
-function calculateAst(alternatives: TypeAlternative[]): Interface[] {
-    const interfaces: Interface[] = [];
+function calculateAst(alternatives: TypeAlternative[]): InterfaceType[] {
+    const interfaces: InterfaceType[] = [];
     const ruleCallAlternatives: TypeAlternative[] = [];
     const flattened = flattenTypes(alternatives);
 
     for (const flat of flattened) {
-        const interfaceType = new Interface(flat.name, flat.super, flat.fields);
+        const interfaceType = new InterfaceType(flat.name, flat.super, flat.fields);
         interfaces.push(interfaceType);
         if (flat.ruleCalls.length > 0) {
             ruleCallAlternatives.push(flat);
@@ -449,7 +496,7 @@ function calculateAst(alternatives: TypeAlternative[]): Interface[] {
             }
         }
         if (!exists && !interfaces.some(e => e.name === ruleCallType.name)) {
-            interfaces.push(new Interface(ruleCallType.name, ruleCallType.super, []));
+            interfaces.push(new InterfaceType(ruleCallType.name, ruleCallType.super, []));
         }
     }
     for (const interfaceType of interfaces) {
@@ -497,7 +544,7 @@ function flattenTypes(alternatives: TypeAlternative[]): TypeAlternative[] {
  * Builds container types for given interfaces.
  * @param interfaces The interfaces that have to get container types.
  */
-function buildContainerTypes(interfaces: Interface[]): void {
+function buildContainerTypes(interfaces: InterfaceType[]): void {
     // 1st stage: collect container types & calculate sub-types
     for (const interfaceType of interfaces) {
         for (const field of interfaceType.fields.filter(e => !e.type.reference)) {
@@ -512,14 +559,14 @@ function buildContainerTypes(interfaces: Interface[]): void {
         }
     }
     // 2nd stage: share container types
-    const connectedComponents: Interface[][] = [];
+    const connectedComponents: InterfaceType[][] = [];
     calculateConnectedComponents(connectedComponents, interfaces);
     shareContainerTypes(connectedComponents);
 }
 
-function calculateConnectedComponents(connectedComponents: Interface[][], interfaces: Interface[]): void {
-    function dfs(typeInterface: Interface): Interface[] {
-        const component: Interface[] = [typeInterface];
+function calculateConnectedComponents(connectedComponents: InterfaceType[][], interfaces: InterfaceType[]): void {
+    function dfs(typeInterface: InterfaceType): InterfaceType[] {
+        const component: InterfaceType[] = [typeInterface];
         visited.add(typeInterface.name);
         for (const nextTypeInterfaceName of typeInterface.subTypes.concat(typeInterface.superTypes)) {
             if (!visited.has(nextTypeInterfaceName)) {
@@ -540,7 +587,7 @@ function calculateConnectedComponents(connectedComponents: Interface[][], interf
     }
 }
 
-function shareContainerTypes(connectedComponents: Interface[][]): void {
+function shareContainerTypes(connectedComponents: InterfaceType[][]): void {
     for (const component of connectedComponents) {
         const containerTypes: string[] = [];
         component.forEach(type => containerTypes.push(...type.containerTypes));
@@ -554,7 +601,7 @@ function shareContainerTypes(connectedComponents: Interface[][]): void {
  * @param interfaces The interfaces that have to be transformed on demand.
  * @returns Types and not transformed interfaces.
  */
-function extractTypes(interfaces: Interface[]): AstTypes {
+function extractTypes(interfaces: InterfaceType[]): AstTypes {
     const astTypes: AstTypes = { interfaces: [], types: [] };
     const typeNames: string[] = [];
     for (const interfaceType of interfaces) {
@@ -565,7 +612,7 @@ function extractTypes(interfaces: Interface[]): AstTypes {
                 reference: false,
                 array: false
             });
-            const type = new Type(interfaceType.name, alternatives, { reflection: true });
+            const type = new TypeType(interfaceType.name, alternatives, { reflection: true });
             type.superTypes = interfaceType.superTypes;
             astTypes.types.push(type);
             typeNames.push(interfaceType.name);
@@ -582,7 +629,7 @@ function extractTypes(interfaces: Interface[]): AstTypes {
     return astTypes;
 }
 
-function atomTypeToFieldType(type: langium.AtomType): FieldType {
+function atomTypeToFieldType(type: AtomType): FieldType {
     return {
         types: [type.refType?.ref?.name ?? type.primitiveType ?? `'${type.keywordType?.value}'`],
         reference: type.isRef,
@@ -595,9 +642,9 @@ function atomTypeToFieldType(type: langium.AtomType): FieldType {
  * @param interfaces The interfaces to sort topologically.
  * @returns A topologically sorted set of interfaces.
  */
-function sortInterfaces(interfaces: Interface[]): Interface[] {
+function sortInterfaces(interfaces: InterfaceType[]): InterfaceType[] {
     type TypeNode = {
-        value: Interface;
+        value: InterfaceType;
         nodes: TypeNode[];
     }
 
