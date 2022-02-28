@@ -6,7 +6,7 @@
 
 /* eslint-disable no-bitwise */
 
-import { CancellationToken, Range, SemanticTokenModifiers, SemanticTokens, SemanticTokensBuilder, SemanticTokensDelta, SemanticTokensDeltaParams, SemanticTokensOptions, SemanticTokensParams, SemanticTokensRangeParams, SemanticTokenTypes } from 'vscode-languageserver';
+import { CancellationToken, Range, SemanticTokenModifiers, SemanticTokens, SemanticTokensBuilder as BaseSemanticTokensBuilder, SemanticTokensDelta, SemanticTokensDeltaParams, SemanticTokensOptions, SemanticTokensParams, SemanticTokensRangeParams, SemanticTokenTypes } from 'vscode-languageserver';
 import { findKeywordNode, findNodeForFeature } from '../grammar/grammar-util';
 import { AstNode, CstNode, Properties } from '../syntax-tree';
 import { streamAllContents } from '../utils/ast-util';
@@ -67,6 +67,14 @@ export interface SemanticTokenProvider {
     semanticHighlightDelta(document: LangiumDocument, params: SemanticTokensDeltaParams, cancelToken?: CancellationToken): SemanticTokens | SemanticTokensDelta
 }
 
+export interface SemanticToken {
+    line: number
+    char: number
+    length: number
+    tokenType: number
+    tokenModifiers: number
+}
+
 export type SemanticTokenAcceptorOptions<N extends AstNode = AstNode> = ({
     line: number
     char: number,
@@ -83,6 +91,44 @@ export type SemanticTokenAcceptorOptions<N extends AstNode = AstNode> = ({
 }) & {
     type: string
     modifier?: string | string[]
+}
+
+export class SemanticTokensBuilder extends BaseSemanticTokensBuilder {
+    private _tokens: SemanticToken[] = [];
+
+    override push(line: number, char: number, length: number, tokenType: number, tokenModifiers: number): void {
+        this._tokens.push({
+            line,
+            char,
+            length,
+            tokenType,
+            tokenModifiers
+        });
+    }
+
+    override build(): SemanticTokens {
+        this.applyTokens();
+        return super.build();
+    }
+
+    override buildEdits(): SemanticTokens | SemanticTokensDelta {
+        this.applyTokens();
+        return super.buildEdits();
+    }
+
+    private applyTokens(): void {
+        for (const token of this._tokens.sort(this.compareTokens)) {
+            super.push(token.line, token.char, token.length, token.tokenType, token.tokenModifiers);
+        }
+        this._tokens = [];
+    }
+
+    private compareTokens(a: SemanticToken, b: SemanticToken): number {
+        if (a.line === b.line) {
+            return a.char - b.char;
+        }
+        return a.line - b.line;
+    }
 }
 
 export type SemanticTokenAcceptor = <N extends AstNode = AstNode>(options: SemanticTokenAcceptorOptions<N>) => void;
@@ -175,8 +221,8 @@ export abstract class AbstractSemanticTokenProvider implements SemanticTokenProv
     }
 
     /**
-	 * @return `'prune'` to skip the children of this element, nothing otherwise.
-	 */
+     * @return `'prune'` to skip the children of this element, nothing otherwise.
+     */
     protected abstract highlightElement(node: AstNode, acceptor: SemanticTokenAcceptor): void | undefined | 'prune';
 
     protected highlightToken(line: number, char: number, length: number, type: string, modifiers?: string | string[]): void {
