@@ -6,7 +6,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { defaultParserErrorProvider, DSLMethodOpts, EmbeddedActionsParser, ILexingError, IMultiModeLexerDefinition, IOrAlt, IParserErrorMessageProvider, IRecognitionException, IToken, Lexer, TokenType, TokenTypeDictionary, TokenVocabulary } from 'chevrotain';
-import { AbstractElement, Action, Assignment, isAssignment, isCrossReference } from '../grammar/generated/ast';
+import { AbstractElement, Action, Assignment, isAssignment, isCrossReference, isKeyword } from '../grammar/generated/ast';
 import { Linker } from '../references/linker';
 import { LangiumServices } from '../services';
 import { AstNode, CompositeCstNode, CstNode, LeafCstNode } from '../syntax-tree';
@@ -23,6 +23,18 @@ export type ParseResult<T = AstNode> = {
 }
 
 export const DatatypeSymbol = Symbol('Datatype');
+
+interface DataTypeNode {
+    $cstNode: CompositeCstNode
+    /** Instead of a string, this node is uniquely identified by the `Datatype` symbol */
+    $type: symbol
+    /** Used as a storage for all parsed terminals, keywords and sub-datatype rules */
+    value: string
+}
+
+function isDataTypeNode(node: { $type: string | symbol | undefined }): node is DataTypeNode {
+    return node.$type === DatatypeSymbol;
+}
 
 type RuleResult = () => any;
 
@@ -122,7 +134,11 @@ export class LangiumParser {
     private startImplementation($type: string | symbol | undefined, implementation: RuleImpl): RuleImpl {
         return (args) => {
             if (!this.wrapper.IS_RECORDING) {
-                this.stack.push({ $type });
+                const node: any = { $type };
+                this.stack.push(node);
+                if ($type === DatatypeSymbol)  {
+                    node.value = '';
+                }
             }
             let result: unknown;
             try {
@@ -159,12 +175,20 @@ export class LangiumParser {
         if (!this.wrapper.IS_RECORDING) {
             const leafNode = this.nodeBuilder.buildLeafNode(token, feature);
             const { assignment, crossRef } = this.getAssignment(feature);
+            const current = this.current;
             if (assignment) {
                 let crossRefId: string | undefined;
                 if (crossRef) {
-                    crossRefId = `${this.current.$type}:${assignment.feature}`;
+                    crossRefId = `${current.$type}:${assignment.feature}`;
                 }
-                this.assign(assignment, token.image, leafNode, crossRefId);
+                const convertedValue = isKeyword(feature) ? token.image : this.converter.convert(token.image, leafNode);
+                this.assign(assignment, convertedValue, leafNode, crossRefId);
+            } else if (isDataTypeNode(current)) {
+                let text = token.image;
+                if (!isKeyword(feature)) {
+                    text = this.converter.convert(text, leafNode).toString();
+                }
+                current.value += text;
             }
         }
     }
@@ -172,14 +196,19 @@ export class LangiumParser {
     unassignedSubrule(idx: number, rule: RuleResult, feature: AbstractElement, args: Args): void {
         const result = this.subrule(idx, rule, feature, args);
         if (!this.wrapper.IS_RECORDING) {
-            const resultKind = result.$type;
-            const object = this.assignWithoutOverride(result, this.current);
-            if (resultKind) {
-                object.$type = resultKind;
+            const current = this.current;
+            if (isDataTypeNode(current)) {
+                current.value += result.toString();
+            } else {
+                const resultKind = result.$type;
+                const object = this.assignWithoutOverride(result, current);
+                if (resultKind) {
+                    object.$type = resultKind;
+                }
+                const newItem = object;
+                this.stack.pop();
+                this.stack.push(newItem);
             }
-            const newItem = object;
-            this.stack.pop();
-            this.stack.push(newItem);
         }
     }
 
@@ -246,9 +275,8 @@ export class LangiumParser {
         if (pop) {
             this.stack.pop();
         }
-        if (obj.$type === DatatypeSymbol) {
-            const node = obj.$cstNode;
-            return node.text;
+        if (isDataTypeNode(obj)) {
+            return this.converter.convert(obj.value, obj.$cstNode);
         }
         return obj;
     }
@@ -269,10 +297,7 @@ export class LangiumParser {
         const feature = assignment.feature.replace(/\^/g, '');
         let item: unknown;
         if (crossRefId && typeof value === 'string') {
-            const refText = cstNode ? this.converter.convert(value, cstNode).toString() : value;
-            item = this.linker.buildReference(obj, cstNode, crossRefId, refText);
-        } else if (cstNode && typeof value === 'string') {
-            item = this.converter.convert(value, cstNode);
+            item = this.linker.buildReference(obj, cstNode, crossRefId, value);
         } else {
             item = value;
         }

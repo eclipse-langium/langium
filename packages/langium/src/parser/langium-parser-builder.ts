@@ -144,7 +144,7 @@ function buildRuleCall(ctx: RuleContext, ruleCall: RuleCall): Method {
     if (isParserRule(rule)) {
         const idx = ctx.subrule++;
         const predicate = ruleCall.arguments.length > 0 ? buildRuleCallPredicate(rule, ruleCall.arguments) : () => ({});
-        if (hasContainerOfType(ruleCall, isAssignment) || isDataTypeRule(rule)) {
+        if (hasContainerOfType(ruleCall, isAssignment)) {
             return (args) => ctx.parser.subrule(idx, getRule(ctx, rule.name), ruleCall, predicate(args));
         } else {
             return (args) => ctx.parser.unassignedSubrule(idx, getRule(ctx, rule.name), ruleCall, predicate(args));

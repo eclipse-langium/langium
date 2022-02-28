@@ -6,15 +6,14 @@
 
 import { IToken } from '@chevrotain/types';
 import { Range } from 'vscode-languageserver';
-import { CompositeCstNodeImpl, LeafCstNodeImpl } from '../parser/cst-node-builder';
 import { DatatypeSymbol } from '../parser/langium-parser';
-import { AstNode, CstNode, LeafCstNode } from '../syntax-tree';
+import { AstNode, CstNode, isCompositeCstNode, isLeafCstNode, LeafCstNode } from '../syntax-tree';
 import { DocumentSegment } from '../workspace/documents';
 import { TreeStream, TreeStreamImpl } from './stream';
 
 export function streamCst(node: CstNode): TreeStream<CstNode> {
     return new TreeStreamImpl(node, element => {
-        if (element instanceof CompositeCstNodeImpl) {
+        if (isCompositeCstNode(element)) {
             return element.children;
         } else {
             return [];
@@ -23,9 +22,9 @@ export function streamCst(node: CstNode): TreeStream<CstNode> {
 }
 
 export function flatten(node: CstNode): LeafCstNode[] {
-    if (node instanceof LeafCstNodeImpl) {
+    if (isLeafCstNode(node)) {
         return [node];
-    } else if (node instanceof CompositeCstNodeImpl) {
+    } else if (isCompositeCstNode(node)) {
         return node.children.flatMap(e => flatten(e));
     } else {
         return [];
@@ -72,12 +71,12 @@ export function findRelevantNode(cstNode: CstNode): AstNode | undefined {
 
 export function findCommentNode(cstNode: CstNode | undefined, commentNames: string[]): CstNode | undefined {
     let lastNode: CstNode | undefined;
-    if (cstNode instanceof CompositeCstNodeImpl) {
+    if (cstNode && isCompositeCstNode(cstNode)) {
         for (const node of cstNode.children) {
             if (!node.hidden) {
                 break;
             }
-            if (node instanceof LeafCstNodeImpl && commentNames.includes(node.tokenType.name)) {
+            if (isLeafCstNode(node) && commentNames.includes(node.tokenType.name)) {
                 lastNode = node;
             }
         }
@@ -86,9 +85,9 @@ export function findCommentNode(cstNode: CstNode | undefined, commentNames: stri
 }
 
 export function findLeafNodeAtOffset(node: CstNode, offset: number): LeafCstNode | undefined {
-    if (node instanceof LeafCstNodeImpl) {
+    if (isLeafCstNode(node)) {
         return node;
-    } else if (node instanceof CompositeCstNodeImpl) {
+    } else if (isCompositeCstNode(node)) {
         const children = node.children.filter(e => e.offset <= offset).reverse();
         for (const child of children) {
             const result = findLeafNodeAtOffset(child, offset);
