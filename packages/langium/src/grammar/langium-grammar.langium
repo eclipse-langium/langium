@@ -41,7 +41,7 @@ PrimitiveType returns string:
 ReturnType:
 	name=(PrimitiveType | ID);
 
-AbstractRule : ParserRule | TerminalRule;
+AbstractRule: ParserRule | TerminalRule;
 
 GrammarImport:
 	'import' path=STRING ';';
