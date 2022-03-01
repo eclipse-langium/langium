@@ -41,6 +41,16 @@ export class CstNodeBuilder {
         return leafNode;
     }
 
+    removeNode(node: CstNode): void {
+        const parent = node.parent;
+        if (parent) {
+            const index = parent.children.indexOf(node);
+            if (index >= 0) {
+                parent.children.splice(index, 1);
+            }
+        }
+    }
+
     construct(item: { $type: string | symbol | undefined, $cstNode: CstNode }): void {
         const current: CstNode = this.current;
         // The specified item could be a datatype ($type is symbol) or a fragment ($type is undefined)
@@ -49,7 +59,12 @@ export class CstNodeBuilder {
             this.current.element = <AstNode>item;
         }
         item.$cstNode = current;
-        this.nodeStack.pop();
+        const node = this.nodeStack.pop();
+        // Empty composite nodes are not valid
+        // Simply remove the node from the tree
+        if (node?.children.length === 0) {
+            this.removeNode(node);
+        }
     }
 }
 
