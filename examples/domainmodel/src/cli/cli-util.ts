@@ -44,14 +44,16 @@ export async function extractAstNode<T extends AstNode>(fileName: string, extens
 }
 
 export async function setRootFolder(fileName: string, services: LangiumServices, root?: string): Promise<void> {
-    const folders: WorkspaceFolder[] = [];
-    if(!root) {
+    if (!root) {
         root = path.dirname(fileName);
     }
-    folders.push({
+    if (!path.isAbsolute(root)) {
+        root = path.resolve(process.cwd(), root);
+    }
+    const folders: WorkspaceFolder[] = [{
         name: path.basename(root),
         uri: URI.file(root).toString()
-    });
+    }];
     await services.shared.workspace.WorkspaceManager.initializeWorkspace(folders);
 }
 
