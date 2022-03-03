@@ -4,26 +4,73 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { DefaultScopeComputation } from '../references/scope';
+import { DefaultScopeComputation, DefaultScopeProvider, Scope } from '../references/scope';
 import { LangiumServices } from '../services';
-import { AstNode } from '../syntax-tree';
-import { AstNodeLocator } from '../workspace/ast-node-locator';
+import { AstNode, AstNodeDescription } from '../syntax-tree';
+import { getDocument } from '../utils/ast-util';
+import { stream, Stream } from '../utils/stream';
 import { LangiumDocument, PrecomputedScopes } from '../workspace/documents';
 import { isReturnType } from './generated/ast';
-import { processTypeNodeWithNodeLocator } from './grammar-util';
+import { processActionNodeWithNodeDescriptionProvider, processTypeNodeWithNodeLocator } from './grammar-util';
+
+export class LangiumScopeProvider extends DefaultScopeProvider {
+    constructor(services: LangiumServices) {
+        super(services);
+    }
+
+    getScope(node: AstNode, referenceId: string): Scope {
+        const referenceType = this.reflection.getReferenceType(referenceId);
+        if (referenceType !== 'AbstractType') return super.getScope(node, referenceId);
+
+        const scopes: Array<Stream<AstNodeDescription>> = [];
+        const precomputed = getDocument(node).precomputedScopes;
+        if (precomputed) {
+            let currentNode: AstNode | undefined = node;
+            do {
+                const allDescriptions = precomputed.get(currentNode);
+                const parserRuleScopesArray: AstNodeDescription[] = [];
+                const scopesArray: AstNodeDescription[] = [];
+                if (allDescriptions.length > 0) {
+                    for (const description of allDescriptions) {
+                        if (this.reflection.isSubtype(description.type, 'ParserRule')) {
+                            parserRuleScopesArray.push(description);
+                        } else if (this.reflection.isSubtype(description.type, referenceType)) {
+                            scopesArray.push(description);
+                        }
+                    }
+                    scopes.push(stream(
+                        scopesArray.concat(
+                            parserRuleScopesArray.filter(parserRule => !scopesArray.some(e => e.name === parserRule.name))
+                        )
+                    ));
+                }
+                currentNode = currentNode.$container;
+            } while (currentNode);
+        }
+
+        let result: Scope = this.getGlobalScope(referenceType);
+        for (let i = scopes.length - 1; i >= 0; i--) {
+            result = this.createScope(scopes[i], result);
+        }
+
+        return result;
+    }
+}
 
 export class LangiumGrammarScopeComputation extends DefaultScopeComputation {
-    protected readonly astNodeLocator: AstNodeLocator;
     protected readonly processTypeNode: (node: AstNode, document: LangiumDocument, scopes: PrecomputedScopes) => void;
+    protected readonly processActionNode: (node: AstNode, document: LangiumDocument, scopes: PrecomputedScopes) => void;
 
     constructor(services: LangiumServices) {
         super(services);
         this.processTypeNode = processTypeNodeWithNodeLocator(services.index.AstNodeLocator);
+        this.processActionNode = processActionNodeWithNodeDescriptionProvider(services.index.AstNodeDescriptionProvider);
     }
 
     protected processNode(node: AstNode, document: LangiumDocument, scopes: PrecomputedScopes): void {
         if (isReturnType(node)) return;
         this.processTypeNode(node, document, scopes);
+        this.processActionNode(node, document, scopes);
         super.processNode(node, document, scopes);
     }
 }
