@@ -81,6 +81,26 @@
 			]
 		},
 		{
+			"name": "Generate Domainmodel",
+			"type": "pwa-node",
+			"request": "launch",
+			"runtimeExecutable": "node",
+			"runtimeArgs": [
+				"${workspaceFolder}/examples/domainmodel/out/cli/cli",
+				"generate",
+				"example/blog.dmodel"
+			],
+			"cwd": "${workspaceFolder}/examples/domainmodel",
+			"skipFiles": [
+				"<node_internals>/**"
+			],
+			"sourceMaps": true,
+			"outFiles": [
+				"${workspaceFolder}/examples/domainmodel/out/**/*.js",
+				"${workspaceFolder}/packages/langium/lib/**/*.js"
+			]
+		},
+		{
 			"name": "Extension Tests",
 			"type": "extensionHost",
 			"request": "launch",

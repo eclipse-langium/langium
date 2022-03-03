@@ -28,7 +28,7 @@ export interface DocumentValidator {
     validateDocument(document: LangiumDocument, cancelToken?: CancellationToken): Promise<Diagnostic[]>;
 }
 
-export class DefaultDocumentValidator {
+export class DefaultDocumentValidator implements DocumentValidator {
     protected readonly validationRegistry: ValidationRegistry;
 
     constructor(services: LangiumServices) {

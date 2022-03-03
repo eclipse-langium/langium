@@ -15,11 +15,15 @@ import { createDomainModelServices } from '../language-server/domain-model-modul
 import { DomainModelLanguageMetaData } from '../language-server/generated/module';
 
 export const generateAction = async (fileName: string, opts: GenerateOptions): Promise<void> => {
-    const services = createDomainModelServices().domainmodel;
-    await setRootFolder(fileName, services, opts.root);
-    const domainmodel = await extractAstNode<Domainmodel>(fileName, DomainModelLanguageMetaData.fileExtensions, services);
-    const generatedDirPath = generateJava(domainmodel, fileName, opts.destination);
-    console.log(colors.green(`Java classes generated successfully: ${colors.yellow(generatedDirPath)}`));
+    try {
+        const services = createDomainModelServices().domainmodel;
+        await setRootFolder(fileName, services, opts.root);
+        const domainmodel = await extractAstNode<Domainmodel>(fileName, DomainModelLanguageMetaData.fileExtensions, services);
+        const generatedDirPath = generateJava(domainmodel, fileName, opts.destination);
+        console.log(colors.green(`Java classes generated successfully: ${colors.yellow(generatedDirPath)}`));
+    } catch (error) {
+        console.error(colors.red(String(error)));
+    }
 };
 
 export type GenerateOptions = {
