@@ -276,6 +276,8 @@ export function getTypeName(type: ast.AbstractType | undefined): string {
         return type.type?.name ?? type.name;
     } else if (ast.isInterface(type) || ast.isType(type)) {
         return type.name;
+    } else if (ast.isAction(type)) {
+        return type.type;
     }
     throw new Error('Unknown type');
 }

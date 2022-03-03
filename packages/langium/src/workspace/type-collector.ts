@@ -300,7 +300,7 @@ function collectDeclaredTypes(astResources: AstResources, inferredTypes: AstType
     const declaredTypes: AstTypes = {types: [], interfaces: []};
     // add interfaces
     for (const interfaceType of Array.from(astResources.interfaces)) {
-        const superTypes = interfaceType.superTypes.map(e => e.ref?.name).filter(e => typeof e === 'string') as string[];
+        const superTypes = interfaceType.superTypes.map(e => getTypeName(e.ref));
         const fields: Field[] = interfaceType.attributes.map(e => <Field>{
             name: e.name,
             optional: e.isOptional === true,
@@ -318,8 +318,8 @@ function collectDeclaredTypes(astResources: AstResources, inferredTypes: AstType
         declaredTypes.types.push(new TypeType(type.name, alternatives, { reflection }));
 
         for (const maybeRef of type.typeAlternatives) {
-            if (typeof maybeRef.refType?.ref?.name === 'string') {
-                childToSuper.add(maybeRef.refType.ref?.name, type.name);
+            if (maybeRef.refType) {
+                childToSuper.add(getTypeName(maybeRef.refType.ref), type.name);
             }
         }
     }
@@ -663,7 +663,7 @@ function extractTypes(interfaces: InterfaceType[]): AstTypes {
 
 function atomTypeToFieldType(type: AtomType): FieldType {
     return {
-        types: [type.refType?.ref?.name ?? type.primitiveType ?? `'${type.keywordType?.value}'`],
+        types: [type.refType ? getTypeName(type.refType.ref) : (type.primitiveType ?? `'${type.keywordType?.value}'`)],
         reference: type.isRef === true,
         array: type.isArray === true
     };

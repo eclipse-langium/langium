@@ -33,7 +33,7 @@ AtomType:
 		) isArray?='[]'?
 	|	keywordType=Keyword;
 
-type AbstractType = Interface | Type | ParserRule;
+type AbstractType = Interface | Type | ParserRule | Action;
 
 PrimitiveType returns string:
 	'string' | 'number' | 'boolean' | 'date';
