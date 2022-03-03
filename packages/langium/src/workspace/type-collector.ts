@@ -76,6 +76,25 @@ export class TypeType {
         if (this.reflection) pushReflectionInfo(this.name, typeNode);
         return processGeneratorNode(typeNode);
     }
+
+    compare(type: TypeType): boolean {
+        return this.name === type.name &&
+            this.reflection === type.reflection &&
+            compareLists(this.superTypes, type.superTypes) &&
+            compareLists(this.alternatives, type.alternatives, compareFieldType);
+    }
+}
+
+function compareFieldType(a: FieldType, b: FieldType): boolean {
+    return a.array === b.array &&
+        a.reference === b.reference &&
+        compareLists(a.types, b.types);
+}
+
+function compareLists<T>(a: T[], b: T[], eq: (x: T, y: T) => boolean = (x: T, y: T) => x === y): boolean {
+    if (a.length !== b.length) return false;
+    const distictAndSortedA = distictAndSorted(a);
+    return distictAndSorted(b).every((e, i) => eq(e, distictAndSortedA[i]));
 }
 
 export class InterfaceType {
@@ -112,6 +131,16 @@ export class InterfaceType {
 
         pushReflectionInfo(this.name, interfaceNode);
         return processGeneratorNode(interfaceNode);
+    }
+
+    compare(type: InterfaceType): boolean {
+        return this.name === type.name &&
+        compareLists(this.superTypes, type.superTypes) &&
+        compareLists(this.fields, type.fields, (x, y) =>
+            x.name === y.name &&
+            x.optional === y.optional &&
+            compareFieldType(x.type, y.type)
+        );
     }
 }
 
@@ -220,7 +249,10 @@ export function collectAst(documents: LangiumDocuments, grammars: Grammar[]): As
     sortInterfaces(interfaces);
     types.sort((a, b) => a.name.localeCompare(b.name));
 
-    return { interfaces, types };
+    return {
+        interfaces: stream(interfaces).distinct(e => e.name).toArray(),
+        types: stream(types).distinct(e => e.name).toArray(),
+    };
 }
 
 /**
@@ -271,7 +303,7 @@ function collectDeclaredTypes(astResources: AstResources, inferredTypes: AstType
         const superTypes = interfaceType.superTypes.map(e => e.ref?.name).filter(e => typeof e === 'string') as string[];
         const fields: Field[] = interfaceType.attributes.map(e => <Field>{
             name: e.name,
-            optional: e.isOptional,
+            optional: e.isOptional === true,
             type: atomTypeToFieldType(e.type)
         });
         declaredTypes.interfaces.push(new InterfaceType(interfaceType.name, superTypes, fields));
@@ -632,8 +664,8 @@ function extractTypes(interfaces: InterfaceType[]): AstTypes {
 function atomTypeToFieldType(type: AtomType): FieldType {
     return {
         types: [type.refType?.ref?.name ?? type.primitiveType ?? `'${type.keywordType?.value}'`],
-        reference: type.isRef,
-        array: type.isArray
+        reference: type.isRef === true,
+        array: type.isArray === true
     };
 }
 

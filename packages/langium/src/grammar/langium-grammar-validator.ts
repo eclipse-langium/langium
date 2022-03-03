@@ -16,8 +16,9 @@ import { toDocumentSegment } from '../utils/cst-util';
 import { stream } from '../utils/stream';
 import { ValidationAcceptor, ValidationCheck, ValidationRegistry } from '../validation/validation-registry';
 import { LangiumDocument, LangiumDocuments } from '../workspace/documents';
+import { collectAstForValidation, InterfaceType, TypeType } from '../workspace/type-collector';
 import * as ast from './generated/ast';
-import { findKeywordNode, findNameAssignment, getEntryRule, isDataTypeRule, resolveImport, resolveTransitiveImports, terminalRegex } from './grammar-util';
+import { findKeywordNode, findNameAssignment, getEntryRule, getRuleType, isDataTypeRule, resolveImport, resolveTransitiveImports, terminalRegex } from './grammar-util';
 import type { LangiumGrammarServices } from './langium-grammar-module';
 
 type LangiumGrammarChecks = { [type in ast.LangiumGrammarAstType]?: ValidationCheck | ValidationCheck[] }
@@ -50,7 +51,8 @@ export class LangiumGrammarValidationRegistry extends ValidationRegistry {
                 validator.checkGrammarForUnusedRules,
                 validator.checkGrammarImports,
                 validator.checkGrammarTypeAliases,
-                validator.checkGrammarTypeInfer
+                validator.checkGrammarTypeInfer,
+                validator.checkTypes
             ],
             GrammarImport: validator.checkPackageImport,
             CharacterRange: validator.checkInvalidCharacterRange,
@@ -402,6 +404,47 @@ export class LangiumGrammarValidator {
                 accept('error', 'Actions cannot create alias types.', { node: action, property: 'type' });
             }
         }
+    }
+
+    checkTypes(grammar: ast.Grammar, accept: ValidationAcceptor): void {
+        const types = collectAstForValidation(grammar);
+        if (!types) return;
+        const typeToRule = this.astTypeNames(grammar.rules);
+
+        const declaredTypeNames = new Map<string, TypeType>();
+        types.declared.types.map(e => declaredTypeNames.set(e.name, e));
+        for (const inferredType of types.inferred.types) {
+            const declaredType = declaredTypeNames.get(inferredType.name);
+            if (declaredType && !inferredType.compare(declaredType)) {
+                for (const node of typeToRule.get(inferredType.name)) {
+                    accept('error', `The inferred type ${inferredType.name} is not consistent with its declared version.`, {
+                        node,
+                        property: node.type ? 'type' : 'name'
+                    });
+                }
+            }
+        }
+
+        const declaredInterfaceNames = new Map<string, InterfaceType>();
+        types.declared.interfaces.map(e => declaredInterfaceNames.set(e.name, e));
+        for (const inferredType of types.inferred.interfaces) {
+            const declaredType = declaredInterfaceNames.get(inferredType.name);
+            if (declaredType && !inferredType.compare(declaredType)) {
+                for (const node of typeToRule.get(inferredType.name)) {
+                    accept('error', `The inferred interface type ${inferredType.name} is not consistent with its declared version.`, {
+                        node,
+                        property: node.type ? 'type' : 'name'
+                    });
+                }
+            }
+        }
+
+    }
+
+    private astTypeNames(rules: ast.AbstractRule[]): MultiMap<string, ast.AbstractRule> {
+        const typeNameToRule = new MultiMap<string, ast.AbstractRule>();
+        rules.map(rule => typeNameToRule.add(getRuleType(rule), rule));
+        return typeNameToRule;
     }
 
     checkInvalidCharacterRange(range: ast.CharacterRange, accept: ValidationAcceptor): void {
