@@ -1,5 +1,36 @@
 # Change Log of `langium-cli`
 
+## v0.3.0 (Mar. 2022)
+
+### General Improvements
+
+ * Added support for importing other grammar files to state explicitly which rules should be included in your grammar ([#311](https://github.com/langium/langium/pull/311)).
+ * Added support for explicit type declarations in the grammar ([#406](https://github.com/langium/langium/pull/406)).
+ * Improved generated TextMate syntax highlighting ([#289](https://github.com/langium/langium/pull/289), [#293](https://github.com/langium/langium/pull/293), [#312](https://github.com/langium/langium/pull/312)).
+ * Added support for case-insensitive parsing of keywords ([#316](https://github.com/langium/langium/pull/316)).
+ * When parser validation errors occur, the file path and line number of the corresponding grammar rule is printed out ([#372](https://github.com/langium/langium/pull/372)).
+
+### Breaking Changes
+
+ * In order to support multiple languages running in the same language server, the Langium configuration format was changed ([#311](https://github.com/langium/langium/pull/311)). It now looks like this:
+   ```
+   {
+     "projectName": "Arithmetics",
+     "languages": [{
+       "id": "arithmetics",
+       "grammar": "src/language-server/arithmetics.langium",
+       "fileExtensions": [".calc"],
+       "textMate": {
+         "out": "syntaxes/arithmetics.tmLanguage.json"
+       }
+     }],
+     "out": "src/language-server/generated"
+   }
+   ```
+   The `languages` array accepts multiple language configurations, which are then all generated at once.
+
+---
+
 ## v0.2.0 (Nov. 2021)
 
 ### General Improvements

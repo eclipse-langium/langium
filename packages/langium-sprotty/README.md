@@ -1,6 +1,6 @@
 # Integration of Langium and Sprotty
 
-This package provides glue code for Langium and Sprotty. It includes the following features:
+This package provides glue code for [Langium](https://langium.org) and [Sprotty](https://www.npmjs.com/package/sprotty). It includes the following features:
 
  * Generate diagram models from a Langium AST
  * Listen to document changes and update existing diagram models automatically

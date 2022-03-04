@@ -21,10 +21,13 @@ export const RelativePath = Symbol('RelativePath');
 export interface LangiumConfig {
     /** Relative path to the directory of the config */
     [RelativePath]: string
+    /** Name of the language project */
     projectName: string
+    /** Array of language configurations */
     languages: LangiumLanguageConfig[]
     /** Main output directory for TypeScript code */
     out?: string
+    /** Configure the chevrotain parser for all languages */
     chevrotainParserConfig?: IParserConfig,
     /** The following option is meant to be used only by Langium itself */
     langiumInternal?: boolean
@@ -44,7 +47,7 @@ export interface LangiumLanguageConfig {
         /** Output path to syntax highlighting file */
         out: string
     }
-    /** Configure the chevrotain parser */
+    /** Configure the chevrotain parser for a single language */
     chevrotainParserConfig?: IParserConfig
 }
 
