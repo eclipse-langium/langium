@@ -9,6 +9,7 @@ import { DiagnosticTag } from 'vscode-languageserver-types';
 import { Utils } from 'vscode-uri';
 import { References } from '../references/references';
 import { LangiumServices } from '../services';
+import { Reference } from '../syntax-tree';
 import { getContainerOfType, getDocument, streamAllContents } from '../utils/ast-util';
 import { MultiMap } from '../utils/collections';
 import { stream } from '../utils/stream';
@@ -58,7 +59,11 @@ export class LangiumGrammarValidationRegistry extends ValidationRegistry {
             CrossReference: [
                 validator.checkCrossReferenceSyntax,
                 validator.checkCrossRefNameAssignment,
-                validator.checkCrossRefTerminalType
+                validator.checkCrossRefTerminalType,
+                validator.checkCrossRefType
+            ],
+            AtomType: [
+                validator.checkAtomTypeRefType
             ]
         };
         this.register(checks, validator);
@@ -437,6 +442,27 @@ export class LangiumGrammarValidator {
         if (ast.isRuleCall(reference.terminal) && ast.isParserRule(reference.terminal.rule.ref) && !isDataTypeRule(reference.terminal.rule.ref)) {
             accept('error', 'Parser rules cannot be used for cross references.', { node: reference.terminal, property: 'rule' });
         }
+    }
+
+    checkCrossRefType(reference: ast.CrossReference, accept: ValidationAcceptor): void {
+        const issue = this.checkReferenceToRuleButNotType(reference.type);
+        if (issue) {
+            accept('error', issue, { node: reference, property: 'type' });
+        }
+    }
+
+    checkAtomTypeRefType(atomType: ast.AtomType, accept: ValidationAcceptor): void {
+        const issue = this.checkReferenceToRuleButNotType(atomType.refType);
+        if (issue) {
+            accept('error', issue, { node: atomType, property: 'refType' });
+        }
+    }
+
+    protected checkReferenceToRuleButNotType(type: Reference<ast.AbstractType>): string | undefined {
+        if(type && ast.isParserRule(type.ref) && !isDataTypeRule(type.ref) && type.ref.type) {
+            return `Use the rule type '${type.ref.type.name}' instead of the typed rule '${type.ref.name}' for cross references.`;
+        }
+        return undefined;
     }
 }
 
