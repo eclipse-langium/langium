@@ -2,6 +2,8 @@
 
 Langium is a language engineering tool with built-in support for the [Language Server Protocol](https://microsoft.github.io/language-server-protocol/). It has a simple and direct integration with the [VS Code extension API](https://code.visualstudio.com/api/language-extensions/overview).
 
+More information: 🌍 https://langium.org
+
 ## Getting Started
 
 Langium offers a [Yeoman](https://yeoman.io) generator to create a new language extension for VS Code. The only prerequisite for the following terminal commands is [NodeJS](https://nodejs.org/) version 14 or higher.
@@ -25,7 +27,7 @@ code hello-world
 
 5. Open a folder, create a file with your chosen file name extension (`.hello` is the default), and see that validation and completion (ctrl+space) works:
 
-Follow the instructions in `langium-quickstart.md` (in your extension folder) to go further.
+Follow the instructions in `langium-quickstart.md` (in your extension folder) and the [documentation on the website](https://langium.org/docs/) to go further.
 
 ## How Does it Work?
 
@@ -35,9 +37,9 @@ The core of Langium is a _grammar declaration language_ in which you describe mu
  - Syntax (parser rules)
  - Abstract syntax tree (AST)
 
-The grammar declaration language of Langium is very similar to [Xtext](https://www.eclipse.org/Xtext/documentation/301_grammarlanguage.html). Please follow the Xtext documentation to learn how to use this language.
+Please follow the [Langium documentation](https://langium.org/docs/grammar-language/) to learn how to use this language.
 
-Langium features a command line interface ([langium-cli](https://www.npmjs.com/package/langium-cli)) that reads a grammar declaration and generates a parser, TypeScript type declarations for the AST and more.
+Langium features a command line interface ([langium-cli](https://www.npmjs.com/package/langium-cli)) that reads a grammar declaration and generates TypeScript type declarations for the AST and more.
 
 Integration with the Language Server Protocol (LSP) is done with [vscode-languageserver](https://www.npmjs.com/package/vscode-languageserver). You have full access to the LSP API in Langium, so you can register additional message handlers or extend the protocol in a breeze.
 

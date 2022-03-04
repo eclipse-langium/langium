@@ -1,5 +1,13 @@
 # Change Log of `generator-langium`
 
+## v0.3.0 (Mar. 2022)
+
+ * The generated project is adapted to the new structure supporting multiple languages ([#311](https://github.com/langium/langium/pull/311)). This mainly affects the configuration format of the `langium` CLI and the separation of _shared services_ and _language-specific services_.
+ * The generator now prints descriptions of the requested values ([#373](https://github.com/langium/langium/pull/373)).
+ * Added an `attach` launch config for debugging the language server ([#380](https://github.com/langium/langium/pull/380)).
+
+---
+
 ## v0.2.1 (Nov. 2021)
 
  * Fixed an outdated TypeScript reference in `src/cli/generator.ts` that led to a compile error.

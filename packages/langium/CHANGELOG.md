@@ -1,5 +1,73 @@
 # Change Log of `langium`
 
+## v0.3.0 (Mar. 2022)
+
+### Multi-Language Support
+
+Langium now supports multiple languages running in the same language server ([#311](https://github.com/langium/langium/pull/311)). This works by splitting the dependency injection container in two sets of services: the _shared_ services and the _language-specific_ services. When an LSP request is received from the client, the `ServiceRegistry` is used to decide which language is responsible for a given document by looking at its file extension.
+
+A grammar file can use declarations from other grammar files by importing them. This is useful for organizing large grammars and for using common grammar rules in multiple languages. Imports are written with a relative path similarly to TypeScript:
+```
+import './expressions';
+```
+This makes all declarations of the file `expressions.langium` available in the current grammar.
+
+The `grammar` declaration at the beginning of a grammar file is now optional unless the file is used as entry point for the language ([#381](https://github.com/langium/langium/pull/381)).
+
+### Type Declarations in the Grammar
+
+Langium is able to infer TypeScript types from your grammar rules by looking at the property assignments, actions and rule calls. This is very useful for the initial development of your language syntax, supporting rapid prototyping. For more mature language projects, however, it is advisable to declare the AST types explicitly because a large part of your code base depends on it: type system, validation, code generator etc. We introduced a new syntax so you can declare types directly in the grammar language and use them in your grammar rules ([#406](https://github.com/langium/langium/pull/406)).
+
+The syntax is very similar to TypeScript:
+```
+interface Entity {
+   name: string
+   superType?: @Entity
+   features: Feature[]
+}
+
+type Symbol = Entity | PackageDeclaration | DataType | Feature
+```
+The `interface` form describes the properties of an AST node type. The `@` character used at the `superType` property above denotes a cross-reference to a node of type `Entity`. The `type` form creates _union types_, i.e. an alternative of other declared or inferred types. These are transferred almost identically to TypeScript, where they have [their usual meaning](https://www.typescriptlang.org/docs/handbook/2/everyday-types.html).
+
+### New Sprotty Integration
+
+A new package `langium-sprotty` is available to enable [Sprotty](https://github.com/eclipse/sprotty)-powered diagrams generated from a Langium DSL ([#308](https://github.com/langium/langium/pull/308)). An example is presented [in this blog post](https://www.typefox.io/blog/langium-meets-sprotty-combining-text-and-diagrams-in-vs-code).
+
+### Further Improvements
+
+ * In addition to regular expressions, terminals now feature an [_extended backus-naur form_](https://langium.org/docs/grammar-language/#more-on-terminal-rules) that enables composition of terminal rules ([#288](https://github.com/langium/langium/pull/288)).
+ * We no longer assume that a terminal rule named `ID` is present when a cross-reference is defined without an explicit token ([#341](https://github.com/langium/langium/pull/341)). Instead, we derive the terminal or data type rule to use for the cross-reference from an assignment to the `name` property in the referenced grammar rule. This is not always possible, so in certain cases the cross-reference token must be stated explicitly, which is enforced by a validation.
+ * Added an API for [semantic token highlighting](https://microsoft.github.io/language-server-protocol/specifications/specification-current/#textDocument_semanticTokens) ([#345](https://github.com/langium/langium/pull/345)).
+ * Implemented support for [guarded parser rules](https://langium.org/docs/grammar-language/#guarded-rules) ([#346](https://github.com/langium/langium/pull/346), [#422](https://github.com/langium/langium/pull/422)).
+ * Added `$containerProperty` and `$containerIndex` properties to `AstNode`, enabling the inclusion of programmatically created documents in the index ([#354](https://github.com/langium/langium/pull/354)).
+ * Added a new `WorkspaceManager` service to be overridden if you want to specialize where the source files are found or to add programmatic documents to the index ([#377](https://github.com/langium/langium/pull/377)).
+ * Extracted file system access to a single service to minimize dependencies to Node.js ([#405](https://github.com/langium/langium/pull/405)). This will ease using Langium in a web browser.
+ * Added ability to use a multi-mode lexer ([#398](https://github.com/langium/langium/pull/398)).
+
+### Breaking Changes
+
+ * The `hidden` keyword of the grammar language is now used as modifier for terminals instead of following the top-level grammar declaration ([#288](https://github.com/langium/langium/pull/288)).
+   Instead of
+   ```
+   grammar Foo
+   hidden(WS)
+
+   terminal WS: /\s+/;
+   ```
+   you now write
+   ```
+   grammar Foo
+
+   hidden terminal WS: /\s+/;
+   ```
+ * Introduced a new `entry` keyword to explicitly mark the entry rule of the parser ([#305](https://github.com/langium/langium/pull/305)). Previously the first grammar rule was assumed to be the entry rule.
+ * Changed the syntax of cross-references in the grammar ([#306](https://github.com/langium/langium/pull/306)). Instead of `property=[Type|TOKEN]`, you now write `property=[Type:TOKEN]`.
+ * Some dependency injection services were moved to the new _shared services_ container ([#311](https://github.com/langium/langium/pull/311)), especially the `LangiumDocuments` and `DocumentBuilder`.
+ * Numerous breaking API improvements that cannot be all mentioned here. If you're unsure how to migrate your code, please ask in [Discussions](https://github.com/langium/langium/discussions).
+
+---
+
 ## v0.2.0 (Nov. 2021)
 
 ### Cross-File Linking

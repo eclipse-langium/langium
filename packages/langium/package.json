@@ -2,6 +2,7 @@
   "name": "langium",
   "version": "0.2.0",
   "description": "A language engineering tool for the Language Server Protocol",
+  "homepage": "https://langium.org",
   "engines": {
     "node": ">=12.0.0"
   },

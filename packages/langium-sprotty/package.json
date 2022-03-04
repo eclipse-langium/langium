@@ -2,6 +2,7 @@
   "name": "langium-sprotty",
   "version": "0.2.0",
   "description": "Use Langium as source for Sprotty diagram models",
+  "homepage": "https://langium.org",
   "keywords": [
     "language",
     "dsl",
