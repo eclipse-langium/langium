@@ -5,8 +5,9 @@
  ******************************************************************************/
 
 import {
-    GeneratorNode, Grammar, IndentNode, CompositeGeneratorNode, NL, processGeneratorNode, streamAllContents, isCrossReference, MultiMap, LangiumServices, collectAst, AstTypes
+    GeneratorNode, Grammar, IndentNode, CompositeGeneratorNode, NL, processGeneratorNode, streamAllContents, isCrossReference, MultiMap, LangiumServices, collectAst
 } from 'langium';
+import { AstTypes } from 'langium/src/typification/types-util';
 import { LangiumConfig } from '../package';
 import { generatedHeader } from './util';
 

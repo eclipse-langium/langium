@@ -5,15 +5,10 @@
  ******************************************************************************/
 
 import _ from 'lodash';
-import { URI } from 'vscode-uri';
-import { Cardinality, getRuleType, getTypeName, isDataTypeRule, isOptional, resolveImport } from '../grammar/grammar-util';
-import { AbstractElement, Action, Alternatives, Assignment, AtomType, Grammar, Group, Interface, isAction, isAlternatives, isAssignment, isCrossReference, isGroup, isKeyword, isParserRule, isRuleCall, isUnorderedGroup, ParserRule, RuleCall, Type, UnorderedGroup } from '../grammar/generated/ast';
-import { CompositeGeneratorNode, IndentNode, NL } from '../generator/generator-node';
-import { processGeneratorNode } from '../generator/node-processor';
-import { LangiumDocuments } from './documents';
+import { Cardinality, getRuleType, getTypeName, isOptional } from '../grammar/grammar-util';
+import { AbstractElement, Action, Alternatives, Assignment, Group, isAction, isAlternatives, isAssignment, isCrossReference, isGroup, isKeyword, isParserRule, isRuleCall, isUnorderedGroup, ParserRule, RuleCall, UnorderedGroup } from '../grammar/generated/ast';
 import { stream } from '../utils/stream';
-import { MultiMap } from '../utils/collections';
-import { getDocument } from '../utils/ast-util';
+import { AstTypes, compareFieldType, Field, FieldType, InterfaceType, TypeType } from './types-util';
 
 type TypeAlternative = {
     name: string,
@@ -23,148 +18,9 @@ type TypeAlternative = {
     hasAction: boolean
 }
 
-type Field = {
-    name: string,
-    optional: boolean,
-    typeAlternatives: FieldType[]
-}
-
-type FieldType = {
-    types: string[],
-    reference: boolean,
-    array: boolean
-}
-
 type TypeCollection = {
     types: string[],
     reference: boolean
-}
-
-type AstResources = {
-    parserRules: Set<ParserRule>,
-    datatypeRules: Set<ParserRule>,
-    interfaces: Set<Interface>,
-    types: Set<Type>
-}
-
-export type AstTypes = {
-    interfaces: InterfaceType[];
-    types: TypeType[];
-}
-
-export type InferredDeclaredTypes = {
-    inferred: AstTypes,
-    declared: AstTypes
-}
-
-export class TypeType {
-    name: string;
-    alternatives: FieldType[];
-    reflection: boolean;
-    superTypes: string[] = [];
-
-    constructor(name: string, alternatives: FieldType[], options?: { reflection: boolean }) {
-        this.name = name;
-        this.alternatives = alternatives;
-        this.reflection = options?.reflection ?? false;
-    }
-
-    toString(): string {
-        const typeNode = new CompositeGeneratorNode();
-        typeNode.contents.push(`export type ${this.name} = ${fieldTypeArrayToString(this.alternatives)};`, NL);
-
-        if (this.reflection) pushReflectionInfo(this.name, typeNode);
-        return processGeneratorNode(typeNode);
-    }
-
-    compare(type: TypeType): boolean {
-        return this.name === type.name &&
-            this.reflection === type.reflection &&
-            compareLists(this.superTypes, type.superTypes) &&
-            compareLists(this.alternatives, type.alternatives, compareFieldType);
-    }
-}
-
-function compareFieldType(a: FieldType, b: FieldType): boolean {
-    return a.array === b.array &&
-        a.reference === b.reference &&
-        compareLists(a.types, b.types);
-}
-
-function compareLists<T>(a: T[], b: T[], eq: (x: T, y: T) => boolean = (x: T, y: T) => x === y): boolean {
-    if (a.length !== b.length) return false;
-    const distictAndSortedA = distictAndSorted(a);
-    return distictAndSorted(b).every((e, i) => eq(e, distictAndSortedA[i]));
-}
-
-function fieldTypeArrayToString(alternatives: FieldType[]): string {
-    return distictAndSorted(alternatives.map(typeFieldToString)).join(' | ');
-}
-
-export class InterfaceType {
-    name: string;
-    superTypes: string[];
-    printingSuperTypes: string[];
-    subTypes: string[] = [];
-    containerTypes: string[] = [];
-    fields: Field[];
-
-    constructor(name: string, superTypes: string[], fields: Field[]) {
-        this.name = name;
-        this.superTypes = superTypes;
-        this.printingSuperTypes = _.cloneDeep(superTypes);
-        this.fields = fields;
-    }
-
-    toString(): string {
-        const interfaceNode = new CompositeGeneratorNode();
-        const superTypes = this.printingSuperTypes.length > 0 ? distictAndSorted(this.printingSuperTypes) : ['AstNode'];
-        interfaceNode.contents.push(`export interface ${this.name} extends ${superTypes.join(', ')} {`, NL);
-
-        const fieldsNode = new IndentNode();
-        if (this.containerTypes.length > 0) {
-            fieldsNode.contents.push(`readonly $container: ${distictAndSorted(this.containerTypes).join(' | ')};`, NL);
-        }
-
-        for (const field of distictAndSorted(this.fields, (a, b) => a.name.localeCompare(b.name))) {
-            const optional = field.optional && field.typeAlternatives.some(e => e.reference) && !field.typeAlternatives.some(e => e.array) ? '?' : '';
-            const type = fieldTypeArrayToString(field.typeAlternatives);
-            fieldsNode.contents.push(`${field.name}${optional}: ${type}`, NL);
-        }
-        interfaceNode.contents.push(fieldsNode, '}', NL);
-
-        pushReflectionInfo(this.name, interfaceNode);
-        return processGeneratorNode(interfaceNode);
-    }
-
-    compare(type: InterfaceType): boolean {
-        return this.name === type.name &&
-        compareLists(this.superTypes, type.superTypes) &&
-        compareLists(this.fields, type.fields, (x, y) =>
-            x.name === y.name &&
-            x.optional === y.optional &&
-            compareLists(x.typeAlternatives, y.typeAlternatives, compareFieldType)
-        );
-    }
-}
-
-function distictAndSorted<T>(list: T[], compareFn?: (a: T, b: T) => number): T[] {
-    return Array.from(new Set(list)).sort(compareFn);
-}
-
-function typeFieldToString(fieldType: FieldType): string {
-    let res = distictAndSorted(fieldType.types).join(' | ');
-    res = fieldType.reference ? `Reference<${res}>` : res;
-    res = fieldType.array ? `Array<${res}>` : res;
-    return res;
-}
-
-function pushReflectionInfo(name: string, node: CompositeGeneratorNode) {
-    node.contents.push(NL, `export const ${name} = '${name}';`, NL, NL);
-    node.contents.push(`export function is${name}(item: unknown): item is ${name} {`, NL);
-    const methodBody = new IndentNode();
-    methodBody.contents.push(`return reflection.isInstance(item, ${name});`, NL);
-    node.contents.push(methodBody, '}', NL);
 }
 
 class TypeTree {
@@ -237,46 +93,11 @@ class TypeCollectorState {
     }
 }
 
-/**
- * Collects all types for the generated AST. The types collector entry point.
- * @param documents Documents to resolve imports that were used in the given grammars.
- * @param grammars Grammars for which it's necessary to build an AST.
- */
-export function collectAst(documents: LangiumDocuments, grammars: Grammar[]): AstTypes {
-    const astResources = collectAllAstResources(grammars, documents);
-    const inferred = collectInferredTypes(astResources);
-    const declared = collectDeclaredTypes(astResources, inferred);
-
-    const interfaces = inferred.interfaces.concat(declared.interfaces);
-    const types = inferred.types.concat(declared.types);
-
-    sortInterfaces(interfaces);
-    types.sort((a, b) => a.name.localeCompare(b.name));
-
-    return {
-        interfaces: stream(interfaces).distinct(e => e.name).toArray(),
-        types: stream(types).distinct(e => e.name).toArray(),
-    };
-}
-
-/**
- * Collects declared and inferred types for the generated AST separately. The types collector entry point.
- * @param grammars Grammars that necessary to validate.
- */
-export function collectAstForValidation(grammar: Grammar): InferredDeclaredTypes {
-    const astResources = collectAllAstResources([grammar]);
-    const inferred = collectInferredTypes(astResources);
-    return {
-        inferred,
-        declared: collectDeclaredTypes(astResources, inferred)
-    };
-}
-
-function collectInferredTypes(astResources: AstResources): AstTypes {
+export function collectInferredTypes(parserRules: ParserRule[], datatypeRules: ParserRule[]): AstTypes {
     // extract interfaces and types from parser rules
     const state = new TypeCollectorState();
     const allTypes: TypeAlternative[] = [];
-    for (const rule of Array.from(astResources.parserRules)) {
+    for (const rule of parserRules) {
         state.parserRule = rule;
         const type = initType(rule);
         state.tree = new TypeTree();
@@ -290,7 +111,7 @@ function collectInferredTypes(astResources: AstResources): AstTypes {
     const inferredTypes = extractTypes(interfaces);
 
     // extract types from datatype rules
-    for (const rule of Array.from(astResources.datatypeRules)) {
+    for (const rule of datatypeRules) {
         const types = isAlternatives(rule.alternatives) && rule.alternatives.elements.every(e => isKeyword(e)) ?
             stream(rule.alternatives.elements).filter(isKeyword).map(e => `'${e.value}'`).toArray() :
             [rule.type?.name ?? 'string'];
@@ -298,77 +119,6 @@ function collectInferredTypes(astResources: AstResources): AstTypes {
     }
 
     return inferredTypes;
-}
-
-function collectDeclaredTypes(astResources: AstResources, inferredTypes: AstTypes): AstTypes {
-    const declaredTypes: AstTypes = {types: [], interfaces: []};
-    // add interfaces
-    for (const interfaceType of Array.from(astResources.interfaces)) {
-        const superTypes = interfaceType.superTypes.map(e => getTypeName(e.ref));
-        const fields: Field[] = interfaceType.attributes.map(e => <Field>{
-            name: e.name,
-            optional: e.isOptional === true,
-            typeAlternatives: e.typeAlternatives.map(atomTypeToFieldType)
-        });
-        declaredTypes.interfaces.push(new InterfaceType(interfaceType.name, superTypes, fields));
-    }
-
-    // add types
-    const childToSuper = new MultiMap<string, string>();
-    for (const type of Array.from(astResources.types)) {
-        const alternatives = type.typeAlternatives.map(atomTypeToFieldType);
-        const reflection = type.typeAlternatives.some(e => {
-            const refType = e.refType?.ref;
-            return refType && (isParserRule(refType) && !isDataTypeRule(refType) || isAction(refType));
-        });
-        declaredTypes.types.push(new TypeType(type.name, alternatives, { reflection }));
-
-        for (const maybeRef of type.typeAlternatives) {
-            if (maybeRef.refType) {
-                childToSuper.add(getTypeName(maybeRef.refType.ref), type.name);
-            }
-        }
-    }
-    for (const child of childToSuper.keys()) {
-        const childType = inferredTypes.types.find(e => e.name === child) ??
-            inferredTypes.interfaces.find(e => e.name === child) ??
-            declaredTypes.types.find(e => e.name === child) ??
-            declaredTypes.interfaces.find(e => e.name === child);
-        if (childType) {
-            childToSuper.get(child).map(superType => childType.superTypes.push(superType));
-        }
-    }
-
-    return declaredTypes;
-}
-
-function collectAllAstResources(grammars: Grammar[], documents?: LangiumDocuments, visited: Set<URI> = new Set(),
-    astResources: AstResources = { parserRules: new Set(), datatypeRules: new Set(), interfaces: new Set(), types: new Set() }): AstResources {
-
-    for (const grammar of grammars) {
-        const doc = getDocument(grammar);
-        if (visited.has(doc.uri)) {
-            continue;
-        }
-        visited.add(doc.uri);
-        for (const rule of grammar.rules) {
-            if (isParserRule(rule) && !rule.fragment) {
-                if (isDataTypeRule(rule)) {
-                    astResources.datatypeRules.add(rule);
-                } else {
-                    astResources.parserRules.add(rule);
-                }
-            }
-        }
-        grammar.interfaces.forEach(e => astResources.interfaces.add(e));
-        grammar.types.forEach(e => astResources.types.add(e));
-
-        if (documents) {
-            const importedGrammars = grammar.imports.map(e => resolveImport(documents, e)!);
-            collectAllAstResources(importedGrammars, documents, visited, astResources);
-        }
-    }
-    return astResources;
 }
 
 function initType(rule: ParserRule | string): TypeAlternative {
@@ -667,44 +417,4 @@ function extractTypes(interfaces: InterfaceType[]): AstTypes {
             .filter(superType => !typeNames.includes(superType));
     }
     return astTypes;
-}
-
-function atomTypeToFieldType(type: AtomType): FieldType {
-    return {
-        types: [type.refType ? getTypeName(type.refType.ref) : (type.primitiveType ?? `'${type.keywordType?.value}'`)],
-        reference: type.isRef === true,
-        array: type.isArray === true
-    };
-}
-
-/**
- * Performs topological sorting on the generated interfaces.
- * @param interfaces The interfaces to sort topologically.
- * @returns A topologically sorted set of interfaces.
- */
-function sortInterfaces(interfaces: InterfaceType[]): InterfaceType[] {
-    type TypeNode = {
-        value: InterfaceType;
-        nodes: TypeNode[];
-    }
-
-    const nodes: TypeNode[] = interfaces
-        .sort((a, b) => a.name.localeCompare(b.name))
-        .map(e => <TypeNode>{ value: e, nodes: [] });
-    for (const node of nodes) {
-        node.nodes = nodes.filter(e => node.value.superTypes.includes(e.value.name));
-    }
-    const l: TypeNode[] = [];
-    const s = nodes.filter(e => e.nodes.length === 0);
-    while (s.length > 0) {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        const n = s.shift()!;
-        if (!l.includes(n)) {
-            l.push(n);
-            nodes
-                .filter(e => e.nodes.includes(n))
-                .forEach(m => s.push(m));
-        }
-    }
-    return l.map(e => e.value);
 }

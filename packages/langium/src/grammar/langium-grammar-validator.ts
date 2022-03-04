@@ -16,10 +16,11 @@ import { toDocumentSegment } from '../utils/cst-util';
 import { stream } from '../utils/stream';
 import { ValidationAcceptor, ValidationCheck, ValidationRegistry } from '../validation/validation-registry';
 import { LangiumDocument, LangiumDocuments } from '../workspace/documents';
-import { collectAstForValidation, InterfaceType, TypeType } from '../workspace/type-collector';
+import { collectAstForValidation } from '../typification/type-collector';
 import * as ast from './generated/ast';
 import { findKeywordNode, findNameAssignment, getEntryRule, getRuleType, isDataTypeRule, resolveImport, resolveTransitiveImports, terminalRegex } from './grammar-util';
 import type { LangiumGrammarServices } from './langium-grammar-module';
+import { InterfaceType, TypeType } from '../typification/types-util';
 
 type LangiumGrammarChecks = { [type in ast.LangiumGrammarAstType]?: ValidationCheck | ValidationCheck[] }
 
