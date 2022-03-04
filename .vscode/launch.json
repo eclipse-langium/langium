@@ -57,7 +57,8 @@
 				"${workspaceFolder}/packages/langium/lib/**/*.js",
 				"${workspaceFolder}/examples/arithmetics/out/**/*.js",
 				"${workspaceFolder}/examples/domainmodel/out/**/*.js",
-				"${workspaceFolder}/examples/statemachine/out/**/*.js"
+				"${workspaceFolder}/examples/statemachine/out/**/*.js",
+				"${workspaceFolder}/packages/langium-vscode/out/**/*.js"
 			]
 		},
 		{
