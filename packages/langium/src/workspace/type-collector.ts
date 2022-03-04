@@ -313,8 +313,10 @@ function collectDeclaredTypes(astResources: AstResources, inferredTypes: AstType
     const childToSuper = new MultiMap<string, string>();
     for (const type of Array.from(astResources.types)) {
         const alternatives = type.typeAlternatives.map(atomTypeToFieldType);
-        const reflection = type.typeAlternatives.some(e =>
-            e.refType?.ref && isParserRule(e.refType?.ref) && !isDataTypeRule(e.refType?.ref));
+        const reflection = type.typeAlternatives.some(e => {
+            const refType = e.refType?.ref;
+            return refType && (isParserRule(refType) && !isDataTypeRule(refType) || isAction(refType));
+        });
         declaredTypes.types.push(new TypeType(type.name, alternatives, { reflection }));
 
         for (const maybeRef of type.typeAlternatives) {
