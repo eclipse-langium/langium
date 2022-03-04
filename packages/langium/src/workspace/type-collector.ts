@@ -26,7 +26,7 @@ type TypeAlternative = {
 type Field = {
     name: string,
     optional: boolean,
-    type: FieldType
+    typeAlternatives: FieldType[]
 }
 
 type FieldType = {
@@ -71,7 +71,7 @@ export class TypeType {
 
     toString(): string {
         const typeNode = new CompositeGeneratorNode();
-        typeNode.contents.push(`export type ${this.name} = ${distictAndSorted(this.alternatives.map(typeFieldToString)).join(' | ')};`, NL);
+        typeNode.contents.push(`export type ${this.name} = ${fieldTypeArrayToString(this.alternatives)};`, NL);
 
         if (this.reflection) pushReflectionInfo(this.name, typeNode);
         return processGeneratorNode(typeNode);
@@ -95,6 +95,10 @@ function compareLists<T>(a: T[], b: T[], eq: (x: T, y: T) => boolean = (x: T, y:
     if (a.length !== b.length) return false;
     const distictAndSortedA = distictAndSorted(a);
     return distictAndSorted(b).every((e, i) => eq(e, distictAndSortedA[i]));
+}
+
+function fieldTypeArrayToString(alternatives: FieldType[]): string {
+    return distictAndSorted(alternatives.map(typeFieldToString)).join(' | ');
 }
 
 export class InterfaceType {
@@ -123,8 +127,8 @@ export class InterfaceType {
         }
 
         for (const field of distictAndSorted(this.fields, (a, b) => a.name.localeCompare(b.name))) {
-            const optional = field.optional && field.type.reference && !field.type.array ? '?' : '';
-            const type = typeFieldToString(field.type);
+            const optional = field.optional && field.typeAlternatives.some(e => e.reference) && !field.typeAlternatives.some(e => e.array) ? '?' : '';
+            const type = fieldTypeArrayToString(field.typeAlternatives);
             fieldsNode.contents.push(`${field.name}${optional}: ${type}`, NL);
         }
         interfaceNode.contents.push(fieldsNode, '}', NL);
@@ -139,7 +143,7 @@ export class InterfaceType {
         compareLists(this.fields, type.fields, (x, y) =>
             x.name === y.name &&
             x.optional === y.optional &&
-            compareFieldType(x.type, y.type)
+            compareLists(x.typeAlternatives, y.typeAlternatives, compareFieldType)
         );
     }
 }
@@ -304,7 +308,7 @@ function collectDeclaredTypes(astResources: AstResources, inferredTypes: AstType
         const fields: Field[] = interfaceType.attributes.map(e => <Field>{
             name: e.name,
             optional: e.isOptional === true,
-            type: atomTypeToFieldType(e.type)
+            typeAlternatives: e.typeAlternatives.map(atomTypeToFieldType)
         });
         declaredTypes.interfaces.push(new InterfaceType(interfaceType.name, superTypes, fields));
     }
@@ -433,11 +437,11 @@ function addAction(state: TypeCollectorState, action: Action): void {
             newType.fields.push({
                 name: action.feature,
                 optional: false,
-                type: {
+                typeAlternatives: [{
                     array: action.operator === '+=',
                     reference: false,
                     types: [getTypeName(state.parserRule)]
-                }
+                }]
             });
         }
     }
@@ -449,11 +453,11 @@ function addAssignment(state: TypeCollectorState, assignment: Assignment): void 
     state.currentType?.fields.push({
         name: assignment.feature,
         optional: isOptional(assignment.cardinality) || state.isOptional(),
-        type: {
+        typeAlternatives: [{
             array: assignment.operator === '+=',
             types: assignment.operator === '?=' ? ['boolean'] : Array.from(new Set(typeItems.types)),
             reference: typeItems.reference
-        }
+        }]
     });
 }
 
@@ -556,9 +560,7 @@ function flattenTypes(alternatives: TypeAlternative[]): TypeAlternative[] {
                 const existingField = fields.find(e => e.name === altField.name);
                 if (existingField) {
                     existingField.optional = existingField.optional && altField.optional;
-                    const typeSet = new Set(existingField.type.types);
-                    altField.type.types.forEach(type => typeSet.add(type));
-                    existingField.type.types = Array.from(typeSet);
+                    altField.typeAlternatives.filter(isNotInTypeAlternatives(existingField.typeAlternatives)).forEach(type => existingField.typeAlternatives.push(type));
                 } else {
                     fields.push({ ...altField });
                 }
@@ -574,6 +576,12 @@ function flattenTypes(alternatives: TypeAlternative[]): TypeAlternative[] {
     return types;
 }
 
+function isNotInTypeAlternatives(typeAlternatives: FieldType[]): (type: FieldType) => boolean {
+    return (type: FieldType) => {
+        return !typeAlternatives.some(e => compareFieldType(e, type));
+    };
+}
+
 /**
  * Builds container types for given interfaces.
  * @param interfaces The interfaces that have to get container types.
@@ -581,11 +589,9 @@ function flattenTypes(alternatives: TypeAlternative[]): TypeAlternative[] {
 function buildContainerTypes(interfaces: InterfaceType[]): void {
     // 1st stage: collect container types & calculate sub-types
     for (const interfaceType of interfaces) {
-        for (const field of interfaceType.fields.filter(e => !e.type.reference)) {
-            for (const fieldTypeName of field.type.types) {
-                interfaces.find(e => e.name === fieldTypeName)
-                    ?.containerTypes.push(interfaceType.name);
-            }
+        for (const typeName of interfaceType.fields.flatMap(field => field.typeAlternatives.filter(e => !e.reference).flatMap(e => e.types))) {
+            interfaces.find(e => e.name === typeName)
+                ?.containerTypes.push(interfaceType.name);
         }
         for (const superTypeName of interfaceType.superTypes) {
             interfaces.find(e => e.name === superTypeName)
