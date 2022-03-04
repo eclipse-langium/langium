@@ -4,15 +4,12 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { URI } from 'vscode-uri';
-import { isDataTypeRule, resolveImport } from '../grammar/grammar-util';
-import { Grammar, Interface, isParserRule, ParserRule, Type } from '../grammar/generated/ast';
+import { Grammar } from '../grammar/generated/ast';
 import { LangiumDocuments } from '../workspace/documents';
 import { stream } from '../utils/stream';
-import { getDocument } from '../utils/ast-util';
 import { collectInferredTypes } from './inferred-types';
 import { collectDeclaredTypes } from './declared-types';
-import { AstTypes, InterfaceType, TypeType } from './types-util';
+import { AstTypes, collectAllAstResources, InterfaceType, TypeType } from './types-util';
 
 /**
  * Collects all types for the generated AST. The types collector entry point.
@@ -34,60 +31,6 @@ export function collectAst(documents: LangiumDocuments, grammars: Grammar[]): As
         interfaces: stream(interfaces).distinct(e => e.name).toArray(),
         types: stream(types).distinct(e => e.name).toArray(),
     };
-}
-
-export type InferredDeclaredTypes = {
-    inferred: AstTypes,
-    declared: AstTypes
-}
-
-/**
- * Collects declared and inferred types for the generated AST separately. The types collector entry point.
- * @param grammars Grammars that necessary to validate.
- */
-export function collectAstForValidation(grammar: Grammar): InferredDeclaredTypes {
-    const astResources = collectAllAstResources([grammar]);
-    const inferred = collectInferredTypes(Array.from(astResources.parserRules), Array.from(astResources.datatypeRules));
-    return {
-        inferred,
-        declared: collectDeclaredTypes(Array.from(astResources.interfaces), Array.from(astResources.types), inferred)
-    };
-}
-
-type AstResources = {
-    parserRules: Set<ParserRule>,
-    datatypeRules: Set<ParserRule>,
-    interfaces: Set<Interface>,
-    types: Set<Type>
-}
-
-function collectAllAstResources(grammars: Grammar[], documents?: LangiumDocuments, visited: Set<URI> = new Set(),
-    astResources: AstResources = { parserRules: new Set(), datatypeRules: new Set(), interfaces: new Set(), types: new Set() }): AstResources {
-
-    for (const grammar of grammars) {
-        const doc = getDocument(grammar);
-        if (visited.has(doc.uri)) {
-            continue;
-        }
-        visited.add(doc.uri);
-        for (const rule of grammar.rules) {
-            if (isParserRule(rule) && !rule.fragment) {
-                if (isDataTypeRule(rule)) {
-                    astResources.datatypeRules.add(rule);
-                } else {
-                    astResources.parserRules.add(rule);
-                }
-            }
-        }
-        grammar.interfaces.forEach(e => astResources.interfaces.add(e));
-        grammar.types.forEach(e => astResources.types.add(e));
-
-        if (documents) {
-            const importedGrammars = grammar.imports.map(e => resolveImport(documents, e)!);
-            collectAllAstResources(importedGrammars, documents, visited, astResources);
-        }
-    }
-    return astResources;
 }
 
 /**

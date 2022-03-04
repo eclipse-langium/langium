@@ -5,8 +5,13 @@
  ******************************************************************************/
 
 import _ from 'lodash';
+import { URI } from 'vscode-uri';
 import { CompositeGeneratorNode, IndentNode, NL } from '../generator/generator-node';
 import { processGeneratorNode } from '../generator/node-processor';
+import { Grammar, Interface, isParserRule, ParserRule, Type } from '../grammar/generated/ast';
+import { isDataTypeRule, resolveImport } from '../grammar/grammar-util';
+import { getDocument } from '../utils/ast-util';
+import { LangiumDocuments } from '../workspace/documents';
 
 export type Field = {
     name: string,
@@ -43,13 +48,6 @@ export class TypeType {
 
         if (this.reflection) pushReflectionInfo(this.name, typeNode);
         return processGeneratorNode(typeNode);
-    }
-
-    compare(type: TypeType): boolean {
-        return this.name === type.name &&
-            this.reflection === type.reflection &&
-            compareLists(this.superTypes, type.superTypes) &&
-            compareLists(this.alternatives, type.alternatives, compareFieldType);
     }
 }
 
@@ -88,16 +86,42 @@ export class InterfaceType {
         pushReflectionInfo(this.name, interfaceNode);
         return processGeneratorNode(interfaceNode);
     }
+}
 
-    compare(type: InterfaceType): boolean {
-        return this.name === type.name &&
-        compareLists(this.superTypes, type.superTypes) &&
-        compareLists(this.fields, type.fields, (x, y) =>
-            x.name === y.name &&
-            x.optional === y.optional &&
-            compareLists(x.typeAlternatives, y.typeAlternatives, compareFieldType)
-        );
+type AstResources = {
+    parserRules: Set<ParserRule>,
+    datatypeRules: Set<ParserRule>,
+    interfaces: Set<Interface>,
+    types: Set<Type>
+}
+
+export function collectAllAstResources(grammars: Grammar[], documents?: LangiumDocuments, visited: Set<URI> = new Set(),
+    astResources: AstResources = { parserRules: new Set(), datatypeRules: new Set(), interfaces: new Set(), types: new Set() }): AstResources {
+
+    for (const grammar of grammars) {
+        const doc = getDocument(grammar);
+        if (visited.has(doc.uri)) {
+            continue;
+        }
+        visited.add(doc.uri);
+        for (const rule of grammar.rules) {
+            if (isParserRule(rule) && !rule.fragment) {
+                if (isDataTypeRule(rule)) {
+                    astResources.datatypeRules.add(rule);
+                } else {
+                    astResources.parserRules.add(rule);
+                }
+            }
+        }
+        grammar.interfaces.forEach(e => astResources.interfaces.add(e));
+        grammar.types.forEach(e => astResources.types.add(e));
+
+        if (documents) {
+            const importedGrammars = grammar.imports.map(e => resolveImport(documents, e)!);
+            collectAllAstResources(importedGrammars, documents, visited, astResources);
+        }
     }
+    return astResources;
 }
 
 export function compareFieldType(a: FieldType, b: FieldType): boolean {
@@ -106,7 +130,7 @@ export function compareFieldType(a: FieldType, b: FieldType): boolean {
         compareLists(a.types, b.types);
 }
 
-function compareLists<T>(a: T[], b: T[], eq: (x: T, y: T) => boolean = (x: T, y: T) => x === y): boolean {
+export function compareLists<T>(a: T[], b: T[], eq: (x: T, y: T) => boolean = (x: T, y: T) => x === y): boolean {
     if (a.length !== b.length) return false;
     const distictAndSortedA = distictAndSorted(a);
     return distictAndSorted(b).every((e, i) => eq(e, distictAndSortedA[i]));
