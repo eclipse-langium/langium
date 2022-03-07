@@ -26,18 +26,13 @@ type TypeCollection = {
 class TypeTree {
     descendents: Map<TypeAlternative, TypeAlternative[]> = new Map();
 
-    addRoot(root: TypeAlternative): void {
+    constructor(root: TypeAlternative) {
         this.descendents.set(root, []);
     }
 
     split(type: TypeAlternative, count: number): TypeAlternative[] {
-        const descendents: TypeAlternative[] = [];
-
-        for (let i = 0; i < count; i++) {
-            const clone = _.cloneDeep(type);
-            descendents.push(clone);
-            this.descendents.set(clone, []);
-        }
+        const descendents: TypeAlternative[] = new Array(count).fill(_.cloneDeep(type));
+        descendents.forEach(e => this.descendents.set(e, []));
         this.descendents.set(type, descendents);
         return descendents;
     }
@@ -68,16 +63,13 @@ class TypeTree {
 }
 
 class TypeCollectorState {
-    tree: TypeTree = new TypeTree();
-    types: TypeAlternative[] = [];
+    tree: TypeTree;
     cardinalities: Cardinality[] = [];
     parserRule?: ParserRule;
     currentType?: TypeAlternative;
 
-    constructor(type?: TypeAlternative) {
-        if (type) {
-            this.tree.addRoot(type);
-        }
+    constructor(type: TypeAlternative) {
+        this.tree = new TypeTree(type);
     }
 
     enterGroup(cardinality: Cardinality): void {
@@ -95,14 +87,11 @@ class TypeCollectorState {
 
 export function collectInferredTypes(parserRules: ParserRule[], datatypeRules: ParserRule[]): AstTypes {
     // extract interfaces and types from parser rules
-    const state = new TypeCollectorState();
     const allTypes: TypeAlternative[] = [];
     for (const rule of parserRules) {
-        state.parserRule = rule;
         const type = initType(rule);
-        state.tree = new TypeTree();
-        state.tree.addRoot(type);
-        state.currentType = type;
+        const state = new TypeCollectorState(type);
+        state.parserRule = rule;
         collectElement(state, type, rule.alternatives);
         allTypes.push(...state.tree.getLeafNodes());
     }
@@ -121,6 +110,7 @@ export function collectInferredTypes(parserRules: ParserRule[], datatypeRules: P
     return inferredTypes;
 }
 
+// todo simplify
 function initType(rule: ParserRule | string): TypeAlternative {
     return {
         name: isParserRule(rule) ? getTypeName(rule) : rule,
@@ -141,22 +131,17 @@ function collectElement(state: TypeCollectorState, type: TypeAlternative, elemen
     state.currentType = type;
     state.enterGroup(element.cardinality);
     if (isOptional(element.cardinality)) {
-        const [item] = state.tree.split(state.currentType, 2);
-        state.currentType = item;
+        state.tree.split(state.currentType, 2);
     }
     if (isAlternatives(element)) {
-        const splits = state.tree.split(state.currentType, element.elements.length);
-        for (let i = 0; i < splits.length; i++) {
-            const item = element.elements[i];
-            const splitType = splits[i];
-            collectElement(state, splitType, item);
-        }
+        state.tree
+            .split(state.currentType, element.elements.length)
+            .forEach((split, i) => collectElement(state, split, element.elements[i]));
     } else if (isGroup(element) || isUnorderedGroup(element)) {
         for (const item of element.elements) {
-            const leaves = state.tree.getLeafNodesOf(type);
-            for (const leaf of leaves) {
-                collectElement(state, leaf, item);
-            }
+            state.tree
+                .getLeafNodesOf(type)
+                .forEach(leaf => collectElement(state, leaf, item));
         }
     } else if (isAction(element)) {
         addAction(state, element);
@@ -169,9 +154,9 @@ function collectElement(state: TypeCollectorState, type: TypeAlternative, elemen
 }
 
 function addAction(state: TypeCollectorState, action: Action): void {
-    let newType: TypeAlternative;
     const type = state.currentType;
     if (type) {
+        let newType: TypeAlternative;
         if (action.type !== type.name) {
             newType = initType(action.type);
             newType.super.push(getTypeName(state.parserRule));
