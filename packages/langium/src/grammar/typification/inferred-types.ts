@@ -1,13 +1,13 @@
 /******************************************************************************
- * Copyright 2021 TypeFox GmbH
+ * Copyright 2022 TypeFox GmbH
  * This program and the accompanying materials are made available under the
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
 import _ from 'lodash';
-import { Cardinality, getRuleType, getTypeName, isOptional } from '../grammar/grammar-util';
-import { AbstractElement, Action, Alternatives, Assignment, Group, isAction, isAlternatives, isAssignment, isCrossReference, isGroup, isKeyword, isParserRule, isRuleCall, isUnorderedGroup, ParserRule, RuleCall, UnorderedGroup } from '../grammar/generated/ast';
-import { stream } from '../utils/stream';
+import { Cardinality, getRuleType, getTypeName, isOptional } from '../grammar-util';
+import { AbstractElement, Action, Alternatives, Assignment, Group, isAction, isAlternatives, isAssignment, isCrossReference, isGroup, isKeyword, isParserRule, isRuleCall, isUnorderedGroup, ParserRule, RuleCall, UnorderedGroup } from '../generated/ast';
+import { stream } from '../../utils/stream';
 import { AstTypes, compareFieldType, Field, FieldType, InterfaceType, TypeType } from './types-util';
 
 type TypeAlternative = {

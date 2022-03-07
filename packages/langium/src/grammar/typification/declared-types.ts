@@ -1,13 +1,13 @@
 /******************************************************************************
- * Copyright 2021 TypeFox GmbH
+ * Copyright 2022 TypeFox GmbH
  * This program and the accompanying materials are made available under the
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { getTypeName, isDataTypeRule } from '../grammar/grammar-util';
-import { AtomType, Interface, isAction, isParserRule, Type } from '../grammar/generated/ast';
-import { MultiMap } from '../utils/collections';
+import { getTypeName, isDataTypeRule } from '../grammar-util';
+import { AtomType, Interface, isAction, isParserRule, Type } from '../generated/ast';
 import { AstTypes, Field, FieldType, InterfaceType, TypeType } from './types-util';
+import { MultiMap } from '../../utils/collections';
 
 export function collectDeclaredTypes(interfaces: Interface[], types: Type[], inferredTypes: AstTypes): AstTypes {
     const declaredTypes: AstTypes = {types: [], interfaces: []};

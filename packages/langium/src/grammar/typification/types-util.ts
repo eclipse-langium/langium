@@ -1,17 +1,17 @@
 /******************************************************************************
- * Copyright 2021 TypeFox GmbH
+ * Copyright 2022 TypeFox GmbH
  * This program and the accompanying materials are made available under the
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
 import _ from 'lodash';
 import { URI } from 'vscode-uri';
-import { CompositeGeneratorNode, IndentNode, NL } from '../generator/generator-node';
-import { processGeneratorNode } from '../generator/node-processor';
-import { Grammar, Interface, isParserRule, ParserRule, Type } from '../grammar/generated/ast';
-import { isDataTypeRule, resolveImport } from '../grammar/grammar-util';
-import { getDocument } from '../utils/ast-util';
-import { LangiumDocuments } from '../workspace/documents';
+import { CompositeGeneratorNode, IndentNode, NL } from '../../generator/generator-node';
+import { processGeneratorNode } from '../../generator/node-processor';
+import { Grammar, Interface, isParserRule, ParserRule, Type } from '../generated/ast';
+import { isDataTypeRule, resolveImport } from '../grammar-util';
+import { getDocument } from '../../utils/ast-util';
+import { LangiumDocuments } from '../../workspace/documents';
 
 export type Field = {
     name: string,

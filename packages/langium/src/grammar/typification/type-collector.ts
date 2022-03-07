@@ -4,9 +4,9 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { Grammar } from '../grammar/generated/ast';
-import { LangiumDocuments } from '../workspace/documents';
-import { stream } from '../utils/stream';
+import { Grammar } from '../generated/ast';
+import { LangiumDocuments } from '../../workspace/documents';
+import { stream } from '../../utils/stream';
 import { collectInferredTypes } from './inferred-types';
 import { collectDeclaredTypes } from './declared-types';
 import { AstTypes, collectAllAstResources, InterfaceType, TypeType } from './types-util';

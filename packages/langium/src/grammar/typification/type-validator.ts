@@ -1,12 +1,12 @@
 /******************************************************************************
- * Copyright 2021 TypeFox GmbH
+ * Copyright 2022 TypeFox GmbH
  * This program and the accompanying materials are made available under the
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { AbstractRule, Grammar } from '../grammar/generated/ast';
-import { getRuleType } from '../grammar/grammar-util';
-import { MultiMap } from '../utils/collections';
+import { AbstractRule, Grammar } from '../generated/ast';
+import { getRuleType } from '../grammar-util';
+import { MultiMap } from '../../utils/collections';
 import { collectDeclaredTypes } from './declared-types';
 import { collectInferredTypes } from './inferred-types';
 import { AstTypes, collectAllAstResources, compareFieldType, compareLists, InterfaceType, TypeType } from './types-util';
