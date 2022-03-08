@@ -10,7 +10,7 @@ import * as ast from '../grammar/generated/ast';
 import { CompositeCstNodeImpl } from '../parser/cst-node-builder';
 import { LangiumServices } from '../services';
 import { AstNode, AstNodeDescription, CstNode } from '../syntax-tree';
-import { getContainerOfType, getDocument, Mutable, streamAllContents } from '../utils/ast-util';
+import { extractRootNode, getContainerOfType, getDocument, Mutable, streamAllContents } from '../utils/ast-util';
 import { MultiMap } from '../utils/collections';
 import { streamCst } from '../utils/cst-util';
 import { escapeRegExp } from '../utils/regex-util';
@@ -406,13 +406,9 @@ export function processTypeNodeWithNodeLocator(astNodeLocator: AstNodeLocator): 
 }
 
 export function processActionNodeWithNodeDescriptionProvider(descriptions: AstNodeDescriptionProvider): (node: AstNode, document: LangiumDocument, scopes: PrecomputedScopes) => void {
-    type ContainerType = ast.Alternatives | ast.Assignment | ast.AtomType | ast.CharacterRange | ast.CrossReference | ast.Group | ast.NegatedToken | ast.ParserRule | ast.TerminalAlternatives | ast.TerminalGroup | ast.TerminalRule | ast.UnorderedGroup | ast.UntilToken;
     return (node: AstNode, document: LangiumDocument, scopes: PrecomputedScopes) => {
-        let container = node.$container;
+        const container = extractRootNode(node);
         if (container && ast.isAction(node)) {
-            while (container.$container) {
-                container = container.$container as ContainerType;
-            }
             scopes.add(container, descriptions.createDescription(node, node.type, document));
         }
     };

@@ -7,7 +7,7 @@
 import { DefaultScopeComputation, DefaultScopeProvider, Scope } from '../references/scope';
 import { LangiumServices } from '../services';
 import { AstNode, AstNodeDescription } from '../syntax-tree';
-import { getDocument } from '../utils/ast-util';
+import { extractRootNode, getDocument } from '../utils/ast-util';
 import { stream, Stream } from '../utils/stream';
 import { LangiumDocument, PrecomputedScopes } from '../workspace/documents';
 import { isReturnType } from './generated/ast';
@@ -24,28 +24,25 @@ export class LangiumScopeProvider extends DefaultScopeProvider {
 
         const scopes: Array<Stream<AstNodeDescription>> = [];
         const precomputed = getDocument(node).precomputedScopes;
-        if (precomputed) {
-            let currentNode: AstNode | undefined = node;
-            do {
-                const allDescriptions = precomputed.get(currentNode);
-                const parserRuleScopesArray: AstNodeDescription[] = [];
-                const scopesArray: AstNodeDescription[] = [];
-                if (allDescriptions.length > 0) {
-                    for (const description of allDescriptions) {
-                        if (this.reflection.isSubtype(description.type, 'ParserRule')) {
-                            parserRuleScopesArray.push(description);
-                        } else if (this.reflection.isSubtype(description.type, referenceType)) {
-                            scopesArray.push(description);
-                        }
+        const rootNode = extractRootNode(node);
+        if (precomputed && rootNode) {
+            const allDescriptions = precomputed.get(rootNode);
+            const parserRuleScopesArray: AstNodeDescription[] = [];
+            const scopesArray: AstNodeDescription[] = [];
+            if (allDescriptions.length > 0) {
+                for (const description of allDescriptions) {
+                    if (this.reflection.isSubtype(description.type, 'ParserRule')) {
+                        parserRuleScopesArray.push(description);
+                    } else if (this.reflection.isSubtype(description.type, referenceType)) {
+                        scopesArray.push(description);
                     }
-                    scopes.push(stream(
-                        scopesArray.concat(
-                            parserRuleScopesArray.filter(parserRule => !scopesArray.some(e => e.name === parserRule.name))
-                        )
-                    ));
                 }
-                currentNode = currentNode.$container;
-            } while (currentNode);
+                scopes.push(stream(
+                    scopesArray.concat(
+                        parserRuleScopesArray.filter(parserRule => !scopesArray.some(e => e.name === parserRule.name))
+                    )
+                ));
+            }
         }
 
         let result: Scope = this.getGlobalScope(referenceType);

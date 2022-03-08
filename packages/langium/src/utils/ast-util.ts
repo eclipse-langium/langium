@@ -4,6 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import * as ast from '../grammar/generated/ast';
 import { AstNode, AstNodeDescription, LinkingError, Reference, ReferenceInfo } from '../syntax-tree';
 import { DONE_RESULT, Stream, stream, StreamImpl, TreeStream, TreeStreamImpl } from '../utils/stream';
 import { LangiumDocument } from '../workspace/documents';
@@ -95,14 +96,11 @@ export function hasContainerOfType(node: AstNode | undefined, predicate: (n: Ast
  * @throws an error if the node is not contained in a document.
  */
 export function getDocument<T extends AstNode = AstNode>(node: AstNode): LangiumDocument<T> {
-    let n = node;
-    while (!n.$document && n.$container) {
-        n = n.$container;
-    }
-    if (!n.$document) {
+    const rootNode = extractRootNode(node);
+    if (!rootNode?.$document) {
         throw new Error('AST node has no document.');
     }
-    return n.$document as LangiumDocument<T>;
+    return rootNode.$document as LangiumDocument<T>;
 }
 
 /**
@@ -202,4 +200,12 @@ export function findLocalReferences(targetNode: AstNode, lookup = getDocument(ta
     process(lookup);
     streamAllContents(lookup).forEach(node => process(node));
     return stream(refs);
+}
+
+export function extractRootNode(node: AstNode): AstNode | undefined {
+    type ContainerType = ast.Alternatives | ast.Assignment | ast.AtomType | ast.CharacterRange | ast.CrossReference | ast.Group | ast.NegatedToken | ast.ParserRule | ast.TerminalAlternatives | ast.TerminalGroup | ast.TerminalRule | ast.UnorderedGroup | ast.UntilToken;
+    while (node?.$container) {
+        node = node?.$container as ContainerType;
+    }
+    return node;
 }
