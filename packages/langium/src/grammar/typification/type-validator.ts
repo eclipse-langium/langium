@@ -9,83 +9,134 @@ import { getRuleType } from '../grammar-util';
 import { MultiMap } from '../../utils/collections';
 import { collectDeclaredTypes } from './declared-types';
 import { collectInferredTypes } from './inferred-types';
-import { AstTypes, collectAllAstResources, compareFieldType, compareLists, InterfaceType, TypeType } from './types-util';
+import { AstTypes, collectAllAstResources, Field, FieldType, InterfaceType, typeFieldToString, TypeType } from './types-util';
 
 export type TypeInconsistency = {
-    node: AbstractRule,
-    typeName: string
+    nodes: readonly AbstractRule[];
+    inconsistencyReasons: string[];
 }
 
 export function validateTypes(grammar: Grammar): TypeInconsistency[] {
-    const types = collectAstForValidation(grammar);
-    if (!types) return [];
-    const typeToRule = astTypeNames(grammar.rules);
-    const result = [];
+    const result: TypeInconsistency[] = [];
+    const validationResources = collectValidationResources(grammar);
+    for (const [inferredTypeName, inferredType] of validationResources.nameToInferredType.entries()) {
+        const declaredType = validationResources.nameToDeclaredType.get(inferredTypeName);
+        if (!declaredType) continue;
 
-    const declaredTypeNames = new Map<string, TypeType>();
-    types.declared.types.map(e => declaredTypeNames.set(e.name, e));
-    for (const inferredType of types.inferred.types) {
-        const declaredType = declaredTypeNames.get(inferredType.name);
-        if (declaredType && !compareTypes(inferredType, declaredType)) {
-            for (const node of typeToRule.get(inferredType.name)) {
-                result.push({
-                    node,
-                    typeName: inferredType.name
-                });
-            }
+        const inconsistencyReasons: string[] = [];
+        if (isType(declaredType) && isType(inferredType.type)) {
+            inconsistencyReasons.push(...checkAlternativesConsistency(inferredType.type.alternatives, declaredType.alternatives));
+        } else if (isInterface(declaredType) && isInterface(inferredType.type)) {
+            inconsistencyReasons.push(...checkFieldConsistency(inferredType.type.fields, declaredType.fields));
+            inconsistencyReasons.push(...checkStringElementConsistency(inferredType.type.superTypes, declaredType.superTypes, 'super type'));
+        } else {
+            inconsistencyReasons.push(`Inferred and declared versions of type ${inferredTypeName} have to be both types or interfaces.`);
+        }
+
+        if (inconsistencyReasons.length > 0) {
+            result.push({
+                nodes: inferredType.rules,
+                inconsistencyReasons,
+            });
         }
     }
-
-    const declaredInterfaceNames = new Map<string, InterfaceType>();
-    types.declared.interfaces.map(e => declaredInterfaceNames.set(e.name, e));
-    for (const inferredType of types.inferred.interfaces) {
-        const declaredType = declaredInterfaceNames.get(inferredType.name);
-        if (declaredType && !compareInterfaces(inferredType, declaredType)) {
-            for (const node of typeToRule.get(inferredType.name)) {
-                result.push({
-                    node,
-                    typeName: inferredType.name
-                });
-            }
-        }
-    }
-
     return result;
 }
 
-type InferredDeclaredTypes = {
-    inferred: AstTypes,
-    declared: AstTypes
+type Type = InterfaceType | TypeType;
+
+function isType(type: Type): type is TypeType {
+    return type && 'alternatives' in type;
 }
 
-function collectAstForValidation(grammar: Grammar): InferredDeclaredTypes {
+function isInterface(type: Type): type is InterfaceType {
+    return type && 'fields' in type;
+}
+
+type TypeToRules = {
+    type: Type;
+    rules: readonly AbstractRule[];
+}
+
+type ValidationResources = {
+    nameToInferredType: Map<string, TypeToRules>;
+    nameToDeclaredType: Map<string, Type>;
+}
+
+function collectValidationResources(grammar: Grammar): ValidationResources {
     const astResources = collectAllAstResources([grammar]);
     const inferred = collectInferredTypes(Array.from(astResources.parserRules), Array.from(astResources.datatypeRules));
-    return {
-        inferred,
-        declared: collectDeclaredTypes(Array.from(astResources.interfaces), Array.from(astResources.types), inferred)
-    };
+    const declared = collectDeclaredTypes(Array.from(astResources.interfaces), Array.from(astResources.types), inferred);
+
+    const nameToDeclaredType = mergeTypesAndInterfaces(declared)
+        .reduce((acc, type) => acc.set(type.name, type), new Map<string, Type>());
+
+    const typeNameToRule = grammar.rules
+        .reduce((acc, rule) => acc.add(getRuleType(rule), rule),
+            new MultiMap<string, AbstractRule>()
+        );
+    const nameToInferredType = mergeTypesAndInterfaces(inferred)
+        .reduce((acc, type) => acc.set(type.name, { type, rules: typeNameToRule.get(type.name) }),
+            new Map<string, TypeToRules>()
+        );
+
+    return { nameToDeclaredType, nameToInferredType };
 }
 
-function astTypeNames(rules: AbstractRule[]): MultiMap<string, AbstractRule> {
-    const typeNameToRule = new MultiMap<string, AbstractRule>();
-    rules.map(rule => typeNameToRule.add(getRuleType(rule), rule));
-    return typeNameToRule;
+function mergeTypesAndInterfaces(astTypes: AstTypes): Type[] {
+    return (astTypes.interfaces as Type[]).concat(astTypes.types);
 }
 
-function compareTypes(a: TypeType, b: TypeType): boolean {
-    return a.name === b.name &&
-        a.reflection === b.reflection &&
-        compareLists(a.superTypes, b.superTypes) &&
-        compareLists(a.alternatives, b.alternatives, compareFieldType);
+function checkStringElementConsistency(inferredType: string[], declaredType: string[], errorElementName: string): string[] {
+    const extra = inferredType.filter(e => !declaredType.includes(e));
+    const lack = declaredType.filter(e => !inferredType.includes(e));
+    return getExtraAndLackError(extra, lack, errorElementName);
 }
 
-function compareInterfaces(a: InterfaceType, b: InterfaceType): boolean {
-    return a.name === b.name &&
-    compareLists(a.superTypes, b.superTypes) &&
-    compareLists(a.fields, b.fields, (x, y) =>
-        x.name === y.name &&
-        x.optional === y.optional &&
-        compareLists(x.typeAlternatives, y.typeAlternatives, compareFieldType)
-    );
+function checkAlternativesConsistency(inferredType: FieldType[], declaredType: FieldType[], errorElementName = 'type alternative'): string[] {
+    return checkStringElementConsistency(inferredType.map(typeFieldToString), declaredType.map(typeFieldToString), errorElementName);
+}
+
+type ComparingFields = {
+    inferredField: Field;
+    declaredField: Field;
+}
+
+function checkFieldConsistency(inferredType: Field[], declaredType: Field[]): string[] {
+    const inconsistencyReasons: string[] = [];
+    const commonByName: ComparingFields[] = [];
+    const extra: string[] = [];
+    for (const inferredField of inferredType) {
+        const declaredField = declaredType.find(e => e.name === inferredField.name);
+        if (declaredField) {
+            commonByName.push({ inferredField, declaredField });
+        } else {
+            extra.push(inferredField.name);
+        }
+    }
+
+    const lack: string[] = declaredType
+        .filter(declaredField => !inferredType.some(inferredField => inferredField.name === declaredField.name))
+        .map(e => e.name);
+    inconsistencyReasons.push(...getExtraAndLackError(extra, lack, 'field'));
+
+    for (const comparingFields of commonByName) {
+        const inferred = comparingFields.inferredField;
+        const declared = comparingFields.declaredField;
+        inconsistencyReasons.push(...checkAlternativesConsistency(inferred.typeAlternatives, declared.typeAlternatives, `type alternative of '${inferred.name}' field`));
+        if (inferred.optional && !declared.optional) {
+            inconsistencyReasons.push(`Inferred field '${inferred.name}' is optional, but declared one is mandatory.`);
+        } else if (!inferred.optional && declared.optional) {
+            inconsistencyReasons.push(`Declared field '${inferred.name}' is optional, but inferred one is mandatory.`);
+        }
+    }
+
+    return inconsistencyReasons;
+}
+
+function getExtraAndLackError(extra: string[], lack: string[], errorElementName: string): string[] {
+    const inconsistencyReasons: string[] = [];
+    extra.forEach(e => inconsistencyReasons.push(`There is no '${e}' ${errorElementName ?? ''} in declared type.`));
+    lack.forEach(e => inconsistencyReasons.push(`Lack of '${e}' ${errorElementName ?? ''} in inferred type.`));
+    return inconsistencyReasons;
 }

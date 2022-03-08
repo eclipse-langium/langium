@@ -408,10 +408,14 @@ export class LangiumGrammarValidator {
 
     checkTypes(grammar: ast.Grammar, accept: ValidationAcceptor): void {
         for (const typeInconsistency of validateTypes(grammar)) {
-            accept('error', `The inferred type ${typeInconsistency.typeName} is not consistent with its declared version.`, {
-                node: typeInconsistency.node,
-                property: typeInconsistency.node.type ? 'type' : 'name'
-            });
+            for (const errorMessage of typeInconsistency.inconsistencyReasons) {
+                for (const node of typeInconsistency.nodes) {
+                    accept('error', errorMessage, {
+                        node,
+                        property: node.type ? 'type' : 'name'
+                    });
+                }
+            }
         }
     }
 

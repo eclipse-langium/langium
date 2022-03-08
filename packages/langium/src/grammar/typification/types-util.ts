@@ -123,27 +123,15 @@ export function collectAllAstResources(grammars: Grammar[], documents?: LangiumD
     return astResources;
 }
 
-export function compareFieldType(a: FieldType, b: FieldType): boolean {
-    return a.array === b.array &&
-        a.reference === b.reference &&
-        compareLists(a.types, b.types);
-}
-
-export function compareLists<T>(a: T[], b: T[], eq: (x: T, y: T) => boolean = (x: T, y: T) => x === y): boolean {
-    if (a.length !== b.length) return false;
-    const distictAndSortedA = distictAndSorted(a);
-    return distictAndSorted(b).every((e, i) => eq(e, distictAndSortedA[i]));
-}
-
 function fieldTypeArrayToString(alternatives: FieldType[]): string {
     return distictAndSorted(alternatives.map(typeFieldToString)).join(' | ');
 }
 
-function distictAndSorted<T>(list: T[], compareFn?: (a: T, b: T) => number): T[] {
+export function distictAndSorted<T>(list: T[], compareFn?: (a: T, b: T) => number): T[] {
     return Array.from(new Set(list)).sort(compareFn);
 }
 
-function typeFieldToString(fieldType: FieldType): string {
+export function typeFieldToString(fieldType: FieldType): string {
     let res = distictAndSorted(fieldType.types).join(' | ');
     res = fieldType.reference ? `Reference<${res}>` : res;
     res = fieldType.array ? `Array<${res}>` : res;

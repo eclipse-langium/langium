@@ -7,7 +7,7 @@
 import { Cardinality, getRuleType, getTypeName, isOptional } from '../grammar-util';
 import { AbstractElement, Action, Alternatives, Assignment, Group, isAction, isAlternatives, isAssignment, isCrossReference, isGroup, isKeyword, isParserRule, isRuleCall, isUnorderedGroup, ParserRule, RuleCall, UnorderedGroup } from '../generated/ast';
 import { stream } from '../../utils/stream';
-import { AstTypes, compareFieldType, Field, FieldType, InterfaceType, TypeType } from './types-util';
+import { AstTypes, distictAndSorted, Field, FieldType, InterfaceType, TypeType } from './types-util';
 
 type TypeAlternative = {
     name: string,
@@ -314,6 +314,18 @@ function isNotInTypeAlternatives(typeAlternatives: FieldType[]): (type: FieldTyp
     return (type: FieldType) => {
         return !typeAlternatives.some(e => compareFieldType(e, type));
     };
+}
+
+function compareFieldType(a: FieldType, b: FieldType): boolean {
+    return a.array === b.array &&
+        a.reference === b.reference &&
+        compareLists(a.types, b.types);
+}
+
+function compareLists<T>(a: T[], b: T[], eq: (x: T, y: T) => boolean = (x: T, y: T) => x === y): boolean {
+    if (a.length !== b.length) return false;
+    const distictAndSortedA = distictAndSorted(a);
+    return distictAndSorted(b).every((e, i) => eq(e, distictAndSortedA[i]));
 }
 
 /**
