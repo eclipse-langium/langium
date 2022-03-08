@@ -4,7 +4,6 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import _ from 'lodash';
 import { Cardinality, getRuleType, getTypeName, isOptional } from '../grammar-util';
 import { AbstractElement, Action, Alternatives, Assignment, Group, isAction, isAlternatives, isAssignment, isCrossReference, isGroup, isKeyword, isParserRule, isRuleCall, isUnorderedGroup, ParserRule, RuleCall, UnorderedGroup } from '../generated/ast';
 import { stream } from '../../utils/stream';
@@ -31,7 +30,7 @@ class TypeTree {
     }
 
     split(type: TypeAlternative, count: number): TypeAlternative[] {
-        const descendents: TypeAlternative[] = new Array(count).fill(_.cloneDeep(type));
+        const descendents: TypeAlternative[] = new Array(count).fill(JSON.parse(JSON.stringify(type)));
         descendents.forEach(e => this.descendents.set(e, []));
         this.descendents.set(type, descendents);
         return descendents;
@@ -398,7 +397,7 @@ function extractTypes(interfaces: InterfaceType[]): AstTypes {
     // define printingSuperTypes containing intefaces that
     // became types from super types of their "former" children
     for (const interfaceType of astTypes.interfaces) {
-        interfaceType.printingSuperTypes = _.cloneDeep(interfaceType.superTypes)
+        interfaceType.printingSuperTypes = (JSON.parse(JSON.stringify(interfaceType.superTypes)) as string[])
             .filter(superType => !typeNames.includes(superType));
     }
     return astTypes;

@@ -4,7 +4,6 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import _ from 'lodash';
 import { URI } from 'vscode-uri';
 import { CompositeGeneratorNode, IndentNode, NL } from '../../generator/generator-node';
 import { processGeneratorNode } from '../../generator/node-processor';
@@ -62,7 +61,7 @@ export class InterfaceType {
     constructor(name: string, superTypes: string[], fields: Field[]) {
         this.name = name;
         this.superTypes = superTypes;
-        this.printingSuperTypes = _.cloneDeep(superTypes);
+        this.printingSuperTypes = JSON.parse(JSON.stringify(superTypes));
         this.fields = fields;
     }
 
