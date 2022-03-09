@@ -46,7 +46,8 @@ export class LangiumGrammarValidationRegistry extends ValidationRegistry {
                 validator.checkDuplicateImportedGrammar,
                 validator.checkGrammarHiddenTokens,
                 validator.checkGrammarForUnusedRules,
-                validator.checkGrammarImports
+                validator.checkGrammarImports,
+                validator.checkGrammarTypeAliases
             ],
             GrammarImport: validator.checkPackageImport,
             CharacterRange: validator.checkInvalidCharacterRange,
@@ -316,6 +317,30 @@ export class LangiumGrammarValidator {
         }
     }
 
+    checkGrammarTypeAliases(grammar: ast.Grammar, accept: ValidationAcceptor): void {
+        const types = new Set<string>();
+        for (const type of grammar.types) {
+            types.add(type.name);
+        }
+        for (const rule of grammar.rules) {
+            if (rule.type?.name && types.has(rule.type.name)) {
+                accept('error', 'Rules are not allowed to return alias types.', { node: rule.type, property: 'name' });
+            }
+        }
+        for (const interfaceType of grammar.interfaces) {
+            interfaceType.superTypes.forEach((superType, i) => {
+                if (superType.ref && ast.isType(superType.ref)) {
+                    accept('error', 'Interfaces cannot extend alias types.', { node: interfaceType, property: 'superTypes', index: i });
+                }
+            });
+        }
+        for (const action of streamAllContents(grammar).filter(ast.isAction)) {
+            if (action.type && types.has(action.type)) {
+                accept('error', 'Actions cannot create alias types.', { node: action, property: 'type' });
+            }
+        }
+    }
+
     checkInvalidCharacterRange(range: ast.CharacterRange, accept: ValidationAcceptor): void {
         if (range.right) {
             const message = 'Character ranges cannot use more than one character';
@@ -409,13 +434,13 @@ export class LangiumGrammarValidator {
         if (!hasDatatypeReturnType && isDataType) {
             accept('error', 'This parser rule does not create an object. Add a primitive return type or an action to the start of the rule to force object instantiation.', { node: rule, property: 'name' });
         } else if (hasDatatypeReturnType && !isDataType) {
-            accept('error', 'Normal parser rules are not allowed to return a primitive value. Use a datatype rule for that.', { node: rule, property: 'type' });
+            accept('error', 'Normal parser rules are not allowed to return a primitive value. Use a datatype rule for that.', { node: rule.type, property: 'name' });
         }
     }
 
     checkTerminalRuleReturnType(rule: ast.TerminalRule, accept: ValidationAcceptor): void {
         if (rule.type?.name && !isPrimitiveType(rule.type.name)) {
-            accept('error', "Terminal rules can only return primitive types like 'string', 'boolean', 'number' or 'date'.", { node: rule, property: 'type' });
+            accept('error', "Terminal rules can only return primitive types like 'string', 'boolean', 'number' or 'date'.", { node: rule.type, property: 'name' });
         }
     }
 

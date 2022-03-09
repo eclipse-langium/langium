@@ -6,11 +6,12 @@
 
 import { CancellationToken, Diagnostic, DiagnosticSeverity } from 'vscode-languageserver';
 import { Range } from 'vscode-languageserver-textdocument';
-import { tokenToRange } from '..';
 import { findNodeForFeature } from '../grammar/grammar-util';
+import { LanguageMetaData } from '../grammar/language-meta-data';
 import { LangiumServices } from '../services';
 import { AstNode } from '../syntax-tree';
 import { streamAllContents } from '../utils/ast-util';
+import { tokenToRange } from '../utils/cst-util';
 import { interruptAndCheck } from '../utils/promise-util';
 import { LangiumDocument } from '../workspace/documents';
 import { DiagnosticInfo, ValidationAcceptor, ValidationRegistry } from './validation-registry';
@@ -30,9 +31,11 @@ export interface DocumentValidator {
 
 export class DefaultDocumentValidator {
     protected readonly validationRegistry: ValidationRegistry;
+    protected readonly metadata: LanguageMetaData;
 
     constructor(services: LangiumServices) {
         this.validationRegistry = services.validation.ValidationRegistry;
+        this.metadata = services.LanguageMetaData;
     }
 
     async validateDocument(document: LangiumDocument, cancelToken = CancellationToken.None): Promise<Diagnostic[]> {
@@ -125,8 +128,13 @@ export class DefaultDocumentValidator {
             codeDescription: info.codeDescription,
             tags: info.tags,
             relatedInformation: info.relatedInformation,
-            data: info.data
+            data: info.data,
+            source: this.getSource()
         };
+    }
+
+    protected getSource(): string | undefined {
+        return this.metadata.languageId;
     }
 }
 
