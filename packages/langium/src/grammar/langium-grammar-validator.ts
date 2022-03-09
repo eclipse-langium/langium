@@ -52,7 +52,7 @@ export class LangiumGrammarValidationRegistry extends ValidationRegistry {
                 validator.checkGrammarImports,
                 validator.checkGrammarTypeAliases,
                 validator.checkGrammarTypeInfer,
-                validator.checkTypes
+                validator.checkTypesConsistency
             ],
             GrammarImport: validator.checkPackageImport,
             CharacterRange: validator.checkInvalidCharacterRange,
@@ -406,14 +406,17 @@ export class LangiumGrammarValidator {
         }
     }
 
-    checkTypes(grammar: ast.Grammar, accept: ValidationAcceptor): void {
+    checkTypesConsistency(grammar: ast.Grammar, accept: ValidationAcceptor): void {
         for (const typeInconsistency of validateTypes(grammar)) {
             for (const errorMessage of typeInconsistency.inconsistencyReasons) {
                 for (const node of typeInconsistency.nodes) {
-                    accept('error', errorMessage, {
-                        node,
-                        property: node.type ? 'type' : 'name'
-                    });
+                    if (ast.isParserRule(node)) {
+                        accept('error', errorMessage, { node, property: node.type ? 'type' : 'name'});
+                    } else if (ast.isAction(node)) {
+                        accept('error', errorMessage, { node, property: 'type'});
+                    } else {
+                        accept('error', errorMessage, { node, property: 'name'});
+                    }
                 }
             }
         }

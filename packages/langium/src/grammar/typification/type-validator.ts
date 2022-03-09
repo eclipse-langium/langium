@@ -4,15 +4,16 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { AbstractRule, Grammar } from '../generated/ast';
+import { AbstractType, Grammar } from '../generated/ast';
 import { getRuleType } from '../grammar-util';
 import { MultiMap } from '../../utils/collections';
 import { collectDeclaredTypes } from './declared-types';
 import { collectInferredTypes } from './inferred-types';
 import { AstTypes, collectAllAstResources, Field, FieldType, InterfaceType, typeFieldToString, TypeType } from './types-util';
+import { stream } from '../../utils/stream';
 
 export type TypeInconsistency = {
-    nodes: readonly AbstractRule[];
+    nodes: readonly AbstractType[];
     inconsistencyReasons: string[];
 }
 
@@ -24,18 +25,18 @@ export function validateTypes(grammar: Grammar): TypeInconsistency[] {
         if (!declaredType) continue;
 
         const inconsistencyReasons: string[] = [];
-        if (isType(declaredType) && isType(inferredType.type)) {
-            inconsistencyReasons.push(...checkAlternativesConsistency(inferredType.type.alternatives, declaredType.alternatives));
-        } else if (isInterface(declaredType) && isInterface(inferredType.type)) {
-            inconsistencyReasons.push(...checkFieldConsistency(inferredType.type.fields, declaredType.fields));
-            inconsistencyReasons.push(...checkStringElementConsistency(inferredType.type.superTypes, declaredType.superTypes, 'super type'));
+        if (isType(declaredType.type) && isType(inferredType.type)) {
+            inconsistencyReasons.push(...checkAlternativesConsistency(inferredType.type.alternatives, declaredType.type.alternatives));
+        } else if (isInterface(declaredType.type) && isInterface(inferredType.type)) {
+            inconsistencyReasons.push(...checkFieldConsistency(inferredType.type.fields, declaredType.type.fields));
+            inconsistencyReasons.push(...checkStringElementConsistency(inferredType.type.printingSuperTypes, declaredType.type.printingSuperTypes, 'super type'));
         } else {
             inconsistencyReasons.push(`Inferred and declared versions of type ${inferredTypeName} have to be both types or interfaces.`);
         }
 
         if (inconsistencyReasons.length > 0) {
             result.push({
-                nodes: inferredType.rules,
+                nodes: inferredType.nodes,
                 inconsistencyReasons,
             });
         }
@@ -53,31 +54,39 @@ function isInterface(type: Type): type is InterfaceType {
     return type && 'fields' in type;
 }
 
-type TypeToRules = {
+type TypeToNodes = {
     type: Type;
-    rules: readonly AbstractRule[];
+    nodes: readonly AbstractType[];
 }
 
 type ValidationResources = {
-    nameToInferredType: Map<string, TypeToRules>;
-    nameToDeclaredType: Map<string, Type>;
+    nameToInferredType: Map<string, TypeToNodes>;
+    nameToDeclaredType: Map<string, TypeToNodes>;
 }
 
-function collectValidationResources(grammar: Grammar): ValidationResources {
+export function collectValidationResources(grammar: Grammar): ValidationResources {
     const astResources = collectAllAstResources([grammar]);
     const inferred = collectInferredTypes(Array.from(astResources.parserRules), Array.from(astResources.datatypeRules));
     const declared = collectDeclaredTypes(Array.from(astResources.interfaces), Array.from(astResources.types), inferred);
 
+    const typeNameToType = stream(astResources.interfaces)
+        .concat(astResources.types)
+        .reduce((acc, type) => acc.add(type.name, type),
+            new MultiMap<string, AbstractType>()
+        );
     const nameToDeclaredType = mergeTypesAndInterfaces(declared)
-        .reduce((acc, type) => acc.set(type.name, type), new Map<string, Type>());
+        .reduce((acc, type) => acc.set(type.name, { type, nodes: typeNameToType.get(type.name) }),
+            new Map<string, TypeToNodes>()
+        );
 
-    const typeNameToRule = grammar.rules
+    const typeNameToRule = stream(astResources.parserRules)
+        .concat(astResources.datatypeRules)
         .reduce((acc, rule) => acc.add(getRuleType(rule), rule),
-            new MultiMap<string, AbstractRule>()
+            new MultiMap<string, AbstractType>()
         );
     const nameToInferredType = mergeTypesAndInterfaces(inferred)
-        .reduce((acc, type) => acc.set(type.name, { type, rules: typeNameToRule.get(type.name) }),
-            new Map<string, TypeToRules>()
+        .reduce((acc, type) => acc.set(type.name, { type, nodes: typeNameToRule.get(type.name) }),
+            new Map<string, TypeToNodes>()
         );
 
     return { nameToDeclaredType, nameToInferredType };
