@@ -87,7 +87,7 @@ export class InterfaceType {
     }
 }
 
-type AstResources = {
+export type AstResources = {
     parserRules: Set<ParserRule>,
     datatypeRules: Set<ParserRule>,
     interfaces: Set<Interface>,

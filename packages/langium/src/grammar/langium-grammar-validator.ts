@@ -19,7 +19,7 @@ import { LangiumDocument, LangiumDocuments } from '../workspace/documents';
 import * as ast from './generated/ast';
 import { findKeywordNode, findNameAssignment, getEntryRule, isDataTypeRule, resolveImport, resolveTransitiveImports, terminalRegex } from './grammar-util';
 import type { LangiumGrammarServices } from './langium-grammar-module';
-import { validateTypes } from './type-system/type-validator';
+import { applyErrorToAssignment, collectAllInterfaces, InterfaceInfo, validateTypesConsistency } from './type-system/type-validator';
 
 type LangiumGrammarChecks = { [type in ast.LangiumGrammarAstType]?: ValidationCheck | ValidationCheck[] }
 
@@ -52,7 +52,8 @@ export class LangiumGrammarValidationRegistry extends ValidationRegistry {
                 validator.checkGrammarImports,
                 validator.checkGrammarTypeAliases,
                 validator.checkGrammarTypeInfer,
-                validator.checkTypesConsistency
+                validator.checkTypesConsistency,
+                validator.checkPropertyNameDuplication
             ],
             GrammarImport: validator.checkPackageImport,
             CharacterRange: validator.checkInvalidCharacterRange,
@@ -407,7 +408,47 @@ export class LangiumGrammarValidator {
     }
 
     checkTypesConsistency(grammar: ast.Grammar, accept: ValidationAcceptor): void {
-        validateTypes(grammar, accept);
+        validateTypesConsistency(grammar, accept);
+    }
+
+    checkPropertyNameDuplication(grammar: ast.Grammar, accept: ValidationAcceptor): void {
+        if (grammar.interfaces.length === 0) return;
+
+        const nameToInterfaceInfo = collectAllInterfaces(grammar);
+
+        for (const interfaceName of grammar.interfaces.map(e => e.name)) {
+            const propertyNameToNode: MultiMap<string, ast.Interface | readonly ast.ParserRule[]> = new MultiMap();
+            this.collectPropertyNamesForHierarchy(nameToInterfaceInfo, new Set(), propertyNameToNode, interfaceName);
+
+            for (const propertyName of propertyNameToNode.keys()) {
+                const nodes = propertyNameToNode.get(propertyName) ?? [];
+                if (nodes.length < 2) continue;
+                for (const node of nodes) {
+                    const errorMessage = `A property '${propertyName}' has to be unique for the whole hierarchy.`;
+                    if (ast.isInterface(node)) {
+                        const attributeNode = node.attributes.find(e => e.name === propertyName);
+                        if (attributeNode) {
+                            accept('error', errorMessage, { node: attributeNode, property: 'name' });
+                        }
+                    } else {
+                        applyErrorToAssignment(node, accept)(propertyName, errorMessage);
+                    }
+                }
+            }
+        }
+    }
+
+    private collectPropertyNamesForHierarchy(nameToInterfaceInfo: Map<string, InterfaceInfo>, visited: Set<string>, result: MultiMap<string, ast.Interface | readonly ast.ParserRule[]>, interfaceName: string): void {
+        function collectPropertyNamesForHierarchyInternal(interfaceName: string) {
+            if (visited.has(interfaceName)) return;
+            visited.add(interfaceName);
+            const interfaceInfo = nameToInterfaceInfo.get(interfaceName);
+            if (interfaceInfo) {
+                interfaceInfo.type.properties.forEach(propery => result.add(propery.name, interfaceInfo.node));
+                interfaceInfo.type.printingSuperTypes.forEach(superType => collectPropertyNamesForHierarchyInternal(superType));
+            }
+        }
+        collectPropertyNamesForHierarchyInternal(interfaceName);
     }
 
     checkInvalidCharacterRange(range: ast.CharacterRange, accept: ValidationAcceptor): void {

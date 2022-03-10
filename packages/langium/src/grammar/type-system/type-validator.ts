@@ -9,12 +9,12 @@ import { getRuleType } from '../grammar-util';
 import { MultiMap } from '../../utils/collections';
 import { collectDeclaredTypes } from './declared-types';
 import { collectInferredTypes } from './inferred-types';
-import { AstTypes, collectAllAstResources, distictAndSorted, Property, PropertyType, propertyTypeArrayToString, InterfaceType, TypeType } from './types-util';
+import { AstTypes, collectAllAstResources, distictAndSorted, Property, PropertyType, propertyTypeArrayToString, InterfaceType, TypeType, AstResources } from './types-util';
 import { stream } from '../../utils/stream';
 import { ValidationAcceptor } from '../../validation/validation-registry';
 import { extractAssignments } from '../../utils/ast-util';
 
-export function validateTypes(grammar: Grammar, accept: ValidationAcceptor): void {
+export function validateTypesConsistency(grammar: Grammar, accept: ValidationAcceptor): void {
     function applyErrorToRuleNodes(nodes: readonly ParserRule[], typeName: string): (errorMessage: string) => void {
         return (errorMessage: string) => {
             nodes.forEach(node => accept('error',
@@ -24,24 +24,11 @@ export function validateTypes(grammar: Grammar, accept: ValidationAcceptor): voi
         };
     }
 
-    function applyErrorToAssignment(nodes: readonly ParserRule[]): (propertyName: string, errorMessage: string) => void {
-        const assignmentNodes = nodes.flatMap(node => extractAssignments(node.alternatives));
-        return (propertyName: string, errorMessage: string) => {
-            const node = assignmentNodes.find(assignment => assignment.feature === propertyName);
-            if (node) {
-                accept('error',
-                    errorMessage,
-                    { node, property: 'feature' }
-                );
-            }
-        };
-    }
-
     const validationResources = collectValidationResources(grammar);
     for (const [typeName, typeInfo] of validationResources.entries()) {
         if (!isInferredAndDeclared(typeInfo)) continue;
         const errorToRuleNodes = applyErrorToRuleNodes(typeInfo.nodes, typeName);
-        const errorToAssignment = applyErrorToAssignment(typeInfo.nodes);
+        const errorToAssignment = applyErrorToAssignment(typeInfo.nodes, accept);
 
         if (isType(typeInfo.inferred) && isType(typeInfo.declared)) {
             checkAlternativesConsistency(typeInfo.inferred.alternatives, typeInfo.declared.alternatives, errorToRuleNodes);
@@ -58,6 +45,19 @@ export function validateTypes(grammar: Grammar, accept: ValidationAcceptor): voi
             );
         }
     }
+}
+
+export function applyErrorToAssignment(nodes: readonly ParserRule[], accept: ValidationAcceptor): (propertyName: string, errorMessage: string) => void {
+    const assignmentNodes = nodes.flatMap(node => extractAssignments(node.alternatives));
+    return (propertyName: string, errorMessage: string) => {
+        const node = assignmentNodes.find(assignment => assignment.feature === propertyName);
+        if (node) {
+            accept('error',
+                errorMessage,
+                { node, property: 'feature' }
+            );
+        }
+    };
 }
 
 type TypeOrInterface = TypeType | InterfaceType;
@@ -88,19 +88,15 @@ type ValidationResources = Map<string, InferredInfo | DeclaredInfo | InferredInf
 
 export function collectValidationResources(grammar: Grammar): ValidationResources {
     const astResources = collectAllAstResources([grammar]);
-
     const inferred = collectInferredTypes(Array.from(astResources.parserRules), Array.from(astResources.datatypeRules));
-    const typeNameToRules = stream(astResources.parserRules)
-        .concat(astResources.datatypeRules)
-        .reduce((acc, rule) => acc.add(getRuleType(rule), rule),
-            new MultiMap<string, ParserRule>()
-        );
+    const declared = collectDeclaredTypes(Array.from(astResources.interfaces), Array.from(astResources.types), inferred);
+
+    const typeNameToRules = getTypeNameToRules(astResources);
     const inferredInfo = mergeTypesAndInterfaces(inferred)
         .reduce((acc, type) => acc.set(type.name, { inferred: type, nodes: typeNameToRules.get(type.name) }),
             new Map<string, InferredInfo>()
         );
 
-    const declared = collectDeclaredTypes(Array.from(astResources.interfaces), Array.from(astResources.types), inferred);
     const allTypesInfo = mergeTypesAndInterfaces(declared)
         .reduce((acc, type) => {
             const node = stream(astResources.types).find(e => e.name === type.name) ??
@@ -113,6 +109,14 @@ export function collectValidationResources(grammar: Grammar): ValidationResource
         }, new Map<string, InferredInfo | DeclaredInfo | InferredInfo & DeclaredInfo>());
 
     return allTypesInfo;
+}
+
+function getTypeNameToRules(astResources: AstResources): MultiMap<string, ParserRule> {
+    return stream(astResources.parserRules)
+        .concat(astResources.datatypeRules)
+        .reduce((acc, rule) => acc.add(getRuleType(rule), rule),
+            new MultiMap<string, ParserRule>()
+        );
 }
 
 function mergeTypesAndInterfaces(astTypes: AstTypes): TypeOrInterface[] {
@@ -223,4 +227,31 @@ function checkSuperTypesConsistency(inferred: string[], declared: string[], erro
     declared
         .filter(e => !inferred.includes(e))
         .forEach(lackSuperType => errorToRuleNodes(specificError(lackSuperType, false)));
+}
+
+export type InterfaceInfo = {
+    type: InterfaceType;
+    node: Interface | readonly ParserRule[];
+}
+
+// use only after type consistancy validation
+export function collectAllInterfaces(grammar: Grammar): Map<string, InterfaceInfo> {
+    const astResources = collectAllAstResources([grammar]);
+    const inferred = collectInferredTypes(Array.from(astResources.parserRules), Array.from(astResources.datatypeRules));
+    const declared = collectDeclaredTypes(Array.from(astResources.interfaces), Array.from(astResources.types), inferred);
+
+    const typeNameToRules = getTypeNameToRules(astResources);
+    const inferredInterfaces = inferred.interfaces
+        .reduce((acc, type) => acc.set(type.name, { type, node: typeNameToRules.get(type.name) }),
+            new Map<string, InterfaceInfo>()
+        );
+
+    return declared.interfaces
+        .reduce((acc, type) => {
+            if (!acc.has(type.name)) {
+                const node = stream(astResources.interfaces).find(e => e.name === type.name);
+                if (node) acc.set(type.name, { type, node });
+            }
+            return acc;
+        }, inferredInterfaces);
 }
