@@ -13,7 +13,7 @@ import { getContainerOfType } from '../utils/ast-util';
 import { findLeafNodeAtOffset } from '../utils/cst-util';
 import { MaybePromise } from '../utils/promise-util';
 import { escapeRegExp } from '../utils/regex-util';
-import { LangiumDocument } from '../workspace/documents';
+import { DocumentSegment, LangiumDocument } from '../workspace/documents';
 import * as ast from './generated/ast';
 import { findNodeForFeature } from './grammar-util';
 import { IssueCodes } from './langium-grammar-validator';
@@ -48,9 +48,80 @@ export class LangiumGrammarCodeActionProvider implements CodeActionProvider {
                 return this.fixMissingImport(diagnostic, document);
             case IssueCodes.UnnecessaryFileExtension:
                 return this.fixUnnecessaryFileExtension(diagnostic, document);
+            case IssueCodes.InvalidInfer:
+            case IssueCodes.InvalidReturns:
+                return this.fixInvalidReturnsInfer(diagnostic, document);
+            case IssueCodes.MissingInfer:
+                return this.fixMissingInfer(diagnostic, document);
+            case IssueCodes.SuperfluousInfer:
+                return this.fixSuperfluousInfer(diagnostic, document);
             default:
                 return undefined;
         }
+    }
+
+    private fixInvalidReturnsInfer(diagnostic: Diagnostic, document: LangiumDocument): CodeAction | undefined {
+        const data = diagnostic.data as DocumentSegment;
+        if (data) {
+            const text = document.textDocument.getText(data.range);
+            return {
+                title: `Correct ${text} usage`,
+                kind: CodeActionKind.QuickFix,
+                diagnostics: [diagnostic],
+                edit: {
+                    changes: {
+                        [document.textDocument.uri]: [{
+                            range: data.range,
+                            newText: text === 'infer' ? 'returns' : 'infer'
+                        }]
+                    }
+                }
+            };
+        }
+        return undefined;
+    }
+
+    private fixMissingInfer(diagnostic: Diagnostic, document: LangiumDocument): CodeAction | undefined {
+        const data = diagnostic.data as DocumentSegment;
+        if (data) {
+            return {
+                title: "Correct 'infer' usage",
+                kind: CodeActionKind.QuickFix,
+                diagnostics: [diagnostic],
+                edit: {
+                    changes: {
+                        [document.textDocument.uri]: [{
+                            range: {
+                                start: data.range.end,
+                                end: data.range.end
+                            },
+                            newText: 'infer '
+                        }]
+                    }
+                }
+            };
+        }
+        return undefined;
+    }
+
+    private fixSuperfluousInfer(diagnostic: Diagnostic, document: LangiumDocument): CodeAction | undefined {
+        const data = diagnostic.data as DocumentSegment;
+        if (data) {
+            return {
+                title: "Correct 'infer' usage",
+                kind: CodeActionKind.QuickFix,
+                diagnostics: [diagnostic],
+                edit: {
+                    changes: {
+                        [document.textDocument.uri]: [{
+                            range: data.range,
+                            newText: ''
+                        }]
+                    }
+                }
+            };
+        }
+        return undefined;
     }
 
     private fixUnnecessaryFileExtension(diagnostic: Diagnostic, document: LangiumDocument): CodeAction {

@@ -22,16 +22,16 @@ Evaluation:
 Expression:
 	Addition;
 
-Addition returns Expression:
-	Multiplication ({BinaryExpression.left=current} operator=('+' | '-') right=Multiplication)*;
+Addition infer Expression:
+	Multiplication ({infer BinaryExpression.left=current} operator=('+' | '-') right=Multiplication)*;
 
-Multiplication returns Expression:
-	PrimaryExpression ({BinaryExpression.left=current} operator=('*' | '/') right=PrimaryExpression)*;
+Multiplication infer Expression:
+	PrimaryExpression ({infer BinaryExpression.left=current} operator=('*' | '/') right=PrimaryExpression)*;
 
-PrimaryExpression returns Expression:
+PrimaryExpression infer Expression:
 	'(' Expression ')' |
-	{NumberLiteral} value=NUMBER |
-	{FunctionCall} func=[AbstractDefinition] ('(' args+=Expression (',' args+=Expression)* ')')?;
+	{infer NumberLiteral} value=NUMBER |
+	{infer FunctionCall} func=[AbstractDefinition] ('(' args+=Expression (',' args+=Expression)* ')')?;
 
 hidden terminal WS: /\s+/;
 terminal ID: /[_a-zA-Z][\w_]*/;

@@ -50,6 +50,7 @@ export function isAbstractElement(item: unknown): item is AbstractElement {
 export interface Action extends AbstractElement {
     readonly $container: Alternatives | Assignment | AtomType | CharacterRange | CrossReference | Group | NegatedToken | ParserRule | TerminalAlternatives | TerminalGroup | TerminalRule | UnorderedGroup | UntilToken;
     feature: FeatureName
+    infer: boolean
     operator: '+=' | '='
     type: string
 }
@@ -294,6 +295,7 @@ export interface ParserRule extends AstNode {
     entry: boolean
     fragment: boolean
     hiddenTokens: Array<Reference<AbstractRule>>
+    infer: boolean
     name: string
     parameters: Array<Parameter>
     type: ReturnType

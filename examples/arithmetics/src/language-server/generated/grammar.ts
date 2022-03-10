@@ -246,6 +246,7 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
       "parameters": [],
       "name": "Addition",
       "hiddenTokens": [],
+      "infer": true,
       "type": {
         "$type": "ReturnType",
         "name": "Expression"
@@ -266,6 +267,7 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
             "elements": [
               {
                 "$type": "Action",
+                "infer": true,
                 "type": "BinaryExpression",
                 "feature": "left",
                 "operator": "=",
@@ -313,6 +315,7 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
       "parameters": [],
       "name": "Multiplication",
       "hiddenTokens": [],
+      "infer": true,
       "type": {
         "$type": "ReturnType",
         "name": "Expression"
@@ -333,6 +336,7 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
             "elements": [
               {
                 "$type": "Action",
+                "infer": true,
                 "type": "BinaryExpression",
                 "feature": "left",
                 "operator": "=",
@@ -380,6 +384,7 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
       "parameters": [],
       "name": "PrimaryExpression",
       "hiddenTokens": [],
+      "infer": true,
       "type": {
         "$type": "ReturnType",
         "name": "Expression"
@@ -413,6 +418,7 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
             "elements": [
               {
                 "$type": "Action",
+                "infer": true,
                 "type": "NumberLiteral",
                 "elements": []
               },
@@ -435,6 +441,7 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
             "elements": [
               {
                 "$type": "Action",
+                "infer": true,
                 "type": "FunctionCall",
                 "elements": []
               },
