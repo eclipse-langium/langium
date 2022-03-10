@@ -275,7 +275,7 @@ function withCardinality(regex: string, cardinality?: string, wrap = false): str
 export function getTypeName(type: ast.AbstractType | undefined): string {
     if (ast.isParserRule(type)) {
         return type.type?.name ?? type.name;
-    } else if (ast.isInterface(type) || ast.isType(type)) {
+    } else if (ast.isInterface(type) || ast.isType(type) || ast.isReturnType(type)) {
         return type.name;
     } else if (ast.isAction(type)) {
         return type.type;
