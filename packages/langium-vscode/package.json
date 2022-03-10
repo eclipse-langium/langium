@@ -46,10 +46,10 @@
   "scripts": {
     "prepare": "npm run copy-schema",
     "copy-schema": "cpy ../langium-cli/langium-config-schema.json ./data",
-    "vscode:prepublish": "npm run clean && npm run lint && webpack --mode=production",
+    "vscode:prepublish": "npm run clean && tsc --noEmit && npm run lint && node esbuild.js --minify",
     "clean": "rimraf out",
-    "build": "webpack",
-    "watch": "webpack --watch",
+    "build": "node esbuild.js && tsc --noEmit",
+    "watch": "node esbuild.js --watch",
     "lint": "eslint src --ext ts"
   },
   "dependencies": {
@@ -58,22 +58,17 @@
     "vscode-languageserver": "^7.0.0"
   },
   "devDependencies": {
-    "@types/glob": "^7.1.3",
     "@types/mocha": "^8.2.2",
     "@types/node": "^12.12.6",
     "@types/vscode": "^1.53.0",
     "@typescript-eslint/eslint-plugin": "^4.14.1",
     "@typescript-eslint/parser": "^4.14.1",
+    "esbuild": "^0.14.25",
     "eslint": "^7.19.0",
     "eslint-plugin-header": "^3.1.1",
-    "glob": "^7.1.6",
     "mocha": "^8.4.0",
-    "source-map-loader": "^3.0.0",
-    "ts-loader": "^9.2.3",
     "typescript": "^4.1.3",
-    "vscode-test": "^1.5.0",
-    "webpack": "^5.39.1",
-    "webpack-cli": "^4.7.2"
+    "vscode-test": "^1.5.0"
   },
   "repository": {
     "type": "git",
