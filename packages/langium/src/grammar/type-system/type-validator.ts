@@ -30,7 +30,7 @@ export function validateTypes(grammar: Grammar, accept: ValidationAcceptor): voi
             const node = assignmentNodes.find(assignment => assignment.feature === propertyName);
             if (node) {
                 accept('error',
-                    `A property '${propertyName}' ` + errorMessage,
+                    errorMessage,
                     { node, property: 'feature' }
                 );
             }
@@ -171,11 +171,15 @@ function checkPropertiesConsistency(inferred: Property[], declared: Property[],
     errorToRuleNodes: (error: string) => void, errorToAssignment: (propertyName: string, error: string) => void): void {
 
     const baseError = (propertyName: string, foundType: string, expectedType: string) =>
-        `has type '${foundType}', but '${expectedType}' is expected.`;
+        `The assigned type ‘${foundType}’ is not compatible with the declared property ‘${propertyName}’ of type ‘${expectedType}’.`;
 
     const optError = (found: Property, expected: Property) =>
         found.optional && !expected.optional ? 'can\'t be optional' :
             !found.optional && expected.optional ? 'has to be optional' : '';
+
+    const checkOptional = (found: Property, expected: Property) =>
+        !(found.typeAlternatives.length === 1 && found.typeAlternatives[0].array ||
+            expected.typeAlternatives.length === 1 && expected.typeAlternatives[0].array);
 
     // detects extra properties & check matched ones on consistency by 'opional'
     for (const foundProperty of inferred) {
@@ -192,11 +196,11 @@ function checkPropertiesConsistency(inferred: Property[], declared: Property[],
                 errorToAssignment(foundProperty.name, resultError);
             }
 
-            if (expectedProperty.optional !== foundProperty.optional) {
-                errorToAssignment(foundProperty.name, `${optError(foundProperty, expectedProperty)}.`);
+            if (checkOptional(expectedProperty, foundProperty) && expectedProperty.optional !== foundProperty.optional) {
+                errorToAssignment(foundProperty.name, `A property '${foundProperty.name}' ${optError(foundProperty, expectedProperty)}.`);
             }
         } else {
-            errorToAssignment(foundProperty.name, 'is not expected.');
+            errorToAssignment(foundProperty.name, `A property '${foundProperty.name}' is not expected.`);
         }
     }
 
