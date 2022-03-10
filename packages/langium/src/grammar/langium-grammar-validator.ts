@@ -407,19 +407,7 @@ export class LangiumGrammarValidator {
     }
 
     checkTypesConsistency(grammar: ast.Grammar, accept: ValidationAcceptor): void {
-        for (const typeInconsistency of validateTypes(grammar)) {
-            for (const errorMessage of typeInconsistency.inconsistencyReasons) {
-                for (const node of typeInconsistency.nodes) {
-                    if (ast.isParserRule(node)) {
-                        accept('error', errorMessage, { node, property: node.type ? 'type' : 'name'});
-                    } else if (ast.isAction(node)) {
-                        accept('error', errorMessage, { node, property: 'type'});
-                    } else {
-                        accept('error', errorMessage, { node, property: 'name'});
-                    }
-                }
-            }
-        }
+        validateTypes(grammar, accept);
     }
 
     checkInvalidCharacterRange(range: ast.CharacterRange, accept: ValidationAcceptor): void {

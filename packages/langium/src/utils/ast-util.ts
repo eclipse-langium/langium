@@ -209,3 +209,12 @@ export function extractRootNode(node: AstNode): AstNode | undefined {
     }
     return node;
 }
+
+export function extractAssignments(element: ast.AbstractElement): ast.Assignment[] {
+    if (ast.isAssignment(element)) {
+        return [element];
+    } if (ast.isAlternatives(element) || ast.isGroup(element) || ast.isUnorderedGroup(element)) {
+        return element.elements.flatMap(e => extractAssignments(e));
+    }
+    return [];
+}

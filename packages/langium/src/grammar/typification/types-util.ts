@@ -123,7 +123,7 @@ export function collectAllAstResources(grammars: Grammar[], documents?: LangiumD
     return astResources;
 }
 
-function fieldTypeArrayToString(alternatives: FieldType[]): string {
+export function fieldTypeArrayToString(alternatives: FieldType[]): string {
     return distictAndSorted(alternatives.map(typeFieldToString)).join(' | ');
 }
 
