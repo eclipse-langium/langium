@@ -9,7 +9,7 @@ import { getRuleType } from '../grammar-util';
 import { MultiMap } from '../../utils/collections';
 import { collectDeclaredTypes } from './declared-types';
 import { collectInferredTypes } from './inferred-types';
-import { AstTypes, collectAllAstResources, distictAndSorted, Field, FieldType, fieldTypeArrayToString, InterfaceType, TypeType } from './types-util';
+import { AstTypes, collectAllAstResources, distictAndSorted, Property, PropertyType, propertyTypeArrayToString, InterfaceType, TypeType } from './types-util';
 import { stream } from '../../utils/stream';
 import { ValidationAcceptor } from '../../validation/validation-registry';
 import { extractAssignments } from '../../utils/ast-util';
@@ -24,13 +24,13 @@ export function validateTypes(grammar: Grammar, accept: ValidationAcceptor): voi
         };
     }
 
-    function applyErrorToAssignment(nodes: readonly ParserRule[]): (fieldName: string, errorMessage: string) => void {
+    function applyErrorToAssignment(nodes: readonly ParserRule[]): (propertyName: string, errorMessage: string) => void {
         const assignmentNodes = nodes.flatMap(node => extractAssignments(node.alternatives));
-        return (fieldName: string, errorMessage: string) => {
-            const node = assignmentNodes.find(assignment => assignment.feature === fieldName);
+        return (propertyName: string, errorMessage: string) => {
+            const node = assignmentNodes.find(assignment => assignment.feature === propertyName);
             if (node) {
                 accept('error',
-                    `A field '${fieldName}' ` + errorMessage,
+                    `A property '${propertyName}' ` + errorMessage,
                     { node, property: 'feature' }
                 );
             }
@@ -46,7 +46,7 @@ export function validateTypes(grammar: Grammar, accept: ValidationAcceptor): voi
         if (isType(typeInfo.inferred) && isType(typeInfo.declared)) {
             checkAlternativesConsistency(typeInfo.inferred.alternatives, typeInfo.declared.alternatives, errorToRuleNodes);
         } else if (isInterface(typeInfo.inferred) && isInterface(typeInfo.declared)) {
-            checkFieldsConsistency(typeInfo.inferred.fields, typeInfo.declared.fields, errorToRuleNodes, errorToAssignment);
+            checkPropertiesConsistency(typeInfo.inferred.properties, typeInfo.declared.properties, errorToRuleNodes, errorToAssignment);
             checkSuperTypesConsistency(typeInfo.inferred.superTypes, typeInfo.declared.superTypes, errorToRuleNodes);
         } else {
             const specificError = `Inferred and declared versions of type ${typeName} have to be types or interfaces both.`;
@@ -67,7 +67,7 @@ function isType(type: TypeOrInterface): type is TypeType {
 }
 
 function isInterface(type: TypeOrInterface): type is InterfaceType {
-    return type && 'fields' in type;
+    return type && 'properties' in type;
 }
 
 type InferredInfo = {
@@ -124,7 +124,7 @@ type ErrorInfo = {
     typeString: string;
 }
 
-const arrRefError = (found: FieldType, expected: FieldType) =>
+const arrRefError = (found: PropertyType, expected: PropertyType) =>
     found.array && !expected.array && found.reference && !expected.reference ? 'can\'t be an array and a reference' :
         !found.array && expected.array && !found.reference && expected.reference ? 'has to be an array and a reference' :
             found.array && !expected.array ? 'can\'t be an array' :
@@ -132,21 +132,21 @@ const arrRefError = (found: FieldType, expected: FieldType) =>
                     found.reference && !expected.reference ? 'can\'t be a reference' :
                         !found.reference && expected.reference ? 'has to be a reference' : '';
 
-function checkAlternativesConsistencyHelper(found: FieldType[], expected: FieldType[]): ErrorInfo[] {
-    const stringToFieldTypeList = (fieldTypeList: FieldType[]) =>
-        fieldTypeList.reduce((acc, e) => acc.set(distictAndSorted(e.types).join(' | '), e), new Map<string, FieldType>());
+function checkAlternativesConsistencyHelper(found: PropertyType[], expected: PropertyType[]): ErrorInfo[] {
+    const stringToPropertyTypeList = (propertyTypeList: PropertyType[]) =>
+        propertyTypeList.reduce((acc, e) => acc.set(distictAndSorted(e.types).join(' | '), e), new Map<string, PropertyType>());
 
-    const stringToFound = stringToFieldTypeList(found);
-    const stringToExpected = stringToFieldTypeList(expected);
+    const stringToFound = stringToPropertyTypeList(found);
+    const stringToExpected = stringToPropertyTypeList(expected);
     const errorsInfo: ErrorInfo[] = [];
 
-    // detects extra type alternatives & check matched ones on consistency by 'array' and 'reference' properties
-    for (const [typeString, foundFieldType] of stream(stringToFound)) {
-        const expectedFieldType = stringToExpected.get(typeString);
-        if (!expectedFieldType) {
+    // detects extra type alternatives & check matched ones on consistency by 'array' and 'reference'
+    for (const [typeString, foundPropertyType] of stream(stringToFound)) {
+        const expectedPropertyType = stringToExpected.get(typeString);
+        if (!expectedPropertyType) {
             errorsInfo.push({ typeString, errorMessage: 'is not expected' });
-        } else if (expectedFieldType.array !== foundFieldType.array || expectedFieldType.reference !== foundFieldType.reference) {
-            errorsInfo.push({ typeString, errorMessage: arrRefError(foundFieldType, expectedFieldType) });
+        } else if (expectedPropertyType.array !== foundPropertyType.array || expectedPropertyType.reference !== foundPropertyType.reference) {
+            errorsInfo.push({ typeString, errorMessage: arrRefError(foundPropertyType, expectedPropertyType) });
         }
     }
 
@@ -160,51 +160,51 @@ function checkAlternativesConsistencyHelper(found: FieldType[], expected: FieldT
     return errorsInfo;
 }
 
-function checkAlternativesConsistency(inferred: FieldType[], declared: FieldType[], errorToRuleNodes: (error: string) => void): void {
+function checkAlternativesConsistency(inferred: PropertyType[], declared: PropertyType[], errorToRuleNodes: (error: string) => void): void {
     const errorsInfo = checkAlternativesConsistencyHelper(inferred, declared);
     for (const errorInfo of errorsInfo) {
         errorToRuleNodes(`A type '${errorInfo.typeString}' ${errorInfo.errorMessage}`);
     }
 }
 
-function checkFieldsConsistency(inferred: Field[], declared: Field[],
-    errorToRuleNodes: (error: string) => void, errorToAssignment: (fieldName: string, error: string) => void): void {
+function checkPropertiesConsistency(inferred: Property[], declared: Property[],
+    errorToRuleNodes: (error: string) => void, errorToAssignment: (propertyName: string, error: string) => void): void {
 
-    const baseError = (fieldName: string, foundType: string, expectedType: string) =>
+    const baseError = (propertyName: string, foundType: string, expectedType: string) =>
         `has type '${foundType}', but '${expectedType}' is expected.`;
 
-    const optError = (found: Field, expected: Field) =>
+    const optError = (found: Property, expected: Property) =>
         found.optional && !expected.optional ? 'can\'t be optional' :
             !found.optional && expected.optional ? 'has to be optional' : '';
 
-    // detects extra fields & check matched ones on consistency by 'opional' property
-    for (const foundField of inferred) {
-        const expectedField = declared.find(e => foundField.name === e.name);
-        if (expectedField) {
-            const foundStringType = fieldTypeArrayToString(foundField.typeAlternatives);
-            const expectedStringType = fieldTypeArrayToString(expectedField.typeAlternatives);
+    // detects extra properties & check matched ones on consistency by 'opional'
+    for (const foundProperty of inferred) {
+        const expectedProperty = declared.find(e => foundProperty.name === e.name);
+        if (expectedProperty) {
+            const foundStringType = propertyTypeArrayToString(foundProperty.typeAlternatives);
+            const expectedStringType = propertyTypeArrayToString(expectedProperty.typeAlternatives);
             if (foundStringType !== expectedStringType) {
-                let resultError = baseError(foundField.name, foundStringType, expectedStringType);
-                for (const errorInfo of checkAlternativesConsistencyHelper(foundField.typeAlternatives, expectedField.typeAlternatives)) {
+                let resultError = baseError(foundProperty.name, foundStringType, expectedStringType);
+                for (const errorInfo of checkAlternativesConsistencyHelper(foundProperty.typeAlternatives, expectedProperty.typeAlternatives)) {
                     resultError = resultError + ` '${errorInfo.typeString}' ${errorInfo.errorMessage};`;
                 }
                 resultError = resultError.replace(/;$/, '.');
-                errorToAssignment(foundField.name, resultError);
+                errorToAssignment(foundProperty.name, resultError);
             }
 
-            if (expectedField.optional !== foundField.optional) {
-                errorToAssignment(foundField.name, `${optError(foundField, expectedField)}.`);
+            if (expectedProperty.optional !== foundProperty.optional) {
+                errorToAssignment(foundProperty.name, `${optError(foundProperty, expectedProperty)}.`);
             }
         } else {
-            errorToAssignment(foundField.name, 'is not expected.');
+            errorToAssignment(foundProperty.name, 'is not expected.');
         }
     }
 
-    // detects lack of fields
-    for (const foundField of declared) {
-        const expectedField = inferred.find(e => foundField.name === e.name);
-        if (!expectedField) {
-            errorToRuleNodes(`A field '${foundField.name}' is expected`);
+    // detects lack of properties
+    for (const foundProperty of declared) {
+        const expectedProperty = inferred.find(e => foundProperty.name === e.name);
+        if (!expectedProperty) {
+            errorToRuleNodes(`A property '${foundProperty.name}' is expected`);
         }
     }
 }

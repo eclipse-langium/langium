@@ -12,13 +12,13 @@ import { isDataTypeRule, resolveImport } from '../grammar-util';
 import { getDocument } from '../../utils/ast-util';
 import { LangiumDocuments } from '../../workspace/documents';
 
-export type Field = {
+export type Property = {
     name: string,
     optional: boolean,
-    typeAlternatives: FieldType[]
+    typeAlternatives: PropertyType[]
 }
 
-export type FieldType = {
+export type PropertyType = {
     types: string[],
     reference: boolean,
     array: boolean
@@ -31,11 +31,11 @@ export type AstTypes = {
 
 export class TypeType {
     name: string;
-    alternatives: FieldType[];
+    alternatives: PropertyType[];
     reflection: boolean;
     superTypes: string[] = [];
 
-    constructor(name: string, alternatives: FieldType[], options?: { reflection: boolean }) {
+    constructor(name: string, alternatives: PropertyType[], options?: { reflection: boolean }) {
         this.name = name;
         this.alternatives = alternatives;
         this.reflection = options?.reflection ?? false;
@@ -43,7 +43,7 @@ export class TypeType {
 
     toString(): string {
         const typeNode = new CompositeGeneratorNode();
-        typeNode.contents.push(`export type ${this.name} = ${fieldTypeArrayToString(this.alternatives)};`, NL);
+        typeNode.contents.push(`export type ${this.name} = ${propertyTypeArrayToString(this.alternatives)};`, NL);
 
         if (this.reflection) pushReflectionInfo(this.name, typeNode);
         return processGeneratorNode(typeNode);
@@ -56,13 +56,13 @@ export class InterfaceType {
     printingSuperTypes: string[];
     subTypes: string[] = [];
     containerTypes: string[] = [];
-    fields: Field[];
+    properties: Property[];
 
-    constructor(name: string, superTypes: string[], fields: Field[]) {
+    constructor(name: string, superTypes: string[], properties: Property[]) {
         this.name = name;
         this.superTypes = superTypes;
         this.printingSuperTypes = JSON.parse(JSON.stringify(superTypes));
-        this.fields = fields;
+        this.properties = properties;
     }
 
     toString(): string {
@@ -70,17 +70,17 @@ export class InterfaceType {
         const superTypes = this.printingSuperTypes.length > 0 ? distictAndSorted(this.printingSuperTypes) : ['AstNode'];
         interfaceNode.contents.push(`export interface ${this.name} extends ${superTypes.join(', ')} {`, NL);
 
-        const fieldsNode = new IndentNode();
+        const propertiesNode = new IndentNode();
         if (this.containerTypes.length > 0) {
-            fieldsNode.contents.push(`readonly $container: ${distictAndSorted(this.containerTypes).join(' | ')};`, NL);
+            propertiesNode.contents.push(`readonly $container: ${distictAndSorted(this.containerTypes).join(' | ')};`, NL);
         }
 
-        for (const field of distictAndSorted(this.fields, (a, b) => a.name.localeCompare(b.name))) {
-            const optional = field.optional && field.typeAlternatives.some(e => e.reference) && !field.typeAlternatives.some(e => e.array) ? '?' : '';
-            const type = fieldTypeArrayToString(field.typeAlternatives);
-            fieldsNode.contents.push(`${field.name}${optional}: ${type}`, NL);
+        for (const property of distictAndSorted(this.properties, (a, b) => a.name.localeCompare(b.name))) {
+            const optional = property.optional && property.typeAlternatives.some(e => e.reference) && !property.typeAlternatives.some(e => e.array) ? '?' : '';
+            const type = propertyTypeArrayToString(property.typeAlternatives);
+            propertiesNode.contents.push(`${property.name}${optional}: ${type}`, NL);
         }
-        interfaceNode.contents.push(fieldsNode, '}', NL);
+        interfaceNode.contents.push(propertiesNode, '}', NL);
 
         pushReflectionInfo(this.name, interfaceNode);
         return processGeneratorNode(interfaceNode);
@@ -123,18 +123,18 @@ export function collectAllAstResources(grammars: Grammar[], documents?: LangiumD
     return astResources;
 }
 
-export function fieldTypeArrayToString(alternatives: FieldType[]): string {
-    return distictAndSorted(alternatives.map(typeFieldToString)).join(' | ');
+export function propertyTypeArrayToString(alternatives: PropertyType[]): string {
+    return distictAndSorted(alternatives.map(typePropertyToString)).join(' | ');
 }
 
 export function distictAndSorted<T>(list: T[], compareFn?: (a: T, b: T) => number): T[] {
     return Array.from(new Set(list)).sort(compareFn);
 }
 
-export function typeFieldToString(fieldType: FieldType): string {
-    let res = distictAndSorted(fieldType.types).join(' | ');
-    res = fieldType.reference ? `Reference<${res}>` : res;
-    res = fieldType.array ? `Array<${res}>` : res;
+export function typePropertyToString(propertyType: PropertyType): string {
+    let res = distictAndSorted(propertyType.types).join(' | ');
+    res = propertyType.reference ? `Reference<${res}>` : res;
+    res = propertyType.array ? `Array<${res}>` : res;
     return res;
 }
 

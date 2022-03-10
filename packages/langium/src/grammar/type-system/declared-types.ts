@@ -6,7 +6,7 @@
 
 import { getTypeName, isDataTypeRule } from '../grammar-util';
 import { AtomType, Interface, isAction, isParserRule, Type } from '../generated/ast';
-import { AstTypes, Field, FieldType, InterfaceType, TypeType } from './types-util';
+import { AstTypes, Property, PropertyType, InterfaceType, TypeType } from './types-util';
 import { MultiMap } from '../../utils/collections';
 
 export function collectDeclaredTypes(interfaces: Interface[], types: Type[], inferredTypes: AstTypes): AstTypes {
@@ -14,18 +14,18 @@ export function collectDeclaredTypes(interfaces: Interface[], types: Type[], inf
     // add interfaces
     for (const interfaceType of interfaces) {
         const superTypes = interfaceType.superTypes.map(e => getTypeName(e.ref));
-        const fields: Field[] = interfaceType.attributes.map(e => <Field>{
+        const properties: Property[] = interfaceType.attributes.map(e => <Property>{
             name: e.name,
             optional: e.isOptional === true,
-            typeAlternatives: e.typeAlternatives.map(atomTypeToFieldType)
+            typeAlternatives: e.typeAlternatives.map(atomTypeToPropertyType)
         });
-        declaredTypes.interfaces.push(new InterfaceType(interfaceType.name, superTypes, fields));
+        declaredTypes.interfaces.push(new InterfaceType(interfaceType.name, superTypes, properties));
     }
 
     // add types
     const childToSuper = new MultiMap<string, string>();
     for (const type of types) {
-        const alternatives = type.typeAlternatives.map(atomTypeToFieldType);
+        const alternatives = type.typeAlternatives.map(atomTypeToPropertyType);
         const reflection = type.typeAlternatives.some(e => {
             const refType = e.refType?.ref;
             return refType && (isParserRule(refType) && !isDataTypeRule(refType) || isAction(refType));
@@ -51,7 +51,7 @@ export function collectDeclaredTypes(interfaces: Interface[], types: Type[], inf
     return declaredTypes;
 }
 
-function atomTypeToFieldType(type: AtomType): FieldType {
+function atomTypeToPropertyType(type: AtomType): PropertyType {
     return {
         types: [type.refType ? getTypeName(type.refType.ref) : (type.primitiveType ?? `'${type.keywordType?.value}'`)],
         reference: type.isRef === true,

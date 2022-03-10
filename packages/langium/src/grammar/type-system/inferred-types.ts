@@ -7,12 +7,12 @@
 import { Cardinality, getRuleType, getTypeName, isOptional } from '../grammar-util';
 import { AbstractElement, Action, Alternatives, Assignment, Group, isAction, isAlternatives, isAssignment, isCrossReference, isGroup, isKeyword, isParserRule, isRuleCall, isUnorderedGroup, ParserRule, RuleCall, UnorderedGroup } from '../generated/ast';
 import { stream } from '../../utils/stream';
-import { AstTypes, distictAndSorted, Field, FieldType, InterfaceType, TypeType } from './types-util';
+import { AstTypes, distictAndSorted, Property, PropertyType, InterfaceType, TypeType } from './types-util';
 
 type TypeAlternative = {
     name: string,
     super: string[],
-    fields: Field[]
+    properties: Property[]
     ruleCalls: string[],
     hasAction: boolean
 }
@@ -103,7 +103,7 @@ export function collectInferredTypes(parserRules: ParserRule[], datatypeRules: P
         const types = isAlternatives(rule.alternatives) && rule.alternatives.elements.every(e => isKeyword(e)) ?
             stream(rule.alternatives.elements).filter(isKeyword).map(e => `'${e.value}'`).toArray() :
             [rule.type?.name ?? 'string'];
-        inferredTypes.types.push(new TypeType(rule.name, [<FieldType>{ types, reference: false, array: false }]));
+        inferredTypes.types.push(new TypeType(rule.name, [<PropertyType>{ types, reference: false, array: false }]));
     }
 
     return inferredTypes;
@@ -114,7 +114,7 @@ function initType(rule: ParserRule | string): TypeAlternative {
     return {
         name: isParserRule(rule) ? getTypeName(rule) : rule,
         super: [],
-        fields: [],
+        properties: [],
         ruleCalls: [],
         hasAction: false
     };
@@ -168,7 +168,7 @@ function addAction(state: TypeCollectorState, action: Action): void {
         }
 
         if (action.feature && action.operator) {
-            newType.fields.push({
+            newType.properties.push({
                 name: action.feature,
                 optional: false,
                 typeAlternatives: [{
@@ -184,7 +184,7 @@ function addAction(state: TypeCollectorState, action: Action): void {
 function addAssignment(state: TypeCollectorState, assignment: Assignment): void {
     const typeItems: TypeCollection = { types: [], reference: false };
     findTypes(assignment.terminal, typeItems);
-    state.currentType?.fields.push({
+    state.currentType?.properties.push({
         name: assignment.feature,
         optional: isOptional(assignment.cardinality) || state.isOptional(),
         typeAlternatives: [{
@@ -218,7 +218,7 @@ function addRuleCall(state: TypeCollectorState, ruleCall: RuleCall): void {
     const rule = ruleCall.rule.ref;
     const type = state.currentType;
     if (type) {
-        // Add all fields of fragments to the current type
+        // Add all properties of fragments to the current type
         if (isParserRule(rule) && rule.fragment) {
             const fragmentType = initType(rule);
             const fragmentState = new TypeCollectorState(fragmentType);
@@ -226,7 +226,7 @@ function addRuleCall(state: TypeCollectorState, ruleCall: RuleCall): void {
             const types = calculateAst(fragmentState.tree.getLeafNodes());
             const foundType = types.find(e => e.name === rule.name);
             if (foundType) {
-                type.fields.push(...foundType.fields);
+                type.properties.push(...foundType.properties);
             }
         } else if (isParserRule(rule)) {
             type.ruleCalls.push(getRuleType(rule));
@@ -246,7 +246,7 @@ function calculateAst(alternatives: TypeAlternative[]): InterfaceType[] {
     const flattened = flattenTypes(alternatives);
 
     for (const flat of flattened) {
-        const interfaceType = new InterfaceType(flat.name, flat.super, flat.fields);
+        const interfaceType = new InterfaceType(flat.name, flat.super, flat.properties);
         interfaces.push(interfaceType);
         if (flat.ruleCalls.length > 0) {
             ruleCallAlternatives.push(flat);
@@ -282,24 +282,24 @@ function flattenTypes(alternatives: TypeAlternative[]): TypeAlternative[] {
     const types: TypeAlternative[] = [];
 
     for (const name of names) {
-        const fields: Field[] = [];
+        const properties: Property[] = [];
         const ruleCalls = new Set<string>();
-        const type = { name, fields, ruleCalls: <string[]>[], super: <string[]>[], hasAction: false };
+        const type = { name, properties, ruleCalls: <string[]>[], super: <string[]>[], hasAction: false };
         const namedAlternatives = alternatives.filter(e => e.name === name);
         for (const alt of namedAlternatives) {
             type.super.push(...alt.super);
             type.hasAction = type.hasAction || alt.hasAction;
-            const altFields = alt.fields;
-            for (const altField of altFields) {
-                const existingField = fields.find(e => e.name === altField.name);
-                if (existingField) {
-                    existingField.optional = existingField.optional && altField.optional;
-                    altField.typeAlternatives.filter(isNotInTypeAlternatives(existingField.typeAlternatives)).forEach(type => existingField.typeAlternatives.push(type));
+            const altProperties = alt.properties;
+            for (const altProperty of altProperties) {
+                const existingProperty = properties.find(e => e.name === altProperty.name);
+                if (existingProperty) {
+                    existingProperty.optional = existingProperty.optional && altProperty.optional;
+                    altProperty.typeAlternatives.filter(isNotInTypeAlternatives(existingProperty.typeAlternatives)).forEach(type => existingProperty.typeAlternatives.push(type));
                 } else {
-                    fields.push({ ...altField });
+                    properties.push({ ...altProperty });
                 }
             }
-            if (altFields.length === 0) {
+            if (altProperties.length === 0) {
                 alt.ruleCalls.forEach(ruleCall => ruleCalls.add(ruleCall));
             }
         }
@@ -310,13 +310,13 @@ function flattenTypes(alternatives: TypeAlternative[]): TypeAlternative[] {
     return types;
 }
 
-function isNotInTypeAlternatives(typeAlternatives: FieldType[]): (type: FieldType) => boolean {
-    return (type: FieldType) => {
-        return !typeAlternatives.some(e => compareFieldType(e, type));
+function isNotInTypeAlternatives(typeAlternatives: PropertyType[]): (type: PropertyType) => boolean {
+    return (type: PropertyType) => {
+        return !typeAlternatives.some(e => comparePropertyType(e, type));
     };
 }
 
-function compareFieldType(a: FieldType, b: FieldType): boolean {
+function comparePropertyType(a: PropertyType, b: PropertyType): boolean {
     return a.array === b.array &&
         a.reference === b.reference &&
         compareLists(a.types, b.types);
@@ -335,7 +335,7 @@ function compareLists<T>(a: T[], b: T[], eq: (x: T, y: T) => boolean = (x: T, y:
 function buildContainerTypes(interfaces: InterfaceType[]): void {
     // 1st stage: collect container types & calculate sub-types
     for (const interfaceType of interfaces) {
-        for (const typeName of interfaceType.fields.flatMap(field => field.typeAlternatives.filter(e => !e.reference).flatMap(e => e.types))) {
+        for (const typeName of interfaceType.properties.flatMap(property => property.typeAlternatives.filter(e => !e.reference).flatMap(e => e.types))) {
             interfaces.find(e => e.name === typeName)
                 ?.containerTypes.push(interfaceType.name);
         }
@@ -383,7 +383,7 @@ function shareContainerTypes(connectedComponents: InterfaceType[][]): void {
 
 /**
  * Filters interfaces, transforming some of them in types.
- * The transformation criterion: no fields, but have subtypes.
+ * The transformation criterion: no properties, but have subtypes.
  * @param interfaces The interfaces that have to be transformed on demand.
  * @returns Types and not transformed interfaces.
  */
@@ -392,8 +392,8 @@ function extractTypes(interfaces: InterfaceType[]): AstTypes {
     const typeNames: string[] = [];
     for (const interfaceType of interfaces) {
         // the criterion for converting an interface into a type
-        if (interfaceType.fields.length === 0 && interfaceType.subTypes.length > 0) {
-            const alternatives = interfaceType.subTypes.map(e => <FieldType>{
+        if (interfaceType.properties.length === 0 && interfaceType.subTypes.length > 0) {
+            const alternatives = interfaceType.subTypes.map(e => <PropertyType>{
                 types: [e],
                 reference: false,
                 array: false

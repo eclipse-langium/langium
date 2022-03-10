@@ -115,11 +115,11 @@ type CrossReferenceType = {
 function buildCrossReferenceTypes(astTypes: AstTypes): CrossReferenceType[] {
     const crossReferences: CrossReferenceType[] = [];
     for (const typeInterface of astTypes.interfaces) {
-        for (const field of typeInterface.fields.sort((a, b) => a.name.localeCompare(b.name))) {
-            field.typeAlternatives.filter(e => e.reference).flatMap(e => e.types).forEach(type =>
+        for (const property of typeInterface.properties.sort((a, b) => a.name.localeCompare(b.name))) {
+            property.typeAlternatives.filter(e => e.reference).flatMap(e => e.types).forEach(type =>
                 crossReferences.push({
                     type: typeInterface.name,
-                    feature: field.name,
+                    feature: property.name,
                     referenceType: type
                 })
             );
