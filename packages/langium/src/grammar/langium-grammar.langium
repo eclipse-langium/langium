@@ -46,11 +46,8 @@ AbstractRule : ParserRule | TerminalRule;
 GrammarImport:
 	'import' path=STRING ';';
 
-ParserRule :
-	(
-	  (entry?='entry' | fragment?='fragment') RuleNameAndParams (wildcard?='*' | ('returns' type=ReturnType)?)
-	| RuleNameAndParams ('returns' type=ReturnType)?
-	)
+ParserRule:
+	(entry?='entry' | fragment?='fragment')? RuleNameAndParams (wildcard?='*' | 'returns' type=ReturnType | infer?='infer' type=ReturnType)?
 	(definesHiddenTokens?='hidden' '(' (hiddenTokens+=[AbstractRule:ID] (',' hiddenTokens+=[AbstractRule:ID])*)? ')')? ':'
 		alternatives=Alternatives
 	';';
@@ -61,31 +58,31 @@ fragment RuleNameAndParams:
 Parameter:
 	name=ID;
 
-Alternatives returns AbstractElement:
-	ConditionalBranch ({Alternatives.elements+=current} ('|' elements+=ConditionalBranch)+)?;
+Alternatives infer AbstractElement:
+	ConditionalBranch ({infer Alternatives.elements+=current} ('|' elements+=ConditionalBranch)+)?;
 
-ConditionalBranch returns AbstractElement:
+ConditionalBranch infer AbstractElement:
 	  UnorderedGroup
-	| {Group} '<' guardCondition=Disjunction '>' (elements+=AbstractToken)+
+	| {infer Group} '<' guardCondition=Disjunction '>' (elements+=AbstractToken)+
 ;
 
-UnorderedGroup returns AbstractElement:
-	Group ({UnorderedGroup.elements+=current} ('&' elements+=Group)+)?;
+UnorderedGroup infer AbstractElement:
+	Group ({infer UnorderedGroup.elements+=current} ('&' elements+=Group)+)?;
 
-Group returns AbstractElement:
-	AbstractToken ({Group.elements+=current} elements+=AbstractToken+)?;
+Group infer AbstractElement:
+	AbstractToken ({infer Group.elements+=current} elements+=AbstractToken+)?;
 
-AbstractToken returns AbstractElement:
+AbstractToken infer AbstractElement:
 	AbstractTokenWithCardinality |
 	Action;
 
-AbstractTokenWithCardinality returns AbstractElement:
+AbstractTokenWithCardinality infer AbstractElement:
 	(Assignment | AbstractTerminal) cardinality=('?'|'*'|'+')?;
 
-Action returns AbstractElement:
-	{Action} '{' type=ID ('.' feature=FeatureName operator=('='|'+=') 'current')? '}';
+Action infer AbstractElement:
+	{infer Action} '{' infer?='infer'? type=ID ('.' feature=FeatureName operator=('='|'+=') 'current')? '}';
 
-AbstractTerminal returns AbstractElement:
+AbstractTerminal infer AbstractElement:
 	Keyword |
 	RuleCall |
 	ParenthesizedElement |
@@ -106,52 +103,52 @@ NamedArgument:
 LiteralCondition:
 	true?='true' | 'false';
 
-Disjunction returns Condition:
-	Conjunction ({Disjunction.left=current} '|' right=Conjunction)*;
+Disjunction infer Condition:
+	Conjunction ({infer Disjunction.left=current} '|' right=Conjunction)*;
 
-Conjunction returns Condition:
-	Negation ({Conjunction.left=current} '&' right=Negation)*;
+Conjunction infer Condition:
+	Negation ({infer Conjunction.left=current} '&' right=Negation)*;
 
-Negation returns Condition:
-	Atom | {Negation} '!' value=Negation;
+Negation infer Condition:
+	Atom | {infer Negation} '!' value=Negation;
 
-Atom returns Condition:
+Atom infer Condition:
 	ParameterReference | ParenthesizedCondition | LiteralCondition;
 
-ParenthesizedCondition returns Condition:
+ParenthesizedCondition infer Condition:
 	'(' Disjunction ')';
 
 ParameterReference:
 	parameter=[Parameter:ID];
 
-PredicatedKeyword returns Keyword:
+PredicatedKeyword infer Keyword:
 	(predicated?='=>' | firstSetPredicated?='->') value=STRING;
 
-PredicatedRuleCall returns RuleCall:
+PredicatedRuleCall infer RuleCall:
 	(predicated?='=>' | firstSetPredicated?='->') rule=[AbstractRule:ID] ('<' arguments+=NamedArgument (',' arguments+=NamedArgument)* '>')?;
 
-Assignment returns AbstractElement:
-	{Assignment} (predicated?='=>' | firstSetPredicated?='->')? feature=FeatureName operator=('+='|'='|'?=') terminal=AssignableTerminal;
+Assignment infer AbstractElement:
+	{infer Assignment} (predicated?='=>' | firstSetPredicated?='->')? feature=FeatureName operator=('+='|'='|'?=') terminal=AssignableTerminal;
 
-AssignableTerminal returns AbstractElement:
+AssignableTerminal infer AbstractElement:
 	Keyword | RuleCall | ParenthesizedAssignableElement | CrossReference;
 
-ParenthesizedAssignableElement returns AbstractElement:
+ParenthesizedAssignableElement infer AbstractElement:
 	'(' AssignableAlternatives ')';
 
-AssignableAlternatives returns AbstractElement:
-	AssignableTerminal ({Alternatives.elements+=current} ('|' elements+=AssignableTerminal)+)?;
+AssignableAlternatives infer AbstractElement:
+	AssignableTerminal ({infer Alternatives.elements+=current} ('|' elements+=AssignableTerminal)+)?;
 
-CrossReference returns AbstractElement:
-	{CrossReference} '[' type=[AbstractType] ((deprecatedSyntax?='|' | ':') terminal=CrossReferenceableTerminal )? ']';
+CrossReference infer AbstractElement:
+	{infer CrossReference} '[' type=[AbstractType] ((deprecatedSyntax?='|' | ':') terminal=CrossReferenceableTerminal )? ']';
 
-CrossReferenceableTerminal returns AbstractElement:
+CrossReferenceableTerminal infer AbstractElement:
 	Keyword | RuleCall;
 
-ParenthesizedElement returns AbstractElement:
+ParenthesizedElement infer AbstractElement:
 	'(' Alternatives ')';
 
-PredicatedGroup returns Group:
+PredicatedGroup infer Group:
 	(predicated?='=>' | firstSetPredicated?='->') '(' elements+=Alternatives ')';
 
 TerminalRule:
@@ -161,41 +158,41 @@ TerminalRule:
 
 terminal RegexLiteral returns string: /\/(?![*+?])(?:[^\r\n\[/\\]|\\.|\[(?:[^\r\n\]\\]|\\.)*\])+\//;
 
-TerminalAlternatives returns AbstractElement:
-	TerminalGroup ({TerminalAlternatives.elements+=current} '|' elements+=TerminalGroup)*;
+TerminalAlternatives infer AbstractElement:
+	TerminalGroup ({infer TerminalAlternatives.elements+=current} '|' elements+=TerminalGroup)*;
 
-TerminalGroup returns AbstractElement:
-	TerminalToken ({TerminalGroup.elements+=current} elements+=TerminalToken+)?;
+TerminalGroup infer AbstractElement:
+	TerminalToken ({infer TerminalGroup.elements+=current} elements+=TerminalToken+)?;
 
-TerminalToken returns AbstractElement:
+TerminalToken infer AbstractElement:
 	TerminalTokenElement cardinality=('?'|'*'|'+')?;
 
-TerminalTokenElement returns AbstractElement:
+TerminalTokenElement infer AbstractElement:
 	CharacterRange | TerminalRuleCall | ParenthesizedTerminalElement | NegatedToken | UntilToken | RegexToken | Wildcard;
 
-ParenthesizedTerminalElement returns AbstractElement:
+ParenthesizedTerminalElement infer AbstractElement:
 	'(' TerminalAlternatives ')';
 
-TerminalRuleCall returns AbstractElement:
-	{TerminalRuleCall} rule=[TerminalRule:ID];
+TerminalRuleCall infer AbstractElement:
+	{infer TerminalRuleCall} rule=[TerminalRule:ID];
 
-NegatedToken returns AbstractElement:
-	{NegatedToken} '!' terminal=TerminalTokenElement;
+NegatedToken infer AbstractElement:
+	{infer NegatedToken} '!' terminal=TerminalTokenElement;
 
-UntilToken returns AbstractElement:
-	{UntilToken} '->' terminal=TerminalTokenElement;
+UntilToken infer AbstractElement:
+	{infer UntilToken} '->' terminal=TerminalTokenElement;
 
-RegexToken returns AbstractElement:
-	{RegexToken} regex=RegexLiteral;
+RegexToken infer AbstractElement:
+	{infer RegexToken} regex=RegexLiteral;
 
-Wildcard returns AbstractElement:
-	{Wildcard} '.';
+Wildcard infer AbstractElement:
+	{infer Wildcard} '.';
 
-CharacterRange returns AbstractElement:
-	{CharacterRange} left=Keyword ('..' right=Keyword)?;
+CharacterRange infer AbstractElement:
+	{infer CharacterRange} left=Keyword ('..' right=Keyword)?;
 
 FeatureName returns string:
-	'current' | 'entry' | 'extends' | 'false' | 'fragment' | 'grammar' | 'hidden' | 'import' | 'interface' | 'returns' | 'terminal' | 'true' | 'type' | 'with' | PrimitiveType | ID;
+	'current' | 'entry' | 'extends' | 'false' | 'fragment' | 'grammar' | 'hidden' | 'import' | 'interface' | 'returns' | 'terminal' | 'true' | 'type' | 'infer' | 'with' | PrimitiveType | ID;
 
 terminal ID: /\^?[_a-zA-Z][\w_]*/;
 terminal STRING: /"[^"]*"|'[^']*'/;

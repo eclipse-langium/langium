@@ -12,11 +12,12 @@ import { LangiumServices } from '../services';
 import { Reference } from '../syntax-tree';
 import { getContainerOfType, getDocument, streamAllContents } from '../utils/ast-util';
 import { MultiMap } from '../utils/collections';
+import { toDocumentSegment } from '../utils/cst-util';
 import { stream } from '../utils/stream';
 import { ValidationAcceptor, ValidationCheck, ValidationRegistry } from '../validation/validation-registry';
 import { LangiumDocument, LangiumDocuments } from '../workspace/documents';
 import * as ast from './generated/ast';
-import { findNameAssignment, getEntryRule, isDataTypeRule, resolveImport, resolveTransitiveImports, terminalRegex } from './grammar-util';
+import { findKeywordNode, findNameAssignment, getEntryRule, isDataTypeRule, resolveImport, resolveTransitiveImports, terminalRegex } from './grammar-util';
 import type { LangiumGrammarServices } from './langium-grammar-module';
 
 type LangiumGrammarChecks = { [type in ast.LangiumGrammarAstType]?: ValidationCheck | ValidationCheck[] }
@@ -47,7 +48,8 @@ export class LangiumGrammarValidationRegistry extends ValidationRegistry {
                 validator.checkGrammarHiddenTokens,
                 validator.checkGrammarForUnusedRules,
                 validator.checkGrammarImports,
-                validator.checkGrammarTypeAliases
+                validator.checkGrammarTypeAliases,
+                validator.checkGrammarTypeInfer
             ],
             GrammarImport: validator.checkPackageImport,
             CharacterRange: validator.checkInvalidCharacterRange,
@@ -80,6 +82,10 @@ export namespace IssueCodes {
     export const CrossRefTokenSyntax = 'cross-ref-token-syntax';
     export const MissingImport = 'missing-import';
     export const UnnecessaryFileExtension = 'unnecessary-file-extension';
+    export const InvalidReturns = 'invalid-returns';
+    export const InvalidInfer = 'invalid-infer';
+    export const MissingInfer = 'missing-infer';
+    export const SuperfluousInfer = 'superfluous-infer';
 }
 
 export class LangiumGrammarValidator {
@@ -218,6 +224,54 @@ export class LangiumGrammarValidator {
             }
         }
         return duplicates;
+    }
+
+    checkGrammarTypeInfer(grammar: ast.Grammar, accept: ValidationAcceptor): void {
+        const types = new Set<string>();
+        for (const type of grammar.types) {
+            types.add(type.name);
+        }
+        for (const interfaceType of grammar.interfaces) {
+            types.add(interfaceType.name);
+        }
+        for (const rule of grammar.rules.filter(ast.isParserRule)) {
+            const isDataType = isDataTypeRule(rule);
+            if (!isDataType && rule.type?.name && types.has(rule.type.name) === !!rule.infer) {
+                const keywordNode = findKeywordNode(rule.$cstNode, 'infer') || findKeywordNode(rule.$cstNode, 'returns');
+                accept('error', getMessage(rule.type.name, rule.infer), {
+                    node: rule.type,
+                    property: 'name',
+                    code: rule.infer ? IssueCodes.InvalidInfer : IssueCodes.InvalidReturns,
+                    data: keywordNode && toDocumentSegment(keywordNode)
+                });
+            } else if (isDataType && rule.infer) {
+                const inferNode = findKeywordNode(rule.$cstNode, 'infer');
+                accept('error', 'Data type rules cannot infer a type.', {
+                    node: rule,
+                    property: 'infer',
+                    code: IssueCodes.InvalidInfer,
+                    data: inferNode && toDocumentSegment(inferNode)
+                });
+            }
+        }
+        for (const action of streamAllContents(grammar).filter(ast.isAction)) {
+            if (action.type && types.has(action.type) === !!action.infer) {
+                const keywordNode = action.infer ? findKeywordNode(action.$cstNode, 'infer') : findKeywordNode(action.$cstNode, '{');
+                accept('error', getMessage(action.type, action.infer), {
+                    node: action,
+                    property: 'type',
+                    code: action.infer ? IssueCodes.SuperfluousInfer : IssueCodes.MissingInfer,
+                    data: keywordNode && toDocumentSegment(keywordNode)
+                });
+            }
+        }
+        function getMessage(name: string, infer: boolean) {
+            if (infer) {
+                return `The type '${name}' is already explicitly declared and cannot be inferred.`;
+            } else {
+                return `The type '${name}' is not explicitly declared and must be inferred.`;
+            }
+        }
     }
 
     checkGrammarHiddenTokens(grammar: ast.Grammar, accept: ValidationAcceptor): void {

@@ -30,6 +30,8 @@ type Symbol = Entity | PackageDeclaration | DataType | Feature
 ```
 The `interface` form describes the properties of an AST node type. The `@` character used at the `superType` property above denotes a cross-reference to a node of type `Entity`. The `type` form creates _union types_, i.e. an alternative of other declared or inferred types. These are transferred almost identically to TypeScript, where they have [their usual meaning](https://www.typescriptlang.org/docs/handbook/2/everyday-types.html).
 
+Parser rules which use the `returns` directive to infer a new type should now use the `infer` keyword instead. Using `returns` is only valid for explicitly declared types. Actions also need to add the `infer` keyword in front of the type if it is not explicitly declared. ([#438](https://github.com/langium/langium/pull/438))
+
 ### New Sprotty Integration
 
 A new package `langium-sprotty` is available to enable [Sprotty](https://github.com/eclipse/sprotty)-powered diagrams generated from a Langium DSL ([#308](https://github.com/langium/langium/pull/308)). An example is presented [in this blog post](https://www.typefox.io/blog/langium-meets-sprotty-combining-text-and-diagrams-in-vs-code).
