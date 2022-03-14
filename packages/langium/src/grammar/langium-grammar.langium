@@ -44,7 +44,7 @@ ReturnType:
 AbstractRule : ParserRule | TerminalRule;
 
 GrammarImport:
-	'import' path=STRING ';';
+	'import' path=STRING ';'?;
 
 ParserRule:
 	(entry?='entry' | fragment?='fragment')? RuleNameAndParams (wildcard?='*' | 'returns' type=ReturnType | infer?='infer' type=ReturnType)?
