@@ -698,7 +698,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           },
           {
             "$type": "Keyword",
-            "value": ";"
+            "value": ";",
+            "cardinality": "?"
           }
         ]
       }
