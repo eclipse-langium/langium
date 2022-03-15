@@ -200,9 +200,9 @@ function findTypes(terminal: AbstractElement, types: TypeCollection): void {
         findInCollection(terminal, types);
     } else if (isKeyword(terminal)) {
         types.types.push(`'${terminal.value}'`);
-    } else if (isRuleCall(terminal)) {
+    } else if (isRuleCall(terminal) && terminal.rule.ref) {
         types.types.push(getRuleType(terminal.rule.ref));
-    } else if (isCrossReference(terminal)) {
+    } else if (isCrossReference(terminal) && terminal.type.ref) {
         types.types.push(getTypeName(terminal.type.ref));
         types.reference = true;
     }
