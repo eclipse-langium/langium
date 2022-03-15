@@ -50,7 +50,7 @@ GrammarImport:
 	'import' path=STRING ';'?;
 
 ParserRule:
-	(entry?='entry' | fragment?='fragment')? RuleNameAndParams (wildcard?='*' | 'returns' type=ReturnType | infer?='infer' type=ReturnType)?
+	(entry?='entry' | fragment?='fragment')? RuleNameAndParams (wildcard?='*' | ('return' | 'returns') type=ReturnType | infer?='infer' type=ReturnType)?
 	(definesHiddenTokens?='hidden' '(' (hiddenTokens+=[AbstractRule:ID] (',' hiddenTokens+=[AbstractRule:ID])*)? ')')? ':'
 		alternatives=Alternatives
 	';';
@@ -155,7 +155,7 @@ PredicatedGroup infer Group:
 	(predicated?='=>' | firstSetPredicated?='->') '(' elements+=Alternatives ')';
 
 TerminalRule:
-	hidden?='hidden'? 'terminal' (fragment?='fragment' name=ID | name=ID ('returns' type=ReturnType)?) ':'
+	hidden?='hidden'? 'terminal' (fragment?='fragment' name=ID | name=ID (('return' | 'returns') type=ReturnType)?) ':'
 		terminal=TerminalAlternatives
 	';';
 
@@ -195,7 +195,7 @@ CharacterRange infer AbstractElement:
 	{infer CharacterRange} left=Keyword ('..' right=Keyword)?;
 
 FeatureName returns string:
-	'current' | 'entry' | 'extends' | 'false' | 'fragment' | 'grammar' | 'hidden' | 'import' | 'interface' | 'returns' | 'terminal' | 'true' | 'type' | 'infer' | 'with' | PrimitiveType | ID;
+	'current' | 'entry' | 'extends' | 'false' | 'fragment' | 'grammar' | 'hidden' | 'import' | 'interface' | 'return' | 'returns' | 'terminal' | 'true' | 'type' | 'infer' | 'with' | PrimitiveType | ID;
 
 terminal ID: /\^?[_a-zA-Z][\w_]*/;
 terminal STRING: /"[^"]*"|'[^']*'/;

@@ -777,9 +777,19 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                 "$type": "Group",
                 "elements": [
                   {
-                    "$type": "Keyword",
-                    "value": "returns",
-                    "elements": []
+                    "$type": "Alternatives",
+                    "elements": [
+                      {
+                        "$type": "Keyword",
+                        "value": "return",
+                        "elements": []
+                      },
+                      {
+                        "$type": "Keyword",
+                        "value": "returns",
+                        "elements": []
+                      }
+                    ]
                   },
                   {
                     "$type": "Assignment",
@@ -2638,9 +2648,19 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                     "$type": "Group",
                     "elements": [
                       {
-                        "$type": "Keyword",
-                        "value": "returns",
-                        "elements": []
+                        "$type": "Alternatives",
+                        "elements": [
+                          {
+                            "$type": "Keyword",
+                            "value": "return",
+                            "elements": []
+                          },
+                          {
+                            "$type": "Keyword",
+                            "value": "returns",
+                            "elements": []
+                          }
+                        ]
                       },
                       {
                         "$type": "Assignment",
@@ -3242,6 +3262,11 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           {
             "$type": "Keyword",
             "value": "interface",
+            "elements": []
+          },
+          {
+            "$type": "Keyword",
+            "value": "return",
             "elements": []
           },
           {

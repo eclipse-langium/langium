@@ -49,18 +49,20 @@ export class LangiumGrammarCodeActionProvider implements CodeActionProvider {
             case IssueCodes.UnnecessaryFileExtension:
                 return this.fixUnnecessaryFileExtension(diagnostic, document);
             case IssueCodes.InvalidInfer:
-            case IssueCodes.InvalidReturns:
-                return this.fixInvalidReturnsInfer(diagnostic, document);
+            case IssueCodes.InvalidReturn:
+                return this.fixInvalidReturnInfer(diagnostic, document);
             case IssueCodes.MissingInfer:
                 return this.fixMissingInfer(diagnostic, document);
             case IssueCodes.SuperfluousInfer:
                 return this.fixSuperfluousInfer(diagnostic, document);
+            case IssueCodes.ReturnTypeTokenSyntax:
+                return this.fixReturnTypeTokenSyntax(diagnostic, document);
             default:
                 return undefined;
         }
     }
 
-    private fixInvalidReturnsInfer(diagnostic: Diagnostic, document: LangiumDocument): CodeAction | undefined {
+    private fixInvalidReturnInfer(diagnostic: Diagnostic, document: LangiumDocument): CodeAction | undefined {
         const data = diagnostic.data as DocumentSegment;
         if (data) {
             const text = document.textDocument.getText(data.range);
@@ -72,7 +74,7 @@ export class LangiumGrammarCodeActionProvider implements CodeActionProvider {
                     changes: {
                         [document.textDocument.uri]: [{
                             range: data.range,
-                            newText: text === 'infer' ? 'returns' : 'infer'
+                            newText: text === 'infer' ? 'return' : 'infer'
                         }]
                     }
                 }
@@ -116,6 +118,26 @@ export class LangiumGrammarCodeActionProvider implements CodeActionProvider {
                         [document.textDocument.uri]: [{
                             range: data.range,
                             newText: ''
+                        }]
+                    }
+                }
+            };
+        }
+        return undefined;
+    }
+
+    private fixReturnTypeTokenSyntax(diagnostic: Diagnostic, document: LangiumDocument): CodeAction | undefined {
+        const data = diagnostic.data as DocumentSegment;
+        if (data) {
+            return {
+                title: 'Replace returns with return',
+                kind: CodeActionKind.QuickFix,
+                diagnostics: [diagnostic],
+                edit: {
+                    changes: {
+                        [document.textDocument.uri]: [{
+                            range: data.range,
+                            newText: 'return'
                         }]
                     }
                 }

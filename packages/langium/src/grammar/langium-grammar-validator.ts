@@ -28,7 +28,10 @@ export class LangiumGrammarValidationRegistry extends ValidationRegistry {
         super(services);
         const validator = services.validation.LangiumGrammarValidator;
         const checks: LangiumGrammarChecks = {
-            AbstractRule: validator.checkRuleName,
+            AbstractRule: [
+                validator.checkRuleName,
+                validator.checkTypeReturns
+            ],
             ParserRule: [
                 validator.checkParserRuleDataType,
                 validator.checkRuleParametersUsed
@@ -86,10 +89,11 @@ export namespace IssueCodes {
     export const CrossRefTokenSyntax = 'cross-ref-token-syntax';
     export const MissingImport = 'missing-import';
     export const UnnecessaryFileExtension = 'unnecessary-file-extension';
-    export const InvalidReturns = 'invalid-returns';
+    export const InvalidReturn = 'invalid-return';
     export const InvalidInfer = 'invalid-infer';
     export const MissingInfer = 'missing-infer';
     export const SuperfluousInfer = 'superfluous-infer';
+    export const ReturnTypeTokenSyntax = 'return-type-token-syntax';
 }
 
 export class LangiumGrammarValidator {
@@ -249,11 +253,11 @@ export class LangiumGrammarValidator {
         for (const rule of grammar.rules.filter(ast.isParserRule)) {
             const isDataType = isDataTypeRule(rule);
             if (!isDataType && rule.type?.name && types.has(rule.type.name) === !!rule.infer) {
-                const keywordNode = findKeywordNode(rule.$cstNode, 'infer') || findKeywordNode(rule.$cstNode, 'returns');
+                const keywordNode = findKeywordNode(rule.$cstNode, 'infer') || findKeywordNode(rule.$cstNode, 'return');
                 accept('error', getMessage(rule.type.name, rule.infer), {
                     node: rule.type,
                     property: 'name',
-                    code: rule.infer ? IssueCodes.InvalidInfer : IssueCodes.InvalidReturns,
+                    code: rule.infer ? IssueCodes.InvalidInfer : IssueCodes.InvalidReturn,
                     data: keywordNode && toDocumentSegment(keywordNode)
                 });
             } else if (isDataType && rule.infer) {
@@ -505,6 +509,20 @@ export class LangiumGrammarValidator {
             const firstChar = rule.name.substring(0, 1);
             if (firstChar.toUpperCase() !== firstChar) {
                 accept('warning', 'Rule name should start with an upper case letter.', { node: rule, property: 'name', code: IssueCodes.RuleNameUppercase });
+            }
+        }
+    }
+
+    checkTypeReturns(rule: ast.AbstractRule, accept: ValidationAcceptor): void {
+        if (rule.type) {
+            const returnsNode = findKeywordNode(rule.$cstNode, 'returns');
+            if (returnsNode) {
+                accept('error', '\'returns\' keyword is depreceted. Use \'return\' instead.', {
+                    node: rule.type,
+                    property: 'name',
+                    code: IssueCodes.ReturnTypeTokenSyntax,
+                    data: returnsNode && toDocumentSegment(returnsNode)
+                });
             }
         }
     }
