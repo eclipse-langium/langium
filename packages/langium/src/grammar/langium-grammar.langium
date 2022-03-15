@@ -33,7 +33,7 @@ AtomType:
 		) isArray?='[]'?
 	|	keywordType=Keyword;
 
-PrimitiveType returns string:
+PrimitiveType return string:
 	'string' | 'number' | 'boolean' | 'date';
 
 type AbstractType = Interface | Type | Action | ParserRule;
@@ -159,7 +159,7 @@ TerminalRule:
 		terminal=TerminalAlternatives
 	';';
 
-terminal RegexLiteral returns string: /\/(?![*+?])(?:[^\r\n\[/\\]|\\.|\[(?:[^\r\n\]\\]|\\.)*\])+\//;
+terminal RegexLiteral return string: /\/(?![*+?])(?:[^\r\n\[/\\]|\\.|\[(?:[^\r\n\]\\]|\\.)*\])+\//;
 
 TerminalAlternatives infer AbstractElement:
 	TerminalGroup ({infer TerminalAlternatives.elements+=current} '|' elements+=TerminalGroup)*;
@@ -194,7 +194,7 @@ Wildcard infer AbstractElement:
 CharacterRange infer AbstractElement:
 	{infer CharacterRange} left=Keyword ('..' right=Keyword)?;
 
-FeatureName returns string:
+FeatureName return string:
 	'current' | 'entry' | 'extends' | 'false' | 'fragment' | 'grammar' | 'hidden' | 'import' | 'interface' | 'return' | 'returns' | 'terminal' | 'true' | 'type' | 'infer' | 'with' | PrimitiveType | ID;
 
 terminal ID: /\^?[_a-zA-Z][\w_]*/;
