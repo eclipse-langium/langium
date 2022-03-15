@@ -34,7 +34,7 @@ export function isStatement(item: unknown): item is Statement {
 export interface BinaryExpression extends AstNode {
     readonly $container: BinaryExpression | Definition | Evaluation | FunctionCall;
     left: Expression
-    operator: '*' | '+' | '-' | '/'
+    operator: '*' | '/' | '+' | '-'
     right: Expression
 }
 

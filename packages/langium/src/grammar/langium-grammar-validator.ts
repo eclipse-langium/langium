@@ -9,7 +9,7 @@ import { DiagnosticTag } from 'vscode-languageserver-types';
 import { Utils } from 'vscode-uri';
 import { References } from '../references/references';
 import { LangiumServices } from '../services';
-import { Reference } from '../syntax-tree';
+import { AstNode, Reference } from '../syntax-tree';
 import { getContainerOfType, getDocument, streamAllContents } from '../utils/ast-util';
 import { MultiMap } from '../utils/collections';
 import { toDocumentSegment } from '../utils/cst-util';
@@ -19,6 +19,7 @@ import { LangiumDocument, LangiumDocuments } from '../workspace/documents';
 import * as ast from './generated/ast';
 import { findKeywordNode, findNameAssignment, getEntryRule, isDataTypeRule, resolveImport, resolveTransitiveImports, terminalRegex } from './grammar-util';
 import type { LangiumGrammarServices } from './langium-grammar-module';
+import { applyErrorToAssignment, collectAllInterfaces, InterfaceInfo, validateTypesConsistency } from './type-system/type-validator';
 
 type LangiumGrammarChecks = { [type in ast.LangiumGrammarAstType]?: ValidationCheck | ValidationCheck[] }
 
@@ -43,13 +44,16 @@ export class LangiumGrammarValidationRegistry extends ValidationRegistry {
                 validator.checkGrammarName,
                 validator.checkEntryGrammarRule,
                 validator.checkUniqueRuleName,
+                validator.checkUniqueTypeName,
                 validator.checkUniqueImportedRules,
                 validator.checkDuplicateImportedGrammar,
                 validator.checkGrammarHiddenTokens,
                 validator.checkGrammarForUnusedRules,
                 validator.checkGrammarImports,
                 validator.checkGrammarTypeAliases,
-                validator.checkGrammarTypeInfer
+                validator.checkGrammarTypeInfer,
+                validator.checkTypesConsistency,
+                validator.checkPropertyNameDuplication
             ],
             GrammarImport: validator.checkPackageImport,
             CharacterRange: validator.checkInvalidCharacterRange,
@@ -91,7 +95,7 @@ export namespace IssueCodes {
 export class LangiumGrammarValidator {
 
     protected readonly references: References;
-    protected readonly documents: LangiumDocuments
+    protected readonly documents: LangiumDocuments;
 
     constructor(services: LangiumServices) {
         this.references = services.references.References;
@@ -129,30 +133,38 @@ export class LangiumGrammarValidator {
      * Check whether any rule defined in this grammar is a duplicate of an already defined rule or an imported rule
      */
     checkUniqueRuleName(grammar: ast.Grammar, accept: ValidationAcceptor): void {
-        const ruleMap = new MultiMap<string, ast.AbstractRule>();
-        for (const rule of grammar.rules) {
-            ruleMap.add(rule.name, rule);
-        }
-        for (const name of ruleMap.keys()) {
-            const rules = ruleMap.get(name);
-            if (rules.length > 1) {
-                rules.forEach(e => {
-                    accept('error', "A rule's name has to be unique.", { node: e, property: 'name' });
+        this.checkUniqueName(grammar, accept, (grammar: ast.Grammar) => grammar.rules, 'rule');
+    }
+
+    /**
+     * Check whether any type defined in this grammar is a duplicate of an already defined type or an imported type
+     */
+    checkUniqueTypeName(grammar: ast.Grammar, accept: ValidationAcceptor): void {
+        this.checkUniqueName(grammar, accept, (grammar: ast.Grammar) => (grammar.types as Array<{name: string} & AstNode>).concat(grammar.interfaces), 'type');
+    }
+
+    private checkUniqueName(grammar: ast.Grammar, accept: ValidationAcceptor, extractor: (grammar: ast.Grammar) => Array<{name: string} & AstNode>, uniqueObjName: string): void {
+        const map = new MultiMap<string, {name: string} & AstNode>();
+        extractor(grammar).forEach(e => map.add(e.name, e));
+
+        for (const name of map.keys()) {
+            const types = map.get(name);
+            if (types.length > 1) {
+                types.forEach(e => {
+                    accept('error', `A ${uniqueObjName}'s name has to be unique.`, { node: e, property: 'name' });
                 });
             }
         }
-        const importedRules = new Set<string>();
+        const imported = new Set<string>();
         const resolvedGrammars = resolveTransitiveImports(this.documents, grammar);
         for (const resolvedGrammar of resolvedGrammars) {
-            for (const rule of resolvedGrammar.rules) {
-                importedRules.add(rule.name);
-            }
+            extractor(resolvedGrammar).forEach(e => imported.add(e.name));
         }
-        for (const name of ruleMap.keys()) {
-            if (importedRules.has(name)) {
-                const rules = ruleMap.get(name);
-                rules.forEach(e => {
-                    accept('error', `A rule with the name '${e.name}' already exists in an imported grammar.`, { node: e, property: 'name' });
+        for (const name of map.keys()) {
+            if (imported.has(name)) {
+                const types = map.get(name);
+                types.forEach(e => {
+                    accept('error', `A ${uniqueObjName} with the name '${e.name}' already exists in an imported grammar.`, { node: e, property: 'name' });
                 });
             }
         }
@@ -393,6 +405,50 @@ export class LangiumGrammarValidator {
                 accept('error', 'Actions cannot create alias types.', { node: action, property: 'type' });
             }
         }
+    }
+
+    checkTypesConsistency(grammar: ast.Grammar, accept: ValidationAcceptor): void {
+        validateTypesConsistency(grammar, accept);
+    }
+
+    checkPropertyNameDuplication(grammar: ast.Grammar, accept: ValidationAcceptor): void {
+        if (grammar.interfaces.length === 0) return;
+
+        const nameToInterfaceInfo = collectAllInterfaces(grammar);
+
+        for (const interfaceName of grammar.interfaces.map(e => e.name)) {
+            const propertyNameToNode: MultiMap<string, ast.Interface | readonly ast.ParserRule[]> = new MultiMap();
+            this.collectPropertyNamesForHierarchy(nameToInterfaceInfo, new Set(), propertyNameToNode, interfaceName);
+
+            for (const propertyName of propertyNameToNode.keys()) {
+                const nodes = propertyNameToNode.get(propertyName) ?? [];
+                if (nodes.length < 2) continue;
+                for (const node of nodes) {
+                    const errorMessage = `A property '${propertyName}' has to be unique for the whole hierarchy.`;
+                    if (ast.isInterface(node)) {
+                        const attributeNode = node.attributes.find(e => e.name === propertyName);
+                        if (attributeNode) {
+                            accept('error', errorMessage, { node: attributeNode, property: 'name' });
+                        }
+                    } else {
+                        applyErrorToAssignment(node, accept)(propertyName, errorMessage);
+                    }
+                }
+            }
+        }
+    }
+
+    private collectPropertyNamesForHierarchy(nameToInterfaceInfo: Map<string, InterfaceInfo>, visited: Set<string>, result: MultiMap<string, ast.Interface | readonly ast.ParserRule[]>, interfaceName: string): void {
+        function collectPropertyNamesForHierarchyInternal(interfaceName: string) {
+            if (visited.has(interfaceName)) return;
+            visited.add(interfaceName);
+            const interfaceInfo = nameToInterfaceInfo.get(interfaceName);
+            if (interfaceInfo) {
+                interfaceInfo.type.properties.forEach(propery => result.add(propery.name, interfaceInfo.node));
+                interfaceInfo.type.printingSuperTypes.forEach(superType => collectPropertyNamesForHierarchyInternal(superType));
+            }
+        }
+        collectPropertyNamesForHierarchyInternal(interfaceName);
     }
 
     checkInvalidCharacterRange(range: ast.CharacterRange, accept: ValidationAcceptor): void {

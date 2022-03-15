@@ -16,7 +16,7 @@ export function isAbstractRule(item: unknown): item is AbstractRule {
     return reflection.isInstance(item, AbstractRule);
 }
 
-export type AbstractType = Interface | ParserRule | Type;
+export type AbstractType = Action | Interface | ParserRule | Type;
 
 export const AbstractType = 'AbstractType';
 
@@ -408,7 +408,7 @@ export interface TypeAttribute extends AstNode {
     readonly $container: Interface;
     isOptional: boolean
     name: string
-    type: AtomType
+    typeAlternatives: Array<AtomType>
 }
 
 export const TypeAttribute = 'TypeAttribute';
@@ -468,7 +468,9 @@ export class LangiumGrammarAstReflection implements AstReflection {
             return true;
         }
         switch (subtype) {
-            case Action:
+            case Action: {
+                return this.isSubtype(AbstractElement, supertype) || this.isSubtype(AbstractType, supertype);
+            }
             case Alternatives:
             case Assignment:
             case CharacterRange:

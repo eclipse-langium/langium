@@ -10,10 +10,11 @@ import * as ast from '../grammar/generated/ast';
 import { CompositeCstNodeImpl } from '../parser/cst-node-builder';
 import { LangiumServices } from '../services';
 import { AstNode, AstNodeDescription, CstNode } from '../syntax-tree';
-import { getContainerOfType, getDocument, Mutable, streamAllContents } from '../utils/ast-util';
+import { extractRootNode, getContainerOfType, getDocument, Mutable, streamAllContents } from '../utils/ast-util';
 import { MultiMap } from '../utils/collections';
 import { streamCst } from '../utils/cst-util';
 import { escapeRegExp } from '../utils/regex-util';
+import { AstNodeDescriptionProvider } from '../workspace/ast-descriptions';
 import { AstNodeLocator } from '../workspace/ast-node-locator';
 import { documentFromText, LangiumDocument, LangiumDocuments, PrecomputedScopes } from '../workspace/documents';
 import { createLangiumGrammarServices } from './langium-grammar-module';
@@ -274,8 +275,10 @@ function withCardinality(regex: string, cardinality?: string, wrap = false): str
 export function getTypeName(type: ast.AbstractType | undefined): string {
     if (ast.isParserRule(type)) {
         return type.type?.name ?? type.name;
-    } else if (ast.isInterface(type) || ast.isType(type)) {
+    } else if (ast.isInterface(type) || ast.isType(type) || ast.isReturnType(type)) {
         return type.name;
+    } else if (ast.isAction(type)) {
+        return type.type;
     }
     throw new Error('Unknown type');
 }
@@ -370,15 +373,16 @@ export function computeGrammarScope(services: LangiumServices, grammar: ast.Gram
     const document = getDocument(grammar);
     const scopes = new MultiMap<AstNode, AstNodeDescription>();
     const processTypeNode = processTypeNodeWithNodeLocator(services.index.AstNodeLocator);
+    const processActionNode = processActionNodeWithNodeDescriptionProvider(descriptions);
     for (const node of streamAllContents(grammar)) {
         if (ast.isReturnType(node)) continue;
+        processActionNode(node, document, scopes);
         processTypeNode(node, document, scopes);
         const container = node.$container;
         if (container) {
             const name = nameProvider.getName(node);
             if (name) {
-                const description = descriptions.createDescription(node, name, document);
-                scopes.add(container, description);
+                scopes.add(container, descriptions.createDescription(node, name, document));
             }
         }
     }
@@ -392,11 +396,20 @@ export function processTypeNodeWithNodeLocator(astNodeLocator: AstNodeLocator): 
             const typeNode = node.type ?? node;
             scopes.add(container, {
                 node: typeNode,
-                type: 'Interface',
                 name: typeNode.name,
+                type: 'Interface',
                 documentUri: document.uri,
                 path: astNodeLocator.getAstNodePath(typeNode)
             });
+        }
+    };
+}
+
+export function processActionNodeWithNodeDescriptionProvider(descriptions: AstNodeDescriptionProvider): (node: AstNode, document: LangiumDocument, scopes: PrecomputedScopes) => void {
+    return (node: AstNode, document: LangiumDocument, scopes: PrecomputedScopes) => {
+        const container = extractRootNode(node);
+        if (container && ast.isAction(node)) {
+            scopes.add(container, descriptions.createDescription(node, node.type, document));
         }
     };
 }

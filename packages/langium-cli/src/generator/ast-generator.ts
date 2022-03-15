@@ -5,10 +5,9 @@
  ******************************************************************************/
 
 import {
-    GeneratorNode, Grammar, IndentNode, CompositeGeneratorNode, NL, processGeneratorNode, streamAllContents, isCrossReference, MultiMap, LangiumServices
+    GeneratorNode, Grammar, IndentNode, CompositeGeneratorNode, NL, processGeneratorNode, streamAllContents, isCrossReference, MultiMap, LangiumServices, collectAst, AstTypes
 } from 'langium';
 import { LangiumConfig } from '../package';
-import { AstTypes, collectAst } from './type-collector';
 import { generatedHeader } from './util';
 
 export function generateAst(services: LangiumServices, grammars: Grammar[], config: LangiumConfig): string {
@@ -116,12 +115,14 @@ type CrossReferenceType = {
 function buildCrossReferenceTypes(astTypes: AstTypes): CrossReferenceType[] {
     const crossReferences: CrossReferenceType[] = [];
     for (const typeInterface of astTypes.interfaces) {
-        for (const field of typeInterface.fields.filter(e => e.type.reference).sort((a, b) => a.name.localeCompare(b.name))) {
-            crossReferences.push({
-                type: typeInterface.name,
-                feature: field.name,
-                referenceType: field.type.types[0]
-            });
+        for (const property of typeInterface.properties.sort((a, b) => a.name.localeCompare(b.name))) {
+            property.typeAlternatives.filter(e => e.reference).flatMap(e => e.types).forEach(type =>
+                crossReferences.push({
+                    type: typeInterface.name,
+                    feature: property.name,
+                    referenceType: type
+                })
+            );
         }
     }
     return crossReferences.sort((a, b) => a.type.localeCompare(b.type));

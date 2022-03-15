@@ -22,10 +22,10 @@ fragment SchemaType:
 	'{' attributes+=TypeAttribute* '}' ';'?;
 
 TypeAttribute:
-	name=ID (isOptional?='?')? ':' type=AtomType ';'?;
+	name=ID (isOptional?='?')? ':' TypeAlternatives ';'?;
 
-Type:
-	'type' name=ID '=' typeAlternatives+=AtomType ('|' typeAlternatives+=AtomType)* ';'?;
+fragment TypeAlternatives:
+	typeAlternatives+=AtomType ('|' typeAlternatives+=AtomType)*;
 
 AtomType:
 		(	primitiveType=PrimitiveType
@@ -33,15 +33,18 @@ AtomType:
 		) isArray?='[]'?
 	|	keywordType=Keyword;
 
-type AbstractType = Interface | Type | ParserRule;
-
 PrimitiveType returns string:
 	'string' | 'number' | 'boolean' | 'date';
+
+type AbstractType = Interface | Type | Action | ParserRule;
+
+Type:
+	'type' name=ID '=' TypeAlternatives ';'?;
 
 ReturnType:
 	name=(PrimitiveType | ID);
 
-AbstractRule : ParserRule | TerminalRule;
+AbstractRule: ParserRule | TerminalRule;
 
 GrammarImport:
 	'import' path=STRING ';'?;

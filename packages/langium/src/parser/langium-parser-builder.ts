@@ -260,12 +260,12 @@ function buildAction(ctx: RuleContext, action: Action): Method {
 function buildCrossReference(ctx: RuleContext, crossRef: CrossReference, terminal = crossRef.terminal): Method {
     if (!terminal) {
         if (!crossRef.type.ref) {
-            throw new Error('Could not resolve reference to rule: ' + crossRef.type.$refText);
+            throw new Error('Could not resolve reference to type: ' + crossRef.type.$refText);
         }
         const assignment = findNameAssignment(crossRef.type.ref);
         const assignTerminal = assignment?.terminal;
         if (!assignTerminal) {
-            throw new Error('Could not find name assignment for rule: ' + crossRef.type.ref.name);
+            throw new Error('Could not find name assignment for type: ' + getTypeName(crossRef.type.ref));
         }
         return buildCrossReference(ctx, crossRef, assignTerminal);
     } else if (isRuleCall(terminal) && isParserRule(terminal.rule.ref)) {
