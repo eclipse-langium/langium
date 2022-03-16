@@ -87,7 +87,7 @@ export namespace IssueCodes {
     export const MissingImport = 'missing-import';
     export const UnnecessaryFileExtension = 'unnecessary-file-extension';
     export const InvalidReturns = 'invalid-returns';
-    export const InvalidInfers = 'invalid-infer';
+    export const InvalidInfers = 'invalid-infers';
     export const MissingInfer = 'missing-infer';
     export const SuperfluousInfer = 'superfluous-infer';
 }
