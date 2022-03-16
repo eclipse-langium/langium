@@ -50,7 +50,7 @@ GrammarImport:
 	'import' path=STRING ';'?;
 
 ParserRule:
-	(entry?='entry' | fragment?='fragment')? RuleNameAndParams (wildcard?='*' | 'returns' type=ReturnType | infer?='infers' type=ReturnType)?
+	(entry?='entry' | fragment?='fragment')? RuleNameAndParams (wildcard?='*' | 'returns' type=ReturnType | infers?='infers' type=ReturnType)?
 	(definesHiddenTokens?='hidden' '(' (hiddenTokens+=[AbstractRule:ID] (',' hiddenTokens+=[AbstractRule:ID])*)? ')')? ':'
 		alternatives=Alternatives
 	';';

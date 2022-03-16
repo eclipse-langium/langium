@@ -248,19 +248,19 @@ export class LangiumGrammarValidator {
         }
         for (const rule of grammar.rules.filter(ast.isParserRule)) {
             const isDataType = isDataTypeRule(rule);
-            if (!isDataType && rule.type?.name && types.has(rule.type.name) === !!rule.infer) {
-                const keywordNode = rule.infer ? findKeywordNode(rule.$cstNode, 'infers') : findKeywordNode(rule.$cstNode, 'returns');
-                accept('error', getMessage(rule.type.name, rule.infer), {
+            if (!isDataType && rule.type?.name && types.has(rule.type.name) === !!rule.infers) {
+                const keywordNode = rule.infers ? findKeywordNode(rule.$cstNode, 'infers') : findKeywordNode(rule.$cstNode, 'returns');
+                accept('error', getMessage(rule.type.name, rule.infers), {
                     node: rule.type,
                     property: 'name',
-                    code: rule.infer ? IssueCodes.InvalidInfers : IssueCodes.InvalidReturns,
+                    code: rule.infers ? IssueCodes.InvalidInfers : IssueCodes.InvalidReturns,
                     data: keywordNode && toDocumentSegment(keywordNode)
                 });
-            } else if (isDataType && rule.infer) {
+            } else if (isDataType && rule.infers) {
                 const inferNode = findKeywordNode(rule.$cstNode, 'infers');
                 accept('error', 'Data type rules cannot infer a type.', {
                     node: rule,
-                    property: 'infer',
+                    property: 'infers',
                     code: IssueCodes.InvalidInfers,
                     data: inferNode && toDocumentSegment(inferNode)
                 });

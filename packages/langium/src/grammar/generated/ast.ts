@@ -295,7 +295,7 @@ export interface ParserRule extends AstNode {
     entry: boolean
     fragment: boolean
     hiddenTokens: Array<Reference<AbstractRule>>
-    infer: boolean
+    infers: boolean
     name: string
     parameters: Array<Parameter>
     type: ReturnType
