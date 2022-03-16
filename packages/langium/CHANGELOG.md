@@ -65,8 +65,54 @@ A new package `langium-sprotty` is available to enable [Sprotty](https://github.
    ```
  * Introduced a new `entry` keyword to explicitly mark the entry rule of the parser ([#305](https://github.com/langium/langium/pull/305)). Previously the first grammar rule was assumed to be the entry rule.
  * Changed the syntax of cross-references in the grammar ([#306](https://github.com/langium/langium/pull/306)). Instead of `property=[Type|TOKEN]`, you now write `property=[Type:TOKEN]`.
+ * Parser rules with a non-primitive `returns` type must be changed to use the `infers` keyword instead ([#438](https://github.com/langium/langium/pull/438), [#445](https://github.com/langium/langium/pull/445)), unless the type is declared explicitly.
+ * Actions in parser rules need the `infer` keyword ([#438](https://github.com/langium/langium/pull/438)), unless the type is declared explicitly.
  * Some dependency injection services were moved to the new _shared services_ container ([#311](https://github.com/langium/langium/pull/311)), especially the `LangiumDocuments` and `DocumentBuilder`.
  * Numerous breaking API improvements that cannot be all mentioned here. If you're unsure how to migrate your code, please ask in [Discussions](https://github.com/langium/langium/discussions).
+
+### Migrating from v0.2.0
+
+ 1. Update `langium` and `langium-cli` to `^0.3.0` and update the Langium VS Code extension.
+ 2. Change `langium-config.json`:
+    * Add a property `projectName` with a CamelCase version of your language name.
+    * Rename the `languageId` property to `id`.
+    * Move the following properties into the `languages` property, wrapped by an object and an array: `id`, `grammar`, `fileExtensions`, `textMate`.
+      Example: `"languages": [{ "id": "hello-world", ... }]`
+ 3. Change your grammar file:
+    * Remove the `hidden(...)` statement at the beginning of the grammar and prefix the respective terminal rules with the `hidden` keyword. Example: `hidden terminal WS: /\s+/;`
+    * Add the `entry` keyword as prefix to the first parser rule.
+    * Change the `|` character in every cross-reference to `:`. Example: `person=[Person:ID]`
+    * In all parser rules that use the `returns` keyword with a non-primitive type, change that keyword to `infers`. Example: `Multiplication infers Expression: ...`
+    * Add the `infer` keyword to all parser rule actions, just before the type name. Example: `{infer MyType}`
+ 4. Change the service creation function in your DI module file like this, replacing `HelloWorld` with your CamelCase language name:
+    ```typescript
+    export function createArithmeticsServices(context?: DefaultSharedModuleContext): {
+        shared: LangiumSharedServices,
+        arithmetics: ArithmeticsServices
+    } {
+        const shared = inject(
+            createDefaultSharedModule(context),
+            ArithmeticsGeneratedSharedModule
+        );
+        const arithmetics = inject(
+            createDefaultModule({ shared }),
+            ArithmeticsGeneratedModule,
+            ArithmeticsModule
+        );
+        shared.ServiceRegistry.register(arithmetics);
+        return { shared, arithmetics };
+    }
+    ```
+ 5. Pass the `shared` services to the `startLanguageServer` function in your language server's `main.ts`:
+    ```typescript
+    startLanguageServer(services.shared);
+    ```
+ 6. Other selected API changes based on the Yeoman template:
+    * In other places where you used the service creation function, e.g. the CLI, extract the language-specific service container from the returned object.
+    * Where you use the `languageMetaData`, prefix that import with your CamelCase language name.
+    * Access `LangiumDocuments`, `DocumentBuilder` and related services from `services.shared.workspace` instead of `services.documents`.
+    * When passing a single document to `DocumentBuilder.build`, wrap it in an array.
+    * There is no longer a `BuildResult` of `DocumentBuilder.build`; diagnostics (validation results) can be taken directly from the `LangiumDocument` instead.
 
 ---
 
