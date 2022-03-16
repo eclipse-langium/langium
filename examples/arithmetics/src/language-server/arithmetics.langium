@@ -22,13 +22,13 @@ Evaluation:
 Expression:
 	Addition;
 
-Addition infer Expression:
+Addition infers Expression:
 	Multiplication ({infer BinaryExpression.left=current} operator=('+' | '-') right=Multiplication)*;
 
-Multiplication infer Expression:
+Multiplication infers Expression:
 	PrimaryExpression ({infer BinaryExpression.left=current} operator=('*' | '/') right=PrimaryExpression)*;
 
-PrimaryExpression infer Expression:
+PrimaryExpression infers Expression:
 	'(' Expression ')' |
 	{infer NumberLiteral} value=NUMBER |
 	{infer FunctionCall} func=[AbstractDefinition] ('(' args+=Expression (',' args+=Expression)* ')')?;

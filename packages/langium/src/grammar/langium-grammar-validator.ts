@@ -87,7 +87,7 @@ export namespace IssueCodes {
     export const MissingImport = 'missing-import';
     export const UnnecessaryFileExtension = 'unnecessary-file-extension';
     export const InvalidReturns = 'invalid-returns';
-    export const InvalidInfer = 'invalid-infer';
+    export const InvalidInfers = 'invalid-infer';
     export const MissingInfer = 'missing-infer';
     export const SuperfluousInfer = 'superfluous-infer';
 }
@@ -249,19 +249,19 @@ export class LangiumGrammarValidator {
         for (const rule of grammar.rules.filter(ast.isParserRule)) {
             const isDataType = isDataTypeRule(rule);
             if (!isDataType && rule.type?.name && types.has(rule.type.name) === !!rule.infer) {
-                const keywordNode = findKeywordNode(rule.$cstNode, 'infer') || findKeywordNode(rule.$cstNode, 'returns');
+                const keywordNode = rule.infer ? findKeywordNode(rule.$cstNode, 'infers') : findKeywordNode(rule.$cstNode, 'returns');
                 accept('error', getMessage(rule.type.name, rule.infer), {
                     node: rule.type,
                     property: 'name',
-                    code: rule.infer ? IssueCodes.InvalidInfer : IssueCodes.InvalidReturns,
+                    code: rule.infer ? IssueCodes.InvalidInfers : IssueCodes.InvalidReturns,
                     data: keywordNode && toDocumentSegment(keywordNode)
                 });
             } else if (isDataType && rule.infer) {
-                const inferNode = findKeywordNode(rule.$cstNode, 'infer');
+                const inferNode = findKeywordNode(rule.$cstNode, 'infers');
                 accept('error', 'Data type rules cannot infer a type.', {
                     node: rule,
                     property: 'infer',
-                    code: IssueCodes.InvalidInfer,
+                    code: IssueCodes.InvalidInfers,
                     data: inferNode && toDocumentSegment(inferNode)
                 });
             }

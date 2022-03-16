@@ -48,9 +48,9 @@ export class LangiumGrammarCodeActionProvider implements CodeActionProvider {
                 return this.fixMissingImport(diagnostic, document);
             case IssueCodes.UnnecessaryFileExtension:
                 return this.fixUnnecessaryFileExtension(diagnostic, document);
-            case IssueCodes.InvalidInfer:
+            case IssueCodes.InvalidInfers:
             case IssueCodes.InvalidReturns:
-                return this.fixInvalidReturnsInfer(diagnostic, document);
+                return this.fixInvalidReturnsInfers(diagnostic, document);
             case IssueCodes.MissingInfer:
                 return this.fixMissingInfer(diagnostic, document);
             case IssueCodes.SuperfluousInfer:
@@ -60,7 +60,7 @@ export class LangiumGrammarCodeActionProvider implements CodeActionProvider {
         }
     }
 
-    private fixInvalidReturnsInfer(diagnostic: Diagnostic, document: LangiumDocument): CodeAction | undefined {
+    private fixInvalidReturnsInfers(diagnostic: Diagnostic, document: LangiumDocument): CodeAction | undefined {
         const data = diagnostic.data as DocumentSegment;
         if (data) {
             const text = document.textDocument.getText(data.range);
@@ -72,7 +72,7 @@ export class LangiumGrammarCodeActionProvider implements CodeActionProvider {
                     changes: {
                         [document.textDocument.uri]: [{
                             range: data.range,
-                            newText: text === 'infer' ? 'returns' : 'infer'
+                            newText: text === 'infers' ? 'returns' : 'infers'
                         }]
                     }
                 }
@@ -85,7 +85,7 @@ export class LangiumGrammarCodeActionProvider implements CodeActionProvider {
         const data = diagnostic.data as DocumentSegment;
         if (data) {
             return {
-                title: "Correct 'infer' usage",
+                title: "Correct 'infers' usage",
                 kind: CodeActionKind.QuickFix,
                 diagnostics: [diagnostic],
                 edit: {
@@ -108,7 +108,7 @@ export class LangiumGrammarCodeActionProvider implements CodeActionProvider {
         const data = diagnostic.data as DocumentSegment;
         if (data) {
             return {
-                title: "Correct 'infer' usage",
+                title: "Correct 'infers' usage",
                 kind: CodeActionKind.QuickFix,
                 diagnostics: [diagnostic],
                 edit: {
