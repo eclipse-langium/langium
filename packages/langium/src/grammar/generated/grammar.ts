@@ -800,11 +800,11 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                 "elements": [
                   {
                     "$type": "Assignment",
-                    "feature": "infer",
+                    "feature": "infers",
                     "operator": "?=",
                     "terminal": {
                       "$type": "Keyword",
-                      "value": "infer"
+                      "value": "infers"
                     },
                     "elements": []
                   },
@@ -3267,6 +3267,11 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           {
             "$type": "Keyword",
             "value": "infer",
+            "elements": []
+          },
+          {
+            "$type": "Keyword",
+            "value": "infers",
             "elements": []
           },
           {

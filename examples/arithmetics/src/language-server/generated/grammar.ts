@@ -246,7 +246,7 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
       "parameters": [],
       "name": "Addition",
       "hiddenTokens": [],
-      "infer": true,
+      "infers": true,
       "type": {
         "$type": "ReturnType",
         "name": "Expression"
@@ -315,7 +315,7 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
       "parameters": [],
       "name": "Multiplication",
       "hiddenTokens": [],
-      "infer": true,
+      "infers": true,
       "type": {
         "$type": "ReturnType",
         "name": "Expression"
@@ -384,7 +384,7 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
       "parameters": [],
       "name": "PrimaryExpression",
       "hiddenTokens": [],
-      "infer": true,
+      "infers": true,
       "type": {
         "$type": "ReturnType",
         "name": "Expression"
