@@ -56,9 +56,11 @@ export function collectDeclaredTypes(interfaces: Interface[], types: Type[], inf
 }
 
 function atomTypeToPropertyType(type: AtomType): PropertyType {
-    return {
-        types: [type.refType ? getTypeName(type.refType.ref) : (type.primitiveType ?? `'${type.keywordType?.value}'`)],
-        reference: type.isRef === true,
-        array: type.isArray === true
-    };
+    let types: string[] = [];
+    if (type.refType) {
+        types = [type.refType.ref ? getTypeName(type.refType.ref) : type.refType.$refText];
+    } else {
+        types = [type.primitiveType ?? `'${type.keywordType?.value}'`];
+    }
+    return { types, reference: type.isRef === true, array: type.isArray === true };
 }
