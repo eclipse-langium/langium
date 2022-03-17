@@ -97,3 +97,43 @@ With the above configuration you can attach the debugger to the language server 
 ```javascript
 const debugOptions = { execArgv: ['--nolazy', '--inspect-brk=6009'] };
 ```
+
+## Release Process
+
+Currently the process of releasing a new version of Langium is done manually one package after another. It requires to carefully update versions and dependencies. Proposals for automation of parts of this process are welcome.
+
+ 1. Prepare the workspace
+    * Pull the latest changes
+    * `npm install`
+    * `npm test`
+ 2. `packages/langium`
+    * Update version in `package.json`
+    * `npm run publish:latest`
+ 3. `packages/langium-cli`
+    * Update version in `package.json`
+    * Update dependency to `langium` with `~` as version prefix (include bugfix versions)
+    * `npm run publish:latest`
+ 4. `packages/langium-sprotty`
+    * Update version in `package.json`
+    * Update dependency to `langium` with `~` as version prefix
+    * `npm run publish:latest`
+ 5. `packages/generator-langium`
+    * Update version in `package.json`
+    * Update dependency to `langium` and dev-dependency to `langium-cli` in `langium-template/package.json` with `^` as version prefix (include minor and bugfix versions)
+    * `npm run publish:latest`
+ 6. `packages/langium-vscode`
+    * Update version in `package.json`
+    * Update dependency to `langium`
+    * `npm install -g vsce`
+    * `vsce publish -p <token> --yarn` (the last argument is due to an npm bug)
+    * `npm i -g ovsx`
+    * `ovsx publish -p <token> --yarn`
+ 7. `examples/*`
+    * Update dependency to `langium` and dev-dependency to `langium-cli`
+ 8. `npm install` again in the repository root to update `package-lock.json`
+ 9. Commit, tag and push your changes
+ 10. Close the corresponding GitHub milestone
+
+In order to publish `next` versions from the current state of the `main` branch, use `npm run publish:next`, and don't update the `version` numbers manually as this is done by the npm script.
+The changes must not be committed to the repository after publishing a `next` version.
+Usually we don't publish `next` versions for the VS Code extension, only for the npm packages.

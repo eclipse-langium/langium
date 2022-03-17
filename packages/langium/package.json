@@ -1,6 +1,6 @@
 {
   "name": "langium",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "A language engineering tool for the Language Server Protocol",
   "homepage": "https://langium.org",
   "engines": {

@@ -46,7 +46,7 @@
         "chevrotain": "^9.1.0",
         "colors": "^1.4.0",
         "commander": "^8.0.0",
-        "langium": "^0.2.0",
+        "langium": "^0.3.0",
         "vscode-languageclient": "^7.0.0",
         "vscode-languageserver": "^7.0.0",
         "vscode-uri": "^3.0.2"
@@ -57,7 +57,7 @@
         "@typescript-eslint/eslint-plugin": "^4.14.1",
         "@typescript-eslint/parser": "^4.14.1",
         "eslint": "^7.19.0",
-        "langium-cli": "^0.2.0",
+        "langium-cli": "^0.3.0",
         "typescript": "^4.1.3"
     }
 }
