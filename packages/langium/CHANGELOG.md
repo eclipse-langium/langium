@@ -84,7 +84,7 @@ A new package `langium-sprotty` is available to enable [Sprotty](https://github.
     * Change the `|` character in every cross-reference to `:`. Example: `person=[Person:ID]`
     * In all parser rules that use the `returns` keyword with a non-primitive type, change that keyword to `infers`. Example: `Multiplication infers Expression: ...`
     * Add the `infer` keyword to all parser rule actions, just before the type name. Example: `{infer MyType}`
- 4. Change the service creation function in your DI module file like this, replacing `HelloWorld` with your CamelCase language name:
+ 4. Change the service creation function in your DI module file like this, replacing `Arithmetics` with your CamelCase language name:
     ```typescript
     export function createArithmeticsServices(context?: DefaultSharedModuleContext): {
         shared: LangiumSharedServices,
