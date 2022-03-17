@@ -19,8 +19,8 @@
   "files": [
     "lib",
     "src",
-	"test.js",
-	"test.d.ts"
+    "test.js",
+    "test.d.ts"
   ],
   "main": "lib/index.js",
   "types": "lib/index.d.ts",

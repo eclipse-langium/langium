@@ -1,26 +1,26 @@
 grammar Statemachine
 
 entry Statemachine:
-	'statemachine' name=ID
-	('events' events+=Event+)?
-	('commands'	commands+=Command+)?
-	'initialState' init=[State]
-	states+=State*;
+    'statemachine' name=ID
+    ('events' events+=Event+)?
+    ('commands'    commands+=Command+)?
+    'initialState' init=[State]
+    states+=State*;
 
 Event:
-	name=ID;
+    name=ID;
 
 Command:
-	name=ID;
+    name=ID;
 
 State:
-	'state' name=ID
-		('actions' '{' actions+=[Command]+ '}')?
-		transitions+=Transition*
-	'end';
+    'state' name=ID
+        ('actions' '{' actions+=[Command]+ '}')?
+        transitions+=Transition*
+    'end';
 
 Transition:
-	event=[Event] '=>' state=[State];
+    event=[Event] '=>' state=[State];
 
 hidden terminal WS: /\s+/;
 terminal ID: /[_a-zA-Z][\w_]*/;

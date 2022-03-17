@@ -7,7 +7,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import {
-	LanguageClient, LanguageClientOptions, ServerOptions, TransportKind
+    LanguageClient, LanguageClientOptions, ServerOptions, TransportKind
 } from 'vscode-languageclient/node';
 
 let client: LanguageClient;
@@ -19,53 +19,53 @@ export function activate(context: vscode.ExtensionContext): void {
 }
 
 export function deactivate(): Thenable<void> | undefined {
-	if (client) {
+    if (client) {
         return client.stop();
-	}
+    }
     return undefined;
 }
 
 function startLanguageClient(context: vscode.ExtensionContext): LanguageClient {
     const serverModule = context.asAbsolutePath(path.join('out', 'language-server', 'main'));
-	// The debug options for the server
-	// --inspect=6009: runs the server in Node's Inspector mode so VS Code can attach to the server for debugging.
-	// By setting `process.env.DEBUG_BREAK` to a truthy value, the language server will wait until a debugger is attached.
+    // The debug options for the server
+    // --inspect=6009: runs the server in Node's Inspector mode so VS Code can attach to the server for debugging.
+    // By setting `process.env.DEBUG_BREAK` to a truthy value, the language server will wait until a debugger is attached.
     const debugOptions = { execArgv: ['--nolazy', `--inspect${process.env.DEBUG_BREAK ? '-brk' : ''}=${process.env.DEBUG_SOCKET || '6009'}`] };
 
-	// If the extension is launched in debug mode then the debug server options are used
-	// Otherwise the run options are used
-	const serverOptions: ServerOptions = {
-	  run: { module: serverModule, transport: TransportKind.ipc },
-	  debug: {
-		module: serverModule,
-		transport: TransportKind.ipc,
-		options: debugOptions
-	  }
-	};
+    // If the extension is launched in debug mode then the debug server options are used
+    // Otherwise the run options are used
+    const serverOptions: ServerOptions = {
+      run: { module: serverModule, transport: TransportKind.ipc },
+      debug: {
+        module: serverModule,
+        transport: TransportKind.ipc,
+        options: debugOptions
+      }
+    };
 
-	const fileSystemWatcher = vscode.workspace.createFileSystemWatcher('**/*.langium');
-	context.subscriptions.push(fileSystemWatcher);
+    const fileSystemWatcher = vscode.workspace.createFileSystemWatcher('**/*.langium');
+    context.subscriptions.push(fileSystemWatcher);
 
-	// Options to control the language client
-	const clientOptions: LanguageClientOptions = {
-	  // Register the server for langium documents
-	  documentSelector: [{ scheme: 'file', language: 'langium' }],
-	  synchronize: {
-		// Notify the server about file changes to langium files contained in the workspace
-		fileEvents: fileSystemWatcher
-	  }
-	};
+    // Options to control the language client
+    const clientOptions: LanguageClientOptions = {
+      // Register the server for langium documents
+      documentSelector: [{ scheme: 'file', language: 'langium' }],
+      synchronize: {
+        // Notify the server about file changes to langium files contained in the workspace
+        fileEvents: fileSystemWatcher
+      }
+    };
 
-	// Create the language client and start the client.
-	const client = new LanguageClient(
-	  'langium',
-	  'Langium',
-	  serverOptions,
-	  clientOptions
-	);
+    // Create the language client and start the client.
+    const client = new LanguageClient(
+      'langium',
+      'Langium',
+      serverOptions,
+      clientOptions
+    );
 
-	// Start the client. This will also launch the server
-	client.start();
+    // Start the client. This will also launch the server
+    client.start();
     return client;
 }
 
@@ -75,17 +75,17 @@ const DELAY = 100; // delay in ms until a render can be cancelled on subsequent 
 
 function configureTemplateDecoration(context: vscode.ExtensionContext) {
     // define decoration type
-	const decorationType = vscode.window.createTextEditorDecorationType(decorationRenderOptions());
+    const decorationType = vscode.window.createTextEditorDecorationType(decorationRenderOptions());
 
-	// creates a cancelable decorator that delays the update
-	const decorator = cancelableDecorator((editor) => editor.setDecorations(decorationType, createDecorations(editor.document)));
+    // creates a cancelable decorator that delays the update
+    const decorator = cancelableDecorator((editor) => editor.setDecorations(decorationType, createDecorations(editor.document)));
 
-	// initiate first decoration
-	decorator();
+    // initiate first decoration
+    decorator();
 
-	// register editor & document change listeners
-	vscode.window.onDidChangeActiveTextEditor(() => decorator(), null, context.subscriptions);
-	vscode.workspace.onDidChangeTextDocument(() => decorator(), null, context.subscriptions);
+    // register editor & document change listeners
+    vscode.window.onDidChangeActiveTextEditor(() => decorator(), null, context.subscriptions);
+    vscode.workspace.onDidChangeTextDocument(() => decorator(), null, context.subscriptions);
 }
 
 // internal type definitions
@@ -95,47 +95,47 @@ type TimeoutID = ReturnType<typeof setTimeout>; // NodeJS.Timer (node) or number
 
 // adds the ability to cancel decoration requests
 function cancelableDecorator(decorator: Decorator, delay: number = 500): CancelableDecorator {
-	let timeout: TimeoutID | undefined; // works for window.setTimeout() & NodeJS
-	return () => {
-		const editor = vscode.window.activeTextEditor;
-		timeout && clearTimeout(timeout);
-		timeout = editor && setTimeout(() => decorator(editor), DELAY);
-	};
+    let timeout: TimeoutID | undefined; // works for window.setTimeout() & NodeJS
+    return () => {
+        const editor = vscode.window.activeTextEditor;
+        timeout && clearTimeout(timeout);
+        timeout = editor && setTimeout(() => decorator(editor), DELAY);
+    };
 }
 
 // scans the document for decoratable regions and returns decorated ranges
 function createDecorations(document: vscode.TextDocument): vscode.DecorationOptions[] {
-	// TODO(@@dd): change implementation
-	const regEx = /(\S+)`([^`]*)`/g; // TODO(@@dd): consider comments, strings and string substitutions
-	const text = document.getText();
-	const decorations: vscode.DecorationOptions[] = [];
-	let match: RegExpExecArray | null;
-	while ((match = regEx.exec(text))) {
-		const name = match[1];
-		const nameIndex = match.index;
-		if (isSmartTemplate(name, nameIndex)) {
-			const text = match[2];
-			const textIndex = nameIndex + name.length + 1;
-			decorateText(document, decorations, text, textIndex);
-		}
-	}
-	return decorations;
+    // TODO(@@dd): change implementation
+    const regEx = /(\S+)`([^`]*)`/g; // TODO(@@dd): consider comments, strings and string substitutions
+    const text = document.getText();
+    const decorations: vscode.DecorationOptions[] = [];
+    let match: RegExpExecArray | null;
+    while ((match = regEx.exec(text))) {
+        const name = match[1];
+        const nameIndex = match.index;
+        if (isSmartTemplate(name, nameIndex)) {
+            const text = match[2];
+            const textIndex = nameIndex + name.length + 1;
+            decorateText(document, decorations, text, textIndex);
+        }
+    }
+    return decorations;
 }
 
 // TODO(@@dd): replace this heuristic with a proper grammar
 function decorateText(document: vscode.TextDocument, decorations: vscode.DecorationOptions[], text: string, textIndex: number): void {
-	const indentation = findIndentation(text);
-	const regEx = /[^\r?\n]+/g;
-	let match: RegExpExecArray | null;
-	while ((match = regEx.exec(text))) {
-		const startIndex = textIndex + match.index;
-		const startPos = document.positionAt(startIndex + indentation);
-		const endPos = document.positionAt(startIndex + match[0].trimRight().length);
-		if (startPos.isBefore(endPos)) {
-			const range = new vscode.Range(startPos, endPos);
-			decorations.push({ range });
-		}
-	}
+    const indentation = findIndentation(text);
+    const regEx = /[^\r?\n]+/g;
+    let match: RegExpExecArray | null;
+    while ((match = regEx.exec(text))) {
+        const startIndex = textIndex + match.index;
+        const startPos = document.positionAt(startIndex + indentation);
+        const endPos = document.positionAt(startIndex + match[0].trimRight().length);
+        if (startPos.isBefore(endPos)) {
+            const range = new vscode.Range(startPos, endPos);
+            decorations.push({ range });
+        }
+    }
 }
 
  // TODO(@@dd): find bug
@@ -146,21 +146,21 @@ function findIndentation(text: string): number {
 }
 
 function isSmartTemplate(name: string, index: number): boolean {
-	// TODO(@@dd): check if symbol(name)'s type resolves to smart template
-	return name === "indent" && index !== -1;
+    // TODO(@@dd): check if symbol(name)'s type resolves to smart template
+    return name === "indent" && index !== -1;
 }
 
 // styling of a decorated range
 function decorationRenderOptions(): vscode.DecorationRenderOptions {
-	return { // TODO(@@dd): externalize extension config
-		overviewRulerLane: vscode.OverviewRulerLane.Right,
-		light: {
-			backgroundColor: 'rgba(0, 0, 0, 0.13)',
-			overviewRulerColor: 'rgba(0, 0, 0, 0.13)'
-		},
-		dark: {
-			backgroundColor: 'rgba(255, 255, 255, 0.13)',
-			overviewRulerColor: 'rgba(255, 255, 255, 0.13)'
-		}
-	};
+    return { // TODO(@@dd): externalize extension config
+        overviewRulerLane: vscode.OverviewRulerLane.Right,
+        light: {
+            backgroundColor: 'rgba(0, 0, 0, 0.13)',
+            overviewRulerColor: 'rgba(0, 0, 0, 0.13)'
+        },
+        dark: {
+            backgroundColor: 'rgba(255, 255, 255, 0.13)',
+            overviewRulerColor: 'rgba(255, 255, 255, 0.13)'
+        }
+    };
 }

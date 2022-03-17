@@ -5,139 +5,139 @@
     "version": "0.2.0",
     "configurations": [
         {
-			"name": "Run Grammar Extension",
-			"type": "extensionHost",
-			"request": "launch",
+            "name": "Run Grammar Extension",
+            "type": "extensionHost",
+            "request": "launch",
             "runtimeExecutable": "${execPath}",
-			"args": [
-				"${workspaceFolder}/examples",
-				"--extensionDevelopmentPath=${workspaceFolder}/packages/langium-vscode"
-			]
-		},
-		{
-			"name": "Run Arithmetics Extension",
-			"type": "extensionHost",
-			"request": "launch",
+            "args": [
+                "${workspaceFolder}/examples",
+                "--extensionDevelopmentPath=${workspaceFolder}/packages/langium-vscode"
+            ]
+        },
+        {
+            "name": "Run Arithmetics Extension",
+            "type": "extensionHost",
+            "request": "launch",
             "runtimeExecutable": "${execPath}",
-			"args": [
-				"${workspaceFolder}/examples/arithmetics/example",
-				"--extensionDevelopmentPath=${workspaceFolder}/examples/arithmetics"
-			]
-		},
-		{
-			"name": "Run Domainmodel Extension",
-			"type": "extensionHost",
-			"request": "launch",
+            "args": [
+                "${workspaceFolder}/examples/arithmetics/example",
+                "--extensionDevelopmentPath=${workspaceFolder}/examples/arithmetics"
+            ]
+        },
+        {
+            "name": "Run Domainmodel Extension",
+            "type": "extensionHost",
+            "request": "launch",
             "runtimeExecutable": "${execPath}",
-			"args": [
-				"${workspaceFolder}/examples/domainmodel/example",
-				"--extensionDevelopmentPath=${workspaceFolder}/examples/domainmodel"
-			]
-		},
-		{
-			"name": "Run Statemachine Extension",
-			"type": "extensionHost",
-			"request": "launch",
+            "args": [
+                "${workspaceFolder}/examples/domainmodel/example",
+                "--extensionDevelopmentPath=${workspaceFolder}/examples/domainmodel"
+            ]
+        },
+        {
+            "name": "Run Statemachine Extension",
+            "type": "extensionHost",
+            "request": "launch",
             "runtimeExecutable": "${execPath}",
-			"args": [
-				"${workspaceFolder}/examples/statemachine/example",
-				"--extensionDevelopmentPath=${workspaceFolder}/examples/statemachine"
-			]
-		},
-		{
-			"name": "Attach to Language Server",
-			"type": "pwa-node",
-			"port": 6009,
-			"request": "attach",
-			"skipFiles": [
-				"<node_internals>/**"
-			],
-			"sourceMaps": true,
-			"outFiles": [
-				"${workspaceFolder}/packages/langium/lib/**/*.js",
-				"${workspaceFolder}/examples/arithmetics/out/**/*.js",
-				"${workspaceFolder}/examples/domainmodel/out/**/*.js",
-				"${workspaceFolder}/examples/statemachine/out/**/*.js",
-				"${workspaceFolder}/packages/langium-vscode/out/**/*.js"
-			]
-		},
-		{
-			"name": "Bootstrap",
-			"type": "pwa-node",
-			"request": "launch",
-			"runtimeArgs": [
-				"${workspaceFolder}/packages/langium-cli/lib/langium",
-				"generate"
-			],
-			"runtimeExecutable": "node",
-			"cwd": "${workspaceFolder}/packages/langium",
-			"skipFiles": [
-				"<node_internals>/**"
-			],
-			"sourceMaps": true,
-			"outFiles": [
-				"${workspaceFolder}/packages/langium-cli/lib/**/*.js",
-				"${workspaceFolder}/packages/langium/lib/**/*.js"
-			]
-		},
-		{
-			"name": "Generate Domainmodel",
-			"type": "pwa-node",
-			"request": "launch",
-			"runtimeExecutable": "node",
-			"runtimeArgs": [
-				"${workspaceFolder}/examples/domainmodel/out/cli/cli",
-				"generate",
-				"example/blog.dmodel"
-			],
-			"cwd": "${workspaceFolder}/examples/domainmodel",
-			"skipFiles": [
-				"<node_internals>/**"
-			],
-			"sourceMaps": true,
-			"outFiles": [
-				"${workspaceFolder}/examples/domainmodel/out/**/*.js",
-				"${workspaceFolder}/packages/langium/lib/**/*.js"
-			]
-		},
-		{
-			"name": "Extension Tests",
-			"type": "extensionHost",
-			"request": "launch",
+            "args": [
+                "${workspaceFolder}/examples/statemachine/example",
+                "--extensionDevelopmentPath=${workspaceFolder}/examples/statemachine"
+            ]
+        },
+        {
+            "name": "Attach to Language Server",
+            "type": "pwa-node",
+            "port": 6009,
+            "request": "attach",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "sourceMaps": true,
+            "outFiles": [
+                "${workspaceFolder}/packages/langium/lib/**/*.js",
+                "${workspaceFolder}/examples/arithmetics/out/**/*.js",
+                "${workspaceFolder}/examples/domainmodel/out/**/*.js",
+                "${workspaceFolder}/examples/statemachine/out/**/*.js",
+                "${workspaceFolder}/packages/langium-vscode/out/**/*.js"
+            ]
+        },
+        {
+            "name": "Bootstrap",
+            "type": "pwa-node",
+            "request": "launch",
+            "runtimeArgs": [
+                "${workspaceFolder}/packages/langium-cli/lib/langium",
+                "generate"
+            ],
+            "runtimeExecutable": "node",
+            "cwd": "${workspaceFolder}/packages/langium",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "sourceMaps": true,
+            "outFiles": [
+                "${workspaceFolder}/packages/langium-cli/lib/**/*.js",
+                "${workspaceFolder}/packages/langium/lib/**/*.js"
+            ]
+        },
+        {
+            "name": "Generate Domainmodel",
+            "type": "pwa-node",
+            "request": "launch",
+            "runtimeExecutable": "node",
+            "runtimeArgs": [
+                "${workspaceFolder}/examples/domainmodel/out/cli/cli",
+                "generate",
+                "example/blog.dmodel"
+            ],
+            "cwd": "${workspaceFolder}/examples/domainmodel",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "sourceMaps": true,
+            "outFiles": [
+                "${workspaceFolder}/examples/domainmodel/out/**/*.js",
+                "${workspaceFolder}/packages/langium/lib/**/*.js"
+            ]
+        },
+        {
+            "name": "Extension Tests",
+            "type": "extensionHost",
+            "request": "launch",
             "runtimeExecutable": "${execPath}",
-			"args": [
-				"--extensionDevelopmentPath=${workspaceFolder}/packages/langium-vscode",
-				"--extensionTestsPath=${workspaceFolder}/out/test/suite/index"
-			]
-		},
-		{
-			"name": "Jest: Run All",
-			"type": "node",
-			"request": "launch",
-			"program": "${workspaceFolder}/node_modules/jest/bin/jest.js",
-			"args": [
-				"--config=${workspaceFolder}/jest.config.json",
-				"--verbose",
-				"-i",
-				"--no-cache",
-			],
-			"console": "integratedTerminal",
-			"internalConsoleOptions": "neverOpen"
-		},
-		{
-			"name": "Jest: Run Selected File",
-			"type": "node",
-			"request": "launch",
-			"program": "${workspaceFolder}/node_modules/jest/bin/jest.js",
-			"args": [
-				"${fileBasename}",
-				"--config=${workspaceFolder}/jest.config.json",
-				"--verbose",
-				"-i",
-				"--no-cache",
-			],
-			"console": "integratedTerminal",
-			"internalConsoleOptions": "neverOpen"
-		}
+            "args": [
+                "--extensionDevelopmentPath=${workspaceFolder}/packages/langium-vscode",
+                "--extensionTestsPath=${workspaceFolder}/out/test/suite/index"
+            ]
+        },
+        {
+            "name": "Jest: Run All",
+            "type": "node",
+            "request": "launch",
+            "program": "${workspaceFolder}/node_modules/jest/bin/jest.js",
+            "args": [
+                "--config=${workspaceFolder}/jest.config.json",
+                "--verbose",
+                "-i",
+                "--no-cache",
+            ],
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen"
+        },
+        {
+            "name": "Jest: Run Selected File",
+            "type": "node",
+            "request": "launch",
+            "program": "${workspaceFolder}/node_modules/jest/bin/jest.js",
+            "args": [
+                "${fileBasename}",
+                "--config=${workspaceFolder}/jest.config.json",
+                "--verbose",
+                "-i",
+                "--no-cache",
+            ],
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen"
+        }
     ]
 }

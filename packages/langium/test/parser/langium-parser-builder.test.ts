@@ -217,8 +217,8 @@ describe('Parser calls value converter', () => {
     QFN returns string: ID ('.' QFN)?;
     terminal ID: /\\^?[_a-zA-Z][\\w_]*/;
 
-	Number returns number: INT ('.' INT)?;
-	terminal INT returns number: /[0-9]+/;
+    Number returns number: INT ('.' INT)?;
+    terminal INT returns number: /[0-9]+/;
 
     hidden terminal WS: /\\s+/;
     hidden terminal ML_COMMENT: /\\/\\*[\\s\\S]*?\\*\\//;

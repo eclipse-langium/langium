@@ -77,19 +77,19 @@ When debugging a project that depends on another project under development using
 
 In `.vscode/launch.json` of your language project add the following launch configuration:
 ```json
-        {
-			"name": "Attach",
-			"port": 6009,
-			"request": "attach",
-			"skipFiles": [
-				"<node_internals>/**"
-			],
-			"sourceMaps": true,
-			"outFiles": [
-				"${workspaceFolder}/out/**/*.js"
-			],
-			"type": "pwa-node"
-		}
+    {
+        "name": "Attach",
+        "port": 6009,
+        "request": "attach",
+        "skipFiles": [
+            "<node_internals>/**"
+        ],
+        "sourceMaps": true,
+        "outFiles": [
+            "${workspaceFolder}/out/**/*.js"
+        ],
+        "type": "pwa-node"
+    }
 ```
 With the above configuration you can attach the debugger to the language server which effectively means you are able to debug your local version of Langium.
 
