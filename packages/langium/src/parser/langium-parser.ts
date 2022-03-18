@@ -181,7 +181,7 @@ export class LangiumParser {
                     crossRefId = `${current.$type}:${assignment.feature}`;
                 }
                 const convertedValue = isKeyword(feature) ? token.image : this.converter.convert(token.image, leafNode);
-                this.assign(assignment, convertedValue, leafNode, crossRefId);
+                this.assign(assignment.operator, assignment.feature, convertedValue, leafNode, crossRefId);
             } else if (isDataTypeNode(current)) {
                 let text = token.image;
                 if (!isKeyword(feature)) {
@@ -224,7 +224,7 @@ export class LangiumParser {
                 if (crossRef) {
                     crossRefId = `${this.current.$type}:${assignment.feature}`;
                 }
-                this.assign(assignment, subruleResult, cstNode, crossRefId);
+                this.assign(assignment.operator, assignment.feature, subruleResult, cstNode, crossRefId);
             }
         }
         return subruleResult;
@@ -245,7 +245,7 @@ export class LangiumParser {
             this.stack.pop();
             this.stack.push(newItem);
             if (action.feature && action.operator) {
-                this.assign(action, last, last.$cstNode);
+                this.assign(action.operator, action.feature, last, last.$cstNode);
             }
         }
     }
@@ -291,16 +291,15 @@ export class LangiumParser {
         return this.assignmentMap.get(feature)!;
     }
 
-    private assign(assignment: { operator: string, feature: string }, value: unknown, cstNode: CstNode, crossRefId?: string): void {
+    private assign(operator: string, feature: string, value: unknown, cstNode: CstNode, crossRefId?: string): void {
         const obj = this.current;
-        const feature = assignment.feature.replace(/\^/g, '');
         let item: unknown;
         if (crossRefId && typeof value === 'string') {
             item = this.linker.buildReference(obj, cstNode, crossRefId, value);
         } else {
             item = value;
         }
-        switch (assignment.operator) {
+        switch (operator) {
             case '=': {
                 obj[feature] = item;
                 break;

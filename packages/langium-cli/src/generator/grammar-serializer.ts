@@ -24,15 +24,17 @@ export function serializeGrammar(services: LangiumServices, grammars: Grammar[],
 
     for (let i = 0; i < grammars.length; i++) {
         const grammar = grammars[i];
-        // The json serializer returns strings with \n line delimiter by default
-        // We need to translate these line endings to the OS specific line ending
-        const json = services.serializer.JsonSerializer.serialize(grammar, 2).replace(/\\/g, '\\\\').replace(/`/g, '\\`').split('\n').join(EOL);
-        node.append(
-            'let loaded', grammar.name, 'Grammar: Grammar | undefined;', NL,
-            'export const ', grammar.name, 'Grammar = (): Grammar => loaded', grammar.name, 'Grammar ||' ,'(loaded', grammar.name, 'Grammar = loadGrammar(`', json, '`));', NL
-        );
-        if (i < grammars.length - 1) {
-            node.append(NL);
+        if (grammar.name) {
+            // The json serializer returns strings with \n line delimiter by default
+            // We need to translate these line endings to the OS specific line ending
+            const json = services.serializer.JsonSerializer.serialize(grammar, 2).replace(/\\/g, '\\\\').replace(/`/g, '\\`').split('\n').join(EOL);
+            node.append(
+                'let loaded', grammar.name, 'Grammar: Grammar | undefined;', NL,
+                'export const ', grammar.name, 'Grammar = (): Grammar => loaded', grammar.name, 'Grammar ||' ,'(loaded', grammar.name, 'Grammar = loadGrammar(`', json, '`));', NL
+            );
+            if (i < grammars.length - 1) {
+                node.append(NL);
+            }
         }
     }
     return processGeneratorNode(node);

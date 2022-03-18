@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import * as ast from '../../grammar/generated/ast';
-import { isDataTypeRule, terminalRegex } from '../../grammar/grammar-util';
+import { getCrossReferenceTerminal, isDataTypeRule, terminalRegex } from '../../grammar/grammar-util';
 import { CstNode } from '../../syntax-tree';
 import { findFirstFeatures, findNextFeatures } from './follow-element-computation';
 
@@ -59,7 +59,10 @@ export class RuleInterpreter {
         } else if (ast.isRuleCall(feature)) {
             return this.ruleMatches(feature.rule.ref, node, offset);
         } else if (ast.isCrossReference(feature)) {
-            return this.featureMatches(feature.terminal, node, offset);
+            const crossRefTerminal = getCrossReferenceTerminal(feature);
+            if (crossRefTerminal) {
+                return this.featureMatches(crossRefTerminal, node, offset);
+            }
         }
         return 'none';
     }

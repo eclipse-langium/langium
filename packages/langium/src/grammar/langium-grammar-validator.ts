@@ -9,7 +9,7 @@ import { DiagnosticTag } from 'vscode-languageserver-types';
 import { Utils } from 'vscode-uri';
 import { References } from '../references/references';
 import { LangiumServices } from '../services';
-import { AstNode, Reference } from '../syntax-tree';
+import { AstNode } from '../syntax-tree';
 import { getContainerOfType, getDocument, streamAllContents } from '../utils/ast-util';
 import { MultiMap } from '../utils/collections';
 import { toDocumentSegment } from '../utils/cst-util';
@@ -50,7 +50,7 @@ export class LangiumGrammarValidationRegistry extends ValidationRegistry {
                 validator.checkGrammarHiddenTokens,
                 validator.checkGrammarForUnusedRules,
                 validator.checkGrammarImports,
-                validator.checkGrammarTypeAliases,
+                validator.checkGrammarTypeUnions,
                 validator.checkGrammarTypeInfer,
                 validator.checkTypesConsistency,
                 validator.checkPropertyNameDuplication
@@ -383,26 +383,26 @@ export class LangiumGrammarValidator {
         }
     }
 
-    checkGrammarTypeAliases(grammar: ast.Grammar, accept: ValidationAcceptor): void {
+    checkGrammarTypeUnions(grammar: ast.Grammar, accept: ValidationAcceptor): void {
         const types = new Set<string>();
         for (const type of grammar.types) {
             types.add(type.name);
         }
         for (const rule of grammar.rules) {
             if (rule.type?.name && types.has(rule.type.name)) {
-                accept('error', 'Rules are not allowed to return alias types.', { node: rule.type, property: 'name' });
+                accept('error', 'Rules are not allowed to return union types.', { node: rule.type, property: 'name' });
             }
         }
         for (const interfaceType of grammar.interfaces) {
             interfaceType.superTypes.forEach((superType, i) => {
                 if (superType.ref && ast.isType(superType.ref)) {
-                    accept('error', 'Interfaces cannot extend alias types.', { node: interfaceType, property: 'superTypes', index: i });
+                    accept('error', 'Interfaces cannot extend union types.', { node: interfaceType, property: 'superTypes', index: i });
                 }
             });
         }
         for (const action of streamAllContents(grammar).filter(ast.isAction)) {
             if (action.type && types.has(action.type)) {
-                accept('error', 'Actions cannot create alias types.', { node: action, property: 'type' });
+                accept('error', 'Actions cannot create union types.', { node: action, property: 'type' });
             }
         }
     }
@@ -544,7 +544,7 @@ export class LangiumGrammarValidator {
         if (!hasDatatypeReturnType && isDataType) {
             accept('error', 'This parser rule does not create an object. Add a primitive return type or an action to the start of the rule to force object instantiation.', { node: rule, property: 'name' });
         } else if (hasDatatypeReturnType && !isDataType) {
-            accept('error', 'Normal parser rules are not allowed to return a primitive value. Use a datatype rule for that.', { node: rule.type, property: 'name' });
+            accept('error', 'Normal parser rules are not allowed to return a primitive value. Use a datatype rule for that.', { node: rule.type!, property: 'name' });
         }
     }
 
@@ -580,22 +580,22 @@ export class LangiumGrammarValidator {
     }
 
     checkCrossRefType(reference: ast.CrossReference, accept: ValidationAcceptor): void {
-        const issue = this.checkReferenceToRuleButNotType(reference.type);
+        const issue = this.checkReferenceToRuleButNotType(reference?.type?.ref);
         if (issue) {
             accept('error', issue, { node: reference, property: 'type' });
         }
     }
 
     checkAtomTypeRefType(atomType: ast.AtomType, accept: ValidationAcceptor): void {
-        const issue = this.checkReferenceToRuleButNotType(atomType.refType);
+        const issue = this.checkReferenceToRuleButNotType(atomType?.refType?.ref);
         if (issue) {
             accept('error', issue, { node: atomType, property: 'refType' });
         }
     }
 
-    protected checkReferenceToRuleButNotType(type: Reference<ast.AbstractType>): string | undefined {
-        if(type && ast.isParserRule(type.ref) && !isDataTypeRule(type.ref) && type.ref.type) {
-            return `Use the rule type '${type.ref.type.name}' instead of the typed rule '${type.ref.name}' for cross references.`;
+    protected checkReferenceToRuleButNotType(parserRule: ast.AbstractType | undefined): string | undefined {
+        if(ast.isParserRule(parserRule) && !isDataTypeRule(parserRule) && parserRule.type) {
+            return `Use the rule type '${parserRule.type.name}' instead of the typed rule '${parserRule.name}' for cross references.`;
         }
         return undefined;
     }

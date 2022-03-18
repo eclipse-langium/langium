@@ -7,7 +7,7 @@
 import { Cardinality, getRuleType, getTypeName, isOptional } from '../grammar-util';
 import { AbstractElement, Action, Alternatives, Assignment, Group, isAction, isAlternatives, isAssignment, isCrossReference, isGroup, isKeyword, isParserRule, isRuleCall, isUnorderedGroup, ParserRule, RuleCall, UnorderedGroup } from '../generated/ast';
 import { stream } from '../../utils/stream';
-import { AstTypes, distictAndSorted, Property, PropertyType, InterfaceType, TypeType } from './types-util';
+import { AstTypes, distictAndSorted, Property, PropertyType, InterfaceType, UnionType } from './types-util';
 
 type TypeAlternative = {
     name: string,
@@ -15,6 +15,7 @@ type TypeAlternative = {
     properties: Property[]
     ruleCalls: string[],
     hasAction: boolean
+    cardinalities: Cardinality[]
 }
 
 type TypeCollection = {
@@ -30,7 +31,10 @@ class TypeTree {
     }
 
     split(type: TypeAlternative, count: number): TypeAlternative[] {
-        const descendents: TypeAlternative[] = new Array(count).fill(JSON.parse(JSON.stringify(type)));
+        const descendents: TypeAlternative[] = [];
+        for (let i = 0; i < count; i++) {
+            descendents.push(JSON.parse(JSON.stringify(type)));
+        }
         descendents.forEach(e => this.descendents.set(e, []));
         this.descendents.set(type, descendents);
         return descendents;
@@ -53,7 +57,13 @@ class TypeTree {
     }
 
     getLeafNodes(): TypeAlternative[] {
-        return Array.from(this.descendents.keys());
+        const leaves: TypeAlternative[] = [];
+        for (const [type, children] of this.descendents.entries()) {
+            if (children.length === 0) {
+                leaves.push(type);
+            }
+        }
+        return leaves;
     }
 
     hasLeaves(type: TypeAlternative): boolean {
@@ -63,7 +73,6 @@ class TypeTree {
 
 class TypeCollectorState {
     tree: TypeTree;
-    cardinalities: Cardinality[] = [];
     parserRule?: ParserRule;
     currentType?: TypeAlternative;
 
@@ -72,15 +81,15 @@ class TypeCollectorState {
     }
 
     enterGroup(cardinality: Cardinality): void {
-        this.cardinalities.push(cardinality);
+        this.currentType?.cardinalities.push(cardinality);
     }
 
-    leaveGroup(): void {
-        this.cardinalities.pop();
+    leaveGroup(splits: TypeAlternative[]): void {
+        splits.forEach(e => e.cardinalities.pop());
     }
 
     isOptional(): boolean {
-        return this.cardinalities.some(e => isOptional(e));
+        return this.currentType?.cardinalities.some(e => isOptional(e)) ?? false;
     }
 }
 
@@ -101,9 +110,9 @@ export function collectInferredTypes(parserRules: ParserRule[], datatypeRules: P
     // extract types from datatype rules
     for (const rule of datatypeRules) {
         const types = isAlternatives(rule.alternatives) && rule.alternatives.elements.every(e => isKeyword(e)) ?
-            stream(rule.alternatives.elements).filter(isKeyword).map(e => `'${e.value}'`).toArray() :
+            stream(rule.alternatives.elements).filter(isKeyword).map(e => `'${e.value}'`).toArray().sort() :
             [rule.type?.name ?? 'string'];
-        inferredTypes.types.push(new TypeType(rule.name, [<PropertyType>{ types, reference: false, array: false }]));
+        inferredTypes.unions.push(new UnionType(rule.name, [<PropertyType>{ types, reference: false, array: false }]));
     }
 
     return inferredTypes;
@@ -116,6 +125,7 @@ function initType(rule: ParserRule | string): TypeAlternative {
         super: [],
         properties: [],
         ruleCalls: [],
+        cardinalities: [],
         hasAction: false
     };
 }
@@ -129,13 +139,10 @@ function initType(rule: ParserRule | string): TypeAlternative {
 function collectElement(state: TypeCollectorState, type: TypeAlternative, element: AbstractElement): void {
     state.currentType = type;
     state.enterGroup(element.cardinality);
-    if (isOptional(element.cardinality)) {
-        state.tree.split(state.currentType, 2);
-    }
+    let splits: TypeAlternative[] = [type];
     if (isAlternatives(element)) {
-        state.tree
-            .split(state.currentType, element.elements.length)
-            .forEach((split, i) => collectElement(state, split, element.elements[i]));
+        splits = state.tree.split(state.currentType, element.elements.length);
+        splits.forEach((split, i) => collectElement(state, split, element.elements[i]));
     } else if (isGroup(element) || isUnorderedGroup(element)) {
         for (const item of element.elements) {
             state.tree
@@ -149,7 +156,7 @@ function collectElement(state: TypeCollectorState, type: TypeAlternative, elemen
     } else if (isRuleCall(element)) {
         addRuleCall(state, element);
     }
-    state.leaveGroup();
+    state.leaveGroup(splits);
 }
 
 function addAction(state: TypeCollectorState, action: Action): void {
@@ -189,7 +196,7 @@ function addAssignment(state: TypeCollectorState, assignment: Assignment): void 
         optional: isOptional(assignment.cardinality) || state.isOptional(),
         typeAlternatives: [{
             array: assignment.operator === '+=',
-            types: assignment.operator === '?=' ? ['boolean'] : Array.from(new Set(typeItems.types)),
+            types: assignment.operator === '?=' ? ['boolean'] : Array.from(new Set(typeItems.types)).sort(),
             reference: typeItems.reference
         }]
     });
@@ -284,16 +291,17 @@ function flattenTypes(alternatives: TypeAlternative[]): TypeAlternative[] {
     for (const name of names) {
         const properties: Property[] = [];
         const ruleCalls = new Set<string>();
-        const type = { name, properties, ruleCalls: <string[]>[], super: <string[]>[], hasAction: false };
+        const type: TypeAlternative = { name, properties, ruleCalls: <string[]>[], super: <string[]>[], hasAction: false, cardinalities: [] };
         const namedAlternatives = alternatives.filter(e => e.name === name);
         for (const alt of namedAlternatives) {
             type.super.push(...alt.super);
             type.hasAction = type.hasAction || alt.hasAction;
             const altProperties = alt.properties;
+            const foundProperties = new Set<string>();
             for (const altProperty of altProperties) {
+                foundProperties.add(altProperty.name);
                 const existingProperty = properties.find(e => e.name === altProperty.name);
                 if (existingProperty) {
-                    existingProperty.optional = existingProperty.optional && altProperty.optional;
                     altProperty.typeAlternatives.filter(isNotInTypeAlternatives(existingProperty.typeAlternatives)).forEach(type => existingProperty.typeAlternatives.push(type));
                 } else {
                     properties.push({ ...altProperty });
@@ -301,6 +309,13 @@ function flattenTypes(alternatives: TypeAlternative[]): TypeAlternative[] {
             }
             if (altProperties.length === 0) {
                 alt.ruleCalls.forEach(ruleCall => ruleCalls.add(ruleCall));
+            }
+        }
+        for (const alt of namedAlternatives) {
+            for (const property of properties) {
+                if (!alt.properties.find(e => e.name === property.name)) {
+                    property.optional = true;
+                }
             }
         }
         type.ruleCalls = Array.from(ruleCalls);
@@ -388,19 +403,19 @@ function shareContainerTypes(connectedComponents: InterfaceType[][]): void {
  * @returns Types and not transformed interfaces.
  */
 function extractTypes(interfaces: InterfaceType[]): AstTypes {
-    const astTypes: AstTypes = { interfaces: [], types: [] };
+    const astTypes: AstTypes = { interfaces: [], unions: [] };
     const typeNames: string[] = [];
     for (const interfaceType of interfaces) {
         // the criterion for converting an interface into a type
         if (interfaceType.properties.length === 0 && interfaceType.subTypes.length > 0) {
-            const alternatives = interfaceType.subTypes.map(e => <PropertyType>{
-                types: [e],
+            const alternative: PropertyType = {
+                types: [...interfaceType.subTypes].sort(),
                 reference: false,
                 array: false
-            });
-            const type = new TypeType(interfaceType.name, alternatives, { reflection: true });
+            };
+            const type = new UnionType(interfaceType.name, [alternative], { reflection: true });
             type.superTypes = interfaceType.superTypes;
-            astTypes.types.push(type);
+            astTypes.unions.push(type);
             typeNames.push(interfaceType.name);
         } else {
             astTypes.interfaces.push(interfaceType);
@@ -409,8 +424,7 @@ function extractTypes(interfaces: InterfaceType[]): AstTypes {
     // define printingSuperTypes containing intefaces that
     // became types from super types of their "former" children
     for (const interfaceType of astTypes.interfaces) {
-        interfaceType.printingSuperTypes = (JSON.parse(JSON.stringify(interfaceType.superTypes)) as string[])
-            .filter(superType => !typeNames.includes(superType));
+        interfaceType.printingSuperTypes = interfaceType.superTypes.filter(superType => !typeNames.includes(superType)).sort();
     }
     return astTypes;
 }

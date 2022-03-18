@@ -6,20 +6,20 @@
 
 import { getTypeName } from '../grammar-util';
 import { AtomType, Interface, Type } from '../generated/ast';
-import { AstTypes, Property, PropertyType, InterfaceType, TypeType } from './types-util';
+import { AstTypes, Property, PropertyType, InterfaceType, UnionType } from './types-util';
 import { MultiMap } from '../../utils/collections';
 
 export function collectDeclaredTypes(interfaces: Interface[], types: Type[], inferredTypes: AstTypes): AstTypes {
 
     function addSuperTypes(child: string, types: AstTypes) {
-        const childType = types.types.find(e => e.name === child) ??
+        const childType = types.unions.find(e => e.name === child) ??
             types.interfaces.find(e => e.name === child);
         if (childType) {
             childType.superTypes.push(...childToSuper.get(child));
         }
     }
 
-    const declaredTypes: AstTypes = { types: [], interfaces: [] };
+    const declaredTypes: AstTypes = { unions: [], interfaces: [] };
     // add interfaces
     for (const interfaceType of interfaces) {
         const superTypes = interfaceType.superTypes.map(e => getTypeName(e.ref));
@@ -36,7 +36,7 @@ export function collectDeclaredTypes(interfaces: Interface[], types: Type[], inf
     for (const type of types) {
         const alternatives = type.typeAlternatives.map(atomTypeToPropertyType);
         const reflection = type.typeAlternatives.length > 1 && type.typeAlternatives.some(e => e.refType?.ref !== undefined);
-        declaredTypes.types.push(new TypeType(type.name, alternatives, { reflection }));
+        declaredTypes.unions.push(new UnionType(type.name, alternatives, { reflection }));
 
         if (reflection) {
             for (const maybeRef of type.typeAlternatives) {

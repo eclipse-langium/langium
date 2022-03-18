@@ -28,29 +28,33 @@ export function generateModule(grammars: langium.Grammar[], config: LangiumConfi
     );
     for (let i = 0; i < grammars.length; i++) {
         const grammar = grammars[i];
-        node.append(grammar.name, 'Grammar');
-        if (i < grammars.length - 1) {
-            node.append(', ');
+        if (grammar.name) {
+            node.append(grammar.name, 'Grammar');
+            if (i < grammars.length - 1) {
+                node.append(', ');
+            }
         }
     }
     node.append(" } from './grammar';", NL, NL);
 
     for (const grammar of grammars) {
-        const config = grammarConfigMap.get(grammar)!;
-        node.append('export const ', grammar.name, 'LanguageMetaData: LanguageMetaData = {', NL);
-        node.indent(metaData => {
-            metaData.append(`languageId: '${config.id}',`, NL);
-            metaData.append(`fileExtensions: [${config.fileExtensions && config.fileExtensions.map(e => appendQuotesAndDot(e)).join(', ')}],`, NL);
-            metaData.append(`caseInsensitive: ${!!config.caseInsensitive}`, NL);
-        });
-        node.append('};', NL, NL);
+        if (grammar.name) {
+            const config = grammarConfigMap.get(grammar)!;
+            node.append('export const ', grammar.name, 'LanguageMetaData: LanguageMetaData = {', NL);
+            node.indent(metaData => {
+                metaData.append(`languageId: '${config.id}',`, NL);
+                metaData.append(`fileExtensions: [${config.fileExtensions && config.fileExtensions.map(e => appendQuotesAndDot(e)).join(', ')}],`, NL);
+                metaData.append(`caseInsensitive: ${!!config.caseInsensitive}`, NL);
+            });
+            node.append('};', NL, NL);
+        }
     }
 
     let needsGeneralParserConfig = false;
     for (const grammar of grammars) {
         const grammarConfig = grammarConfigMap.get(grammar)!;
         const grammarParserConfig = grammarConfig.chevrotainParserConfig;
-        if (grammarParserConfig) {
+        if (grammarParserConfig && grammar.name) {
             node.append('export const ', grammar.name, 'ParserConfig: IParserConfig = ', generateParserConfig(grammarParserConfig));
         } else {
             needsGeneralParserConfig = true;
@@ -71,28 +75,30 @@ export function generateModule(grammars: langium.Grammar[], config: LangiumConfi
 
     for (let i = 0; i < grammars.length; i++) {
         const grammar = grammars[i];
-        const grammarConfig = grammarConfigMap.get(grammar)!;
-        node.append('export const ', grammar.name, 'GeneratedModule: Module<LangiumServices, LangiumGeneratedServices> = {', NL);
-        node.indent(moduleNode => {
-            moduleNode.append(
-                'Grammar: () => ', grammar.name, 'Grammar(),', NL,
-                'LanguageMetaData: () => ', grammar.name, 'LanguageMetaData,', NL,
-                'parser: {'
-            );
-            if (parserConfig) {
-                moduleNode.append(NL);
-                moduleNode.indent(parserGroupNode => {
-                    const parserConfigName = grammarConfig.chevrotainParserConfig
-                        ? grammar.name + 'ParserConfig'
-                        : 'parserConfig';
-                    parserGroupNode.append('ParserConfig: () => ', parserConfigName,  NL);
-                });
+        if (grammar.name) {
+            const grammarConfig = grammarConfigMap.get(grammar)!;
+            node.append('export const ', grammar.name, 'GeneratedModule: Module<LangiumServices, LangiumGeneratedServices> = {', NL);
+            node.indent(moduleNode => {
+                moduleNode.append(
+                    'Grammar: () => ', grammar.name!, 'Grammar(),', NL,
+                    'LanguageMetaData: () => ', grammar.name!, 'LanguageMetaData,', NL,
+                    'parser: {'
+                );
+                if (parserConfig) {
+                    moduleNode.append(NL);
+                    moduleNode.indent(parserGroupNode => {
+                        const parserConfigName = grammarConfig.chevrotainParserConfig
+                            ? grammar.name + 'ParserConfig'
+                            : 'parserConfig';
+                        parserGroupNode.append('ParserConfig: () => ', parserConfigName,  NL);
+                    });
+                }
+                moduleNode.append('}', NL);
+            });
+            node.append('};', NL);
+            if (i < grammars.length - 1) {
+                node.append(NL);
             }
-            moduleNode.append('}', NL);
-        });
-        node.append('};', NL);
-        if (i < grammars.length - 1) {
-            node.append(NL);
         }
     }
 

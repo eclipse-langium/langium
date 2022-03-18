@@ -4,7 +4,8 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { AbstractRule, isCrossReference, isRuleCall } from '../grammar/generated/ast';
+import { AbstractElement, AbstractRule, isCrossReference, isRuleCall } from '../grammar/generated/ast';
+import { getCrossReferenceTerminal } from '../grammar/grammar-util';
 import { CstNode } from '../syntax-tree';
 
 /**
@@ -22,9 +23,9 @@ export type ValueType = string | number | boolean | bigint | Date;
 export class DefaultValueConverter implements ValueConverter {
 
     convert(input: string, cstNode: CstNode): ValueType {
-        let feature = cstNode.feature;
+        let feature: AbstractElement | undefined = cstNode.feature;
         if (isCrossReference(feature)) {
-            feature = feature.terminal;
+            feature = getCrossReferenceTerminal(feature);
         }
         if (isRuleCall(feature)) {
             const rule = feature.rule.ref;
