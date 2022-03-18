@@ -12,7 +12,7 @@ import { LangiumServices } from '../services';
 import { AstNode } from '../syntax-tree';
 import { streamAllContents } from '../utils/ast-util';
 import { tokenToRange } from '../utils/cst-util';
-import { interruptAndCheck } from '../utils/promise-util';
+import { interruptAndCheck, isOperationCancelled } from '../utils/promise-util';
 import { LangiumDocument } from '../workspace/documents';
 import { DiagnosticInfo, ValidationAcceptor, ValidationRegistry } from './validation-registry';
 
@@ -91,6 +91,9 @@ export class DefaultDocumentValidator implements DocumentValidator {
         try {
             diagnostics.push(...await this.validateAst(parseResult.value, document, cancelToken));
         } catch (err) {
+            if (isOperationCancelled(err)) {
+                throw err;
+            }
             console.error('An error occurred during validation:', err);
         }
 
