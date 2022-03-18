@@ -7,7 +7,15 @@
     ],
     "parserOptions": {
         "ecmaVersion": 6,
-        "sourceType": "module"
+        "sourceType": "module",
+        "project": [
+            "./tsconfig.json",
+            "./tsconfig-eslint.json",
+            "./packages/generator-langium/tsconfig.json",
+            "./packages/langium-cli/tsconfig.json",
+            "./packages/langium-sprotty/tsconfig.json",
+            "./packages/langium-vscode/tsconfig.json"
+        ]
     },
     "plugins": [
         "@typescript-eslint",
@@ -69,6 +77,7 @@
         "@typescript-eslint/prefer-for-of": "error",                // prefer for-of loop over arrays
         "@typescript-eslint/prefer-namespace-keyword": "error",     // prefer namespace over module in TypeScript
         "@typescript-eslint/triple-slash-reference": "error",       // ban /// <reference />, prefer imports
-        "@typescript-eslint/type-annotation-spacing": "error"       // consistent space around colon ':'
+        "@typescript-eslint/type-annotation-spacing": "error",      // consistent space around colon ':'
+        "@typescript-eslint/no-floating-promises": "warn"           // Promises returned by functions must be handled appropriately.
     }
 }
