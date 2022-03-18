@@ -18,7 +18,7 @@ export function validateTypesConsistency(grammar: Grammar, accept: ValidationAcc
     function applyErrorToRuleNodes(nodes: readonly ParserRule[], typeName: string): (errorMessage: string) => void {
         return (errorMessage: string) => {
             nodes.forEach(node => accept('error',
-                errorMessage + ` in inferred type '${typeName}'.`,
+                errorMessage + ` in a rule that returns a type '${typeName}'.`,
                 { node: node?.type ? node.type : node, property: 'name' }
             ));
         };
