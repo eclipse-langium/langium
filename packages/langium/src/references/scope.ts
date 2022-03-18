@@ -185,7 +185,7 @@ export class DefaultScopeComputation implements ScopeComputation {
         const rootNode = document.parseResult.value;
         const scopes = new MultiMap<AstNode, AstNodeDescription>();
         for (const node of streamAllContents(rootNode)) {
-            interruptAndCheck(cancelToken);
+            await interruptAndCheck(cancelToken);
             this.processNode(node, document, scopes);
         }
         return scopes;

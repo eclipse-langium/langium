@@ -8,7 +8,7 @@ import {
     Connection, NotificationType
 } from 'vscode-languageserver';
 import { ActionMessage } from 'sprotty-protocol';
-import { OperationCancelled } from 'langium';
+import { isOperationCancelled } from 'langium';
 import { LangiumSprottySharedServices } from './sprotty-services';
 
 export namespace DiagramActionNotification {
@@ -28,7 +28,7 @@ export function addDiagramHandler(connection: Connection, services: LangiumSprot
     connection.onNotification(DiagramActionNotification.type, message => {
         diagramServerManager.acceptAction(message)
             .catch(err => {
-                if (err !== OperationCancelled) {
+                if (!isOperationCancelled(err)) {
                     console.error('Error: ', err);
                 }
             });

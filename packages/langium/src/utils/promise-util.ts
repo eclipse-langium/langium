@@ -45,6 +45,14 @@ export function setInterruptionPeriod(period: number): void {
 export const OperationCancelled = Symbol('OperationCancelled');
 
 /**
+ * Use this in a `catch` block to check whether the thrown object indicates that the operation
+ * has been cancelled.
+ */
+export function isOperationCancelled(err: unknown): err is typeof OperationCancelled {
+    return err === OperationCancelled;
+}
+
+/**
  * This function does two things:
  *  1. Check the elapsed time since the last call to this function or to `startCancelableOperation`. If the predefined
  *     period (configured with `setInterruptionPeriod`) is exceeded, execution is delayed with `delayNextTick`.

@@ -10,7 +10,7 @@ import {
 } from 'vscode-languageserver';
 import { URI } from 'vscode-uri';
 import { LangiumServices, LangiumSharedServices } from '../services';
-import { OperationCancelled, startCancelableOperation } from '../utils/promise-util';
+import { isOperationCancelled, startCancelableOperation } from '../utils/promise-util';
 import { DocumentState, LangiumDocument } from '../workspace/documents';
 import { DefaultSemanticTokenOptions } from './semantic-token-provider';
 
@@ -92,7 +92,7 @@ export function addDocumentsHandler(connection: Connection, services: LangiumSha
         changePromise = documentBuilder
             .update(changed, deleted ?? [], changeTokenSource.token)
             .catch(err => {
-                if (err !== OperationCancelled) {
+                if (!isOperationCancelled(err)) {
                     console.error('Error: ', err);
                 }
             });
@@ -272,7 +272,7 @@ export function createRequestHandler<P extends { textDocument: TextDocumentIdent
 }
 
 function responseError<E = void>(err: unknown): ResponseError<E> {
-    if (err === OperationCancelled) {
+    if (isOperationCancelled(err)) {
         return new ResponseError(LSPErrorCodes.RequestCancelled, 'The request has been cancelled.');
     }
     if (err instanceof ResponseError) {
