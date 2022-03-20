@@ -35,7 +35,7 @@ export function generateAst(services: LangiumServices, grammars: Grammar[], conf
         fileNode.append(interfaceType.toString(), NL);
     }
 
-    astTypes.unions =  astTypes.unions.filter(e => e.reflection);
+    astTypes.unions = astTypes.unions.filter(e => e.reflection);
     fileNode.append(generateAstReflection(config, astTypes));
 
     return processGeneratorNode(fileNode);

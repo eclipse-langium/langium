@@ -193,6 +193,69 @@ describeTypes('inferred types for alternatives', `
 
 });
 
+describeTypes('inferred types using actions', `
+    A: a=ID ({infer B} b=ID ({infer C} c=ID)?)? d=ID;
+	D: E ({infer D.e=current} d=ID)?;
+    E: {E};
+
+    terminal ID returns string: /string/;
+`, function() {
+    test('A is inferred with a:string, d:string', () => {
+        const a = getType(this.types, 'A') as InterfaceType;
+        expect(a).toBeTruthy();
+        expect(a.superTypes).toHaveLength(0);
+        expect(a.properties).toHaveLength(2);
+        expectProperty(a, 'a');
+        expectProperty(a, 'd');
+    });
+
+    test('B is inferred with a:string, b:string, d:string', () => {
+        const b = getType(this.types, 'B') as InterfaceType;
+        expect(b).toBeTruthy();
+        expect(b.superTypes).toEqual(['A']);
+        expect(b.properties).toHaveLength(3);
+        expectProperty(b, 'a');
+        expectProperty(b, 'b');
+        expectProperty(b, 'd');
+    });
+
+    test('C is inferred with a:string, b:string, c:string d:string', () => {
+        const c = getType(this.types, 'C') as InterfaceType;
+        expect(c).toBeTruthy();
+        expect(c.superTypes).toEqual(['B']);
+        expect(c.properties).toHaveLength(4);
+        expectProperty(c, 'a');
+        expectProperty(c, 'b');
+        expectProperty(c, 'c');
+        expectProperty(c, 'd');
+    });
+
+    test('D is inferred with e:E, d:string', () => {
+        const d = getType(this.types, 'D') as InterfaceType;
+        expect(d).toBeTruthy();
+        expect(d.superTypes).toHaveLength(0);
+        expect(d.properties).toHaveLength(2);
+        expectProperty(d, 'd');
+        expectProperty(d, {
+            name: 'e',
+            optional: false,
+            typeAlternatives: [{
+                array: false,
+                reference: false,
+                types: ['E']
+            }]
+        });
+    });
+
+    test('E is inferred empty with super type D', () => {
+        const d = getType(this.types, 'D') as InterfaceType;
+        expect(d).toBeTruthy();
+        expect(d.superTypes).toEqual(['D']);
+        expect(d.properties).toHaveLength(0);
+    });
+
+});
+
 async function getTypes(grammar: string): Promise<AstTypes> {
     const services = createLangiumGrammarServices().grammar;
     const helper = parseHelper<Grammar>(services);
@@ -210,17 +273,23 @@ function getType(types: AstTypes, name: string): InterfaceType | UnionType | und
     return interfaceType || unionType;
 }
 
-function expectProperty(interfaceType: InterfaceType, property: Property): void {
-    const prop = interfaceType.properties.find(e => e.name === property.name)!;
-    expect(prop).toBeTruthy();
-    expect(prop.optional).toStrictEqual(property.optional);
-    expect(prop.typeAlternatives.length).toStrictEqual(property.typeAlternatives.length);
-    for (let i = 0; i < prop.typeAlternatives.length; i++) {
-        const actualType = prop.typeAlternatives[i];
-        const expectedType = property.typeAlternatives[i];
-        expect(actualType.types).toEqual(expectedType.types);
-        expect(actualType.array).toEqual(expectedType.array);
-        expect(actualType.reference).toEqual(expectedType.reference);
+function expectProperty(interfaceType: InterfaceType, property: Property | string): void {
+    if (typeof property === 'string') {
+        const prop = interfaceType.properties.find(e => e.name === property)!;
+        expect(prop).toBeTruthy();
+        expect(prop.optional).toStrictEqual(false);
+    } else {
+        const prop = interfaceType.properties.find(e => e.name === property.name)!;
+        expect(prop).toBeTruthy();
+        expect(prop.optional).toStrictEqual(property.optional);
+        expect(prop.typeAlternatives.length).toStrictEqual(property.typeAlternatives.length);
+        for (let i = 0; i < prop.typeAlternatives.length; i++) {
+            const actualType = prop.typeAlternatives[i];
+            const expectedType = property.typeAlternatives[i];
+            expect(actualType.types).toEqual(expectedType.types);
+            expect(actualType.array).toEqual(expectedType.array);
+            expect(actualType.reference).toEqual(expectedType.reference);
+        }
     }
 }
 

@@ -4,10 +4,20 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { Cardinality, getRuleType, getTypeName, isOptional } from '../grammar-util';
+import { getRuleType, getTypeName, isOptional } from '../grammar-util';
 import { AbstractElement, Action, Alternatives, Assignment, Group, isAction, isAlternatives, isAssignment, isCrossReference, isGroup, isKeyword, isParserRule, isRuleCall, isUnorderedGroup, ParserRule, RuleCall, UnorderedGroup } from '../generated/ast';
 import { stream } from '../../utils/stream';
 import { AstTypes, distictAndSorted, Property, PropertyType, InterfaceType, UnionType } from './types-util';
+
+interface TypePart {
+    name?: string
+    properties: Property[]
+    ruleCalls: string[]
+    parents: TypePart[]
+    children: TypePart[]
+    super: string[]
+    hasAction: boolean
+}
 
 type TypeAlternative = {
     name: string,
@@ -15,7 +25,6 @@ type TypeAlternative = {
     properties: Property[]
     ruleCalls: string[],
     hasAction: boolean
-    cardinalities: Cardinality[]
 }
 
 type TypeCollection = {
@@ -23,85 +32,126 @@ type TypeCollection = {
     reference: boolean
 }
 
-class TypeTree {
-    descendents: Map<TypeAlternative, TypeAlternative[]> = new Map();
+function copy<T>(value: T): T {
+    return JSON.parse(JSON.stringify(value));
+}
 
-    constructor(root: TypeAlternative) {
-        this.descendents.set(root, []);
-    }
-
-    split(type: TypeAlternative, count: number): TypeAlternative[] {
-        const descendents: TypeAlternative[] = [];
-        for (let i = 0; i < count; i++) {
-            descendents.push(JSON.parse(JSON.stringify(type)));
+function collectSuperTypes(original: TypePart, part: TypePart, set: Set<string>): void {
+    for (const parent of part.parents) {
+        if (original.name === undefined) {
+            collectSuperTypes(parent, parent, set);
+        } else if (parent.name !== undefined && parent.name !== original.name) {
+            set.add(parent.name);
+        } else {
+            collectSuperTypes(original, parent, set);
         }
-        descendents.forEach(e => this.descendents.set(e, []));
-        this.descendents.set(type, descendents);
-        return descendents;
-    }
-
-    getLeafNodesOf(type: TypeAlternative): TypeAlternative[] {
-        const leaves: TypeAlternative[] = [];
-        const direct = this.descendents.get(type) ?? [];
-        for (const directDesc of direct) {
-            if (!this.hasLeaves(directDesc)) {
-                leaves.push(directDesc);
-            } else {
-                leaves.push(...this.getLeafNodesOf(directDesc));
-            }
-        }
-        if (leaves.length === 0) {
-            leaves.push(type);
-        }
-        return leaves;
-    }
-
-    getLeafNodes(): TypeAlternative[] {
-        const leaves: TypeAlternative[] = [];
-        for (const [type, children] of this.descendents.entries()) {
-            if (children.length === 0) {
-                leaves.push(type);
-            }
-        }
-        return leaves;
-    }
-
-    hasLeaves(type: TypeAlternative): boolean {
-        return (this.descendents.get(type) ?? []).length > 0;
     }
 }
 
-class TypeCollectorState {
-    tree: TypeTree;
-    parserRule?: ParserRule;
-    currentType?: TypeAlternative;
+interface TypeCollectionContext {
+    fragments: Map<ParserRule, Property[]>
+}
 
-    constructor(type: TypeAlternative) {
-        this.tree = new TypeTree(type);
+interface TypePath {
+    alt: TypeAlternative
+    next: TypePart[]
+}
+
+class TypeGraph {
+    context: TypeCollectionContext;
+    root: TypePart;
+
+    constructor(context: TypeCollectionContext, root: TypePart) {
+        this.context = context;
+        this.root = root;
     }
 
-    enterGroup(cardinality: Cardinality): void {
-        this.currentType?.cardinalities.push(cardinality);
+    getTypes(): TypeAlternative[] {
+        const rootType: TypeAlternative = {
+            name: this.root.name!,
+            hasAction: this.root.hasAction,
+            properties: this.root.properties,
+            ruleCalls: this.root.ruleCalls,
+            super: []
+        };
+        if (this.root.children.length === 0) {
+            return [rootType];
+        } else {
+            return this.applyNext({
+                alt: rootType,
+                next: this.root.children
+            }).map(e => e.alt);
+        }
     }
 
-    leaveGroup(splits: TypeAlternative[]): void {
-        splits.forEach(e => e.cardinalities.pop());
+    private applyNext(nextPath: TypePath): TypePath[] {
+        const splits = this.splitType(nextPath.alt, nextPath.next.length);
+        const paths: TypePath[] = [];
+        for (let i = 0; i < nextPath.next.length; i++) {
+            const split = splits[i];
+            const part = nextPath.next[i];
+            split.properties.push(...part.properties);
+            split.ruleCalls.push(...part.ruleCalls);
+            if (part.name !== undefined && part.name !== split.name) {
+                split.super = [split.name];
+                split.name = part.name;
+            }
+            const path: TypePath = {
+                alt: split,
+                next: part.children
+            };
+            if (path.next.length === 0) {
+                paths.push(path);
+            } else {
+                paths.push(...this.applyNext(path));
+            }
+        }
+        return paths;
     }
 
-    isOptional(): boolean {
-        return this.currentType?.cardinalities.some(e => isOptional(e)) ?? false;
+    private splitType(type: TypeAlternative, count: number): TypeAlternative[] {
+        const alternatives: TypeAlternative[] = [];
+        for (let i = 0; i < count; i++) {
+            alternatives.push(copy(type));
+        }
+        return alternatives;
+    }
+
+    getSuperTypes(node: TypePart): string[] {
+        const set = new Set<string>();
+        collectSuperTypes(node, node, set);
+        return Array.from(set).sort();
+    }
+
+    connect(parent: TypePart, children: TypePart): TypePart {
+        children.parents.push(parent);
+        parent.children.push(children);
+        return children;
+    }
+
+    merge(...parts: TypePart[]): TypePart | undefined {
+        if (parts.length === 1) {
+            return parts[0];
+        } else if (parts.length === 0) {
+            return undefined;
+        }
+        const node = newTypePart();
+        node.parents = parts;
+        for (const parent of parts) {
+            parent.children.push(node);
+        }
+        return node;
     }
 }
 
 export function collectInferredTypes(parserRules: ParserRule[], datatypeRules: ParserRule[]): AstTypes {
     // extract interfaces and types from parser rules
     const allTypes: TypeAlternative[] = [];
+    const context: TypeCollectionContext = {
+        fragments: new Map()
+    };
     for (const rule of parserRules) {
-        const type = initType(rule);
-        const state = new TypeCollectorState(type);
-        state.parserRule = rule;
-        collectElement(state, type, rule.alternatives);
-        allTypes.push(...state.tree.getLeafNodes());
+        allTypes.push(...getRuleTypes(context, rule));
     }
     const interfaces = calculateAst(allTypes);
     buildContainerTypes(interfaces);
@@ -114,18 +164,24 @@ export function collectInferredTypes(parserRules: ParserRule[], datatypeRules: P
             [rule.type?.name ?? 'string'];
         inferredTypes.unions.push(new UnionType(rule.name, [<PropertyType>{ types, reference: false, array: false }]));
     }
-
     return inferredTypes;
 }
 
-// todo simplify
-function initType(rule: ParserRule | string): TypeAlternative {
+function getRuleTypes(context: TypeCollectionContext, rule: ParserRule): TypeAlternative[] {
+    const type = newTypePart(rule);
+    const graph = new TypeGraph(context, type);
+    collectElement(graph, graph.root, rule.alternatives);
+    return graph.getTypes();
+}
+
+function newTypePart(rule?: ParserRule | string): TypePart {
     return {
         name: isParserRule(rule) ? getTypeName(rule) : rule,
-        super: [],
         properties: [],
         ruleCalls: [],
-        cardinalities: [],
+        children: [],
+        parents: [],
+        super: [],
         hasAction: false
     };
 }
@@ -136,64 +192,61 @@ function initType(rule: ParserRule | string): TypeAlternative {
  * @param type Element that collects a current type branch for the given element.
  * @param element The given AST element, from which it's necessary to extract the type.
  */
-function collectElement(state: TypeCollectorState, type: TypeAlternative, element: AbstractElement): void {
-    state.currentType = type;
-    state.enterGroup(element.cardinality);
-    let splits: TypeAlternative[] = [type];
+function collectElement(graph: TypeGraph, current: TypePart, element: AbstractElement): TypePart {
+    const optional = isOptional(element.cardinality);
     if (isAlternatives(element)) {
-        splits = state.tree.split(state.currentType, element.elements.length);
-        splits.forEach((split, i) => collectElement(state, split, element.elements[i]));
+        const children: TypePart[] = [];
+        if (optional) {
+            children.push(current);
+        }
+        for (const alt of element.elements) {
+            const altType = graph.connect(current, newTypePart());
+            children.push(collectElement(graph, altType, alt));
+        }
+        return graph.merge(...children)!;
     } else if (isGroup(element) || isUnorderedGroup(element)) {
+        let groupNode = optional ? graph.connect(current, newTypePart()) : current;
         for (const item of element.elements) {
-            state.tree
-                .getLeafNodesOf(type)
-                .forEach(leaf => collectElement(state, leaf, item));
+            groupNode = collectElement(graph, groupNode, item);
+        }
+        if (optional) {
+            return graph.merge(current, groupNode)!;
+        } else {
+            return groupNode;
         }
     } else if (isAction(element)) {
-        addAction(state, element);
+        return addAction(graph, current, element);
     } else if (isAssignment(element)) {
-        addAssignment(state, element);
+        addAssignment(current, element);
     } else if (isRuleCall(element)) {
-        addRuleCall(state, element);
+        addRuleCall(graph, current, element);
     }
-    state.leaveGroup(splits);
+    return current;
 }
 
-function addAction(state: TypeCollectorState, action: Action): void {
-    const type = state.currentType;
-    if (type) {
-        let newType: TypeAlternative;
-        if (action.type !== type.name) {
-            newType = initType(action.type);
-            newType.super.push(getTypeName(state.parserRule));
-            newType.hasAction = true;
-            state.tree.descendents.get(type)!.push(newType);
-            state.tree.descendents.set(newType, []);
-            state.currentType = newType;
-        } else {
-            newType = type;
-        }
+function addAction(graph: TypeGraph, parent: TypePart, action: Action): TypePart {
+    const typeNode = graph.connect(parent, newTypePart(action.type));
 
-        if (action.feature && action.operator) {
-            newType.properties.push({
-                name: action.feature,
-                optional: false,
-                typeAlternatives: [{
-                    array: action.operator === '+=',
-                    reference: false,
-                    types: [getTypeName(state.parserRule)]
-                }]
-            });
-        }
+    if (action.feature && action.operator) {
+        typeNode.properties.push({
+            name: action.feature,
+            optional: false,
+            typeAlternatives: [{
+                array: action.operator === '+=',
+                reference: false,
+                types: graph.getSuperTypes(typeNode)
+            }]
+        });
     }
+    return typeNode;
 }
 
-function addAssignment(state: TypeCollectorState, assignment: Assignment): void {
+function addAssignment(current: TypePart, assignment: Assignment): void {
     const typeItems: TypeCollection = { types: [], reference: false };
     findTypes(assignment.terminal, typeItems);
-    state.currentType?.properties.push({
+    current.properties.push({
         name: assignment.feature,
-        optional: isOptional(assignment.cardinality) || state.isOptional(),
+        optional: isOptional(assignment.cardinality),
         typeAlternatives: [{
             array: assignment.operator === '+=',
             types: assignment.operator === '?=' ? ['boolean'] : Array.from(new Set(typeItems.types)).sort(),
@@ -221,24 +274,39 @@ function findInCollection(collection: Alternatives | Group | UnorderedGroup, typ
     }
 }
 
-function addRuleCall(state: TypeCollectorState, ruleCall: RuleCall): void {
+function addRuleCall(graph: TypeGraph, current: TypePart, ruleCall: RuleCall): void {
     const rule = ruleCall.rule.ref;
-    const type = state.currentType;
-    if (type) {
-        // Add all properties of fragments to the current type
-        if (isParserRule(rule) && rule.fragment) {
-            const fragmentType = initType(rule);
-            const fragmentState = new TypeCollectorState(fragmentType);
-            collectElement(fragmentState, fragmentType, rule.alternatives);
-            const types = calculateAst(fragmentState.tree.getLeafNodes());
-            const foundType = types.find(e => e.name === rule.name);
-            if (foundType) {
-                type.properties.push(...foundType.properties);
-            }
-        } else if (isParserRule(rule)) {
-            type.ruleCalls.push(getRuleType(rule));
+    // Add all properties of fragments to the current type
+    if (isParserRule(rule) && rule.fragment) {
+        const properties = getFragmentProperties(rule, graph.context);
+        if (isOptional(ruleCall.cardinality)) {
+            current.properties.push(...properties.map(e => ({
+                ...e,
+                optional: true
+            })));
+        } else {
+            current.properties.push(...properties);
         }
+    } else if (isParserRule(rule)) {
+        current.ruleCalls.push(getRuleType(rule));
     }
+}
+
+function getFragmentProperties(fragment: ParserRule, context: TypeCollectionContext): Property[] {
+    const existing = context.fragments.get(fragment);
+    if (existing) {
+        return existing;
+    }
+    const properties: Property[] = [];
+    context.fragments.set(fragment, properties);
+    const fragmentName = getTypeName(fragment);
+    const typeAlternatives = getRuleTypes(context, fragment);
+    const types = calculateAst(typeAlternatives);
+    const foundType = types.find(e => e.name === fragmentName);
+    if (foundType) {
+        properties.push(...foundType.properties);
+    }
+    return properties;
 }
 
 /**
@@ -291,7 +359,7 @@ function flattenTypes(alternatives: TypeAlternative[]): TypeAlternative[] {
     for (const name of names) {
         const properties: Property[] = [];
         const ruleCalls = new Set<string>();
-        const type: TypeAlternative = { name, properties, ruleCalls: <string[]>[], super: <string[]>[], hasAction: false, cardinalities: [] };
+        const type: TypeAlternative = { name, properties, ruleCalls: <string[]>[], super: <string[]>[], hasAction: false };
         const namedAlternatives = alternatives.filter(e => e.name === name);
         for (const alt of namedAlternatives) {
             type.super.push(...alt.super);
