@@ -61,7 +61,7 @@ export class InterfaceType {
     constructor(name: string, superTypes: string[], properties: Property[]) {
         this.name = name;
         this.superTypes = superTypes;
-        this.printingSuperTypes = JSON.parse(JSON.stringify(superTypes));
+        this.printingSuperTypes = [...superTypes];
         this.properties = properties;
     }
 

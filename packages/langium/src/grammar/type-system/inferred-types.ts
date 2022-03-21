@@ -8,6 +8,7 @@ import { getRuleType, getTypeName, isOptional } from '../grammar-util';
 import { AbstractElement, Action, Alternatives, Assignment, Group, isAction, isAlternatives, isAssignment, isCrossReference, isGroup, isKeyword, isParserRule, isRuleCall, isUnorderedGroup, ParserRule, RuleCall, UnorderedGroup } from '../generated/ast';
 import { stream } from '../../utils/stream';
 import { AstTypes, distictAndSorted, Property, PropertyType, InterfaceType, UnionType } from './types-util';
+import { MultiMap } from '../../utils/collections';
 
 interface TypePart {
     name?: string
@@ -15,20 +16,18 @@ interface TypePart {
     ruleCalls: string[]
     parents: TypePart[]
     children: TypePart[]
-    super: string[]
-    hasAction: boolean
+    actionWithAssignment: boolean
 }
 
 type TypeAlternative = {
-    name: string,
-    super: string[],
+    name: string
+    super: string[]
     properties: Property[]
-    ruleCalls: string[],
-    hasAction: boolean
+    ruleCalls: string[]
 }
 
 type TypeCollection = {
-    types: string[],
+    types: Set<string>,
     reference: boolean
 }
 
@@ -37,6 +36,13 @@ function copy<T>(value: T): T {
 }
 
 function collectSuperTypes(original: TypePart, part: TypePart, set: Set<string>): void {
+    if (part.ruleCalls.length > 0) {
+        // Each unassigned rule call corresponds to a super type
+        for (const ruleCall of part.ruleCalls) {
+            set.add(ruleCall);
+        }
+        return;
+    }
     for (const parent of part.parents) {
         if (original.name === undefined) {
             collectSuperTypes(parent, parent, set);
@@ -45,6 +51,9 @@ function collectSuperTypes(original: TypePart, part: TypePart, set: Set<string>)
         } else {
             collectSuperTypes(original, parent, set);
         }
+    }
+    if (part.parents.length === 0 && part.name) {
+        set.add(part.name);
     }
 }
 
@@ -69,7 +78,6 @@ class TypeGraph {
     getTypes(): TypeAlternative[] {
         const rootType: TypeAlternative = {
             name: this.root.name!,
-            hasAction: this.root.hasAction,
             properties: this.root.properties,
             ruleCalls: this.root.ruleCalls,
             super: []
@@ -77,33 +85,50 @@ class TypeGraph {
         if (this.root.children.length === 0) {
             return [rootType];
         } else {
-            return this.applyNext({
+            return this.applyNext(this.root, {
                 alt: rootType,
                 next: this.root.children
             }).map(e => e.alt);
         }
     }
 
-    private applyNext(nextPath: TypePath): TypePath[] {
+    private applyNext(root: TypePart, nextPath: TypePath): TypePath[] {
         const splits = this.splitType(nextPath.alt, nextPath.next.length);
         const paths: TypePath[] = [];
         for (let i = 0; i < nextPath.next.length; i++) {
             const split = splits[i];
             const part = nextPath.next[i];
+            if (part.actionWithAssignment) {
+                // If the path enters an action with an assignment which changes the current name
+                // We already add a new path, since the next part of the part refers to a new inferred type
+                paths.push({
+                    alt: copy(split),
+                    next: []
+                });
+            }
+            if (part.name !== undefined && part.name !== split.name) {
+                if (part.actionWithAssignment) {
+                    // We reset all properties, super types and ruleCalls since we are now in a new inferred type
+                    split.properties = [];
+                    split.ruleCalls = [];
+                    split.super = [root.name!];
+                    split.name = part.name;
+                } else {
+                    split.super = [split.name];
+                    split.name = part.name;
+                }
+            }
             split.properties.push(...part.properties);
             split.ruleCalls.push(...part.ruleCalls);
-            if (part.name !== undefined && part.name !== split.name) {
-                split.super = [split.name];
-                split.name = part.name;
-            }
             const path: TypePath = {
                 alt: split,
                 next: part.children
             };
             if (path.next.length === 0) {
+                path.alt.super = path.alt.super.filter(e => e !== path.alt.name);
                 paths.push(path);
             } else {
-                paths.push(...this.applyNext(path));
+                paths.push(...this.applyNext(root, path));
             }
         }
         return paths;
@@ -157,6 +182,27 @@ export function collectInferredTypes(parserRules: ParserRule[], datatypeRules: P
     buildContainerTypes(interfaces);
     const inferredTypes = extractTypes(interfaces);
 
+    const allSupertypes = new MultiMap<string, string>();
+    for (const interfaceType of interfaces.values()) {
+        for (const superType of interfaceType.superTypes) {
+            allSupertypes.add(superType, interfaceType.name);
+        }
+    }
+    for (const superType of allSupertypes.keys()) {
+        if (!interfaces.some(e => e.name === superType)) {
+            inferredTypes.unions.push({
+                name: superType,
+                reflection: true,
+                superTypes: [],
+                union: [{
+                    array: false,
+                    reference: false,
+                    types: [...allSupertypes.get(superType)]
+                }]
+            });
+        }
+    }
+
     // extract types from datatype rules
     for (const rule of datatypeRules) {
         const types = isAlternatives(rule.alternatives) && rule.alternatives.elements.every(e => isKeyword(e)) ?
@@ -181,8 +227,7 @@ function newTypePart(rule?: ParserRule | string): TypePart {
         ruleCalls: [],
         children: [],
         parents: [],
-        super: [],
-        hasAction: false
+        actionWithAssignment: false
     };
 }
 
@@ -228,6 +273,7 @@ function addAction(graph: TypeGraph, parent: TypePart, action: Action): TypePart
     const typeNode = graph.connect(parent, newTypePart(action.type));
 
     if (action.feature && action.operator) {
+        typeNode.actionWithAssignment = true;
         typeNode.properties.push({
             name: action.feature,
             optional: false,
@@ -242,14 +288,14 @@ function addAction(graph: TypeGraph, parent: TypePart, action: Action): TypePart
 }
 
 function addAssignment(current: TypePart, assignment: Assignment): void {
-    const typeItems: TypeCollection = { types: [], reference: false };
+    const typeItems: TypeCollection = { types: new Set(), reference: false };
     findTypes(assignment.terminal, typeItems);
     current.properties.push({
         name: assignment.feature,
         optional: isOptional(assignment.cardinality),
         typeAlternatives: [{
             array: assignment.operator === '+=',
-            types: assignment.operator === '?=' ? ['boolean'] : Array.from(new Set(typeItems.types)).sort(),
+            types: assignment.operator === '?=' ? ['boolean'] : Array.from(typeItems.types).sort(),
             reference: typeItems.reference
         }]
     });
@@ -259,11 +305,11 @@ function findTypes(terminal: AbstractElement, types: TypeCollection): void {
     if (isAlternatives(terminal) || isUnorderedGroup(terminal) || isGroup(terminal)) {
         findInCollection(terminal, types);
     } else if (isKeyword(terminal)) {
-        types.types.push(`'${terminal.value}'`);
+        types.types.add(`'${terminal.value}'`);
     } else if (isRuleCall(terminal) && terminal.rule.ref) {
-        types.types.push(getRuleType(terminal.rule.ref));
+        types.types.add(getRuleType(terminal.rule.ref));
     } else if (isCrossReference(terminal) && terminal.type.ref) {
-        types.types.push(getTypeName(terminal.type.ref));
+        types.types.add(getTypeName(terminal.type.ref));
         types.reference = true;
     }
 }
@@ -316,13 +362,13 @@ function getFragmentProperties(fragment: ParserRule, context: TypeCollectionCont
  * @returns Interfaces.
  */
 function calculateAst(alternatives: TypeAlternative[]): InterfaceType[] {
-    const interfaces: InterfaceType[] = [];
+    const interfaces = new Map<string, InterfaceType>();
     const ruleCallAlternatives: TypeAlternative[] = [];
     const flattened = flattenTypes(alternatives);
 
     for (const flat of flattened) {
         const interfaceType = new InterfaceType(flat.name, flat.super, flat.properties);
-        interfaces.push(interfaceType);
+        interfaces.set(interfaceType.name, interfaceType);
         if (flat.ruleCalls.length > 0) {
             ruleCallAlternatives.push(flat);
         }
@@ -333,7 +379,7 @@ function calculateAst(alternatives: TypeAlternative[]): InterfaceType[] {
     for (const ruleCallType of ruleCallAlternatives) {
         let exists = false;
         for (const ruleCall of ruleCallType.ruleCalls) {
-            const calledInterface = interfaces.find(e => e.name === ruleCall);
+            const calledInterface = interfaces.get(ruleCall);
             if (calledInterface) {
                 if (calledInterface.name === ruleCallType.name) {
                     exists = true;
@@ -342,14 +388,14 @@ function calculateAst(alternatives: TypeAlternative[]): InterfaceType[] {
                 }
             }
         }
-        if (!exists && !interfaces.some(e => e.name === ruleCallType.name)) {
-            interfaces.push(new InterfaceType(ruleCallType.name, ruleCallType.super, []));
+        if (!exists && !interfaces.has(ruleCallType.name)) {
+            interfaces.set(ruleCallType.name, new InterfaceType(ruleCallType.name, ruleCallType.super, []));
         }
     }
-    for (const interfaceType of interfaces) {
+    for (const interfaceType of interfaces.values()) {
         interfaceType.superTypes = Array.from(new Set(interfaceType.superTypes));
     }
-    return interfaces;
+    return Array.from(interfaces.values());
 }
 
 function flattenTypes(alternatives: TypeAlternative[]): TypeAlternative[] {
@@ -359,11 +405,10 @@ function flattenTypes(alternatives: TypeAlternative[]): TypeAlternative[] {
     for (const name of names) {
         const properties: Property[] = [];
         const ruleCalls = new Set<string>();
-        const type: TypeAlternative = { name, properties, ruleCalls: <string[]>[], super: <string[]>[], hasAction: false };
+        const type: TypeAlternative = { name, properties, ruleCalls: [], super: [] };
         const namedAlternatives = alternatives.filter(e => e.name === name);
         for (const alt of namedAlternatives) {
             type.super.push(...alt.super);
-            type.hasAction = type.hasAction || alt.hasAction;
             const altProperties = alt.properties;
             const foundProperties = new Set<string>();
             for (const altProperty of altProperties) {
@@ -380,9 +425,13 @@ function flattenTypes(alternatives: TypeAlternative[]): TypeAlternative[] {
             }
         }
         for (const alt of namedAlternatives) {
-            for (const property of properties) {
-                if (!alt.properties.find(e => e.name === property.name)) {
-                    property.optional = true;
+            // A type with rule calls is not a real member of the type
+            // Any missing properties are therefore not associated with the current type
+            if (alt.ruleCalls.length === 0) {
+                for (const property of properties) {
+                    if (!alt.properties.find(e => e.name === property.name)) {
+                        property.optional = true;
+                    }
                 }
             }
         }
