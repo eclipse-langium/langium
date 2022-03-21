@@ -8,7 +8,7 @@ import { CancellationToken, CodeDescription, DiagnosticRelatedInformation, Diagn
 import { LangiumServices } from '../services';
 import { AstNode, AstReflection, Properties } from '../syntax-tree';
 import { MultiMap } from '../utils/collections';
-import { MaybePromise } from '../utils/promise-util';
+import { isOperationCancelled, MaybePromise } from '../utils/promise-util';
 
 export type DiagnosticInfo<N extends AstNode, P = Properties<N>> = {
     /** The AST node to which the diagnostic is attached. */
@@ -60,11 +60,16 @@ export class ValidationRegistry {
     }
 
     protected wrapValidationException(check: ValidationCheck, thisObj: unknown): ValidationCheck {
-        return (node, accept, cancelToken) => {
+        return async (node, accept, cancelToken) => {
             try {
-                check.call(thisObj, node, accept, cancelToken);
-            } catch (e) {
-                console.error('An exception occured executing a validation.', e);
+                await check.call(thisObj, node, accept, cancelToken);
+            } catch (err) {
+                if (isOperationCancelled(err)) {
+                    throw err;
+                }
+                console.error('An error occurred during validation:', err);
+                const message = err instanceof Error ? err.message : String(err);
+                accept('error', 'An error occurred during validation: ' + message, { node });
             }
         };
     }

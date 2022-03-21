@@ -21,7 +21,10 @@ program
     .option('-f, --file <file>', 'the configuration file or package.json setting up the generator')
     .option('-w, --watch', 'enables watch mode', false)
     .action((options: GenerateOptions) => {
-        forEachConfig(options, generate);
+        forEachConfig(options, generate).catch(err => {
+            console.error(err);
+            process.exit(1);
+        });
     });
 
 program.parse(process.argv);
