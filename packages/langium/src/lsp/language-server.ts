@@ -99,12 +99,14 @@ export function addDocumentsHandler(connection: Connection, services: LangiumSha
     }
 
     const documents = services.workspace.TextDocuments;
-    documents.onDidChangeContent(async change => {
+    documents.onDidChangeContent(change => {
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises
         onDidChange([URI.parse(change.document.uri)]);
     });
-    connection.onDidChangeWatchedFiles(async params => {
+    connection.onDidChangeWatchedFiles(params => {
         const changedUris = params.changes.filter(e => e.type !== FileChangeType.Deleted).map(e => URI.parse(e.uri));
         const deletedUris = params.changes.filter(e => e.type === FileChangeType.Deleted).map(e => URI.parse(e.uri));
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises
         onDidChange(changedUris, deletedUris);
     });
 }

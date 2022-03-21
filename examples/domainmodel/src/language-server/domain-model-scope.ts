@@ -25,7 +25,7 @@ export class DomainModelScopeComputation extends DefaultScopeComputation {
     protected async processContainer(container: Domainmodel | PackageDeclaration, scopes: PrecomputedScopes, document: LangiumDocument, cancelToken: CancellationToken): Promise<AstNodeDescription[]> {
         const localDescriptions: AstNodeDescription[] = [];
         for (const element of container.elements) {
-            interruptAndCheck(cancelToken);
+            await interruptAndCheck(cancelToken);
             if (isType(element)) {
                 const description = this.descriptions.createDescription(element, element.name, document);
                 localDescriptions.push(description);
