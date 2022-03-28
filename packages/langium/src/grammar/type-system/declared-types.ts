@@ -15,7 +15,7 @@ export function collectDeclaredTypes(interfaces: Interface[], types: Type[], inf
         const childType = types.unions.find(e => e.name === child) ??
             types.interfaces.find(e => e.name === child);
         if (childType) {
-            childType.superTypes.push(...childToSuper.get(child));
+            childToSuper.get(child).forEach(e => childType.superTypes.add(e));
         }
     }
 

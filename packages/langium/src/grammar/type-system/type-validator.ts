@@ -34,7 +34,7 @@ export function validateTypesConsistency(grammar: Grammar, accept: ValidationAcc
             checkAlternativesConsistency(typeInfo.inferred.union, typeInfo.declared.union, errorToRuleNodes);
         } else if (isInterface(typeInfo.inferred) && isInterface(typeInfo.declared)) {
             checkPropertiesConsistency(typeInfo.inferred.properties, typeInfo.declared.properties, errorToRuleNodes, errorToAssignment);
-            checkSuperTypesConsistency(typeInfo.inferred.superTypes, typeInfo.declared.superTypes, errorToRuleNodes);
+            checkSuperTypesConsistency([...typeInfo.inferred.superTypes], [...typeInfo.declared.superTypes], errorToRuleNodes);
         } else {
             const specificError = `Inferred and declared versions of type ${typeName} have to be types or interfaces both.`;
             typeInfo.nodes.forEach(node => accept('error', specificError,

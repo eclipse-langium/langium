@@ -33,7 +33,7 @@ export class UnionType {
     name: string;
     union: PropertyType[];
     reflection: boolean;
-    superTypes: string[] = [];
+    superTypes = new Set<string>();
 
     constructor(name: string, union: PropertyType[], options?: { reflection: boolean }) {
         this.name = name;
@@ -52,27 +52,27 @@ export class UnionType {
 
 export class InterfaceType {
     name: string;
-    superTypes: string[];
-    printingSuperTypes: string[];
-    subTypes: string[] = [];
-    containerTypes: string[] = [];
+    superTypes = new Set<string>();
+    interfaceSuperTypes: string[]  = [];
+    subTypes = new Set<string>();
+    containerTypes = new Set<string>();
     properties: Property[];
 
     constructor(name: string, superTypes: string[], properties: Property[]) {
         this.name = name;
-        this.superTypes = superTypes;
-        this.printingSuperTypes = [...superTypes];
+        this.superTypes = new Set(superTypes);
+        this.interfaceSuperTypes = [...superTypes];
         this.properties = properties;
     }
 
     toString(): string {
         const interfaceNode = new CompositeGeneratorNode();
-        const superTypes = this.printingSuperTypes.length > 0 ? distictAndSorted(this.printingSuperTypes) : ['AstNode'];
+        const superTypes = this.interfaceSuperTypes.length > 0 ? distictAndSorted([...this.interfaceSuperTypes]) : ['AstNode'];
         interfaceNode.contents.push(`export interface ${this.name} extends ${superTypes.join(', ')} {`, NL);
 
         const propertiesNode = new IndentNode();
-        if (this.containerTypes.length > 0) {
-            propertiesNode.contents.push(`readonly $container: ${distictAndSorted(this.containerTypes).join(' | ')};`, NL);
+        if (this.containerTypes.size > 0) {
+            propertiesNode.contents.push(`readonly $container: ${distictAndSorted([...this.containerTypes]).join(' | ')};`, NL);
         }
 
         for (const property of distictAndSorted(this.properties, (a, b) => a.name.localeCompare(b.name))) {

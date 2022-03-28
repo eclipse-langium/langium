@@ -445,7 +445,7 @@ export class LangiumGrammarValidator {
             const interfaceInfo = nameToInterfaceInfo.get(interfaceName);
             if (interfaceInfo) {
                 interfaceInfo.type.properties.forEach(propery => result.add(propery.name, interfaceInfo.node));
-                interfaceInfo.type.printingSuperTypes.forEach(superType => collectPropertyNamesForHierarchyInternal(superType));
+                interfaceInfo.type.interfaceSuperTypes.forEach(superType => collectPropertyNamesForHierarchyInternal(superType));
             }
         }
         collectPropertyNamesForHierarchyInternal(interfaceName);

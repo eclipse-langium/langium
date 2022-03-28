@@ -48,7 +48,7 @@ function sortInterfaces(interfaces: InterfaceType[]): InterfaceType[] {
         .sort((a, b) => a.name.localeCompare(b.name))
         .map(e => <TypeNode>{ value: e, nodes: [] });
     for (const node of nodes) {
-        node.nodes = nodes.filter(e => node.value.superTypes.includes(e.value.name));
+        node.nodes = nodes.filter(e => node.value.superTypes.has(e.value.name));
     }
     const l: TypeNode[] = [];
     const s = nodes.filter(e => e.nodes.length === 0);
