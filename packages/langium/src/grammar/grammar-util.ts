@@ -57,6 +57,16 @@ function isDataTypeRuleInternal(rule: ast.ParserRule, visited: Set<ast.ParserRul
     return true;
 }
 
+export function getCrossReferenceTerminal(crossRef: ast.CrossReference): ast.AbstractElement | undefined {
+    if (crossRef.terminal) {
+        return crossRef.terminal;
+    } else if (crossRef.type.ref) {
+        const nameAssigment = findNameAssignment(crossRef.type.ref);
+        return nameAssigment?.terminal;
+    }
+    return undefined;
+}
+
 export function findNameAssignment(type: ast.AbstractType): ast.Assignment | undefined {
     return findNameAssignmentInternal(type, new Map());
 }
@@ -81,7 +91,7 @@ function findNameAssignmentInternal(type: ast.AbstractType, cashed: Map<ast.Abst
             return node;
         } else if (ast.isRuleCall(node) && ast.isParserRule(node.rule.ref)) {
             return go(node, node.rule.ref);
-        } else if (ast.isAtomType(node) && node.refType.ref) {
+        } else if (ast.isAtomType(node) && node?.refType?.ref) {
             return go(node, node.refType.ref);
         }
     }

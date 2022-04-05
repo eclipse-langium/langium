@@ -9,7 +9,7 @@ import { LangiumDocuments } from '../../workspace/documents';
 import { stream } from '../../utils/stream';
 import { collectInferredTypes } from './inferred-types';
 import { collectDeclaredTypes } from './declared-types';
-import { AstTypes, collectAllAstResources, InterfaceType, TypeType } from './types-util';
+import { AstTypes, collectAllAstResources, InterfaceType, UnionType } from './types-util';
 
 /**
  * Collects all types for the generated AST. The types collector entry point.
@@ -22,14 +22,14 @@ export function collectAst(documents: LangiumDocuments, grammars: Grammar[]): As
     const declared = collectDeclaredTypes(Array.from(astResources.interfaces), Array.from(astResources.types), inferred);
 
     const interfaces: InterfaceType[] = inferred.interfaces.concat(declared.interfaces);
-    const types: TypeType[] = inferred.types.concat(declared.types);
+    const types: UnionType[] = inferred.unions.concat(declared.unions);
 
     sortInterfaces(interfaces);
     types.sort((a, b) => a.name.localeCompare(b.name));
 
     return {
         interfaces: stream(interfaces).distinct(e => e.name).toArray(),
-        types: stream(types).distinct(e => e.name).toArray(),
+        unions: stream(types).distinct(e => e.name).toArray(),
     };
 }
 
@@ -48,7 +48,7 @@ function sortInterfaces(interfaces: InterfaceType[]): InterfaceType[] {
         .sort((a, b) => a.name.localeCompare(b.name))
         .map(e => <TypeNode>{ value: e, nodes: [] });
     for (const node of nodes) {
-        node.nodes = nodes.filter(e => node.value.superTypes.includes(e.value.name));
+        node.nodes = nodes.filter(e => node.value.superTypes.has(e.value.name));
     }
     const l: TypeNode[] = [];
     const s = nodes.filter(e => e.nodes.length === 0);

@@ -9,7 +9,7 @@ import { getRuleType } from '../grammar-util';
 import { MultiMap } from '../../utils/collections';
 import { collectDeclaredTypes } from './declared-types';
 import { collectInferredTypes } from './inferred-types';
-import { AstTypes, collectAllAstResources, distictAndSorted, Property, PropertyType, propertyTypeArrayToString, InterfaceType, TypeType, AstResources } from './types-util';
+import { AstTypes, collectAllAstResources, distictAndSorted, Property, PropertyType, propertyTypeArrayToString, InterfaceType, UnionType, AstResources } from './types-util';
 import { stream } from '../../utils/stream';
 import { ValidationAcceptor } from '../../validation/validation-registry';
 import { extractAssignments } from '../../utils/ast-util';
@@ -31,10 +31,10 @@ export function validateTypesConsistency(grammar: Grammar, accept: ValidationAcc
         const errorToAssignment = applyErrorToAssignment(typeInfo.nodes, accept);
 
         if (isType(typeInfo.inferred) && isType(typeInfo.declared)) {
-            checkAlternativesConsistency(typeInfo.inferred.alternatives, typeInfo.declared.alternatives, errorToRuleNodes);
+            checkAlternativesConsistency(typeInfo.inferred.union, typeInfo.declared.union, errorToRuleNodes);
         } else if (isInterface(typeInfo.inferred) && isInterface(typeInfo.declared)) {
             checkPropertiesConsistency(typeInfo.inferred.properties, typeInfo.declared.properties, errorToRuleNodes, errorToAssignment);
-            checkSuperTypesConsistency(typeInfo.inferred.superTypes, typeInfo.declared.superTypes, errorToRuleNodes);
+            checkSuperTypesConsistency([...typeInfo.inferred.superTypes], [...typeInfo.declared.superTypes], errorToRuleNodes);
         } else {
             const specificError = `Inferred and declared versions of type ${typeName} have to be types or interfaces both.`;
             typeInfo.nodes.forEach(node => accept('error', specificError,
@@ -60,9 +60,9 @@ export function applyErrorToAssignment(nodes: readonly ParserRule[], accept: Val
     };
 }
 
-type TypeOrInterface = TypeType | InterfaceType;
+type TypeOrInterface = UnionType | InterfaceType;
 
-function isType(type: TypeOrInterface): type is TypeType {
+function isType(type: TypeOrInterface): type is UnionType {
     return type && 'alternatives' in type;
 }
 
@@ -120,7 +120,7 @@ function getTypeNameToRules(astResources: AstResources): MultiMap<string, Parser
 }
 
 function mergeTypesAndInterfaces(astTypes: AstTypes): TypeOrInterface[] {
-    return (astTypes.interfaces as TypeOrInterface[]).concat(astTypes.types);
+    return (astTypes.interfaces as TypeOrInterface[]).concat(astTypes.unions);
 }
 
 type ErrorInfo = {

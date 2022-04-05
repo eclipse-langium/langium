@@ -26,24 +26,24 @@ export type PropertyType = {
 
 export type AstTypes = {
     interfaces: InterfaceType[];
-    types: TypeType[];
+    unions: UnionType[];
 }
 
-export class TypeType {
+export class UnionType {
     name: string;
-    alternatives: PropertyType[];
+    union: PropertyType[];
     reflection: boolean;
-    superTypes: string[] = [];
+    superTypes = new Set<string>();
 
-    constructor(name: string, alternatives: PropertyType[], options?: { reflection: boolean }) {
+    constructor(name: string, union: PropertyType[], options?: { reflection: boolean }) {
         this.name = name;
-        this.alternatives = alternatives;
+        this.union = union;
         this.reflection = options?.reflection ?? false;
     }
 
     toString(): string {
         const typeNode = new CompositeGeneratorNode();
-        typeNode.contents.push(`export type ${this.name} = ${propertyTypeArrayToString(this.alternatives)};`, NL);
+        typeNode.contents.push(`export type ${this.name} = ${propertyTypeArrayToString(this.union)};`, NL);
 
         if (this.reflection) pushReflectionInfo(this.name, typeNode);
         return processGeneratorNode(typeNode);
@@ -52,31 +52,31 @@ export class TypeType {
 
 export class InterfaceType {
     name: string;
-    superTypes: string[];
-    printingSuperTypes: string[];
-    subTypes: string[] = [];
-    containerTypes: string[] = [];
+    superTypes = new Set<string>();
+    interfaceSuperTypes: string[]  = [];
+    subTypes = new Set<string>();
+    containerTypes = new Set<string>();
     properties: Property[];
 
     constructor(name: string, superTypes: string[], properties: Property[]) {
         this.name = name;
-        this.superTypes = superTypes;
-        this.printingSuperTypes = JSON.parse(JSON.stringify(superTypes));
+        this.superTypes = new Set(superTypes);
+        this.interfaceSuperTypes = [...superTypes];
         this.properties = properties;
     }
 
     toString(): string {
         const interfaceNode = new CompositeGeneratorNode();
-        const superTypes = this.printingSuperTypes.length > 0 ? distictAndSorted(this.printingSuperTypes) : ['AstNode'];
+        const superTypes = this.interfaceSuperTypes.length > 0 ? distictAndSorted([...this.interfaceSuperTypes]) : ['AstNode'];
         interfaceNode.contents.push(`export interface ${this.name} extends ${superTypes.join(', ')} {`, NL);
 
         const propertiesNode = new IndentNode();
-        if (this.containerTypes.length > 0) {
-            propertiesNode.contents.push(`readonly $container: ${distictAndSorted(this.containerTypes).join(' | ')};`, NL);
+        if (this.containerTypes.size > 0) {
+            propertiesNode.contents.push(`readonly $container: ${distictAndSorted([...this.containerTypes]).join(' | ')};`, NL);
         }
 
         for (const property of distictAndSorted(this.properties, (a, b) => a.name.localeCompare(b.name))) {
-            const optional = property.optional && property.typeAlternatives.some(e => e.reference) && !property.typeAlternatives.some(e => e.array) ? '?' : '';
+            const optional = property.optional && !property.typeAlternatives.some(e => e.array) && !property.typeAlternatives.every(e => e.types.length === 1 && e.types[0] === 'boolean') ? '?' : '';
             const type = propertyTypeArrayToString(property.typeAlternatives);
             propertiesNode.contents.push(`${property.name}${optional}: ${type}`, NL);
         }
