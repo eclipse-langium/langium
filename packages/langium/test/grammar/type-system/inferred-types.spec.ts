@@ -8,22 +8,18 @@ import { AstTypes, createLangiumGrammarServices, Grammar, InterfaceType, isDataT
 import { collectInferredTypes } from '../../../src/grammar/type-system/inferred-types';
 import { parseHelper } from '../../../src/test';
 
-interface TypeContainer {
-    types: AstTypes;
-}
-
-function describeTypes(name: string, grammar: string, description: (this: TypeContainer) => void | Promise<void>): void {
+function describeTypes(name: string, grammar: string, description: (types: AstTypes) => void | Promise<void>): void {
     describe(name, () => {
-        const container: TypeContainer = {
-            types: {
-                interfaces: [],
-                unions: []
-            }
+        const types: AstTypes = {
+            interfaces: [],
+            unions: []
         };
         beforeAll(async () => {
-            container.types = await getTypes(grammar);
+            const newTypes = await getTypes(grammar);
+            types.interfaces = newTypes.interfaces;
+            types.unions = newTypes.unions;
         });
-        description.call(container);
+        description.call(undefined, types);
     });
 }
 
@@ -35,9 +31,9 @@ describeTypes('inferred types of simple grammars', `
     FQN: ID;
     terminal ID returns string: /string/;
     terminal NUMBER returns number: /number/;
-`, function() {
+`, types => {
     test('A is inferred with name:string and value?:number', () => {
-        const a = getType(this.types, 'A') as InterfaceType;
+        const a = getType(types, 'A') as InterfaceType;
         expect(a).toBeDefined();
         expectProperty(a, {
             name: 'name',
@@ -60,7 +56,7 @@ describeTypes('inferred types of simple grammars', `
     });
 
     test('B is inferred with name:FQN and values:number[]', () => {
-        const b = getType(this.types, 'B') as InterfaceType;
+        const b = getType(types, 'B') as InterfaceType;
         expect(b).toBeDefined();
         expectProperty(b, {
             name: 'name',
@@ -83,7 +79,7 @@ describeTypes('inferred types of simple grammars', `
     });
 
     test('C is inferred with ref:@A', () => {
-        const c = getType(this.types, 'C') as InterfaceType;
+        const c = getType(types, 'C') as InterfaceType;
         expect(c).toBeDefined();
         expectProperty(c, {
             name: 'ref',
@@ -97,7 +93,7 @@ describeTypes('inferred types of simple grammars', `
     });
 
     test('FQN is created as an union type', () => {
-        const fqn = getType(this.types, 'FQN') as UnionType;
+        const fqn = getType(types, 'FQN') as UnionType;
         expectUnion(fqn, [
             {
                 array: false,
@@ -118,9 +114,9 @@ describeTypes('inferred types for alternatives', `
 
     terminal ID returns string: /string/;
     terminal NUMBER returns number: /number/;
-`, function() {
+`, types => {
     test('A is inferred with name:(string)|(number)', () => {
-        const a = getType(this.types, 'A') as InterfaceType;
+        const a = getType(types, 'A') as InterfaceType;
         expect(a).toBeDefined();
         expect(a.interfaceSuperTypes).toEqual(['D']);
         expect(a.properties).toHaveLength(1);
@@ -143,7 +139,7 @@ describeTypes('inferred types for alternatives', `
     });
 
     test('B is inferred with name:(number|string)', () => {
-        const b = getType(this.types, 'B') as InterfaceType;
+        const b = getType(types, 'B') as InterfaceType;
         expect(b).toBeDefined();
         expect(b.interfaceSuperTypes).toEqual(['D']);
         expect(b.properties).toHaveLength(1);
@@ -161,7 +157,7 @@ describeTypes('inferred types for alternatives', `
     });
 
     test('C is inferred as union type A | B', () => {
-        const c = getType(this.types, 'C') as UnionType;
+        const c = getType(types, 'C') as UnionType;
         expect(c).toBeDefined();
         expectUnion(c, [{
             array: false,
@@ -171,7 +167,7 @@ describeTypes('inferred types for alternatives', `
     });
 
     test('D is inferred as name:string', () => {
-        const d = getType(this.types, 'D') as InterfaceType;
+        const d = getType(types, 'D') as InterfaceType;
         expect(d).toBeDefined();
         expect(d.interfaceSuperTypes).toHaveLength(0);
         expect(d.properties).toHaveLength(1);
@@ -187,7 +183,7 @@ describeTypes('inferred types for alternatives', `
     });
 
     test('E is inferred with name?:string, value?: number', () => {
-        const e = getType(this.types, 'E') as InterfaceType;
+        const e = getType(types, 'E') as InterfaceType;
         expect(e).toBeDefined();
         expectProperty(e, {
             name: 'name',
@@ -233,10 +229,10 @@ describeTypes('inferred types using chained actions', `
         {Access} '.' member=ID;
 
     terminal ID returns string: /string/;
-`, function() {
+`, types => {
 
     test('Entry is inferred as a union type', () => {
-        const entry = getType(this.types, 'Entry') as UnionType;
+        const entry = getType(types, 'Entry') as UnionType;
         expect(entry).toBeDefined();
         expectUnion(entry, [{
             array: false,
@@ -246,7 +242,7 @@ describeTypes('inferred types using chained actions', `
     });
 
     test('Expr is inferred as a union type', () => {
-        const expr = getType(this.types, 'Expr') as UnionType;
+        const expr = getType(types, 'Expr') as UnionType;
         expect(expr).toBeDefined();
         expectUnion(expr, [{
             array: false,
@@ -256,7 +252,7 @@ describeTypes('inferred types using chained actions', `
     });
 
     test('Ref is inferred as ref:string', () => {
-        const ref = getType(this.types, 'Ref') as InterfaceType;
+        const ref = getType(types, 'Ref') as InterfaceType;
         expect(ref).toBeDefined();
         expect(ref.interfaceSuperTypes).toHaveLength(0);
         expect(ref.properties).toHaveLength(1);
@@ -272,7 +268,7 @@ describeTypes('inferred types using chained actions', `
     });
 
     test('Access is inferred as receiver:Ref, member:string', () => {
-        const access = getType(this.types, 'Access') as InterfaceType;
+        const access = getType(types, 'Access') as InterfaceType;
         expect(access).toBeDefined();
         expect(access.interfaceSuperTypes).toHaveLength(0);
         expect(access.properties).toHaveLength(2);
@@ -297,7 +293,7 @@ describeTypes('inferred types using chained actions', `
     });
 
     test('A is inferred with a:string, d:string', () => {
-        const a = getType(this.types, 'A') as InterfaceType;
+        const a = getType(types, 'A') as InterfaceType;
         expect(a).toBeDefined();
         expect(a.interfaceSuperTypes).toHaveLength(0);
         expect(a.properties).toHaveLength(2);
@@ -306,7 +302,7 @@ describeTypes('inferred types using chained actions', `
     });
 
     test('B is inferred with super type A and a:string, b:string, d:string', () => {
-        const b = getType(this.types, 'B') as InterfaceType;
+        const b = getType(types, 'B') as InterfaceType;
         expect(b).toBeDefined();
         expect(b.interfaceSuperTypes).toEqual(['A']);
         expect(b.properties).toHaveLength(3);
@@ -316,7 +312,7 @@ describeTypes('inferred types using chained actions', `
     });
 
     test('C is inferred with super type B and a:string, b:string, c:string d:string', () => {
-        const c = getType(this.types, 'C') as InterfaceType;
+        const c = getType(types, 'C') as InterfaceType;
         expect(c).toBeDefined();
         expect(c.interfaceSuperTypes).toEqual(['B']);
         expect(c.properties).toHaveLength(4);
@@ -327,7 +323,7 @@ describeTypes('inferred types using chained actions', `
     });
 
     test('D is inferred with e:E, d:string', () => {
-        const d = getType(this.types, 'D') as InterfaceType;
+        const d = getType(types, 'D') as InterfaceType;
         expect(d).toBeDefined();
         expect(d.interfaceSuperTypes).toHaveLength(0);
         expect(d.properties).toHaveLength(2);
@@ -344,7 +340,7 @@ describeTypes('inferred types using chained actions', `
     });
 
     test('E is inferred with super type D and property e', () => {
-        const e = getType(this.types, 'E') as InterfaceType;
+        const e = getType(types, 'E') as InterfaceType;
         expect(e).toBeDefined();
         expect(e.interfaceSuperTypes).toEqual(['D']);
         expect(e.properties).toHaveLength(1);
@@ -352,7 +348,7 @@ describeTypes('inferred types using chained actions', `
     });
 
     test('F is inferred with value:string, item?:F', () => {
-        const f = getType(this.types, 'F') as InterfaceType;
+        const f = getType(types, 'F') as InterfaceType;
         expect(f).toBeDefined();
         expect(f.interfaceSuperTypes).toHaveLength(0);
         expect(f.properties).toHaveLength(2);
@@ -369,7 +365,7 @@ describeTypes('inferred types using chained actions', `
     });
 
     test('G is inferred with front:(X|Y|Z), back:string', () => {
-        const G = getType(this.types, 'G') as InterfaceType;
+        const G = getType(types, 'G') as InterfaceType;
         expect(G).toBeDefined();
         expect(G.interfaceSuperTypes).toHaveLength(0);
         expect(G.properties).toHaveLength(2);
@@ -385,17 +381,17 @@ describeTypes('inferred types using chained actions', `
     });
 
     test('X, Y, Z are inferred from G as simple types', () => {
-        const x = getType(this.types, 'X') as InterfaceType;
+        const x = getType(types, 'X') as InterfaceType;
         expect(x).toBeDefined();
         expect(x.interfaceSuperTypes).toEqual(['G']);
         expect(x.properties).toHaveLength(1);
         expectProperty(x, 'x');
-        const y = getType(this.types, 'Y') as InterfaceType;
+        const y = getType(types, 'Y') as InterfaceType;
         expect(y).toBeDefined();
         expect(x.interfaceSuperTypes).toEqual(['G']);
         expect(y.properties).toHaveLength(1);
         expectProperty(y, 'y');
-        const z = getType(this.types, 'Z') as InterfaceType;
+        const z = getType(types, 'Z') as InterfaceType;
         expect(z).toBeDefined();
         expect(x.interfaceSuperTypes).toEqual(['G']);
         expect(z.properties).toHaveLength(1);
@@ -410,9 +406,9 @@ describeTypes('inferred types with common names', `
     C infers X: a=ID c=ID?;
 
     terminal ID returns string: /string/;
-`, function() {
+`, types => {
     test('X is inferred with a:string, b?:string, c?:string', () => {
-        const x = getType(this.types, 'X') as InterfaceType;
+        const x = getType(types, 'X') as InterfaceType;
         expect(x).toBeDefined();
         expect(x.interfaceSuperTypes).toHaveLength(0);
         expect(x.properties).toHaveLength(3);
@@ -438,11 +434,11 @@ describeTypes('inferred types with common names', `
     });
 
     test('A, B, C are not inferred', () => {
-        const a = getType(this.types, 'A') as InterfaceType;
+        const a = getType(types, 'A') as InterfaceType;
         expect(a).toBeUndefined();
-        const b = getType(this.types, 'B') as InterfaceType;
+        const b = getType(types, 'B') as InterfaceType;
         expect(b).toBeUndefined();
-        const c = getType(this.types, 'C') as InterfaceType;
+        const c = getType(types, 'C') as InterfaceType;
         expect(c).toBeUndefined();
     });
 
@@ -456,9 +452,9 @@ describeTypes('inferred types with common names and actions', `
     D infers Y: y=ID;
 
     terminal ID returns string: /string/;
-`, function() {
+`, types => {
     test('A is inferred with a:string', () => {
-        const a = getType(this.types, 'A') as InterfaceType;
+        const a = getType(types, 'A') as InterfaceType;
         expect(a).toBeDefined();
         // Since 'X' is not an actual type (but a union), it is removed as a super type.
         expect(a.interfaceSuperTypes).toHaveLength(0);
@@ -467,7 +463,7 @@ describeTypes('inferred types with common names and actions', `
     });
 
     test('B is inferred with b:string', () => {
-        const b = getType(this.types, 'B') as InterfaceType;
+        const b = getType(types, 'B') as InterfaceType;
         expect(b).toBeDefined();
         // Since 'X' is not an actual type (but a union), it is removed as a super type.
         expect(b.interfaceSuperTypes).toHaveLength(0);
@@ -476,7 +472,7 @@ describeTypes('inferred types with common names and actions', `
     });
 
     test('X is inferred as A | B', () => {
-        const x = getType(this.types, 'X') as UnionType;
+        const x = getType(types, 'X') as UnionType;
         expect(x).toBeDefined();
         expectUnion(x, [{
             array: false,
@@ -486,7 +482,7 @@ describeTypes('inferred types with common names and actions', `
     });
 
     test('C is inferred with super type Y and properties item:Y, value:ID', () => {
-        const c = getType(this.types, 'C') as InterfaceType;
+        const c = getType(types, 'C') as InterfaceType;
         expect(c).toBeDefined();
         expect(c.interfaceSuperTypes).toHaveLength(0);
         expect(c.properties).toHaveLength(2);
@@ -503,7 +499,7 @@ describeTypes('inferred types with common names and actions', `
     });
 
     test('Y is inferred from D with y:ID', () => {
-        const y = getType(this.types, 'Y') as InterfaceType;
+        const y = getType(types, 'Y') as InterfaceType;
         expect(y).toBeDefined();
         expect(y.interfaceSuperTypes).toEqual(['C']);
         expect(y.properties).toHaveLength(1);
@@ -511,7 +507,7 @@ describeTypes('inferred types with common names and actions', `
     });
 
     test('D is not inferred', () => {
-        const d = getType(this.types, 'D');
+        const d = getType(types, 'D');
         expect(d).toBeUndefined();
     });
 
