@@ -203,18 +203,18 @@ function buildSuperUnions(interfaces: InterfaceType[]): UnionType[] {
     }
     for (const superType of allSupertypes.keys()) {
         if (!interfaces.some(e => e.name === superType)) {
-            unions.push({
-                name: superType,
-                reflection: true,
-                superTypes: new Set(),
-                union: [{
+            unions.push(new UnionType(
+                superType,
+                [{
                     array: false,
                     reference: false,
                     types: [...allSupertypes.get(superType)]
-                }]
-            });
+                }],
+                { reflection: true }
+            ));
         }
     }
+
     return unions;
 }
 
