@@ -8,23 +8,19 @@ import { loadGrammar, Grammar } from 'langium';
 let loadedStatemachineGrammar: Grammar | undefined;
 export const StatemachineGrammar = (): Grammar => loadedStatemachineGrammar ||(loadedStatemachineGrammar = loadGrammar(`{
   "$type": "Grammar",
-  "usedGrammars": [],
-  "hiddenTokens": [],
-  "imports": [],
+  "isDeclared": true,
+  "name": "Statemachine",
   "rules": [
     {
       "$type": "ParserRule",
-      "parameters": [],
       "name": "Statemachine",
-      "hiddenTokens": [],
       "entry": true,
       "alternatives": {
         "$type": "Group",
         "elements": [
           {
             "$type": "Keyword",
-            "value": "statemachine",
-            "elements": []
+            "value": "statemachine"
           },
           {
             "$type": "Assignment",
@@ -32,10 +28,10 @@ export const StatemachineGrammar = (): Grammar => loadedStatemachineGrammar ||(l
             "operator": "=",
             "terminal": {
               "$type": "RuleCall",
-              "arguments": [],
               "rule": {
                 "$refText": "ID"
-              }
+              },
+              "arguments": []
             }
           },
           {
@@ -43,8 +39,7 @@ export const StatemachineGrammar = (): Grammar => loadedStatemachineGrammar ||(l
             "elements": [
               {
                 "$type": "Keyword",
-                "value": "events",
-                "elements": []
+                "value": "events"
               },
               {
                 "$type": "Assignment",
@@ -52,10 +47,10 @@ export const StatemachineGrammar = (): Grammar => loadedStatemachineGrammar ||(l
                 "operator": "+=",
                 "terminal": {
                   "$type": "RuleCall",
-                  "arguments": [],
                   "rule": {
                     "$refText": "Event"
-                  }
+                  },
+                  "arguments": []
                 },
                 "cardinality": "+"
               }
@@ -67,8 +62,7 @@ export const StatemachineGrammar = (): Grammar => loadedStatemachineGrammar ||(l
             "elements": [
               {
                 "$type": "Keyword",
-                "value": "commands",
-                "elements": []
+                "value": "commands"
               },
               {
                 "$type": "Assignment",
@@ -76,10 +70,10 @@ export const StatemachineGrammar = (): Grammar => loadedStatemachineGrammar ||(l
                 "operator": "+=",
                 "terminal": {
                   "$type": "RuleCall",
-                  "arguments": [],
                   "rule": {
                     "$refText": "Command"
-                  }
+                  },
+                  "arguments": []
                 },
                 "cardinality": "+"
               }
@@ -98,7 +92,8 @@ export const StatemachineGrammar = (): Grammar => loadedStatemachineGrammar ||(l
               "$type": "CrossReference",
               "type": {
                 "$refText": "State"
-              }
+              },
+              "deprecatedSyntax": false
             }
           },
           {
@@ -107,66 +102,77 @@ export const StatemachineGrammar = (): Grammar => loadedStatemachineGrammar ||(l
             "operator": "+=",
             "terminal": {
               "$type": "RuleCall",
-              "arguments": [],
               "rule": {
                 "$refText": "State"
-              }
+              },
+              "arguments": []
             },
             "cardinality": "*"
           }
         ]
-      }
+      },
+      "definesHiddenTokens": false,
+      "fragment": false,
+      "hiddenTokens": [],
+      "infers": false,
+      "parameters": [],
+      "wildcard": false
     },
     {
       "$type": "ParserRule",
-      "parameters": [],
       "name": "Event",
-      "hiddenTokens": [],
       "alternatives": {
         "$type": "Assignment",
         "feature": "name",
         "operator": "=",
         "terminal": {
           "$type": "RuleCall",
-          "arguments": [],
           "rule": {
             "$refText": "ID"
-          }
-        },
-        "elements": []
-      }
+          },
+          "arguments": []
+        }
+      },
+      "definesHiddenTokens": false,
+      "entry": false,
+      "fragment": false,
+      "hiddenTokens": [],
+      "infers": false,
+      "parameters": [],
+      "wildcard": false
     },
     {
       "$type": "ParserRule",
-      "parameters": [],
       "name": "Command",
-      "hiddenTokens": [],
       "alternatives": {
         "$type": "Assignment",
         "feature": "name",
         "operator": "=",
         "terminal": {
           "$type": "RuleCall",
-          "arguments": [],
           "rule": {
             "$refText": "ID"
-          }
-        },
-        "elements": []
-      }
+          },
+          "arguments": []
+        }
+      },
+      "definesHiddenTokens": false,
+      "entry": false,
+      "fragment": false,
+      "hiddenTokens": [],
+      "infers": false,
+      "parameters": [],
+      "wildcard": false
     },
     {
       "$type": "ParserRule",
-      "parameters": [],
       "name": "State",
-      "hiddenTokens": [],
       "alternatives": {
         "$type": "Group",
         "elements": [
           {
             "$type": "Keyword",
-            "value": "state",
-            "elements": []
+            "value": "state"
           },
           {
             "$type": "Assignment",
@@ -174,10 +180,10 @@ export const StatemachineGrammar = (): Grammar => loadedStatemachineGrammar ||(l
             "operator": "=",
             "terminal": {
               "$type": "RuleCall",
-              "arguments": [],
               "rule": {
                 "$refText": "ID"
-              }
+              },
+              "arguments": []
             }
           },
           {
@@ -185,8 +191,7 @@ export const StatemachineGrammar = (): Grammar => loadedStatemachineGrammar ||(l
             "elements": [
               {
                 "$type": "Keyword",
-                "value": "actions",
-                "elements": []
+                "value": "actions"
               },
               {
                 "$type": "Keyword",
@@ -200,7 +205,8 @@ export const StatemachineGrammar = (): Grammar => loadedStatemachineGrammar ||(l
                   "$type": "CrossReference",
                   "type": {
                     "$refText": "Command"
-                  }
+                  },
+                  "deprecatedSyntax": false
                 },
                 "cardinality": "+"
               },
@@ -217,10 +223,10 @@ export const StatemachineGrammar = (): Grammar => loadedStatemachineGrammar ||(l
             "operator": "+=",
             "terminal": {
               "$type": "RuleCall",
-              "arguments": [],
               "rule": {
                 "$refText": "Transition"
-              }
+              },
+              "arguments": []
             },
             "cardinality": "*"
           },
@@ -229,13 +235,18 @@ export const StatemachineGrammar = (): Grammar => loadedStatemachineGrammar ||(l
             "value": "end"
           }
         ]
-      }
+      },
+      "definesHiddenTokens": false,
+      "entry": false,
+      "fragment": false,
+      "hiddenTokens": [],
+      "infers": false,
+      "parameters": [],
+      "wildcard": false
     },
     {
       "$type": "ParserRule",
-      "parameters": [],
       "name": "Transition",
-      "hiddenTokens": [],
       "alternatives": {
         "$type": "Group",
         "elements": [
@@ -247,9 +258,9 @@ export const StatemachineGrammar = (): Grammar => loadedStatemachineGrammar ||(l
               "$type": "CrossReference",
               "type": {
                 "$refText": "Event"
-              }
-            },
-            "elements": []
+              },
+              "deprecatedSyntax": false
+            }
           },
           {
             "$type": "Keyword",
@@ -263,11 +274,19 @@ export const StatemachineGrammar = (): Grammar => loadedStatemachineGrammar ||(l
               "$type": "CrossReference",
               "type": {
                 "$refText": "State"
-              }
+              },
+              "deprecatedSyntax": false
             }
           }
         ]
-      }
+      },
+      "definesHiddenTokens": false,
+      "entry": false,
+      "fragment": false,
+      "hiddenTokens": [],
+      "infers": false,
+      "parameters": [],
+      "wildcard": false
     },
     {
       "$type": "TerminalRule",
@@ -275,18 +294,19 @@ export const StatemachineGrammar = (): Grammar => loadedStatemachineGrammar ||(l
       "name": "WS",
       "terminal": {
         "$type": "RegexToken",
-        "regex": "\\\\s+",
-        "elements": []
-      }
+        "regex": "\\\\s+"
+      },
+      "fragment": false
     },
     {
       "$type": "TerminalRule",
       "name": "ID",
       "terminal": {
         "$type": "RegexToken",
-        "regex": "[_a-zA-Z][\\\\w_]*",
-        "elements": []
-      }
+        "regex": "[_a-zA-Z][\\\\w_]*"
+      },
+      "fragment": false,
+      "hidden": false
     },
     {
       "$type": "TerminalRule",
@@ -297,18 +317,20 @@ export const StatemachineGrammar = (): Grammar => loadedStatemachineGrammar ||(l
       },
       "terminal": {
         "$type": "RegexToken",
-        "regex": "[0-9]+",
-        "elements": []
-      }
+        "regex": "[0-9]+"
+      },
+      "fragment": false,
+      "hidden": false
     },
     {
       "$type": "TerminalRule",
       "name": "STRING",
       "terminal": {
         "$type": "RegexToken",
-        "regex": "\\"[^\\"]*\\"|'[^']*'",
-        "elements": []
-      }
+        "regex": "\\"[^\\"]*\\"|'[^']*'"
+      },
+      "fragment": false,
+      "hidden": false
     },
     {
       "$type": "TerminalRule",
@@ -316,9 +338,9 @@ export const StatemachineGrammar = (): Grammar => loadedStatemachineGrammar ||(l
       "name": "ML_COMMENT",
       "terminal": {
         "$type": "RegexToken",
-        "regex": "\\\\/\\\\*[\\\\s\\\\S]*?\\\\*\\\\/",
-        "elements": []
-      }
+        "regex": "\\\\/\\\\*[\\\\s\\\\S]*?\\\\*\\\\/"
+      },
+      "fragment": false
     },
     {
       "$type": "TerminalRule",
@@ -326,13 +348,15 @@ export const StatemachineGrammar = (): Grammar => loadedStatemachineGrammar ||(l
       "name": "SL_COMMENT",
       "terminal": {
         "$type": "RegexToken",
-        "regex": "\\\\/\\\\/[^\\\\n\\\\r]*",
-        "elements": []
-      }
+        "regex": "\\\\/\\\\/[^\\\\n\\\\r]*"
+      },
+      "fragment": false
     }
   ],
+  "definesHiddenTokens": false,
+  "hiddenTokens": [],
+  "imports": [],
   "interfaces": [],
   "types": [],
-  "isDeclared": true,
-  "name": "Statemachine"
+  "usedGrammars": []
 }`));

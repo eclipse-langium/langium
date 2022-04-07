@@ -95,8 +95,19 @@ export interface LinkingError extends ReferenceInfo {
 export interface AstReflection {
     getAllTypes(): string[]
     getReferenceType(referenceId: string): string
+    getTypeMetaData(type: string): TypeMetaData
     isInstance(node: AstNode, type: string): boolean
     isSubtype(subtype: string, supertype: string): boolean
+}
+
+export interface TypeMetaData {
+    name: string
+    mandatory: TypeMandatoryField[]
+}
+
+export interface TypeMandatoryField {
+    name: string
+    type: 'array' | 'boolean'
 }
 
 /**
