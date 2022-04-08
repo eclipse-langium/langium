@@ -11,6 +11,7 @@ import { generatedHeader } from './util';
 
 export function generateModule(grammars: langium.Grammar[], config: LangiumConfig, grammarConfigMap: Map<langium.Grammar, LangiumLanguageConfig>): string {
     const parserConfig = config.chevrotainParserConfig;
+    const hasIParserConfigImport: boolean = !!parserConfig || grammars.some(grammar => grammarConfigMap.get(grammar)?.chevrotainParserConfig !== undefined);
     const node = new CompositeGeneratorNode();
 
     node.append(generatedHeader);
@@ -19,7 +20,7 @@ export function generateModule(grammars: langium.Grammar[], config: LangiumConfi
         node.append("import { Module } from '../../dependency-injection';", NL);
         node.contents.push("import { LangiumGeneratedServices, LangiumGeneratedSharedServices, LangiumSharedServices, LangiumServices } from '../../services';", NL);
     } else {
-        node.append(`import { LangiumGeneratedServices, LangiumGeneratedSharedServices, LangiumSharedServices, LangiumServices, LanguageMetaData, Module${parserConfig ? ', IParserConfig' : ''} } from 'langium';`, NL);
+        node.append(`import { LangiumGeneratedServices, LangiumGeneratedSharedServices, LangiumSharedServices, LangiumServices, LanguageMetaData, Module${hasIParserConfigImport ? ', IParserConfig' : ''} } from 'langium';`, NL);
     }
 
     node.append(

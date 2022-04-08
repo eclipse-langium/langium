@@ -18,7 +18,7 @@ export function validateTypesConsistency(grammar: Grammar, accept: ValidationAcc
     function applyErrorToRuleNodes(nodes: readonly ParserRule[], typeName: string): (errorMessage: string) => void {
         return (errorMessage: string) => {
             nodes.forEach(node => accept('error',
-                errorMessage + ` in inferred type '${typeName}'.`,
+                errorMessage + ` in a rule that returns type '${typeName}'.`,
                 { node: node?.type ? node.type : node, property: 'name' }
             ));
         };
@@ -181,12 +181,15 @@ function checkPropertiesConsistency(inferred: Property[], declared: Property[],
             const foundStringType = propertyTypeArrayToString(foundProperty.typeAlternatives);
             const expectedStringType = propertyTypeArrayToString(expectedProperty.typeAlternatives);
             if (foundStringType !== expectedStringType) {
-                let resultError = baseError(foundProperty.name, foundStringType, expectedStringType);
-                for (const errorInfo of checkAlternativesConsistencyHelper(foundProperty.typeAlternatives, expectedProperty.typeAlternatives)) {
-                    resultError = resultError + ` '${errorInfo.typeString}' ${errorInfo.errorMessage};`;
+                const typeAlternativesErrors = checkAlternativesConsistencyHelper(foundProperty.typeAlternatives, expectedProperty.typeAlternatives);
+                if (typeAlternativesErrors.length > 0) {
+                    let resultError = baseError(foundProperty.name, foundStringType, expectedStringType);
+                    for (const errorInfo of typeAlternativesErrors) {
+                        resultError = resultError + ` '${errorInfo.typeString}' ${errorInfo.errorMessage};`;
+                    }
+                    resultError = resultError.replace(/;$/, '.');
+                    errorToAssignment(foundProperty.name, resultError);
                 }
-                resultError = resultError.replace(/;$/, '.');
-                errorToAssignment(foundProperty.name, resultError);
             }
 
             if (checkOptional(foundProperty, expectedProperty) && !expectedProperty.optional && foundProperty.optional) {

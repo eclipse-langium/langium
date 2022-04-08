@@ -203,18 +203,18 @@ function buildSuperUnions(interfaces: InterfaceType[]): UnionType[] {
     }
     for (const superType of allSupertypes.keys()) {
         if (!interfaces.some(e => e.name === superType)) {
-            unions.push({
-                name: superType,
-                reflection: true,
-                superTypes: new Set(),
-                union: [{
+            unions.push(new UnionType(
+                superType,
+                [{
                     array: false,
                     reference: false,
                     types: [...allSupertypes.get(superType)]
-                }]
-            });
+                }],
+                { reflection: true }
+            ));
         }
     }
+
     return unions;
 }
 
@@ -295,14 +295,24 @@ function addAction(graph: TypeGraph, parent: TypePart, action: Action): TypePart
 function addAssignment(current: TypePart, assignment: Assignment): void {
     const typeItems: TypeCollection = { types: new Set(), reference: false };
     findTypes(assignment.terminal, typeItems);
-    current.properties.push({
-        name: assignment.feature,
-        optional: isOptional(assignment.cardinality),
-        typeAlternatives: [{
+
+    let typeAlternatives: PropertyType[] = [];
+    if (assignment.operator === '=' && !typeItems.reference) {
+        stream(typeItems.types)
+            .distinct()
+            .forEach(type => typeAlternatives.push({ array: false, types: [type], reference: false }));
+    } else {
+        typeAlternatives = [{
             array: assignment.operator === '+=',
             types: assignment.operator === '?=' ? ['boolean'] : Array.from(typeItems.types).sort(),
             reference: typeItems.reference
-        }]
+        }];
+    }
+
+    current.properties.push({
+        name: assignment.feature,
+        optional: isOptional(assignment.cardinality),
+        typeAlternatives
     });
 }
 

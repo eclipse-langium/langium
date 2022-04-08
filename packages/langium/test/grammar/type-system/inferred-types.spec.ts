@@ -150,7 +150,12 @@ describeTypes('inferred types for alternatives', `
                 {
                     array: false,
                     reference: false,
-                    types: ['number', 'string']
+                    types: ['string']
+                },
+                {
+                    array: false,
+                    reference: false,
+                    types: ['number']
                 }
             ]
         });

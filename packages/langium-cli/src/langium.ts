@@ -12,6 +12,7 @@ import { generate, GenerateOptions, GeneratorResult } from './generate';
 import { cliVersion, elapsedTime, getTime, log, schema } from './generator/util';
 import { LangiumConfig, loadConfigs, RelativePath } from './package';
 import path from 'path';
+import _ from 'lodash';
 
 const program = new Command();
 program
@@ -42,7 +43,11 @@ async function forEachConfig(options: GenerateOptions, callback: (config: Langiu
         });
         process.exit(1);
     }
-    const results = await Promise.all(configs.map(config => callback(config, options)));
+    const results = await Promise.all(configs.map(config => {
+        config.projectName = _.camelCase(config.projectName);
+        config.projectName = config.projectName.charAt(0).toUpperCase() + config.projectName.slice(1);
+        return callback(config, options);
+    }));
     const allSuccessful = results.every(result => result === 'success');
     if (options.watch) {
         if (allSuccessful) {
