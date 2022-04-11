@@ -14,7 +14,7 @@ import { DefaultDocumentHighlighter } from './lsp/document-highlighter';
 import { DefaultDocumentSymbolProvider } from './lsp/document-symbol-provider';
 import { DefaultFoldingRangeProvider } from './lsp/folding-range-provider';
 import { DefaultGoToResolverProvider } from './lsp/goto';
-import { MultilineCommentHoverProvider } from './lsp/hover-provider';
+import { LangiumGrammarHoverProvider } from './lsp/langium-grammar-hover-provider';
 import { DefaultReferenceFinder } from './lsp/reference-finder';
 import { DefaultRenameHandler } from './lsp/rename-refactoring';
 import { createLangiumParser } from './parser/langium-parser-builder';
@@ -62,7 +62,7 @@ export function createDefaultModule(context: DefaultModuleContext): Module<Langi
                 RuleInterpreter: () => new RuleInterpreter()
             },
             DocumentSymbolProvider: (services) => new DefaultDocumentSymbolProvider(services),
-            HoverProvider: (services) => new MultilineCommentHoverProvider(services),
+            HoverProvider: (services) => new LangiumGrammarHoverProvider(services),
             FoldingRangeProvider: (services) => new DefaultFoldingRangeProvider(services),
             ReferenceFinder: (services) => new DefaultReferenceFinder(services),
             GoToResolver: (services) => new DefaultGoToResolverProvider(services),
