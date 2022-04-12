@@ -65,7 +65,7 @@ export class LangiumGrammarHoverProvider extends MultilineCommentHoverProvider {
                     }
                 } else if (isKeyword(terminal)) {
                     terminalName = terminal.value;
-                } else if (isRuleCall(terminal)){
+                } else if (isRuleCall(terminal)) {
                     terminalName = terminal.rule.ref!.name;
                 }
 
