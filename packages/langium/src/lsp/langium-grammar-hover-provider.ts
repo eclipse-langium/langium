@@ -4,11 +4,9 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 import { Hover, HoverParams } from 'vscode-languageserver';
-import {CrossReference, findLeafNodeAtOffset, findNameAssignment, Grammar, isCrossReference, isParserRule, isType, LangiumDocuments, LangiumServices, RuleCall } from '..';
+import {CrossReference, findLeafNodeAtOffset, findNameAssignment, findRelevantNode, Grammar, isCrossReference, isKeyword, isParserRule, isRuleCall, isType, LangiumDocument, LangiumDocuments, LangiumServices } from '..';
 import { AstNode } from '../syntax-tree';
-import { findRelevantNode } from '../utils/cst-util';
 import { MaybePromise } from '../utils/promise-util';
-import { LangiumDocument } from '../workspace/documents';
 import { MultilineCommentHoverProvider } from './hover-provider';
 
 export class LangiumGrammarHoverProvider extends MultilineCommentHoverProvider {
@@ -21,17 +19,25 @@ export class LangiumGrammarHoverProvider extends MultilineCommentHoverProvider {
         this.documents = services.shared.workspace.LangiumDocuments;
     }
 
+    protected getAstNodeHoverContent(node: AstNode): MaybePromise<Hover | undefined> {
+        if(isCrossReference(node)) {
+            return this.getCrossReferenceHoverContent(node);
+        }
+        return super.getAstNodeHoverContent(node);
+    }
+
     getHoverContent(document: LangiumDocument<AstNode>, params: HoverParams): MaybePromise<Hover | undefined> {
         const rootNode = document.parseResult?.value?.$cstNode;
-        if(rootNode)  {
+        if (rootNode)  {
             const offset = document.textDocument.offsetAt(params.position);
             const cstNode = findLeafNodeAtOffset(rootNode, offset);
-            if(cstNode){
+            if (cstNode && cstNode.offset + cstNode.length > offset) {
                 const relevantNode = findRelevantNode(cstNode);
-                if(isCrossReference(relevantNode)){
-                    return this.getCrossReferenceHoverContent(relevantNode);
-                } else {
-                    return super.getHoverContent(document, params);
+                const targetNode = this.references.findDeclaration(cstNode);
+                if (isCrossReference(relevantNode)) {
+                    return this.getAstNodeHoverContent(relevantNode);
+                } else if (targetNode) {
+                    return this.getAstNodeHoverContent(targetNode?.element);
                 }
             }
         }
@@ -39,35 +45,38 @@ export class LangiumGrammarHoverProvider extends MultilineCommentHoverProvider {
     }
 
     getCrossReferenceHoverContent(node: CrossReference): MaybePromise<Hover | undefined> {
-
         const ref = node.type.ref;
-
-        if(ref){
-            if(isType(ref)){
+        if (ref) {
+            if (isType(ref)) {
                 return {
                     contents: {
                         kind: 'markdown',
                         value: ref.$cstNode!.text
                     }
                 };
-            }
-            else if(isParserRule(ref)){
-                let terminal;
-                if(node.$cstNode?.text.includes(':')){
-                    terminal = node.$cstNode?.text.split(':')[1].replace(']', '');
-                } else {
-                    terminal = (findNameAssignment(ref)?.terminal as RuleCall).rule.$refText;
+            } else if (isParserRule(ref)) {
+                const typeName = ref.name;
+                const terminal = node.terminal;
+                let terminalName = '';
+                if (terminal === undefined){
+                    const terminalRule = findNameAssignment(ref);
+                    if (terminalRule && isRuleCall(terminalRule.terminal)){
+                        terminalName = terminalRule.terminal.rule.ref!.name;
+                    }
+                } else if (isKeyword(terminal)) {
+                    terminalName = terminal.value;
+                } else if (isRuleCall(terminal)){
+                    terminalName = terminal.rule.ref!.name;
                 }
 
                 return {
                     contents: {
                         kind: 'markdown',
-                        value: `[${ref.name}:${terminal}]`,
-                    },
+                        value: `[${typeName}:${terminalName}]`
+                    }
                 };
             }
         }
-
         return undefined;
     }
 
