@@ -6,6 +6,7 @@
 
 import { createDefaultModule, createDefaultSharedModule, DefaultSharedModuleContext } from '../default-module';
 import { inject, Module } from '../dependency-injection';
+import { LangiumGrammarHoverProvider } from '../lsp/langium-grammar-hover-provider';
 import { LangiumServices, LangiumSharedServices, PartialLangiumServices } from '../services';
 import { LangiumGrammarGeneratedModule, LangiumGrammarGeneratedSharedModule } from './generated/module';
 import { LangiumGrammarCodeActionProvider } from './langium-grammar-code-actions';
@@ -30,7 +31,8 @@ export const LangiumGrammarModule: Module<LangiumGrammarServices, PartialLangium
     lsp: {
         FoldingRangeProvider: (services) => new LangiumGrammarFoldingRangeProvider(services),
         CodeActionProvider: () => new LangiumGrammarCodeActionProvider(),
-        SemanticTokenProvider: () => new LangiumGrammarSemanticTokenProvider()
+        SemanticTokenProvider: () => new LangiumGrammarSemanticTokenProvider(),
+        HoverProvider: (services) => new LangiumGrammarHoverProvider(services)
     },
     references: {
         ScopeComputation: (services) => new LangiumGrammarScopeComputation(services),
