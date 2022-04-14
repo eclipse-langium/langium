@@ -72,7 +72,7 @@ export class LangiumGrammarHoverProvider extends MultilineCommentHoverProvider {
                 return {
                     contents: {
                         kind: 'markdown',
-                        value: `[${typeName}:${terminalName}]`
+                        value: '```\n' + `[${typeName}:${terminalName}]` + '\n```'
                     }
                 };
             }
