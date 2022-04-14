@@ -37,10 +37,11 @@
     "scripts": {
         "vscode:prepublish": "npm run build && npm run lint",
         "build": "tsc",
-        "watch": "tsc -watch",
+        "build:watch": "tsc -watch",
         "lint": "eslint src --ext ts",
         "langium:generate": "langium generate",
-        "langium:watch": "langium generate --watch"
+        "langium:watch": "langium generate --watch",
+        "watch": "concurrently \"npm run build:watch\" \"npm run langium:watch\""
     },
     "dependencies": {
         "colors": "^1.4.0",
@@ -54,6 +55,7 @@
         "@types/vscode": "^1.56.0",
         "@typescript-eslint/eslint-plugin": "^4.14.1",
         "@typescript-eslint/parser": "^4.14.1",
+        "concurrently": "^7.0.0",
         "eslint": "^7.19.0",
         "eslint-plugin-header": "^3.1.1",
         "langium-cli": "0.3.0",
