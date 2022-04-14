@@ -249,7 +249,6 @@ export class DefaultLangiumDocuments implements LangiumDocuments {
         }
         const textDoc = this.textDocuments.get(uriString) ?? this.textDocumentFactory.fromUri(uri);
         langiumDoc = this.langiumDocumentFactory.fromTextDocument(textDoc, uri);
-        this.documentMap.set(uriString, langiumDoc);
         return langiumDoc;
     }
 
