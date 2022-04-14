@@ -4,10 +4,10 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 import { Hover, HoverParams } from 'vscode-languageserver';
-import {CrossReference, findLeafNodeAtOffset, findNameAssignment, findRelevantNode, Grammar, isCrossReference, isKeyword, isParserRule, isRuleCall, isType, LangiumDocument, LangiumDocuments, LangiumServices } from '..';
-import { AstNode } from '../syntax-tree';
-import { MaybePromise } from '../utils/promise-util';
-import { MultilineCommentHoverProvider } from './hover-provider';
+import { AstNode } from '../../syntax-tree';
+import { MaybePromise } from '../../utils/promise-util';
+import { MultilineCommentHoverProvider } from '../../lsp/hover-provider';
+import { CrossReference, findLeafNodeAtOffset, findNameAssignment, findRelevantNode, Grammar, isCrossReference, isKeyword, isParserRule, isRuleCall, isType, LangiumDocument, LangiumDocuments, LangiumServices } from '../..';
 
 export class LangiumGrammarHoverProvider extends MultilineCommentHoverProvider {
 

@@ -6,7 +6,6 @@
 
 import { createDefaultModule, createDefaultSharedModule, DefaultSharedModuleContext } from '../default-module';
 import { inject, Module } from '../dependency-injection';
-import { LangiumGrammarHoverProvider } from '../lsp/langium-grammar-hover-provider';
 import { LangiumServices, LangiumSharedServices, PartialLangiumServices } from '../services';
 import { LangiumGrammarGeneratedModule, LangiumGrammarGeneratedSharedModule } from './generated/module';
 import { LangiumGrammarCodeActionProvider } from './langium-grammar-code-actions';
@@ -14,6 +13,7 @@ import { LangiumGrammarScopeComputation, LangiumScopeProvider } from './langium-
 import { LangiumGrammarSemanticTokenProvider } from './langium-grammar-semantic-token-provider';
 import { LangiumGrammarValidationRegistry, LangiumGrammarValidator } from './langium-grammar-validator';
 import { LangiumGrammarFoldingRangeProvider } from './lsp/langium-grammar-folding-range-provider';
+import { LangiumGrammarHoverProvider } from './lsp/langium-grammar-hover-provider';
 
 export type LangiumGrammarAddedServices = {
     validation: {
