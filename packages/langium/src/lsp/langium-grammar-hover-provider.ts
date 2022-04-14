@@ -51,7 +51,7 @@ export class LangiumGrammarHoverProvider extends MultilineCommentHoverProvider {
                 return {
                     contents: {
                         kind: 'markdown',
-                        value: ref.$cstNode!.text
+                        value: '```\n' + ref.$cstNode!.text + '\n```'
                     }
                 };
             } else if (isParserRule(ref)) {
