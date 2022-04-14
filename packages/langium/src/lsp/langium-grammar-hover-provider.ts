@@ -58,7 +58,7 @@ export class LangiumGrammarHoverProvider extends MultilineCommentHoverProvider {
                 const typeName = ref.name;
                 const terminal = node.terminal;
                 let terminalName = '';
-                if (terminal === undefined){
+                if (terminal === undefined) {
                     const terminalRule = findNameAssignment(ref);
                     if (terminalRule && isRuleCall(terminalRule.terminal)){
                         terminalName = terminalRule.terminal.rule.ref!.name;
