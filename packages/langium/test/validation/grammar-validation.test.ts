@@ -5,13 +5,14 @@
  ******************************************************************************/
 
 import { Diagnostic, DiagnosticSeverity } from 'vscode-languageserver';
-import { createLangiumGrammarServices, Grammar } from '../../src';
+import { createLangiumGrammarServices, Grammar, LangiumDocument } from '../../src';
 import { parseHelper } from '../../src/test';
 
-describe('Validation checks', () => {
+const services = createLangiumGrammarServices();
+const parser = parseHelper<Grammar>(services.grammar);
 
-    const services = createLangiumGrammarServices();
-    const parser = parseHelper<Grammar>(services.grammar);
+describe('checkReferenceToRuleButNotType', () => {
+
     const grammar = `
         grammar CrossRefs
 
@@ -24,31 +25,65 @@ describe('Validation checks', () => {
         Element:
             Definition | Reference;
         
-        Definition returns DefType:
+        Definition infers DefType:
             name=ID;
-        Reference returns RefType:
+        Reference infers RefType:
             ref=[Definition];
         terminal ID: /[_a-zA-Z][\\w_]*/;
     `;
 
-    let diagnostics: Diagnostic[] = [];
+    let validationData: ValidatorData;
 
     beforeAll(async () => {
-        const parsedDoc = await parser(grammar);
-        diagnostics = await services.grammar.validation.DocumentValidator.validateDocument(parsedDoc);
+        validationData = await parseAndValidate(grammar);
     });
 
     test('CrossReference validation', () => {
-        const errors = diagnostics.filter(isError).map(d => d.message);
-        expect(errors).toContain("Use the rule type 'DefType' instead of the typed rule 'Definition' for cross references.");
+        expectError(validationData, "Use the rule type 'DefType' instead of the typed rule name 'Definition' for cross references.", 'Definition');
     });
 
     test('AtomType validation', () => {
-        const errors = diagnostics.filter(isError).map(d => d.message);
-        expect(errors).toContain("Use the rule type 'RefType' instead of the typed rule 'Reference' for cross references.");
+        expectError(validationData, "Use the rule type 'RefType' instead of the typed rule name 'Reference' for cross references.", 'Reference');
     });
 
 });
+
+interface ValidatorData {
+    document: LangiumDocument;
+    diagnostics: Diagnostic[];
+}
+
+async function parseAndValidate(grammar: string): Promise<ValidatorData> {
+    const doc = await parser(grammar);
+    const diagnostics = await services.grammar.validation.DocumentValidator.validateDocument(doc);
+    return {
+        document: doc,
+        diagnostics: diagnostics
+    };
+}
+
+function expectError(data: ValidatorData, msg: string, at?: string): void {
+    const found: { msg?: string; at?: string } = {};
+    for (const error of data.diagnostics.filter(isError)) {
+        if (error.message === msg) {
+            found.msg = error.message;
+            if (at) {
+                const errorMarkedText = data.document.textDocument.getText(error.range);
+                found.at = errorMarkedText;
+                if (at === errorMarkedText) {
+                    return;
+                }
+            } else {
+                return;
+            }
+        }
+    }
+    expect(found.msg).toBe(msg);
+    if (at) {
+        expect(found.at).toBe(at);
+    }
+}
+
 function isError(d: Diagnostic): boolean {
     return d.severity === DiagnosticSeverity.Error;
 }

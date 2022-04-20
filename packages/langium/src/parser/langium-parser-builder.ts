@@ -254,7 +254,8 @@ function getGuardCondition(element: AbstractElement): Condition | undefined {
 }
 
 function buildAction(ctx: RuleContext, action: Action): Method {
-    return () => ctx.parser.action(action.type, action);
+    const actionType = getTypeName(action);
+    return () => ctx.parser.action(actionType, action);
 }
 
 function buildCrossReference(ctx: RuleContext, crossRef: CrossReference, terminal = crossRef.terminal): Method {

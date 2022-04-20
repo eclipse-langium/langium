@@ -246,9 +246,8 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
       "parameters": [],
       "name": "Addition",
       "hiddenTokens": [],
-      "infers": true,
-      "type": {
-        "$type": "ReturnType",
+      "inferredType": {
+        "$type": "InferredType",
         "name": "Expression"
       },
       "alternatives": {
@@ -267,8 +266,10 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
             "elements": [
               {
                 "$type": "Action",
-                "infer": true,
-                "type": "BinaryExpression",
+                "inferredType": {
+                  "$type": "InferredType",
+                  "name": "BinaryExpression"
+                },
                 "feature": "left",
                 "operator": "=",
                 "elements": []
@@ -315,9 +316,8 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
       "parameters": [],
       "name": "Multiplication",
       "hiddenTokens": [],
-      "infers": true,
-      "type": {
-        "$type": "ReturnType",
+      "inferredType": {
+        "$type": "InferredType",
         "name": "Expression"
       },
       "alternatives": {
@@ -336,8 +336,10 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
             "elements": [
               {
                 "$type": "Action",
-                "infer": true,
-                "type": "BinaryExpression",
+                "inferredType": {
+                  "$type": "InferredType",
+                  "name": "BinaryExpression"
+                },
                 "feature": "left",
                 "operator": "=",
                 "elements": []
@@ -384,9 +386,8 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
       "parameters": [],
       "name": "PrimaryExpression",
       "hiddenTokens": [],
-      "infers": true,
-      "type": {
-        "$type": "ReturnType",
+      "inferredType": {
+        "$type": "InferredType",
         "name": "Expression"
       },
       "alternatives": {
@@ -418,8 +419,10 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
             "elements": [
               {
                 "$type": "Action",
-                "infer": true,
-                "type": "NumberLiteral",
+                "inferredType": {
+                  "$type": "InferredType",
+                  "name": "NumberLiteral"
+                },
                 "elements": []
               },
               {
@@ -441,8 +444,10 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
             "elements": [
               {
                 "$type": "Action",
-                "infer": true,
-                "type": "FunctionCall",
+                "inferredType": {
+                  "$type": "InferredType",
+                  "name": "FunctionCall"
+                },
                 "elements": []
               },
               {

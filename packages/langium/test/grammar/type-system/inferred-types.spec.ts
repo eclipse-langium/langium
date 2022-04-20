@@ -221,17 +221,17 @@ describeTypes('inferred types using chained actions', `
 	D: E ({infer D.e=current} d=ID)?;
     E: e=ID;
     F: value=ID ({infer F.item=current} value=ID)*;
-    G: ({X} x=ID | {Y} y=ID | {Z} z=ID) {infer G.front=current} back=ID;
+    G: ({infer X} x=ID | {infer Y} y=ID | {infer Z} z=ID) {infer G.front=current} back=ID;
 
     Entry:
 	    Expr;
     Expr:
-        {Ref} ref=ID
-        ({Access.receiver=current} '.' member=ID)*;
+        {infer Ref} ref=ID
+        ({infer Access.receiver=current} '.' member=ID)*;
     Ref:
-        {Ref} ref=ID;
+        {infer Ref} ref=ID;
     Access:
-        {Access} '.' member=ID;
+        {infer Access} '.' member=ID;
 
     terminal ID returns string: /string/;
 `, types => {

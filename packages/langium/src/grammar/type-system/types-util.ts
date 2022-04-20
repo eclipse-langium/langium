@@ -7,10 +7,11 @@
 import { URI } from 'vscode-uri';
 import { CompositeGeneratorNode, IndentNode, NL } from '../../generator/generator-node';
 import { processGeneratorNode } from '../../generator/node-processor';
-import { Grammar, Interface, isParserRule, ParserRule, Type } from '../generated/ast';
-import { isDataTypeRule, resolveImport } from '../grammar-util';
+import { CstNode } from '../../syntax-tree';
 import { getDocument } from '../../utils/ast-util';
 import { LangiumDocuments } from '../../workspace/documents';
+import { Grammar, Interface, isParserRule, ParserRule, Type } from '../generated/ast';
+import { isDataTypeRule, resolveImport } from '../grammar-util';
 
 export type Property = {
     name: string,
@@ -86,7 +87,16 @@ export class InterfaceType {
         return processGeneratorNode(interfaceNode);
     }
 }
+export class TypeResolutionError extends Error {
+    readonly target: CstNode | undefined;
 
+    constructor(message: string, target: CstNode | undefined) {
+        super(message);
+        this.name = 'TypeResolutionError';
+        this.target = target;
+    }
+
+}
 export type AstResources = {
     parserRules: Set<ParserRule>,
     datatypeRules: Set<ParserRule>,

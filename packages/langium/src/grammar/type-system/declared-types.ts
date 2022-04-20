@@ -22,7 +22,7 @@ export function collectDeclaredTypes(interfaces: Interface[], types: Type[], inf
     const declaredTypes: AstTypes = { unions: [], interfaces: [] };
     // add interfaces
     for (const interfaceType of interfaces) {
-        const superTypes = interfaceType.superTypes.map(e => getTypeName(e.ref));
+        const superTypes = interfaceType.superTypes.filter(e => e.ref).map(e => getTypeName(e.ref!));
         const properties: Property[] = interfaceType.attributes.map(e => <Property>{
             name: e.name,
             optional: e.isOptional === true,
@@ -40,7 +40,7 @@ export function collectDeclaredTypes(interfaces: Interface[], types: Type[], inf
 
         if (reflection) {
             for (const maybeRef of type.typeAlternatives) {
-                if (maybeRef.refType) {
+                if (maybeRef.refType?.ref) {
                     childToSuper.add(getTypeName(maybeRef.refType.ref), type.name);
                 }
             }

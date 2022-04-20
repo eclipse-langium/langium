@@ -305,10 +305,7 @@ export const DomainModelGrammar = (): Grammar => loadedDomainModelGrammar ||(loa
       "parameters": [],
       "name": "QualifiedName",
       "hiddenTokens": [],
-      "type": {
-        "$type": "ReturnType",
-        "name": "string"
-      },
+      "dataType": "string",
       "alternatives": {
         "$type": "Group",
         "elements": [

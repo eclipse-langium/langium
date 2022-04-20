@@ -6,6 +6,7 @@
 
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { URI, Utils } from 'vscode-uri';
+import { TypeResolutionError } from '..';
 import * as ast from '../grammar/generated/ast';
 import { CompositeCstNodeImpl } from '../parser/cst-node-builder';
 import { LangiumServices } from '../services';
@@ -185,7 +186,7 @@ export function findAssignment(cstNode: CstNode): ast.Assignment | undefined {
 
 export function getTypeNameAtElement(rule: ast.ParserRule, element: ast.AbstractElement): string {
     const action = getActionAtElement(element);
-    return action?.type ?? getTypeName(rule);
+    return action ? getTypeName(action) : getTypeName(rule);
 }
 
 export function getActionAtElement(element: ast.AbstractElement): ast.Action | undefined {
@@ -282,24 +283,55 @@ function withCardinality(regex: string, cardinality?: string, wrap = false): str
     return regex;
 }
 
-export function getTypeName(type: ast.AbstractType | undefined): string {
+export function getTypeName(type: ast.AbstractType): string {
     if (ast.isParserRule(type)) {
-        return type.type?.name ?? type.name;
+        return getExplicitRuleType(type) ?? type.name;
     } else if (ast.isInterface(type) || ast.isType(type) || ast.isReturnType(type)) {
         return type.name;
     } else if (ast.isAction(type)) {
-        return type.type;
+        const actionType = getActionType(type);
+        if (actionType) {
+            return actionType;
+        }
     }
-    throw new Error('Unknown type');
+    throw new TypeResolutionError('Unknown type', (type as AstNode).$cstNode);
 }
 
-export function getRuleType(rule: ast.AbstractRule | undefined): string {
+export function getExplicitRuleType(rule: ast.ParserRule): string | undefined {
+    if (rule.inferredType) {
+        return rule.inferredType.name;
+    } else if (rule.dataType) {
+        return rule.dataType;
+    } else if (rule.returnType) {
+        const refType = rule.returnType.ref;
+        if(refType) {
+            // check if we need to check Action as return type
+            if (ast.isParserRule(refType)) {
+                return refType.name;
+            }  else if(ast.isInterface(refType) || ast.isType(refType)) {
+                return refType.name;
+            }
+        }
+    }
+    return undefined;
+}
+
+function getActionType(action: ast.Action): string | undefined {
+    if(action.inferredType) {
+        return action.inferredType.name;
+    } else if(action.type.ref) {
+        return getTypeName(action.type.ref);
+    }
+    return undefined; // not inferring and not referencing a valid type
+}
+
+export function getRuleType(rule: ast.AbstractRule): string {
     if (ast.isTerminalRule(rule)) {
         return rule.type?.name ?? 'string';
     } else if (ast.isParserRule(rule)) {
-        return isDataTypeRule(rule) ? rule.name : (rule.type?.name ?? rule.name);
+        return isDataTypeRule(rule) ? rule.name : getExplicitRuleType(rule) ?? rule.name;
     }
-    throw new Error('Unknown rule type');
+    throw new TypeResolutionError('Unknown rule type', (rule as AstNode).$cstNode);
 }
 
 export function getEntryRule(grammar: ast.Grammar): ast.ParserRule | undefined {
@@ -398,12 +430,17 @@ export function computeGrammarScope(services: LangiumServices, grammar: ast.Gram
     }
     return scopes;
 }
-
+/**
+ * Add synthetic Interface in case of explicitly or implicitly inferred type:<br>
+ * cases: `ParserRule: ...;` or `ParserRule infers Type: ...;`
+ * @param astNodeLocator AstNodeLocator
+ * @returns scope populator
+ */
 export function processTypeNodeWithNodeLocator(astNodeLocator: AstNodeLocator): (node: AstNode, document: LangiumDocument, scopes: PrecomputedScopes) => void {
     return (node: AstNode, document: LangiumDocument, scopes: PrecomputedScopes) => {
         const container = node.$container;
-        if (container && ast.isParserRule(node)) {
-            const typeNode = node.type ?? node;
+        if (container && ast.isParserRule(node) && !node.returnType && !node.dataType) {
+            const typeNode = node.inferredType ?? node;
             scopes.add(container, {
                 node: typeNode,
                 name: typeNode.name,
@@ -415,11 +452,20 @@ export function processTypeNodeWithNodeLocator(astNodeLocator: AstNodeLocator): 
     };
 }
 
+/**
+ * Add synthetic Interface in case of explicitly inferred type:<br>
+ * case: `{infer Action}`
+ * @param astNodeLocator AstNodeLocator
+ * @returns scope populator
+ */
 export function processActionNodeWithNodeDescriptionProvider(descriptions: AstNodeDescriptionProvider): (node: AstNode, document: LangiumDocument, scopes: PrecomputedScopes) => void {
     return (node: AstNode, document: LangiumDocument, scopes: PrecomputedScopes) => {
         const container = extractRootNode(node);
-        if (container && ast.isAction(node)) {
-            scopes.add(container, descriptions.createDescription(node, node.type, document));
+        if (container && ast.isAction(node) && node.inferredType) {
+            const typeName = getActionType(node);
+            if(typeName) {
+                scopes.add(container, descriptions.createDescription(node, typeName, document));
+            }
         }
     };
 }
