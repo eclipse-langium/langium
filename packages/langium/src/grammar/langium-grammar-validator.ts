@@ -248,12 +248,12 @@ export class LangiumGrammarValidator {
         }
         for (const rule of grammar.rules.filter(ast.isParserRule)) {
             const isDataType = isDataTypeRule(rule);
-            const isInfers = !!rule.inferredType;
+            const isInfers = !rule.returnType && !rule.dataType;
             const ruleTypeName = getTypeName(rule);
             if (!isDataType && ruleTypeName && types.has(ruleTypeName) === isInfers) {
                 const keywordNode = isInfers ? findKeywordNode(rule.$cstNode, 'infer') : findKeywordNode(rule.$cstNode, 'returns');
                 accept('error', getMessage(ruleTypeName, isInfers), {
-                    node: rule.inferredType,
+                    node: rule.inferredType ?? rule,
                     property: 'name',
                     code: isInfers ? IssueCodes.InvalidInfers : IssueCodes.InvalidReturns,
                     data: keywordNode && toDocumentSegment(keywordNode)
