@@ -63,7 +63,7 @@ export function applyErrorToAssignment(nodes: readonly ParserRule[], accept: Val
 type TypeOrInterface = UnionType | InterfaceType;
 
 function isType(type: TypeOrInterface): type is UnionType {
-    return type && 'alternatives' in type;
+    return type && 'union' in type;
 }
 
 function isInterface(type: TypeOrInterface): type is InterfaceType {
