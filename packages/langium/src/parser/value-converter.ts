@@ -6,6 +6,7 @@
 
 import { AbstractElement, AbstractRule, isCrossReference, isRuleCall } from '../grammar/generated/ast';
 import { getCrossReferenceTerminal } from '../grammar/grammar-util';
+import { getRuleType } from '../grammar/grammar-util';
 import { CstNode } from '../syntax-tree';
 
 /**
@@ -45,7 +46,7 @@ export class DefaultValueConverter implements ValueConverter {
             case 'ID': return convertID(input);
             case 'REGEXLITERAL': return convertString(input);
         }
-        switch (rule.type?.name?.toLowerCase()) {
+        switch (getRuleType(rule)?.toLowerCase()) {
             case 'number': return convertNumber(input);
             case 'boolean': return convertBoolean(input);
             default: return input;

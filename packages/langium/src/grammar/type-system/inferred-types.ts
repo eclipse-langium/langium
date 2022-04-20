@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { getRuleType, getTypeName, isOptional } from '../grammar-util';
+import { getExplicitRuleType, getRuleType, getTypeName, isOptional } from '../grammar-util';
 import { AbstractElement, Action, Alternatives, Assignment, Group, isAction, isAlternatives, isAssignment, isCrossReference, isGroup, isKeyword, isParserRule, isRuleCall, isUnorderedGroup, ParserRule, RuleCall, UnorderedGroup } from '../generated/ast';
 import { stream } from '../../utils/stream';
 import { AstTypes, distictAndSorted, Property, PropertyType, InterfaceType, UnionType } from './types-util';
@@ -187,7 +187,7 @@ export function collectInferredTypes(parserRules: ParserRule[], datatypeRules: P
     for (const rule of datatypeRules) {
         const types = isAlternatives(rule.alternatives) && rule.alternatives.elements.every(e => isKeyword(e)) ?
             stream(rule.alternatives.elements).filter(isKeyword).map(e => `'${e.value}'`).toArray().sort() :
-            [rule.type?.name ?? 'string'];
+            [getExplicitRuleType(rule) ?? 'string'];
         inferredTypes.unions.push(new UnionType(rule.name, [<PropertyType>{ types, reference: false, array: false }]));
     }
     return inferredTypes;
@@ -275,7 +275,7 @@ function collectElement(graph: TypeGraph, current: TypePart, element: AbstractEl
 }
 
 function addAction(graph: TypeGraph, parent: TypePart, action: Action): TypePart {
-    const typeNode = graph.connect(parent, newTypePart(action.type));
+    const typeNode = graph.connect(parent, newTypePart(action.inferredType?.name));
 
     if (action.feature && action.operator) {
         typeNode.actionWithAssignment = true;

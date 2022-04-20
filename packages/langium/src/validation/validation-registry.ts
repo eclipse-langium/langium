@@ -13,7 +13,7 @@ import { isOperationCancelled, MaybePromise } from '../utils/promise-util';
 export type DiagnosticInfo<N extends AstNode, P = Properties<N>> = {
     /** The AST node to which the diagnostic is attached. */
     node: N,
-    /** If a property name is given, the diagnostic is resticted to the corresponding text region. */
+    /** If a property name is given, the diagnostic is restricted to the corresponding text region. */
     property?: P,
     /** In case of a multi-value property (array), an index can be given to select a specific element. */
     index?: number,
@@ -69,7 +69,10 @@ export class ValidationRegistry {
                 }
                 console.error('An error occurred during validation:', err);
                 const message = err instanceof Error ? err.message : String(err);
-                accept('error', 'An error occurred during validation: ' + message, { node });
+                if(err instanceof Error && err.stack) {
+                    console.error(err.stack);
+                }
+                accept('error', 'An error occurred during validation: ' + message, {node});
             }
         };
     }

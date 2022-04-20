@@ -44,7 +44,7 @@ describe('tokenBuilder#longerAlts', () => {
     beforeAll(async () => {
         const text = `
         grammar test
-        Main: {Main} 'A' 'AB' 'ABC';
+        Main: {infer Main} 'A' 'AB' 'ABC';
         terminal AB: /ABD?/;
         `;
         const grammar = (await helper(text)).parseResult.value;

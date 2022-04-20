@@ -41,19 +41,20 @@ type AbstractType = Interface | Type | Action | ParserRule;
 Type:
     'type' name=ID '=' TypeAlternatives ';'?;
 
-ReturnType:
-    name=(PrimitiveType | ID);
-
 AbstractRule: ParserRule | TerminalRule;
 
 GrammarImport:
     'import' path=STRING ';'?;
 
 ParserRule:
-    (entry?='entry' | fragment?='fragment')? RuleNameAndParams (wildcard?='*' | 'returns' type=ReturnType | infers?='infers' type=ReturnType)?
+    (entry?='entry' | fragment?='fragment')?
+    RuleNameAndParams
+    (wildcard?='*' | ('returns' (returnType=[AbstractType:ID] | dataType=PrimitiveType)) | inferredType=InferredType<false>)?
     (definesHiddenTokens?='hidden' '(' (hiddenTokens+=[AbstractRule:ID] (',' hiddenTokens+=[AbstractRule:ID])*)? ')')? ':'
-        alternatives=Alternatives
-    ';';
+    alternatives=Alternatives ';';
+
+InferredType<imperative>:
+    (<imperative> 'infer' | <!imperative> 'infers') name=ID;
 
 fragment RuleNameAndParams:
     name=ID ('<' (parameters+=Parameter (',' parameters+=Parameter)*)? '>')?;
@@ -83,8 +84,8 @@ AbstractTokenWithCardinality infers AbstractElement:
     (Assignment | AbstractTerminal) cardinality=('?'|'*'|'+')?;
 
 Action infers AbstractElement:
-    {infer Action} '{' infer?='infer'? type=ID ('.' feature=FeatureName operator=('='|'+=') 'current')? '}';
-
+    {infer Action} '{' (type=[AbstractType:ID] | inferredType=InferredType<true>) ('.' feature=FeatureName operator=('='|'+=') 'current')? '}';
+    
 AbstractTerminal infers AbstractElement:
     Keyword |
     RuleCall |
@@ -153,6 +154,9 @@ ParenthesizedElement infers AbstractElement:
 
 PredicatedGroup infers Group:
     (predicated?='=>' | firstSetPredicated?='->') '(' elements+=Alternatives ')';
+
+ReturnType:
+    name=(PrimitiveType | ID);
 
 TerminalRule:
     hidden?='hidden'? 'terminal' (fragment?='fragment' name=ID | name=ID ('returns' type=ReturnType)?) ':'

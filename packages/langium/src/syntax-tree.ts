@@ -118,16 +118,6 @@ export interface CstNode extends DocumentSegment {
 }
 
 /**
- * Text range for the CST.
- */
-export interface CstRange {
-    /** Start offset in the document text */
-    start: number;
-    /** End offset (exclusive) in the document text */
-    end: number;
-}
-
-/**
  * A composite CST node has children, but no directly associated token.
  */
 export interface CompositeCstNode extends CstNode {

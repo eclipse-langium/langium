@@ -19,7 +19,7 @@ export function validateTypesConsistency(grammar: Grammar, accept: ValidationAcc
         return (errorMessage: string) => {
             nodes.forEach(node => accept('error',
                 errorMessage + ` in a rule that returns type '${typeName}'.`,
-                { node: node?.type ? node.type : node, property: 'name' }
+                { node: node?.inferredType ? node.inferredType : node, property: 'name' }
             ));
         };
     }
@@ -38,7 +38,7 @@ export function validateTypesConsistency(grammar: Grammar, accept: ValidationAcc
         } else {
             const specificError = `Inferred and declared versions of type ${typeName} have to be types or interfaces both.`;
             typeInfo.nodes.forEach(node => accept('error', specificError,
-                { node: node?.type ? node.type : node, property: 'name' }
+                { node: node?.inferredType ? node.inferredType : node, property: 'name' }
             ));
             accept('error', specificError,
                 { node: typeInfo.node, property: 'name' }

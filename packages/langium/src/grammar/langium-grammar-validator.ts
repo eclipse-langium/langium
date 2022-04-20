@@ -9,7 +9,7 @@ import { DiagnosticTag } from 'vscode-languageserver-types';
 import { Utils } from 'vscode-uri';
 import { References } from '../references/references';
 import { LangiumServices } from '../services';
-import { AstNode } from '../syntax-tree';
+import { AstNode, Reference } from '../syntax-tree';
 import { getContainerOfType, getDocument, streamAllContents } from '../utils/ast-util';
 import { MultiMap } from '../utils/collections';
 import { toDocumentSegment } from '../utils/cst-util';
@@ -17,7 +17,7 @@ import { stream } from '../utils/stream';
 import { ValidationAcceptor, ValidationCheck, ValidationRegistry } from '../validation/validation-registry';
 import { LangiumDocument, LangiumDocuments } from '../workspace/documents';
 import * as ast from './generated/ast';
-import { findKeywordNode, findNameAssignment, getEntryRule, isDataTypeRule, resolveImport, resolveTransitiveImports, terminalRegex } from './grammar-util';
+import { findKeywordNode, findNameAssignment, getEntryRule, getTypeName, isDataTypeRule, resolveImport, resolveTransitiveImports, terminalRegex } from './grammar-util';
 import type { LangiumGrammarServices } from './langium-grammar-module';
 import { applyErrorToAssignment, collectAllInterfaces, InterfaceInfo, validateTypesConsistency } from './type-system/type-validator';
 
@@ -120,11 +120,11 @@ export class LangiumGrammarValidator {
             } else {
                 accept('error', 'This grammar is missing an entry parser rule.', { node: grammar, property: 'name' });
             }
-        } else if(!grammar.isDeclared && entryRules.length >= 1) {
+        } else if (!grammar.isDeclared && entryRules.length >= 1) {
             entryRules.forEach(rule => accept('error', 'Cannot declare entry rules for unnamed grammars.', { node: rule, property: 'name' }));
         } else if (entryRules.length > 1) {
             entryRules.forEach(rule => accept('error', 'The entry rule has to be unique.', { node: rule, property: 'name' }));
-        } else if (isDataTypeRule(entryRules[0])) {
+        } else if (entryRules.length === 1 && isDataTypeRule(entryRules[0])) {
             accept('error', 'The entry rule cannot be a data type rule.', { node: entryRules[0], property: 'name' });
         }
     }
@@ -140,11 +140,11 @@ export class LangiumGrammarValidator {
      * Check whether any type defined in this grammar is a duplicate of an already defined type or an imported type
      */
     checkUniqueTypeName(grammar: ast.Grammar, accept: ValidationAcceptor): void {
-        this.checkUniqueName(grammar, accept, (grammar: ast.Grammar) => (grammar.types as Array<{name: string} & AstNode>).concat(grammar.interfaces), 'type');
+        this.checkUniqueName(grammar, accept, (grammar: ast.Grammar) => (grammar.types as Array<{ name: string } & AstNode>).concat(grammar.interfaces), 'type');
     }
 
-    private checkUniqueName(grammar: ast.Grammar, accept: ValidationAcceptor, extractor: (grammar: ast.Grammar) => Array<{name: string} & AstNode>, uniqueObjName: string): void {
-        const map = new MultiMap<string, {name: string} & AstNode>();
+    private checkUniqueName(grammar: ast.Grammar, accept: ValidationAcceptor, extractor: (grammar: ast.Grammar) => Array<{ name: string } & AstNode>, uniqueObjName: string): void {
+        const map = new MultiMap<string, { name: string } & AstNode>();
         extractor(grammar).forEach(e => map.add(e.name, e));
 
         for (const name of map.keys()) {
@@ -248,33 +248,40 @@ export class LangiumGrammarValidator {
         }
         for (const rule of grammar.rules.filter(ast.isParserRule)) {
             const isDataType = isDataTypeRule(rule);
-            if (!isDataType && rule.type?.name && types.has(rule.type.name) === !!rule.infers) {
-                const keywordNode = rule.infers ? findKeywordNode(rule.$cstNode, 'infers') : findKeywordNode(rule.$cstNode, 'returns');
-                accept('error', getMessage(rule.type.name, rule.infers), {
-                    node: rule.type,
+            const isInfers = !!rule.inferredType;
+            const ruleTypeName = getTypeName(rule);
+            if (!isDataType && ruleTypeName && types.has(ruleTypeName) === isInfers) {
+                const keywordNode = isInfers ? findKeywordNode(rule.$cstNode, 'infer') : findKeywordNode(rule.$cstNode, 'returns');
+                accept('error', getMessage(ruleTypeName, isInfers), {
+                    node: rule.inferredType,
                     property: 'name',
-                    code: rule.infers ? IssueCodes.InvalidInfers : IssueCodes.InvalidReturns,
+                    code: isInfers ? IssueCodes.InvalidInfers : IssueCodes.InvalidReturns,
                     data: keywordNode && toDocumentSegment(keywordNode)
                 });
-            } else if (isDataType && rule.infers) {
-                const inferNode = findKeywordNode(rule.$cstNode, 'infers');
+            } else if (isDataType && isInfers) {
+                const inferNode = findKeywordNode(rule.$cstNode, 'infer');
                 accept('error', 'Data type rules cannot infer a type.', {
                     node: rule,
-                    property: 'infers',
+                    property: 'inferredType',
                     code: IssueCodes.InvalidInfers,
                     data: inferNode && toDocumentSegment(inferNode)
                 });
             }
         }
         for (const action of streamAllContents(grammar).filter(ast.isAction)) {
-            if (action.type && types.has(action.type) === !!action.infer) {
-                const keywordNode = action.infer ? findKeywordNode(action.$cstNode, 'infer') : findKeywordNode(action.$cstNode, '{');
-                accept('error', getMessage(action.type, action.infer), {
-                    node: action,
-                    property: 'type',
-                    code: action.infer ? IssueCodes.SuperfluousInfer : IssueCodes.MissingInfer,
-                    data: keywordNode && toDocumentSegment(keywordNode)
-                });
+            const actionType = this.getActionType(action);
+            if (actionType) {
+                const isInfers = !!action.inferredType;
+                const typeName = getTypeName(action);
+                if (action.type && types.has(typeName) === isInfers) {
+                    const keywordNode = isInfers ? findKeywordNode(action.$cstNode, 'infer') : findKeywordNode(action.$cstNode, '{');
+                    accept('error', getMessage(typeName, isInfers), {
+                        node: action,
+                        property: 'type',
+                        code: isInfers ? IssueCodes.SuperfluousInfer : IssueCodes.MissingInfer,
+                        data: keywordNode && toDocumentSegment(keywordNode)
+                    });
+                }
             }
         }
         function getMessage(name: string, infer: boolean) {
@@ -286,9 +293,18 @@ export class LangiumGrammarValidator {
         }
     }
 
+    private getActionType(rule: ast.Action): ast.AbstractType | ast.InferredType | undefined {
+        if (rule.type) {
+            return rule.type?.ref;
+        } else if (rule.inferredType) {
+            return rule.inferredType;
+        }
+        return undefined;
+    }
+
     checkGrammarHiddenTokens(grammar: ast.Grammar, accept: ValidationAcceptor): void {
         if (grammar.definesHiddenTokens) {
-            accept('error', 'Hidden terminals are declared at the terminal definition.', { node: grammar, property: 'definesHiddenTokens', code: IssueCodes.HiddenGrammarTokens});
+            accept('error', 'Hidden terminals are declared at the terminal definition.', { node: grammar, property: 'definesHiddenTokens', code: IssueCodes.HiddenGrammarTokens });
         }
     }
 
@@ -384,13 +400,9 @@ export class LangiumGrammarValidator {
     }
 
     checkGrammarTypeUnions(grammar: ast.Grammar, accept: ValidationAcceptor): void {
-        const types = new Set<string>();
-        for (const type of grammar.types) {
-            types.add(type.name);
-        }
         for (const rule of grammar.rules) {
-            if (rule.type?.name && types.has(rule.type.name)) {
-                accept('error', 'Rules are not allowed to return union types.', { node: rule.type, property: 'name' });
+            if (ast.isParserRule(rule) && ast.isType(rule.returnType)) {
+                accept('error', 'Rules are not allowed to return union types.', { node: rule, property: 'returnType' });
             }
         }
         for (const interfaceType of grammar.interfaces) {
@@ -401,7 +413,7 @@ export class LangiumGrammarValidator {
             });
         }
         for (const action of streamAllContents(grammar).filter(ast.isAction)) {
-            if (action.type && types.has(action.type)) {
+            if (ast.isType(action.type)) {
                 accept('error', 'Actions cannot create union types.', { node: action, property: 'type' });
             }
         }
@@ -539,12 +551,12 @@ export class LangiumGrammarValidator {
     }
 
     checkParserRuleDataType(rule: ast.ParserRule, accept: ValidationAcceptor): void {
-        const hasDatatypeReturnType = rule.type?.name && isPrimitiveType(rule.type.name);
+        const hasDatatypeReturnType = rule.dataType;
         const isDataType = isDataTypeRule(rule);
         if (!hasDatatypeReturnType && isDataType) {
             accept('error', 'This parser rule does not create an object. Add a primitive return type or an action to the start of the rule to force object instantiation.', { node: rule, property: 'name' });
         } else if (hasDatatypeReturnType && !isDataType) {
-            accept('error', 'Normal parser rules are not allowed to return a primitive value. Use a datatype rule for that.', { node: rule.type!, property: 'name' });
+            accept('error', 'Normal parser rules are not allowed to return a primitive value. Use a datatype rule for that.', { node: rule, property: 'dataType' });
         }
     }
 
@@ -580,22 +592,27 @@ export class LangiumGrammarValidator {
     }
 
     checkCrossRefType(reference: ast.CrossReference, accept: ValidationAcceptor): void {
-        const issue = this.checkReferenceToRuleButNotType(reference?.type?.ref);
+        const issue = this.checkReferenceToRuleButNotType(reference?.type);
         if (issue) {
             accept('error', issue, { node: reference, property: 'type' });
         }
     }
 
     checkAtomTypeRefType(atomType: ast.AtomType, accept: ValidationAcceptor): void {
-        const issue = this.checkReferenceToRuleButNotType(atomType?.refType?.ref);
-        if (issue) {
-            accept('error', issue, { node: atomType, property: 'refType' });
+        if (atomType?.refType) {
+            const issue = this.checkReferenceToRuleButNotType(atomType?.refType);
+            if (issue) {
+                accept('error', issue, { node: atomType, property: 'refType' });
+            }
         }
     }
 
-    protected checkReferenceToRuleButNotType(parserRule: ast.AbstractType | undefined): string | undefined {
-        if(ast.isParserRule(parserRule) && !isDataTypeRule(parserRule) && parserRule.type) {
-            return `Use the rule type '${parserRule.type.name}' instead of the typed rule '${parserRule.name}' for cross references.`;
+    protected checkReferenceToRuleButNotType(type: Reference<ast.AbstractType>): string | undefined {
+        if (type && ast.isParserRule(type.ref) && !isDataTypeRule(type.ref) && (type.ref.returnType || type.ref.inferredType)) {
+            const typeName = getTypeName(type.ref);
+            if (typeName) {
+                return `Use the rule type '${typeName}' instead of the typed rule name '${type.ref.name}' for cross references.`;
+            }
         }
         return undefined;
     }

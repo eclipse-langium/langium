@@ -553,10 +553,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "parameters": [],
       "name": "PrimitiveType",
       "hiddenTokens": [],
-      "type": {
-        "$type": "ReturnType",
-        "name": "string"
-      },
+      "dataType": "string",
       "alternatives": {
         "$type": "Alternatives",
         "elements": [
@@ -625,38 +622,6 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "cardinality": "?"
           }
         ]
-      }
-    },
-    {
-      "$type": "ParserRule",
-      "parameters": [],
-      "name": "ReturnType",
-      "hiddenTokens": [],
-      "alternatives": {
-        "$type": "Assignment",
-        "feature": "name",
-        "operator": "=",
-        "terminal": {
-          "$type": "Alternatives",
-          "elements": [
-            {
-              "$type": "RuleCall",
-              "arguments": [],
-              "rule": {
-                "$refText": "PrimitiveType"
-              },
-              "elements": []
-            },
-            {
-              "$type": "RuleCall",
-              "arguments": [],
-              "rule": {
-                "$refText": "ID"
-              }
-            }
-          ]
-        },
-        "elements": []
       }
     },
     {
@@ -782,45 +747,63 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                     "elements": []
                   },
                   {
-                    "$type": "Assignment",
-                    "feature": "type",
-                    "operator": "=",
-                    "terminal": {
-                      "$type": "RuleCall",
-                      "arguments": [],
-                      "rule": {
-                        "$refText": "ReturnType"
+                    "$type": "Alternatives",
+                    "elements": [
+                      {
+                        "$type": "Assignment",
+                        "feature": "returnType",
+                        "operator": "=",
+                        "terminal": {
+                          "$type": "CrossReference",
+                          "type": {
+                            "$refText": "AbstractType"
+                          },
+                          "terminal": {
+                            "$type": "RuleCall",
+                            "arguments": [],
+                            "rule": {
+                              "$refText": "ID"
+                            }
+                          }
+                        },
+                        "elements": []
+                      },
+                      {
+                        "$type": "Assignment",
+                        "feature": "dataType",
+                        "operator": "=",
+                        "terminal": {
+                          "$type": "RuleCall",
+                          "arguments": [],
+                          "rule": {
+                            "$refText": "PrimitiveType"
+                          }
+                        },
+                        "elements": []
                       }
-                    }
+                    ]
                   }
                 ]
               },
               {
-                "$type": "Group",
-                "elements": [
-                  {
-                    "$type": "Assignment",
-                    "feature": "infers",
-                    "operator": "?=",
-                    "terminal": {
-                      "$type": "Keyword",
-                      "value": "infers"
-                    },
-                    "elements": []
-                  },
-                  {
-                    "$type": "Assignment",
-                    "feature": "type",
-                    "operator": "=",
-                    "terminal": {
-                      "$type": "RuleCall",
-                      "arguments": [],
-                      "rule": {
-                        "$refText": "ReturnType"
+                "$type": "Assignment",
+                "feature": "inferredType",
+                "operator": "=",
+                "terminal": {
+                  "$type": "RuleCall",
+                  "arguments": [
+                    {
+                      "$type": "NamedArgument",
+                      "value": {
+                        "$type": "LiteralCondition"
                       }
                     }
+                  ],
+                  "rule": {
+                    "$refText": "InferredType"
                   }
-                ]
+                },
+                "elements": []
               }
             ],
             "cardinality": "?"
@@ -922,6 +905,72 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           {
             "$type": "Keyword",
             "value": ";"
+          }
+        ]
+      }
+    },
+    {
+      "$type": "ParserRule",
+      "parameters": [
+        {
+          "$type": "Parameter",
+          "name": "imperative"
+        }
+      ],
+      "name": "InferredType",
+      "hiddenTokens": [],
+      "alternatives": {
+        "$type": "Group",
+        "elements": [
+          {
+            "$type": "Alternatives",
+            "elements": [
+              {
+                "$type": "Group",
+                "guardCondition": {
+                  "$type": "ParameterReference",
+                  "parameter": {
+                    "$refText": "imperative"
+                  }
+                },
+                "elements": [
+                  {
+                    "$type": "Keyword",
+                    "value": "infer"
+                  }
+                ]
+              },
+              {
+                "$type": "Group",
+                "guardCondition": {
+                  "$type": "Negation",
+                  "value": {
+                    "$type": "ParameterReference",
+                    "parameter": {
+                      "$refText": "imperative"
+                    }
+                  }
+                },
+                "elements": [
+                  {
+                    "$type": "Keyword",
+                    "value": "infers"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "$type": "Assignment",
+            "feature": "name",
+            "operator": "=",
+            "terminal": {
+              "$type": "RuleCall",
+              "arguments": [],
+              "rule": {
+                "$refText": "ID"
+              }
+            }
           }
         ]
       }
@@ -1032,9 +1081,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "parameters": [],
       "name": "Alternatives",
       "hiddenTokens": [],
-      "infers": true,
-      "type": {
-        "$type": "ReturnType",
+      "inferredType": {
+        "$type": "InferredType",
         "name": "AbstractElement"
       },
       "alternatives": {
@@ -1053,8 +1101,10 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "elements": [
               {
                 "$type": "Action",
-                "infer": true,
-                "type": "Alternatives",
+                "inferredType": {
+                  "$type": "InferredType",
+                  "name": "Alternatives"
+                },
                 "feature": "elements",
                 "operator": "+=",
                 "elements": []
@@ -1093,9 +1143,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "parameters": [],
       "name": "ConditionalBranch",
       "hiddenTokens": [],
-      "infers": true,
-      "type": {
-        "$type": "ReturnType",
+      "inferredType": {
+        "$type": "InferredType",
         "name": "AbstractElement"
       },
       "alternatives": {
@@ -1114,8 +1163,10 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "elements": [
               {
                 "$type": "Action",
-                "infer": true,
-                "type": "Group",
+                "inferredType": {
+                  "$type": "InferredType",
+                  "name": "Group"
+                },
                 "elements": []
               },
               {
@@ -1162,9 +1213,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "parameters": [],
       "name": "UnorderedGroup",
       "hiddenTokens": [],
-      "infers": true,
-      "type": {
-        "$type": "ReturnType",
+      "inferredType": {
+        "$type": "InferredType",
         "name": "AbstractElement"
       },
       "alternatives": {
@@ -1183,8 +1233,10 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "elements": [
               {
                 "$type": "Action",
-                "infer": true,
-                "type": "UnorderedGroup",
+                "inferredType": {
+                  "$type": "InferredType",
+                  "name": "UnorderedGroup"
+                },
                 "feature": "elements",
                 "operator": "+=",
                 "elements": []
@@ -1223,9 +1275,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "parameters": [],
       "name": "Group",
       "hiddenTokens": [],
-      "infers": true,
-      "type": {
-        "$type": "ReturnType",
+      "inferredType": {
+        "$type": "InferredType",
         "name": "AbstractElement"
       },
       "alternatives": {
@@ -1244,8 +1295,10 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "elements": [
               {
                 "$type": "Action",
-                "infer": true,
-                "type": "Group",
+                "inferredType": {
+                  "$type": "InferredType",
+                  "name": "Group"
+                },
                 "feature": "elements",
                 "operator": "+=",
                 "elements": []
@@ -1274,9 +1327,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "parameters": [],
       "name": "AbstractToken",
       "hiddenTokens": [],
-      "infers": true,
-      "type": {
-        "$type": "ReturnType",
+      "inferredType": {
+        "$type": "InferredType",
         "name": "AbstractElement"
       },
       "alternatives": {
@@ -1306,9 +1358,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "parameters": [],
       "name": "AbstractTokenWithCardinality",
       "hiddenTokens": [],
-      "infers": true,
-      "type": {
-        "$type": "ReturnType",
+      "inferredType": {
+        "$type": "InferredType",
         "name": "AbstractElement"
       },
       "alternatives": {
@@ -1367,9 +1418,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "parameters": [],
       "name": "Action",
       "hiddenTokens": [],
-      "infers": true,
-      "type": {
-        "$type": "ReturnType",
+      "inferredType": {
+        "$type": "InferredType",
         "name": "AbstractElement"
       },
       "alternatives": {
@@ -1377,8 +1427,10 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
         "elements": [
           {
             "$type": "Action",
-            "infer": true,
-            "type": "Action",
+            "inferredType": {
+              "$type": "InferredType",
+              "name": "Action"
+            },
             "elements": []
           },
           {
@@ -1386,26 +1438,49 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "value": "{"
           },
           {
-            "$type": "Assignment",
-            "feature": "infer",
-            "operator": "?=",
-            "terminal": {
-              "$type": "Keyword",
-              "value": "infer"
-            },
-            "cardinality": "?"
-          },
-          {
-            "$type": "Assignment",
-            "feature": "type",
-            "operator": "=",
-            "terminal": {
-              "$type": "RuleCall",
-              "arguments": [],
-              "rule": {
-                "$refText": "ID"
+            "$type": "Alternatives",
+            "elements": [
+              {
+                "$type": "Assignment",
+                "feature": "type",
+                "operator": "=",
+                "terminal": {
+                  "$type": "CrossReference",
+                  "type": {
+                    "$refText": "AbstractType"
+                  },
+                  "terminal": {
+                    "$type": "RuleCall",
+                    "arguments": [],
+                    "rule": {
+                      "$refText": "ID"
+                    }
+                  }
+                },
+                "elements": []
+              },
+              {
+                "$type": "Assignment",
+                "feature": "inferredType",
+                "operator": "=",
+                "terminal": {
+                  "$type": "RuleCall",
+                  "arguments": [
+                    {
+                      "$type": "NamedArgument",
+                      "value": {
+                        "$type": "LiteralCondition",
+                        "true": true
+                      }
+                    }
+                  ],
+                  "rule": {
+                    "$refText": "InferredType"
+                  }
+                },
+                "elements": []
               }
-            }
+            ]
           },
           {
             "$type": "Group",
@@ -1465,9 +1540,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "parameters": [],
       "name": "AbstractTerminal",
       "hiddenTokens": [],
-      "infers": true,
-      "type": {
-        "$type": "ReturnType",
+      "inferredType": {
+        "$type": "InferredType",
         "name": "AbstractElement"
       },
       "alternatives": {
@@ -1712,9 +1786,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "parameters": [],
       "name": "Disjunction",
       "hiddenTokens": [],
-      "infers": true,
-      "type": {
-        "$type": "ReturnType",
+      "inferredType": {
+        "$type": "InferredType",
         "name": "Condition"
       },
       "alternatives": {
@@ -1733,8 +1806,10 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "elements": [
               {
                 "$type": "Action",
-                "infer": true,
-                "type": "Disjunction",
+                "inferredType": {
+                  "$type": "InferredType",
+                  "name": "Disjunction"
+                },
                 "feature": "left",
                 "operator": "=",
                 "elements": []
@@ -1766,9 +1841,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "parameters": [],
       "name": "Conjunction",
       "hiddenTokens": [],
-      "infers": true,
-      "type": {
-        "$type": "ReturnType",
+      "inferredType": {
+        "$type": "InferredType",
         "name": "Condition"
       },
       "alternatives": {
@@ -1787,8 +1861,10 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "elements": [
               {
                 "$type": "Action",
-                "infer": true,
-                "type": "Conjunction",
+                "inferredType": {
+                  "$type": "InferredType",
+                  "name": "Conjunction"
+                },
                 "feature": "left",
                 "operator": "=",
                 "elements": []
@@ -1820,9 +1896,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "parameters": [],
       "name": "Negation",
       "hiddenTokens": [],
-      "infers": true,
-      "type": {
-        "$type": "ReturnType",
+      "inferredType": {
+        "$type": "InferredType",
         "name": "Condition"
       },
       "alternatives": {
@@ -1841,8 +1916,10 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "elements": [
               {
                 "$type": "Action",
-                "infer": true,
-                "type": "Negation",
+                "inferredType": {
+                  "$type": "InferredType",
+                  "name": "Negation"
+                },
                 "elements": []
               },
               {
@@ -1871,9 +1948,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "parameters": [],
       "name": "Atom",
       "hiddenTokens": [],
-      "infers": true,
-      "type": {
-        "$type": "ReturnType",
+      "inferredType": {
+        "$type": "InferredType",
         "name": "Condition"
       },
       "alternatives": {
@@ -1911,9 +1987,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "parameters": [],
       "name": "ParenthesizedCondition",
       "hiddenTokens": [],
-      "infers": true,
-      "type": {
-        "$type": "ReturnType",
+      "inferredType": {
+        "$type": "InferredType",
         "name": "Condition"
       },
       "alternatives": {
@@ -1968,9 +2043,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "parameters": [],
       "name": "PredicatedKeyword",
       "hiddenTokens": [],
-      "infers": true,
-      "type": {
-        "$type": "ReturnType",
+      "inferredType": {
+        "$type": "InferredType",
         "name": "Keyword"
       },
       "alternatives": {
@@ -2021,9 +2095,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "parameters": [],
       "name": "PredicatedRuleCall",
       "hiddenTokens": [],
-      "infers": true,
-      "type": {
-        "$type": "ReturnType",
+      "inferredType": {
+        "$type": "InferredType",
         "name": "RuleCall"
       },
       "alternatives": {
@@ -2130,9 +2203,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "parameters": [],
       "name": "Assignment",
       "hiddenTokens": [],
-      "infers": true,
-      "type": {
-        "$type": "ReturnType",
+      "inferredType": {
+        "$type": "InferredType",
         "name": "AbstractElement"
       },
       "alternatives": {
@@ -2140,8 +2212,10 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
         "elements": [
           {
             "$type": "Action",
-            "infer": true,
-            "type": "Assignment",
+            "inferredType": {
+              "$type": "InferredType",
+              "name": "Assignment"
+            },
             "elements": []
           },
           {
@@ -2225,9 +2299,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "parameters": [],
       "name": "AssignableTerminal",
       "hiddenTokens": [],
-      "infers": true,
-      "type": {
-        "$type": "ReturnType",
+      "inferredType": {
+        "$type": "InferredType",
         "name": "AbstractElement"
       },
       "alternatives": {
@@ -2273,9 +2346,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "parameters": [],
       "name": "ParenthesizedAssignableElement",
       "hiddenTokens": [],
-      "infers": true,
-      "type": {
-        "$type": "ReturnType",
+      "inferredType": {
+        "$type": "InferredType",
         "name": "AbstractElement"
       },
       "alternatives": {
@@ -2305,9 +2377,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "parameters": [],
       "name": "AssignableAlternatives",
       "hiddenTokens": [],
-      "infers": true,
-      "type": {
-        "$type": "ReturnType",
+      "inferredType": {
+        "$type": "InferredType",
         "name": "AbstractElement"
       },
       "alternatives": {
@@ -2326,8 +2397,10 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "elements": [
               {
                 "$type": "Action",
-                "infer": true,
-                "type": "Alternatives",
+                "inferredType": {
+                  "$type": "InferredType",
+                  "name": "Alternatives"
+                },
                 "feature": "elements",
                 "operator": "+=",
                 "elements": []
@@ -2366,9 +2439,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "parameters": [],
       "name": "CrossReference",
       "hiddenTokens": [],
-      "infers": true,
-      "type": {
-        "$type": "ReturnType",
+      "inferredType": {
+        "$type": "InferredType",
         "name": "AbstractElement"
       },
       "alternatives": {
@@ -2376,8 +2448,10 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
         "elements": [
           {
             "$type": "Action",
-            "infer": true,
-            "type": "CrossReference",
+            "inferredType": {
+              "$type": "InferredType",
+              "name": "CrossReference"
+            },
             "elements": []
           },
           {
@@ -2445,9 +2519,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "parameters": [],
       "name": "CrossReferenceableTerminal",
       "hiddenTokens": [],
-      "infers": true,
-      "type": {
-        "$type": "ReturnType",
+      "inferredType": {
+        "$type": "InferredType",
         "name": "AbstractElement"
       },
       "alternatives": {
@@ -2477,9 +2550,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "parameters": [],
       "name": "ParenthesizedElement",
       "hiddenTokens": [],
-      "infers": true,
-      "type": {
-        "$type": "ReturnType",
+      "inferredType": {
+        "$type": "InferredType",
         "name": "AbstractElement"
       },
       "alternatives": {
@@ -2509,9 +2581,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "parameters": [],
       "name": "PredicatedGroup",
       "hiddenTokens": [],
-      "infers": true,
-      "type": {
-        "$type": "ReturnType",
+      "inferredType": {
+        "$type": "InferredType",
         "name": "Group"
       },
       "alternatives": {
@@ -2563,6 +2634,38 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "value": ")"
           }
         ]
+      }
+    },
+    {
+      "$type": "ParserRule",
+      "parameters": [],
+      "name": "ReturnType",
+      "hiddenTokens": [],
+      "alternatives": {
+        "$type": "Assignment",
+        "feature": "name",
+        "operator": "=",
+        "terminal": {
+          "$type": "Alternatives",
+          "elements": [
+            {
+              "$type": "RuleCall",
+              "arguments": [],
+              "rule": {
+                "$refText": "PrimitiveType"
+              },
+              "elements": []
+            },
+            {
+              "$type": "RuleCall",
+              "arguments": [],
+              "rule": {
+                "$refText": "ID"
+              }
+            }
+          ]
+        },
+        "elements": []
       }
     },
     {
@@ -2702,9 +2805,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "parameters": [],
       "name": "TerminalAlternatives",
       "hiddenTokens": [],
-      "infers": true,
-      "type": {
-        "$type": "ReturnType",
+      "inferredType": {
+        "$type": "InferredType",
         "name": "AbstractElement"
       },
       "alternatives": {
@@ -2723,8 +2825,10 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "elements": [
               {
                 "$type": "Action",
-                "infer": true,
-                "type": "TerminalAlternatives",
+                "inferredType": {
+                  "$type": "InferredType",
+                  "name": "TerminalAlternatives"
+                },
                 "feature": "elements",
                 "operator": "+=",
                 "elements": []
@@ -2756,9 +2860,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "parameters": [],
       "name": "TerminalGroup",
       "hiddenTokens": [],
-      "infers": true,
-      "type": {
-        "$type": "ReturnType",
+      "inferredType": {
+        "$type": "InferredType",
         "name": "AbstractElement"
       },
       "alternatives": {
@@ -2777,8 +2880,10 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "elements": [
               {
                 "$type": "Action",
-                "infer": true,
-                "type": "TerminalGroup",
+                "inferredType": {
+                  "$type": "InferredType",
+                  "name": "TerminalGroup"
+                },
                 "feature": "elements",
                 "operator": "+=",
                 "elements": []
@@ -2807,9 +2912,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "parameters": [],
       "name": "TerminalToken",
       "hiddenTokens": [],
-      "infers": true,
-      "type": {
-        "$type": "ReturnType",
+      "inferredType": {
+        "$type": "InferredType",
         "name": "AbstractElement"
       },
       "alternatives": {
@@ -2855,9 +2959,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "parameters": [],
       "name": "TerminalTokenElement",
       "hiddenTokens": [],
-      "infers": true,
-      "type": {
-        "$type": "ReturnType",
+      "inferredType": {
+        "$type": "InferredType",
         "name": "AbstractElement"
       },
       "alternatives": {
@@ -2927,9 +3030,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "parameters": [],
       "name": "ParenthesizedTerminalElement",
       "hiddenTokens": [],
-      "infers": true,
-      "type": {
-        "$type": "ReturnType",
+      "inferredType": {
+        "$type": "InferredType",
         "name": "AbstractElement"
       },
       "alternatives": {
@@ -2959,9 +3061,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "parameters": [],
       "name": "TerminalRuleCall",
       "hiddenTokens": [],
-      "infers": true,
-      "type": {
-        "$type": "ReturnType",
+      "inferredType": {
+        "$type": "InferredType",
         "name": "AbstractElement"
       },
       "alternatives": {
@@ -2969,8 +3070,10 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
         "elements": [
           {
             "$type": "Action",
-            "infer": true,
-            "type": "TerminalRuleCall",
+            "inferredType": {
+              "$type": "InferredType",
+              "name": "TerminalRuleCall"
+            },
             "elements": []
           },
           {
@@ -2999,9 +3102,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "parameters": [],
       "name": "NegatedToken",
       "hiddenTokens": [],
-      "infers": true,
-      "type": {
-        "$type": "ReturnType",
+      "inferredType": {
+        "$type": "InferredType",
         "name": "AbstractElement"
       },
       "alternatives": {
@@ -3009,8 +3111,10 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
         "elements": [
           {
             "$type": "Action",
-            "infer": true,
-            "type": "NegatedToken",
+            "inferredType": {
+              "$type": "InferredType",
+              "name": "NegatedToken"
+            },
             "elements": []
           },
           {
@@ -3037,9 +3141,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "parameters": [],
       "name": "UntilToken",
       "hiddenTokens": [],
-      "infers": true,
-      "type": {
-        "$type": "ReturnType",
+      "inferredType": {
+        "$type": "InferredType",
         "name": "AbstractElement"
       },
       "alternatives": {
@@ -3047,8 +3150,10 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
         "elements": [
           {
             "$type": "Action",
-            "infer": true,
-            "type": "UntilToken",
+            "inferredType": {
+              "$type": "InferredType",
+              "name": "UntilToken"
+            },
             "elements": []
           },
           {
@@ -3075,9 +3180,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "parameters": [],
       "name": "RegexToken",
       "hiddenTokens": [],
-      "infers": true,
-      "type": {
-        "$type": "ReturnType",
+      "inferredType": {
+        "$type": "InferredType",
         "name": "AbstractElement"
       },
       "alternatives": {
@@ -3085,8 +3189,10 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
         "elements": [
           {
             "$type": "Action",
-            "infer": true,
-            "type": "RegexToken",
+            "inferredType": {
+              "$type": "InferredType",
+              "name": "RegexToken"
+            },
             "elements": []
           },
           {
@@ -3109,9 +3215,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "parameters": [],
       "name": "Wildcard",
       "hiddenTokens": [],
-      "infers": true,
-      "type": {
-        "$type": "ReturnType",
+      "inferredType": {
+        "$type": "InferredType",
         "name": "AbstractElement"
       },
       "alternatives": {
@@ -3119,8 +3224,10 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
         "elements": [
           {
             "$type": "Action",
-            "infer": true,
-            "type": "Wildcard",
+            "inferredType": {
+              "$type": "InferredType",
+              "name": "Wildcard"
+            },
             "elements": []
           },
           {
@@ -3135,9 +3242,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "parameters": [],
       "name": "CharacterRange",
       "hiddenTokens": [],
-      "infers": true,
-      "type": {
-        "$type": "ReturnType",
+      "inferredType": {
+        "$type": "InferredType",
         "name": "AbstractElement"
       },
       "alternatives": {
@@ -3145,8 +3251,10 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
         "elements": [
           {
             "$type": "Action",
-            "infer": true,
-            "type": "CharacterRange",
+            "inferredType": {
+              "$type": "InferredType",
+              "name": "CharacterRange"
+            },
             "elements": []
           },
           {
@@ -3192,10 +3300,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "parameters": [],
       "name": "FeatureName",
       "hiddenTokens": [],
-      "type": {
-        "$type": "ReturnType",
-        "name": "string"
-      },
+      "dataType": "string",
       "alternatives": {
         "$type": "Alternatives",
         "elements": [
