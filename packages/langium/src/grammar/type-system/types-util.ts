@@ -104,6 +104,27 @@ export type AstResources = {
     types: Set<Type>
 }
 
+/**
+ * Collects all properties of all interface types. Includes super type properties.
+ * @param interfaces A topologically sorted array of interfaces.
+ */
+export function collectAllProperties(interfaces: InterfaceType[]): Map<string, Property[]> {
+    const map = new Map<string, Property[]>();
+    for (const interfaceType of interfaces) {
+        map.set(interfaceType.name, [...interfaceType.properties]);
+    }
+    for (const interfaceType of interfaces) {
+        const existing = map.get(interfaceType.name)!;
+        for (const superType of interfaceType.interfaceSuperTypes) {
+            const superTypeProperties = map.get(superType);
+            if (superTypeProperties) {
+                existing.push(...superTypeProperties);
+            }
+        }
+    }
+    return map;
+}
+
 export function collectAllAstResources(grammars: Grammar[], documents?: LangiumDocuments, visited: Set<URI> = new Set(),
     astResources: AstResources = { parserRules: new Set(), datatypeRules: new Set(), interfaces: new Set(), types: new Set() }): AstResources {
 

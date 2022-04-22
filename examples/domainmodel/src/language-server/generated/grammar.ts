@@ -31,7 +31,6 @@ export const DomainModelGrammar = (): Grammar => loadedDomainModelGrammar ||(loa
       "definesHiddenTokens": false,
       "fragment": false,
       "hiddenTokens": [],
-      "infers": false,
       "parameters": [],
       "wildcard": false
     },
@@ -61,7 +60,6 @@ export const DomainModelGrammar = (): Grammar => loadedDomainModelGrammar ||(loa
       "entry": false,
       "fragment": false,
       "hiddenTokens": [],
-      "infers": false,
       "parameters": [],
       "wildcard": false
     },
@@ -114,7 +112,6 @@ export const DomainModelGrammar = (): Grammar => loadedDomainModelGrammar ||(loa
       "entry": false,
       "fragment": false,
       "hiddenTokens": [],
-      "infers": false,
       "parameters": [],
       "wildcard": false
     },
@@ -144,7 +141,6 @@ export const DomainModelGrammar = (): Grammar => loadedDomainModelGrammar ||(loa
       "entry": false,
       "fragment": false,
       "hiddenTokens": [],
-      "infers": false,
       "parameters": [],
       "wildcard": false
     },
@@ -176,7 +172,6 @@ export const DomainModelGrammar = (): Grammar => loadedDomainModelGrammar ||(loa
       "entry": false,
       "fragment": false,
       "hiddenTokens": [],
-      "infers": false,
       "parameters": [],
       "wildcard": false
     },
@@ -258,7 +253,6 @@ export const DomainModelGrammar = (): Grammar => loadedDomainModelGrammar ||(loa
       "entry": false,
       "fragment": false,
       "hiddenTokens": [],
-      "infers": false,
       "parameters": [],
       "wildcard": false
     },
@@ -319,7 +313,6 @@ export const DomainModelGrammar = (): Grammar => loadedDomainModelGrammar ||(loa
       "entry": false,
       "fragment": false,
       "hiddenTokens": [],
-      "infers": false,
       "parameters": [],
       "wildcard": false
     },
@@ -360,7 +353,6 @@ export const DomainModelGrammar = (): Grammar => loadedDomainModelGrammar ||(loa
       "entry": false,
       "fragment": false,
       "hiddenTokens": [],
-      "infers": false,
       "parameters": [],
       "wildcard": false
     },

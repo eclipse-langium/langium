@@ -52,7 +52,6 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
       "definesHiddenTokens": false,
       "fragment": false,
       "hiddenTokens": [],
-      "infers": false,
       "parameters": [],
       "wildcard": false
     },
@@ -82,7 +81,6 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
       "entry": false,
       "fragment": false,
       "hiddenTokens": [],
-      "infers": false,
       "parameters": [],
       "wildcard": false
     },
@@ -182,7 +180,6 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
       "entry": false,
       "fragment": false,
       "hiddenTokens": [],
-      "infers": false,
       "parameters": [],
       "wildcard": false
     },
@@ -205,7 +202,6 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
       "entry": false,
       "fragment": false,
       "hiddenTokens": [],
-      "infers": false,
       "parameters": [],
       "wildcard": false
     },
@@ -237,7 +233,6 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
       "entry": false,
       "fragment": false,
       "hiddenTokens": [],
-      "infers": false,
       "parameters": [],
       "wildcard": false
     },
@@ -255,7 +250,6 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
       "entry": false,
       "fragment": false,
       "hiddenTokens": [],
-      "infers": false,
       "parameters": [],
       "wildcard": false
     },
@@ -286,8 +280,7 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
                   "name": "BinaryExpression"
                 },
                 "feature": "left",
-                "operator": "=",
-                "infer": false
+                "operator": "="
               },
               {
                 "$type": "Assignment",
@@ -328,7 +321,6 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
       "entry": false,
       "fragment": false,
       "hiddenTokens": [],
-      "infers": false,
       "parameters": [],
       "wildcard": false
     },
@@ -359,8 +351,7 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
                   "name": "BinaryExpression"
                 },
                 "feature": "left",
-                "operator": "=",
-                "infer": false
+                "operator": "="
               },
               {
                 "$type": "Assignment",
@@ -401,7 +392,6 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
       "entry": false,
       "fragment": false,
       "hiddenTokens": [],
-      "infers": false,
       "parameters": [],
       "wildcard": false
     },
@@ -443,8 +433,7 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
                 "inferredType": {
                   "$type": "InferredType",
                   "name": "NumberLiteral"
-                },
-                "infer": false
+                }
               },
               {
                 "$type": "Assignment",
@@ -468,8 +457,7 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
                 "inferredType": {
                   "$type": "InferredType",
                   "name": "FunctionCall"
-                },
-                "infer": false
+                }
               },
               {
                 "$type": "Assignment",
@@ -539,7 +527,6 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
       "entry": false,
       "fragment": false,
       "hiddenTokens": [],
-      "infers": false,
       "parameters": [],
       "wildcard": false
     },

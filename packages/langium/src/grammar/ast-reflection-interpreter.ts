@@ -4,22 +4,29 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { AstNode, AstReflection, TypeMandatoryField, TypeMetaData } from '../syntax-tree';
+import { AstReflection, TypeMandatoryField, TypeMetaData } from '../syntax-tree';
 import { isAstNode } from '../utils/ast-util';
 import { MultiMap } from '../utils/collections';
 import { LangiumDocuments } from '../workspace/documents';
-import { Grammar } from './generated/ast';
+import { Grammar, isGrammar } from './generated/ast';
 import { createLangiumGrammarServices } from './langium-grammar-module';
 import { collectAst } from './type-system/type-collector';
-import { AstTypes, Property } from './type-system/types-util';
+import { AstTypes, collectAllProperties, Property } from './type-system/types-util';
 
 let emptyDocuments: LangiumDocuments;
 
-export function interpreteAstReflection(grammar: Grammar, documents?: LangiumDocuments): AstReflection {
-    if (!emptyDocuments && !documents) {
-        emptyDocuments = createLangiumGrammarServices().shared.workspace.LangiumDocuments;
+export function interpreteAstReflection(astTypes: AstTypes): AstReflection;
+export function interpreteAstReflection(grammar: Grammar, documents?: LangiumDocuments): AstReflection;
+export function interpreteAstReflection(grammarOrTypes: Grammar | AstTypes, documents?: LangiumDocuments): AstReflection {
+    let collectedTypes: AstTypes;
+    if (isGrammar(grammarOrTypes)) {
+        if (!emptyDocuments && !documents) {
+            emptyDocuments = createLangiumGrammarServices().shared.workspace.LangiumDocuments;
+        }
+        collectedTypes = collectAst(documents ?? emptyDocuments, [grammarOrTypes]);
+    } else {
+        collectedTypes = grammarOrTypes;
     }
-    const collectedTypes = collectAst(documents ?? emptyDocuments, [grammar]);
     const allTypes = collectedTypes.interfaces.map(e => e.name).concat(collectedTypes.unions.map(e => e.name));
     const references = buildReferenceTypes(collectedTypes);
     const metaData = buildTypeMetaData(collectedTypes);
@@ -42,7 +49,7 @@ export function interpreteAstReflection(grammar: Grammar, documents?: LangiumDoc
                 mandatory: []
             };
         },
-        isInstance(node: AstNode, type: string): boolean {
+        isInstance(node: unknown, type: string): boolean {
             return isAstNode(node) && this.isSubtype(node.$type, type);
         },
         isSubtype(subtype: string, originalSuperType: string): boolean {
@@ -76,8 +83,9 @@ function buildReferenceTypes(astTypes: AstTypes): Map<string, string> {
 
 function buildTypeMetaData(astTypes: AstTypes): Map<string, TypeMetaData> {
     const map = new Map<string, TypeMetaData>();
+    const allProperties = collectAllProperties(astTypes.interfaces);
     for (const interfaceType of astTypes.interfaces) {
-        const props = interfaceType.properties;
+        const props = allProperties.get(interfaceType.name)!;
         const arrayProps = props.filter(e => e.typeAlternatives.some(e => e.array));
         const booleanProps = props.filter(e => e.typeAlternatives.every(e => !e.array && e.types.includes('boolean')));
         if (arrayProps.length > 0 || booleanProps.length > 0) {

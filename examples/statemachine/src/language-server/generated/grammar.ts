@@ -114,7 +114,6 @@ export const StatemachineGrammar = (): Grammar => loadedStatemachineGrammar ||(l
       "definesHiddenTokens": false,
       "fragment": false,
       "hiddenTokens": [],
-      "infers": false,
       "parameters": [],
       "wildcard": false
     },
@@ -137,7 +136,6 @@ export const StatemachineGrammar = (): Grammar => loadedStatemachineGrammar ||(l
       "entry": false,
       "fragment": false,
       "hiddenTokens": [],
-      "infers": false,
       "parameters": [],
       "wildcard": false
     },
@@ -160,7 +158,6 @@ export const StatemachineGrammar = (): Grammar => loadedStatemachineGrammar ||(l
       "entry": false,
       "fragment": false,
       "hiddenTokens": [],
-      "infers": false,
       "parameters": [],
       "wildcard": false
     },
@@ -240,7 +237,6 @@ export const StatemachineGrammar = (): Grammar => loadedStatemachineGrammar ||(l
       "entry": false,
       "fragment": false,
       "hiddenTokens": [],
-      "infers": false,
       "parameters": [],
       "wildcard": false
     },
@@ -284,7 +280,6 @@ export const StatemachineGrammar = (): Grammar => loadedStatemachineGrammar ||(l
       "entry": false,
       "fragment": false,
       "hiddenTokens": [],
-      "infers": false,
       "parameters": [],
       "wildcard": false
     },

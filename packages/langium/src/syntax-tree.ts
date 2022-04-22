@@ -96,7 +96,7 @@ export interface AstReflection {
     getAllTypes(): string[]
     getReferenceType(referenceId: string): string
     getTypeMetaData(type: string): TypeMetaData
-    isInstance(node: AstNode, type: string): boolean
+    isInstance(node: unknown, type: string): boolean
     isSubtype(subtype: string, supertype: string): boolean
 }
 

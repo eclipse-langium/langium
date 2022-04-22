@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import {
-    GeneratorNode, Grammar, IndentNode, CompositeGeneratorNode, NL, processGeneratorNode, streamAllContents, isCrossReference, MultiMap, LangiumServices, collectAst, AstTypes, Property
+    GeneratorNode, Grammar, IndentNode, CompositeGeneratorNode, NL, processGeneratorNode, streamAllContents, isCrossReference, MultiMap, LangiumServices, collectAst, AstTypes, Property, collectAllProperties
 } from 'langium';
 import { LangiumConfig } from '../package';
 import { generatedHeader } from './util';
@@ -91,8 +91,9 @@ function buildTypeMetaDataMethod(astTypes: AstTypes): GeneratorNode {
     const typeSwitchNode = new IndentNode();
     typeSwitchNode.append('switch (type) {', NL);
     typeSwitchNode.indent(caseNode => {
+        const allProperties = collectAllProperties(astTypes.interfaces);
         for (const interfaceType of astTypes.interfaces) {
-            const props = interfaceType.properties;
+            const props = allProperties.get(interfaceType.name)!;
             const arrayProps = props.filter(e => e.typeAlternatives.some(e => e.array));
             const booleanProps = props.filter(e => e.typeAlternatives.every(e => !e.array && e.types.includes('boolean')));
             if (arrayProps.length > 0 || booleanProps.length > 0) {

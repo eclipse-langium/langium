@@ -241,7 +241,6 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "definesHiddenTokens": false,
       "fragment": false,
       "hiddenTokens": [],
-      "infers": false,
       "parameters": [],
       "wildcard": false
     },
@@ -324,7 +323,6 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "entry": false,
       "fragment": false,
       "hiddenTokens": [],
-      "infers": false,
       "parameters": [],
       "wildcard": false
     },
@@ -366,7 +364,6 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "definesHiddenTokens": false,
       "entry": false,
       "hiddenTokens": [],
-      "infers": false,
       "parameters": [],
       "wildcard": false
     },
@@ -420,7 +417,6 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "entry": false,
       "fragment": false,
       "hiddenTokens": [],
-      "infers": false,
       "parameters": [],
       "wildcard": false
     },
@@ -470,7 +466,6 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "definesHiddenTokens": false,
       "entry": false,
       "hiddenTokens": [],
-      "infers": false,
       "parameters": [],
       "wildcard": false
     },
@@ -557,7 +552,6 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "entry": false,
       "fragment": false,
       "hiddenTokens": [],
-      "infers": false,
       "parameters": [],
       "wildcard": false
     },
@@ -590,7 +584,6 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "entry": false,
       "fragment": false,
       "hiddenTokens": [],
-      "infers": false,
       "parameters": [],
       "wildcard": false
     },
@@ -638,7 +631,6 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "entry": false,
       "fragment": false,
       "hiddenTokens": [],
-      "infers": false,
       "parameters": [],
       "wildcard": false
     },
@@ -668,7 +660,6 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "entry": false,
       "fragment": false,
       "hiddenTokens": [],
-      "infers": false,
       "parameters": [],
       "wildcard": false
     },
@@ -705,7 +696,6 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "entry": false,
       "fragment": false,
       "hiddenTokens": [],
-      "infers": false,
       "parameters": [],
       "wildcard": false
     },
@@ -930,7 +920,6 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "entry": false,
       "fragment": false,
       "hiddenTokens": [],
-      "infers": false,
       "parameters": [],
       "wildcard": false
     },
@@ -1002,7 +991,6 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "entry": false,
       "fragment": false,
       "hiddenTokens": [],
-      "infers": false,
       "wildcard": false
     },
     {
@@ -1083,7 +1071,6 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "definesHiddenTokens": false,
       "entry": false,
       "hiddenTokens": [],
-      "infers": false,
       "parameters": [],
       "wildcard": false
     },
@@ -1106,7 +1093,6 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "entry": false,
       "fragment": false,
       "hiddenTokens": [],
-      "infers": false,
       "parameters": [],
       "wildcard": false
     },
@@ -1137,8 +1123,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                   "name": "Alternatives"
                 },
                 "feature": "elements",
-                "operator": "+=",
-                "infer": false
+                "operator": "+="
               },
               {
                 "$type": "Group",
@@ -1171,7 +1156,6 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "entry": false,
       "fragment": false,
       "hiddenTokens": [],
-      "infers": false,
       "parameters": [],
       "wildcard": false
     },
@@ -1200,8 +1184,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                 "inferredType": {
                   "$type": "InferredType",
                   "name": "Group"
-                },
-                "infer": false
+                }
               },
               {
                 "$type": "Keyword",
@@ -1244,7 +1227,6 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "entry": false,
       "fragment": false,
       "hiddenTokens": [],
-      "infers": false,
       "parameters": [],
       "wildcard": false
     },
@@ -1275,8 +1257,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                   "name": "UnorderedGroup"
                 },
                 "feature": "elements",
-                "operator": "+=",
-                "infer": false
+                "operator": "+="
               },
               {
                 "$type": "Group",
@@ -1309,7 +1290,6 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "entry": false,
       "fragment": false,
       "hiddenTokens": [],
-      "infers": false,
       "parameters": [],
       "wildcard": false
     },
@@ -1340,8 +1320,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                   "name": "Group"
                 },
                 "feature": "elements",
-                "operator": "+=",
-                "infer": false
+                "operator": "+="
               },
               {
                 "$type": "Assignment",
@@ -1365,7 +1344,6 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "entry": false,
       "fragment": false,
       "hiddenTokens": [],
-      "infers": false,
       "parameters": [],
       "wildcard": false
     },
@@ -1399,7 +1377,6 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "entry": false,
       "fragment": false,
       "hiddenTokens": [],
-      "infers": false,
       "parameters": [],
       "wildcard": false
     },
@@ -1461,7 +1438,6 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "entry": false,
       "fragment": false,
       "hiddenTokens": [],
-      "infers": false,
       "parameters": [],
       "wildcard": false
     },
@@ -1480,8 +1456,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "inferredType": {
               "$type": "InferredType",
               "name": "Action"
-            },
-            "infer": false
+            }
           },
           {
             "$type": "Keyword",
@@ -1586,7 +1561,6 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "entry": false,
       "fragment": false,
       "hiddenTokens": [],
-      "infers": false,
       "parameters": [],
       "wildcard": false
     },
@@ -1648,7 +1622,6 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "entry": false,
       "fragment": false,
       "hiddenTokens": [],
-      "infers": false,
       "parameters": [],
       "wildcard": false
     },
@@ -1671,7 +1644,6 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "entry": false,
       "fragment": false,
       "hiddenTokens": [],
-      "infers": false,
       "parameters": [],
       "wildcard": false
     },
@@ -1754,7 +1726,6 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "entry": false,
       "fragment": false,
       "hiddenTokens": [],
-      "infers": false,
       "parameters": [],
       "wildcard": false
     },
@@ -1816,7 +1787,6 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "entry": false,
       "fragment": false,
       "hiddenTokens": [],
-      "infers": false,
       "parameters": [],
       "wildcard": false
     },
@@ -1845,7 +1815,6 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "entry": false,
       "fragment": false,
       "hiddenTokens": [],
-      "infers": false,
       "parameters": [],
       "wildcard": false
     },
@@ -1876,8 +1845,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                   "name": "Disjunction"
                 },
                 "feature": "left",
-                "operator": "=",
-                "infer": false
+                "operator": "="
               },
               {
                 "$type": "Keyword",
@@ -1904,7 +1872,6 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "entry": false,
       "fragment": false,
       "hiddenTokens": [],
-      "infers": false,
       "parameters": [],
       "wildcard": false
     },
@@ -1935,8 +1902,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                   "name": "Conjunction"
                 },
                 "feature": "left",
-                "operator": "=",
-                "infer": false
+                "operator": "="
               },
               {
                 "$type": "Keyword",
@@ -1963,7 +1929,6 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "entry": false,
       "fragment": false,
       "hiddenTokens": [],
-      "infers": false,
       "parameters": [],
       "wildcard": false
     },
@@ -1992,8 +1957,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                 "inferredType": {
                   "$type": "InferredType",
                   "name": "Negation"
-                },
-                "infer": false
+                }
               },
               {
                 "$type": "Keyword",
@@ -2019,7 +1983,6 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "entry": false,
       "fragment": false,
       "hiddenTokens": [],
-      "infers": false,
       "parameters": [],
       "wildcard": false
     },
@@ -2060,7 +2023,6 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "entry": false,
       "fragment": false,
       "hiddenTokens": [],
-      "infers": false,
       "parameters": [],
       "wildcard": false
     },
@@ -2095,7 +2057,6 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "entry": false,
       "fragment": false,
       "hiddenTokens": [],
-      "infers": false,
       "parameters": [],
       "wildcard": false
     },
@@ -2125,7 +2086,6 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "entry": false,
       "fragment": false,
       "hiddenTokens": [],
-      "infers": false,
       "parameters": [],
       "wildcard": false
     },
@@ -2170,7 +2130,6 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "entry": false,
       "fragment": false,
       "hiddenTokens": [],
-      "infers": false,
       "parameters": [],
       "wildcard": false
     },
@@ -2270,7 +2229,6 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "entry": false,
       "fragment": false,
       "hiddenTokens": [],
-      "infers": false,
       "parameters": [],
       "wildcard": false
     },
@@ -2289,8 +2247,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "inferredType": {
               "$type": "InferredType",
               "name": "Assignment"
-            },
-            "infer": false
+            }
           },
           {
             "$type": "Alternatives",
@@ -2358,7 +2315,6 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "entry": false,
       "fragment": false,
       "hiddenTokens": [],
-      "infers": false,
       "parameters": [],
       "wildcard": false
     },
@@ -2406,7 +2362,6 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "entry": false,
       "fragment": false,
       "hiddenTokens": [],
-      "infers": false,
       "parameters": [],
       "wildcard": false
     },
@@ -2441,7 +2396,6 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "entry": false,
       "fragment": false,
       "hiddenTokens": [],
-      "infers": false,
       "parameters": [],
       "wildcard": false
     },
@@ -2472,8 +2426,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                   "name": "Alternatives"
                 },
                 "feature": "elements",
-                "operator": "+=",
-                "infer": false
+                "operator": "+="
               },
               {
                 "$type": "Group",
@@ -2506,7 +2459,6 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "entry": false,
       "fragment": false,
       "hiddenTokens": [],
-      "infers": false,
       "parameters": [],
       "wildcard": false
     },
@@ -2525,8 +2477,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "inferredType": {
               "$type": "InferredType",
               "name": "CrossReference"
-            },
-            "infer": false
+            }
           },
           {
             "$type": "Keyword",
@@ -2590,7 +2541,6 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "entry": false,
       "fragment": false,
       "hiddenTokens": [],
-      "infers": false,
       "parameters": [],
       "wildcard": false
     },
@@ -2624,7 +2574,6 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "entry": false,
       "fragment": false,
       "hiddenTokens": [],
-      "infers": false,
       "parameters": [],
       "wildcard": false
     },
@@ -2659,7 +2608,6 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "entry": false,
       "fragment": false,
       "hiddenTokens": [],
-      "infers": false,
       "parameters": [],
       "wildcard": false
     },
@@ -2712,7 +2660,6 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "entry": false,
       "fragment": false,
       "hiddenTokens": [],
-      "infers": false,
       "parameters": [],
       "wildcard": false
     },
@@ -2747,7 +2694,6 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "entry": false,
       "fragment": false,
       "hiddenTokens": [],
-      "infers": false,
       "parameters": [],
       "wildcard": false
     },
@@ -2867,7 +2813,6 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "entry": false,
       "fragment": false,
       "hiddenTokens": [],
-      "infers": false,
       "parameters": [],
       "wildcard": false
     },
@@ -2912,8 +2857,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                   "name": "TerminalAlternatives"
                 },
                 "feature": "elements",
-                "operator": "+=",
-                "infer": false
+                "operator": "+="
               },
               {
                 "$type": "Keyword",
@@ -2940,7 +2884,6 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "entry": false,
       "fragment": false,
       "hiddenTokens": [],
-      "infers": false,
       "parameters": [],
       "wildcard": false
     },
@@ -2971,8 +2914,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                   "name": "TerminalGroup"
                 },
                 "feature": "elements",
-                "operator": "+=",
-                "infer": false
+                "operator": "+="
               },
               {
                 "$type": "Assignment",
@@ -2996,7 +2938,6 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "entry": false,
       "fragment": false,
       "hiddenTokens": [],
-      "infers": false,
       "parameters": [],
       "wildcard": false
     },
@@ -3046,7 +2987,6 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "entry": false,
       "fragment": false,
       "hiddenTokens": [],
-      "infers": false,
       "parameters": [],
       "wildcard": false
     },
@@ -3115,7 +3055,6 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "entry": false,
       "fragment": false,
       "hiddenTokens": [],
-      "infers": false,
       "parameters": [],
       "wildcard": false
     },
@@ -3150,7 +3089,6 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "entry": false,
       "fragment": false,
       "hiddenTokens": [],
-      "infers": false,
       "parameters": [],
       "wildcard": false
     },
@@ -3169,8 +3107,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "inferredType": {
               "$type": "InferredType",
               "name": "TerminalRuleCall"
-            },
-            "infer": false
+            }
           },
           {
             "$type": "Assignment",
@@ -3197,7 +3134,6 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "entry": false,
       "fragment": false,
       "hiddenTokens": [],
-      "infers": false,
       "parameters": [],
       "wildcard": false
     },
@@ -3216,8 +3152,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "inferredType": {
               "$type": "InferredType",
               "name": "NegatedToken"
-            },
-            "infer": false
+            }
           },
           {
             "$type": "Keyword",
@@ -3241,7 +3176,6 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "entry": false,
       "fragment": false,
       "hiddenTokens": [],
-      "infers": false,
       "parameters": [],
       "wildcard": false
     },
@@ -3260,8 +3194,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "inferredType": {
               "$type": "InferredType",
               "name": "UntilToken"
-            },
-            "infer": false
+            }
           },
           {
             "$type": "Keyword",
@@ -3285,7 +3218,6 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "entry": false,
       "fragment": false,
       "hiddenTokens": [],
-      "infers": false,
       "parameters": [],
       "wildcard": false
     },
@@ -3304,8 +3236,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "inferredType": {
               "$type": "InferredType",
               "name": "RegexToken"
-            },
-            "infer": false
+            }
           },
           {
             "$type": "Assignment",
@@ -3325,7 +3256,6 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "entry": false,
       "fragment": false,
       "hiddenTokens": [],
-      "infers": false,
       "parameters": [],
       "wildcard": false
     },
@@ -3344,8 +3274,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "inferredType": {
               "$type": "InferredType",
               "name": "Wildcard"
-            },
-            "infer": false
+            }
           },
           {
             "$type": "Keyword",
@@ -3357,7 +3286,6 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "entry": false,
       "fragment": false,
       "hiddenTokens": [],
-      "infers": false,
       "parameters": [],
       "wildcard": false
     },
@@ -3376,8 +3304,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "inferredType": {
               "$type": "InferredType",
               "name": "CharacterRange"
-            },
-            "infer": false
+            }
           },
           {
             "$type": "Assignment",
@@ -3419,7 +3346,6 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "entry": false,
       "fragment": false,
       "hiddenTokens": [],
-      "infers": false,
       "parameters": [],
       "wildcard": false
     },
@@ -3514,7 +3440,6 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "entry": false,
       "fragment": false,
       "hiddenTokens": [],
-      "infers": false,
       "parameters": [],
       "wildcard": false
     },
