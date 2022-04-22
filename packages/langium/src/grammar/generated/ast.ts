@@ -50,9 +50,9 @@ export function isAbstractElement(item: unknown): item is AbstractElement {
 export interface Action extends AbstractElement {
     readonly $container: Alternatives | Assignment | AtomType | CharacterRange | CrossReference | Group | NegatedToken | ParserRule | TerminalAlternatives | TerminalGroup | TerminalRule | UnorderedGroup | UntilToken;
     feature?: FeatureName
-    inferredType: InferredType
+    inferredType?: InferredType
     operator?: '+=' | '='
-    type: Reference<AbstractType>
+    type?: Reference<AbstractType>
 }
 
 export const Action = 'Action';
@@ -296,12 +296,12 @@ export function isParameterReference(item: unknown): item is ParameterReference 
 export interface ParserRule extends AstNode {
     readonly $container: Grammar;
     alternatives: AbstractElement
-    dataType: PrimitiveType
+    dataType?: PrimitiveType
     definesHiddenTokens: boolean
     entry: boolean
     fragment: boolean
     hiddenTokens: Array<Reference<AbstractRule>>
-    inferredType: InferredType
+    inferredType?: InferredType
     name: string
     parameters: Array<Parameter>
     returnType?: Reference<AbstractType>
@@ -561,14 +561,6 @@ export class LangiumGrammarAstReflection implements AstReflection {
 
     getTypeMetaData(type: string): TypeMetaData {
         switch (type) {
-            case 'Action': {
-                return {
-                    name: 'Action',
-                    mandatory: [
-                        { name: 'infer', type: 'boolean' }
-                    ]
-                };
-            }
             case 'Alternatives': {
                 return {
                     name: 'Alternatives',
@@ -650,7 +642,6 @@ export class LangiumGrammarAstReflection implements AstReflection {
                         { name: 'entry', type: 'boolean' },
                         { name: 'fragment', type: 'boolean' },
                         { name: 'hiddenTokens', type: 'array' },
-                        { name: 'infers', type: 'boolean' },
                         { name: 'parameters', type: 'array' },
                         { name: 'wildcard', type: 'boolean' }
                     ]

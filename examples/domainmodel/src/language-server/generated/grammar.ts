@@ -8,15 +8,12 @@ import { loadGrammar, Grammar } from 'langium';
 let loadedDomainModelGrammar: Grammar | undefined;
 export const DomainModelGrammar = (): Grammar => loadedDomainModelGrammar ||(loadedDomainModelGrammar = loadGrammar(`{
   "$type": "Grammar",
-  "usedGrammars": [],
-  "hiddenTokens": [],
-  "imports": [],
+  "isDeclared": true,
+  "name": "DomainModel",
   "rules": [
     {
       "$type": "ParserRule",
-      "parameters": [],
       "name": "Domainmodel",
-      "hiddenTokens": [],
       "entry": true,
       "alternatives": {
         "$type": "Assignment",
@@ -24,54 +21,59 @@ export const DomainModelGrammar = (): Grammar => loadedDomainModelGrammar ||(loa
         "operator": "+=",
         "terminal": {
           "$type": "RuleCall",
-          "arguments": [],
           "rule": {
             "$refText": "AbstractElement"
-          }
+          },
+          "arguments": []
         },
-        "elements": [],
         "cardinality": "*"
-      }
+      },
+      "definesHiddenTokens": false,
+      "fragment": false,
+      "hiddenTokens": [],
+      "infers": false,
+      "parameters": [],
+      "wildcard": false
     },
     {
       "$type": "ParserRule",
-      "parameters": [],
       "name": "AbstractElement",
-      "hiddenTokens": [],
       "alternatives": {
         "$type": "Alternatives",
         "elements": [
           {
             "$type": "RuleCall",
-            "arguments": [],
             "rule": {
               "$refText": "PackageDeclaration"
             },
-            "elements": []
+            "arguments": []
           },
           {
             "$type": "RuleCall",
-            "arguments": [],
             "rule": {
               "$refText": "Type"
             },
-            "elements": []
+            "arguments": []
           }
         ]
-      }
+      },
+      "definesHiddenTokens": false,
+      "entry": false,
+      "fragment": false,
+      "hiddenTokens": [],
+      "infers": false,
+      "parameters": [],
+      "wildcard": false
     },
     {
       "$type": "ParserRule",
-      "parameters": [],
       "name": "PackageDeclaration",
-      "hiddenTokens": [],
       "alternatives": {
         "$type": "Group",
         "elements": [
           {
             "$type": "Keyword",
-            "value": "package",
-            "elements": []
+            "value": "package"
           },
           {
             "$type": "Assignment",
@@ -79,10 +81,10 @@ export const DomainModelGrammar = (): Grammar => loadedDomainModelGrammar ||(loa
             "operator": "=",
             "terminal": {
               "$type": "RuleCall",
-              "arguments": [],
               "rule": {
                 "$refText": "QualifiedName"
-              }
+              },
+              "arguments": []
             }
           },
           {
@@ -95,12 +97,11 @@ export const DomainModelGrammar = (): Grammar => loadedDomainModelGrammar ||(loa
             "operator": "+=",
             "terminal": {
               "$type": "RuleCall",
-              "arguments": [],
               "rule": {
                 "$refText": "AbstractElement"
-              }
+              },
+              "arguments": []
             },
-            "elements": [],
             "cardinality": "*"
           },
           {
@@ -108,47 +109,54 @@ export const DomainModelGrammar = (): Grammar => loadedDomainModelGrammar ||(loa
             "value": "}"
           }
         ]
-      }
+      },
+      "definesHiddenTokens": false,
+      "entry": false,
+      "fragment": false,
+      "hiddenTokens": [],
+      "infers": false,
+      "parameters": [],
+      "wildcard": false
     },
     {
       "$type": "ParserRule",
-      "parameters": [],
       "name": "Type",
-      "hiddenTokens": [],
       "alternatives": {
         "$type": "Alternatives",
         "elements": [
           {
             "$type": "RuleCall",
-            "arguments": [],
             "rule": {
               "$refText": "DataType"
             },
-            "elements": []
+            "arguments": []
           },
           {
             "$type": "RuleCall",
-            "arguments": [],
             "rule": {
               "$refText": "Entity"
             },
-            "elements": []
+            "arguments": []
           }
         ]
-      }
+      },
+      "definesHiddenTokens": false,
+      "entry": false,
+      "fragment": false,
+      "hiddenTokens": [],
+      "infers": false,
+      "parameters": [],
+      "wildcard": false
     },
     {
       "$type": "ParserRule",
-      "parameters": [],
       "name": "DataType",
-      "hiddenTokens": [],
       "alternatives": {
         "$type": "Group",
         "elements": [
           {
             "$type": "Keyword",
-            "value": "datatype",
-            "elements": []
+            "value": "datatype"
           },
           {
             "$type": "Assignment",
@@ -156,27 +164,31 @@ export const DomainModelGrammar = (): Grammar => loadedDomainModelGrammar ||(loa
             "operator": "=",
             "terminal": {
               "$type": "RuleCall",
-              "arguments": [],
               "rule": {
                 "$refText": "ID"
-              }
+              },
+              "arguments": []
             }
           }
         ]
-      }
+      },
+      "definesHiddenTokens": false,
+      "entry": false,
+      "fragment": false,
+      "hiddenTokens": [],
+      "infers": false,
+      "parameters": [],
+      "wildcard": false
     },
     {
       "$type": "ParserRule",
-      "parameters": [],
       "name": "Entity",
-      "hiddenTokens": [],
       "alternatives": {
         "$type": "Group",
         "elements": [
           {
             "$type": "Keyword",
-            "value": "entity",
-            "elements": []
+            "value": "entity"
           },
           {
             "$type": "Assignment",
@@ -184,10 +196,10 @@ export const DomainModelGrammar = (): Grammar => loadedDomainModelGrammar ||(loa
             "operator": "=",
             "terminal": {
               "$type": "RuleCall",
-              "arguments": [],
               "rule": {
                 "$refText": "ID"
-              }
+              },
+              "arguments": []
             }
           },
           {
@@ -195,8 +207,7 @@ export const DomainModelGrammar = (): Grammar => loadedDomainModelGrammar ||(loa
             "elements": [
               {
                 "$type": "Keyword",
-                "value": "extends",
-                "elements": []
+                "value": "extends"
               },
               {
                 "$type": "Assignment",
@@ -209,11 +220,12 @@ export const DomainModelGrammar = (): Grammar => loadedDomainModelGrammar ||(loa
                   },
                   "terminal": {
                     "$type": "RuleCall",
-                    "arguments": [],
                     "rule": {
                       "$refText": "QualifiedName"
-                    }
-                  }
+                    },
+                    "arguments": []
+                  },
+                  "deprecatedSyntax": false
                 }
               }
             ],
@@ -229,12 +241,11 @@ export const DomainModelGrammar = (): Grammar => loadedDomainModelGrammar ||(loa
             "operator": "+=",
             "terminal": {
               "$type": "RuleCall",
-              "arguments": [],
               "rule": {
                 "$refText": "Feature"
-              }
+              },
+              "arguments": []
             },
-            "elements": [],
             "cardinality": "*"
           },
           {
@@ -242,13 +253,18 @@ export const DomainModelGrammar = (): Grammar => loadedDomainModelGrammar ||(loa
             "value": "}"
           }
         ]
-      }
+      },
+      "definesHiddenTokens": false,
+      "entry": false,
+      "fragment": false,
+      "hiddenTokens": [],
+      "infers": false,
+      "parameters": [],
+      "wildcard": false
     },
     {
       "$type": "ParserRule",
-      "parameters": [],
       "name": "Feature",
-      "hiddenTokens": [],
       "alternatives": {
         "$type": "Group",
         "elements": [
@@ -260,7 +276,6 @@ export const DomainModelGrammar = (): Grammar => loadedDomainModelGrammar ||(loa
               "$type": "Keyword",
               "value": "many"
             },
-            "elements": [],
             "cardinality": "?"
           },
           {
@@ -269,10 +284,10 @@ export const DomainModelGrammar = (): Grammar => loadedDomainModelGrammar ||(loa
             "operator": "=",
             "terminal": {
               "$type": "RuleCall",
-              "arguments": [],
               "rule": {
                 "$refText": "ID"
-              }
+              },
+              "arguments": []
             }
           },
           {
@@ -290,53 +305,64 @@ export const DomainModelGrammar = (): Grammar => loadedDomainModelGrammar ||(loa
               },
               "terminal": {
                 "$type": "RuleCall",
-                "arguments": [],
                 "rule": {
                   "$refText": "QualifiedName"
-                }
-              }
+                },
+                "arguments": []
+              },
+              "deprecatedSyntax": false
             }
           }
         ]
-      }
+      },
+      "definesHiddenTokens": false,
+      "entry": false,
+      "fragment": false,
+      "hiddenTokens": [],
+      "infers": false,
+      "parameters": [],
+      "wildcard": false
     },
     {
       "$type": "ParserRule",
-      "parameters": [],
       "name": "QualifiedName",
-      "hiddenTokens": [],
       "dataType": "string",
       "alternatives": {
         "$type": "Group",
         "elements": [
           {
             "$type": "RuleCall",
-            "arguments": [],
             "rule": {
               "$refText": "ID"
             },
-            "elements": []
+            "arguments": []
           },
           {
             "$type": "Group",
             "elements": [
               {
                 "$type": "Keyword",
-                "value": ".",
-                "elements": []
+                "value": "."
               },
               {
                 "$type": "RuleCall",
-                "arguments": [],
                 "rule": {
                   "$refText": "ID"
-                }
+                },
+                "arguments": []
               }
             ],
             "cardinality": "*"
           }
         ]
-      }
+      },
+      "definesHiddenTokens": false,
+      "entry": false,
+      "fragment": false,
+      "hiddenTokens": [],
+      "infers": false,
+      "parameters": [],
+      "wildcard": false
     },
     {
       "$type": "TerminalRule",
@@ -344,18 +370,19 @@ export const DomainModelGrammar = (): Grammar => loadedDomainModelGrammar ||(loa
       "name": "WS",
       "terminal": {
         "$type": "RegexToken",
-        "regex": "\\\\s+",
-        "elements": []
-      }
+        "regex": "\\\\s+"
+      },
+      "fragment": false
     },
     {
       "$type": "TerminalRule",
       "name": "ID",
       "terminal": {
         "$type": "RegexToken",
-        "regex": "[_a-zA-Z][\\\\w_]*",
-        "elements": []
-      }
+        "regex": "[_a-zA-Z][\\\\w_]*"
+      },
+      "fragment": false,
+      "hidden": false
     },
     {
       "$type": "TerminalRule",
@@ -366,18 +393,20 @@ export const DomainModelGrammar = (): Grammar => loadedDomainModelGrammar ||(loa
       },
       "terminal": {
         "$type": "RegexToken",
-        "regex": "[0-9]+",
-        "elements": []
-      }
+        "regex": "[0-9]+"
+      },
+      "fragment": false,
+      "hidden": false
     },
     {
       "$type": "TerminalRule",
       "name": "STRING",
       "terminal": {
         "$type": "RegexToken",
-        "regex": "\\"[^\\"]*\\"|'[^']*'",
-        "elements": []
-      }
+        "regex": "\\"[^\\"]*\\"|'[^']*'"
+      },
+      "fragment": false,
+      "hidden": false
     },
     {
       "$type": "TerminalRule",
@@ -385,9 +414,9 @@ export const DomainModelGrammar = (): Grammar => loadedDomainModelGrammar ||(loa
       "name": "ML_COMMENT",
       "terminal": {
         "$type": "RegexToken",
-        "regex": "\\\\/\\\\*[\\\\s\\\\S]*?\\\\*\\\\/",
-        "elements": []
-      }
+        "regex": "\\\\/\\\\*[\\\\s\\\\S]*?\\\\*\\\\/"
+      },
+      "fragment": false
     },
     {
       "$type": "TerminalRule",
@@ -395,13 +424,15 @@ export const DomainModelGrammar = (): Grammar => loadedDomainModelGrammar ||(loa
       "name": "SL_COMMENT",
       "terminal": {
         "$type": "RegexToken",
-        "regex": "\\\\/\\\\/[^\\\\n\\\\r]*",
-        "elements": []
-      }
+        "regex": "\\\\/\\\\/[^\\\\n\\\\r]*"
+      },
+      "fragment": false
     }
   ],
+  "definesHiddenTokens": false,
+  "hiddenTokens": [],
+  "imports": [],
   "interfaces": [],
   "types": [],
-  "isDeclared": true,
-  "name": "DomainModel"
+  "usedGrammars": []
 }`));

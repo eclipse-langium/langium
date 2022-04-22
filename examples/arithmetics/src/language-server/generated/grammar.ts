@@ -8,23 +8,19 @@ import { loadGrammar, Grammar } from 'langium';
 let loadedArithmeticsGrammar: Grammar | undefined;
 export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loadedArithmeticsGrammar = loadGrammar(`{
   "$type": "Grammar",
-  "usedGrammars": [],
-  "hiddenTokens": [],
-  "imports": [],
+  "isDeclared": true,
+  "name": "Arithmetics",
   "rules": [
     {
       "$type": "ParserRule",
-      "parameters": [],
       "name": "Module",
-      "hiddenTokens": [],
       "entry": true,
       "alternatives": {
         "$type": "Group",
         "elements": [
           {
             "$type": "Keyword",
-            "value": "module",
-            "elements": []
+            "value": "module"
           },
           {
             "$type": "Assignment",
@@ -32,10 +28,10 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
             "operator": "=",
             "terminal": {
               "$type": "RuleCall",
-              "arguments": [],
               "rule": {
                 "$refText": "ID"
-              }
+              },
+              "arguments": []
             }
           },
           {
@@ -44,56 +40,61 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
             "operator": "+=",
             "terminal": {
               "$type": "RuleCall",
-              "arguments": [],
               "rule": {
                 "$refText": "Statement"
-              }
+              },
+              "arguments": []
             },
-            "elements": [],
             "cardinality": "*"
           }
         ]
-      }
+      },
+      "definesHiddenTokens": false,
+      "fragment": false,
+      "hiddenTokens": [],
+      "infers": false,
+      "parameters": [],
+      "wildcard": false
     },
     {
       "$type": "ParserRule",
-      "parameters": [],
       "name": "Statement",
-      "hiddenTokens": [],
       "alternatives": {
         "$type": "Alternatives",
         "elements": [
           {
             "$type": "RuleCall",
-            "arguments": [],
             "rule": {
               "$refText": "Definition"
             },
-            "elements": []
+            "arguments": []
           },
           {
             "$type": "RuleCall",
-            "arguments": [],
             "rule": {
               "$refText": "Evaluation"
             },
-            "elements": []
+            "arguments": []
           }
         ]
-      }
+      },
+      "definesHiddenTokens": false,
+      "entry": false,
+      "fragment": false,
+      "hiddenTokens": [],
+      "infers": false,
+      "parameters": [],
+      "wildcard": false
     },
     {
       "$type": "ParserRule",
-      "parameters": [],
       "name": "Definition",
-      "hiddenTokens": [],
       "alternatives": {
         "$type": "Group",
         "elements": [
           {
             "$type": "Keyword",
-            "value": "def",
-            "elements": []
+            "value": "def"
           },
           {
             "$type": "Assignment",
@@ -101,10 +102,10 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
             "operator": "=",
             "terminal": {
               "$type": "RuleCall",
-              "arguments": [],
               "rule": {
                 "$refText": "ID"
-              }
+              },
+              "arguments": []
             }
           },
           {
@@ -112,8 +113,7 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
             "elements": [
               {
                 "$type": "Keyword",
-                "value": "(",
-                "elements": []
+                "value": "("
               },
               {
                 "$type": "Assignment",
@@ -121,10 +121,10 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
                 "operator": "+=",
                 "terminal": {
                   "$type": "RuleCall",
-                  "arguments": [],
                   "rule": {
                     "$refText": "DeclaredParameter"
-                  }
+                  },
+                  "arguments": []
                 }
               },
               {
@@ -132,8 +132,7 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
                 "elements": [
                   {
                     "$type": "Keyword",
-                    "value": ",",
-                    "elements": []
+                    "value": ","
                   },
                   {
                     "$type": "Assignment",
@@ -141,10 +140,10 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
                     "operator": "+=",
                     "terminal": {
                       "$type": "RuleCall",
-                      "arguments": [],
                       "rule": {
                         "$refText": "DeclaredParameter"
-                      }
+                      },
+                      "arguments": []
                     }
                   }
                 ],
@@ -167,10 +166,10 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
             "operator": "=",
             "terminal": {
               "$type": "RuleCall",
-              "arguments": [],
               "rule": {
                 "$refText": "Expression"
-              }
+              },
+              "arguments": []
             }
           },
           {
@@ -178,32 +177,41 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
             "value": ";"
           }
         ]
-      }
+      },
+      "definesHiddenTokens": false,
+      "entry": false,
+      "fragment": false,
+      "hiddenTokens": [],
+      "infers": false,
+      "parameters": [],
+      "wildcard": false
     },
     {
       "$type": "ParserRule",
-      "parameters": [],
       "name": "DeclaredParameter",
-      "hiddenTokens": [],
       "alternatives": {
         "$type": "Assignment",
         "feature": "name",
         "operator": "=",
         "terminal": {
           "$type": "RuleCall",
-          "arguments": [],
           "rule": {
             "$refText": "ID"
-          }
-        },
-        "elements": []
-      }
+          },
+          "arguments": []
+        }
+      },
+      "definesHiddenTokens": false,
+      "entry": false,
+      "fragment": false,
+      "hiddenTokens": [],
+      "infers": false,
+      "parameters": [],
+      "wildcard": false
     },
     {
       "$type": "ParserRule",
-      "parameters": [],
       "name": "Evaluation",
-      "hiddenTokens": [],
       "alternatives": {
         "$type": "Group",
         "elements": [
@@ -213,39 +221,47 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
             "operator": "=",
             "terminal": {
               "$type": "RuleCall",
-              "arguments": [],
               "rule": {
                 "$refText": "Expression"
-              }
-            },
-            "elements": []
+              },
+              "arguments": []
+            }
           },
           {
             "$type": "Keyword",
             "value": ";"
           }
         ]
-      }
+      },
+      "definesHiddenTokens": false,
+      "entry": false,
+      "fragment": false,
+      "hiddenTokens": [],
+      "infers": false,
+      "parameters": [],
+      "wildcard": false
     },
     {
       "$type": "ParserRule",
-      "parameters": [],
       "name": "Expression",
-      "hiddenTokens": [],
       "alternatives": {
         "$type": "RuleCall",
-        "arguments": [],
         "rule": {
           "$refText": "Addition"
         },
-        "elements": []
-      }
+        "arguments": []
+      },
+      "definesHiddenTokens": false,
+      "entry": false,
+      "fragment": false,
+      "hiddenTokens": [],
+      "infers": false,
+      "parameters": [],
+      "wildcard": false
     },
     {
       "$type": "ParserRule",
-      "parameters": [],
       "name": "Addition",
-      "hiddenTokens": [],
       "inferredType": {
         "$type": "InferredType",
         "name": "Expression"
@@ -255,11 +271,10 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
         "elements": [
           {
             "$type": "RuleCall",
-            "arguments": [],
             "rule": {
               "$refText": "Multiplication"
             },
-            "elements": []
+            "arguments": []
           },
           {
             "$type": "Group",
@@ -272,7 +287,7 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
                 },
                 "feature": "left",
                 "operator": "=",
-                "elements": []
+                "infer": false
               },
               {
                 "$type": "Assignment",
@@ -283,8 +298,7 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
                   "elements": [
                     {
                       "$type": "Keyword",
-                      "value": "+",
-                      "elements": []
+                      "value": "+"
                     },
                     {
                       "$type": "Keyword",
@@ -299,23 +313,28 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
                 "operator": "=",
                 "terminal": {
                   "$type": "RuleCall",
-                  "arguments": [],
                   "rule": {
                     "$refText": "Multiplication"
-                  }
+                  },
+                  "arguments": []
                 }
               }
             ],
             "cardinality": "*"
           }
         ]
-      }
+      },
+      "definesHiddenTokens": false,
+      "entry": false,
+      "fragment": false,
+      "hiddenTokens": [],
+      "infers": false,
+      "parameters": [],
+      "wildcard": false
     },
     {
       "$type": "ParserRule",
-      "parameters": [],
       "name": "Multiplication",
-      "hiddenTokens": [],
       "inferredType": {
         "$type": "InferredType",
         "name": "Expression"
@@ -325,11 +344,10 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
         "elements": [
           {
             "$type": "RuleCall",
-            "arguments": [],
             "rule": {
               "$refText": "PrimaryExpression"
             },
-            "elements": []
+            "arguments": []
           },
           {
             "$type": "Group",
@@ -342,7 +360,7 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
                 },
                 "feature": "left",
                 "operator": "=",
-                "elements": []
+                "infer": false
               },
               {
                 "$type": "Assignment",
@@ -353,8 +371,7 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
                   "elements": [
                     {
                       "$type": "Keyword",
-                      "value": "*",
-                      "elements": []
+                      "value": "*"
                     },
                     {
                       "$type": "Keyword",
@@ -369,23 +386,28 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
                 "operator": "=",
                 "terminal": {
                   "$type": "RuleCall",
-                  "arguments": [],
                   "rule": {
                     "$refText": "PrimaryExpression"
-                  }
+                  },
+                  "arguments": []
                 }
               }
             ],
             "cardinality": "*"
           }
         ]
-      }
+      },
+      "definesHiddenTokens": false,
+      "entry": false,
+      "fragment": false,
+      "hiddenTokens": [],
+      "infers": false,
+      "parameters": [],
+      "wildcard": false
     },
     {
       "$type": "ParserRule",
-      "parameters": [],
       "name": "PrimaryExpression",
-      "hiddenTokens": [],
       "inferredType": {
         "$type": "InferredType",
         "name": "Expression"
@@ -398,15 +420,14 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
             "elements": [
               {
                 "$type": "Keyword",
-                "value": "(",
-                "elements": []
+                "value": "("
               },
               {
                 "$type": "RuleCall",
-                "arguments": [],
                 "rule": {
                   "$refText": "Expression"
-                }
+                },
+                "arguments": []
               },
               {
                 "$type": "Keyword",
@@ -423,7 +444,7 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
                   "$type": "InferredType",
                   "name": "NumberLiteral"
                 },
-                "elements": []
+                "infer": false
               },
               {
                 "$type": "Assignment",
@@ -431,10 +452,10 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
                 "operator": "=",
                 "terminal": {
                   "$type": "RuleCall",
-                  "arguments": [],
                   "rule": {
                     "$refText": "NUMBER"
-                  }
+                  },
+                  "arguments": []
                 }
               }
             ]
@@ -448,7 +469,7 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
                   "$type": "InferredType",
                   "name": "FunctionCall"
                 },
-                "elements": []
+                "infer": false
               },
               {
                 "$type": "Assignment",
@@ -458,7 +479,8 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
                   "$type": "CrossReference",
                   "type": {
                     "$refText": "AbstractDefinition"
-                  }
+                  },
+                  "deprecatedSyntax": false
                 }
               },
               {
@@ -466,8 +488,7 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
                 "elements": [
                   {
                     "$type": "Keyword",
-                    "value": "(",
-                    "elements": []
+                    "value": "("
                   },
                   {
                     "$type": "Assignment",
@@ -475,10 +496,10 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
                     "operator": "+=",
                     "terminal": {
                       "$type": "RuleCall",
-                      "arguments": [],
                       "rule": {
                         "$refText": "Expression"
-                      }
+                      },
+                      "arguments": []
                     }
                   },
                   {
@@ -486,8 +507,7 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
                     "elements": [
                       {
                         "$type": "Keyword",
-                        "value": ",",
-                        "elements": []
+                        "value": ","
                       },
                       {
                         "$type": "Assignment",
@@ -495,10 +515,10 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
                         "operator": "+=",
                         "terminal": {
                           "$type": "RuleCall",
-                          "arguments": [],
                           "rule": {
                             "$refText": "Expression"
-                          }
+                          },
+                          "arguments": []
                         }
                       }
                     ],
@@ -514,7 +534,14 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
             ]
           }
         ]
-      }
+      },
+      "definesHiddenTokens": false,
+      "entry": false,
+      "fragment": false,
+      "hiddenTokens": [],
+      "infers": false,
+      "parameters": [],
+      "wildcard": false
     },
     {
       "$type": "TerminalRule",
@@ -522,18 +549,19 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
       "name": "WS",
       "terminal": {
         "$type": "RegexToken",
-        "regex": "\\\\s+",
-        "elements": []
-      }
+        "regex": "\\\\s+"
+      },
+      "fragment": false
     },
     {
       "$type": "TerminalRule",
       "name": "ID",
       "terminal": {
         "$type": "RegexToken",
-        "regex": "[_a-zA-Z][\\\\w_]*",
-        "elements": []
-      }
+        "regex": "[_a-zA-Z][\\\\w_]*"
+      },
+      "fragment": false,
+      "hidden": false
     },
     {
       "$type": "TerminalRule",
@@ -544,9 +572,10 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
       },
       "terminal": {
         "$type": "RegexToken",
-        "regex": "[0-9]+(\\\\.[0-9])?",
-        "elements": []
-      }
+        "regex": "[0-9]+(\\\\.[0-9])?"
+      },
+      "fragment": false,
+      "hidden": false
     },
     {
       "$type": "TerminalRule",
@@ -554,9 +583,9 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
       "name": "ML_COMMENT",
       "terminal": {
         "$type": "RegexToken",
-        "regex": "\\\\/\\\\*[\\\\s\\\\S]*?\\\\*\\\\/",
-        "elements": []
-      }
+        "regex": "\\\\/\\\\*[\\\\s\\\\S]*?\\\\*\\\\/"
+      },
+      "fragment": false
     },
     {
       "$type": "TerminalRule",
@@ -564,12 +593,11 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
       "name": "SL_COMMENT",
       "terminal": {
         "$type": "RegexToken",
-        "regex": "\\\\/\\\\/[^\\\\n\\\\r]*",
-        "elements": []
-      }
+        "regex": "\\\\/\\\\/[^\\\\n\\\\r]*"
+      },
+      "fragment": false
     }
   ],
-  "interfaces": [],
   "types": [
     {
       "$type": "Type",
@@ -578,18 +606,25 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
           "$type": "AtomType",
           "refType": {
             "$refText": "Definition"
-          }
+          },
+          "isArray": false,
+          "isRef": false
         },
         {
           "$type": "AtomType",
           "refType": {
             "$refText": "DeclaredParameter"
-          }
+          },
+          "isArray": false,
+          "isRef": false
         }
       ],
       "name": "AbstractDefinition"
     }
   ],
-  "isDeclared": true,
-  "name": "Arithmetics"
+  "definesHiddenTokens": false,
+  "hiddenTokens": [],
+  "imports": [],
+  "interfaces": [],
+  "usedGrammars": []
 }`));
