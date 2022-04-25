@@ -16,6 +16,7 @@ import type { RuleInterpreter } from './lsp/completion/rule-interpreter';
 import type { DocumentHighlighter } from './lsp/document-highlighter';
 import type { DocumentSymbolProvider } from './lsp/document-symbol-provider';
 import type { FoldingRangeProvider } from './lsp/folding-range-provider';
+import { FormattingService } from './lsp/formatter';
 import type { GoToResolver } from './lsp/goto';
 import type { HoverProvider } from './lsp/hover-provider';
 import type { ReferenceFinder } from './lsp/reference-finder';
@@ -71,6 +72,7 @@ export type LangiumLspServices = {
     CodeActionProvider?: CodeActionProvider
     SemanticTokenProvider?: SemanticTokenProvider
     RenameHandler: RenameHandler
+    FormattingService?: FormattingService
 }
 
 /**

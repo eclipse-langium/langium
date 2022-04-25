@@ -116,33 +116,47 @@ export function findNodeForFeature(node: CstNode | undefined, feature: string | 
     return nodes[index];
 }
 
-export function findKeywordNode(node: CstNode | undefined, keyword: string): CstNode | undefined {
-    if (node && ast.isKeyword(node.feature) && node.feature.value === keyword) {
-        return node;
-    }
-    return findKeywordNodeInternal(node, keyword, node?.element);
+export function findKeywordNodes(node: CstNode | undefined, keyword: string): CstNode[] {
+    return findKeywordNodesInternal(node, keyword, node?.element);
 }
 
-export function findKeywordNodeInternal(node: CstNode | undefined, keyword: string, element: AstNode | undefined): CstNode | undefined {
-    if (!node || !element) {
+export function findKeywordNode(node: CstNode | undefined, keyword: string, index?: number): CstNode | undefined {
+    const nodes = findKeywordNodesInternal(node, keyword, node?.element);
+    if (nodes.length === 0) {
         return undefined;
+    }
+    if (index !== undefined) {
+        index = Math.max(0, Math.min(index, nodes.length - 1));
+    } else {
+        index = 0;
+    }
+    return nodes[index];
+}
+
+export function findKeywordNodesInternal(node: CstNode | undefined, keyword: string, element: AstNode | undefined): CstNode[] {
+    if (!node || !keyword || node.element !== element) {
+        return [];
+    }
+    if (ast.isKeyword(node.feature) && node.feature.value === keyword) {
+        return [node];
     }
     const treeIterator = streamCst(node).iterator();
     let result: IteratorResult<CstNode>;
+    const keywordNodes: CstNode[] = [];
     do {
         result = treeIterator.next();
         if (!result.done) {
             const childNode = result.value;
             if (childNode.element === element) {
                 if (ast.isKeyword(childNode.feature) && childNode.feature.value === keyword) {
-                    return childNode;
+                    keywordNodes.push(childNode);
                 }
             } else {
                 treeIterator.prune();
             }
         }
     } while (!result.done);
-    return undefined;
+    return keywordNodes;
 }
 
 /**
@@ -156,13 +170,13 @@ export function findKeywordNodeInternal(node: CstNode | undefined, keyword: stri
  * @returns A list of all nodes within this node that belong to the specified feature.
  */
 function findNodesForFeatureInternal(node: CstNode | undefined, feature: string | undefined, element: AstNode | undefined, first: boolean): CstNode[] {
-    if (!node || !feature || node.element !== element) {
+    if (!node || !feature) {
         return [];
     }
     const nodeFeature = getContainerOfType(node.feature, ast.isAssignment);
     if (!first && nodeFeature && nodeFeature.feature === feature) {
         return [node];
-    } else if (node instanceof CompositeCstNodeImpl) {
+    } else if (node instanceof CompositeCstNodeImpl && node.element === element) {
         return node.children.flatMap(e => findNodesForFeatureInternal(e, feature, element, false));
     }
     return [];
