@@ -47,7 +47,12 @@ export class DefaultWorkspaceManager implements WorkspaceManager {
     async initializeWorkspace(folders: WorkspaceFolder[]): Promise<void> {
         const fileExtensions = this.serviceRegistry.all.flatMap(e => e.LanguageMetaData.fileExtensions);
         const documents: LangiumDocument[] = [];
-        const collector = (document: LangiumDocument) => documents.push(document);
+        const collector = (document: LangiumDocument) => {
+            documents.push(document);
+            if (!this.langiumDocuments.hasDocument(document.uri)) {
+                this.langiumDocuments.addDocument(document);
+            }
+        };
         await Promise.all(
             folders.map(wf => this.getRootFolder(wf))
                 .map(async rf => this.traverseFolder(rf, fileExtensions, collector))
