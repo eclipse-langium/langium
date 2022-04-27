@@ -49,7 +49,9 @@ export class DefaultWorkspaceManager implements WorkspaceManager {
         const documents: LangiumDocument[] = [];
         const collector = (document: LangiumDocument) => {
             documents.push(document);
-            this.langiumDocuments.addDocument(document);
+            if (!this.langiumDocuments.hasDocument(document.uri)) {
+                this.langiumDocuments.addDocument(document);
+            }
         };
         await Promise.all(
             folders.map(wf => this.getRootFolder(wf))
