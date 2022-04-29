@@ -538,7 +538,7 @@ export class StreamImpl<S, T> implements Stream<T> {
         if (depth <= 0) {
             return this as unknown as FlatStream<T, D>;
         }
-        const stream = depth > 1 ? this.flat(depth - 1) as StreamImpl<S, unknown> : this;
+        const stream = depth > 1 ? this.flat(depth - 1) as unknown as StreamImpl<S, T> : this;
         type FlatMapState = { this: S, iterator?: Iterator<T, undefined> }
         return new StreamImpl<FlatMapState, T>(
             () => ({ this: stream.startFn() }),
@@ -557,7 +557,7 @@ export class StreamImpl<S, T> implements Stream<T> {
                         if (isIterable(value)) {
                             state.iterator = value[Symbol.iterator]() as Iterator<T>;
                         } else {
-                            return { done: false, value };
+                            return { done: false, value: value };
                         }
                     }
                 } while (state.iterator);
