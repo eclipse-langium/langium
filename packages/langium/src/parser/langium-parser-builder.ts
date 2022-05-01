@@ -190,7 +190,7 @@ function buildPredicate(condition: Condition): Predicate {
         return (args) => !value(args);
     } else if (isParameterReference(condition)) {
         const name = condition.parameter.ref!.name;
-        return (args) => args[name] === true;
+        return (args) => args !== undefined && args[name] === true;
     } else if (isLiteralCondition(condition)) {
         const value = !!condition.true;
         return () => value;
