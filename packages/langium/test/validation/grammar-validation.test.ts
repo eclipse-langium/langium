@@ -48,6 +48,31 @@ describe('checkReferenceToRuleButNotType', () => {
 
 });
 
+describe('Validate that cross-references are not named as "name"', () => {
+    const grammar = `
+    grammar HelloWorld
+    entry Model:
+        (persons+=Person | greetings+=Greeting)*;
+    Person:
+        'person' name=ID;
+    Greeting:
+        'Hello' name=[Person] '!';
+    
+    hidden terminal WS: /\s+/;
+    terminal ID: /[_a-zA-Z][\w_]*/;
+    `;
+
+    let validationData: ValidatorData;
+
+    beforeAll(async () => {
+        validationData = await parseAndValidate(grammar);
+    });
+
+    test('Named crossReference warning', () => {
+        expectWarning(validationData, 'We recommend not to use the "name" property for cross-references.');
+    });
+});
+
 interface ValidatorData {
     document: LangiumDocument;
     diagnostics: Diagnostic[];
@@ -62,15 +87,16 @@ async function parseAndValidate(grammar: string): Promise<ValidatorData> {
     };
 }
 
-function expectError(data: ValidatorData, msg: string, at?: string): void {
+function expecting(severity: DiagnosticSeverity) {
+  return function(data: ValidatorData, msg: string, at?: string): void {
     const found: { msg?: string; at?: string } = {};
-    for (const error of data.diagnostics.filter(isError)) {
-        if (error.message === msg) {
-            found.msg = error.message;
+    for (const diagnostic of data.diagnostics.filter(d => d.severity === severity)) {
+        if (diagnostic.message === msg) {
+            found.msg = diagnostic.message;
             if (at) {
-                const errorMarkedText = data.document.textDocument.getText(error.range);
-                found.at = errorMarkedText;
-                if (at === errorMarkedText) {
+                const diagnosticMarkedText = data.document.textDocument.getText(diagnostic.range);
+                found.at = diagnosticMarkedText;
+                if (at === diagnosticMarkedText) {
                     return;
                 }
             } else {
@@ -82,8 +108,8 @@ function expectError(data: ValidatorData, msg: string, at?: string): void {
     if (at) {
         expect(found.at).toBe(at);
     }
+  }
 }
 
-function isError(d: Diagnostic): boolean {
-    return d.severity === DiagnosticSeverity.Error;
-}
+const expectError = expecting(DiagnosticSeverity.Error);
+const expectWarning = expecting(DiagnosticSeverity.Warning);
