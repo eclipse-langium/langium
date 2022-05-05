@@ -319,7 +319,7 @@ export function getExplicitRuleType(rule: ast.ParserRule): string | undefined {
 function getActionType(action: ast.Action): string | undefined {
     if(action.inferredType) {
         return action.inferredType.name;
-    } else if(action.type?.ref) {
+    } else if (action.type?.ref) {
         return getTypeName(action.type.ref);
     }
     return undefined; // not inferring and not referencing a valid type
