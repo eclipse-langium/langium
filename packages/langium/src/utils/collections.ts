@@ -148,4 +148,11 @@ export class MultiMap<K, V> {
             .flat() as any;
     }
 
+    /**
+     * Returns a stream of key, value set pairs for every key in the map.
+     */
+    entriesGroupedByKey(): Stream<[K, V[]]> {
+        return stream(this.map.entries());
+    }
+
 }
