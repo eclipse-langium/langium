@@ -53,7 +53,7 @@ describe('Checked Named CrossRefs', () => {
     grammar g
     A: 'a' name=ID;
     B: 'b' name=[A];
-    terminal ID: /[_a-zA-Z][\w_]*/;
+    terminal ID: /[_a-zA-Z][\\w_]*/;
     `.trim();
 
     let validationData: ValidatorData;
