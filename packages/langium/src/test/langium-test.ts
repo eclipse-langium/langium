@@ -56,17 +56,6 @@ export function expectSymbols(services: LangiumServices, expectEqual: ExpectFunc
     };
 }
 
-export function expectRecursiveSerializationError(services: LangiumServices): (input: string) => Promise<void> {
-    return async input => {
-        const document = await parseDocument(services, input);
-        const symbolProvider = services.lsp.DocumentSymbolProvider;
-        const symbols = await symbolProvider.getSymbols(document, textDocumentParams(document));
-
-        const serialize = () => JSON.stringify(symbols);
-        expect(serialize).not.toThrowError(/Converting circular structure to JSON/);
-    };
-}
-
 export function expectFoldings(services: LangiumServices, expectEqual: ExpectFunction): (input: ExpectedBase) => Promise<void> {
     return async input => {
         const { output, ranges } = replaceIndices(input);

@@ -620,7 +620,7 @@ export class LangiumGrammarValidator {
 
     checkAssignmentWithFeatureName(assignment: ast.Assignment, accept: ValidationAcceptor): void {
         if(assignment.feature === 'name' && ast.isCrossReference(assignment.terminal)) {
-            accept('warning', 'We recommend not to use the "name" property for cross-references.', { node: assignment, property: 'feature' });
+            accept('warning', 'The "name" property is not recommended for cross-references.', { node: assignment, property: 'feature' });
         }
     }
 }

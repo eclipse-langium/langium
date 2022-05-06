@@ -6,7 +6,7 @@
 
 import { Position, Range, SymbolKind } from 'vscode-languageserver';
 import { createLangiumGrammarServices } from '../../src';
-import { expectRecursiveSerializationError, expectSymbols } from '../../src/test';
+import { expectSymbols } from '../../src/test';
 import { expectFunction } from '../fixture';
 
 const text = `
@@ -17,7 +17,6 @@ const text = `
 
 const grammarServices = createLangiumGrammarServices().grammar;
 const symbols = expectSymbols(grammarServices, expectFunction);
-const recursiveSerializationError = expectRecursiveSerializationError(grammarServices);
 
 describe('Document symbols', () => {
 
@@ -48,20 +47,5 @@ describe('Document symbols', () => {
             ]
         });
     });
-
-    test('Should not produce recursive symbol structure', async () => {
-        const input = `
-            grammar HelloWorld
-            entry Model:
-                (persons+=Person | greetings+=Greeting)*;
-            Person:
-                'person' name=ID;
-            Greeting:
-                'Hello' name=[Person] '!';
-            
-            hidden terminal WS: /\s+/;
-            terminal ID: /[_a-zA-Z][\w_]*/; 
-        `;
-        await recursiveSerializationError(input);
-    });
 });
+

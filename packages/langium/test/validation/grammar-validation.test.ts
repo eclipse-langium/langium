@@ -48,19 +48,13 @@ describe('checkReferenceToRuleButNotType', () => {
 
 });
 
-describe('Validate that cross-references are not named as "name"', () => {
+describe('Checked Named CrossRefs', () => {
     const grammar = `
-    grammar HelloWorld
-    entry Model:
-        (persons+=Person | greetings+=Greeting)*;
-    Person:
-        'person' name=ID;
-    Greeting:
-        'Hello' name=[Person] '!';
-    
-    hidden terminal WS: /\s+/;
+    grammar g
+    A: 'a' name=ID;
+    B: 'b' name=[A];
     terminal ID: /[_a-zA-Z][\w_]*/;
-    `;
+    `.trim();
 
     let validationData: ValidatorData;
 
@@ -69,7 +63,7 @@ describe('Validate that cross-references are not named as "name"', () => {
     });
 
     test('Named crossReference warning', () => {
-        expectWarning(validationData, 'We recommend not to use the "name" property for cross-references.');
+        expectWarning(validationData, 'The "name" property is not recommended for cross-references.');
     });
 });
 
@@ -88,27 +82,27 @@ async function parseAndValidate(grammar: string): Promise<ValidatorData> {
 }
 
 function expecting(severity: DiagnosticSeverity) {
-  return function(data: ValidatorData, msg: string, at?: string): void {
-    const found: { msg?: string; at?: string } = {};
-    for (const diagnostic of data.diagnostics.filter(d => d.severity === severity)) {
-        if (diagnostic.message === msg) {
-            found.msg = diagnostic.message;
-            if (at) {
-                const diagnosticMarkedText = data.document.textDocument.getText(diagnostic.range);
-                found.at = diagnosticMarkedText;
-                if (at === diagnosticMarkedText) {
+    return function(data: ValidatorData, msg: string, at?: string): void {
+        const found: { msg?: string; at?: string } = {};
+        for (const diagnostic of data.diagnostics.filter(d => d.severity === severity)) {
+            if (diagnostic.message === msg) {
+                found.msg = diagnostic.message;
+                if (at) {
+                    const diagnosticMarkedText = data.document.textDocument.getText(diagnostic.range);
+                    found.at = diagnosticMarkedText;
+                    if (at === diagnosticMarkedText) {
+                        return;
+                    }
+                } else {
                     return;
                 }
-            } else {
-                return;
             }
         }
-    }
-    expect(found.msg).toBe(msg);
-    if (at) {
-        expect(found.at).toBe(at);
-    }
-  }
+        expect(found.msg).toBe(msg);
+        if (at) {
+            expect(found.at).toBe(at);
+        }
+    };
 }
 
 const expectError = expecting(DiagnosticSeverity.Error);
