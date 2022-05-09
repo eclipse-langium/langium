@@ -53,7 +53,8 @@ export class LangiumGrammarValidationRegistry extends ValidationRegistry {
                 validator.checkGrammarTypeUnions,
                 validator.checkGrammarTypeInfer,
                 validator.checkTypesConsistency,
-                validator.checkPropertyNameDuplication
+                validator.checkPropertyNameDuplication,
+                validator.checkFragmentsInTypes
             ],
             GrammarImport: validator.checkPackageImport,
             CharacterRange: validator.checkInvalidCharacterRange,
@@ -306,6 +307,18 @@ export class LangiumGrammarValidator {
         if (grammar.definesHiddenTokens) {
             accept('error', 'Hidden terminals are declared at the terminal definition.', { node: grammar, property: 'definesHiddenTokens', code: IssueCodes.HiddenGrammarTokens });
         }
+    }
+
+    checkFragmentsInTypes(grammar: ast.Grammar, accept: ValidationAcceptor): void {
+        grammar.types.map(e => {
+            e.typeAlternatives.map(e => {
+                if (ast.isParserRule(e.refType?.ref)) {
+                    if ((e.refType?.ref as ast.ParserRule).fragment) {
+                        accept('error', 'Cannot use rule fragments in as cross references in types.', { node: e, property: 'refType'});
+                    }
+                }
+            });
+        });
     }
 
     checkHiddenTerminalRule(terminalRule: ast.TerminalRule, accept: ValidationAcceptor): void {
