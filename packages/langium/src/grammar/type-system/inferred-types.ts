@@ -285,7 +285,7 @@ function addAction(graph: TypeGraph, parent: TypePart, action: Action): TypePart
             typeAlternatives: [{
                 array: action.operator === '+=',
                 reference: false,
-                types: graph.getSuperTypes(typeNode)
+                types: graph.root.ruleCalls.length !== 0 ? graph.root.ruleCalls : graph.getSuperTypes(typeNode)
             }]
         });
     }
