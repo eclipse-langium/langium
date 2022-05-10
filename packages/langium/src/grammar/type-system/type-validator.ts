@@ -174,7 +174,7 @@ function checkPropertiesConsistency(inferred: Property[], declared: Property[],
         !(found.typeAlternatives.length === 1 && found.typeAlternatives[0].array ||
             expected.typeAlternatives.length === 1 && expected.typeAlternatives[0].array);
 
-    // detects extra properties & check matched ones on consistency by 'opional'
+    // detects extra properties & check matched ones on consistency by 'optional'
     for (const foundProperty of inferred) {
         const expectedProperty = declared.find(e => foundProperty.name === e.name);
         if (expectedProperty) {
@@ -203,7 +203,7 @@ function checkPropertiesConsistency(inferred: Property[], declared: Property[],
     // detects lack of properties
     for (const foundProperty of declared) {
         const expectedProperty = inferred.find(e => foundProperty.name === e.name);
-        if (!expectedProperty) {
+        if (!expectedProperty && !foundProperty.optional) {
             errorToRuleNodes(`A property '${foundProperty.name}' is expected`);
         }
     }
