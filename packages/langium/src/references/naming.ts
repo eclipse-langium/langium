@@ -12,7 +12,7 @@ export interface NamedAstNode extends AstNode {
 }
 
 export function isNamed(node: AstNode): node is NamedAstNode {
-    return (node as NamedAstNode).name !== undefined;
+    return typeof (node as NamedAstNode).name === 'string';
 }
 
 /**

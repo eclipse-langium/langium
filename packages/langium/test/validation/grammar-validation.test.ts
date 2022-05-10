@@ -48,6 +48,25 @@ describe('checkReferenceToRuleButNotType', () => {
 
 });
 
+describe('Checked Named CrossRefs', () => {
+    const grammar = `
+    grammar g
+    A: 'a' name=ID;
+    B: 'b' name=[A];
+    terminal ID: /[_a-zA-Z][\\w_]*/;
+    `.trim();
+
+    let validationData: ValidatorData;
+
+    beforeAll(async () => {
+        validationData = await parseAndValidate(grammar);
+    });
+
+    test('Named crossReference warning', () => {
+        expectWarning(validationData, 'The "name" property is not recommended for cross-references.');
+    });
+});
+
 interface ValidatorData {
     document: LangiumDocument;
     diagnostics: Diagnostic[];
@@ -62,28 +81,29 @@ async function parseAndValidate(grammar: string): Promise<ValidatorData> {
     };
 }
 
-function expectError(data: ValidatorData, msg: string, at?: string): void {
-    const found: { msg?: string; at?: string } = {};
-    for (const error of data.diagnostics.filter(isError)) {
-        if (error.message === msg) {
-            found.msg = error.message;
-            if (at) {
-                const errorMarkedText = data.document.textDocument.getText(error.range);
-                found.at = errorMarkedText;
-                if (at === errorMarkedText) {
+function expecting(severity: DiagnosticSeverity) {
+    return function(data: ValidatorData, msg: string, at?: string): void {
+        const found: { msg?: string; at?: string } = {};
+        for (const diagnostic of data.diagnostics.filter(d => d.severity === severity)) {
+            if (diagnostic.message === msg) {
+                found.msg = diagnostic.message;
+                if (at) {
+                    const diagnosticMarkedText = data.document.textDocument.getText(diagnostic.range);
+                    found.at = diagnosticMarkedText;
+                    if (at === diagnosticMarkedText) {
+                        return;
+                    }
+                } else {
                     return;
                 }
-            } else {
-                return;
             }
         }
-    }
-    expect(found.msg).toBe(msg);
-    if (at) {
-        expect(found.at).toBe(at);
-    }
+        expect(found.msg).toBe(msg);
+        if (at) {
+            expect(found.at).toBe(at);
+        }
+    };
 }
 
-function isError(d: Diagnostic): boolean {
-    return d.severity === DiagnosticSeverity.Error;
-}
+const expectError = expecting(DiagnosticSeverity.Error);
+const expectWarning = expecting(DiagnosticSeverity.Warning);

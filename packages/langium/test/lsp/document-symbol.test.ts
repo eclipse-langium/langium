@@ -48,3 +48,4 @@ describe('Document symbols', () => {
         });
     });
 });
+

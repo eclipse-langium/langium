@@ -29,6 +29,7 @@ export class LangiumGrammarValidationRegistry extends ValidationRegistry {
         const validator = services.validation.LangiumGrammarValidator;
         const checks: LangiumGrammarChecks = {
             AbstractRule: validator.checkRuleName,
+            Assignment: validator.checkAssignmentWithFeatureName,
             ParserRule: [
                 validator.checkParserRuleDataType,
                 validator.checkRuleParametersUsed
@@ -615,6 +616,12 @@ export class LangiumGrammarValidator {
             }
         }
         return undefined;
+    }
+
+    checkAssignmentWithFeatureName(assignment: ast.Assignment, accept: ValidationAcceptor): void {
+        if(assignment.feature === 'name' && ast.isCrossReference(assignment.terminal)) {
+            accept('warning', 'The "name" property is not recommended for cross-references.', { node: assignment, property: 'feature' });
+        }
     }
 }
 
