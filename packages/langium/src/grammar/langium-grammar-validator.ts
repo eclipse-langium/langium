@@ -559,7 +559,7 @@ export class LangiumGrammarValidator {
 
     checkTerminalRuleReturnType(rule: ast.TerminalRule, accept: ValidationAcceptor): void {
         if (rule.type?.name && !isPrimitiveType(rule.type.name)) {
-            accept('error', "Terminal rules can only return primitive types like 'string', 'boolean', 'number' or 'date'.", { node: rule.type, property: 'name' });
+            accept('error', "Terminal rules can only return primitive types like 'string', 'boolean', 'number', 'Date' or 'bigint'.", { node: rule.type, property: 'name' });
         }
     }
 
@@ -627,7 +627,7 @@ export class LangiumGrammarValidator {
     }
 }
 
-const primitiveTypes = ['string', 'number', 'boolean', 'Date'];
+const primitiveTypes = ['string', 'number', 'boolean', 'Date', 'bigint'];
 
 function isPrimitiveType(type: string): boolean {
     return primitiveTypes.includes(type);

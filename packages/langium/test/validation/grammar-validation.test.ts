@@ -86,6 +86,34 @@ describe('Checked Named CrossRefs', () => {
     });
 });
 
+describe('Check primitive types', () => {
+    const g_allPrims = `
+    grammar G
+    entry A: 'a' s=STR b=BOOL n=NUM b=BIG;
+    terminal STR: /[_a-zA-Z][\\w_]*/;
+    terminal BOOL returns boolean: /true|false/;
+    terminal NUM returns number: /[0-9]+(\\.[0-9])?/;
+    terminal BIG returns bigint: /[0-9]+/;
+    `.trim();
+    // TODO, still needs testing for 'Date'
+
+    let validationData: ValidatorData;
+    // parseAndValidate(g_allPrims).then(validationData => {
+    //     test('No primitive type errors', () => {
+    //         expectError(validationData, 'blah blah');
+    //     });
+    // });
+
+    // but i see why they did this here, I can just create several test enclosures to do work instead...
+    beforeAll(async () => {
+        validationData = await parseAndValidate(g_allPrims);
+    });
+
+    test('No primitive type errors', () => {
+        expectError(validationData, 'blah blah');
+    });
+});
+
 interface ValidatorData {
     document: LangiumDocument;
     diagnostics: Diagnostic[];

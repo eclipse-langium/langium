@@ -31,7 +31,7 @@ AtomType:
     (primitiveType=PrimitiveType | isRef?='@'? refType=[AbstractType]) isArray?='[]'? | keywordType=Keyword;
 
 PrimitiveType returns string:
-    'string' | 'number' | 'boolean' | 'date';
+    'string' | 'number' | 'boolean' | 'Date' | 'bigint';
 
 type AbstractType = Interface | Type | Action | ParserRule;
 
