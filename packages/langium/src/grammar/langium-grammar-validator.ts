@@ -314,7 +314,7 @@ export class LangiumGrammarValidator {
             e.typeAlternatives.forEach(e => {
                 if (ast.isParserRule(e.refType?.ref)) {
                     if ((e.refType?.ref as ast.ParserRule).fragment) {
-                        accept('error', 'Cannot use rule fragments in as cross references in types.', { node: e, property: 'refType'});
+                        accept('error', 'Cannot use rule fragments in types.', { node: e, property: 'refType'});
                     }
                 }
             });
