@@ -410,7 +410,7 @@ function calculateAst(alternatives: TypeAlternative[]): InterfaceType[] {
 }
 
 function flattenTypes(alternatives: TypeAlternative[]): TypeAlternative[] {
-    const nameToAlternatives = alternatives.reduce((acc, e) => { acc.add(e.name, e); return acc; }, new MultiMap<string, TypeAlternative>());
+    const nameToAlternatives = alternatives.reduce((acc, e) => acc.add(e.name, e), new MultiMap<string, TypeAlternative>());
     const types: TypeAlternative[] = [];
 
     for (const [name, namedAlternatives] of nameToAlternatives.entriesGroupedByKey()) {
