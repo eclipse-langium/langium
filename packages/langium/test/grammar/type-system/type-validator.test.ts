@@ -4,41 +4,82 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { DiagnosticSeverity } from 'vscode-languageserver';
-import { createLangiumGrammarServices, isGrammar, toDiagnosticSeverity } from '../../../src';
+import { Diagnostic, DiagnosticSeverity } from 'vscode-languageserver';
+import { createLangiumGrammarServices } from '../../../src';
 import { parseDocument } from '../../../src/test';
 
 const grammarServices = createLangiumGrammarServices().grammar;
 
-describe('validate optional params in types', () => {
+describe('validate params in types', () => {
+
+    // verifies that missing properties that are required are reported in the correct spot
+    test('verify missing required property error, for single rule', async () => {
+        const prog = `
+        interface B {
+            name:string
+            count?:string
+        }
+        X2 returns B: count=ID;
+        terminal ID: /[a-zA-Z_][\\w_]*/;
+        `.trim();
+        // verify we only have 1 error, associated with a missing 'name' prop
+        const document = await parseDocument(grammarServices, prog);
+        let diagnostics: Diagnostic[] = await grammarServices.validation.DocumentValidator.validateDocument(document);
+        diagnostics = diagnostics.filter(d => d.severity === DiagnosticSeverity.Error);
+        expect(diagnostics).toHaveLength(1);
+
+        // verify location of diagnostic
+        const d = diagnostics[0];
+        expect(d.range.start).toEqual({character: 8, line: 4});
+        expect(d.range.end).toEqual({character: 10, line: 4});
+    });
+
+    // verifies that missing required params use the right msg & position
+    test('verify that missing required param error, for multiple rules', async () => {
+        const prog = `
+        interface A {
+            name:string
+            count?:number
+        }
+        X returns A: name=ID;
+        Y returns A: count=NUMBER;
+        terminal ID: /[a-zA-Z_][\\w_]*/;
+        terminal NUMBER returns number: /[0-9]+(\\.[0-9]+)?/;
+        `.trim();
+
+        // expect exactly 2 errors, associated with a missing 'name' prop for type 'A'
+        const document = await parseDocument(grammarServices, prog);
+        let diagnostics: Diagnostic[] = await grammarServices.validation.DocumentValidator.validateDocument(document);
+        diagnostics = diagnostics.filter(d => d.severity === DiagnosticSeverity.Error);
+        expect(diagnostics).toHaveLength(2);
+
+        // verify the location of both errors, indicating the associated type for these rules requires a param
+        let d = diagnostics[0];
+        expect(d.range.start).toEqual({character: 8, line: 4});
+        expect(d.range.end).toEqual({character: 9, line: 4});
+
+        d = diagnostics[1];
+        expect(d.range.start).toEqual({character: 8, line: 5});
+        expect(d.range.end).toEqual({character: 9, line: 5});
+    });
 
     // tests that an optional param in a declared type can be optionally present in a rule
     test('optional param should not invalidate type', async () => {
         const prog = `
-        grammar g
         interface MyType {
             name: string
             count?: number
         }
         X returns MyType : name=ID;
         Y returns MyType : name=ID count=NUMBER;
+        terminal ID: /[a-zA-Z_][\\w_]*/;
+        terminal NUMBER returns number: /[0-9]+(\\.[0-9]+)?/;
         `.trim();
 
+        // verify we have no errors
         const document = await parseDocument(grammarServices, prog);
-
-        if(isGrammar(document.parseResult.value)) {
-            // verify we have no error diagnostics
-            const validationItems: DiagnosticSeverity[] = [];
-            grammarServices.validation.LangiumGrammarValidator.checkTypesConsistency(document.parseResult.value, (severity: 'error' | 'warning' | 'info' | 'hint') => {
-                if(severity === 'error') {
-                    validationItems.push(toDiagnosticSeverity(severity));
-                }
-            });
-            expect(validationItems).toHaveLength(0);
-        } else {
-            // something else went wrong
-            fail('Could not extract Grammar from document');
-        }
+        const diagnostics: Diagnostic[] = await grammarServices.validation.DocumentValidator.validateDocument(document);
+        expect(diagnostics.filter(d => d.severity === DiagnosticSeverity.Error)).toHaveLength(0);
     });
 
 });

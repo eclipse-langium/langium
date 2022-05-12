@@ -193,7 +193,7 @@ function checkPropertiesConsistency(inferred: Property[], declared: Property[],
             }
 
             if (checkOptional(foundProperty, expectedProperty) && !expectedProperty.optional && foundProperty.optional) {
-                errorToAssignment(foundProperty.name, `A property '${foundProperty.name}' can't be optional.`);
+                errorToRuleNodes(`A property '${foundProperty.name}' can't be optional`);
             }
         } else {
             errorToAssignment(foundProperty.name, `A property '${foundProperty.name}' is not expected.`);
@@ -201,10 +201,10 @@ function checkPropertiesConsistency(inferred: Property[], declared: Property[],
     }
 
     // detects lack of properties
-    for (const foundProperty of declared) {
-        const expectedProperty = inferred.find(e => foundProperty.name === e.name);
-        if (!expectedProperty && !foundProperty.optional) {
-            errorToRuleNodes(`A property '${foundProperty.name}' is expected`);
+    for (const expectedProperty of declared) {
+        const foundProperty = inferred.find(e => expectedProperty.name === e.name);
+        if (!foundProperty && !expectedProperty.optional) {
+            errorToRuleNodes(`A property '${expectedProperty.name}' is expected`);
         }
     }
 }
