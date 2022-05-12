@@ -283,7 +283,7 @@ function withCardinality(regex: string, cardinality?: string, wrap = false): str
     return regex;
 }
 
-export function getTypeName(type: ast.AbstractType): string {
+export function getTypeName(type: ast.AbstractType | ast.InferredType): string {
     if (ast.isParserRule(type)) {
         return getExplicitRuleType(type) ?? type.name;
     } else if (ast.isInterface(type) || ast.isType(type) || ast.isReturnType(type)) {
@@ -293,6 +293,8 @@ export function getTypeName(type: ast.AbstractType): string {
         if (actionType) {
             return actionType;
         }
+    } else if (ast.isInferredType(type)) {
+        return type.name;
     }
     throw new TypeResolutionError('Unknown type', type.$cstNode);
 }

@@ -4,9 +4,38 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { createLangiumGrammarServices, findNameAssignment, getEntryRule, Grammar, isDataTypeRule, isParserRule, isTerminalRule, ParserRule, stream, terminalRegex, TerminalRule } from '../../src';
+import { createLangiumGrammarServices, findNameAssignment, getEntryRule, getTypeName, Grammar, InferredType, isDataTypeRule, isParserRule, isTerminalRule, ParserRule, stream, terminalRegex, TerminalRule } from '../../src';
 import { LangiumGrammarGrammar } from '../../src/grammar/generated/grammar';
 import { parseHelper } from '../../src/test';
+
+describe('Verify type resolution', () => {
+
+    //const services = createLangiumGrammarServices();
+
+    test('able to get type name of InferredType w/out error', async () => {
+        // previous attempt to trip the error, tmp for reference...
+        // const g =`
+        // grammar G
+        // A infers B: 
+        //     {infer q=A} name=ID;
+        // X: 'a' A;
+        // terminal ID: /[a-zA-Z_][a-zA-Z0-9_]*/;
+        // `.trim();
+
+        // const document = await parseDocument(services.grammar, g);
+        // const diagnostics = await services.grammar.validation.DocumentValidator.validateDocument(document);
+        // expect(diagnostics).toHaveLength(0);
+
+        const typeName = 'Parameter';
+        const type = {
+            name: typeName,
+            $type: 'InferredType'
+        };
+        expect(getTypeName(type as InferredType)).toBe(typeName);
+
+    });
+
+});
 
 describe('Data type rules', () => {
 

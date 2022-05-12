@@ -41,6 +41,7 @@ export function collectDeclaredTypes(interfaces: Interface[], types: Type[], inf
         if (reflection) {
             for (const maybeRef of type.typeAlternatives) {
                 if (maybeRef.refType?.ref) {
+                    // Can be an InferredType...
                     childToSuper.add(getTypeName(maybeRef.refType.ref), type.name);
                 }
             }
@@ -58,6 +59,7 @@ export function collectDeclaredTypes(interfaces: Interface[], types: Type[], inf
 function atomTypeToPropertyType(type: AtomType): PropertyType {
     let types: string[] = [];
     if (type.refType) {
+        // Can also be an InferredType...
         types = [type.refType.ref ? getTypeName(type.refType.ref) : type.refType.$refText];
     } else {
         types = [type.primitiveType ?? `'${type.keywordType?.value}'`];
