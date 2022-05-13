@@ -4,7 +4,6 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { TextDocument } from 'vscode-languageserver-textdocument';
 import { URI, Utils } from 'vscode-uri';
 import { TypeResolutionError } from '..';
 import * as ast from '../grammar/generated/ast';
@@ -17,7 +16,7 @@ import { streamCst } from '../utils/cst-util';
 import { escapeRegExp } from '../utils/regex-util';
 import { AstNodeDescriptionProvider } from '../workspace/ast-descriptions';
 import { AstNodeLocator } from '../workspace/ast-node-locator';
-import { documentFromText, LangiumDocument, LangiumDocuments, PrecomputedScopes } from '../workspace/documents';
+import { LangiumDocument, LangiumDocuments, PrecomputedScopes } from '../workspace/documents';
 import { createLangiumGrammarServices } from './langium-grammar-module';
 
 export type Cardinality = '?' | '*' | '+' | undefined;
@@ -411,12 +410,7 @@ export function loadGrammar(json: string): ast.Grammar {
         throw new Error('Could not load grammar from specified json input.');
     }
     const grammar = astNode as Mutable<ast.Grammar>;
-    const textDocument = TextDocument.create('memory://grammar.langium', 'langium', 0, '');
-    const document = documentFromText(textDocument, {
-        lexerErrors: [],
-        parserErrors: [],
-        value: grammar
-    });
+    const document = services.shared.workspace.LangiumDocumentFactory.fromModel(grammar, URI.parse('memory://grammar.langium'));
     grammar.$document = document;
     document.precomputedScopes = computeGrammarScope(services, grammar);
     return grammar;
