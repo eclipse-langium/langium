@@ -4,45 +4,9 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { createDefaultModule, createDefaultSharedModule, createLangiumGrammarServices, createLangiumParser, findNameAssignment, getEntryRule, Grammar, inject, IParserConfig, isDataTypeRule, isParserRule, isTerminalRule, LangiumGeneratedServices, LangiumGeneratedSharedServices, LangiumParser, LangiumServices, LangiumSharedServices, Module, ParserRule, stream, terminalRegex, TerminalRule } from '../../src';
+import { createLangiumGrammarServices, findNameAssignment, getEntryRule, Grammar, isDataTypeRule, isParserRule, isTerminalRule, ParserRule, stream, terminalRegex, TerminalRule } from '../../src';
 import { LangiumGrammarGrammar } from '../../src/grammar/generated/grammar';
 import { parseHelper } from '../../src/test';
-
-const grammarServices = createLangiumGrammarServices().grammar;
-const helper = parseHelper<Grammar>(grammarServices);
-
-describe('Verify type resolution', () => {
-
-    test('verify no TypeError for InferredType in scope', async () => {
-        const c = `
-        type T = A;
-        B returns A: name=ID;
-        hidden terminal WS: /\\s+/;
-        terminal ID: /[a-zA-Z_][a-zA-Z0-9_]*/;
-        `.trim();
-
-        const g = (await helper(c)).parseResult.value;
-
-        expect(() => {
-            parserFromGrammar(g);
-        }).not.toThrow();
-    });
-
-    test('verify data type rule can be inferred for cross reference', async () => {
-        const c = `
-        A infers B: 'a' name=ID (otherA=[B])?;
-        hidden terminal WS: /\\s+/;
-        terminal ID: /[a-zA-Z_][a-zA-Z0-9_]*/;
-        `.trim();
-
-        const g = (await helper(c)).parseResult.value;
-
-        expect(() => {
-            parserFromGrammar(g);
-        }).not.toThrow();
-    });
-
-});
 
 describe('Data type rules', () => {
 
@@ -218,24 +182,3 @@ describe('TerminalRule to regex', () => {
         return terminal;
     }
 });
-
-function parserFromGrammar(grammar: Grammar): LangiumParser {
-    const parserConfig: IParserConfig = {
-        skipValidations: false
-    };
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const unavailable: () => any = () => ({});
-    const generatedSharedModule: Module<LangiumSharedServices, LangiumGeneratedSharedServices> = {
-        AstReflection: unavailable,
-    };
-    const generatedModule: Module<LangiumServices, LangiumGeneratedServices> = {
-        Grammar: () => grammar,
-        LanguageMetaData: unavailable,
-        parser: {
-            ParserConfig: () => parserConfig
-        }
-    };
-    const shared = inject(createDefaultSharedModule(), generatedSharedModule);
-    const services = inject(createDefaultModule({ shared }), generatedModule);
-    return createLangiumParser(services);
-}

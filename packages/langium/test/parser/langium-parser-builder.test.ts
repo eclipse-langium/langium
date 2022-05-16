@@ -259,6 +259,42 @@ describe('Parser calls value converter', () => {
     });
 });
 
+describe('Parsing with Inferred Types', () => {
+
+    const services = createLangiumGrammarServices();
+    const parser = parseHelper<Grammar>(services.grammar);
+
+    test('verify no TypeError for InferredType in scope', async () => {
+        const c = `
+        type T = A;
+        B returns A: name=ID;
+        hidden terminal WS: /\\s+/;
+        terminal ID: /[a-zA-Z_][a-zA-Z0-9_]*/;
+        `.trim();
+
+        const g = (await parser(c)).parseResult.value;
+
+        expect(() => {
+            parserFromGrammar(g);
+        }).not.toThrow();
+    });
+
+    test('verify data type rule can be inferred for cross reference', async () => {
+        const c = `
+        A infers B: 'a' name=ID (otherA=[B])?;
+        hidden terminal WS: /\\s+/;
+        terminal ID: /[a-zA-Z_][a-zA-Z0-9_]*/;
+        `.trim();
+
+        const g = (await helper(c)).parseResult.value;
+
+        expect(() => {
+            parserFromGrammar(g);
+        }).not.toThrow();
+    });
+
+});
+
 function parserFromGrammar(grammar: Grammar): LangiumParser {
     const parserConfig: IParserConfig = {
         skipValidations: false
