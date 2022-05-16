@@ -159,9 +159,12 @@ export class CompositeCstNodeImpl extends AbstractCstNode implements CompositeCs
 
     get range(): Range {
         if (this.children.length > 0) {
-            const { range: firstRange } = this.firstNonHiddenNode;
-            const { range: lastRange } = this.lastNonHiddenNode;
-            return { start: firstRange.start, end: lastRange.end.line < firstRange.start.line ? firstRange.start : lastRange.end };
+            if (this._rangeCache === undefined) {
+                const { range: firstRange } = this.firstNonHiddenNode;
+                const { range: lastRange } = this.lastNonHiddenNode;
+                this._rangeCache = { start: firstRange.start, end: lastRange.end.line < firstRange.start.line ? firstRange.start : lastRange.end };
+            }
+            return this._rangeCache;
         } else {
             return { start: Position.create(0, 0), end: Position.create(0, 0) };
         }
@@ -187,6 +190,7 @@ export class CompositeCstNodeImpl extends AbstractCstNode implements CompositeCs
     }
 
     readonly children: CstNode[] = new CstNodeContainer(this);
+    private _rangeCache?: Range;
 }
 
 class CstNodeContainer extends Array<CstNode> {
