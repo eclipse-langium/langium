@@ -4,35 +4,42 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { createLangiumGrammarServices, findNameAssignment, getEntryRule, getTypeName, Grammar, InferredType, isDataTypeRule, isParserRule, isTerminalRule, ParserRule, stream, terminalRegex, TerminalRule } from '../../src';
+import { createDefaultModule, createDefaultSharedModule, createLangiumGrammarServices, createLangiumParser, findNameAssignment, getEntryRule, Grammar, inject, IParserConfig, isDataTypeRule, isParserRule, isTerminalRule, LangiumGeneratedServices, LangiumGeneratedSharedServices, LangiumParser, LangiumServices, LangiumSharedServices, Module, ParserRule, stream, terminalRegex, TerminalRule } from '../../src';
 import { LangiumGrammarGrammar } from '../../src/grammar/generated/grammar';
 import { parseHelper } from '../../src/test';
 
+const grammarServices = createLangiumGrammarServices().grammar;
+const helper = parseHelper<Grammar>(grammarServices);
+
 describe('Verify type resolution', () => {
 
-    //const services = createLangiumGrammarServices();
+    test('verify no TypeError for InferredType in scope', async () => {
+        const c = `
+        type T = A;
+        B returns A: name=ID;
+        hidden terminal WS: /\\s+/;
+        terminal ID: /[a-zA-Z_][a-zA-Z0-9_]*/;
+        `.trim();
 
-    test('able to get type name of InferredType w/out error', async () => {
-        // previous attempt to trip the error, tmp for reference...
-        // const g =`
-        // grammar G
-        // A infers B: 
-        //     {infer q=A} name=ID;
-        // X: 'a' A;
-        // terminal ID: /[a-zA-Z_][a-zA-Z0-9_]*/;
-        // `.trim();
+        const g = (await helper(c)).parseResult.value;
 
-        // const document = await parseDocument(services.grammar, g);
-        // const diagnostics = await services.grammar.validation.DocumentValidator.validateDocument(document);
-        // expect(diagnostics).toHaveLength(0);
+        expect(() => {
+            parserFromGrammar(g);
+        }).not.toThrow();
+    });
 
-        const typeName = 'Parameter';
-        const type = {
-            name: typeName,
-            $type: 'InferredType'
-        };
-        expect(getTypeName(type as InferredType)).toBe(typeName);
+    test('verify data type rule can be inferred for cross reference', async () => {
+        const c = `
+        A infers B: 'a' name=ID (otherA=[B])?;
+        hidden terminal WS: /\\s+/;
+        terminal ID: /[a-zA-Z_][a-zA-Z0-9_]*/;
+        `.trim();
 
+        const g = (await helper(c)).parseResult.value;
+
+        expect(() => {
+            parserFromGrammar(g);
+        }).not.toThrow();
     });
 
 });
@@ -87,6 +94,7 @@ describe('Find name assignment in parser rules', () => {
     DirectName: name=ID;
     IndirectName: DirectName value=ID;
     MissingName: value=ID;
+    A infers B: 'a' name=ID (otherA=[B])?;
     `;
 
     let rules: ParserRule[] = [];
@@ -113,6 +121,12 @@ describe('Find name assignment in parser rules', () => {
         const missing = rules[2];
         const nameAssignment = findNameAssignment(missing);
         expect(nameAssignment).toBe(undefined);
+    });
+
+    test('Should be able to infer data type rule for cross ref', () => {
+        const a = rules[3];
+        const nameAssigment = findNameAssignment(a);
+        expect(nameAssigment?.feature).toBe('name');
     });
 
 });
@@ -204,3 +218,24 @@ describe('TerminalRule to regex', () => {
         return terminal;
     }
 });
+
+function parserFromGrammar(grammar: Grammar): LangiumParser {
+    const parserConfig: IParserConfig = {
+        skipValidations: false
+    };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const unavailable: () => any = () => ({});
+    const generatedSharedModule: Module<LangiumSharedServices, LangiumGeneratedSharedServices> = {
+        AstReflection: unavailable,
+    };
+    const generatedModule: Module<LangiumServices, LangiumGeneratedServices> = {
+        Grammar: () => grammar,
+        LanguageMetaData: unavailable,
+        parser: {
+            ParserConfig: () => parserConfig
+        }
+    };
+    const shared = inject(createDefaultSharedModule(), generatedSharedModule);
+    const services = inject(createDefaultModule({ shared }), generatedModule);
+    return createLangiumParser(services);
+}

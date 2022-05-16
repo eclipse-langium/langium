@@ -68,7 +68,11 @@ export function getCrossReferenceTerminal(crossRef: ast.CrossReference): ast.Abs
     return undefined;
 }
 
-export function findNameAssignment(type: ast.AbstractType): ast.Assignment | undefined {
+export function findNameAssignment(type: ast.AbstractType | ast.InferredType): ast.Assignment | undefined {
+    if (ast.isInferredType(type)) {
+        // inferred type is unexpected, extract AbstractType first
+        type = type.$container;
+    }
     return findNameAssignmentInternal(type, new Map());
 }
 
