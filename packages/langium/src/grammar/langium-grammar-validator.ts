@@ -312,7 +312,7 @@ export class LangiumGrammarValidator {
     checkFragmentsInTypes(grammar: ast.Grammar, accept: ValidationAcceptor): void {
         grammar.types.forEach(e => {
             e.typeAlternatives.forEach(e => {
-                if (ast.isParserRule(e.refType?.ref) && (e.refType?.ref as ast.ParserRule).fragment) {
+                if (ast.isParserRule(e.refType?.ref) && e.refType?.ref.fragment) {
                     accept('error', 'Cannot use rule fragments in types.', { node: e, property: 'refType'});
                 }
             });
