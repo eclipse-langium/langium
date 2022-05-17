@@ -154,7 +154,7 @@ function buildRuleCall(ctx: RuleContext, ruleCall: RuleCall): Method {
         const idx = ctx.consume++;
         const method = getToken(ctx, rule.name);
         return () => ctx.parser.consume(idx, method, ruleCall);
-    } else if(rule===undefined) {
+    } else if (!rule) {
         throw new ErrorWithLocation(ruleCall.$cstNode, `Undefined rule type: ${ruleCall.$type}`);
     } else {
         assertUnreachable(rule);

@@ -4,14 +4,14 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { CstNode } from '..';
+import { CstNode } from '../syntax-tree';
 
 export class ErrorWithLocation extends Error {
-    constructor(node: CstNode|undefined, message: string) {
-        super(`${message} at ${node?.range.start.line || 0}:${node?.range.start.character || 0}`);
+    constructor(node: CstNode | undefined, message: string) {
+        super(node ? `${message} at ${node.range.start.line}:${node.range.start.character}` : message);
     }
 }
 
 export function assertUnreachable(_: never): never {
-    throw new Error('Error! Please fulfill the logic also for the other types in the inheritence hierarchy.');
+    throw new Error('Error! The input value was not handled.');
 }
