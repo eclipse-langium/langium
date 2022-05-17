@@ -9,7 +9,7 @@ import { defaultParserErrorProvider, DSLMethodOpts, EmbeddedActionsParser, ILexi
 import { AbstractElement, Action, Assignment, isAssignment, isCrossReference, isKeyword } from '../grammar/generated/ast';
 import { Linker } from '../references/linker';
 import { LangiumServices } from '../services';
-import { AstNode, CompositeCstNode, CstNode, LeafCstNode } from '../syntax-tree';
+import { AstNode, AstReflection, CompositeCstNode, CstNode, LeafCstNode } from '../syntax-tree';
 import { getContainerOfType, linkContentToContainer } from '../utils/ast-util';
 import { tokenToRange } from '../utils/cst-util';
 import { CompositeCstNodeImpl, CstNodeBuilder, LeafCstNodeImpl, RootCstNodeImpl } from './cst-node-builder';
@@ -53,6 +53,7 @@ export class LangiumParser {
     private readonly linker: Linker;
     private readonly converter: ValueConverter;
     private readonly lexer: Lexer;
+    private readonly astReflection: AstReflection;
     private readonly nodeBuilder = new CstNodeBuilder();
     private readonly wrapper: ChevrotainWrapper;
     private stack: any[] = [];
@@ -67,6 +68,7 @@ export class LangiumParser {
         this.wrapper = new ChevrotainWrapper(tokens, services.parser.ParserConfig);
         this.linker = services.references.Linker;
         this.converter = services.parser.ValueConverter;
+        this.astReflection = services.shared.AstReflection;
         this.lexer = new Lexer(isTokenTypeDictionary(tokens) ? Object.values(tokens) : tokens);
     }
 
@@ -250,20 +252,6 @@ export class LangiumParser {
         }
     }
 
-    /**
-     * Initializes array fields of the current object. Array fields are not allowed to be undefined.
-     * Therefore, all array fields are initialized with an empty array.
-     * @param initialArrayProperties The grammar access element that belongs to the current rule
-     */
-    initializeElement(initialArrayProperties: string[]): void {
-        if (!this.wrapper.IS_RECORDING) {
-            const item = this.current;
-            for (const element of initialArrayProperties) {
-                item[element] = [];
-            }
-        }
-    }
-
     construct(pop = true): unknown {
         if (this.wrapper.IS_RECORDING) {
             return undefined;
@@ -276,8 +264,22 @@ export class LangiumParser {
         }
         if (isDataTypeNode(obj)) {
             return this.converter.convert(obj.value, obj.$cstNode);
+        } else {
+            this.assignMandatoryProperties(obj);
         }
         return obj;
+    }
+
+    private assignMandatoryProperties(obj: any): void {
+        const typeMetaData = this.astReflection.getTypeMetaData(obj.$type);
+        for (const mandatoryProperty of typeMetaData.mandatory) {
+            const value = obj[mandatoryProperty.name];
+            if (mandatoryProperty.type === 'array' && !Array.isArray(value)) {
+                obj[mandatoryProperty.name] = [];
+            } else if (mandatoryProperty.type === 'boolean' && value === undefined) {
+                obj[mandatoryProperty.name] = false;
+            }
+        }
     }
 
     private getAssignment(feature: AbstractElement): AssignmentElement {

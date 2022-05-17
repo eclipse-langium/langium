@@ -294,7 +294,7 @@ export function getTypeName(type: ast.AbstractType): string {
             return actionType;
         }
     }
-    throw new TypeResolutionError('Unknown type', (type as AstNode).$cstNode);
+    throw new TypeResolutionError('Unknown type', type.$cstNode);
 }
 
 export function getExplicitRuleType(rule: ast.ParserRule): string | undefined {
@@ -319,7 +319,7 @@ export function getExplicitRuleType(rule: ast.ParserRule): string | undefined {
 function getActionType(action: ast.Action): string | undefined {
     if(action.inferredType) {
         return action.inferredType.name;
-    } else if(action.type.ref) {
+    } else if(action.type?.ref) {
         return getTypeName(action.type.ref);
     }
     return undefined; // not inferring and not referencing a valid type
@@ -328,10 +328,9 @@ function getActionType(action: ast.Action): string | undefined {
 export function getRuleType(rule: ast.AbstractRule): string {
     if (ast.isTerminalRule(rule)) {
         return rule.type?.name ?? 'string';
-    } else if (ast.isParserRule(rule)) {
+    } else {
         return isDataTypeRule(rule) ? rule.name : getExplicitRuleType(rule) ?? rule.name;
     }
-    throw new TypeResolutionError('Unknown rule type', (rule as AstNode).$cstNode);
 }
 
 export function getEntryRule(grammar: ast.Grammar): ast.ParserRule | undefined {
