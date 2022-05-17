@@ -6,9 +6,9 @@
 
 import { EMPTY_ALT, IOrAlt, TokenType, TokenTypeDictionary, TokenVocabulary } from 'chevrotain';
 import { AbstractElement, Action, Alternatives, Condition, CrossReference, Grammar, Group, isAction, isAlternatives, isAssignment, isConjunction, isCrossReference, isDisjunction, isGroup, isKeyword, isLiteralCondition, isNegation, isParameterReference, isParserRule, isRuleCall, isTerminalRule, isUnorderedGroup, Keyword, NamedArgument, ParserRule, RuleCall, UnorderedGroup } from '../grammar/generated/ast';
-import { Cardinality, findNameAssignment, getTypeName, isArrayOperator, isDataTypeRule } from '../grammar/grammar-util';
+import { Cardinality, findNameAssignment, getTypeName, isDataTypeRule } from '../grammar/grammar-util';
 import { LangiumServices } from '../services';
-import { hasContainerOfType, streamAllContents } from '../utils/ast-util';
+import { hasContainerOfType } from '../utils/ast-util';
 import { stream } from '../utils/stream';
 import { DatatypeSymbol, isIMultiModeLexerDefinition, isTokenTypeDictionary, LangiumParser } from './langium-parser';
 
@@ -102,14 +102,7 @@ function buildParserRules(parserContext: ParserContext, grammar: Grammar): void 
 
 function buildRuleContent(ctx: RuleContext, rule: ParserRule): Method {
     const method = buildElement(ctx, rule.alternatives);
-    const arrays: string[] = [];
-    streamAllContents(rule.alternatives).forEach(item => {
-        if (isAssignment(item) && isArrayOperator(item.operator)) {
-            arrays.push(item.feature);
-        }
-    });
     return (args) => {
-        ctx.parser.initializeElement(arrays);
         method(args);
         return ctx.parser.construct();
     };

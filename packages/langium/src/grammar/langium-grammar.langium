@@ -126,13 +126,13 @@ ParameterReference:
     parameter=[Parameter:ID];
 
 PredicatedKeyword infers Keyword:
-    (predicated?='=>' | firstSetPredicated?='->') value=STRING;
+    ('=>' | '->') value=STRING;
 
 PredicatedRuleCall infers RuleCall:
-    (predicated?='=>' | firstSetPredicated?='->') rule=[AbstractRule:ID] ('<' arguments+=NamedArgument (',' arguments+=NamedArgument)* '>')?;
+    ('=>' | '->') rule=[AbstractRule:ID] ('<' arguments+=NamedArgument (',' arguments+=NamedArgument)* '>')?;
 
 Assignment infers AbstractElement:
-    {infer Assignment} (predicated?='=>' | firstSetPredicated?='->')? feature=FeatureName operator=('+='|'='|'?=') terminal=AssignableTerminal;
+    {infer Assignment} ('=>' | '->')? feature=FeatureName operator=('+='|'='|'?=') terminal=AssignableTerminal;
 
 AssignableTerminal infers AbstractElement:
     Keyword | RuleCall | ParenthesizedAssignableElement | CrossReference;
@@ -153,7 +153,7 @@ ParenthesizedElement infers AbstractElement:
     '(' Alternatives ')';
 
 PredicatedGroup infers Group:
-    (predicated?='=>' | firstSetPredicated?='->') '(' elements+=Alternatives ')';
+    ('=>' | '->') '(' elements+=Alternatives ')';
 
 ReturnType:
     name=(PrimitiveType | ID);

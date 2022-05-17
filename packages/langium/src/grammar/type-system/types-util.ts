@@ -9,6 +9,7 @@ import { CompositeGeneratorNode, IndentNode, NL } from '../../generator/generato
 import { processGeneratorNode } from '../../generator/node-processor';
 import { CstNode } from '../../syntax-tree';
 import { getDocument } from '../../utils/ast-util';
+import { MultiMap } from '../../utils/collections';
 import { LangiumDocuments } from '../../workspace/documents';
 import { Grammar, Interface, isParserRule, ParserRule, Type } from '../generated/ast';
 import { isDataTypeRule, resolveImport } from '../grammar-util';
@@ -102,6 +103,26 @@ export type AstResources = {
     datatypeRules: Set<ParserRule>,
     interfaces: Set<Interface>,
     types: Set<Type>
+}
+
+/**
+ * Collects all properties of all interface types. Includes super type properties.
+ * @param interfaces A topologically sorted array of interfaces.
+ */
+export function collectAllProperties(interfaces: InterfaceType[]): MultiMap<string, Property> {
+    const map = new MultiMap<string, Property>();
+    for (const interfaceType of interfaces) {
+        map.addAll(interfaceType.name, interfaceType.properties);
+    }
+    for (const interfaceType of interfaces) {
+        for (const superType of interfaceType.interfaceSuperTypes) {
+            const superTypeProperties = map.get(superType);
+            if (superTypeProperties) {
+                map.addAll(interfaceType.name, superTypeProperties);
+            }
+        }
+    }
+    return map;
 }
 
 export function collectAllAstResources(grammars: Grammar[], documents?: LangiumDocuments, visited: Set<URI> = new Set(),
