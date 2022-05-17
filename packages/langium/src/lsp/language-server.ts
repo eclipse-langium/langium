@@ -22,7 +22,8 @@ export function startLanguageServer(services: LangiumSharedServices): void {
     }
 
     connection.onInitialize(async params => {
-        const hasFormattingService = languages.some(e => e.lsp.FormattingService !== undefined);
+        const hasFormattingService = languages.some(e => e.lsp.Formatter !== undefined);
+        const formattingOnTypeOptions = languages.map(e => e.lsp.Formatter?.formatOnTypeOptions).find(e => !!e);
         const hasCodeActionProvider = languages.some(e => e.lsp.CodeActionProvider !== undefined);
         const hasSemanticTokensProvider = languages.some(e => e.lsp.SemanticTokenProvider !== undefined);
 
@@ -42,6 +43,7 @@ export function startLanguageServer(services: LangiumSharedServices): void {
                 codeActionProvider: hasCodeActionProvider,
                 documentFormattingProvider: hasFormattingService,
                 documentRangeFormattingProvider: hasFormattingService,
+                documentOnTypeFormattingProvider: formattingOnTypeOptions,
                 foldingRangeProvider: {},
                 hoverProvider: {},
                 renameProvider: {
@@ -195,17 +197,17 @@ export function addFoldingRangeHandler(connection: Connection, services: Langium
 
 export function addFormattingHandler(connection: Connection, services: LangiumSharedServices): void {
     connection.onDocumentFormatting(createRequestHandler(
-        (services, document, params, cancelToken) => services.lsp.FormattingService?.formatDocument(document, params, cancelToken),
+        (services, document, params, cancelToken) => services.lsp.Formatter?.formatDocument(document, params, cancelToken),
         services
     ));
     connection.onDocumentRangeFormatting(createRequestHandler(
-        (services, document, params, cancelToken) => services.lsp.FormattingService?.formatDocumentRange(document, params, cancelToken),
+        (services, document, params, cancelToken) => services.lsp.Formatter?.formatDocumentRange(document, params, cancelToken),
         services
     ));
-    // connection.onDocumentOnTypeFormatting(createRequestHandler(
-    //     (services, document, params, cancelToken) => services.lsp.FormattingService?.formatDocumentOnType(document, params, cancelToken),
-    //     services
-    // ));
+    connection.onDocumentOnTypeFormatting(createRequestHandler(
+        (services, document, params, cancelToken) => services.lsp.Formatter?.formatDocumentOnType(document, params, cancelToken),
+        services
+    ));
 }
 
 export function addRenameHandler(connection: Connection, services: LangiumSharedServices): void {

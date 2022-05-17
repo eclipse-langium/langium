@@ -10,7 +10,7 @@ import { DomainModelValidationRegistry, DomainModelValidator } from './domain-mo
 import { DomainModelScopeComputation } from './domain-model-scope';
 import { DomainModelDescriptionProvider } from './domain-model-index';
 import { DomainModelNameProvider } from './domain-model-naming';
-import { DomainModelFormattingService } from './domain-model-formatting';
+import { DomainModelFormatter } from './domain-model-formatter';
 
 export type DomainModelAddedServices = {
     validation: {
@@ -33,7 +33,7 @@ export const DomainModelModule: Module<DomainModelServices, PartialLangiumServic
         AstNodeDescriptionProvider: (services) => new DomainModelDescriptionProvider(services)
     },
     lsp: {
-        FormattingService: () => new DomainModelFormattingService()
+        Formatter: () => new DomainModelFormatter()
     }
 };
 

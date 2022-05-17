@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { CancellationToken, DocumentFormattingParams, DocumentOnTypeFormattingParams, DocumentRangeFormattingParams, FormattingOptions, Range, TextEdit } from 'vscode-languageserver';
+import { CancellationToken, DocumentFormattingParams, DocumentOnTypeFormattingOptions, DocumentOnTypeFormattingParams, DocumentRangeFormattingParams, FormattingOptions, Range, TextEdit } from 'vscode-languageserver';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { findKeywordNode, findNodeForFeature, isCompositeCstNode, isLeafCstNode } from '..';
 import { findKeywordNodes, findNodesForFeature } from '../grammar/grammar-util';
@@ -15,18 +15,53 @@ import { MaybePromise } from '../utils/promise-util';
 import { DONE_RESULT, EMPTY_STREAM, Stream, StreamImpl, TreeStreamImpl } from '../utils/stream';
 import { LangiumDocument } from '../workspace/documents';
 
-export interface FormattingService {
+/**
+ * Language specific service for handling formatting related LSP requests.
+ */
+export interface Formatter {
+    /**
+     * Handles full document formatting.
+     */
     formatDocument(document: LangiumDocument, params: DocumentFormattingParams, cancelToken?: CancellationToken): MaybePromise<TextEdit[]>
+    /**
+     * Handles partial document formatting. Only parts of the document within the `params.range` property are formatted.
+     */
     formatDocumentRange(document: LangiumDocument, params: DocumentRangeFormattingParams, cancelToken?: CancellationToken): MaybePromise<TextEdit[]>
+    /**
+     * Handles document formatting while typing. Only formats the current line.
+     */
     formatDocumentOnType(document: LangiumDocument, params: DocumentOnTypeFormattingParams, cancelToken?: CancellationToken): MaybePromise<TextEdit[]>
+    /**
+     * Options that determine when the `formatDocumentOnType` method should be invoked by the language client.
+     * When `undefined` is returned, document format on type will be disabled.
+     */
+    get formatOnTypeOptions(): DocumentOnTypeFormattingOptions | undefined
 }
 
-export abstract class AbstractFormattingService implements FormattingService {
+export abstract class AbstractFormatter implements Formatter {
 
     protected collector: FormattingCollector = () => { /* Does nothing at first */ }
 
-    protected formatter<T extends AstNode>(node: T): Formatter<T> {
-        return new DefaultFormatter(node, this.collector);
+    /**
+     * Creates a formatter scoped to the supplied AST node.
+     * Allows to define fine-grained formatting rules for elements.
+     *
+     * Example usage:
+     *
+     * ```ts
+     * export class CustomFormatter extends AbstractFormatter {
+     *   protected override format(node: AstNode): void {
+     *     if (isPerson(node)) {
+     *       const formatter = this.getNodeFormatter(node);
+     *       formatter.property('name').prepend(Formatting.oneSpace());
+     *     }
+     *   }
+     * }
+     * ```
+     * @param node The specific node the formatter should be scoped to. Every call to properties or keywords will only select those which belong to the supplied AST node.
+     */
+    protected getNodeFormatter<T extends AstNode>(node: T): NodeFormatter<T> {
+        return new DefaultNodeFormatter(node, this.collector);
     }
 
     formatDocument(document: LangiumDocument, params: DocumentFormattingParams): MaybePromise<TextEdit[]> {
@@ -37,8 +72,19 @@ export abstract class AbstractFormattingService implements FormattingService {
         return this.doDocumentFormat(document, params.options, params.range);
     }
 
-    formatDocumentOnType(): MaybePromise<TextEdit[]> {
-        throw new Error('Method not implemented.');
+    formatDocumentOnType(document: LangiumDocument, params: DocumentOnTypeFormattingParams): MaybePromise<TextEdit[]> {
+        // Format the current line after typing something
+        return this.doDocumentFormat(document, params.options, {
+            start: {
+                character: 0,
+                line: params.position.line
+            },
+            end: params.position
+        });
+    }
+
+    get formatOnTypeOptions(): DocumentOnTypeFormattingOptions | undefined {
+        return undefined;
     }
 
     protected doDocumentFormat(document: LangiumDocument, options: FormattingOptions, range?: Range): TextEdit[] {
@@ -396,18 +442,69 @@ export abstract class AbstractFormattingService implements FormattingService {
 
 }
 
-export interface Formatter<T extends AstNode> {
+/**
+ * Represents an object that allows to format certain parts of a specific node, like its keywords or properties.
+ */
+export interface NodeFormatter<T extends AstNode> {
+    /**
+     * Creates a new formatting region that contains the specified node.
+     */
     node(node: AstNode): FormattingRegion
+    /**
+     * Creates a new formatting region that contains all of the specified nodes.
+     */
     nodes(...nodes: AstNode[]): FormattingRegion
-    feature(feature: Properties<T>, index?: number): FormattingRegion
-    features(...features: Array<Properties<T>>): FormattingRegion
+    /**
+     * Creates a new formatting region that contains the specified property of the supplied node.
+     *
+     * @param property The name of the property to format. Scoped to the supplied node.
+     * @param index The index of the property, if the property is an array. `0` by default. To retrieve all elements of this array, use the {@link properties} method instead.
+     */
+    property(property: Properties<T>, index?: number): FormattingRegion
+    /**
+     * Creates a new formatting region that contains the all of the specified properties of the supplied node.
+     *
+     * @param properties The names of the properties to format. Scoped to the supplied node.
+     */
+    properties(...properties: Array<Properties<T>>): FormattingRegion
+    /**
+     * Creates a new formatting region that contains the specified keyword of the supplied node.
+     *
+     * @param keyword The keyword to format. Scoped to the supplied node.
+     * @param index The index of the keyword, necessary if the keyword appears multiple times. `0` by default. To retrieve all keywords, use the {@link keywords} method instead.
+     */
     keyword(keyword: string, index?: number): FormattingRegion
+    /**
+     * Creates a new formatting region that contains the all of the specified keywords of the supplied node.
+     *
+     * @param keywords The keywords to format. Scoped to the supplied node.
+     */
     keywords(...keywords: string[]): FormattingRegion
+    /**
+     * Creates a new formatting region that contains the all of the specified CST nodes.
+     *
+     * @param nodes A list of CST nodes to format
+     */
     cst(nodes: CstNode[]): FormattingRegion
+    /**
+     * Creates a new formatting region that contains all nodes between the given formatting regions.
+     *
+     * For example, can be used to retrieve a formatting region that contains all nodes between two curly braces:
+     *
+     * ```ts
+     * const formatter = this.getNodeFormatter(node);
+     * const bracesOpen = formatter.keyword('{');
+     * const bracesClose = formatter.keyword('}');
+     * formatter.interior(bracesOpen, bracesClose).prepend(Formatting.indent());
+     * ```
+     *
+     * @param start Determines where the search for interior nodes should start
+     * @param end Determines where the search for interior nodes should end
+     */
     interior(start: FormattingRegion, end: FormattingRegion): FormattingRegion
 }
 
-export class DefaultFormatter<T extends AstNode> implements Formatter<T> {
+export class DefaultNodeFormatter<T extends AstNode> implements NodeFormatter<T> {
 
     protected readonly astNode: T;
     protected readonly collector: FormattingCollector
@@ -431,12 +528,12 @@ export class DefaultFormatter<T extends AstNode> implements Formatter<T> {
         return new FormattingRegion(cstNodes, this.collector);
     }
 
-    feature(feature: Properties<T>, index?: number): FormattingRegion {
+    property(feature: Properties<T>, index?: number): FormattingRegion {
         const cstNode = findNodeForFeature(this.astNode.$cstNode, feature, index);
         return new FormattingRegion(cstNode ? [cstNode] : [], this.collector);
     }
 
-    features(...features: Array<Properties<T>>): FormattingRegion {
+    properties(...features: Array<Properties<T>>): FormattingRegion {
         const nodes: CstNode[] = [];
         for (const feature of features) {
             const cstNodes = findNodesForFeature(this.astNode.$cstNode, feature);
@@ -498,6 +595,9 @@ export class FormattingRegion {
         this.collector = collector;
     }
 
+    /**
+     * Prepends the specified formatting to all nodes of this region.
+     */
     prepend(formatting: FormattingAction): FormattingRegion {
         for (const node of this.nodes) {
             this.collector(node, 'prepend', formatting);
@@ -505,6 +605,9 @@ export class FormattingRegion {
         return this;
     }
 
+    /**
+     * Appends the specified formatting to all nodes of this region.
+     */
     append(formatting: FormattingAction): FormattingRegion {
         for (const node of this.nodes) {
             this.collector(node, 'append', formatting);
@@ -512,6 +615,10 @@ export class FormattingRegion {
         return this;
     }
 
+    /**
+     * Sorrounds all nodes of this region with the specified formatting.
+     * Functionally the same as invoking `prepend` and `append` with the same formatting.
+     */
     surround(formatting: FormattingAction): FormattingRegion {
         for (const node of this.nodes) {
             this.collector(node, 'prepend', formatting);
@@ -538,8 +645,18 @@ export interface FormattingAction {
 }
 
 export interface FormattingActionOptions {
+    /**
+     * The priority of this formatting. Formattings with a higher priority override those with lower priority.
+     * `0` by default.
+     */
     priority?: number
+    /**
+     * Determines whether this formatting allows more spaces/lines than expected. For example, if {@link Formatting.newLine} is used, but 2 empty lines already exist between the elements, no formatting is applied.
+     */
     allowMore?: boolean
+    /**
+     * Determines whether this formatting allows less spaces/lines than expected. For example, if {@link Formatting.oneSpace} is used, but no spaces exist between the elements, no formatting is applied.
+     */
     allowLess?: boolean
 }
 
@@ -549,10 +666,15 @@ export interface FormattingMove {
     lines?: number
 }
 
-export type FormattingFunction = (a: CstNode, b: CstNode, context: FormattingContext) => TextEdit | undefined;
-
+/**
+ * Contains utilities to easily create formatting actions that can be applied to a {@link FormattingRegion}.
+ */
 export namespace Formatting {
 
+    /**
+     * Creates a new formatting that tries to fit the existing text into one of the specified formattings.
+     * @param formattings All possible formattings.
+     */
     export function fit(...formattings: FormattingAction[]): FormattingAction {
         return {
             options: {},
@@ -560,14 +682,25 @@ export namespace Formatting {
         };
     }
 
+    /**
+     * Creates a new formatting that removes all spaces
+     */
     export function noSpace(options?: FormattingActionOptions): FormattingAction {
         return spaces(0, options);
     }
 
+    /**
+     * Creates a new formatting that creates a single space
+     */
     export function oneSpace(options?: FormattingActionOptions): FormattingAction {
         return spaces(1, options);
     }
 
+    /**
+     * Creates a new formatting that creates the specified amount of spaces
+     *
+     * @param count The amount of spaces to be inserted
+     */
     export function spaces(count: number, options?: FormattingActionOptions): FormattingAction {
         return {
             options: options ?? {},
@@ -577,15 +710,28 @@ export namespace Formatting {
         };
     }
 
+    /**
+     * Creates a new formatting that moves an element to the next line
+     */
     export function newLine(options?: FormattingActionOptions): FormattingAction {
+        return newLines(1, options);
+    }
+
+    /**
+     * Creates a new formatting that creates the specified amount of new lines.
+     */
+    export function newLines(count: number, options?: FormattingActionOptions): FormattingAction {
         return {
             options: options ?? {},
             moves: [{
-                lines: 1
+                lines: count
             }]
         };
     }
 
+    /**
+     * Creates a new formatting that moves the element to a new line and indents that line.
+     */
     export function indent(options?: FormattingActionOptions): FormattingAction {
         return {
             options: options ?? {},
@@ -596,6 +742,9 @@ export namespace Formatting {
         };
     }
 
+    /**
+     * Creates a new formatting that removes all indentation.
+     */
     export function noIndent(options?: FormattingActionOptions): FormattingAction {
         return {
             options: options ?? {},

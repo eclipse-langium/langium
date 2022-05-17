@@ -4,25 +4,25 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { AbstractFormattingService, Formatting } from '../../lsp/formatter';
+import { AbstractFormatter, Formatting } from '../../lsp/formatter';
 import { AstNode } from '../../syntax-tree';
 import * as ast from '../generated/ast';
 
-export class LangiumGrammarFormattingService extends AbstractFormattingService {
+export class LangiumGrammarFormatter extends AbstractFormatter {
 
     protected format(node: AstNode): void {
         if (ast.isCrossReference(node)) {
-            const formatter = this.formatter(node);
-            formatter.features('type', 'terminal').surround(Formatting.noSpace());
+            const formatter = this.getNodeFormatter(node);
+            formatter.properties('type', 'terminal').surround(Formatting.noSpace());
         } else if (ast.isParserRule(node)) {
-            const formatter = this.formatter(node);
+            const formatter = this.getNodeFormatter(node);
             formatter.keywords('entry', 'fragment', 'returns').append(Formatting.oneSpace());
             if ((node.inferredType || node.returnType || node.dataType) && node.parameters.length === 0) {
-                formatter.feature('name').append(Formatting.oneSpace());
+                formatter.property('name').append(Formatting.oneSpace());
             } else {
-                formatter.feature('name').append(Formatting.noSpace());
+                formatter.property('name').append(Formatting.noSpace());
             }
-            formatter.features('parameters').append(Formatting.noSpace());
+            formatter.properties('parameters').append(Formatting.noSpace());
             formatter.keywords(',').append(Formatting.oneSpace());
             formatter.keywords('<').append(Formatting.noSpace());
             const semicolon = formatter.keyword(';');
@@ -32,9 +32,9 @@ export class LangiumGrammarFormattingService extends AbstractFormattingService {
             semicolon.prepend(Formatting.fit(Formatting.noSpace(), Formatting.newLine()));
             formatter.node(node).prepend(Formatting.noIndent());
         } else if (ast.isTerminalRule(node)) {
-            const formatter = this.formatter(node);
+            const formatter = this.getNodeFormatter(node);
             if (node.type) {
-                formatter.feature('name').append(Formatting.oneSpace());
+                formatter.property('name').append(Formatting.oneSpace());
                 formatter.keyword('returns').append(Formatting.oneSpace());
             }
             formatter.keywords('hidden', 'terminal', 'fragment').append(Formatting.oneSpace());
@@ -42,26 +42,26 @@ export class LangiumGrammarFormattingService extends AbstractFormattingService {
             formatter.keyword(';').prepend(Formatting.fit(Formatting.noSpace(), Formatting.newLine()));
             formatter.node(node).prepend(Formatting.noIndent());
         } else if (ast.isAction(node)) {
-            const formatter = this.formatter(node);
+            const formatter = this.getNodeFormatter(node);
             formatter.keyword('{').append(Formatting.noSpace());
             formatter.keywords('.', '+=', '=').surround(Formatting.noSpace());
             formatter.keyword('}').prepend(Formatting.noSpace());
         } else if (ast.isInferredType(node)) {
-            const formatter = this.formatter(node);
+            const formatter = this.getNodeFormatter(node);
             formatter.keywords('infer', 'infers').append(Formatting.oneSpace());
         } else if (ast.isAssignment(node)) {
-            const formatter = this.formatter(node);
+            const formatter = this.getNodeFormatter(node);
             formatter.keywords('=', '+=', '?=').surround(Formatting.noSpace());
         } else if (ast.isRuleCall(node)) {
-            const formatter = this.formatter(node);
+            const formatter = this.getNodeFormatter(node);
             formatter.keyword('<').surround(Formatting.noSpace());
             formatter.keyword(',').append(Formatting.oneSpace());
-            formatter.features('arguments').append(Formatting.noSpace());
+            formatter.properties('arguments').append(Formatting.noSpace());
         }
 
         if (ast.isAbstractElement(node)) {
-            const formatter = this.formatter(node);
-            formatter.feature('cardinality').prepend(Formatting.noSpace());
+            const formatter = this.getNodeFormatter(node);
+            formatter.property('cardinality').prepend(Formatting.noSpace());
         }
     }
 
