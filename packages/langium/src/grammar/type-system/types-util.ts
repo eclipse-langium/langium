@@ -9,6 +9,7 @@ import { CompositeGeneratorNode, IndentNode, NL } from '../../generator/generato
 import { processGeneratorNode } from '../../generator/node-processor';
 import { CstNode } from '../../syntax-tree';
 import { getDocument } from '../../utils/ast-util';
+import { MultiMap } from '../../utils/collections';
 import { LangiumDocuments } from '../../workspace/documents';
 import { Grammar, Interface, isParserRule, ParserRule, Type } from '../generated/ast';
 import { isDataTypeRule, resolveImport } from '../grammar-util';
@@ -108,17 +109,16 @@ export type AstResources = {
  * Collects all properties of all interface types. Includes super type properties.
  * @param interfaces A topologically sorted array of interfaces.
  */
-export function collectAllProperties(interfaces: InterfaceType[]): Map<string, Property[]> {
-    const map = new Map<string, Property[]>();
+export function collectAllProperties(interfaces: InterfaceType[]): MultiMap<string, Property> {
+    const map = new MultiMap<string, Property>();
     for (const interfaceType of interfaces) {
-        map.set(interfaceType.name, [...interfaceType.properties]);
+        map.addAll(interfaceType.name, interfaceType.properties);
     }
     for (const interfaceType of interfaces) {
-        const existing = map.get(interfaceType.name)!;
         for (const superType of interfaceType.interfaceSuperTypes) {
             const superTypeProperties = map.get(superType);
             if (superTypeProperties) {
-                existing.push(...superTypeProperties);
+                map.addAll(interfaceType.name, superTypeProperties);
             }
         }
     }

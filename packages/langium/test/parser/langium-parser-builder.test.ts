@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { createDefaultModule, createDefaultSharedModule, createLangiumGrammarServices, createLangiumParser, Grammar, inject, interpreteAstReflection, IParserConfig, LangiumGeneratedServices, LangiumGeneratedSharedServices, LangiumParser, LangiumServices, LangiumSharedServices, Module } from '../../src';
+import { createDefaultModule, createDefaultSharedModule, createLangiumGrammarServices, createLangiumParser, Grammar, inject, interpretAstReflection, IParserConfig, LangiumGeneratedServices, LangiumGeneratedSharedServices, LangiumParser, LangiumServices, LangiumSharedServices, Module } from '../../src';
 import { parseHelper } from '../../src/test';
 
 const grammarServices = createLangiumGrammarServices().grammar;
@@ -266,7 +266,7 @@ function parserFromGrammar(grammar: Grammar): LangiumParser {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const unavailable: () => any = () => ({});
     const generatedSharedModule: Module<LangiumSharedServices, LangiumGeneratedSharedServices> = {
-        AstReflection: () => interpreteAstReflection(grammar),
+        AstReflection: () => interpretAstReflection(grammar),
     };
     const generatedModule: Module<LangiumServices, LangiumGeneratedServices> = {
         Grammar: () => grammar,

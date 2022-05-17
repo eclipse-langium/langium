@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { AstReflection, TypeMandatoryField, TypeMetaData } from '../syntax-tree';
+import { AstReflection, TypeMandatoryProperty, TypeMetaData } from '../syntax-tree';
 import { isAstNode } from '../utils/ast-util';
 import { MultiMap } from '../utils/collections';
 import { LangiumDocuments } from '../workspace/documents';
@@ -15,9 +15,9 @@ import { AstTypes, collectAllProperties, Property } from './type-system/types-ut
 
 let emptyDocuments: LangiumDocuments;
 
-export function interpreteAstReflection(astTypes: AstTypes): AstReflection;
-export function interpreteAstReflection(grammar: Grammar, documents?: LangiumDocuments): AstReflection;
-export function interpreteAstReflection(grammarOrTypes: Grammar | AstTypes, documents?: LangiumDocuments): AstReflection {
+export function interpretAstReflection(astTypes: AstTypes): AstReflection;
+export function interpretAstReflection(grammar: Grammar, documents?: LangiumDocuments): AstReflection;
+export function interpretAstReflection(grammarOrTypes: Grammar | AstTypes, documents?: LangiumDocuments): AstReflection {
     let collectedTypes: AstTypes;
     if (isGrammar(grammarOrTypes)) {
         if (!emptyDocuments && !documents) {
@@ -98,8 +98,8 @@ function buildTypeMetaData(astTypes: AstTypes): Map<string, TypeMetaData> {
     return map;
 }
 
-function buildMandatoryMetaData(arrayProps: Property[], booleanProps: Property[]): TypeMandatoryField[] {
-    const array: TypeMandatoryField[] = [];
+function buildMandatoryMetaData(arrayProps: Property[], booleanProps: Property[]): TypeMandatoryProperty[] {
+    const array: TypeMandatoryProperty[] = [];
     const all = arrayProps.concat(booleanProps).sort((a, b) => a.name.localeCompare(b.name));
     for (const property of all) {
         const type = arrayProps.includes(property) ? 'array' : 'boolean';

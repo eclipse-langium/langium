@@ -4,13 +4,13 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { interpreteAstReflection } from '../../src';
+import { interpretAstReflection } from '../../src';
 
 describe('AST reflection interpreter', () => {
 
     describe('Inheritance with sub- and super-types', () => {
 
-        const reflectionForInheritance = interpreteAstReflection({
+        const reflectionForInheritance = interpretAstReflection({
             interfaces: [
                 {
                     name: 'Super',

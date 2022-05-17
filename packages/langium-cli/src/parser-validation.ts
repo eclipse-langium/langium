@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import {
-    createDefaultModule, createDefaultSharedModule, getDocument, Grammar, inject, interpreteAstReflection, IParserConfig,
+    createDefaultModule, createDefaultSharedModule, getDocument, Grammar, inject, interpretAstReflection, IParserConfig,
     isGrammar, isParserRule, LangiumDocuments, LangiumGeneratedServices, LangiumGeneratedSharedServices,
     LangiumParser, LangiumServices, LangiumSharedServices, Module, ParserRule, prepareLangiumParser
 } from 'langium';
@@ -19,7 +19,7 @@ export function validateParser(grammar: Grammar, config: LangiumConfig, grammarC
         skipValidations: false
     };
     const generatedSharedModule: Module<LangiumSharedServices, LangiumGeneratedSharedServices> = {
-        AstReflection: interpreteAstReflection(grammar, documents),
+        AstReflection: interpretAstReflection(grammar, documents),
     };
     const generatedModule: Module<LangiumServices, LangiumGeneratedServices> = {
         Grammar: () => grammar,
