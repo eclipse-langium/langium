@@ -300,7 +300,7 @@ export function getTypeName(type: ast.AbstractType | ast.InferredType): string {
     } else if (ast.isInferredType(type)) {
         return type.name;
     }
-    throw new TypeResolutionError('Unknown type', type.$cstNode);
+    throw new TypeResolutionError('Cannot get name of Unknown Type', (type as AstNode).$cstNode);
 }
 
 export function getExplicitRuleType(rule: ast.ParserRule): string | undefined {
