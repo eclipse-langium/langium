@@ -83,7 +83,13 @@ function _resolve<I, T>(obj: any, prop: string | symbol | number, module: Module
     } else if (prop in module) {
         const value: Module<I, T[keyof T]> | ((injector: I) => T[keyof T]) = module[prop as keyof T];
         obj[prop] = __requested__;
-        obj[prop] = (typeof value === 'function') ? value(injector) : _inject(value, injector);
+        try {
+            obj[prop] = (typeof value === 'function') ? value(injector) : _inject(value, injector);
+        } catch (error) {
+            obj[prop] = undefined;
+            console.error(error);
+            throw error;
+        }
         return obj[prop];
     } else {
         return undefined;
