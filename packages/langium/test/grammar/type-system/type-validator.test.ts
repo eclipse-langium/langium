@@ -51,14 +51,10 @@ describe('validate params in types', () => {
         const document = await parseDocument(grammarServices, prog);
         let diagnostics: Diagnostic[] = await grammarServices.validation.DocumentValidator.validateDocument(document);
         diagnostics = diagnostics.filter(d => d.severity === DiagnosticSeverity.Error);
-        expect(diagnostics).toHaveLength(2);
+        expect(diagnostics).toHaveLength(1);
 
-        // verify the location of both errors, indicating the associated type for these rules requires a param
-        let d = diagnostics[0];
-        expect(d.range.start).toEqual({character: 8, line: 4});
-        expect(d.range.end).toEqual({character: 9, line: 4});
-
-        d = diagnostics[1];
+        // verify the location of the single diagnostic error, should be only for the 2nd rule
+        const d = diagnostics[0];
         expect(d.range.start).toEqual({character: 8, line: 5});
         expect(d.range.end).toEqual({character: 9, line: 5});
     });

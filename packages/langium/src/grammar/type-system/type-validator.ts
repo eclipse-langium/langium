@@ -24,16 +24,29 @@ export function validateTypesConsistency(grammar: Grammar, accept: ValidationAcc
         };
     }
 
+    // Report missing assignments for required properties in offending nodes
+    function applyMissingAssignmentErrorToRuleNodes(nodes: readonly ParserRule[], accept: ValidationAcceptor): (propertyName: string, errorMessage: string) => void {
+        return (propertyName: string, errorMessage: string) => {
+            nodes.forEach(node => {
+                const assignments = extractAssignments(node.alternatives);
+                if (assignments.find(a => a.feature === propertyName) === undefined) {
+                    accept('error', errorMessage, {node, property: 'parameters'});
+                }
+            });
+        };
+    }
+
     const validationResources = collectValidationResources(grammar);
     for (const [typeName, typeInfo] of validationResources.entries()) {
         if (!isInferredAndDeclared(typeInfo)) continue;
         const errorToRuleNodes = applyErrorToRuleNodes(typeInfo.nodes, typeName);
+        const errorToInvalidRuleNodes = applyMissingAssignmentErrorToRuleNodes(typeInfo.nodes, accept);
         const errorToAssignment = applyErrorToAssignment(typeInfo.nodes, accept);
 
         if (isType(typeInfo.inferred) && isType(typeInfo.declared)) {
             checkAlternativesConsistency(typeInfo.inferred.union, typeInfo.declared.union, errorToRuleNodes);
         } else if (isInterface(typeInfo.inferred) && isInterface(typeInfo.declared)) {
-            checkPropertiesConsistency(typeInfo.inferred.properties, typeInfo.declared.properties, errorToRuleNodes, errorToAssignment);
+            checkPropertiesConsistency(typeInfo.inferred.properties, typeInfo.declared.properties, errorToRuleNodes, errorToAssignment, errorToInvalidRuleNodes);
             checkSuperTypesConsistency([...typeInfo.inferred.superTypes], [...typeInfo.declared.superTypes], errorToRuleNodes);
         } else {
             const specificError = `Inferred and declared versions of type ${typeName} have to be types or interfaces both.`;
@@ -165,7 +178,7 @@ function checkAlternativesConsistency(inferred: PropertyType[], declared: Proper
 }
 
 function checkPropertiesConsistency(inferred: Property[], declared: Property[],
-    errorToRuleNodes: (error: string) => void, errorToAssignment: (propertyName: string, error: string) => void): void {
+    errorToRuleNodes: (error: string) => void, errorToAssignment: (propertyName: string, error: string) => void, errorToInvalidRuleNodes: (propertyName: string, error: string) => void): void {
 
     const baseError = (propertyName: string, foundType: string, expectedType: string) =>
         `The assigned type '${foundType}' is not compatible with the declared property '${propertyName}' of type '${expectedType}'.`;
@@ -193,7 +206,7 @@ function checkPropertiesConsistency(inferred: Property[], declared: Property[],
             }
 
             if (checkOptional(foundProperty, expectedProperty) && !expectedProperty.optional && foundProperty.optional) {
-                errorToRuleNodes(`A property '${foundProperty.name}' can't be optional`);
+                errorToInvalidRuleNodes(foundProperty.name, `A property '${foundProperty.name}' can't be optional.`);
             }
         } else {
             errorToAssignment(foundProperty.name, `A property '${foundProperty.name}' is not expected.`);
