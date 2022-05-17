@@ -16,8 +16,8 @@ describe('Grammar validation', () => {
     const grammarText = `
     grammar Test
 
-    entry Main returns X
-      : age=NUMBER same=NUMBER;
+    entry Main
+      : {infer X}age=NUMBER same=NUMBER;
 
     terminal NUMBER returns number: [\\d]+;
 
@@ -34,6 +34,7 @@ describe('Grammar validation', () => {
             diagnostics.push({ severity: toDiagnosticSeverity(severity), message });
         };
         validations.getChecks('Grammar').flatMap(ch => ch(grammar, accept, new CancellationTokenSource().token));
+        console.log(diagnostics.map(d=> d.message))
     });
 
     test('Property is unknown to the usage of X', () => {
