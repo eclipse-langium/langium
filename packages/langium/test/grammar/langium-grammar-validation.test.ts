@@ -1,7 +1,13 @@
-import { CancellationTokenSource, DiagnosticSeverity } from "vscode-languageserver";
-import { createLangiumGrammarServices, Grammar, ValidationAcceptor, toDiagnosticSeverity } from "../../src";
-import { LangiumGrammarValidationRegistry } from "../../src/grammar/langium-grammar-validator";
-import { parseHelper } from "../../src/test";
+/******************************************************************************
+ * Copyright 2021 TypeFox GmbH
+ * This program and the accompanying materials are made available under the
+ * terms of the MIT License, which is available in the project root.
+ ******************************************************************************/
+
+import { CancellationTokenSource, DiagnosticSeverity } from 'vscode-languageserver';
+import { createLangiumGrammarServices, Grammar, ValidationAcceptor, toDiagnosticSeverity } from '../../src';
+import { LangiumGrammarValidationRegistry } from '../../src/grammar/langium-grammar-validator';
+import { parseHelper } from '../../src/test';
 
 describe('Grammar validation', () => {
     const services = createLangiumGrammarServices();
@@ -13,7 +19,7 @@ describe('Grammar validation', () => {
     entry Main returns X
       : age=NUMBER same=NUMBER;
 
-    terminal NUMBER returns number: [\d]+;
+    terminal NUMBER returns number: [\\d]+;
 
     interface X {
       name: string;
@@ -21,14 +27,13 @@ describe('Grammar validation', () => {
     }
     `;
 
-    const diagnostics: { severity: DiagnosticSeverity, message: string }[] = [];
+    const diagnostics: Array<{ severity: DiagnosticSeverity, message: string }> = [];
     beforeAll(async () => {
         const grammar = (await parser(grammarText)).parseResult.value;
-        const accept: ValidationAcceptor = (severity, message, info) => {
-            console.log(message)
+        const accept: ValidationAcceptor = (severity, message) => {
             diagnostics.push({ severity: toDiagnosticSeverity(severity), message });
         };
-        validations.getChecks('Grammar').flatMap(ch => ch(grammar, accept, new CancellationTokenSource().token))
+        validations.getChecks('Grammar').flatMap(ch => ch(grammar, accept, new CancellationTokenSource().token));
     });
 
     test('Property is unknown to the usage of X', () => {
