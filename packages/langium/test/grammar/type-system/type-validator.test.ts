@@ -35,7 +35,7 @@ describe('validate params in types', () => {
     });
 
     // verifies that missing required params use the right msg & position
-    test('verify that missing required param error, for multiple rules', async () => {
+    test('verify missing required param error is present for the correct rule', async () => {
         const prog = `
         interface A {
             name:string
@@ -56,7 +56,7 @@ describe('validate params in types', () => {
         // verify the location of the single diagnostic error, should be only for the 2nd rule
         const d = diagnostics[0];
         expect(d.range.start).toEqual({character: 8, line: 5});
-        expect(d.range.end).toEqual({character: 9, line: 5});
+        expect(d.range.end).toEqual({character: 34, line: 5});
     });
 
     // tests that an optional param in a declared type can be optionally present in a rule
