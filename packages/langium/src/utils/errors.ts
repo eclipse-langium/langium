@@ -1,4 +1,10 @@
-import { CstNode } from "..";
+/******************************************************************************
+ * Copyright 2021 TypeFox GmbH
+ * This program and the accompanying materials are made available under the
+ * terms of the MIT License, which is available in the project root.
+ ******************************************************************************/
+
+import { CstNode } from '..';
 
 export class ErrorWithLocation extends Error {
     constructor(node: CstNode|undefined, message: string) {
@@ -6,6 +12,6 @@ export class ErrorWithLocation extends Error {
     }
 }
 
-export function assertUnreachable(x: never): never {
-    throw new Error("Error! Please fulfill the logic also for the other types in the inheritence hierarchy.");
+export function assertUnreachable(_: never): never {
+    throw new Error('Error! Please fulfill the logic also for the other types in the inheritence hierarchy.');
 }
