@@ -148,8 +148,7 @@ export class LangiumGrammarValidator {
         const map = new MultiMap<string, { name: string } & AstNode>();
         extractor(grammar).forEach(e => map.add(e.name, e));
 
-        for (const name of map.keys()) {
-            const types = map.get(name);
+        for (const [, types] of map.entriesGroupedByKey()) {
             if (types.length > 1) {
                 types.forEach(e => {
                     accept('error', `A ${uniqueObjName}'s name has to be unique.`, { node: e, property: 'name' });
@@ -179,8 +178,7 @@ export class LangiumGrammarValidator {
                 importMap.add(resolvedGrammar, imp);
             }
         }
-        for (const grammar of importMap.keys()) {
-            const imports = importMap.get(grammar);
+        for (const [, imports] of importMap.entriesGroupedByKey()) {
             if (imports.length > 1) {
                 imports.forEach((imp, i) => {
                     if (i > 0) {
@@ -433,8 +431,7 @@ export class LangiumGrammarValidator {
             const propertyNameToNode: MultiMap<string, ast.Interface | readonly ast.ParserRule[]> = new MultiMap();
             this.collectPropertyNamesForHierarchy(nameToInterfaceInfo, new Set(), propertyNameToNode, interfaceName);
 
-            for (const propertyName of propertyNameToNode.keys()) {
-                const nodes = propertyNameToNode.get(propertyName) ?? [];
+            for (const [propertyName, nodes] of propertyNameToNode.entriesGroupedByKey()) {
                 if (nodes.length < 2) continue;
                 for (const node of nodes) {
                     const errorMessage = `A property '${propertyName}' has to be unique for the whole hierarchy.`;

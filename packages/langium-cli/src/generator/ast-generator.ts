@@ -196,8 +196,7 @@ function buildIsSubtypeMethod(astTypes: AstTypes): GeneratorNode {
     methodNode.indent(switchNode => {
         const groups = groupBySupertypes(astTypes);
 
-        for (const superTypes of groups.keys()) {
-            const typeGroup = groups.get(superTypes);
+        for (const [superTypes, typeGroup] of groups.entriesGroupedByKey()) {
             for (const typeName of typeGroup) {
                 switchNode.append(`case ${typeName}:`, NL);
             }
