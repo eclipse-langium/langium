@@ -69,7 +69,8 @@ export class LangiumGrammarValidationRegistry extends ValidationRegistry {
                 validator.checkCrossRefType
             ],
             AtomType: [
-                validator.checkAtomTypeRefType
+                validator.checkAtomTypeRefType,
+                validator.checkFragmentsInTypes
             ]
         };
         this.register(checks, validator);
@@ -600,6 +601,12 @@ export class LangiumGrammarValidator {
             if (issue) {
                 accept('error', issue, { node: atomType, property: 'refType' });
             }
+        }
+    }
+
+    checkFragmentsInTypes(atomType: ast.AtomType, accept: ValidationAcceptor): void {
+        if (ast.isParserRule(atomType.refType?.ref) && atomType.refType?.ref.fragment) {
+            accept('error', 'Cannot use rule fragments in types.', { node: atomType, property: 'refType'});
         }
     }
 
