@@ -14,20 +14,18 @@ import { getContainerOfType, getDocument, streamAllContents } from '../utils/ast
 import { MultiMap } from '../utils/collections';
 import { toDocumentSegment } from '../utils/cst-util';
 import { stream } from '../utils/stream';
-import { ValidationAcceptor, ValidationCheck, ValidationRegistry } from '../validation/validation-registry';
+import { ValidationAcceptor, ValidationChecks, ValidationRegistry } from '../validation/validation-registry';
 import { LangiumDocument, LangiumDocuments } from '../workspace/documents';
 import * as ast from './generated/ast';
 import { findKeywordNode, findNameAssignment, getEntryRule, getTypeName, isDataTypeRule, resolveImport, resolveTransitiveImports, terminalRegex } from './grammar-util';
 import type { LangiumGrammarServices } from './langium-grammar-module';
 import { applyErrorToAssignment, collectAllInterfaces, InterfaceInfo, validateTypesConsistency } from './type-system/type-validator';
 
-type LangiumGrammarChecks = { [type in ast.LangiumGrammarAstType]?: ValidationCheck | ValidationCheck[] }
-
 export class LangiumGrammarValidationRegistry extends ValidationRegistry {
     constructor(services: LangiumGrammarServices) {
         super(services);
         const validator = services.validation.LangiumGrammarValidator;
-        const checks: LangiumGrammarChecks = {
+        const checks: ValidationChecks<ast.LangiumGrammarAstType> = {
             AbstractRule: validator.checkRuleName,
             Assignment: validator.checkAssignmentWithFeatureName,
             ParserRule: [

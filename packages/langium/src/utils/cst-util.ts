@@ -7,7 +7,7 @@
 import { IToken } from '@chevrotain/types';
 import { Range } from 'vscode-languageserver';
 import { DatatypeSymbol } from '../parser/langium-parser';
-import { AstNode, CstNode, isCompositeCstNode, isLeafCstNode, LeafCstNode } from '../syntax-tree';
+import { AstNode, CstNode, CompositeCstNode, isCompositeCstNode, isLeafCstNode, LeafCstNode } from '../syntax-tree';
 import { DocumentSegment } from '../workspace/documents';
 import { TreeStream, TreeStreamImpl } from './stream';
 
@@ -70,18 +70,13 @@ export function findRelevantNode(cstNode: CstNode): AstNode | undefined {
 }
 
 export function findCommentNode(cstNode: CstNode | undefined, commentNames: string[]): CstNode | undefined {
-    let lastNode: CstNode | undefined;
-    if (cstNode && isCompositeCstNode(cstNode)) {
-        for (const node of cstNode.children) {
-            if (!node.hidden) {
-                break;
-            }
-            if (isLeafCstNode(node) && commentNames.includes(node.tokenType.name)) {
-                lastNode = node;
-            }
+    if (cstNode) {
+        const previous = getPreviousNode(cstNode, true);
+        if (previous && isLeafCstNode(previous) && commentNames.includes(previous.tokenType.name)) {
+            return previous;
         }
     }
-    return lastNode;
+    return undefined;
 }
 
 export function findLeafNodeAtOffset(node: CstNode, offset: number): LeafCstNode | undefined {
@@ -97,4 +92,116 @@ export function findLeafNodeAtOffset(node: CstNode, offset: number): LeafCstNode
         }
     }
     return undefined;
+}
+
+export function getPreviousNode(node: CstNode, hidden = true): CstNode | undefined {
+    while (node.parent) {
+        const parent = node.parent;
+        let index = parent.children.indexOf(node);
+        if (index === 0) {
+            node = parent;
+        } else {
+            index--;
+            const previous = parent.children[index];
+            if (hidden || !previous.hidden) {
+                return previous;
+            }
+        }
+    }
+    return undefined;
+}
+
+export function getNextNode(node: CstNode, hidden = true): CstNode | undefined {
+    while (node.parent) {
+        const parent = node.parent;
+        let index = parent.children.indexOf(node);
+        if (parent.children.length - 1 === index) {
+            node = parent;
+        } else {
+            index++;
+            const next = parent.children[index];
+            if (hidden || !next.hidden) {
+                return next;
+            }
+        }
+    }
+    return undefined;
+}
+
+export function getStartlineNode(node: CstNode): CstNode {
+    if (node.range.start.character === 0) {
+        return node;
+    }
+    const line = node.range.start.line;
+    let last = node;
+    let index: number | undefined;
+    while (node.parent) {
+        const parent = node.parent;
+        const selfIndex = index ?? parent.children.indexOf(node);
+        if (selfIndex === 0) {
+            node = parent;
+            index = undefined;
+        } else {
+            index = selfIndex - 1;
+            node = parent.children[index];
+        }
+        if (node.range.start.line !== line) {
+            break;
+        }
+        last = node;
+    }
+    return last;
+}
+
+export function getInteriorNodes(start: CstNode, end: CstNode): CstNode[] {
+    const commonParent = getCommonParent(start, end);
+    if (!commonParent) {
+        return [];
+    }
+    return commonParent.parent.children.slice(commonParent.a + 1, commonParent.b);
+}
+
+function getCommonParent(a: CstNode, b: CstNode): CommonParent | undefined {
+    const aParents = getParentChain(a);
+    const bParents = getParentChain(b);
+    let current: CommonParent | undefined;
+    for (let i = 0; i < aParents.length && i < bParents.length; i++) {
+        const aParent = aParents[i];
+        const bParent = bParents[i];
+        if (aParent.parent === bParent.parent) {
+            current = {
+                parent: aParent.parent,
+                a: aParent.index,
+                b: bParent.index
+            };
+        } else {
+            break;
+        }
+    }
+    return current;
+}
+
+interface CommonParent {
+    parent: CompositeCstNode
+    a: number
+    b: number
+}
+
+function getParentChain(node: CstNode): ParentLink[] {
+    const chain: ParentLink[] = [];
+    while (node.parent) {
+        const parent = node.parent;
+        const index = parent.children.indexOf(node);
+        chain.push({
+            parent,
+            index
+        });
+        node = parent;
+    }
+    return chain.reverse();
+}
+
+interface ParentLink {
+    parent: CompositeCstNode
+    index: number
 }
