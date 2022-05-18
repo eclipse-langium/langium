@@ -9,6 +9,7 @@ import { AbstractElement, Action, Alternatives, Condition, CrossReference, Gramm
 import { Cardinality, findNameAssignment, getTypeName, isDataTypeRule } from '../grammar/grammar-util';
 import { LangiumServices } from '../services';
 import { hasContainerOfType } from '../utils/ast-util';
+import { assertUnreachable, ErrorWithLocation } from '../utils/errors';
 import { stream } from '../utils/stream';
 import { DatatypeSymbol, isIMultiModeLexerDefinition, isTokenTypeDictionary, LangiumParser } from './langium-parser';
 
@@ -127,7 +128,7 @@ function buildElement(ctx: RuleContext, element: AbstractElement, ignoreGuard = 
     } else if (isGroup(element)) {
         method = buildGroup(ctx, element);
     } else {
-        throw new Error();
+        throw new ErrorWithLocation(element.$cstNode, `Unexpected element type: ${element.$type}`);
     }
     return wrap(ctx, ignoreGuard ? undefined : getGuardCondition(element), method, element.cardinality);
 }
@@ -146,8 +147,10 @@ function buildRuleCall(ctx: RuleContext, ruleCall: RuleCall): Method {
         const idx = ctx.consume++;
         const method = getToken(ctx, rule.name);
         return () => ctx.parser.consume(idx, method, ruleCall);
+    } else if (!rule) {
+        throw new ErrorWithLocation(ruleCall.$cstNode, `Undefined rule type: ${ruleCall.$type}`);
     } else {
-        throw new Error();
+        assertUnreachable(rule);
     }
 }
 
@@ -188,7 +191,7 @@ function buildPredicate(condition: Condition): Predicate {
         const value = !!condition.true;
         return () => value;
     }
-    throw new Error();
+    assertUnreachable(condition);
 }
 
 function buildAlternatives(ctx: RuleContext, alternatives: Alternatives): Method {
@@ -352,6 +355,6 @@ function wrap(ctx: RuleContext, guard: Condition | undefined, method: Method, ca
             GATE: gate ? () => gate(args) : undefined
         });
     } else {
-        throw new Error();
+        assertUnreachable(cardinality);
     }
 }
