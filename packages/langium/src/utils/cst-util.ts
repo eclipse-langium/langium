@@ -6,6 +6,7 @@
 
 import { IToken } from '@chevrotain/types';
 import { Range } from 'vscode-languageserver';
+import { isParserRule } from '..';
 import { DatatypeSymbol } from '../parser/langium-parser';
 import { AstNode, CstNode, CompositeCstNode, isCompositeCstNode, isLeafCstNode, LeafCstNode } from '../syntax-tree';
 import { DocumentSegment } from '../workspace/documents';
@@ -204,4 +205,20 @@ function getParentChain(node: CstNode): ParentLink[] {
 interface ParentLink {
     parent: CompositeCstNode
     index: number
+}
+
+// Given a CstNode, goes up the parent hierarchy chain and returns the closest parent that is a ParserRule.
+// If no ParserRule is found in the parent chain, returns undefined
+export function findParentParserRuleCstNode(sourceCstNode: CstNode): CstNode | undefined {
+    if (!sourceCstNode.parent) {
+        return undefined;
+    }
+    else {
+        if (isParserRule(sourceCstNode.parent.element)) {
+            return sourceCstNode.parent;
+        }
+        else {
+            return findParentParserRuleCstNode(sourceCstNode.parent);
+        }
+    }
 }

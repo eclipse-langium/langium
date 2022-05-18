@@ -44,13 +44,7 @@ export class DefaultGoToResolverProvider implements GoToResolver {
             const cst = rootNode.$cstNode;
             const sourceCstNode = findLeafNodeAtOffset(cst, document.textDocument.offsetAt(params.position));
             if (sourceCstNode) {
-                const targetNode = this.references.findDeclaration(sourceCstNode);
-                if (targetNode?.element) {
-                    const targetDoc = getDocument(targetNode?.element);
-                    if (targetNode && targetDoc) {
-                        targetCstNodes.push({ source: sourceCstNode, target: targetNode, targetDocument: targetDoc });
-                    }
-                }
+                this.findTargetNode(sourceCstNode, targetCstNodes);
             }
         }
         return targetCstNodes.map(link => LocationLink.create(
@@ -60,6 +54,17 @@ export class DefaultGoToResolverProvider implements GoToResolver {
             link.source.range
         ));
     }
+
+    protected findTargetNode(sourceCstNode: CstNode, targetCstNodes: Array<{ source: CstNode, target: CstNode, targetDocument: LangiumDocument }>): void {
+        const targetNode = this.references.findDeclaration(sourceCstNode);
+        if (targetNode?.element) {
+            const targetDoc = getDocument(targetNode?.element);
+            if(targetNode && targetDoc) {
+                targetCstNodes.push({ source: sourceCstNode, target: targetNode, targetDocument: targetDoc });
+            }
+        }
+    }
+
     protected findActualNodeFor(cstNode: CstNode): CstNode | undefined {
         let actualNode: CstNode | undefined = cstNode;
         while (!actualNode?.element?.$cstNode) {

@@ -9,6 +9,7 @@ import { inject, Module } from '../dependency-injection';
 import { LangiumServices, LangiumSharedServices, PartialLangiumServices } from '../services';
 import { LangiumGrammarGeneratedModule, LangiumGrammarGeneratedSharedModule } from './generated/module';
 import { LangiumGrammarCodeActionProvider } from './langium-grammar-code-actions';
+import { LangiumGrammarGoToResolver } from './langium-grammar-goto';
 import { LangiumGrammarScopeComputation, LangiumScopeProvider } from './langium-grammar-scope';
 import { LangiumGrammarSemanticTokenProvider } from './langium-grammar-semantic-token-provider';
 import { LangiumGrammarValidationRegistry, LangiumGrammarValidator } from './langium-grammar-validator';
@@ -34,7 +35,8 @@ export const LangiumGrammarModule: Module<LangiumGrammarServices, PartialLangium
         CodeActionProvider: () => new LangiumGrammarCodeActionProvider(),
         SemanticTokenProvider: () => new LangiumGrammarSemanticTokenProvider(),
         Formatter: () => new LangiumGrammarFormatter(),
-        HoverProvider: (services) => new LangiumGrammarHoverProvider(services)
+        HoverProvider: (services) => new LangiumGrammarHoverProvider(services),
+        GoToResolver: (services) => new LangiumGrammarGoToResolver(services)
     },
     references: {
         ScopeComputation: (services) => new LangiumGrammarScopeComputation(services),
