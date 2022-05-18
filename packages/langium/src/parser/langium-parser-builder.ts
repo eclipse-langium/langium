@@ -6,9 +6,10 @@
 
 import { EMPTY_ALT, IOrAlt, TokenType, TokenTypeDictionary, TokenVocabulary } from 'chevrotain';
 import { AbstractElement, Action, Alternatives, Condition, CrossReference, Grammar, Group, isAction, isAlternatives, isAssignment, isConjunction, isCrossReference, isDisjunction, isGroup, isKeyword, isLiteralCondition, isNegation, isParameterReference, isParserRule, isRuleCall, isTerminalRule, isUnorderedGroup, Keyword, NamedArgument, ParserRule, RuleCall, UnorderedGroup } from '../grammar/generated/ast';
-import { Cardinality, findNameAssignment, getTypeName, isArrayOperator, isDataTypeRule } from '../grammar/grammar-util';
+import { Cardinality, findNameAssignment, getTypeName, isDataTypeRule } from '../grammar/grammar-util';
 import { LangiumServices } from '../services';
-import { hasContainerOfType, streamAllContents } from '../utils/ast-util';
+import { hasContainerOfType } from '../utils/ast-util';
+import { assertUnreachable, ErrorWithLocation } from '../utils/errors';
 import { stream } from '../utils/stream';
 import { DatatypeSymbol, isIMultiModeLexerDefinition, isTokenTypeDictionary, LangiumParser } from './langium-parser';
 
@@ -102,14 +103,7 @@ function buildParserRules(parserContext: ParserContext, grammar: Grammar): void 
 
 function buildRuleContent(ctx: RuleContext, rule: ParserRule): Method {
     const method = buildElement(ctx, rule.alternatives);
-    const arrays: string[] = [];
-    streamAllContents(rule.alternatives).forEach(item => {
-        if (isAssignment(item) && isArrayOperator(item.operator)) {
-            arrays.push(item.feature);
-        }
-    });
     return (args) => {
-        ctx.parser.initializeElement(arrays);
         method(args);
         return ctx.parser.construct();
     };
@@ -134,7 +128,7 @@ function buildElement(ctx: RuleContext, element: AbstractElement, ignoreGuard = 
     } else if (isGroup(element)) {
         method = buildGroup(ctx, element);
     } else {
-        throw new Error();
+        throw new ErrorWithLocation(element.$cstNode, `Unexpected element type: ${element.$type}`);
     }
     return wrap(ctx, ignoreGuard ? undefined : getGuardCondition(element), method, element.cardinality);
 }
@@ -153,8 +147,10 @@ function buildRuleCall(ctx: RuleContext, ruleCall: RuleCall): Method {
         const idx = ctx.consume++;
         const method = getToken(ctx, rule.name);
         return () => ctx.parser.consume(idx, method, ruleCall);
+    } else if (!rule) {
+        throw new ErrorWithLocation(ruleCall.$cstNode, `Undefined rule type: ${ruleCall.$type}`);
     } else {
-        throw new Error();
+        assertUnreachable(rule);
     }
 }
 
@@ -195,7 +191,7 @@ function buildPredicate(condition: Condition): Predicate {
         const value = !!condition.true;
         return () => value;
     }
-    throw new Error();
+    assertUnreachable(condition);
 }
 
 function buildAlternatives(ctx: RuleContext, alternatives: Alternatives): Method {
@@ -359,6 +355,6 @@ function wrap(ctx: RuleContext, guard: Condition | undefined, method: Method, ca
             GATE: gate ? () => gate(args) : undefined
         });
     } else {
-        throw new Error();
+        assertUnreachable(cardinality);
     }
 }

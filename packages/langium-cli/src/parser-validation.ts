@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import {
-    createDefaultModule, createDefaultSharedModule, getDocument, Grammar, inject, IParserConfig,
+    createDefaultModule, createDefaultSharedModule, getDocument, Grammar, inject, interpretAstReflection, IParserConfig,
     isGrammar, isParserRule, LangiumDocuments, LangiumGeneratedServices, LangiumGeneratedSharedServices,
     LangiumParser, LangiumServices, LangiumSharedServices, Module, ParserRule, prepareLangiumParser
 } from 'langium';
@@ -18,10 +18,8 @@ export function validateParser(grammar: Grammar, config: LangiumConfig, grammarC
         ...grammarConfigMap.get(grammar)?.chevrotainParserConfig,
         skipValidations: false
     };
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const unavailable: () => any = () => ({});
     const generatedSharedModule: Module<LangiumSharedServices, LangiumGeneratedSharedServices> = {
-        AstReflection: unavailable,
+        AstReflection: interpretAstReflection(grammar, documents),
     };
     const generatedModule: Module<LangiumServices, LangiumGeneratedServices> = {
         Grammar: () => grammar,

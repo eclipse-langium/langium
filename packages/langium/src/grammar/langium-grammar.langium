@@ -28,10 +28,7 @@ fragment TypeAlternatives:
     typeAlternatives+=AtomType ('|' typeAlternatives+=AtomType)*;
 
 AtomType:
-        (    primitiveType=PrimitiveType
-        |     isRef?='@'? refType=[AbstractType]
-        ) isArray?='[]'?
-    |    keywordType=Keyword;
+    (primitiveType=PrimitiveType | isRef?='@'? refType=[AbstractType]) isArray?='[]'? | keywordType=Keyword;
 
 PrimitiveType returns string:
     'string' | 'number' | 'boolean' | 'date';
@@ -41,7 +38,8 @@ type AbstractType = Interface | Type | Action | ParserRule;
 Type:
     'type' name=ID '=' TypeAlternatives ';'?;
 
-AbstractRule: ParserRule | TerminalRule;
+AbstractRule:
+    ParserRule | TerminalRule;
 
 GrammarImport:
     'import' path=STRING ';'?;
@@ -66,7 +64,7 @@ Alternatives infers AbstractElement:
     ConditionalBranch ({infer Alternatives.elements+=current} ('|' elements+=ConditionalBranch)+)?;
 
 ConditionalBranch infers AbstractElement:
-      UnorderedGroup
+    UnorderedGroup
     | {infer Group} '<' guardCondition=Disjunction '>' (elements+=AbstractToken)+
 ;
 
@@ -85,7 +83,7 @@ AbstractTokenWithCardinality infers AbstractElement:
 
 Action infers AbstractElement:
     {infer Action} '{' (type=[AbstractType:ID] | inferredType=InferredType<true>) ('.' feature=FeatureName operator=('='|'+=') 'current')? '}';
-    
+
 AbstractTerminal infers AbstractElement:
     Keyword |
     RuleCall |
@@ -101,7 +99,7 @@ RuleCall:
     rule=[AbstractRule:ID] ('<' arguments+=NamedArgument (',' arguments+=NamedArgument)* '>')?;
 
 NamedArgument:
-    ( parameter=[Parameter:ID] calledByName?= '=')?
+    ( parameter=[Parameter:ID] calledByName?='=')?
     ( value=Disjunction );
 
 LiteralCondition:
@@ -126,13 +124,13 @@ ParameterReference:
     parameter=[Parameter:ID];
 
 PredicatedKeyword infers Keyword:
-    (predicated?='=>' | firstSetPredicated?='->') value=STRING;
+    ('=>' | '->') value=STRING;
 
 PredicatedRuleCall infers RuleCall:
-    (predicated?='=>' | firstSetPredicated?='->') rule=[AbstractRule:ID] ('<' arguments+=NamedArgument (',' arguments+=NamedArgument)* '>')?;
+    ('=>' | '->') rule=[AbstractRule:ID] ('<' arguments+=NamedArgument (',' arguments+=NamedArgument)* '>')?;
 
 Assignment infers AbstractElement:
-    {infer Assignment} (predicated?='=>' | firstSetPredicated?='->')? feature=FeatureName operator=('+='|'='|'?=') terminal=AssignableTerminal;
+    {infer Assignment} ('=>' | '->')? feature=FeatureName operator=('+='|'='|'?=') terminal=AssignableTerminal;
 
 AssignableTerminal infers AbstractElement:
     Keyword | RuleCall | ParenthesizedAssignableElement | CrossReference;
@@ -153,7 +151,7 @@ ParenthesizedElement infers AbstractElement:
     '(' Alternatives ')';
 
 PredicatedGroup infers Group:
-    (predicated?='=>' | firstSetPredicated?='->') '(' elements+=Alternatives ')';
+    ('=>' | '->') '(' elements+=Alternatives ')';
 
 ReturnType:
     name=(PrimitiveType | ID);

@@ -5,7 +5,7 @@
 
 /* eslint-disable @typescript-eslint/array-type */
 /* eslint-disable @typescript-eslint/no-empty-interface */
-import { AstNode, AstReflection, Reference } from '../../syntax-tree';
+import { AstNode, AstReflection, Reference, TypeMetaData } from '../../syntax-tree';
 import { isAstNode } from '../../utils/ast-util';
 
 export type AbstractRule = ParserRule | TerminalRule;
@@ -50,9 +50,9 @@ export function isAbstractElement(item: unknown): item is AbstractElement {
 export interface Action extends AbstractElement {
     readonly $container: Alternatives | Assignment | AtomType | CharacterRange | CrossReference | Group | NegatedToken | ParserRule | TerminalAlternatives | TerminalGroup | TerminalRule | UnorderedGroup | UntilToken;
     feature?: FeatureName
-    inferredType: InferredType
+    inferredType?: InferredType
     operator?: '+=' | '='
-    type: Reference<AbstractType>
+    type?: Reference<AbstractType>
 }
 
 export const Action = 'Action';
@@ -75,9 +75,7 @@ export function isAlternatives(item: unknown): item is Alternatives {
 export interface Assignment extends AbstractElement {
     readonly $container: Alternatives | Assignment | AtomType | CharacterRange | CrossReference | Group | NegatedToken | ParserRule | TerminalAlternatives | TerminalGroup | TerminalRule | UnorderedGroup | UntilToken;
     feature: FeatureName
-    firstSetPredicated: boolean
     operator: '+=' | '=' | '?='
-    predicated: boolean
     terminal: AbstractElement
 }
 
@@ -183,9 +181,7 @@ export function isGrammarImport(item: unknown): item is GrammarImport {
 export interface Group extends AbstractElement {
     readonly $container: Alternatives | Assignment | AtomType | CharacterRange | CrossReference | Group | NegatedToken | ParserRule | TerminalAlternatives | TerminalGroup | TerminalRule | UnorderedGroup | UntilToken;
     elements: Array<AbstractElement>
-    firstSetPredicated: boolean
     guardCondition?: Condition
-    predicated: boolean
 }
 
 export const Group = 'Group';
@@ -220,8 +216,6 @@ export function isInterface(item: unknown): item is Interface {
 
 export interface Keyword extends AbstractElement {
     readonly $container: Alternatives | Assignment | AtomType | CharacterRange | CrossReference | Group | NegatedToken | ParserRule | TerminalAlternatives | TerminalGroup | TerminalRule | UnorderedGroup | UntilToken;
-    firstSetPredicated: boolean
-    predicated: boolean
     value: string
 }
 
@@ -302,12 +296,12 @@ export function isParameterReference(item: unknown): item is ParameterReference 
 export interface ParserRule extends AstNode {
     readonly $container: Grammar;
     alternatives: AbstractElement
-    dataType: PrimitiveType
+    dataType?: PrimitiveType
     definesHiddenTokens: boolean
     entry: boolean
     fragment: boolean
     hiddenTokens: Array<Reference<AbstractRule>>
-    inferredType: InferredType
+    inferredType?: InferredType
     name: string
     parameters: Array<Parameter>
     returnType?: Reference<AbstractType>
@@ -345,8 +339,6 @@ export function isReturnType(item: unknown): item is ReturnType {
 export interface RuleCall extends AbstractElement {
     readonly $container: Alternatives | Assignment | AtomType | CharacterRange | CrossReference | Group | NegatedToken | ParserRule | TerminalAlternatives | TerminalGroup | TerminalRule | UnorderedGroup | UntilToken;
     arguments: Array<NamedArgument>
-    firstSetPredicated: boolean
-    predicated: boolean
     rule: Reference<AbstractRule>
 }
 
@@ -563,6 +555,161 @@ export class LangiumGrammarAstReflection implements AstReflection {
             }
             default: {
                 throw new Error(`${referenceId} is not a valid reference id.`);
+            }
+        }
+    }
+
+    getTypeMetaData(type: string): TypeMetaData {
+        switch (type) {
+            case 'Alternatives': {
+                return {
+                    name: 'Alternatives',
+                    mandatory: [
+                        { name: 'elements', type: 'array' }
+                    ]
+                };
+            }
+            case 'AtomType': {
+                return {
+                    name: 'AtomType',
+                    mandatory: [
+                        { name: 'isArray', type: 'boolean' },
+                        { name: 'isRef', type: 'boolean' }
+                    ]
+                };
+            }
+            case 'CrossReference': {
+                return {
+                    name: 'CrossReference',
+                    mandatory: [
+                        { name: 'deprecatedSyntax', type: 'boolean' }
+                    ]
+                };
+            }
+            case 'Grammar': {
+                return {
+                    name: 'Grammar',
+                    mandatory: [
+                        { name: 'definesHiddenTokens', type: 'boolean' },
+                        { name: 'hiddenTokens', type: 'array' },
+                        { name: 'imports', type: 'array' },
+                        { name: 'interfaces', type: 'array' },
+                        { name: 'isDeclared', type: 'boolean' },
+                        { name: 'rules', type: 'array' },
+                        { name: 'types', type: 'array' },
+                        { name: 'usedGrammars', type: 'array' }
+                    ]
+                };
+            }
+            case 'Group': {
+                return {
+                    name: 'Group',
+                    mandatory: [
+                        { name: 'elements', type: 'array' }
+                    ]
+                };
+            }
+            case 'Interface': {
+                return {
+                    name: 'Interface',
+                    mandatory: [
+                        { name: 'attributes', type: 'array' },
+                        { name: 'superTypes', type: 'array' }
+                    ]
+                };
+            }
+            case 'LiteralCondition': {
+                return {
+                    name: 'LiteralCondition',
+                    mandatory: [
+                        { name: 'true', type: 'boolean' }
+                    ]
+                };
+            }
+            case 'NamedArgument': {
+                return {
+                    name: 'NamedArgument',
+                    mandatory: [
+                        { name: 'calledByName', type: 'boolean' }
+                    ]
+                };
+            }
+            case 'ParserRule': {
+                return {
+                    name: 'ParserRule',
+                    mandatory: [
+                        { name: 'definesHiddenTokens', type: 'boolean' },
+                        { name: 'entry', type: 'boolean' },
+                        { name: 'fragment', type: 'boolean' },
+                        { name: 'hiddenTokens', type: 'array' },
+                        { name: 'parameters', type: 'array' },
+                        { name: 'wildcard', type: 'boolean' }
+                    ]
+                };
+            }
+            case 'RuleCall': {
+                return {
+                    name: 'RuleCall',
+                    mandatory: [
+                        { name: 'arguments', type: 'array' }
+                    ]
+                };
+            }
+            case 'TerminalAlternatives': {
+                return {
+                    name: 'TerminalAlternatives',
+                    mandatory: [
+                        { name: 'elements', type: 'array' }
+                    ]
+                };
+            }
+            case 'TerminalGroup': {
+                return {
+                    name: 'TerminalGroup',
+                    mandatory: [
+                        { name: 'elements', type: 'array' }
+                    ]
+                };
+            }
+            case 'TerminalRule': {
+                return {
+                    name: 'TerminalRule',
+                    mandatory: [
+                        { name: 'fragment', type: 'boolean' },
+                        { name: 'hidden', type: 'boolean' }
+                    ]
+                };
+            }
+            case 'Type': {
+                return {
+                    name: 'Type',
+                    mandatory: [
+                        { name: 'typeAlternatives', type: 'array' }
+                    ]
+                };
+            }
+            case 'TypeAttribute': {
+                return {
+                    name: 'TypeAttribute',
+                    mandatory: [
+                        { name: 'isOptional', type: 'boolean' },
+                        { name: 'typeAlternatives', type: 'array' }
+                    ]
+                };
+            }
+            case 'UnorderedGroup': {
+                return {
+                    name: 'UnorderedGroup',
+                    mandatory: [
+                        { name: 'elements', type: 'array' }
+                    ]
+                };
+            }
+            default: {
+                return {
+                    name: type,
+                    mandatory: []
+                };
             }
         }
     }

@@ -13,6 +13,7 @@ export * from './document-symbol-provider';
 export * from './folding-range-provider';
 export * from './goto';
 export * from './hover-provider';
+export * from './formatter';
 export * from './language-server';
 export * from './reference-finder';
 export * from './rename-refactoring';

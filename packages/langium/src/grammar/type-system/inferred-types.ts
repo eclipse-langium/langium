@@ -201,14 +201,14 @@ function buildSuperUnions(interfaces: InterfaceType[]): UnionType[] {
             allSupertypes.add(superType, interfaceType.name);
         }
     }
-    for (const superType of allSupertypes.keys()) {
+    for (const [superType, types] of allSupertypes.entriesGroupedByKey()) {
         if (!interfaces.some(e => e.name === superType)) {
             unions.push(new UnionType(
                 superType,
                 [{
                     array: false,
                     reference: false,
-                    types: [...allSupertypes.get(superType)]
+                    types
                 }],
                 { reflection: true }
             ));
@@ -285,7 +285,7 @@ function addAction(graph: TypeGraph, parent: TypePart, action: Action): TypePart
             typeAlternatives: [{
                 array: action.operator === '+=',
                 reference: false,
-                types: graph.getSuperTypes(typeNode)
+                types: graph.root.ruleCalls.length !== 0 ? graph.root.ruleCalls : graph.getSuperTypes(typeNode)
             }]
         });
     }
@@ -410,14 +410,13 @@ function calculateAst(alternatives: TypeAlternative[]): InterfaceType[] {
 }
 
 function flattenTypes(alternatives: TypeAlternative[]): TypeAlternative[] {
-    const names = new Set<string>(alternatives.map(e => e.name));
+    const nameToAlternatives = alternatives.reduce((acc, e) => acc.add(e.name, e), new MultiMap<string, TypeAlternative>());
     const types: TypeAlternative[] = [];
 
-    for (const name of names) {
+    for (const [name, namedAlternatives] of nameToAlternatives.entriesGroupedByKey()) {
         const properties: Property[] = [];
         const ruleCalls = new Set<string>();
         const type: TypeAlternative = { name, properties, ruleCalls: [], super: [] };
-        const namedAlternatives = alternatives.filter(e => e.name === name);
         for (const alt of namedAlternatives) {
             type.super.push(...alt.super);
             const altProperties = alt.properties;

@@ -4,17 +4,15 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { ValidationAcceptor, ValidationCheck, ValidationRegistry } from 'langium';
+import { ValidationAcceptor, ValidationChecks, ValidationRegistry } from 'langium';
 import { DomainModelAstType, Type } from './generated/ast';
 import { DomainModelServices } from './domain-model-module';
-
-type DomainModelChecks = { [type in DomainModelAstType]?: ValidationCheck | ValidationCheck[] }
 
 export class DomainModelValidationRegistry extends ValidationRegistry {
     constructor(services: DomainModelServices) {
         super(services);
         const validator = services.validation.DomainModelValidator;
-        const checks: DomainModelChecks = {
+        const checks: ValidationChecks<DomainModelAstType> = {
             Type: validator.checkTypeStartsWithCapital
         };
         this.register(checks, validator);

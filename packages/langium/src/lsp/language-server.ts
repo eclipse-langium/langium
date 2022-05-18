@@ -22,6 +22,11 @@ export function startLanguageServer(services: LangiumSharedServices): void {
     }
 
     connection.onInitialize(async params => {
+        const hasFormattingService = languages.some(e => e.lsp.Formatter !== undefined);
+        const formattingOnTypeOptions = languages.map(e => e.lsp.Formatter?.formatOnTypeOptions).find(e => !!e);
+        const hasCodeActionProvider = languages.some(e => e.lsp.CodeActionProvider !== undefined);
+        const hasSemanticTokensProvider = languages.some(e => e.lsp.SemanticTokenProvider !== undefined);
+
         const result: InitializeResult = {
             capabilities: {
                 workspace: {
@@ -35,13 +40,16 @@ export function startLanguageServer(services: LangiumSharedServices): void {
                 documentSymbolProvider: {},
                 definitionProvider: {},
                 documentHighlightProvider: {},
-                codeActionProvider: languages.some(e => e.lsp.CodeActionProvider !== undefined) ? {} : undefined,
+                codeActionProvider: hasCodeActionProvider,
+                documentFormattingProvider: hasFormattingService,
+                documentRangeFormattingProvider: hasFormattingService,
+                documentOnTypeFormattingProvider: formattingOnTypeOptions,
                 foldingRangeProvider: {},
                 hoverProvider: {},
                 renameProvider: {
                     prepareProvider: true
                 },
-                semanticTokensProvider: languages.some(e => e.lsp.SemanticTokenProvider !== undefined)
+                semanticTokensProvider: hasSemanticTokensProvider
                     ? DefaultSemanticTokenOptions
                     : undefined
             }
@@ -65,6 +73,7 @@ export function startLanguageServer(services: LangiumSharedServices): void {
     addGotoDefinitionHandler(connection, services);
     addDocumentHighlightsHandler(connection, services);
     addFoldingRangeHandler(connection, services);
+    addFormattingHandler(connection, services);
     addCodeActionHandler(connection, services);
     addRenameHandler(connection, services);
     addHoverHandler(connection, services);
@@ -182,6 +191,21 @@ export function addHoverHandler(connection: Connection, services: LangiumSharedS
 export function addFoldingRangeHandler(connection: Connection, services: LangiumSharedServices): void {
     connection.onFoldingRanges(createRequestHandler(
         (services, document, params, cancelToken) => services.lsp.FoldingRangeProvider.getFoldingRanges(document, params, cancelToken),
+        services
+    ));
+}
+
+export function addFormattingHandler(connection: Connection, services: LangiumSharedServices): void {
+    connection.onDocumentFormatting(createRequestHandler(
+        (services, document, params, cancelToken) => services.lsp.Formatter?.formatDocument(document, params, cancelToken),
+        services
+    ));
+    connection.onDocumentRangeFormatting(createRequestHandler(
+        (services, document, params, cancelToken) => services.lsp.Formatter?.formatDocumentRange(document, params, cancelToken),
+        services
+    ));
+    connection.onDocumentOnTypeFormatting(createRequestHandler(
+        (services, document, params, cancelToken) => services.lsp.Formatter?.formatDocumentOnType(document, params, cancelToken),
         services
     ));
 }

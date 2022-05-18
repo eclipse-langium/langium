@@ -5,7 +5,7 @@
 
 /* eslint-disable @typescript-eslint/array-type */
 /* eslint-disable @typescript-eslint/no-empty-interface */
-import { AstNode, AstReflection, Reference, isAstNode } from 'langium';
+import { AstNode, AstReflection, Reference, isAstNode, TypeMetaData } from 'langium';
 
 export type AbstractElement = PackageDeclaration | Type;
 
@@ -127,6 +127,49 @@ export class DomainModelAstReflection implements AstReflection {
             }
             default: {
                 throw new Error(`${referenceId} is not a valid reference id.`);
+            }
+        }
+    }
+
+    getTypeMetaData(type: string): TypeMetaData {
+        switch (type) {
+            case 'Domainmodel': {
+                return {
+                    name: 'Domainmodel',
+                    mandatory: [
+                        { name: 'elements', type: 'array' }
+                    ]
+                };
+            }
+            case 'Entity': {
+                return {
+                    name: 'Entity',
+                    mandatory: [
+                        { name: 'features', type: 'array' }
+                    ]
+                };
+            }
+            case 'Feature': {
+                return {
+                    name: 'Feature',
+                    mandatory: [
+                        { name: 'many', type: 'boolean' }
+                    ]
+                };
+            }
+            case 'PackageDeclaration': {
+                return {
+                    name: 'PackageDeclaration',
+                    mandatory: [
+                        { name: 'elements', type: 'array' }
+                    ]
+                };
+            }
+            default: {
+                return {
+                    name: type,
+                    mandatory: []
+                };
             }
         }
     }
