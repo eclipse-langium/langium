@@ -159,7 +159,8 @@ describe('The inject function', () => {
         ).toThrowError('construction error');
     });
 
-    test('should not handle construction attempts as a detected cycle', () => {
+    test('should properly forward past construction errors when building multiple times', () => {
+        //before fixing issue #463 a second attempt was leading to a cycle detection error (wrong direction for debugging people)
         interface API { first: { a: boolean }, second: { b: boolean }, third: { c: boolean } }
         const createFirst = () => { throw new Error('construction error'); };
         const createSecond = ({ first }: API) => ({ b: first.a });
@@ -168,9 +169,14 @@ describe('The inject function', () => {
         expect(() =>
             result.second
         ).toThrowError('construction error');
-        expect(() =>
-            result.third
-        ).toThrowError(/Construction failure/);
+        try {
+            result.third;
+            fail();
+        } catch (err) {
+            expect(err.message).toMatch(/Construction failure/)
+            expect(err.cause).toBeInstanceOf(Error)
+            expect(err.cause.message).toBe('construction error');
+        }
     });
 
     test('should work with arrays', () => {
