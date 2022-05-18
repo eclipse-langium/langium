@@ -8,6 +8,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
+import assert from 'assert';
 import { inject, Module } from '../src/dependency-injection';
 
 describe('A dependency type', () => {
@@ -169,15 +170,9 @@ describe('The inject function', () => {
         expect(() =>
             result.second
         ).toThrowError('construction error');
-        try {
-            result.third;
-            fail();
-        } catch (err) {
-            expect(err).toBeInstanceOf(Error)
-            expect(err.message).toMatch(/Construction failure/)
-            expect(err.cause).toBeInstanceOf(Error)
-            expect(err.cause.message).toBe('construction error');
-        }
+        expect(() =>
+            result.second
+        ).toThrowError(/Construction failure/); //where cause is Error('construction error')
     });
 
     test('should work with arrays', () => {
