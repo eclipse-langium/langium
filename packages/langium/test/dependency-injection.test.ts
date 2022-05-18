@@ -8,7 +8,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
-import assert from 'assert';
 import { inject, Module } from '../src/dependency-injection';
 
 describe('A dependency type', () => {
