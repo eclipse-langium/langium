@@ -59,7 +59,7 @@ describe('A non-cyclic dependency', () => {
     });
 
     test('should be result on an idempotent api call', () => {
-        const api = inject({ dep: () => ({ }) });
+        const api = inject({ dep: () => ({}) });
         expect(api.dep).toBe(api.dep);
     });
 
@@ -77,7 +77,7 @@ describe('A cyclic dependency', () => {
     });
 
     test('should be result on an idempotent api call', () => {
-        const api = createA({ });
+        const api = createA({});
         expect(api.testee).not.toBeUndefined();
         expect(api.testee).toBe(api.testee);
     });
@@ -135,7 +135,7 @@ describe('A cyclic dependency', () => {
 
     function createCycle<T>(testee: T): API<T> {
         return inject({
-            a: ({b}) => new A(b, testee),
+            a: ({ b }) => new A(b, testee),
             b: (api) => new B(api)
         });
     }
@@ -149,6 +149,29 @@ describe('A cyclic dependency', () => {
 });
 
 describe('The inject function', () => {
+
+    test('should forward construction error', () => {
+        interface API { first: { a: boolean }, second: { b: boolean } }
+        const createFirst = () => { throw new Error("construction error") };
+        const createSecond = ({ first }: API) => ({ b: first.a });
+        expect(() =>
+            inject({ first: createFirst, second: createSecond }).second
+        ).toThrowError('construction error');
+    });
+
+    test('should not handle construction attempts as a detected cycle', () => {
+        interface API { first: { a: boolean }, second: { b: boolean }, third: { c: boolean } }
+        const createFirst = () => { throw new Error("construction error") };
+        const createSecond = ({ first }: API) => ({ b: first.a });
+        const createThird = ({ first }: API) => ({ c: first.a });
+        const result = inject({ first: createFirst, second: createSecond, third: createThird });
+        expect(() =>
+            result.second
+        ).toThrowError('construction error');
+        expect(() =>
+            result.third
+        ).toThrowError('construction error');
+    });
 
     test('should work with arrays', () => {
         const api = inject([
