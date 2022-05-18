@@ -48,6 +48,25 @@ describe('checkReferenceToRuleButNotType', () => {
 
 });
 
+describe('Check Rule Fragment Validation', () => {
+    const grammar = `
+    grammar g
+    type Type = Fragment;
+    fragment Fragment: name=ID;
+    terminal ID: /[_a-zA-Z][\\w_]*/;
+    `.trim();
+
+    let validationData: ValidatorData;
+
+    beforeAll(async () => {
+        validationData = await parseAndValidate(grammar);
+    });
+
+    test('Rule Fragment Validation', () => {
+        expectError(validationData, 'Cannot use rule fragments in types.', 'Fragment');
+    });
+});
+
 interface ValidatorData {
     document: LangiumDocument;
     diagnostics: Diagnostic[];
