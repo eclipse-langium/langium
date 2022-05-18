@@ -27,6 +27,12 @@ export interface GoToResolver {
     goToDefinition(document: LangiumDocument, params: DefinitionParams, cancelToken?: CancellationToken): MaybePromise<LocationLink[] | undefined>;
 }
 
+export interface GoToLink {
+    source: CstNode
+    target: CstNode
+    targetDocument: LangiumDocument
+}
+
 export class DefaultGoToResolverProvider implements GoToResolver {
 
     protected readonly nameProvider: NameProvider;
@@ -44,7 +50,10 @@ export class DefaultGoToResolverProvider implements GoToResolver {
             const cst = rootNode.$cstNode;
             const sourceCstNode = findLeafNodeAtOffset(cst, document.textDocument.offsetAt(params.position));
             if (sourceCstNode) {
-                this.findTargetNode(sourceCstNode, targetCstNodes);
+                const goToLink = this.findLink(sourceCstNode);
+                if (goToLink) {
+                    targetCstNodes.push(goToLink);
+                }
             }
         }
         return targetCstNodes.map(link => LocationLink.create(
@@ -55,14 +64,16 @@ export class DefaultGoToResolverProvider implements GoToResolver {
         ));
     }
 
-    protected findTargetNode(sourceCstNode: CstNode, targetCstNodes: Array<{ source: CstNode, target: CstNode, targetDocument: LangiumDocument }>): void {
-        const targetNode = this.references.findDeclaration(sourceCstNode);
-        if (targetNode?.element) {
-            const targetDoc = getDocument(targetNode?.element);
-            if(targetNode && targetDoc) {
-                targetCstNodes.push({ source: sourceCstNode, target: targetNode, targetDocument: targetDoc });
+    protected findLink(source: CstNode): GoToLink | undefined{
+        const target = this.references.findDeclaration(source);
+        if (target?.element) {
+            const targetDocument = getDocument(target.element);
+            if(target && targetDocument) {
+                return { source, target, targetDocument};
             }
         }
+
+        return undefined;
     }
 
     protected findActualNodeFor(cstNode: CstNode): CstNode | undefined {

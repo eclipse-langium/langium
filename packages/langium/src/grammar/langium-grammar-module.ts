@@ -9,12 +9,12 @@ import { inject, Module } from '../dependency-injection';
 import { LangiumServices, LangiumSharedServices, PartialLangiumServices } from '../services';
 import { LangiumGrammarGeneratedModule, LangiumGrammarGeneratedSharedModule } from './generated/module';
 import { LangiumGrammarCodeActionProvider } from './langium-grammar-code-actions';
-import { LangiumGrammarGoToResolver } from './langium-grammar-goto';
 import { LangiumGrammarScopeComputation, LangiumScopeProvider } from './langium-grammar-scope';
 import { LangiumGrammarSemanticTokenProvider } from './langium-grammar-semantic-token-provider';
 import { LangiumGrammarValidationRegistry, LangiumGrammarValidator } from './langium-grammar-validator';
 import { LangiumGrammarFoldingRangeProvider } from './lsp/langium-grammar-folding-range-provider';
 import { LangiumGrammarFormatter } from './lsp/langium-grammar-formatter';
+import { LangiumGrammarGoToResolver } from './lsp/langium-grammar-goto';
 import { LangiumGrammarHoverProvider } from './lsp/langium-grammar-hover-provider';
 
 export type LangiumGrammarAddedServices = {
