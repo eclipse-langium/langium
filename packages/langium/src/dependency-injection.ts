@@ -89,7 +89,7 @@ function _resolve<I, T>(obj: any, prop: string | symbol | number, module: Module
         try {
             obj[prop] = (typeof value === 'function') ? value(injector) : _inject(value, injector);
         } catch (error) {
-            obj[prop] = error;
+            obj[prop] = error instanceof Error ? error : undefined;
             throw error;
         }
         return obj[prop];

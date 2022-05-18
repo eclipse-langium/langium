@@ -173,6 +173,7 @@ describe('The inject function', () => {
             result.third;
             fail();
         } catch (err) {
+            expect(err).toBeInstanceOf(Error)
             expect(err.message).toMatch(/Construction failure/)
             expect(err.cause).toBeInstanceOf(Error)
             expect(err.cause.message).toBe('construction error');
