@@ -170,7 +170,7 @@ describe('The inject function', () => {
         ).toThrowError('construction error');
         expect(() =>
             result.third
-        ).toThrowError('construction error');
+        ).toThrowError(/Construction failure/);
     });
 
     test('should work with arrays', () => {
