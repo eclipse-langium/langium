@@ -152,7 +152,7 @@ describe('The inject function', () => {
 
     test('should forward construction error', () => {
         interface API { first: { a: boolean }, second: { b: boolean } }
-        const createFirst = () => { throw new Error("construction error") };
+        const createFirst = () => { throw new Error('construction error'); };
         const createSecond = ({ first }: API) => ({ b: first.a });
         expect(() =>
             inject({ first: createFirst, second: createSecond }).second
@@ -161,7 +161,7 @@ describe('The inject function', () => {
 
     test('should not handle construction attempts as a detected cycle', () => {
         interface API { first: { a: boolean }, second: { b: boolean }, third: { c: boolean } }
-        const createFirst = () => { throw new Error("construction error") };
+        const createFirst = () => { throw new Error('construction error'); };
         const createSecond = ({ first }: API) => ({ b: first.a });
         const createThird = ({ first }: API) => ({ c: first.a });
         const result = inject({ first: createFirst, second: createSecond, third: createThird });
