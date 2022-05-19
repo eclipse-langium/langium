@@ -34,7 +34,7 @@ export function isCondition(item: unknown): item is Condition {
 
 export type FeatureName = string;
 
-export type PrimitiveType = 'boolean' | 'date' | 'number' | 'string';
+export type PrimitiveType = 'Date' | 'bigint' | 'boolean' | 'number' | 'string';
 
 export interface AbstractElement extends AstNode {
     readonly $container: Alternatives | Assignment | AtomType | CharacterRange | CrossReference | Group | NegatedToken | ParserRule | TerminalAlternatives | TerminalGroup | TerminalRule | UnorderedGroup | UntilToken;

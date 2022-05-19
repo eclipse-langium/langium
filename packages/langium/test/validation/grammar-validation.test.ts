@@ -86,14 +86,24 @@ describe('Checked Named CrossRefs', () => {
     });
 });
 
-describe('Check primitive types', () => {
+describe('Check grammar with primitives', () => {
     const grammar = `
     grammar PrimGrammar
-    entry A: 'a' s=STR b=BOOL n=NUM b=BIG d=DATE;
+    entry Expr:
+        (String | Bool | Num | BigInt | DateObj)*;
+    String:
+        'String' val=STR;
+    Bool:
+        'Bool' val?='true';
+    Num:
+        'Num' val=NUM;
+    BigInt:
+        'BigInt' val=BIG 'n';
+    DateObj:
+        'Date' val=DATE;
     terminal STR: /[_a-zA-Z][\\w_]*/;
-    terminal BOOL returns boolean: /true|false/;
+    terminal BIG returns bigint: /[0-9]+(?=n)/;
     terminal NUM returns number: /[0-9]+(\\.[0-9])?/;
-    terminal BIG returns bigint: /[0-9]+/;
     terminal DATE returns Date: /[0-9]{4}-{0-9}2-{0-9}2/+;
     `.trim();
 
@@ -107,27 +117,6 @@ describe('Check primitive types', () => {
     test('No validation errors in grammar', () => {
         expect(validationData.diagnostics.filter(d => d.severity === DiagnosticSeverity.Error)).toHaveLength(0);
     });
-
-    // 2. using the build parser, attempt to parse various primitives
-    // 3. try to parse a good case of all
-    // 3. Try a big int of 0x1fffffffffffff, from MDN example
-    //  should succed, giving a value of '9007199254740991n'
-    // 4. try to parse a big int of 1.1, which should fail
-    // 5. try to parse an ISO 8601 date, YYYY-MM-DDTHH:mm:ss.ssssZ .... or ±YYYYYY-MM-DDTHH:mm:ss.sssZ, should succeed
-    //  2022-10-04T12:13:11
-    // 6. Try to parse a date string by hand
-    //  19 September 1999 15:31 UTC (should also succeed)
-    // 7. try to parse a garbage date: 2022 Apples, should fail
-
-    // parseAndValidate(g_allPrims).then(validationData => {
-    //     test('No primitive type errors', () => {
-    //         expectError(validationData, 'blah blah');
-    //     });
-    // });
-
-    // test('No primitive type errors', () => {
-    //     expectError(validationData, 'blah blah');
-    // });
 });
 
 interface ValidatorData {

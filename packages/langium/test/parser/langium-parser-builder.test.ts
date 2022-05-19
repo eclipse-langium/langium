@@ -207,18 +207,82 @@ describe('One name for terminal and non-terminal rules', () => {
 
 });
 
+describe('BigInt Parser value converter', () => {
+    let parser: LangiumParser;
+    const content = `
+    grammar G
+    entry M: value=BIGINT;
+    terminal BIGINT returns bigint: /[0-9]+/;
+    hidden terminal WS: /\\s+/;
+    `;
+
+    beforeAll(async () => {
+        const grammar = (await helper(content)).parseResult.value;
+        parser = parserFromGrammar(grammar);
+    });
+
+    function expectValue(input: string, value: unknown): void {
+        const main = parser.parse(input).value as unknown as { value: unknown };
+        expect(main.value).toBe(value);
+    }
+
+    test('Should have no definition errors', () => {
+        expect(parser.definitionErrors).toHaveLength(0);
+    });
+
+    test('Parsed BigInt is correct', () => {
+        expectValue('149587349587234971', BigInt('149587349587234971'));
+        expectValue('9007199254740991', BigInt('9007199254740991')); // === 0x1fffffffffffff
+    });
+});
+
+describe('Date Parser value converter', () => {
+    let parser: LangiumParser;
+    const content = `
+    grammar G
+    entry M: value=DATE;
+    terminal DATE returns Date: /[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}/;
+    hidden terminal WS: /\\s+/;
+    `;
+
+    beforeAll(async () => {
+        const grammar = (await helper(content)).parseResult.value;
+        parser = parserFromGrammar(grammar);
+    });
+
+    test('Should have no definition errors', () => {
+        expect(parser.definitionErrors).toHaveLength(0);
+    });
+
+    test('Parsed Date is correct Date object', () => {
+        const parseResult = parser.parse('2022-10-12T00:00').value as unknown as { value: unknown };
+        expect(parseResult.value).toEqual(new Date('2022-10-12T00:00'));
+    });
+});
+
 describe('Parser calls value converter', () => {
 
     let parser: LangiumParser;
     const content = `
     grammar TestGrammar
-    entry Main: value=(QFN|Number);
+    entry Main:
+        'big' BigVal |
+        'b' value?='true' |
+        'q' value=QFN |
+        'n' value=Number |
+        'd' value=DATE;
 
     QFN returns string: ID ('.' QFN)?;
     terminal ID: /\\^?[_a-zA-Z][\\w_]*/;
 
-    Number returns number: INT ('.' INT)?;
-    terminal INT returns number: /[0-9]+/;
+    fragment BigVal:
+        value=BIGINT 'n';
+    terminal BIGINT returns bigint: /[0-9]+(?=n)/;
+
+    terminal DATE returns Date: /[0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2})?/;
+
+    Number returns number: NUM;
+    terminal NUM returns number: /-?[0-9]+(\\.[0-9]+)?/;
 
     hidden terminal WS: /\\s+/;
     hidden terminal ML_COMMENT: /\\/\\*[\\s\\S]*?\\*\\//;
@@ -230,32 +294,63 @@ describe('Parser calls value converter', () => {
     });
 
     function expectValue(input: string, value: unknown): void {
-        const main = parser.parse(input).value as unknown as { value: string };
+        const main = parser.parse(input).value as unknown as { value: unknown };
         expect(main.value).toBe(value);
     }
 
+    function expectEqual(input: string, value: unknown): void {
+        const main = parser.parse(input).value as unknown as { value: unknown };
+        expect(main.value).toEqual(value);
+    }
+
+    test('Should have no definition errors', () => {
+        expect(parser.definitionErrors).toHaveLength(0);
+    });
+
     test('Should parse ID inside of data type rule correctly', () => {
-        expectValue('^x', 'x');
+        expectValue('q ^x', 'x');
     });
 
     test('Should parse FQN correctly', () => {
-        expectValue('^x.y.^z', 'x.y.z');
+        expectValue('q ^x.y.^z', 'x.y.z');
     });
 
     test('Should parse FQN with whitespace correctly', () => {
-        expectValue('^x. y . ^z', 'x.y.z');
+        expectValue('q ^x. y . ^z', 'x.y.z');
     });
 
     test('Should parse FQN with comment correctly', () => {
-        expectValue('^x./* test */y.^z', 'x.y.z');
+        expectValue('q ^x./* test */y.^z', 'x.y.z');
     });
 
     test('Should parse integer correctly', () => {
-        expectValue('123', 123);
+        expectValue('n 123', 123);
     });
 
     test('Should parse float correctly', () => {
-        expectValue('123.5', 123.5);
+        expectValue('n 123.5', 123.5);
+    });
+
+    test('Should parse bool correctly', () => {
+        expectValue('b true', true);
+        // this is the current 'boolean' behavior, either true/undefined, no false
+        expectValue('b false', undefined);
+        // no distinguishing between the bad parse case
+        expectValue('b asdfg', undefined);
+    });
+
+    test('Should parse BigInt correctly', () => {
+        expectValue('big 9007199254740991n', BigInt('9007199254740991'));
+        expectValue('big 9007199254740991', undefined);
+        expectValue('big 1.1', undefined);
+        expectValue('big -19458438592374', undefined);
+    });
+
+    test('Should parse Date correctly', () => {
+        expectEqual('d 2020-01-01', new Date('2020-01-01'));
+        expectEqual('d 2020-01-01T00:00', new Date('2020-01-01T00:00'));
+        expectEqual('d 2022-10-04T12:13', new Date('2022-10-04T12:13'));
+        expectEqual('d 2022-Peach', undefined);
     });
 });
 
