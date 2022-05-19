@@ -25,12 +25,15 @@ export function validateTypesConsistency(grammar: Grammar, accept: ValidationAcc
     }
 
     // Report missing assignments for required properties in offending nodes
-    function applyMissingAssignmentErrorToRuleNodes(nodes: readonly ParserRule[], accept: ValidationAcceptor): (propertyName: string, errorMessage: string) => void {
+    function applyMissingAssignmentErrorToRuleNodes(nodes: readonly ParserRule[], typeName: string, accept: ValidationAcceptor): (propertyName: string, errorMessage: string) => void {
         return (propertyName: string, errorMessage: string) => {
             nodes.forEach(node => {
                 const assignments = extractAssignments(node.alternatives);
                 if (assignments.find(a => a.feature === propertyName) === undefined) {
-                    accept('error', errorMessage, {node, property: 'parameters'});
+                    accept(
+                        'error',
+                        errorMessage + ` in rule '${node.name}', but is required in type '${typeName}'.`,
+                        {node, property: 'parameters'});
                 }
             });
         };
@@ -40,7 +43,7 @@ export function validateTypesConsistency(grammar: Grammar, accept: ValidationAcc
     for (const [typeName, typeInfo] of validationResources.entries()) {
         if (!isInferredAndDeclared(typeInfo)) continue;
         const errorToRuleNodes = applyErrorToRuleNodes(typeInfo.nodes, typeName);
-        const errorToInvalidRuleNodes = applyMissingAssignmentErrorToRuleNodes(typeInfo.nodes, accept);
+        const errorToInvalidRuleNodes = applyMissingAssignmentErrorToRuleNodes(typeInfo.nodes, typeName, accept);
         const errorToAssignment = applyErrorToAssignment(typeInfo.nodes, accept);
 
         if (isType(typeInfo.inferred) && isType(typeInfo.declared)) {
@@ -206,7 +209,7 @@ function checkPropertiesConsistency(inferred: Property[], declared: Property[],
             }
 
             if (checkOptional(foundProperty, expectedProperty) && !expectedProperty.optional && foundProperty.optional) {
-                errorToInvalidRuleNodes(foundProperty.name, `A property '${foundProperty.name}' can't be optional.`);
+                errorToInvalidRuleNodes(foundProperty.name, `Property '${foundProperty.name}' is missing`);
             }
         } else {
             errorToAssignment(foundProperty.name, `A property '${foundProperty.name}' is not expected.`);
