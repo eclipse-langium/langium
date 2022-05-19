@@ -4,9 +4,9 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { Diagnostic, DiagnosticSeverity } from 'vscode-languageserver';
-import { createLangiumGrammarServices, Grammar, LangiumDocument } from '../../src';
-import { expectError, expectWarning, parseHelper, validationHelper } from '../../src/test';
+import { Diagnostic } from 'vscode-languageserver';
+import { createLangiumGrammarServices, Grammar } from '../../src';
+import { expectError, expectWarning, validationHelper } from '../../src/test';
 
 const services = createLangiumGrammarServices();
 const validate = validationHelper<Grammar>(services.grammar);
