@@ -207,6 +207,37 @@ describe('One name for terminal and non-terminal rules', () => {
 
 });
 
+describe('Boolean value converter', () => {
+    let parser: LangiumParser;
+    const content = `
+    grammar G
+    entry M: value?='true';
+    hidden terminal WS: /\\s+/;
+    `;
+
+    beforeAll(async () => {
+        const grammar = (await helper(content)).parseResult.value;
+        parser = parserFromGrammar(grammar);
+    });
+
+    function expectValue(input: string, value: unknown): void {
+        const main = parser.parse(input).value as unknown as { value: unknown };
+        expect(main.value).toBe(value);
+    }
+
+    test('Should have no definition errors', () => {
+        expect(parser.definitionErrors).toHaveLength(0);
+    });
+
+    test('Parsed Boolean is correct', () => {
+        expectValue('true', true);
+        // normal behavior when a property type can be resolved to only boolean
+        // gives us true/false values representing the parse result
+        expectValue('false', false);
+        expectValue('something-else-entirely', false);
+    });
+});
+
 describe('BigInt Parser value converter', () => {
     let parser: LangiumParser;
     const content = `
@@ -333,9 +364,10 @@ describe('Parser calls value converter', () => {
 
     test('Should parse bool correctly', () => {
         expectValue('b true', true);
-        // this is the current 'boolean' behavior, either true/undefined, no false
+        // this is the current 'boolean' behavior when a prop type can't be resolved to just a boolean
+        // either true/undefined, no false in this case
         expectValue('b false', undefined);
-        // no distinguishing between the bad parse case
+        // ...then no distinguishing between the bad parse case when the type is unclear
         expectValue('b asdfg', undefined);
     });
 
