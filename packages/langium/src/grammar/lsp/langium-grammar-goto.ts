@@ -6,15 +6,11 @@
 
 import { isAssignment, isInterface, isParserRule } from '../generated/ast';
 import { DefaultGoToResolverProvider, GoToLink } from '../../lsp';
-import { LangiumServices } from '../../services';
 import { CstNode } from '../../syntax-tree';
 import { getContainerOfType, getDocument } from '../../utils/ast-util';
+import { findNodeForFeature } from '../..';
 
 export class LangiumGrammarGoToResolver extends DefaultGoToResolverProvider {
-
-    constructor(services: LangiumServices) {
-        super(services);
-    }
 
     protected findLink(source: CstNode): GoToLink | undefined {
         if (isAssignment(source.element)){
@@ -29,9 +25,11 @@ export class LangiumGrammarGoToResolver extends DefaultGoToResolverProvider {
                     returnTypeCstNode.element.attributes.forEach(attribute => {
                         // find attribute corresponding to the property
                         if (attribute.name === sourcePropertyName) {
-                            const target = attribute.$cstNode!;
-                            const targetDocument = getDocument(returnTypeCstNode.element);
-                            goToLink = { source, target, targetDocument };
+                            const target = findNodeForFeature(attribute.$cstNode, 'name');
+                            if (target) {
+                                const targetDocument = getDocument(returnTypeCstNode.element);
+                                goToLink = { source, target, targetDocument };
+                            }
                         }
                     });
                 }
