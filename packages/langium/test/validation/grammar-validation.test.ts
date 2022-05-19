@@ -6,14 +6,14 @@
 
 import { Diagnostic, DiagnosticSeverity } from 'vscode-languageserver';
 import { createLangiumGrammarServices, Grammar, LangiumDocument } from '../../src';
-import { parseHelper } from '../../src/test';
+import { expectError, expectWarning, parseHelper, validationHelper } from '../../src/test';
 
 const services = createLangiumGrammarServices();
-const parser = parseHelper<Grammar>(services.grammar);
+const validate = validationHelper<Grammar>(services.grammar);
 
 describe('checkReferenceToRuleButNotType', () => {
 
-    const grammar = `
+    const input = `
         grammar CrossRefs
 
         entry Model:
@@ -32,78 +32,37 @@ describe('checkReferenceToRuleButNotType', () => {
         terminal ID: /[_a-zA-Z][\\w_]*/;
     `;
 
-    let validationData: ValidatorData;
+    let diagnostics: Diagnostic[];
 
     beforeAll(async () => {
-        validationData = await parseAndValidate(grammar);
+        diagnostics = await validate(input);
     });
 
     test('CrossReference validation', () => {
-        expectError(validationData, "Use the rule type 'DefType' instead of the typed rule name 'Definition' for cross references.", 'Definition');
+        expectError(diagnostics, "Use the rule type 'DefType' instead of the typed rule name 'Definition' for cross references.");
     });
 
     test('AtomType validation', () => {
-        expectError(validationData, "Use the rule type 'RefType' instead of the typed rule name 'Reference' for cross references.", 'Reference');
+        expectError(diagnostics, "Use the rule type 'RefType' instead of the typed rule name 'Reference' for cross references.");
     });
 
 });
 
 describe('Checked Named CrossRefs', () => {
-    const grammar = `
+    const input = `
     grammar g
     A: 'a' name=ID;
     B: 'b' name=[A];
     terminal ID: /[_a-zA-Z][\\w_]*/;
     `.trim();
 
-    let validationData: ValidatorData;
+    let diagnostics: Diagnostic[];
 
     beforeAll(async () => {
-        validationData = await parseAndValidate(grammar);
+        diagnostics = await validate(input);
     });
 
     test('Named crossReference warning', () => {
-        expectWarning(validationData, 'The "name" property is not recommended for cross-references.');
+        expectWarning(diagnostics, 'The "name" property is not recommended for cross-references.');
     });
 });
-
-interface ValidatorData {
-    document: LangiumDocument;
-    diagnostics: Diagnostic[];
-}
-
-async function parseAndValidate(grammar: string): Promise<ValidatorData> {
-    const doc = await parser(grammar);
-    const diagnostics = await services.grammar.validation.DocumentValidator.validateDocument(doc);
-    return {
-        document: doc,
-        diagnostics: diagnostics
-    };
-}
-
-function expecting(severity: DiagnosticSeverity) {
-    return function(data: ValidatorData, msg: string, at?: string): void {
-        const found: { msg?: string; at?: string } = {};
-        for (const diagnostic of data.diagnostics.filter(d => d.severity === severity)) {
-            if (diagnostic.message === msg) {
-                found.msg = diagnostic.message;
-                if (at) {
-                    const diagnosticMarkedText = data.document.textDocument.getText(diagnostic.range);
-                    found.at = diagnosticMarkedText;
-                    if (at === diagnosticMarkedText) {
-                        return;
-                    }
-                } else {
-                    return;
-                }
-            }
-        }
-        expect(found.msg).toBe(msg);
-        if (at) {
-            expect(found.at).toBe(at);
-        }
-    };
-}
-
-const expectError = expecting(DiagnosticSeverity.Error);
-const expectWarning = expecting(DiagnosticSeverity.Warning);

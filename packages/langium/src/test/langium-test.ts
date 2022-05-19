@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import {
-    CompletionItem, DocumentSymbol, MarkupContent, Range, TextDocumentIdentifier, TextDocumentPositionParams
+    CompletionItem, Diagnostic, DiagnosticSeverity, DocumentSymbol, MarkupContent, Range, TextDocumentIdentifier, TextDocumentPositionParams
 } from 'vscode-languageserver';
 import { URI } from 'vscode-uri';
 import { LangiumServices } from '../services';
@@ -187,4 +187,61 @@ function replaceIndices(base: ExpectedBase): { output: string, indices: number[]
     }
 
     return { output: input, indices, ranges: ranges.sort((a, b) => a[0] - b[0]) };
+}
+
+export function validationHelper<T extends AstNode = AstNode>(services: LangiumServices): (input: string) => Promise<Diagnostic[]> {
+    const parse = parseHelper(services);
+    return async (input) => {
+        const document = await parse(input);
+        return await services.validation.DocumentValidator.validateDocument(document);
+    };
+}
+
+export type Predicate<T> = (arg: T) => boolean;
+
+export interface DiagnosticFilters {
+    severity: DiagnosticSeverity;
+    message: RegExp | string;
+}
+
+export type DiagnosticFilterOptions = Partial<DiagnosticFilters>;
+
+function filterByOptions(diagnostics: Diagnostic[], filterOptions?: DiagnosticFilterOptions) {
+    const options = filterOptions || {};
+    const filters: Predicate<Diagnostic>[] = [];
+    if (options.severity) {
+        filters.push(d => d.severity === options.severity);
+    }
+    if (options.message) {
+        if (typeof options.message === 'string') {
+            filters.push(d => d.message === options.message);
+        } else if (options.message instanceof RegExp) {
+            const regexp = options.message as RegExp;
+            filters.push(d => regexp.test(d.message));
+        }
+    }
+    return diagnostics.filter(diag => filters.every(holdsFor => holdsFor(diag)));
+}
+
+export function expectNoIssues(diagnostics: Diagnostic[], filterOptions?: DiagnosticFilterOptions) {
+    const filtered = filterByOptions(diagnostics, filterOptions);
+    expect(filtered).toHaveLength(0);
+}
+
+export function expectIssue(diagnostics: Diagnostic[], filterOptions?: DiagnosticFilterOptions) {
+    const filtered = filterByOptions(diagnostics, filterOptions);
+    expect(filtered).not.toHaveLength(0);
+}
+
+export function expectError(diagnostics: Diagnostic[], message: string | RegExp) {
+    expectIssue(diagnostics, {
+        message,
+        severity: DiagnosticSeverity.Error
+    });
+}
+export function expectWarning(diagnostics: Diagnostic[], message: string | RegExp) {
+    expectIssue(diagnostics, {
+        message,
+        severity: DiagnosticSeverity.Warning
+    });
 }
