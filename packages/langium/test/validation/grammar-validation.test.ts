@@ -5,11 +5,11 @@
  ******************************************************************************/
 
 import { Diagnostic } from 'vscode-languageserver';
-import { createLangiumGrammarServices, Grammar } from '../../src';
+import { createLangiumGrammarServices } from '../../src';
 import { expectError, expectWarning, validationHelper } from '../../src/test';
 
 const services = createLangiumGrammarServices();
-const validate = validationHelper<Grammar>(services.grammar);
+const validate = validationHelper(services.grammar);
 
 describe('checkReferenceToRuleButNotType', () => {
 

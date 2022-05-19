@@ -189,7 +189,7 @@ function replaceIndices(base: ExpectedBase): { output: string, indices: number[]
     return { output: input, indices, ranges: ranges.sort((a, b) => a[0] - b[0]) };
 }
 
-export function validationHelper<T extends AstNode = AstNode>(services: LangiumServices): (input: string) => Promise<Diagnostic[]> {
+export function validationHelper(services: LangiumServices): (input: string) => Promise<Diagnostic[]> {
     const parse = parseHelper(services);
     return async (input) => {
         const document = await parse(input);
@@ -208,7 +208,7 @@ export type DiagnosticFilterOptions = Partial<DiagnosticFilters>;
 
 function filterByOptions(diagnostics: Diagnostic[], filterOptions?: DiagnosticFilterOptions) {
     const options = filterOptions || {};
-    const filters: Predicate<Diagnostic>[] = [];
+    const filters: Array<Predicate<Diagnostic>> = [];
     if (options.severity) {
         filters.push(d => d.severity === options.severity);
     }
@@ -223,23 +223,23 @@ function filterByOptions(diagnostics: Diagnostic[], filterOptions?: DiagnosticFi
     return diagnostics.filter(diag => filters.every(holdsFor => holdsFor(diag)));
 }
 
-export function expectNoIssues(diagnostics: Diagnostic[], filterOptions?: DiagnosticFilterOptions) {
+export function expectNoIssues(diagnostics: Diagnostic[], filterOptions?: DiagnosticFilterOptions): void {
     const filtered = filterByOptions(diagnostics, filterOptions);
     expect(filtered).toHaveLength(0);
 }
 
-export function expectIssue(diagnostics: Diagnostic[], filterOptions?: DiagnosticFilterOptions) {
+export function expectIssue(diagnostics: Diagnostic[], filterOptions?: DiagnosticFilterOptions): void {
     const filtered = filterByOptions(diagnostics, filterOptions);
     expect(filtered).not.toHaveLength(0);
 }
 
-export function expectError(diagnostics: Diagnostic[], message: string | RegExp) {
+export function expectError(diagnostics: Diagnostic[], message: string | RegExp): void {
     expectIssue(diagnostics, {
         message,
         severity: DiagnosticSeverity.Error
     });
 }
-export function expectWarning(diagnostics: Diagnostic[], message: string | RegExp) {
+export function expectWarning(diagnostics: Diagnostic[], message: string | RegExp): void {
     expectIssue(diagnostics, {
         message,
         severity: DiagnosticSeverity.Warning
