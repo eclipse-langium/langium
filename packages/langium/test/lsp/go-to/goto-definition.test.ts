@@ -8,6 +8,12 @@ import { createLangiumGrammarServices } from '../../../src';
 import { expectGoToDefinition } from '../../../src/test';
 import { expectFunction } from '../../fixture';
 
+/**
+ * Represents a grammar file
+ *
+ * `index` <|> represents the position of the curser where the GoTo Request is executed
+ * `rangeIndex` <|ABC|> represent the range that should be targeted by a GoTo Request
+ */
 const text = `
 grammar test hidden(WS, <|>COMMENT)
 
@@ -18,6 +24,13 @@ terminal <|COMMENT|>: /\\/\\/.*/;
 Model: value=<|>Ent<|>ity;
 
 <|Ent<|>ity|>: name=ID;
+
+interface A {
+    <|name|>:string
+}
+
+X returns A:
+    <|>na<|>me=ID;
 `.trim();
 
 const grammarServices = createLangiumGrammarServices().grammar;
@@ -54,6 +67,22 @@ describe('GoToResolver', () => {
             text,
             index: 3,
             rangeIndex: 1
+        });
+    });
+
+    test('Assignment name in parser rule X must find property name in interface A from start of location', async () => {
+        await gotoDefinition({
+            text,
+            index: 4,
+            rangeIndex: 2
+        });
+    });
+
+    test('Assignment name in parser rule X must find property name in interface A from within location', async () => {
+        await gotoDefinition({
+            text,
+            index: 5,
+            rangeIndex: 2
         });
     });
 });
