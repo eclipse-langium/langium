@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { createLangiumGrammarServices, findNameAssignment, getEntryRule, Grammar, isDataTypeRule, isParserRule, isTerminalRule, ParserRule, stream, terminalRegex, TerminalRule } from '../../src';
+import { createLangiumGrammarServices, findNameAssignment, getEntryRule, getTypeName, Grammar, InferredType, isDataTypeRule, isParserRule, isTerminalRule, ParserRule, stream, terminalRegex, TerminalRule } from '../../src';
 import { LangiumGrammarGrammar } from '../../src/grammar/generated/grammar';
 import { parseHelper } from '../../src/test';
 
@@ -97,6 +97,35 @@ describe('Find name assignment in parser rules', () => {
 
 test('Langium grammar entry rule', () => {
     expect(getEntryRule(LangiumGrammarGrammar())?.name).toBe('Grammar');
+});
+
+describe('Get Name from Type', () => {
+
+    const typeName = 'Parameter';
+
+    test('Should get name for AbstractType', () => {
+        //AbstractType case
+        expect(getTypeName({
+            name: typeName,
+            $type: 'Type'
+        } as InferredType)).toBe(typeName);
+    });
+
+    test('Should get name for InferredType', () => {
+        //InferredType case
+        expect(getTypeName({
+            name: typeName,
+            $type: 'InferredType'
+        } as InferredType)).toBe(typeName);
+    });
+
+    test('Should throw error for Unknown Type', () => {
+        // Unknown Type case
+        expect(() => getTypeName({
+            name: typeName,
+            $type: 'BadType'
+        } as InferredType)).toThrow('Cannot get name of Unknown Type');
+    });
 });
 
 describe('TerminalRule to regex', () => {
