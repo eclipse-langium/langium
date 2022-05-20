@@ -25,7 +25,7 @@ export function validateTypesConsistency(grammar: Grammar, accept: ValidationAcc
     }
 
     // Report missing assignments for required properties in offending nodes
-    function applyMissingAssignmentErrorToRuleNodes(nodes: readonly ParserRule[], typeName: string, accept: ValidationAcceptor): (propertyName: string, errorMessage: string) => void {
+    function applyMissingAssignmentErrorToRuleNodes(nodes: readonly ParserRule[], typeName: string): (propertyName: string, errorMessage: string) => void {
         return (propertyName: string, errorMessage: string) => {
             nodes.forEach(node => {
                 const assignments = extractAssignments(node.alternatives);
@@ -40,19 +40,31 @@ export function validateTypesConsistency(grammar: Grammar, accept: ValidationAcc
     }
 
     const validationResources = collectValidationResources(grammar);
+    const propertyMap = new MultiMap<string, Property>();
     for (const [typeName, typeInfo] of validationResources.entries()) {
+        if ('declared' in typeInfo && isInterface(typeInfo.declared)) {
+            propertyMap.addAll(typeName, collectAllSuperProperties(typeInfo.declared, 'declared', validationResources).values());
+        }
+    }
+    for (const [typeName, typeInfo] of validationResources.entries()) {
+
+        if ('declared' in typeInfo) {
+            checkConsistentlyDeclaredType(typeInfo, propertyMap, accept);
+        }
+
         if (!isInferredAndDeclared(typeInfo)) continue;
         const errorToRuleNodes = applyErrorToRuleNodes(typeInfo.nodes, typeName);
-        const errorToInvalidRuleNodes = applyMissingAssignmentErrorToRuleNodes(typeInfo.nodes, typeName, accept);
+        const errorToInvalidRuleNodes = applyMissingAssignmentErrorToRuleNodes(typeInfo.nodes, typeName);
         const errorToAssignment = applyErrorToAssignment(typeInfo.nodes, accept);
 
         if (isType(typeInfo.inferred) && isType(typeInfo.declared)) {
             checkAlternativesConsistency(typeInfo.inferred.union, typeInfo.declared.union, errorToRuleNodes);
         } else if (isInterface(typeInfo.inferred) && isInterface(typeInfo.declared)) {
-            checkPropertiesConsistency(typeInfo.inferred.properties, typeInfo.declared.properties, errorToRuleNodes, errorToAssignment, errorToInvalidRuleNodes);
-            checkSuperTypesConsistency([...typeInfo.inferred.superTypes], [...typeInfo.declared.superTypes], errorToRuleNodes);
+            const inferredProps = collectAllSuperProperties(typeInfo.inferred, 'inferred', validationResources);
+            const declaredProps = collectAllSuperProperties(typeInfo.declared, 'declared', validationResources);
+            checkPropertiesConsistency(inferredProps, declaredProps, errorToRuleNodes, errorToAssignment, errorToInvalidRuleNodes);
         } else {
-            const specificError = `Inferred and declared versions of type ${typeName} have to be types or interfaces both.`;
+            const specificError = `Inferred and declared versions of type ${typeName} both have to be interfaces or unions.`;
             typeInfo.nodes.forEach(node => accept('error', specificError,
                 { node: node?.inferredType ? node.inferredType : node, property: 'name' }
             ));
@@ -61,6 +73,109 @@ export function validateTypesConsistency(grammar: Grammar, accept: ValidationAcc
             );
         }
     }
+}
+
+function checkConsistentlyDeclaredType(declaredInfo: DeclaredInfo, properties: MultiMap<string, Property>, accept: ValidationAcceptor): void {
+    const declaredType = declaredInfo.declared;
+    if (!isInterface(declaredType)) {
+        return;
+    }
+    const allSuperTypes = declaredType.interfaceSuperTypes;
+    for (let i = 0; i < allSuperTypes.length; i++) {
+        for (let j = i + 1; j < allSuperTypes.length; j++) {
+            const outerType = allSuperTypes[i];
+            const innerType = allSuperTypes[j];
+            const outerProps = properties.get(outerType);
+            const innerProps = properties.get(innerType);
+            const nonIdentical = getNonIdenticalProps(outerProps, innerProps);
+            if (nonIdentical.length > 0) {
+                accept('error', `Cannot simultaneously inherit from '${outerType}' and '${innerType}'. Their ${nonIdentical.map(e => "'" + e + "'").join(', ')} properties are not identical.`, {
+                    node: declaredInfo.node,
+                    property: 'name'
+                });
+            }
+        }
+    }
+    const allSuperProps = new Set<string>();
+    for (const superType of allSuperTypes) {
+        const props = properties.get(superType);
+        for (const prop of props) {
+            allSuperProps.add(prop.name);
+        }
+    }
+    for (const ownProp of declaredType.properties) {
+        if (allSuperProps.has(ownProp.name)) {
+            const interfaceNode = declaredInfo.node as Interface;
+            const propNode = interfaceNode.attributes.find(e => e.name === ownProp.name);
+            if (propNode) {
+                accept('error', `Cannot redeclare property '${ownProp.name}'. It is already inherited from another interface.`, {
+                    node: propNode,
+                    property: 'name'
+                });
+            }
+        }
+    }
+}
+
+function getNonIdenticalProps(a: readonly Property[], b: readonly Property[]): string[] {
+    const nonIdentical: string[] = [];
+    for (const outerProp of a) {
+        const innerProp = b.find(e => e.name === outerProp.name);
+        if (innerProp && !arePropTypesIdentical(outerProp, innerProp)) {
+            nonIdentical.push(outerProp.name);
+        }
+    }
+    return nonIdentical;
+}
+
+function arePropTypesIdentical(a: Property, b: Property): boolean {
+    if (a.optional !== b.optional) {
+        return false;
+    }
+    if (a.typeAlternatives.length !== b.typeAlternatives.length) {
+        return false;
+    }
+    for (const firstTypes of a.typeAlternatives) {
+        let found = false;
+        for (const otherTypes of b.typeAlternatives) {
+            if (otherTypes.array === firstTypes.array
+                && otherTypes.reference === firstTypes.reference
+                && otherTypes.types.length === firstTypes.types.length
+                && otherTypes.types.every(e => firstTypes.types.includes(e))) {
+                found = true;
+            }
+        }
+        if (!found) {
+            return false;
+        }
+    }
+    return true;
+}
+
+function collectAllSuperProperties(
+    type: InterfaceType,
+    mode: 'inferred' | 'declared',
+    resources: ValidationResources,
+    map: MultiMap<string, Property> = new MultiMap(),
+    visitedTypes: Set<string> = new Set()
+): MultiMap<string, Property> {
+    if (visitedTypes.has(type.name)) {
+        return map;
+    }
+    visitedTypes.add(type.name);
+    const typeProps = type.properties;
+    for (const property of typeProps) {
+        map.add(property.name, property);
+    }
+    for (const superType of type.interfaceSuperTypes) {
+        const typeInfo = resources.get(superType) as InferredInfo & DeclaredInfo;
+        const type = typeInfo?.[mode];
+        if (isInterface(type)) {
+            collectAllSuperProperties(type, mode, resources, map, visitedTypes);
+        }
+    }
+
+    return map;
 }
 
 export function applyErrorToAssignment(nodes: readonly ParserRule[], accept: ValidationAcceptor): (propertyName: string, errorMessage: string) => void {
@@ -76,23 +191,23 @@ export function applyErrorToAssignment(nodes: readonly ParserRule[], accept: Val
     };
 }
 
-type TypeOrInterface = UnionType | InterfaceType;
+type TypeOption = UnionType | InterfaceType;
 
-function isType(type: TypeOrInterface): type is UnionType {
+function isType(type: TypeOption): type is UnionType {
     return type && 'union' in type;
 }
 
-function isInterface(type: TypeOrInterface): type is InterfaceType {
+function isInterface(type: TypeOption): type is InterfaceType {
     return type && 'properties' in type;
 }
 
-type InferredInfo = {
-    inferred: TypeOrInterface;
+interface InferredInfo {
+    inferred: TypeOption;
     nodes: readonly ParserRule[];
 }
 
-type DeclaredInfo = {
-    declared: TypeOrInterface;
+interface DeclaredInfo {
+    declared: TypeOption;
     node: Type | Interface;
 }
 
@@ -135,11 +250,11 @@ function getTypeNameToRules(astResources: AstResources): MultiMap<string, Parser
         );
 }
 
-function mergeTypesAndInterfaces(astTypes: AstTypes): TypeOrInterface[] {
-    return (astTypes.interfaces as TypeOrInterface[]).concat(astTypes.unions);
+function mergeTypesAndInterfaces(astTypes: AstTypes): TypeOption[] {
+    return (astTypes.interfaces as TypeOption[]).concat(astTypes.unions);
 }
 
-type ErrorInfo = {
+interface ErrorInfo {
     errorMessage: string;
     typeString: string;
 }
@@ -180,8 +295,13 @@ function checkAlternativesConsistency(inferred: PropertyType[], declared: Proper
     }
 }
 
-function checkPropertiesConsistency(inferred: Property[], declared: Property[],
-    errorToRuleNodes: (error: string) => void, errorToAssignment: (propertyName: string, error: string) => void, errorToInvalidRuleNodes: (propertyName: string, error: string) => void): void {
+function checkPropertiesConsistency(
+    inferred: MultiMap<string, Property>,
+    declared: MultiMap<string, Property>,
+    errorToRuleNodes: (error: string) => void,
+    errorToAssignment: (propertyName: string, error: string) => void,
+    errorToInvalidRuleNodes: (propertyName: string, error: string) => void
+): void {
 
     const baseError = (propertyName: string, foundType: string, expectedType: string) =>
         `The assigned type '${foundType}' is not compatible with the declared property '${propertyName}' of type '${expectedType}'.`;
@@ -191,8 +311,11 @@ function checkPropertiesConsistency(inferred: Property[], declared: Property[],
             expected.typeAlternatives.length === 1 && expected.typeAlternatives[0].array);
 
     // detects extra properties & check matched ones on consistency by 'optional'
-    for (const foundProperty of inferred) {
-        const expectedProperty = declared.find(e => foundProperty.name === e.name);
+    for (const propName of inferred.keys()) {
+        const foundProperties = inferred.get(propName);
+        const foundProperty = foundProperties[0];
+        const expectedProperties = declared.get(propName);
+        const expectedProperty = expectedProperties[0];
         if (expectedProperty) {
             const foundStringType = propertyTypeArrayToString(foundProperty.typeAlternatives);
             const expectedStringType = propertyTypeArrayToString(expectedProperty.typeAlternatives);
@@ -217,24 +340,12 @@ function checkPropertiesConsistency(inferred: Property[], declared: Property[],
     }
 
     // detects lack of properties
-    for (const expectedProperty of declared) {
-        const foundProperty = inferred.find(e => expectedProperty.name === e.name);
-        if (!foundProperty && !expectedProperty.optional) {
-            errorToRuleNodes(`A property '${expectedProperty.name}' is expected`);
+    for (const [property, expectedProperties] of declared.entriesGroupedByKey()) {
+        const foundProperty = inferred.get(property);
+        if (foundProperty.length === 0 && !expectedProperties.some(e => e.optional)) {
+            errorToRuleNodes(`A property '${property}' is expected`);
         }
     }
-}
-
-function checkSuperTypesConsistency(inferred: string[], declared: string[], errorToRuleNodes: (error: string) => void): void {
-    const specificError = (superType: string, isExtra: boolean) => `A super type '${superType}' is ${isExtra ? 'not ' : ''}expected`;
-
-    inferred
-        .filter(e => !declared.includes(e))
-        .forEach(extraSuperType => errorToRuleNodes(specificError(extraSuperType, true)));
-
-    declared
-        .filter(e => !inferred.includes(e))
-        .forEach(lackSuperType => errorToRuleNodes(specificError(lackSuperType, false)));
 }
 
 export type InterfaceInfo = {
