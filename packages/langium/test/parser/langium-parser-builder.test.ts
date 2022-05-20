@@ -306,14 +306,14 @@ describe('Parser calls value converter', () => {
     QFN returns string: ID ('.' QFN)?;
     terminal ID: /\\^?[_a-zA-Z][\\w_]*/;
 
-    fragment BigVal:
-        value=BIGINT 'n';
-    terminal BIGINT returns bigint: /[0-9]+(?=n)/;
+    fragment BigVal: value=BINT 'n';
+    terminal BINT returns bigint: INT /(?=n)/;
 
     terminal DATE returns Date: /[0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2})?/;
 
-    Number returns number: NUM;
-    terminal NUM returns number: /-?[0-9]+(\\.[0-9]+)?/;
+    Number returns number:
+        INT ('.' INT)?;
+    terminal INT returns number: /[0-9]+/;
 
     hidden terminal WS: /\\s+/;
     hidden terminal ML_COMMENT: /\\/\\*[\\s\\S]*?\\*\\//;
