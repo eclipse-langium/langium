@@ -45,7 +45,7 @@ export class DefaultGoToResolverProvider implements GoToResolver {
 
     goToDefinition(document: LangiumDocument, params: DefinitionParams): MaybePromise<LocationLink[] | undefined> {
         const rootNode = document.parseResult.value;
-        const targetCstNodes: Array<{ source: CstNode, target: CstNode, targetDocument: LangiumDocument }> = [];
+        const targetCstNodes: GoToLink[] = [];
         if (rootNode.$cstNode) {
             const cst = rootNode.$cstNode;
             const sourceCstNode = findLeafNodeAtOffset(cst, document.textDocument.offsetAt(params.position));

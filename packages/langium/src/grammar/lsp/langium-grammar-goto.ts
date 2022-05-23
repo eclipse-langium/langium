@@ -4,38 +4,45 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { isAssignment, isInterface, isParserRule } from '../generated/ast';
+import { isAssignment, isInterface, isParserRule, ParserRule, Interface, Assignment } from '../generated/ast';
 import { DefaultGoToResolverProvider, GoToLink } from '../../lsp';
 import { CstNode } from '../../syntax-tree';
 import { getContainerOfType, getDocument } from '../../utils/ast-util';
-import { findNodeForFeature } from '../..';
+import { findNodeForFeature } from '../grammar-util';
 
 export class LangiumGrammarGoToResolver extends DefaultGoToResolverProvider {
 
     protected findLink(source: CstNode): GoToLink | undefined {
-        if (isAssignment(source.element)){
+        if (isAssignment(source.element)) {
             let goToLink: GoToLink | undefined;
             const parserRule = getContainerOfType(source.element, isParserRule);
-            // check that the parser rule has a return type
-            if (parserRule && parserRule.returnType) {
-                const returnType = parserRule.returnType;
-                const returnTypeCstNode = returnType.ref?.$cstNode;
-                if (returnTypeCstNode && isInterface(returnTypeCstNode.element)){
-                    const sourcePropertyName = source.element.feature;
-                    returnTypeCstNode.element.attributes.forEach(attribute => {
-                        // find attribute corresponding to the property
-                        if (attribute.name === sourcePropertyName) {
-                            const target = findNodeForFeature(attribute.$cstNode, 'name');
-                            if (target) {
-                                const targetDocument = getDocument(returnTypeCstNode.element);
-                                goToLink = { source, target, targetDocument };
-                            }
-                        }
-                    });
-                }
+            if(parserRule && parserRule.returnType) {
+                goToLink = this.findLinkForDeclaredType(parserRule, source);
             }
             return goToLink;
         }
         return super.findLink(source);
+    }
+
+    findLinkForDeclaredType(parserRule: ParserRule, source: CstNode): GoToLink | undefined {
+        const returnTypeCstNode = parserRule.returnType!.ref?.$cstNode;
+        if (returnTypeCstNode && isInterface(returnTypeCstNode.element)){
+            return this.getGoToLink(returnTypeCstNode.element, source);
+        }
+        return undefined;
+    }
+
+    private getGoToLink(returnTypeCstNodeElement: Interface, source: CstNode) {
+        let goToLink: GoToLink | undefined;
+        returnTypeCstNodeElement.attributes.forEach(attribute => {
+            if (attribute.name === (source.element as Assignment).feature) {
+                const target = findNodeForFeature(attribute.$cstNode, 'name');
+                if (target) {
+                    const targetDocument = getDocument(returnTypeCstNodeElement);
+                    goToLink = { source, target, targetDocument };
+                }
+            }
+        });
+        return goToLink;
     }
 }
