@@ -87,7 +87,7 @@ describe('Find name assignment in parser rules', () => {
         expect(nameAssignment).toBe(undefined);
     });
 
-    test('Should be able to infer data type rule for cross ref', () => {
+    test('Should be able to find a named assignment by InferredType', () => {
         const a = rules[3];
         const nameAssigment = findNameAssignment(a);
         expect(nameAssigment?.feature).toBe('name');

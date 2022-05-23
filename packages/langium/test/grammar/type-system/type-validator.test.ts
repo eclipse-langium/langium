@@ -80,9 +80,9 @@ describe('validate params in types', () => {
 
 });
 
-describe('Inferred Types Validation', () => {
+describe('validate inferred types', () => {
 
-    test('Should validate InferredType', async () => {
+    test('inferred type in cross-reference should not produce an error', async () => {
         const prog = `
         A infers B: 'a' name=ID (otherA=[B])?;
         hidden terminal WS: /\\s+/;

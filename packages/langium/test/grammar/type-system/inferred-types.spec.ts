@@ -564,7 +564,7 @@ describeTypes('inferred types with common names and actions', `
 
 });
 
-describeTypes('inferred types with common names and actions', `
+describeTypes('inferred types that are used by the grammar', `
     A infers B: 'a' name=ID (otherA=[B])?;
     hidden terminal WS: /\\s+/;
     terminal ID: /[a-zA-Z_][a-zA-Z0-9_]*/;
