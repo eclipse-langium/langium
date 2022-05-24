@@ -67,7 +67,11 @@ export function getCrossReferenceTerminal(crossRef: ast.CrossReference): ast.Abs
     return undefined;
 }
 
-export function findNameAssignment(type: ast.AbstractType): ast.Assignment | undefined {
+export function findNameAssignment(type: ast.AbstractType | ast.InferredType): ast.Assignment | undefined {
+    if (ast.isInferredType(type)) {
+        // inferred type is unexpected, extract AbstractType first
+        type = type.$container;
+    }
     return findNameAssignmentInternal(type, new Map());
 }
 
@@ -296,7 +300,7 @@ function withCardinality(regex: string, cardinality?: string, wrap = false): str
     return regex;
 }
 
-export function getTypeName(type: ast.AbstractType): string {
+export function getTypeName(type: ast.AbstractType | ast.InferredType): string {
     if (ast.isParserRule(type)) {
         return getExplicitRuleType(type) ?? type.name;
     } else if (ast.isInterface(type) || ast.isType(type) || ast.isReturnType(type)) {
@@ -306,8 +310,10 @@ export function getTypeName(type: ast.AbstractType): string {
         if (actionType) {
             return actionType;
         }
+    } else if (ast.isInferredType(type)) {
+        return type.name;
     }
-    throw new TypeResolutionError('Unknown type', type.$cstNode);
+    throw new TypeResolutionError('Cannot get name of Unknown Type', type.$cstNode);
 }
 
 export function getExplicitRuleType(rule: ast.ParserRule): string | undefined {

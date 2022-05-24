@@ -79,3 +79,19 @@ describe('validate params in types', () => {
     });
 
 });
+
+describe('validate inferred types', () => {
+
+    test('inferred type in cross-reference should not produce an error', async () => {
+        const prog = `
+        A infers B: 'a' name=ID (otherA=[B])?;
+        hidden terminal WS: /\\s+/;
+        terminal ID: /[a-zA-Z_][a-zA-Z0-9_]*/;
+        `.trim();
+
+        const document = await parseDocument(grammarServices, prog);
+        const diagnostics: Diagnostic[] = await grammarServices.validation.DocumentValidator.validateDocument(document);
+        expect(diagnostics.filter(d => d.severity === DiagnosticSeverity.Error)).toHaveLength(0);
+
+    });
+});
