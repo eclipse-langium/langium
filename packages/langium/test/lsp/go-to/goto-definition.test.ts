@@ -11,7 +11,7 @@ import { expectFunction } from '../../fixture';
 /**
  * Represents a grammar file
  *
- * `index` <|> represents the position of the curser where the GoTo Request is executed
+ * `index` <|> represents the position of the cursor where the GoTo Request is executed
  * `rangeIndex` <|ABC|> represent the range that should be targeted by a GoTo Request
  */
 const text = `
