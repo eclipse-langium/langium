@@ -86,6 +86,39 @@ describe('Checked Named CrossRefs', () => {
     });
 });
 
+describe('Check grammar with primitives', () => {
+    const grammar = `
+    grammar PrimGrammar
+    entry Expr:
+        (String | Bool | Num | BigInt | DateObj)*;
+    String:
+        'String' val=STR;
+    Bool:
+        'Bool' val?='true';
+    Num:
+        'Num' val=NUM;
+    BigInt:
+        'BigInt' val=BIG 'n';
+    DateObj:
+        'Date' val=DATE;
+    terminal STR: /[_a-zA-Z][\\w_]*/;
+    terminal BIG returns bigint: /[0-9]+(?=n)/;
+    terminal NUM returns number: /[0-9]+(\\.[0-9])?/;
+    terminal DATE returns Date: /[0-9]{4}-{0-9}2-{0-9}2/+;
+    `.trim();
+
+    let validationData: ValidatorData;
+
+    // 1. build a parser from this grammar, verify it works
+    beforeAll(async () => {
+        validationData = await parseAndValidate(grammar);
+    });
+
+    test('No validation errors in grammar', () => {
+        expect(validationData.diagnostics.filter(d => d.severity === DiagnosticSeverity.Error)).toHaveLength(0);
+    });
+});
+
 interface ValidatorData {
     document: LangiumDocument;
     diagnostics: Diagnostic[];
