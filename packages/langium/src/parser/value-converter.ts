@@ -45,8 +45,6 @@ export class DefaultValueConverter implements ValueConverter {
             case 'STRING': return convertString(input);
             case 'ID': return convertID(input);
             case 'REGEXLITERAL': return convertString(input);
-            case 'BIGINT': return convertBigint(input);
-            case 'DATE': return convertDate(input);
         }
         switch (getRuleType(rule)?.toLowerCase()) {
             case 'number': return convertNumber(input);
