@@ -9,7 +9,7 @@ import { URI } from 'vscode-uri';
 import { NameProvider } from '../references/naming';
 import { References } from '../references/references';
 import { LangiumServices } from '../services';
-import { AstNode, CstNode } from '../syntax-tree';
+import { AstNode, CstNode, LeafCstNode } from '../syntax-tree';
 import { getDocument, isReference } from '../utils/ast-util';
 import { findLeafNodeAtOffset, flattenCst } from '../utils/cst-util';
 import { MaybePromise } from '../utils/promise-util';
@@ -42,11 +42,22 @@ export class DefaultReferenceFinder implements ReferenceFinder {
         if (!rootNode) {
             return [];
         }
-        const refs: Array<{ docUri: URI, range: Range }> = [];
+        // const refs: Array<{ docUri: URI, range: Range }> = [];
         const selectedNode = findLeafNodeAtOffset(rootNode, document.textDocument.offsetAt(params.position));
         if (!selectedNode) {
             return [];
         }
+
+        const refs: Array<{ docUri: URI, range: Range }> = this.getReferences(selectedNode, params, document);
+
+        return refs.map(ref => Location.create(
+            ref.docUri.toString(),
+            ref.range
+        ));
+    }
+
+    protected getReferences(selectedNode: LeafCstNode, params: ReferenceParams, document: LangiumDocument<AstNode>): Array<{ docUri: URI, range: Range }> {
+        const refs: Array<{ docUri: URI, range: Range }> = [];
         const targetAstNode = this.references.findDeclaration(selectedNode)?.element;
         if (targetAstNode) {
             if (params.context.includeDeclaration) {
@@ -64,10 +75,7 @@ export class DefaultReferenceFinder implements ReferenceFinder {
                 }
             });
         }
-        return refs.map(ref => Location.create(
-            ref.docUri.toString(),
-            ref.range
-        ));
+        return refs;
     }
 
     protected findNameNode(node: AstNode, name: string): CstNode | undefined {
