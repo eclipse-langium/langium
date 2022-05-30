@@ -41,14 +41,14 @@ describe('checkReferenceToRuleButNotType', () => {
     test('CrossReference validation', () => {
         const rule = validationResult.document.parseResult.value.rules[3];
         expectError(validationResult, "Use the rule type 'DefType' instead of the typed rule name 'Definition' for cross references.", {
-            atNode: { node: rule }
+            node: rule
         });
     });
 
     test('AtomType validation', () => {
         const type = validationResult.document.parseResult.value.types[0];
         expectError(validationResult, "Use the rule type 'RefType' instead of the typed rule name 'Reference' for cross references.", {
-            atNode: { node: type }
+            node: type
         });
     });
 
@@ -70,7 +70,7 @@ describe('Check Rule Fragment Validation', () => {
 
     test('Rule Fragment Validation', () => {
         const fragmentType = validationResult.document.parseResult.value.types[0];
-        expectError(validationResult, 'Cannot use rule fragments in types.', { atNode: { node: fragmentType } });
+        expectError(validationResult, 'Cannot use rule fragments in types.', { node: fragmentType });
     });
 });
 
@@ -91,7 +91,7 @@ describe('Checked Named CrossRefs', () => {
     test('Named crossReference warning', () => {
         const rule = validationResult.document.parseResult.value.rules[1];
         expectWarning(validationResult, 'The "name" property is not recommended for cross-references.', {
-            atNode: { node: rule }
+            node: rule
         });
     });
 });
