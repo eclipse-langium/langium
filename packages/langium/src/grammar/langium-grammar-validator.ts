@@ -69,7 +69,8 @@ export class LangiumGrammarValidationRegistry extends ValidationRegistry {
                 validator.checkCrossRefType
             ],
             AtomType: [
-                validator.checkAtomTypeRefType
+                validator.checkAtomTypeRefType,
+                validator.checkFragmentsInTypes
             ]
         };
         this.register(checks, validator);
@@ -558,7 +559,7 @@ export class LangiumGrammarValidator {
 
     checkTerminalRuleReturnType(rule: ast.TerminalRule, accept: ValidationAcceptor): void {
         if (rule.type?.name && !isPrimitiveType(rule.type.name)) {
-            accept('error', "Terminal rules can only return primitive types like 'string', 'boolean', 'number' or 'date'.", { node: rule.type, property: 'name' });
+            accept('error', "Terminal rules can only return primitive types like 'string', 'boolean', 'number', 'Date' or 'bigint'.", { node: rule.type, property: 'name' });
         }
     }
 
@@ -603,6 +604,12 @@ export class LangiumGrammarValidator {
         }
     }
 
+    checkFragmentsInTypes(atomType: ast.AtomType, accept: ValidationAcceptor): void {
+        if (ast.isParserRule(atomType.refType?.ref) && atomType.refType?.ref.fragment) {
+            accept('error', 'Cannot use rule fragments in types.', { node: atomType, property: 'refType'});
+        }
+    }
+
     protected checkReferenceToRuleButNotType(type: Reference<ast.AbstractType>): string | undefined {
         if (type && ast.isParserRule(type.ref) && !isDataTypeRule(type.ref) && (type.ref.returnType || type.ref.inferredType)) {
             const typeName = getTypeName(type.ref);
@@ -620,7 +627,7 @@ export class LangiumGrammarValidator {
     }
 }
 
-const primitiveTypes = ['string', 'number', 'boolean', 'Date'];
+const primitiveTypes = ['string', 'number', 'boolean', 'Date', 'bigint'];
 
 function isPrimitiveType(type: string): boolean {
     return primitiveTypes.includes(type);

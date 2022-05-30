@@ -564,6 +564,20 @@ describeTypes('inferred types with common names and actions', `
 
 });
 
+describeTypes('inferred types that are used by the grammar', `
+    A infers B: 'a' name=ID (otherA=[B])?;
+    hidden terminal WS: /\\s+/;
+    terminal ID: /[a-zA-Z_][a-zA-Z0-9_]*/;
+    `, types => {
+
+    test('B is defined and A is not', () => {
+        const a = getType(types, 'A') as InterfaceType;
+        expect(a).toBeUndefined();
+        const b = getType(types, 'B') as InterfaceType;
+        expect(b).toBeDefined();
+    });
+});
+
 async function getTypes(grammar: string): Promise<AstTypes> {
     const services = createLangiumGrammarServices().grammar;
     const helper = parseHelper<Grammar>(services);

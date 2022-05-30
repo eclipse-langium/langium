@@ -6,7 +6,7 @@
 
 import { createLangiumGrammarServices } from '../../src';
 import { Grammar } from '../../src/grammar/generated/ast';
-import { expectError, expectWarning, validationHelper, ValidationResult } from '../../src/test';
+import { expectError, expectNoIssues, expectWarning, validationHelper, ValidationResult } from '../../src/test';
 
 const services = createLangiumGrammarServices();
 const validate = validationHelper<Grammar>(services.grammar);
@@ -30,7 +30,7 @@ describe('checkReferenceToRuleButNotType', () => {
         Reference infers RefType:
             ref=[Definition];
         terminal ID: /[_a-zA-Z][\\w_]*/;
-    `;
+    `.trim();
 
     let validationResult: ValidationResult<Grammar>;
 
@@ -54,6 +54,26 @@ describe('checkReferenceToRuleButNotType', () => {
 
 });
 
+describe('Check Rule Fragment Validation', () => {
+    const grammar = `
+    grammar g
+    type Type = Fragment;
+    fragment Fragment: name=ID;
+    terminal ID: /[_a-zA-Z][\\w_]*/;
+    `.trim();
+
+    let validationResult: ValidationResult<Grammar>;
+
+    beforeAll(async () => {
+        validationResult = await validate(grammar);
+    });
+
+    test('Rule Fragment Validation', () => {
+        const fragmentType = validationResult.document.parseResult.value.types[0];
+        expectError(validationResult, 'Cannot use rule fragments in types.', { atNode: { node: fragmentType } });
+    });
+});
+
 describe('Checked Named CrossRefs', () => {
     const input = `
     grammar g
@@ -73,5 +93,38 @@ describe('Checked Named CrossRefs', () => {
         expectWarning(validationResult, 'The "name" property is not recommended for cross-references.', {
             atNode: { node: rule }
         });
+    });
+});
+
+describe('Check grammar with primitives', () => {
+    const grammar = `
+    grammar PrimGrammar
+    entry Expr:
+        (String | Bool | Num | BigInt | DateObj)*;
+    String:
+        'String' val=STR;
+    Bool:
+        'Bool' val?='true';
+    Num:
+        'Num' val=NUM;
+    BigInt:
+        'BigInt' val=BIG 'n';
+    DateObj:
+        'Date' val=DATE;
+    terminal STR: /[_a-zA-Z][\\w_]*/;
+    terminal BIG returns bigint: /[0-9]+(?=n)/;
+    terminal NUM returns number: /[0-9]+(\\.[0-9])?/;
+    terminal DATE returns Date: /[0-9]{4}-{0-9}2-{0-9}2/+;
+    `.trim();
+
+    let validationResult: ValidationResult<Grammar>;
+
+    // 1. build a parser from this grammar, verify it works
+    beforeAll(async () => {
+        validationResult = await validate(grammar);
+    });
+
+    test('No validation errors in grammar', () => {
+        expectNoIssues(validationResult);
     });
 });

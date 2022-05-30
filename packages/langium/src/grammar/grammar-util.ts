@@ -4,7 +4,6 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { TextDocument } from 'vscode-languageserver-textdocument';
 import { URI, Utils } from 'vscode-uri';
 import { TypeResolutionError } from '..';
 import * as ast from '../grammar/generated/ast';
@@ -17,7 +16,7 @@ import { streamCst } from '../utils/cst-util';
 import { escapeRegExp } from '../utils/regex-util';
 import { AstNodeDescriptionProvider } from '../workspace/ast-descriptions';
 import { AstNodeLocator } from '../workspace/ast-node-locator';
-import { documentFromText, LangiumDocument, LangiumDocuments, PrecomputedScopes } from '../workspace/documents';
+import { LangiumDocument, LangiumDocuments, PrecomputedScopes } from '../workspace/documents';
 import { createLangiumGrammarServices } from './langium-grammar-module';
 
 export type Cardinality = '?' | '*' | '+' | undefined;
@@ -68,7 +67,11 @@ export function getCrossReferenceTerminal(crossRef: ast.CrossReference): ast.Abs
     return undefined;
 }
 
-export function findNameAssignment(type: ast.AbstractType): ast.Assignment | undefined {
+export function findNameAssignment(type: ast.AbstractType | ast.InferredType): ast.Assignment | undefined {
+    if (ast.isInferredType(type)) {
+        // inferred type is unexpected, extract AbstractType first
+        type = type.$container;
+    }
     return findNameAssignmentInternal(type, new Map());
 }
 
@@ -297,7 +300,7 @@ function withCardinality(regex: string, cardinality?: string, wrap = false): str
     return regex;
 }
 
-export function getTypeName(type: ast.AbstractType): string {
+export function getTypeName(type: ast.AbstractType | ast.InferredType): string {
     if (ast.isParserRule(type)) {
         return getExplicitRuleType(type) ?? type.name;
     } else if (ast.isInterface(type) || ast.isType(type) || ast.isReturnType(type)) {
@@ -307,8 +310,10 @@ export function getTypeName(type: ast.AbstractType): string {
         if (actionType) {
             return actionType;
         }
+    } else if (ast.isInferredType(type)) {
+        return type.name;
     }
-    throw new TypeResolutionError('Unknown type', type.$cstNode);
+    throw new TypeResolutionError('Cannot get name of Unknown Type', type.$cstNode);
 }
 
 export function getExplicitRuleType(rule: ast.ParserRule): string | undefined {
@@ -411,12 +416,7 @@ export function loadGrammar(json: string): ast.Grammar {
         throw new Error('Could not load grammar from specified json input.');
     }
     const grammar = astNode as Mutable<ast.Grammar>;
-    const textDocument = TextDocument.create('memory://grammar.langium', 'langium', 0, '');
-    const document = documentFromText(textDocument, {
-        lexerErrors: [],
-        parserErrors: [],
-        value: grammar
-    });
+    const document = services.shared.workspace.LangiumDocumentFactory.fromModel(grammar, URI.parse('memory://grammar.langium'));
     grammar.$document = document;
     document.precomputedScopes = computeGrammarScope(services, grammar);
     return grammar;

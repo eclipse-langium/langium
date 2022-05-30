@@ -49,6 +49,8 @@ export class DefaultValueConverter implements ValueConverter {
         switch (getRuleType(rule)?.toLowerCase()) {
             case 'number': return convertNumber(input);
             case 'boolean': return convertBoolean(input);
+            case 'bigint': return convertBigint(input);
+            case 'date': return convertDate(input);
             default: return input;
         }
     }
@@ -68,6 +70,14 @@ export function convertID(input: string): string {
 
 export function convertInt(input: string): number {
     return parseInt(input);
+}
+
+export function convertBigint(input: string): bigint {
+    return BigInt(input);
+}
+
+export function convertDate(input: string): Date {
+    return new Date(input);
 }
 
 export function convertNumber(input: string): number {
