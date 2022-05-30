@@ -24,16 +24,32 @@ export function validateTypesConsistency(grammar: Grammar, accept: ValidationAcc
         };
     }
 
+    // Report missing assignments for required properties in offending nodes
+    function applyMissingAssignmentErrorToRuleNodes(nodes: readonly ParserRule[], typeName: string, accept: ValidationAcceptor): (propertyName: string, errorMessage: string) => void {
+        return (propertyName: string, errorMessage: string) => {
+            nodes.forEach(node => {
+                const assignments = extractAssignments(node.alternatives);
+                if (assignments.find(a => a.feature === propertyName) === undefined) {
+                    accept(
+                        'error',
+                        errorMessage + ` in rule '${node.name}', but is required in type '${typeName}'.`,
+                        {node, property: 'parameters'});
+                }
+            });
+        };
+    }
+
     const validationResources = collectValidationResources(grammar);
     for (const [typeName, typeInfo] of validationResources.entries()) {
         if (!isInferredAndDeclared(typeInfo)) continue;
         const errorToRuleNodes = applyErrorToRuleNodes(typeInfo.nodes, typeName);
+        const errorToInvalidRuleNodes = applyMissingAssignmentErrorToRuleNodes(typeInfo.nodes, typeName, accept);
         const errorToAssignment = applyErrorToAssignment(typeInfo.nodes, accept);
 
         if (isType(typeInfo.inferred) && isType(typeInfo.declared)) {
             checkAlternativesConsistency(typeInfo.inferred.union, typeInfo.declared.union, errorToRuleNodes);
         } else if (isInterface(typeInfo.inferred) && isInterface(typeInfo.declared)) {
-            checkPropertiesConsistency(typeInfo.inferred.properties, typeInfo.declared.properties, errorToRuleNodes, errorToAssignment);
+            checkPropertiesConsistency(typeInfo.inferred.properties, typeInfo.declared.properties, errorToRuleNodes, errorToAssignment, errorToInvalidRuleNodes);
             checkSuperTypesConsistency([...typeInfo.inferred.superTypes], [...typeInfo.declared.superTypes], errorToRuleNodes);
         } else {
             const specificError = `Inferred and declared versions of type ${typeName} have to be types or interfaces both.`;
@@ -165,7 +181,7 @@ function checkAlternativesConsistency(inferred: PropertyType[], declared: Proper
 }
 
 function checkPropertiesConsistency(inferred: Property[], declared: Property[],
-    errorToRuleNodes: (error: string) => void, errorToAssignment: (propertyName: string, error: string) => void): void {
+    errorToRuleNodes: (error: string) => void, errorToAssignment: (propertyName: string, error: string) => void, errorToInvalidRuleNodes: (propertyName: string, error: string) => void): void {
 
     const baseError = (propertyName: string, foundType: string, expectedType: string) =>
         `The assigned type '${foundType}' is not compatible with the declared property '${propertyName}' of type '${expectedType}'.`;
@@ -174,7 +190,7 @@ function checkPropertiesConsistency(inferred: Property[], declared: Property[],
         !(found.typeAlternatives.length === 1 && found.typeAlternatives[0].array ||
             expected.typeAlternatives.length === 1 && expected.typeAlternatives[0].array);
 
-    // detects extra properties & check matched ones on consistency by 'opional'
+    // detects extra properties & check matched ones on consistency by 'optional'
     for (const foundProperty of inferred) {
         const expectedProperty = declared.find(e => foundProperty.name === e.name);
         if (expectedProperty) {
@@ -193,7 +209,7 @@ function checkPropertiesConsistency(inferred: Property[], declared: Property[],
             }
 
             if (checkOptional(foundProperty, expectedProperty) && !expectedProperty.optional && foundProperty.optional) {
-                errorToAssignment(foundProperty.name, `A property '${foundProperty.name}' can't be optional.`);
+                errorToInvalidRuleNodes(foundProperty.name, `Property '${foundProperty.name}' is missing`);
             }
         } else {
             errorToAssignment(foundProperty.name, `A property '${foundProperty.name}' is not expected.`);
@@ -201,10 +217,10 @@ function checkPropertiesConsistency(inferred: Property[], declared: Property[],
     }
 
     // detects lack of properties
-    for (const foundProperty of declared) {
-        const expectedProperty = inferred.find(e => foundProperty.name === e.name);
-        if (!expectedProperty) {
-            errorToRuleNodes(`A property '${foundProperty.name}' is expected`);
+    for (const expectedProperty of declared) {
+        const foundProperty = inferred.find(e => expectedProperty.name === e.name);
+        if (!foundProperty && !expectedProperty.optional) {
+            errorToRuleNodes(`A property '${expectedProperty.name}' is expected`);
         }
     }
 }

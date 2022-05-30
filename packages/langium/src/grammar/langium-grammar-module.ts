@@ -13,6 +13,8 @@ import { LangiumGrammarScopeComputation, LangiumScopeProvider } from './langium-
 import { LangiumGrammarSemanticTokenProvider } from './langium-grammar-semantic-token-provider';
 import { LangiumGrammarValidationRegistry, LangiumGrammarValidator } from './langium-grammar-validator';
 import { LangiumGrammarFoldingRangeProvider } from './lsp/langium-grammar-folding-range-provider';
+import { LangiumGrammarFormatter } from './lsp/langium-grammar-formatter';
+import { LangiumGrammarGoToResolver } from './lsp/langium-grammar-goto';
 import { LangiumGrammarHoverProvider } from './lsp/langium-grammar-hover-provider';
 
 export type LangiumGrammarAddedServices = {
@@ -32,7 +34,9 @@ export const LangiumGrammarModule: Module<LangiumGrammarServices, PartialLangium
         FoldingRangeProvider: (services) => new LangiumGrammarFoldingRangeProvider(services),
         CodeActionProvider: () => new LangiumGrammarCodeActionProvider(),
         SemanticTokenProvider: () => new LangiumGrammarSemanticTokenProvider(),
-        HoverProvider: (services) => new LangiumGrammarHoverProvider(services)
+        Formatter: () => new LangiumGrammarFormatter(),
+        HoverProvider: (services) => new LangiumGrammarHoverProvider(services),
+        GoToResolver: (services) => new LangiumGrammarGoToResolver(services)
     },
     references: {
         ScopeComputation: (services) => new LangiumGrammarScopeComputation(services),

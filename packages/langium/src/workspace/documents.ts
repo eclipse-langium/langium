@@ -22,9 +22,9 @@ import { FileSystemProvider } from './file-system-provider';
  */
 export interface LangiumDocument<T extends AstNode = AstNode> {
     /** The Uniform Resource Identifier (URI) of the document */
-    uri: URI;
+    readonly uri: URI;
     /** The text document used to convert between offsets and positions */
-    textDocument: TextDocument;
+    readonly textDocument: TextDocument;
     /** The current state of the document */
     state: DocumentState;
     /** The parse result holds the Abstract Syntax Tree (AST) and potentially also parser / lexer errors */
@@ -77,6 +77,7 @@ export function equalURI(uri1: URI, uri2: URI): boolean {
 
 /**
  * Shared service for creating `TextDocument` instances.
+ * @deprecated This service is no longer necessary and will be removed.
  */
 export interface TextDocumentFactory {
     /**
@@ -85,6 +86,9 @@ export interface TextDocumentFactory {
     fromUri(uri: URI): TextDocument;
 }
 
+/**
+ * @deprecated This service implementation is no longer necessary and will be removed.
+ */
 export class DefaultTextDocumentFactory implements TextDocumentFactory {
 
     protected readonly serviceRegistry: ServiceRegistry;
@@ -152,32 +156,63 @@ export class DefaultLangiumDocumentFactory implements LangiumDocumentFactory {
             uri = URI.parse(textDocument!.uri);
         }
         const services = this.serviceRegistry.getServices(uri);
-        if (textDocument === undefined) {
-            textDocument = TextDocument.create(uri.toString(), services.LanguageMetaData.languageId, 0, text ?? '');
-        }
         let parseResult: ParseResult<T>;
         if (model === undefined) {
-            parseResult = services.parser.LangiumParser.parse<T>(textDocument.getText());
+            parseResult = services.parser.LangiumParser.parse<T>(text ?? textDocument!.getText());
         } else {
             parseResult = { value: model, parserErrors: [], lexerErrors: [] };
         }
-        return documentFromText<T>(textDocument, parseResult, uri);
+        return this.createLangiumDocument<T>(parseResult, uri, textDocument ?? {
+            $template: true,
+            languageId: services.LanguageMetaData.languageId,
+            uri,
+            text
+        });
     }
+
+    /**
+     * Create a LangiumDocument from a given parse result.
+     *
+     * A TextDocument is created on demand if it is not provided as argument here. Usually this
+     * should not be necessary because the main purpose of the TextDocument is to convert between
+     * text ranges and offsets, which is done solely in LSP request handling.
+     */
+    protected createLangiumDocument<T extends AstNode = AstNode>(parseResult: ParseResult<T>, uri: URI, textDocument: TextDocument | TextDocumentTemplate): LangiumDocument<T> {
+        let textDoc: TextDocument | undefined = undefined;
+        // eslint-disable-next-line @typescript-eslint/no-this-alias
+        const factory = this;
+        const doc: LangiumDocument<T> = {
+            parseResult,
+            uri: uri,
+            state: DocumentState.Parsed,
+            references: [],
+            get textDocument() {
+                if (!textDoc) {
+                    textDoc = (textDocument as TextDocumentTemplate).$template
+                        ? factory.createTextDocument(textDocument as TextDocumentTemplate)
+                        : textDocument as TextDocument;
+                }
+                return textDoc;
+            }
+        };
+        (parseResult.value as Mutable<AstNode>).$document = doc;
+        return doc;
+    }
+
+    protected createTextDocument(template: TextDocumentTemplate): TextDocument {
+        return TextDocument.create(template.uri.toString(), template.languageId, 0, template.text ?? '');
+    }
+
 }
 
 /**
- * Convert a TextDocument and a ParseResult into a LangiumDocument.
+ * Necessary information to create a TextDocument.
  */
-export function documentFromText<T extends AstNode = AstNode>(textDocument: TextDocument, parseResult: ParseResult<T>, uri?: URI): LangiumDocument<T> {
-    const doc: LangiumDocument<T> = {
-        parseResult,
-        textDocument,
-        uri: uri ?? URI.parse(textDocument.uri),
-        state: DocumentState.Parsed,
-        references: []
-    };
-    (parseResult.value as Mutable<AstNode>).$document = doc;
-    return doc;
+export interface TextDocumentTemplate {
+    $template: true
+    languageId: string
+    uri: URI
+    text?: string
 }
 
 /**
@@ -220,12 +255,12 @@ export class DefaultLangiumDocuments implements LangiumDocuments {
 
     protected readonly documentMap: Map<string, LangiumDocument> = new Map();
     protected readonly textDocuments: TextDocuments<TextDocument>;
-    protected readonly textDocumentFactory: TextDocumentFactory;
+    protected readonly fileSystemProvider: FileSystemProvider;
     protected readonly langiumDocumentFactory: LangiumDocumentFactory;
 
     constructor(services: LangiumSharedServices) {
         this.textDocuments = services.workspace.TextDocuments;
-        this.textDocumentFactory = services.workspace.TextDocumentFactory;
+        this.fileSystemProvider = services.workspace.FileSystemProvider;
         this.langiumDocumentFactory = services.workspace.LangiumDocumentFactory;
     }
 
@@ -245,12 +280,23 @@ export class DefaultLangiumDocuments implements LangiumDocuments {
         const uriString = uri.toString();
         let langiumDoc = this.documentMap.get(uriString);
         if (langiumDoc) {
+            // The document is already present in our map
             return langiumDoc;
         }
-        const textDoc = this.textDocuments.get(uriString) ?? this.textDocumentFactory.fromUri(uri);
-        langiumDoc = this.langiumDocumentFactory.fromTextDocument(textDoc, uri);
+        const textDoc = this.textDocuments.get(uriString);
+        if (textDoc) {
+            // The document is managed by the TextDocuments service, which means it is opened in the editor
+            langiumDoc = this.langiumDocumentFactory.fromTextDocument(textDoc, uri);
+        } else {
+            // Load the document from file
+            langiumDoc = this.langiumDocumentFactory.fromString(this.getContent(uri), uri);
+        }
         this.documentMap.set(uriString, langiumDoc);
         return langiumDoc;
+    }
+
+    protected getContent(uri: URI): string {
+        return this.fileSystemProvider.readFileSync(uri);
     }
 
     hasDocument(uri: URI): boolean {

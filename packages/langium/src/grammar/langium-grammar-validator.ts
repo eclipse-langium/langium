@@ -14,20 +14,18 @@ import { getContainerOfType, getDocument, streamAllContents } from '../utils/ast
 import { MultiMap } from '../utils/collections';
 import { toDocumentSegment } from '../utils/cst-util';
 import { stream } from '../utils/stream';
-import { ValidationAcceptor, ValidationCheck, ValidationRegistry } from '../validation/validation-registry';
+import { ValidationAcceptor, ValidationChecks, ValidationRegistry } from '../validation/validation-registry';
 import { LangiumDocument, LangiumDocuments } from '../workspace/documents';
 import * as ast from './generated/ast';
 import { findKeywordNode, findNameAssignment, getEntryRule, getTypeName, isDataTypeRule, resolveImport, resolveTransitiveImports, terminalRegex } from './grammar-util';
 import type { LangiumGrammarServices } from './langium-grammar-module';
 import { applyErrorToAssignment, collectAllInterfaces, InterfaceInfo, validateTypesConsistency } from './type-system/type-validator';
 
-type LangiumGrammarChecks = { [type in ast.LangiumGrammarAstType]?: ValidationCheck | ValidationCheck[] }
-
 export class LangiumGrammarValidationRegistry extends ValidationRegistry {
     constructor(services: LangiumGrammarServices) {
         super(services);
         const validator = services.validation.LangiumGrammarValidator;
-        const checks: LangiumGrammarChecks = {
+        const checks: ValidationChecks<ast.LangiumGrammarAstType> = {
             AbstractRule: validator.checkRuleName,
             Assignment: validator.checkAssignmentWithFeatureName,
             ParserRule: [
@@ -71,7 +69,8 @@ export class LangiumGrammarValidationRegistry extends ValidationRegistry {
                 validator.checkCrossRefType
             ],
             AtomType: [
-                validator.checkAtomTypeRefType
+                validator.checkAtomTypeRefType,
+                validator.checkFragmentsInTypes
             ]
         };
         this.register(checks, validator);
@@ -148,8 +147,7 @@ export class LangiumGrammarValidator {
         const map = new MultiMap<string, { name: string } & AstNode>();
         extractor(grammar).forEach(e => map.add(e.name, e));
 
-        for (const name of map.keys()) {
-            const types = map.get(name);
+        for (const [, types] of map.entriesGroupedByKey()) {
             if (types.length > 1) {
                 types.forEach(e => {
                     accept('error', `A ${uniqueObjName}'s name has to be unique.`, { node: e, property: 'name' });
@@ -179,8 +177,7 @@ export class LangiumGrammarValidator {
                 importMap.add(resolvedGrammar, imp);
             }
         }
-        for (const grammar of importMap.keys()) {
-            const imports = importMap.get(grammar);
+        for (const [, imports] of importMap.entriesGroupedByKey()) {
             if (imports.length > 1) {
                 imports.forEach((imp, i) => {
                     if (i > 0) {
@@ -433,8 +430,7 @@ export class LangiumGrammarValidator {
             const propertyNameToNode: MultiMap<string, ast.Interface | readonly ast.ParserRule[]> = new MultiMap();
             this.collectPropertyNamesForHierarchy(nameToInterfaceInfo, new Set(), propertyNameToNode, interfaceName);
 
-            for (const propertyName of propertyNameToNode.keys()) {
-                const nodes = propertyNameToNode.get(propertyName) ?? [];
+            for (const [propertyName, nodes] of propertyNameToNode.entriesGroupedByKey()) {
                 if (nodes.length < 2) continue;
                 for (const node of nodes) {
                     const errorMessage = `A property '${propertyName}' has to be unique for the whole hierarchy.`;
@@ -563,7 +559,7 @@ export class LangiumGrammarValidator {
 
     checkTerminalRuleReturnType(rule: ast.TerminalRule, accept: ValidationAcceptor): void {
         if (rule.type?.name && !isPrimitiveType(rule.type.name)) {
-            accept('error', "Terminal rules can only return primitive types like 'string', 'boolean', 'number' or 'date'.", { node: rule.type, property: 'name' });
+            accept('error', "Terminal rules can only return primitive types like 'string', 'boolean', 'number', 'Date' or 'bigint'.", { node: rule.type, property: 'name' });
         }
     }
 
@@ -608,6 +604,12 @@ export class LangiumGrammarValidator {
         }
     }
 
+    checkFragmentsInTypes(atomType: ast.AtomType, accept: ValidationAcceptor): void {
+        if (ast.isParserRule(atomType.refType?.ref) && atomType.refType?.ref.fragment) {
+            accept('error', 'Cannot use rule fragments in types.', { node: atomType, property: 'refType'});
+        }
+    }
+
     protected checkReferenceToRuleButNotType(type: Reference<ast.AbstractType>): string | undefined {
         if (type && ast.isParserRule(type.ref) && !isDataTypeRule(type.ref) && (type.ref.returnType || type.ref.inferredType)) {
             const typeName = getTypeName(type.ref);
@@ -625,7 +627,7 @@ export class LangiumGrammarValidator {
     }
 }
 
-const primitiveTypes = ['string', 'number', 'boolean', 'Date'];
+const primitiveTypes = ['string', 'number', 'boolean', 'Date', 'bigint'];
 
 function isPrimitiveType(type: string): boolean {
     return primitiveTypes.includes(type);

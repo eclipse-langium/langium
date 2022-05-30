@@ -4,7 +4,6 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { TextDocument } from 'vscode-languageserver-textdocument';
 import { URI, Utils } from 'vscode-uri';
 import { TypeResolutionError } from '..';
 import * as ast from '../grammar/generated/ast';
@@ -17,7 +16,7 @@ import { streamCst } from '../utils/cst-util';
 import { escapeRegExp } from '../utils/regex-util';
 import { AstNodeDescriptionProvider } from '../workspace/ast-descriptions';
 import { AstNodeLocator } from '../workspace/ast-node-locator';
-import { documentFromText, LangiumDocument, LangiumDocuments, PrecomputedScopes } from '../workspace/documents';
+import { LangiumDocument, LangiumDocuments, PrecomputedScopes } from '../workspace/documents';
 import { createLangiumGrammarServices } from './langium-grammar-module';
 
 export type Cardinality = '?' | '*' | '+' | undefined;
@@ -68,7 +67,11 @@ export function getCrossReferenceTerminal(crossRef: ast.CrossReference): ast.Abs
     return undefined;
 }
 
-export function findNameAssignment(type: ast.AbstractType): ast.Assignment | undefined {
+export function findNameAssignment(type: ast.AbstractType | ast.InferredType): ast.Assignment | undefined {
+    if (ast.isInferredType(type)) {
+        // inferred type is unexpected, extract AbstractType first
+        type = type.$container;
+    }
     return findNameAssignmentInternal(type, new Map());
 }
 
@@ -116,33 +119,47 @@ export function findNodeForFeature(node: CstNode | undefined, feature: string | 
     return nodes[index];
 }
 
-export function findKeywordNode(node: CstNode | undefined, keyword: string): CstNode | undefined {
-    if (node && ast.isKeyword(node.feature) && node.feature.value === keyword) {
-        return node;
-    }
-    return findKeywordNodeInternal(node, keyword, node?.element);
+export function findKeywordNodes(node: CstNode | undefined, keyword: string): CstNode[] {
+    return findKeywordNodesInternal(node, keyword, node?.element);
 }
 
-export function findKeywordNodeInternal(node: CstNode | undefined, keyword: string, element: AstNode | undefined): CstNode | undefined {
-    if (!node || !element) {
+export function findKeywordNode(node: CstNode | undefined, keyword: string, index?: number): CstNode | undefined {
+    const nodes = findKeywordNodesInternal(node, keyword, node?.element);
+    if (nodes.length === 0) {
         return undefined;
+    }
+    if (index !== undefined) {
+        index = Math.max(0, Math.min(index, nodes.length - 1));
+    } else {
+        index = 0;
+    }
+    return nodes[index];
+}
+
+export function findKeywordNodesInternal(node: CstNode | undefined, keyword: string, element: AstNode | undefined): CstNode[] {
+    if (!node || !keyword || node.element !== element) {
+        return [];
+    }
+    if (ast.isKeyword(node.feature) && node.feature.value === keyword) {
+        return [node];
     }
     const treeIterator = streamCst(node).iterator();
     let result: IteratorResult<CstNode>;
+    const keywordNodes: CstNode[] = [];
     do {
         result = treeIterator.next();
         if (!result.done) {
             const childNode = result.value;
             if (childNode.element === element) {
                 if (ast.isKeyword(childNode.feature) && childNode.feature.value === keyword) {
-                    return childNode;
+                    keywordNodes.push(childNode);
                 }
             } else {
                 treeIterator.prune();
             }
         }
     } while (!result.done);
-    return undefined;
+    return keywordNodes;
 }
 
 /**
@@ -156,13 +173,13 @@ export function findKeywordNodeInternal(node: CstNode | undefined, keyword: stri
  * @returns A list of all nodes within this node that belong to the specified feature.
  */
 function findNodesForFeatureInternal(node: CstNode | undefined, feature: string | undefined, element: AstNode | undefined, first: boolean): CstNode[] {
-    if (!node || !feature || node.element !== element) {
+    if (!node || !feature) {
         return [];
     }
     const nodeFeature = getContainerOfType(node.feature, ast.isAssignment);
     if (!first && nodeFeature && nodeFeature.feature === feature) {
         return [node];
-    } else if (node instanceof CompositeCstNodeImpl) {
+    } else if (node instanceof CompositeCstNodeImpl && node.element === element) {
         return node.children.flatMap(e => findNodesForFeatureInternal(e, feature, element, false));
     }
     return [];
@@ -283,7 +300,7 @@ function withCardinality(regex: string, cardinality?: string, wrap = false): str
     return regex;
 }
 
-export function getTypeName(type: ast.AbstractType): string {
+export function getTypeName(type: ast.AbstractType | ast.InferredType): string {
     if (ast.isParserRule(type)) {
         return getExplicitRuleType(type) ?? type.name;
     } else if (ast.isInterface(type) || ast.isType(type) || ast.isReturnType(type)) {
@@ -293,8 +310,10 @@ export function getTypeName(type: ast.AbstractType): string {
         if (actionType) {
             return actionType;
         }
+    } else if (ast.isInferredType(type)) {
+        return type.name;
     }
-    throw new TypeResolutionError('Unknown type', (type as AstNode).$cstNode);
+    throw new TypeResolutionError('Cannot get name of Unknown Type', type.$cstNode);
 }
 
 export function getExplicitRuleType(rule: ast.ParserRule): string | undefined {
@@ -319,7 +338,7 @@ export function getExplicitRuleType(rule: ast.ParserRule): string | undefined {
 function getActionType(action: ast.Action): string | undefined {
     if(action.inferredType) {
         return action.inferredType.name;
-    } else if(action.type.ref) {
+    } else if (action.type?.ref) {
         return getTypeName(action.type.ref);
     }
     return undefined; // not inferring and not referencing a valid type
@@ -328,10 +347,9 @@ function getActionType(action: ast.Action): string | undefined {
 export function getRuleType(rule: ast.AbstractRule): string {
     if (ast.isTerminalRule(rule)) {
         return rule.type?.name ?? 'string';
-    } else if (ast.isParserRule(rule)) {
+    } else {
         return isDataTypeRule(rule) ? rule.name : getExplicitRuleType(rule) ?? rule.name;
     }
-    throw new TypeResolutionError('Unknown rule type', (rule as AstNode).$cstNode);
 }
 
 export function getEntryRule(grammar: ast.Grammar): ast.ParserRule | undefined {
@@ -398,12 +416,7 @@ export function loadGrammar(json: string): ast.Grammar {
         throw new Error('Could not load grammar from specified json input.');
     }
     const grammar = astNode as Mutable<ast.Grammar>;
-    const textDocument = TextDocument.create('memory://grammar.langium', 'langium', 0, '');
-    const document = documentFromText(textDocument, {
-        lexerErrors: [],
-        parserErrors: [],
-        value: grammar
-    });
+    const document = services.shared.workspace.LangiumDocumentFactory.fromModel(grammar, URI.parse('memory://grammar.langium'));
     grammar.$document = document;
     document.precomputedScopes = computeGrammarScope(services, grammar);
     return grammar;

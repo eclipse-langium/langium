@@ -95,8 +95,28 @@ export interface LinkingError extends ReferenceInfo {
 export interface AstReflection {
     getAllTypes(): string[]
     getReferenceType(referenceId: string): string
-    isInstance(node: AstNode, type: string): boolean
+    getTypeMetaData(type: string): TypeMetaData
+    isInstance(node: unknown, type: string): boolean
     isSubtype(subtype: string, supertype: string): boolean
+}
+
+/**
+ * Represents runtime meta data about a meta model type.
+ */
+export interface TypeMetaData {
+    /** The name of this meta model type. Corresponds to the `AstNode.$type` value. */
+    name: string
+    /** A list of mandatory properties. These are defaults for array and boolean based properties (`[]` and `false` respectively). */
+    mandatory: TypeMandatoryProperty[]
+}
+
+/**
+ * Mandatory properties are implicitly expected to be set in an AST node.
+ * For example, if an AST node contains an array, but no elements of this array have been parsed, we still expect an empty array instead of `undefined`.
+ */
+export interface TypeMandatoryProperty {
+    name: string
+    type: 'array' | 'boolean'
 }
 
 /**

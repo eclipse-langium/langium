@@ -5,7 +5,7 @@
 
 /* eslint-disable @typescript-eslint/array-type */
 /* eslint-disable @typescript-eslint/no-empty-interface */
-import { AstNode, AstReflection, Reference, isAstNode } from 'langium';
+import { AstNode, AstReflection, Reference, isAstNode, TypeMetaData } from 'langium';
 
 export type AbstractDefinition = DeclaredParameter | Definition;
 
@@ -34,7 +34,7 @@ export function isStatement(item: unknown): item is Statement {
 export interface BinaryExpression extends AstNode {
     readonly $container: BinaryExpression | Definition | Evaluation | FunctionCall;
     left: Expression
-    operator: '*' | '/' | '+' | '-'
+    operator: '*' | '+' | '-' | '/'
     right: Expression
 }
 
@@ -159,6 +159,41 @@ export class ArithmeticsAstReflection implements AstReflection {
             }
             default: {
                 throw new Error(`${referenceId} is not a valid reference id.`);
+            }
+        }
+    }
+
+    getTypeMetaData(type: string): TypeMetaData {
+        switch (type) {
+            case 'Definition': {
+                return {
+                    name: 'Definition',
+                    mandatory: [
+                        { name: 'args', type: 'array' }
+                    ]
+                };
+            }
+            case 'FunctionCall': {
+                return {
+                    name: 'FunctionCall',
+                    mandatory: [
+                        { name: 'args', type: 'array' }
+                    ]
+                };
+            }
+            case 'Module': {
+                return {
+                    name: 'Module',
+                    mandatory: [
+                        { name: 'statements', type: 'array' }
+                    ]
+                };
+            }
+            default: {
+                return {
+                    name: type,
+                    mandatory: []
+                };
             }
         }
     }

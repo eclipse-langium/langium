@@ -4,18 +4,16 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { ValidationAcceptor, ValidationCheck, ValidationRegistry } from 'langium';
+import { ValidationAcceptor, ValidationChecks, ValidationRegistry } from 'langium';
 import { ArithmeticsAstType, isNumberLiteral, Definition, isFunctionCall, Expression, BinaryExpression, isBinaryExpression } from './generated/ast';
 import { ArithmeticsServices } from './arithmetics-module';
 import { applyOp } from '../cli/cli-util';
-
-type ArithmeticsChecks = { [type in ArithmeticsAstType]?: ValidationCheck | ValidationCheck[] }
 
 export class ArithmeticsValidationRegistry extends ValidationRegistry {
     constructor(services: ArithmeticsServices) {
         super(services);
         const validator = services.validation.ArithmeticsValidator;
-        const checks: ArithmeticsChecks = {
+        const checks: ValidationChecks<ArithmeticsAstType> = {
             BinaryExpression: validator.checkDivByZero,
             Definition: validator.checkNormalisable
         };

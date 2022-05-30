@@ -27,6 +27,12 @@ export interface GoToResolver {
     goToDefinition(document: LangiumDocument, params: DefinitionParams, cancelToken?: CancellationToken): MaybePromise<LocationLink[] | undefined>;
 }
 
+export interface GoToLink {
+    source: CstNode
+    target: CstNode
+    targetDocument: LangiumDocument
+}
+
 export class DefaultGoToResolverProvider implements GoToResolver {
 
     protected readonly nameProvider: NameProvider;
@@ -39,17 +45,14 @@ export class DefaultGoToResolverProvider implements GoToResolver {
 
     goToDefinition(document: LangiumDocument, params: DefinitionParams): MaybePromise<LocationLink[] | undefined> {
         const rootNode = document.parseResult.value;
-        const targetCstNodes: Array<{ source: CstNode, target: CstNode, targetDocument: LangiumDocument }> = [];
+        const targetCstNodes: GoToLink[] = [];
         if (rootNode.$cstNode) {
             const cst = rootNode.$cstNode;
             const sourceCstNode = findLeafNodeAtOffset(cst, document.textDocument.offsetAt(params.position));
             if (sourceCstNode) {
-                const targetNode = this.references.findDeclaration(sourceCstNode);
-                if (targetNode?.element) {
-                    const targetDoc = getDocument(targetNode?.element);
-                    if (targetNode && targetDoc) {
-                        targetCstNodes.push({ source: sourceCstNode, target: targetNode, targetDocument: targetDoc });
-                    }
+                const goToLink = this.findLink(sourceCstNode);
+                if (goToLink) {
+                    targetCstNodes.push(goToLink);
                 }
             }
         }
@@ -60,6 +63,19 @@ export class DefaultGoToResolverProvider implements GoToResolver {
             link.source.range
         ));
     }
+
+    protected findLink(source: CstNode): GoToLink | undefined{
+        const target = this.references.findDeclaration(source);
+        if (target?.element) {
+            const targetDocument = getDocument(target.element);
+            if(target && targetDocument) {
+                return { source, target, targetDocument};
+            }
+        }
+
+        return undefined;
+    }
+
     protected findActualNodeFor(cstNode: CstNode): CstNode | undefined {
         let actualNode: CstNode | undefined = cstNode;
         while (!actualNode?.element?.$cstNode) {

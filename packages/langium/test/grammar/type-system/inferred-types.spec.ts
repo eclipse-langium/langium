@@ -233,8 +233,54 @@ describeTypes('inferred types using chained actions', `
     Access:
         {infer Access} '.' member=ID;
 
+    IdRule:
+        'id' name=ID;
+    RuleName infers RuleType:
+        IdRule (
+            {infer FirstBranch.value=current} FirstBranchFragment
+        |   {infer SecondBranch.value=current} SecondBranchFragment
+        );
+    fragment FirstBranchFragment: 'First' first=ID;
+    fragment SecondBranchFragment: 'Second' second=ID;
+
     terminal ID returns string: /string/;
 `, types => {
+
+    test('RuleType is inferred as a union type', () => {
+        const ruleType = getType(types, 'RuleType') as UnionType;
+        expect(ruleType).toBeDefined();
+        expectUnion(ruleType, [{
+            array: false,
+            reference: false,
+            types: ['FirstBranch', 'IdRule', 'SecondBranch']
+        }]);
+    });
+
+    test('FirstBranch is inferred as first:string, value:IdRule', () => {
+        const firstBranch = getType(types, 'FirstBranch') as InterfaceType;
+        expect(firstBranch).toBeDefined();
+        expect(firstBranch.interfaceSuperTypes).toHaveLength(0);
+        expect(firstBranch.properties).toHaveLength(2);
+        expectProperty(firstBranch, {
+            name: 'first',
+            optional: false,
+            typeAlternatives: [{
+                array: false,
+                reference: false,
+                types: ['string']
+            }]
+        });
+        expectProperty(firstBranch, {
+            name: 'value',
+            optional: false,
+            typeAlternatives: [{
+                array: false,
+                reference: false,
+                types: ['IdRule']
+            }]
+        });
+
+    });
 
     test('Entry is inferred as a union type', () => {
         const entry = getType(types, 'Entry') as UnionType;
@@ -516,6 +562,20 @@ describeTypes('inferred types with common names and actions', `
         expect(d).toBeUndefined();
     });
 
+});
+
+describeTypes('inferred types that are used by the grammar', `
+    A infers B: 'a' name=ID (otherA=[B])?;
+    hidden terminal WS: /\\s+/;
+    terminal ID: /[a-zA-Z_][a-zA-Z0-9_]*/;
+    `, types => {
+
+    test('B is defined and A is not', () => {
+        const a = getType(types, 'A') as InterfaceType;
+        expect(a).toBeUndefined();
+        const b = getType(types, 'B') as InterfaceType;
+        expect(b).toBeDefined();
+    });
 });
 
 async function getTypes(grammar: string): Promise<AstTypes> {
