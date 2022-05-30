@@ -5,13 +5,14 @@
  ******************************************************************************/
 
 import {
-    CompletionItem, Diagnostic, DiagnosticSeverity, DocumentSymbol, MarkupContent, Range, TextDocumentIdentifier, TextDocumentPositionParams
+    CompletionItem, Diagnostic, DiagnosticSeverity, DocumentSymbol, MarkupContent, Position, Range, TextDocumentIdentifier, TextDocumentPositionParams
 } from 'vscode-languageserver';
 import { URI } from 'vscode-uri';
 import { LangiumServices } from '../services';
-import { AstNode } from '../syntax-tree';
+import { AstNode, Properties } from '../syntax-tree';
 import { escapeRegExp } from '../utils/regex-util';
 import { LangiumDocument } from '../workspace/documents';
+import { findNodeForFeature } from '../grammar/grammar-util';
 
 export function parseHelper<T extends AstNode = AstNode>(services: LangiumServices): (input: string) => Promise<LangiumDocument<T>> {
     const metaData = services.LanguageMetaData;
@@ -189,28 +190,70 @@ function replaceIndices(base: ExpectedBase): { output: string, indices: number[]
     return { output: input, indices, ranges: ranges.sort((a, b) => a[0] - b[0]) };
 }
 
-export function validationHelper(services: LangiumServices): (input: string) => Promise<Diagnostic[]> {
-    const parse = parseHelper(services);
+export interface ValidationResult<T extends AstNode = AstNode> {
+    diagnostics: Diagnostic[];
+    document: LangiumDocument<T>;
+}
+
+export function validationHelper<T extends AstNode = AstNode>(services: LangiumServices): (input: string) => Promise<ValidationResult<T>> {
+    const parse = parseHelper<T>(services);
     return async (input) => {
         const document = await parse(input);
-        return await services.validation.DocumentValidator.validateDocument(document);
+        return { document, diagnostics: await services.validation.DocumentValidator.validateDocument(document) };
     };
+}
+
+export type ExpectDiagnosticOptions<T extends AstNode = AstNode> = {
+    atNode?: ExpectDiagnosticAstOptions<T>;
+    atRange?: Range;
+    atOffset?: ExpectDiagnosticOffsetOptions;
+    code?: string;
+    message?: string | RegExp
+    severity?: DiagnosticSeverity;
+};
+
+export interface ExpectDiagnosticAstOptions<T extends AstNode> {
+    node: T;
+    feature?: Properties<T>;
+    index?: number;
+}
+
+export interface ExpectDiagnosticOffsetOptions {
+    offset: number
+    length: number
 }
 
 export type Predicate<T> = (arg: T) => boolean;
 
-export interface DiagnosticFilters {
-    severity: DiagnosticSeverity;
-    message: RegExp | string;
+function isLeftOrEqualFrom(lhs: Position, rhs: Position) {
+    return lhs.line < rhs.line || lhs.line === rhs.line && lhs.character <= rhs.character;
 }
 
-export type DiagnosticFilterOptions = Partial<DiagnosticFilters>;
+function containsRange(outer: Range, inner: Range): boolean {
+    const start = isLeftOrEqualFrom(outer.start, inner.start);
+    const end = isLeftOrEqualFrom(inner.end, outer.end);
+    return start && end;
+}
 
-function filterByOptions(diagnostics: Diagnostic[], filterOptions?: DiagnosticFilterOptions) {
-    const options = filterOptions || {};
+function filterByOptions<T extends AstNode = AstNode>(validationResult: ValidationResult, filterOptions: ExpectDiagnosticOptions<T>) {
+    const options = { ...filterOptions };
     const filters: Array<Predicate<Diagnostic>> = [];
-    if (options.severity) {
-        filters.push(d => d.severity === options.severity);
+    if (options.atNode) {
+        const node = findNodeForFeature(options.atNode.node.$cstNode, options.atNode.feature, options.atNode.index) ?? options.atNode!.node.$cstNode!;
+        filters.push(d => containsRange(node.range, d.range));
+    }
+    if (options.atOffset) {
+        const outer = {
+            start: validationResult.document.textDocument.positionAt(options.atOffset.offset),
+            end: validationResult.document.textDocument.positionAt(options.atOffset.offset + options.atOffset.length - 1)
+        };
+        filters.push(d => containsRange(outer, d.range));
+    }
+    if (options.atRange) {
+        filters.push(d => containsRange(options.atRange!, d.range));
+    }
+    if (options.code) {
+        filters.push(d => d.code === options.code);
     }
     if (options.message) {
         if (typeof options.message === 'string') {
@@ -220,27 +263,32 @@ function filterByOptions(diagnostics: Diagnostic[], filterOptions?: DiagnosticFi
             filters.push(d => regexp.test(d.message));
         }
     }
-    return diagnostics.filter(diag => filters.every(holdsFor => holdsFor(diag)));
+    if (options.severity) {
+        filters.push(d => d.severity === options.severity);
+    }
+    return validationResult.diagnostics.filter(diag => filters.every(holdsFor => holdsFor(diag)));
 }
 
-export function expectNoIssues(diagnostics: Diagnostic[], filterOptions?: DiagnosticFilterOptions): void {
-    const filtered = filterByOptions(diagnostics, filterOptions);
+export function expectNoIssues<T extends AstNode = AstNode>(validationResult: ValidationResult, filterOptions?: ExpectDiagnosticOptions<T>): void {
+    const filtered = filterOptions ? filterByOptions<T>(validationResult, filterOptions) : validationResult.diagnostics;
     expect(filtered).toHaveLength(0);
 }
 
-export function expectIssue(diagnostics: Diagnostic[], filterOptions?: DiagnosticFilterOptions): void {
-    const filtered = filterByOptions(diagnostics, filterOptions);
+export function expectIssue<T extends AstNode = AstNode>(validationResult: ValidationResult, filterOptions?: ExpectDiagnosticOptions<T>): void {
+    const filtered = filterOptions ? filterByOptions<T>(validationResult, filterOptions) : validationResult.diagnostics;
     expect(filtered).not.toHaveLength(0);
 }
 
-export function expectError(diagnostics: Diagnostic[], message: string | RegExp): void {
-    expectIssue(diagnostics, {
+export function expectError<T extends AstNode = AstNode>(validationResult: ValidationResult, message: string | RegExp, filterOptions: Omit<ExpectDiagnosticOptions<T>, 'message' | 'severity'>): void {
+    expectIssue<T>(validationResult, {
+        ...filterOptions,
         message,
         severity: DiagnosticSeverity.Error
     });
 }
-export function expectWarning(diagnostics: Diagnostic[], message: string | RegExp): void {
-    expectIssue(diagnostics, {
+export function expectWarning<T extends AstNode = AstNode>(validationResult: ValidationResult, message: string | RegExp, filterOptions: Omit<ExpectDiagnosticOptions<T>, 'message' | 'severity'>): void {
+    expectIssue<T>(validationResult, {
+        ...filterOptions,
         message,
         severity: DiagnosticSeverity.Warning
     });

@@ -4,12 +4,12 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { Diagnostic } from 'vscode-languageserver';
 import { createLangiumGrammarServices } from '../../src';
-import { expectError, expectWarning, validationHelper } from '../../src/test';
+import { Grammar } from '../../src/grammar/generated/ast';
+import { expectError, expectWarning, validationHelper, ValidationResult } from '../../src/test';
 
 const services = createLangiumGrammarServices();
-const validate = validationHelper(services.grammar);
+const validate = validationHelper<Grammar>(services.grammar);
 
 describe('checkReferenceToRuleButNotType', () => {
 
@@ -32,18 +32,24 @@ describe('checkReferenceToRuleButNotType', () => {
         terminal ID: /[_a-zA-Z][\\w_]*/;
     `;
 
-    let diagnostics: Diagnostic[];
+    let validationResult: ValidationResult<Grammar>;
 
     beforeAll(async () => {
-        diagnostics = await validate(input);
+        validationResult = await validate(input);
     });
 
     test('CrossReference validation', () => {
-        expectError(diagnostics, "Use the rule type 'DefType' instead of the typed rule name 'Definition' for cross references.");
+        const rule = validationResult.document.parseResult.value.rules[3];
+        expectError(validationResult, "Use the rule type 'DefType' instead of the typed rule name 'Definition' for cross references.", {
+            atNode: { node: rule }
+        });
     });
 
     test('AtomType validation', () => {
-        expectError(diagnostics, "Use the rule type 'RefType' instead of the typed rule name 'Reference' for cross references.");
+        const type = validationResult.document.parseResult.value.types[0];
+        expectError(validationResult, "Use the rule type 'RefType' instead of the typed rule name 'Reference' for cross references.", {
+            atNode: { node: type }
+        });
     });
 
 });
@@ -56,13 +62,16 @@ describe('Checked Named CrossRefs', () => {
     terminal ID: /[_a-zA-Z][\\w_]*/;
     `.trim();
 
-    let diagnostics: Diagnostic[];
+    let validationResult: ValidationResult<Grammar>;
 
     beforeAll(async () => {
-        diagnostics = await validate(input);
+        validationResult = await validate(input);
     });
 
     test('Named crossReference warning', () => {
-        expectWarning(diagnostics, 'The "name" property is not recommended for cross-references.');
+        const rule = validationResult.document.parseResult.value.rules[1];
+        expectWarning(validationResult, 'The "name" property is not recommended for cross-references.', {
+            atNode: { node: rule }
+        });
     });
 });
