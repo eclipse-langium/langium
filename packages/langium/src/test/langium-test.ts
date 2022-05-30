@@ -243,23 +243,23 @@ function containsRange(outer: Range, inner: Range): boolean {
 
 function filterByOptions<T extends AstNode = AstNode, N extends AstNode = AstNode>(validationResult: ValidationResult<T>, options: ExpectDiagnosticOptions<N>) {
     const filters: Array<Predicate<Diagnostic>> = [];
-    if ("node" in options) {
-        const node = "property" in options
+    if ('node' in options) {
+        const node = 'property' in options
             ? findNodeForFeature(options.node.$cstNode, options.property!.name, options.property!.index)
             : options.node.$cstNode;
         if (!node) {
-            throw new Error("Cannot find node!");
+            throw new Error('Cannot find the node!');
         }
         filters.push(d => containsRange(node.range, d.range));
     }
-    if ("offset" in options) {
+    if ('offset' in options) {
         const outer = {
             start: validationResult.document.textDocument.positionAt(options.offset),
             end: validationResult.document.textDocument.positionAt(options.offset + options.length - 1)
         };
         filters.push(d => containsRange(outer, d.range));
     }
-    if ("range" in options) {
+    if ('range' in options) {
         filters.push(d => containsRange(options.range!, d.range));
     }
     if (options.code) {
