@@ -232,10 +232,10 @@ export interface ExpectDiagnosticOffsetOptions {
 export type Predicate<T> = (arg: T) => boolean;
 
 function isRangeEqual(lhs: Range, rhs: Range): boolean {
-    return lhs.start.character == rhs.start.character
-        && lhs.start.line == rhs.start.line
-        && lhs.end.character == rhs.end.character
-        && lhs.end.line == rhs.end.line;
+    return lhs.start.character === rhs.start.character
+        && lhs.start.line === rhs.start.line
+        && lhs.end.character === rhs.end.character
+        && lhs.end.line === rhs.end.line;
 }
 
 function filterByOptions<T extends AstNode = AstNode, N extends AstNode = AstNode>(validationResult: ValidationResult<T>, options: ExpectDiagnosticOptions<N>) {
