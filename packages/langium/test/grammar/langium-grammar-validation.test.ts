@@ -4,9 +4,11 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { Diagnostic } from 'vscode-languageserver';
-import { createLangiumGrammarServices, Grammar, LangiumDocument } from '../../src';
-import { parseHelper } from '../../src/test';
+import { Assignment, createLangiumGrammarServices, Grammar, Group, ParserRule } from '../../src';
+import { expectError, validationHelper, ValidationResult } from '../../src/test';
+
+const services = createLangiumGrammarServices();
+const validate = validationHelper<Grammar>(services.grammar);
 
 describe('Grammar validation', () => {
     const grammarText = `
@@ -18,36 +20,26 @@ describe('Grammar validation', () => {
 
     entry Main: {X} count=NUMBER;
     terminal NUMBER returns number: /[0-9]+/;
-    `;
+    `.trim();
 
-    let validationResult: ValidatorData;
+    let validationResult: ValidationResult<Grammar>;
     beforeAll(async () => {
-        validationResult = await parseAndValidate(grammarText);
+        validationResult = await validate(grammarText);
     });
 
     test('Property "name" is expected in the rule Main.', () => {
-        const errors = validationResult.diagnostics.filter(d => /A property 'name' is expected in a rule that returns type 'X'./.test(d.message));
-        expect(errors.length).toBe(1);
+        const node = validationResult.document.parseResult.value.rules[0] as ParserRule;
+        expectError(validationResult, /A property 'name' is expected in a rule that returns type 'X'./, {
+            node,
+            property: {name: 'name'}
+        });
     });
 
     test('Property "count" is unexpected in the rule Main.', () => {
-        const errors = validationResult.diagnostics.filter(d => /A property 'count' is not expected./.test(d.message));
-        expect(errors.length).toBe(1);
+        const node = ((validationResult.document.parseResult.value.rules[0] as ParserRule).alternatives as Group).elements[1] as Assignment;
+        expectError(validationResult, /A property 'count' is not expected./, {
+            node,
+            property: {name: 'feature'}
+        });
     });
 });
-
-//TODO remove
-interface ValidatorData {
-    document: LangiumDocument;
-    diagnostics: Diagnostic[];
-}
-const services = createLangiumGrammarServices();
-const parser = parseHelper<Grammar>(services.grammar);
-async function parseAndValidate(grammar: string): Promise<ValidatorData> {
-    const doc = await parser(grammar);
-    const diagnostics = await services.grammar.validation.DocumentValidator.validateDocument(doc);
-    return {
-        document: doc,
-        diagnostics: diagnostics
-    };
-}
