@@ -5,13 +5,14 @@
  ******************************************************************************/
 
 import {
-    CompletionItem, DocumentSymbol, MarkupContent, Range, TextDocumentIdentifier, TextDocumentPositionParams
+    CompletionItem, Diagnostic, DiagnosticSeverity, DocumentSymbol, MarkupContent, Range, TextDocumentIdentifier, TextDocumentPositionParams
 } from 'vscode-languageserver';
 import { URI } from 'vscode-uri';
 import { LangiumServices } from '../services';
-import { AstNode } from '../syntax-tree';
+import { AstNode, Properties } from '../syntax-tree';
 import { escapeRegExp } from '../utils/regex-util';
 import { LangiumDocument } from '../workspace/documents';
+import { findNodeForFeature } from '../grammar/grammar-util';
 
 export function parseHelper<T extends AstNode = AstNode>(services: LangiumServices): (input: string) => Promise<LangiumDocument<T>> {
     const metaData = services.LanguageMetaData;
@@ -187,4 +188,121 @@ function replaceIndices(base: ExpectedBase): { output: string, indices: number[]
     }
 
     return { output: input, indices, ranges: ranges.sort((a, b) => a[0] - b[0]) };
+}
+
+export interface ValidationResult<T extends AstNode = AstNode> {
+    diagnostics: Diagnostic[];
+    document: LangiumDocument<T>;
+}
+
+export function validationHelper<T extends AstNode = AstNode>(services: LangiumServices): (input: string) => Promise<ValidationResult<T>> {
+    const parse = parseHelper<T>(services);
+    return async (input) => {
+        const document = await parse(input);
+        return { document, diagnostics: await services.validation.DocumentValidator.validateDocument(document) };
+    };
+}
+
+export type ExpectDiagnosticOptionsWithoutContent<T extends AstNode = AstNode> = ExpectDiagnosticCode & (ExpectDiagnosticAstOptions<T> | ExpectDiagnosticRangeOptions | ExpectDiagnosticOffsetOptions);
+export type ExpectDiagnosticOptions<T extends AstNode = AstNode> = ExpectDiagnosticContent & ExpectDiagnosticOptionsWithoutContent<T>;
+
+export interface ExpectDiagnosticContent {
+    message?: string | RegExp
+    severity?: DiagnosticSeverity;
+}
+
+export interface ExpectDiagnosticCode {
+    code?: string;
+}
+
+export interface ExpectDiagnosticAstOptions<T extends AstNode> {
+    node: T;
+    property?: { name: Properties<T>, index?: number };
+}
+
+export interface ExpectDiagnosticRangeOptions {
+    range: Range;
+}
+
+export interface ExpectDiagnosticOffsetOptions {
+    offset: number
+    length: number
+}
+
+export type Predicate<T> = (arg: T) => boolean;
+
+function isRangeEqual(lhs: Range, rhs: Range): boolean {
+    return lhs.start.character === rhs.start.character
+        && lhs.start.line === rhs.start.line
+        && lhs.end.character === rhs.end.character
+        && lhs.end.line === rhs.end.line;
+}
+
+function filterByOptions<T extends AstNode = AstNode, N extends AstNode = AstNode>(validationResult: ValidationResult<T>, options: ExpectDiagnosticOptions<N>) {
+    const filters: Array<Predicate<Diagnostic>> = [];
+    if ('node' in options) {
+        const cstNode = options.property
+            ? findNodeForFeature(options.node.$cstNode, options.property.name, options.property.index)
+            : options.node.$cstNode;
+        if (!cstNode) {
+            throw new Error('Cannot find the node!');
+        }
+        filters.push(d => isRangeEqual(cstNode.range, d.range));
+    }
+    if ('offset' in options) {
+        const outer = {
+            start: validationResult.document.textDocument.positionAt(options.offset),
+            end: validationResult.document.textDocument.positionAt(options.offset + options.length - 1)
+        };
+        filters.push(d => isRangeEqual(outer, d.range));
+    }
+    if ('range' in options) {
+        filters.push(d => isRangeEqual(options.range!, d.range));
+    }
+    if (options.code) {
+        filters.push(d => d.code === options.code);
+    }
+    if (options.message) {
+        if (typeof options.message === 'string') {
+            filters.push(d => d.message === options.message);
+        } else if (options.message instanceof RegExp) {
+            const regexp = options.message as RegExp;
+            filters.push(d => regexp.test(d.message));
+        }
+    }
+    if (options.severity) {
+        filters.push(d => d.severity === options.severity);
+    }
+    return validationResult.diagnostics.filter(diag => filters.every(holdsFor => holdsFor(diag)));
+}
+
+export function expectNoIssues<T extends AstNode = AstNode, N extends AstNode = AstNode>(validationResult: ValidationResult<T>, filterOptions?: ExpectDiagnosticOptions<N>): void {
+    const filtered = filterOptions ? filterByOptions<T, N>(validationResult, filterOptions) : validationResult.diagnostics;
+    expect(filtered).toHaveLength(0);
+}
+
+export function expectIssue<T extends AstNode = AstNode, N extends AstNode = AstNode>(validationResult: ValidationResult<T>, filterOptions?: ExpectDiagnosticOptions<N>): void {
+    const filtered = filterOptions ? filterByOptions<T, N>(validationResult, filterOptions) : validationResult.diagnostics;
+    expect(filtered).not.toHaveLength(0);
+}
+
+export function expectError<T extends AstNode = AstNode, N extends AstNode = AstNode>(validationResult: ValidationResult<T>, message: string | RegExp, filterOptions: ExpectDiagnosticOptionsWithoutContent<N>): void {
+    const content: ExpectDiagnosticContent = {
+        message,
+        severity: DiagnosticSeverity.Error
+    };
+    expectIssue<T, N>(validationResult, {
+        ...filterOptions,
+        ...content,
+    });
+}
+export function expectWarning<T extends AstNode = AstNode, N extends AstNode = AstNode>(validationResult: ValidationResult<T>, message: string | RegExp, filterOptions: ExpectDiagnosticOptionsWithoutContent<N>): void {
+    const content: ExpectDiagnosticContent = {
+        message,
+        severity: DiagnosticSeverity.Warning
+    };
+    expectIssue<T, N>(validationResult, {
+        ...filterOptions,
+        ...content,
+    });
 }

@@ -76,6 +76,9 @@ const __requested__ = Symbol();
  */
 function _resolve<I, T>(obj: any, prop: string | symbol | number, module: Module<I, T>, injector: I): T[keyof T] | undefined {
     if (prop in obj) {
+        if (obj[prop] instanceof Error) {
+            throw new Error('Construction failure. Please make sure that your dependencies are constructable.', {cause: obj[prop]});
+        }
         if (obj[prop] === __requested__) {
             throw new Error('Cycle detected. Please make "' + String(prop) + '" lazy. See https://langium.org/docs/di/cyclic-dependencies');
         }
@@ -83,7 +86,12 @@ function _resolve<I, T>(obj: any, prop: string | symbol | number, module: Module
     } else if (prop in module) {
         const value: Module<I, T[keyof T]> | ((injector: I) => T[keyof T]) = module[prop as keyof T];
         obj[prop] = __requested__;
-        obj[prop] = (typeof value === 'function') ? value(injector) : _inject(value, injector);
+        try {
+            obj[prop] = (typeof value === 'function') ? value(injector) : _inject(value, injector);
+        } catch (error) {
+            obj[prop] = error instanceof Error ? error : undefined;
+            throw error;
+        }
         return obj[prop];
     } else {
         return undefined;
