@@ -241,13 +241,13 @@ function isRangeEqual(lhs: Range, rhs: Range): boolean {
 function filterByOptions<T extends AstNode = AstNode, N extends AstNode = AstNode>(validationResult: ValidationResult<T>, options: ExpectDiagnosticOptions<N>) {
     const filters: Array<Predicate<Diagnostic>> = [];
     if ('node' in options) {
-        const node = 'property' in options
-            ? findNodeForFeature(options.node.$cstNode, options.property!.name, options.property!.index)
+        const cstNode = options.property
+            ? findNodeForFeature(options.node.$cstNode, options.property.name, options.property.index)
             : options.node.$cstNode;
-        if (!node) {
+        if (!cstNode) {
             throw new Error('Cannot find the node!');
         }
-        filters.push(d => isRangeEqual(node.range, d.range));
+        filters.push(d => isRangeEqual(cstNode.range, d.range));
     }
     if ('offset' in options) {
         const outer = {
