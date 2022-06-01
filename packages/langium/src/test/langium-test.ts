@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import {
-    CompletionItem, Diagnostic, DiagnosticSeverity, DocumentSymbol, MarkupContent, Position, Range, TextDocumentIdentifier, TextDocumentPositionParams
+    CompletionItem, Diagnostic, DiagnosticSeverity, DocumentSymbol, MarkupContent, Range, TextDocumentIdentifier, TextDocumentPositionParams
 } from 'vscode-languageserver';
 import { URI } from 'vscode-uri';
 import { LangiumServices } from '../services';
@@ -231,14 +231,11 @@ export interface ExpectDiagnosticOffsetOptions {
 
 export type Predicate<T> = (arg: T) => boolean;
 
-function isLeftOrEqualFrom(lhs: Position, rhs: Position) {
-    return lhs.line < rhs.line || lhs.line === rhs.line && lhs.character <= rhs.character;
-}
-
-function containsRange(outer: Range, inner: Range): boolean {
-    const start = isLeftOrEqualFrom(outer.start, inner.start);
-    const end = isLeftOrEqualFrom(inner.end, outer.end);
-    return start && end;
+function isRangeEqual(lhs: Range, rhs: Range): boolean {
+    return lhs.start.character == rhs.start.character
+        && lhs.start.line == rhs.start.line
+        && lhs.end.character == rhs.end.character
+        && lhs.end.line == rhs.end.line;
 }
 
 function filterByOptions<T extends AstNode = AstNode, N extends AstNode = AstNode>(validationResult: ValidationResult<T>, options: ExpectDiagnosticOptions<N>) {
@@ -250,17 +247,17 @@ function filterByOptions<T extends AstNode = AstNode, N extends AstNode = AstNod
         if (!node) {
             throw new Error('Cannot find the node!');
         }
-        filters.push(d => containsRange(node.range, d.range));
+        filters.push(d => isRangeEqual(node.range, d.range));
     }
     if ('offset' in options) {
         const outer = {
             start: validationResult.document.textDocument.positionAt(options.offset),
             end: validationResult.document.textDocument.positionAt(options.offset + options.length - 1)
         };
-        filters.push(d => containsRange(outer, d.range));
+        filters.push(d => isRangeEqual(outer, d.range));
     }
     if ('range' in options) {
-        filters.push(d => containsRange(options.range!, d.range));
+        filters.push(d => isRangeEqual(options.range!, d.range));
     }
     if (options.code) {
         filters.push(d => d.code === options.code);

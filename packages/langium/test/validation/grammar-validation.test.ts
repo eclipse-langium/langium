@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import { createLangiumGrammarServices } from '../../src';
-import { Grammar } from '../../src/grammar/generated/ast';
+import { Assignment, CrossReference, Grammar, Group, ParserRule } from '../../src/grammar/generated/ast';
 import { expectError, expectNoIssues, expectWarning, validationHelper, ValidationResult } from '../../src/test';
 
 const services = createLangiumGrammarServices();
@@ -39,16 +39,18 @@ describe('checkReferenceToRuleButNotType', () => {
     });
 
     test('CrossReference validation', () => {
-        const rule = validationResult.document.parseResult.value.rules[3];
+        const rule = ((validationResult.document.parseResult.value.rules[3] as ParserRule).alternatives as Assignment).terminal as CrossReference;
         expectError(validationResult, "Use the rule type 'DefType' instead of the typed rule name 'Definition' for cross references.", {
-            node: rule
+            node: rule,
+            property: { name: 'type' }
         });
     });
 
     test('AtomType validation', () => {
         const type = validationResult.document.parseResult.value.types[0];
         expectError(validationResult, "Use the rule type 'RefType' instead of the typed rule name 'Reference' for cross references.", {
-            node: type
+            node: type,
+            property: { name: 'typeAlternatives' }
         });
     });
 
@@ -70,7 +72,7 @@ describe('Check Rule Fragment Validation', () => {
 
     test('Rule Fragment Validation', () => {
         const fragmentType = validationResult.document.parseResult.value.types[0];
-        expectError(validationResult, 'Cannot use rule fragments in types.', { node: fragmentType });
+        expectError(validationResult, 'Cannot use rule fragments in types.', { node: fragmentType, property: { name: 'typeAlternatives' } });
     });
 });
 
@@ -89,9 +91,10 @@ describe('Checked Named CrossRefs', () => {
     });
 
     test('Named crossReference warning', () => {
-        const rule = validationResult.document.parseResult.value.rules[1];
+        const rule = ((validationResult.document.parseResult.value.rules[1] as ParserRule).alternatives as Group).elements[1] as Assignment;
         expectWarning(validationResult, 'The "name" property is not recommended for cross-references.', {
-            node: rule
+            node: rule,
+            property: { name: 'feature' }
         });
     });
 });
