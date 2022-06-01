@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { Grammar, Interface, ParserRule, Type } from '../generated/ast';
+import { AbstractElement, Grammar, Interface, isAction, isAlternatives, isGroup, isParserRule, isUnorderedGroup, ParserRule, Type } from '../generated/ast';
 import { getRuleType } from '../grammar-util';
 import { MultiMap } from '../../utils/collections';
 import { collectDeclaredTypes } from './declared-types';
@@ -12,7 +12,9 @@ import { collectInferredTypes } from './inferred-types';
 import { AstTypes, collectAllAstResources, distictAndSorted, Property, PropertyType, propertyTypeArrayToString, InterfaceType, UnionType, AstResources } from './types-util';
 import { stream } from '../../utils/stream';
 import { ValidationAcceptor } from '../../validation/validation-registry';
-import { extractAssignments } from '../../utils/ast-util';
+import { extractAssignments, streamAllContents } from '../../utils/ast-util';
+import { getTypeName } from '../..';
+import assert from 'assert';
 
 export function validateTypesConsistency(grammar: Grammar, accept: ValidationAcceptor): void {
     function applyErrorToRuleNodes(nodes: readonly ParserRule[], typeName: string): (errorMessage: string) => void {
@@ -61,6 +63,38 @@ export function validateTypesConsistency(grammar: Grammar, accept: ValidationAcc
             );
         }
     }
+
+    streamAllContents(grammar).filter(isParserRule).forEach(rule => {
+        if(rule.inferredType) {
+            return;
+        }
+        const ruleType = getRuleType(rule);
+        if(isAlternatives(rule.alternatives)) {
+            rule.alternatives.elements.forEach(visitSubRule);
+        } else {
+            visitSubRule(rule.alternatives);
+        }
+        function visitSubRule(subRule: AbstractElement) {
+            if(isGroup(subRule) || isUnorderedGroup(subRule)) {
+                const action = subRule.elements.find(isAction);
+                const subRuleType = action?.type?.ref ? getTypeName(action!.type!.ref!) : ruleType;
+                if(validationResources.has(subRuleType)) {
+                    const desiredInfo = validationResources.get(subRuleType)!;
+                    assert('declared' in desiredInfo && isInterface(desiredInfo.declared));
+                    const errorToRuleNodes = applyErrorToRuleNodes([rule], subRuleType);
+                    const errorToInvalidRuleNodes = applyMissingAssignmentErrorToRuleNodes([rule], subRuleType, accept);
+                    const errorToAssignment = applyErrorToAssignment([rule], accept);
+                    const assignments = extractAssignments(subRule);
+                    const properties = assignments.map<Property>(a => ({
+                        name: a.feature,
+                        optional: a.cardinality != '+',
+                        typeAlternatives: []//TODO markus
+                    }));
+                    checkPropertiesConsistency(properties, desiredInfo.declared.properties, errorToRuleNodes, errorToAssignment, errorToInvalidRuleNodes);
+                }
+            }
+        }
+    });
 }
 
 export function applyErrorToAssignment(nodes: readonly ParserRule[], accept: ValidationAcceptor): (propertyName: string, errorMessage: string) => void {
