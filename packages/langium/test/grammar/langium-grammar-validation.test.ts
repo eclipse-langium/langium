@@ -25,11 +25,15 @@ describe('Grammar validation', () => {
         validationResult = await parseAndValidate(grammarText);
     });
 
-    test('Property is unknown in the definition of X.', () => {
+    test('Property "name" is expected in the rule Main.', () => {
         const errors = validationResult.diagnostics.filter(d => /A property 'name' is expected in a rule that returns type 'X'./.test(d.message));
         expect(errors.length).toBe(1);
     });
 
+    test('Property "count" is unexpected in the rule Main.', () => {
+        const errors = validationResult.diagnostics.filter(d => /A property 'count' is not expected./.test(d.message));
+        expect(errors.length).toBe(1);
+    });
 });
 
 //TODO remove

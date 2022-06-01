@@ -9,6 +9,7 @@ import { AbstractElement, Action, Alternatives, Assignment, Group, isAction, isA
 import { stream } from '../../utils/stream';
 import { AstTypes, distictAndSorted, Property, PropertyType, InterfaceType, UnionType } from './types-util';
 import { MultiMap } from '../../utils/collections';
+import { streamAllContents } from '../../utils/ast-util';
 
 interface TypePart {
     name?: string
@@ -290,6 +291,12 @@ function addAction(graph: TypeGraph, parent: TypePart, action: Action): TypePart
         });
     }
     return typeNode;
+}
+
+export function getAlternativeProperties(alternative: AbstractElement): Property[] {
+    const part: TypePart = { properties: [], actionWithAssignment: false, children: [], parents: [], ruleCalls: [], name: '' };
+    streamAllContents(alternative).filter(isAssignment).forEach(a => addAssignment(part, a));
+    return part.properties;
 }
 
 function addAssignment(current: TypePart, assignment: Assignment): void {

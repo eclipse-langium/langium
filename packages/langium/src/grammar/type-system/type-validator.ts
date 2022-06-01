@@ -8,13 +8,12 @@ import { AbstractElement, Grammar, Interface, isAction, isAlternatives, isGroup,
 import { getRuleType } from '../grammar-util';
 import { MultiMap } from '../../utils/collections';
 import { collectDeclaredTypes } from './declared-types';
-import { collectInferredTypes } from './inferred-types';
+import { collectInferredTypes, getAlternativeProperties } from './inferred-types';
 import { AstTypes, collectAllAstResources, distictAndSorted, Property, PropertyType, propertyTypeArrayToString, InterfaceType, UnionType, AstResources } from './types-util';
 import { stream } from '../../utils/stream';
 import { ValidationAcceptor } from '../../validation/validation-registry';
 import { extractAssignments, streamAllContents } from '../../utils/ast-util';
 import { getTypeName } from '../..';
-import assert from 'assert';
 
 export function validateTypesConsistency(grammar: Grammar, accept: ValidationAcceptor): void {
     function applyErrorToRuleNodes(nodes: readonly ParserRule[], typeName: string): (errorMessage: string) => void {
@@ -35,7 +34,7 @@ export function validateTypesConsistency(grammar: Grammar, accept: ValidationAcc
                     accept(
                         'error',
                         errorMessage + ` in rule '${node.name}', but is required in type '${typeName}'.`,
-                        {node, property: 'parameters'});
+                        { node, property: 'parameters' });
                 }
             });
         };
@@ -65,31 +64,25 @@ export function validateTypesConsistency(grammar: Grammar, accept: ValidationAcc
     }
 
     streamAllContents(grammar).filter(isParserRule).forEach(rule => {
-        if(rule.inferredType) {
+        if (rule.inferredType) {
             return;
         }
         const ruleType = getRuleType(rule);
-        if(isAlternatives(rule.alternatives)) {
+        if (isAlternatives(rule.alternatives)) {
             rule.alternatives.elements.forEach(visitSubRule);
         } else {
             visitSubRule(rule.alternatives);
         }
         function visitSubRule(subRule: AbstractElement) {
-            if(isGroup(subRule) || isUnorderedGroup(subRule)) {
-                const action = subRule.elements.find(isAction);
-                const subRuleType = action?.type?.ref ? getTypeName(action!.type!.ref!) : ruleType;
-                if(validationResources.has(subRuleType)) {
-                    const desiredInfo = validationResources.get(subRuleType)!;
-                    assert('declared' in desiredInfo && isInterface(desiredInfo.declared));
+            const action = isGroup(subRule) || isUnorderedGroup(subRule) ? subRule.elements.find(isAction) : undefined;
+            const subRuleType = action?.type?.ref ? getTypeName(action!.type!.ref!) : ruleType;
+            if (validationResources.has(subRuleType)) {
+                const desiredInfo = validationResources.get(subRuleType)!;
+                if ('declared' in desiredInfo && isInterface(desiredInfo.declared)) {
                     const errorToRuleNodes = applyErrorToRuleNodes([rule], subRuleType);
                     const errorToInvalidRuleNodes = applyMissingAssignmentErrorToRuleNodes([rule], subRuleType, accept);
                     const errorToAssignment = applyErrorToAssignment([rule], accept);
-                    const assignments = extractAssignments(subRule);
-                    const properties = assignments.map<Property>(a => ({
-                        name: a.feature,
-                        optional: a.cardinality != '+',
-                        typeAlternatives: []//TODO markus
-                    }));
+                    const properties = getAlternativeProperties(subRule);
                     checkPropertiesConsistency(properties, desiredInfo.declared.properties, errorToRuleNodes, errorToAssignment, errorToInvalidRuleNodes);
                 }
             }
@@ -153,7 +146,7 @@ export function collectValidationResources(grammar: Grammar): ValidationResource
                 stream(astResources.interfaces).find(e => e.name === type.name);
             if (node) {
                 const inferred = inferredInfo.get(type.name);
-                acc.set(type.name, inferred ? {...inferred, declared: type, node } : { declared: type, node });
+                acc.set(type.name, inferred ? { ...inferred, declared: type, node } : { declared: type, node });
             }
             return acc;
         }, new Map<string, InferredInfo | DeclaredInfo | InferredInfo & DeclaredInfo>());
