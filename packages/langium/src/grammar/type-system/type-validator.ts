@@ -69,20 +69,20 @@ export function validateTypesConsistency(grammar: Grammar, accept: ValidationAcc
         }
         const ruleType = getRuleType(rule);
         if (isAlternatives(rule.alternatives)) {
-            rule.alternatives.elements.forEach(visitSubRule);
+            rule.alternatives.elements.forEach(visitAlternative);
         } else {
-            visitSubRule(rule.alternatives);
+            visitAlternative(rule.alternatives);
         }
-        function visitSubRule(subRule: AbstractElement) {
-            const action = isGroup(subRule) || isUnorderedGroup(subRule) ? subRule.elements.find(isAction) : undefined;
-            const subRuleType = action?.type?.ref ? getTypeName(action!.type!.ref!) : ruleType;
-            if (validationResources.has(subRuleType)) {
-                const desiredInfo = validationResources.get(subRuleType)!;
+        function visitAlternative(alternativeRule: AbstractElement) {
+            const action = isGroup(alternativeRule) || isUnorderedGroup(alternativeRule) ? alternativeRule.elements.find(isAction) : undefined;
+            const alternativeRuleType = action?.type?.ref ? getTypeName(action!.type!.ref!) : ruleType;
+            if (validationResources.has(alternativeRuleType)) {
+                const desiredInfo = validationResources.get(alternativeRuleType)!;
                 if ('declared' in desiredInfo && isInterface(desiredInfo.declared)) {
-                    const errorToRuleNodes = applyErrorToRuleNodes([rule], subRuleType);
-                    const errorToInvalidRuleNodes = applyMissingAssignmentErrorToRuleNodes([rule], subRuleType, accept);
+                    const errorToRuleNodes = applyErrorToRuleNodes([rule], alternativeRuleType);
+                    const errorToInvalidRuleNodes = applyMissingAssignmentErrorToRuleNodes([rule], alternativeRuleType, accept);
                     const errorToAssignment = applyErrorToAssignment([rule], accept);
-                    const properties = getAlternativeProperties(subRule);
+                    const properties = getAlternativeProperties(alternativeRule);
                     checkPropertiesConsistency(properties, desiredInfo.declared.properties, errorToRuleNodes, errorToAssignment, errorToInvalidRuleNodes);
                 }
             }
