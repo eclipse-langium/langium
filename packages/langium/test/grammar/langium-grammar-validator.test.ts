@@ -25,7 +25,7 @@ describe('Langium grammar validation', () => {
         const validationResult = await validate(grammarText);
 
         // assert
-        expectError(validationResult, /assigns to a call of the fragment rule/, {
+        expectError(validationResult, /Cannot use fragment rule 'B' for assignment of property 'b'./, {
             node: (validationResult.document.parseResult.value.rules[0] as ParserRule).alternatives as Assignment,
             property: {name: 'terminal'}
         });

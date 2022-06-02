@@ -10,7 +10,7 @@ import { Utils } from 'vscode-uri';
 import { References } from '../references/references';
 import { LangiumServices } from '../services';
 import { AstNode, Reference } from '../syntax-tree';
-import { extractAssignments, getContainerOfType, getDocument, streamAllContents } from '../utils/ast-util';
+import { getContainerOfType, getDocument, streamAllContents } from '../utils/ast-util';
 import { MultiMap } from '../utils/collections';
 import { toDocumentSegment } from '../utils/cst-util';
 import { stream } from '../utils/stream';
@@ -28,11 +28,13 @@ export class LangiumGrammarValidationRegistry extends ValidationRegistry {
         const validator = services.validation.LangiumGrammarValidator;
         const checks: ValidationChecks<ast.LangiumGrammarAstType> = {
             AbstractRule: validator.checkRuleName,
-            Assignment: validator.checkAssignmentWithFeatureName,
+            Assignment: [
+                validator.checkAssignmentWithFeatureName,
+                validator.checkAssignmentToFragmentRule
+            ],
             ParserRule: [
                 validator.checkParserRuleDataType,
-                validator.checkRuleParametersUsed,
-                validator.checkParserRuleNotAssigningToFragmentRule
+                validator.checkRuleParametersUsed
             ],
             TerminalRule: [
                 validator.checkTerminalRuleReturnType,
@@ -559,12 +561,9 @@ export class LangiumGrammarValidator {
         }
     }
 
-    checkParserRuleNotAssigningToFragmentRule(rule: ast.ParserRule, accept: ValidationAcceptor): void {
-        const assignments = extractAssignments(rule.alternatives);
-        for (const assignment of assignments) {
-            if(isRuleCall(assignment.terminal) && isParserRule(assignment.terminal.rule.ref) && assignment.terminal.rule.ref.fragment) {
-                accept('error', `The parser rule '${rule.name}' assigns to a call of the fragment rule '${assignment.terminal.rule.ref.name}', which is not allowed.`, {node: assignment, property: 'terminal'});
-            }
+    checkAssignmentToFragmentRule(assignment: ast.Assignment, accept: ValidationAcceptor): void {
+        if (isRuleCall(assignment.terminal) && isParserRule(assignment.terminal.rule.ref) && assignment.terminal.rule.ref.fragment) {
+            accept('error', `Cannot use fragment rule '${assignment.terminal.rule.ref.name}' for assignment of property '${assignment.feature}'.`, { node: assignment, property: 'terminal' });
         }
     }
 
@@ -617,7 +616,7 @@ export class LangiumGrammarValidator {
 
     checkFragmentsInTypes(atomType: ast.AtomType, accept: ValidationAcceptor): void {
         if (ast.isParserRule(atomType.refType?.ref) && atomType.refType?.ref.fragment) {
-            accept('error', 'Cannot use rule fragments in types.', { node: atomType, property: 'refType'});
+            accept('error', 'Cannot use rule fragments in types.', { node: atomType, property: 'refType' });
         }
     }
 
@@ -632,7 +631,7 @@ export class LangiumGrammarValidator {
     }
 
     checkAssignmentWithFeatureName(assignment: ast.Assignment, accept: ValidationAcceptor): void {
-        if(assignment.feature === 'name' && ast.isCrossReference(assignment.terminal)) {
+        if (assignment.feature === 'name' && ast.isCrossReference(assignment.terminal)) {
             accept('warning', 'The "name" property is not recommended for cross-references.', { node: assignment, property: 'feature' });
         }
     }
