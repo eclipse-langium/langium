@@ -46,7 +46,7 @@ describe('Module generator', () => {
 
             // assert
             expect(moduleString).toContain('MagicGrammarParserConfig');
-            expect(moduleString.split('\n').filter(line => line.startsWith('import') && line.indexOf('IParserConfig') > -1)).toHaveLength(1);
+            expect(moduleString.split('\n').filter(line => line.startsWith('import') && line.includes('IParserConfig'))).toHaveLength(1);
         });
     });
 });
