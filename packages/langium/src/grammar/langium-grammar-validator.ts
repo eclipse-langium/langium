@@ -10,13 +10,14 @@ import { Utils } from 'vscode-uri';
 import { References } from '../references/references';
 import { LangiumServices } from '../services';
 import { AstNode, Reference } from '../syntax-tree';
-import { getContainerOfType, getDocument, streamAllContents } from '../utils/ast-util';
+import { extractAssignments, getContainerOfType, getDocument, streamAllContents } from '../utils/ast-util';
 import { MultiMap } from '../utils/collections';
 import { toDocumentSegment } from '../utils/cst-util';
 import { stream } from '../utils/stream';
 import { ValidationAcceptor, ValidationChecks, ValidationRegistry } from '../validation/validation-registry';
 import { LangiumDocument, LangiumDocuments } from '../workspace/documents';
 import * as ast from './generated/ast';
+import { isParserRule, isRuleCall } from './generated/ast';
 import { findKeywordNode, findNameAssignment, getEntryRule, getTypeName, isDataTypeRule, resolveImport, resolveTransitiveImports, terminalRegex } from './grammar-util';
 import type { LangiumGrammarServices } from './langium-grammar-module';
 import { applyErrorToAssignment, collectAllInterfaces, InterfaceInfo, validateTypesConsistency } from './type-system/type-validator';
@@ -30,7 +31,8 @@ export class LangiumGrammarValidationRegistry extends ValidationRegistry {
             Assignment: validator.checkAssignmentWithFeatureName,
             ParserRule: [
                 validator.checkParserRuleDataType,
-                validator.checkRuleParametersUsed
+                validator.checkRuleParametersUsed,
+                validator.checkParserRuleNotAssigningToFragmentRule
             ],
             TerminalRule: [
                 validator.checkTerminalRuleReturnType,
@@ -453,7 +455,7 @@ export class LangiumGrammarValidator {
             visited.add(interfaceName);
             const interfaceInfo = nameToInterfaceInfo.get(interfaceName);
             if (interfaceInfo) {
-                interfaceInfo.type.properties.forEach(propery => result.add(propery.name, interfaceInfo.node));
+                interfaceInfo.type.properties.forEach(property => result.add(property.name, interfaceInfo.node));
                 interfaceInfo.type.interfaceSuperTypes.forEach(superType => collectPropertyNamesForHierarchyInternal(superType));
             }
         }
@@ -554,6 +556,15 @@ export class LangiumGrammarValidator {
             accept('error', 'This parser rule does not create an object. Add a primitive return type or an action to the start of the rule to force object instantiation.', { node: rule, property: 'name' });
         } else if (hasDatatypeReturnType && !isDataType) {
             accept('error', 'Normal parser rules are not allowed to return a primitive value. Use a datatype rule for that.', { node: rule, property: 'dataType' });
+        }
+    }
+
+    checkParserRuleNotAssigningToFragmentRule(rule: ast.ParserRule, accept: ValidationAcceptor): void {
+        const assignments = extractAssignments(rule.alternatives);
+        for (const assignment of assignments) {
+            if(isRuleCall(assignment.terminal) && isParserRule(assignment.terminal.rule.ref) && assignment.terminal.rule.ref.fragment) {
+                accept('error', `The parser rule '${rule.name}' assigns to a call of the fragment rule '${assignment.terminal.rule.ref.name}', which is not allowed.`, {node: assignment, property: 'terminal'});
+            }
         }
     }
 
