@@ -26,6 +26,7 @@ export class LangiumGrammarValidationRegistry extends ValidationRegistry {
         super(services);
         const validator = services.validation.LangiumGrammarValidator;
         const checks: ValidationChecks<ast.LangiumGrammarAstType> = {
+            Action: validator.checkActionTypeUnions,
             AbstractRule: validator.checkRuleName,
             Assignment: validator.checkAssignmentWithFeatureName,
             ParserRule: [
@@ -410,10 +411,11 @@ export class LangiumGrammarValidator {
                 }
             });
         }
-        for (const action of streamAllContents(grammar).filter(ast.isAction)) {
-            if (ast.isType(action.type)) {
-                accept('error', 'Actions cannot create union types.', { node: action, property: 'type' });
-            }
+    }
+
+    checkActionTypeUnions(action: ast.Action, accept: ValidationAcceptor): void {
+        if (ast.isType(action.type)) {
+            accept('error', 'Actions cannot create union types.', { node: action, property: 'type' });
         }
     }
 

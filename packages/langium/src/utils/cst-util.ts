@@ -9,8 +9,12 @@ import { Range } from 'vscode-languageserver';
 import { DatatypeSymbol } from '../parser/langium-parser';
 import { AstNode, CstNode, CompositeCstNode, isCompositeCstNode, isLeafCstNode, LeafCstNode } from '../syntax-tree';
 import { DocumentSegment } from '../workspace/documents';
-import { TreeStream, TreeStreamImpl } from './stream';
+import { Stream, TreeStream, TreeStreamImpl } from './stream';
 
+/**
+ * Create a stream of all CST nodes that are directly and indirectly contained in the given root node,
+ * including the root node itself.
+ */
 export function streamCst(node: CstNode): TreeStream<CstNode> {
     return new TreeStreamImpl(node, element => {
         if (isCompositeCstNode(element)) {
@@ -18,17 +22,14 @@ export function streamCst(node: CstNode): TreeStream<CstNode> {
         } else {
             return [];
         }
-    });
+    }, { includeRoot: true });
 }
 
-export function flatten(node: CstNode): LeafCstNode[] {
-    if (isLeafCstNode(node)) {
-        return [node];
-    } else if (isCompositeCstNode(node)) {
-        return node.children.flatMap(e => flatten(e));
-    } else {
-        return [];
-    }
+/**
+ * Create a stream of all leaf nodes that are directly and indirectly contained in the given root node.
+ */
+export function flattenCst(node: CstNode): Stream<LeafCstNode> {
+    return streamCst(node).filter(isLeafCstNode);
 }
 
 export function tokenToRange(token: IToken): Range {

@@ -8,8 +8,8 @@ import { CancellationToken } from 'vscode-languageserver';
 import { URI } from 'vscode-uri';
 import { NameProvider } from '../references/naming';
 import { LangiumServices } from '../services';
-import { AstNode, AstNodeDescription, ReferenceInfo } from '../syntax-tree';
-import { getDocument, isLinkingError, streamAllContents, streamContents, streamReferences } from '../utils/ast-util';
+import { AstNode, AstNodeDescription } from '../syntax-tree';
+import { getDocument, isLinkingError, streamAst, streamContents, streamReferences } from '../utils/ast-util';
 import { toDocumentSegment } from '../utils/cst-util';
 import { interruptAndCheck } from '../utils/promise-util';
 import { AstNodeLocator } from './ast-node-locator';
@@ -132,29 +132,22 @@ export class DefaultReferenceDescriptionProvider implements ReferenceDescription
     async createDescriptions(document: LangiumDocument, cancelToken = CancellationToken.None): Promise<ReferenceDescription[]> {
         const descr: ReferenceDescription[] = [];
         const rootNode = document.parseResult.value;
-        const refConverter = (refInfo: ReferenceInfo): ReferenceDescription | undefined => {
-            const refAstNodeDescr = refInfo.reference.$nodeDescription;
-            // Do not handle not yet linked references. Consider logging a warning or throw an exception when DocumentState is < than Linked
-            if (!refAstNodeDescr) {
-                return undefined;
-            }
-            const doc = getDocument(refInfo.container);
-            const docUri = doc.uri;
-            const refCstNode = refInfo.reference.$refNode;
-            return {
-                sourceUri: docUri,
-                sourcePath: this.nodeLocator.getAstNodePath(refInfo.container),
-                targetUri: refAstNodeDescr.documentUri,
-                targetPath: refAstNodeDescr.path,
-                segment: toDocumentSegment(refCstNode),
-                local: refAstNodeDescr.documentUri.toString() === docUri.toString()
-            };
-        };
-        for (const astNode of streamAllContents(rootNode)) {
+        for (const astNode of streamAst(rootNode)) {
             await interruptAndCheck(cancelToken);
             streamReferences(astNode).filter(refInfo => !isLinkingError(refInfo)).forEach(refInfo => {
-                const refDescr = refConverter(refInfo);
-                if (refDescr) {
+                const refAstNodeDescr = refInfo.reference.$nodeDescription;
+                // Do not handle not yet linked references. Consider logging a warning or throw an exception when DocumentState is < than Linked
+                if (refAstNodeDescr) {
+                    const docUri = getDocument(refInfo.container).uri;
+                    const refCstNode = refInfo.reference.$refNode;
+                    const refDescr: ReferenceDescription = {
+                        sourceUri: docUri,
+                        sourcePath: this.nodeLocator.getAstNodePath(refInfo.container),
+                        targetUri: refAstNodeDescr.documentUri,
+                        targetPath: refAstNodeDescr.path,
+                        segment: toDocumentSegment(refCstNode),
+                        local: refAstNodeDescr.documentUri.toString() === docUri.toString()
+                    };
                     descr.push(refDescr);
                 }
             });

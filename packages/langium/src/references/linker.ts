@@ -7,7 +7,7 @@
 import { CancellationToken } from 'vscode-languageserver';
 import { LangiumServices } from '../services';
 import { AstNode, AstNodeDescription, AstReflection, CstNode, LinkingError, Reference, ReferenceInfo } from '../syntax-tree';
-import { isAstNode, isAstNodeDescription, isLinkingError, streamAllContents, streamReferences } from '../utils/ast-util';
+import { isAstNode, isAstNodeDescription, isLinkingError, streamAst, streamReferences } from '../utils/ast-util';
 import { interruptAndCheck } from '../utils/promise-util';
 import { AstNodeLocator } from '../workspace/ast-node-locator';
 import { DocumentState, LangiumDocument, LangiumDocuments } from '../workspace/documents';
@@ -89,14 +89,9 @@ export class DefaultLinker implements Linker {
     }
 
     async link(document: LangiumDocument, cancelToken = CancellationToken.None): Promise<void> {
-        const process = (node: AstNode) => {
-            streamReferences(node).forEach(ref => this.doLink(ref, document));
-        };
-        const rootNode = document.parseResult.value;
-        process(rootNode);
-        for (const node of streamAllContents(rootNode)) {
+        for (const node of streamAst(document.parseResult.value)) {
             await interruptAndCheck(cancelToken);
-            process(node);
+            streamReferences(node).forEach(ref => this.doLink(ref, document));
         }
         document.state = DocumentState.Linked;
     }
