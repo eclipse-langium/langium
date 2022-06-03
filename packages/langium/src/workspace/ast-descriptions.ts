@@ -54,7 +54,7 @@ export class DefaultAstNodeDescriptionProvider implements AstNodeDescriptionProv
     protected readonly nameProvider: NameProvider;
 
     constructor(services: LangiumServices) {
-        this.astNodeLocator = services.index.AstNodeLocator;
+        this.astNodeLocator = services.workspace.AstNodeLocator;
         this.nameProvider = services.references.NameProvider;
     }
 
@@ -126,7 +126,7 @@ export class DefaultReferenceDescriptionProvider implements ReferenceDescription
     protected readonly nodeLocator: AstNodeLocator;
 
     constructor(services: LangiumServices) {
-        this.nodeLocator = services.index.AstNodeLocator;
+        this.nodeLocator = services.workspace.AstNodeLocator;
     }
 
     async createDescriptions(document: LangiumDocument, cancelToken = CancellationToken.None): Promise<ReferenceDescription[]> {

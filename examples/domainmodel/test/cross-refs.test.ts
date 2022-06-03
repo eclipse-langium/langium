@@ -57,6 +57,6 @@ function range(ref: ReferenceDescription): string {
     return ref.segment.range.start.line + ':' + ref.segment.range.start.character + '->' + ref.segment.range.end.line + ':' + ref.segment.range.end.character;
 }
 function createPath(node: AstNode): string {
-    return services.index.AstNodeLocator.getAstNodePath(node);
+    return services.workspace.AstNodeLocator.getAstNodePath(node);
 }
 

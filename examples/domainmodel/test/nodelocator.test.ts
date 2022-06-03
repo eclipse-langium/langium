@@ -41,9 +41,9 @@ async function getModel(): Promise<Domainmodel> {
 }
 
 function createPath(node: AstNode): string {
-    return services.index.AstNodeLocator.getAstNodePath(node);
+    return services.workspace.AstNodeLocator.getAstNodePath(node);
 }
 
 function findNode(document: LangiumDocument, path: string): AstNode | undefined {
-    return services.index.AstNodeLocator.getAstNode(document, path);
+    return services.workspace.AstNodeLocator.getAstNode(document, path);
 }

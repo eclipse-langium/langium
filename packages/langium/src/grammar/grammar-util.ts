@@ -424,10 +424,10 @@ export function loadGrammar(json: string): ast.Grammar {
 
 export function computeGrammarScope(services: LangiumServices, grammar: ast.Grammar): PrecomputedScopes {
     const nameProvider = services.references.NameProvider;
-    const descriptions = services.index.AstNodeDescriptionProvider;
+    const descriptions = services.workspace.AstNodeDescriptionProvider;
     const document = getDocument(grammar);
     const scopes = new MultiMap<AstNode, AstNodeDescription>();
-    const processTypeNode = processTypeNodeWithNodeLocator(services.index.AstNodeLocator);
+    const processTypeNode = processTypeNodeWithNodeLocator(services.workspace.AstNodeLocator);
     const processActionNode = processActionNodeWithNodeDescriptionProvider(descriptions);
     for (const node of streamAllContents(grammar)) {
         if (ast.isReturnType(node)) continue;

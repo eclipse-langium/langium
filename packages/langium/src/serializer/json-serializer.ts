@@ -25,7 +25,7 @@ export interface JsonSerializer {
     deserialize(content: string): AstNode
 }
 
-export class DefaultJsonSerializer {
+export class DefaultJsonSerializer implements JsonSerializer {
 
     private readonly linker: Linker;
     protected ignoreProperties = ['$container', '$containerProperty', '$containerIndex', '$document', '$cstNode'];

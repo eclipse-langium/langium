@@ -79,17 +79,12 @@ export type LangiumLspServices = {
  * Services for a single language where Langium provides default implementations.
  */
 export type LangiumDefaultServices = {
+    lsp: LangiumLspServices
     parser: {
         GrammarConfig: GrammarConfig
         ValueConverter: ValueConverter
         LangiumParser: LangiumParser
         TokenBuilder: TokenBuilder
-    }
-    lsp: LangiumLspServices
-    index: {
-        AstNodeLocator: AstNodeLocator
-        AstNodeDescriptionProvider: AstNodeDescriptionProvider
-        ReferenceDescriptionProvider: ReferenceDescriptionProvider
     }
     references: {
         Linker: Linker
@@ -104,6 +99,11 @@ export type LangiumDefaultServices = {
     validation: {
         DocumentValidator: DocumentValidator
         ValidationRegistry: ValidationRegistry
+    }
+    workspace: {
+        AstNodeLocator: AstNodeLocator
+        AstNodeDescriptionProvider: AstNodeDescriptionProvider
+        ReferenceDescriptionProvider: ReferenceDescriptionProvider
     }
     shared: LangiumSharedServices
 }

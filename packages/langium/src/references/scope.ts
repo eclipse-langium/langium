@@ -178,7 +178,7 @@ export class DefaultScopeComputation implements ScopeComputation {
 
     constructor(services: LangiumServices) {
         this.nameProvider = services.references.NameProvider;
-        this.descriptions = services.index.AstNodeDescriptionProvider;
+        this.descriptions = services.workspace.AstNodeDescriptionProvider;
     }
 
     async computeScope(document: LangiumDocument, cancelToken = CancellationToken.None): Promise<PrecomputedScopes> {

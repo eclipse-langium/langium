@@ -69,7 +69,7 @@ export function createDefaultModule(context: DefaultModuleContext): Module<Langi
             DocumentHighlighter: (services) => new DefaultDocumentHighlighter(services),
             RenameHandler: (services) => new DefaultRenameHandler(services)
         },
-        index: {
+        workspace: {
             AstNodeLocator: () => new DefaultAstNodeLocator(),
             AstNodeDescriptionProvider: (services) => new DefaultAstNodeDescriptionProvider(services),
             ReferenceDescriptionProvider: (services) => new DefaultReferenceDescriptionProvider(services)

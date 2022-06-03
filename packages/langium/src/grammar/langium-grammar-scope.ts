@@ -60,8 +60,8 @@ export class LangiumGrammarScopeComputation extends DefaultScopeComputation {
 
     constructor(services: LangiumServices) {
         super(services);
-        this.processTypeNode = processTypeNodeWithNodeLocator(services.index.AstNodeLocator);
-        this.processActionNode = processActionNodeWithNodeDescriptionProvider(services.index.AstNodeDescriptionProvider);
+        this.processTypeNode = processTypeNodeWithNodeLocator(services.workspace.AstNodeLocator);
+        this.processActionNode = processActionNodeWithNodeDescriptionProvider(services.workspace.AstNodeDescriptionProvider);
     }
 
     protected processNode(node: AstNode, document: LangiumDocument, scopes: PrecomputedScopes): void {

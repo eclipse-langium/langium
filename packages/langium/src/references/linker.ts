@@ -85,7 +85,7 @@ export class DefaultLinker implements Linker {
         this.reflection = services.shared.AstReflection;
         this.langiumDocuments = () => services.shared.workspace.LangiumDocuments;
         this.scopeProvider = services.references.ScopeProvider;
-        this.astNodeLocator = services.index.AstNodeLocator;
+        this.astNodeLocator = services.workspace.AstNodeLocator;
     }
 
     async link(document: LangiumDocument, cancelToken = CancellationToken.None): Promise<void> {
