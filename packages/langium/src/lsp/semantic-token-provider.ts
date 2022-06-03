@@ -182,6 +182,10 @@ export abstract class AbstractSemanticTokenProvider implements SemanticTokenProv
 
     protected computeHighlighting(document: LangiumDocument, acceptor: SemanticTokenAcceptor, cancelToken: CancellationToken): void {
         const root = document.parseResult.value;
+        if (this.highlightElement(root, acceptor) === 'prune') {
+            // If the root node is pruned, we can return here already
+            return;
+        }
         const treeIterator = streamAllContents(root).iterator();
         let result: IteratorResult<AstNode>;
         do {
