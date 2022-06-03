@@ -576,13 +576,11 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           },
           {
             "$type": "Keyword",
-            "value": "Date",
-            "elements": []
+            "value": "Date"
           },
           {
             "$type": "Keyword",
-            "value": "bigint",
-            "elements": []
+            "value": "bigint"
           }
         ]
       },
