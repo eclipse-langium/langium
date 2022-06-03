@@ -141,9 +141,18 @@ export function streamContents(node: AstNode): Stream<AstNode> {
 
 /**
  * Create a stream of all AST nodes that are directly and indirectly contained in the given root node.
+ * This does not include the root node itself.
  */
 export function streamAllContents(root: AstNode): TreeStream<AstNode> {
     return new TreeStreamImpl(root, node => streamContents(node));
+}
+
+/**
+ * Create a stream of all AST nodes that are directly and indirectly contained in the given root node,
+ * including the root node itself.
+ */
+export function streamAst(root: AstNode): TreeStream<AstNode> {
+    return new TreeStreamImpl(root, node => streamContents(node), { includeRoot: true });
 }
 
 /**
@@ -190,15 +199,13 @@ export function streamReferences(node: AstNode): Stream<ReferenceInfo> {
  */
 export function findLocalReferences(targetNode: AstNode, lookup = getDocument(targetNode).parseResult.value): Stream<Reference> {
     const refs: Reference[] = [];
-    const process = (node: AstNode) => {
+    streamAst(lookup).forEach(node => {
         streamReferences(node).forEach(refInfo => {
             if (refInfo.reference.ref === targetNode) {
                 refs.push(refInfo.reference);
             }
         });
-    };
-    process(lookup);
-    streamAllContents(lookup).forEach(node => process(node));
+    });
     return stream(refs);
 }
 

@@ -732,16 +732,17 @@ export interface TreeStream<T> extends Stream<T> {
 
 /**
  * The default implementation of `TreeStream` takes a root element and a function that computes the
- * children of its argument. The root is not included in the stream.
+ * children of its argument. Whether the root node included in the stream is controlled with the
+ * `includeRoot` option, which defaults to `false`.
  */
 export class TreeStreamImpl<T>
     extends StreamImpl<{ iterators: Array<Iterator<T>>, pruned: boolean }, T>
     implements TreeStream<T> {
 
-    constructor(root: T, children: (node: T) => Iterable<T>) {
+    constructor(root: T, children: (node: T) => Iterable<T>, options?: { includeRoot?: boolean }) {
         super(
             () => ({
-                iterators: [children(root)[Symbol.iterator]()],
+                iterators: options?.includeRoot ? [[root][Symbol.iterator]()] : [children(root)[Symbol.iterator]()],
                 pruned: false
             }),
             state => {

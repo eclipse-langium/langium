@@ -10,7 +10,7 @@ import { findNodeForFeature } from '../grammar/grammar-util';
 import { LanguageMetaData } from '../grammar/language-meta-data';
 import { LangiumServices } from '../services';
 import { AstNode } from '../syntax-tree';
-import { streamAllContents } from '../utils/ast-util';
+import { streamAst } from '../utils/ast-util';
 import { tokenToRange } from '../utils/cst-util';
 import { interruptAndCheck, isOperationCancelled } from '../utils/promise-util';
 import { LangiumDocument } from '../workspace/documents';
@@ -108,16 +108,12 @@ export class DefaultDocumentValidator implements DocumentValidator {
             validationItems.push(this.toDiagnostic(severity, message, info));
         };
 
-        const runChecks = async (node: AstNode) => {
+        await Promise.all(streamAst(rootNode).map(async node => {
+            await interruptAndCheck(cancelToken);
             const checks = this.validationRegistry.getChecks(node.$type);
             for (const check of checks) {
                 await check(node, acceptor, cancelToken);
             }
-        };
-        await runChecks(rootNode);
-        await Promise.all(streamAllContents(rootNode).map(async node => {
-            await interruptAndCheck(cancelToken);
-            await runChecks(node);
         }));
         return validationItems;
     }

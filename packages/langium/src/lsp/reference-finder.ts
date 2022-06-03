@@ -11,7 +11,7 @@ import { References } from '../references/references';
 import { LangiumServices } from '../services';
 import { AstNode, CstNode } from '../syntax-tree';
 import { getDocument, isReference } from '../utils/ast-util';
-import { findLeafNodeAtOffset, flatten } from '../utils/cst-util';
+import { findLeafNodeAtOffset, flattenCst } from '../utils/cst-util';
 import { MaybePromise } from '../utils/promise-util';
 import { LangiumDocument } from '../workspace/documents';
 
@@ -76,7 +76,7 @@ export class DefaultReferenceFinder implements ReferenceFinder {
             return nameNode;
         if (node.$cstNode) {
             // try find first leaf with name as text
-            const leafNode = flatten(node.$cstNode).find((n) => n.text === name);
+            const leafNode = flattenCst(node.$cstNode).find((n) => n.text === name);
             if (leafNode)
                 return leafNode;
         }

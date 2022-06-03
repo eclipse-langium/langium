@@ -6,9 +6,9 @@
 
 import { CancellationToken, FoldingRange, FoldingRangeKind, FoldingRangeParams } from 'vscode-languageserver';
 import { LangiumServices } from '../services';
-import { AstNode, CstNode, isLeafCstNode } from '../syntax-tree';
+import { AstNode, CstNode } from '../syntax-tree';
 import { streamAllContents } from '../utils/ast-util';
-import { streamCst } from '../utils/cst-util';
+import { flattenCst } from '../utils/cst-util';
 import { MaybePromise } from '../utils/promise-util';
 import { LangiumDocument } from '../workspace/documents';
 
@@ -99,8 +99,8 @@ export class DefaultFoldingRangeProvider implements FoldingRangeProvider {
     protected collectCommentFolding(document: LangiumDocument, node: AstNode, acceptor: FoldingRangeAcceptor): void {
         const cstNode = node.$cstNode;
         if (cstNode) {
-            for (const node of streamCst(cstNode)) {
-                if (isLeafCstNode(node) && this.commentNames.includes(node.tokenType.name)) {
+            for (const node of flattenCst(cstNode)) {
+                if (this.commentNames.includes(node.tokenType.name)) {
                     const foldingRange = this.toFoldingRange(document, node, FoldingRangeKind.Comment);
                     if (foldingRange) {
                         acceptor(foldingRange);

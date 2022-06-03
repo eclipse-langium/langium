@@ -13,7 +13,7 @@ import { ScopeProvider } from '../../references/scope';
 import { LangiumServices } from '../../services';
 import { AstNode, AstNodeDescription, CstNode } from '../../syntax-tree';
 import { getContainerOfType, isAstNode } from '../../utils/ast-util';
-import { findLeafNodeAtOffset, findRelevantNode, flatten } from '../../utils/cst-util';
+import { findLeafNodeAtOffset, findRelevantNode, flattenCst } from '../../utils/cst-util';
 import { MaybePromise } from '../../utils/promise-util';
 import { stream } from '../../utils/stream';
 import { LangiumDocument } from '../../workspace/documents';
@@ -65,7 +65,7 @@ export class DefaultCompletionProvider implements CompletionProvider {
                 const commonSuperRule = this.findCommonSuperRule(node);
                 // In some cases, it is possible that we do not have a super rule
                 if (commonSuperRule) {
-                    const flattened = flatten(commonSuperRule.node).filter(e => e.offset < offset);
+                    const flattened = flattenCst(commonSuperRule.node).filter(e => e.offset < offset).toArray();
                     const possibleFeatures = this.ruleInterpreter.interpretRule(commonSuperRule.rule, [...flattened], offset);
                     // Remove features which we already identified during parsing
                     const partialMatches = possibleFeatures.filter(e => {
