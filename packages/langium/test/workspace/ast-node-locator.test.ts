@@ -20,7 +20,7 @@ describe('DefaultAstNodeLocator', () => {
             C: 'c';
         `);
         const model = document.parseResult.value;
-        const nodeLocator = grammarServices.index.AstNodeLocator;
+        const nodeLocator = grammarServices.workspace.AstNodeLocator;
         expect(nodeLocator.getAstNodePath(model.rules[0])).toBe('/rules@0');
         expect(nodeLocator.getAstNodePath((model.rules[0] as ParserRule).alternatives)).toBe('/rules@0/alternatives');
         expect(nodeLocator.getAstNodePath(((model.rules[0] as ParserRule).alternatives as Alternatives).elements[1])).toBe('/rules@0/alternatives/elements@1');
@@ -34,7 +34,7 @@ describe('DefaultAstNodeLocator', () => {
             C: 'c';
         `);
         const model = document.parseResult.value;
-        const nodeLocator = grammarServices.index.AstNodeLocator;
+        const nodeLocator = grammarServices.workspace.AstNodeLocator;
         expect(nodeLocator.getAstNode(document, '/rules@0')).toBe(model.rules[0]);
         expect(nodeLocator.getAstNode(document, '/rules@0/alternatives')).toBe((model.rules[0] as ParserRule).alternatives);
         expect(nodeLocator.getAstNode(document, '/rules@0/alternatives/elements@1')).toBe(((model.rules[0] as ParserRule).alternatives as Alternatives).elements[1]);

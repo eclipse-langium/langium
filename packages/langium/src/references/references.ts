@@ -43,7 +43,7 @@ export class DefaultReferences implements References {
     constructor(services: LangiumServices) {
         this.nameProvider = services.references.NameProvider;
         this.index = services.shared.workspace.IndexManager;
-        this.nodeLocator = services.index.AstNodeLocator;
+        this.nodeLocator = services.workspace.AstNodeLocator;
     }
 
     findDeclaration(sourceCstNode: CstNode): CstNode | undefined {

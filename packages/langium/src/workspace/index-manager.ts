@@ -130,7 +130,7 @@ export class DefaultIndexManager implements IndexManager {
     async updateContent(document: LangiumDocument, cancelToken = CancellationToken.None): Promise<void> {
         this.globalScopeCache.clear();
         const services = this.serviceRegistry.getServices(document.uri);
-        const indexData: AstNodeDescription[] = await services.index.AstNodeDescriptionProvider.createDescriptions(document, cancelToken);
+        const indexData: AstNodeDescription[] = await services.workspace.AstNodeDescriptionProvider.createDescriptions(document, cancelToken);
         for (const data of indexData) {
             data.node = undefined; // clear reference to the AST Node
         }
@@ -140,7 +140,7 @@ export class DefaultIndexManager implements IndexManager {
 
     async updateReferences(document: LangiumDocument, cancelToken = CancellationToken.None): Promise<void> {
         const services = this.serviceRegistry.getServices(document.uri);
-        const indexData: ReferenceDescription[] = await services.index.ReferenceDescriptionProvider.createDescriptions(document, cancelToken);
+        const indexData: ReferenceDescription[] = await services.workspace.ReferenceDescriptionProvider.createDescriptions(document, cancelToken);
         this.referenceIndex.set(document.uri.toString(), indexData);
         document.state = DocumentState.IndexedReferences;
     }

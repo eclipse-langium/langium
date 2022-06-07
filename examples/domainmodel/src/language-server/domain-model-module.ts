@@ -29,7 +29,7 @@ export const DomainModelModule: Module<DomainModelServices, PartialLangiumServic
         ValidationRegistry: (services) => new DomainModelValidationRegistry(services),
         DomainModelValidator: () => new DomainModelValidator()
     },
-    index: {
+    workspace: {
         AstNodeDescriptionProvider: (services) => new DomainModelDescriptionProvider(services)
     },
     lsp: {
