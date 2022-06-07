@@ -39,8 +39,6 @@ describe('Cross references indexed after affected process', () => {
 async function updateDocuments(extendsFile: string, superFile: string): Promise<{ 'super': LangiumDocument, 'extends': LangiumDocument }> {
     const superDoc: LangiumDocument = await parseDocument(services, superFile);
     const extendsDoc: LangiumDocument = await parseDocument(services, extendsFile);
-    services.shared.workspace.LangiumDocuments.addDocument(superDoc);
-    services.shared.workspace.LangiumDocuments.addDocument(extendsDoc);
 
     await services.shared.workspace.DocumentBuilder.build([extendsDoc, superDoc]);
     return { 'super': superDoc, 'extends': extendsDoc };

@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import {
-    CompletionItem, Diagnostic, DiagnosticSeverity, DocumentSymbol, MarkupContent, Range, TextDocumentIdentifier, TextDocumentPositionParams
+    CompletionItem, Diagnostic, DiagnosticSeverity, DocumentSymbol, MarkupContent, Range, ReferenceParams, TextDocumentIdentifier, TextDocumentPositionParams
 } from 'vscode-languageserver';
 import { URI } from 'vscode-uri';
 import { LangiumServices } from '../services';
@@ -21,6 +21,7 @@ export function parseHelper<T extends AstNode = AstNode>(services: LangiumServic
         const randomNumber = Math.floor(Math.random() * 10000000) + 1000000;
         const uri = URI.parse(`file:///${randomNumber}${metaData.fileExtensions[0]}`);
         const document = services.shared.workspace.LangiumDocumentFactory.fromString<T>(input, uri);
+        services.shared.workspace.LangiumDocuments.addDocument(document);
         await documentBuilder.build([document]);
         return document;
     };
@@ -124,6 +125,26 @@ export function expectGoToDefinition(services: LangiumServices, expectEqual: Exp
     };
 }
 
+export interface ExpectedFindReferences extends ExpectedBase {
+    index: number,
+    referencesCount: number,
+    includeDeclaration: boolean
+}
+
+export function expectFindReferences(services: LangiumServices, expectEqual: ExpectFunction): (expectedFindReferences: ExpectedFindReferences) => Promise<void> {
+    return async expectedFindReferences => {
+        const { output, indices } = replaceIndices(expectedFindReferences);
+        const document = await parseDocument(services, output);
+        const referenceFinder = services.lsp.ReferenceFinder;
+        const references = await referenceFinder.findReferences(document, referenceParams(document, indices[expectedFindReferences.index], expectedFindReferences.includeDeclaration)) ?? [];
+        CleanUpTestDocuments(services);
+        expectEqual(references.length, expectedFindReferences.referencesCount);
+    };
+}
+
+function referenceParams(document: LangiumDocument, offset: number, includeDeclaration: boolean): ReferenceParams {
+    return { textDocument: { uri: document.textDocument.uri }, position: document.textDocument.positionAt(offset), context: {includeDeclaration: includeDeclaration} };
+}
 export interface ExpectedHover extends ExpectedBase {
     index: number
     hover?: string
@@ -305,4 +326,9 @@ export function expectWarning<T extends AstNode = AstNode, N extends AstNode = A
         ...filterOptions,
         ...content,
     });
+}
+
+function CleanUpTestDocuments(services: LangiumServices) {
+    const allDocs = services.shared.workspace.LangiumDocuments.all.map(x => x.uri).toArray();
+    services.shared.workspace.DocumentBuilder.update([], allDocs);
 }
