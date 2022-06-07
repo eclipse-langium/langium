@@ -17,6 +17,7 @@ import { stream } from '../utils/stream';
 import { ValidationAcceptor, ValidationChecks, ValidationRegistry } from '../validation/validation-registry';
 import { LangiumDocument, LangiumDocuments } from '../workspace/documents';
 import * as ast from './generated/ast';
+import { isParserRule, isRuleCall } from './generated/ast';
 import { findKeywordNode, findNameAssignment, getEntryRule, getTypeName, isDataTypeRule, resolveImport, resolveTransitiveImports, terminalRegex } from './grammar-util';
 import type { LangiumGrammarServices } from './langium-grammar-module';
 import { applyErrorToAssignment, collectAllInterfaces, InterfaceInfo, validateTypesConsistency } from './type-system/type-validator';
@@ -28,7 +29,10 @@ export class LangiumGrammarValidationRegistry extends ValidationRegistry {
         const checks: ValidationChecks<ast.LangiumGrammarAstType> = {
             Action: validator.checkActionTypeUnions,
             AbstractRule: validator.checkRuleName,
-            Assignment: validator.checkAssignmentWithFeatureName,
+            Assignment: [
+                validator.checkAssignmentWithFeatureName,
+                validator.checkAssignmentToFragmentRule
+            ],
             ParserRule: [
                 validator.checkParserRuleDataType,
                 validator.checkRuleParametersUsed
@@ -455,7 +459,7 @@ export class LangiumGrammarValidator {
             visited.add(interfaceName);
             const interfaceInfo = nameToInterfaceInfo.get(interfaceName);
             if (interfaceInfo) {
-                interfaceInfo.type.properties.forEach(propery => result.add(propery.name, interfaceInfo.node));
+                interfaceInfo.type.properties.forEach(property => result.add(property.name, interfaceInfo.node));
                 interfaceInfo.type.interfaceSuperTypes.forEach(superType => collectPropertyNamesForHierarchyInternal(superType));
             }
         }
@@ -559,6 +563,12 @@ export class LangiumGrammarValidator {
         }
     }
 
+    checkAssignmentToFragmentRule(assignment: ast.Assignment, accept: ValidationAcceptor): void {
+        if (isRuleCall(assignment.terminal) && isParserRule(assignment.terminal.rule.ref) && assignment.terminal.rule.ref.fragment) {
+            accept('error', `Cannot use fragment rule '${assignment.terminal.rule.ref.name}' for assignment of property '${assignment.feature}'.`, { node: assignment, property: 'terminal' });
+        }
+    }
+
     checkTerminalRuleReturnType(rule: ast.TerminalRule, accept: ValidationAcceptor): void {
         if (rule.type?.name && !isPrimitiveType(rule.type.name)) {
             accept('error', "Terminal rules can only return primitive types like 'string', 'boolean', 'number', 'Date' or 'bigint'.", { node: rule.type, property: 'name' });
@@ -608,7 +618,7 @@ export class LangiumGrammarValidator {
 
     checkFragmentsInTypes(atomType: ast.AtomType, accept: ValidationAcceptor): void {
         if (ast.isParserRule(atomType.refType?.ref) && atomType.refType?.ref.fragment) {
-            accept('error', 'Cannot use rule fragments in types.', { node: atomType, property: 'refType'});
+            accept('error', 'Cannot use rule fragments in types.', { node: atomType, property: 'refType' });
         }
     }
 
@@ -623,7 +633,7 @@ export class LangiumGrammarValidator {
     }
 
     checkAssignmentWithFeatureName(assignment: ast.Assignment, accept: ValidationAcceptor): void {
-        if(assignment.feature === 'name' && ast.isCrossReference(assignment.terminal)) {
+        if (assignment.feature === 'name' && ast.isCrossReference(assignment.terminal)) {
             accept('warning', 'The "name" property is not recommended for cross-references.', { node: assignment, property: 'feature' });
         }
     }
