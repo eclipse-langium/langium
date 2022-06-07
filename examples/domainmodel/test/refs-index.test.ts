@@ -60,7 +60,7 @@ function nodeRefString(from: AstNode, to: AstNode): string {
 }
 
 function createPath(node: AstNode): string {
-    return services.workspace.AstNodeLocator.getAstNodePath(node);
+    return services.index.AstNodeLocator.getAstNodePath(node);
 }
 
 function asString(fromUri: URI, fromPath: string, toUri: URI, toPath: string): string {

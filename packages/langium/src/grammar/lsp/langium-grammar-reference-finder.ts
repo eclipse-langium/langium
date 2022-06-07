@@ -22,7 +22,7 @@ export class LangiumGrammarReferenceFinder extends DefaultReferenceFinder {
 
     constructor(services: LangiumServices) {
         super(services);
-        this.astNodeLocator = services.index.AstNodeLocator;
+        this.astNodeLocator = services.workspace.AstNodeLocator;
         this.langiumDocuments = services.shared.workspace.LangiumDocuments;
     }
 
