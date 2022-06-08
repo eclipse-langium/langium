@@ -35,7 +35,7 @@ export class LangiumGrammarSemanticTokenProvider extends AbstractSemanticTokenPr
         } else if (isAtomType(node)) {
             acceptor({
                 node,
-                feature: 'primitiveType',
+                feature: 'primitiveType' in node ? 'primitiveType' : 'refType',
                 type: SemanticTokenTypes.type
             });
         } else if (isParameter(node)) {
