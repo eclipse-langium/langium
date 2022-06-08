@@ -4,7 +4,6 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import path from 'path';
 import { DiagnosticTag } from 'vscode-languageserver-types';
 import { Utils } from 'vscode-uri';
 import { References } from '../references/references';
@@ -14,6 +13,7 @@ import { getContainerOfType, getDocument, streamAllContents } from '../utils/ast
 import { MultiMap } from '../utils/collections';
 import { toDocumentSegment } from '../utils/cst-util';
 import { stream } from '../utils/stream';
+import { relativeURI } from '../utils/uri-utils';
 import { ValidationAcceptor, ValidationChecks, ValidationRegistry } from '../validation/validation-registry';
 import { LangiumDocument, LangiumDocuments } from '../workspace/documents';
 import * as ast from './generated/ast';
@@ -386,7 +386,7 @@ export class LangiumGrammarValidator {
             const grammar = document.parseResult.value;
             // Only check if the rule is sourced from another document
             if (ast.isGrammar(grammar) && refDoc !== document && !importedDocuments.has(refDoc)) {
-                let relative = path.relative(Utils.dirname(document.uri).fsPath, refDoc.uri.fsPath);
+                let relative = relativeURI(Utils.dirname(document.uri), refDoc.uri);
                 if (relative.endsWith('.langium')) {
                     relative = relative.substring(0, relative.length - '.langium'.length);
                 }
