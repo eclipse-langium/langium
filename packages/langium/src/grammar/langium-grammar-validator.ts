@@ -18,7 +18,7 @@ import { ValidationAcceptor, ValidationChecks, ValidationRegistry } from '../val
 import { LangiumDocument, LangiumDocuments } from '../workspace/documents';
 import * as ast from './generated/ast';
 import { isParserRule, isRuleCall } from './generated/ast';
-import { findKeywordNode, findNameAssignment, getEntryRule, getTypeName, isDataTypeRule, resolveImport, resolveTransitiveImports, terminalRegex } from './grammar-util';
+import { findKeywordNode, findNameAssignment, getEntryRule, getTypeName, isDataTypeRule, isOptional, resolveImport, resolveTransitiveImports, terminalRegex } from './grammar-util';
 import type { LangiumGrammarServices } from './langium-grammar-module';
 import { applyErrorToAssignment, collectAllInterfaces, InterfaceInfo, validateTypesConsistency } from './type-system/type-validator';
 
@@ -95,6 +95,7 @@ export namespace IssueCodes {
     export const InvalidInfers = 'invalid-infers';
     export const MissingInfer = 'missing-infer';
     export const SuperfluousInfer = 'superfluous-infer';
+    export const OptionalUnorderedGroup = 'optional-unordered-group';
 }
 
 export class LangiumGrammarValidator {
@@ -535,7 +536,11 @@ export class LangiumGrammarValidator {
     }
 
     checkUnorderedGroup(unorderedGroup: ast.UnorderedGroup, accept: ValidationAcceptor): void {
-        accept('error', 'Unordered groups are currently not supported', { node: unorderedGroup });
+        unorderedGroup.elements.forEach((ele) => {
+            if (isOptional(ele.cardinality)) {
+                accept('error', 'Optional elements in Unordered groups are currently not supported', { node: ele, code: IssueCodes.OptionalUnorderedGroup });
+            }
+        });
     }
 
     checkRuleParametersUsed(rule: ast.ParserRule, accept: ValidationAcceptor): void {

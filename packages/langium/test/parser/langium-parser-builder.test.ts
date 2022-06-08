@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { createDefaultModule, createDefaultSharedModule, createLangiumGrammarServices, createLangiumParser, Grammar, inject, interpretAstReflection, IParserConfig, LangiumGeneratedServices, LangiumGeneratedSharedServices, LangiumParser, LangiumServices, LangiumSharedServices, Module } from '../../src';
+import { AstNode, createDefaultModule, createDefaultSharedModule, createLangiumGrammarServices, createLangiumParser, Grammar, inject, interpretAstReflection, IParserConfig, LangiumGeneratedServices, LangiumGeneratedSharedServices, LangiumParser, LangiumServices, LangiumSharedServices, Module } from '../../src';
 import { parseHelper } from '../../src/test';
 
 const grammarServices = createLangiumGrammarServices().grammar;
@@ -177,6 +177,118 @@ describe('Predicated groups', () => {
     });
 
 });
+
+describe('Handle unordered group', () => {
+    let grammar: Grammar;
+    const content = `
+    grammar TestUnorderedGroup
+    
+    entry Lib:
+	    books+=Book*;
+    
+    Book: 
+        'book' name=STRING 
+        (
+              ("description" descr=STRING)
+            & ("edition" version=STRING)
+            & ("author" author=STRING)
+        )
+    ;
+    hidden terminal WS: /\\s+/;
+    terminal STRING: /"[^"]*"|'[^']*'/;
+    `;
+
+    beforeAll(async () => {
+        grammar = (await helper(content)).parseResult.value;
+    });
+
+    let parser: LangiumParser;
+    test('Should work without Parser Definition Errors', () => {
+        expect(() => {
+            parser = parserFromGrammar(grammar);
+        }).not.toThrow();
+        expect(parser).not.toBeUndefined();
+    });
+
+    test('Should parse documents without Errors', () => {
+        type bookType = { version?: string, author?: string, descr?: string }
+        // declared order
+        let parsedNode = parseAndCheck(
+            `
+            book "MyBook"
+
+            description "Cool book"
+            edition "second"
+            author "me"
+            `, parser) as { books?: string | string[] };
+        expect(parsedNode?.books).toBeDefined();
+
+        let book: bookType = parsedNode?.books![0] as bookType;
+        expect(book.version).toBe('second');
+        expect(book.descr).toBe('Cool book');
+        expect(book.author).toBe('me');
+
+        parsedNode = parseAndCheck(
+            `
+            book "MyBook"
+            
+            edition "second"
+            description "Cool book"
+            author "me"
+            `, parser) as { books?: string | string[] };
+        expect(parsedNode?.books).toBeDefined();
+
+        // swapped order
+        book = parsedNode?.books![0] as bookType;
+        expect(book.version).toBe('second');
+        expect(book.author).toBe('me');
+        expect(book.descr).toBe('Cool book');
+    });
+
+    test('Should not parse documents with duplicates', () => {
+        // duplicate description
+        const parsed = parser!.parse<AstNode>(
+            `book "MyBook"
+
+            edition "second"
+            description "Cool book"
+            description "New description"
+            author "foo"
+            `);
+        expect(parsed.parserErrors.length).toBe(2);
+    });
+
+    test('Should parse multiple instances', () => {
+        // duplicate description
+        const lib = (parseAndCheck(
+            `
+            book "MyBook"
+
+            edition "second"
+            description "Cool book"
+            author "foo"
+            
+            book "MyBook2"
+
+            edition "second2"
+            description "Cool book2"
+            author "foo2"
+            
+            `, parser) as { parserErrors?: string | string[], books?: string[] });
+        expect(lib.parserErrors).toBeUndefined();
+        expect(lib.books).not.toBeUndefined();
+        expect(lib.books?.length).toBe(2);
+    });
+
+});
+
+function parseAndCheck(model: string, parser: LangiumParser): AstNode {
+    const result = parser!.parse<AstNode>(model);
+    expect(result.lexerErrors.length).toBe(0);
+    expect(result.parserErrors.length).toBe(0);
+    expect(result.value).not.toBeUndefined();
+    return result.value;
+}
 
 describe('One name for terminal and non-terminal rules', () => {
     let grammar: Grammar;

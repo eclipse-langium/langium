@@ -59,6 +59,7 @@ export class LangiumParser {
     private stack: any[] = [];
     private mainRule!: RuleResult;
     private assignmentMap = new Map<AbstractElement, AssignmentElement | undefined>();
+    private _unorderedGroups: Map<string, boolean[]> = new Map<string, boolean[]>();
 
     private get current(): any {
         return this.stack[this.stack.length - 1];
@@ -94,6 +95,7 @@ export class LangiumParser {
         this.wrapper.input = lexerResult.tokens;
         const result = this.mainRule.call(this.wrapper);
         this.addHiddenTokens(result.$cstNode, lexerResult.groups.hidden);
+        this.unorderedGroups.clear();
         return {
             value: result,
             lexerErrors: lexerResult.errors,
@@ -336,6 +338,17 @@ export class LangiumParser {
         return this.wrapper.definitionErrors;
     }
 
+    getRuleStack(): number[] {
+        return (this.wrapper as any).RULE_STACK;
+    }
+
+    isRecording(): boolean {
+        return this.wrapper.IS_RECORDING;
+    }
+
+    get unorderedGroups(): Map<string, boolean[]> {
+        return this._unorderedGroups;
+    }
 }
 
 export interface IParserDefinitionError {
