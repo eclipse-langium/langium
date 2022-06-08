@@ -409,13 +409,38 @@ export class LangiumGrammarValidator {
                 accept('error', 'Rules are not allowed to return union types.', { node: rule, property: 'returnType' });
             }
         }
+
+        //const astResources = collectAllAstResources([grammar]);
+        //const inferredTypes = collectInferredTypes(Array.from(astResources.parserRules), Array.from(astResources.datatypeRules));
+
+        // Okay, this doesn't work because I don't yet have the information to determine that this interface is a problem...
+
         for (const interfaceType of grammar.interfaces) {
             interfaceType.superTypes.forEach((superType, i) => {
                 if (superType.ref && ast.isType(superType.ref)) {
                     accept('error', 'Interfaces cannot extend union types.', { node: interfaceType, property: 'superTypes', index: i });
                 }
+                // TODO: Could is be a solution to actually disallow extending from things that are NOT interfaces directly...
+                // i.e., interfaces build off of other concrete interfaces. That would improve the base reasoning, and make things a lot simpler...
+                //
+                else if(superType.ref && !ast.isInterface(superType.ref)) {
+                    accept('error', 'Interfaces cannot extend parser rules.', { node: interfaceType, property: 'superTypes', index: i });
+                }
+                //
+                //  else if(superType.ref && ast.isParserRule(superType.ref) && ast.isType(superType.ref.inferredType)) {
+                //     // thinking of looking here instead, since this process is tiresome...
+                //     console.info('>>>> Super type ref not defined for ....>>>' + interfaceType.name);
+                //     console.info(superType.ref?.inferredType);
+                //     accept('error', 'Interfaces cannot extend union types!!!!', { node: interfaceType, property: 'superTypes', index: i });
+                // }
             });
         }
+
+        // TEMPORARY, not a good idea in the long run
+        //const astResources = collectAllAstResources([grammar], this.documents);
+        //const inferred = collectInferredTypes(Array.from(astResources.parserRules), Array.from(astResources.datatypeRules));
+        // ...
+        //inferred.unions
     }
 
     checkActionTypeUnions(action: ast.Action, accept: ValidationAcceptor): void {

@@ -40,6 +40,7 @@ export function validateTypesConsistency(grammar: Grammar, accept: ValidationAcc
     }
 
     const validationResources = collectValidationResources(grammar);
+
     for (const [typeName, typeInfo] of validationResources.entries()) {
         if (!isInferredAndDeclared(typeInfo)) continue;
         const errorToRuleNodes = applyErrorToRuleNodes(typeInfo.nodes, typeName);
@@ -61,6 +62,51 @@ export function validateTypesConsistency(grammar: Grammar, accept: ValidationAcc
             );
         }
     }
+
+    // TODO around here is where I need to validate the interfaces that are using inferred type information...
+    // The data coming back from 'collectValidationResources' is only declared, and does not suffice.
+    // >>>>> This is where I should be doing further validation. Right after the validation of type consistency, I need to generate inferred types
+    // and THEN check all interfaces, and verify their superTypes are solid (inferred or NOT)
+    // the one thing that makes me hesitate is that we already have a superType check, but it's just for whether inferred matches declared...that's it
+    // cool, so after this do the change
+    /// >>>>>>>
+
+    // DUPLICATED FROM TYPE COLLECTOR FOR TESTING
+    // const astResources = collectAllAstResources([grammar]);
+    // const inferred = collectInferredTypes(Array.from(astResources.parserRules), Array.from(astResources.datatypeRules));
+    // //const declared = collectDeclaredTypes(Array.from(astResources.interfaces), Array.from(astResources.types), inferred);
+    // //const interfaces: InterfaceType[] = inferred.interfaces.concat(declared.interfaces);
+    // //const types: UnionType[] = inferred.unions.concat(declared.unions);
+
+    // const typeNameToRules = getTypeNameToRules(astResources);
+    // const inferredInfo = mergeTypesAndInterfaces(inferred)
+    //     .reduce((acc, type) => acc.set(type.name, { inferred: type, nodes: typeNameToRules.get(type.name) }),
+    //         new Map<string, InferredInfo>()
+    //     );
+
+    // // for every interface
+    // //      verify that each super types is NOT a union type (isType)
+    // //      if it is, report the error that 'Interfaces cannot extend union types'
+
+    // for(const [,i] of inferredInfo.entries()) {
+
+    //     // for(const node of i.nodes) {
+    //     //     if(isInterface(node.)) {
+
+    //     //     }
+    //     // }
+
+    //     if(inferred.unions.some(unionType => i.inferred.superTypes.has(unionType.name) && isInterface(i.inferred))) {
+    //         // TODO index 0 is not correct
+    //         accept('error', 'Interfaces cannot extend union types.', { node: i.nodes[0], property: 'inferredType', index: 0 });
+    //         // accept('error', ``,
+    //         //     { node: typeInfo.node, property: 'name' }
+    //         // );
+    //     }
+    // }
+
+    //const inferred = collectInferredTypes(Array.from(astResources.parserRules), Array.from(astResources.datatypeRules));
+    //inferred.unions;
 }
 
 export function applyErrorToAssignment(nodes: readonly ParserRule[], accept: ValidationAcceptor): (propertyName: string, errorMessage: string) => void {
@@ -106,6 +152,11 @@ export function collectValidationResources(grammar: Grammar): ValidationResource
     const astResources = collectAllAstResources([grammar]);
     const inferred = collectInferredTypes(Array.from(astResources.parserRules), Array.from(astResources.datatypeRules));
     const declared = collectDeclaredTypes(Array.from(astResources.interfaces), Array.from(astResources.types), inferred);
+    // ^^^ This section above is exactly what I want in terms of getting access for validation, both inferred & declared types together
+    // just missing the type collector to get the resources I need combined...
+
+    // TODO 'inferred' has the union data I need to extending is done correctly...
+    // This seems like the right kind of information, but the spot needs to be just above this function (separate comment)
 
     const typeNameToRules = getTypeNameToRules(astResources);
     const inferredInfo = mergeTypesAndInterfaces(inferred)
