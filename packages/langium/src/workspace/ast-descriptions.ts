@@ -12,6 +12,7 @@ import { AstNode, AstNodeDescription } from '../syntax-tree';
 import { getDocument, isLinkingError, streamAst, streamContents, streamReferences } from '../utils/ast-util';
 import { toDocumentSegment } from '../utils/cst-util';
 import { interruptAndCheck } from '../utils/promise-util';
+import { equalURI } from '../utils/uri-utils';
 import { AstNodeLocator } from './ast-node-locator';
 import { DocumentSegment, LangiumDocument } from './documents';
 
@@ -146,7 +147,7 @@ export class DefaultReferenceDescriptionProvider implements ReferenceDescription
                         targetUri: refAstNodeDescr.documentUri,
                         targetPath: refAstNodeDescr.path,
                         segment: toDocumentSegment(refCstNode),
-                        local: refAstNodeDescr.documentUri.toString() === docUri.toString()
+                        local: equalURI(refAstNodeDescr.documentUri, docUri)
                     };
                     descr.push(refDescr);
                 }
