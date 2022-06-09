@@ -1,5 +1,37 @@
 # Change Log of `langium`
 
+## v0.4.0 (Jun. 2022)
+
+### Formatting
+
+Langium now features an API to configure formatting of your language ([#479](https://github.com/langium/langium/pull/479)). To use this feature, you need to implement a subclass of `AbstractFormatter` and register it to the `lsp.Formatter` service:
+```typescript
+export class MyDSLFormatter extends AbstractFormatter {
+    protected format(node: AstNode): void {
+        ...
+    }
+}
+```
+
+The concrete formatting can be specified by first obtaining a node formatter and then choosing specific parts to format, like a keyword of the corresponding grammar rule. The chosen parts can be adjusted by appending or prepending white space:
+```typescript
+const formatter = this.getNodeFormatter(node);
+const bracesClose = formatter.keyword('}');
+bracesClose.prepend(Formatting.newLine());
+```
+
+See the [domain model formatter](https://github.com/langium/langium/blob/main/examples/domainmodel/src/language-server/domain-model-formatter.ts) for a full example.
+
+### Further Improvements
+
+ * [Unordered groups](https://langium.org/docs/grammar-language/#unordered-groups) are supported in the grammar ([#522](https://github.com/langium/langium/pull/522)).
+ * `Date` and `bigint` data types are supported in the grammar ([#508](https://github.com/langium/langium/pull/508)).
+ * AST properties of type `boolean` are initialized to `false` even when they are not assigned a value during parsing ([#469](https://github.com/langium/langium/pull/469)).
+ * The JavaScript code compiled from the TypeScript sources is now compatible to ES2017 (previously ES2015), so `async` and `await` keywords are preserved ([#495](https://github.com/langium/langium/pull/495)).
+ * An API for testing validation checks is now available ([#506](https://github.com/langium/langium/pull/506)).
+
+---
+
 ## v0.3.0 (Mar. 2022)
 
 ### Multi-Language Support

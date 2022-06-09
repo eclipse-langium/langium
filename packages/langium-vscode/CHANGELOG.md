@@ -1,5 +1,14 @@
 # Change Log of `langium-vscode`
 
+## v0.4.0 (Jun. 2022)
+
+ * Hover pop-up shows information for cross-references ([#473](https://github.com/langium/langium/pull/473)).
+ * Formatting of grammar files is now available ([#479](https://github.com/langium/langium/pull/479)).
+ * You can "Go to Definition" on property assignments where the return type is explicitly declared ([#505](https://github.com/langium/langium/pull/505)).
+ * Improved validation and general handling of inferred and declared types.
+
+---
+
 ## v0.3.0 (Mar. 2022)
 
 This release brought several changes to the grammar language:
