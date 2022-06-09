@@ -130,7 +130,10 @@ export class LangiumGrammarReferenceFinder extends DefaultReferenceFinder {
                         if (leaf) {
                             const rootNode = extractRootNode(leaf.element);
                             if (rootNode) {
-                                refs.push({docUri: rootNode.$document!.uri, range: leaf.range});
+                                refs.push({
+                                    docUri: rootNode.$document!.uri,
+                                    range: leaf.range
+                                });
                             }
                         }
                     }
