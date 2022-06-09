@@ -4,48 +4,28 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { interpretAstReflection } from '../../src';
+import { AstReflection, createLangiumGrammarServices, Grammar, interpretAstReflection } from '../../src';
+import { parseHelper } from '../../src/test';
 
 describe('AST reflection interpreter', () => {
 
     describe('Inheritance with sub- and super-types', () => {
 
-        const reflectionForInheritance = interpretAstReflection({
-            interfaces: [
-                {
-                    name: 'Super',
-                    containerTypes: new Set(),
-                    interfaceSuperTypes: [],
-                    subTypes: new Set(['Sub']),
-                    superTypes: new Set(),
-                    properties: [{
-                        name: 'A',
-                        optional: false,
-                        typeAlternatives: [{
-                            array: true,
-                            reference: false,
-                            types: ['string']
-                        }]
-                    }]
-                },
-                {
-                    name: 'Sub',
-                    containerTypes: new Set(),
-                    interfaceSuperTypes: ['Super'],
-                    subTypes: new Set(),
-                    superTypes: new Set(['Super']),
-                    properties: [{
-                        name: 'B',
-                        optional: false,
-                        typeAlternatives: [{
-                            array: true,
-                            reference: false,
-                            types: ['string']
-                        }]
-                    }]
-                }
-            ],
-            unions: []
+        let reflectionForInheritance: AstReflection;
+
+        beforeAll(async () => {
+            const grammarParser = parseHelper<Grammar>(createLangiumGrammarServices().grammar);
+            const grammarDoc = await grammarParser(`
+            interface Super {
+                A: boolean
+            }
+            interface Sub extends Super {
+                B: boolean
+            }
+            `);
+            const grammar = grammarDoc.parseResult.value;
+
+            reflectionForInheritance = interpretAstReflection(grammar);
         });
 
         test('isSubtype returns correct value', () => {
@@ -55,8 +35,8 @@ describe('AST reflection interpreter', () => {
             expect(reflectionForInheritance.isSubtype('Super', 'Sub')).toBeFalsy();
         });
 
-        test('getAllTypes returns "Super", "Sub"', () => {
-            expect(reflectionForInheritance.getAllTypes()).toMatchObject(['Super', 'Sub']);
+        test('getAllTypes returns "Sub", "Super"', () => {
+            expect(reflectionForInheritance.getAllTypes()).toMatchObject(['Sub', 'Super']);
         });
 
         test('Creates metadata with super types', () => {

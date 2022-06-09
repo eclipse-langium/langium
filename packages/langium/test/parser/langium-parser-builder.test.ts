@@ -4,12 +4,11 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { URI } from 'vscode-uri';
 import { AstNode, createDefaultModule, createDefaultSharedModule, createLangiumGrammarServices, Grammar, inject, interpretAstReflection, IParserConfig, LangiumGeneratedServices, LangiumGeneratedSharedServices, LangiumParser, LangiumServices, LangiumSharedServices, LanguageMetaData, Module } from '../../src';
-import { parseHelper } from '../../src/test';
+import { ParseHelper, parseHelper } from '../../src/test';
 
 const grammarServices = createLangiumGrammarServices().grammar;
-const helper = parseHelper<Grammar>(grammarServices);
+const grammarHelper = parseHelper<Grammar>(grammarServices);
 
 describe('Predicated grammar rules with alternatives', () => {
 
@@ -35,7 +34,7 @@ describe('Predicated grammar rules with alternatives', () => {
     `;
 
     beforeAll(async () => {
-        const grammar = (await helper(content)).parseResult.value;
+        const grammar = (await grammarHelper(content)).parseResult.value;
         parser = servicesFromGrammar(grammar).parser.LangiumParser;
     });
 
@@ -112,7 +111,7 @@ describe('Predicated groups', () => {
     `;
 
     beforeAll(async () => {
-        grammar = (await helper(content)).parseResult.value;
+        grammar = (await grammarHelper(content)).parseResult.value;
         parser = servicesFromGrammar(grammar).parser.LangiumParser;
     });
 
@@ -200,7 +199,7 @@ describe('Handle unordered group', () => {
     `;
 
     beforeAll(async () => {
-        grammar = (await helper(content)).parseResult.value;
+        grammar = (await grammarHelper(content)).parseResult.value;
     });
 
     let parser: LangiumParser;
@@ -309,7 +308,7 @@ describe('One name for terminal and non-terminal rules', () => {
     `;
 
     beforeAll(async () => {
-        grammar = (await helper(content)).parseResult.value;
+        grammar = (await grammarHelper(content)).parseResult.value;
     });
 
     test('Should work without Parser Definition Errors', () => {
@@ -329,7 +328,7 @@ describe('Boolean value converter', () => {
     `;
 
     beforeAll(async () => {
-        const grammar = (await helper(content)).parseResult.value;
+        const grammar = (await grammarHelper(content)).parseResult.value;
         parser = servicesFromGrammar(grammar).parser.LangiumParser;
     });
 
@@ -361,7 +360,7 @@ describe('BigInt Parser value converter', () => {
     `;
 
     beforeAll(async () => {
-        const grammar = (await helper(content)).parseResult.value;
+        const grammar = (await grammarHelper(content)).parseResult.value;
         parser = servicesFromGrammar(grammar).parser.LangiumParser;
     });
 
@@ -390,7 +389,7 @@ describe('Date Parser value converter', () => {
     `;
 
     beforeAll(async () => {
-        const grammar = (await helper(content)).parseResult.value;
+        const grammar = (await grammarHelper(content)).parseResult.value;
         parser = servicesFromGrammar(grammar).parser.LangiumParser;
     });
 
@@ -433,7 +432,7 @@ describe('Parser calls value converter', () => {
     `;
 
     beforeAll(async () => {
-        const grammar = (await helper(content)).parseResult.value;
+        const grammar = (await grammarHelper(content)).parseResult.value;
         parser = servicesFromGrammar(grammar).parser.LangiumParser;
     });
 
@@ -501,7 +500,8 @@ describe('Parser calls value converter', () => {
 
 describe('Fragment parsing', () => {
 
-    let services: LangiumServices;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let helper: ParseHelper<any>;
     const content = `
     grammar TestGrammar
     entry Main: values+=(A | B)+;
@@ -515,16 +515,14 @@ describe('Fragment parsing', () => {
     `;
 
     beforeAll(async () => {
-        const grammar = (await helper(content)).parseResult.value;
-        services = servicesFromGrammar(grammar);
+        const grammar = (await grammarHelper(content)).parseResult.value;
+        const services = servicesFromGrammar(grammar);
+        helper = parseHelper(services);
     });
 
     test('Resolves cross reference correctly', async () => {
-        const document = services.shared.workspace.LangiumDocumentFactory.fromString('a A b A', URI.parse('memory://x.test'));
-        services.shared.workspace.LangiumDocuments.addDocument(document);
-        await services.shared.workspace.DocumentBuilder.build([document]);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const main = document.parseResult.value as any;
+        const main = (await helper('a A b A')).parseResult.value;
         const a = main.values[0];
         const b = main.values[1];
         expect(a.name).toBe('A');

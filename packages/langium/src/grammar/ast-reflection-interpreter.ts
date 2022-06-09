@@ -22,7 +22,7 @@ export function interpretAstReflection(grammar: Grammar, documents?: LangiumDocu
         emptyDocuments = createLangiumGrammarServices().shared.workspace.LangiumDocuments;
     }
     const collectedTypes = collectAst(documents ?? emptyDocuments, [grammar]);
-    const allTypes = collectedTypes.interfaces.map(e => e.name).concat(collectedTypes.unions.map(e => e.name));
+    const allTypes = collectedTypes.interfaces.map(e => e.name).concat(collectedTypes.unions.map(e => e.name)).sort();
     const references = buildCrossReferenceTypes(grammar.rules.filter(isParserRule));
     const metaData = buildTypeMetaData(collectedTypes);
     const superTypeMap = buildSupertypeMap(collectedTypes);

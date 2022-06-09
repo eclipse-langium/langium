@@ -14,7 +14,9 @@ import { escapeRegExp } from '../utils/regex-util';
 import { LangiumDocument } from '../workspace/documents';
 import { findNodeForFeature } from '../grammar/grammar-util';
 
-export function parseHelper<T extends AstNode = AstNode>(services: LangiumServices): (input: string) => Promise<LangiumDocument<T>> {
+export type ParseHelper<T extends AstNode> = (input: string) => Promise<LangiumDocument<T>>
+
+export function parseHelper<T extends AstNode = AstNode>(services: LangiumServices): ParseHelper<T> {
     const metaData = services.LanguageMetaData;
     const documentBuilder = services.shared.workspace.DocumentBuilder;
     return async input => {
