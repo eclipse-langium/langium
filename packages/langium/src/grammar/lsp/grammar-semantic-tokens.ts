@@ -5,9 +5,9 @@
  ******************************************************************************/
 
 import { SemanticTokenTypes } from 'vscode-languageserver';
-import { AbstractSemanticTokenProvider, SemanticTokenAcceptor } from '../lsp/semantic-token-provider';
-import { AstNode } from '../syntax-tree';
-import { isAction, isAssignment, isAtomType, isParameter, isParameterReference, isReturnType } from './generated/ast';
+import { AbstractSemanticTokenProvider, SemanticTokenAcceptor } from '../../lsp/semantic-token-provider';
+import { AstNode } from '../../syntax-tree';
+import { isAction, isAssignment, isAtomType, isParameter, isParameterReference, isReturnType } from '../generated/ast';
 
 export class LangiumGrammarSemanticTokenProvider extends AbstractSemanticTokenProvider {
 
