@@ -55,6 +55,12 @@ export class LangiumGrammarCodeActionProvider implements CodeActionProvider {
                 return this.fixMissingInfer(diagnostic, document);
             case IssueCodes.SuperfluousInfer:
                 return this.fixSuperfluousInfer(diagnostic, document);
+            case IssueCodes.DuplicateType:
+                return this.fixDuplicateType(diagnostic, document);
+            case IssueCodes.DuplicateProperty:
+                return this.fixDuplicateProperty(diagnostic, document);
+            case IssueCodes.DeriveDeclaredType:
+                return this.deriveDeclaredType(diagnostic, document);
             default:
                 return undefined;
         }
@@ -116,6 +122,75 @@ export class LangiumGrammarCodeActionProvider implements CodeActionProvider {
                         [document.textDocument.uri]: [{
                             range: data.range,
                             newText: ''
+                        }]
+                    }
+                }
+            };
+        }
+        return undefined;
+    }
+
+    // Removes a duplicate type, in the case where two types share the same name
+    private fixDuplicateType(diagnostic: Diagnostic, document: LangiumDocument): CodeAction | undefined {
+        const data = diagnostic.data as DocumentSegment;
+        if (data) {
+            return {
+                title: 'Remove this duplicate type declaration.',
+                kind: CodeActionKind.QuickFix,
+                diagnostics: [diagnostic],
+                edit: {
+                    changes: {
+                        [document.textDocument.uri]: [{
+                            range: data.range,
+                            newText: ''
+                        }]
+                    }
+                }
+            };
+        }
+        return undefined;
+    }
+
+    // Removes a duplicated property in a type hierarchy
+    private fixDuplicateProperty(diagnostic: Diagnostic, document: LangiumDocument): CodeAction | undefined {
+        const data = diagnostic.data as DocumentSegment;
+        if (data) {
+            return {
+                title: 'Remove this duplicate property.',
+                kind: CodeActionKind.QuickFix,
+                diagnostics: [diagnostic],
+                edit: {
+                    changes: {
+                        [document.textDocument.uri]: [{
+                            range: data.range,
+                            newText: ''
+                        }]
+                    }
+                }
+            };
+        }
+        return undefined;
+    }
+
+    // Derives a declared type from a parser rule that automatically infers one
+    private deriveDeclaredType(diagnostic: Diagnostic, document: LangiumDocument): CodeAction | undefined {
+        const data = diagnostic.data as DocumentSegment;
+        if (data) {
+            // TODO: Next steps would be to make sure that we can generate & insert a declared type properly
+            // This involves:
+            // 1) Getting the inferred type by analysis
+            // 2) Pretty-printing the inferred type above this thing
+            // 3) Adding 'returns Type' if 'infers' is not present
+            // 4) If 'infers' is present we should do nothing, since it's explicit...
+            return {
+                title: 'Derive declared type for this parser rule.',
+                kind: CodeActionKind.QuickFix,
+                diagnostics: [diagnostic],
+                edit: {
+                    changes: {
+                        [document.textDocument.uri]: [{
+                            range: data.range,
+                            newText: 'WIP not done yet'
                         }]
                     }
                 }

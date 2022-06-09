@@ -96,6 +96,9 @@ export namespace IssueCodes {
     export const MissingInfer = 'missing-infer';
     export const SuperfluousInfer = 'superfluous-infer';
     export const OptionalUnorderedGroup = 'optional-unordered-group';
+    export const DuplicateType = 'duplicate-type';
+    export const DuplicateProperty = 'duplicate-property';
+    export const DeriveDeclaredType = 'derive-declared-type';
 }
 
 export class LangiumGrammarValidator {
@@ -156,7 +159,14 @@ export class LangiumGrammarValidator {
         for (const [, types] of map.entriesGroupedByKey()) {
             if (types.length > 1) {
                 types.forEach(e => {
-                    accept('error', `A ${uniqueObjName}'s name has to be unique.`, { node: e, property: 'name' });
+                    accept('error', `A ${uniqueObjName}'s name has to be unique.`, {
+                        node: e,
+                        property: 'name',
+                        code: IssueCodes.DuplicateType,
+                        data: {
+                            range: e.$cstNode?.range
+                        }
+                    });
                 });
             }
         }
@@ -260,7 +270,7 @@ export class LangiumGrammarValidator {
                     node: rule.inferredType ?? rule,
                     property: 'name',
                     code: isInfers ? IssueCodes.InvalidInfers : IssueCodes.InvalidReturns,
-                    data: keywordNode && toDocumentSegment(keywordNode)
+                    data: keywordNode && toDocumentSegment(keywordNode) 
                 });
             } else if (isDataType && isInfers) {
                 const inferNode = findKeywordNode(rule.$cstNode, 'infer');
@@ -269,6 +279,17 @@ export class LangiumGrammarValidator {
                     property: 'inferredType',
                     code: IssueCodes.InvalidInfers,
                     data: inferNode && toDocumentSegment(inferNode)
+                });
+            } else if(!isDataType && ruleTypeName && isInfers) {
+                // provide a code hint to derive a declared type just above it
+                // DeriveDeclaredType
+                accept('hint', 'A declared type can be derived from this rule.', {
+                    node: rule,
+                    property: 'name',
+                    code: IssueCodes.DeriveDeclaredType,
+                    data: {
+                        range: findKeywordNode(rule.$cstNode, ruleTypeName)?.range
+                    }
                 });
             }
         }
@@ -444,7 +465,14 @@ export class LangiumGrammarValidator {
                     if (ast.isInterface(node)) {
                         const attributeNode = node.attributes.find(e => e.name === propertyName);
                         if (attributeNode) {
-                            accept('error', errorMessage, { node: attributeNode, property: 'name' });
+                            accept('error', errorMessage, {
+                                node: attributeNode,
+                                property: 'name',
+                                code: IssueCodes.DuplicateProperty,
+                                data: {
+                                    range: attributeNode.$cstNode?.range
+                                }
+                            });
                         }
                     } else {
                         applyErrorToAssignment(node, accept)(propertyName, errorMessage);
