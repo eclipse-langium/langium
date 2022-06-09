@@ -328,7 +328,7 @@ export function expectWarning<T extends AstNode = AstNode, N extends AstNode = A
     });
 }
 
-function CleanUpTestDocuments(services: LangiumServices) {
+export function clearDocuments(services: LangiumServices) {
     const allDocs = services.shared.workspace.LangiumDocuments.all.map(x => x.uri).toArray();
     services.shared.workspace.DocumentBuilder.update([], allDocs);
 }
