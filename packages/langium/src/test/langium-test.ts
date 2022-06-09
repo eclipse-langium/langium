@@ -143,7 +143,11 @@ export function expectFindReferences(services: LangiumServices, expectEqual: Exp
 }
 
 function referenceParams(document: LangiumDocument, offset: number, includeDeclaration: boolean): ReferenceParams {
-    return { textDocument: { uri: document.textDocument.uri }, position: document.textDocument.positionAt(offset), context: {includeDeclaration: includeDeclaration} };
+    return { 
+        textDocument: { uri: document.textDocument.uri },
+        position: document.textDocument.positionAt(offset),
+        context: { includeDeclaration }
+    };
 }
 export interface ExpectedHover extends ExpectedBase {
     index: number
