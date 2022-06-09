@@ -112,16 +112,20 @@ export class LangiumGrammarReferenceFinder extends DefaultReferenceFinder {
             const collectedTypes = this.collectChildrenTypes(interfaceNode);
             collectedTypes.add(interfaceNode);
 
-            let referencesToTypes: Set<ReferenceDescription> = new Set<ReferenceDescription>();
+            const referencesToTypes = new Set<ReferenceDescription>();
             collectedTypes.forEach(collectedType => {
-                const refs = this.references.findReferences(collectedType).toSet();
-                referencesToTypes = new Set<ReferenceDescription>([...referencesToTypes, ...refs]);
+                const refs = this.references.findReferences(collectedType);
+                for (const ref of refs) {
+                    referencesToTypes.add(ref);
+                }
             });
 
-            const parserRules: Set<ParserRule | Action> = this.findParserRulesFromReferences(referencesToTypes);
+            const parserRules = this.findParserRulesFromReferences(referencesToTypes);
 
             parserRules.forEach(rule => {
-                const assignment = isParserRule(rule) ? extractAssignments(rule.alternatives).find(assignment => assignment.feature === selectedNode.text) : extractAssignments(getContainerOfType(rule, isGroup)!).find(assignment => assignment.feature === selectedNode.text);
+                const assignment = isParserRule(rule) ?
+                    extractAssignments(rule.alternatives).find(assignment => assignment.feature === selectedNode.text)
+                    : extractAssignments(getContainerOfType(rule, isGroup)!).find(assignment => assignment.feature === selectedNode.text);
 
                 if (assignment) {
                     const cstNode = assignment.$cstNode;
@@ -156,15 +160,18 @@ export class LangiumGrammarReferenceFinder extends DefaultReferenceFinder {
     }
 
     collectChildrenTypes(interfaceRule: Interface): Set<Interface | Type> {
-        let childrenTypes = new Set<Interface | Type>();
-        const refs = this.references.findReferences(interfaceRule).toArray();
+        const childrenTypes = new Set<Interface | Type>();
+        const refs = this.references.findReferences(interfaceRule);
 
         refs.forEach(ref => {
             const doc = this.langiumDocuments.getOrCreateDocument(ref.sourceUri);
             const astNode = this.astNodeLocator.getAstNode(doc, ref.sourcePath);
             if (isInterface(astNode)) {
                 childrenTypes.add(astNode);
-                childrenTypes = new Set([...childrenTypes, ...this.collectChildrenTypes(astNode)]);
+                const collectedChildrenTypes = this.collectChildrenTypes(astNode);
+                for (const childType of collectedChildrenTypes) {
+                    childrenTypes.add(childType);
+                }
             } else if (isType(astNode?.$container)) {
                 childrenTypes.add(astNode!.$container);
             }
@@ -174,20 +181,26 @@ export class LangiumGrammarReferenceFinder extends DefaultReferenceFinder {
     }
 
     collectSuperTypes(ruleNode: Interface | Type): Set<Interface> {
-        let superTypes: Set<Interface> = new Set<Interface>();
+        const superTypes = new Set<Interface>();
         if (isInterface(ruleNode)) {
             superTypes.add(ruleNode);
             ruleNode.superTypes.forEach(superType => {
                 if (isInterface(superType.ref)) {
                     superTypes.add(superType.ref);
-                    superTypes = new Set([...superTypes, ...this.collectSuperTypes(superType.ref)]);
+                    const collectedSuperTypes = this.collectSuperTypes(superType.ref);
+                    for (const superType of collectedSuperTypes) {
+                        superTypes.add(superType);
+                    }
                 }
             });
         } else if (isType(ruleNode)) {
             ruleNode.typeAlternatives.forEach(typeAlternative => {
                 if (typeAlternative.refType?.ref) {
                     if (isInterface(typeAlternative.refType.ref) || isType(typeAlternative.refType.ref)) {
-                        superTypes = new Set<Interface>([...superTypes, ...this.collectSuperTypes(typeAlternative.refType!.ref!)]);
+                        const collectedSuperTypes = this.collectSuperTypes(typeAlternative.refType.ref);
+                        for (const superType of collectedSuperTypes) {
+                            superTypes.add(superType);
+                        }
                     }
                 }
             });

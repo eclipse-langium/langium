@@ -137,13 +137,13 @@ export function expectFindReferences(services: LangiumServices, expectEqual: Exp
         const document = await parseDocument(services, output);
         const referenceFinder = services.lsp.ReferenceFinder;
         const references = await referenceFinder.findReferences(document, referenceParams(document, indices[expectedFindReferences.index], expectedFindReferences.includeDeclaration)) ?? [];
-        CleanUpTestDocuments(services);
+        clearDocuments(services);
         expectEqual(references.length, expectedFindReferences.referencesCount);
     };
 }
 
 function referenceParams(document: LangiumDocument, offset: number, includeDeclaration: boolean): ReferenceParams {
-    return { 
+    return {
         textDocument: { uri: document.textDocument.uri },
         position: document.textDocument.positionAt(offset),
         context: { includeDeclaration }
@@ -332,7 +332,7 @@ export function expectWarning<T extends AstNode = AstNode, N extends AstNode = A
     });
 }
 
-export function clearDocuments(services: LangiumServices) {
+export function clearDocuments(services: LangiumServices): void {
     const allDocs = services.shared.workspace.LangiumDocuments.all.map(x => x.uri).toArray();
     services.shared.workspace.DocumentBuilder.update([], allDocs);
 }

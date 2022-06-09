@@ -42,7 +42,7 @@ export class DefaultReferenceFinder implements ReferenceFinder {
         if (!rootNode) {
             return [];
         }
-        // const refs: Array<{ docUri: URI, range: Range }> = [];
+
         const selectedNode = findLeafNodeAtOffset(rootNode, document.textDocument.offsetAt(params.position));
         if (!selectedNode) {
             return [];
