@@ -156,7 +156,7 @@ export class LangiumGrammarReferenceFinder extends DefaultReferenceFinder {
     }
 
     collectChildrenTypes(interfaceRule: Interface): Set<Interface | Type> {
-        let childrenTypes: Set<Interface | Type> = new Set<Interface | Type>();
+        let childrenTypes = new Set<Interface | Type>();
         const refs = this.references.findReferences(interfaceRule).toArray();
 
         refs.forEach(ref => {
