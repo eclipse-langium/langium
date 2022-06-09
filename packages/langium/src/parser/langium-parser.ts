@@ -6,7 +6,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { defaultParserErrorProvider, DSLMethodOpts, EmbeddedActionsParser, ILexingError, IMultiModeLexerDefinition, IOrAlt, IParserErrorMessageProvider, IRecognitionException, IToken, Lexer, TokenType, TokenTypeDictionary, TokenVocabulary } from 'chevrotain';
-import { AbstractElement, Action, Assignment, isAssignment, isCrossReference, isKeyword } from '../grammar/generated/ast';
+import { AbstractElement, Action, Assignment, isAssignment, isCrossReference, isKeyword, isParserRule } from '../grammar/generated/ast';
 import { Linker } from '../references/linker';
 import { LangiumServices } from '../services';
 import { AstNode, AstReflection, CompositeCstNode, CstNode, LeafCstNode } from '../syntax-tree';
@@ -46,7 +46,7 @@ type Alternatives = Array<IOrAlt<any>>;
 
 interface AssignmentElement {
     assignment?: Assignment
-    crossRef: boolean
+    crossRefId?: string
 }
 
 export class LangiumParser {
@@ -177,13 +177,9 @@ export class LangiumParser {
         const token = this.wrapper.wrapConsume(idx, tokenType);
         if (!this.wrapper.IS_RECORDING) {
             const leafNode = this.nodeBuilder.buildLeafNode(token, feature);
-            const { assignment, crossRef } = this.getAssignment(feature);
+            const { assignment, crossRefId } = this.getAssignment(feature);
             const current = this.current;
             if (assignment) {
-                let crossRefId: string | undefined;
-                if (crossRef) {
-                    crossRefId = `${current.$type}:${assignment.feature}`;
-                }
                 const convertedValue = isKeyword(feature) ? token.image : this.converter.convert(token.image, leafNode);
                 this.assign(assignment.operator, assignment.feature, convertedValue, leafNode, crossRefId);
             } else if (isDataTypeNode(current)) {
@@ -222,12 +218,8 @@ export class LangiumParser {
         }
         const subruleResult = this.wrapper.wrapSubrule(idx, rule, args);
         if (!this.wrapper.IS_RECORDING) {
-            const { assignment, crossRef } = this.getAssignment(feature);
+            const { assignment, crossRefId } = this.getAssignment(feature);
             if (assignment && cstNode) {
-                let crossRefId: string | undefined;
-                if (crossRef) {
-                    crossRefId = `${this.current.$type}:${assignment.feature}`;
-                }
                 this.assign(assignment.operator, assignment.feature, subruleResult, cstNode, crossRefId);
             }
         }
@@ -285,14 +277,19 @@ export class LangiumParser {
     }
 
     private getAssignment(feature: AbstractElement): AssignmentElement {
-        if (!this.assignmentMap.has(feature)) {
+        let assignmentElement = this.assignmentMap.get(feature);
+        if (!assignmentElement) {
             const assignment = getContainerOfType(feature, isAssignment);
-            this.assignmentMap.set(feature, {
+            const parserRule = getContainerOfType(feature, isParserRule);
+            assignmentElement = {
                 assignment: assignment,
-                crossRef: assignment ? isCrossReference(assignment.terminal) : false
-            });
+                crossRefId: parserRule && assignment && isCrossReference(assignment.terminal)
+                    ? `${parserRule.name}:${assignment.feature}`
+                    : undefined
+            };
+            this.assignmentMap.set(feature, assignmentElement);
         }
-        return this.assignmentMap.get(feature)!;
+        return assignmentElement;
     }
 
     private assign(operator: string, feature: string, value: unknown, cstNode: CstNode, crossRefId?: string): void {

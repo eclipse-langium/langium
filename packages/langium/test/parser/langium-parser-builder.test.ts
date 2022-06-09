@@ -4,7 +4,8 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { AstNode, createDefaultModule, createDefaultSharedModule, createLangiumGrammarServices, createLangiumParser, Grammar, inject, interpretAstReflection, IParserConfig, LangiumGeneratedServices, LangiumGeneratedSharedServices, LangiumParser, LangiumServices, LangiumSharedServices, Module } from '../../src';
+import { URI } from 'vscode-uri';
+import { AstNode, createDefaultModule, createDefaultSharedModule, createLangiumGrammarServices, Grammar, inject, interpretAstReflection, IParserConfig, LangiumGeneratedServices, LangiumGeneratedSharedServices, LangiumParser, LangiumServices, LangiumSharedServices, LanguageMetaData, Module } from '../../src';
 import { parseHelper } from '../../src/test';
 
 const grammarServices = createLangiumGrammarServices().grammar;
@@ -35,7 +36,7 @@ describe('Predicated grammar rules with alternatives', () => {
 
     beforeAll(async () => {
         const grammar = (await helper(content)).parseResult.value;
-        parser = parserFromGrammar(grammar);
+        parser = servicesFromGrammar(grammar).parser.LangiumParser;
     });
 
     function hasProp(prop: string): void {
@@ -112,7 +113,7 @@ describe('Predicated groups', () => {
 
     beforeAll(async () => {
         grammar = (await helper(content)).parseResult.value;
-        parser = parserFromGrammar(grammar);
+        parser = servicesFromGrammar(grammar).parser.LangiumParser;
     });
 
     function expectCorrectParse(text: string, a: number, b = 0): void {
@@ -205,7 +206,7 @@ describe('Handle unordered group', () => {
     let parser: LangiumParser;
     test('Should work without Parser Definition Errors', () => {
         expect(() => {
-            parser = parserFromGrammar(grammar);
+            parser = servicesFromGrammar(grammar).parser.LangiumParser;
         }).not.toThrow();
         expect(parser).not.toBeUndefined();
     });
@@ -313,7 +314,7 @@ describe('One name for terminal and non-terminal rules', () => {
 
     test('Should work without Parser Definition Errors', () => {
         expect(() => {
-            parserFromGrammar(grammar);
+            servicesFromGrammar(grammar);
         }).not.toThrow();
     });
 
@@ -329,7 +330,7 @@ describe('Boolean value converter', () => {
 
     beforeAll(async () => {
         const grammar = (await helper(content)).parseResult.value;
-        parser = parserFromGrammar(grammar);
+        parser = servicesFromGrammar(grammar).parser.LangiumParser;
     });
 
     function expectValue(input: string, value: unknown): void {
@@ -361,7 +362,7 @@ describe('BigInt Parser value converter', () => {
 
     beforeAll(async () => {
         const grammar = (await helper(content)).parseResult.value;
-        parser = parserFromGrammar(grammar);
+        parser = servicesFromGrammar(grammar).parser.LangiumParser;
     });
 
     function expectValue(input: string, value: unknown): void {
@@ -390,7 +391,7 @@ describe('Date Parser value converter', () => {
 
     beforeAll(async () => {
         const grammar = (await helper(content)).parseResult.value;
-        parser = parserFromGrammar(grammar);
+        parser = servicesFromGrammar(grammar).parser.LangiumParser;
     });
 
     test('Should have no definition errors', () => {
@@ -433,7 +434,7 @@ describe('Parser calls value converter', () => {
 
     beforeAll(async () => {
         const grammar = (await helper(content)).parseResult.value;
-        parser = parserFromGrammar(grammar);
+        parser = servicesFromGrammar(grammar).parser.LangiumParser;
     });
 
     function expectValue(input: string, value: unknown): void {
@@ -498,23 +499,62 @@ describe('Parser calls value converter', () => {
     });
 });
 
-function parserFromGrammar(grammar: Grammar): LangiumParser {
+describe('Fragment parsing', () => {
+
+    let services: LangiumServices;
+    const content = `
+    grammar TestGrammar
+    entry Main: values+=(A | B)+;
+
+    A: 'a' name=ID;
+    B: 'b' Test;
+    fragment Test: a=[A];
+
+    terminal ID: /\\^?[_a-zA-Z][\\w_]*/;
+    hidden terminal WS: /\\s+/;
+    `;
+
+    beforeAll(async () => {
+        const grammar = (await helper(content)).parseResult.value;
+        services = servicesFromGrammar(grammar);
+    });
+
+    test('Resolves cross reference correctly', async () => {
+        const document = services.shared.workspace.LangiumDocumentFactory.fromString('a A b A', URI.parse('memory://x.test'));
+        services.shared.workspace.LangiumDocuments.addDocument(document);
+        await services.shared.workspace.DocumentBuilder.build([document]);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const main = document.parseResult.value as any;
+        const a = main.values[0];
+        const b = main.values[1];
+        expect(a.name).toBe('A');
+        expect(b.a.ref).toBeDefined();
+        expect(b.a.ref.name).toBe(a.name);
+    });
+
+});
+
+function servicesFromGrammar(grammar: Grammar): LangiumServices {
     const parserConfig: IParserConfig = {
         skipValidations: false
     };
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const unavailable: () => any = () => ({});
+    const unavailable: LanguageMetaData = {
+        caseInsensitive: false,
+        fileExtensions: ['.test'],
+        languageId: 'test'
+    };
     const generatedSharedModule: Module<LangiumSharedServices, LangiumGeneratedSharedServices> = {
         AstReflection: () => interpretAstReflection(grammar),
     };
     const generatedModule: Module<LangiumServices, LangiumGeneratedServices> = {
         Grammar: () => grammar,
-        LanguageMetaData: unavailable,
+        LanguageMetaData: () => unavailable,
         parser: {
             ParserConfig: () => parserConfig
         }
     };
     const shared = inject(createDefaultSharedModule(), generatedSharedModule);
     const services = inject(createDefaultModule({ shared }), generatedModule);
-    return createLangiumParser(services);
+    shared.ServiceRegistry.register(services);
+    return services;
 }

@@ -49,6 +49,8 @@ export interface Reference<T extends AstNode = AstNode> {
     readonly $refNode: CstNode;
     /** The actual text used to look up in the surrounding scope */
     readonly $refText: string;
+    /** A unique identifier for the cross reference type */
+    readonly $refId: string;
     /** The node description for the AstNode returned by `ref`  */
     readonly $nodeDescription?: AstNodeDescription;
 }

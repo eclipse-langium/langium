@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import {
-    GeneratorNode, Grammar, IndentNode, CompositeGeneratorNode, NL, processGeneratorNode, streamAllContents, isCrossReference, MultiMap, LangiumServices, collectAst, AstTypes, Property, collectAllProperties
+    GeneratorNode, Grammar, IndentNode, CompositeGeneratorNode, NL, processGeneratorNode, streamAllContents, isCrossReference, MultiMap, LangiumServices, collectAst, AstTypes, Property, collectAllProperties, ParserRule, isParserRule, buildCrossReferenceTypes
 } from 'langium';
 import { LangiumConfig } from '../package';
 import { generatedHeader } from './util';
@@ -36,7 +36,7 @@ export function generateAst(services: LangiumServices, grammars: Grammar[], conf
     }
 
     astTypes.unions = astTypes.unions.filter(e => e.reflection);
-    fileNode.append(generateAstReflection(config, astTypes));
+    fileNode.append(generateAstReflection(config, grammars, astTypes));
 
     return processGeneratorNode(fileNode);
 }
@@ -45,11 +45,12 @@ function hasCrossReferences(grammar: Grammar): boolean {
     return !!streamAllContents(grammar).find(isCrossReference);
 }
 
-function generateAstReflection(config: LangiumConfig, astTypes: AstTypes): GeneratorNode {
+function generateAstReflection(config: LangiumConfig, grammars: Grammar[], astTypes: AstTypes): GeneratorNode {
     const typeNames: string[] = astTypes.interfaces.map(t => `'${t.name}'`)
         .concat(astTypes.unions.map(t => `'${t.name}'`))
         .sort();
-    const crossReferenceTypes = buildCrossReferenceTypes(astTypes);
+    const parserRules = grammars.flatMap(e => e.rules).filter(isParserRule);
+    const crossReferenceTypes = getSortedCrossReferenceTypes(parserRules);
     const reflectionNode = new CompositeGeneratorNode();
 
     reflectionNode.append(
@@ -167,20 +168,10 @@ type CrossReferenceType = {
     referenceType: string
 }
 
-function buildCrossReferenceTypes(astTypes: AstTypes): CrossReferenceType[] {
-    const crossReferences: CrossReferenceType[] = [];
-    for (const typeInterface of astTypes.interfaces) {
-        for (const property of typeInterface.properties.sort((a, b) => a.name.localeCompare(b.name))) {
-            property.typeAlternatives.filter(e => e.reference).flatMap(e => e.types).forEach(type =>
-                crossReferences.push({
-                    type: typeInterface.name,
-                    feature: property.name,
-                    referenceType: type
-                })
-            );
-        }
-    }
-    return crossReferences.sort((a, b) => a.type.localeCompare(b.type));
+function getSortedCrossReferenceTypes(rules: ParserRule[]): CrossReferenceType[] {
+    const crossRefTypes = buildCrossReferenceTypes(rules);
+    return Array.from(crossRefTypes.values())
+        .sort((a, b) => a.toString().localeCompare(b.toString()));
 }
 
 function buildIsSubtypeMethod(astTypes: AstTypes): GeneratorNode {

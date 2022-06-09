@@ -115,7 +115,7 @@ export function isNumberLiteral(item: unknown): item is NumberLiteral {
 
 export type ArithmeticsAstType = 'AbstractDefinition' | 'BinaryExpression' | 'DeclaredParameter' | 'Definition' | 'Evaluation' | 'Expression' | 'FunctionCall' | 'Module' | 'NumberLiteral' | 'Statement';
 
-export type ArithmeticsAstReference = 'FunctionCall:func';
+export type ArithmeticsAstReference = 'PrimaryExpression:func';
 
 export class ArithmeticsAstReflection implements AstReflection {
 
@@ -154,7 +154,7 @@ export class ArithmeticsAstReflection implements AstReflection {
 
     getReferenceType(referenceId: ArithmeticsAstReference): string {
         switch (referenceId) {
-            case 'FunctionCall:func': {
+            case 'PrimaryExpression:func': {
                 return AbstractDefinition;
             }
             default: {

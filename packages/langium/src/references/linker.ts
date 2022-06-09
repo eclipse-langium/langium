@@ -40,7 +40,7 @@ export interface Linker {
      * @param refId The reference identifier used to build a scope.
      * @param reference The actual reference to resolve.
      */
-    getCandidate(node: AstNode, refId: string, reference: Reference): AstNodeDescription | LinkingError;
+    getCandidate(node: AstNode, reference: Reference): AstNodeDescription | LinkingError;
 
     /**
      * Creates a cross reference node being aware of its containing AstNode, the corresponding CstNode,
@@ -101,8 +101,7 @@ export class DefaultLinker implements Linker {
         // The reference may already have been resolved lazily by accessing its `ref` property.
         if (ref._ref === undefined) {
             try {
-                const refId = getReferenceId(info.container.$type, info.property);
-                const description = this.getCandidate(info.container, refId, ref);
+                const description = this.getCandidate(info.container, ref);
                 if (isLinkingError(description)) {
                     ref._ref = description;
                 } else {
@@ -110,7 +109,7 @@ export class DefaultLinker implements Linker {
                     if (this.langiumDocuments().hasDocument(description.documentUri)) {
                         // The target document is already loaded
                         const linkedNode = this.loadAstNode(description);
-                        ref._ref = linkedNode ?? this.createLinkingError(info, refId, description);
+                        ref._ref = linkedNode ?? this.createLinkingError(info, description);
                     }
                 }
             } catch (err) {
@@ -132,10 +131,10 @@ export class DefaultLinker implements Linker {
         document.references = [];
     }
 
-    getCandidate(container: AstNode, refId: string, reference: Reference): AstNodeDescription | LinkingError {
-        const scope = this.scopeProvider.getScope(container, refId);
+    getCandidate(container: AstNode, reference: Reference): AstNodeDescription | LinkingError {
+        const scope = this.scopeProvider.getScope(container, reference.$refId);
         const description = scope.getElement(reference.$refText);
-        return description ?? this.createLinkingError({ container, property: getReferenceProperty(refId), reference }, refId);
+        return description ?? this.createLinkingError({ container, property: getReferenceProperty(reference.$refId), reference });
     }
 
     buildReference(node: AstNode, refNode: CstNode, refId: string, refText: string): Reference {
@@ -145,6 +144,7 @@ export class DefaultLinker implements Linker {
         const reference: DefaultReference = {
             $refNode: refNode,
             $refText: refText,
+            $refId: refId,
 
             get ref() {
                 if (isAstNode(this._ref)) {
@@ -154,10 +154,10 @@ export class DefaultLinker implements Linker {
                     // A candidate has been found before, but it is not loaded yet.
                     const linkedNode = linker.loadAstNode(this._nodeDescription);
                     this._ref = linkedNode ??
-                        linker.createLinkingError({ container: node, property: getReferenceProperty(refId), reference }, refId, this._nodeDescription);
+                        linker.createLinkingError({ container: node, property: getReferenceProperty(refId), reference }, this._nodeDescription);
                 } else if (this._ref === undefined) {
                     // The reference has not been linked yet, so do that now.
-                    const refData = linker.getLinkedNode(node, refId, reference);
+                    const refData = linker.getLinkedNode(node, reference);
                     this._ref = refData.node ?? refData.error;
                     this._nodeDescription = refData.descr;
                 }
@@ -173,9 +173,9 @@ export class DefaultLinker implements Linker {
         return reference;
     }
 
-    protected getLinkedNode(container: AstNode, refId: string, reference: Reference): { node?: AstNode, descr?: AstNodeDescription, error?: LinkingError } {
+    protected getLinkedNode(container: AstNode, reference: Reference): { node?: AstNode, descr?: AstNodeDescription, error?: LinkingError } {
         try {
-            const description = this.getCandidate(container, refId, reference);
+            const description = this.getCandidate(container, reference);
             if (isLinkingError(description)) {
                 return { error: description };
             }
@@ -187,14 +187,14 @@ export class DefaultLinker implements Linker {
                 return {
                     descr: description,
                     error:
-                        this.createLinkingError({ container, property: getReferenceProperty(refId), reference }, refId, description)
+                        this.createLinkingError({ container, property: getReferenceProperty(reference.$refId), reference }, description)
                 };
             }
         } catch (err) {
             return {
                 error: {
                     container,
-                    property: getReferenceProperty(refId),
+                    property: getReferenceProperty(reference.$refId),
                     reference,
                     message: `An error occurred while resolving reference to '${reference.$refText}': ${err}`
                 }
@@ -210,8 +210,8 @@ export class DefaultLinker implements Linker {
         return this.astNodeLocator.getAstNode(doc, nodeDescription.path);
     }
 
-    protected createLinkingError(refInfo: ReferenceInfo, refId: string, targetDescription?: AstNodeDescription): LinkingError {
-        const referenceType = this.reflection.getReferenceType(refId);
+    protected createLinkingError(refInfo: ReferenceInfo, targetDescription?: AstNodeDescription): LinkingError {
+        const referenceType = this.reflection.getReferenceType(refInfo.reference.$refId);
         return {
             ...refInfo,
             message: `Could not resolve reference to ${referenceType} named '${refInfo.reference.$refText}'.`,

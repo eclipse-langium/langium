@@ -55,7 +55,7 @@ export class DefaultJsonSerializer implements JsonSerializer {
                 }
                 // If it is a reference, just return the name
                 if (isReference(item)) {
-                    return { $refText: item.$refText } as Reference; // surprisingly this cast works at the time of writing, although $refNode is absent
+                    return { $refText: item.$refText, $refId: item.$refId } as Reference; // surprisingly this cast works at the time of writing, although $refNode is absent
                 }
                 let newItem: Record<string, unknown> | unknown[];
                 // If it is an array, replicate the array.
@@ -88,8 +88,7 @@ export class DefaultJsonSerializer implements JsonSerializer {
                 for (let i = 0; i < value.length; i++) {
                     const item = value[i];
                     if (isReference(item) && isAstNode(container)) {
-                        const refId = getReferenceId(container.$type, propName!);
-                        const reference = this.linker.buildReference(container, item.$refNode, refId, item.$refText);
+                        const reference = this.linker.buildReference(container, item.$refNode, item.$refId, item.$refText);
                         value[i] = reference;
                     } else if (typeof item === 'object' && item !== null) {
                         internalRevive(item);

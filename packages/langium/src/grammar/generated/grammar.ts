@@ -38,7 +38,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$refText": "ID"
+                    "$refText": "ID",
+                    "$refId": "RuleCall:rule"
                   },
                   "arguments": []
                 }
@@ -57,12 +58,14 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                     "terminal": {
                       "$type": "CrossReference",
                       "type": {
-                        "$refText": "Grammar"
+                        "$refText": "Grammar",
+                        "$refId": "CrossReference:type"
                       },
                       "terminal": {
                         "$type": "RuleCall",
                         "rule": {
-                          "$refText": "ID"
+                          "$refText": "ID",
+                          "$refId": "RuleCall:rule"
                         },
                         "arguments": []
                       },
@@ -83,12 +86,14 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                         "terminal": {
                           "$type": "CrossReference",
                           "type": {
-                            "$refText": "Grammar"
+                            "$refText": "Grammar",
+                            "$refId": "CrossReference:type"
                           },
                           "terminal": {
                             "$type": "RuleCall",
                             "rule": {
-                              "$refText": "ID"
+                              "$refText": "ID",
+                              "$refId": "RuleCall:rule"
                             },
                             "arguments": []
                           },
@@ -127,12 +132,14 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                         "terminal": {
                           "$type": "CrossReference",
                           "type": {
-                            "$refText": "AbstractRule"
+                            "$refText": "AbstractRule",
+                            "$refId": "CrossReference:type"
                           },
                           "terminal": {
                             "$type": "RuleCall",
                             "rule": {
-                              "$refText": "ID"
+                              "$refText": "ID",
+                              "$refId": "RuleCall:rule"
                             },
                             "arguments": []
                           },
@@ -153,12 +160,14 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                             "terminal": {
                               "$type": "CrossReference",
                               "type": {
-                                "$refText": "AbstractRule"
+                                "$refText": "AbstractRule",
+                                "$refId": "CrossReference:type"
                               },
                               "terminal": {
                                 "$type": "RuleCall",
                                 "rule": {
-                                  "$refText": "ID"
+                                  "$refText": "ID",
+                                  "$refId": "RuleCall:rule"
                                 },
                                 "arguments": []
                               },
@@ -188,7 +197,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$refText": "GrammarImport"
+                "$refText": "GrammarImport",
+                "$refId": "RuleCall:rule"
               },
               "arguments": []
             },
@@ -204,7 +214,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$refText": "AbstractRule"
+                    "$refText": "AbstractRule",
+                    "$refId": "RuleCall:rule"
                   },
                   "arguments": []
                 }
@@ -216,7 +227,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$refText": "Interface"
+                    "$refText": "Interface",
+                    "$refId": "RuleCall:rule"
                   },
                   "arguments": []
                 }
@@ -228,7 +240,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$refText": "Type"
+                    "$refText": "Type",
+                    "$refId": "RuleCall:rule"
                   },
                   "arguments": []
                 }
@@ -261,7 +274,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$refText": "ID"
+                "$refText": "ID",
+                "$refId": "RuleCall:rule"
               },
               "arguments": []
             }
@@ -280,7 +294,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                 "terminal": {
                   "$type": "CrossReference",
                   "type": {
-                    "$refText": "AbstractType"
+                    "$refText": "AbstractType",
+                    "$refId": "CrossReference:type"
                   },
                   "deprecatedSyntax": false
                 }
@@ -299,7 +314,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                     "terminal": {
                       "$type": "CrossReference",
                       "type": {
-                        "$refText": "AbstractType"
+                        "$refText": "AbstractType",
+                        "$refId": "CrossReference:type"
                       },
                       "deprecatedSyntax": false
                     }
@@ -313,7 +329,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           {
             "$type": "RuleCall",
             "rule": {
-              "$refText": "SchemaType"
+              "$refText": "SchemaType",
+              "$refId": "RuleCall:rule"
             },
             "arguments": []
           }
@@ -344,7 +361,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$refText": "TypeAttribute"
+                "$refText": "TypeAttribute",
+                "$refId": "RuleCall:rule"
               },
               "arguments": []
             },
@@ -380,7 +398,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$refText": "ID"
+                "$refText": "ID",
+                "$refId": "RuleCall:rule"
               },
               "arguments": []
             }
@@ -402,7 +421,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           {
             "$type": "RuleCall",
             "rule": {
-              "$refText": "TypeAlternatives"
+              "$refText": "TypeAlternatives",
+              "$refId": "RuleCall:rule"
             },
             "arguments": []
           },
@@ -434,7 +454,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$refText": "AtomType"
+                "$refText": "AtomType",
+                "$refId": "RuleCall:rule"
               },
               "arguments": []
             }
@@ -453,7 +474,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$refText": "AtomType"
+                    "$refText": "AtomType",
+                    "$refId": "RuleCall:rule"
                   },
                   "arguments": []
                 }
@@ -488,7 +510,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                     "terminal": {
                       "$type": "RuleCall",
                       "rule": {
-                        "$refText": "PrimitiveType"
+                        "$refText": "PrimitiveType",
+                        "$refId": "RuleCall:rule"
                       },
                       "arguments": []
                     }
@@ -513,7 +536,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                         "terminal": {
                           "$type": "CrossReference",
                           "type": {
-                            "$refText": "AbstractType"
+                            "$refText": "AbstractType",
+                            "$refId": "CrossReference:type"
                           },
                           "deprecatedSyntax": false
                         }
@@ -541,7 +565,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$refText": "Keyword"
+                "$refText": "Keyword",
+                "$refId": "RuleCall:rule"
               },
               "arguments": []
             }
@@ -608,7 +633,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$refText": "ID"
+                "$refText": "ID",
+                "$refId": "RuleCall:rule"
               },
               "arguments": []
             }
@@ -620,7 +646,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           {
             "$type": "RuleCall",
             "rule": {
-              "$refText": "TypeAlternatives"
+              "$refText": "TypeAlternatives",
+              "$refId": "RuleCall:rule"
             },
             "arguments": []
           },
@@ -647,14 +674,16 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           {
             "$type": "RuleCall",
             "rule": {
-              "$refText": "ParserRule"
+              "$refText": "ParserRule",
+              "$refId": "RuleCall:rule"
             },
             "arguments": []
           },
           {
             "$type": "RuleCall",
             "rule": {
-              "$refText": "TerminalRule"
+              "$refText": "TerminalRule",
+              "$refId": "RuleCall:rule"
             },
             "arguments": []
           }
@@ -684,7 +713,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$refText": "STRING"
+                "$refText": "STRING",
+                "$refId": "RuleCall:rule"
               },
               "arguments": []
             }
@@ -736,7 +766,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           {
             "$type": "RuleCall",
             "rule": {
-              "$refText": "RuleNameAndParams"
+              "$refText": "RuleNameAndParams",
+              "$refId": "RuleCall:rule"
             },
             "arguments": []
           },
@@ -769,12 +800,14 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                         "terminal": {
                           "$type": "CrossReference",
                           "type": {
-                            "$refText": "AbstractType"
+                            "$refText": "AbstractType",
+                            "$refId": "CrossReference:type"
                           },
                           "terminal": {
                             "$type": "RuleCall",
                             "rule": {
-                              "$refText": "ID"
+                              "$refText": "ID",
+                              "$refId": "RuleCall:rule"
                             },
                             "arguments": []
                           },
@@ -788,7 +821,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                         "terminal": {
                           "$type": "RuleCall",
                           "rule": {
-                            "$refText": "PrimitiveType"
+                            "$refText": "PrimitiveType",
+                            "$refId": "RuleCall:rule"
                           },
                           "arguments": []
                         }
@@ -804,7 +838,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$refText": "InferredType"
+                    "$refText": "InferredType",
+                    "$refId": "RuleCall:rule"
                   },
                   "arguments": [
                     {
@@ -847,12 +882,14 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                     "terminal": {
                       "$type": "CrossReference",
                       "type": {
-                        "$refText": "AbstractRule"
+                        "$refText": "AbstractRule",
+                        "$refId": "CrossReference:type"
                       },
                       "terminal": {
                         "$type": "RuleCall",
                         "rule": {
-                          "$refText": "ID"
+                          "$refText": "ID",
+                          "$refId": "RuleCall:rule"
                         },
                         "arguments": []
                       },
@@ -873,12 +910,14 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                         "terminal": {
                           "$type": "CrossReference",
                           "type": {
-                            "$refText": "AbstractRule"
+                            "$refText": "AbstractRule",
+                            "$refId": "CrossReference:type"
                           },
                           "terminal": {
                             "$type": "RuleCall",
                             "rule": {
-                              "$refText": "ID"
+                              "$refText": "ID",
+                              "$refId": "RuleCall:rule"
                             },
                             "arguments": []
                           },
@@ -909,7 +948,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$refText": "Alternatives"
+                "$refText": "Alternatives",
+                "$refId": "RuleCall:rule"
               },
               "arguments": []
             }
@@ -947,7 +987,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                 "guardCondition": {
                   "$type": "ParameterReference",
                   "parameter": {
-                    "$refText": "imperative"
+                    "$refText": "imperative",
+                    "$refId": "ParameterReference:parameter"
                   }
                 },
                 "elements": [
@@ -964,7 +1005,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                   "value": {
                     "$type": "ParameterReference",
                     "parameter": {
-                      "$refText": "imperative"
+                      "$refText": "imperative",
+                      "$refId": "ParameterReference:parameter"
                     }
                   }
                 },
@@ -984,7 +1026,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$refText": "ID"
+                "$refText": "ID",
+                "$refId": "RuleCall:rule"
               },
               "arguments": []
             }
@@ -1011,7 +1054,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$refText": "ID"
+                "$refText": "ID",
+                "$refId": "RuleCall:rule"
               },
               "arguments": []
             }
@@ -1033,7 +1077,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                     "terminal": {
                       "$type": "RuleCall",
                       "rule": {
-                        "$refText": "Parameter"
+                        "$refText": "Parameter",
+                        "$refId": "RuleCall:rule"
                       },
                       "arguments": []
                     }
@@ -1052,7 +1097,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                         "terminal": {
                           "$type": "RuleCall",
                           "rule": {
-                            "$refText": "Parameter"
+                            "$refText": "Parameter",
+                            "$refId": "RuleCall:rule"
                           },
                           "arguments": []
                         }
@@ -1088,7 +1134,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
         "terminal": {
           "$type": "RuleCall",
           "rule": {
-            "$refText": "ID"
+            "$refText": "ID",
+            "$refId": "RuleCall:rule"
           },
           "arguments": []
         }
@@ -1113,7 +1160,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           {
             "$type": "RuleCall",
             "rule": {
-              "$refText": "ConditionalBranch"
+              "$refText": "ConditionalBranch",
+              "$refId": "RuleCall:rule"
             },
             "arguments": []
           },
@@ -1143,7 +1191,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                     "terminal": {
                       "$type": "RuleCall",
                       "rule": {
-                        "$refText": "ConditionalBranch"
+                        "$refText": "ConditionalBranch",
+                        "$refId": "RuleCall:rule"
                       },
                       "arguments": []
                     }
@@ -1176,7 +1225,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           {
             "$type": "RuleCall",
             "rule": {
-              "$refText": "UnorderedGroup"
+              "$refText": "UnorderedGroup",
+              "$refId": "RuleCall:rule"
             },
             "arguments": []
           },
@@ -1201,7 +1251,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$refText": "Disjunction"
+                    "$refText": "Disjunction",
+                    "$refId": "RuleCall:rule"
                   },
                   "arguments": []
                 }
@@ -1217,7 +1268,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$refText": "AbstractToken"
+                    "$refText": "AbstractToken",
+                    "$refId": "RuleCall:rule"
                   },
                   "arguments": []
                 },
@@ -1247,7 +1299,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           {
             "$type": "RuleCall",
             "rule": {
-              "$refText": "Group"
+              "$refText": "Group",
+              "$refId": "RuleCall:rule"
             },
             "arguments": []
           },
@@ -1277,7 +1330,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                     "terminal": {
                       "$type": "RuleCall",
                       "rule": {
-                        "$refText": "Group"
+                        "$refText": "Group",
+                        "$refId": "RuleCall:rule"
                       },
                       "arguments": []
                     }
@@ -1310,7 +1364,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           {
             "$type": "RuleCall",
             "rule": {
-              "$refText": "AbstractToken"
+              "$refText": "AbstractToken",
+              "$refId": "RuleCall:rule"
             },
             "arguments": []
           },
@@ -1333,7 +1388,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$refText": "AbstractToken"
+                    "$refText": "AbstractToken",
+                    "$refId": "RuleCall:rule"
                   },
                   "arguments": []
                 },
@@ -1364,14 +1420,16 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           {
             "$type": "RuleCall",
             "rule": {
-              "$refText": "AbstractTokenWithCardinality"
+              "$refText": "AbstractTokenWithCardinality",
+              "$refId": "RuleCall:rule"
             },
             "arguments": []
           },
           {
             "$type": "RuleCall",
             "rule": {
-              "$refText": "Action"
+              "$refText": "Action",
+              "$refId": "RuleCall:rule"
             },
             "arguments": []
           }
@@ -1400,14 +1458,16 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
               {
                 "$type": "RuleCall",
                 "rule": {
-                  "$refText": "Assignment"
+                  "$refText": "Assignment",
+                  "$refId": "RuleCall:rule"
                 },
                 "arguments": []
               },
               {
                 "$type": "RuleCall",
                 "rule": {
-                  "$refText": "AbstractTerminal"
+                  "$refText": "AbstractTerminal",
+                  "$refId": "RuleCall:rule"
                 },
                 "arguments": []
               }
@@ -1476,12 +1536,14 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                 "terminal": {
                   "$type": "CrossReference",
                   "type": {
-                    "$refText": "AbstractType"
+                    "$refText": "AbstractType",
+                    "$refId": "CrossReference:type"
                   },
                   "terminal": {
                     "$type": "RuleCall",
                     "rule": {
-                      "$refText": "ID"
+                      "$refText": "ID",
+                      "$refId": "RuleCall:rule"
                     },
                     "arguments": []
                   },
@@ -1495,7 +1557,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$refText": "InferredType"
+                    "$refText": "InferredType",
+                    "$refId": "RuleCall:rule"
                   },
                   "arguments": [
                     {
@@ -1525,7 +1588,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$refText": "FeatureName"
+                    "$refText": "FeatureName",
+                    "$refId": "RuleCall:rule"
                   },
                   "arguments": []
                 }
@@ -1581,42 +1645,48 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           {
             "$type": "RuleCall",
             "rule": {
-              "$refText": "Keyword"
+              "$refText": "Keyword",
+              "$refId": "RuleCall:rule"
             },
             "arguments": []
           },
           {
             "$type": "RuleCall",
             "rule": {
-              "$refText": "RuleCall"
+              "$refText": "RuleCall",
+              "$refId": "RuleCall:rule"
             },
             "arguments": []
           },
           {
             "$type": "RuleCall",
             "rule": {
-              "$refText": "ParenthesizedElement"
+              "$refText": "ParenthesizedElement",
+              "$refId": "RuleCall:rule"
             },
             "arguments": []
           },
           {
             "$type": "RuleCall",
             "rule": {
-              "$refText": "PredicatedKeyword"
+              "$refText": "PredicatedKeyword",
+              "$refId": "RuleCall:rule"
             },
             "arguments": []
           },
           {
             "$type": "RuleCall",
             "rule": {
-              "$refText": "PredicatedRuleCall"
+              "$refText": "PredicatedRuleCall",
+              "$refId": "RuleCall:rule"
             },
             "arguments": []
           },
           {
             "$type": "RuleCall",
             "rule": {
-              "$refText": "PredicatedGroup"
+              "$refText": "PredicatedGroup",
+              "$refId": "RuleCall:rule"
             },
             "arguments": []
           }
@@ -1639,7 +1709,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
         "terminal": {
           "$type": "RuleCall",
           "rule": {
-            "$refText": "STRING"
+            "$refText": "STRING",
+            "$refId": "RuleCall:rule"
           },
           "arguments": []
         }
@@ -1664,12 +1735,14 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "terminal": {
               "$type": "CrossReference",
               "type": {
-                "$refText": "AbstractRule"
+                "$refText": "AbstractRule",
+                "$refId": "CrossReference:type"
               },
               "terminal": {
                 "$type": "RuleCall",
                 "rule": {
-                  "$refText": "ID"
+                  "$refText": "ID",
+                  "$refId": "RuleCall:rule"
                 },
                 "arguments": []
               },
@@ -1690,7 +1763,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$refText": "NamedArgument"
+                    "$refText": "NamedArgument",
+                    "$refId": "RuleCall:rule"
                   },
                   "arguments": []
                 }
@@ -1709,7 +1783,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                     "terminal": {
                       "$type": "RuleCall",
                       "rule": {
-                        "$refText": "NamedArgument"
+                        "$refText": "NamedArgument",
+                        "$refId": "RuleCall:rule"
                       },
                       "arguments": []
                     }
@@ -1749,12 +1824,14 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                 "terminal": {
                   "$type": "CrossReference",
                   "type": {
-                    "$refText": "Parameter"
+                    "$refText": "Parameter",
+                    "$refId": "CrossReference:type"
                   },
                   "terminal": {
                     "$type": "RuleCall",
                     "rule": {
-                      "$refText": "ID"
+                      "$refText": "ID",
+                      "$refId": "RuleCall:rule"
                     },
                     "arguments": []
                   },
@@ -1780,7 +1857,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$refText": "Disjunction"
+                "$refText": "Disjunction",
+                "$refId": "RuleCall:rule"
               },
               "arguments": []
             }
@@ -1835,7 +1913,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           {
             "$type": "RuleCall",
             "rule": {
-              "$refText": "Conjunction"
+              "$refText": "Conjunction",
+              "$refId": "RuleCall:rule"
             },
             "arguments": []
           },
@@ -1862,7 +1941,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$refText": "Conjunction"
+                    "$refText": "Conjunction",
+                    "$refId": "RuleCall:rule"
                   },
                   "arguments": []
                 }
@@ -1892,7 +1972,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           {
             "$type": "RuleCall",
             "rule": {
-              "$refText": "Negation"
+              "$refText": "Negation",
+              "$refId": "RuleCall:rule"
             },
             "arguments": []
           },
@@ -1919,7 +2000,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$refText": "Negation"
+                    "$refText": "Negation",
+                    "$refId": "RuleCall:rule"
                   },
                   "arguments": []
                 }
@@ -1949,7 +2031,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           {
             "$type": "RuleCall",
             "rule": {
-              "$refText": "Atom"
+              "$refText": "Atom",
+              "$refId": "RuleCall:rule"
             },
             "arguments": []
           },
@@ -1974,7 +2057,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$refText": "Negation"
+                    "$refText": "Negation",
+                    "$refId": "RuleCall:rule"
                   },
                   "arguments": []
                 }
@@ -2003,21 +2087,24 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           {
             "$type": "RuleCall",
             "rule": {
-              "$refText": "ParameterReference"
+              "$refText": "ParameterReference",
+              "$refId": "RuleCall:rule"
             },
             "arguments": []
           },
           {
             "$type": "RuleCall",
             "rule": {
-              "$refText": "ParenthesizedCondition"
+              "$refText": "ParenthesizedCondition",
+              "$refId": "RuleCall:rule"
             },
             "arguments": []
           },
           {
             "$type": "RuleCall",
             "rule": {
-              "$refText": "LiteralCondition"
+              "$refText": "LiteralCondition",
+              "$refId": "RuleCall:rule"
             },
             "arguments": []
           }
@@ -2047,7 +2134,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           {
             "$type": "RuleCall",
             "rule": {
-              "$refText": "Disjunction"
+              "$refText": "Disjunction",
+              "$refId": "RuleCall:rule"
             },
             "arguments": []
           },
@@ -2074,12 +2162,14 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
         "terminal": {
           "$type": "CrossReference",
           "type": {
-            "$refText": "Parameter"
+            "$refText": "Parameter",
+            "$refId": "CrossReference:type"
           },
           "terminal": {
             "$type": "RuleCall",
             "rule": {
-              "$refText": "ID"
+              "$refText": "ID",
+              "$refId": "RuleCall:rule"
             },
             "arguments": []
           },
@@ -2123,7 +2213,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$refText": "STRING"
+                "$refText": "STRING",
+                "$refId": "RuleCall:rule"
               },
               "arguments": []
             }
@@ -2167,12 +2258,14 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "terminal": {
               "$type": "CrossReference",
               "type": {
-                "$refText": "AbstractRule"
+                "$refText": "AbstractRule",
+                "$refId": "CrossReference:type"
               },
               "terminal": {
                 "$type": "RuleCall",
                 "rule": {
-                  "$refText": "ID"
+                  "$refText": "ID",
+                  "$refId": "RuleCall:rule"
                 },
                 "arguments": []
               },
@@ -2193,7 +2286,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$refText": "NamedArgument"
+                    "$refText": "NamedArgument",
+                    "$refId": "RuleCall:rule"
                   },
                   "arguments": []
                 }
@@ -2212,7 +2306,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                     "terminal": {
                       "$type": "RuleCall",
                       "rule": {
-                        "$refText": "NamedArgument"
+                        "$refText": "NamedArgument",
+                        "$refId": "RuleCall:rule"
                       },
                       "arguments": []
                     }
@@ -2274,7 +2369,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$refText": "FeatureName"
+                "$refText": "FeatureName",
+                "$refId": "RuleCall:rule"
               },
               "arguments": []
             }
@@ -2308,7 +2404,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$refText": "AssignableTerminal"
+                "$refText": "AssignableTerminal",
+                "$refId": "RuleCall:rule"
               },
               "arguments": []
             }
@@ -2335,28 +2432,32 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           {
             "$type": "RuleCall",
             "rule": {
-              "$refText": "Keyword"
+              "$refText": "Keyword",
+              "$refId": "RuleCall:rule"
             },
             "arguments": []
           },
           {
             "$type": "RuleCall",
             "rule": {
-              "$refText": "RuleCall"
+              "$refText": "RuleCall",
+              "$refId": "RuleCall:rule"
             },
             "arguments": []
           },
           {
             "$type": "RuleCall",
             "rule": {
-              "$refText": "ParenthesizedAssignableElement"
+              "$refText": "ParenthesizedAssignableElement",
+              "$refId": "RuleCall:rule"
             },
             "arguments": []
           },
           {
             "$type": "RuleCall",
             "rule": {
-              "$refText": "CrossReference"
+              "$refText": "CrossReference",
+              "$refId": "RuleCall:rule"
             },
             "arguments": []
           }
@@ -2386,7 +2487,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           {
             "$type": "RuleCall",
             "rule": {
-              "$refText": "AssignableAlternatives"
+              "$refText": "AssignableAlternatives",
+              "$refId": "RuleCall:rule"
             },
             "arguments": []
           },
@@ -2416,7 +2518,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           {
             "$type": "RuleCall",
             "rule": {
-              "$refText": "AssignableTerminal"
+              "$refText": "AssignableTerminal",
+              "$refId": "RuleCall:rule"
             },
             "arguments": []
           },
@@ -2446,7 +2549,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                     "terminal": {
                       "$type": "RuleCall",
                       "rule": {
-                        "$refText": "AssignableTerminal"
+                        "$refText": "AssignableTerminal",
+                        "$refId": "RuleCall:rule"
                       },
                       "arguments": []
                     }
@@ -2494,7 +2598,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "terminal": {
               "$type": "CrossReference",
               "type": {
-                "$refText": "AbstractType"
+                "$refText": "AbstractType",
+                "$refId": "CrossReference:type"
               },
               "deprecatedSyntax": false
             }
@@ -2527,7 +2632,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$refText": "CrossReferenceableTerminal"
+                    "$refText": "CrossReferenceableTerminal",
+                    "$refId": "RuleCall:rule"
                   },
                   "arguments": []
                 }
@@ -2561,14 +2667,16 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           {
             "$type": "RuleCall",
             "rule": {
-              "$refText": "Keyword"
+              "$refText": "Keyword",
+              "$refId": "RuleCall:rule"
             },
             "arguments": []
           },
           {
             "$type": "RuleCall",
             "rule": {
-              "$refText": "RuleCall"
+              "$refText": "RuleCall",
+              "$refId": "RuleCall:rule"
             },
             "arguments": []
           }
@@ -2598,7 +2706,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           {
             "$type": "RuleCall",
             "rule": {
-              "$refText": "Alternatives"
+              "$refText": "Alternatives",
+              "$refId": "RuleCall:rule"
             },
             "arguments": []
           },
@@ -2649,7 +2758,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$refText": "Alternatives"
+                "$refText": "Alternatives",
+                "$refId": "RuleCall:rule"
               },
               "arguments": []
             }
@@ -2680,14 +2790,16 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             {
               "$type": "RuleCall",
               "rule": {
-                "$refText": "PrimitiveType"
+                "$refText": "PrimitiveType",
+                "$refId": "RuleCall:rule"
               },
               "arguments": []
             },
             {
               "$type": "RuleCall",
               "rule": {
-                "$refText": "ID"
+                "$refText": "ID",
+                "$refId": "RuleCall:rule"
               },
               "arguments": []
             }
@@ -2743,7 +2855,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                     "terminal": {
                       "$type": "RuleCall",
                       "rule": {
-                        "$refText": "ID"
+                        "$refText": "ID",
+                        "$refId": "RuleCall:rule"
                       },
                       "arguments": []
                     }
@@ -2760,7 +2873,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                     "terminal": {
                       "$type": "RuleCall",
                       "rule": {
-                        "$refText": "ID"
+                        "$refText": "ID",
+                        "$refId": "RuleCall:rule"
                       },
                       "arguments": []
                     }
@@ -2779,7 +2893,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                         "terminal": {
                           "$type": "RuleCall",
                           "rule": {
-                            "$refText": "ReturnType"
+                            "$refText": "ReturnType",
+                            "$refId": "RuleCall:rule"
                           },
                           "arguments": []
                         }
@@ -2802,7 +2917,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$refText": "TerminalAlternatives"
+                "$refText": "TerminalAlternatives",
+                "$refId": "RuleCall:rule"
               },
               "arguments": []
             }
@@ -2847,7 +2963,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           {
             "$type": "RuleCall",
             "rule": {
-              "$refText": "TerminalGroup"
+              "$refText": "TerminalGroup",
+              "$refId": "RuleCall:rule"
             },
             "arguments": []
           },
@@ -2874,7 +2991,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$refText": "TerminalGroup"
+                    "$refText": "TerminalGroup",
+                    "$refId": "RuleCall:rule"
                   },
                   "arguments": []
                 }
@@ -2904,7 +3022,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           {
             "$type": "RuleCall",
             "rule": {
-              "$refText": "TerminalToken"
+              "$refText": "TerminalToken",
+              "$refId": "RuleCall:rule"
             },
             "arguments": []
           },
@@ -2927,7 +3046,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$refText": "TerminalToken"
+                    "$refText": "TerminalToken",
+                    "$refId": "RuleCall:rule"
                   },
                   "arguments": []
                 },
@@ -2958,7 +3078,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           {
             "$type": "RuleCall",
             "rule": {
-              "$refText": "TerminalTokenElement"
+              "$refText": "TerminalTokenElement",
+              "$refId": "RuleCall:rule"
             },
             "arguments": []
           },
@@ -3007,49 +3128,56 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           {
             "$type": "RuleCall",
             "rule": {
-              "$refText": "CharacterRange"
+              "$refText": "CharacterRange",
+              "$refId": "RuleCall:rule"
             },
             "arguments": []
           },
           {
             "$type": "RuleCall",
             "rule": {
-              "$refText": "TerminalRuleCall"
+              "$refText": "TerminalRuleCall",
+              "$refId": "RuleCall:rule"
             },
             "arguments": []
           },
           {
             "$type": "RuleCall",
             "rule": {
-              "$refText": "ParenthesizedTerminalElement"
+              "$refText": "ParenthesizedTerminalElement",
+              "$refId": "RuleCall:rule"
             },
             "arguments": []
           },
           {
             "$type": "RuleCall",
             "rule": {
-              "$refText": "NegatedToken"
+              "$refText": "NegatedToken",
+              "$refId": "RuleCall:rule"
             },
             "arguments": []
           },
           {
             "$type": "RuleCall",
             "rule": {
-              "$refText": "UntilToken"
+              "$refText": "UntilToken",
+              "$refId": "RuleCall:rule"
             },
             "arguments": []
           },
           {
             "$type": "RuleCall",
             "rule": {
-              "$refText": "RegexToken"
+              "$refText": "RegexToken",
+              "$refId": "RuleCall:rule"
             },
             "arguments": []
           },
           {
             "$type": "RuleCall",
             "rule": {
-              "$refText": "Wildcard"
+              "$refText": "Wildcard",
+              "$refId": "RuleCall:rule"
             },
             "arguments": []
           }
@@ -3079,7 +3207,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           {
             "$type": "RuleCall",
             "rule": {
-              "$refText": "TerminalAlternatives"
+              "$refText": "TerminalAlternatives",
+              "$refId": "RuleCall:rule"
             },
             "arguments": []
           },
@@ -3120,12 +3249,14 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "terminal": {
               "$type": "CrossReference",
               "type": {
-                "$refText": "TerminalRule"
+                "$refText": "TerminalRule",
+                "$refId": "CrossReference:type"
               },
               "terminal": {
                 "$type": "RuleCall",
                 "rule": {
-                  "$refText": "ID"
+                  "$refText": "ID",
+                  "$refId": "RuleCall:rule"
                 },
                 "arguments": []
               },
@@ -3169,7 +3300,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$refText": "TerminalTokenElement"
+                "$refText": "TerminalTokenElement",
+                "$refId": "RuleCall:rule"
               },
               "arguments": []
             }
@@ -3211,7 +3343,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$refText": "TerminalTokenElement"
+                "$refText": "TerminalTokenElement",
+                "$refId": "RuleCall:rule"
               },
               "arguments": []
             }
@@ -3249,7 +3382,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$refText": "RegexLiteral"
+                "$refText": "RegexLiteral",
+                "$refId": "RuleCall:rule"
               },
               "arguments": []
             }
@@ -3317,7 +3451,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$refText": "Keyword"
+                "$refText": "Keyword",
+                "$refId": "RuleCall:rule"
               },
               "arguments": []
             }
@@ -3336,7 +3471,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$refText": "Keyword"
+                    "$refText": "Keyword",
+                    "$refId": "RuleCall:rule"
                   },
                   "arguments": []
                 }
@@ -3427,14 +3563,16 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           {
             "$type": "RuleCall",
             "rule": {
-              "$refText": "PrimitiveType"
+              "$refText": "PrimitiveType",
+              "$refId": "RuleCall:rule"
             },
             "arguments": []
           },
           {
             "$type": "RuleCall",
             "rule": {
-              "$refText": "ID"
+              "$refText": "ID",
+              "$refId": "RuleCall:rule"
             },
             "arguments": []
           }
@@ -3505,7 +3643,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
         {
           "$type": "AtomType",
           "refType": {
-            "$refText": "Interface"
+            "$refText": "Interface",
+            "$refId": "AtomType:refType"
           },
           "isArray": false,
           "isRef": false
@@ -3513,7 +3652,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
         {
           "$type": "AtomType",
           "refType": {
-            "$refText": "Type"
+            "$refText": "Type",
+            "$refId": "AtomType:refType"
           },
           "isArray": false,
           "isRef": false
@@ -3521,7 +3661,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
         {
           "$type": "AtomType",
           "refType": {
-            "$refText": "Action"
+            "$refText": "Action",
+            "$refId": "AtomType:refType"
           },
           "isArray": false,
           "isRef": false
@@ -3529,7 +3670,8 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
         {
           "$type": "AtomType",
           "refType": {
-            "$refText": "ParserRule"
+            "$refText": "ParserRule",
+            "$refId": "AtomType:refType"
           },
           "isArray": false,
           "isRef": false

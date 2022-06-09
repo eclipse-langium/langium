@@ -29,7 +29,8 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$refText": "ID"
+                "$refText": "ID",
+                "$refId": "RuleCall:rule"
               },
               "arguments": []
             }
@@ -41,7 +42,8 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$refText": "Statement"
+                "$refText": "Statement",
+                "$refId": "RuleCall:rule"
               },
               "arguments": []
             },
@@ -64,14 +66,16 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
           {
             "$type": "RuleCall",
             "rule": {
-              "$refText": "Definition"
+              "$refText": "Definition",
+              "$refId": "RuleCall:rule"
             },
             "arguments": []
           },
           {
             "$type": "RuleCall",
             "rule": {
-              "$refText": "Evaluation"
+              "$refText": "Evaluation",
+              "$refId": "RuleCall:rule"
             },
             "arguments": []
           }
@@ -101,7 +105,8 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$refText": "ID"
+                "$refText": "ID",
+                "$refId": "RuleCall:rule"
               },
               "arguments": []
             }
@@ -120,7 +125,8 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$refText": "DeclaredParameter"
+                    "$refText": "DeclaredParameter",
+                    "$refId": "RuleCall:rule"
                   },
                   "arguments": []
                 }
@@ -139,7 +145,8 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
                     "terminal": {
                       "$type": "RuleCall",
                       "rule": {
-                        "$refText": "DeclaredParameter"
+                        "$refText": "DeclaredParameter",
+                        "$refId": "RuleCall:rule"
                       },
                       "arguments": []
                     }
@@ -165,7 +172,8 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$refText": "Expression"
+                "$refText": "Expression",
+                "$refId": "RuleCall:rule"
               },
               "arguments": []
             }
@@ -193,7 +201,8 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
         "terminal": {
           "$type": "RuleCall",
           "rule": {
-            "$refText": "ID"
+            "$refText": "ID",
+            "$refId": "RuleCall:rule"
           },
           "arguments": []
         }
@@ -218,7 +227,8 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$refText": "Expression"
+                "$refText": "Expression",
+                "$refId": "RuleCall:rule"
               },
               "arguments": []
             }
@@ -242,7 +252,8 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
       "alternatives": {
         "$type": "RuleCall",
         "rule": {
-          "$refText": "Addition"
+          "$refText": "Addition",
+          "$refId": "RuleCall:rule"
         },
         "arguments": []
       },
@@ -266,7 +277,8 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
           {
             "$type": "RuleCall",
             "rule": {
-              "$refText": "Multiplication"
+              "$refText": "Multiplication",
+              "$refId": "RuleCall:rule"
             },
             "arguments": []
           },
@@ -307,7 +319,8 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$refText": "Multiplication"
+                    "$refText": "Multiplication",
+                    "$refId": "RuleCall:rule"
                   },
                   "arguments": []
                 }
@@ -337,7 +350,8 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
           {
             "$type": "RuleCall",
             "rule": {
-              "$refText": "PrimaryExpression"
+              "$refText": "PrimaryExpression",
+              "$refId": "RuleCall:rule"
             },
             "arguments": []
           },
@@ -378,7 +392,8 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$refText": "PrimaryExpression"
+                    "$refText": "PrimaryExpression",
+                    "$refId": "RuleCall:rule"
                   },
                   "arguments": []
                 }
@@ -415,7 +430,8 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
               {
                 "$type": "RuleCall",
                 "rule": {
-                  "$refText": "Expression"
+                  "$refText": "Expression",
+                  "$refId": "RuleCall:rule"
                 },
                 "arguments": []
               },
@@ -442,7 +458,8 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$refText": "NUMBER"
+                    "$refText": "NUMBER",
+                    "$refId": "RuleCall:rule"
                   },
                   "arguments": []
                 }
@@ -466,7 +483,8 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
                 "terminal": {
                   "$type": "CrossReference",
                   "type": {
-                    "$refText": "AbstractDefinition"
+                    "$refText": "AbstractDefinition",
+                    "$refId": "CrossReference:type"
                   },
                   "deprecatedSyntax": false
                 }
@@ -485,7 +503,8 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
                     "terminal": {
                       "$type": "RuleCall",
                       "rule": {
-                        "$refText": "Expression"
+                        "$refText": "Expression",
+                        "$refId": "RuleCall:rule"
                       },
                       "arguments": []
                     }
@@ -504,7 +523,8 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
                         "terminal": {
                           "$type": "RuleCall",
                           "rule": {
-                            "$refText": "Expression"
+                            "$refText": "Expression",
+                            "$refId": "RuleCall:rule"
                           },
                           "arguments": []
                         }
@@ -592,7 +612,8 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
         {
           "$type": "AtomType",
           "refType": {
-            "$refText": "Definition"
+            "$refText": "Definition",
+            "$refId": "AtomType:refType"
           },
           "isArray": false,
           "isRef": false
@@ -600,7 +621,8 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loa
         {
           "$type": "AtomType",
           "refType": {
-            "$refText": "DeclaredParameter"
+            "$refText": "DeclaredParameter",
+            "$refId": "AtomType:refType"
           },
           "isArray": false,
           "isRef": false

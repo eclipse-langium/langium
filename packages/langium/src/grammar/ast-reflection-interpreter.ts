@@ -4,31 +4,26 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import { getReferenceId } from '../references/linker';
+import { NamedAstNode } from '../references/naming';
 import { AstReflection, TypeMandatoryProperty, TypeMetaData } from '../syntax-tree';
-import { isAstNode } from '../utils/ast-util';
+import { getContainerOfType, isAstNode, streamAllContents } from '../utils/ast-util';
 import { MultiMap } from '../utils/collections';
 import { LangiumDocuments } from '../workspace/documents';
-import { Grammar, isGrammar } from './generated/ast';
+import { Grammar, isAssignment, isCrossReference, isParserRule, ParserRule } from './generated/ast';
 import { createLangiumGrammarServices } from './langium-grammar-module';
 import { collectAst } from './type-system/type-collector';
 import { AstTypes, collectAllProperties, Property } from './type-system/types-util';
 
 let emptyDocuments: LangiumDocuments;
 
-export function interpretAstReflection(astTypes: AstTypes): AstReflection;
-export function interpretAstReflection(grammar: Grammar, documents?: LangiumDocuments): AstReflection;
-export function interpretAstReflection(grammarOrTypes: Grammar | AstTypes, documents?: LangiumDocuments): AstReflection {
-    let collectedTypes: AstTypes;
-    if (isGrammar(grammarOrTypes)) {
-        if (!emptyDocuments && !documents) {
-            emptyDocuments = createLangiumGrammarServices().shared.workspace.LangiumDocuments;
-        }
-        collectedTypes = collectAst(documents ?? emptyDocuments, [grammarOrTypes]);
-    } else {
-        collectedTypes = grammarOrTypes;
+export function interpretAstReflection(grammar: Grammar, documents?: LangiumDocuments): AstReflection {
+    if (!emptyDocuments && !documents) {
+        emptyDocuments = createLangiumGrammarServices().shared.workspace.LangiumDocuments;
     }
+    const collectedTypes = collectAst(documents ?? emptyDocuments, [grammar]);
     const allTypes = collectedTypes.interfaces.map(e => e.name).concat(collectedTypes.unions.map(e => e.name));
-    const references = buildReferenceTypes(collectedTypes);
+    const references = buildCrossReferenceTypes(grammar.rules.filter(isParserRule));
     const metaData = buildTypeMetaData(collectedTypes);
     const superTypeMap = buildSupertypeMap(collectedTypes);
 
@@ -39,7 +34,7 @@ export function interpretAstReflection(grammarOrTypes: Grammar | AstTypes, docum
         getReferenceType(referenceId: string): string {
             const referenceType = references.get(referenceId);
             if (referenceType) {
-                return referenceType;
+                return referenceType.referenceType;
             }
             throw new Error('Could not find reference type for ' + referenceId);
         },
@@ -67,18 +62,31 @@ export function interpretAstReflection(grammarOrTypes: Grammar | AstTypes, docum
     };
 }
 
-function buildReferenceTypes(astTypes: AstTypes): Map<string, string> {
-    const references = new Map<string, string>();
-    for (const interfaceType of astTypes.interfaces) {
-        for (const property of interfaceType.properties) {
-            for (const propertyAlternative of property.typeAlternatives) {
-                if (propertyAlternative.reference) {
-                    references.set(`${interfaceType.name}:${property.name}`, propertyAlternative.types[0]);
-                }
-            }
+export type CrossReferenceType = {
+    type: string,
+    feature: string,
+    referenceType: string
+    toString(): string
+}
+
+export function buildCrossReferenceTypes(rules: ParserRule[]): Map<string, CrossReferenceType> {
+
+    const crossReferences = new Map<string, CrossReferenceType>();
+    for (const rule of rules) {
+        for (const crossRef of streamAllContents(rule).filter(isCrossReference)) {
+            const assignment = getContainerOfType(crossRef, isAssignment)!;
+            const targetType = crossRef.type.ref! as NamedAstNode;
+            const ruleName = rule.name;
+            const propertyName = assignment.feature;
+            crossReferences.set(getReferenceId(ruleName, propertyName), {
+                type: ruleName,
+                feature: propertyName,
+                referenceType: targetType.name,
+                toString: () => getReferenceId(ruleName, propertyName)
+            });
         }
     }
-    return references;
+    return crossReferences;
 }
 
 function buildTypeMetaData(astTypes: AstTypes): Map<string, TypeMetaData> {

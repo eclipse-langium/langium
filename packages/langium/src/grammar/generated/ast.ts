@@ -455,7 +455,7 @@ export function isWildcard(item: unknown): item is Wildcard {
 
 export type LangiumGrammarAstType = 'AbstractElement' | 'AbstractRule' | 'AbstractType' | 'Action' | 'Alternatives' | 'Assignment' | 'AtomType' | 'CharacterRange' | 'Condition' | 'Conjunction' | 'CrossReference' | 'Disjunction' | 'Grammar' | 'GrammarImport' | 'Group' | 'InferredType' | 'Interface' | 'Keyword' | 'LiteralCondition' | 'NamedArgument' | 'NegatedToken' | 'Negation' | 'Parameter' | 'ParameterReference' | 'ParserRule' | 'RegexToken' | 'ReturnType' | 'RuleCall' | 'TerminalAlternatives' | 'TerminalGroup' | 'TerminalRule' | 'TerminalRuleCall' | 'Type' | 'TypeAttribute' | 'UnorderedGroup' | 'UntilToken' | 'Wildcard';
 
-export type LangiumGrammarAstReference = 'Action:type' | 'AtomType:refType' | 'CrossReference:type' | 'Grammar:hiddenTokens' | 'Grammar:usedGrammars' | 'Interface:superTypes' | 'NamedArgument:parameter' | 'ParameterReference:parameter' | 'ParserRule:hiddenTokens' | 'ParserRule:returnType' | 'RuleCall:rule' | 'TerminalRuleCall:rule';
+export type LangiumGrammarAstReference = 'Action:type' | 'AtomType:refType' | 'CrossReference:type' | 'Grammar:hiddenTokens' | 'Grammar:usedGrammars' | 'Interface:superTypes' | 'NamedArgument:parameter' | 'ParameterReference:parameter' | 'ParserRule:hiddenTokens' | 'ParserRule:returnType' | 'PredicatedRuleCall:rule' | 'RuleCall:rule' | 'TerminalRuleCall:rule';
 
 export class LangiumGrammarAstReflection implements AstReflection {
 
@@ -546,6 +546,9 @@ export class LangiumGrammarAstReflection implements AstReflection {
             }
             case 'ParserRule:returnType': {
                 return AbstractType;
+            }
+            case 'PredicatedRuleCall:rule': {
+                return AbstractRule;
             }
             case 'RuleCall:rule': {
                 return AbstractRule;

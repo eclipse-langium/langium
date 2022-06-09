@@ -8,6 +8,7 @@ import { CancellationToken, CompletionItem, CompletionItemKind, CompletionList, 
 import { TextDocument, TextEdit } from 'vscode-languageserver-textdocument';
 import * as ast from '../../grammar/generated/ast';
 import { getTypeNameAtElement } from '../../grammar/grammar-util';
+import { getReferenceId } from '../../references/linker';
 import { isNamed } from '../../references/naming';
 import { ScopeProvider } from '../../references/scope';
 import { LangiumServices } from '../../services';
@@ -128,7 +129,7 @@ export class DefaultCompletionProvider implements CompletionProvider {
         const assignment = getContainerOfType(crossRef, ast.isAssignment);
         const parserRule = getContainerOfType(crossRef, ast.isParserRule);
         if (assignment && parserRule) {
-            const scope = this.scopeProvider.getScope(context, `${getTypeNameAtElement(parserRule, assignment)}:${assignment.feature}`);
+            const scope = this.scopeProvider.getScope(context, getReferenceId(getTypeNameAtElement(parserRule, assignment), assignment.feature));
             const duplicateStore = new Set<string>();
             scope.getAllElements().forEach(e => {
                 if (!duplicateStore.has(e.name)) {
