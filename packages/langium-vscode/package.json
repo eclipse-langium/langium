@@ -54,8 +54,8 @@
   },
   "dependencies": {
     "langium": "0.4.0",
-    "vscode-languageclient": "^7.0.0",
-    "vscode-languageserver": "^7.0.0"
+    "vscode-languageclient": "^8.0.1",
+    "vscode-languageserver": "^8.0.1"
   },
   "devDependencies": {
     "@types/mocha": "^8.2.2",
