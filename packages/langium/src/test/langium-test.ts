@@ -14,7 +14,7 @@ import { AstNode, Properties } from '../syntax-tree';
 import { escapeRegExp } from '../utils/regex-util';
 import { LangiumDocument } from '../workspace/documents';
 import { findNodeForFeature } from '../grammar/grammar-util';
-import { AllSemanticTokenTypes } from '../lsp/semantic-token-provider';
+import { DecodedSemanticToken, SemanticTokensDecoder } from '../grammar/langium-grammar-semantic-token-provider';
 
 export function parseHelper<T extends AstNode = AstNode>(services: LangiumServices): (input: string) => Promise<LangiumDocument<T>> {
     const metaData = services.LanguageMetaData;
@@ -309,42 +309,14 @@ export function expectWarning<T extends AstNode = AstNode, N extends AstNode = A
     });
 }
 
-export interface DecodedToken {
-    line: number;
-    character: number;
-    length: number;
-    tokenType: SemanticTokenTypes;
-    text: string;
-    tokenModifiers: number;
-}
-
-export function highlightHelper<T extends AstNode = AstNode>(services: LangiumServices): (input: string) => Promise<DecodedToken[]> {
+export function highlightHelper<T extends AstNode = AstNode>(services: LangiumServices): (input: string) => Promise<DecodedSemanticToken[]> {
     const parse = parseHelper<T>(services);
     const tokenProvider = services.lsp.SemanticTokenProvider!;
-    const typeMap = new Map<number, SemanticTokenTypes>();
-    Object.entries(AllSemanticTokenTypes).forEach(([type, index]) => typeMap.set(index, type as SemanticTokenTypes));
     return async input => {
         const document = await parse(input);
         const params: SemanticTokensParams = { textDocument: { uri: document.textDocument.uri } };
         const tokens = tokenProvider.semanticHighlight(document, params, new CancellationTokenSource().token);
-        let line = 0;
-        let character = 0;
-        return sliceIntoChunks(tokens.data, 5).map(t => {
-            line += t[0];
-            if (t[0] !== 0) {
-                character = 0;
-            }
-            character += t[1];
-            const length = t[2];
-            return {
-                line,
-                character,
-                length,
-                tokenType: typeMap.get(t[3])!,
-                tokenModifiers: t[4],
-                text: document.textDocument.getText({ start: { line, character }, end: { line, character: character + length } })
-            };
-        });
+        return SemanticTokensDecoder.decode(tokens, document);
     };
 }
 
@@ -354,18 +326,9 @@ export interface DecodedTokenOptions {
     line?: number;
 }
 
-export function expectToken(tokens: DecodedToken[], options: DecodedTokenOptions): void {
+export function expectToken(tokens: DecodedSemanticToken[], options: DecodedTokenOptions): void {
     const result = tokens.filter(t => {
         return t.text === options.text && t.tokenType === options.tokenType && (!options.line || options.line === t.line);
     });
     expect(result).toHaveLength(1);
-}
-
-function sliceIntoChunks<T>(arr: T[], chunkSize: number) {
-    const res = [];
-    for (let i = 0; i < arr.length; i += chunkSize) {
-        const chunk = arr.slice(i, i + chunkSize);
-        res.push(chunk);
-    }
-    return res;
 }
