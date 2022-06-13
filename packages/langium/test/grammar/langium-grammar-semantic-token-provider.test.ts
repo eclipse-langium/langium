@@ -66,12 +66,11 @@ describe('Langium grammar semantic token provider', () => {
         });
     });
 
-    test.skip('should highlight return type\'s name as token type "type"', async () => {
+    test('should highlight return type\'s name as token type "type"', async () => {
         // arrange
         const grammarText = `grammar Test
-        interface A {name: string;}
-        entry Main returns <|A|>: name=ID;
-        terminal ID: /[a-z]+/;
+        entry Main: Num;
+        terminal Num returns <|number|>: /[0-9]+/;
         `.trim();
 
         // act

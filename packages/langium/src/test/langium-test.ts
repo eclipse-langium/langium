@@ -318,13 +318,13 @@ export function highlightHelper<T extends AstNode = AstNode>(services: LangiumSe
     const parse = parseHelper<T>(services);
     const tokenProvider = services.lsp.SemanticTokenProvider!;
     return async text => {
-        const {output: input, ranges} = replaceIndices({
+        const { output: input, ranges } = replaceIndices({
             text
         });
         const document = await parse(input);
         const params: SemanticTokensParams = { textDocument: { uri: document.textDocument.uri } };
         const tokens = tokenProvider.semanticHighlight(document, params, new CancellationTokenSource().token);
-        return {tokens:SemanticTokensDecoder.decode(tokens, document), ranges};
+        return { tokens: SemanticTokensDecoder.decode(tokens, document), ranges };
     };
 }
 
@@ -336,7 +336,7 @@ export interface DecodedTokenOptions {
 export function expectSemanticToken(tokensWithRanges: DecodedSemanticTokensWithRanges, options: DecodedTokenOptions): void {
     const range = tokensWithRanges.ranges[options.rangeIndex || 0];
     const result = tokensWithRanges.tokens.filter(t => {
-        return t.tokenType === options.tokenType && t.offset >= range[0] && t.offset < range[1];
+        return t.tokenType === options.tokenType && t.offset >= range[0] && t.offset + t.text.length - 1 < range[1];
     });
     expect(result).toHaveLength(1);
 }
