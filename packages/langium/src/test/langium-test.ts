@@ -14,7 +14,7 @@ import { AstNode, Properties } from '../syntax-tree';
 import { escapeRegExp } from '../utils/regex-util';
 import { LangiumDocument } from '../workspace/documents';
 import { findNodeForFeature } from '../grammar/grammar-util';
-import { SemanticTokensDecoder } from '../grammar/lsp/grammar-semantic-tokens';
+import { SemanticTokensDecoder } from '../lsp/semantic-token-provider';
 
 export function parseHelper<T extends AstNode = AstNode>(services: LangiumServices): (input: string) => Promise<LangiumDocument<T>> {
     const metaData = services.LanguageMetaData;
