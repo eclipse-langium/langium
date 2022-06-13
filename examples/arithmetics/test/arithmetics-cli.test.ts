@@ -30,7 +30,7 @@ interface CliResult {
 
 async function cli(args: string[]): Promise<CliResult> {
     return new Promise(resolve => {
-        exec(`node ${path.join(__dirname, '../bin/cli')} ${args.join(' ')}`, (error, stdout, stderr) => {
+        exec(`node "${path.join(__dirname, '../bin/cli')}" "${args.join('" "')}"`, (error, stdout, stderr) => {
             resolve({
                 code: error && error.code ? error.code : 0,
                 error,

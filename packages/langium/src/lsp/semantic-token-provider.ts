@@ -273,3 +273,43 @@ export abstract class AbstractSemanticTokenProvider implements SemanticTokenProv
     }
 
 }
+
+export interface DecodedSemanticToken {
+    offset: number;
+    tokenType: SemanticTokenTypes;
+    tokenModifiers: number;
+    text: string;
+}
+
+export class SemanticTokensDecoder {
+    static decode<T extends AstNode = AstNode>(tokens: SemanticTokens, document: LangiumDocument<T>): DecodedSemanticToken[] {
+        const typeMap = new Map<number, SemanticTokenTypes>();
+        Object.entries(AllSemanticTokenTypes).forEach(([type, index]) => typeMap.set(index, type as SemanticTokenTypes));
+        let line = 0;
+        let character = 0;
+        return this.sliceIntoChunks(tokens.data, 5).map(t => {
+            line += t[0];
+            if (t[0] !== 0) {
+                character = 0;
+            }
+            character += t[1];
+            const length = t[2];
+            const offset = document.textDocument.offsetAt({ line, character });
+            return {
+                offset,
+                tokenType: typeMap.get(t[3])!,
+                tokenModifiers: t[4],
+                text: document.textDocument.getText({ start: { line, character }, end: { line, character: character + length } })
+            } as DecodedSemanticToken;
+        });
+    }
+
+    private static sliceIntoChunks<T>(arr: T[], chunkSize: number) {
+        const res = [];
+        for (let i = 0; i < arr.length; i += chunkSize) {
+            const chunk = arr.slice(i, i + chunkSize);
+            res.push(chunk);
+        }
+        return res;
+    }
+}

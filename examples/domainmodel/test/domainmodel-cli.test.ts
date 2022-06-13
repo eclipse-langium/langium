@@ -41,7 +41,7 @@ describe('Test the domainmodel CLI', () => {
     });
 
     test('Via CLI: Generator command returns code 0 and creates expected files', async () => {
-        const result = await cli(['generate', rawfileName, `-d ${destination}`]);
+        const result = await cli(['generate', rawfileName, '-d', destination]);
         if(result.code !== 0) {
             console.log('Error code:', result.code);
             console.log('Error message:', result.error);
@@ -65,7 +65,7 @@ interface CliResult {
 
 async function cli(args: string[]): Promise<CliResult> {
     return new Promise(resolve => {
-        exec(`node ${path.join(__dirname, '../bin/cli')} ${args.join(' ')}`, (error, stdout, stderr) => {
+        exec(`node "${path.join(__dirname, '../bin/cli')}" "${args.join('" "')}"`, (error, stdout, stderr) => {
             resolve({
                 code: error && error.code ? error.code : 0,
                 error,

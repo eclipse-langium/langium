@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import fs from 'fs';
+import * as fs from 'fs';
 import { URI, Utils } from 'vscode-uri';
 
 export interface FileSystemNode {
@@ -34,6 +34,22 @@ export interface FileSystemProvider {
      * @returns The list of file system entries that are contained within the specified directory.
      */
     readDirectory(uri: URI): Promise<FileSystemNode[]>;
+}
+
+export class EmptyFileSystemProvider implements FileSystemProvider {
+
+    readFile(): Promise<string> {
+        throw new Error('Method not implemented.');
+    }
+
+    readFileSync(): string {
+        throw new Error('Method not implemented.');
+    }
+
+    async readDirectory(): Promise<FileSystemNode[]> {
+        return [];
+    }
+
 }
 
 export type NodeTextEncoding = 'ascii' | 'utf8' | 'utf-8' | 'utf16le' | 'ucs2' | 'ucs-2' | 'latin1';

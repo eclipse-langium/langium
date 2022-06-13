@@ -4,7 +4,6 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import path from 'path';
 import { WorkspaceFolder } from 'vscode-languageserver';
 import { URI, Utils } from 'vscode-uri';
 import { ServiceRegistry } from '../service-registry';
@@ -108,7 +107,8 @@ export class DefaultWorkspaceManager implements WorkspaceManager {
         if (entry.isDirectory) {
             return name !== 'node_modules' && name !== 'out';
         } else if (entry.isFile) {
-            return fileExtensions.includes(path.extname(name));
+            const extname = Utils.extname(entry.uri);
+            return fileExtensions.includes(extname);
         }
         return false;
     }

@@ -1,5 +1,10 @@
 # Change Log of `generator-langium`
 
+## v0.4.0 (Jun. 2022)
+
+This release updates the generated dependencies to Langium version `0.4.0`.
+
+
 ## v0.3.0 (Mar. 2022)
 
  * The generated project is adapted to the new structure supporting multiple languages ([#311](https://github.com/langium/langium/pull/311)). This mainly affects the configuration format of the `langium` CLI and the separation of _shared services_ and _language-specific services_.
