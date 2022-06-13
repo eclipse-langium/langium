@@ -309,26 +309,34 @@ export function expectWarning<T extends AstNode = AstNode, N extends AstNode = A
     });
 }
 
-export function highlightHelper<T extends AstNode = AstNode>(services: LangiumServices): (input: string) => Promise<DecodedSemanticToken[]> {
+export interface DecodedSemanticTokensWithRanges {
+    tokens: DecodedSemanticToken[];
+    ranges: Array<[number, number]>;
+}
+
+export function highlightHelper<T extends AstNode = AstNode>(services: LangiumServices): (input: string) => Promise<DecodedSemanticTokensWithRanges> {
     const parse = parseHelper<T>(services);
     const tokenProvider = services.lsp.SemanticTokenProvider!;
-    return async input => {
+    return async text => {
+        const {output: input, ranges} = replaceIndices({
+            text
+        });
         const document = await parse(input);
         const params: SemanticTokensParams = { textDocument: { uri: document.textDocument.uri } };
         const tokens = tokenProvider.semanticHighlight(document, params, new CancellationTokenSource().token);
-        return SemanticTokensDecoder.decode(tokens, document);
+        return {tokens:SemanticTokensDecoder.decode(tokens, document), ranges};
     };
 }
 
 export interface DecodedTokenOptions {
-    text: string;
+    rangeIndex?: number;
     tokenType: SemanticTokenTypes;
-    line?: number;
 }
 
-export function expectToken(tokens: DecodedSemanticToken[], options: DecodedTokenOptions): void {
-    const result = tokens.filter(t => {
-        return t.text === options.text && t.tokenType === options.tokenType && (!options.line || options.line === t.line);
+export function expectSemanticToken(tokensWithRanges: DecodedSemanticTokensWithRanges, options: DecodedTokenOptions): void {
+    const range = tokensWithRanges.ranges[options.rangeIndex || 0];
+    const result = tokensWithRanges.tokens.filter(t => {
+        return t.tokenType === options.tokenType && t.offset >= range[0] && t.offset < range[1];
     });
     expect(result).toHaveLength(1);
 }

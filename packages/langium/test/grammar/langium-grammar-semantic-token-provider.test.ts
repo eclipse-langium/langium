@@ -3,7 +3,7 @@
  * This program and the accompanying materials are made available under the
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
-import { highlightHelper, expectToken } from '../../src/test/langium-test';
+import { highlightHelper, expectSemanticToken } from '../../src/test/langium-test';
 import { createLangiumGrammarServices } from '../../src';
 import { SemanticTokenTypes } from 'vscode-languageserver';
 
@@ -15,7 +15,7 @@ describe('Langium grammar semantic token provider', () => {
         // arrange
         const grammarText = `grammar Test
         interface X {
-            x: string | AbstractDefinition
+            x: <|string|> | <|AbstractDefinition|>
         }
         `.trim();
 
@@ -23,22 +23,20 @@ describe('Langium grammar semantic token provider', () => {
         const tokens = await highlight(grammarText);
 
         // assert
-        expectToken(tokens, {
-            text: 'string',
+        expectSemanticToken(tokens, {
+            rangeIndex: 0,
             tokenType: SemanticTokenTypes.type,
-            line: 2
         });
-        expectToken(tokens, {
-            text: 'AbstractDefinition',
+        expectSemanticToken(tokens, {
+            rangeIndex: 1,
             tokenType: SemanticTokenTypes.type,
-            line: 2
         });
     });
 
     test('should highlight assignment\'s feature as token type "property"', async () => {
         // arrange
         const grammarText = `grammar Test
-        entry Main: name=ID;
+        entry Main: <|name|>=ID;
         terminal ID: /[a-z]+/;
         `.trim();
 
@@ -46,10 +44,8 @@ describe('Langium grammar semantic token provider', () => {
         const tokens = await highlight(grammarText);
 
         // assert
-        expectToken(tokens, {
-            text: 'name',
+        expectSemanticToken(tokens, {
             tokenType: SemanticTokenTypes.property,
-            line: 1
         });
     });
 
@@ -57,7 +53,7 @@ describe('Langium grammar semantic token provider', () => {
         // arrange
         const grammarText = `grammar Test
         interface A {name: string; main: Main;}
-        entry Main: {infer A.main=current} name=ID;
+        entry Main: {infer A.<|main|>=current} name=ID;
         terminal ID: /[a-z]+/;
         `.trim();
 
@@ -65,10 +61,8 @@ describe('Langium grammar semantic token provider', () => {
         const tokens = await highlight(grammarText);
 
         // assert
-        expectToken(tokens, {
-            text: 'main',
+        expectSemanticToken(tokens, {
             tokenType: SemanticTokenTypes.property,
-            line: 2
         });
     });
 
@@ -76,7 +70,7 @@ describe('Langium grammar semantic token provider', () => {
         // arrange
         const grammarText = `grammar Test
         interface A {name: string;}
-        entry Main returns A: name=ID;
+        entry Main returns <|A|>: name=ID;
         terminal ID: /[a-z]+/;
         `.trim();
 
@@ -84,18 +78,16 @@ describe('Langium grammar semantic token provider', () => {
         const tokens = await highlight(grammarText);
 
         // assert
-        expectToken(tokens, {
-            text: 'A',
+        expectSemanticToken(tokens, {
             tokenType: SemanticTokenTypes.type,
-            line: 2
         });
     });
 
     test('should highlight parameter\'s name and parameter reference\'s parameter as token type "parameter"', async () => {
         // arrange
         const grammarText = `grammar Test
-        entry Main <abc>: 
-          <abc> name=ID;
+        entry Main <<|abc|>>: 
+          <<|abc|>> name=ID;
         terminal ID: /[a-z]+/;
         `.trim();
 
@@ -103,15 +95,14 @@ describe('Langium grammar semantic token provider', () => {
         const tokens = await highlight(grammarText);
 
         // assert
-        expectToken(tokens, {
-            text: 'abc',
+        expectSemanticToken(tokens, {
+            rangeIndex: 0,
             tokenType: SemanticTokenTypes.parameter,
-            line: 1
         });
-        expectToken(tokens, {
-            text: 'abc',
+        expectSemanticToken(tokens, {
+            rangeIndex: 1,
             tokenType: SemanticTokenTypes.parameter,
-            line: 2
         });
     });
+
 });

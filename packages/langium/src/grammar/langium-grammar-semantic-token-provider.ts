@@ -34,7 +34,7 @@ export class LangiumGrammarSemanticTokenProvider extends AbstractSemanticTokenPr
                 type: SemanticTokenTypes.type
             });
         } else if (isAtomType(node)) {
-            if(node.primitiveType || node.refType) {
+            if (node.primitiveType || node.refType) {
                 acceptor({
                     node,
                     feature: 'primitiveType' in node ? 'primitiveType' : 'refType',
@@ -59,16 +59,14 @@ export class LangiumGrammarSemanticTokenProvider extends AbstractSemanticTokenPr
 }
 
 export interface DecodedSemanticToken {
-    line: number;
-    character: number;
-    length: number;
+    offset: number;
     tokenType: SemanticTokenTypes;
-    text: string;
     tokenModifiers: number;
+    text: string;
 }
 
 export class SemanticTokensDecoder {
-    static decode<T extends AstNode=AstNode>(tokens: SemanticTokens, document: LangiumDocument<T>): DecodedSemanticToken[] {
+    static decode<T extends AstNode = AstNode>(tokens: SemanticTokens, document: LangiumDocument<T>): DecodedSemanticToken[] {
         const typeMap = new Map<number, SemanticTokenTypes>();
         Object.entries(AllSemanticTokenTypes).forEach(([type, index]) => typeMap.set(index, type as SemanticTokenTypes));
         let line = 0;
@@ -80,10 +78,9 @@ export class SemanticTokensDecoder {
             }
             character += t[1];
             const length = t[2];
+            const offset = document.textDocument.offsetAt({ line, character });
             return {
-                line,
-                character,
-                length,
+                offset,
                 tokenType: typeMap.get(t[3])!,
                 tokenModifiers: t[4],
                 text: document.textDocument.getText({ start: { line, character }, end: { line, character: character + length } })
