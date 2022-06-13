@@ -8,7 +8,7 @@ import { SemanticTokens, SemanticTokenTypes } from 'vscode-languageserver';
 import { AstNode } from '../../syntax-tree';
 import { AbstractSemanticTokenProvider, AllSemanticTokenTypes, SemanticTokenAcceptor } from '../../lsp/semantic-token-provider';
 import { isAction, isAssignment, isAtomType, isParameter, isParameterReference, isReturnType } from '../generated/ast';
-import { LangiumDocument } from '../..';
+import { LangiumDocument } from '../../workspace/documents';
 
 export class LangiumGrammarSemanticTokenProvider extends AbstractSemanticTokenProvider {
 
@@ -58,20 +58,20 @@ export class LangiumGrammarSemanticTokenProvider extends AbstractSemanticTokenPr
 
 }
 
-export interface DecodedSemanticToken {
-    offset: number;
-    tokenType: SemanticTokenTypes;
-    tokenModifiers: number;
-    text: string;
-}
+export namespace SemanticTokensDecoder {
+    export interface DecodedSemanticToken {
+        offset: number;
+        tokenType: SemanticTokenTypes;
+        tokenModifiers: number;
+        text: string;
+    }
 
-export class SemanticTokensDecoder {
-    static decode<T extends AstNode = AstNode>(tokens: SemanticTokens, document: LangiumDocument<T>): DecodedSemanticToken[] {
+    export function decode<T extends AstNode = AstNode>(tokens: SemanticTokens, document: LangiumDocument<T>): DecodedSemanticToken[] {
         const typeMap = new Map<number, SemanticTokenTypes>();
         Object.entries(AllSemanticTokenTypes).forEach(([type, index]) => typeMap.set(index, type as SemanticTokenTypes));
         let line = 0;
         let character = 0;
-        return this.sliceIntoChunks(tokens.data, 5).map(t => {
+        return sliceIntoChunks(tokens.data, 5).map(t => {
             line += t[0];
             if (t[0] !== 0) {
                 character = 0;
@@ -88,7 +88,7 @@ export class SemanticTokensDecoder {
         });
     }
 
-    private static sliceIntoChunks<T>(arr: T[], chunkSize: number) {
+    function sliceIntoChunks<T>(arr: T[], chunkSize: number) {
         const res = [];
         for (let i = 0; i < arr.length; i += chunkSize) {
             const chunk = arr.slice(i, i + chunkSize);

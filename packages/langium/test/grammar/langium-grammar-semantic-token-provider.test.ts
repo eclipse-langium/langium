@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 import { highlightHelper, expectSemanticToken } from '../../src/test/langium-test';
-import { createLangiumGrammarServices } from '../../src';
+import { createLangiumGrammarServices } from '../../src/grammar/langium-grammar-module';
 import { SemanticTokenTypes } from 'vscode-languageserver';
 
 const services = createLangiumGrammarServices();

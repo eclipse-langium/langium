@@ -14,7 +14,7 @@ import { AstNode, Properties } from '../syntax-tree';
 import { escapeRegExp } from '../utils/regex-util';
 import { LangiumDocument } from '../workspace/documents';
 import { findNodeForFeature } from '../grammar/grammar-util';
-import { DecodedSemanticToken, SemanticTokensDecoder } from '../grammar/lsp/grammar-semantic-tokens';
+import { SemanticTokensDecoder } from '../grammar/lsp/grammar-semantic-tokens';
 
 export function parseHelper<T extends AstNode = AstNode>(services: LangiumServices): (input: string) => Promise<LangiumDocument<T>> {
     const metaData = services.LanguageMetaData;
@@ -310,7 +310,7 @@ export function expectWarning<T extends AstNode = AstNode, N extends AstNode = A
 }
 
 export interface DecodedSemanticTokensWithRanges {
-    tokens: DecodedSemanticToken[];
+    tokens: SemanticTokensDecoder.DecodedSemanticToken[];
     ranges: Array<[number, number]>;
 }
 
