@@ -14,7 +14,6 @@ import { AstNode, Properties } from '../syntax-tree';
 import { escapeRegExp } from '../utils/regex-util';
 import { LangiumDocument } from '../workspace/documents';
 import { findNodeForFeature } from '../grammar/grammar-util';
-import { LangiumGrammarSemanticTokenProvider } from '../grammar/langium-grammar-semantic-token-provider';
 import { AllSemanticTokenTypes } from '../lsp/semantic-token-provider';
 
 export function parseHelper<T extends AstNode = AstNode>(services: LangiumServices): (input: string) => Promise<LangiumDocument<T>> {
@@ -321,7 +320,7 @@ export interface DecodedToken {
 
 export function highlightHelper<T extends AstNode = AstNode>(services: LangiumServices): (input: string) => Promise<DecodedToken[]> {
     const parse = parseHelper<T>(services);
-    const tokenProvider = new LangiumGrammarSemanticTokenProvider();
+    const tokenProvider = services.lsp.SemanticTokenProvider!;
     const typeMap = new Map<number, SemanticTokenTypes>();
     Object.entries(AllSemanticTokenTypes).forEach(([type, index]) => typeMap.set(index, type as SemanticTokenTypes));
     return async input => {

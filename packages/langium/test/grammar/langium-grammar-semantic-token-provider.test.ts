@@ -34,4 +34,84 @@ describe('Langium grammar semantic token provider', () => {
             line: 2
         });
     });
+
+    test('should highlight assignment\'s feature as token type "property"', async () => {
+        // arrange
+        const grammarText = `grammar Test
+        entry Main: name=ID;
+        terminal ID: /[a-z]+/;
+        `.trim();
+
+        // act
+        const tokens = await highlight(grammarText);
+
+        // assert
+        expectToken(tokens, {
+            text: 'name',
+            tokenType: SemanticTokenTypes.property,
+            line: 1
+        });
+    });
+
+    test('should highlight action\'s feature as token type "property"', async () => {
+        // arrange
+        const grammarText = `grammar Test
+        interface A {name: string; main: Main;}
+        entry Main: {infer A.main=current} name=ID;
+        terminal ID: /[a-z]+/;
+        `.trim();
+
+        // act
+        const tokens = await highlight(grammarText);
+
+        // assert
+        expectToken(tokens, {
+            text: 'main',
+            tokenType: SemanticTokenTypes.property,
+            line: 2
+        });
+    });
+
+    test.skip('should highlight return type\'s name as token type "type"', async () => {
+        // arrange
+        const grammarText = `grammar Test
+        interface A {name: string;}
+        entry Main returns A: name=ID;
+        terminal ID: /[a-z]+/;
+        `.trim();
+
+        // act
+        const tokens = await highlight(grammarText);
+
+        // assert
+        expectToken(tokens, {
+            text: 'A',
+            tokenType: SemanticTokenTypes.type,
+            line: 2
+        });
+    });
+
+    test('should highlight parameter\'s name and parameter reference\'s parameter as token type "parameter"', async () => {
+        // arrange
+        const grammarText = `grammar Test
+        entry Main <abc>: 
+          <abc> name=ID;
+        terminal ID: /[a-z]+/;
+        `.trim();
+
+        // act
+        const tokens = await highlight(grammarText);
+
+        // assert
+        expectToken(tokens, {
+            text: 'abc',
+            tokenType: SemanticTokenTypes.parameter,
+            line: 1
+        });
+        expectToken(tokens, {
+            text: 'abc',
+            tokenType: SemanticTokenTypes.parameter,
+            line: 2
+        });
+    });
 });

@@ -33,11 +33,13 @@ export class LangiumGrammarSemanticTokenProvider extends AbstractSemanticTokenPr
                 type: SemanticTokenTypes.type
             });
         } else if (isAtomType(node)) {
-            acceptor({
-                node,
-                feature: 'primitiveType' in node ? 'primitiveType' : 'refType',
-                type: SemanticTokenTypes.type
-            });
+            if(node.primitiveType || node.refType) {
+                acceptor({
+                    node,
+                    feature: 'primitiveType' in node ? 'primitiveType' : 'refType',
+                    type: SemanticTokenTypes.type
+                });
+            }
         } else if (isParameter(node)) {
             acceptor({
                 node,
