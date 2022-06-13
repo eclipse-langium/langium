@@ -336,7 +336,7 @@ export interface DecodedTokenOptions {
 export function expectSemanticToken(tokensWithRanges: DecodedSemanticTokensWithRanges, options: DecodedTokenOptions): void {
     const range = tokensWithRanges.ranges[options.rangeIndex || 0];
     const result = tokensWithRanges.tokens.filter(t => {
-        return t.tokenType === options.tokenType && t.offset >= range[0] && t.offset + t.text.length - 1 < range[1];
+        return t.tokenType === options.tokenType && t.offset === range[0] && t.offset + t.text.length === range[1];
     });
     expect(result).toHaveLength(1);
 }
