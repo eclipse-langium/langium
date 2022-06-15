@@ -13,6 +13,7 @@ import { getContainerOfType } from '../../utils/ast-util';
 import { findLeafNodeAtOffset } from '../../utils/cst-util';
 import { MaybePromise } from '../../utils/promise-util';
 import { escapeRegExp } from '../../utils/regex-util';
+import { DocumentValidator, LinkingErrorData } from '../../validation/document-validator';
 import { DocumentSegment, LangiumDocument } from '../../workspace/documents';
 import * as ast from '../generated/ast';
 import { findNodeForFeature } from '../grammar-util';
@@ -55,9 +56,15 @@ export class LangiumGrammarCodeActionProvider implements CodeActionProvider {
                 return this.fixMissingInfer(diagnostic, document);
             case IssueCodes.SuperfluousInfer:
                 return this.fixSuperfluousInfer(diagnostic, document);
-            default:
-                return undefined;
+            case DocumentValidator.LinkingError: {
+                const data = diagnostic.data as LinkingErrorData;
+                if (data && data.containerType === 'RuleCall' && data.property === 'rule') {
+                    return this.addNewRule(diagnostic, data, document);
+                }
+                break;
+            }
         }
+        return undefined;
     }
 
     private fixInvalidReturnsInfers(diagnostic: Diagnostic, document: LangiumDocument): CodeAction | undefined {
@@ -229,8 +236,7 @@ export class LangiumGrammarCodeActionProvider implements CodeActionProvider {
         const rootCst = document.parseResult.value.$cstNode;
         if (rootCst) {
             const cstNode = findLeafNodeAtOffset(rootCst, offset);
-            const element = cstNode?.element;
-            const container = ast.isCharacterRange(element) ? element : getContainerOfType(element, ast.isCharacterRange);
+            const container = getContainerOfType(cstNode?.element, ast.isCharacterRange);
             if (container && container.right && container.$cstNode) {
                 const left = container.left.value;
                 const right = container.right.value;
@@ -312,4 +318,34 @@ export class LangiumGrammarCodeActionProvider implements CodeActionProvider {
             }
         };
     }
+
+    private addNewRule(diagnostic: Diagnostic, data: LinkingErrorData, document: LangiumDocument): CodeAction | undefined {
+        const offset = document.textDocument.offsetAt(diagnostic.range.start);
+        const rootCst = document.parseResult.value.$cstNode;
+        if (rootCst) {
+            const cstNode = findLeafNodeAtOffset(rootCst, offset);
+            const container = getContainerOfType(cstNode?.element, ast.isParserRule);
+            if (container && container.$cstNode) {
+                return {
+                    title: `Add new rule '${data.refText}'`,
+                    kind: CodeActionKind.QuickFix,
+                    diagnostics: [diagnostic],
+                    isPreferred: true,
+                    edit: {
+                        changes: {
+                            [document.textDocument.uri]: [{
+                                range: {
+                                    start: container.$cstNode.range.end,
+                                    end: container.$cstNode.range.end
+                                },
+                                newText: '\n\n' + data.refText + ':\n    /* TODO implement rule */ {infer ' + data.refText + '};'
+                            }]
+                        }
+                    }
+                };
+            }
+        }
+        return undefined;
+    }
+
 }
