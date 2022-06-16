@@ -49,7 +49,7 @@ ParserRule:
     RuleNameAndParams
     (wildcard?='*' | ('returns' (returnType=[AbstractType:ID] | dataType=PrimitiveType)) | inferredType=InferredType<false>)?
     (definesHiddenTokens?='hidden' '(' (hiddenTokens+=[AbstractRule:ID] (',' hiddenTokens+=[AbstractRule:ID])*)? ')')? ':'
-    alternatives=Alternatives ';';
+    definition=Alternatives ';';
 
 InferredType<imperative>:
     (<imperative> 'infer' | <!imperative> 'infers') name=ID;
@@ -65,8 +65,7 @@ Alternatives infers AbstractElement:
 
 ConditionalBranch infers AbstractElement:
     UnorderedGroup
-    | {infer Group} '<' guardCondition=Disjunction '>' (elements+=AbstractToken)+
-;
+    | {infer Group} '<' guardCondition=Disjunction '>' (elements+=AbstractToken)+;
 
 UnorderedGroup infers AbstractElement:
     Group ({infer UnorderedGroup.elements+=current} ('&' elements+=Group)+)?;
@@ -158,7 +157,7 @@ ReturnType:
 
 TerminalRule:
     hidden?='hidden'? 'terminal' (fragment?='fragment' name=ID | name=ID ('returns' type=ReturnType)?) ':'
-        terminal=TerminalAlternatives
+        definition=TerminalAlternatives
     ';';
 
 terminal RegexLiteral returns string: /\/(?![*+?])(?:[^\r\n\[/\\]|\\.|\[(?:[^\r\n\]\\]|\\.)*\])+\//;

@@ -102,7 +102,7 @@ function buildParserRules(parserContext: ParserContext, grammar: Grammar): void 
 }
 
 function buildRuleContent(ctx: RuleContext, rule: ParserRule): Method {
-    const method = buildElement(ctx, rule.alternatives);
+    const method = buildElement(ctx, rule.definition);
     return (args) => {
         method(args);
         return ctx.parser.construct();
