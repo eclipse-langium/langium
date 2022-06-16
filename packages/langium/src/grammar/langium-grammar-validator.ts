@@ -660,5 +660,5 @@ function isPrimitiveType(type: string): boolean {
 }
 
 function isEmptyRule(rule: ast.AbstractRule): boolean {
-    return !rule.definition || !!rule.definition.$cstNode && rule.definition.$cstNode.length === 0;
+    return !rule.definition || !rule.definition.$cstNode || rule.definition.$cstNode.length === 0;
 }
