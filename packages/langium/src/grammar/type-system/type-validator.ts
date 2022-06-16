@@ -28,7 +28,7 @@ export function validateTypesConsistency(grammar: Grammar, accept: ValidationAcc
     function applyMissingAssignmentErrorToRuleNodes(nodes: readonly ParserRule[], typeName: string): (propertyName: string, errorMessage: string) => void {
         return (propertyName: string, errorMessage: string) => {
             nodes.forEach(node => {
-                const assignments = extractAssignments(node.alternatives);
+                const assignments = extractAssignments(node.definition);
                 if (assignments.find(a => a.feature === propertyName) === undefined) {
                     accept(
                         'error',
@@ -179,7 +179,7 @@ function collectAllSuperProperties(
 }
 
 export function applyErrorToAssignment(nodes: readonly ParserRule[], accept: ValidationAcceptor): (propertyName: string, errorMessage: string) => void {
-    const assignmentNodes = nodes.flatMap(node => extractAssignments(node.alternatives));
+    const assignmentNodes = nodes.flatMap(node => extractAssignments(node.definition));
     return (propertyName: string, errorMessage: string) => {
         const node = assignmentNodes.find(assignment => assignment.feature === propertyName);
         if (node) {
