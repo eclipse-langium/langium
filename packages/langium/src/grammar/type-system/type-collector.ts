@@ -20,6 +20,7 @@ export function collectAst(documents: LangiumDocuments, grammars: Grammar[]): As
     const astResources = collectAllAstResources(grammars, documents);
     const inferred = collectInferredTypes(Array.from(astResources.parserRules), Array.from(astResources.datatypeRules));
     const declared = collectDeclaredTypes(Array.from(astResources.interfaces), Array.from(astResources.types), inferred);
+
     const interfaces: InterfaceType[] = inferred.interfaces.concat(declared.interfaces);
     const types: UnionType[] = inferred.unions.concat(declared.unions);
 

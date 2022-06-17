@@ -95,27 +95,3 @@ describe('validate inferred types', () => {
 
     });
 });
-
-// Helps enforce how inferred types can be used
-describe('valid proper usage of inferred types', () => {
-
-    test('interface cannot extend inferred union type', async () => {
-        const prog = `
-        Statement: S1 | S2;
-        S1: 's1' s1=ID;
-        S2: 's2' s2=ID;
-        interface Def extends Statement {}
-        hidden terminal WS: /\\s+/;
-        terminal ID: /[a-zA-Z_][a-zA-Z0-9_]*/;
-        `.trim();
-
-        const document = await parseDocument(grammarServices, prog);
-        const diagnostics: Diagnostic[] = await grammarServices.validation.DocumentValidator.validateDocument(document);
-        expect(diagnostics.filter(d => d.severity === DiagnosticSeverity.Error)).toHaveLength(1);
-
-        // verify the location of the single diagnostic error, should be only for the 2nd rule
-        // const d = diagnostics[0];
-        // expect(d.range.start).toEqual({character: 8, line: 5});
-        // expect(d.range.end).toEqual({character: 34, line: 5});
-    });
-});
