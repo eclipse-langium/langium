@@ -55,12 +55,10 @@ export function startLanguageServer(services: LangiumSharedServices): void {
             }
         };
 
-        try {
-            if (params.workspaceFolders) {
-                await services.workspace.WorkspaceManager.initializeWorkspace(params.workspaceFolders);
-            }
-        } catch (err) {
-            console.error(err);
+        if (params.workspaceFolders) {
+            const folders = params.workspaceFolders;
+            const mutex = services.workspace.ReadWriteMutex;
+            mutex.write(() => services.workspace.WorkspaceManager.initializeWorkspace(folders));
         }
         return result;
     });
@@ -77,7 +75,7 @@ export function startLanguageServer(services: LangiumSharedServices): void {
     addCodeActionHandler(connection, services);
     addRenameHandler(connection, services);
     addHoverHandler(connection, services);
-    addSemanticHighlighting(connection, services);
+    addSemanticTokenHandler(connection, services);
 
     // Make the text document manager listen on the connection for open, change and close text document events.
     const documents = services.workspace.TextDocuments;
@@ -89,33 +87,23 @@ export function startLanguageServer(services: LangiumSharedServices): void {
 
 export function addDocumentsHandler(connection: Connection, services: LangiumSharedServices): void {
     const documentBuilder = services.workspace.DocumentBuilder;
+    const mutex = services.workspace.ReadWriteMutex;
     let changeTokenSource: AbstractCancellationTokenSource;
-    let changePromise: Promise<void> | undefined;
 
-    async function onDidChange(changed: URI[], deleted?: URI[]): Promise<void> {
+    function onDidChange(changed: URI[], deleted: URI[]): void {
         changeTokenSource?.cancel();
-        if (changePromise) {
-            await changePromise;
-        }
         changeTokenSource = startCancelableOperation();
-        changePromise = documentBuilder
-            .update(changed, deleted ?? [], changeTokenSource.token)
-            .catch(err => {
-                if (!isOperationCancelled(err)) {
-                    console.error('Error: ', err);
-                }
-            });
+        const token = changeTokenSource.token;
+        mutex.write(() => documentBuilder.update(changed, deleted, token));
     }
 
     const documents = services.workspace.TextDocuments;
     documents.onDidChangeContent(change => {
-        // eslint-disable-next-line @typescript-eslint/no-floating-promises
-        onDidChange([URI.parse(change.document.uri)]);
+        onDidChange([URI.parse(change.document.uri)], []);
     });
     connection.onDidChangeWatchedFiles(params => {
         const changedUris = params.changes.filter(e => e.type !== FileChangeType.Deleted).map(e => URI.parse(e.uri));
         const deletedUris = params.changes.filter(e => e.type === FileChangeType.Deleted).map(e => URI.parse(e.uri));
-        // eslint-disable-next-line @typescript-eslint/no-floating-promises
         onDidChange(changedUris, deletedUris);
     });
 }
@@ -221,7 +209,7 @@ export function addRenameHandler(connection: Connection, services: LangiumShared
     ));
 }
 
-export function addSemanticHighlighting(connection: Connection, services: LangiumSharedServices): void {
+export function addSemanticTokenHandler(connection: Connection, services: LangiumSharedServices): void {
     connection.languages.semanticTokens.on(createServerRequestHandler(
         (services, document, params, cancelToken) => {
             if (services.lsp.SemanticTokenProvider) {
@@ -255,19 +243,22 @@ export function createServerRequestHandler<P extends { textDocument: TextDocumen
     serviceCall: (services: LangiumServices, document: LangiumDocument, params: P, cancelToken: CancellationToken) => HandlerResult<R, E>,
     sharedServices: LangiumSharedServices
 ): ServerRequestHandler<P, R, PR, E> {
+    const documents = sharedServices.workspace.LangiumDocuments;
+    const serviceRegistry = sharedServices.ServiceRegistry;
+    const mutex = sharedServices.workspace.ReadWriteMutex;
     return async (params: P, cancelToken: CancellationToken) => {
         const uri = URI.parse(params.textDocument.uri);
-        const language = sharedServices.ServiceRegistry.getServices(uri);
+        const language = serviceRegistry.getServices(uri);
         if (!language) {
             console.error(`Could not find service instance for uri: '${uri.toString()}'`);
             throw new Error();
         }
-        const document = sharedServices.workspace.LangiumDocuments.getOrCreateDocument(uri);
+        const document = documents.getOrCreateDocument(uri);
         if (!document) {
             throw new Error();
         }
         try {
-            return await serviceCall(language, document, params, cancelToken);
+            return await mutex.read(async () => await serviceCall(language, document, params, cancelToken));
         } catch (err) {
             return responseError<E>(err);
         }
@@ -278,19 +269,22 @@ export function createRequestHandler<P extends { textDocument: TextDocumentIdent
     serviceCall: (services: LangiumServices, document: LangiumDocument, params: P, cancelToken: CancellationToken) => HandlerResult<R, E>,
     sharedServices: LangiumSharedServices
 ): RequestHandler<P, R | null, E> {
+    const documents = sharedServices.workspace.LangiumDocuments;
+    const serviceRegistry = sharedServices.ServiceRegistry;
+    const mutex = sharedServices.workspace.ReadWriteMutex;
     return async (params: P, cancelToken: CancellationToken) => {
         const uri = URI.parse(params.textDocument.uri);
-        const language = sharedServices.ServiceRegistry.getServices(uri);
+        const language = serviceRegistry.getServices(uri);
         if (!language) {
             console.error(`Could not find service instance for uri: '${uri.toString()}'`);
             return null;
         }
-        const document = sharedServices.workspace.LangiumDocuments.getOrCreateDocument(uri);
+        const document = documents.getOrCreateDocument(uri);
         if (!document) {
             return null;
         }
         try {
-            return await serviceCall(language, document, params, cancelToken);
+            return await mutex.read(async () => await serviceCall(language, document, params, cancelToken));
         } catch (err) {
             return responseError<E>(err);
         }

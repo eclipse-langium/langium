@@ -73,7 +73,119 @@ export async function interruptAndCheck(token: CancellationToken): Promise<void>
         lastTick = current;
         await delayNextTick();
     }
-    if (token. isCancellationRequested) {
+    if (token.isCancellationRequested) {
         throw OperationCancelled;
     }
+}
+
+/**
+ * Utility class to allow for mutually exclusive read and write access.
+ *
+ * Can perform multiple read accesses at the same time, but only one write access.
+ */
+export class ReadWriteMutex {
+
+    private readCount = 0;
+    private writeCount = 0;
+
+    private writeLock: Deferred = new Deferred().resolve();
+    private readLock: Deferred = new Deferred().resolve();
+
+    private previousWriteAction?: Promise<void>;
+
+    /**
+     * Performs a single async write action, like initializing the workspace or processing document changes.
+     * Only one action will be executed at a time.
+     *
+     * If a write action is queued up while a read action is being performed, the write action will wait until all read actions have completed.
+     */
+    async write(action: () => Promise<void>): Promise<void> {
+        // Lock reading first, so that consequent read requests don't have priority over this write request
+        this.lockRead();
+        // Then await that every read previous action has completed
+        await this.readLock.promise;
+        // Append the new action to the previous action. We usually don't have to wait for long, as the previous write action
+        // 1. has either completed
+        // 2. has been cancelled due to the new write request
+        this.previousWriteAction = (this.previousWriteAction ?? Promise.resolve()).then(() =>
+            action().catch(err => {
+                if (!isOperationCancelled(err)) {
+                    console.error('Error: ', err);
+                }
+            }).finally(() => {
+                this.unlockRead();
+            })
+        );
+    }
+
+    /**
+     * Call this to lock this mutex before a write operation.
+     */
+    private lockRead(): void {
+        if (this.writeCount === 0) {
+            this.writeLock.resolve();
+            this.writeLock = new Deferred();
+        }
+        this.writeCount++;
+    }
+
+    /**
+     * Call this to unlock this mutex after a write operation.
+     */
+    private unlockRead(): void {
+        this.writeCount--;
+        if (this.writeCount === 0) {
+            this.writeLock.resolve();
+        }
+    }
+
+    /**
+     * Performs a read action on the language server. Multiple read actions can be performed at a time.
+     *
+     * If a read action is queued up while a write action is being performed, the read action will wait until the write action has completed.
+     */
+    async read<T>(action: () => Promise<T>): Promise<T> {
+        // Wait one tick for any write request to arrive
+        await delayNextTick();
+        // Await that writing has completed
+        await this.writeLock.promise;
+        // Then lock writing
+        this.lockWrite();
+        return action().finally(() => this.unlockWrite());
+    }
+
+    /**
+     * Call this to lock this mutex before a read operation.
+     */
+    private lockWrite(): void {
+        if (this.readCount === 0) {
+            this.readLock.resolve();
+            this.readLock = new Deferred();
+        }
+        this.readCount++;
+    }
+
+    /**
+     * Call this to lock this mutex after a read operation.
+     */
+    private unlockWrite(): void {
+        this.readCount--;
+        if (this.readCount === 0) {
+            this.readLock.resolve();
+        }
+    }
+}
+
+/**
+ * Simple implementation of the deferred pattern.
+ * An object that exposes a promise and functions to resolve and reject it.
+ */
+export class Deferred<T = void> {
+    resolve: (value: T) => this;
+    reject: (err?: unknown) => this;
+
+    promise = new Promise<T>((resolve, reject) => {
+        this.resolve = (arg) => (resolve(arg), this);
+        this.reject = (err) => (reject(err), this);
+    });
 }
