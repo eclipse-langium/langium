@@ -21,6 +21,7 @@ import * as ast from './generated/ast';
 import { isParserRule, isRuleCall } from './generated/ast';
 import { findKeywordNode, findNameAssignment, getEntryRule, getTypeName, isDataTypeRule, isOptional, resolveImport, resolveTransitiveImports, terminalRegex } from './grammar-util';
 import type { LangiumGrammarServices } from './langium-grammar-module';
+import { collectInferredTypes } from './type-system/inferred-types';
 import { applyErrorToAssignment, collectAllInterfaces, InterfaceInfo, validateTypesConsistency } from './type-system/type-validator';
 
 export class LangiumGrammarValidationRegistry extends ValidationRegistry {
@@ -416,37 +417,24 @@ export class LangiumGrammarValidator {
             }
         }
 
-        //const astResources = collectAllAstResources([grammar]);
-        //const inferredTypes = collectInferredTypes(Array.from(astResources.parserRules), Array.from(astResources.datatypeRules));
-
-        // Okay, this doesn't work because I don't yet have the information to determine that this interface is a problem...
-
         for (const interfaceType of grammar.interfaces) {
             interfaceType.superTypes.forEach((superType, i) => {
                 if (superType.ref && ast.isType(superType.ref)) {
                     accept('error', 'Interfaces cannot extend union types.', { node: interfaceType, property: 'superTypes', index: i });
+                } else if(superType.ref && ast.isParserRule(superType.ref)) {
+                    // collect just the beginning of whatever inferred types this standalone rule produces
+                    // looking to exclude anything that would be a union down the line
+                    const inferred = collectInferredTypes([superType.ref as ast.ParserRule], []);
+                    if(inferred.unions.length > 0) {
+                        // inferred union type also cannot be extended
+                        accept('error', `An interface cannot extend a union type, which was inferred from parser rule ${superType.ref.name}.`, { node: interfaceType, property: 'superTypes', index: i });
+                    } else {
+                        // otherwise we'll allow it, but issue a warning against basing declared off of inferred types
+                        accept('warning', 'Extending an interface by a parser rule gives an ambiguous type, instead of the expected declared type.', { node: interfaceType, property: 'superTypes', index: i });
+                    }
                 }
-                // TODO: Could is be a solution to actually disallow extending from things that are NOT interfaces directly...
-                // i.e., interfaces build off of other concrete interfaces. That would improve the base reasoning, and make things a lot simpler...
-                //
-                else if(superType.ref && !ast.isInterface(superType.ref)) {
-                    accept('error', 'Interfaces cannot extend parser rules.', { node: interfaceType, property: 'superTypes', index: i });
-                }
-                //
-                //  else if(superType.ref && ast.isParserRule(superType.ref) && ast.isType(superType.ref.inferredType)) {
-                //     // thinking of looking here instead, since this process is tiresome...
-                //     console.info('>>>> Super type ref not defined for ....>>>' + interfaceType.name);
-                //     console.info(superType.ref?.inferredType);
-                //     accept('error', 'Interfaces cannot extend union types!!!!', { node: interfaceType, property: 'superTypes', index: i });
-                // }
             });
         }
-
-        // TEMPORARY, not a good idea in the long run
-        //const astResources = collectAllAstResources([grammar], this.documents);
-        //const inferred = collectInferredTypes(Array.from(astResources.parserRules), Array.from(astResources.datatypeRules));
-        // ...
-        //inferred.unions
     }
 
     checkActionTypeUnions(action: ast.Action, accept: ValidationAcceptor): void {
