@@ -8,6 +8,7 @@ import { EOL } from 'os';
 import { CodeActionKind, Diagnostic } from 'vscode-languageserver';
 import { CodeActionParams } from 'vscode-languageserver-protocol';
 import { CodeAction, Command, Position, TextEdit } from 'vscode-languageserver-types';
+import { AstNode } from '..';
 import { CodeActionProvider } from '../lsp/code-action';
 import { getContainerOfType } from '../utils/ast-util';
 import { findLeafNodeAtOffset } from '../utils/cst-util';
@@ -48,9 +49,12 @@ export class LangiumGrammarCodeActionProvider implements CodeActionProvider {
                 return this.fixMissingImport(diagnostic, document);
             case IssueCodes.UnnecessaryFileExtension:
                 return this.fixUnnecessaryFileExtension(diagnostic, document);
+            case IssueCodes.MissingReturns:
+                return this.fixMissingReturns(diagnostic, document);
             case IssueCodes.InvalidInfers:
+                return this.fixInvalidInfers(diagnostic, document);
             case IssueCodes.InvalidReturns:
-                return this.fixInvalidReturnsInfers(diagnostic, document);
+                return this.fixInvalidReturns(diagnostic, document);
             case IssueCodes.MissingInfer:
                 return this.fixMissingInfer(diagnostic, document);
             case IssueCodes.SuperfluousInfer:
@@ -59,14 +63,73 @@ export class LangiumGrammarCodeActionProvider implements CodeActionProvider {
                 return this.fixDuplicateType(diagnostic, document);
             case IssueCodes.DuplicateProperty:
                 return this.fixDuplicateProperty(diagnostic, document);
-            case IssueCodes.DeriveDeclaredType:
-                return this.deriveDeclaredType(diagnostic, document);
             default:
                 return undefined;
         }
     }
 
-    private fixInvalidReturnsInfers(diagnostic: Diagnostic, document: LangiumDocument): CodeAction | undefined {
+    /**
+     * Returns whether an AST node of a given type exists within the range of a diagnostic
+     * Helpful to prevent code actions being suggested in the incorrect context
+     *
+     * @param diagnostic to use to determine the range to search for a node
+     * @param document to search within
+     * @param astTypePredicate to select the desired node
+     * @returns whether or not the node exists
+     */
+    private astNodeExistsAtDiagnostic<T extends AstNode>(diagnostic: Diagnostic, document: LangiumDocument, astTypePredicate: (n: AstNode) => n is T): boolean {
+        const offset = document.textDocument.offsetAt(diagnostic.range.start);
+        const rootCst = document.parseResult.value.$cstNode;
+        if(rootCst) {
+            const container = getContainerOfType(findLeafNodeAtOffset(rootCst, offset)?.element, astTypePredicate);
+            return !!(container && container.$cstNode);
+        }
+        return false;
+    }
+
+    // Adds missing returns for parser rule
+    private fixMissingReturns(diagnostic: Diagnostic, document: LangiumDocument): CodeAction | undefined {
+        const data = diagnostic.data as Record<string, string>;
+        if (this.astNodeExistsAtDiagnostic(diagnostic, document, ast.isParserRule) && data && data.suggestion && data.ruleTypeName) {
+            return {
+                title: `Add explicit return type for parser rule ${data.ruleTypeName}`,
+                kind: CodeActionKind.QuickFix,
+                diagnostics: [diagnostic],
+                edit: {
+                    changes: {
+                        [document.textDocument.uri]: [{
+                            range: diagnostic.range,
+                            newText: data.suggestion
+                        }]
+                    }
+                }
+            };
+        }
+        return undefined;
+    }
+
+    // Replaces infers w/ returns on a parser rule
+    private fixInvalidInfers(diagnostic: Diagnostic, document: LangiumDocument): CodeAction | undefined {
+        const data = diagnostic.data as Record<string, string>;
+        if (this.astNodeExistsAtDiagnostic(diagnostic, document, ast.isInferredType) && data && data.suggestion && data.ruleTypeName) {
+            return {
+                title: `Replace 'infers' with 'returns' for parser rule ${data.ruleTypeName}`,
+                kind: CodeActionKind.QuickFix,
+                diagnostics: [diagnostic],
+                edit: {
+                    changes: {
+                        [document.textDocument.uri]: [{
+                            range: diagnostic.range,
+                            newText: data.suggestion
+                        }]
+                    }
+                }
+            };
+        }
+        return undefined;
+    }
+
+    private fixInvalidReturns(diagnostic: Diagnostic, document: LangiumDocument): CodeAction | undefined {
         const data = diagnostic.data as DocumentSegment;
         if (data) {
             const text = document.textDocument.getText(data.range);
@@ -133,7 +196,7 @@ export class LangiumGrammarCodeActionProvider implements CodeActionProvider {
     // Removes a duplicate type, in the case where two types share the same name
     private fixDuplicateType(diagnostic: Diagnostic, document: LangiumDocument): CodeAction | undefined {
         const data = diagnostic.data as DocumentSegment;
-        if (data) {
+        if (this.astNodeExistsAtDiagnostic(diagnostic, document, ast.isInterface) && data) {
             return {
                 title: 'Remove this duplicate type declaration.',
                 kind: CodeActionKind.QuickFix,
@@ -164,33 +227,6 @@ export class LangiumGrammarCodeActionProvider implements CodeActionProvider {
                         [document.textDocument.uri]: [{
                             range: data.range,
                             newText: ''
-                        }]
-                    }
-                }
-            };
-        }
-        return undefined;
-    }
-
-    // Derives a declared type from a parser rule that automatically infers one
-    private deriveDeclaredType(diagnostic: Diagnostic, document: LangiumDocument): CodeAction | undefined {
-        const data = diagnostic.data as DocumentSegment;
-        if (data) {
-            // TODO: Next steps would be to make sure that we can generate & insert a declared type properly
-            // This involves:
-            // 1) Getting the inferred type by analysis
-            // 2) Pretty-printing the inferred type above this thing
-            // 3) Adding 'returns Type' if 'infers' is not present
-            // 4) If 'infers' is present we should do nothing, since it's explicit...
-            return {
-                title: 'Derive declared type for this parser rule.',
-                kind: CodeActionKind.QuickFix,
-                diagnostics: [diagnostic],
-                edit: {
-                    changes: {
-                        [document.textDocument.uri]: [{
-                            range: data.range,
-                            newText: 'WIP not done yet'
                         }]
                     }
                 }

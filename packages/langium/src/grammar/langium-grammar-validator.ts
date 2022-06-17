@@ -92,13 +92,13 @@ export namespace IssueCodes {
     export const MissingImport = 'missing-import';
     export const UnnecessaryFileExtension = 'unnecessary-file-extension';
     export const InvalidReturns = 'invalid-returns';
+    export const MissingReturns = 'missing-returns';
     export const InvalidInfers = 'invalid-infers';
     export const MissingInfer = 'missing-infer';
     export const SuperfluousInfer = 'superfluous-infer';
     export const OptionalUnorderedGroup = 'optional-unordered-group';
     export const DuplicateType = 'duplicate-type';
     export const DuplicateProperty = 'duplicate-property';
-    export const DeriveDeclaredType = 'derive-declared-type';
 }
 
 export class LangiumGrammarValidator {
@@ -265,13 +265,31 @@ export class LangiumGrammarValidator {
             const isInfers = !rule.returnType && !rule.dataType;
             const ruleTypeName = getTypeName(rule);
             if (!isDataType && ruleTypeName && types.has(ruleTypeName) === isInfers) {
-                const keywordNode = isInfers ? findKeywordNode(rule.$cstNode, 'infer') : findKeywordNode(rule.$cstNode, 'returns');
-                accept('error', getMessage(ruleTypeName, isInfers), {
-                    node: rule.inferredType ?? rule,
-                    property: 'name',
-                    code: isInfers ? IssueCodes.InvalidInfers : IssueCodes.InvalidReturns,
-                    data: keywordNode && toDocumentSegment(keywordNode) 
-                });
+                if(rule.inferredType === undefined) {
+                    // diagnostic should go on the rule name, since there is no explicit 'infers'
+                    accept('error', getMessage(ruleTypeName, isInfers), {
+                        node: rule,
+                        property: 'name',
+                        code: isInfers ? IssueCodes.MissingReturns : IssueCodes.InvalidReturns,
+                        data: {
+                            suggestion: `${ruleTypeName} returns ${ruleTypeName}`,
+                            ruleTypeName: ruleTypeName
+                        }
+                    });
+
+                } else {
+                    // diagnostic should go on the explict infers, which will be rewritten as returns
+                    accept('error', getMessage(ruleTypeName, isInfers), {
+                        node: rule,
+                        property: 'inferredType',
+                        code: isInfers ? IssueCodes.InvalidInfers : IssueCodes.InvalidReturns,
+                        data: {
+                            suggestion: `returns ${ruleTypeName}`,
+                            ruleTypeName: ruleTypeName
+                        }
+                    });
+
+                }
             } else if (isDataType && isInfers) {
                 const inferNode = findKeywordNode(rule.$cstNode, 'infer');
                 accept('error', 'Data type rules cannot infer a type.', {
@@ -279,17 +297,6 @@ export class LangiumGrammarValidator {
                     property: 'inferredType',
                     code: IssueCodes.InvalidInfers,
                     data: inferNode && toDocumentSegment(inferNode)
-                });
-            } else if(!isDataType && ruleTypeName && isInfers) {
-                // provide a code hint to derive a declared type just above it
-                // DeriveDeclaredType
-                accept('hint', 'A declared type can be derived from this rule.', {
-                    node: rule,
-                    property: 'name',
-                    code: IssueCodes.DeriveDeclaredType,
-                    data: {
-                        range: findKeywordNode(rule.$cstNode, ruleTypeName)?.range
-                    }
                 });
             }
         }
