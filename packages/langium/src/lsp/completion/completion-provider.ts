@@ -109,7 +109,7 @@ export class DefaultCompletionProvider implements CompletionProvider {
 
     protected completionForRule(astNode: AstNode | undefined, rule: ast.AbstractRule, acceptor: CompletionAcceptor): void {
         if (ast.isParserRule(rule)) {
-            const features = findFirstFeatures(rule.alternatives);
+            const features = findFirstFeatures(rule.definition);
             features.flatMap(e => this.completionFor(astNode, e, acceptor));
         }
     }

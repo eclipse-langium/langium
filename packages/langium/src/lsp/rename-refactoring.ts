@@ -38,9 +38,9 @@ export interface RenameHandler {
 
 export class DefaultRenameHandler implements RenameHandler {
 
-    protected readonly referenceFinder: ReferenceFinder
-    protected readonly references: References
-    protected readonly nameProvider: NameProvider
+    protected readonly referenceFinder: ReferenceFinder;
+    protected readonly references: References;
+    protected readonly nameProvider: NameProvider;
 
     constructor(services: LangiumServices) {
         this.referenceFinder = services.lsp.ReferenceFinder;

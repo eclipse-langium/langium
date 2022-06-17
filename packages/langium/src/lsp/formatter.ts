@@ -40,7 +40,7 @@ export interface Formatter {
 
 export abstract class AbstractFormatter implements Formatter {
 
-    protected collector: FormattingCollector = () => { /* Does nothing at first */ }
+    protected collector: FormattingCollector = () => { /* Does nothing at first */ };
 
     /**
      * Creates a formatter scoped to the supplied AST node.
@@ -507,7 +507,7 @@ export interface NodeFormatter<T extends AstNode> {
 export class DefaultNodeFormatter<T extends AstNode> implements NodeFormatter<T> {
 
     protected readonly astNode: T;
-    protected readonly collector: FormattingCollector
+    protected readonly collector: FormattingCollector;
 
     constructor(astNode: T, collector: FormattingCollector) {
         this.astNode = astNode;
@@ -587,8 +587,8 @@ export interface FormattingContext {
 
 export class FormattingRegion {
 
-    readonly nodes: CstNode[]
-    protected readonly collector: FormattingCollector
+    readonly nodes: CstNode[];
+    protected readonly collector: FormattingCollector;
 
     constructor(nodes: CstNode[], collector: FormattingCollector) {
         this.nodes = nodes;

@@ -1,7 +1,7 @@
 {
   "name": "langium-vscode",
   "publisher": "langium",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "displayName": "Langium",
   "description": "Support for the Langium Grammar Language",
   "homepage": "https://langium.org",
@@ -53,18 +53,18 @@
     "lint": "eslint src --ext ts"
   },
   "dependencies": {
-    "langium": "0.3.0",
-    "vscode-languageclient": "^7.0.0",
-    "vscode-languageserver": "^7.0.0"
+    "langium": "0.4.0",
+    "vscode-languageclient": "^8.0.1",
+    "vscode-languageserver": "^8.0.1"
   },
   "devDependencies": {
     "@types/mocha": "^8.2.2",
     "@types/node": "^12.12.6",
     "@types/vscode": "^1.53.0",
-    "@typescript-eslint/eslint-plugin": "^4.14.1",
-    "@typescript-eslint/parser": "^4.14.1",
+    "@typescript-eslint/eslint-plugin": "^5.28.0",
+    "@typescript-eslint/parser": "^5.28.0",
     "esbuild": "^0.14.25",
-    "eslint": "^7.19.0",
+    "eslint": "^8.17.0",
     "eslint-plugin-header": "^3.1.1",
     "mocha": "^8.4.0",
     "typescript": "^4.6.2",

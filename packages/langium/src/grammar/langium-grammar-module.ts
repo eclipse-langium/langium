@@ -8,14 +8,14 @@ import { createDefaultModule, createDefaultSharedModule, DefaultSharedModuleCont
 import { inject, Module } from '../dependency-injection';
 import { LangiumServices, LangiumSharedServices, PartialLangiumServices } from '../services';
 import { LangiumGrammarGeneratedModule, LangiumGrammarGeneratedSharedModule } from './generated/module';
-import { LangiumGrammarCodeActionProvider } from './langium-grammar-code-actions';
-import { LangiumGrammarScopeComputation, LangiumScopeProvider } from './langium-grammar-scope';
-import { LangiumGrammarSemanticTokenProvider } from './langium-grammar-semantic-token-provider';
+import { LangiumGrammarCodeActionProvider } from './lsp/grammar-code-actions';
+import { LangiumGrammarScopeComputation, LangiumGrammarScopeProvider } from './langium-grammar-scope';
+import { LangiumGrammarSemanticTokenProvider } from './lsp/grammar-semantic-tokens';
 import { LangiumGrammarValidationRegistry, LangiumGrammarValidator } from './langium-grammar-validator';
-import { LangiumGrammarFoldingRangeProvider } from './lsp/langium-grammar-folding-range-provider';
-import { LangiumGrammarFormatter } from './lsp/langium-grammar-formatter';
-import { LangiumGrammarGoToResolver } from './lsp/langium-grammar-goto';
-import { LangiumGrammarHoverProvider } from './lsp/langium-grammar-hover-provider';
+import { LangiumGrammarFoldingRangeProvider } from './lsp/grammar-folding-ranges';
+import { LangiumGrammarFormatter } from './lsp/grammar-formatter';
+import { LangiumGrammarGoToResolver } from './lsp/grammar-goto';
+import { LangiumGrammarHoverProvider } from './lsp/grammar-hovers';
 
 export type LangiumGrammarAddedServices = {
     validation: {
@@ -40,7 +40,7 @@ export const LangiumGrammarModule: Module<LangiumGrammarServices, PartialLangium
     },
     references: {
         ScopeComputation: (services) => new LangiumGrammarScopeComputation(services),
-        ScopeProvider: (services) => new LangiumScopeProvider(services)
+        ScopeProvider: (services) => new LangiumGrammarScopeProvider(services)
     }
 };
 

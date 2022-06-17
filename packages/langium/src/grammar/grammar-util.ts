@@ -231,7 +231,7 @@ export function getActionAtElement(element: ast.AbstractElement): ast.Action | u
 }
 
 export function terminalRegex(terminalRule: ast.TerminalRule): string {
-    return abstractElementToRegex(terminalRule.terminal);
+    return abstractElementToRegex(terminalRule.definition);
 }
 
 // Using [\s\S]* allows to match everything, compared to . which doesn't match line terminators

@@ -8,15 +8,15 @@ import { EOL } from 'os';
 import { CodeActionKind, Diagnostic } from 'vscode-languageserver';
 import { CodeActionParams } from 'vscode-languageserver-protocol';
 import { CodeAction, Command, Position, TextEdit } from 'vscode-languageserver-types';
-import { CodeActionProvider } from '../lsp/code-action';
-import { getContainerOfType } from '../utils/ast-util';
-import { findLeafNodeAtOffset } from '../utils/cst-util';
-import { MaybePromise } from '../utils/promise-util';
-import { escapeRegExp } from '../utils/regex-util';
-import { DocumentSegment, LangiumDocument } from '../workspace/documents';
-import * as ast from './generated/ast';
-import { findNodeForFeature } from './grammar-util';
-import { IssueCodes } from './langium-grammar-validator';
+import { CodeActionProvider } from '../../lsp/code-action';
+import { getContainerOfType } from '../../utils/ast-util';
+import { findLeafNodeAtOffset } from '../../utils/cst-util';
+import { MaybePromise } from '../../utils/promise-util';
+import { escapeRegExp } from '../../utils/regex-util';
+import { DocumentSegment, LangiumDocument } from '../../workspace/documents';
+import * as ast from '../generated/ast';
+import { findNodeForFeature } from '../grammar-util';
+import { IssueCodes } from '../langium-grammar-validator';
 
 export class LangiumGrammarCodeActionProvider implements CodeActionProvider {
 

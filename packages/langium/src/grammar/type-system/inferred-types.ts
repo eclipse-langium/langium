@@ -185,8 +185,8 @@ export function collectInferredTypes(parserRules: ParserRule[], datatypeRules: P
 
     // extract types from datatype rules
     for (const rule of datatypeRules) {
-        const types = isAlternatives(rule.alternatives) && rule.alternatives.elements.every(e => isKeyword(e)) ?
-            stream(rule.alternatives.elements).filter(isKeyword).map(e => `'${e.value}'`).toArray().sort() :
+        const types = isAlternatives(rule.definition) && rule.definition.elements.every(e => isKeyword(e)) ?
+            stream(rule.definition.elements).filter(isKeyword).map(e => `'${e.value}'`).toArray().sort() :
             [getExplicitRuleType(rule) ?? 'string'];
         inferredTypes.unions.push(new UnionType(rule.name, [<PropertyType>{ types, reference: false, array: false }]));
     }
@@ -221,7 +221,7 @@ function buildSuperUnions(interfaces: InterfaceType[]): UnionType[] {
 function getRuleTypes(context: TypeCollectionContext, rule: ParserRule): TypeAlternative[] {
     const type = newTypePart(rule);
     const graph = new TypeGraph(context, type);
-    collectElement(graph, graph.root, rule.alternatives);
+    collectElement(graph, graph.root, rule.definition);
     return graph.getTypes();
 }
 
