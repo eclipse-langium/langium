@@ -4,15 +4,10 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { AstNode, createDefaultModule, createDefaultSharedModule, createLangiumGrammarServices, createLangiumParser, Grammar, inject, interpretAstReflection, IParserConfig, LangiumGeneratedServices, LangiumGeneratedSharedServices, LangiumParser, LangiumServices, LangiumSharedServices, Module } from '../../src';
-import { parseHelper } from '../../src/test';
-
-const grammarServices = createLangiumGrammarServices().grammar;
-const helper = parseHelper<Grammar>(grammarServices);
+import { AstNode, createServicesForGrammar, LangiumParser } from '../../src';
 
 describe('Predicated grammar rules with alternatives', () => {
 
-    let parser: LangiumParser;
     const content = `
     grammar TestGrammar
 
@@ -33,10 +28,7 @@ describe('Predicated grammar rules with alternatives', () => {
     hidden terminal WS: /\\s+/;
     `;
 
-    beforeAll(async () => {
-        const grammar = (await helper(content)).parseResult.value;
-        parser = parserFromGrammar(grammar);
-    });
+    const parser = parserFromGrammar(content);
 
     function hasProp(prop: string): void {
         const main = parser.parse(prop + '1').value;
@@ -48,40 +40,16 @@ describe('Predicated grammar rules with alternatives', () => {
         });
     }
 
-    test('Should parse RuleA correctly', () => {
-        hasProp('a');
-    });
-
-    test('Should parse RuleB correctly', () => {
-        hasProp('b');
-    });
-
-    test('Should parse RuleC correctly', () => {
-        hasProp('c');
-    });
-
-    test('Should parse RuleD correctly', () => {
-        hasProp('d');
-    });
-
-    test('Should parse RuleE correctly', () => {
-        hasProp('e');
-    });
-
-    test('Should parse RuleF correctly', () => {
-        hasProp('f');
-    });
-
-    test('Should parse RuleG correctly', () => {
-        hasProp('g');
-    });
-
+    for (const letter of ['a', 'b', 'c', 'd', 'e', 'f', 'g']) {
+        const current = letter;
+        test(`Should parse Rule${current.toUpperCase()} correctly`, () => {
+            hasProp(current);
+        });
+    }
 });
 
 describe('Predicated groups', () => {
 
-    let grammar: Grammar;
-    let parser: LangiumParser;
     const content = `
     grammar TestGrammar
 
@@ -110,10 +78,7 @@ describe('Predicated groups', () => {
     hidden terminal WS: /\\s+/;
     `;
 
-    beforeAll(async () => {
-        grammar = (await helper(content)).parseResult.value;
-        parser = parserFromGrammar(grammar);
-    });
+    const parser = parserFromGrammar(content);
 
     function expectCorrectParse(text: string, a: number, b = 0): void {
         const result = parser.parse(text);
@@ -179,7 +144,7 @@ describe('Predicated groups', () => {
 });
 
 describe('Handle unordered group', () => {
-    let grammar: Grammar;
+
     const content = `
     grammar TestUnorderedGroup
     
@@ -198,17 +163,7 @@ describe('Handle unordered group', () => {
     terminal STRING: /"[^"]*"|'[^']*'/;
     `;
 
-    beforeAll(async () => {
-        grammar = (await helper(content)).parseResult.value;
-    });
-
-    let parser: LangiumParser;
-    test('Should work without Parser Definition Errors', () => {
-        expect(() => {
-            parser = parserFromGrammar(grammar);
-        }).not.toThrow();
-        expect(parser).not.toBeUndefined();
-    });
+    const parser = parserFromGrammar(content);
 
     test('Should parse documents without Errors', () => {
         type bookType = { version?: string, author?: string, descr?: string }
@@ -291,7 +246,6 @@ function parseAndCheck(model: string, parser: LangiumParser): AstNode {
 }
 
 describe('One name for terminal and non-terminal rules', () => {
-    let grammar: Grammar;
     const content = `
     grammar Test
 
@@ -307,30 +261,22 @@ describe('One name for terminal and non-terminal rules', () => {
     hidden terminal WS: /\\s+/;
     `;
 
-    beforeAll(async () => {
-        grammar = (await helper(content)).parseResult.value;
-    });
-
     test('Should work without Parser Definition Errors', () => {
         expect(() => {
-            parserFromGrammar(grammar);
+            parserFromGrammar(content);
         }).not.toThrow();
     });
 
 });
 
 describe('Boolean value converter', () => {
-    let parser: LangiumParser;
     const content = `
     grammar G
     entry M: value?='true';
     hidden terminal WS: /\\s+/;
     `;
 
-    beforeAll(async () => {
-        const grammar = (await helper(content)).parseResult.value;
-        parser = parserFromGrammar(grammar);
-    });
+    const parser = parserFromGrammar(content);
 
     function expectValue(input: string, value: unknown): void {
         const main = parser.parse(input).value as unknown as { value: unknown };
@@ -351,7 +297,6 @@ describe('Boolean value converter', () => {
 });
 
 describe('BigInt Parser value converter', () => {
-    let parser: LangiumParser;
     const content = `
     grammar G
     entry M: value=BIGINT;
@@ -359,10 +304,7 @@ describe('BigInt Parser value converter', () => {
     hidden terminal WS: /\\s+/;
     `;
 
-    beforeAll(async () => {
-        const grammar = (await helper(content)).parseResult.value;
-        parser = parserFromGrammar(grammar);
-    });
+    const parser = parserFromGrammar(content);
 
     function expectValue(input: string, value: unknown): void {
         const main = parser.parse(input).value as unknown as { value: unknown };
@@ -380,7 +322,6 @@ describe('BigInt Parser value converter', () => {
 });
 
 describe('Date Parser value converter', () => {
-    let parser: LangiumParser;
     const content = `
     grammar G
     entry M: value=DATE;
@@ -388,10 +329,7 @@ describe('Date Parser value converter', () => {
     hidden terminal WS: /\\s+/;
     `;
 
-    beforeAll(async () => {
-        const grammar = (await helper(content)).parseResult.value;
-        parser = parserFromGrammar(grammar);
-    });
+    const parser = parserFromGrammar(content);
 
     test('Should have no definition errors', () => {
         expect(parser.definitionErrors).toHaveLength(0);
@@ -405,7 +343,6 @@ describe('Date Parser value converter', () => {
 
 describe('Parser calls value converter', () => {
 
-    let parser: LangiumParser;
     const content = `
     grammar TestGrammar
     entry Main:
@@ -431,10 +368,7 @@ describe('Parser calls value converter', () => {
     hidden terminal ML_COMMENT: /\\/\\*[\\s\\S]*?\\*\\//;
     `;
 
-    beforeAll(async () => {
-        const grammar = (await helper(content)).parseResult.value;
-        parser = parserFromGrammar(grammar);
-    });
+    const parser = parserFromGrammar(content);
 
     function expectValue(input: string, value: unknown): void {
         const main = parser.parse(input).value as unknown as { value: unknown };
@@ -498,23 +432,6 @@ describe('Parser calls value converter', () => {
     });
 });
 
-function parserFromGrammar(grammar: Grammar): LangiumParser {
-    const parserConfig: IParserConfig = {
-        skipValidations: false
-    };
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const unavailable: () => any = () => ({});
-    const generatedSharedModule: Module<LangiumSharedServices, LangiumGeneratedSharedServices> = {
-        AstReflection: () => interpretAstReflection(grammar),
-    };
-    const generatedModule: Module<LangiumServices, LangiumGeneratedServices> = {
-        Grammar: () => grammar,
-        LanguageMetaData: unavailable,
-        parser: {
-            ParserConfig: () => parserConfig
-        }
-    };
-    const shared = inject(createDefaultSharedModule(), generatedSharedModule);
-    const services = inject(createDefaultModule({ shared }), generatedModule);
-    return createLangiumParser(services);
+function parserFromGrammar(grammar: string): LangiumParser {
+    return createServicesForGrammar({ grammar }).parser.LangiumParser;
 }

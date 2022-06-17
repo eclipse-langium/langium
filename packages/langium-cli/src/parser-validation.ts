@@ -4,11 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import {
-    createDefaultModule, createDefaultSharedModule, getDocument, Grammar, inject, interpretAstReflection, IParserConfig,
-    isGrammar, isParserRule, LangiumDocuments, LangiumGeneratedServices, LangiumGeneratedSharedServices,
-    LangiumParser, LangiumServices, LangiumSharedServices, Module, ParserRule, prepareLangiumParser
-} from 'langium';
+import { createServicesForGrammar, getDocument, Grammar, IParserConfig, isGrammar, isParserRule, LangiumDocuments, LangiumParser, LanguageMetaData, ParserRule, prepareLangiumParser } from 'langium';
 import { getFilePath, LangiumConfig, LangiumLanguageConfig } from './package';
 
 export function validateParser(grammar: Grammar, config: LangiumConfig, grammarConfigMap: Map<Grammar, LangiumLanguageConfig>,
@@ -18,19 +14,11 @@ export function validateParser(grammar: Grammar, config: LangiumConfig, grammarC
         ...grammarConfigMap.get(grammar)?.chevrotainParserConfig,
         skipValidations: false
     };
-    const generatedSharedModule: Module<LangiumSharedServices, LangiumGeneratedSharedServices> = {
-        AstReflection: interpretAstReflection(grammar, documents),
-    };
-    const generatedModule: Module<LangiumServices, LangiumGeneratedServices> = {
-        Grammar: () => grammar,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        LanguageMetaData: () => grammarConfigMap.get(grammar) as any,
-        parser: {
-            ParserConfig: () => parserConfig
-        }
-    };
-    const shared = inject(createDefaultSharedModule(), generatedSharedModule);
-    const services = inject(createDefaultModule({ shared }), generatedModule);
+    const services = createServicesForGrammar({
+        grammar,
+        languageMetaData: languageConfigToMetaData(grammarConfigMap.get(grammar)!),
+        parserConfig
+    });
 
     let parser: LangiumParser | undefined;
     try {
@@ -61,6 +49,14 @@ export function validateParser(grammar: Grammar, config: LangiumConfig, grammarC
         }
         throw err;
     }
+}
+
+function languageConfigToMetaData(config: LangiumLanguageConfig): LanguageMetaData {
+    return {
+        languageId: config.id,
+        fileExtensions: config.fileExtensions ?? [],
+        caseInsensitive: !!config.caseInsensitive
+    };
 }
 
 function findRule(name: string, grammar: Grammar, documents: LangiumDocuments): ParserRule | undefined {
