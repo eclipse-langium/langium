@@ -71,7 +71,7 @@ export class DefaultDiagramServerManager implements DiagramServerManager {
             // Track the document URIs to diagram servers via the `sourceUri` option sent with the `RequestModelAction`
             .map(doc => <[LangiumDocument, DiagramServer]>[
                 doc,
-                stream(this.diagramServerMap.values()).find(server => doc.uri.toString() === server.state.options?.sourceUri)
+                stream(this.diagramServerMap.values()).find(server => equalURI(doc.uri, server.state.options?.sourceUri as string))
             ])
             .forEach(entry => {
                 if (entry[1]) {

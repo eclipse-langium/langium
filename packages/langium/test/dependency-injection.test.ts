@@ -253,7 +253,7 @@ describe('The inject function', () => {
             constructor(a: A) {
                 super();
             }
-            a = 1
+            a = 1;
         }
 
         interface I1 {

@@ -138,11 +138,7 @@ export class LeafCstNodeImpl extends AbstractCstNode implements LeafCstNode {
 
 export class CompositeCstNodeImpl extends AbstractCstNode implements CompositeCstNode {
     get offset(): number {
-        if (this.children.length > 0) {
-            return this.firstNonHiddenNode.offset;
-        } else {
-            return 0;
-        }
+        return this.firstNonHiddenNode?.offset ?? 0;
     }
 
     get length(): number {
@@ -150,18 +146,16 @@ export class CompositeCstNodeImpl extends AbstractCstNode implements CompositeCs
     }
 
     get end(): number {
-        if (this.children.length > 0) {
-            return this.lastNonHiddenNode.end;
-        } else {
-            return 0;
-        }
+        return this.lastNonHiddenNode?.end ?? 0;
     }
 
     get range(): Range {
-        if (this.children.length > 0) {
+        const firstNode = this.firstNonHiddenNode;
+        const lastNode = this.lastNonHiddenNode;
+        if (firstNode && lastNode) {
             if (this._rangeCache === undefined) {
-                const { range: firstRange } = this.firstNonHiddenNode;
-                const { range: lastRange } = this.lastNonHiddenNode;
+                const { range: firstRange } = firstNode;
+                const { range: lastRange } = lastNode;
                 this._rangeCache = { start: firstRange.start, end: lastRange.end.line < firstRange.start.line ? firstRange.start : lastRange.end };
             }
             return this._rangeCache;
@@ -170,23 +164,23 @@ export class CompositeCstNodeImpl extends AbstractCstNode implements CompositeCs
         }
     }
 
-    private get firstNonHiddenNode(): CstNode {
+    private get firstNonHiddenNode(): CstNode | undefined {
         for (const child of this.children) {
             if (!child.hidden) {
                 return child;
             }
         }
-        throw new Error('Composite node contains only hidden nodes');
+        return this.children[0];
     }
 
-    private get lastNonHiddenNode(): CstNode {
+    private get lastNonHiddenNode(): CstNode | undefined {
         for (let i = this.children.length - 1; i >= 0; i--) {
             const child = this.children[i];
             if (!child.hidden) {
                 return child;
             }
         }
-        throw new Error('Composite node contains only hidden nodes');
+        return this.children[this.children.length - 1];
     }
 
     readonly children: CstNode[] = new CstNodeContainer(this);

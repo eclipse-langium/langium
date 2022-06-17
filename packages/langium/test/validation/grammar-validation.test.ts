@@ -40,7 +40,7 @@ describe('checkReferenceToRuleButNotType', () => {
     });
 
     test('CrossReference validation', () => {
-        const rule = ((validationResult.document.parseResult.value.rules[3] as ParserRule).alternatives as Assignment).terminal as CrossReference;
+        const rule = ((validationResult.document.parseResult.value.rules[3] as ParserRule).definition as Assignment).terminal as CrossReference;
         expectError(validationResult, "Use the rule type 'DefType' instead of the typed rule name 'Definition' for cross references.", {
             node: rule,
             property: { name: 'type' }
@@ -92,7 +92,7 @@ describe('Checked Named CrossRefs', () => {
     });
 
     test('Named crossReference warning', () => {
-        const rule = ((validationResult.document.parseResult.value.rules[1] as ParserRule).alternatives as Group).elements[1] as Assignment;
+        const rule = ((validationResult.document.parseResult.value.rules[1] as ParserRule).definition as Group).elements[1] as Assignment;
         expectWarning(validationResult, 'The "name" property is not recommended for cross-references.', {
             node: rule,
             property: { name: 'feature' }

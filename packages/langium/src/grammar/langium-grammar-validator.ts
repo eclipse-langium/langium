@@ -4,16 +4,17 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import path from 'path';
 import { DiagnosticTag } from 'vscode-languageserver-types';
 import { Utils } from 'vscode-uri';
+import { NamedAstNode } from '../references/naming';
 import { References } from '../references/references';
 import { LangiumServices } from '../services';
 import { AstNode, Reference } from '../syntax-tree';
 import { getContainerOfType, getDocument, streamAllContents } from '../utils/ast-util';
 import { MultiMap } from '../utils/collections';
 import { toDocumentSegment } from '../utils/cst-util';
-import { stream } from '../utils/stream';
+import { Stream, stream } from '../utils/stream';
+import { relativeURI } from '../utils/uri-utils';
 import { ValidationAcceptor, ValidationChecks, ValidationRegistry } from '../validation/validation-registry';
 import { LangiumDocument, LangiumDocuments } from '../workspace/documents';
 import * as ast from './generated/ast';
@@ -142,17 +143,19 @@ export class LangiumGrammarValidator {
      * Check whether any rule defined in this grammar is a duplicate of an already defined rule or an imported rule
      */
     checkUniqueRuleName(grammar: ast.Grammar, accept: ValidationAcceptor): void {
-        this.checkUniqueName(grammar, accept, (grammar: ast.Grammar) => grammar.rules, 'rule');
+        const extractor = (grammar: ast.Grammar) => stream(grammar.rules).filter(rule => !isEmptyRule(rule));
+        this.checkUniqueName(grammar, accept, extractor, 'rule');
     }
 
     /**
      * Check whether any type defined in this grammar is a duplicate of an already defined type or an imported type
      */
     checkUniqueTypeName(grammar: ast.Grammar, accept: ValidationAcceptor): void {
-        this.checkUniqueName(grammar, accept, (grammar: ast.Grammar) => (grammar.types as Array<{ name: string } & AstNode>).concat(grammar.interfaces), 'type');
+        const extractor = (grammar: ast.Grammar) => stream(grammar.types).concat(grammar.interfaces);
+        this.checkUniqueName(grammar, accept, extractor, 'type');
     }
 
-    private checkUniqueName(grammar: ast.Grammar, accept: ValidationAcceptor, extractor: (grammar: ast.Grammar) => Array<{ name: string } & AstNode>, uniqueObjName: string): void {
+    private checkUniqueName(grammar: ast.Grammar, accept: ValidationAcceptor, extractor: (grammar: ast.Grammar) => Stream<NamedAstNode>, uniqueObjName: string): void {
         const map = new MultiMap<string, { name: string } & AstNode>();
         extractor(grammar).forEach(e => map.add(e.name, e));
 
@@ -261,6 +264,9 @@ export class LangiumGrammarValidator {
             types.add(interfaceType.name);
         }
         for (const rule of grammar.rules.filter(ast.isParserRule)) {
+            if (isEmptyRule(rule)) {
+                continue;
+            }
             const isDataType = isDataTypeRule(rule);
             const isInfers = !rule.returnType && !rule.dataType;
             const ruleTypeName = getTypeName(rule);
@@ -414,7 +420,7 @@ export class LangiumGrammarValidator {
             const grammar = document.parseResult.value;
             // Only check if the rule is sourced from another document
             if (ast.isGrammar(grammar) && refDoc !== document && !importedDocuments.has(refDoc)) {
-                let relative = path.relative(Utils.dirname(document.uri).fsPath, refDoc.uri.fsPath);
+                let relative = relativeURI(Utils.dirname(document.uri), refDoc.uri);
                 if (relative.endsWith('.langium')) {
                     relative = relative.substring(0, relative.length - '.langium'.length);
                 }
@@ -528,7 +534,7 @@ export class LangiumGrammarValidator {
             visitedSet.add(entry.name);
         }
         for (const rule of grammar.rules) {
-            if (ast.isTerminalRule(rule) && rule.hidden) {
+            if (ast.isTerminalRule(rule) && rule.hidden || isEmptyRule(rule)) {
                 continue;
             }
             if (!visitedSet.has(rule.name)) {
@@ -552,7 +558,7 @@ export class LangiumGrammarValidator {
     }
 
     checkRuleName(rule: ast.AbstractRule, accept: ValidationAcceptor): void {
-        if (rule.name) {
+        if (rule.name && !isEmptyRule(rule)) {
             const firstChar = rule.name.substring(0, 1);
             if (firstChar.toUpperCase() !== firstChar) {
                 accept('warning', 'Rule name should start with an upper case letter.', { node: rule, property: 'name', code: IssueCodes.RuleNameUppercase });
@@ -594,6 +600,9 @@ export class LangiumGrammarValidator {
     }
 
     checkParserRuleDataType(rule: ast.ParserRule, accept: ValidationAcceptor): void {
+        if (isEmptyRule(rule)) {
+            return;
+        }
         const hasDatatypeReturnType = rule.dataType;
         const isDataType = isDataTypeRule(rule);
         if (!hasDatatypeReturnType && isDataType) {
@@ -683,4 +692,8 @@ const primitiveTypes = ['string', 'number', 'boolean', 'Date', 'bigint'];
 
 function isPrimitiveType(type: string): boolean {
     return primitiveTypes.includes(type);
+}
+
+function isEmptyRule(rule: ast.AbstractRule): boolean {
+    return !rule.definition || !rule.definition.$cstNode || rule.definition.$cstNode.length === 0;
 }

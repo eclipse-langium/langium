@@ -5,7 +5,8 @@
  ******************************************************************************/
 
 import {
-    CompletionItem, Diagnostic, DiagnosticSeverity, DocumentSymbol, MarkupContent, Range, TextDocumentIdentifier, TextDocumentPositionParams
+    CancellationTokenSource,
+    CompletionItem, Diagnostic, DiagnosticSeverity, DocumentSymbol, MarkupContent, Range, SemanticTokensParams, SemanticTokenTypes, TextDocumentIdentifier, TextDocumentPositionParams
 } from 'vscode-languageserver';
 import { URI } from 'vscode-uri';
 import { LangiumServices } from '../services';
@@ -13,6 +14,7 @@ import { AstNode, Properties } from '../syntax-tree';
 import { escapeRegExp } from '../utils/regex-util';
 import { LangiumDocument } from '../workspace/documents';
 import { findNodeForFeature } from '../grammar/grammar-util';
+import { SemanticTokensDecoder } from '../lsp/semantic-token-provider';
 
 export function parseHelper<T extends AstNode = AstNode>(services: LangiumServices): (input: string) => Promise<LangiumDocument<T>> {
     const metaData = services.LanguageMetaData;
@@ -305,4 +307,36 @@ export function expectWarning<T extends AstNode = AstNode, N extends AstNode = A
         ...filterOptions,
         ...content,
     });
+}
+
+export interface DecodedSemanticTokensWithRanges {
+    tokens: SemanticTokensDecoder.DecodedSemanticToken[];
+    ranges: Array<[number, number]>;
+}
+
+export function highlightHelper<T extends AstNode = AstNode>(services: LangiumServices): (input: string) => Promise<DecodedSemanticTokensWithRanges> {
+    const parse = parseHelper<T>(services);
+    const tokenProvider = services.lsp.SemanticTokenProvider!;
+    return async text => {
+        const { output: input, ranges } = replaceIndices({
+            text
+        });
+        const document = await parse(input);
+        const params: SemanticTokensParams = { textDocument: { uri: document.textDocument.uri } };
+        const tokens = tokenProvider.semanticHighlight(document, params, new CancellationTokenSource().token);
+        return { tokens: SemanticTokensDecoder.decode(tokens, document), ranges };
+    };
+}
+
+export interface DecodedTokenOptions {
+    rangeIndex?: number;
+    tokenType: SemanticTokenTypes;
+}
+
+export function expectSemanticToken(tokensWithRanges: DecodedSemanticTokensWithRanges, options: DecodedTokenOptions): void {
+    const range = tokensWithRanges.ranges[options.rangeIndex || 0];
+    const result = tokensWithRanges.tokens.filter(t => {
+        return t.tokenType === options.tokenType && t.offset === range[0] && t.offset + t.text.length === range[1];
+    });
+    expect(result).toHaveLength(1);
 }

@@ -13,7 +13,7 @@ import { LangiumDocument, PrecomputedScopes } from '../workspace/documents';
 import { isReturnType } from './generated/ast';
 import { processActionNodeWithNodeDescriptionProvider, processTypeNodeWithNodeLocator } from './grammar-util';
 
-export class LangiumScopeProvider extends DefaultScopeProvider {
+export class LangiumGrammarScopeProvider extends DefaultScopeProvider {
     constructor(services: LangiumServices) {
         super(services);
     }

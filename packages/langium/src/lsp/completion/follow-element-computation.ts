@@ -88,7 +88,7 @@ export function findFirstFeatures(feature: ast.AbstractElement | undefined, card
         return findNextFeaturesInternal([feature], card)
             .map(e => modifyCardinality(e, feature.cardinality, card));
     } else if (ast.isRuleCall(feature) && ast.isParserRule(feature.rule.ref)) {
-        return findFirstFeatures(feature.rule.ref.alternatives, card)
+        return findFirstFeatures(feature.rule.ref.definition, card)
             .map(e => modifyCardinality(e, feature.cardinality, card));
     } else {
         return [feature];
