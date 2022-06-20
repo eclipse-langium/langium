@@ -16,7 +16,7 @@ import { LangiumGrammarFoldingRangeProvider } from './lsp/langium-grammar-foldin
 import { LangiumGrammarFormatter } from './lsp/langium-grammar-formatter';
 import { LangiumGrammarGoToResolver } from './lsp/langium-grammar-goto';
 import { LangiumGrammarHoverProvider } from './lsp/langium-grammar-hover-provider';
-import { LangiumGrammarReferenceFinder } from './lsp/langium-grammar-reference-finder';
+import { LangiumGrammarReferenceFinder } from './lsp/grammar-reference-finder';
 
 export type LangiumGrammarAddedServices = {
     validation: {
