@@ -127,18 +127,27 @@ export function expectGoToDefinition(services: LangiumServices, expectEqual: Exp
 
 export interface ExpectedFindReferences extends ExpectedBase {
     index: number,
-    referencesCount: number,
     includeDeclaration: boolean
 }
 
-export function expectFindReferences(services: LangiumServices, expectEqual: ExpectFunction): (expectedFindReferences: ExpectedFindReferences) => Promise<void> {
+export function expectFindReferences(services: LangiumServices): (expectedFindReferences: ExpectedFindReferences) => Promise<void> {
     return async expectedFindReferences => {
-        const { output, indices } = replaceIndices(expectedFindReferences);
+        const { output, indices, ranges } = replaceIndices(expectedFindReferences);
         const document = await parseDocument(services, output);
+        const expectedRanges: Range[] = [];
+        ranges.forEach(range => {
+            const expectedRange: Range = {start: document.textDocument.positionAt(range[0]), end: document.textDocument.positionAt(range[1])};
+            expectedRanges.push(expectedRange);
+        });
         const referenceFinder = services.lsp.ReferenceFinder;
-        const references = await referenceFinder.findReferences(document, referenceParams(document, indices[expectedFindReferences.index], expectedFindReferences.includeDeclaration)) ?? [];
+        const referenceParameters = referenceParams(document, indices[expectedFindReferences.index], expectedFindReferences.includeDeclaration);
+        const references = await referenceFinder.findReferences(document, referenceParameters);
         clearDocuments(services);
-        expectEqual(references.length, expectedFindReferences.referencesCount);
+
+        expect(references.length).toBe(expectedRanges.length);
+        references.forEach(ref => {
+            expect(expectedRanges).toContainEqual(ref.range);
+        });
     };
 }
 

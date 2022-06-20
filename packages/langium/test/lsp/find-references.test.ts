@@ -6,127 +6,500 @@
 
 import { createLangiumGrammarServices } from '../../src';
 import { expectFindReferences } from '../../src/test';
-import { expectFunction } from '../fixture';
-
-const text = `
-grammar test hidden(WS)
-
-entry Model: value=RuleA;
-
-interface <|>A {
-    na<|>me: string
-}
-
-interface B extends A {
-    assignmentB: string
-}
-
-type C = A | B;
-
-RuleA returns A: na<|>me=ID;
-
-RuleB returns B: na<|>me=ID assignmentB=ID;
-
-RuleC returns C: na<|>me=ID assi<|>gnmentB=ID;
-
-ActionRule: {A} 'A' na<|>me=ID | {B} name=ID assig<|>nmentB=ID | {C} na<|>me=ID assignmentB=ID;
-
-terminal ID: /\\w+/;
-terminal WS: /\\s+/;
-
-`;
 
 const grammarServices = createLangiumGrammarServices().grammar;
-const findReferences = expectFindReferences(grammarServices, expectFunction);
+const findReferences = expectFindReferences(grammarServices);
 
 describe('findReferences', () => {
-    test('Must find all references to interface A from interface\'s name including declaration', async () => {
+    test('Must find references to parent interface in another interface declaration. Including parent interface declaration', async () => {
+        const grammar = `grammar test hidden (WS)
+        terminal ID: /\\w+/;
+
+        interface <|<|>A|> {
+            name: string
+        }
+        
+        interface B extends <|A|> {}
+        `;
+
         await findReferences({
-            text,
+            text: grammar,
             index: 0,
-            referencesCount: 5,
             includeDeclaration: true
         });
     });
 
-    test('Must find all references to interface A from interface\'s name excluding declaration', async () => {
+    test('Must find references to parent interface in another interface declaration. Excluding parent interface declaration', async () => {
+        const grammar = `grammar test hidden (WS)
+        terminal ID: /\\w+/;
+
+        interface <|>A {
+            name: string
+        }
+        
+        interface B extends <|A|> {}
+        `;
+
         await findReferences({
-            text,
+            text: grammar,
             index: 0,
-            referencesCount: 4,
             includeDeclaration: false
         });
     });
 
-    test('Must find all references to property name from interface A declaration', async () => {
+    test('Must find references to interface in parser rules. Including interface declaration', async () => {
+        const grammar = `grammar test hidden (WS)
+        terminal ID: /\\w+/;
+
+        interface <|<|>A|> {
+            name: string
+        }
+        
+        ruleA returns <|A|>: name=ID;
+        `;
+
         await findReferences({
-            text,
-            index: 1,
-            referencesCount: 7,
+            text: grammar,
+            index: 0,
             includeDeclaration: true
         });
     });
 
-    test ('Must find all references to property name from parser rule RuleA', async () => {
+    test('Must find references to interface in parser rules. Excluding interface declaration', async () => {
+        const grammar = `grammar test hidden (WS)
+        terminal ID: /\\w+/;
+
+        interface <|>A {
+            name: string
+        }
+        
+        ruleA returns <|A|>: name=ID;
+        `;
+
         await findReferences({
-            text,
-            index: 2,
-            referencesCount: 7,
+            text: grammar,
+            index: 0,
+            includeDeclaration: false
+        });
+    });
+
+    test('Must find references to interface in actions. Including interface declaration', async () => {
+        const grammar = `grammar test hidden (WS)
+        terminal ID: /\\w+/;
+
+        interface <|<|>A|> {
+            name: string
+        }
+        
+        ActionRule: {<|A|>} name=ID;
+        `;
+
+        await findReferences({
+            text: grammar,
+            index: 0,
             includeDeclaration: true
         });
     });
 
-    test ('Must find all references to property name from parser RuleB', async () => {
+    test('Must find references to interface in actions. Excluding interface declaration', async () => {
+        const grammar = `grammar test hidden (WS)
+        terminal ID: /\\w+/;
+
+        interface <|>A {
+            name: string
+        }
+        
+        ActionRule: {<|A|>} name=ID;
+        `;
+
         await findReferences({
-            text,
-            index: 3,
-            referencesCount: 7,
+            text: grammar,
+            index: 0,
+            includeDeclaration: false
+        });
+    });
+
+    test('Must find references to interface in union types. Including interface declaration', async () => {
+        const grammar = `grammar test hidden (WS)
+        terminal ID: /\\w+/;
+
+        interface <|<|>A|> {
+            name: string
+        }
+        
+        interface B {
+            foo:string
+        }
+
+        type C = <|A|> | B;
+        `;
+
+        await findReferences({
+            text: grammar,
+            index: 0,
             includeDeclaration: true
         });
     });
 
-    test ('Must find all references to property name from parser RuleC', async () => {
+    test('Must find references to interface in union types. Excluding interface declaration', async () => {
+        const grammar = `grammar test hidden (WS)
+        terminal ID: /\\w+/;
+
+        interface <|>A {
+            name: string
+        }
+        
+        interface B {
+            foo:string
+        }
+
+        type C = <|A|> | B;
+        `;
+
         await findReferences({
-            text,
-            index: 4,
-            referencesCount: 7,
+            text: grammar,
+            index: 0,
+            includeDeclaration: false
+        });
+    });
+
+    test('Must find references to interface in children interfaces, parser rules, actions, and union types. Including parent interface declaration', async () => {
+        const grammar = `grammar test hidden (WS)
+        terminal ID: /\\w+/;
+
+        interface <|<|>A|> {
+            name: string
+        }
+        
+        interface B extends <|A|> {}
+
+        type C = <|A|> | B;
+
+        RuleA returns <|A|>: name=ID;
+
+        ActionRule: {<|A|>} name=ID;
+        `;
+
+        await findReferences({
+            text: grammar,
+            index: 0,
             includeDeclaration: true
         });
     });
 
-    test ('Must find all references to property assignmentB from parser ruleC', async () => {
+    test('Must find references to interface in children interfaces, parser rules, actions, and union types. Excluding interface declaration', async () => {
+        const grammar = `grammar test hidden (WS)
+        terminal ID: /\\w+/;
+
+        interface <|>A {
+            name: string
+        }
+        
+        interface B extends <|A|> {}
+
+        type C = <|A|> | B;
+
+        RuleA returns <|A|>: name=ID;
+
+        ActionRule: {<|A|>} name=ID;
+        `;
+
         await findReferences({
-            text,
-            index: 5,
-            referencesCount: 5,
+            text: grammar,
+            index: 0,
+            includeDeclaration: false
+        });
+    });
+
+    test('Must find references to a property assigned in parser rule from interface declaration', async () => {
+        const grammar = `grammar test hidden (WS)
+        terminal ID: /\\w+/;
+
+        interface A {
+            <|na<|>me|>: string
+        }
+
+        RuleA returns A: <|name|>=ID;
+        `;
+
+        await findReferences({
+            text: grammar,
+            index: 0,
             includeDeclaration: true
         });
     });
 
-    test ('Must find all references to property name from Action A', async () => {
+    test('Must find references to a property assigned in parser rule from assignment', async () => {
+        const grammar = `grammar test hidden (WS)
+        terminal ID: /\\w+/;
+
+        interface A {
+            <|name|>: string
+        }
+
+        RuleA returns A: <|na<|>me|>=ID;
+        `;
+
         await findReferences({
-            text,
-            index: 6,
-            referencesCount: 7,
+            text: grammar,
+            index: 0,
             includeDeclaration: true
         });
     });
 
-    test ('Must find all references to property assignmentB from Action B', async () => {
+    test('Must find references to a property assigned in parser rule returning child type from interface declaration', async () => {
+        const grammar = `grammar test hidden (WS)
+        terminal ID: /\\w+/;
+
+        interface A {
+            <|na<|>me|>: string
+        }
+        
+        interface B extends A {}
+
+        RuleB returns B: <|name|>=ID;
+        `;
+
         await findReferences({
-            text,
-            index: 7,
-            referencesCount: 5,
+            text: grammar,
+            index: 0,
             includeDeclaration: true
         });
     });
 
-    test ('Must find all references to property name from Action C', async () => {
+    test('Must find references to a property assigned in parser rule returning child type from assignment', async () => {
+        const grammar = `grammar test hidden (WS)
+        terminal ID: /\\w+/;
+
+        interface A {
+            <|name|>: string
+        }
+        
+        interface B extends A {}
+
+        RuleB returns B: <|na<|>me|>=ID;
+        `;
+
         await findReferences({
-            text,
-            index: 8,
-            referencesCount: 7,
+            text: grammar,
+            index: 0,
             includeDeclaration: true
         });
     });
+
+    test('Must find references to a property assigned in actions from interface declaration', async () => {
+        const grammar = `grammar test hidden (WS)
+        terminal ID: /\\w+/;
+
+        interface A {
+            <|na<|>me|>: string
+        }
+        
+        ActionRule: {A} <|name|>=ID;
+        `;
+
+        await findReferences({
+            text: grammar,
+            index: 0,
+            includeDeclaration: true
+        });
+    });
+
+    test('Must find references to a property assigned in actions returning child type from interface assignment', async () => {
+        const grammar = `grammar test hidden (WS)
+        terminal ID: /\\w+/;
+
+        interface A {
+            <|na<|>me|>: string
+        }
+
+        interface B extends A {}
+        
+        ActionRule: {B} <|name|>=ID;
+        `;
+
+        await findReferences({
+            text: grammar,
+            index: 0,
+            includeDeclaration: true
+        });
+    });
+
+    test('Must find references to a property assigned in action returning union type from interface declaration', async () => {
+        const grammar = `grammar test hidden (WS)
+        terminal ID: /\\w+/;
+
+        interface A {
+            <|na<|>me|>: string
+        }
+
+        interface B {
+            foo: string
+        }
+        
+        type C = A | B;
+
+        ActionRule: {C} <|name|>=ID;
+        `;
+
+        await findReferences({
+            text: grammar,
+            index: 0,
+            includeDeclaration: true
+        });
+    });
+
+    test('Must find references to a property assigned in actions from assignment', async () => {
+        const grammar = `grammar test hidden (WS)
+        terminal ID: /\\w+/;
+
+        interface A {
+            <|name|>: string
+        }
+        
+        ActionRule: {A} <|na<|>me|>=ID;
+        `;
+
+        await findReferences({
+            text: grammar,
+            index: 0,
+            includeDeclaration: true
+        });
+    });
+
+    test('Must find references to a property assigned in action returning child type from assignment', async () => {
+        const grammar = `grammar test hidden (WS)
+        terminal ID: /\\w+/;
+
+        interface A {
+            <|name|>: string
+        }
+        
+        interface B extends A {}
+
+        ActionRule: {B} <|na<|>me|>=ID;
+        `;
+
+        await findReferences({
+            text: grammar,
+            index: 0,
+            includeDeclaration: true
+        });
+    });
+
+    test('Must find references to a property assigned in action returning union type from assignment', async () => {
+        const grammar = `grammar test hidden (WS)
+        terminal ID: /\\w+/;
+
+        interface A {
+            <|name|>: string
+        }
+        
+        interface B {
+            foo: string
+        }
+        
+        type C = A | B;
+        ActionRule: {C} <|na<|>me|>=ID;
+        `;
+
+        await findReferences({
+            text: grammar,
+            index: 0,
+            includeDeclaration: true
+        });
+    });
+
+    test('Must find references to a property assigned in parser rule returning union type from interface declaration', async () => {
+        const grammar = `grammar test hidden (WS)
+        terminal ID: /\\w+/;
+
+        interface A {
+            <|na<|>me|>: string
+        }
+        
+        interface B {
+            foo: string
+        }
+
+        type C = A | B | C;
+
+        ruleC returns C: <|name|>=ID;
+        `;
+
+        await findReferences({
+            text: grammar,
+            index: 0,
+            includeDeclaration: true
+        });
+    });
+
+    test('Must find references to a property assigned in parser rule returning union type from assignment', async () => {
+        const grammar = `grammar test hidden (WS)
+        terminal ID: /\\w+/;
+
+        interface A {
+            <|na<|>me|>: string
+        }
+        
+        interface B {
+            foo: string
+        }
+
+        type C = A | B | C;
+
+        ruleC returns C: <|name|>=ID;
+        `;
+
+        await findReferences({
+            text: grammar,
+            index: 0,
+            includeDeclaration: true
+        });
+    });
+
+    test('Must find references to property assigned in parser rule returning child of child type from declaration', async () =>{
+        const grammar = `grammar test hidden (WS)
+        terminal ID: /\\w+/;
+
+        interface A {
+            <|na<|>me|>: string
+        }
+        
+        interface B extends A {}
+
+        interface C extends B {}
+
+        ruleC returns C: <|name|>=ID;
+        `;
+
+        await findReferences({
+            text: grammar,
+            index: 0,
+            includeDeclaration: true
+        });
+    });
+
+    test('Must find references to property assigned in parser rule returning child of child type from assignment', async () =>{
+        const grammar = `grammar test hidden (WS)
+        terminal ID: /\\w+/;
+
+        interface A {
+            <|name|>: string
+        }
+        
+        interface B extends A {}
+
+        interface C extends B {}
+
+        ruleC returns C: <|na<|>me|>=ID;
+        `;
+
+        await findReferences({
+            text: grammar,
+            index: 0,
+            includeDeclaration: true
+        });
+    });
+
 });
