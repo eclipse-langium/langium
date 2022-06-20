@@ -126,7 +126,6 @@ export function expectGoToDefinition(services: LangiumServices, expectEqual: Exp
 }
 
 export interface ExpectedFindReferences extends ExpectedBase {
-    index: number,
     includeDeclaration: boolean
 }
 
@@ -140,14 +139,16 @@ export function expectFindReferences(services: LangiumServices): (expectedFindRe
             expectedRanges.push(expectedRange);
         });
         const referenceFinder = services.lsp.ReferenceFinder;
-        const referenceParameters = referenceParams(document, indices[expectedFindReferences.index], expectedFindReferences.includeDeclaration);
-        const references = await referenceFinder.findReferences(document, referenceParameters);
-        clearDocuments(services);
+        indices.forEach(async (index) => {
+            const referenceParameters = referenceParams(document, index, expectedFindReferences.includeDeclaration);
+            const references = await referenceFinder.findReferences(document, referenceParameters);
 
-        expect(references.length).toBe(expectedRanges.length);
-        references.forEach(ref => {
-            expect(expectedRanges).toContainEqual(ref.range);
+            expect(references.length).toBe(expectedRanges.length);
+            references.forEach(ref => {
+                expect(expectedRanges).toContainEqual(ref.range);
+            });
         });
+        clearDocuments(services);
     };
 }
 
