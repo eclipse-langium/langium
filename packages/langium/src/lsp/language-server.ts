@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import {
-    AbstractCancellationTokenSource, CancellationToken, Connection, FileChangeType, HandlerResult, InitializeResult,
+    AbstractCancellationTokenSource, CancellationToken, ClientCapabilities, Connection, FileChangeType, HandlerResult, InitializeResult,
     LSPErrorCodes, RequestHandler, ResponseError, ServerRequestHandler, TextDocumentIdentifier, TextDocumentSyncKind
 } from 'vscode-languageserver';
 import { URI } from 'vscode-uri';
@@ -55,6 +55,8 @@ export function startLanguageServer(services: LangiumSharedServices): void {
             }
         };
 
+        await Promise.all(languages.map(languageService => initializeClientCapabilities(languageService, params.capabilities)));
+
         if (params.workspaceFolders) {
             const folders = params.workspaceFolders;
             const mutex = services.workspace.MutexLock;
@@ -83,6 +85,27 @@ export function startLanguageServer(services: LangiumSharedServices): void {
 
     // Start listening for incoming messages from the client.
     connection.listen();
+}
+
+export async function initializeClientCapabilities(services: LangiumServices, clientCapabilities: ClientCapabilities): Promise<void> {
+    const text = clientCapabilities.textDocument;
+    await Promise.all([
+        services.lsp.CodeActionProvider?.initialize?.(text?.codeAction),
+        services.lsp.DocumentHighlighter.initialize?.(text?.documentHighlight),
+        services.lsp.DocumentSymbolProvider.initialize?.(text?.documentSymbol),
+        services.lsp.FoldingRangeProvider.initialize?.(text?.foldingRange),
+        services.lsp.Formatter?.initialize?.({
+            formatting: text?.formatting,
+            rangeFormatting: text?.rangeFormatting,
+            onTypeFormatting: text?.onTypeFormatting
+        }),
+        services.lsp.GoToResolver.initialize?.(text?.definition),
+        services.lsp.HoverProvider.initialize?.(text?.hover),
+        services.lsp.ReferenceFinder.initialize?.(text?.references),
+        services.lsp.RenameHandler.initialize?.(text?.rename),
+        services.lsp.SemanticTokenProvider?.initialize?.(text?.semanticTokens),
+        services.validation.DocumentValidator.initialize?.(text?.publishDiagnostics)
+    ]);
 }
 
 export function addDocumentsHandler(connection: Connection, services: LangiumSharedServices): void {

@@ -4,11 +4,11 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { CancellationToken, Location, Range, ReferenceParams } from 'vscode-languageserver';
+import { CancellationToken, Location, Range, ReferenceClientCapabilities, ReferenceParams } from 'vscode-languageserver';
 import { URI } from 'vscode-uri';
 import { NameProvider } from '../references/naming';
 import { References } from '../references/references';
-import { LangiumServices } from '../services';
+import { InitializableService, LangiumServices } from '../services';
 import { AstNode, CstNode } from '../syntax-tree';
 import { getDocument, isReference } from '../utils/ast-util';
 import { findLeafNodeAtOffset, flattenCst } from '../utils/cst-util';
@@ -18,7 +18,7 @@ import { LangiumDocument } from '../workspace/documents';
 /**
  * Language-specific service for handling find references requests.
  */
-export interface ReferenceFinder {
+export interface ReferenceFinder extends InitializableService<ReferenceClientCapabilities> {
     /**
      * Handle a find references request.
      *
