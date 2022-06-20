@@ -298,6 +298,17 @@ export class LangiumGrammarValidator {
                         code: isInfers ? IssueCodes.SuperfluousInfer : IssueCodes.MissingInfer,
                         data: keywordNode && toDocumentSegment(keywordNode)
                     });
+                } else if(actionType && types.has(typeName) && isInfers) {
+                    // error: action infers type that is already defined
+                    if(action.$cstNode) {
+                        accept('error', `${typeName} is a declared type and cannot be redefined.`, {
+                            node: action,
+                            property: 'type',
+                            code: IssueCodes.SuperfluousInfer,
+                            // use the same data, stripping the 'infer' keyword out
+                            data: action.$cstNode.text.replace(/\s*infer\s+/, '')
+                        });
+                    }
                 }
             }
         }
