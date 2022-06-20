@@ -4,8 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { CancellationToken, Location, Range, ReferenceParams } from 'vscode-languageserver';
-import { URI } from 'vscode-uri';
+import { CancellationToken, Location, ReferenceParams } from 'vscode-languageserver';
 import { NameProvider } from '../references/naming';
 import { References } from '../references/references';
 import { LangiumServices } from '../services';
