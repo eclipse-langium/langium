@@ -28,11 +28,6 @@ export interface ReferenceFinder {
     findReferences(document: LangiumDocument, params: ReferenceParams, cancelToken?: CancellationToken): MaybePromise<Location[]>;
 }
 
-export interface ReferenceLocation {
-    docUri: URI
-    range: Range
-}
-
 export class DefaultReferenceFinder implements ReferenceFinder {
     protected readonly nameProvider: NameProvider;
     protected readonly references: References;
@@ -53,30 +48,26 @@ export class DefaultReferenceFinder implements ReferenceFinder {
             return [];
         }
 
-        const refs: ReferenceLocation[] = this.getReferences(selectedNode, params, document);
+        const refs: Location[] = this.getReferences(selectedNode, params, document);
 
-        return refs.map(ref => Location.create(
-            ref.docUri.toString(),
-            ref.range
-        ));
+        return refs;
     }
 
-    protected getReferences(selectedNode: LeafCstNode, params: ReferenceParams, document: LangiumDocument<AstNode>): ReferenceLocation[] {
-        const refs: ReferenceLocation[] = [];
+    protected getReferences(selectedNode: LeafCstNode, params: ReferenceParams, document: LangiumDocument<AstNode>): Location[] {
+        const refs: Location[] = [];
         const targetAstNode = this.references.findDeclaration(selectedNode)?.element;
         if (targetAstNode) {
             if (params.context.includeDeclaration) {
                 const declDoc = getDocument(targetAstNode);
                 const nameNode = this.findNameNode(targetAstNode, selectedNode.text);
                 if (nameNode)
-                    refs.push({ docUri: declDoc.uri, range: nameNode.range });
+                    refs.push(Location.create(declDoc.uri.toString(), nameNode.range));
             }
             this.references.findReferences(targetAstNode).forEach(reference => {
                 if (isReference(reference)) {
-                    refs.push({ docUri: document.uri, range: reference.$refNode.range });
+                    refs.push(Location.create(document.uri.toString(), reference.$refNode.range));
                 } else {
-                    const range = reference.segment.range;
-                    refs.push({ docUri: reference.sourceUri, range: range });
+                    refs.push(Location.create(reference.sourceUri.toString(), reference.segment.range));
                 }
             });
         }
