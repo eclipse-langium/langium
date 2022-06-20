@@ -28,6 +28,11 @@ export interface ReferenceFinder {
     findReferences(document: LangiumDocument, params: ReferenceParams, cancelToken?: CancellationToken): MaybePromise<Location[]>;
 }
 
+export interface ReferenceLocation {
+    docUri: URI
+    range: Range
+}
+
 export class DefaultReferenceFinder implements ReferenceFinder {
     protected readonly nameProvider: NameProvider;
     protected readonly references: References;
@@ -48,7 +53,7 @@ export class DefaultReferenceFinder implements ReferenceFinder {
             return [];
         }
 
-        const refs: Array<{ docUri: URI, range: Range }> = this.getReferences(selectedNode, params, document);
+        const refs: ReferenceLocation[] = this.getReferences(selectedNode, params, document);
 
         return refs.map(ref => Location.create(
             ref.docUri.toString(),
@@ -56,8 +61,8 @@ export class DefaultReferenceFinder implements ReferenceFinder {
         ));
     }
 
-    protected getReferences(selectedNode: LeafCstNode, params: ReferenceParams, document: LangiumDocument<AstNode>): Array<{ docUri: URI, range: Range }> {
-        const refs: Array<{ docUri: URI, range: Range }> = [];
+    protected getReferences(selectedNode: LeafCstNode, params: ReferenceParams, document: LangiumDocument<AstNode>): ReferenceLocation[] {
+        const refs: ReferenceLocation[] = [];
         const targetAstNode = this.references.findDeclaration(selectedNode)?.element;
         if (targetAstNode) {
             if (params.context.includeDeclaration) {
@@ -71,7 +76,7 @@ export class DefaultReferenceFinder implements ReferenceFinder {
                     refs.push({ docUri: document.uri, range: reference.$refNode.range });
                 } else {
                     const range = reference.segment.range;
-                    refs.push({ docUri: reference.sourceUri, range });
+                    refs.push({ docUri: reference.sourceUri, range: range });
                 }
             });
         }

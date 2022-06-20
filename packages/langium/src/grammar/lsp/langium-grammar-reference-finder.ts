@@ -4,9 +4,8 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { ReferenceParams, Range } from 'vscode-languageserver';
-import { URI } from 'vscode-uri';
-import { DefaultReferenceFinder } from '../../lsp';
+import { ReferenceParams } from 'vscode-languageserver';
+import { DefaultReferenceFinder, ReferenceLocation } from '../../lsp';
 import { LangiumServices } from '../../services';
 import { AstNode, LeafCstNode } from '../../syntax-tree';
 import { extractAssignments, extractRootNode, getContainerOfType } from '../../utils/ast-util';
@@ -26,8 +25,8 @@ export class LangiumGrammarReferenceFinder extends DefaultReferenceFinder {
         this.langiumDocuments = services.shared.workspace.LangiumDocuments;
     }
 
-    protected getReferences(selectedNode: LeafCstNode, params: ReferenceParams, document: LangiumDocument<AstNode>): Array<{ docUri: URI; range: Range; }> {
-        const refs: Array<{ docUri: URI; range: Range; }> = [];
+    protected getReferences(selectedNode: LeafCstNode, params: ReferenceParams, document: LangiumDocument<AstNode>): ReferenceLocation[] {
+        const refs: ReferenceLocation[] = [];
         const targetAstNode = selectedNode.element;
 
         if (isTypeAttribute(targetAstNode)) {
@@ -45,8 +44,8 @@ export class LangiumGrammarReferenceFinder extends DefaultReferenceFinder {
         return refs;
     }
 
-    getReferencesFromAssignment(targetAstNode: Assignment, selectedNode: LeafCstNode, params: ReferenceParams, document: LangiumDocument<AstNode>): Array<{ docUri: URI; range: Range; }>{
-        const refs: Array<{ docUri: URI; range: Range; }> = [];
+    getReferencesFromAssignment(targetAstNode: Assignment, selectedNode: LeafCstNode, params: ReferenceParams, document: LangiumDocument<AstNode>): ReferenceLocation[] {
+        const refs: ReferenceLocation[] = [];
         const parserRule = getContainerOfType(targetAstNode, isParserRule);
         const groupNode = getContainerOfType(targetAstNode, isGroup);
 
@@ -105,8 +104,8 @@ export class LangiumGrammarReferenceFinder extends DefaultReferenceFinder {
         return interfaces;
     }
 
-    getReferencesFromTypeAttribute(typeAttributeNode: TypeAttribute, selectedNode: LeafCstNode): Array<{ docUri: URI; range: Range; }> {
-        const refs: Array<{ docUri: URI; range: Range; }> = [];
+    getReferencesFromTypeAttribute(typeAttributeNode: TypeAttribute, selectedNode: LeafCstNode): ReferenceLocation[] {
+        const refs: ReferenceLocation[] = [];
         const interfaceNode = getContainerOfType(typeAttributeNode, isInterface);
         if (interfaceNode) {
             const collectedTypes = this.collectChildrenTypes(interfaceNode);
