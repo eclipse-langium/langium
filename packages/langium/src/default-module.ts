@@ -27,7 +27,7 @@ import { DefaultScopeComputation, DefaultScopeProvider } from './references/scop
 import { DefaultJsonSerializer } from './serializer/json-serializer';
 import { DefaultServiceRegistry } from './service-registry';
 import { LangiumDefaultServices, LangiumDefaultSharedServices, LangiumServices, LangiumSharedServices } from './services';
-import { ReadWriteMutex } from './utils/promise-util';
+import { MutexLock } from './utils/promise-util';
 import { DefaultDocumentValidator } from './validation/document-validator';
 import { ValidationRegistry } from './validation/validation-registry';
 import { DefaultAstNodeDescriptionProvider, DefaultReferenceDescriptionProvider } from './workspace/ast-descriptions';
@@ -119,7 +119,7 @@ export function createDefaultSharedModule(context: DefaultSharedModuleContext = 
             IndexManager: (services) => new DefaultIndexManager(services),
             WorkspaceManager: (services) => new DefaultWorkspaceManager(services),
             FileSystemProvider: () => new NodeFileSystemProvider(),
-            ReadWriteMutex: () => new ReadWriteMutex()
+            MutexLock: () => new MutexLock()
         }
     };
 }

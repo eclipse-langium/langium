@@ -57,8 +57,8 @@ export function startLanguageServer(services: LangiumSharedServices): void {
 
         if (params.workspaceFolders) {
             const folders = params.workspaceFolders;
-            const mutex = services.workspace.ReadWriteMutex;
-            mutex.write(() => services.workspace.WorkspaceManager.initializeWorkspace(folders));
+            const mutex = services.workspace.MutexLock;
+            mutex.lock(() => services.workspace.WorkspaceManager.initializeWorkspace(folders));
         }
         return result;
     });
@@ -87,14 +87,14 @@ export function startLanguageServer(services: LangiumSharedServices): void {
 
 export function addDocumentsHandler(connection: Connection, services: LangiumSharedServices): void {
     const documentBuilder = services.workspace.DocumentBuilder;
-    const mutex = services.workspace.ReadWriteMutex;
-    let changeTokenSource: AbstractCancellationTokenSource;
+    const mutex = services.workspace.MutexLock;
+    let changeTokenSource: AbstractCancellationTokenSource | undefined;
 
     function onDidChange(changed: URI[], deleted: URI[]): void {
         changeTokenSource?.cancel();
         changeTokenSource = startCancelableOperation();
         const token = changeTokenSource.token;
-        mutex.write(() => documentBuilder.update(changed, deleted, token));
+        mutex.lock(() => documentBuilder.update(changed, deleted, token));
     }
 
     const documents = services.workspace.TextDocuments;
@@ -245,7 +245,6 @@ export function createServerRequestHandler<P extends { textDocument: TextDocumen
 ): ServerRequestHandler<P, R, PR, E> {
     const documents = sharedServices.workspace.LangiumDocuments;
     const serviceRegistry = sharedServices.ServiceRegistry;
-    const mutex = sharedServices.workspace.ReadWriteMutex;
     return async (params: P, cancelToken: CancellationToken) => {
         const uri = URI.parse(params.textDocument.uri);
         const language = serviceRegistry.getServices(uri);
@@ -258,7 +257,7 @@ export function createServerRequestHandler<P extends { textDocument: TextDocumen
             throw new Error();
         }
         try {
-            return await mutex.read(async () => await serviceCall(language, document, params, cancelToken));
+            return await serviceCall(language, document, params, cancelToken);
         } catch (err) {
             return responseError<E>(err);
         }
@@ -271,7 +270,6 @@ export function createRequestHandler<P extends { textDocument: TextDocumentIdent
 ): RequestHandler<P, R | null, E> {
     const documents = sharedServices.workspace.LangiumDocuments;
     const serviceRegistry = sharedServices.ServiceRegistry;
-    const mutex = sharedServices.workspace.ReadWriteMutex;
     return async (params: P, cancelToken: CancellationToken) => {
         const uri = URI.parse(params.textDocument.uri);
         const language = serviceRegistry.getServices(uri);
@@ -284,7 +282,7 @@ export function createRequestHandler<P extends { textDocument: TextDocumentIdent
             return null;
         }
         try {
-            return await mutex.read(async () => await serviceCall(language, document, params, cancelToken));
+            return await serviceCall(language, document, params, cancelToken);
         } catch (err) {
             return responseError<E>(err);
         }
