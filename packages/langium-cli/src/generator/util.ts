@@ -58,7 +58,7 @@ export function collectKeywords(grammar: langium.Grammar): string[] {
     const keywords = new Set<string>();
 
     for (const rule of stream(grammar.rules).filter(langium.isParserRule)) {
-        collectElementKeywords(rule.alternatives, keywords);
+        collectElementKeywords(rule.definition, keywords);
     }
 
     return Array.from(keywords).sort((a, b) => a.localeCompare(b));

@@ -4,11 +4,11 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { CancellationToken, Range, RenameParams, TextDocumentPositionParams, TextEdit, WorkspaceEdit } from 'vscode-languageserver';
+import { CancellationToken, Range, RenameClientCapabilities, RenameParams, TextDocumentPositionParams, TextEdit, WorkspaceEdit } from 'vscode-languageserver';
 import { Position } from 'vscode-languageserver-textdocument';
 import { isNamed, NameProvider } from '../references/naming';
 import { References } from '../references/references';
-import { LangiumServices } from '../services';
+import { InitializableService, LangiumServices } from '../services';
 import { CstNode } from '../syntax-tree';
 import { findLeafNodeAtOffset } from '../utils/cst-util';
 import { MaybePromise } from '../utils/promise-util';
@@ -18,7 +18,7 @@ import { ReferenceFinder } from './reference-finder';
 /**
  * Language-specific service for handling rename requests and prepare rename requests.
  */
-export interface RenameHandler {
+export interface RenameHandler extends InitializableService<RenameClientCapabilities> {
     /**
      * Handle a rename request.
      *
@@ -38,9 +38,9 @@ export interface RenameHandler {
 
 export class DefaultRenameHandler implements RenameHandler {
 
-    protected readonly referenceFinder: ReferenceFinder
-    protected readonly references: References
-    protected readonly nameProvider: NameProvider
+    protected readonly referenceFinder: ReferenceFinder;
+    protected readonly references: References;
+    protected readonly nameProvider: NameProvider;
 
     constructor(services: LangiumServices) {
         this.referenceFinder = services.lsp.ReferenceFinder;

@@ -71,10 +71,6 @@ export interface DocumentSegment {
     readonly end: number
 }
 
-export function equalURI(uri1: URI, uri2: URI): boolean {
-    return uri1.toString() === uri2.toString();
-}
-
 /**
  * Shared service for creating `TextDocument` instances.
  * @deprecated This service is no longer necessary and will be removed.

@@ -7,8 +7,8 @@
 import { CancellationToken, Location, ReferenceParams } from 'vscode-languageserver';
 import { NameProvider } from '../references/naming';
 import { References } from '../references/references';
-import { LangiumServices } from '../services';
 import { AstNode, CstNode, LeafCstNode } from '../syntax-tree';
+import { InitializableService, LangiumServices } from '../services';
 import { getDocument, isReference } from '../utils/ast-util';
 import { findLeafNodeAtOffset, flattenCst } from '../utils/cst-util';
 import { MaybePromise } from '../utils/promise-util';
@@ -17,7 +17,7 @@ import { LangiumDocument } from '../workspace/documents';
 /**
  * Language-specific service for handling find references requests.
  */
-export interface ReferenceFinder {
+export interface ReferenceFinder extends InitializableService<ReferenceClientCapabilities> {
     /**
      * Handle a find references request.
      *

@@ -22,8 +22,8 @@ describe('DefaultAstNodeLocator', () => {
         const model = document.parseResult.value;
         const nodeLocator = grammarServices.workspace.AstNodeLocator;
         expect(nodeLocator.getAstNodePath(model.rules[0])).toBe('/rules@0');
-        expect(nodeLocator.getAstNodePath((model.rules[0] as ParserRule).alternatives)).toBe('/rules@0/alternatives');
-        expect(nodeLocator.getAstNodePath(((model.rules[0] as ParserRule).alternatives as Alternatives).elements[1])).toBe('/rules@0/alternatives/elements@1');
+        expect(nodeLocator.getAstNodePath((model.rules[0] as ParserRule).definition)).toBe('/rules@0/definition');
+        expect(nodeLocator.getAstNodePath(((model.rules[0] as ParserRule).definition as Alternatives).elements[1])).toBe('/rules@0/definition/elements@1');
     });
 
     test('resolves paths correctly', async () => {
@@ -36,8 +36,8 @@ describe('DefaultAstNodeLocator', () => {
         const model = document.parseResult.value;
         const nodeLocator = grammarServices.workspace.AstNodeLocator;
         expect(nodeLocator.getAstNode(document, '/rules@0')).toBe(model.rules[0]);
-        expect(nodeLocator.getAstNode(document, '/rules@0/alternatives')).toBe((model.rules[0] as ParserRule).alternatives);
-        expect(nodeLocator.getAstNode(document, '/rules@0/alternatives/elements@1')).toBe(((model.rules[0] as ParserRule).alternatives as Alternatives).elements[1]);
+        expect(nodeLocator.getAstNode(document, '/rules@0/definition')).toBe((model.rules[0] as ParserRule).definition);
+        expect(nodeLocator.getAstNode(document, '/rules@0/definition/elements@1')).toBe(((model.rules[0] as ParserRule).definition as Alternatives).elements[1]);
     });
 
 });

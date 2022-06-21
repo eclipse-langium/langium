@@ -4,11 +4,12 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { CancellationToken, CodeAction, CodeActionParams, Command } from 'vscode-languageserver';
+import { CancellationToken, CodeAction, CodeActionClientCapabilities, CodeActionParams, Command } from 'vscode-languageserver';
+import { InitializableService } from '../services';
 import { MaybePromise } from '../utils/promise-util';
 import { LangiumDocument } from '../workspace/documents';
 
-export interface CodeActionProvider {
+export interface CodeActionProvider extends InitializableService<CodeActionClientCapabilities> {
     /**
      * Handle a code action request.
      *

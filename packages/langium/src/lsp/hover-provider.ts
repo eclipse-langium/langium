@@ -4,10 +4,10 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { CancellationToken, Hover, HoverParams } from 'vscode-languageserver';
+import { CancellationToken, Hover, HoverClientCapabilities, HoverParams } from 'vscode-languageserver';
 import { GrammarConfig } from '../grammar/grammar-config';
 import { References } from '../references/references';
-import { LangiumServices } from '../services';
+import { InitializableService, LangiumServices } from '../services';
 import { AstNode } from '../syntax-tree';
 import { findCommentNode, findLeafNodeAtOffset } from '../utils/cst-util';
 import { MaybePromise } from '../utils/promise-util';
@@ -16,7 +16,7 @@ import { LangiumDocument } from '../workspace/documents';
 /**
  * Language-specific service for handling hover requests.
  */
-export interface HoverProvider {
+export interface HoverProvider extends InitializableService<HoverClientCapabilities> {
     /**
      * Handle a hover request.
      *

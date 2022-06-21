@@ -4,8 +4,8 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { CancellationToken, FoldingRange, FoldingRangeKind, FoldingRangeParams } from 'vscode-languageserver';
-import { LangiumServices } from '../services';
+import { CancellationToken, FoldingRange, FoldingRangeClientCapabilities, FoldingRangeKind, FoldingRangeParams } from 'vscode-languageserver';
+import { InitializableService, LangiumServices } from '../services';
 import { AstNode, CstNode } from '../syntax-tree';
 import { streamAllContents } from '../utils/ast-util';
 import { flattenCst } from '../utils/cst-util';
@@ -15,7 +15,7 @@ import { LangiumDocument } from '../workspace/documents';
 /**
  * Language-specific service for handling folding range requests.
  */
-export interface FoldingRangeProvider {
+export interface FoldingRangeProvider extends InitializableService<FoldingRangeClientCapabilities> {
     /**
      * Handle a folding range request.
      *

@@ -73,7 +73,47 @@ export async function interruptAndCheck(token: CancellationToken): Promise<void>
         lastTick = current;
         await delayNextTick();
     }
-    if (token. isCancellationRequested) {
+    if (token.isCancellationRequested) {
         throw OperationCancelled;
     }
+}
+
+/**
+ * Utility class to execute mutually exclusive actions.
+ */
+export class MutexLock {
+
+    private previousAction = Promise.resolve();
+
+    /**
+     * Performs a single async action, like initializing the workspace or processing document changes.
+     * Only one action will be executed at a time.
+     */
+    async lock(action: () => Promise<void>): Promise<void> {
+        // Append the new action to the previous action. We usually don't have to wait for long, as the previous action
+        // 1. has either completed
+        // 2. has been cancelled due to the new write request
+        return this.previousAction = this.previousAction.then(
+            action,
+            err => {
+                if (!isOperationCancelled(err)) {
+                    console.error('Error: ', err);
+                }
+            }
+        );
+    }
+}
+
+/**
+ * Simple implementation of the deferred pattern.
+ * An object that exposes a promise and functions to resolve and reject it.
+ */
+export class Deferred<T = void> {
+    resolve: (value: T) => this;
+    reject: (err?: unknown) => this;
+
+    promise = new Promise<T>((resolve, reject) => {
+        this.resolve = (arg) => (resolve(arg), this);
+        this.reject = (err) => (reject(err), this);
+    });
 }

@@ -11,6 +11,7 @@ import { LangiumSharedServices } from '../services';
 import { AstNode, AstNodeDescription, AstReflection } from '../syntax-tree';
 import { getDocument } from '../utils/ast-util';
 import { stream, Stream } from '../utils/stream';
+import { equalURI } from '../utils/uri-utils';
 import { ReferenceDescription } from './ast-descriptions';
 import { DocumentState, LangiumDocument, LangiumDocuments } from './documents';
 
@@ -96,7 +97,7 @@ export class DefaultIndexManager implements IndexManager {
         const result: ReferenceDescription[] = [];
         this.referenceIndex.forEach((docRefs: ReferenceDescription[]) => {
             docRefs.forEach((refDescr) => {
-                if (refDescr.targetUri.toString() === targetDocUri.toString() && refDescr.targetPath === astNodePath) {
+                if (equalURI(refDescr.targetUri, targetDocUri) && refDescr.targetPath === astNodePath) {
                     result.push(refDescr);
                 }
             });
@@ -147,7 +148,7 @@ export class DefaultIndexManager implements IndexManager {
 
     getAffectedDocuments(uris: URI[]): Stream<LangiumDocument> {
         return this.langiumDocuments().all.filter(e => {
-            if (uris.some(uri => e.uri.toString() === uri.toString())) {
+            if (uris.some(uri => equalURI(e.uri, uri))) {
                 return false;
             }
             for (const uri of uris) {
@@ -164,16 +165,17 @@ export class DefaultIndexManager implements IndexManager {
      * identified by the given URI (second parameter).
      */
     protected isAffected(document: LangiumDocument, changed: URI): boolean {
+        // Cache the uri string
         const changedUriString = changed.toString();
         const documentUri = document.uri.toString();
         // The document is affected if it contains linking errors
-        if (document.references.some(e => e.error)) {
+        if (document.references.some(e => e.error !== undefined)) {
             return true;
         }
         const references = this.referenceIndex.get(documentUri);
         // ...or if it contains a reference to the changed file
         if (references) {
-            return references.filter(e => !e.local).some(e => e.targetUri.toString() === changedUriString);
+            return references.filter(e => !e.local).some(e => equalURI(e.targetUri, changedUriString));
         }
         return false;
     }

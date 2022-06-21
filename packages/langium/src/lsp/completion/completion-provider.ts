@@ -4,13 +4,13 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { CancellationToken, CompletionItem, CompletionItemKind, CompletionList, CompletionParams } from 'vscode-languageserver';
+import { CancellationToken, CompletionClientCapabilities, CompletionItem, CompletionItemKind, CompletionList, CompletionParams } from 'vscode-languageserver';
 import { TextDocument, TextEdit } from 'vscode-languageserver-textdocument';
 import * as ast from '../../grammar/generated/ast';
 import { getTypeNameAtElement } from '../../grammar/grammar-util';
 import { isNamed } from '../../references/naming';
 import { ScopeProvider } from '../../references/scope';
-import { LangiumServices } from '../../services';
+import { InitializableService, LangiumServices } from '../../services';
 import { AstNode, AstNodeDescription, CstNode } from '../../syntax-tree';
 import { getContainerOfType, isAstNode } from '../../utils/ast-util';
 import { findLeafNodeAtOffset, findRelevantNode, flattenCst } from '../../utils/cst-util';
@@ -25,7 +25,7 @@ export type CompletionAcceptor = (value: string | AstNode | AstNodeDescription, 
 /**
  * Language-specific service for handling completion requests.
  */
-export interface CompletionProvider {
+export interface CompletionProvider extends InitializableService<CompletionClientCapabilities> {
     /**
      * Handle a completion request.
      *
@@ -109,7 +109,7 @@ export class DefaultCompletionProvider implements CompletionProvider {
 
     protected completionForRule(astNode: AstNode | undefined, rule: ast.AbstractRule, acceptor: CompletionAcceptor): void {
         if (ast.isParserRule(rule)) {
-            const features = findFirstFeatures(rule.alternatives);
+            const features = findFirstFeatures(rule.definition);
             features.flatMap(e => this.completionFor(astNode, e, acceptor));
         }
     }
