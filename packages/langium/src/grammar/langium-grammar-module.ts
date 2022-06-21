@@ -33,7 +33,7 @@ export const LangiumGrammarModule: Module<LangiumGrammarServices, PartialLangium
     lsp: {
         FoldingRangeProvider: (services) => new LangiumGrammarFoldingRangeProvider(services),
         CodeActionProvider: () => new LangiumGrammarCodeActionProvider(),
-        SemanticTokenProvider: () => new LangiumGrammarSemanticTokenProvider(),
+        SemanticTokenProvider: (services) => new LangiumGrammarSemanticTokenProvider(services),
         Formatter: () => new LangiumGrammarFormatter(),
         HoverProvider: (services) => new LangiumGrammarHoverProvider(services),
         GoToResolver: (services) => new LangiumGrammarGoToResolver(services)

@@ -4,21 +4,27 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { CancellationToken, DocumentFormattingParams, DocumentOnTypeFormattingOptions, DocumentOnTypeFormattingParams, DocumentRangeFormattingParams, FormattingOptions, Range, TextEdit } from 'vscode-languageserver';
+import { CancellationToken, DocumentFormattingClientCapabilities, DocumentFormattingParams, DocumentOnTypeFormattingClientCapabilities, DocumentOnTypeFormattingOptions, DocumentOnTypeFormattingParams, DocumentRangeFormattingClientCapabilities, DocumentRangeFormattingParams, FormattingOptions, Range, TextEdit } from 'vscode-languageserver';
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { findKeywordNode, findNodeForFeature, isCompositeCstNode, isLeafCstNode } from '..';
-import { findKeywordNodes, findNodesForFeature } from '../grammar/grammar-util';
-import { AstNode, CstNode, Properties } from '../syntax-tree';
+import { findKeywordNode, findKeywordNodes, findNodeForFeature, findNodesForFeature } from '../grammar/grammar-util';
+import { InitializableService } from '../services';
+import { AstNode, CstNode, isCompositeCstNode, isLeafCstNode, Properties } from '../syntax-tree';
 import { streamAllContents } from '../utils/ast-util';
 import { getInteriorNodes, getNextNode } from '../utils/cst-util';
 import { MaybePromise } from '../utils/promise-util';
 import { DONE_RESULT, EMPTY_STREAM, Stream, StreamImpl, TreeStreamImpl } from '../utils/stream';
 import { LangiumDocument } from '../workspace/documents';
 
+export interface FormatterClientCapabilities {
+    formatting?: DocumentFormattingClientCapabilities
+    rangeFormatting?: DocumentRangeFormattingClientCapabilities
+    onTypeFormatting?: DocumentOnTypeFormattingClientCapabilities
+}
+
 /**
  * Language specific service for handling formatting related LSP requests.
  */
-export interface Formatter {
+export interface Formatter extends InitializableService<FormatterClientCapabilities> {
     /**
      * Handles full document formatting.
      */

@@ -33,7 +33,7 @@ import type { ScopeComputation, ScopeProvider } from './references/scope';
 import type { JsonSerializer } from './serializer/json-serializer';
 import type { ServiceRegistry } from './service-registry';
 import type { AstReflection } from './syntax-tree';
-import type { MutexLock } from './utils/promise-util';
+import type { MaybePromise, MutexLock } from './utils/promise-util';
 import type { DocumentValidator } from './validation/document-validator';
 import type { ValidationRegistry } from './validation/validation-registry';
 import type { AstNodeDescriptionProvider, ReferenceDescriptionProvider } from './workspace/ast-descriptions';
@@ -74,6 +74,15 @@ export type LangiumLspServices = {
     SemanticTokenProvider?: SemanticTokenProvider
     RenameHandler: RenameHandler
     Formatter?: Formatter
+}
+
+export interface InitializableService<T extends object> {
+    /**
+     * Initializes the service with client (IDE) related capabilities.
+     *
+     * This method is only executed if Langium is running as part of a language server.
+     */
+    initialize?(clientCapabilities?: T): MaybePromise<void>
 }
 
 /**

@@ -4,11 +4,11 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { CancellationToken, Diagnostic, DiagnosticSeverity } from 'vscode-languageserver';
+import { CancellationToken, Diagnostic, DiagnosticSeverity, PublishDiagnosticsClientCapabilities } from 'vscode-languageserver';
 import { Range } from 'vscode-languageserver-textdocument';
 import { findNodeForFeature } from '../grammar/grammar-util';
 import { LanguageMetaData } from '../grammar/language-meta-data';
-import { LangiumServices } from '../services';
+import { InitializableService, LangiumServices } from '../services';
 import { AstNode } from '../syntax-tree';
 import { streamAst } from '../utils/ast-util';
 import { tokenToRange } from '../utils/cst-util';
@@ -19,7 +19,7 @@ import { DiagnosticInfo, ValidationAcceptor, ValidationRegistry } from './valida
 /**
  * Language-specific service for validating `LangiumDocument`s.
  */
-export interface DocumentValidator {
+export interface DocumentValidator extends InitializableService<PublishDiagnosticsClientCapabilities> {
     /**
      * Validates the whole specified document.
      * @param document specified document to validate
