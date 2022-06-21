@@ -123,7 +123,7 @@ export class LangiumGrammarReferenceFinder extends DefaultReferenceFinder {
 
             parserRules.forEach(rule => {
                 const assignment = isParserRule(rule) ?
-                    extractAssignments(rule.alternatives).find(assignment => assignment.feature === selectedNode.text)
+                    extractAssignments(rule.definition).find(assignment => assignment.feature === selectedNode.text)
                     : extractAssignments(getContainerOfType(rule, isGroup)!).find(assignment => assignment.feature === selectedNode.text);
 
                 if (assignment) {

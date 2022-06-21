@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { CancellationToken, Location, ReferenceParams } from 'vscode-languageserver';
+import { CancellationToken, Location, ReferenceClientCapabilities, ReferenceParams } from 'vscode-languageserver';
 import { NameProvider } from '../references/naming';
 import { References } from '../references/references';
 import { AstNode, CstNode, LeafCstNode } from '../syntax-tree';
