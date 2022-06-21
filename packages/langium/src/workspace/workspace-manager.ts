@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { WorkspaceFolder } from 'vscode-languageserver';
+import { CancellationToken, WorkspaceFolder } from 'vscode-languageserver';
 import { URI, Utils } from 'vscode-uri';
 import { ServiceRegistry } from '../service-registry';
 import { LangiumSharedServices } from '../services';
@@ -25,7 +25,7 @@ export interface WorkspaceManager {
      *
      * @param folders The set of workspace folders to be indexed.
      */
-    initializeWorkspace(folders: WorkspaceFolder[]): Promise<void>;
+    initializeWorkspace(folders: WorkspaceFolder[], cancelToken?: CancellationToken): Promise<void>;
 
 }
 
@@ -43,7 +43,7 @@ export class DefaultWorkspaceManager implements WorkspaceManager {
         this.fileSystemProvider = services.workspace.FileSystemProvider;
     }
 
-    async initializeWorkspace(folders: WorkspaceFolder[]): Promise<void> {
+    async initializeWorkspace(folders: WorkspaceFolder[], cancelToken = CancellationToken.None): Promise<void> {
         const fileExtensions = this.serviceRegistry.all.flatMap(e => e.LanguageMetaData.fileExtensions);
         const documents: LangiumDocument[] = [];
         const collector = (document: LangiumDocument) => {
@@ -57,7 +57,7 @@ export class DefaultWorkspaceManager implements WorkspaceManager {
                 .map(async rf => this.traverseFolder(rf, fileExtensions, collector))
         );
         await this.loadAdditionalDocuments(folders, collector);
-        await this.documentBuilder.build(documents);
+        await this.documentBuilder.build(documents, undefined, cancelToken);
     }
 
     /**
@@ -84,7 +84,7 @@ export class DefaultWorkspaceManager implements WorkspaceManager {
      */
     protected async traverseFolder(folderPath: URI, fileExtensions: string[], collector: (document: LangiumDocument) => void): Promise<void> {
         const content = await this.fileSystemProvider.readDirectory(folderPath);
-        for (const entry of content) {
+        await Promise.all(content.map(async entry => {
             if (this.includeEntry(entry, fileExtensions)) {
                 if (entry.isDirectory) {
                     await this.traverseFolder(entry.uri, fileExtensions, collector);
@@ -93,7 +93,7 @@ export class DefaultWorkspaceManager implements WorkspaceManager {
                     collector(document);
                 }
             }
-        }
+        }));
     }
 
     /**

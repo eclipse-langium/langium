@@ -28,4 +28,50 @@ describe('Mutex locking', () => {
             deferredItems[i].resolve();
         }
     });
+
+    test('Actions can be cancelled explicitly', async () => {
+        let counter = 0;
+        const mutex = new MutexLock();
+        mutex.lock(async token => {
+            // Increase counter to 1
+            counter++;
+            await delayNextTick();
+            if (token.isCancellationRequested) {
+                return;
+            }
+            // Increase counter to 2
+            counter++;
+        });
+
+        await delayNextTick();
+        expect(counter).toBe(1);
+        mutex.cancel();
+        await delayNextTick();
+        // Counter is 1, since first action has been cancelled
+        expect(counter).toBe(1);
+    });
+
+    test('Actions can be cancelled by enqueueing another action', async () => {
+        let counter = 0;
+        const mutex = new MutexLock();
+        mutex.lock(async token => {
+            // Increase counter to 1
+            counter++;
+            await delayNextTick();
+            if (token.isCancellationRequested) {
+                return;
+            }
+            // Increase counter to 2
+            counter++;
+        });
+
+        await delayNextTick();
+        expect(counter).toBe(1);
+        mutex.lock(async () => { counter--; });
+        expect(counter).toBe(1);
+        await delayNextTick();
+        // Counter is 0, since first action has been cancelled
+        // and the second action decreases the value again
+        expect(counter).toBe(0);
+    });
 });

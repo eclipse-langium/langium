@@ -5,12 +5,12 @@
  ******************************************************************************/
 
 import {
-    AbstractCancellationTokenSource, CancellationToken, ClientCapabilities, Connection, FileChangeType, HandlerResult, InitializeResult,
+    CancellationToken, ClientCapabilities, Connection, FileChangeType, HandlerResult, InitializeResult,
     LSPErrorCodes, RequestHandler, ResponseError, ServerRequestHandler, TextDocumentIdentifier, TextDocumentSyncKind
 } from 'vscode-languageserver';
 import { URI } from 'vscode-uri';
 import { LangiumServices, LangiumSharedServices } from '../services';
-import { isOperationCancelled, startCancelableOperation } from '../utils/promise-util';
+import { isOperationCancelled } from '../utils/promise-util';
 import { DocumentState, LangiumDocument } from '../workspace/documents';
 import { DefaultSemanticTokenOptions } from './semantic-token-provider';
 
@@ -60,7 +60,7 @@ export function startLanguageServer(services: LangiumSharedServices): void {
         if (params.workspaceFolders) {
             const folders = params.workspaceFolders;
             const mutex = services.workspace.MutexLock;
-            mutex.lock(() => services.workspace.WorkspaceManager.initializeWorkspace(folders));
+            mutex.lock(token => services.workspace.WorkspaceManager.initializeWorkspace(folders, token));
         }
         return result;
     });
@@ -111,13 +111,9 @@ export async function initializeClientCapabilities(services: LangiumServices, cl
 export function addDocumentsHandler(connection: Connection, services: LangiumSharedServices): void {
     const documentBuilder = services.workspace.DocumentBuilder;
     const mutex = services.workspace.MutexLock;
-    let changeTokenSource: AbstractCancellationTokenSource | undefined;
 
     function onDidChange(changed: URI[], deleted: URI[]): void {
-        changeTokenSource?.cancel();
-        changeTokenSource = startCancelableOperation();
-        const token = changeTokenSource.token;
-        mutex.lock(() => documentBuilder.update(changed, deleted, token));
+        mutex.lock(token => documentBuilder.update(changed, deleted, token));
     }
 
     const documents = services.workspace.TextDocuments;
