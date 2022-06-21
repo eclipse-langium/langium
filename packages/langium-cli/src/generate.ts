@@ -155,7 +155,7 @@ export async function generate(config: LangiumConfig, options: GenerateOptions):
     for (const grammar of grammars) {
         embedReferencedRules(grammar, ruleMap);
         // Create and validate the in-memory parser
-        const parserAnalysis = validateParser(grammar, config, configMap, documents);
+        const parserAnalysis = validateParser(grammar, config, configMap, grammarServices);
         if (parserAnalysis instanceof Error) {
             log('error', options, parserAnalysis.toString().red);
             return 'failure';

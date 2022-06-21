@@ -4,17 +4,18 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { createServicesForGrammar, getDocument, Grammar, IParserConfig, isGrammar, isParserRule, LangiumDocuments, LangiumParser, LanguageMetaData, ParserRule, prepareLangiumParser } from 'langium';
+import { createServicesForGrammar, getDocument, Grammar, IParserConfig, isGrammar, isParserRule, LangiumDocuments, LangiumGrammarServices, LangiumParser, LanguageMetaData, ParserRule, prepareLangiumParser } from 'langium';
 import { getFilePath, LangiumConfig, LangiumLanguageConfig } from './package';
 
 export function validateParser(grammar: Grammar, config: LangiumConfig, grammarConfigMap: Map<Grammar, LangiumLanguageConfig>,
-    documents: LangiumDocuments): Error | undefined {
+    grammarServices: LangiumGrammarServices): Error | undefined {
     const parserConfig: IParserConfig = {
         ...config.chevrotainParserConfig,
         ...grammarConfigMap.get(grammar)?.chevrotainParserConfig,
         skipValidations: false
     };
     const services = createServicesForGrammar({
+        grammarServices,
         grammar,
         languageMetaData: languageConfigToMetaData(grammarConfigMap.get(grammar)!),
         parserConfig
@@ -33,7 +34,7 @@ export function validateParser(grammar: Grammar, config: LangiumConfig, grammarC
             for (const defError of parser.definitionErrors) {
                 message += '\n-------------------------------\n';
                 if (defError.ruleName) {
-                    const rule = findRule(defError.ruleName, grammar, documents);
+                    const rule = findRule(defError.ruleName, grammar, grammarServices.shared.workspace.LangiumDocuments);
                     if (rule && rule.$cstNode) {
                         const filePath = getFilePath(getDocument(rule).uri.fsPath, config);
                         const line = rule.$cstNode.range.start.line + 1;

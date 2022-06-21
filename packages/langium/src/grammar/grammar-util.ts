@@ -431,8 +431,8 @@ export function createServicesForGrammar(config: {
     };
     const languageMetaData = config.languageMetaData ?? {
         caseInsensitive: false,
-        fileExtensions: ['.test'],
-        languageId: 'test'
+        fileExtensions: [`.${grammarNode.name?.toLowerCase() ?? 'unknown'}`],
+        languageId: grammarNode.name ?? 'UNKNOWN'
     };
     const generatedSharedModule: Module<LangiumSharedServices, LangiumGeneratedSharedServices> = {
         AstReflection: () => interpretAstReflection(grammarNode),
