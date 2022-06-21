@@ -33,6 +33,7 @@ import type { ScopeComputation, ScopeProvider } from './references/scope';
 import type { JsonSerializer } from './serializer/json-serializer';
 import type { ServiceRegistry } from './service-registry';
 import type { AstReflection } from './syntax-tree';
+import type { MutexLock } from './utils/promise-util';
 import type { DocumentValidator } from './validation/document-validator';
 import type { ValidationRegistry } from './validation/validation-registry';
 import type { AstNodeDescriptionProvider, ReferenceDescriptionProvider } from './workspace/ast-descriptions';
@@ -139,6 +140,7 @@ export type LangiumDefaultSharedServices = {
         TextDocumentFactory: TextDocumentFactory
         WorkspaceManager: WorkspaceManager
         FileSystemProvider: FileSystemProvider
+        MutexLock: MutexLock
     }
 }
 
