@@ -4,12 +4,11 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { CancellationToken, Location, Range, ReferenceClientCapabilities, ReferenceParams } from 'vscode-languageserver';
-import { URI } from 'vscode-uri';
+import { CancellationToken, Location, ReferenceClientCapabilities, ReferenceParams } from 'vscode-languageserver';
 import { NameProvider } from '../references/naming';
 import { References } from '../references/references';
+import { AstNode, CstNode, LeafCstNode } from '../syntax-tree';
 import { InitializableService, LangiumServices } from '../services';
-import { AstNode, CstNode } from '../syntax-tree';
 import { getDocument, isReference } from '../utils/ast-util';
 import { findLeafNodeAtOffset, flattenCst } from '../utils/cst-util';
 import { MaybePromise } from '../utils/promise-util';
@@ -42,32 +41,36 @@ export class DefaultReferenceFinder implements ReferenceFinder {
         if (!rootNode) {
             return [];
         }
-        const refs: Array<{ docUri: URI, range: Range }> = [];
+
         const selectedNode = findLeafNodeAtOffset(rootNode, document.textDocument.offsetAt(params.position));
         if (!selectedNode) {
             return [];
         }
+
+        const refs: Location[] = this.getReferences(selectedNode, params, document);
+
+        return refs;
+    }
+
+    protected getReferences(selectedNode: LeafCstNode, params: ReferenceParams, document: LangiumDocument<AstNode>): Location[] {
+        const refs: Location[] = [];
         const targetAstNode = this.references.findDeclaration(selectedNode)?.element;
         if (targetAstNode) {
             if (params.context.includeDeclaration) {
                 const declDoc = getDocument(targetAstNode);
                 const nameNode = this.findNameNode(targetAstNode, selectedNode.text);
                 if (nameNode)
-                    refs.push({ docUri: declDoc.uri, range: nameNode.range });
+                    refs.push(Location.create(declDoc.uri.toString(), nameNode.range));
             }
             this.references.findReferences(targetAstNode).forEach(reference => {
                 if (isReference(reference)) {
-                    refs.push({ docUri: document.uri, range: reference.$refNode.range });
+                    refs.push(Location.create(document.uri.toString(), reference.$refNode.range));
                 } else {
-                    const range = reference.segment.range;
-                    refs.push({ docUri: reference.sourceUri, range });
+                    refs.push(Location.create(reference.sourceUri.toString(), reference.segment.range));
                 }
             });
         }
-        return refs.map(ref => Location.create(
-            ref.docUri.toString(),
-            ref.range
-        ));
+        return refs;
     }
 
     protected findNameNode(node: AstNode, name: string): CstNode | undefined {

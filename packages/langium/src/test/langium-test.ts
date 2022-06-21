@@ -6,7 +6,7 @@
 
 import {
     CancellationTokenSource,
-    CompletionItem, Diagnostic, DiagnosticSeverity, DocumentSymbol, MarkupContent, Range, SemanticTokensParams, SemanticTokenTypes, TextDocumentIdentifier, TextDocumentPositionParams
+    CompletionItem, Diagnostic, DiagnosticSeverity, DocumentSymbol, MarkupContent, Range, ReferenceParams, SemanticTokensParams, SemanticTokenTypes, TextDocumentIdentifier, TextDocumentPositionParams
 } from 'vscode-languageserver';
 import { URI } from 'vscode-uri';
 import { LangiumServices } from '../services';
@@ -23,6 +23,7 @@ export function parseHelper<T extends AstNode = AstNode>(services: LangiumServic
         const randomNumber = Math.floor(Math.random() * 10000000) + 1000000;
         const uri = URI.parse(`file:///${randomNumber}${metaData.fileExtensions[0]}`);
         const document = services.shared.workspace.LangiumDocumentFactory.fromString<T>(input, uri);
+        services.shared.workspace.LangiumDocuments.addDocument(document);
         await documentBuilder.build([document]);
         return document;
     };
@@ -126,6 +127,40 @@ export function expectGoToDefinition(services: LangiumServices, expectEqual: Exp
     };
 }
 
+export interface ExpectedFindReferences extends ExpectedBase {
+    includeDeclaration: boolean
+}
+
+export function expectFindReferences(services: LangiumServices): (expectedFindReferences: ExpectedFindReferences) => Promise<void> {
+    return async expectedFindReferences => {
+        const { output, indices, ranges } = replaceIndices(expectedFindReferences);
+        const document = await parseDocument(services, output);
+        const expectedRanges: Range[] = [];
+        ranges.forEach(range => {
+            const expectedRange: Range = {start: document.textDocument.positionAt(range[0]), end: document.textDocument.positionAt(range[1])};
+            expectedRanges.push(expectedRange);
+        });
+        const referenceFinder = services.lsp.ReferenceFinder;
+        indices.forEach(async (index) => {
+            const referenceParameters = referenceParams(document, index, expectedFindReferences.includeDeclaration);
+            const references = await referenceFinder.findReferences(document, referenceParameters);
+
+            expect(references.length).toBe(expectedRanges.length);
+            references.forEach(ref => {
+                expect(expectedRanges).toContainEqual(ref.range);
+            });
+        });
+        clearDocuments(services);
+    };
+}
+
+function referenceParams(document: LangiumDocument, offset: number, includeDeclaration: boolean): ReferenceParams {
+    return {
+        textDocument: { uri: document.textDocument.uri },
+        position: document.textDocument.positionAt(offset),
+        context: { includeDeclaration }
+    };
+}
 export interface ExpectedHover extends ExpectedBase {
     index: number
     hover?: string
@@ -307,6 +342,11 @@ export function expectWarning<T extends AstNode = AstNode, N extends AstNode = A
         ...filterOptions,
         ...content,
     });
+}
+
+export function clearDocuments(services: LangiumServices): void {
+    const allDocs = services.shared.workspace.LangiumDocuments.all.map(x => x.uri).toArray();
+    services.shared.workspace.DocumentBuilder.update([], allDocs);
 }
 
 export interface DecodedSemanticTokensWithRanges {
