@@ -7,11 +7,13 @@
 import { URI } from 'vscode-uri';
 import { CompositeGeneratorNode, IndentNode, NL } from '../../generator/generator-node';
 import { processGeneratorNode } from '../../generator/node-processor';
+import { References } from '../../references/references';
 import { CstNode } from '../../syntax-tree';
 import { getDocument } from '../../utils/ast-util';
 import { MultiMap } from '../../utils/collections';
+import { AstNodeLocator } from '../../workspace/ast-node-locator';
 import { LangiumDocuments } from '../../workspace/documents';
-import { Grammar, Interface, isParserRule, ParserRule, Type } from '../generated/ast';
+import { Grammar, Interface, isInterface, isParserRule, isType, ParserRule, Type } from '../generated/ast';
 import { isDataTypeRule, resolveImport } from '../grammar-util';
 
 export type Property = {
@@ -175,4 +177,54 @@ function pushReflectionInfo(name: string, node: CompositeGeneratorNode) {
     const methodBody = new IndentNode();
     methodBody.contents.push(`return reflection.isInstance(item, ${name});`, NL);
     node.contents.push(methodBody, '}', NL);
+}
+
+export function collectChildrenTypes(interfaceRule: Interface, references: References, langiumDocuments: LangiumDocuments, astNodeLocator: AstNodeLocator): Set<Interface | Type> {
+    const childrenTypes = new Set<Interface | Type>();
+    const refs = references.findReferences(interfaceRule);
+
+    refs.forEach(ref => {
+        const doc = langiumDocuments.getOrCreateDocument(ref.sourceUri);
+        const astNode = astNodeLocator.getAstNode(doc, ref.sourcePath);
+        if (isInterface(astNode)) {
+            childrenTypes.add(astNode);
+            const collectedChildrenTypes = collectChildrenTypes(astNode, references, langiumDocuments, astNodeLocator);
+            for (const childType of collectedChildrenTypes) {
+                childrenTypes.add(childType);
+            }
+        } else if (isType(astNode?.$container)) {
+            childrenTypes.add(astNode!.$container);
+        }
+    });
+
+    return childrenTypes;
+}
+
+export function collectSuperTypes(ruleNode: Interface | Type): Set<Interface> {
+    const superTypes = new Set<Interface>();
+    if (isInterface(ruleNode)) {
+        superTypes.add(ruleNode);
+        ruleNode.superTypes.forEach(superType => {
+            if (isInterface(superType.ref)) {
+                superTypes.add(superType.ref);
+                const collectedSuperTypes = collectSuperTypes(superType.ref);
+                for (const superType of collectedSuperTypes) {
+                    superTypes.add(superType);
+                }
+            }
+        });
+    } else if (isType(ruleNode)) {
+        ruleNode.typeAlternatives.forEach(typeAlternative => {
+            if (typeAlternative.refType?.ref) {
+                if (isInterface(typeAlternative.refType.ref) || isType(typeAlternative.refType.ref)) {
+                    const collectedSuperTypes = collectSuperTypes(typeAlternative.refType.ref);
+                    for (const superType of collectedSuperTypes) {
+                        superTypes.add(superType);
+                    }
+                }
+            }
+        });
+    }
+
+    return superTypes;
 }

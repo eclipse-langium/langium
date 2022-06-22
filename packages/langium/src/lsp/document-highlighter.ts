@@ -8,7 +8,7 @@ import { CancellationToken, DocumentHighlight, DocumentHighlightClientCapabiliti
 import { NameProvider } from '../references/naming';
 import { References } from '../references/references';
 import { InitializableService, LangiumServices } from '../services';
-import { AstNode, CstNode, Reference } from '../syntax-tree';
+import { AstNode, CstNode, LeafCstNode, Reference } from '../syntax-tree';
 import { findLocalReferences, getDocument } from '../utils/ast-util';
 import { findLeafNodeAtOffset } from '../utils/cst-util';
 import { MaybePromise } from '../utils/promise-util';
@@ -46,6 +46,11 @@ export class DefaultDocumentHighlighter implements DocumentHighlighter {
         if (!selectedNode) {
             return undefined;
         }
+        const highlights = this.getHighlights(selectedNode, document, rootNode);
+        return highlights;
+    }
+
+    protected getHighlights(selectedNode: LeafCstNode, document: LangiumDocument, rootNode: CstNode): DocumentHighlight[] | undefined {
         const targetAstNode = this.references.findDeclaration(selectedNode)?.element;
         if (targetAstNode) {
             const refs: Array<[CstNode, DocumentHighlightKind]> = [];
@@ -62,6 +67,7 @@ export class DefaultDocumentHighlighter implements DocumentHighlighter {
                 DocumentHighlight.create(node.range, kind)
             );
         }
+
         return undefined;
     }
 

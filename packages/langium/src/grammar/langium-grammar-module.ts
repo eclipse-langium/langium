@@ -17,6 +17,7 @@ import { LangiumGrammarFoldingRangeProvider } from './lsp/grammar-folding-ranges
 import { LangiumGrammarFormatter } from './lsp/grammar-formatter';
 import { LangiumGrammarGoToResolver } from './lsp/grammar-goto';
 import { LangiumGrammarHoverProvider } from './lsp/grammar-hovers';
+import { LangiumGrammarDocumentHighlighter } from './lsp/grammar-document-highlighter';
 
 export type LangiumGrammarAddedServices = {
     validation: {
@@ -38,7 +39,8 @@ export const LangiumGrammarModule: Module<LangiumGrammarServices, PartialLangium
         Formatter: () => new LangiumGrammarFormatter(),
         HoverProvider: (services) => new LangiumGrammarHoverProvider(services),
         GoToResolver: (services) => new LangiumGrammarGoToResolver(services),
-        ReferenceFinder: (services) => new LangiumGrammarReferenceFinder(services)
+        ReferenceFinder: (services) => new LangiumGrammarReferenceFinder(services),
+        DocumentHighlighter: (services) => new LangiumGrammarDocumentHighlighter(services)
     },
     references: {
         ScopeComputation: (services) => new LangiumGrammarScopeComputation(services),
