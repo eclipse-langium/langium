@@ -1,16 +1,17 @@
 /******************************************************************************
- * Copyright 2022 TypeFox GmbH
- * This program and the accompanying materials are made available under the
- * terms of the MIT License, which is available in the project root.
- ******************************************************************************/
+* Copyright 2022 TypeFox GmbH
+* This program and the accompanying materials are made available under the
+* terms of the MIT License, which is available in the project root.
+******************************************************************************/
 
 import { URI } from 'vscode-uri';
 import { CompositeGeneratorNode, IndentNode, NL } from '../../generator/generator-node';
 import { processGeneratorNode } from '../../generator/node-processor';
 import { References } from '../../references/references';
-import { CstNode } from '../../syntax-tree';
+import { CstNode, LeafCstNode } from '../../syntax-tree';
 import { getDocument } from '../../utils/ast-util';
 import { MultiMap } from '../../utils/collections';
+import { findLeafNodeAtOffset } from '../../utils/cst-util';
 import { AstNodeLocator } from '../../workspace/ast-node-locator';
 import { LangiumDocuments } from '../../workspace/documents';
 import { Grammar, Interface, isInterface, isParserRule, isType, ParserRule, Type } from '../generated/ast';
@@ -98,8 +99,8 @@ export class TypeResolutionError extends Error {
         this.name = 'TypeResolutionError';
         this.target = target;
     }
-
 }
+
 export type AstResources = {
     parserRules: Set<ParserRule>,
     datatypeRules: Set<ParserRule>,
@@ -108,9 +109,9 @@ export type AstResources = {
 }
 
 /**
- * Collects all properties of all interface types. Includes super type properties.
- * @param interfaces A topologically sorted array of interfaces.
- */
+* Collects all properties of all interface types. Includes super type properties.
+* @param interfaces A topologically sorted array of interfaces.
+*/
 export function collectAllProperties(interfaces: InterfaceType[]): MultiMap<string, Property> {
     const map = new MultiMap<string, Property>();
     for (const interfaceType of interfaces) {
@@ -197,6 +198,7 @@ export function collectChildrenTypes(interfaceRule: Interface, references: Refer
         }
     });
 
+    childrenTypes.add(interfaceRule);
     return childrenTypes;
 }
 
@@ -227,4 +229,15 @@ export function collectSuperTypes(ruleNode: Interface | Type): Set<Interface> {
     }
 
     return superTypes;
+}
+
+export function findAttributeLeafNodeInInterface(interfaceNode: Interface, attributeName: string): LeafCstNode | undefined {
+    const attribute = interfaceNode.attributes.find(a => a.name === attributeName);
+    if (attribute?.$cstNode) {
+        const leafNode = findLeafNodeAtOffset(attribute.$cstNode, attribute.$cstNode.offset);
+        if (leafNode) {
+            return leafNode;
+        }
+    }
+    return undefined;
 }
