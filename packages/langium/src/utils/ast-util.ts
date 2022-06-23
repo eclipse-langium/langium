@@ -5,6 +5,7 @@
  ******************************************************************************/
 
 import * as ast from '../grammar/generated/ast';
+import { Action, Interface, isAction, isParserRule, ParserRule, Type } from '../grammar/generated/ast';
 import { AstNode, AstNodeDescription, LinkingError, Reference, ReferenceInfo } from '../syntax-tree';
 import { DONE_RESULT, Stream, stream, StreamImpl, TreeStream, TreeStreamImpl } from '../utils/stream';
 import { LangiumDocument } from '../workspace/documents';
@@ -224,4 +225,12 @@ export function extractAssignments(element: ast.AbstractElement): ast.Assignment
         return element.elements.flatMap(e => extractAssignments(e));
     }
     return [];
+}
+
+export function getLocalParserRulesAndActionsWithReturnType(document: LangiumDocument<AstNode>, returnType: Interface | Type): Array<ParserRule | Action>{
+    const rootNode = document.parseResult.value;
+    const rules = streamAst(rootNode)
+        .filter(node => (isParserRule(node) && node.returnType?.ref === returnType)
+    || (isAction(node) && node.type?.ref === returnType)) as Stream<ParserRule | Action>;
+    return rules.toArray();
 }

@@ -8,9 +8,8 @@ import { DocumentHighlight } from 'vscode-languageserver';
 import { DefaultDocumentHighlighter } from '../../lsp/document-highlighter';
 import { LangiumServices } from '../../services';
 import { AstNode, CstNode, LeafCstNode } from '../../syntax-tree';
-import { extractRootNode, getContainerOfType, getDocument, streamAst } from '../../utils/ast-util';
+import { extractRootNode, getContainerOfType, getDocument, getLocalParserRulesAndActionsWithReturnType, streamAst } from '../../utils/ast-util';
 import { findLeafNodeAtOffset } from '../../utils/cst-util';
-import { Stream } from '../../utils/stream';
 import { equalURI } from '../../utils/uri-utils';
 import { AstNodeLocator } from '../../workspace/ast-node-locator';
 import { LangiumDocument, LangiumDocuments } from '../../workspace/documents';
@@ -115,12 +114,4 @@ export class LangiumGrammarDocumentHighlighter extends DefaultDocumentHighlighte
         }
         return undefined;
     }
-}
-
-function getLocalParserRulesAndActionsWithReturnType(document: LangiumDocument<AstNode>, returnType: Interface | Type): Array<ParserRule | Action>{
-    const rootNode = document.parseResult.value;
-    const rules = streamAst(rootNode)
-        .filter(node => (isParserRule(node) && node.returnType?.ref === returnType)
-    || (isAction(node) && node.type?.ref === returnType)) as Stream<ParserRule | Action>;
-    return rules.toArray();
 }
