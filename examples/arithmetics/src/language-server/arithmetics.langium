@@ -4,21 +4,6 @@ entry Module:
     'module' name=ID
     (statements+=Statement)*;
 
-interface A {
-    name: string
-    foo: string
-}
-
-interface B extends A {}
-
-type C = A | B;
-
-RuleA returns A: name=ID foo=ID;
-
-RuleB returns B: name=ID foo=ID;
-
-RuleC returns C: name=ID foo=ID;
-
 Statement:
     Definition | Evaluation;
 
