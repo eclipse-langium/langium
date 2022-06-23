@@ -6,7 +6,6 @@
 
 import { Location, ReferenceParams } from 'vscode-languageserver';
 import { DefaultReferenceFinder } from '../../lsp';
-import { References } from '../../references/references';
 import { LangiumServices } from '../../services';
 import { AstNode, LeafCstNode } from '../../syntax-tree';
 import { extractAssignments, extractRootNode, getContainerOfType } from '../../utils/ast-util';
@@ -78,7 +77,7 @@ export class LangiumGrammarReferenceFinder extends DefaultReferenceFinder {
 
             const targetRules: Array<ParserRule | Action> = [];
             interfaces.forEach(interf => {
-                targetRules.push(...getParserRulesAndActionsWithReturnType(interf, this.references, this.langiumDocuments, this.astNodeLocator));
+                targetRules.push(...this.references.getParserRulesAndActionsWithReturnType(interf));
             });
 
             targetRules.forEach(rule => {
@@ -96,19 +95,6 @@ export class LangiumGrammarReferenceFinder extends DefaultReferenceFinder {
         }
         return refs;
     }
-}
-
-function getParserRulesAndActionsWithReturnType(returnType: Interface | Type, references: References, langiumDocuments: LangiumDocuments, astNodeLocator: AstNodeLocator): Array<ParserRule | Action> {
-    const rules: Array<ParserRule |  Action> = [];
-    const refs = references.findReferences(returnType);
-    refs.forEach(ref => {
-        const doc = langiumDocuments.getOrCreateDocument(ref.sourceUri);
-        const astNode = astNodeLocator.getAstNode(doc, ref.sourcePath);
-        if (isParserRule(astNode) || isAction(astNode)) {
-            rules.push(astNode);
-        }
-    });
-    return rules;
 }
 
 function getLocationOfAssignment(assignment: Assignment): Location | undefined {

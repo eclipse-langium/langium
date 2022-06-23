@@ -4,6 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import { Action, Interface, isAction, isParserRule, ParserRule, Type } from '../grammar/generated/ast';
 import { findAssignment } from '../grammar/grammar-util';
 import { LangiumServices } from '../services';
 import { AstNode, CstNode, Reference } from '../syntax-tree';
@@ -12,6 +13,7 @@ import { findRelevantNode } from '../utils/cst-util';
 import { Stream } from '../utils/stream';
 import { ReferenceDescription } from '../workspace/ast-descriptions';
 import { AstNodeLocator } from '../workspace/ast-node-locator';
+import { LangiumDocuments } from '../workspace/documents';
 import { IndexManager } from '../workspace/index-manager';
 import { NameProvider } from './naming';
 
@@ -33,17 +35,24 @@ export interface References {
      * @param targetNode Specified target node whose references should be returned
      */
     findReferences(targetNode: AstNode): Stream<ReferenceDescription>;
+    /**
+     * Finds all `ParserRule` and `Action` returning a given declared type.
+     * @param returnType `Interface` of `Type` of the targeted return type.
+     */
+    getParserRulesAndActionsWithReturnType(returnType: Interface | Type): Array<ParserRule | Action>
 }
 
 export class DefaultReferences implements References {
     protected readonly nameProvider: NameProvider;
     protected readonly index: IndexManager;
     protected readonly nodeLocator: AstNodeLocator;
+    protected readonly langiumDocuments: LangiumDocuments;
 
     constructor(services: LangiumServices) {
         this.nameProvider = services.references.NameProvider;
         this.index = services.shared.workspace.IndexManager;
         this.nodeLocator = services.workspace.AstNodeLocator;
+        this.langiumDocuments = services.shared.workspace.LangiumDocuments;
     }
 
     findDeclaration(sourceCstNode: CstNode): CstNode | undefined {
@@ -96,4 +105,16 @@ export class DefaultReferences implements References {
         return undefined;
     }
 
+    getParserRulesAndActionsWithReturnType(returnType: Interface | Type): Array<ParserRule | Action> {
+        const rules: Array<ParserRule |  Action> = [];
+        const refs = this.findReferences(returnType);
+        refs.forEach(ref => {
+            const doc = this.langiumDocuments.getOrCreateDocument(ref.sourceUri);
+            const astNode = this.nodeLocator.getAstNode(doc, ref.sourcePath);
+            if (isParserRule(astNode) || isAction(astNode)) {
+                rules.push(astNode);
+            }
+        });
+        return rules;
+    }
 }
