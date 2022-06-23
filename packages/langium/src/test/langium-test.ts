@@ -6,7 +6,7 @@
 
 import {
     CancellationTokenSource,
-    CompletionItem, Diagnostic, DiagnosticSeverity, DocumentSymbol, MarkupContent, Range, ReferenceParams, SemanticTokensParams, SemanticTokenTypes, TextDocumentIdentifier, TextDocumentPositionParams
+    CompletionItem, Diagnostic, DiagnosticSeverity, DocumentHighlightParams, DocumentSymbol, MarkupContent, Range, ReferenceParams, SemanticTokensParams, SemanticTokenTypes, TextDocumentIdentifier, TextDocumentPositionParams
 } from 'vscode-languageserver';
 import { URI } from 'vscode-uri';
 import { LangiumServices } from '../services';
@@ -379,4 +379,33 @@ export function expectSemanticToken(tokensWithRanges: DecodedSemanticTokensWithR
         return t.tokenType === options.tokenType && t.offset === range[0] && t.offset + t.text.length === range[1];
     });
     expect(result).toHaveLength(1);
+}
+
+export function expectDocumentHighlights(services: LangiumServices): (expectedDocumentHighlights: ExpectedBase) => Promise<void> {
+    return async expectedDocumentHighlights => {
+        const { output, indices, ranges } = replaceIndices(expectedDocumentHighlights);
+        const document = await parseDocument(services, output);
+        const expectedRanges: Range[] = [];
+        ranges.forEach(range => {
+            const expectedRange: Range = {start: document.textDocument.positionAt(range[0]), end: document.textDocument.positionAt(range[1])};
+            expectedRanges.push(expectedRange);
+        });
+        const documentHighlighter = services.lsp.DocumentHighlighter;
+        indices.forEach(async (index) => {
+            const parameters = highlightParams(document, index);
+            const highlights = await documentHighlighter.findHighlights(document, parameters) ?? [];
+
+            expect(highlights.length).toBe(expectedRanges.length);
+            highlights.forEach(highlight => {
+                expect(expectedRanges).toContainEqual(highlight.range);
+            });
+        });
+    };
+}
+
+function highlightParams(document: LangiumDocument, offset: number): DocumentHighlightParams {
+    return {
+        textDocument: { uri: document.textDocument.uri },
+        position: document.textDocument.positionAt(offset)
+    };
 }
