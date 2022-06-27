@@ -9,12 +9,19 @@ import { AbstractCancellationTokenSource, CancellationToken, CancellationTokenSo
 export type MaybePromise<T> = T | Promise<T>
 
 /**
+ * This is a function that can be promisified to delay execution to the next tick of the event loop
+ * In case we are running in a non-node environment, `setImmediate` isn't available.
+ * Using `setTimeout` of the browser API accomplishes the same result.
+ */
+const delayImmediate = setImmediate || setTimeout;
+
+/**
  * Delays the execution of the current code to the next tick of the event loop.
  * Don't call this method directly in a tight loop to prevent too many promises from being created.
  */
 export function delayNextTick(): Promise<void> {
     return new Promise(resolve => {
-        setImmediate(resolve);
+        delayImmediate(resolve);
     });
 }
 
