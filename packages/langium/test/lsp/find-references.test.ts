@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { createLangiumGrammarServices } from '../../src';
+import { createLangiumGrammarServices } from '../../src/node';
 import { expectFindReferences } from '../../src/test';
 
 const grammarServices = createLangiumGrammarServices().grammar;

@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import { Diagnostic, DiagnosticSeverity } from 'vscode-languageserver';
-import { createLangiumGrammarServices } from '../../../src';
+import { createLangiumGrammarServices } from '../../../src/node';
 import { parseDocument } from '../../../src/test';
 
 const grammarServices = createLangiumGrammarServices().grammar;

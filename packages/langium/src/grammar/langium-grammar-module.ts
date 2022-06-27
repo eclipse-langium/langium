@@ -4,10 +4,8 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { createDefaultModule, createDefaultSharedModule, DefaultSharedModuleContext } from '../default-module';
-import { inject, Module } from '../dependency-injection';
-import { LangiumServices, LangiumSharedServices, PartialLangiumServices } from '../services';
-import { LangiumGrammarGeneratedModule, LangiumGrammarGeneratedSharedModule } from './generated/module';
+import { Module } from '../dependency-injection';
+import { LangiumServices, PartialLangiumServices } from '../services';
 import { LangiumGrammarCodeActionProvider } from './lsp/grammar-code-actions';
 import { LangiumGrammarScopeComputation, LangiumGrammarScopeProvider } from './langium-grammar-scope';
 import { LangiumGrammarSemanticTokenProvider } from './lsp/grammar-semantic-tokens';
@@ -45,20 +43,3 @@ export const LangiumGrammarModule: Module<LangiumGrammarServices, PartialLangium
         ScopeProvider: (services) => new LangiumGrammarScopeProvider(services)
     }
 };
-
-export function createLangiumGrammarServices(context?: DefaultSharedModuleContext): {
-    shared: LangiumSharedServices,
-    grammar: LangiumGrammarServices
-} {
-    const shared = inject(
-        createDefaultSharedModule(context),
-        LangiumGrammarGeneratedSharedModule
-    );
-    const grammar = inject(
-        createDefaultModule({ shared }),
-        LangiumGrammarGeneratedModule,
-        LangiumGrammarModule
-    );
-    shared.ServiceRegistry.register(grammar);
-    return { shared, grammar };
-}

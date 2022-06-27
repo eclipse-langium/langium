@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { AstTypes, createLangiumGrammarServices, Grammar, InterfaceType, isDataTypeRule, isParserRule, Property, PropertyType, UnionType } from '../../../src';
+import { AstTypes, createLangiumGrammarServices, Grammar, InterfaceType, isDataTypeRule, isParserRule, Property, PropertyType, UnionType } from '../../../src/node';
 import { collectInferredTypes } from '../../../src/grammar/type-system/inferred-types';
 import { parseHelper } from '../../../src/test';
 

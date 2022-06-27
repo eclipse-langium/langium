@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import { TokenPattern, TokenType } from '@chevrotain/types';
-import { createLangiumGrammarServices, Grammar } from '../../src';
+import { createLangiumGrammarServices, Grammar } from '../../src/node';
 import { parseHelper } from '../../src/test';
 
 const grammarServices = createLangiumGrammarServices().grammar;

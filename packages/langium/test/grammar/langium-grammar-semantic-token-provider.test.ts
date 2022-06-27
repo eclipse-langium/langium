@@ -3,8 +3,9 @@
  * This program and the accompanying materials are made available under the
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
+
 import { highlightHelper, expectSemanticToken } from '../../src/test/langium-test';
-import { createLangiumGrammarServices } from '../../src/grammar/langium-grammar-module';
+import { createLangiumGrammarServices } from '../../src/node/node-module';
 import { SemanticTokenTypes } from 'vscode-languageserver';
 
 const services = createLangiumGrammarServices();

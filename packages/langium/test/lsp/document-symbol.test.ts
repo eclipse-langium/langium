@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import { Position, Range, SymbolKind } from 'vscode-languageserver';
-import { createLangiumGrammarServices } from '../../src';
+import { createLangiumGrammarServices } from '../../src/node';
 import { expectSymbols } from '../../src/test';
 import { expectFunction } from '../fixture';
 

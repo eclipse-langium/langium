@@ -7,7 +7,7 @@
 import {
     createDefaultModule, createDefaultSharedModule, DefaultSharedModuleContext, inject,
     LangiumServices, LangiumSharedServices, Module, PartialLangiumServices
-} from 'langium';
+} from 'langium/node';
 import { StatemachineGeneratedModule, StatemachineGeneratedSharedModule } from './generated/module';
 import { StatemachineValidationRegistry, StatemachineValidator } from './statemachine-validator';
 

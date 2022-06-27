@@ -4,10 +4,11 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { URI, Utils } from 'vscode-uri';
-import { createDefaultModule, createDefaultSharedModule } from '../default-module';
-import { inject, Module } from '../dependency-injection';
 import * as ast from '../grammar/generated/ast';
+import { URI, Utils } from 'vscode-uri';
+import { createDefaultSharedModule, createLangiumGrammarServices } from '../browser/browser-module';
+import { createDefaultModule } from '../default-module';
+import { inject, Module } from '../dependency-injection';
 import { CompositeCstNodeImpl } from '../parser/cst-node-builder';
 import { IParserConfig } from '../parser/parser-config';
 import { LangiumGeneratedServices, LangiumGeneratedSharedServices, LangiumServices, LangiumSharedServices } from '../services';
@@ -20,7 +21,7 @@ import { AstNodeDescriptionProvider } from '../workspace/ast-descriptions';
 import { AstNodeLocator } from '../workspace/ast-node-locator';
 import { LangiumDocument, LangiumDocuments, PrecomputedScopes } from '../workspace/documents';
 import { interpretAstReflection } from './ast-reflection-interpreter';
-import { createLangiumGrammarServices, LangiumGrammarServices } from './langium-grammar-module';
+import { LangiumGrammarServices } from './langium-grammar-module';
 import { LanguageMetaData } from './language-meta-data';
 import { TypeResolutionError } from './type-system/types-util';
 

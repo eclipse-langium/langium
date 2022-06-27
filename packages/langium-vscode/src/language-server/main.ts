@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { createLangiumGrammarServices, startLanguageServer } from 'langium';
+import { createLangiumGrammarServices, startLanguageServer } from 'langium/node';
 import { createConnection, ProposedFeatures } from 'vscode-languageserver/node';
 
 const connection = createConnection(ProposedFeatures.all);

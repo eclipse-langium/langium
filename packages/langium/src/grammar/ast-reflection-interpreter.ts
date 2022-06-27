@@ -9,7 +9,7 @@ import { isAstNode } from '../utils/ast-util';
 import { MultiMap } from '../utils/collections';
 import { LangiumDocuments } from '../workspace/documents';
 import { Grammar, isGrammar } from './generated/ast';
-import { createLangiumGrammarServices } from './langium-grammar-module';
+import { createLangiumGrammarServices } from '../browser/browser-module';
 import { collectAst } from './type-system/type-collector';
 import { AstTypes, collectAllProperties, Property } from './type-system/types-util';
 

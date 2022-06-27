@@ -34,7 +34,7 @@ import { DefaultAstNodeDescriptionProvider, DefaultReferenceDescriptionProvider 
 import { DefaultAstNodeLocator } from './workspace/ast-node-locator';
 import { DefaultDocumentBuilder } from './workspace/document-builder';
 import { DefaultLangiumDocumentFactory, DefaultLangiumDocuments, DefaultTextDocumentFactory } from './workspace/documents';
-import { NodeFileSystemProvider } from './workspace/file-system-provider';
+import { FileSystemProvider } from './workspace/file-system-provider';
 import { DefaultIndexManager } from './workspace/index-manager';
 import { DefaultWorkspaceManager } from './workspace/workspace-manager';
 
@@ -101,10 +101,19 @@ export interface DefaultSharedModuleContext {
 }
 
 /**
+ * Common context required for creating the default shared dependency injection module.
+ *
+ * Contains additional runtime related services compared to {@link DefaultSharedModuleContext}.
+ */
+export interface CommonSharedModuleContext extends DefaultSharedModuleContext {
+    fileSystemProvider: (services: LangiumSharedServices) => FileSystemProvider
+}
+
+/**
  * Create a dependency injection module for the default shared services. This is the set of
  * services that are shared between multiple languages.
  */
-export function createDefaultSharedModule(context: DefaultSharedModuleContext = {}): Module<LangiumSharedServices, LangiumDefaultSharedServices> {
+export function createCommonSharedModule(context: CommonSharedModuleContext): Module<LangiumSharedServices, LangiumDefaultSharedServices> {
     return {
         ServiceRegistry: () => new DefaultServiceRegistry(),
         lsp: {
@@ -118,7 +127,7 @@ export function createDefaultSharedModule(context: DefaultSharedModuleContext = 
             TextDocumentFactory: (services) => new DefaultTextDocumentFactory(services),
             IndexManager: (services) => new DefaultIndexManager(services),
             WorkspaceManager: (services) => new DefaultWorkspaceManager(services),
-            FileSystemProvider: () => new NodeFileSystemProvider(),
+            FileSystemProvider: (services) => context.fileSystemProvider(services),
             MutexLock: () => new MutexLock()
         }
     };

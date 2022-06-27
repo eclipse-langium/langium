@@ -8,7 +8,7 @@ import fs from 'fs-extra';
 import {
     AbstractRule, createLangiumGrammarServices, getDocument, Grammar, isGrammar,
     isParserRule, LangiumDocument, resolveImport, resolveTransitiveImports
-} from 'langium';
+} from 'langium/node';
 import path from 'path';
 import { URI } from 'vscode-uri';
 import { generateAst } from './generator/ast-generator';

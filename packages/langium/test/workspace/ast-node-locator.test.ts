@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import { Alternatives, Grammar, ParserRule } from '../../src/grammar/generated/ast';
-import { createLangiumGrammarServices } from '../../src/grammar/langium-grammar-module';
+import { createLangiumGrammarServices } from '../../src/node';
 import { parseHelper } from '../../src/test';
 
 describe('DefaultAstNodeLocator', () => {

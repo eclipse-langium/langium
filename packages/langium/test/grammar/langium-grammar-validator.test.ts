@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { createLangiumGrammarServices } from '../../src';
+import { createLangiumGrammarServices } from '../../src/node';
 import { Assignment, Grammar, ParserRule } from '../../src/grammar/generated/ast';
 import { expectError, validationHelper } from '../../src/test';
 
