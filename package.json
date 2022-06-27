@@ -7,27 +7,27 @@
   },
   "scripts": {
     "prepare": "npm run clean && npm run build && npm run build --workspace=langium-vscode",
-    "clean": "rimraf \"packages/**/lib\" \"packages/**/*.tsbuildinfo\"",
+    "clean": "shx rm -rf packages/**/lib packages/**/tsconfig.tsbuildinfo",
     "build": "tsc -b tsconfig.build.json",
     "watch": "tsc -b tsconfig.build.json -w",
     "lint": "npm run lint --workspaces",
     "test": "jest --coverage",
     "langium:generate": "npm run langium:generate --workspace=langium --workspace=domainmodel --workspace=arithmetics --workspace=statemachine",
     "dev-build": "npm run dev-clean && npm install && npm link ./packages/langium && npm link ./packages/langium-cli && npm link ./packages/generator-langium",
-    "dev-clean": "rimraf ./packages/**/node_modules && npm uninstall -g langium-workspaces langium-cli generator-langium langium && npm unlink langium-workspaces langium-cli generator-langium langium"
+    "dev-clean": "shx rm -rf packages/**/node_modules && npm uninstall -g langium-workspaces langium-cli generator-langium langium && npm unlink langium-workspaces langium-cli generator-langium langium"
   },
   "devDependencies": {
     "@types/jest": "^28.1.1",
     "@types/jest-expect-message": "^1.0.3",
     "@typescript-eslint/eslint-plugin": "^5.28.0",
     "@typescript-eslint/parser": "^5.28.0",
-    "cpy-cli": "^3.1.1",
     "eslint": "^8.17.0",
     "eslint-plugin-header": "^3.1.1",
     "jest": "^28.1.1",
     "jest-expect-message": "^1.0.2",
-    "rimraf": "^3.0.2",
-    "ts-jest": "^28.0.5"
+    "shx": "^0.3.4",
+    "ts-jest": "^28.0.5",
+    "typescript": "^4.7.4"
   },
   "workspaces": [
     "packages/*",
