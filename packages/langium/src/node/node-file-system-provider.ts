@@ -32,3 +32,7 @@ export class NodeFileSystemProvider implements FileSystemProvider {
         }));
     }
 }
+
+export const NodeFileSystem = {
+    fileSystemProvider: () => new NodeFileSystemProvider()
+};

@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { createLangiumGrammarServices } from '../../../src/node';
+import { createLangiumGrammarServices, EmptyFileSystem } from '../../../src';
 import { expectCompletion } from '../../../src/test';
 import { expectFunction } from '../../fixture';
 
@@ -14,7 +14,7 @@ X: name="X";
 terminal hiddenTerminal: /x/;
 `;
 
-const grammarServices = createLangiumGrammarServices().grammar;
+const grammarServices = createLangiumGrammarServices(EmptyFileSystem).grammar;
 const completion = expectCompletion(grammarServices, expectFunction);
 
 describe('Completion Provider', () => {

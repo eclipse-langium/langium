@@ -8,8 +8,9 @@ import { AstReflection, TypeMandatoryProperty, TypeMetaData } from '../syntax-tr
 import { isAstNode } from '../utils/ast-util';
 import { MultiMap } from '../utils/collections';
 import { LangiumDocuments } from '../workspace/documents';
+import { EmptyFileSystem } from '../workspace/file-system-provider';
 import { Grammar, isGrammar } from './generated/ast';
-import { createLangiumGrammarServices } from '../browser/browser-module';
+import { createLangiumGrammarServices } from './langium-grammar-module';
 import { collectAst } from './type-system/type-collector';
 import { AstTypes, collectAllProperties, Property } from './type-system/types-util';
 
@@ -21,7 +22,7 @@ export function interpretAstReflection(grammarOrTypes: Grammar | AstTypes, docum
     let collectedTypes: AstTypes;
     if (isGrammar(grammarOrTypes)) {
         if (!emptyDocuments && !documents) {
-            emptyDocuments = createLangiumGrammarServices().shared.workspace.LangiumDocuments;
+            emptyDocuments = createLangiumGrammarServices(EmptyFileSystem).shared.workspace.LangiumDocuments;
         }
         collectedTypes = collectAst(documents ?? emptyDocuments, [grammarOrTypes]);
     } else {

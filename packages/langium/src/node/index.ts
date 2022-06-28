@@ -5,7 +5,3 @@
  ******************************************************************************/
 
 export * from './node-file-system-provider';
-export * from './node-module';
-
-// Re-export everything from the main index
-export * from '../index';

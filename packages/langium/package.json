@@ -19,8 +19,6 @@
   "files": [
     "lib",
     "src",
-    "browser.js",
-    "browser.d.ts",
     "node.js",
     "node.d.ts",
     "test.js",

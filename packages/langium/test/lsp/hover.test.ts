@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { createLangiumGrammarServices } from '../../src/node';
+import { createLangiumGrammarServices, EmptyFileSystem } from '../../src';
 import { expectHover } from '../../src/test';
 import { expectFunction } from '../fixture';
 
@@ -17,7 +17,7 @@ const text = `
   Y: value=<|>X;
   `;
 
-const grammarServices = createLangiumGrammarServices().grammar;
+const grammarServices = createLangiumGrammarServices(EmptyFileSystem).grammar;
 const hover = expectHover(grammarServices, expectFunction);
 
 describe('Hover', () => {

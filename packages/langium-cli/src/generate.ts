@@ -8,7 +8,8 @@ import fs from 'fs-extra';
 import {
     AbstractRule, createLangiumGrammarServices, getDocument, Grammar, isGrammar,
     isParserRule, LangiumDocument, resolveImport, resolveTransitiveImports
-} from 'langium/node';
+} from 'langium';
+import { NodeFileSystem } from 'langium/node';
 import path from 'path';
 import { URI } from 'vscode-uri';
 import { generateAst } from './generator/ast-generator';
@@ -26,7 +27,7 @@ export type GenerateOptions = {
 
 export type GeneratorResult = 'success' | 'failure';
 
-const { shared: sharedServices, grammar: grammarServices } = createLangiumGrammarServices();
+const { shared: sharedServices, grammar: grammarServices } = createLangiumGrammarServices(NodeFileSystem);
 const documents = sharedServices.workspace.LangiumDocuments;
 
 function eagerLoad(document: LangiumDocument, uris: Set<string> = new Set()): URI[] {

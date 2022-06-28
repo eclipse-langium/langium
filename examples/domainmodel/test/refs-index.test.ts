@@ -4,14 +4,14 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { AstNode, getDocument, LangiumDocument, ReferenceDescription } from 'langium';
+import { AstNode, EmptyFileSystem, getDocument, LangiumDocument, ReferenceDescription } from 'langium';
 import { parseDocument } from 'langium/lib/test';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { URI } from 'vscode-uri';
 import { createDomainModelServices } from '../src/language-server/domain-model-module';
 import { Domainmodel } from '../src/language-server/generated/ast';
 
-const services = createDomainModelServices().domainmodel;
+const services = createDomainModelServices(EmptyFileSystem).domainmodel;
 
 describe('Cross references indexed after affected process', () => {
     test('Fixed reference is in index', async () => {

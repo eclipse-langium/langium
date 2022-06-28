@@ -1,7 +1,7 @@
 import {
     createDefaultModule, createDefaultSharedModule, DefaultSharedModuleContext, inject,
     LangiumServices, LangiumSharedServices, Module, PartialLangiumServices
-} from 'langium/node';
+} from 'langium';
 import { <%= LanguageName %>GeneratedModule, <%= LanguageName %>GeneratedSharedModule } from './generated/module';
 import { <%= LanguageName %>ValidationRegistry, <%= LanguageName %>Validator } from './<%= language-id %>-validator';
 
@@ -47,7 +47,7 @@ export const <%= LanguageName %>Module: Module<<%= LanguageName %>Services, Part
  * @param context Optional module context with the LSP connection
  * @returns An object wrapping the shared services and the language-specific services
  */
-export function create<%= LanguageName %>Services(context?: DefaultSharedModuleContext): {
+export function create<%= LanguageName %>Services(context: DefaultSharedModuleContext): {
     shared: LangiumSharedServices,
     <%= LanguageName %>: <%= LanguageName %>Services
 } {

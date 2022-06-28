@@ -50,3 +50,7 @@ export class EmptyFileSystemProvider implements FileSystemProvider {
     }
 
 }
+
+export const EmptyFileSystem = {
+    fileSystemProvider: () => new EmptyFileSystemProvider()
+};

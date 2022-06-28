@@ -5,11 +5,11 @@
  ******************************************************************************/
 
 import { Alternatives, Grammar, ParserRule } from '../../src/grammar/generated/ast';
-import { createLangiumGrammarServices } from '../../src/node';
+import { createLangiumGrammarServices, EmptyFileSystem } from '../../src';
 import { parseHelper } from '../../src/test';
 
 describe('DefaultAstNodeLocator', () => {
-    const grammarServices = createLangiumGrammarServices().grammar;
+    const grammarServices = createLangiumGrammarServices(EmptyFileSystem).grammar;
     const parser = parseHelper<Grammar>(grammarServices);
 
     test('computes correct paths', async () => {

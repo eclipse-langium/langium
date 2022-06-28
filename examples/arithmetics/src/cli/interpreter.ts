@@ -4,13 +4,14 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import { NodeFileSystem } from 'langium/node';
 import { createArithmeticsServices } from '../language-server/arithmetics-module';
 import { AbstractDefinition, Definition, Evaluation, Expression, isBinaryExpression, isDefinition, isEvaluation, isFunctionCall, isNumberLiteral, Module, Statement } from '../language-server/generated/ast';
 import { ArithmeticsLanguageMetaData } from '../language-server/generated/module';
 import { applyOp, extractDocument } from './cli-util';
 
 export const evalAction = async (fileName: string): Promise<void> => {
-    const services = createArithmeticsServices().arithmetics;
+    const services = createArithmeticsServices(NodeFileSystem).arithmetics;
     const document = await extractDocument<Module>(fileName, ArithmeticsLanguageMetaData.fileExtensions, services);
     const module = document.parseResult.value;
     for (const [evaluation, value] of interpretEvaluations(module)) {

@@ -5,10 +5,10 @@
  ******************************************************************************/
 
 import { Diagnostic, DiagnosticSeverity } from 'vscode-languageserver';
-import { createLangiumGrammarServices } from '../../../src/node';
+import { createLangiumGrammarServices, EmptyFileSystem } from '../../../src';
 import { parseDocument } from '../../../src/test';
 
-const grammarServices = createLangiumGrammarServices().grammar;
+const grammarServices = createLangiumGrammarServices(EmptyFileSystem).grammar;
 
 describe('validate params in types', () => {
 

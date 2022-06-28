@@ -97,23 +97,25 @@ export function createDefaultModule(context: DefaultModuleContext): Module<Langi
  * Context required for creating the default shared dependency injection module.
  */
 export interface DefaultSharedModuleContext {
+    /**
+     * Represents an abstract language server connection
+     */
     connection?: Connection;
-}
-
-/**
- * Common context required for creating the default shared dependency injection module.
- *
- * Contains additional runtime related services compared to {@link DefaultSharedModuleContext}.
- */
-export interface CommonSharedModuleContext extends DefaultSharedModuleContext {
-    fileSystemProvider: (services: LangiumSharedServices) => FileSystemProvider
+    /**
+     * Factory function to create a {@link FileSystemProvider}.
+     *
+     * Langium exposes an `EmptyFileSystem` and `NodeFileSystem`, exported through `langium/node`.
+     * When running Langium as part of a vscode language server or a Node.js app, using the `NodeFileSystem` is recommended,
+     * the `EmptyFileSystem` in every other use case.
+     */
+    fileSystemProvider: (services: LangiumSharedServices) => FileSystemProvider;
 }
 
 /**
  * Create a dependency injection module for the default shared services. This is the set of
  * services that are shared between multiple languages.
  */
-export function createCommonSharedModule(context: CommonSharedModuleContext): Module<LangiumSharedServices, LangiumDefaultSharedServices> {
+export function createDefaultSharedModule(context: DefaultSharedModuleContext): Module<LangiumSharedServices, LangiumDefaultSharedServices> {
     return {
         ServiceRegistry: () => new DefaultServiceRegistry(),
         lsp: {
