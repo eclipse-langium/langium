@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { EOL } from 'os';
+const EOL = process?.platform === 'win32' ? '\r\n' : '\n';
 
 export type GeneratorNode = CompositeGeneratorNode | IndentNode | NewLineNode | string;
 

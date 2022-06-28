@@ -5,10 +5,10 @@
  ******************************************************************************/
 
 import { TokenPattern, TokenType } from '@chevrotain/types';
-import { createLangiumGrammarServices, Grammar } from '../../src';
+import { createLangiumGrammarServices, Grammar, EmptyFileSystem } from '../../src';
 import { parseHelper } from '../../src/test';
 
-const grammarServices = createLangiumGrammarServices().grammar;
+const grammarServices = createLangiumGrammarServices(EmptyFileSystem).grammar;
 const helper = parseHelper<Grammar>(grammarServices);
 const tokenBuilder = grammarServices.parser.TokenBuilder;
 

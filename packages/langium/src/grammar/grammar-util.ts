@@ -4,10 +4,10 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import * as ast from '../grammar/generated/ast';
 import { URI, Utils } from 'vscode-uri';
 import { createDefaultModule, createDefaultSharedModule } from '../default-module';
 import { inject, Module } from '../dependency-injection';
-import * as ast from '../grammar/generated/ast';
 import { CompositeCstNodeImpl } from '../parser/cst-node-builder';
 import { IParserConfig } from '../parser/parser-config';
 import { LangiumGeneratedServices, LangiumGeneratedSharedServices, LangiumServices, LangiumSharedServices } from '../services';
@@ -23,6 +23,7 @@ import { interpretAstReflection } from './ast-reflection-interpreter';
 import { createLangiumGrammarServices, LangiumGrammarServices } from './langium-grammar-module';
 import { LanguageMetaData } from './language-meta-data';
 import { TypeResolutionError } from './type-system/types-util';
+import { EmptyFileSystem } from '../workspace/file-system-provider';
 
 export type Cardinality = '?' | '*' | '+' | undefined;
 export type Operator = '=' | '+=' | '?=' | undefined;
@@ -422,7 +423,7 @@ export function createServicesForGrammar(config: {
     module?: Module<LangiumServices>
     sharedModule?: Module<LangiumSharedServices>
 }): LangiumServices {
-    const grammarServices = config.grammarServices ?? createLangiumGrammarServices().grammar;
+    const grammarServices = config.grammarServices ?? createLangiumGrammarServices(EmptyFileSystem).grammar;
     const grammarNode = typeof config.grammar === 'string' ? grammarServices.parser.LangiumParser.parse<ast.Grammar>(config.grammar).value : config.grammar;
     prepareGrammar(grammarServices, grammarNode);
 
@@ -444,13 +445,13 @@ export function createServicesForGrammar(config: {
             ParserConfig: () => parserConfig
         }
     };
-    const shared = inject(createDefaultSharedModule(), generatedSharedModule, config.sharedModule);
+    const shared = inject(createDefaultSharedModule(EmptyFileSystem), generatedSharedModule, config.sharedModule);
     const services = inject(createDefaultModule({ shared }), generatedModule, config.module);
     return services;
 }
 
 export function loadGrammar(json: string): ast.Grammar {
-    const services = createLangiumGrammarServices().grammar;
+    const services = createLangiumGrammarServices(EmptyFileSystem).grammar;
     const astNode = services.serializer.JsonSerializer.deserialize(json);
     if (!ast.isGrammar(astNode)) {
         throw new Error('Could not load grammar from specified json input.');

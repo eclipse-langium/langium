@@ -34,7 +34,7 @@ import { DefaultAstNodeDescriptionProvider, DefaultReferenceDescriptionProvider 
 import { DefaultAstNodeLocator } from './workspace/ast-node-locator';
 import { DefaultDocumentBuilder } from './workspace/document-builder';
 import { DefaultLangiumDocumentFactory, DefaultLangiumDocuments, DefaultTextDocumentFactory } from './workspace/documents';
-import { NodeFileSystemProvider } from './workspace/file-system-provider';
+import { FileSystemProvider } from './workspace/file-system-provider';
 import { DefaultIndexManager } from './workspace/index-manager';
 import { DefaultWorkspaceManager } from './workspace/workspace-manager';
 
@@ -97,14 +97,25 @@ export function createDefaultModule(context: DefaultModuleContext): Module<Langi
  * Context required for creating the default shared dependency injection module.
  */
 export interface DefaultSharedModuleContext {
+    /**
+     * Represents an abstract language server connection
+     */
     connection?: Connection;
+    /**
+     * Factory function to create a {@link FileSystemProvider}.
+     *
+     * Langium exposes an `EmptyFileSystem` and `NodeFileSystem`, exported through `langium/node`.
+     * When running Langium as part of a vscode language server or a Node.js app, using the `NodeFileSystem` is recommended,
+     * the `EmptyFileSystem` in every other use case.
+     */
+    fileSystemProvider: (services: LangiumSharedServices) => FileSystemProvider;
 }
 
 /**
  * Create a dependency injection module for the default shared services. This is the set of
  * services that are shared between multiple languages.
  */
-export function createDefaultSharedModule(context: DefaultSharedModuleContext = {}): Module<LangiumSharedServices, LangiumDefaultSharedServices> {
+export function createDefaultSharedModule(context: DefaultSharedModuleContext): Module<LangiumSharedServices, LangiumDefaultSharedServices> {
     return {
         ServiceRegistry: () => new DefaultServiceRegistry(),
         lsp: {
@@ -118,7 +129,7 @@ export function createDefaultSharedModule(context: DefaultSharedModuleContext = 
             TextDocumentFactory: (services) => new DefaultTextDocumentFactory(services),
             IndexManager: (services) => new DefaultIndexManager(services),
             WorkspaceManager: (services) => new DefaultWorkspaceManager(services),
-            FileSystemProvider: () => new NodeFileSystemProvider(),
+            FileSystemProvider: (services) => context.fileSystemProvider(services),
             MutexLock: () => new MutexLock()
         }
     };

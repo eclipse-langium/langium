@@ -5,11 +5,12 @@
  ******************************************************************************/
 
 import { startLanguageServer } from 'langium';
+import { NodeFileSystem } from 'langium/node';
 import { createConnection, ProposedFeatures } from 'vscode-languageserver/node';
 import { createArithmeticsServices } from './arithmetics-module';
 
 const connection = createConnection(ProposedFeatures.all);
 
-const { shared } = createArithmeticsServices({ connection });
+const { shared } = createArithmeticsServices({ connection, ...NodeFileSystem });
 
 startLanguageServer(shared);

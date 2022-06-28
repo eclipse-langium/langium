@@ -37,7 +37,7 @@ export const DomainModelModule: Module<DomainModelServices, PartialLangiumServic
     }
 };
 
-export function createDomainModelServices(context?: DefaultSharedModuleContext): {
+export function createDomainModelServices(context: DefaultSharedModuleContext): {
     shared: LangiumSharedServices,
     domainmodel: DomainModelServices
 } {

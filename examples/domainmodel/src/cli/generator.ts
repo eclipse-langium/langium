@@ -13,10 +13,11 @@ import { AbstractElement, Domainmodel, Entity, Feature, isEntity, isPackageDecla
 import { extractAstNode, extractDestinationAndName, setRootFolder } from './cli-util';
 import { createDomainModelServices } from '../language-server/domain-model-module';
 import { DomainModelLanguageMetaData } from '../language-server/generated/module';
+import { NodeFileSystem } from 'langium/node';
 
 export const generateAction = async (fileName: string, opts: GenerateOptions): Promise<void> => {
     try {
-        const services = createDomainModelServices().domainmodel;
+        const services = createDomainModelServices(NodeFileSystem).domainmodel;
         await setRootFolder(fileName, services, opts.root);
         const domainmodel = await extractAstNode<Domainmodel>(fileName, DomainModelLanguageMetaData.fileExtensions, services);
         const generatedDirPath = generateJava(domainmodel, fileName, opts.destination);

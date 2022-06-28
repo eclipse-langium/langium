@@ -46,7 +46,7 @@ export const LangiumGrammarModule: Module<LangiumGrammarServices, PartialLangium
     }
 };
 
-export function createLangiumGrammarServices(context?: DefaultSharedModuleContext): {
+export function createLangiumGrammarServices(context: DefaultSharedModuleContext): {
     shared: LangiumSharedServices,
     grammar: LangiumGrammarServices
 } {

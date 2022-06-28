@@ -14,7 +14,13 @@ export type MaybePromise<T> = T | Promise<T>
  */
 export function delayNextTick(): Promise<void> {
     return new Promise(resolve => {
-        setImmediate(resolve);
+        // In case we are running in a non-node environment, `setImmediate` isn't available.
+        // Using `setTimeout` of the browser API accomplishes the same result.
+        if (typeof setImmediate === 'undefined') {
+            setTimeout(resolve, 0);
+        } else {
+            setImmediate(resolve);
+        }
     });
 }
 

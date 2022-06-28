@@ -19,6 +19,8 @@
   "files": [
     "lib",
     "src",
+    "node.js",
+    "node.d.ts",
     "test.js",
     "test.d.ts"
   ],

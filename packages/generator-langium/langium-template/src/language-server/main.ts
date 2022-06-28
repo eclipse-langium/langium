@@ -1,4 +1,5 @@
 import { startLanguageServer } from 'langium';
+import { NodeFileSystem } from 'langium/node';
 import { createConnection, ProposedFeatures } from 'vscode-languageserver/node';
 import { create<%= LanguageName %>Services } from './<%= language-id %>-module';
 
@@ -6,7 +7,7 @@ import { create<%= LanguageName %>Services } from './<%= language-id %>-module';
 const connection = createConnection(ProposedFeatures.all);
 
 // Inject the shared services and language-specific services
-const { shared } = create<%= LanguageName %>Services({ connection });
+const { shared } = create<%= LanguageName %>Services({ connection, ...NodeFileSystem });
 
 // Start the language server with the shared services
 startLanguageServer(shared);

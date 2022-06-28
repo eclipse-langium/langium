@@ -54,7 +54,7 @@ export const ArithmeticsModule: Module<ArithmeticsServices, PartialLangiumServic
  * @param context Optional module context with the LSP connection
  * @returns An object wrapping the shared services and the language-specific services
  */
-export function createArithmeticsServices(context?: DefaultSharedModuleContext): {
+export function createArithmeticsServices(context: DefaultSharedModuleContext): {
     shared: LangiumSharedServices,
     arithmetics: ArithmeticsServices
 } {

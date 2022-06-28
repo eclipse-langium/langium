@@ -4,7 +4,6 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { EOL } from 'os';
 import { CodeActionKind, Diagnostic } from 'vscode-languageserver';
 import { CodeActionParams } from 'vscode-languageserver-protocol';
 import { CodeAction, Command, Position, TextEdit } from 'vscode-languageserver-types';
@@ -181,7 +180,7 @@ export class LangiumGrammarCodeActionProvider implements CodeActionProvider {
                                 start: position,
                                 end: position
                             },
-                            newText: `import '${path}';${EOL}`
+                            newText: `import '${path}';\n`
                         }]
                     }
                 }
