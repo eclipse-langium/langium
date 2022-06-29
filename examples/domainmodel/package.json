@@ -1,12 +1,13 @@
 {
-    "name": "domainmodel",
-    "displayName": "domainmodel",
-    "description": "description",
-    "version": "0.0.0",
-    "private": true,
+    "name": "langium-domainmodel-dsl",
+    "displayName": "Domain Model DSL",
+    "version": "0.4.0",
+    "description": "Example language built with Langium",
+    "homepage": "https://langium.org",
     "engines": {
         "vscode": "^1.56.0"
     },
+    "license": "MIT",
     "categories": [
         "Programming Languages"
     ],
@@ -29,7 +30,9 @@
     "files": [
         "bin",
         "out",
-        "src"
+        "src",
+        "syntaxes",
+        "language-configuration.json"
     ],
     "bin": {
         "domainmodel-cli": "./bin/cli"
@@ -41,7 +44,9 @@
         "watch": "tsc -watch",
         "lint": "eslint src --ext ts",
         "langium:generate": "langium generate",
-        "langium:watch": "langium generate --watch"
+        "langium:watch": "langium generate --watch",
+        "publish:next": "npm --no-git-tag-version version \"$(semver $npm_package_version -i minor)-next.$(git rev-parse --short HEAD)\" && npm publish --tag next",
+        "publish:latest": "npm publish --tag latest"
     },
     "dependencies": {
         "colors": "^1.4.0",
@@ -53,5 +58,15 @@
     },
     "devDependencies": {
         "langium-cli": "0.4.0"
+    },
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/langium/langium",
+      "directory": "examples/domainmodel"
+    },
+    "bugs": "https://github.com/langium/langium/issues",
+    "author": {
+      "name": "TypeFox",
+      "url": "https://www.typefox.io"
     }
 }
