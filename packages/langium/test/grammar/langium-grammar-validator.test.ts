@@ -31,7 +31,8 @@ describe('Langium grammar validation', () => {
         });
     });
 
-    test('Interfaces should only be able to extend inferred interfaces', async () => {
+    // verifies that interfaces can't extend type unions, especially inferred ones
+    test('Interfaces extend only interfaces', async () => {
         const validationResult = await validate(`
         grammar G
 
