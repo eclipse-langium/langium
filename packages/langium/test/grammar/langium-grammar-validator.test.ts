@@ -36,28 +36,43 @@ describe('Langium grammar validation', () => {
         const validationResult = await validate(`
         grammar G
 
-        entry SA: S1 | S2;
-        SB: S1;
+        // generates an inferred union of 2 other inferred interfaces
+        entry InferredUnion: InferredI1 | InferredI2;
 
-        S1: 's1' s1=ID;
-        S2: 's2' s2=ID;
+        // for the case where an inferred interface extends another inferred interface
+        InferredI0: InferredI1;
 
-        interface DA extends SA {}
-        interface D2 extends S2 {}
-        interface DB extends SB {}
+        // just for the sake of generating a pair of inferred interfaces
+        InferredI1: 'InferredI1' InferredI1=ID;
+        InferredI2: 'InferredI2' InferredI2=ID;
+
+        // should fail...
+        interface DeclaredExtendsUnion extends InferredUnion {}
+
+        // we can extend an inferred type that has no parent
+        interface DeclaredExtendsInferred1 extends InferredI2 {}
+
+        // we can extend an inferred type that extends other inferred types
+        interface DeclaredExtendsInferred2 extends InferredI0 {}
 
         hidden terminal WS: /\\s+/;
         terminal ID: /[a-zA-Z_][a-zA-Z0-9_]*/;
         `);
-        expectError(validationResult, /An interface cannot extend a union type, which was inferred from parser rule SA./, {
+
+        // should get an error on DeclaredExtendsUnion, since it cannot extend an inferred union
+        expectError(validationResult, /An interface cannot extend a union type, which was inferred from parser rule InferredUnion./, {
             node: validationResult.document.parseResult.value.interfaces[0],
             property: {name: 'superTypes'}
         });
+
+        // should get a warning when basing declared types on inferred types
         expectWarning(validationResult, /Extending an interface by a parser rule gives an ambiguous type, instead of the expected declared type./, {
             node: validationResult.document.parseResult.value.interfaces[1],
             property: {name: 'superTypes'}
         });
-        expectError(validationResult, /An interface cannot extend a union type, which was inferred from parser rule SB./, {
+
+        // same warning, but being sure that this holds when an inferred type extends another inferred type
+        expectError(validationResult, /An interface cannot extend a union type, which was inferred from parser rule InferredI0./, {
             node: validationResult.document.parseResult.value.interfaces[2],
             property: {name: 'superTypes'}
         });
