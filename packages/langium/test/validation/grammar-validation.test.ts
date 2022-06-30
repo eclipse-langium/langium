@@ -4,12 +4,12 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { createLangiumGrammarServices } from '../../src';
+import { createLangiumGrammarServices, EmptyFileSystem } from '../../src';
 import { Assignment, CrossReference, Grammar, Group, ParserRule } from '../../src/grammar/generated/ast';
 import { IssueCodes } from '../../src/grammar/langium-grammar-validator';
 import { expectError, expectNoIssues, expectWarning, validationHelper, ValidationResult } from '../../src/test';
 
-const services = createLangiumGrammarServices();
+const services = createLangiumGrammarServices(EmptyFileSystem);
 const validate = validationHelper<Grammar>(services.grammar);
 
 describe('checkReferenceToRuleButNotType', () => {

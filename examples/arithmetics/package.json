@@ -1,11 +1,13 @@
 {
-    "name": "arithmetics",
-    "displayName": "arithmetics",
-    "description": "description",
-    "version": "0.0.0",
+    "name": "langium-arithmetics-dsl",
+    "displayName": "Arithmetics DSL",
+    "version": "0.4.0",
+    "description": "Example language built with Langium",
+    "homepage": "https://langium.org",
     "engines": {
         "vscode": "^1.56.0"
     },
+    "license": "MIT",
     "categories": [
         "Programming Languages"
     ],
@@ -28,7 +30,9 @@
     "files": [
         "bin",
         "out",
-        "src"
+        "src",
+        "syntaxes",
+        "language-configuration.json"
     ],
     "bin": {
         "arithmetics-cli": "./bin/cli"
@@ -40,7 +44,9 @@
         "watch": "tsc -watch",
         "lint": "eslint src --ext ts",
         "langium:generate": "langium generate",
-        "langium:watch": "langium generate --watch"
+        "langium:watch": "langium generate --watch",
+        "publish:next": "npm --no-git-tag-version version \"$(semver $npm_package_version -i minor)-next.$(git rev-parse --short HEAD)\" && npm publish --tag next",
+        "publish:latest": "npm publish --tag latest"
     },
     "dependencies": {
         "colors": "^1.4.0",
@@ -50,13 +56,16 @@
         "vscode-languageserver": "^8.0.1"
     },
     "devDependencies": {
-        "@types/node": "^12.12.6",
-        "@types/vscode": "^1.56.0",
-        "@typescript-eslint/eslint-plugin": "^5.28.0",
-        "@typescript-eslint/parser": "^5.28.0",
-        "eslint": "^8.17.0",
-        "eslint-plugin-header": "^3.1.1",
-        "langium-cli": "0.4.0",
-        "typescript": "^4.6.2"
+        "langium-cli": "0.4.0"
+    },
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/langium/langium",
+      "directory": "examples/arithmetics"
+    },
+    "bugs": "https://github.com/langium/langium/issues",
+    "author": {
+      "name": "TypeFox",
+      "url": "https://www.typefox.io"
     }
 }

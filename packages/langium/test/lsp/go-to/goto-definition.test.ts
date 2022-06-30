@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { createLangiumGrammarServices } from '../../../src';
+import { createLangiumGrammarServices, EmptyFileSystem } from '../../../src';
 import { expectGoToDefinition } from '../../../src/test';
 import { expectFunction } from '../../fixture';
 
@@ -33,7 +33,7 @@ X returns A:
     <|>na<|>me=ID;
 `.trim();
 
-const grammarServices = createLangiumGrammarServices().grammar;
+const grammarServices = createLangiumGrammarServices(EmptyFileSystem).grammar;
 const gotoDefinition = expectGoToDefinition(grammarServices, expectFunction);
 
 describe('GoToResolver', () => {

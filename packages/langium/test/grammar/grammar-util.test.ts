@@ -4,13 +4,13 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { createLangiumGrammarServices, findNameAssignment, getEntryRule, getTypeName, Grammar, InferredType, isDataTypeRule, isParserRule, isTerminalRule, ParserRule, stream, terminalRegex, TerminalRule } from '../../src';
+import { createLangiumGrammarServices, EmptyFileSystem, findNameAssignment, getEntryRule, getTypeName, Grammar, InferredType, isDataTypeRule, isParserRule, isTerminalRule, ParserRule, stream, terminalRegex, TerminalRule } from '../../src';
 import { LangiumGrammarGrammar } from '../../src/grammar/generated/grammar';
 import { parseHelper } from '../../src/test';
 
 describe('Data type rules', () => {
 
-    const services = createLangiumGrammarServices();
+    const services = createLangiumGrammarServices(EmptyFileSystem);
     const parser = parseHelper<Grammar>(services.grammar);
     const grammar = `
     grammar Test
@@ -50,7 +50,7 @@ describe('Data type rules', () => {
 
 describe('Find name assignment in parser rules', () => {
 
-    const services = createLangiumGrammarServices();
+    const services = createLangiumGrammarServices(EmptyFileSystem);
     const parser = parseHelper<Grammar>(services.grammar);
     const grammar = `
     grammar Test
@@ -194,7 +194,7 @@ describe('TerminalRule to regex', () => {
         expect('a some value b').toMatch(regex);
     });
 
-    const services = createLangiumGrammarServices().grammar;
+    const services = createLangiumGrammarServices(EmptyFileSystem).grammar;
     const parse = parseHelper<Grammar>(services);
 
     async function getTerminal(input: string, name?: string): Promise<TerminalRule> {

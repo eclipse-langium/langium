@@ -21,7 +21,7 @@
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
   "scripts": {
-    "clean": "rimraf lib coverage",
+    "clean": "shx rm -rf lib coverage",
     "build": "tsc",
     "watch": "tsc --watch",
     "lint": "eslint src --ext .ts",
@@ -31,18 +31,6 @@
   "dependencies": {
     "langium": "~0.4.0",
     "sprotty-protocol": "^0.11.0"
-  },
-  "devDependencies": {
-    "@types/jest": "^28.1.1",
-    "@types/node": "^12.12.6",
-    "@typescript-eslint/eslint-plugin": "^5.28.0",
-    "@typescript-eslint/parser": "^5.28.0",
-    "eslint": "^8.17.0",
-    "eslint-plugin-header": "^3.1.1",
-    "jest": "^28.1.1",
-    "rimraf": "^3.0.2",
-    "ts-jest": "^28.0.5",
-    "typescript": "^4.6.2"
   },
   "repository": {
     "type": "git",

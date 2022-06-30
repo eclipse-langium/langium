@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { AstTypes, createLangiumGrammarServices, Grammar, InterfaceType, isDataTypeRule, isParserRule, Property, PropertyType, UnionType } from '../../../src';
+import { AstTypes, createLangiumGrammarServices, Grammar, InterfaceType, isDataTypeRule, isParserRule, Property, PropertyType, UnionType, EmptyFileSystem } from '../../../src';
 import { collectInferredTypes } from '../../../src/grammar/type-system/inferred-types';
 import { parseHelper } from '../../../src/test';
 
@@ -579,7 +579,7 @@ describeTypes('inferred types that are used by the grammar', `
 });
 
 async function getTypes(grammar: string): Promise<AstTypes> {
-    const services = createLangiumGrammarServices().grammar;
+    const services = createLangiumGrammarServices(EmptyFileSystem).grammar;
     const helper = parseHelper<Grammar>(services);
     const result = await helper(grammar);
     const gram = result.parseResult.value;

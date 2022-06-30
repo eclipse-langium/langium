@@ -5,9 +5,10 @@ import { <%= LanguageName %>LanguageMetaData } from '../language-server/generate
 import { create<%= LanguageName %>Services } from '../language-server/<%= language-id %>-module';
 import { extractAstNode } from './cli-util';
 import { generateJavaScript } from './generator';
+import { NodeFileSystem } from 'langium/node';
 
 export const generateAction = async (fileName: string, opts: GenerateOptions): Promise<void> => {
-    const services = create<%= LanguageName %>Services().<%= LanguageName %>;
+    const services = create<%= LanguageName %>Services(NodeFileSystem).<%= LanguageName %>;
     const model = await extractAstNode<Model>(fileName, services);
     const generatedFilePath = generateJavaScript(model, fileName, opts.destination);
     console.log(colors.green(`JavaScript code generated successfully: ${generatedFilePath}`));

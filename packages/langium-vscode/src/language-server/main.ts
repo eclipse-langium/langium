@@ -5,8 +5,9 @@
  ******************************************************************************/
 
 import { createLangiumGrammarServices, startLanguageServer } from 'langium';
+import { NodeFileSystem } from 'langium/node';
 import { createConnection, ProposedFeatures } from 'vscode-languageserver/node';
 
 const connection = createConnection(ProposedFeatures.all);
-const { shared } = createLangiumGrammarServices({ connection });
+const { shared } = createLangiumGrammarServices({ connection, ...NodeFileSystem });
 startLanguageServer(shared);

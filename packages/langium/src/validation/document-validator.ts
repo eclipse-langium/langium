@@ -4,11 +4,11 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { CancellationToken, Diagnostic, DiagnosticSeverity } from 'vscode-languageserver';
+import { CancellationToken, Diagnostic, DiagnosticSeverity, PublishDiagnosticsClientCapabilities } from 'vscode-languageserver';
 import { Range } from 'vscode-languageserver-textdocument';
 import { findNodeForFeature } from '../grammar/grammar-util';
 import { LanguageMetaData } from '../grammar/language-meta-data';
-import { LangiumServices } from '../services';
+import { InitializableService, LangiumServices } from '../services';
 import { AstNode } from '../syntax-tree';
 import { streamAst } from '../utils/ast-util';
 import { tokenToRange } from '../utils/cst-util';
@@ -19,7 +19,7 @@ import { DiagnosticInfo, ValidationAcceptor, ValidationRegistry } from './valida
 /**
  * Language-specific service for validating `LangiumDocument`s.
  */
-export interface DocumentValidator {
+export interface DocumentValidator extends InitializableService<PublishDiagnosticsClientCapabilities> {
     /**
      * Validates the whole specified document.
      * @param document specified document to validate
@@ -44,7 +44,7 @@ export class DefaultDocumentValidator implements DocumentValidator {
 
         await interruptAndCheck(cancelToken);
 
-        // Process lexer errors
+        // Process lexing errors
         for (const lexerError of parseResult.lexerErrors) {
             const diagnostic: Diagnostic = {
                 severity: DiagnosticSeverity.Error,
@@ -58,18 +58,21 @@ export class DefaultDocumentValidator implements DocumentValidator {
                         character: lexerError.column + lexerError.length - 1
                     }
                 },
-                message: lexerError.message
+                message: lexerError.message,
+                code: DocumentValidator.LexingError,
+                source: this.getSource()
             };
             diagnostics.push(diagnostic);
         }
 
-        // Process parser errors
+        // Process parsing errors
         for (const parserError of parseResult.parserErrors) {
-            const token = parserError.token;
             const diagnostic: Diagnostic = {
                 severity: DiagnosticSeverity.Error,
-                range: tokenToRange(token),
-                message: parserError.message
+                range: tokenToRange(parserError.token),
+                message: parserError.message,
+                code: DocumentValidator.ParsingError,
+                source: this.getSource()
             };
             diagnostics.push(diagnostic);
         }
@@ -78,10 +81,17 @@ export class DefaultDocumentValidator implements DocumentValidator {
         for (const reference of document.references) {
             const linkingError = reference.error;
             if (linkingError) {
+                const data: LinkingErrorData = {
+                    containerType: linkingError.container.$type,
+                    property: linkingError.property,
+                    refText: linkingError.reference.$refText
+                };
                 const info: DiagnosticInfo<AstNode, string> = {
                     node: linkingError.container,
                     property: linkingError.property,
-                    index: linkingError.index
+                    index: linkingError.index,
+                    code: DocumentValidator.LinkingError,
+                    data
                 };
                 diagnostics.push(this.toDiagnostic('error', linkingError.message, info));
             }
@@ -167,4 +177,16 @@ export function toDiagnosticSeverity(severity: 'error' | 'warning' | 'info' | 'h
         default:
             throw new Error('Invalid diagnostic severity: ' + severity);
     }
+}
+
+export namespace DocumentValidator {
+    export const LexingError = 'lexing-error';
+    export const ParsingError = 'parsing-error';
+    export const LinkingError = 'linking-error';
+}
+
+export interface LinkingErrorData {
+    containerType: string
+    property: string
+    refText: string
 }

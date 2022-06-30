@@ -4,10 +4,10 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { CancellationToken, DocumentHighlight, DocumentHighlightKind, DocumentHighlightParams } from 'vscode-languageserver';
+import { CancellationToken, DocumentHighlight, DocumentHighlightClientCapabilities, DocumentHighlightKind, DocumentHighlightParams } from 'vscode-languageserver';
 import { NameProvider } from '../references/naming';
 import { References } from '../references/references';
-import { LangiumServices } from '../services';
+import { InitializableService, LangiumServices } from '../services';
 import { AstNode, CstNode, Reference } from '../syntax-tree';
 import { findLocalReferences, getDocument } from '../utils/ast-util';
 import { findLeafNodeAtOffset } from '../utils/cst-util';
@@ -18,7 +18,7 @@ import { LangiumDocument } from '../workspace/documents';
 /**
  * Language-specific service for handling document highlight requests.
  */
-export interface DocumentHighlighter {
+export interface DocumentHighlighter extends InitializableService<DocumentHighlightClientCapabilities> {
     /**
      * Handle a document highlight request.
      *

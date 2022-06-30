@@ -6,8 +6,9 @@
 
 /* eslint-disable no-bitwise */
 
-import { CancellationToken, Range, SemanticTokenModifiers, SemanticTokens, SemanticTokensBuilder as BaseSemanticTokensBuilder, SemanticTokensDelta, SemanticTokensDeltaParams, SemanticTokensOptions, SemanticTokensParams, SemanticTokensRangeParams, SemanticTokenTypes } from 'vscode-languageserver';
+import { CancellationToken, Range, SemanticTokenModifiers, SemanticTokens, SemanticTokensBuilder as BaseSemanticTokensBuilder, SemanticTokensClientCapabilities, SemanticTokensDelta, SemanticTokensDeltaParams, SemanticTokensOptions, SemanticTokensParams, SemanticTokensRangeParams, SemanticTokenTypes } from 'vscode-languageserver';
 import { findKeywordNodes, findNodeForFeature } from '../grammar/grammar-util';
+import { InitializableService, LangiumServices } from '../services';
 import { AstNode, CstNode, Properties } from '../syntax-tree';
 import { streamAllContents } from '../utils/ast-util';
 import { LangiumDocument } from '../workspace/documents';
@@ -61,7 +62,7 @@ export const DefaultSemanticTokenOptions: SemanticTokensOptions = {
     range: true
 };
 
-export interface SemanticTokenProvider {
+export interface SemanticTokenProvider extends InitializableService<SemanticTokensClientCapabilities> {
     semanticHighlight(document: LangiumDocument, params: SemanticTokensParams, cancelToken?: CancellationToken): SemanticTokens
     semanticHighlightRange(document: LangiumDocument, params: SemanticTokensRangeParams, cancelToken?: CancellationToken): SemanticTokens
     semanticHighlightDelta(document: LangiumDocument, params: SemanticTokensDeltaParams, cancelToken?: CancellationToken): SemanticTokens | SemanticTokensDelta
@@ -87,7 +88,9 @@ export type SemanticTokenAcceptorOptions<N extends AstNode = AstNode> = ({
     node: N,
     keyword: string
 } | {
-    node: CstNode
+    cst: CstNode
+} | {
+    range: Range
 }) & {
     type: string
     modifier?: string | string[]
@@ -141,43 +144,85 @@ export type SemanticTokenAcceptor = <N extends AstNode = AstNode>(options: Seman
  */
 export abstract class AbstractSemanticTokenProvider implements SemanticTokenProvider {
 
-    protected tokenBuilder = new SemanticTokensBuilder();
-    protected acceptor: SemanticTokenAcceptor = options => {
-        if ('line' in options) {
-            this.highlightToken(options.line, options.char, options.length, options.type, options.modifier);
-        } else if ('keyword' in options) {
-            this.highlightKeyword(options.node, options.keyword, options.type, options.modifier);
-        } else if ('feature' in options) {
-            this.highlightFeature(options.node, options.feature, options.index, options.type, options.modifier);
-        } else {
-            this.highlightNode(options.node, options.type, options.modifier);
-        }
-    };
-    protected range?: Range;
+    /**
+     * Store a token builder for each open document.
+     */
+    protected tokensBuilders = new Map<string, SemanticTokensBuilder>();
+    protected currentDocument?: LangiumDocument;
+    protected currentTokensBuilder?: SemanticTokensBuilder;
+    protected currentRange?: Range;
+    protected clientCapabilities?: SemanticTokensClientCapabilities;
+
+    constructor(services: LangiumServices) {
+        // Delete the token builder once the text document has been closed
+        services.shared.workspace.TextDocuments.onDidClose(e => {
+            this.tokensBuilders.delete(e.document.uri);
+        });
+    }
+
+    initialize(clientCapabilities?: SemanticTokensClientCapabilities): void {
+        this.clientCapabilities = clientCapabilities;
+    }
 
     semanticHighlight(document: LangiumDocument, _params: SemanticTokensParams, cancelToken = CancellationToken.None): SemanticTokens {
-        this.range = undefined;
-        this.resetTokensBuilder();
-        this.computeHighlighting(document, this.acceptor, cancelToken);
-        return this.tokenBuilder.build();
+        this.currentRange = undefined;
+        this.currentDocument = document;
+        this.currentTokensBuilder = this.getDocumentTokensBuilder(document);
+        this.computeHighlighting(document, this.createAcceptor(), cancelToken);
+        return this.currentTokensBuilder.build();
     }
 
     semanticHighlightRange(document: LangiumDocument, params: SemanticTokensRangeParams, cancelToken = CancellationToken.None): SemanticTokens {
-        this.range = params.range;
-        this.resetTokensBuilder();
-        this.computeHighlighting(document, this.acceptor, cancelToken);
-        return this.tokenBuilder.build();
+        this.currentRange = params.range;
+        this.currentDocument = document;
+        this.currentTokensBuilder = this.getDocumentTokensBuilder(document);
+        this.computeHighlighting(document, this.createAcceptor(), cancelToken);
+        return this.currentTokensBuilder.build();
     }
 
     semanticHighlightDelta(document: LangiumDocument, params: SemanticTokensDeltaParams, cancelToken = CancellationToken.None): SemanticTokens | SemanticTokensDelta {
-        this.range = undefined;
-        this.tokenBuilder.previousResult(params.previousResultId);
-        this.computeHighlighting(document, this.acceptor, cancelToken);
-        return this.tokenBuilder.buildEdits();
+        this.currentRange = undefined;
+        this.currentDocument = document;
+        this.currentTokensBuilder = this.getDocumentTokensBuilder(document);
+        this.currentTokensBuilder.previousResult(params.previousResultId);
+        this.computeHighlighting(document, this.createAcceptor(), cancelToken);
+        return this.currentTokensBuilder.buildEdits();
     }
 
-    protected resetTokensBuilder(): void {
-        this.tokenBuilder.previousResult(Date.now().toString());
+    protected createAcceptor(): SemanticTokenAcceptor {
+        const acceptor: SemanticTokenAcceptor = options => {
+            if ('line' in options) {
+                this.highlightToken({
+                    start: {
+                        line: options.line,
+                        character: options.char
+                    },
+                    end: {
+                        line: options.line,
+                        character: options.char + options.length
+                    }
+                }, options.type, options.modifier);
+            } else if ('range' in options) {
+                this.highlightToken(options.range, options.type, options.modifier);
+            } else if ('keyword' in options) {
+                this.highlightKeyword(options.node, options.keyword, options.type, options.modifier);
+            } else if ('feature' in options) {
+                this.highlightFeature(options.node, options.feature, options.index, options.type, options.modifier);
+            } else {
+                this.highlightNode(options.cst, options.type, options.modifier);
+            }
+        };
+        return acceptor;
+    }
+
+    protected getDocumentTokensBuilder(document: LangiumDocument): SemanticTokensBuilder {
+        const existing = this.tokensBuilders.get(document.uri.toString());
+        if (existing) {
+            return existing;
+        }
+        const builder = new SemanticTokensBuilder();
+        this.tokensBuilders.set(document.uri.toString(), builder);
+        return builder;
     }
 
     protected computeHighlighting(document: LangiumDocument, acceptor: SemanticTokenAcceptor, cancelToken: CancellationToken): void {
@@ -210,14 +255,14 @@ export abstract class AbstractSemanticTokenProvider implements SemanticTokenProv
     }
 
     protected compareRange(range: Range | number): number {
-        if (!this.range) {
+        if (!this.currentRange) {
             return 0;
         }
         const startLine = typeof range === 'number' ? range : range.start.line;
         const endLine = typeof range === 'number' ? range : range.end.line;
-        if (endLine < this.range.start.line) {
+        if (endLine < this.currentRange.start.line) {
             return -1;
-        } else if (startLine > this.range.end.line) {
+        } else if (startLine > this.currentRange.end.line) {
             return 1;
         } else {
             return 0;
@@ -229,8 +274,8 @@ export abstract class AbstractSemanticTokenProvider implements SemanticTokenProv
      */
     protected abstract highlightElement(node: AstNode, acceptor: SemanticTokenAcceptor): void | undefined | 'prune';
 
-    protected highlightToken(line: number, char: number, length: number, type: string, modifiers?: string | string[]): void {
-        if (this.compareRange(line) !== 0) {
+    protected highlightToken(range: Range, type: string, modifiers?: string | string[]): void {
+        if (this.compareRange(range) !== 0 || !this.currentDocument || !this.currentTokensBuilder) {
             return;
         }
         const intType = AllSemanticTokenTypes[type];
@@ -244,7 +289,58 @@ export abstract class AbstractSemanticTokenProvider implements SemanticTokenProv
                 totalModifier |= intModifier;
             }
         }
-        this.tokenBuilder.push(line, char, length, intType, totalModifier);
+        const startLine = range.start.line;
+        const endLine = range.end.line;
+        if (startLine === endLine) {
+            // Token only spans a single line
+            const char = range.start.character;
+            const length = range.end.character - char;
+            this.currentTokensBuilder.push(startLine, char, length, intType, totalModifier);
+        } else if (this.clientCapabilities?.multilineTokenSupport) {
+            // Let token span multiple lines
+            const startChar = range.start.character;
+            const startOffset = this.currentDocument.textDocument.offsetAt(range.start);
+            const endOffset = this.currentDocument.textDocument.offsetAt(range.end);
+            this.currentTokensBuilder.push(startLine, startChar, endOffset - startOffset, intType, totalModifier);
+        } else {
+            // Token spans multiple lines, but the client doesn't support it
+            // Split the range into multiple semantic tokens
+            const firstLineStart = range.start;
+            let nextLineOffset = this.currentDocument.textDocument.offsetAt({
+                line: startLine + 1,
+                character: 0
+            });
+            // Build first line
+            this.currentTokensBuilder.push(
+                firstLineStart.line,
+                firstLineStart.character,
+                nextLineOffset - firstLineStart.character - 1,
+                intType,
+                totalModifier
+            );
+            // Build all lines in between first and last
+            for (let i = startLine + 1; i < endLine; i++) {
+                const currentLineOffset = nextLineOffset;
+                nextLineOffset = this.currentDocument.textDocument.offsetAt({
+                    line: i + 1,
+                    character: 0
+                });
+                this.currentTokensBuilder.push(
+                    i,
+                    0,
+                    nextLineOffset - currentLineOffset - 1,
+                    intType, totalModifier
+                );
+            }
+            // Build last line
+            this.currentTokensBuilder.push(
+                endLine,
+                0,
+                range.end.character,
+                intType,
+                totalModifier
+            );
+        }
     }
 
     protected highlightFeature<N extends AstNode>(node: N, feature: Properties<N>, index: number | undefined, type: string, modifiers?: string | string[]): void {
@@ -262,14 +358,7 @@ export abstract class AbstractSemanticTokenProvider implements SemanticTokenProv
     }
 
     protected highlightNode(node: CstNode, type: string, modifiers?: string | string[]): void {
-        const nodeRange = node.range;
-        this.highlightToken(
-            nodeRange.start.line,
-            nodeRange.start.character,
-            nodeRange.end.character - nodeRange.start.character,
-            type,
-            modifiers
-        );
+        this.highlightToken(node.range, type, modifiers);
     }
 
 }

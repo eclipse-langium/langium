@@ -53,7 +53,7 @@ export const StatemachineModule: Module<StatemachineServices, PartialLangiumServ
  * @param context Optional module context with the LSP connection
  * @returns An object wrapping the shared services and the language-specific services
  */
-export function createStatemachineServices(context?: DefaultSharedModuleContext): {
+export function createStatemachineServices(context: DefaultSharedModuleContext): {
     shared: LangiumSharedServices,
     statemachine: StatemachineServices
 } {

@@ -9,6 +9,7 @@ import {
     AbstractRule, createLangiumGrammarServices, getDocument, Grammar, isGrammar,
     isParserRule, LangiumDocument, resolveImport, resolveTransitiveImports
 } from 'langium';
+import { NodeFileSystem } from 'langium/node';
 import path from 'path';
 import { URI } from 'vscode-uri';
 import { generateAst } from './generator/ast-generator';
@@ -26,7 +27,7 @@ export type GenerateOptions = {
 
 export type GeneratorResult = 'success' | 'failure';
 
-const { shared: sharedServices, grammar: grammarServices } = createLangiumGrammarServices();
+const { shared: sharedServices, grammar: grammarServices } = createLangiumGrammarServices(NodeFileSystem);
 const documents = sharedServices.workspace.LangiumDocuments;
 
 function eagerLoad(document: LangiumDocument, uris: Set<string> = new Set()): URI[] {
@@ -155,7 +156,7 @@ export async function generate(config: LangiumConfig, options: GenerateOptions):
     for (const grammar of grammars) {
         embedReferencedRules(grammar, ruleMap);
         // Create and validate the in-memory parser
-        const parserAnalysis = validateParser(grammar, config, configMap, documents);
+        const parserAnalysis = validateParser(grammar, config, configMap, grammarServices);
         if (parserAnalysis instanceof Error) {
             log('error', options, parserAnalysis.toString().red);
             return 'failure';

@@ -5,12 +5,12 @@
  ******************************************************************************/
 
 import {
-    AbstractCancellationTokenSource, CancellationToken, Connection, FileChangeType, HandlerResult, InitializeResult,
+    CancellationToken, ClientCapabilities, Connection, FileChangeType, HandlerResult, InitializeResult,
     LSPErrorCodes, RequestHandler, ResponseError, ServerRequestHandler, TextDocumentIdentifier, TextDocumentSyncKind
 } from 'vscode-languageserver';
 import { URI } from 'vscode-uri';
 import { LangiumServices, LangiumSharedServices } from '../services';
-import { isOperationCancelled, startCancelableOperation } from '../utils/promise-util';
+import { isOperationCancelled } from '../utils/promise-util';
 import { DocumentState, LangiumDocument } from '../workspace/documents';
 import { DefaultSemanticTokenOptions } from './semantic-token-provider';
 
@@ -55,12 +55,12 @@ export function startLanguageServer(services: LangiumSharedServices): void {
             }
         };
 
-        try {
-            if (params.workspaceFolders) {
-                await services.workspace.WorkspaceManager.initializeWorkspace(params.workspaceFolders);
-            }
-        } catch (err) {
-            console.error(err);
+        await Promise.all(languages.map(languageService => initializeClientCapabilities(languageService, params.capabilities)));
+
+        if (params.workspaceFolders) {
+            const folders = params.workspaceFolders;
+            const mutex = services.workspace.MutexLock;
+            mutex.lock(token => services.workspace.WorkspaceManager.initializeWorkspace(folders, token));
         }
         return result;
     });
@@ -77,7 +77,7 @@ export function startLanguageServer(services: LangiumSharedServices): void {
     addCodeActionHandler(connection, services);
     addRenameHandler(connection, services);
     addHoverHandler(connection, services);
-    addSemanticHighlighting(connection, services);
+    addSemanticTokenHandler(connection, services);
 
     // Make the text document manager listen on the connection for open, change and close text document events.
     const documents = services.workspace.TextDocuments;
@@ -87,35 +87,42 @@ export function startLanguageServer(services: LangiumSharedServices): void {
     connection.listen();
 }
 
+export async function initializeClientCapabilities(services: LangiumServices, clientCapabilities: ClientCapabilities): Promise<void> {
+    const text = clientCapabilities.textDocument;
+    await Promise.all([
+        services.lsp.CodeActionProvider?.initialize?.(text?.codeAction),
+        services.lsp.DocumentHighlighter.initialize?.(text?.documentHighlight),
+        services.lsp.DocumentSymbolProvider.initialize?.(text?.documentSymbol),
+        services.lsp.FoldingRangeProvider.initialize?.(text?.foldingRange),
+        services.lsp.Formatter?.initialize?.({
+            formatting: text?.formatting,
+            rangeFormatting: text?.rangeFormatting,
+            onTypeFormatting: text?.onTypeFormatting
+        }),
+        services.lsp.GoToResolver.initialize?.(text?.definition),
+        services.lsp.HoverProvider.initialize?.(text?.hover),
+        services.lsp.ReferenceFinder.initialize?.(text?.references),
+        services.lsp.RenameHandler.initialize?.(text?.rename),
+        services.lsp.SemanticTokenProvider?.initialize?.(text?.semanticTokens),
+        services.validation.DocumentValidator.initialize?.(text?.publishDiagnostics)
+    ]);
+}
+
 export function addDocumentsHandler(connection: Connection, services: LangiumSharedServices): void {
     const documentBuilder = services.workspace.DocumentBuilder;
-    let changeTokenSource: AbstractCancellationTokenSource;
-    let changePromise: Promise<void> | undefined;
+    const mutex = services.workspace.MutexLock;
 
-    async function onDidChange(changed: URI[], deleted?: URI[]): Promise<void> {
-        changeTokenSource?.cancel();
-        if (changePromise) {
-            await changePromise;
-        }
-        changeTokenSource = startCancelableOperation();
-        changePromise = documentBuilder
-            .update(changed, deleted ?? [], changeTokenSource.token)
-            .catch(err => {
-                if (!isOperationCancelled(err)) {
-                    console.error('Error: ', err);
-                }
-            });
+    function onDidChange(changed: URI[], deleted: URI[]): void {
+        mutex.lock(token => documentBuilder.update(changed, deleted, token));
     }
 
     const documents = services.workspace.TextDocuments;
     documents.onDidChangeContent(change => {
-        // eslint-disable-next-line @typescript-eslint/no-floating-promises
-        onDidChange([URI.parse(change.document.uri)]);
+        onDidChange([URI.parse(change.document.uri)], []);
     });
     connection.onDidChangeWatchedFiles(params => {
         const changedUris = params.changes.filter(e => e.type !== FileChangeType.Deleted).map(e => URI.parse(e.uri));
         const deletedUris = params.changes.filter(e => e.type === FileChangeType.Deleted).map(e => URI.parse(e.uri));
-        // eslint-disable-next-line @typescript-eslint/no-floating-promises
         onDidChange(changedUris, deletedUris);
     });
 }
@@ -221,7 +228,7 @@ export function addRenameHandler(connection: Connection, services: LangiumShared
     ));
 }
 
-export function addSemanticHighlighting(connection: Connection, services: LangiumSharedServices): void {
+export function addSemanticTokenHandler(connection: Connection, services: LangiumSharedServices): void {
     connection.languages.semanticTokens.on(createServerRequestHandler(
         (services, document, params, cancelToken) => {
             if (services.lsp.SemanticTokenProvider) {
@@ -255,14 +262,16 @@ export function createServerRequestHandler<P extends { textDocument: TextDocumen
     serviceCall: (services: LangiumServices, document: LangiumDocument, params: P, cancelToken: CancellationToken) => HandlerResult<R, E>,
     sharedServices: LangiumSharedServices
 ): ServerRequestHandler<P, R, PR, E> {
+    const documents = sharedServices.workspace.LangiumDocuments;
+    const serviceRegistry = sharedServices.ServiceRegistry;
     return async (params: P, cancelToken: CancellationToken) => {
         const uri = URI.parse(params.textDocument.uri);
-        const language = sharedServices.ServiceRegistry.getServices(uri);
+        const language = serviceRegistry.getServices(uri);
         if (!language) {
             console.error(`Could not find service instance for uri: '${uri.toString()}'`);
             throw new Error();
         }
-        const document = sharedServices.workspace.LangiumDocuments.getOrCreateDocument(uri);
+        const document = documents.getOrCreateDocument(uri);
         if (!document) {
             throw new Error();
         }
@@ -278,14 +287,16 @@ export function createRequestHandler<P extends { textDocument: TextDocumentIdent
     serviceCall: (services: LangiumServices, document: LangiumDocument, params: P, cancelToken: CancellationToken) => HandlerResult<R, E>,
     sharedServices: LangiumSharedServices
 ): RequestHandler<P, R | null, E> {
+    const documents = sharedServices.workspace.LangiumDocuments;
+    const serviceRegistry = sharedServices.ServiceRegistry;
     return async (params: P, cancelToken: CancellationToken) => {
         const uri = URI.parse(params.textDocument.uri);
-        const language = sharedServices.ServiceRegistry.getServices(uri);
+        const language = serviceRegistry.getServices(uri);
         if (!language) {
             console.error(`Could not find service instance for uri: '${uri.toString()}'`);
             return null;
         }
-        const document = sharedServices.workspace.LangiumDocuments.getOrCreateDocument(uri);
+        const document = documents.getOrCreateDocument(uri);
         if (!document) {
             return null;
         }

@@ -6,6 +6,7 @@
 
 import colors from 'colors';
 import { Command } from 'commander';
+import { NodeFileSystem } from 'langium/node';
 import { Statemachine } from '../language-server/generated/ast';
 import { StatemachineLanguageMetaData } from '../language-server/generated/module';
 import { createStatemachineServices } from '../language-server/statemachine-module';
@@ -13,7 +14,7 @@ import { extractAstNode } from './cli-util';
 import { generateCpp } from './generator';
 
 export const generateAction = async (fileName: string, opts: GenerateOptions): Promise<void> => {
-    const services = createStatemachineServices().statemachine;
+    const services = createStatemachineServices(NodeFileSystem).statemachine;
     const statemachine = await extractAstNode<Statemachine>(fileName, StatemachineLanguageMetaData.fileExtensions, services);
     const generatedFilePath = generateCpp(statemachine, fileName, opts.destination);
     console.log(colors.green(`C++ code generated successfully: ${generatedFilePath}`));

@@ -4,11 +4,13 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { URI, Utils } from 'vscode-uri';
-import { TypeResolutionError } from '..';
 import * as ast from '../grammar/generated/ast';
+import { URI, Utils } from 'vscode-uri';
+import { createDefaultModule, createDefaultSharedModule } from '../default-module';
+import { inject, Module } from '../dependency-injection';
 import { CompositeCstNodeImpl } from '../parser/cst-node-builder';
-import { LangiumServices } from '../services';
+import { IParserConfig } from '../parser/parser-config';
+import { LangiumGeneratedServices, LangiumGeneratedSharedServices, LangiumServices, LangiumSharedServices } from '../services';
 import { AstNode, AstNodeDescription, CstNode } from '../syntax-tree';
 import { extractRootNode, getContainerOfType, getDocument, Mutable, streamAllContents } from '../utils/ast-util';
 import { MultiMap } from '../utils/collections';
@@ -17,7 +19,11 @@ import { escapeRegExp } from '../utils/regex-util';
 import { AstNodeDescriptionProvider } from '../workspace/ast-descriptions';
 import { AstNodeLocator } from '../workspace/ast-node-locator';
 import { LangiumDocument, LangiumDocuments, PrecomputedScopes } from '../workspace/documents';
-import { createLangiumGrammarServices } from './langium-grammar-module';
+import { interpretAstReflection } from './ast-reflection-interpreter';
+import { createLangiumGrammarServices, LangiumGrammarServices } from './langium-grammar-module';
+import { LanguageMetaData } from './language-meta-data';
+import { TypeResolutionError } from './type-system/types-util';
+import { EmptyFileSystem } from '../workspace/file-system-provider';
 
 export type Cardinality = '?' | '*' | '+' | undefined;
 export type Operator = '=' | '+=' | '?=' | undefined;
@@ -409,20 +415,59 @@ function resolveTransitiveImportsInternal(documents: LangiumDocuments, grammar: 
     return Array.from(grammars);
 }
 
+export function createServicesForGrammar(config: {
+    grammar: string | ast.Grammar,
+    grammarServices?: LangiumGrammarServices,
+    parserConfig?: IParserConfig,
+    languageMetaData?: LanguageMetaData,
+    module?: Module<LangiumServices>
+    sharedModule?: Module<LangiumSharedServices>
+}): LangiumServices {
+    const grammarServices = config.grammarServices ?? createLangiumGrammarServices(EmptyFileSystem).grammar;
+    const grammarNode = typeof config.grammar === 'string' ? grammarServices.parser.LangiumParser.parse<ast.Grammar>(config.grammar).value : config.grammar;
+    prepareGrammar(grammarServices, grammarNode);
+
+    const parserConfig = config.parserConfig ?? {
+        skipValidations: false
+    };
+    const languageMetaData = config.languageMetaData ?? {
+        caseInsensitive: false,
+        fileExtensions: [`.${grammarNode.name?.toLowerCase() ?? 'unknown'}`],
+        languageId: grammarNode.name ?? 'UNKNOWN'
+    };
+    const generatedSharedModule: Module<LangiumSharedServices, LangiumGeneratedSharedServices> = {
+        AstReflection: () => interpretAstReflection(grammarNode),
+    };
+    const generatedModule: Module<LangiumServices, LangiumGeneratedServices> = {
+        Grammar: () => grammarNode,
+        LanguageMetaData: () => languageMetaData,
+        parser: {
+            ParserConfig: () => parserConfig
+        }
+    };
+    const shared = inject(createDefaultSharedModule(EmptyFileSystem), generatedSharedModule, config.sharedModule);
+    const services = inject(createDefaultModule({ shared }), generatedModule, config.module);
+    return services;
+}
+
 export function loadGrammar(json: string): ast.Grammar {
-    const services = createLangiumGrammarServices().grammar;
+    const services = createLangiumGrammarServices(EmptyFileSystem).grammar;
     const astNode = services.serializer.JsonSerializer.deserialize(json);
     if (!ast.isGrammar(astNode)) {
         throw new Error('Could not load grammar from specified json input.');
     }
-    const grammar = astNode as Mutable<ast.Grammar>;
+    return prepareGrammar(services, astNode);
+}
+
+function prepareGrammar(services: LangiumServices, grammar: ast.Grammar): ast.Grammar {
+    const mutableGrammar = grammar as Mutable<ast.Grammar>;
     const document = services.shared.workspace.LangiumDocumentFactory.fromModel(grammar, URI.parse('memory://grammar.langium'));
-    grammar.$document = document;
+    mutableGrammar.$document = document;
     document.precomputedScopes = computeGrammarScope(services, grammar);
     return grammar;
 }
 
-export function computeGrammarScope(services: LangiumServices, grammar: ast.Grammar): PrecomputedScopes {
+function computeGrammarScope(services: LangiumServices, grammar: ast.Grammar): PrecomputedScopes {
     const nameProvider = services.references.NameProvider;
     const descriptions = services.workspace.AstNodeDescriptionProvider;
     const document = getDocument(grammar);
@@ -443,6 +488,7 @@ export function computeGrammarScope(services: LangiumServices, grammar: ast.Gram
     }
     return scopes;
 }
+
 /**
  * Add synthetic Interface in case of explicitly or implicitly inferred type:<br>
  * cases: `ParserRule: ...;` or `ParserRule infers Type: ...;`

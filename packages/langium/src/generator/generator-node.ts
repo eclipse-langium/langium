@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { EOL } from 'os';
+const EOL = (typeof process === 'undefined') ? '\n' : (process.platform === 'win32') ? '\r\n' : '\n';
 
 export type GeneratorNode = CompositeGeneratorNode | IndentNode | NewLineNode | string;
 
@@ -40,14 +40,14 @@ export class CompositeGeneratorNode {
 export class IndentNode extends CompositeGeneratorNode {
 
     indentation?: string;
-    indentImmediately  = true;
-    indentEmptyLines  = false;
+    indentImmediately = true;
+    indentEmptyLines = false;
 
     constructor(indentation?: string | number, indentImmediately = true, indentEmptyLines = false) {
         super();
-        if (typeof(indentation) === 'string') {
+        if (typeof (indentation) === 'string') {
             this.indentation = indentation;
-        } else if (typeof(indentation) === 'number') {
+        } else if (typeof (indentation) === 'number') {
             this.indentation = ''.padStart(indentation);
         }
         this.indentImmediately = indentImmediately;
@@ -59,7 +59,7 @@ export class NewLineNode {
 
     lineDelimiter: string;
 
-    ifNotEmpty  = false;
+    ifNotEmpty = false;
 
     constructor(lineDelimiter?: string, ifNotEmpty = false) {
         this.lineDelimiter = lineDelimiter ?? EOL;
