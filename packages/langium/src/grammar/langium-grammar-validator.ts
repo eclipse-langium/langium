@@ -12,14 +12,14 @@ import { LangiumServices } from '../services';
 import { AstNode, Reference } from '../syntax-tree';
 import { getContainerOfType, getDocument, streamAllContents } from '../utils/ast-util';
 import { MultiMap } from '../utils/collections';
-import { toDocumentSegment } from '../utils/cst-util';
+import { getPreviousNode, toDocumentSegment } from '../utils/cst-util';
 import { Stream, stream } from '../utils/stream';
 import { relativeURI } from '../utils/uri-utils';
 import { ValidationAcceptor, ValidationChecks, ValidationRegistry } from '../validation/validation-registry';
 import { LangiumDocument, LangiumDocuments } from '../workspace/documents';
 import * as ast from './generated/ast';
 import { isParserRule, isRuleCall } from './generated/ast';
-import { findKeywordNode, findNameAssignment, getEntryRule, getTypeName, isDataTypeRule, isOptional, resolveImport, resolveTransitiveImports, terminalRegex } from './grammar-util';
+import { findKeywordNode, findNameAssignment, findNodeForFeature, getEntryRule, getTypeName, isDataTypeRule, isOptional, resolveImport, resolveTransitiveImports, terminalRegex } from './grammar-util';
 import type { LangiumGrammarServices } from './langium-grammar-module';
 import { collectInferredTypes } from './type-system/inferred-types';
 import { applyErrorToAssignment, collectAllInterfaces, InterfaceInfo, validateTypesConsistency } from './type-system/type-validator';
@@ -301,13 +301,28 @@ export class LangiumGrammarValidator {
                 } else if(actionType && types.has(typeName) && isInfers) {
                     // error: action infers type that is already defined
                     if(action.$cstNode) {
-                        accept('error', `${typeName} is a declared type and cannot be redefined.`, {
-                            node: action,
-                            property: 'type',
-                            code: IssueCodes.SuperfluousInfer,
-                            // use the same data, stripping the 'infer' keyword out
-                            data: action.$cstNode.text.replace(/\s*infer\s+/, '')
-                        });
+
+                        // Find the '{' keyword leading this action (findKeywordNode)
+                        //const keywordNode = findKeywordNode(action.$cstNode, '{');
+                        // Find the inferredType of the action. (findFeatureNode)
+                        const inferredTypeNode = findNodeForFeature(action.inferredType?.$cstNode, 'name');
+                        // Take the range between the two CST elements
+
+                        if(inferredTypeNode) {
+                            // ALMOST, need to reverse walk until I hit a keyword infer node
+                            const prevNode = getPreviousNode(inferredTypeNode);
+
+                            //  TODO if prevNode.text === 'infer', then strip it...otherwise keep crawling back
+
+                            accept('error', `${typeName} is a declared type and cannot be redefined.`, {
+                                node: action,
+                                property: 'type',
+                                code: IssueCodes.SuperfluousInfer,
+                                data: prevNode?.range
+                            });
+                        } else {
+                            console.error('Missing something...');
+                        }
                     }
                 }
             }
