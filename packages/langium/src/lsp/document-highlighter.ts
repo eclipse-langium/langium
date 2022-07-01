@@ -9,7 +9,7 @@ import { NameProvider } from '../references/naming';
 import { References } from '../references/references';
 import { LangiumServices } from '../services';
 import { AstNode, CstNode, Reference } from '../syntax-tree';
-import { findLocalReferences, getDocument } from '../utils/ast-util';
+import { getDocument } from '../utils/ast-util';
 import { findLeafNodeAtOffset } from '../utils/cst-util';
 import { MaybePromise } from '../utils/promise-util';
 import { equalURI } from '../utils/uri-utils';
@@ -49,14 +49,12 @@ export class DefaultDocumentHighlighter implements DocumentHighlighter {
         const targetAstNode = this.references.findDeclaration(selectedNode)?.element;
         if (targetAstNode) {
             const refs: Array<[CstNode, DocumentHighlightKind]> = [];
-            if (equalURI(getDocument(targetAstNode).uri, document.uri)) {
-                const nameNode = this.findNameNode(targetAstNode);
-                if (nameNode) {
-                    refs.push([nameNode, this.getHighlightKind(nameNode)]);
+            const includeDeclaration = equalURI(getDocument(targetAstNode).uri, document.uri);
+            this.references.findReferences(targetAstNode, true, includeDeclaration).forEach(ref => {
+                const leaf = findLeafNodeAtOffset(rootNode, ref.segment.offset);
+                if (leaf) {
+                    refs.push([leaf, this.getHighlightKind(leaf)]);
                 }
-            }
-            findLocalReferences(targetAstNode, rootNode.element).forEach(ref => {
-                refs.push([ref.$refNode, this.getHighlightKind(ref.$refNode, ref)]);
             });
             return refs.map(([node, kind]) =>
                 DocumentHighlight.create(node.range, kind)
@@ -69,6 +67,9 @@ export class DefaultDocumentHighlighter implements DocumentHighlighter {
         const nameNode = this.nameProvider.getNameNode(node);
         if (nameNode)
             return nameNode;
+        const leaf = findLeafNodeAtOffset(node.$cstNode!, node.$cstNode!.offset);
+        if (leaf)
+            return leaf;
         return node.$cstNode;
     }
 

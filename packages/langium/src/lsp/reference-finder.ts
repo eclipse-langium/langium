@@ -9,7 +9,7 @@ import { NameProvider } from '../references/naming';
 import { References } from '../references/references';
 import { AstNode, CstNode, LeafCstNode } from '../syntax-tree';
 import { LangiumServices } from '../services';
-import { getDocument, isReference } from '../utils/ast-util';
+import { isReference } from '../utils/ast-util';
 import { findLeafNodeAtOffset, flattenCst } from '../utils/cst-util';
 import { MaybePromise } from '../utils/promise-util';
 import { LangiumDocument } from '../workspace/documents';
@@ -56,13 +56,7 @@ export class DefaultReferenceFinder implements ReferenceFinder {
         const refs: Location[] = [];
         const targetAstNode = this.references.findDeclaration(selectedNode)?.element;
         if (targetAstNode) {
-            if (params.context.includeDeclaration) {
-                const declDoc = getDocument(targetAstNode);
-                const nameNode = this.findNameNode(targetAstNode, selectedNode.text);
-                if (nameNode)
-                    refs.push(Location.create(declDoc.uri.toString(), nameNode.range));
-            }
-            this.references.findReferences(targetAstNode).forEach(reference => {
+            this.references.findReferences(targetAstNode, false, params.context.includeDeclaration).forEach(reference => {
                 if (isReference(reference)) {
                     refs.push(Location.create(document.uri.toString(), reference.$refNode.range));
                 } else {
