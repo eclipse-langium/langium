@@ -6,10 +6,11 @@
 
 import { DiagnosticTag } from 'vscode-languageserver-types';
 import { Utils } from 'vscode-uri';
+import { LeafCstNodeImpl } from '../parser/cst-node-builder';
 import { NamedAstNode } from '../references/naming';
 import { References } from '../references/references';
 import { LangiumServices } from '../services';
-import { AstNode, Reference } from '../syntax-tree';
+import { AstNode, CstNode, Reference } from '../syntax-tree';
 import { getContainerOfType, getDocument, streamAllContents } from '../utils/ast-util';
 import { MultiMap } from '../utils/collections';
 import { getPreviousNode, toDocumentSegment } from '../utils/cst-util';
@@ -301,27 +302,23 @@ export class LangiumGrammarValidator {
                 } else if(actionType && types.has(typeName) && isInfers) {
                     // error: action infers type that is already defined
                     if(action.$cstNode) {
-
-                        // Find the '{' keyword leading this action (findKeywordNode)
-                        //const keywordNode = findKeywordNode(action.$cstNode, '{');
-                        // Find the inferredType of the action. (findFeatureNode)
                         const inferredTypeNode = findNodeForFeature(action.inferredType?.$cstNode, 'name');
-                        // Take the range between the two CST elements
-
                         if(inferredTypeNode) {
-                            // ALMOST, need to reverse walk until I hit a keyword infer node
-                            const prevNode = getPreviousNode(inferredTypeNode);
+                            // reverse walk to find the appropriate keyword node to remove
+                            // this avoids deleting block comments that may also be present
+                            let prevNode: CstNode | undefined = getPreviousNode(inferredTypeNode);
+                            while(prevNode && (prevNode as LeafCstNodeImpl)?.tokenType.name !== 'infer:KW') {
+                                prevNode = getPreviousNode(prevNode);
+                            }
 
-                            //  TODO if prevNode.text === 'infer', then strip it...otherwise keep crawling back
-
-                            accept('error', `${typeName} is a declared type and cannot be redefined.`, {
-                                node: action,
-                                property: 'type',
-                                code: IssueCodes.SuperfluousInfer,
-                                data: prevNode?.range
-                            });
-                        } else {
-                            console.error('Missing something...');
+                            if(prevNode) {
+                                accept('error', `${typeName} is a declared type and cannot be redefined.`, {
+                                    node: action,
+                                    property: 'type',
+                                    code: IssueCodes.SuperfluousInfer,
+                                    data: prevNode?.range
+                                });
+                            }
                         }
                     }
                 }
