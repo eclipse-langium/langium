@@ -66,11 +66,12 @@ export class LangiumParser {
     }
 
     constructor(services: LangiumServices, tokens: TokenVocabulary) {
+        //IMPORTANT: Lexer must be built before the wrapper, otherwise multi-mode lexing will fail (chevrotain issue)
+        this.lexer = new Lexer(isTokenTypeDictionary(tokens) ? Object.values(tokens) : tokens);
         this.wrapper = new ChevrotainWrapper(tokens, services.parser.ParserConfig);
         this.linker = services.references.Linker;
         this.converter = services.parser.ValueConverter;
         this.astReflection = services.shared.AstReflection;
-        this.lexer = new Lexer(isTokenTypeDictionary(tokens) ? Object.values(tokens) : tokens);
     }
 
     MAIN_RULE(
