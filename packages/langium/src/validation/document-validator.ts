@@ -4,8 +4,8 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { CancellationToken, Diagnostic, DiagnosticSeverity, PublishDiagnosticsClientCapabilities } from 'vscode-languageserver';
-import { Range } from 'vscode-languageserver-textdocument';
+import { MismatchedTokenException } from 'chevrotain';
+import { CancellationToken, Diagnostic, DiagnosticSeverity, Position, PublishDiagnosticsClientCapabilities, Range } from 'vscode-languageserver';
 import { findNodeForFeature } from '../grammar/grammar-util';
 import { LanguageMetaData } from '../grammar/language-meta-data';
 import { InitializableService, LangiumServices } from '../services';
@@ -67,14 +67,31 @@ export class DefaultDocumentValidator implements DocumentValidator {
 
         // Process parsing errors
         for (const parserError of parseResult.parserErrors) {
-            const diagnostic: Diagnostic = {
-                severity: DiagnosticSeverity.Error,
-                range: tokenToRange(parserError.token),
-                message: parserError.message,
-                code: DocumentValidator.ParsingError,
-                source: this.getSource()
-            };
-            diagnostics.push(diagnostic);
+            let range: Range | undefined = undefined;
+            // We can run into the chevrotain error recovery here
+            // The token contained in the parser error might be automatically inserted
+            // In this case every position value will be `NaN`
+            if (isNaN(parserError.token.startOffset)) {
+                // Some special parser error types contain a `previousToken`
+                // We can simply append our diagnostic to that token
+                if ('previousToken' in parserError) {
+                    const token = (parserError as MismatchedTokenException).previousToken;
+                    const position = Position.create(token.endLine! - 1, token.endColumn!);
+                    range = Range.create(position, position);
+                }
+            } else {
+                range = tokenToRange(parserError.token);
+            }
+            if (range) {
+                const diagnostic: Diagnostic = {
+                    severity: DiagnosticSeverity.Error,
+                    range,
+                    message: parserError.message,
+                    code: DocumentValidator.ParsingError,
+                    source: this.getSource()
+                };
+                diagnostics.push(diagnostic);
+            }
         }
 
         // Process unresolved references
