@@ -34,7 +34,6 @@
     "publish:latest": "npm publish --tag latest"
   },
   "dependencies": {
-    "chalk": "^5.0.1",
     "commander": "^7.2.0",
     "fs-extra": "^9.1.0",
     "jsonschema": "^1.4.0",
@@ -42,7 +41,8 @@
     "lodash": "^4.17.21"
   },
   "devDependencies": {
-    "@types/fs-extra": "^9.0.13"
+    "@types/fs-extra": "^9.0.13",
+    "chalk": "^4.1.2"
   },
   "repository": {
     "type": "git",

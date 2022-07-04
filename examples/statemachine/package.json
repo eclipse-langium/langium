@@ -58,7 +58,6 @@
         "publish:latest": "npm publish --tag latest"
     },
     "dependencies": {
-        "chalk": "^5.0.1",
         "commander": "^8.0.0",
         "langium": "0.4.0",
         "lodash": "^4.17.21",
@@ -66,6 +65,7 @@
         "vscode-languageserver": "^8.0.1"
     },
     "devDependencies": {
+        "chalk": "^4.1.2",
         "langium-cli": "0.4.0"
     },
     "repository": {
