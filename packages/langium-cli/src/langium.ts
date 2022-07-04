@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import 'colors';
+import chalk from 'chalk';
 import fs from 'fs-extra';
 import { Command } from 'commander';
 import { validate } from 'jsonschema';
@@ -36,7 +36,7 @@ async function forEachConfig(options: GenerateOptions, callback: (config: Langiu
         nestedErrors: true
     });
     if (!validation.valid) {
-        log('error', options, 'Error: Your Langium configuration is invalid.'.red);
+        log('error', options, chalk.red('Error: Your Langium configuration is invalid.'));
         const errors = validation.errors.filter(error => error.path.length > 0);
         errors.forEach(error => {
             log('error', options, `--> ${error.stack}`);
@@ -51,7 +51,7 @@ async function forEachConfig(options: GenerateOptions, callback: (config: Langiu
     const allSuccessful = results.every(result => result === 'success');
     if (options.watch) {
         if (allSuccessful) {
-            console.log(`${getTime()}Langium generator finished ${'successfully'.green.bold} in ${elapsedTime()}ms`);
+            console.log(`${getTime()}Langium generator finished ${chalk.green.bold('successfully')} in ${elapsedTime()}ms`);
         }
         console.log(getTime() + 'Langium generator will continue running in watch mode');
         for (const config of configs) {
@@ -61,7 +61,7 @@ async function forEachConfig(options: GenerateOptions, callback: (config: Langiu
                     console.log(getTime() + 'File change detected. Starting compilation...');
                     elapsedTime();
                     if (await callback(config, options) === 'success') {
-                        console.log(`${getTime()}Langium generator finished ${'successfully'.green.bold} in ${elapsedTime()}ms`);
+                        console.log(`${getTime()}Langium generator finished ${chalk.green.bold('successfully')} in ${elapsedTime()}ms`);
                     }
                 });
             }
@@ -69,6 +69,6 @@ async function forEachConfig(options: GenerateOptions, callback: (config: Langiu
     } else if (!allSuccessful) {
         process.exit(1);
     } else {
-        console.log(`Langium generator finished ${'successfully'.green.bold} in ${elapsedTime()}ms`);
+        console.log(`Langium generator finished ${chalk.green.bold('successfully')} in ${elapsedTime()}ms`);
     }
 }

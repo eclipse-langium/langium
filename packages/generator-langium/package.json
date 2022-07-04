@@ -32,7 +32,7 @@
     "publish:latest": "npm publish --tag latest"
   },
   "dependencies": {
-    "chalk": "^4.1.2",
+    "chalk": "^5.0.1",
     "lodash": "^4.17.21",
     "yeoman-generator": "^5.5.2"
   },

@@ -32,5 +32,8 @@
   "workspaces": [
     "packages/*",
     "examples/*"
-  ]
+  ],
+  "dependencies": {
+    "chalk": "^5.0.1"
+  }
 }

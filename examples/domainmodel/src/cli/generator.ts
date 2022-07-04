@@ -6,7 +6,7 @@
 
 import fs from 'fs';
 import path from 'path';
-import colors from 'colors';
+import chalk from 'chalk';
 import _ from 'lodash';
 import { CompositeGeneratorNode, IndentNode, NL, processGeneratorNode } from 'langium';
 import { AbstractElement, Domainmodel, Entity, Feature, isEntity, isPackageDeclaration, Type } from '../language-server/generated/ast';
@@ -21,9 +21,9 @@ export const generateAction = async (fileName: string, opts: GenerateOptions): P
         await setRootFolder(fileName, services, opts.root);
         const domainmodel = await extractAstNode<Domainmodel>(fileName, DomainModelLanguageMetaData.fileExtensions, services);
         const generatedDirPath = generateJava(domainmodel, fileName, opts.destination);
-        console.log(colors.green(`Java classes generated successfully: ${colors.yellow(generatedDirPath)}`));
+        console.log(chalk.green(`Java classes generated successfully: ${chalk.yellow(generatedDirPath)}`));
     } catch (error) {
-        console.error(colors.red(String(error)));
+        console.error(chalk.red(String(error)));
     }
 };
 

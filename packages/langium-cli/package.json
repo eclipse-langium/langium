@@ -34,7 +34,7 @@
     "publish:latest": "npm publish --tag latest"
   },
   "dependencies": {
-    "colors": "^1.4.0",
+    "chalk": "^5.0.1",
     "commander": "^7.2.0",
     "fs-extra": "^9.1.0",
     "jsonschema": "^1.4.0",

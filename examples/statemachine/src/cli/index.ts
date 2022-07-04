@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import colors from 'colors';
+import chalk from 'chalk';
 import { Command } from 'commander';
 import { NodeFileSystem } from 'langium/node';
 import { Statemachine } from '../language-server/generated/ast';
@@ -17,7 +17,7 @@ export const generateAction = async (fileName: string, opts: GenerateOptions): P
     const services = createStatemachineServices(NodeFileSystem).statemachine;
     const statemachine = await extractAstNode<Statemachine>(fileName, StatemachineLanguageMetaData.fileExtensions, services);
     const generatedFilePath = generateCpp(statemachine, fileName, opts.destination);
-    console.log(colors.green(`C++ code generated successfully: ${generatedFilePath}`));
+    console.log(chalk.green(`C++ code generated successfully: ${generatedFilePath}`));
 };
 
 export type GenerateOptions = {

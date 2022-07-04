@@ -12,17 +12,26 @@
         "Programming Languages"
     ],
     "contributes": {
-        "languages": [{
-            "id": "domain-model",
-            "aliases": ["DomainModel", "domain-model"],
-            "extensions": [".dmodel"],
-            "configuration": "./language-configuration.json"
-        }],
-        "grammars": [{
-            "language": "domain-model",
-            "scopeName": "source.domain-model",
-            "path": "./syntaxes/domain-model.tmLanguage.json"
-        }]
+        "languages": [
+            {
+                "id": "domain-model",
+                "aliases": [
+                    "DomainModel",
+                    "domain-model"
+                ],
+                "extensions": [
+                    ".dmodel"
+                ],
+                "configuration": "./language-configuration.json"
+            }
+        ],
+        "grammars": [
+            {
+                "language": "domain-model",
+                "scopeName": "source.domain-model",
+                "path": "./syntaxes/domain-model.tmLanguage.json"
+            }
+        ]
     },
     "activationEvents": [
         "onLanguage:domain-model"
@@ -49,7 +58,7 @@
         "publish:latest": "npm publish --tag latest"
     },
     "dependencies": {
-        "colors": "^1.4.0",
+        "chalk": "^5.0.1",
         "commander": "^8.0.0",
         "langium": "0.4.0",
         "lodash": "^4.17.21",
@@ -60,13 +69,13 @@
         "langium-cli": "0.4.0"
     },
     "repository": {
-      "type": "git",
-      "url": "https://github.com/langium/langium",
-      "directory": "examples/domainmodel"
+        "type": "git",
+        "url": "https://github.com/langium/langium",
+        "directory": "examples/domainmodel"
     },
     "bugs": "https://github.com/langium/langium/issues",
     "author": {
-      "name": "TypeFox",
-      "url": "https://www.typefox.io"
+        "name": "TypeFox",
+        "url": "https://www.typefox.io"
     }
 }

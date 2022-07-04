@@ -9,6 +9,7 @@ import type { IParserConfig } from 'langium';
 import path from 'path';
 import type { GenerateOptions } from './generate';
 import { log } from './generator/util';
+import chalk from 'chalk';
 
 export interface Package {
     name: string
@@ -68,7 +69,7 @@ export async function loadConfigs(options: GenerateOptions): Promise<LangiumConf
         filePath = path.normalize(defaultFile);
     }
     const relativePath = path.dirname(filePath);
-    log('log', options, `Reading config from ${filePath.white.bold}`);
+    log('log', options, `Reading config from ${chalk.white.bold(filePath)}`);
     try {
         const obj = await fs.readJson(filePath, { encoding: 'utf-8' });
         const config: LangiumConfig | LangiumConfig[] = path.basename(filePath) === 'package.json' ? obj.langium : obj;
@@ -82,7 +83,7 @@ export async function loadConfigs(options: GenerateOptions): Promise<LangiumConf
         }
         return [config];
     } catch (err) {
-        log('error', options, 'Failed to read config file.'.red, err);
+        log('error', options, chalk.red('Failed to read config file.'), err);
         process.exit(1);
     }
 }
