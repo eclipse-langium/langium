@@ -6,7 +6,6 @@
 
 import { generateModule } from '../../src/generator/module-generator';
 import { LangiumConfig, LangiumLanguageConfig, RelativePath } from '../../src/package';
-//import 'chalk';
 import { Grammar } from 'langium';
 
 describe('Module generator', () => {
