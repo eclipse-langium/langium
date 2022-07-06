@@ -447,6 +447,7 @@ export function createServicesForGrammar(config: {
     };
     const shared = inject(createDefaultSharedModule(EmptyFileSystem), generatedSharedModule, config.sharedModule);
     const services = inject(createDefaultModule({ shared }), generatedModule, config.module);
+    shared.ServiceRegistry.register(services);
     return services;
 }
 
