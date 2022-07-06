@@ -4,7 +4,8 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { AstNode, createServicesForGrammar, LangiumParser } from '../../src';
+import { TokenType, TokenVocabulary } from 'chevrotain';
+import { AstNode, createServicesForGrammar, DefaultTokenBuilder, Grammar, LangiumParser, TerminalRule } from '../../src';
 
 describe('Predicated grammar rules with alternatives', () => {
 
@@ -430,6 +431,140 @@ describe('Parser calls value converter', () => {
         expectEqual('d 2022-10-04T12:13', new Date('2022-10-04T12:13'));
         expectEqual('d 2022-Peach', undefined);
     });
+});
+
+// Constructs a grammar w/ a special token-builder to support multi-mode lexing
+describe('MultiMode Lexing', () => {
+
+    // Multi-mode token builder, filters tokens by state, and sets up push/pop behavior
+    // Without this, we have no multi-mode lexing from the grammar alone
+    class MultiModeTokenBuilder extends DefaultTokenBuilder {
+        buildTokens(grammar: Grammar, options?: { caseInsensitive?: boolean }): TokenVocabulary {
+            const tokenTypes: TokenType[] = super.buildTokens(grammar, options) as TokenType[];
+            return {
+                modes: {
+                    up: tokenTypes.filter(token => !['LowStr'].includes(token.name)),
+                    down: tokenTypes.filter(token => !['UpStr'].includes(token.name))
+                },
+                defaultMode: 'down'
+            };
+        }
+
+        protected buildTerminalToken(terminal: TerminalRule): TokenType {
+            const tokenType = super.buildTerminalToken(terminal);
+            if(tokenType.name === 'Up') {
+                tokenType.PUSH_MODE = 'up';
+            } else if(tokenType.name === 'Low') {
+                tokenType.PUSH_MODE = 'down';
+            } else if(tokenType.name === 'Pop') {
+                tokenType.POP_MODE = true;
+            }
+            return tokenType;
+        }
+    }
+
+    /* Demonstrational MultiMode grammar
+       Describes words that are either all 'lower' or 'UPPER' case, no mixing
+
+       ++ pushes upper case mode to stack
+       -- pushes lower case mode to stack
+       ## pops current mode from stack
+    */
+    const grammar = `
+    grammar MultiMode
+
+    entry Sentence: words+=Word*;
+
+    Word: value=(Up | Low | LowStr | UpStr | Pop);
+
+    // push up state
+    terminal Up returns string: '++';
+
+    // push low state
+    terminal Low returns string: '--';
+
+    // pop last state
+    terminal Pop returns string: '##';
+
+    terminal LowStr returns string: /[a-z]+/;
+    terminal UpStr returns string: /[A-Z]+/;
+
+    hidden terminal WS: /\\s+/;`;
+
+    const services = createServicesForGrammar({
+        grammar,
+        module: {
+            parser: {
+                TokenBuilder: () => new MultiModeTokenBuilder()
+            }
+        }
+    });
+    const parser = services.parser.LangiumParser;
+
+    test('multimode lexing works in default mode as expected', () => {
+        const result = parser.parse('apple banana cherry');
+        expect(result.lexerErrors).toHaveLength(0);
+        expect(result.parserErrors).toHaveLength(0);
+    });
+
+    test('multimode lexing pushes mode correctly', () => {
+        const result = parser.parse('apple banana cherry ++ APPLE BANANA CHERRY');
+        expect(result.lexerErrors).toHaveLength(0);
+        expect(result.parserErrors).toHaveLength(0);
+    });
+
+    test('multimode lexing does not use tokens from non-starting mode', () => {
+        // default should be lowercase only
+        const result = parser.parse('APPLE');
+        expect(result.lexerErrors).toHaveLength(1);
+    });
+
+    test('multimode blocks preceding tokens from different mode', () => {
+        // default should be lowercase only
+        const result = parser.parse('apple APPLE');
+        expect(result.lexerErrors).toHaveLength(1);
+    });
+
+    test('multimode lexing fails on bad tokens after lex mode change', () => {
+        const result = parser.parse('apple banana cherry ++ apple');
+        expect(result.lexerErrors).toHaveLength(1);
+    });
+
+    test('multimode lexing pushes multiple modes correctly', () => {
+        const result = parser.parse('apple ++ BANANA -- cherry ++ APPLE');
+        expect(result.lexerErrors).toHaveLength(0);
+        expect(result.parserErrors).toHaveLength(0);
+    });
+
+    test('multimode lexing pops states correctly', () => {
+        const result = parser.parse('apple ++ BANANA -- cherry ## APPLE ## banana');
+        expect(result.lexerErrors).toHaveLength(0);
+        expect(result.parserErrors).toHaveLength(0);
+    });
+
+    test('multimode lexing fails on pop with empty state stack', () => {
+        const result = parser.parse('apple ## oops');
+        expect(result.lexerErrors).toHaveLength(1);
+    });
+
+    test('multimode lexing can start with mode push', () => {
+        const result = parser.parse('++ APPLE');
+        expect(result.lexerErrors).toHaveLength(0);
+        expect(result.parserErrors).toHaveLength(0);
+    });
+
+    test('multimode lexing can end with mode pop', () => {
+        const result = parser.parse('++ APPLE ##');
+        expect(result.lexerErrors).toHaveLength(0);
+        expect(result.parserErrors).toHaveLength(0);
+    });
+
+    test('multimode lexing can repeatedly push same state', () => {
+        const result = parser.parse('++ APPLE ++ BANANA ++ PEAR');
+        expect(result.lexerErrors).toHaveLength(0);
+        expect(result.parserErrors).toHaveLength(0);
+    });
+
 });
 
 function parserFromGrammar(grammar: string): LangiumParser {
