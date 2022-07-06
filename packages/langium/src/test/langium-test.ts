@@ -244,7 +244,7 @@ function filterByOptions<T extends AstNode = AstNode, N extends AstNode = AstNod
     const filters: Array<Predicate<Diagnostic>> = [];
     if ('node' in options) {
         const cstNode = options.property
-            ? findNodeForFeature(options.node.$cstNode, options.property.name, options.property.index)
+            ? findNodeForFeature(options.node?.$cstNode, options.property.name, options.property.index)
             : options.node.$cstNode;
         if (!cstNode) {
             throw new Error('Cannot find the node!');

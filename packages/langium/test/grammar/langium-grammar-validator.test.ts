@@ -31,6 +31,42 @@ describe('Langium grammar validation', () => {
         });
     });
 
+    test('Declared interfaces cannot extend inferred unions', async () => {
+        const validationResult = await validate(`
+        grammar G
+    
+        InferredUnion: InferredI1 | InferredI2;
+
+        InferredI1: prop1=ID;
+        InferredI2: prop2=ID;
+        
+        interface DeclaredExtendsUnion extends InferredUnion {}
+        `);
+
+        // should get an error on DeclaredExtendsUnion, since it cannot extend an inferred union
+        expectError(validationResult, /An interface cannot extend a union type, which was inferred from parser rule InferredUnion./, {
+            node: validationResult.document.parseResult.value.interfaces[0],
+            property: {name: 'superTypes'}
+        });
+    });
+
+    test('Declared interfaces warn when extending inferred interfaces', async () => {
+        const validationResult = await validate(`
+        grammar G
+
+        InferredT: prop=ID;
+
+        interface DeclaredExtendsInferred extends InferredT {}`);
+
+        // should get a warning when basing declared types on inferred types
+        expectWarning(validationResult, /Extending an interface by a parser rule gives an ambiguous type, instead of the expected declared type./, {
+            node: validationResult.document.parseResult.value.interfaces[0],
+            property: {name: 'superTypes'}
+        });
+    });
+
+    // TODO needs one more test, and also needs a little fixing on the warning above
+
     // verifies that interfaces can't extend type unions, especially inferred ones
     test('Interfaces extend only interfaces', async () => {
         const validationResult = await validate(`
