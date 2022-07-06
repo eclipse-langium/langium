@@ -10,7 +10,7 @@ import { createDefaultModule, createDefaultSharedModule } from '../default-modul
 import { inject, Module } from '../dependency-injection';
 import { CompositeCstNodeImpl } from '../parser/cst-node-builder';
 import { IParserConfig } from '../parser/parser-config';
-import { LangiumGeneratedServices, LangiumGeneratedSharedServices, LangiumServices, LangiumSharedServices } from '../services';
+import { LangiumGeneratedServices, LangiumGeneratedSharedServices, LangiumServices, LangiumSharedServices, PartialLangiumServices, PartialLangiumSharedServices } from '../services';
 import { AstNode, AstNodeDescription, CstNode } from '../syntax-tree';
 import { extractRootNode, getContainerOfType, getDocument, Mutable, streamAllContents } from '../utils/ast-util';
 import { MultiMap } from '../utils/collections';
@@ -420,8 +420,8 @@ export function createServicesForGrammar(config: {
     grammarServices?: LangiumGrammarServices,
     parserConfig?: IParserConfig,
     languageMetaData?: LanguageMetaData,
-    module?: Module<LangiumServices>
-    sharedModule?: Module<LangiumSharedServices>
+    module?: Module<PartialLangiumServices>
+    sharedModule?: Module<PartialLangiumSharedServices>
 }): LangiumServices {
     const grammarServices = config.grammarServices ?? createLangiumGrammarServices(EmptyFileSystem).grammar;
     const grammarNode = typeof config.grammar === 'string' ? grammarServices.parser.LangiumParser.parse<ast.Grammar>(config.grammar).value : config.grammar;

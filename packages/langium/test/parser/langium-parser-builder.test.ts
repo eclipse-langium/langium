@@ -491,8 +491,14 @@ describe('MultiMode Lexing', () => {
 
     hidden terminal WS: /\\s+/;`;
 
-    const services = createServicesForGrammar({ grammar });
-    services.parser.TokenBuilder = new MultiModeTokenBuilder();
+    const services = createServicesForGrammar({
+        grammar,
+        module: {
+            parser: {
+                TokenBuilder: () => new MultiModeTokenBuilder()
+            }
+        }
+    });
     const parser = services.parser.LangiumParser;
 
     test('multimode lexing works in default mode as expected', () => {
