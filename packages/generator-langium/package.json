@@ -32,13 +32,13 @@
     "publish:latest": "npm publish --tag latest"
   },
   "dependencies": {
+    "chalk": "^4.1.2",
     "lodash": "^4.17.21",
     "yeoman-generator": "^5.5.2"
   },
   "devDependencies": {
     "@types/lodash": "^4.14.170",
-    "@types/yeoman-generator": "^5.0.0",
-    "chalk": "^4.1.2"
+    "@types/yeoman-generator": "^5.0.0"
   },
   "repository": {
     "type": "git",
