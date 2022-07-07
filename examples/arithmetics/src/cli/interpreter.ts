@@ -9,6 +9,7 @@ import { createArithmeticsServices } from '../language-server/arithmetics-module
 import { AbstractDefinition, Definition, Evaluation, Expression, isBinaryExpression, isDefinition, isEvaluation, isFunctionCall, isNumberLiteral, Module, Statement } from '../language-server/generated/ast';
 import { ArithmeticsLanguageMetaData } from '../language-server/generated/module';
 import { applyOp, extractDocument } from './cli-util';
+import chalk from 'chalk';
 
 export const evalAction = async (fileName: string): Promise<void> => {
     const services = createArithmeticsServices(NodeFileSystem).arithmetics;
@@ -18,7 +19,7 @@ export const evalAction = async (fileName: string): Promise<void> => {
         const cstNode = evaluation.expression.$cstNode;
         if (cstNode) {
             const line = cstNode.range.start.line + 1;
-            console.log(`line ${line}:`, cstNode.text.green, '===>', value);
+            console.log(`line ${line}:`, chalk.green(cstNode.text), '===>', value);
         }
     }
 };

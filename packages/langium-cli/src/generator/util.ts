@@ -10,6 +10,7 @@ import fs from 'fs-extra';
 import path from 'path';
 import * as readline from 'readline';
 import type { GenerateOptions } from '../generate';
+import chalk from 'chalk';
 
 //eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function log(level: 'log' | 'warn' | 'error', options: GenerateOptions, message: string, ...args: any[]): void {
@@ -30,7 +31,7 @@ export function elapsedTime(): string {
 
 export function getTime(): string {
     const date = new Date();
-    return `[${`${padZeroes(date.getHours())}:${padZeroes(date.getMinutes())}:${padZeroes(date.getSeconds())}`.gray}] `;
+    return `[${chalk.gray(`${padZeroes(date.getHours())}:${padZeroes(date.getMinutes())}:${padZeroes(date.getSeconds())}`)}] `;
 }
 
 function padZeroes(i: number): string {

@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import 'colors';
+import 'chalk';
 import { Command } from 'commander';
 import { ArithmeticsLanguageMetaData } from '../language-server/generated/module';
 import { evalAction } from './interpreter';

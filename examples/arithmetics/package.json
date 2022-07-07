@@ -12,17 +12,26 @@
         "Programming Languages"
     ],
     "contributes": {
-        "languages": [{
-            "id": "arithmetics",
-            "aliases": ["Arithmetics", "arithmetics"],
-            "extensions": [".calc"],
-            "configuration": "./language-configuration.json"
-        }],
-        "grammars": [{
-            "language": "arithmetics",
-            "scopeName": "source.arithmetics",
-            "path": "./syntaxes/arithmetics.tmLanguage.json"
-        }]
+        "languages": [
+            {
+                "id": "arithmetics",
+                "aliases": [
+                    "Arithmetics",
+                    "arithmetics"
+                ],
+                "extensions": [
+                    ".calc"
+                ],
+                "configuration": "./language-configuration.json"
+            }
+        ],
+        "grammars": [
+            {
+                "language": "arithmetics",
+                "scopeName": "source.arithmetics",
+                "path": "./syntaxes/arithmetics.tmLanguage.json"
+            }
+        ]
     },
     "activationEvents": [
         "onLanguage:arithmetics"
@@ -49,7 +58,7 @@
         "publish:latest": "npm publish --tag latest"
     },
     "dependencies": {
-        "colors": "^1.4.0",
+        "chalk": "^4.1.2",
         "commander": "^8.0.0",
         "langium": "0.4.0",
         "vscode-languageclient": "^8.0.1",
@@ -59,13 +68,13 @@
         "langium-cli": "0.4.0"
     },
     "repository": {
-      "type": "git",
-      "url": "https://github.com/langium/langium",
-      "directory": "examples/arithmetics"
+        "type": "git",
+        "url": "https://github.com/langium/langium",
+        "directory": "examples/arithmetics"
     },
     "bugs": "https://github.com/langium/langium/issues",
     "author": {
-      "name": "TypeFox",
-      "url": "https://www.typefox.io"
+        "name": "TypeFox",
+        "url": "https://www.typefox.io"
     }
 }

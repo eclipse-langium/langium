@@ -1,4 +1,4 @@
-import colors from 'colors';
+import chalk from 'chalk';
 import { Command } from 'commander';
 import { Model } from '../language-server/generated/ast';
 import { <%= LanguageName %>LanguageMetaData } from '../language-server/generated/module';
@@ -11,7 +11,7 @@ export const generateAction = async (fileName: string, opts: GenerateOptions): P
     const services = create<%= LanguageName %>Services(NodeFileSystem).<%= LanguageName %>;
     const model = await extractAstNode<Model>(fileName, services);
     const generatedFilePath = generateJavaScript(model, fileName, opts.destination);
-    console.log(colors.green(`JavaScript code generated successfully: ${generatedFilePath}`));
+    console.log(chalk.green(`JavaScript code generated successfully: ${generatedFilePath}`));
 };
 
 export type GenerateOptions = {

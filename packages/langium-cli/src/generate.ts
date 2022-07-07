@@ -19,6 +19,7 @@ import { generateTextMate } from './generator/textmate-generator';
 import { getUserChoice, log } from './generator/util';
 import { getFilePath, LangiumConfig, LangiumLanguageConfig, RelativePath } from './package';
 import { validateParser } from './parser-validation';
+import chalk from 'chalk';
 
 export type GenerateOptions = {
     file?: string;
@@ -117,9 +118,9 @@ export async function generate(config: LangiumConfig, options: GenerateOptions):
         for (const diagnostic of diagnostics) {
             const message = `${getFilePath(path, config)}:${diagnostic.range.start.line + 1}:${diagnostic.range.start.character + 1} - ${diagnostic.message}`;
             if (diagnostic.severity === 1) {
-                log('error', options, message.red);
+                log('error', options, chalk.red(message));
             } else if (diagnostic.severity === 2) {
-                log('warn', options, message.yellow);
+                log('warn', options, chalk.yellow(message));
             } else {
                 log('log', options, message);
             }
@@ -130,7 +131,7 @@ export async function generate(config: LangiumConfig, options: GenerateOptions):
     }
 
     if (hasErrors) {
-        log('error', options, `Langium generator ${'failed'.red.bold}.`);
+        log('error', options, `Langium generator ${chalk.red.bold('failed')}.`);
         return 'failure';
     }
 
@@ -143,7 +144,7 @@ export async function generate(config: LangiumConfig, options: GenerateOptions):
         if (document) {
             const grammar = document.parseResult.value as Grammar;
             if(!grammar.isDeclared) {
-                log('error', options, `${absGrammarPath}: The entry grammar must start with the 'grammar' keyword.`.red);
+                log('error', options, chalk.red(`${absGrammarPath}: The entry grammar must start with the 'grammar' keyword.`));
                 return 'failure';
             }
             grammars.push(grammar);
@@ -158,14 +159,14 @@ export async function generate(config: LangiumConfig, options: GenerateOptions):
         // Create and validate the in-memory parser
         const parserAnalysis = validateParser(grammar, config, configMap, grammarServices);
         if (parserAnalysis instanceof Error) {
-            log('error', options, parserAnalysis.toString().red);
+            log('error', options, chalk.red(parserAnalysis.toString()));
             return 'failure';
         }
     }
 
     // Generate the output files
     const output = path.resolve(relPath, config.out ?? 'src/generated');
-    log('log', options, `Writing generated files to ${output.white.bold}`);
+    log('log', options, `Writing generated files to ${chalk.white.bold(output)}`);
 
     if (await rmdirWithFail(output, ['ast.ts', 'grammar.ts', 'module.ts'], options)) {
         return 'failure';
@@ -188,7 +189,7 @@ export async function generate(config: LangiumConfig, options: GenerateOptions):
         if (languageConfig?.textMate) {
             const genTmGrammar = generateTextMate(grammar, languageConfig);
             const textMatePath = path.resolve(relPath, languageConfig.textMate.out);
-            log('log', options, `Writing textmate grammar to ${textMatePath.white.bold}`);
+            log('log', options, `Writing textmate grammar to ${chalk.white.bold(textMatePath)}`);
             const parentDir = path.dirname(textMatePath).split(path.sep).pop();
             parentDir && await mkdirWithFail(parentDir, options);
             await writeWithFail(textMatePath, genTmGrammar, options);
@@ -206,7 +207,7 @@ async function rmdirWithFail(dirPath: string, expectedFiles: string[], options: 
             const existingFiles = await fs.readdir(dirPath);
             const unexpectedFiles = existingFiles.filter(file => !expectedFiles.includes(path.basename(file)));
             if (unexpectedFiles.length > 0) {
-                log('log', options, `Found unexpected files in the generated directory: ${unexpectedFiles.map(e => e.yellow).join(', ')}`);
+                log('log', options, `Found unexpected files in the generated directory: ${unexpectedFiles.map(e => chalk.yellow(e)).join(', ')}`);
                 deleteDir = await getUserChoice('Do you want to delete the files?', ['yes', 'no'], 'yes') === 'yes';
             }
             if (deleteDir) {
@@ -215,7 +216,7 @@ async function rmdirWithFail(dirPath: string, expectedFiles: string[], options: 
         }
         return false;
     } catch (e) {
-        log('error', options, `Failed to delete directory ${dirPath.red.bold}`, e);
+        log('error', options, `Failed to delete directory ${chalk.red.bold(dirPath)}`, e);
         return true;
     }
 }
@@ -225,7 +226,7 @@ async function mkdirWithFail(path: string, options: GenerateOptions): Promise<bo
         await fs.mkdirs(path);
         return false;
     } catch (e) {
-        log('error', options, `Failed to create directory ${path.red.bold}`, e);
+        log('error', options, `Failed to create directory ${chalk.red.bold(path)}`, e);
         return true;
     }
 }
@@ -234,6 +235,6 @@ async function writeWithFail(path: string, content: string, options: GenerateOpt
     try {
         await fs.writeFile(path, content);
     } catch (e) {
-        log('error', options, `Failed to write file to ${path.red.bold}`, e);
+        log('error', options, `Failed to write file to ${chalk.red.bold(path)}`, e);
     }
 }
