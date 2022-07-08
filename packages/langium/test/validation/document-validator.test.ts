@@ -14,7 +14,7 @@ describe('Parser error is thrown on resynced token with NaN position', () => {
     const grammar = `grammar HelloWorld
 
     entry Model:
-        (persons+=Person | greetings+=Greeting)*;
+        (persons+=Person | greetings+=Greeting)+;
     
     Person:
         'person' name=ID;
@@ -45,5 +45,12 @@ describe('Parser error is thrown on resynced token with NaN position', () => {
         expect(diagnostics).toHaveLength(1);
         const endPosition = Position.create(4, 13);
         expect(diagnostics[0].range).toStrictEqual(Range.create(endPosition, endPosition));
+    });
+
+    test('Diagnostic is shown at document start when document is empty', async () => {
+        const validationResult = await validate('');
+        const diagnostics = validationResult.diagnostics;
+        expect(diagnostics).toHaveLength(1);
+        expect(diagnostics[0].range).toStrictEqual(Range.create(0,0,0,0));
     });
 });
