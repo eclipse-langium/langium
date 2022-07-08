@@ -82,7 +82,7 @@ export class DefaultDocumentValidator implements DocumentValidator {
                     } else {
                         // No valid prev token. Might be empty document or containing only hidden tokens.
                         // Point to document start
-                        range = Range.create(0,0,0,0);
+                        range = Range.create(0, 0, 0, 0);
                     }
                 }
             } else {
