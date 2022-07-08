@@ -51,6 +51,6 @@ describe('Parser error is thrown on resynced token with NaN position', () => {
         const validationResult = await validate('');
         const diagnostics = validationResult.diagnostics;
         expect(diagnostics).toHaveLength(1);
-        expect(diagnostics[0].range).toStrictEqual(Range.create(0,0,0,0));
+        expect(diagnostics[0].range).toStrictEqual(Range.create(0, 0, 0, 0));
     });
 });
