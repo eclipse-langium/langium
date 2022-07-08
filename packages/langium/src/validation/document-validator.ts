@@ -76,8 +76,14 @@ export class DefaultDocumentValidator implements DocumentValidator {
                 // We can simply append our diagnostic to that token
                 if ('previousToken' in parserError) {
                     const token = (parserError as MismatchedTokenException).previousToken;
-                    const position = Position.create(token.endLine! - 1, token.endColumn!);
-                    range = Range.create(position, position);
+                    if(!isNaN(token.startOffset)) {
+                        const position = Position.create(token.endLine! - 1, token.endColumn!);
+                        range = Range.create(position, position);
+                    } else {
+                        // No valid prev token. Might be empty document or containing only hidden tokens.
+                        // Point to document start
+                        range = Range.create(0, 0, 0, 0);
+                    }
                 }
             } else {
                 range = tokenToRange(parserError.token);
