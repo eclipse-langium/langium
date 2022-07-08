@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import { createDefaultModule, createDefaultSharedModule, DefaultSharedModuleContext } from '../default-module';
-import { inject, Module } from '../dependency-injection';
+import { inject, Module } from 'inject';
 import { LangiumServices, LangiumSharedServices, PartialLangiumServices } from '../services';
 import { LangiumGrammarGeneratedModule, LangiumGrammarGeneratedSharedModule } from './generated/module';
 import { LangiumGrammarCodeActionProvider } from './lsp/grammar-code-actions';

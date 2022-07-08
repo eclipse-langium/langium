@@ -7,7 +7,7 @@
 import * as ast from '../grammar/generated/ast';
 import { URI, Utils } from 'vscode-uri';
 import { createDefaultModule, createDefaultSharedModule } from '../default-module';
-import { inject, Module } from '../dependency-injection';
+import { inject, Module } from 'inject';
 import { CompositeCstNodeImpl } from '../parser/cst-node-builder';
 import { IParserConfig } from '../parser/parser-config';
 import { LangiumGeneratedServices, LangiumGeneratedSharedServices, LangiumServices, LangiumSharedServices, PartialLangiumServices, PartialLangiumSharedServices } from '../services';

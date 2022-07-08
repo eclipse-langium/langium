@@ -1,6 +1,7 @@
 {
     "preset": "ts-jest",
     "roots": [
+        "<rootDir>/packages/inject/test",
         "<rootDir>/packages/langium/test",
         "<rootDir>/packages/langium-cli/test",
         "<rootDir>/examples/arithmetics/test",

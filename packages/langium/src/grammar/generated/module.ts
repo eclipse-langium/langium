@@ -4,7 +4,7 @@
  ******************************************************************************/
 
 import { LanguageMetaData } from '../..';
-import { Module } from '../../dependency-injection';
+import { Module } from 'inject';
 import { LangiumGeneratedServices, LangiumGeneratedSharedServices, LangiumSharedServices, LangiumServices } from '../../services';
 import { LangiumGrammarAstReflection } from './ast';
 import { LangiumGrammarGrammar } from './grammar';
