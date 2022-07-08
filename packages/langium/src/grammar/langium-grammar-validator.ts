@@ -253,6 +253,12 @@ export class LangiumGrammarValidator {
         for (const interfaceType of grammar.interfaces) {
             types.add(interfaceType.name);
         }
+        // Collect type/interface definitions from imported grammars
+        resolveTransitiveImports(this.documents, grammar).forEach((grammar) => {
+            grammar.types.forEach((type) => types.add(type.name));
+            grammar.interfaces.forEach((iface) => types.add(iface.name));
+        });
+
         for (const rule of grammar.rules.filter(ast.isParserRule)) {
             if (isEmptyRule(rule)) {
                 continue;

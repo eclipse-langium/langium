@@ -4,7 +4,7 @@ Thank you for your interest in the Langium project! The following is a set of gu
 
 ## Prerequisites
 
-For developing Langium you require at least the Maintenance LTS version of Node.js (currently 12) and at least npm version 7.7.0 (`npm@^7.7.0`) to be able to use npm workspaces. With Node.js versions below 16 you have to install the correct version of npm with `npm install -g npm@7`.
+For developing Langium you require at least the Maintenance LTS version of Node.js (currently 14) and at least npm version 7.7.0 (`npm@^7.7.0`) to be able to use npm workspaces. With Node.js versions below 16 you have to install the correct version of npm with `npm install -g npm@7`.
 
 
 ## Local Development Guide

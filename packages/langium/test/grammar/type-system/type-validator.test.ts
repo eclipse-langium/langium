@@ -30,8 +30,8 @@ describe('validate params in types', () => {
 
         // verify location of diagnostic
         const d = diagnostics[0];
-        expect(d.range.start).toEqual({character: 8, line: 4});
-        expect(d.range.end).toEqual({character: 10, line: 4});
+        expect(d.range.start).toEqual({ character: 8, line: 4 });
+        expect(d.range.end).toEqual({ character: 10, line: 4 });
     });
 
     // verifies that missing required params use the right msg & position
@@ -55,8 +55,8 @@ describe('validate params in types', () => {
 
         // verify the location of the single diagnostic error, should be only for the 2nd rule
         const d = diagnostics[0];
-        expect(d.range.start).toEqual({character: 8, line: 5});
-        expect(d.range.end).toEqual({character: 34, line: 5});
+        expect(d.range.start).toEqual({ character: 8, line: 5 });
+        expect(d.range.end).toEqual({ character: 34, line: 5 });
     });
 
     // tests that an optional param in a declared type can be optionally present in a rule
@@ -89,6 +89,27 @@ describe('validate inferred types', () => {
         terminal ID: /[a-zA-Z_][a-zA-Z0-9_]*/;
         `.trim();
 
+        const document = await parseDocument(grammarServices, prog);
+        const diagnostics: Diagnostic[] = await grammarServices.validation.DocumentValidator.validateDocument(document);
+        expect(diagnostics.filter(d => d.severity === DiagnosticSeverity.Error)).toHaveLength(0);
+
+    });
+});
+describe('Work with imported declared types', () => {
+
+    test('Returning imported type should not produce an error #507', async () => {
+
+        const referencingDoc = await parseDocument(grammarServices, `
+        interface IRoot {}
+        `);
+        const prog = `
+        grammar Test_file_ref
+        import "${referencingDoc.uri.path.split('/').pop()}"
+        entry Root returns IRoot:
+            name=ID;
+
+        terminal ID: /\\^?[_a-zA-Z][\\w_]*/;
+        `.trim();
         const document = await parseDocument(grammarServices, prog);
         const diagnostics: Diagnostic[] = await grammarServices.validation.DocumentValidator.validateDocument(document);
         expect(diagnostics.filter(d => d.severity === DiagnosticSeverity.Error)).toHaveLength(0);
