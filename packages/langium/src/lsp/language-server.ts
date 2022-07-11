@@ -63,6 +63,7 @@ export class DefaultLanguageServer implements LanguageServer {
         const formattingOnTypeOptions = languages.map(e => e.lsp.Formatter?.formatOnTypeOptions).find(e => !!e);
         const hasCodeActionProvider = languages.some(e => e.lsp.CodeActionProvider !== undefined);
         const hasSemanticTokensProvider = languages.some(e => e.lsp.SemanticTokenProvider !== undefined);
+        const commandNames = this.services.lsp.ExecuteCommandHandler?.commands;
 
         const result: InitializeResult = {
             capabilities: {
@@ -70,6 +71,9 @@ export class DefaultLanguageServer implements LanguageServer {
                     workspaceFolders: {
                         supported: true
                     }
+                },
+                executeCommandProvider: commandNames && {
+                    commands: commandNames
                 },
                 textDocumentSync: TextDocumentSyncKind.Incremental,
                 completionProvider: {},
@@ -120,6 +124,7 @@ export function startLanguageServer(services: LangiumSharedServices): void {
     addRenameHandler(connection, services);
     addHoverHandler(connection, services);
     addSemanticTokenHandler(connection, services);
+    addExecuteCommandHandler(connection, services);
 
     connection.onInitialize(params => {
         return services.lsp.LanguageServer.initialize(params);
@@ -257,12 +262,13 @@ export function addRenameHandler(connection: Connection, services: LangiumShared
 }
 
 export function addSemanticTokenHandler(connection: Connection, services: LangiumSharedServices): void {
+    const errorMessage = 'No semantic token provider registered';
     connection.languages.semanticTokens.on(createServerRequestHandler(
         (services, document, params, cancelToken) => {
             if (services.lsp.SemanticTokenProvider) {
                 return services.lsp.SemanticTokenProvider.semanticHighlight(document, params, cancelToken);
             }
-            return new ResponseError<void>(0, '');
+            return new ResponseError<void>(0, errorMessage);
         },
         services
     ));
@@ -271,7 +277,7 @@ export function addSemanticTokenHandler(connection: Connection, services: Langiu
             if (services.lsp.SemanticTokenProvider) {
                 return services.lsp.SemanticTokenProvider.semanticHighlightDelta(document, params, cancelToken);
             }
-            return new ResponseError<void>(0, '');
+            return new ResponseError<void>(0, errorMessage);
         },
         services
     ));
@@ -280,10 +286,23 @@ export function addSemanticTokenHandler(connection: Connection, services: Langiu
             if (services.lsp.SemanticTokenProvider) {
                 return services.lsp.SemanticTokenProvider.semanticHighlightRange(document, params, cancelToken);
             }
-            return new ResponseError<void>(0, '');
+            return new ResponseError<void>(0, errorMessage);
         },
         services
     ));
+}
+
+export function addExecuteCommandHandler(connection: Connection, services: LangiumSharedServices): void {
+    const commandHandler = services.lsp.ExecuteCommandHandler;
+    if (commandHandler) {
+        connection.onExecuteCommand(async (params, token) => {
+            try {
+                return await commandHandler.executeCommand(params.command, params.arguments ?? [], token);
+            } catch (err) {
+                return responseError(err);
+            }
+        });
+    }
 }
 
 export function createServerRequestHandler<P extends { textDocument: TextDocumentIdentifier }, R, PR, E = void>(

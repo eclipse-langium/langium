@@ -10,6 +10,7 @@ import type { TextDocument } from 'vscode-languageserver-textdocument';
 import type { Grammar } from './grammar/generated/ast';
 import type { GrammarConfig } from './grammar/grammar-config';
 import type { LanguageMetaData } from './grammar/language-meta-data';
+import type { ExecuteCommandHandler } from './lsp/execute-command-handler';
 import type { CodeActionProvider } from './lsp/code-action';
 import type { CompletionProvider } from './lsp/completion/completion-provider';
 import type { RuleInterpreter } from './lsp/completion/rule-interpreter';
@@ -131,6 +132,7 @@ export type LangiumDefaultSharedServices = {
     ServiceRegistry: ServiceRegistry
     lsp: {
         Connection?: Connection,
+        ExecuteCommandHandler?: ExecuteCommandHandler,
         LanguageServer: LanguageServer
     }
     workspace: {
