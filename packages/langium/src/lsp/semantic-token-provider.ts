@@ -8,7 +8,7 @@
 
 import { CancellationToken, Range, SemanticTokenModifiers, SemanticTokens, SemanticTokensBuilder as BaseSemanticTokensBuilder, SemanticTokensClientCapabilities, SemanticTokensDelta, SemanticTokensDeltaParams, SemanticTokensOptions, SemanticTokensParams, SemanticTokensRangeParams, SemanticTokenTypes } from 'vscode-languageserver';
 import { findKeywordNodes, findNodeForFeature } from '../grammar/grammar-util';
-import { InitializableService, LangiumServices } from '../services';
+import { LangiumServices } from '../services';
 import { AstNode, CstNode, Properties } from '../syntax-tree';
 import { streamAllContents } from '../utils/ast-util';
 import { LangiumDocument } from '../workspace/documents';
@@ -62,7 +62,7 @@ export const DefaultSemanticTokenOptions: SemanticTokensOptions = {
     range: true
 };
 
-export interface SemanticTokenProvider extends InitializableService<SemanticTokensClientCapabilities> {
+export interface SemanticTokenProvider {
     semanticHighlight(document: LangiumDocument, params: SemanticTokensParams, cancelToken?: CancellationToken): SemanticTokens
     semanticHighlightRange(document: LangiumDocument, params: SemanticTokensRangeParams, cancelToken?: CancellationToken): SemanticTokens
     semanticHighlightDelta(document: LangiumDocument, params: SemanticTokensDeltaParams, cancelToken?: CancellationToken): SemanticTokens | SemanticTokensDelta
@@ -157,6 +157,9 @@ export abstract class AbstractSemanticTokenProvider implements SemanticTokenProv
         // Delete the token builder once the text document has been closed
         services.shared.workspace.TextDocuments.onDidClose(e => {
             this.tokensBuilders.delete(e.document.uri);
+        });
+        services.shared.lsp.LanguageServer.onInitialize(params => {
+            this.initialize(params.capabilities.textDocument?.semanticTokens);
         });
     }
 

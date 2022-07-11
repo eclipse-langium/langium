@@ -8,6 +8,7 @@ import { CancellationToken, WorkspaceFolder } from 'vscode-languageserver';
 import { URI, Utils } from 'vscode-uri';
 import { ServiceRegistry } from '../service-registry';
 import { LangiumSharedServices } from '../services';
+import { MutexLock } from '../utils/promise-util';
 import { DocumentBuilder } from './document-builder';
 import { LangiumDocument, LangiumDocuments } from './documents';
 import { FileSystemNode, FileSystemProvider } from './file-system-provider';
@@ -35,12 +36,21 @@ export class DefaultWorkspaceManager implements WorkspaceManager {
     protected readonly langiumDocuments: LangiumDocuments;
     protected readonly documentBuilder: DocumentBuilder;
     protected readonly fileSystemProvider: FileSystemProvider;
+    protected readonly mutex: MutexLock;
 
     constructor(services: LangiumSharedServices) {
         this.serviceRegistry = services.ServiceRegistry;
         this.langiumDocuments = services.workspace.LangiumDocuments;
         this.documentBuilder = services.workspace.DocumentBuilder;
         this.fileSystemProvider = services.workspace.FileSystemProvider;
+        this.mutex = services.workspace.MutexLock;
+
+        services.lsp.LanguageServer.onInitialize(params => {
+            const folders = params.workspaceFolders;
+            if (folders) {
+                this.mutex.lock(token => this.initializeWorkspace(folders, token));
+            }
+        });
     }
 
     async initializeWorkspace(folders: WorkspaceFolder[], cancelToken = CancellationToken.None): Promise<void> {

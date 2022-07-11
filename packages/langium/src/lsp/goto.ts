@@ -4,10 +4,10 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { CancellationToken, DefinitionClientCapabilities, DefinitionParams, LocationLink } from 'vscode-languageserver';
+import { CancellationToken, DefinitionParams, LocationLink } from 'vscode-languageserver';
 import { NameProvider } from '../references/naming';
 import { References } from '../references/references';
-import { InitializableService, LangiumServices } from '../services';
+import { LangiumServices } from '../services';
 import { CstNode } from '../syntax-tree';
 import { getDocument } from '../utils/ast-util';
 import { findLeafNodeAtOffset } from '../utils/cst-util';
@@ -17,7 +17,7 @@ import { LangiumDocument } from '../workspace/documents';
 /**
  * Language-specific service for handling go to definition requests.
  */
-export interface GoToResolver extends InitializableService<DefinitionClientCapabilities> {
+export interface GoToResolver {
     /**
      * Handle a go to definition request.
      *

@@ -5,23 +5,60 @@
  ******************************************************************************/
 
 import {
-    CancellationToken, ClientCapabilities, Connection, FileChangeType, HandlerResult, InitializeResult,
+    CancellationToken, Connection, Disposable, Emitter, Event, FileChangeType, HandlerResult, InitializedParams, InitializeParams, InitializeResult,
     LSPErrorCodes, RequestHandler, ResponseError, ServerRequestHandler, TextDocumentIdentifier, TextDocumentSyncKind
 } from 'vscode-languageserver';
 import { URI } from 'vscode-uri';
+import { eagerLoad } from '../dependency-injection';
 import { LangiumServices, LangiumSharedServices } from '../services';
 import { isOperationCancelled } from '../utils/promise-util';
 import { DocumentState, LangiumDocument } from '../workspace/documents';
 import { DefaultSemanticTokenOptions } from './semantic-token-provider';
 
-export function startLanguageServer(services: LangiumSharedServices): void {
-    const languages: readonly LangiumServices[] = services.ServiceRegistry.all;
-    const connection = services.lsp.Connection;
-    if (!connection) {
-        throw new Error('Starting a language server requires the languageServer.Connection service to be set.');
+export interface LanguageServer {
+    initialize(params: InitializeParams): Promise<InitializeResult>
+    initialized(params: InitializedParams): Promise<void>
+    onInitialize(callback: (params: InitializeParams) => void): Disposable
+    onInitialized(callback: (params: InitializedParams) => void): Disposable
+}
+
+export class DefaultLanguageServer implements LanguageServer {
+
+    protected onInitializeEmitter = new Emitter<InitializeParams>();
+    protected onInitializedEmitter = new Emitter<InitializedParams>();
+
+    protected readonly services: LangiumSharedServices;
+
+    constructor(services: LangiumSharedServices) {
+        this.services = services;
     }
 
-    connection.onInitialize(async params => {
+    get onInitialize(): Event<InitializeParams> {
+        return this.onInitializeEmitter.event;
+    }
+
+    get onInitialized(): Event<InitializedParams> {
+        return this.onInitializedEmitter.event;
+    }
+
+    async initialize(params: InitializeParams): Promise<InitializeResult> {
+        this.eagerLoadServices();
+        this.onInitializeEmitter.fire(params);
+        this.onInitializeEmitter.dispose();
+        return this.buildInitializeResult(params);
+    }
+
+    /**
+     * Eagerly loads all services before emitting the `onInitialize` event.
+     * Ensures that all services are able to catch the event.
+     */
+    protected eagerLoadServices(): void {
+        eagerLoad(this.services);
+        this.services.ServiceRegistry.all.forEach(language => eagerLoad(language));
+    }
+
+    protected buildInitializeResult(_params: InitializeParams): InitializeResult {
+        const languages = this.services.ServiceRegistry.all;
         const hasFormattingService = languages.some(e => e.lsp.Formatter !== undefined);
         const formattingOnTypeOptions = languages.map(e => e.lsp.Formatter?.formatOnTypeOptions).find(e => !!e);
         const hasCodeActionProvider = languages.some(e => e.lsp.CodeActionProvider !== undefined);
@@ -55,15 +92,20 @@ export function startLanguageServer(services: LangiumSharedServices): void {
             }
         };
 
-        await Promise.all(languages.map(languageService => initializeClientCapabilities(languageService, params.capabilities)));
-
-        if (params.workspaceFolders) {
-            const folders = params.workspaceFolders;
-            const mutex = services.workspace.MutexLock;
-            mutex.lock(token => services.workspace.WorkspaceManager.initializeWorkspace(folders, token));
-        }
         return result;
-    });
+    }
+
+    async initialized(params: InitializedParams): Promise<void> {
+        this.onInitializedEmitter.fire(params);
+        this.onInitializedEmitter.dispose();
+    }
+}
+
+export function startLanguageServer(services: LangiumSharedServices): void {
+    const connection = services.lsp.Connection;
+    if (!connection) {
+        throw new Error('Starting a language server requires the languageServer.Connection service to be set.');
+    }
 
     addDocumentsHandler(connection, services);
     addDiagnosticsHandler(connection, services);
@@ -79,33 +121,19 @@ export function startLanguageServer(services: LangiumSharedServices): void {
     addHoverHandler(connection, services);
     addSemanticTokenHandler(connection, services);
 
+    connection.onInitialize(params => {
+        return services.lsp.LanguageServer.initialize(params);
+    });
+    connection.onInitialized(params => {
+        return services.lsp.LanguageServer.initialized(params);
+    });
+
     // Make the text document manager listen on the connection for open, change and close text document events.
     const documents = services.workspace.TextDocuments;
     documents.listen(connection);
 
     // Start listening for incoming messages from the client.
     connection.listen();
-}
-
-export async function initializeClientCapabilities(services: LangiumServices, clientCapabilities: ClientCapabilities): Promise<void> {
-    const text = clientCapabilities.textDocument;
-    await Promise.all([
-        services.lsp.CodeActionProvider?.initialize?.(text?.codeAction),
-        services.lsp.DocumentHighlighter.initialize?.(text?.documentHighlight),
-        services.lsp.DocumentSymbolProvider.initialize?.(text?.documentSymbol),
-        services.lsp.FoldingRangeProvider.initialize?.(text?.foldingRange),
-        services.lsp.Formatter?.initialize?.({
-            formatting: text?.formatting,
-            rangeFormatting: text?.rangeFormatting,
-            onTypeFormatting: text?.onTypeFormatting
-        }),
-        services.lsp.GoToResolver.initialize?.(text?.definition),
-        services.lsp.HoverProvider.initialize?.(text?.hover),
-        services.lsp.ReferenceFinder.initialize?.(text?.references),
-        services.lsp.RenameHandler.initialize?.(text?.rename),
-        services.lsp.SemanticTokenProvider?.initialize?.(text?.semanticTokens),
-        services.validation.DocumentValidator.initialize?.(text?.publishDiagnostics)
-    ]);
 }
 
 export function addDocumentsHandler(connection: Connection, services: LangiumSharedServices): void {
