@@ -6,14 +6,13 @@
 
 import { DiagnosticTag } from 'vscode-languageserver-types';
 import { Utils } from 'vscode-uri';
-import { LeafCstNodeImpl } from '../parser/cst-node-builder';
 import { NamedAstNode } from '../references/naming';
 import { References } from '../references/references';
 import { LangiumServices } from '../services';
-import { AstNode, CstNode, Reference } from '../syntax-tree';
+import { AstNode, Reference } from '../syntax-tree';
 import { getContainerOfType, getDocument, streamAllContents } from '../utils/ast-util';
 import { MultiMap } from '../utils/collections';
-import { getPreviousNode, toDocumentSegment } from '../utils/cst-util';
+import { toDocumentSegment } from '../utils/cst-util';
 import { Stream, stream } from '../utils/stream';
 import { relativeURI } from '../utils/uri-utils';
 import { ValidationAcceptor, ValidationChecks, ValidationRegistry } from '../validation/validation-registry';
@@ -303,22 +302,19 @@ export class LangiumGrammarValidator {
                     // error: action infers type that is already defined
                     if(action.$cstNode) {
                         const inferredTypeNode = findNodeForFeature(action.inferredType?.$cstNode, 'name');
-                        if(inferredTypeNode) {
-                            // reverse walk to find the appropriate keyword node to remove
-                            // this avoids deleting block comments that may also be present
-                            let prevNode: CstNode | undefined = getPreviousNode(inferredTypeNode);
-                            while(prevNode && (prevNode as LeafCstNodeImpl)?.tokenType.name !== 'infer:KW') {
-                                prevNode = getPreviousNode(prevNode);
-                            }
-
-                            if(prevNode) {
-                                accept('error', `${typeName} is a declared type and cannot be redefined.`, {
-                                    node: action,
-                                    property: 'type',
-                                    code: IssueCodes.SuperfluousInfer,
-                                    data: prevNode?.range
-                                });
-                            }
+                        const keywordNode = findKeywordNode(action.$cstNode, '{');
+                        if(inferredTypeNode && keywordNode) {
+                            // remove everything from the opening { up to the type name
+                            // we may lose comments in-between, but this can be undone as needed
+                            accept('error', `${typeName} is a declared type and cannot be redefined.`, {
+                                node: action,
+                                property: 'type',
+                                code: IssueCodes.SuperfluousInfer,
+                                data: {
+                                    start: keywordNode.range.end,
+                                    end: inferredTypeNode.range.start
+                                }
+                            });
                         }
                     }
                 }
