@@ -21,6 +21,7 @@ import * as ast from './generated/ast';
 import { isParserRule, isRuleCall } from './generated/ast';
 import { findKeywordNode, findNameAssignment, getEntryRule, getTypeName, isDataTypeRule, isOptional, resolveImport, resolveTransitiveImports, terminalRegex } from './grammar-util';
 import type { LangiumGrammarServices } from './langium-grammar-module';
+import { collectInferredTypes } from './type-system/inferred-types';
 import { applyErrorToAssignment, collectAllInterfaces, InterfaceInfo, validateTypesConsistency } from './type-system/type-validator';
 
 export class LangiumGrammarValidationRegistry extends ValidationRegistry {
@@ -421,10 +422,22 @@ export class LangiumGrammarValidator {
                 accept('error', 'Rules are not allowed to return union types.', { node: rule, property: 'returnType' });
             }
         }
+
         for (const interfaceType of grammar.interfaces) {
             interfaceType.superTypes.forEach((superType, i) => {
                 if (superType.ref && ast.isType(superType.ref)) {
                     accept('error', 'Interfaces cannot extend union types.', { node: interfaceType, property: 'superTypes', index: i });
+                } else if(superType.ref && ast.isParserRule(superType.ref)) {
+                    // collect just the beginning of whatever inferred types this standalone rule produces
+                    // looking to exclude anything that would be a union down the line
+                    const inferred = collectInferredTypes([superType.ref as ast.ParserRule], []);
+                    if(inferred.unions.length > 0) {
+                        // inferred union type also cannot be extended
+                        accept('error', `An interface cannot extend a union type, which was inferred from parser rule ${superType.ref.name}.`, { node: interfaceType, property: 'superTypes', index: i });
+                    } else {
+                        // otherwise we'll allow it, but issue a warning against basing declared off of inferred types
+                        accept('warning', 'Extending an interface by a parser rule gives an ambiguous type, instead of the expected declared type.', { node: interfaceType, property: 'superTypes', index: i });
+                    }
                 }
             });
         }
