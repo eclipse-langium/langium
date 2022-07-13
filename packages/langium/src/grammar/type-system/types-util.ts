@@ -182,7 +182,7 @@ function pushReflectionInfo(name: string, node: CompositeGeneratorNode) {
 export function collectChildrenTypes(interfaceNode: Interface, references: References, langiumDocuments: LangiumDocuments, nodeLocator: AstNodeLocator): Set<Interface | Type> {
     const childrenTypes = new Set<Interface | Type>();
     childrenTypes.add(interfaceNode);
-    const refs = references.findReferences(interfaceNode, false, false);
+    const refs = references.findReferences(interfaceNode, {});
     refs.forEach(ref => {
         const doc = langiumDocuments.getOrCreateDocument(ref.sourceUri);
         const astNode = nodeLocator.getAstNode(doc, ref.sourcePath);

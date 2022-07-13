@@ -14,6 +14,7 @@ import { LangiumGrammarSemanticTokenProvider } from './lsp/grammar-semantic-toke
 import { LangiumGrammarValidationRegistry, LangiumGrammarValidator } from './langium-grammar-validator';
 import { LangiumGrammarFoldingRangeProvider } from './lsp/grammar-folding-ranges';
 import { LangiumGrammarFormatter } from './lsp/grammar-formatter';
+import { LangiumGrammarReferences } from './references/langium-grammar-references';
 
 export type LangiumGrammarAddedServices = {
     validation: {
@@ -36,7 +37,8 @@ export const LangiumGrammarModule: Module<LangiumGrammarServices, PartialLangium
     },
     references: {
         ScopeComputation: (services) => new LangiumGrammarScopeComputation(services),
-        ScopeProvider: (services) => new LangiumGrammarScopeProvider(services)
+        ScopeProvider: (services) => new LangiumGrammarScopeProvider(services),
+        References: (services) => new LangiumGrammarReferences(services)
     }
 };
 

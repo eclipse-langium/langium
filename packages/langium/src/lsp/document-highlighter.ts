@@ -50,7 +50,8 @@ export class DefaultDocumentHighlighter implements DocumentHighlighter {
         if (targetAstNode) {
             const refs: Array<[CstNode, DocumentHighlightKind]> = [];
             const includeDeclaration = equalURI(getDocument(targetAstNode).uri, document.uri);
-            this.references.findReferences(targetAstNode, true, includeDeclaration).forEach(ref => {
+            const options = {onlyLocal: true, includeDeclaration};
+            this.references.findReferences(targetAstNode, options).forEach(ref => {
                 const leaf = findLeafNodeAtOffset(rootNode, ref.segment.offset);
                 if (leaf) {
                     refs.push([leaf, this.getHighlightKind(leaf)]);
@@ -61,16 +62,6 @@ export class DefaultDocumentHighlighter implements DocumentHighlighter {
             );
         }
         return undefined;
-    }
-
-    protected findNameNode(node: AstNode): CstNode | undefined {
-        const nameNode = this.nameProvider.getNameNode(node);
-        if (nameNode)
-            return nameNode;
-        const leaf = findLeafNodeAtOffset(node.$cstNode!, node.$cstNode!.offset);
-        if (leaf)
-            return leaf;
-        return node.$cstNode;
     }
 
     /**

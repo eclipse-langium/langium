@@ -54,7 +54,8 @@ export class DefaultRenameHandler implements RenameHandler {
         const offset = document.textDocument.offsetAt(params.position);
         const leafNode = findLeafNodeAtOffset(rootNode!, offset);
         const targetNode = await this.references.findDeclaration(leafNode!) ?? leafNode;
-        const references = await this.references.findReferences(targetNode!.element, false, true);
+        const options = {onlyLocal: false, includeDeclaration: true};
+        const references = await this.references.findReferences(targetNode!.element, options);
         references.forEach(ref => {
             const change = TextEdit.replace(ref.segment.range, params.newName);
             if (changes[ref.sourceUri.toString()]) {
