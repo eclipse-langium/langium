@@ -103,7 +103,7 @@ describe('A cyclic dependency', () => {
 
     test('should work with for..in', () => {
         const obj = createA(1);
-        const res = [];
+        const res: string[] = [];
         for (const key in obj) {
             if (Object.prototype.hasOwnProperty.call(obj, key)) {
                 res.push(key);
@@ -319,7 +319,7 @@ describe('The inject result', () => {
 
     test('should work with for..in', () => {
         const obj = inject({ a: () => 1, b: () => 2 });
-        const res = [];
+        const res: string[] = [];
         for (const key in obj) {
             if (Object.prototype.hasOwnProperty.call(obj, key)) {
                 res.push(key);

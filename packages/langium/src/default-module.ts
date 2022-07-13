@@ -8,13 +8,14 @@ import { Connection, TextDocuments } from 'vscode-languageserver';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { Module } from './dependency-injection';
 import { createGrammarConfig } from './grammar/grammar-config';
-import { MultilineCommentHoverProvider } from './lsp';
 import { DefaultCompletionProvider } from './lsp/completion/completion-provider';
 import { RuleInterpreter } from './lsp/completion/rule-interpreter';
 import { DefaultDocumentHighlighter } from './lsp/document-highlighter';
 import { DefaultDocumentSymbolProvider } from './lsp/document-symbol-provider';
 import { DefaultFoldingRangeProvider } from './lsp/folding-range-provider';
 import { DefaultGoToResolverProvider } from './lsp/goto';
+import { MultilineCommentHoverProvider } from './lsp/hover-provider';
+import { DefaultLanguageServer } from './lsp/language-server';
 import { DefaultReferenceFinder } from './lsp/reference-finder';
 import { DefaultRenameHandler } from './lsp/rename-refactoring';
 import { createLangiumParser } from './parser/langium-parser-builder';
@@ -119,7 +120,8 @@ export function createDefaultSharedModule(context: DefaultSharedModuleContext): 
     return {
         ServiceRegistry: () => new DefaultServiceRegistry(),
         lsp: {
-            Connection: () => context.connection
+            Connection: () => context.connection,
+            LanguageServer: (services) => new DefaultLanguageServer(services)
         },
         workspace: {
             LangiumDocuments: (services) => new DefaultLangiumDocuments(services),

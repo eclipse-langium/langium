@@ -420,8 +420,8 @@ export function createServicesForGrammar(config: {
     grammarServices?: LangiumGrammarServices,
     parserConfig?: IParserConfig,
     languageMetaData?: LanguageMetaData,
-    module?: Module<PartialLangiumServices>
-    sharedModule?: Module<PartialLangiumSharedServices>
+    module?: Module<LangiumServices, PartialLangiumServices>
+    sharedModule?: Module<LangiumSharedServices, PartialLangiumSharedServices>
 }): LangiumServices {
     const grammarServices = config.grammarServices ?? createLangiumGrammarServices(EmptyFileSystem).grammar;
     const grammarNode = typeof config.grammar === 'string' ? grammarServices.parser.LangiumParser.parse<ast.Grammar>(config.grammar).value : config.grammar;

@@ -41,18 +41,30 @@ export function inject<I1, I2, I3, I4, I extends I1 & I2 & I3 & I4>(module1: Mod
     return _inject(module);
 }
 
+const isProxy = Symbol('isProxy');
+
+export function eagerLoad(item: any): any {
+    if (item && item[isProxy]) {
+        for (const value of Object.values(item)) {
+            eagerLoad(value);
+        }
+    }
+    return item;
+}
+
 /**
  * Helper function that returns an injector by creating a proxy.
  * Invariant: injector is of type I. If injector is undefined, then T = I.
  */
 function _inject<I, T>(module: Module<I, T>, injector?: any): T {
-    const proxy: T = new Proxy({} as any, {
+    const proxy: any = new Proxy({} as any, {
         deleteProperty: () => false,
         get: (obj, prop) => _resolve(obj, prop, module, injector || proxy),
         getOwnPropertyDescriptor: (obj, prop) => (_resolve(obj, prop, module, injector || proxy), Object.getOwnPropertyDescriptor(obj, prop)), // used by for..in
         has: (_, prop) => prop in module, // used by ..in..
-        ownKeys: () => Reflect.ownKeys(module) // used by for..in
+        ownKeys: () => [...Reflect.ownKeys(module), isProxy] // used by for..in
     });
+    proxy[isProxy] = true;
     return proxy;
 }
 

@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { CancellationToken } from 'vscode-languageserver';
+import { CancellationToken, Disposable } from 'vscode-languageserver';
 import { URI } from 'vscode-uri';
 import { ServiceRegistry } from '../service-registry';
 import { LangiumSharedServices } from '../services';
@@ -50,12 +50,12 @@ export interface DocumentBuilder {
      * Notify the given callback when a document update was triggered, but before any document
      * is rebuilt. Listeners to this event should not perform any long-running task.
      */
-    onUpdate(callback: DocumentUpdateListener): void;
+    onUpdate(callback: DocumentUpdateListener): Disposable;
 
     /**
      * Notify the given callback when a set of documents has been built reaching a desired target state.
      */
-    onBuildPhase(targetState: DocumentState, callback: DocumentBuildListener): void;
+    onBuildPhase(targetState: DocumentState, callback: DocumentBuildListener): Disposable;
 }
 
 export type DocumentUpdateListener = (changed: URI[], deleted: URI[]) => void
@@ -100,8 +100,14 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
         await this.buildDocuments(rebuildDocuments, buildOptions, cancelToken);
     }
 
-    onUpdate(callback: DocumentUpdateListener): void {
+    onUpdate(callback: DocumentUpdateListener): Disposable {
         this.updateListeners.push(callback);
+        return Disposable.create(() => {
+            const index = this.updateListeners.indexOf(callback);
+            if (index >= 0) {
+                this.updateListeners.splice(index, 1);
+            }
+        });
     }
 
     protected collectDocuments(changed: LangiumDocument[], deleted: URI[]): LangiumDocument[] {
@@ -154,8 +160,11 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
         await this.notifyBuildPhase(filtered, targetState, cancelToken);
     }
 
-    onBuildPhase(targetState: DocumentState, callback: DocumentBuildListener): void {
+    onBuildPhase(targetState: DocumentState, callback: DocumentBuildListener): Disposable {
         this.buildPhaseListeners.add(targetState, callback);
+        return Disposable.create(() => {
+            this.buildPhaseListeners.delete(targetState, callback);
+        });
     }
 
     protected async notifyBuildPhase(documents: LangiumDocument[], state: DocumentState, cancelToken: CancellationToken): Promise<void> {
