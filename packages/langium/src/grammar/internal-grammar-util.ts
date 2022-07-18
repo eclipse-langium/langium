@@ -102,7 +102,8 @@ export function getExplicitRuleType(rule: ast.ParserRule): string | undefined {
     if (rule.inferredType) {
         return rule.inferredType.name;
     } else if (rule.dataType) {
-        return rule.dataType;
+        //return rule.dataType;
+        return rule.name;
     } else if (rule.returnType) {
         const refType = rule.returnType.ref;
         if(refType) {
