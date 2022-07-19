@@ -8,7 +8,7 @@ import { CancellationToken, WorkspaceFolder } from 'vscode-languageserver';
 import { URI, Utils } from 'vscode-uri';
 import { ServiceRegistry } from '../service-registry';
 import { LangiumSharedServices } from '../services';
-import { MutexLock } from '../utils/promise-util';
+import { interruptAndCheck, MutexLock } from '../utils/promise-util';
 import { DocumentBuilder } from './document-builder';
 import { LangiumDocument, LangiumDocuments } from './documents';
 import { FileSystemNode, FileSystemProvider } from './file-system-provider';
@@ -46,10 +46,9 @@ export class DefaultWorkspaceManager implements WorkspaceManager {
         this.mutex = services.workspace.MutexLock;
 
         services.lsp.LanguageServer.onInitialize(params => {
-            const folders = params.workspaceFolders;
-            if (folders) {
-                this.mutex.lock(token => this.initializeWorkspace(folders, token));
-            }
+            // Initialize the workspace even if there are no workspace folders
+            // We still want to load additional documents (language library or similar) during initialization
+            this.mutex.lock(token => this.initializeWorkspace(params.workspaceFolders ?? [], token));
         });
     }
 
@@ -62,11 +61,17 @@ export class DefaultWorkspaceManager implements WorkspaceManager {
                 this.langiumDocuments.addDocument(document);
             }
         };
+        // Even though we don't await the initialization of the workspace manager,
+        // we can still assume that all library documents and file documents are loaded by the time we start building documents.
+        // The mutex prevents anything from performing a workspace build until we check the cancellation token
+        await this.loadAdditionalDocuments(folders, collector);
         await Promise.all(
             folders.map(wf => this.getRootFolder(wf))
                 .map(async rf => this.traverseFolder(rf, fileExtensions, collector))
         );
-        await this.loadAdditionalDocuments(folders, collector);
+        // Only after creating all documents do we check whether we need to cancel the initialization
+        // The document builder will later pick up on all unprocessed documents
+        await interruptAndCheck(cancelToken);
         await this.documentBuilder.build(documents, undefined, cancelToken);
     }
 
