@@ -4,10 +4,10 @@
 * terms of the MIT License, which is available in the project root.
 ******************************************************************************/
 
-import { DefaultReferences, FindReferencesOptions } from '../../references/references';
+import { DefaultReferences } from '../../references/references';
 import { LangiumServices } from '../../services';
-import { AstNode, CstNode, Reference } from '../../syntax-tree';
-import { extractAssignments, findNameNode, getContainerOfType, getDocument, streamAst, streamReferences } from '../../utils/ast-util';
+import { AstNode, CstNode } from '../../syntax-tree';
+import { extractAssignments, findNameNode, getContainerOfType, getDocument, streamAst } from '../../utils/ast-util';
 import { findLeafNodeAtOffset, findRelevantNode, toDocumentSegment } from '../../utils/cst-util';
 import { stream, Stream } from '../../utils/stream';
 import { equalURI } from '../../utils/uri-utils';
@@ -33,74 +33,25 @@ export class LangiumGrammarReferences extends DefaultReferences {
         return super.findDeclaration(sourceCstNode);
     }
 
-    findReferences(target: AstNode, options: FindReferencesOptions): Stream<ReferenceDescription> {
-        if (options.onlyLocal) {
-            return this.findLocalReferences(target, options.includeDeclaration);
-        } else {
-            return this.findGlobalReferences(target, options.includeDeclaration);
-        }
-    }
-
-    findLocalReferences(target: AstNode, includeDeclaration = false): Stream<ReferenceDescription> {
-        const doc = getDocument(target);
-        const rootNode = doc.parseResult.value;
+    protected findLocalReferences(target: AstNode, includeDeclaration = false): Stream<ReferenceDescription> {
         if (isTypeAttribute(target)) {
+            const doc = getDocument(target);
+            const rootNode = doc.parseResult.value;
             return this.findLocalReferencesToTypeAttribute(target, rootNode);
         } else {
-            return this.findAllLocalReferences(target, includeDeclaration, rootNode);
+            return super.findLocalReferences(target, includeDeclaration);
         }
     }
 
-    findGlobalReferences(target: AstNode, includeDeclaration = false): Stream<ReferenceDescription> {
+    protected findGlobalReferences(target: AstNode, includeDeclaration = false): Stream<ReferenceDescription> {
         if (isTypeAttribute(target)) {
             return this.findReferencesToTypeAttribute(target);
         } else {
-            return this.findAllGlobalReferences(target, includeDeclaration);
+            return super.findGlobalReferences(target, includeDeclaration);
         }
     }
 
-    findAllLocalReferences(target: AstNode, includeDeclaration: boolean, rootNode: AstNode): Stream<ReferenceDescription> {
-        const refs: ReferenceDescription[] = [];
-        if (includeDeclaration) {
-            const ref = this.getReferenceToSelf(target);
-            if (ref) {
-                refs.push(ref);
-            }
-        }
-        const localReferences: Reference[] = [];
-        streamAst(rootNode).forEach(node => {
-            streamReferences(node).forEach(refInfo => {
-                if (refInfo.reference.ref === target) {
-                    localReferences.push(refInfo.reference);
-                }
-            });
-        });
-        localReferences.forEach(ref => {
-            refs.push({
-                sourceUri: getDocument(ref.$refNode.element).uri,
-                sourcePath: this.nodeLocator.getAstNodePath(ref.$refNode.element),
-                targetUri: getDocument(target).uri,
-                targetPath: this.nodeLocator.getAstNodePath(target),
-                segment: toDocumentSegment(ref.$refNode),
-                local: equalURI(getDocument(ref.$refNode.element).uri, getDocument(target).uri)
-            });
-        });
-        return stream(refs);
-    }
-
-    findAllGlobalReferences(target: AstNode, includeDeclaration: boolean): Stream<ReferenceDescription> {
-        const refs: ReferenceDescription[] = [];
-        if (includeDeclaration) {
-            const ref = this.getReferenceToSelf(target);
-            if (ref) {
-                refs.push(ref);
-            }
-        }
-        refs.push(...this.index.findAllReferences(target, this.nodeLocator.getAstNodePath(target)));
-        return stream(refs);
-    }
-
-    findLocalReferencesToTypeAttribute(target: TypeAttribute, rootNode: AstNode): Stream<ReferenceDescription> {
+    protected findLocalReferencesToTypeAttribute(target: TypeAttribute, rootNode: AstNode): Stream<ReferenceDescription> {
         const refs: ReferenceDescription[] = [];
         const interfaceNode = getContainerOfType(target, isInterface);
         if (interfaceNode) {
@@ -138,7 +89,7 @@ export class LangiumGrammarReferences extends DefaultReferences {
         return stream(refs);
     }
 
-    findReferencesToTypeAttribute(target: TypeAttribute): Stream<ReferenceDescription> {
+    protected findReferencesToTypeAttribute(target: TypeAttribute): Stream<ReferenceDescription> {
         const refs: ReferenceDescription[] = [];
         const interfaceNode = getContainerOfType(target, isInterface);
         if (interfaceNode) {
@@ -174,7 +125,7 @@ export class LangiumGrammarReferences extends DefaultReferences {
         return stream(refs);
     }
 
-    findAssignmentDeclaration(assignment: Assignment): CstNode | undefined {
+    protected findAssignmentDeclaration(assignment: Assignment): CstNode | undefined {
         const parserRule = getContainerOfType(assignment, isParserRule);
         const groupNode = getContainerOfType(assignment, isGroup);
         if (parserRule?.returnType?.ref) {
@@ -205,7 +156,7 @@ export class LangiumGrammarReferences extends DefaultReferences {
         return findNodeForFeature(assignment.$cstNode,'feature');
     }
 
-    findRulesWithReturnType(interf: Interface | Type): Array<ParserRule | Action> {
+    protected findRulesWithReturnType(interf: Interface | Type): Array<ParserRule | Action> {
         const rules: Array<ParserRule | Action> = [];
         const refs = this.index.findAllReferences(interf, this.nodeLocator.getAstNodePath(interf));
         refs.forEach(ref => {
@@ -218,7 +169,7 @@ export class LangiumGrammarReferences extends DefaultReferences {
         return rules;
     }
 
-    findLocalRulesWithReturnType(interf: Type | Interface, rootNode: AstNode): Array<ParserRule | Action> {
+    protected findLocalRulesWithReturnType(interf: Type | Interface, rootNode: AstNode): Array<ParserRule | Action> {
         const rules: Array<ParserRule | Action> = [];
         const parserRulesOrActions = streamAst(rootNode).filter(node => (isParserRule(node) && node.returnType?.ref === interf) || (isAction(node) && node.type?.ref === interf));
         parserRulesOrActions.forEach(rule => {
@@ -227,22 +178,5 @@ export class LangiumGrammarReferences extends DefaultReferences {
             }
         });
         return rules;
-    }
-
-    getReferenceToSelf(target: AstNode): ReferenceDescription | undefined {
-        const nameNode = findNameNode(target, this.nameProvider);
-        if (nameNode) {
-            const doc = getDocument(target);
-            const path = this.nodeLocator.getAstNodePath(target);
-            return {
-                sourceUri: doc.uri,
-                sourcePath: path,
-                targetUri: doc.uri,
-                targetPath: path,
-                segment: toDocumentSegment(nameNode),
-                local: true
-            };
-        }
-        return undefined;
     }
 }

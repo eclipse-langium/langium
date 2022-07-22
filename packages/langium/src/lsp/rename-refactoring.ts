@@ -58,10 +58,11 @@ export class DefaultRenameHandler implements RenameHandler {
         const references = await this.references.findReferences(targetNode!.element, options);
         references.forEach(ref => {
             const change = TextEdit.replace(ref.segment.range, params.newName);
-            if (changes[ref.sourceUri.toString()]) {
-                changes[ref.sourceUri.toString()].push(change);
+            const uri = ref.sourceUri.toString();
+            if (changes[uri]) {
+                changes[uri].push(change);
             } else {
-                changes[ref.sourceUri.toString()] = [change];
+                changes[uri] = [change];
             }
         });
         return { changes };

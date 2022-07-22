@@ -56,7 +56,7 @@ export class DefaultReferenceFinder implements ReferenceFinder {
         const refs: Location[] = [];
         const targetAstNode = this.references.findDeclaration(selectedNode)?.element;
         if (targetAstNode) {
-            const options = {includeDeclaration: params.context.includeDeclaration};
+            const options = { includeDeclaration: params.context.includeDeclaration };
             this.references.findReferences(targetAstNode, options).forEach(reference => {
                 if (isReference(reference)) {
                     refs.push(Location.create(document.uri.toString(), reference.$refNode.range));

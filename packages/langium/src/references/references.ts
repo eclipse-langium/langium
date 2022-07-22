@@ -7,9 +7,10 @@
 import { findAssignment } from '../grammar/grammar-util';
 import { LangiumServices } from '../services';
 import { AstNode, CstNode, Reference } from '../syntax-tree';
-import { isReference } from '../utils/ast-util';
-import { findRelevantNode } from '../utils/cst-util';
-import { Stream } from '../utils/stream';
+import { findNameNode, getDocument, isReference, streamAst, streamReferences } from '../utils/ast-util';
+import { findRelevantNode, toDocumentSegment } from '../utils/cst-util';
+import { stream, Stream } from '../utils/stream';
+import { equalURI } from '../utils/uri-utils';
 import { ReferenceDescription } from '../workspace/ast-descriptions';
 import { AstNodeLocator } from '../workspace/ast-node-locator';
 import { IndexManager } from '../workspace/index-manager';
@@ -83,8 +84,55 @@ export class DefaultReferences implements References {
         return undefined;
     }
 
-    findReferences(targetNode: AstNode, _options: FindReferencesOptions): Stream<ReferenceDescription> {
-        return this.index.findAllReferences(targetNode, this.nodeLocator.getAstNodePath(targetNode));
+    findReferences(targetNode: AstNode, options: FindReferencesOptions): Stream<ReferenceDescription> {
+        if (options.onlyLocal) {
+            return this.findLocalReferences(targetNode, options.includeDeclaration);
+        } else {
+            return this.findGlobalReferences(targetNode, options.includeDeclaration);
+        }
+    }
+
+    protected findGlobalReferences(targetNode: AstNode, includeDeclaration = false): Stream<ReferenceDescription> {
+        const refs: ReferenceDescription[] = [];
+        if (includeDeclaration) {
+            const ref = this.getReferenceToSelf(targetNode);
+            if (ref) {
+                refs.push(ref);
+            }
+        }
+        refs.push(...this.index.findAllReferences(targetNode, this.nodeLocator.getAstNodePath(targetNode)));
+        return stream(refs);
+    }
+
+    protected findLocalReferences(targetNode: AstNode, includeDeclaration = false): Stream<ReferenceDescription> {
+        const doc = getDocument(targetNode);
+        const rootNode = doc.parseResult.value;
+        const refs: ReferenceDescription[] = [];
+        if (includeDeclaration) {
+            const ref = this.getReferenceToSelf(targetNode);
+            if (ref) {
+                refs.push(ref);
+            }
+        }
+        const localReferences: Reference[] = [];
+        streamAst(rootNode).forEach(node => {
+            streamReferences(node).forEach(refInfo => {
+                if (refInfo.reference.ref === targetNode) {
+                    localReferences.push(refInfo.reference);
+                }
+            });
+        });
+        localReferences.forEach(ref => {
+            refs.push({
+                sourceUri: getDocument(ref.$refNode.element).uri,
+                sourcePath: this.nodeLocator.getAstNodePath(ref.$refNode.element),
+                targetUri: getDocument(targetNode).uri,
+                targetPath: this.nodeLocator.getAstNodePath(targetNode),
+                segment: toDocumentSegment(ref.$refNode),
+                local: equalURI(getDocument(ref.$refNode.element).uri, getDocument(targetNode).uri)
+            });
+        });
+        return stream(refs);
     }
 
     protected processReference(reference: Reference): CstNode | undefined {
@@ -101,4 +149,20 @@ export class DefaultReferences implements References {
         return undefined;
     }
 
+    protected getReferenceToSelf(targetNode: AstNode): ReferenceDescription | undefined {
+        const nameNode = findNameNode(targetNode, this.nameProvider);
+        if (nameNode) {
+            const doc = getDocument(targetNode);
+            const path = this.nodeLocator.getAstNodePath(targetNode);
+            return {
+                sourceUri: doc.uri,
+                sourcePath: path,
+                targetUri: doc.uri,
+                targetPath: path,
+                segment: toDocumentSegment(nameNode),
+                local: true
+            };
+        }
+        return undefined;
+    }
 }
