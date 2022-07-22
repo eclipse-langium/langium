@@ -8,7 +8,7 @@ import { DefaultReferences } from '../../references/references';
 import { LangiumServices } from '../../services';
 import { AstNode, CstNode } from '../../syntax-tree';
 import { extractAssignments, findNameNode, getContainerOfType, getDocument, streamAst } from '../../utils/ast-util';
-import { findLeafNodeAtOffset, findRelevantNode, toDocumentSegment } from '../../utils/cst-util';
+import { findRelevantNode, toDocumentSegment } from '../../utils/cst-util';
 import { stream, Stream } from '../../utils/stream';
 import { equalURI } from '../../utils/uri-utils';
 import { ReferenceDescription } from '../../workspace/ast-descriptions';
@@ -33,27 +33,27 @@ export class LangiumGrammarReferences extends DefaultReferences {
         return super.findDeclaration(sourceCstNode);
     }
 
-    protected findLocalReferences(target: AstNode, includeDeclaration = false): Stream<ReferenceDescription> {
-        if (isTypeAttribute(target)) {
-            const doc = getDocument(target);
+    protected findLocalReferences(targetNode: AstNode, includeDeclaration = false): Stream<ReferenceDescription> {
+        if (isTypeAttribute(targetNode)) {
+            const doc = getDocument(targetNode);
             const rootNode = doc.parseResult.value;
-            return this.findLocalReferencesToTypeAttribute(target, rootNode);
+            return this.findLocalReferencesToTypeAttribute(targetNode, rootNode, includeDeclaration);
         } else {
-            return super.findLocalReferences(target, includeDeclaration);
+            return super.findLocalReferences(targetNode, includeDeclaration);
         }
     }
 
-    protected findGlobalReferences(target: AstNode, includeDeclaration = false): Stream<ReferenceDescription> {
-        if (isTypeAttribute(target)) {
-            return this.findReferencesToTypeAttribute(target);
+    protected findGlobalReferences(targetNode: AstNode, includeDeclaration = false): Stream<ReferenceDescription> {
+        if (isTypeAttribute(targetNode)) {
+            return this.findReferencesToTypeAttribute(targetNode, includeDeclaration);
         } else {
-            return super.findGlobalReferences(target, includeDeclaration);
+            return super.findGlobalReferences(targetNode, includeDeclaration);
         }
     }
 
-    protected findLocalReferencesToTypeAttribute(target: TypeAttribute, rootNode: AstNode): Stream<ReferenceDescription> {
+    protected findLocalReferencesToTypeAttribute(targetNode: TypeAttribute, rootNode: AstNode, includeDeclaration: boolean): Stream<ReferenceDescription> {
         const refs: ReferenceDescription[] = [];
-        const interfaceNode = getContainerOfType(target, isInterface);
+        const interfaceNode = getContainerOfType(targetNode, isInterface);
         if (interfaceNode) {
             const interfaces = collectChildrenTypes(interfaceNode, this, this.documents, this.nodeLocator);
             const targetRules: Array<ParserRule | Action> = [];
@@ -61,26 +61,26 @@ export class LangiumGrammarReferences extends DefaultReferences {
                 const rules = this.findLocalRulesWithReturnType(interf, rootNode);
                 targetRules.push(...rules);
             });
-            if (equalURI(getDocument(target).uri, getDocument(rootNode).uri)) {
-                const ref = this.getReferenceToSelf(target);
+            if (equalURI(getDocument(targetNode).uri, getDocument(rootNode).uri) && includeDeclaration) {
+                const ref = this.getReferenceToSelf(targetNode);
                 if (ref) {
                     refs.push(ref);
                 }
             }
             targetRules.forEach(rule => {
                 const assignment = isParserRule(rule) ?
-                    extractAssignments(rule.definition).find(a => a.feature === target.name)
-                    : getContainerOfType(rule, isGroup)!.elements.find(el => isAssignment(el) && el.feature === target.name);
+                    extractAssignments(rule.definition).find(a => a.feature === targetNode.name)
+                    : getContainerOfType(rule, isGroup)!.elements.find(el => isAssignment(el) && el.feature === targetNode.name);
                 if (assignment?.$cstNode) {
-                    const leaf = findLeafNodeAtOffset(assignment.$cstNode!, assignment.$cstNode!.offset);
+                    const leaf = findNodeForFeature(assignment.$cstNode, 'feature');
                     if (leaf) {
                         refs.push({
                             sourceUri: getDocument(assignment).uri,
                             sourcePath: this.nodeLocator.getAstNodePath(assignment),
-                            targetUri: getDocument(target).uri,
-                            targetPath: this.nodeLocator.getAstNodePath(target),
+                            targetUri: getDocument(targetNode).uri,
+                            targetPath: this.nodeLocator.getAstNodePath(targetNode),
                             segment: toDocumentSegment(leaf),
-                            local: equalURI(getDocument(assignment).uri, getDocument(target).uri)
+                            local: equalURI(getDocument(assignment).uri, getDocument(targetNode).uri)
                         });
                     }
                 }
@@ -89,13 +89,15 @@ export class LangiumGrammarReferences extends DefaultReferences {
         return stream(refs);
     }
 
-    protected findReferencesToTypeAttribute(target: TypeAttribute): Stream<ReferenceDescription> {
+    protected findReferencesToTypeAttribute(targetNode: TypeAttribute, includeDeclaration: boolean): Stream<ReferenceDescription> {
         const refs: ReferenceDescription[] = [];
-        const interfaceNode = getContainerOfType(target, isInterface);
+        const interfaceNode = getContainerOfType(targetNode, isInterface);
         if (interfaceNode) {
-            const ref = this.getReferenceToSelf(target);
-            if (ref) {
-                refs.push(ref);
+            if (includeDeclaration) {
+                const ref = this.getReferenceToSelf(targetNode);
+                if (ref) {
+                    refs.push(ref);
+                }
             }
             const interfaces = collectChildrenTypes(interfaceNode, this, this.documents, this.nodeLocator);
             const targetRules: Array<ParserRule | Action> = [];
@@ -105,18 +107,18 @@ export class LangiumGrammarReferences extends DefaultReferences {
             });
             targetRules.forEach(rule => {
                 const assignment = isParserRule(rule) ?
-                    extractAssignments(rule.definition).find(a => a.feature === target.name)
-                    : getContainerOfType(rule, isGroup)!.elements.find(el => isAssignment(el) && el.feature === target.name);
+                    extractAssignments(rule.definition).find(a => a.feature === targetNode.name)
+                    : getContainerOfType(rule, isGroup)!.elements.find(el => isAssignment(el) && el.feature === targetNode.name);
                 if (assignment?.$cstNode) {
-                    const leaf = findLeafNodeAtOffset(assignment.$cstNode!, assignment.$cstNode!.offset);
+                    const leaf = findNodeForFeature(assignment.$cstNode, 'feature');
                     if (leaf) {
                         refs.push({
                             sourceUri: getDocument(assignment).uri,
                             sourcePath: this.nodeLocator.getAstNodePath(assignment),
-                            targetUri: getDocument(target).uri,
-                            targetPath: this.nodeLocator.getAstNodePath(target),
+                            targetUri: getDocument(targetNode).uri,
+                            targetPath: this.nodeLocator.getAstNodePath(targetNode),
                             segment: toDocumentSegment(leaf),
-                            local: equalURI(getDocument(assignment).uri, getDocument(target).uri)
+                            local: equalURI(getDocument(assignment).uri, getDocument(targetNode).uri)
                         });
                     }
                 }

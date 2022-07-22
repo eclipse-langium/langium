@@ -5,7 +5,6 @@
  ******************************************************************************/
 
 import { CancellationToken, Position, Range, RenameClientCapabilities, RenameParams, TextDocumentPositionParams, TextEdit, WorkspaceEdit } from 'vscode-languageserver';
-import { isAssignment } from '../grammar/generated/ast';
 import { isNamed, NameProvider } from '../references/naming';
 import { References } from '../references/references';
 import { LangiumServices } from '../services';
@@ -51,11 +50,13 @@ export class DefaultRenameHandler implements RenameHandler {
     async renameElement(document: LangiumDocument, params: RenameParams): Promise<WorkspaceEdit | undefined> {
         const changes: Record<string, TextEdit[]> = {};
         const rootNode = document.parseResult.value.$cstNode;
+        if (!rootNode) return undefined;
         const offset = document.textDocument.offsetAt(params.position);
-        const leafNode = findLeafNodeAtOffset(rootNode!, offset);
-        const targetNode = await this.references.findDeclaration(leafNode!) ?? leafNode;
+        const leafNode = findLeafNodeAtOffset(rootNode, offset);
+        if (!leafNode) return undefined;
+        const targetNode = await this.references.findDeclaration(leafNode) ?? leafNode;
         const options = {onlyLocal: false, includeDeclaration: true};
-        const references = await this.references.findReferences(targetNode!.element, options);
+        const references = await this.references.findReferences(targetNode.element, options);
         references.forEach(ref => {
             const change = TextEdit.replace(ref.segment.range, params.newName);
             const uri = ref.sourceUri.toString();
@@ -82,7 +83,7 @@ export class DefaultRenameHandler implements RenameHandler {
             }
             const isCrossRef = this.references.findDeclaration(leafNode);
             // return range if selected CstNode is the name node or it is a crosslink which points to a declaration
-            if (isCrossRef || isAssignment(leafNode.element) || this.isNameNode(leafNode)) {
+            if (isCrossRef || this.isNameNode(leafNode)) {
                 return leafNode.range;
             }
         }

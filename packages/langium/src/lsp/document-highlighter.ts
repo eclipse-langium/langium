@@ -4,11 +4,10 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { CancellationToken, DocumentHighlight, DocumentHighlightKind, DocumentHighlightParams } from 'vscode-languageserver';
+import { CancellationToken, DocumentHighlight, DocumentHighlightClientCapabilities, DocumentHighlightKind, DocumentHighlightParams, Range } from 'vscode-languageserver';
 import { NameProvider } from '../references/naming';
 import { References } from '../references/references';
-import { LangiumServices } from '../services';
-import { AstNode, CstNode, Reference } from '../syntax-tree';
+import { InitializableService, LangiumServices } from '../services';
 import { getDocument } from '../utils/ast-util';
 import { findLeafNodeAtOffset } from '../utils/cst-util';
 import { MaybePromise } from '../utils/promise-util';
@@ -48,31 +47,16 @@ export class DefaultDocumentHighlighter implements DocumentHighlighter {
         }
         const targetAstNode = this.references.findDeclaration(selectedNode)?.element;
         if (targetAstNode) {
-            const refs: Array<[CstNode, DocumentHighlightKind]> = [];
+            const refs: Array<[Range, DocumentHighlightKind]> = [];
             const includeDeclaration = equalURI(getDocument(targetAstNode).uri, document.uri);
             const options = {onlyLocal: true, includeDeclaration};
             this.references.findReferences(targetAstNode, options).forEach(ref => {
-                const leaf = findLeafNodeAtOffset(rootNode, ref.segment.offset);
-                if (leaf) {
-                    refs.push([leaf, this.getHighlightKind(leaf)]);
-                }
+                refs.push([ref.segment.range, DocumentHighlightKind.Read]);
             });
-            return refs.map(([node, kind]) =>
-                DocumentHighlight.create(node.range, kind)
+            return refs.map(([range, kind]) =>
+                DocumentHighlight.create(range, kind)
             );
         }
         return undefined;
     }
-
-    /**
-     * Override this method to determine the highlight kind of the given CST node.
-     */
-    protected getHighlightKind(node: CstNode, reference?: Reference<AstNode>): DocumentHighlightKind {
-        if (reference) {
-            return DocumentHighlightKind.Read;
-        } else {
-            return DocumentHighlightKind.Text;
-        }
-    }
-
 }
