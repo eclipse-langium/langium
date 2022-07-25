@@ -4,10 +4,18 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { createLangiumGrammarServices, startLanguageServer } from 'langium';
+import { createLangiumGrammarServices, LangiumSharedServices, Module, PartialLangiumSharedServices, startLanguageServer } from 'langium';
 import { NodeFileSystem } from 'langium/node';
 import { createConnection, ProposedFeatures } from 'vscode-languageserver/node';
+import { LangiumGrammarWorkspaceManager } from './grammar-workspace-manager';
 
 const connection = createConnection(ProposedFeatures.all);
-const { shared } = createLangiumGrammarServices({ connection, ...NodeFileSystem });
+
+export const LangiumGrammarSharedModule: Module<LangiumSharedServices, PartialLangiumSharedServices> = {
+    workspace: {
+        WorkspaceManager: (services) => new LangiumGrammarWorkspaceManager(services)
+    }
+};
+
+const { shared } = createLangiumGrammarServices({ connection, ...NodeFileSystem }, LangiumGrammarSharedModule);
 startLanguageServer(shared);

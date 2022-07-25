@@ -34,12 +34,12 @@ function startLanguageClient(context: vscode.ExtensionContext): LanguageClient {
     // If the extension is launched in debug mode then the debug server options are used
     // Otherwise the run options are used
     const serverOptions: ServerOptions = {
-      run: { module: serverModule, transport: TransportKind.ipc },
-      debug: {
-        module: serverModule,
-        transport: TransportKind.ipc,
-        options: debugOptions
-      }
+        run: { module: serverModule, transport: TransportKind.ipc },
+        debug: {
+            module: serverModule,
+            transport: TransportKind.ipc,
+            options: debugOptions
+        }
     };
 
     const fileSystemWatcher = vscode.workspace.createFileSystemWatcher('**/*.langium');
@@ -47,27 +47,26 @@ function startLanguageClient(context: vscode.ExtensionContext): LanguageClient {
 
     // Options to control the language client
     const clientOptions: LanguageClientOptions = {
-      // Register the server for langium documents
-      documentSelector: [{ scheme: 'file', language: 'langium' }],
-      synchronize: {
-        // Notify the server about file changes to langium files contained in the workspace
-        fileEvents: fileSystemWatcher
-      }
+        // Register the server for langium documents
+        documentSelector: [{ scheme: 'file', language: 'langium' }],
+        synchronize: {
+            // Notify the server about file changes to langium files contained in the workspace
+            fileEvents: fileSystemWatcher
+        }
     };
 
     // Create the language client and start the client.
     const client = new LanguageClient(
-      'langium',
-      'Langium',
-      serverOptions,
-      clientOptions
+        'langium',
+        'Langium',
+        serverOptions,
+        clientOptions
     );
 
     // Start the client. This will also launch the server
     client.start();
     return client;
 }
-
 
 // TODO(@@dd): externalize extension config
 const DELAY = 100; // delay in ms until a render can be cancelled on subsequent document changes
@@ -93,7 +92,7 @@ type CancelableDecorator = () => void;
 type TimeoutID = ReturnType<typeof setTimeout>; // NodeJS.Timer (node) or number (browser)
 
 // adds the ability to cancel decoration requests
-function cancelableDecorator(decorator: Decorator, delay: number = 500): CancelableDecorator {
+function cancelableDecorator(decorator: Decorator, _delay = 500): CancelableDecorator {
     let timeout: TimeoutID | undefined; // works for window.setTimeout() & NodeJS
     return () => {
         const editor = vscode.window.activeTextEditor;
@@ -137,7 +136,7 @@ function decorateText(document: vscode.TextDocument, decorations: vscode.Decorat
     }
 }
 
- // TODO(@@dd): find bug
+// TODO(@@dd): find bug
 function findIndentation(text: string): number {
     const indents = text.split(/[\r?\n]/g).map(line => line.trimRight()).filter(line => line.length > 0).map(line => line.search(/\S|$/));
     const min = indents.length === 0 ? 0 : Math.min(...indents); // min(...[]) = min() = Infinity
@@ -146,7 +145,7 @@ function findIndentation(text: string): number {
 
 function isSmartTemplate(name: string, index: number): boolean {
     // TODO(@@dd): check if symbol(name)'s type resolves to smart template
-    return name === "indent" && index !== -1;
+    return name === 'indent' && index !== -1;
 }
 
 // styling of a decorated range
