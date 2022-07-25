@@ -7,7 +7,7 @@
 import { findAssignment } from '../grammar/grammar-util';
 import { LangiumServices } from '../services';
 import { AstNode, CstNode, Reference } from '../syntax-tree';
-import { findNameNode, getDocument, isReference, streamAst, streamReferences } from '../utils/ast-util';
+import { getDocument, isReference, streamAst, streamReferences } from '../utils/ast-util';
 import { findRelevantNode, toDocumentSegment } from '../utils/cst-util';
 import { stream, Stream } from '../utils/stream';
 import { equalURI } from '../utils/uri-utils';
@@ -141,8 +141,7 @@ export class DefaultReferences implements References {
             const targetNode = this.nameProvider.getNameNode(ref);
             if (!targetNode) {
                 return ref.$cstNode;
-            }
-            else {
+            } else {
                 return targetNode;
             }
         }
@@ -150,7 +149,7 @@ export class DefaultReferences implements References {
     }
 
     protected getReferenceToSelf(targetNode: AstNode): ReferenceDescription | undefined {
-        const nameNode = findNameNode(targetNode, this.nameProvider);
+        const nameNode = this.nameProvider.getNameNode(targetNode);
         if (nameNode) {
             const doc = getDocument(targetNode);
             const path = this.nodeLocator.getAstNodePath(targetNode);

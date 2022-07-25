@@ -348,7 +348,26 @@ describe('findReferences', () => {
 
         interface C extends B {}
 
-        ruleC returns C: <|na<|>me|>=ID;
+        ruleC returns C: (<|na<|>me|>=ID);
+        `;
+
+        await findReferences({
+            text: grammar,
+            includeDeclaration: true
+        });
+    });
+
+    test('Must find references to action assignment in parser rule returning interface', async () =>{
+        const grammar = `grammar test 
+        hidden terminal WS: /\\s+/;
+        terminal ID: /\\w+/;
+
+        interface A {
+            <|<|>x|>: X
+        }
+
+        ruleA returns A: X {A.<|<|>x|>=current};
+        X: name=ID;
         `;
 
         await findReferences({

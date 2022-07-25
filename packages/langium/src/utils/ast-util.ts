@@ -5,11 +5,9 @@
  ******************************************************************************/
 
 import * as ast from '../grammar/generated/ast';
-import { NameProvider } from '../references/naming';
-import { AstNode, AstNodeDescription, CstNode, LinkingError, Reference, ReferenceInfo } from '../syntax-tree';
+import { AstNode, AstNodeDescription, LinkingError, Reference, ReferenceInfo } from '../syntax-tree';
 import { DONE_RESULT, Stream, stream, StreamImpl, TreeStream, TreeStreamImpl } from '../utils/stream';
 import { LangiumDocument } from '../workspace/documents';
-import { findLeafNodeAtOffset } from './cst-util';
 
 export type Mutable<T> = {
     -readonly [P in keyof T]: T[P]
@@ -226,14 +224,4 @@ export function extractAssignments(element: ast.AbstractElement): ast.Assignment
         return element.elements.flatMap(e => extractAssignments(e));
     }
     return [];
-}
-
-export function findNameNode(node: AstNode, nameProvider: NameProvider): CstNode | undefined {
-    const nameNode = nameProvider.getNameNode(node);
-    if (nameNode)
-        return nameNode;
-    const leaf = findLeafNodeAtOffset(node.$cstNode!, node.$cstNode!.offset);
-    if (leaf)
-        return leaf;
-    return node.$cstNode;
 }

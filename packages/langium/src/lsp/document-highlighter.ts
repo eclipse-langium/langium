@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { CancellationToken, DocumentHighlight, DocumentHighlightClientCapabilities, DocumentHighlightKind, DocumentHighlightParams, Range } from 'vscode-languageserver';
+import { CancellationToken, DocumentHighlight, DocumentHighlightClientCapabilities, DocumentHighlightParams } from 'vscode-languageserver';
 import { NameProvider } from '../references/naming';
 import { References } from '../references/references';
 import { InitializableService, LangiumServices } from '../services';
@@ -48,15 +48,13 @@ export class DefaultDocumentHighlighter implements DocumentHighlighter {
         }
         const targetAstNode = this.references.findDeclaration(selectedNode)?.element;
         if (targetAstNode) {
-            const refs: Array<[Range, DocumentHighlightKind]> = [];
+            const refs: DocumentHighlight[] = [];
             const includeDeclaration = equalURI(getDocument(targetAstNode).uri, document.uri);
-            const options = {onlyLocal: true, includeDeclaration};
+            const options = { onlyLocal: true, includeDeclaration };
             this.references.findReferences(targetAstNode, options).forEach(ref => {
-                refs.push([ref.segment.range, this.getHighlightKind(ref)]);
+                refs.push(this.createDocumentHighlight(ref));
             });
-            return refs.map(([range, kind]) =>
-                DocumentHighlight.create(range, kind)
-            );
+            return refs;
         }
         return undefined;
     }
@@ -64,11 +62,7 @@ export class DefaultDocumentHighlighter implements DocumentHighlighter {
     /**
     * Override this method to determine the highlight kind of the given reference.
     */
-    protected getHighlightKind(reference: ReferenceDescription): DocumentHighlightKind {
-        if (reference) {
-            return DocumentHighlightKind.Read;
-        }
-
-        return DocumentHighlightKind.Text;
+    protected createDocumentHighlight(reference: ReferenceDescription): DocumentHighlight {
+        return DocumentHighlight.create(reference.segment.range);
     }
 }

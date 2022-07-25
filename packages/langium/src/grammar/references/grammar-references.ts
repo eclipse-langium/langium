@@ -7,14 +7,14 @@
 import { DefaultReferences } from '../../references/references';
 import { LangiumServices } from '../../services';
 import { AstNode, CstNode } from '../../syntax-tree';
-import { extractAssignments, findNameNode, getContainerOfType, getDocument, streamAst } from '../../utils/ast-util';
+import { extractAssignments, getContainerOfType, getDocument, streamAst } from '../../utils/ast-util';
 import { findRelevantNode, toDocumentSegment } from '../../utils/cst-util';
 import { stream, Stream } from '../../utils/stream';
 import { equalURI } from '../../utils/uri-utils';
 import { ReferenceDescription } from '../../workspace/ast-descriptions';
 import { LangiumDocuments } from '../../workspace/documents';
-import { Action, Assignment, Interface, isAction, isAssignment, isGroup, isInterface, isParserRule, isType, isTypeAttribute, ParserRule, Type, TypeAttribute } from '../generated/ast';
-import { findNodeForFeature } from '../grammar-util';
+import { Action, Assignment, Interface, isAction, isAssignment, isInterface, isParserRule, isType, isTypeAttribute, ParserRule, Type, TypeAttribute } from '../generated/ast';
+import { findNodeForFeature, getActionAtElement } from '../grammar-util';
 import { collectChildrenTypes, collectSuperTypes } from '../type-system/types-util';
 
 export class LangiumGrammarReferences extends DefaultReferences {
@@ -29,6 +29,8 @@ export class LangiumGrammarReferences extends DefaultReferences {
         const nodeElem = findRelevantNode(sourceCstNode);
         if (isAssignment(nodeElem)) {
             return this.findAssignmentDeclaration(nodeElem);
+        } else if (isAction(nodeElem) && nodeElem.feature === sourceCstNode.text) {
+            return this.findActionDeclaration(nodeElem);
         }
         return super.findDeclaration(sourceCstNode);
     }
@@ -68,22 +70,8 @@ export class LangiumGrammarReferences extends DefaultReferences {
                 }
             }
             targetRules.forEach(rule => {
-                const assignment = isParserRule(rule) ?
-                    extractAssignments(rule.definition).find(a => a.feature === targetNode.name)
-                    : getContainerOfType(rule, isGroup)!.elements.find(el => isAssignment(el) && el.feature === targetNode.name);
-                if (assignment?.$cstNode) {
-                    const leaf = findNodeForFeature(assignment.$cstNode, 'feature');
-                    if (leaf) {
-                        refs.push({
-                            sourceUri: getDocument(assignment).uri,
-                            sourcePath: this.nodeLocator.getAstNodePath(assignment),
-                            targetUri: getDocument(targetNode).uri,
-                            targetPath: this.nodeLocator.getAstNodePath(targetNode),
-                            segment: toDocumentSegment(leaf),
-                            local: equalURI(getDocument(assignment).uri, getDocument(targetNode).uri)
-                        });
-                    }
-                }
+                const references = this.createReferencesToAttribute(rule, targetNode);
+                refs.push(...references);
             });
         }
         return stream(refs);
@@ -106,56 +94,85 @@ export class LangiumGrammarReferences extends DefaultReferences {
                 targetRules.push(...rules);
             });
             targetRules.forEach(rule => {
-                const assignment = isParserRule(rule) ?
-                    extractAssignments(rule.definition).find(a => a.feature === targetNode.name)
-                    : getContainerOfType(rule, isGroup)!.elements.find(el => isAssignment(el) && el.feature === targetNode.name);
-                if (assignment?.$cstNode) {
-                    const leaf = findNodeForFeature(assignment.$cstNode, 'feature');
-                    if (leaf) {
-                        refs.push({
-                            sourceUri: getDocument(assignment).uri,
-                            sourcePath: this.nodeLocator.getAstNodePath(assignment),
-                            targetUri: getDocument(targetNode).uri,
-                            targetPath: this.nodeLocator.getAstNodePath(targetNode),
-                            segment: toDocumentSegment(leaf),
-                            local: equalURI(getDocument(assignment).uri, getDocument(targetNode).uri)
-                        });
-                    }
-                }
+                const references = this.createReferencesToAttribute(rule, targetNode);
+                refs.push(...references);
             });
         }
         return stream(refs);
     }
 
+    protected createReferencesToAttribute(ruleOrAction: ParserRule | Action, attribute: TypeAttribute): ReferenceDescription[] {
+        const refs: ReferenceDescription[] = [];
+        if (isParserRule(ruleOrAction)) {
+            const assignment = extractAssignments(ruleOrAction.definition).find(a => a.feature === attribute.name);
+            if (assignment?.$cstNode) {
+                const leaf = this.nameProvider.getNameNode(assignment);
+                if (leaf) {
+                    refs.push({
+                        sourceUri: getDocument(assignment).uri,
+                        sourcePath: this.nodeLocator.getAstNodePath(assignment),
+                        targetUri: getDocument(attribute).uri,
+                        targetPath: this.nodeLocator.getAstNodePath(attribute),
+                        segment: toDocumentSegment(leaf),
+                        local: equalURI(getDocument(assignment).uri, getDocument(attribute).uri)
+                    });
+                }
+            }
+        } else {
+            if (ruleOrAction.feature === attribute.name) {
+                const leaf = findNodeForFeature(ruleOrAction.$cstNode, 'feature');
+                if (leaf) {
+                    refs.push({
+                        sourceUri: getDocument(ruleOrAction).uri,
+                        sourcePath: this.nodeLocator.getAstNodePath(ruleOrAction),
+                        targetUri: getDocument(attribute).uri,
+                        targetPath: this.nodeLocator.getAstNodePath(attribute),
+                        segment: toDocumentSegment(leaf),
+                        local: equalURI(getDocument(ruleOrAction).uri, getDocument(attribute).uri)
+                    });
+                }
+            }
+            const parserRule = getContainerOfType(ruleOrAction, isParserRule);
+            refs.push(...this.createReferencesToAttribute(parserRule!, attribute));
+        }
+        return refs;
+    }
+
     protected findAssignmentDeclaration(assignment: Assignment): CstNode | undefined {
         const parserRule = getContainerOfType(assignment, isParserRule);
-        const groupNode = getContainerOfType(assignment, isGroup);
+        const action = getActionAtElement(assignment);
+        if (action) {
+            const actionDeclaration = this.findActionDeclaration(action, assignment.feature);
+            if (actionDeclaration) {
+                return actionDeclaration;
+            }
+        }
         if (parserRule?.returnType?.ref) {
             if (isInterface(parserRule.returnType.ref) || isType(parserRule.returnType.ref)) {
                 const interfaces = collectSuperTypes(parserRule.returnType.ref);
                 for (const interf of interfaces) {
                     const typeAttribute = interf.attributes.find(att => att.name === assignment.feature);
                     if (typeAttribute) {
-                        return findNameNode(typeAttribute, this.nameProvider);
+                        return this.nameProvider.getNameNode(typeAttribute);
                     }
                 }
             }
         }
-        if (groupNode) {
-            const action = groupNode.elements.find(el => isAction(el)) as Action | undefined;
-            if (action) {
-                if (action.type?.ref) {
-                    const interfaces = collectSuperTypes(action.type.ref);
-                    for (const interf of interfaces) {
-                        const typeAttribute = interf.attributes.find(att => att.name === assignment.feature);
-                        if (typeAttribute) {
-                            return findNameNode(typeAttribute, this.nameProvider);
-                        }
-                    }
+        return this.nameProvider.getNameNode(assignment);
+    }
+
+    protected findActionDeclaration(action: Action, featureName?: string): CstNode | undefined {
+        if (action.type?.ref) {
+            const feature = featureName ?? action.feature;
+            const interfaces = collectSuperTypes(action.type.ref);
+            for (const interf of interfaces) {
+                const typeAttribute = interf.attributes.find(att => att.name === feature);
+                if (typeAttribute) {
+                    return this.nameProvider.getNameNode(typeAttribute);
                 }
             }
         }
-        return findNodeForFeature(assignment.$cstNode,'feature');
+        return undefined;
     }
 
     protected findRulesWithReturnType(interf: Interface | Type): Array<ParserRule | Action> {
