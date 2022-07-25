@@ -12,6 +12,7 @@ import { getDocument } from '../utils/ast-util';
 import { findLeafNodeAtOffset } from '../utils/cst-util';
 import { MaybePromise } from '../utils/promise-util';
 import { equalURI } from '../utils/uri-utils';
+import { ReferenceDescription } from '../workspace/ast-descriptions';
 import { LangiumDocument } from '../workspace/documents';
 
 /**
@@ -51,12 +52,23 @@ export class DefaultDocumentHighlighter implements DocumentHighlighter {
             const includeDeclaration = equalURI(getDocument(targetAstNode).uri, document.uri);
             const options = {onlyLocal: true, includeDeclaration};
             this.references.findReferences(targetAstNode, options).forEach(ref => {
-                refs.push([ref.segment.range, DocumentHighlightKind.Read]);
+                refs.push([ref.segment.range, this.getHighlightKind(ref)]);
             });
             return refs.map(([range, kind]) =>
                 DocumentHighlight.create(range, kind)
             );
         }
         return undefined;
+    }
+
+    /**
+    * Override this method to determine the highlight kind of the given reference.
+    */
+    protected getHighlightKind(reference: ReferenceDescription): DocumentHighlightKind {
+        if (reference) {
+            return DocumentHighlightKind.Read;
+        }
+
+        return DocumentHighlightKind.Text;
     }
 }
