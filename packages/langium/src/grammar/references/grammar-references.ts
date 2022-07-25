@@ -30,6 +30,7 @@ export class LangiumGrammarReferences extends DefaultReferences {
         if (isAssignment(nodeElem)) {
             return this.findAssignmentDeclaration(nodeElem);
         } else if (isAction(nodeElem) && nodeElem.feature === sourceCstNode.text) {
+            // Only search for a special declaration if the cst node is the feature property of the action
             return this.findActionDeclaration(nodeElem);
         }
         return super.findDeclaration(sourceCstNode);
@@ -119,6 +120,7 @@ export class LangiumGrammarReferences extends DefaultReferences {
                 }
             }
         } else {
+            // If the action references the attribute directly
             if (ruleOrAction.feature === attribute.name) {
                 const leaf = findNodeForFeature(ruleOrAction.$cstNode, 'feature');
                 if (leaf) {
@@ -132,6 +134,7 @@ export class LangiumGrammarReferences extends DefaultReferences {
                     });
                 }
             }
+            // Find all references within the parser rule that contains this action
             const parserRule = getContainerOfType(ruleOrAction, isParserRule);
             refs.push(...this.createReferencesToAttribute(parserRule!, attribute));
         }
