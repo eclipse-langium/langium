@@ -26,12 +26,15 @@ export class LangiumGrammarReferences extends DefaultReferences {
     }
 
     findDeclaration(sourceCstNode: CstNode): CstNode | undefined {
-        const nodeElem = findRelevantNode(sourceCstNode);
-        if (isAssignment(nodeElem)) {
-            return this.findAssignmentDeclaration(nodeElem);
-        } else if (isAction(nodeElem) && nodeElem.feature === sourceCstNode.text) {
-            // Only search for a special declaration if the cst node is the feature property of the action
-            return this.findActionDeclaration(nodeElem);
+        const nodeElem = sourceCstNode.element;
+        const assignment = findAssignment(sourceCstNode);
+        if (assignment && assignment.feature === 'feature') {
+            // Only search for a special declaration if the cst node is the feature property of the action/assignment
+            if (isAssignment(nodeElem)) {
+                return this.findAssignmentDeclaration(nodeElem);
+            } else if (isAction(nodeElem)) {
+                return this.findActionDeclaration(nodeElem);
+            }
         }
         return super.findDeclaration(sourceCstNode);
     }

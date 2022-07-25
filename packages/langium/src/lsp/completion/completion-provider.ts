@@ -13,7 +13,7 @@ import { ScopeProvider } from '../../references/scope';
 import { LangiumServices } from '../../services';
 import { AstNode, AstNodeDescription, CstNode } from '../../syntax-tree';
 import { getContainerOfType, isAstNode } from '../../utils/ast-util';
-import { findLeafNodeAtOffset, findRelevantNode, flattenCst } from '../../utils/cst-util';
+import { findLeafNodeAtOffset, flattenCst } from '../../utils/cst-util';
 import { MaybePromise } from '../../utils/promise-util';
 import { stream } from '../../utils/stream';
 import { LangiumDocument } from '../../workspace/documents';
@@ -85,7 +85,7 @@ export class DefaultCompletionProvider implements CompletionProvider {
                     } else {
                         return e;
                     }
-                }).forEach(e => this.completionFor(findRelevantNode(node), e, acceptor));
+                }).forEach(e => this.completionFor(node.element, e, acceptor));
             } else {
                 // The entry rule is the first parser rule
                 // eslint-disable-next-line @typescript-eslint/no-non-null-assertion

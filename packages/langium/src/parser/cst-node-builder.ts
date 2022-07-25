@@ -7,7 +7,7 @@
 import { IToken, TokenType } from 'chevrotain';
 import { Position, Range } from 'vscode-languageserver-types';
 import { AbstractElement } from '../grammar/generated/ast';
-import { AstNode, CompositeCstNode, CstNode, LeafCstNode } from '../syntax-tree';
+import { AstNode, CompositeCstNode, CstNode, isCompositeCstNode, LeafCstNode, RootCstNode } from '../syntax-tree';
 import { tokenToRange } from '../utils/cst-util';
 
 export class CstNodeBuilder {
@@ -19,9 +19,10 @@ export class CstNodeBuilder {
         return this.nodeStack[this.nodeStack.length - 1];
     }
 
-    buildRootNode(input: string): void {
+    buildRootNode(input: string): RootCstNode {
         this.rootNode = new RootCstNodeImpl(input);
         this.nodeStack = [this.rootNode];
+        return this.rootNode;
     }
 
     buildCompositeNode(feature: AbstractElement): CompositeCstNode {
@@ -66,6 +67,36 @@ export class CstNodeBuilder {
             this.removeNode(node);
         }
     }
+
+    addHiddenTokens(hiddenTokens?: IToken[]): void {
+        if (hiddenTokens) {
+            for (const token of hiddenTokens) {
+                const hiddenNode = new LeafCstNodeImpl(token.startOffset, token.image.length, tokenToRange(token), token.tokenType, true);
+                hiddenNode.root = this.rootNode;
+                this.addHiddenToken(this.rootNode, hiddenNode);
+            }
+        }
+    }
+
+    private addHiddenToken(node: CompositeCstNode, token: LeafCstNode): void {
+        const { offset: tokenStart, end: tokenEnd } = token;
+
+        for (let i = 0; i < node.children.length; i++) {
+            const child = node.children[i];
+            const { offset: childStart, end: childEnd } = child;
+            if (isCompositeCstNode(child) && tokenStart > childStart && tokenEnd < childEnd) {
+                this.addHiddenToken(child, token);
+                return;
+            } else if (tokenEnd <= childStart) {
+                node.children.splice(i, 0, token);
+                return;
+            }
+        }
+
+        // We know that we haven't found a suited position for the token
+        // So we simply add it to the end of the current node
+        node.children.push(token);
+    }
 }
 
 export abstract class AbstractCstNode implements CstNode {
@@ -75,15 +106,19 @@ export abstract class AbstractCstNode implements CstNode {
     abstract get range(): Range;
     parent?: CompositeCstNode;
     feature!: AbstractElement;
-    root!: RootCstNodeImpl;
-    private _element!: AstNode;
+    root!: RootCstNode;
+    private _element?: AstNode;
 
     get hidden(): boolean {
         return false;
     }
 
     get element(): AstNode {
-        return this._element ?? this.parent?.element;
+        const node = typeof this._element?.$type === 'string' ? this._element : this.parent?.element;
+        if (!node) {
+            throw new Error('This node has no associated AST element');
+        }
+        return node;
     }
 
     set element(value: AstNode) {
@@ -91,7 +126,7 @@ export abstract class AbstractCstNode implements CstNode {
     }
 
     get text(): string {
-        return this.root.text.substring(this.offset, this.end);
+        return this.root.fullText.substring(this.offset, this.end);
     }
 }
 
@@ -218,23 +253,15 @@ class CstNodeContainer extends Array<CstNode> {
     }
 }
 
-export class RootCstNodeImpl extends CompositeCstNodeImpl {
+export class RootCstNodeImpl extends CompositeCstNodeImpl implements RootCstNode {
     private _text = '';
 
-    set text(value: string) {
-        this._text = value;
-    }
-
     get text(): string {
+        return this._text.substring(this.offset, this.end);
+    }
+
+    get fullText(): string {
         return this._text;
-    }
-
-    get offset(): number {
-        return 0;
-    }
-
-    get length(): number {
-        return this.text.length;
     }
 
     constructor(input?: string) {

@@ -10,7 +10,7 @@ import { References } from '../references/references';
 import { LangiumServices } from '../services';
 import { CstNode } from '../syntax-tree';
 import { getDocument } from '../utils/ast-util';
-import { findLeafNodeAtOffset } from '../utils/cst-util';
+import { findDeclarationNodeAtOffset } from '../utils/cst-util';
 import { MaybePromise } from '../utils/promise-util';
 import { LangiumDocument } from '../workspace/documents';
 
@@ -47,7 +47,7 @@ export class DefaultGoToResolverProvider implements GoToResolver {
         const rootNode = document.parseResult.value;
         if (rootNode.$cstNode) {
             const cst = rootNode.$cstNode;
-            const sourceCstNode = findLeafNodeAtOffset(cst, document.textDocument.offsetAt(params.position));
+            const sourceCstNode = findDeclarationNodeAtOffset(cst, document.textDocument.offsetAt(params.position));
             if (sourceCstNode) {
                 return this.collectLocationLinks(sourceCstNode, params);
             }

@@ -9,7 +9,15 @@ import { expectHover } from '../../src/test';
 import { expectFunction } from '../fixture';
 
 const text = `
-  grammar g
+  /**
+   * I am a grammar file comment
+   */
+  // This is just a single line comment
+  /**
+   * Hi I am a grammar JSDoc comment
+   */
+  // Another single line comment
+  grammar <|>g
   /**
    * Hi I am Rule 'X'
    */
@@ -22,10 +30,18 @@ const hover = expectHover(grammarServices, expectFunction);
 
 describe('Hover', () => {
 
-    test('Hovering over X definition shows the comment hovering', async () => {
+    test('Hovering over the root node should also provide the documentation', async () => {
         await hover({
             text,
             index: 0,
+            hover: 'Hi I am a grammar JSDoc comment'
+        });
+    });
+
+    test('Hovering over X definition shows the comment hovering', async () => {
+        await hover({
+            text,
+            index: 1,
             hover: "Hi I am Rule 'X'"
         });
     });
@@ -33,7 +49,7 @@ describe('Hover', () => {
     test('Hovering over X reference shows the comment hovering', async () => {
         await hover({
             text,
-            index: 1,
+            index: 2,
             hover: "Hi I am Rule 'X'"
         });
     });

@@ -9,7 +9,7 @@ import { isNamed, NameProvider } from '../references/naming';
 import { References } from '../references/references';
 import { LangiumServices } from '../services';
 import { CstNode } from '../syntax-tree';
-import { findLeafNodeAtOffset } from '../utils/cst-util';
+import { findDeclarationNodeAtOffset } from '../utils/cst-util';
 import { MaybePromise } from '../utils/promise-util';
 import { LangiumDocument } from '../workspace/documents';
 import { ReferenceFinder } from './reference-finder';
@@ -52,7 +52,7 @@ export class DefaultRenameHandler implements RenameHandler {
         const rootNode = document.parseResult.value.$cstNode;
         if (!rootNode) return undefined;
         const offset = document.textDocument.offsetAt(params.position);
-        const leafNode = findLeafNodeAtOffset(rootNode, offset);
+        const leafNode = findDeclarationNodeAtOffset(rootNode, offset);
         if (!leafNode) return undefined;
         const targetNode = this.references.findDeclaration(leafNode) ?? leafNode;
         const options = { onlyLocal: false, includeDeclaration: true };
@@ -77,7 +77,7 @@ export class DefaultRenameHandler implements RenameHandler {
         const rootNode = doc.parseResult.value.$cstNode;
         const offset = doc.textDocument.offsetAt(position);
         if (rootNode && offset) {
-            const leafNode = findLeafNodeAtOffset(rootNode, offset);
+            const leafNode = findDeclarationNodeAtOffset(rootNode, offset);
             if (!leafNode) {
                 return undefined;
             }

@@ -10,7 +10,7 @@ import { References } from '../references/references';
 import { AstNode, LeafCstNode } from '../syntax-tree';
 import { LangiumServices } from '../services';
 import { isReference } from '../utils/ast-util';
-import { findLeafNodeAtOffset } from '../utils/cst-util';
+import { findDeclarationNodeAtOffset } from '../utils/cst-util';
 import { MaybePromise } from '../utils/promise-util';
 import { LangiumDocument } from '../workspace/documents';
 
@@ -42,7 +42,7 @@ export class DefaultReferenceFinder implements ReferenceFinder {
             return [];
         }
 
-        const selectedNode = findLeafNodeAtOffset(rootNode, document.textDocument.offsetAt(params.position));
+        const selectedNode = findDeclarationNodeAtOffset(rootNode, document.textDocument.offsetAt(params.position));
         if (!selectedNode) {
             return [];
         }

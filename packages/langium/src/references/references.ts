@@ -8,7 +8,7 @@ import { findAssignment } from '../grammar/grammar-util';
 import { LangiumServices } from '../services';
 import { AstNode, CstNode, Reference } from '../syntax-tree';
 import { getDocument, isReference, streamAst, streamReferences } from '../utils/ast-util';
-import { findRelevantNode, toDocumentSegment } from '../utils/cst-util';
+import { toDocumentSegment } from '../utils/cst-util';
 import { stream, Stream } from '../utils/stream';
 import { equalURI } from '../utils/uri-utils';
 import { ReferenceDescription } from '../workspace/ast-descriptions';
@@ -55,7 +55,7 @@ export class DefaultReferences implements References {
     findDeclaration(sourceCstNode: CstNode): CstNode | undefined {
         if (sourceCstNode) {
             const assignment = findAssignment(sourceCstNode);
-            const nodeElem = findRelevantNode(sourceCstNode);
+            const nodeElem = sourceCstNode.element;
             if (assignment && nodeElem) {
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const reference = (nodeElem as any)[assignment.feature] as unknown;

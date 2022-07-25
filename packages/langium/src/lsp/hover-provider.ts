@@ -9,7 +9,7 @@ import { GrammarConfig } from '../grammar/grammar-config';
 import { References } from '../references/references';
 import { LangiumServices } from '../services';
 import { AstNode } from '../syntax-tree';
-import { findCommentNode, findLeafNodeAtOffset } from '../utils/cst-util';
+import { findCommentNode, findDeclarationNodeAtOffset } from '../utils/cst-util';
 import { MaybePromise } from '../utils/promise-util';
 import { LangiumDocument } from '../workspace/documents';
 
@@ -38,7 +38,7 @@ export abstract class AstNodeHoverProvider implements HoverProvider {
         const rootNode = document.parseResult?.value?.$cstNode;
         if (rootNode) {
             const offset = document.textDocument.offsetAt(params.position);
-            const cstNode = findLeafNodeAtOffset(rootNode, offset);
+            const cstNode = findDeclarationNodeAtOffset(rootNode, offset);
             if (cstNode && cstNode.offset + cstNode.length > offset) {
                 const targetNode = this.references.findDeclaration(cstNode);
                 if (targetNode) {

@@ -9,7 +9,7 @@ import { NameProvider } from '../references/naming';
 import { References } from '../references/references';
 import { LangiumServices } from '../services';
 import { getDocument } from '../utils/ast-util';
-import { findLeafNodeAtOffset } from '../utils/cst-util';
+import { findDeclarationNodeAtOffset } from '../utils/cst-util';
 import { MaybePromise } from '../utils/promise-util';
 import { equalURI } from '../utils/uri-utils';
 import { ReferenceDescription } from '../workspace/ast-descriptions';
@@ -42,7 +42,7 @@ export class DefaultDocumentHighlighter implements DocumentHighlighter {
         if (!rootNode) {
             return undefined;
         }
-        const selectedNode = findLeafNodeAtOffset(rootNode, document.textDocument.offsetAt(params.position));
+        const selectedNode = findDeclarationNodeAtOffset(rootNode, document.textDocument.offsetAt(params.position));
         if (!selectedNode) {
             return undefined;
         }

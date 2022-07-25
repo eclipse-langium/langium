@@ -6,8 +6,7 @@
 
 import { IToken } from '@chevrotain/types';
 import { Range } from 'vscode-languageserver';
-import { DatatypeSymbol } from '../parser/langium-parser';
-import { AstNode, CstNode, CompositeCstNode, isCompositeCstNode, isLeafCstNode, LeafCstNode } from '../syntax-tree';
+import { CstNode, CompositeCstNode, isCompositeCstNode, isLeafCstNode, LeafCstNode, isRootCstNode } from '../syntax-tree';
 import { DocumentSegment } from '../workspace/documents';
 import { Stream, TreeStream, TreeStreamImpl } from './stream';
 
@@ -57,27 +56,49 @@ export function toDocumentSegment(node: CstNode): DocumentSegment {
     };
 }
 
-export function findRelevantNode(cstNode: CstNode): AstNode | undefined {
-    let n: CstNode | undefined = cstNode;
-    do {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const element = n.element as any;
-        if (element.$type !== DatatypeSymbol) {
-            return element;
+/**
+ * Performs `findLeafNodeAtOffset` with a minor difference: When encountering a non word character (i.e. not a letter, number, etc.),
+ * it will instead return the leaf node at the `offset - 1` position.
+ *
+ * For LSP services, users expect that the declaration of an element is available if the cursor is directly after the element.
+ */
+export function findDeclarationNodeAtOffset(cstNode: CstNode | undefined, offset: number): LeafCstNode | undefined {
+    if (cstNode) {
+        const localOffset = offset - cstNode.offset;
+        const textAtOffset = cstNode.text.substring(localOffset, localOffset + 1);
+        // The \p{L} regex matches any unicode letter character, i.e. characters from non-english alphabets
+        // Together with \w it matches any kind of character which can commonly appear in IDs
+        if (/^[^\w\p{L}]$/u.test(textAtOffset)) {
+            offset--;
         }
-        n = n.parent;
-    } while (n);
+        return findLeafNodeAtOffset(cstNode, offset);
+    }
     return undefined;
 }
 
 export function findCommentNode(cstNode: CstNode | undefined, commentNames: string[]): CstNode | undefined {
     if (cstNode) {
         const previous = getPreviousNode(cstNode, true);
-        if (previous && isLeafCstNode(previous) && commentNames.includes(previous.tokenType.name)) {
+        if (previous && isCommentNode(previous, commentNames)) {
             return previous;
+        }
+        if (isRootCstNode(cstNode)) {
+            // Go from the first non-hidden node through all nodes in reverse order
+            // We do this to find the comment node which directly precedes the root node
+            const endIndex = cstNode.children.findIndex(e => !e.hidden);
+            for (let i = endIndex - 1; i >= 0; i--) {
+                const child = cstNode.children[i];
+                if (isCommentNode(child, commentNames)) {
+                    return child;
+                }
+            }
         }
     }
     return undefined;
+}
+
+export function isCommentNode(cstNode: CstNode, commentNames: string[]): boolean {
+    return isLeafCstNode(cstNode) && commentNames.includes(cstNode.tokenType.name);
 }
 
 export function findLeafNodeAtOffset(node: CstNode, offset: number): LeafCstNode | undefined {
