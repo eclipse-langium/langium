@@ -10,6 +10,7 @@ export * from './completion/rule-interpreter';
 export * from './code-action';
 export * from './document-highlighter';
 export * from './document-symbol-provider';
+export * from './execute-command-handler';
 export * from './folding-range-provider';
 export * from './goto';
 export * from './hover-provider';
