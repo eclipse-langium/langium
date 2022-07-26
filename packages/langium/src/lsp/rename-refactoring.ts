@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { CancellationToken, Position, Range, RenameClientCapabilities, RenameParams, TextDocumentPositionParams, TextEdit, WorkspaceEdit } from 'vscode-languageserver';
+import { CancellationToken, Position, Range, RenameParams, TextDocumentPositionParams, TextEdit, WorkspaceEdit } from 'vscode-languageserver';
 import { isNamed, NameProvider } from '../references/naming';
 import { References } from '../references/references';
 import { LangiumServices } from '../services';
@@ -54,9 +54,9 @@ export class DefaultRenameHandler implements RenameHandler {
         const offset = document.textDocument.offsetAt(params.position);
         const leafNode = findLeafNodeAtOffset(rootNode, offset);
         if (!leafNode) return undefined;
-        const targetNode = await this.references.findDeclaration(leafNode) ?? leafNode;
-        const options = {onlyLocal: false, includeDeclaration: true};
-        const references = await this.references.findReferences(targetNode.element, options);
+        const targetNode = this.references.findDeclaration(leafNode) ?? leafNode;
+        const options = { onlyLocal: false, includeDeclaration: true };
+        const references = this.references.findReferences(targetNode.element, options);
         references.forEach(ref => {
             const change = TextEdit.replace(ref.segment.range, params.newName);
             const uri = ref.sourceUri.toString();

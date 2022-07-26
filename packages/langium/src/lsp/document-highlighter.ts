@@ -4,10 +4,10 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { CancellationToken, DocumentHighlight, DocumentHighlightClientCapabilities, DocumentHighlightParams } from 'vscode-languageserver';
+import { CancellationToken, DocumentHighlight, DocumentHighlightParams } from 'vscode-languageserver';
 import { NameProvider } from '../references/naming';
 import { References } from '../references/references';
-import { InitializableService, LangiumServices } from '../services';
+import { LangiumServices } from '../services';
 import { getDocument } from '../utils/ast-util';
 import { findLeafNodeAtOffset } from '../utils/cst-util';
 import { MaybePromise } from '../utils/promise-util';
