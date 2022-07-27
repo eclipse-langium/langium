@@ -22,7 +22,7 @@ export class RuleInterpreter {
 
     interpretRule(rule: ast.ParserRule, nodes: CstNode[], offset: number): ast.AbstractElement[] {
         let features: ast.AbstractElement[] = [];
-        let nextFeatures = findFirstFeatures(rule.definition);
+        let nextFeatures = findFirstFeatures(rule.definition, new Map(), new Set());
         let node = nodes.shift();
         while (node && nextFeatures.length > 0) {
             const n = node;
@@ -69,7 +69,7 @@ export class RuleInterpreter {
 
     ruleMatches(rule: ast.AbstractRule | undefined, node: CstNode, offset: number): MatchType {
         if (ast.isParserRule(rule)) {
-            const ruleFeatures = findFirstFeatures(rule.definition);
+            const ruleFeatures = findFirstFeatures(rule.definition, new Map(), new Set());
             const matchType = isDataTypeRule(rule) ? 'both' : 'full';
             return ruleFeatures.some(e => this.featureMatches(e, node, offset)) ? matchType : 'none';
         } else if (ast.isTerminalRule(rule)) {
