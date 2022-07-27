@@ -111,16 +111,15 @@ export class LangiumGrammarCodeActionProvider implements CodeActionProvider {
     }
 
     private fixSuperfluousInfer(diagnostic: Diagnostic, document: LangiumDocument): CodeAction | undefined {
-        const data = diagnostic.data as DocumentSegment;
-        if (data) {
+        if (diagnostic.data) {
             return {
-                title: "Correct 'infer' usage",
+                title: "Remove the 'infer' keyword",
                 kind: CodeActionKind.QuickFix,
                 diagnostics: [diagnostic],
                 edit: {
                     changes: {
                         [document.textDocument.uri]: [{
-                            range: data.range,
+                            range: diagnostic.data,
                             newText: ''
                         }]
                     }

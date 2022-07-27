@@ -19,7 +19,7 @@ import { ValidationAcceptor, ValidationChecks, ValidationRegistry } from '../val
 import { LangiumDocument, LangiumDocuments } from '../workspace/documents';
 import * as ast from './generated/ast';
 import { isParserRule, isRuleCall } from './generated/ast';
-import { findKeywordNode, findNameAssignment, getEntryRule, getTypeName, isDataTypeRule, isOptional, resolveImport, resolveTransitiveImports, terminalRegex } from './grammar-util';
+import { findKeywordNode, findNameAssignment, findNodeForFeature, getEntryRule, getTypeName, isDataTypeRule, isOptional, resolveImport, resolveTransitiveImports, terminalRegex } from './grammar-util';
 import type { LangiumGrammarServices } from './langium-grammar-module';
 import { collectInferredTypes } from './type-system/inferred-types';
 import { applyErrorToAssignment, collectAllInterfaces, InterfaceInfo, validateTypesConsistency } from './type-system/type-validator';
@@ -298,6 +298,25 @@ export class LangiumGrammarValidator {
                         code: isInfers ? IssueCodes.SuperfluousInfer : IssueCodes.MissingInfer,
                         data: keywordNode && toDocumentSegment(keywordNode)
                     });
+                } else if(actionType && types.has(typeName) && isInfers) {
+                    // error: action infers type that is already defined
+                    if(action.$cstNode) {
+                        const inferredTypeNode = findNodeForFeature(action.inferredType?.$cstNode, 'name');
+                        const keywordNode = findKeywordNode(action.$cstNode, '{');
+                        if(inferredTypeNode && keywordNode) {
+                            // remove everything from the opening { up to the type name
+                            // we may lose comments in-between, but this can be undone as needed
+                            accept('error', `${typeName} is a declared type and cannot be redefined.`, {
+                                node: action,
+                                property: 'type',
+                                code: IssueCodes.SuperfluousInfer,
+                                data: {
+                                    start: keywordNode.range.end,
+                                    end: inferredTypeNode.range.start
+                                }
+                            });
+                        }
+                    }
                 }
             }
         }

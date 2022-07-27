@@ -595,13 +595,18 @@ function getType(types: AstTypes, name: string): InterfaceType | UnionType | und
     return interfaceType || unionType;
 }
 
+// general purpose property getter for interfaces, does not verify the property exists
+function getProperty(interfaceType: InterfaceType, property: string): Property | undefined {
+    return interfaceType.properties.find(e => e.name === property);
+}
+
 function expectProperty(interfaceType: InterfaceType, property: Property | string): void {
     if (typeof property === 'string') {
-        const prop = interfaceType.properties.find(e => e.name === property)!;
+        const prop = getProperty(interfaceType, property)!;
         expect(prop).toBeDefined();
         expect(prop.optional).toStrictEqual(false);
     } else {
-        const prop = interfaceType.properties.find(e => e.name === property.name)!;
+        const prop = getProperty(interfaceType, property.name)!;
         expect(prop).toBeDefined();
         expect(prop.optional).toStrictEqual(property.optional);
         expect(prop.typeAlternatives.length).toStrictEqual(property.typeAlternatives.length);

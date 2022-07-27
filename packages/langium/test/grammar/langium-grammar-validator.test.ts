@@ -7,6 +7,7 @@
 import { createLangiumGrammarServices, EmptyFileSystem } from '../../src';
 import { Assignment, Grammar, ParserRule } from '../../src/grammar/generated/ast';
 import { expectError, expectWarning, validationHelper } from '../../src/test';
+import { IssueCodes } from '../../src/grammar/langium-grammar-validator';
 
 const services = createLangiumGrammarServices(EmptyFileSystem);
 const validate = validationHelper<Grammar>(services.grammar);
@@ -79,6 +80,24 @@ describe('Langium grammar validation', () => {
         expectError(validationResult, /An interface cannot extend a union type, which was inferred from parser rule Intermediary./, {
             node: validationResult.document.parseResult.value.interfaces[0],
             property: {name: 'superTypes'}
+        });
+    });
+
+    test('Actions cannot redefine declared types', async () => {
+        const validationResult = await validate(`
+        grammar G
+        interface A {
+            val: string
+        }
+        entry X: 'x' {A} val=ID;
+        Y: 'y' {infer A} q='broken';
+        `);
+        expectError(validationResult, /A is a declared type and cannot be redefined./, {
+            range: {
+                start: {character: 15, line: 6},
+                end: {character: 24, line: 6}
+            },
+            code: IssueCodes.SuperfluousInfer
         });
     });
 });
