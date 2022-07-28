@@ -4,15 +4,15 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { CancellationToken, DocumentHighlight, DocumentHighlightKind, DocumentHighlightParams } from 'vscode-languageserver';
+import { CancellationToken, DocumentHighlight, DocumentHighlightParams } from 'vscode-languageserver';
 import { NameProvider } from '../references/naming';
 import { References } from '../references/references';
 import { LangiumServices } from '../services';
-import { AstNode, CstNode, Reference } from '../syntax-tree';
-import { findLocalReferences, getDocument } from '../utils/ast-util';
+import { getDocument } from '../utils/ast-util';
 import { findLeafNodeAtOffset } from '../utils/cst-util';
 import { MaybePromise } from '../utils/promise-util';
 import { equalURI } from '../utils/uri-utils';
+import { ReferenceDescription } from '../workspace/ast-descriptions';
 import { LangiumDocument } from '../workspace/documents';
 
 /**
@@ -48,39 +48,21 @@ export class DefaultDocumentHighlighter implements DocumentHighlighter {
         }
         const targetAstNode = this.references.findDeclaration(selectedNode)?.element;
         if (targetAstNode) {
-            const refs: Array<[CstNode, DocumentHighlightKind]> = [];
-            if (equalURI(getDocument(targetAstNode).uri, document.uri)) {
-                const nameNode = this.findNameNode(targetAstNode);
-                if (nameNode) {
-                    refs.push([nameNode, this.getHighlightKind(nameNode)]);
-                }
-            }
-            findLocalReferences(targetAstNode, rootNode.element).forEach(ref => {
-                refs.push([ref.$refNode, this.getHighlightKind(ref.$refNode, ref)]);
+            const refs: DocumentHighlight[] = [];
+            const includeDeclaration = equalURI(getDocument(targetAstNode).uri, document.uri);
+            const options = { onlyLocal: true, includeDeclaration };
+            this.references.findReferences(targetAstNode, options).forEach(ref => {
+                refs.push(this.createDocumentHighlight(ref));
             });
-            return refs.map(([node, kind]) =>
-                DocumentHighlight.create(node.range, kind)
-            );
+            return refs;
         }
         return undefined;
     }
 
-    protected findNameNode(node: AstNode): CstNode | undefined {
-        const nameNode = this.nameProvider.getNameNode(node);
-        if (nameNode)
-            return nameNode;
-        return node.$cstNode;
-    }
-
     /**
-     * Override this method to determine the highlight kind of the given CST node.
-     */
-    protected getHighlightKind(node: CstNode, reference?: Reference<AstNode>): DocumentHighlightKind {
-        if (reference) {
-            return DocumentHighlightKind.Read;
-        } else {
-            return DocumentHighlightKind.Text;
-        }
+    * Override this method to determine the highlight kind of the given reference.
+    */
+    protected createDocumentHighlight(reference: ReferenceDescription): DocumentHighlight {
+        return DocumentHighlight.create(reference.segment.range);
     }
-
 }

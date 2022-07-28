@@ -4,8 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { CancellationToken, Range, RenameParams, TextDocumentPositionParams, TextEdit, WorkspaceEdit } from 'vscode-languageserver';
-import { Position } from 'vscode-languageserver-textdocument';
+import { CancellationToken, Position, Range, RenameParams, TextDocumentPositionParams, TextEdit, WorkspaceEdit } from 'vscode-languageserver';
 import { isNamed, NameProvider } from '../references/naming';
 import { References } from '../references/references';
 import { LangiumServices } from '../services';
@@ -50,16 +49,21 @@ export class DefaultRenameHandler implements RenameHandler {
 
     async renameElement(document: LangiumDocument, params: RenameParams): Promise<WorkspaceEdit | undefined> {
         const changes: Record<string, TextEdit[]> = {};
-        const references = await this.referenceFinder.findReferences(document, { ...params, context: { includeDeclaration: true } });
-        if (!Array.isArray(references)) {
-            return undefined;
-        }
-        references.forEach(location => {
-            const change = TextEdit.replace(location.range, params.newName);
-            if (changes[location.uri]) {
-                changes[location.uri].push(change);
+        const rootNode = document.parseResult.value.$cstNode;
+        if (!rootNode) return undefined;
+        const offset = document.textDocument.offsetAt(params.position);
+        const leafNode = findLeafNodeAtOffset(rootNode, offset);
+        if (!leafNode) return undefined;
+        const targetNode = this.references.findDeclaration(leafNode) ?? leafNode;
+        const options = { onlyLocal: false, includeDeclaration: true };
+        const references = this.references.findReferences(targetNode.element, options);
+        references.forEach(ref => {
+            const change = TextEdit.replace(ref.segment.range, params.newName);
+            const uri = ref.sourceUri.toString();
+            if (changes[uri]) {
+                changes[uri].push(change);
             } else {
-                changes[location.uri] = [change];
+                changes[uri] = [change];
             }
         });
         return { changes };

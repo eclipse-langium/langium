@@ -34,9 +34,17 @@ describe('Document symbols', () => {
                             name: 'X',
                             kind: SymbolKind.Field,
                             range: Range.create(Position.create(1, 1), Position.create(1, 13)),
-                            selectionRange: Range.create(Position.create(1, 1), Position.create(1, 2))
+                            selectionRange: Range.create(Position.create(1, 1), Position.create(1, 2)),
+                            children: [{
+                                children: undefined,
+                                kind: SymbolKind.Field,
+                                name: 'name',
+                                range: Range.create(Position.create(1, 4), Position.create(1, 12)),
+                                selectionRange: Range.create(Position.create(1, 4), Position.create(1, 8))
+                            }]
                         },
                         {
+                            children: undefined,
                             name: 'hiddenTerminal',
                             kind: SymbolKind.Field,
                             range: Range.create(Position.create(2, 1), Position.create(2, 30)),

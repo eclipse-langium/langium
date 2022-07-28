@@ -7,10 +7,10 @@
 import { CancellationToken, Location,  ReferenceParams } from 'vscode-languageserver';
 import { NameProvider } from '../references/naming';
 import { References } from '../references/references';
-import { AstNode, CstNode, LeafCstNode } from '../syntax-tree';
+import { AstNode, LeafCstNode } from '../syntax-tree';
 import { LangiumServices } from '../services';
-import { getDocument, isReference } from '../utils/ast-util';
-import { findLeafNodeAtOffset, flattenCst } from '../utils/cst-util';
+import { isReference } from '../utils/ast-util';
+import { findLeafNodeAtOffset } from '../utils/cst-util';
 import { MaybePromise } from '../utils/promise-util';
 import { LangiumDocument } from '../workspace/documents';
 
@@ -56,13 +56,8 @@ export class DefaultReferenceFinder implements ReferenceFinder {
         const refs: Location[] = [];
         const targetAstNode = this.references.findDeclaration(selectedNode)?.element;
         if (targetAstNode) {
-            if (params.context.includeDeclaration) {
-                const declDoc = getDocument(targetAstNode);
-                const nameNode = this.findNameNode(targetAstNode, selectedNode.text);
-                if (nameNode)
-                    refs.push(Location.create(declDoc.uri.toString(), nameNode.range));
-            }
-            this.references.findReferences(targetAstNode).forEach(reference => {
+            const options = { includeDeclaration: params.context.includeDeclaration };
+            this.references.findReferences(targetAstNode, options).forEach(reference => {
                 if (isReference(reference)) {
                     refs.push(Location.create(document.uri.toString(), reference.$refNode.range));
                 } else {
@@ -71,18 +66,5 @@ export class DefaultReferenceFinder implements ReferenceFinder {
             });
         }
         return refs;
-    }
-
-    protected findNameNode(node: AstNode, name: string): CstNode | undefined {
-        const nameNode = this.nameProvider.getNameNode(node);
-        if (nameNode)
-            return nameNode;
-        if (node.$cstNode) {
-            // try find first leaf with name as text
-            const leafNode = flattenCst(node.$cstNode).find((n) => n.text === name);
-            if (leafNode)
-                return leafNode;
-        }
-        return node.$cstNode;
     }
 }
