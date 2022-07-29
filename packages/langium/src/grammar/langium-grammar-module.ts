@@ -16,6 +16,7 @@ import { LangiumGrammarFoldingRangeProvider } from './lsp/grammar-folding-ranges
 import { LangiumGrammarFormatter } from './lsp/grammar-formatter';
 import { LangiumGrammarReferences } from './references/grammar-references';
 import { LangiumGrammarNameProvider } from './references/grammar-naming';
+import { LangiumGrammarGoToResolver } from './lsp/grammar-goto';
 
 export type LangiumGrammarAddedServices = {
     validation: {
@@ -35,6 +36,7 @@ export const LangiumGrammarModule: Module<LangiumGrammarServices, PartialLangium
         CodeActionProvider: () => new LangiumGrammarCodeActionProvider(),
         SemanticTokenProvider: (services) => new LangiumGrammarSemanticTokenProvider(services),
         Formatter: () => new LangiumGrammarFormatter(),
+        GoToResolver: (services) => new LangiumGrammarGoToResolver(services),
     },
     references: {
         ScopeComputation: (services) => new LangiumGrammarScopeComputation(services),
