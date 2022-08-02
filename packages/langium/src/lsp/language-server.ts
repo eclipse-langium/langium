@@ -14,6 +14,7 @@ import { LangiumServices, LangiumSharedServices } from '../services';
 import { isOperationCancelled } from '../utils/promise-util';
 import { DocumentState, LangiumDocument } from '../workspace/documents';
 import { DefaultSemanticTokenOptions } from './semantic-token-provider';
+import { mergeSignatureHelpOptions } from './signature-help-provider';
 
 export interface LanguageServer {
     initialize(params: InitializeParams): Promise<InitializeResult>
@@ -64,7 +65,7 @@ export class DefaultLanguageServer implements LanguageServer {
         const hasCodeActionProvider = languages.some(e => e.lsp.CodeActionProvider !== undefined);
         const hasSemanticTokensProvider = languages.some(e => e.lsp.SemanticTokenProvider !== undefined);
         const commandNames = this.services.lsp.ExecuteCommandHandler?.commands;
-        const signatureHelpOptions = languages.map(e => e.lsp.SignatureHelp?.signatureHelpOptions).find(e => !!e);
+        const signatureHelpOptions = mergeSignatureHelpOptions(languages.map(e => e.lsp.SignatureHelp?.signatureHelpOptions));
 
         const result: InitializeResult = {
             capabilities: {

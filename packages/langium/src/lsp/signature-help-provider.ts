@@ -52,3 +52,27 @@ export abstract class AbstractSignatureHelpProvider implements SignatureHelpProv
         return {triggerCharacters: ['('] };
     }
 }
+
+/**
+ * Merges the SignatureHelpOptions of all languages
+ */
+export function mergeSignatureHelpOptions(options: Array<SignatureHelpOptions | undefined>): SignatureHelpOptions | undefined {
+    const triggerCharacters: string[] = [];
+    const retriggerCharacters: string[] = [];
+
+    options.forEach(option => {
+        if (option?.triggerCharacters) {
+            triggerCharacters.push(...option.triggerCharacters);
+        }
+        if (option?.retriggerCharacters) {
+            retriggerCharacters.push(...option.retriggerCharacters);
+        }
+    });
+
+    const mergedOptions: SignatureHelpOptions = {
+        triggerCharacters: triggerCharacters.length > 0 ? Array.from(new Set<string>(triggerCharacters)) : undefined,
+        retriggerCharacters: retriggerCharacters.length > 0 ? Array.from(new Set<string>(retriggerCharacters)) : undefined
+    };
+
+    return mergedOptions.triggerCharacters ? mergedOptions : undefined;
+}
