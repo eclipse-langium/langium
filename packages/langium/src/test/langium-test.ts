@@ -6,7 +6,7 @@
 
 import {
     CancellationTokenSource,
-    CompletionItem, Diagnostic, DiagnosticSeverity, DocumentSymbol, MarkupContent, Range, ReferenceParams, SemanticTokensParams, SemanticTokenTypes, SignatureHelpOptions, TextDocumentIdentifier, TextDocumentPositionParams
+    CompletionItem, Diagnostic, DiagnosticSeverity, DocumentSymbol, MarkupContent, Range, ReferenceParams, SemanticTokensParams, SemanticTokenTypes, TextDocumentIdentifier, TextDocumentPositionParams
 } from 'vscode-languageserver';
 import { URI } from 'vscode-uri';
 import { LangiumServices } from '../services';
@@ -15,7 +15,6 @@ import { escapeRegExp } from '../utils/regex-util';
 import { LangiumDocument } from '../workspace/documents';
 import { findNodeForFeature } from '../grammar/grammar-util';
 import { SemanticTokensDecoder } from '../lsp/semantic-token-provider';
-import { mergeSignatureHelpOptions } from '../lsp/signature-help-provider';
 
 export function parseHelper<T extends AstNode = AstNode>(services: LangiumServices): (input: string) => Promise<LangiumDocument<T>> {
     const metaData = services.LanguageMetaData;
@@ -380,19 +379,4 @@ export function expectSemanticToken(tokensWithRanges: DecodedSemanticTokensWithR
         return t.tokenType === options.tokenType && t.offset === range[0] && t.offset + t.text.length === range[1];
     });
     expect(result).toHaveLength(1);
-}
-
-export interface TestSignatureHelpOptions {
-    options: SignatureHelpOptions[];
-    mergedOptions: SignatureHelpOptions;
-}
-
-export function expectMergeSignatureHelpOptions(testOptions: TestSignatureHelpOptions): void {
-    const mergedSignatureHelp = mergeSignatureHelpOptions(testOptions.options);
-
-    expect(mergedSignatureHelp?.triggerCharacters?.length).toEqual(testOptions.mergedOptions.triggerCharacters?.length);
-    expect(mergedSignatureHelp?.retriggerCharacters?.length).toEqual(testOptions.mergedOptions.retriggerCharacters?.length);
-
-    expect(mergedSignatureHelp?.triggerCharacters).toEqual(testOptions.mergedOptions.triggerCharacters?.sort());
-    expect(mergedSignatureHelp?.retriggerCharacters).toEqual(testOptions.mergedOptions.retriggerCharacters?.sort());
 }

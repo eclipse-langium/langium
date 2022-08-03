@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import { SignatureHelpOptions } from 'vscode-languageserver';
-import { expectMergeSignatureHelpOptions } from '../../src/test';
+import { mergeSignatureHelpOptions } from '../../src/lsp/signature-help-provider';
 
 describe('MergeSignatureHelpOptions', () => {
     test('Must merge SignatureHelpOptions triggerCharacters', async () => {
@@ -20,7 +20,6 @@ describe('MergeSignatureHelpOptions', () => {
                 triggerCharacters: ['[']
             }
         ];
-
         const mergedOptions: SignatureHelpOptions = {
             triggerCharacters: ['.', '[', '(']
         };
@@ -42,7 +41,6 @@ describe('MergeSignatureHelpOptions', () => {
                 retriggerCharacters: ['[']
             }
         ];
-
         const mergedOptions: SignatureHelpOptions = {
             triggerCharacters: ['.', '[', '('],
             retriggerCharacters: ['.', '[', '(']
@@ -59,7 +57,6 @@ describe('MergeSignatureHelpOptions', () => {
                 triggerCharacters: ['(']
             }
         ];
-
         const mergedOptions: SignatureHelpOptions = {
             triggerCharacters: ['(']
         };
@@ -77,7 +74,6 @@ describe('MergeSignatureHelpOptions', () => {
                 retriggerCharacters: ['(']
             }
         ];
-
         const mergedOptions: SignatureHelpOptions = {
             triggerCharacters: ['('],
             retriggerCharacters: ['(']
@@ -85,3 +81,18 @@ describe('MergeSignatureHelpOptions', () => {
         expectMergeSignatureHelpOptions({ options, mergedOptions });
     });
 });
+
+interface TestSignatureHelpOptions {
+    options: SignatureHelpOptions[];
+    mergedOptions: SignatureHelpOptions;
+}
+
+function expectMergeSignatureHelpOptions(testOptions: TestSignatureHelpOptions): void {
+    const mergedSignatureHelp = mergeSignatureHelpOptions(testOptions.options);
+
+    expect(mergedSignatureHelp?.triggerCharacters?.length).toEqual(testOptions.mergedOptions.triggerCharacters?.length);
+    expect(mergedSignatureHelp?.retriggerCharacters?.length).toEqual(testOptions.mergedOptions.retriggerCharacters?.length);
+
+    expect(mergedSignatureHelp?.triggerCharacters).toEqual(testOptions.mergedOptions.triggerCharacters?.sort());
+    expect(mergedSignatureHelp?.retriggerCharacters).toEqual(testOptions.mergedOptions.retriggerCharacters?.sort());
+}
