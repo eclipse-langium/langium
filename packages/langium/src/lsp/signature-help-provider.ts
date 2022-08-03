@@ -49,7 +49,7 @@ export abstract class AbstractSignatureHelpProvider implements SignatureHelpProv
      * Override this getter to return the list of triggering characters for your language. To deactivate the signature help, return an empty object.
      */
     get signatureHelpOptions(): SignatureHelpOptions {
-        return {triggerCharacters: ['('] };
+        return { triggerCharacters: ['('] };
     }
 }
 
