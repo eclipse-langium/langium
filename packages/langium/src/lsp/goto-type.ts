@@ -5,6 +5,8 @@
  ******************************************************************************/
 
 import { CancellationToken, LocationLink, TypeDefinitionParams } from 'vscode-languageserver';
+import { LangiumServices } from '..';
+import { References } from '../references/references';
 import { AstNode } from '../syntax-tree';
 import { findLeafNodeAtOffset } from '../utils/cst-util';
 import { MaybePromise } from '../utils/promise-util';
@@ -22,12 +24,21 @@ export interface GoToTypeProvider {
 
 export abstract class AbstractGoToTypeProvider implements GoToTypeProvider {
 
+    protected readonly references: References;
+
+    constructor(services: LangiumServices) {
+        this.references = services.references.References;
+    }
+
     goToTypeDefinition(document: LangiumDocument, params: TypeDefinitionParams): MaybePromise<LocationLink[] | undefined> {
         const rootNode = document.parseResult.value;
         if (rootNode.$cstNode) {
             const sourceCstNode = findLeafNodeAtOffset(rootNode.$cstNode, document.textDocument.offsetAt(params.position));
             if (sourceCstNode) {
-                return this.collectGoToTypeLocationLinks(sourceCstNode.element);
+                const nodeDeclaration = this.references.findDeclaration(sourceCstNode);
+                if (nodeDeclaration) {
+                    return this.collectGoToTypeLocationLinks(nodeDeclaration.element);
+                }
             }
         }
         return undefined;
