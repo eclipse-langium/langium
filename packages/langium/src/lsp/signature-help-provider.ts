@@ -70,8 +70,8 @@ export function mergeSignatureHelpOptions(options: Array<SignatureHelpOptions | 
     });
 
     const mergedOptions: SignatureHelpOptions = {
-        triggerCharacters: triggerCharacters.length > 0 ? Array.from(new Set<string>(triggerCharacters)) : undefined,
-        retriggerCharacters: retriggerCharacters.length > 0 ? Array.from(new Set<string>(retriggerCharacters)) : undefined
+        triggerCharacters: triggerCharacters.length > 0 ? Array.from(new Set(triggerCharacters)).sort() : undefined,
+        retriggerCharacters: retriggerCharacters.length > 0 ? Array.from(new Set(retriggerCharacters)).sort() : undefined
     };
 
     return mergedOptions.triggerCharacters ? mergedOptions : undefined;
