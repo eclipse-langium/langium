@@ -393,6 +393,6 @@ export function expectMergeSignatureHelpOptions(testOptions: TestSignatureHelpOp
     expect(mergedSignatureHelp?.triggerCharacters?.length).toEqual(testOptions.mergedOptions.triggerCharacters?.length);
     expect(mergedSignatureHelp?.retriggerCharacters?.length).toEqual(testOptions.mergedOptions.retriggerCharacters?.length);
 
-    expect(mergedSignatureHelp?.triggerCharacters?.sort()).toEqual(testOptions.mergedOptions.triggerCharacters?.sort());
-    expect(mergedSignatureHelp?.retriggerCharacters?.sort()).toEqual(testOptions.mergedOptions.retriggerCharacters?.sort());
+    expect(mergedSignatureHelp?.triggerCharacters).toEqual(testOptions.mergedOptions.triggerCharacters?.sort());
+    expect(mergedSignatureHelp?.retriggerCharacters).toEqual(testOptions.mergedOptions.retriggerCharacters?.sort());
 }
