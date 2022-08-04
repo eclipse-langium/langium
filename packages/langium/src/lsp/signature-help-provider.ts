@@ -25,7 +25,7 @@ export interface SignatureHelpProvider {
 }
 
 export abstract class AbstractSignatureHelpProvider implements SignatureHelpProvider {
-    provideSignatureHelp(document: LangiumDocument, params: SignatureHelpParams): MaybePromise<SignatureHelp | undefined> {
+    provideSignatureHelp(document: LangiumDocument, params: SignatureHelpParams, cancelToken= CancellationToken.None): MaybePromise<SignatureHelp | undefined> {
         const rootNode = document.parseResult.value;
         const cst = rootNode.$cstNode;
         if (cst) {
@@ -33,7 +33,7 @@ export abstract class AbstractSignatureHelpProvider implements SignatureHelpProv
             if (sourceCstNode) {
                 const element = findRelevantNode(sourceCstNode);
                 if (element) {
-                    return this.getSignatureFromElement(element);
+                    return this.getSignatureFromElement(element, cancelToken);
                 }
             }
         }
@@ -43,7 +43,7 @@ export abstract class AbstractSignatureHelpProvider implements SignatureHelpProv
     /**
      * Override this method to return the desired SignatureHelp
      */
-    protected abstract getSignatureFromElement(element: AstNode): MaybePromise<SignatureHelp | undefined>;
+    protected abstract getSignatureFromElement(element: AstNode, cancelToken: CancellationToken): MaybePromise<SignatureHelp | undefined>;
 
     /**
      * Override this getter to return the list of triggering characters for your language. To deactivate the signature help, return an empty object.
