@@ -25,7 +25,7 @@ export interface SignatureHelpProvider {
 }
 
 export abstract class AbstractSignatureHelpProvider implements SignatureHelpProvider {
-    provideSignatureHelp(document: LangiumDocument, params: SignatureHelpParams, cancelToken= CancellationToken.None): MaybePromise<SignatureHelp | undefined> {
+    provideSignatureHelp(document: LangiumDocument, params: SignatureHelpParams, cancelToken = CancellationToken.None): MaybePromise<SignatureHelp | undefined> {
         const rootNode = document.parseResult.value;
         const cst = rootNode.$cstNode;
         if (cst) {
