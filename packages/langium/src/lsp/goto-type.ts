@@ -5,8 +5,8 @@
  ******************************************************************************/
 
 import { CancellationToken, LocationLink, TypeDefinitionParams } from 'vscode-languageserver';
-import { LangiumServices } from '..';
 import { References } from '../references/references';
+import { LangiumServices } from '../services';
 import { AstNode } from '../syntax-tree';
 import { findLeafNodeAtOffset } from '../utils/cst-util';
 import { MaybePromise } from '../utils/promise-util';
@@ -47,5 +47,5 @@ export abstract class AbstractGoToTypeProvider implements GoToTypeProvider {
     /**
      * Override this method to implement the logic to generate the expected LocationLink[] for a go to type request for your language.
      */
-    abstract collectGoToTypeLocationLinks(element: AstNode): MaybePromise<LocationLink[] | undefined>;
+    abstract collectGoToTypeLocationLinks(element: AstNode, cancelToken: CancellationToken): MaybePromise<LocationLink[] | undefined>;
 }
