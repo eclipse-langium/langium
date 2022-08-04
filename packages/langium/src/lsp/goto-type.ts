@@ -30,14 +30,14 @@ export abstract class AbstractGoToTypeProvider implements GoToTypeProvider {
         this.references = services.references.References;
     }
 
-    goToTypeDefinition(document: LangiumDocument, params: TypeDefinitionParams): MaybePromise<LocationLink[] | undefined> {
+    goToTypeDefinition(document: LangiumDocument, params: TypeDefinitionParams, cancelToken = CancellationToken.None): MaybePromise<LocationLink[] | undefined> {
         const rootNode = document.parseResult.value;
         if (rootNode.$cstNode) {
             const sourceCstNode = findLeafNodeAtOffset(rootNode.$cstNode, document.textDocument.offsetAt(params.position));
             if (sourceCstNode) {
                 const nodeDeclaration = this.references.findDeclaration(sourceCstNode);
                 if (nodeDeclaration) {
-                    return this.collectGoToTypeLocationLinks(nodeDeclaration.element);
+                    return this.collectGoToTypeLocationLinks(nodeDeclaration.element, cancelToken);
                 }
             }
         }
