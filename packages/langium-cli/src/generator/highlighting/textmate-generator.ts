@@ -124,7 +124,7 @@ function getControlKeywords(grammar: langium.Grammar, pack: LangiumLanguageConfi
     };
 }
 
-export function groupKeywords(keywords: string[], caseInsensitive: boolean | undefined): string[] {
+function groupKeywords(keywords: string[], caseInsensitive: boolean | undefined): string[] {
     const groups: {
         letter: string[],
         leftSpecial: string[],
