@@ -124,37 +124,6 @@ function getControlKeywords(grammar: langium.Grammar, pack: LangiumLanguageConfi
     };
 }
 
-function getStringPatterns(grammar: langium.Grammar, pack: LangiumLanguageConfig): Pattern[] {
-    const terminals = langium.stream(grammar.rules).filter(langium.isTerminalRule);
-    const stringTerminal = terminals.find(e => e.name.toLowerCase() === 'string');
-    const stringPatterns: Pattern[] = [];
-    if (stringTerminal) {
-        const parts = getTerminalParts(terminalRegex(stringTerminal));
-        for (const part of parts) {
-            if (part.end) {
-                stringPatterns.push({
-                    'name': `string.quoted.${delimiterName(part.start)}.${pack.id}`,
-                    'begin': part.start,
-                    'end': part.end
-                });
-            }
-        }
-    }
-    return stringPatterns;
-}
-
-function delimiterName(delimiter: string): string {
-    if (delimiter === "'") {
-        return 'single';
-    } else if (delimiter === '"') {
-        return 'double';
-    } else if (delimiter === '`') {
-        return 'backtick';
-    } else {
-        return 'delimiter';
-    }
-}
-
 export function groupKeywords(keywords: string[], caseInsensitive: boolean | undefined): string[] {
     const groups: {
         letter: string[],
@@ -186,4 +155,35 @@ export function groupKeywords(keywords: string[], caseInsensitive: boolean | und
     if (groups.rightSpecial.length) res.push(`\\b(${groups.rightSpecial.join('|')})\\B`);
     if (groups.special.length) res.push(`\\B(${groups.special.join('|')})\\B`);
     return res;
+}
+
+function getStringPatterns(grammar: langium.Grammar, pack: LangiumLanguageConfig): Pattern[] {
+    const terminals = langium.stream(grammar.rules).filter(langium.isTerminalRule);
+    const stringTerminal = terminals.find(e => e.name.toLowerCase() === 'string');
+    const stringPatterns: Pattern[] = [];
+    if (stringTerminal) {
+        const parts = getTerminalParts(terminalRegex(stringTerminal));
+        for (const part of parts) {
+            if (part.end) {
+                stringPatterns.push({
+                    'name': `string.quoted.${delimiterName(part.start)}.${pack.id}`,
+                    'begin': part.start,
+                    'end': part.end
+                });
+            }
+        }
+    }
+    return stringPatterns;
+}
+
+function delimiterName(delimiter: string): string {
+    if (delimiter === "'") {
+        return 'single';
+    } else if (delimiter === '"') {
+        return 'double';
+    } else if (delimiter === '`') {
+        return 'backtick';
+    } else {
+        return 'delimiter';
+    }
 }
