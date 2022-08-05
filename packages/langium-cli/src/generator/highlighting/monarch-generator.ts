@@ -148,7 +148,7 @@ function getTokenizerStates(grammar: langium.Grammar): State[] {
         rules: getWhitespaceRules(grammar)
     };
 
-    const commentRules: State = {
+    const commentState: State = {
         name: 'comment',
         rules: getCommentRules(grammar)
     };
@@ -178,7 +178,7 @@ function getTokenizerStates(grammar: langium.Grammar): State[] {
     return [
         initialState,
         whitespaceState,
-        commentRules
+        commentState
     ];
 }
 
