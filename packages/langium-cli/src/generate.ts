@@ -15,7 +15,8 @@ import { URI } from 'vscode-uri';
 import { generateAst } from './generator/ast-generator';
 import { serializeGrammar } from './generator/grammar-serializer';
 import { generateModule } from './generator/module-generator';
-import { generateTextMate } from './generator/textmate-generator';
+import { generateTextMate } from './generator/highlighting/textmate-generator';
+import { generateMonarch } from './generator/highlighting/monarch-generator';
 import { getUserChoice, log } from './generator/util';
 import { getFilePath, LangiumConfig, LangiumLanguageConfig, RelativePath } from './package';
 import { validateParser } from './parser-validation';
@@ -190,13 +191,30 @@ export async function generate(config: LangiumConfig, options: GenerateOptions):
             const genTmGrammar = generateTextMate(grammar, languageConfig);
             const textMatePath = path.resolve(relPath, languageConfig.textMate.out);
             log('log', options, `Writing textmate grammar to ${chalk.white.bold(textMatePath)}`);
-            const parentDir = path.dirname(textMatePath).split(path.sep).pop();
-            parentDir && await mkdirWithFail(parentDir, options);
-            await writeWithFail(textMatePath, genTmGrammar, options);
+            await writeHighlightGrammar(genTmGrammar, textMatePath, options);
+        }
+
+        if(languageConfig?.monarch) {
+            const genMonarchGrammar = generateMonarch(grammar, languageConfig);
+            const monarchPath = path.resolve(relPath, languageConfig.monarch.out);
+            log('log', options, `Writing monarch grammar to ${chalk.white.bold(monarchPath)}`);
+            await writeHighlightGrammar(genMonarchGrammar, monarchPath, options);
         }
     }
 
     return 'success';
+}
+
+/**
+ * Writes contents of a grammar for syntax highlighting to a file, logging any errors and continuing without throwing
+ * @param grammar Grammar contents to write
+ * @param grammarPath Path to write, verifying the parent dir exists first
+ * @param options Generation options
+ */
+async function writeHighlightGrammar(grammar: string, grammarPath: string, options: GenerateOptions): Promise<void> {
+    const parentDir = path.dirname(grammarPath).split(path.sep).pop();
+    parentDir && await mkdirWithFail(parentDir, options);
+    await writeWithFail(grammarPath, grammar, options);
 }
 
 async function rmdirWithFail(dirPath: string, expectedFiles: string[], options: GenerateOptions): Promise<boolean> {

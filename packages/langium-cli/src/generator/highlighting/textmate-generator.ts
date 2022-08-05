@@ -1,13 +1,13 @@
 /******************************************************************************
- * Copyright 2021 TypeFox GmbH
+ * Copyright 2022 TypeFox GmbH
  * This program and the accompanying materials are made available under the
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
 import * as langium from 'langium';
 import { escapeRegExp, getCaseInsensitivePattern, getTerminalParts, isCommentTerminal, isTerminalRule, terminalRegex } from 'langium';
-import { LangiumLanguageConfig } from '../package';
-import { collectKeywords } from './util';
+import { LangiumLanguageConfig } from '../../package';
+import { collectKeywords } from '../util';
 
 export interface TextMateGrammar {
     repository: Repository;
@@ -124,7 +124,38 @@ function getControlKeywords(grammar: langium.Grammar, pack: LangiumLanguageConfi
     };
 }
 
-function groupKeywords(keywords: string[], caseInsensitive: boolean | undefined): string[] {
+function getStringPatterns(grammar: langium.Grammar, pack: LangiumLanguageConfig): Pattern[] {
+    const terminals = langium.stream(grammar.rules).filter(langium.isTerminalRule);
+    const stringTerminal = terminals.find(e => e.name.toLowerCase() === 'string');
+    const stringPatterns: Pattern[] = [];
+    if (stringTerminal) {
+        const parts = getTerminalParts(terminalRegex(stringTerminal));
+        for (const part of parts) {
+            if (part.end) {
+                stringPatterns.push({
+                    'name': `string.quoted.${delimiterName(part.start)}.${pack.id}`,
+                    'begin': part.start,
+                    'end': part.end
+                });
+            }
+        }
+    }
+    return stringPatterns;
+}
+
+function delimiterName(delimiter: string): string {
+    if (delimiter === "'") {
+        return 'single';
+    } else if (delimiter === '"') {
+        return 'double';
+    } else if (delimiter === '`') {
+        return 'backtick';
+    } else {
+        return 'delimiter';
+    }
+}
+
+export function groupKeywords(keywords: string[], caseInsensitive: boolean | undefined): string[] {
     const groups: {
         letter: string[],
         leftSpecial: string[],
@@ -155,35 +186,4 @@ function groupKeywords(keywords: string[], caseInsensitive: boolean | undefined)
     if (groups.rightSpecial.length) res.push(`\\b(${groups.rightSpecial.join('|')})\\B`);
     if (groups.special.length) res.push(`\\B(${groups.special.join('|')})\\B`);
     return res;
-}
-
-function getStringPatterns(grammar: langium.Grammar, pack: LangiumLanguageConfig): Pattern[] {
-    const terminals = langium.stream(grammar.rules).filter(langium.isTerminalRule);
-    const stringTerminal = terminals.find(e => e.name.toLowerCase() === 'string');
-    const stringPatterns: Pattern[] = [];
-    if (stringTerminal) {
-        const parts = getTerminalParts(terminalRegex(stringTerminal));
-        for (const part of parts) {
-            if (part.end) {
-                stringPatterns.push({
-                    'name': `string.quoted.${delimiterName(part.start)}.${pack.id}`,
-                    'begin': part.start,
-                    'end': part.end
-                });
-            }
-        }
-    }
-    return stringPatterns;
-}
-
-function delimiterName(delimiter: string): string {
-    if (delimiter === "'") {
-        return 'single';
-    } else if (delimiter === '"') {
-        return 'double';
-    } else if (delimiter === '`') {
-        return 'backtick';
-    } else {
-        return 'delimiter';
-    }
 }
