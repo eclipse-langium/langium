@@ -39,7 +39,7 @@ describe('Completion Provider', () => {
         await completion({
             text,
             index: 2,
-            expectedItems: ['hidden', '(']
+            expectedItems: ['hidden']
         });
     });
 

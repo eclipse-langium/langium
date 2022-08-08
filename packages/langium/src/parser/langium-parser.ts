@@ -362,6 +362,163 @@ export class LangiumParserErrorMessageProvider implements IParserErrorMessagePro
 
 }
 
+export interface CompletionParserResult {
+    tokens: IToken[]
+    elementStack: AbstractElement[]
+    after: boolean
+    token?: IToken
+    tokenIndex: number
+}
+
+export class LangiumCompletionParser {
+    private readonly lexer: Lexer;
+    private readonly wrapper: ChevrotainWrapper;
+    private mainRule!: RuleResult;
+    private elementStack: AbstractElement[] = [];
+    private lastElementStack: AbstractElement[] = [];
+    private lastToken?: IToken;
+    private nextTokenIndex = 0;
+    private tokens: IToken[] = [];
+    private isAfter = false;
+    private stackSize = 0;
+    private _unorderedGroups: Map<string, boolean[]> = new Map<string, boolean[]>();
+
+    get unorderedGroups(): Map<string, boolean[]> {
+        return this._unorderedGroups;
+    }
+
+    constructor(services: LangiumServices, tokens: TokenVocabulary) {
+        //IMPORTANT: Lexer must be built before the wrapper, otherwise multi-mode lexing will fail (chevrotain issue)
+        this.lexer = new Lexer(isTokenTypeDictionary(tokens) ? Object.values(tokens) : tokens);
+        this.wrapper = new ChevrotainWrapper(tokens, { ...services.parser.ParserConfig });
+    }
+
+    finalize(): void {
+        this.wrapper.wrapSelfAnalysis();
+    }
+
+    parse(input: string): CompletionParserResult {
+        this.elementStack = [];
+        this.lastElementStack = [];
+        this.lastToken = undefined;
+        this.stackSize = 0;
+        this.nextTokenIndex = 0;
+        this.isAfter = false;
+        const tokens = this.lexer.tokenize(input);
+        this.tokens = tokens.tokens;
+        this.wrapper.input = [...this.tokens];
+        this.mainRule.call(this.wrapper);
+        this.unorderedGroups.clear();
+        return {
+            tokens: this.tokens,
+            elementStack: [...this.lastElementStack],
+            after: this.isAfter,
+            token: this.lastToken,
+            tokenIndex: this.nextTokenIndex
+        };
+    }
+
+    MAIN_RULE(
+        name: string,
+        implementation: RuleImpl
+    ): RuleResult {
+        return this.mainRule = this.DEFINE_RULE(name, implementation);
+    }
+
+    DEFINE_RULE(
+        name: string,
+        implementation: RuleImpl
+    ): RuleResult {
+        return this.wrapper.DEFINE_RULE(name, this.startImplementation(implementation).bind(this));
+    }
+
+    private startImplementation(implementation: RuleImpl): RuleImpl {
+        return (args) => {
+            const size = this.keepStackSize();
+            try {
+                implementation(args);
+            } finally {
+                this.resetStackSize(size);
+            }
+        };
+    }
+
+    private removeUnexpectedElements(): void {
+        this.elementStack.splice(this.stackSize);
+    }
+
+    keepStackSize(): number {
+        const size = this.elementStack.length;
+        this.stackSize = size;
+        return size;
+    }
+
+    resetStackSize(size: number): void {
+        this.removeUnexpectedElements();
+        this.stackSize = size;
+    }
+
+    alternatives(idx: number, choices: Alternatives): void {
+        this.wrapper.wrapOr(idx, choices);
+    }
+
+    optional(idx: number, callback: DSLMethodOpts<unknown>): void {
+        this.wrapper.wrapOption(idx, callback);
+    }
+
+    many(idx: number, callback: DSLMethodOpts<unknown>): void {
+        this.wrapper.wrapMany(idx, callback);
+    }
+
+    atLeastOne(idx: number, callback: DSLMethodOpts<unknown>): void {
+        this.wrapper.wrapAtLeastOne(idx, callback);
+    }
+
+    consume(idx: number, tokenType: TokenType, feature: AbstractElement): void {
+        const token = this.wrapper.wrapConsume(idx, tokenType);
+        if (!this.isRecording()) {
+            this.lastElementStack = [...this.elementStack, feature];
+            this.lastToken = token;
+            this.nextTokenIndex = this.currIdx + 1;
+        }
+    }
+
+    subrule(idx: number, rule: RuleResult, feature: AbstractElement, args: Args): void {
+        this.before(feature);
+        this.wrapper.wrapSubrule(idx, rule, args);
+        this.after(feature);
+    }
+
+    before(element: AbstractElement): void {
+        if (!this.wrapper.IS_RECORDING) {
+            this.elementStack.push(element);
+            this.isAfter = false;
+        }
+    }
+
+    after(element: AbstractElement): void {
+        if (!this.wrapper.IS_RECORDING) {
+            const index = this.elementStack.lastIndexOf(element);
+            if (index > 0) {
+                this.elementStack.splice(index);
+            }
+            this.isAfter = true;
+        }
+    }
+
+    getRuleStack(): number[] {
+        return (this.wrapper as any).RULE_STACK;
+    }
+
+    isRecording(): boolean {
+        return this.wrapper.IS_RECORDING;
+    }
+
+    get currIdx(): number {
+        return (this.wrapper as any).currIdx;
+    }
+}
+
 const defaultConfig: IParserConfig = {
     recoveryEnabled: true,
     nodeLocationTracking: 'full',

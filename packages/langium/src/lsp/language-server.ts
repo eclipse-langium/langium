@@ -203,7 +203,7 @@ export function addDiagnosticsHandler(connection: Connection, services: LangiumS
 export function addCompletionHandler(connection: Connection, services: LangiumSharedServices): void {
     connection.onCompletion(createRequestHandler(
         (services, document, params, cancelToken) => {
-            return services.lsp.completion.CompletionProvider?.getCompletion(document, params, cancelToken);
+            return services.lsp.CompletionProvider?.getCompletion(document, params, cancelToken);
         },
         services
     ));

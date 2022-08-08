@@ -4,20 +4,21 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { CancellationToken, CompletionItem, CompletionItemKind, CompletionList, CompletionParams } from 'vscode-languageserver';
+import { CancellationToken, CompletionItem, CompletionItemKind, CompletionList, CompletionParams, Position } from 'vscode-languageserver';
 import { TextDocument, TextEdit } from 'vscode-languageserver-textdocument';
 import * as ast from '../../grammar/generated/ast';
+import { getTypeNameAtElement } from '../../grammar/grammar-util';
+import { LangiumCompletionParser } from '../../parser/langium-parser';
 import { isNamed } from '../../references/naming';
 import { ScopeProvider } from '../../references/scope';
 import { LangiumServices } from '../../services';
-import { AstNode, AstNodeDescription, CstNode, Reference, ReferenceInfo } from '../../syntax-tree';
+import { AstNode, AstNodeDescription } from '../../syntax-tree';
 import { getContainerOfType, isAstNode } from '../../utils/ast-util';
-import { findLeafNodeAtOffset, flattenCst } from '../../utils/cst-util';
+import { findLeafNodeAtOffset, findRelevantNode } from '../../utils/cst-util';
 import { MaybePromise } from '../../utils/promise-util';
 import { stream } from '../../utils/stream';
 import { LangiumDocument } from '../../workspace/documents';
 import { findFirstFeatures, findNextFeatures } from './follow-element-computation';
-import { RuleInterpreter } from './rule-interpreter';
 
 export type CompletionAcceptor = (value: string | AstNode | AstNodeDescription, item?: Partial<CompletionItem>) => void
 
@@ -36,14 +37,14 @@ export interface CompletionProvider {
 
 export class DefaultCompletionProvider implements CompletionProvider {
 
+    protected readonly completionParser: LangiumCompletionParser;
     protected readonly scopeProvider: ScopeProvider;
-    protected readonly ruleInterpreter: RuleInterpreter;
     protected readonly grammar: ast.Grammar;
 
     constructor(services: LangiumServices) {
         this.scopeProvider = services.references.ScopeProvider;
-        this.ruleInterpreter = services.lsp.completion.RuleInterpreter;
         this.grammar = services.Grammar;
+        this.completionParser = services.parser.CompletionParser;
     }
 
     getCompletion(document: LangiumDocument, params: CompletionParams): MaybePromise<CompletionList> {
@@ -60,24 +61,12 @@ export class DefaultCompletionProvider implements CompletionProvider {
         if (cst) {
             const node = findLeafNodeAtOffset(cst, offset);
             if (node) {
-                const features = findNextFeatures(this.buildFeatureStack(node));
-                const commonSuperRule = this.findCommonSuperRule(node);
-                // In some cases, it is possible that we do not have a super rule
-                if (commonSuperRule) {
-                    const flattened = flattenCst(commonSuperRule.node).filter(e => e.offset < offset).toArray();
-                    const possibleFeatures = this.ruleInterpreter.interpretRule(commonSuperRule.rule, [...flattened], offset);
-                    // Remove features which we already identified during parsing
-                    const partialMatches = possibleFeatures.filter(e => {
-                        const match = this.ruleInterpreter.featureMatches(e, flattened[flattened.length - 1], offset);
-                        return match === 'partial' || match === 'both';
-                    });
-                    const notMatchingFeatures = possibleFeatures.filter(e => !partialMatches.includes(e));
-                    features.push(...partialMatches);
-                    features.push(...notMatchingFeatures.flatMap(e => findNextFeatures([e])));
+                const parserStart = this.backtrackToTokenStart(document.textDocument.getText(), offset);
+                const features = this.findFeaturesAt(document.textDocument, parserStart);
+                if (parserStart !== offset) {
+                    features.push(...this.findFeaturesAt(document.textDocument, offset));
                 }
-                if (node.end > offset) {
-                    features.push(node.feature);
-                }
+
                 stream(features).distinct(e => {
                     if (ast.isKeyword(e)) {
                         return e.value;
@@ -87,7 +76,6 @@ export class DefaultCompletionProvider implements CompletionProvider {
                 }).forEach(e => this.completionFor(node.element, e, acceptor));
             } else {
                 // The entry rule is the first parser rule
-                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                 const parserRule = this.grammar.rules.find(e => ast.isParserRule(e))!;
                 this.completionForRule(undefined, parserRule, acceptor);
             }
@@ -95,20 +83,34 @@ export class DefaultCompletionProvider implements CompletionProvider {
         return CompletionList.create(items, true);
     }
 
-    protected buildFeatureStack(node: CstNode | undefined): ast.AbstractElement[] {
-        const features: ast.AbstractElement[] = [];
-        while (node) {
-            if (node.feature) {
-                features.push(node.feature);
-            }
-            node = node.parent;
-        }
+    protected findFeaturesAt(document: TextDocument, offset: number): ast.AbstractElement[] {
+        const text = document.getText({
+            start: Position.create(0, 0),
+            end: document.positionAt(offset)
+        });
+        const parserResult = this.completionParser.parse(text);
+        const leftoverTokens = [...parserResult.tokens].splice(parserResult.tokenIndex);
+        const features = findNextFeatures(parserResult.elementStack, leftoverTokens);
         return features;
+    }
+
+    protected backtrackToTokenStart(text: string, offset: number): number {
+        const wordRegex = /\w/;
+        const whiteSpaceRegex = /\s/;
+        let lastCharacter = text.substring(offset - 1, offset);
+        if (whiteSpaceRegex.test(lastCharacter)) {
+            return offset;
+        }
+        while (wordRegex.test(lastCharacter) && offset > 0) {
+            offset--;
+            lastCharacter = text.substring(offset - 1, offset);
+        }
+        return offset;
     }
 
     protected completionForRule(astNode: AstNode | undefined, rule: ast.AbstractRule, acceptor: CompletionAcceptor): void {
         if (ast.isParserRule(rule)) {
-            const features = findFirstFeatures(rule.definition);
+            const features = findFirstFeatures(rule.definition, new Map(), new Set());
             features.flatMap(e => this.completionFor(astNode, e, acceptor));
         }
     }
@@ -145,27 +147,6 @@ export class DefaultCompletionProvider implements CompletionProvider {
 
     protected completionForKeyword(keyword: ast.Keyword, context: AstNode | undefined, acceptor: CompletionAcceptor): void {
         acceptor(keyword.value, { kind: CompletionItemKind.Keyword, detail: 'Keyword', sortText: /\w/.test(keyword.value) ? '1' : '2' });
-    }
-
-    protected findCommonSuperRule(node: CstNode): { rule: ast.ParserRule, node: CstNode } | undefined {
-        while (typeof node.element.$type !== 'string') {
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            node = node.parent!;
-        }
-        let superNode = node.parent;
-        while (superNode) {
-            if (superNode.element !== node.element) {
-                const topFeature = node.feature;
-                if (ast.isRuleCall(topFeature) && topFeature.rule.ref) {
-                    const rule = <ast.ParserRule>topFeature.rule.ref;
-                    return { rule, node };
-                }
-                throw new Error();
-            }
-            node = superNode;
-            superNode = node.parent;
-        }
-        return undefined;
     }
 
     protected fillCompletionItem(document: TextDocument, offset: number, value: string | AstNode | AstNodeDescription, info: Partial<CompletionItem> | undefined): CompletionItem | undefined {
