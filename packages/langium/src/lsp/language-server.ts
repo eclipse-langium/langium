@@ -66,6 +66,7 @@ export class DefaultLanguageServer implements LanguageServer {
         const hasSemanticTokensProvider = languages.some(e => e.lsp.SemanticTokenProvider !== undefined);
         const commandNames = this.services.lsp.ExecuteCommandHandler?.commands;
         const signatureHelpOptions = mergeSignatureHelpOptions(languages.map(e => e.lsp.SignatureHelp?.signatureHelpOptions));
+        const hasGoToTypeProvider = languages.some(e => e.lsp.GoToTypeResolver !== undefined);
 
         const result: InitializeResult = {
             capabilities: {
@@ -82,6 +83,7 @@ export class DefaultLanguageServer implements LanguageServer {
                 referencesProvider: {}, // TODO enable workDoneProgress?
                 documentSymbolProvider: {},
                 definitionProvider: {},
+                typeDefinitionProvider: hasGoToTypeProvider,
                 documentHighlightProvider: {},
                 codeActionProvider: hasCodeActionProvider,
                 documentFormattingProvider: hasFormattingService,
@@ -120,6 +122,7 @@ export function startLanguageServer(services: LangiumSharedServices): void {
     addFindReferencesHandler(connection, services);
     addDocumentSymbolHandler(connection, services);
     addGotoDefinitionHandler(connection, services);
+    addGoToTypeDefinitionHandler(connection, services);
     addDocumentHighlightsHandler(connection, services);
     addFoldingRangeHandler(connection, services);
     addFormattingHandler(connection, services);
@@ -214,6 +217,13 @@ export function addDocumentSymbolHandler(connection: Connection, services: Langi
 export function addGotoDefinitionHandler(connection: Connection, services: LangiumSharedServices): void {
     connection.onDefinition(createRequestHandler(
         (services, document, params, cancelToken) => services.lsp.GoToResolver.goToDefinition(document, params, cancelToken),
+        services
+    ));
+}
+
+export function addGoToTypeDefinitionHandler(connection: Connection, services: LangiumSharedServices): void {
+    connection.onTypeDefinition(createRequestHandler(
+        (services, document, params, cancelToken) => services.lsp.GoToTypeResolver?.goToTypeDefinition(document, params, cancelToken),
         services
     ));
 }

@@ -45,34 +45,37 @@ export class DefaultGoToResolverProvider implements GoToResolver {
 
     goToDefinition(document: LangiumDocument, params: DefinitionParams): MaybePromise<LocationLink[] | undefined> {
         const rootNode = document.parseResult.value;
-        const targetCstNodes: GoToLink[] = [];
         if (rootNode.$cstNode) {
             const cst = rootNode.$cstNode;
             const sourceCstNode = findLeafNodeAtOffset(cst, document.textDocument.offsetAt(params.position));
             if (sourceCstNode) {
-                const goToLink = this.findLink(sourceCstNode);
-                if (goToLink) {
-                    targetCstNodes.push(goToLink);
-                }
+                return this.collectLocationLinks(sourceCstNode, params);
             }
         }
-        return targetCstNodes.map(link => LocationLink.create(
-            link.targetDocument.textDocument.uri,
-            (this.findActualNodeFor(link.target) ?? link.target).range,
-            link.target.range,
-            link.source.range
-        ));
+        return undefined;
     }
 
-    protected findLink(source: CstNode): GoToLink | undefined{
+    protected collectLocationLinks(sourceCstNode: CstNode, _params: DefinitionParams): MaybePromise<LocationLink[] | undefined> {
+        const goToLink = this.findLink(sourceCstNode);
+        if (goToLink) {
+            return [LocationLink.create(
+                goToLink.targetDocument.textDocument.uri,
+                (this.findActualNodeFor(goToLink.target) ?? goToLink.target).range,
+                goToLink.target.range,
+                goToLink.source.range
+            )];
+        }
+        return undefined;
+    }
+
+    protected findLink(source: CstNode): GoToLink | undefined {
         const target = this.references.findDeclaration(source);
         if (target?.element) {
             const targetDocument = getDocument(target.element);
-            if(target && targetDocument) {
-                return { source, target, targetDocument};
+            if (target && targetDocument) {
+                return { source, target, targetDocument };
             }
         }
-
         return undefined;
     }
 
