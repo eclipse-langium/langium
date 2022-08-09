@@ -20,7 +20,8 @@ export function findNextFeatures(featureStack: ast.AbstractElement[], unparsedTo
         tokens: unparsedTokens
     };
     interpreteTokens(context);
-    const nextStacks = interpreteToken(context.stacks);
+    const nextStacks = findNextFeatureStacks(context.stacks);
+    // We only need the last element of each stack
     return nextStacks.map(e => e[e.length - 1]);
 }
 
@@ -44,7 +45,7 @@ function findNextFeaturesInternal(feature: ast.AbstractElement, cardinalities = 
         }
     }
     // First try to iterate the same element again
-    if (isArray(item.cardinality ?? cardinalities.get(item))) {
+    if (isArray(item.cardinality)) {
         features.push(...findFirstFeatures(item, cardinalities, visited));
     }
     if (parent) {
@@ -53,19 +54,11 @@ function findNextFeaturesInternal(feature: ast.AbstractElement, cardinalities = 
         if (ownIndex !== undefined && ownIndex < parent.elements.length - 1) {
             features.push(...findNextFeaturesInGroup(parent, ownIndex + 1, cardinalities, visited));
         }
-        if (features.every(e => isOptional(e.cardinality ?? cardinalities.get(e)))) {
+        // Don't test for `isOptional` on the cardinality. We also want to find the next elements after `+`
+        if (features.every(e => e.cardinality || cardinalities.get(e))) {
             // secondly, try to find the next elements of the parent
-            features.push(...findNextFeaturesInternal(parent, cardinalities));
+            features.push(...findNextFeaturesInternal(parent, cardinalities, visited));
         }
-        // if (features.every(e => isOptional(e.cardinality ?? cardinalities.get(e)))) {
-        //     // lasty, climb the feature stack and calculate completion for previously called rules
-        //     featureStack.shift();
-        //     features.push(...findNextFeaturesInternal(featureStack, cardinalities));
-        // }
-    } else {
-        // Climb the feature stack if this feature is the only one in a rule
-        // featureStack.shift();
-        // features.push(...findNextFeaturesInternal(featureStack, cardinalities));
     }
     return features;
 }
@@ -77,6 +70,13 @@ function findNextFeaturesInternal(feature: ast.AbstractElement, cardinalities = 
  * These features contain a modified `cardinality` property. If the given `feature` is optional, the returned features will be optional as well.
  */
 export function findFirstFeatures(feature: ast.AbstractElement | undefined, cardinalities: Map<ast.AbstractElement, Cardinality>, visited: Set<ast.AbstractElement>): ast.AbstractElement[] {
+    if (ast.isGroup(feature)) {
+        if (visited.has(feature)) {
+            return [];
+        } else {
+            visited.add(feature);
+        }
+    }
     const card = cardinalities ?? new Map();
     visited = visited ?? new Set();
     if (feature === undefined) {
@@ -84,18 +84,14 @@ export function findFirstFeatures(feature: ast.AbstractElement | undefined, card
     } else if (ast.isGroup(feature)) {
         return findNextFeaturesInGroup(feature, 0, card, visited)
             .map(e => modifyCardinality(e, feature.cardinality, card));
-    } else if (ast.isAlternatives(feature)) {
+    } else if (ast.isAlternatives(feature) || ast.isUnorderedGroup(feature)) {
         return feature.elements.flatMap(e => findFirstFeatures(e, card, visited))
             .map(e => modifyCardinality(e, feature.cardinality, card));
-    } else if (ast.isUnorderedGroup(feature)) {
-        // TODO: Do we want to continue supporting unordered groups?
-        return [];
     } else if (ast.isAssignment(feature)) {
         return findFirstFeatures(feature.terminal, card, visited)
             .map(e => modifyCardinality(e, feature.cardinality, card));
     } else if (ast.isAction(feature)) {
-        return findNextFeaturesInternal(feature, card, visited)
-            .map(e => modifyCardinality(e, feature.cardinality, card));
+        return findNextFeaturesInternal(feature, card, visited);
     } else if (ast.isRuleCall(feature) && ast.isParserRule(feature.rule.ref)) {
         return findFirstFeatures(feature.rule.ref.definition, card, visited)
             .map(e => modifyCardinality(e, feature.cardinality, card));
@@ -112,13 +108,7 @@ export function findFirstFeatures(feature: ast.AbstractElement | undefined, card
  * @returns A new feature that could be now optional (`?` or `*`).
  */
 function modifyCardinality(feature: ast.AbstractElement, cardinality: Cardinality, cardinalities: Map<ast.AbstractElement, Cardinality>): ast.AbstractElement {
-    if (isOptional(cardinality)) {
-        if (isArray(feature.cardinality)) {
-            cardinalities.set(feature, '*');
-        } else {
-            cardinalities.set(feature, '?');
-        }
-    }
+    cardinalities.set(feature, cardinality);
     return feature;
 }
 
@@ -127,6 +117,9 @@ function findNextFeaturesInGroup(group: ast.Group, index: number, cardinalities:
     let firstFeature: ast.AbstractElement;
     do {
         firstFeature = group.elements[index++];
+        if (ast.isAction(firstFeature)) {
+            continue;
+        }
         features.push(...findFirstFeatures(firstFeature, cardinalities, visited));
         if (!isOptional(firstFeature?.cardinality ?? cardinalities.get(firstFeature))) {
             break;
@@ -143,12 +136,12 @@ interface InterpretationContext {
 function interpreteTokens(context: InterpretationContext): void {
     while (context.tokens.length > 0) {
         const token = context.tokens.pop()!;
-        const nextFeatureStacks = interpreteToken(context.stacks, token);
+        const nextFeatureStacks = findNextFeatureStacks(context.stacks, token);
         context.stacks = nextFeatureStacks;
     }
 }
 
-function interpreteToken(stacks: ast.AbstractElement[][], token?: IToken): ast.AbstractElement[][] {
+function findNextFeatureStacks(stacks: ast.AbstractElement[][], token?: IToken): ast.AbstractElement[][] {
     const newStacks: ast.AbstractElement[][] = [];
     for (const stack of stacks) {
         newStacks.push(...interpreteStackToken(stack, token));

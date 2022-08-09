@@ -8,7 +8,7 @@ import { Connection, TextDocuments } from 'vscode-languageserver';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { Module } from './dependency-injection';
 import { createGrammarConfig } from './grammar/grammar-config';
-import { createCompletionParser } from './lsp/completion/completion-parser-builder';
+import { createCompletionParser } from './parser/completion-parser-builder';
 import { DefaultCompletionProvider } from './lsp/completion/completion-provider';
 import { DefaultDocumentHighlightProvider } from './lsp/document-highlight-provider';
 import { DefaultDocumentSymbolProvider } from './lsp/document-symbol-provider';

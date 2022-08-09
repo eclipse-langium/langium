@@ -4,14 +4,15 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { EMPTY_ALT, IOrAlt, TokenType, TokenTypeDictionary, TokenVocabulary } from 'chevrotain';
-import { AbstractElement, Alternatives, Condition, CrossReference, Grammar, Group, isAction, isAlternatives, isAssignment, isConjunction, isCrossReference, isDisjunction, isGroup, isKeyword, isLiteralCondition, isNegation, isParameterReference, isParserRule, isRuleCall, isTerminalRule, isUnorderedGroup, Keyword, NamedArgument, ParserRule, RuleCall, UnorderedGroup } from '../../grammar/generated/ast';
-import { Cardinality, findNameAssignment, getTypeName } from '../../grammar/grammar-util';
-import { isIMultiModeLexerDefinition, isTokenTypeDictionary, LangiumCompletionParser } from '../../parser/langium-parser';
-import { LangiumServices } from '../../services';
-import { AstNode } from '../../syntax-tree';
-import { assertUnreachable, ErrorWithLocation } from '../../utils/errors';
-import { stream } from '../../utils/stream';
+import { AbstractElement, Action, Alternatives, Condition, CrossReference, Grammar, Group, isAction, isAlternatives, isAssignment, isConjunction, isCrossReference, isDisjunction, isGroup, isKeyword, isLiteralCondition, isNegation, isParameterReference, isParserRule, isRuleCall, isTerminalRule, isUnorderedGroup, Keyword, NamedArgument, ParserRule, RuleCall, UnorderedGroup } from '../grammar/generated/ast';
+import { Cardinality, findNameAssignment, getTypeName } from '../grammar/grammar-util';
+import { BaseParser, isIMultiModeLexerDefinition, isTokenTypeDictionary } from './langium-parser';
+import { AstNode } from '../syntax-tree';
+import { assertUnreachable, ErrorWithLocation } from '../utils/errors';
+import { stream } from '../utils/stream';
 
 type RuleContext = {
     optional: number,
@@ -22,7 +23,7 @@ type RuleContext = {
 } & ParserContext;
 
 type ParserContext = {
-    parser: LangiumCompletionParser
+    parser: BaseParser
     tokens: TokenTypeDictionary
     rules: Map<string, Rule>
     ruleNames: Map<AstNode, string>
@@ -36,25 +37,20 @@ type Predicate = (args: Args) => boolean;
 
 type Method = (args: Args) => void;
 
-export function createCompletionParser(services: LangiumServices): LangiumCompletionParser {
-    const grammar = services.Grammar;
-    const buildTokens = services.parser.TokenBuilder.buildTokens(grammar, { caseInsensitive: services.LanguageMetaData.caseInsensitive });
-    const tokens = toTokenTypeDictionary(buildTokens);
-
+export function createParser<T extends BaseParser>(grammar: Grammar, parser: T, tokenVocabulary: TokenVocabulary): T {
+    const tokens = toTokenTypeDictionary(tokenVocabulary);
     const rules = new Map<string, Rule>();
-    const parser = new LangiumCompletionParser(services, buildTokens);
     const parserContext: ParserContext = {
         parser,
         tokens,
         rules,
         ruleNames: new Map()
     };
-    buildCompletionRules(parserContext, grammar);
-    parser.finalize();
+    buildRules(parserContext, grammar);
     return parser;
 }
 
-function buildCompletionRules(parserContext: ParserContext, grammar: Grammar): void {
+function buildRules(parserContext: ParserContext, grammar: Grammar): void {
     for (const rule of stream(grammar.rules).filter(isParserRule)) {
         const ctx: RuleContext = {
             ...parserContext,
@@ -64,8 +60,7 @@ function buildCompletionRules(parserContext: ParserContext, grammar: Grammar): v
             many: 1,
             or: 1
         };
-        const method = (rule.entry ? ctx.parser.MAIN_RULE : ctx.parser.DEFINE_RULE).bind(ctx.parser);
-        ctx.rules.set(rule.name, method(rule.name, buildRuleContent(ctx, rule)));
+        ctx.rules.set(rule.name, parserContext.parser.rule(rule, buildRuleContent(ctx, rule)));
     }
 }
 
@@ -79,7 +74,7 @@ function buildElement(ctx: RuleContext, element: AbstractElement, ignoreGuard = 
     if (isKeyword(element)) {
         method = buildKeyword(ctx, element);
     } else if (isAction(element)) {
-        method = () => { /* NOOP */ };
+        method = buildAction(ctx, element);
     } else if (isAssignment(element)) {
         method = buildElement(ctx, element.terminal);
     } else if (isCrossReference(element)) {
@@ -96,6 +91,11 @@ function buildElement(ctx: RuleContext, element: AbstractElement, ignoreGuard = 
         throw new ErrorWithLocation(element.$cstNode, `Unexpected element type: ${element.$type}`);
     }
     return wrap(ctx, ignoreGuard ? undefined : getGuardCondition(element), method, element.cardinality);
+}
+
+function buildAction(ctx: RuleContext, action: Action): Method {
+    const actionType = getTypeName(action);
+    return () => ctx.parser.action(actionType, action);
 }
 
 function buildRuleCall(ctx: RuleContext, ruleCall: RuleCall): Method {
@@ -209,23 +209,23 @@ function buildUnorderedGroup(ctx: RuleContext, group: UnorderedGroup): Method {
 
     const orIdx = ctx.or++;
 
-    const idFunc = (groupIdx: number, lParser: LangiumCompletionParser) => {
+    const idFunc = (groupIdx: number, lParser: BaseParser) => {
         const stackId = lParser.getRuleStack().join('-');
         return `uGroup_${groupIdx}_${stackId}`;
     };
     const alternatives: Method = (args) => ctx.parser.alternatives(orIdx, methods.map((method, idx) => {
-        const alt: IOrAlt<unknown> = {ALT: ()=> { true; }};
+        const alt: IOrAlt<unknown> = { ALT: () => true };
         const parser = ctx.parser;
         alt.ALT = () => {
             method.ALT(args);
-            if(!parser.isRecording()) {
+            if (!parser.isRecording()) {
                 const key = idFunc(orIdx, parser);
                 if (!parser.unorderedGroups.get(key)) {
                     // init after clear state
                     parser.unorderedGroups.set(key, []);
                 }
                 const groupState = parser.unorderedGroups.get(key)!;
-                if(typeof groupState?.[idx] === 'undefined') {
+                if (typeof groupState?.[idx] === 'undefined') {
                     // Not accessed yet
                     groupState[idx] = true;
                 }
@@ -246,7 +246,7 @@ function buildUnorderedGroup(ctx: RuleContext, group: UnorderedGroup): Method {
     const wrapped = wrap(ctx, getGuardCondition(group), alternatives, '*');
     return (args) => {
         wrapped(args);
-        if(!ctx.parser.isRecording()) {
+        if (!ctx.parser.isRecording()) {
             ctx.parser.unorderedGroups.delete(idFunc(orIdx, ctx.parser));
         }
     };

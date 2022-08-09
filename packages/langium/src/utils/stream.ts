@@ -227,6 +227,8 @@ export interface Stream<T> extends Iterable<T> {
      */
     distinct<Key = T>(by?: (element: T) => Key): Stream<T>;
 
+    exclude<Key = T>(other: Iterable<T>, key?: (element: T) => Key): Stream<T>;
+
 }
 
 export type FlatStream<T, Depth extends number> = {
@@ -614,6 +616,18 @@ export class StreamImpl<S, T> implements Stream<T> {
                 set.add(value);
                 return true;
             }
+        });
+    }
+
+    exclude<Key = T>(other: Iterable<T>, key?: (element: T) => Key): Stream<T> {
+        const otherKeySet = new Set<Key | T>();
+        for (const item of other) {
+            const value = key ? key(item) : item;
+            otherKeySet.add(value);
+        }
+        return this.filter(e => {
+            const ownKey = key ? key(e) : e;
+            return !otherKeySet.has(ownKey);
         });
     }
 }

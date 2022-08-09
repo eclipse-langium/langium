@@ -4,9 +4,9 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { createLangiumGrammarServices, EmptyFileSystem } from '../../../src';
-import { expectCompletion } from '../../../src/test';
-import { expectFunction } from '../../fixture';
+import { createLangiumGrammarServices, EmptyFileSystem } from '../../src';
+import { expectCompletion } from '../../src/test';
+import { expectFunction } from '../fixture';
 
 const text = `
 <|>gramm<|>ar g hid<|>den(hiddenTerminal)
@@ -23,7 +23,17 @@ describe('Completion Provider', () => {
         await completion({
             text,
             index: 0,
-            expectedItems: ['grammar']
+            expectedItems: [
+                'grammar',
+                // The grammar name element has become optional, so all other keywords are also included
+                'import',
+                'entry',
+                'fragment',
+                'hidden',
+                'terminal',
+                'interface',
+                'type'
+            ]
         });
     });
 
@@ -39,7 +49,12 @@ describe('Completion Provider', () => {
         await completion({
             text,
             index: 2,
-            expectedItems: ['hidden']
+            expectedItems: [
+                'hidden',
+                '<',
+                '*',
+                ':'
+            ]
         });
     });
 
@@ -63,7 +78,6 @@ describe('Completion Provider', () => {
                 '+',
                 '=>',
                 '->',
-                '(',
                 '{',
                 '&',
                 '|',
