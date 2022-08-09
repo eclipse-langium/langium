@@ -7,14 +7,14 @@
 import { DefaultReferences } from '../../references/references';
 import { LangiumServices } from '../../services';
 import { AstNode, CstNode } from '../../syntax-tree';
-import { extractAssignments, getContainerOfType, getDocument, streamAst } from '../../utils/ast-util';
+import { getContainerOfType, getDocument, streamAst } from '../../utils/ast-util';
 import { findRelevantNode, toDocumentSegment } from '../../utils/cst-util';
 import { stream, Stream } from '../../utils/stream';
 import { equalURI } from '../../utils/uri-utils';
 import { ReferenceDescription } from '../../workspace/ast-descriptions';
 import { LangiumDocuments } from '../../workspace/documents';
 import { Action, Assignment, Interface, isAction, isAssignment, isInterface, isParserRule, isType, isTypeAttribute, ParserRule, Type, TypeAttribute } from '../generated/ast';
-import { findNodeForFeature, getActionAtElement } from '../grammar-util';
+import { extractAssignments, findNodeForFeature, getActionAtElement } from '../grammar-util';
 import { collectChildrenTypes, collectSuperTypes } from '../type-system/types-util';
 
 export class LangiumGrammarReferences extends DefaultReferences {

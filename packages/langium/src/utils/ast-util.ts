@@ -4,7 +4,6 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import * as ast from '../grammar/generated/ast';
 import { AstNode, AstNodeDescription, LinkingError, Reference, ReferenceInfo } from '../syntax-tree';
 import { DONE_RESULT, Stream, stream, StreamImpl, TreeStream, TreeStreamImpl } from '../utils/stream';
 import { LangiumDocument } from '../workspace/documents';
@@ -96,11 +95,22 @@ export function hasContainerOfType(node: AstNode | undefined, predicate: (n: Ast
  * @throws an error if the node is not contained in a document.
  */
 export function getDocument<T extends AstNode = AstNode>(node: AstNode): LangiumDocument<T> {
-    const rootNode = extractRootNode(node);
-    if (!rootNode?.$document) {
+    const rootNode = findRootNode(node);
+    const result = rootNode.$document;
+    if (!result) {
         throw new Error('AST node has no document.');
     }
-    return rootNode.$document as LangiumDocument<T>;
+    return result as LangiumDocument<T>;
+}
+
+/**
+ * Returns the root node of the given AST node by following the `$container` references.
+ */
+export function findRootNode(node: AstNode): AstNode {
+    while (node.$container) {
+        node = node.$container;
+    }
+    return node;
 }
 
 /**
@@ -207,21 +217,4 @@ export function findLocalReferences(targetNode: AstNode, lookup = getDocument(ta
         });
     });
     return stream(refs);
-}
-
-export function extractRootNode(node: AstNode): AstNode | undefined {
-    type ContainerType = ast.Alternatives | ast.Assignment | ast.AtomType | ast.CharacterRange | ast.CrossReference | ast.Group | ast.NegatedToken | ast.ParserRule | ast.TerminalAlternatives | ast.TerminalGroup | ast.TerminalRule | ast.UnorderedGroup | ast.UntilToken;
-    while (node?.$container) {
-        node = node?.$container as ContainerType;
-    }
-    return node;
-}
-
-export function extractAssignments(element: ast.AbstractElement): ast.Assignment[] {
-    if (ast.isAssignment(element)) {
-        return [element];
-    } if (ast.isAlternatives(element) || ast.isGroup(element) || ast.isUnorderedGroup(element)) {
-        return element.elements.flatMap(e => extractAssignments(e));
-    }
-    return [];
 }
