@@ -147,7 +147,7 @@ export class DefaultScopeProvider implements ScopeProvider {
 }
 
 /**
- * Language-specific service for precomputing the scope for a document. This service is executed as part of the _preprocessing_ phase in the `DocumentBuilder`.
+ * Language-specific service for precomputing the scope for a document. This service is executed as the second phase in the `DocumentBuilder`.
  */
 export interface ScopeComputation {
     /**
@@ -156,7 +156,7 @@ export interface ScopeComputation {
      * to determine which target nodes are visible in the context of a specific cross-reference.
      *
      * _Note:_ You should not resolve any cross-references in this service method. Cross-reference
-     * resolution depends on the preprocessing phase to be completed.
+     * resolution depends on the scope computation phase to be completed.
      *
      * @param document The document in which to compute scopes.
      * @param cancelToken Indicates when to cancel the current operation.

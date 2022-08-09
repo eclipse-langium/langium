@@ -116,7 +116,7 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
         affected.forEach(e => {
             const linker = this.serviceRegistry.getServices(e.uri).references.Linker;
             linker.unlink(e);
-            e.state = Math.min(e.state, DocumentState.Processed); // need to re-index potentially linked references
+            e.state = Math.min(e.state, DocumentState.ComputedScopes); // need to re-index potentially linked references
         });
         const docSet = new Set([
             ...changed,
@@ -132,9 +132,9 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
         await this.runCancelable(documents, DocumentState.IndexedContent, cancelToken, doc =>
             this.indexManager.updateContent(doc, cancelToken)
         );
-        // 2. Preprocessing
-        await this.runCancelable(documents, DocumentState.Processed, cancelToken, doc =>
-            this.process(doc, cancelToken)
+        // 2. Compute scopes
+        await this.runCancelable(documents, DocumentState.ComputedScopes, cancelToken, doc =>
+            this.computeScope(doc, cancelToken)
         );
         // 3. Linking
         await this.runCancelable(documents, DocumentState.Linked, cancelToken, doc =>
@@ -180,15 +180,17 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
     }
 
     /**
-     * Process the document by running precomputations. The default implementation precomputes the scope.
+     * Precompute the local scopes of the given document. The resulting data structure is used by
+     * the `ScopeProvider` service to determine the visible scope of any cross-reference.
      *
-     * _Note:_ You should not resolve any cross-references during this phase. Cross-reference resolution depends
-     * on preprocessing to be completed.
+     * _Note:_ You should not resolve any cross-references during this phase. Once the phase is completed,
+     * you may follow the `ref` property of a reference, which triggers lazy resolution. The result is
+     * either the respective target AST node or `undefined` in case the target is not in scope.
      */
-    protected async process(document: LangiumDocument, cancelToken: CancellationToken): Promise<void> {
+    protected async computeScope(document: LangiumDocument, cancelToken: CancellationToken): Promise<void> {
         const scopeComputation = this.serviceRegistry.getServices(document.uri).references.ScopeComputation;
         document.precomputedScopes = await scopeComputation.computeScope(document, cancelToken);
-        document.state = DocumentState.Processed;
+        document.state = DocumentState.ComputedScopes;
     }
 
     /**

@@ -42,19 +42,45 @@ export interface LangiumDocument<T extends AstNode = AstNode> {
  * smaller state values are finished as well.
  */
 export enum DocumentState {
-    /** The text content has changed and needs to be parsed again. */
+    /**
+     * The text content has changed and needs to be parsed again. The AST held by this outdated
+     * document instance is no longer valid.
+     */
     Changed = 0,
-    /** An AST has been created from the text content. */
+    /**
+     * An AST has been created from the text content. The document structure can be traversed,
+     * but cross-references cannot be resolved yet. If necessary, the structure can be manipulated
+     * at this stage as a preprocessing step.
+     */
     Parsed = 1,
-    /** The `IndexManager` service has processed AST nodes of this document. */
+    /**
+     * The `IndexManager` service has processed AST nodes of this document. This means the
+     * exported symbols are available in the global scope and can be resolved from other documents.
+     */
     IndexedContent = 2,
-    /** Pre-processing steps such as scope precomputation have been executed. */
-    Processed = 3,
-    /** The `Linker` service has processed this document. */
+    /**
+     * The `ScopeComputation` service has processed this document. This means the local symbols
+     * are stored in a MultiMap so they can be looked up by the `ScopeProvider` service.
+     * Once a document has reached this state, you may follow every reference - it will lazily
+     * resolve its `ref` property and yield either the target AST node or `undefined` in case
+     * the target is not in scope.
+     */
+    ComputedScopes = 3,
+    /**
+     * The `Linker` service has processed this document. All outgoing references have been
+     * resolved or marked as erroneous.
+     */
     Linked = 4,
-    /** The `IndexManager` service has processed AST node references of this document. */
+    /**
+     * The `IndexManager` service has processed AST node references of this document. This is
+     * necessary to determine which documents are affected by a change in one of the workspace
+     * documents.
+     */
     IndexedReferences = 5,
-    /** The `DocumentValidator` service has processed this document. */
+    /**
+     * The `DocumentValidator` service has processed this document. The language server listens
+     * to the results of this phase and sends diagnostics to the client.
+     */
     Validated = 6
 }
 
