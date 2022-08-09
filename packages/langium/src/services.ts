@@ -45,6 +45,7 @@ import type { FileSystemProvider } from './workspace/file-system-provider';
 import type { IndexManager } from './workspace/index-manager';
 import type { WorkspaceManager } from './workspace/workspace-manager';
 import type { LanguageServer } from './lsp/language-server';
+import type { SignatureHelpProvider } from './lsp/signature-help-provider';
 import type { GoToTypeProvider } from './lsp/goto-type';
 
 /**
@@ -78,6 +79,7 @@ export type LangiumLspServices = {
     SemanticTokenProvider?: SemanticTokenProvider
     RenameHandler: RenameHandler
     Formatter?: Formatter
+    SignatureHelp?: SignatureHelpProvider
 }
 
 /**

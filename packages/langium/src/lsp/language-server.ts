@@ -14,6 +14,7 @@ import { LangiumServices, LangiumSharedServices } from '../services';
 import { isOperationCancelled } from '../utils/promise-util';
 import { DocumentState, LangiumDocument } from '../workspace/documents';
 import { DefaultSemanticTokenOptions } from './semantic-token-provider';
+import { mergeSignatureHelpOptions } from './signature-help-provider';
 
 export interface LanguageServer {
     initialize(params: InitializeParams): Promise<InitializeResult>
@@ -64,6 +65,7 @@ export class DefaultLanguageServer implements LanguageServer {
         const hasCodeActionProvider = languages.some(e => e.lsp.CodeActionProvider !== undefined);
         const hasSemanticTokensProvider = languages.some(e => e.lsp.SemanticTokenProvider !== undefined);
         const commandNames = this.services.lsp.ExecuteCommandHandler?.commands;
+        const signatureHelpOptions = mergeSignatureHelpOptions(languages.map(e => e.lsp.SignatureHelp?.signatureHelpOptions));
         const hasGoToTypeProvider = languages.some(e => e.lsp.GoToTypeResolver !== undefined);
 
         const result: InitializeResult = {
@@ -94,7 +96,8 @@ export class DefaultLanguageServer implements LanguageServer {
                 },
                 semanticTokensProvider: hasSemanticTokensProvider
                     ? DefaultSemanticTokenOptions
-                    : undefined
+                    : undefined,
+                signatureHelpProvider: signatureHelpOptions
             }
         };
 
@@ -128,6 +131,7 @@ export function startLanguageServer(services: LangiumSharedServices): void {
     addHoverHandler(connection, services);
     addSemanticTokenHandler(connection, services);
     addExecuteCommandHandler(connection, services);
+    addSignatureHelpHandler(connection, services);
 
     connection.onInitialize(params => {
         return services.lsp.LanguageServer.initialize(params);
@@ -313,6 +317,13 @@ export function addExecuteCommandHandler(connection: Connection, services: Langi
             }
         });
     }
+}
+
+export function addSignatureHelpHandler(connection: Connection, services: LangiumSharedServices): void {
+    connection.onSignatureHelp(createServerRequestHandler(
+        (services, document, params, cancelToken) => services.lsp.SignatureHelp?.provideSignatureHelp(document, params, cancelToken),
+        services
+    ));
 }
 
 export function createServerRequestHandler<P extends { textDocument: TextDocumentIdentifier }, R, PR, E = void>(
