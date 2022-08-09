@@ -7,7 +7,7 @@
 import { DefaultScopeComputation, DefaultScopeProvider, Scope } from '../references/scope';
 import { LangiumServices } from '../services';
 import { AstNode, AstNodeDescription } from '../syntax-tree';
-import { extractRootNode, getDocument } from '../utils/ast-util';
+import { findRootNode, getDocument } from '../utils/ast-util';
 import { stream, Stream } from '../utils/stream';
 import { LangiumDocument, PrecomputedScopes } from '../workspace/documents';
 import { isReturnType } from './generated/ast';
@@ -24,7 +24,7 @@ export class LangiumGrammarScopeProvider extends DefaultScopeProvider {
 
         const scopes: Array<Stream<AstNodeDescription>> = [];
         const precomputed = getDocument(node).precomputedScopes;
-        const rootNode = extractRootNode(node);
+        const rootNode = findRootNode(node);
         if (precomputed && rootNode) {
             const allDescriptions = precomputed.get(rootNode);
             const parserRuleScopesArray: AstNodeDescription[] = [];

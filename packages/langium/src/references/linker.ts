@@ -7,7 +7,7 @@
 import { CancellationToken } from 'vscode-languageserver';
 import { LangiumServices } from '../services';
 import { AstNode, AstNodeDescription, AstReflection, CstNode, LinkingError, Reference, ReferenceInfo } from '../syntax-tree';
-import { isAstNode, isAstNodeDescription, isLinkingError, streamAst, streamReferences } from '../utils/ast-util';
+import { getDocument, isAstNode, isAstNodeDescription, isLinkingError, streamAst, streamReferences } from '../utils/ast-util';
 import { interruptAndCheck } from '../utils/promise-util';
 import { AstNodeLocator } from '../workspace/ast-node-locator';
 import { DocumentState, LangiumDocument, LangiumDocuments } from '../workspace/documents';
@@ -211,6 +211,12 @@ export class DefaultLinker implements Linker {
     }
 
     protected createLinkingError(refInfo: ReferenceInfo, refId: string, targetDescription?: AstNodeDescription): LinkingError {
+        // Check whether the document is sufficiently processed by the DocumentBuilder. If not, this is a hint for a bug
+        // in the language implementation.
+        const document = getDocument(refInfo.container);
+        if (document.state < DocumentState.ComputedScopes) {
+            console.warn(`Attempted reference resolution before document reached ComputedScopes state (${document.uri}).`);
+        }
         const referenceType = this.reflection.getReferenceType(refId);
         return {
             ...refInfo,

@@ -12,7 +12,7 @@ import { CompositeCstNodeImpl } from '../parser/cst-node-builder';
 import { IParserConfig } from '../parser/parser-config';
 import { LangiumGeneratedServices, LangiumGeneratedSharedServices, LangiumServices, LangiumSharedServices, PartialLangiumServices, PartialLangiumSharedServices } from '../services';
 import { AstNode, AstNodeDescription, CstNode } from '../syntax-tree';
-import { extractRootNode, getContainerOfType, getDocument, Mutable, streamAllContents } from '../utils/ast-util';
+import { findRootNode, getContainerOfType, getDocument, Mutable, streamAllContents } from '../utils/ast-util';
 import { MultiMap } from '../utils/collections';
 import { streamCst } from '../utils/cst-util';
 import { escapeRegExp } from '../utils/regex-util';
@@ -520,7 +520,7 @@ export function processTypeNodeWithNodeLocator(astNodeLocator: AstNodeLocator): 
  */
 export function processActionNodeWithNodeDescriptionProvider(descriptions: AstNodeDescriptionProvider): (node: AstNode, document: LangiumDocument, scopes: PrecomputedScopes) => void {
     return (node: AstNode, document: LangiumDocument, scopes: PrecomputedScopes) => {
-        const container = extractRootNode(node);
+        const container = findRootNode(node);
         if (container && ast.isAction(node) && node.inferredType) {
             const typeName = getActionType(node);
             if(typeName) {
@@ -528,4 +528,13 @@ export function processActionNodeWithNodeDescriptionProvider(descriptions: AstNo
             }
         }
     };
+}
+
+export function extractAssignments(element: ast.AbstractElement): ast.Assignment[] {
+    if (ast.isAssignment(element)) {
+        return [element];
+    } if (ast.isAlternatives(element) || ast.isGroup(element) || ast.isUnorderedGroup(element)) {
+        return element.elements.flatMap(e => extractAssignments(e));
+    }
+    return [];
 }
