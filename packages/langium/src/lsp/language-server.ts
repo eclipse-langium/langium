@@ -67,6 +67,7 @@ export class DefaultLanguageServer implements LanguageServer {
         const commandNames = this.services.lsp.ExecuteCommandHandler?.commands;
         const signatureHelpOptions = mergeSignatureHelpOptions(languages.map(e => e.lsp.SignatureHelp?.signatureHelpOptions));
         const hasGoToTypeProvider = languages.some(e => e.lsp.GoToTypeResolver !== undefined);
+        const hasGoToImplementationProvider = languages.some(e => e.lsp.GoToImplementationResolver !== undefined);
 
         const result: InitializeResult = {
             capabilities: {
@@ -97,7 +98,8 @@ export class DefaultLanguageServer implements LanguageServer {
                 semanticTokensProvider: hasSemanticTokensProvider
                     ? DefaultSemanticTokenOptions
                     : undefined,
-                signatureHelpProvider: signatureHelpOptions
+                signatureHelpProvider: signatureHelpOptions,
+                implementationProvider: hasGoToImplementationProvider
             }
         };
 
@@ -123,6 +125,7 @@ export function startLanguageServer(services: LangiumSharedServices): void {
     addDocumentSymbolHandler(connection, services);
     addGotoDefinitionHandler(connection, services);
     addGoToTypeDefinitionHandler(connection, services);
+    addGoToImplementationHandler(connection, services);
     addDocumentHighlightsHandler(connection, services);
     addFoldingRangeHandler(connection, services);
     addFormattingHandler(connection, services);
@@ -224,6 +227,13 @@ export function addGotoDefinitionHandler(connection: Connection, services: Langi
 export function addGoToTypeDefinitionHandler(connection: Connection, services: LangiumSharedServices): void {
     connection.onTypeDefinition(createRequestHandler(
         (services, document, params, cancelToken) => services.lsp.GoToTypeResolver?.goToTypeDefinition(document, params, cancelToken),
+        services
+    ));
+}
+
+export function addGoToImplementationHandler(connection: Connection, services: LangiumSharedServices) {
+    connection.onImplementation(createRequestHandler(
+        (services, document, params, cancelToken) => services.lsp.GoToImplementationResolver?.goToImplementation(document, params, cancelToken),
         services
     ));
 }
