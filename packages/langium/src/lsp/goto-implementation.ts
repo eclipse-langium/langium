@@ -40,8 +40,8 @@ export abstract class AbstractGoToImplementationProvider implements GoToImplemen
                 }
             }
         }
+        return undefined;
     }
 
     abstract collectGoToImplementationLocationLinks(element: AstNode, cancelToken: CancellationToken): MaybePromise<LocationLink[] | undefined>;
-
 }
