@@ -1,6 +1,5 @@
 // Monarch syntax highlighting for the statemachine language.
-export const languagestatemachine = {
-
+export default {
     keywords: [
         'actions','commands','end','events','initialState','state','statemachine'
     ],
@@ -9,16 +8,9 @@ export const languagestatemachine = {
     ],
     symbols:  /{|}|=>/,
 
-    folding: {
-        markers: {
-            start: new RegExp('^\s*//\s*#?region\b'),
-            end: new RegExp('^\s*//\s*#?endregion\b')
-        }
-    },
-
     tokenizer: {
         initial: [
-            { regex: /[_a-zA-Z][\w_]*/, action: { cases: { '@keywords': {"token":"keyword"}, '@default': {"token":"identifier"} }} },
+            { regex: /[_a-zA-Z][\w_]*/, action: { cases: { '@keywords': {"token":"keyword"}, '@default': {"token":"ID"} }} },
             { regex: /[0-9]+/, action: {"token":"number"} },
             { regex: /"[^"]*"|'[^']*'/, action: {"token":"string"} },
             { include: '@whitespace' },
@@ -31,7 +23,6 @@ export const languagestatemachine = {
         ],
         comment: [
             { regex: /[^\/\*]+/, action: {"token":"comment"} },
-            { regex: /\/\*/, action: {"token":"comment","next":"@push"} },
             { regex: /\*\//, action: {"token":"comment","next":"@pop"} },
             { regex: /[\/\*]/, action: {"token":"comment"} },
         ],
