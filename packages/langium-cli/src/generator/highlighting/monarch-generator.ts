@@ -185,7 +185,7 @@ function getTokenizerStates(grammar: langium.Grammar): State[] {
 /**
  * Pretty prints a monarch grammar into a concrete form, suitable for writing to a file
  * @param monarchGrammar Grammar to pretty print
- * @returns Monarch grammar in concrete form, suitable for writing to a file
+ * @returns Monarch grammar in concrete form
  */
 function prettyPrint(monarchGrammar: MonarchGrammar): string {
     const name = monarchGrammar.languageDefinition.name;
@@ -195,7 +195,6 @@ function prettyPrint(monarchGrammar: MonarchGrammar): string {
     );
 
     node.indent(grammarDef => {
-
         // add language definitions
         prettyPrintLangDef(monarchGrammar.languageDefinition, grammarDef);
         grammarDef.append(NL, NL);
