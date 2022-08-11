@@ -27,10 +27,12 @@ export interface AstNode {
     readonly $document?: LangiumDocument;
 }
 
+type SpecificNodeProperties<N extends AstNode> = keyof Omit<N, keyof AstNode | number | symbol>;
+
 /**
  * The property names of a given AST node type.
  */
-export type Properties<N extends AstNode> = keyof Omit<N, keyof AstNode | number | symbol>
+export type Properties<N extends AstNode> = SpecificNodeProperties<N> extends never ? string : SpecificNodeProperties<N>
 
 /**
  * A cross-reference in the AST. Cross-references may or may not be successfully resolved.
