@@ -201,8 +201,8 @@ export function expectFormatting(services: LangiumServices, cb: ExpectFunction):
             formatter.formatDocumentRange(document, { options, textDocument: identifier, range: expectedFormatting.range }) :
             formatter.formatDocument(document, { options, textDocument: identifier }));
 
-        const edittedDocument = TextDocument.applyEdits(document.textDocument, edits);
-        cb(edittedDocument, expectedFormatting.after);
+        const editedDocument = TextDocument.applyEdits(document.textDocument, edits);
+        cb(editedDocument, expectedFormatting.after);
     };
 }
 
