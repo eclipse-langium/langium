@@ -6,7 +6,7 @@
 
 import {
     CancellationTokenSource,
-    CompletionItem, Diagnostic, DiagnosticSeverity, DocumentSymbol, MarkupContent, Range, ReferenceParams, SemanticTokensParams, SemanticTokenTypes, TextDocumentIdentifier, TextDocumentPositionParams
+    CompletionItem, Diagnostic, DiagnosticSeverity, DocumentSymbol, FormattingOptions, MarkupContent, Range, ReferenceParams, SemanticTokensParams, SemanticTokenTypes, TextDocumentIdentifier, TextDocumentPositionParams
 } from 'vscode-languageserver';
 import { URI } from 'vscode-uri';
 import { LangiumServices } from '../services';
@@ -15,6 +15,7 @@ import { escapeRegExp } from '../utils/regex-util';
 import { LangiumDocument } from '../workspace/documents';
 import { findNodeForFeature } from '../grammar/grammar-util';
 import { SemanticTokensDecoder } from '../lsp/semantic-token-provider';
+import { TextDocument } from 'vscode-languageserver-textdocument';
 
 export function parseHelper<T extends AstNode = AstNode>(services: LangiumServices): (input: string) => Promise<LangiumDocument<T>> {
     const metaData = services.LanguageMetaData;
@@ -174,6 +175,34 @@ export function expectHover(services: LangiumServices, cb: ExpectFunction): (exp
         const hover = await hoverProvider.getHoverContent(document, textDocumentPositionParams(document, indices[expectedHover.index]));
         const hoverContent = hover && MarkupContent.is(hover.contents) ? hover.contents.value : undefined;
         cb(hoverContent, expectedHover.hover);
+    };
+}
+
+export interface ExpectFormatting {
+    before: string
+    after: string
+    range?: Range
+    options?: FormattingOptions
+}
+
+export function expectFormatting(services: LangiumServices, cb: ExpectFunction): (expectedFormatting: ExpectFormatting) => Promise<void> {
+    const formatter = services.lsp.Formatter;
+    if (!formatter) {
+        throw new Error(`No formatter registered for language ${services.LanguageMetaData.languageId}`);
+    }
+    return async expectedFormatting => {
+        const document = await parseDocument(services, expectedFormatting.before);
+        const identifier = { uri: document.uri.toString() };
+        const options = expectedFormatting.options ?? {
+            insertSpaces: true,
+            tabSize: 4
+        };
+        const edits = await (expectedFormatting.range ?
+            formatter.formatDocumentRange(document, { options, textDocument: identifier, range: expectedFormatting.range }) :
+            formatter.formatDocument(document, { options, textDocument: identifier }));
+
+        const editedDocument = TextDocument.applyEdits(document.textDocument, edits);
+        cb(editedDocument, expectedFormatting.after);
     };
 }
 
