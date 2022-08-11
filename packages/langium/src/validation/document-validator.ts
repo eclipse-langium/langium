@@ -6,10 +6,10 @@
 
 import { MismatchedTokenException } from 'chevrotain';
 import { CancellationToken, Diagnostic, DiagnosticSeverity, Position, Range } from 'vscode-languageserver';
-import { findNodeForFeature } from '../grammar/grammar-util';
+import { findKeywordNode, findNodeForFeature } from '../grammar/grammar-util';
 import { LanguageMetaData } from '../grammar/language-meta-data';
 import { LangiumServices } from '../services';
-import { AstNode } from '../syntax-tree';
+import { AstNode, CstNode } from '../syntax-tree';
 import { streamAst } from '../utils/ast-util';
 import { tokenToRange } from '../utils/cst-util';
 import { interruptAndCheck, isOperationCancelled } from '../utils/promise-util';
@@ -171,13 +171,16 @@ export class DefaultDocumentValidator implements DocumentValidator {
 }
 
 export function getDiagnosticRange<N extends AstNode>(info: DiagnosticInfo<N, string>): Range {
-    if (info.range) {
+    if (Range.is(info.range)) {
         return info.range;
     }
-    if (info.property !== undefined && typeof info.property !== 'string') {
-        throw new Error('Invalid property: ' + info.property);
+    let cstNode: CstNode | undefined;
+    if (typeof info.property === 'string') {
+        cstNode = findNodeForFeature(info.node.$cstNode, info.property, info.index);
+    } else if (typeof info.keyword === 'string') {
+        cstNode = findKeywordNode(info.node.$cstNode, info.keyword, info.index);
     }
-    const cstNode = findNodeForFeature(info.node.$cstNode, info.property, info.index) ?? info.node.$cstNode;
+    cstNode ??= info.node.$cstNode;
     if (!cstNode) {
         return {
             start: { line: 0, character: 0 },
