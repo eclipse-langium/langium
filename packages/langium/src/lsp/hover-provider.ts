@@ -29,16 +29,18 @@ export interface HoverProvider {
 export abstract class AstNodeHoverProvider implements HoverProvider {
 
     protected readonly references: References;
+    protected readonly grammarConfig: GrammarConfig;
 
     constructor(services: LangiumServices) {
         this.references = services.references.References;
+        this.grammarConfig = services.parser.GrammarConfig;
     }
 
     getHoverContent(document: LangiumDocument, params: HoverParams): MaybePromise<Hover | undefined> {
         const rootNode = document.parseResult?.value?.$cstNode;
         if (rootNode) {
             const offset = document.textDocument.offsetAt(params.position);
-            const cstNode = findDeclarationNodeAtOffset(rootNode, offset);
+            const cstNode = findDeclarationNodeAtOffset(rootNode, offset, this.grammarConfig.nameRegexp);
             if (cstNode && cstNode.offset + cstNode.length > offset) {
                 const targetNode = this.references.findDeclaration(cstNode);
                 if (targetNode) {
@@ -56,12 +58,6 @@ export abstract class AstNodeHoverProvider implements HoverProvider {
 export class MultilineCommentHoverProvider extends AstNodeHoverProvider {
 
     protected readonly commentContentRegex = /\/\*([\s\S]*?)\*\//;
-    protected readonly grammarConfig: GrammarConfig;
-
-    constructor(services: LangiumServices) {
-        super(services);
-        this.grammarConfig = services.parser.GrammarConfig;
-    }
 
     protected getAstNodeHoverContent(node: AstNode): MaybePromise<Hover | undefined> {
         const lastNode = findCommentNode(node.$cstNode, this.grammarConfig.multilineCommentRules);

@@ -5,6 +5,7 @@
  ******************************************************************************/
 
 import { CancellationToken, DocumentHighlight, DocumentHighlightParams } from 'vscode-languageserver';
+import { GrammarConfig } from '../grammar/grammar-config';
 import { NameProvider } from '../references/naming';
 import { References } from '../references/references';
 import { LangiumServices } from '../services';
@@ -31,10 +32,12 @@ export interface DocumentHighlighter {
 export class DefaultDocumentHighlighter implements DocumentHighlighter {
     protected readonly references: References;
     protected readonly nameProvider: NameProvider;
+    protected readonly grammarConfig: GrammarConfig;
 
     constructor(services: LangiumServices) {
         this.references = services.references.References;
         this.nameProvider = services.references.NameProvider;
+        this.grammarConfig = services.parser.GrammarConfig;
     }
 
     findHighlights(document: LangiumDocument, params: DocumentHighlightParams): MaybePromise<DocumentHighlight[] | undefined> {
@@ -42,7 +45,7 @@ export class DefaultDocumentHighlighter implements DocumentHighlighter {
         if (!rootNode) {
             return undefined;
         }
-        const selectedNode = findDeclarationNodeAtOffset(rootNode, document.textDocument.offsetAt(params.position));
+        const selectedNode = findDeclarationNodeAtOffset(rootNode, document.textDocument.offsetAt(params.position), this.grammarConfig.nameRegexp);
         if (!selectedNode) {
             return undefined;
         }

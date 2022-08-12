@@ -5,12 +5,20 @@
  ******************************************************************************/
 
 import { LangiumServices } from '../services';
+import { DefaultNameRegexp } from '../utils/cst-util';
 import { isMultilineComment } from '../utils/regex-util';
 import { isTerminalRule } from './generated/ast';
 import { isCommentTerminal, terminalRegex } from './grammar-util';
 
 export interface GrammarConfig {
+    /**
+     * Lists all rule names which are classified as multiline comment rules
+     */
     multilineCommentRules: string[]
+    /**
+     * A regular expression which matches characters of names
+     */
+    nameRegexp: RegExp
 }
 
 export function createGrammarConfig(services: LangiumServices): GrammarConfig {
@@ -21,5 +29,8 @@ export function createGrammarConfig(services: LangiumServices): GrammarConfig {
             rules.push(rule.name);
         }
     }
-    return { multilineCommentRules: rules };
+    return {
+        multilineCommentRules: rules,
+        nameRegexp: DefaultNameRegexp
+    };
 }

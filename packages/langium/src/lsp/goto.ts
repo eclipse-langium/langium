@@ -5,6 +5,7 @@
  ******************************************************************************/
 
 import { CancellationToken, DefinitionParams, LocationLink } from 'vscode-languageserver';
+import { GrammarConfig } from '../grammar/grammar-config';
 import { NameProvider } from '../references/naming';
 import { References } from '../references/references';
 import { LangiumServices } from '../services';
@@ -37,17 +38,19 @@ export class DefaultGoToResolverProvider implements GoToResolver {
 
     protected readonly nameProvider: NameProvider;
     protected readonly references: References;
+    protected readonly grammarConfig: GrammarConfig;
 
     constructor(services: LangiumServices) {
         this.nameProvider = services.references.NameProvider;
         this.references = services.references.References;
+        this.grammarConfig = services.parser.GrammarConfig;
     }
 
     goToDefinition(document: LangiumDocument, params: DefinitionParams): MaybePromise<LocationLink[] | undefined> {
         const rootNode = document.parseResult.value;
         if (rootNode.$cstNode) {
             const cst = rootNode.$cstNode;
-            const sourceCstNode = findDeclarationNodeAtOffset(cst, document.textDocument.offsetAt(params.position));
+            const sourceCstNode = findDeclarationNodeAtOffset(cst, document.textDocument.offsetAt(params.position), this.grammarConfig.nameRegexp);
             if (sourceCstNode) {
                 return this.collectLocationLinks(sourceCstNode, params);
             }

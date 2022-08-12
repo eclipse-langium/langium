@@ -5,6 +5,7 @@
  ******************************************************************************/
 
 import { CancellationToken, Position, Range, RenameParams, TextDocumentPositionParams, TextEdit, WorkspaceEdit } from 'vscode-languageserver';
+import { GrammarConfig } from '../grammar/grammar-config';
 import { isNamed, NameProvider } from '../references/naming';
 import { References } from '../references/references';
 import { LangiumServices } from '../services';
@@ -40,11 +41,13 @@ export class DefaultRenameHandler implements RenameHandler {
     protected readonly referenceFinder: ReferenceFinder;
     protected readonly references: References;
     protected readonly nameProvider: NameProvider;
+    protected readonly grammarConfig: GrammarConfig;
 
     constructor(services: LangiumServices) {
         this.referenceFinder = services.lsp.ReferenceFinder;
         this.references = services.references.References;
         this.nameProvider = services.references.NameProvider;
+        this.grammarConfig = services.parser.GrammarConfig;
     }
 
     async renameElement(document: LangiumDocument, params: RenameParams): Promise<WorkspaceEdit | undefined> {
@@ -52,7 +55,7 @@ export class DefaultRenameHandler implements RenameHandler {
         const rootNode = document.parseResult.value.$cstNode;
         if (!rootNode) return undefined;
         const offset = document.textDocument.offsetAt(params.position);
-        const leafNode = findDeclarationNodeAtOffset(rootNode, offset);
+        const leafNode = findDeclarationNodeAtOffset(rootNode, offset, this.grammarConfig.nameRegexp);
         if (!leafNode) return undefined;
         const targetNode = this.references.findDeclaration(leafNode) ?? leafNode;
         const options = { onlyLocal: false, includeDeclaration: true };
@@ -77,7 +80,7 @@ export class DefaultRenameHandler implements RenameHandler {
         const rootNode = doc.parseResult.value.$cstNode;
         const offset = doc.textDocument.offsetAt(position);
         if (rootNode && offset) {
-            const leafNode = findDeclarationNodeAtOffset(rootNode, offset);
+            const leafNode = findDeclarationNodeAtOffset(rootNode, offset, this.grammarConfig.nameRegexp);
             if (!leafNode) {
                 return undefined;
             }

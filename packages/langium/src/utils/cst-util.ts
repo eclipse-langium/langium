@@ -56,20 +56,24 @@ export function toDocumentSegment(node: CstNode): DocumentSegment {
     };
 }
 
+// The \p{L} regex matches any unicode letter character, i.e. characters from non-english alphabets
+// Together with \w it matches any kind of character which can commonly appear in IDs
+export const DefaultNameRegexp = /^[\w\p{L}]$/u;
+
 /**
- * Performs `findLeafNodeAtOffset` with a minor difference: When encountering a non word character (i.e. not a letter, number, etc.),
+ * Performs `findLeafNodeAtOffset` with a minor difference: When encountering a character that matches the `nameRegexp` argument,
  * it will instead return the leaf node at the `offset - 1` position.
  *
  * For LSP services, users expect that the declaration of an element is available if the cursor is directly after the element.
  */
-export function findDeclarationNodeAtOffset(cstNode: CstNode | undefined, offset: number): LeafCstNode | undefined {
+export function findDeclarationNodeAtOffset(cstNode: CstNode | undefined, offset: number, nameRegexp = DefaultNameRegexp): LeafCstNode | undefined {
     if (cstNode) {
-        const localOffset = offset - cstNode.offset;
-        const textAtOffset = cstNode.text.substring(localOffset, localOffset + 1);
-        // The \p{L} regex matches any unicode letter character, i.e. characters from non-english alphabets
-        // Together with \w it matches any kind of character which can commonly appear in IDs
-        if (/^[^\w\p{L}]$/u.test(textAtOffset)) {
-            offset--;
+        if (offset > 0) {
+            const localOffset = offset - cstNode.offset;
+            const textAtOffset = cstNode.text.charAt(localOffset);
+            if (!nameRegexp.test(textAtOffset)) {
+                offset--;
+            }
         }
         return findLeafNodeAtOffset(cstNode, offset);
     }
