@@ -530,31 +530,30 @@ export class LangiumGrammarValidator {
     }
 
     checkGrammarForUnusedRules(grammar: ast.Grammar, accept: ValidationAcceptor): void {
-        const visitedSet = new Set<string>();
         const entry = getEntryRule(grammar);
         if (entry) {
+            const visitedSet = new Set<string>();
             this.ruleDfs(entry, visitedSet);
             visitedSet.add(entry.name);
-        }
-        for (const rule of grammar.rules) {
-            if (ast.isTerminalRule(rule) && rule.hidden || isEmptyRule(rule)) {
-                continue;
-            }
-            if (!visitedSet.has(rule.name)) {
-                accept('hint', 'This rule is declared but never referenced.', { node: rule, property: 'name', tags: [DiagnosticTag.Unnecessary] });
+
+            for (const rule of grammar.rules) {
+                if (ast.isTerminalRule(rule) && rule.hidden || isEmptyRule(rule)) {
+                    continue;
+                }
+                if (!visitedSet.has(rule.name)) {
+                    accept('hint', 'This rule is declared but never referenced.', { node: rule, property: 'name', tags: [DiagnosticTag.Unnecessary] });
+                }
             }
         }
     }
 
-    private ruleDfs(rule: ast.ParserRule, visitedSet: Set<string>): void {
+    private ruleDfs(rule: ast.AbstractRule, visitedSet: Set<string>): void {
         streamAllContents(rule).forEach(node => {
-            if (ast.isRuleCall(node)) {
+            if (ast.isRuleCall(node) || ast.isTerminalRuleCall(node)) {
                 const refRule = node.rule.ref;
                 if (refRule && !visitedSet.has(refRule.name)) {
                     visitedSet.add(refRule.name);
-                    if (ast.isParserRule(refRule)) {
-                        this.ruleDfs(refRule, visitedSet);
-                    }
+                    this.ruleDfs(refRule, visitedSet);
                 }
             }
         });

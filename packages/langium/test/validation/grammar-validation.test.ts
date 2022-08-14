@@ -4,10 +4,11 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import { DiagnosticSeverity } from 'vscode-languageserver';
 import { createLangiumGrammarServices, EmptyFileSystem } from '../../src';
 import { Assignment, CrossReference, Grammar, Group, ParserRule } from '../../src/grammar/generated/ast';
 import { IssueCodes } from '../../src/grammar/langium-grammar-validator';
-import { expectError, expectNoIssues, expectWarning, validationHelper, ValidationResult } from '../../src/test';
+import { expectError, expectIssue, expectNoIssues, expectWarning, validationHelper, ValidationResult } from '../../src/test';
 
 const services = createLangiumGrammarServices(EmptyFileSystem);
 const validate = validationHelper<Grammar>(services.grammar);
@@ -133,7 +134,7 @@ describe('Check grammar with primitives', () => {
     });
 });
 
-describe('Grammar Validator tests', () => {
+describe('Unordered group validations', () => {
 
     test('Unsupported optional element in unordered group error', async () => {
         const text = `
@@ -152,8 +153,67 @@ describe('Grammar Validator tests', () => {
         `;
 
         const validation = await validate(text);
-        expect(validation.diagnostics.length).toBe(1);
+        expect(validation.diagnostics).toHaveLength(1);
         const range = { start: { character: 18, line: 7 }, end: { character: 45, line: 7 } };
         expectError(validation, 'Optional elements in Unordered groups are currently not supported', { range, code: IssueCodes.OptionalUnorderedGroup } );
     });
+});
+
+describe('Unused rules validation', () => {
+
+    test('Should not create validate for indirectly used terminal', async () => {
+        const text = `
+        grammar TestUsedTerminals
+        
+        entry Used: name=ID;
+        hidden terminal WS: /\\s+/;
+        terminal ID: 'a' STRING;
+        terminal STRING: /"[^"]*"|'[^']*'/;
+        `;
+        const validation = await validate(text);
+        expectNoIssues(validation);
+    });
+
+    test('Unused terminals are correctly identified', async () => {
+        const text = `
+        grammar TestUnusedTerminals
+        
+        entry Used: name=ID;
+        hidden terminal WS: /\\s+/;
+        terminal ID: /[_a-zA-Z][\\w_]*/;
+        terminal STRING: /"[^"]*"|'[^']*'/;
+        `;
+        const validation = await validate(text);
+        expect(validation.diagnostics).toHaveLength(1);
+        const stringTerminal = validation.document.parseResult.value.rules.find(e => e.name === 'STRING')!;
+        expectIssue(validation, {
+            node: stringTerminal,
+            property: {
+                name: 'name'
+            },
+            severity: DiagnosticSeverity.Hint
+        });
+    });
+
+    test('Unused parser rules are correctly identified', async () => {
+        const text = `
+        grammar TestUnusedParserRule
+        
+        entry Used: name=ID;
+        Unused: name=ID;
+        hidden terminal WS: /\\s+/;
+        terminal ID: /[_a-zA-Z][\\w_]*/;
+        `;
+        const validation = await validate(text);
+        expect(validation.diagnostics).toHaveLength(1);
+        const unusedRule = validation.document.parseResult.value.rules.find(e => e.name === 'Unused')!;
+        expectIssue(validation, {
+            node: unusedRule,
+            property: {
+                name: 'name'
+            },
+            severity: DiagnosticSeverity.Hint
+        });
+    });
+
 });
