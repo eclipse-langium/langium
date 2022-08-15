@@ -6,7 +6,7 @@
 
 import { CancellationToken, SignatureHelp, SignatureHelpOptions, SignatureHelpParams } from 'vscode-languageserver';
 import { AstNode } from '../syntax-tree';
-import { findLeafNodeAtOffset, findRelevantNode } from '../utils/cst-util';
+import { findLeafNodeAtOffset } from '../utils/cst-util';
 import { MaybePromise } from '../utils/promise-util';
 import { LangiumDocument } from '../workspace/documents';
 
@@ -31,10 +31,7 @@ export abstract class AbstractSignatureHelpProvider implements SignatureHelpProv
         if (cst) {
             const sourceCstNode = findLeafNodeAtOffset(cst, document.textDocument.offsetAt(params.position));
             if (sourceCstNode) {
-                const element = findRelevantNode(sourceCstNode);
-                if (element) {
-                    return this.getSignatureFromElement(element, cancelToken);
-                }
+                return this.getSignatureFromElement(sourceCstNode.element, cancelToken);
             }
         }
         return undefined;

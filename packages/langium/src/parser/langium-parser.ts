@@ -9,10 +9,9 @@ import { defaultParserErrorProvider, DSLMethodOpts, EmbeddedActionsParser, ILexi
 import { AbstractElement, Action, Assignment, isAssignment, isCrossReference, isKeyword } from '../grammar/generated/ast';
 import { Linker } from '../references/linker';
 import { LangiumServices } from '../services';
-import { AstNode, AstReflection, CompositeCstNode, CstNode, LeafCstNode } from '../syntax-tree';
+import { AstNode, AstReflection, CompositeCstNode, CstNode } from '../syntax-tree';
 import { getContainerOfType, linkContentToContainer } from '../utils/ast-util';
-import { tokenToRange } from '../utils/cst-util';
-import { CompositeCstNodeImpl, CstNodeBuilder, LeafCstNodeImpl, RootCstNodeImpl } from './cst-node-builder';
+import { CstNodeBuilder } from './cst-node-builder';
 import { IParserConfig } from './parser-config';
 import { ValueConverter } from './value-converter';
 
@@ -95,45 +94,13 @@ export class LangiumParser {
         const lexerResult = this.lexer.tokenize(input);
         this.wrapper.input = lexerResult.tokens;
         const result = this.mainRule.call(this.wrapper);
-        this.addHiddenTokens(result.$cstNode, lexerResult.groups.hidden);
+        this.nodeBuilder.addHiddenTokens(lexerResult.groups.hidden);
         this.unorderedGroups.clear();
         return {
             value: result,
             lexerErrors: lexerResult.errors,
             parserErrors: this.wrapper.errors
         };
-    }
-
-    private addHiddenTokens(node: RootCstNodeImpl, tokens?: IToken[]): void {
-        if (tokens) {
-            for (const token of tokens) {
-                const hiddenNode = new LeafCstNodeImpl(token.startOffset, token.image.length, tokenToRange(token), token.tokenType, true);
-                hiddenNode.root = node;
-                this.addHiddenToken(node, hiddenNode);
-            }
-        }
-    }
-
-    private addHiddenToken(node: CompositeCstNode, token: LeafCstNode): void {
-        const { offset, end } = node;
-        const { offset: tokenStart, end: tokenEnd } = token;
-        if (offset >= tokenEnd) {
-            node.children.unshift(token);
-        } else if (end <= tokenStart) {
-            node.children.push(token);
-        } else {
-            for (let i = 0; i < node.children.length; i++) {
-                const child = node.children[i];
-                const { offset: childStart, end: childEnd } = child;
-                if (child instanceof CompositeCstNodeImpl && tokenStart > childStart && tokenEnd < childEnd) {
-                    this.addHiddenToken(child, token);
-                    return;
-                } else if (tokenEnd <= childStart) {
-                    node.children.splice(i, 0, token);
-                    return;
-                }
-            }
-        }
     }
 
     private startImplementation($type: string | symbol | undefined, implementation: RuleImpl): RuleImpl {

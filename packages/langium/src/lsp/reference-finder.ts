@@ -10,9 +10,10 @@ import { References } from '../references/references';
 import { AstNode, LeafCstNode } from '../syntax-tree';
 import { LangiumServices } from '../services';
 import { isReference } from '../utils/ast-util';
-import { findLeafNodeAtOffset } from '../utils/cst-util';
+import { findDeclarationNodeAtOffset } from '../utils/cst-util';
 import { MaybePromise } from '../utils/promise-util';
 import { LangiumDocument } from '../workspace/documents';
+import { GrammarConfig } from '../grammar/grammar-config';
 
 /**
  * Language-specific service for handling find references requests.
@@ -30,10 +31,12 @@ export interface ReferenceFinder {
 export class DefaultReferenceFinder implements ReferenceFinder {
     protected readonly nameProvider: NameProvider;
     protected readonly references: References;
+    protected readonly grammarConfig: GrammarConfig;
 
     constructor(services: LangiumServices) {
         this.nameProvider = services.references.NameProvider;
         this.references = services.references.References;
+        this.grammarConfig = services.parser.GrammarConfig;
     }
 
     findReferences(document: LangiumDocument, params: ReferenceParams): MaybePromise<Location[]> {
@@ -42,7 +45,7 @@ export class DefaultReferenceFinder implements ReferenceFinder {
             return [];
         }
 
-        const selectedNode = findLeafNodeAtOffset(rootNode, document.textDocument.offsetAt(params.position));
+        const selectedNode = findDeclarationNodeAtOffset(rootNode, document.textDocument.offsetAt(params.position), this.grammarConfig.nameRegexp);
         if (!selectedNode) {
             return [];
         }

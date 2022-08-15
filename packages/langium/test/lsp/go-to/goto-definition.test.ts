@@ -30,7 +30,7 @@ interface A {
 }
 
 X returns A:
-    <|>na<|>me=ID;
+    <|>na<|>me<|>=ID;
 `.trim();
 
 const grammarServices = createLangiumGrammarServices(EmptyFileSystem).grammar;
@@ -82,6 +82,14 @@ describe('GoToResolver', () => {
         await gotoDefinition({
             text,
             index: 5,
+            rangeIndex: 2
+        });
+    });
+
+    test('Assignment name in parser rule X must find property name in interface A from end of location', async () => {
+        await gotoDefinition({
+            text,
+            index: 6,
             rangeIndex: 2
         });
     });

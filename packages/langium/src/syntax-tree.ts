@@ -143,10 +143,10 @@ export interface CstNode extends DocumentSegment {
  * A composite CST node has children, but no directly associated token.
  */
 export interface CompositeCstNode extends CstNode {
-    children: CstNode[];
+    readonly children: CstNode[];
 }
 
-export function isCompositeCstNode(node: CstNode): node is CompositeCstNode {
+export function isCompositeCstNode(node: unknown): node is CompositeCstNode {
     return typeof node === 'object' && !!node && 'children' in node;
 }
 
@@ -157,6 +157,14 @@ export interface LeafCstNode extends CstNode {
     readonly tokenType: TokenType;
 }
 
-export function isLeafCstNode(node: CstNode): node is LeafCstNode {
+export function isLeafCstNode(node: unknown): node is LeafCstNode {
     return typeof node === 'object' && !!node && 'tokenType' in node;
+}
+
+export interface RootCstNode extends CompositeCstNode {
+    readonly fullText: string
+}
+
+export function isRootCstNode(node: unknown): node is RootCstNode {
+    return isCompositeCstNode(node) && 'fullText' in node;
 }
