@@ -255,13 +255,13 @@ function abstractElementToRegex(element: ast.AbstractElement): string {
         if (!rule) {
             throw new Error('Missing rule reference.');
         }
-        return withCardinality(terminalRegex(rule), element.cardinality, true);
+        return withCardinality(terminalRegex(rule), element.cardinality);
     } else if (ast.isNegatedToken(element)) {
         return negateTokenToRegex(element);
     } else if (ast.isUntilToken(element)) {
         return untilTokenToRegex(element);
     } else if (ast.isRegexToken(element)) {
-        return withCardinality(element.regex, element.cardinality, true);
+        return withCardinality(element.regex, element.cardinality, false);
     } else if (ast.isWildcard(element)) {
         return withCardinality(WILDCARD, element.cardinality);
     } else {
@@ -270,7 +270,7 @@ function abstractElementToRegex(element: ast.AbstractElement): string {
 }
 
 function terminalAlternativesToRegex(alternatives: ast.TerminalAlternatives): string {
-    return withCardinality(`(${alternatives.elements.map(abstractElementToRegex).join('|')})`, alternatives.cardinality);
+    return withCardinality(alternatives.elements.map(abstractElementToRegex).join('|'), alternatives.cardinality);
 }
 
 function terminalGroupToRegex(group: ast.TerminalGroup): string {
@@ -282,25 +282,25 @@ function untilTokenToRegex(until: ast.UntilToken): string {
 }
 
 function negateTokenToRegex(negate: ast.NegatedToken): string {
-    return withCardinality(`(?!${abstractElementToRegex(negate.terminal)})${WILDCARD}*?`, negate.cardinality, true);
+    return withCardinality(`(?!${abstractElementToRegex(negate.terminal)})${WILDCARD}*?`, negate.cardinality);
 }
 
 function characterRangeToRegex(range: ast.CharacterRange): string {
     if (range.right) {
-        return withCardinality(`[${keywordToRegex(range.left)}-${keywordToRegex(range.right)}]`, range.cardinality);
+        return withCardinality(`[${keywordToRegex(range.left)}-${keywordToRegex(range.right)}]`, range.cardinality, false);
     }
-    return withCardinality(keywordToRegex(range.left), range.cardinality, true);
+    return withCardinality(keywordToRegex(range.left), range.cardinality, false);
 }
 
 function keywordToRegex(keyword: ast.Keyword): string {
     return escapeRegExp(keyword.value);
 }
 
-function withCardinality(regex: string, cardinality?: string, wrap = false): string {
+function withCardinality(regex: string, cardinality?: string, wrap = true): string {
+    if (wrap) {
+        regex = `(${regex})`;
+    }
     if (cardinality) {
-        if (wrap) {
-            regex = `(${regex})`;
-        }
         return `${regex}${cardinality}`;
     }
     return regex;
