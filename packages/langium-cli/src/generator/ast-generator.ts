@@ -21,11 +21,11 @@ export function generateAst(services: LangiumServices, grammars: Grammar[], conf
     const crossRef = grammars.some(grammar => hasCrossReferences(grammar));
     if (config.langiumInternal) {
         fileNode.append(
-            `import { AstNode, AstReflection${crossRef ? ', Reference' : ''}, TypeMetaData } from '../../syntax-tree';`, NL,
+            `import type { AstNode, AstReflection${crossRef ? ', Reference' : ''}, ReferenceInfo, TypeMetaData } from '../../syntax-tree';`, NL,
             "import { isAstNode } from '../../utils/ast-util';", NL, NL
         );
     } else {
-        fileNode.append(`import { AstNode, AstReflection${crossRef ? ', Reference' : ''}, isAstNode, TypeMetaData } from 'langium';`, NL, NL);
+        fileNode.append(`import { AstNode, AstReflection${crossRef ? ', Reference' : ''}, ReferenceInfo, isAstNode, TypeMetaData } from 'langium';`, NL, NL);
     }
 
     for (const type of astTypes.unions) {
@@ -54,8 +54,6 @@ function generateAstReflection(config: LangiumConfig, astTypes: AstTypes): Gener
 
     reflectionNode.append(
         `export type ${config.projectName}AstType = ${typeNames.join(' | ')};`, NL, NL,
-        `export type ${config.projectName}AstReference = `,
-        crossReferenceTypes.map(e => `'${e.type}:${e.feature}'`).join(' | ') || 'never', ';', NL, NL,
         `export class ${config.projectName}AstReflection implements AstReflection {`, NL, NL
     );
 
@@ -72,7 +70,7 @@ function generateAstReflection(config: LangiumConfig, astTypes: AstTypes): Gener
             '}', NL, NL,
             'isSubtype(subtype: string, supertype: string): boolean {', NL,
             buildIsSubtypeMethod(astTypes), '}', NL, NL,
-            `getReferenceType(referenceId: ${config.projectName}AstReference): string {`, NL,
+            'getReferenceType(refInfo: ReferenceInfo): string {', NL,
             buildReferenceTypeMethod(crossReferenceTypes), '}', NL, NL,
             'getTypeMetaData(type: string): TypeMetaData {', NL,
             buildTypeMetaDataMethod(astTypes), '}', NL
@@ -142,6 +140,7 @@ function buildMandatoryType(arrayProps: Property[], booleanProps: Property[]): G
 
 function buildReferenceTypeMethod(crossReferenceTypes: CrossReferenceType[]): GeneratorNode {
     const typeSwitchNode = new IndentNode();
+    typeSwitchNode.append('const referenceId = `${refInfo.container.$type}:${refInfo.property}`;', NL);
     typeSwitchNode.append('switch (referenceId) {', NL);
     typeSwitchNode.indent(caseNode => {
         for (const crossRef of crossReferenceTypes) {

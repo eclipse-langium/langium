@@ -6,7 +6,7 @@
 
 import { CancellationToken } from 'vscode-jsonrpc';
 import { LangiumServices } from '../services';
-import { AstNode, AstNodeDescription, AstReflection } from '../syntax-tree';
+import { AstNode, AstNodeDescription, AstReflection, ReferenceInfo } from '../syntax-tree';
 import { getDocument, streamAllContents } from '../utils/ast-util';
 import { MultiMap } from '../utils/collections';
 import { interruptAndCheck } from '../utils/promise-util';
@@ -91,11 +91,9 @@ export interface ScopeProvider {
      * Return a scope describing what elements are visible for the given AST node and cross-reference
      * identifier.
      *
-     * @param node The AST node holding the cross-reference.
-     * @param referenceId Identifier of the cross-reference in the form `Type:property` (see
-     *     `getReferenceId` utility function).
+     * @param context Information about the reference for which a scope is requested.
      */
-    getScope(node: AstNode, referenceId: string): Scope;
+    getScope(context: ReferenceInfo): Scope;
 }
 
 export class DefaultScopeProvider implements ScopeProvider {
@@ -107,13 +105,13 @@ export class DefaultScopeProvider implements ScopeProvider {
         this.indexManager = services.shared.workspace.IndexManager;
     }
 
-    getScope(node: AstNode, referenceId: string): Scope {
+    getScope(context: ReferenceInfo): Scope {
         const scopes: Array<Stream<AstNodeDescription>> = [];
-        const referenceType = this.reflection.getReferenceType(referenceId);
+        const referenceType = this.reflection.getReferenceType(context);
 
-        const precomputed = getDocument(node).precomputedScopes;
+        const precomputed = getDocument(context.container).precomputedScopes;
         if (precomputed) {
-            let currentNode: AstNode | undefined = node;
+            let currentNode: AstNode | undefined = context.container;
             do {
                 const allDescriptions = precomputed.get(currentNode);
                 if (allDescriptions.length > 0) {

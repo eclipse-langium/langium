@@ -7,11 +7,10 @@
 import { CancellationToken, CompletionItem, CompletionItemKind, CompletionList, CompletionParams } from 'vscode-languageserver';
 import { TextDocument, TextEdit } from 'vscode-languageserver-textdocument';
 import * as ast from '../../grammar/generated/ast';
-import { getTypeNameAtElement } from '../../grammar/grammar-util';
 import { isNamed } from '../../references/naming';
 import { ScopeProvider } from '../../references/scope';
 import { LangiumServices } from '../../services';
-import { AstNode, AstNodeDescription, CstNode } from '../../syntax-tree';
+import { AstNode, AstNodeDescription, CstNode, Reference, ReferenceInfo } from '../../syntax-tree';
 import { getContainerOfType, isAstNode } from '../../utils/ast-util';
 import { findLeafNodeAtOffset, flattenCst } from '../../utils/cst-util';
 import { MaybePromise } from '../../utils/promise-util';
@@ -128,7 +127,12 @@ export class DefaultCompletionProvider implements CompletionProvider {
         const assignment = getContainerOfType(crossRef, ast.isAssignment);
         const parserRule = getContainerOfType(crossRef, ast.isParserRule);
         if (assignment && parserRule) {
-            const scope = this.scopeProvider.getScope(context, `${getTypeNameAtElement(parserRule, assignment)}:${assignment.feature}`);
+            const refInfo: ReferenceInfo = {
+                reference: {} as Reference,
+                container: context,
+                property: assignment.feature
+            };
+            const scope = this.scopeProvider.getScope(refInfo);
             const duplicateStore = new Set<string>();
             scope.getAllElements().forEach(e => {
                 if (!duplicateStore.has(e.name)) {

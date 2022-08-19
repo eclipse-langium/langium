@@ -5,7 +5,7 @@
 
 /* eslint-disable @typescript-eslint/array-type */
 /* eslint-disable @typescript-eslint/no-empty-interface */
-import { AstNode, AstReflection, Reference, isAstNode, TypeMetaData } from 'langium';
+import { AstNode, AstReflection, Reference, ReferenceInfo, isAstNode, TypeMetaData } from 'langium';
 
 export type AbstractDefinition = DeclaredParameter | Definition;
 
@@ -115,8 +115,6 @@ export function isNumberLiteral(item: unknown): item is NumberLiteral {
 
 export type ArithmeticsAstType = 'AbstractDefinition' | 'BinaryExpression' | 'DeclaredParameter' | 'Definition' | 'Evaluation' | 'Expression' | 'FunctionCall' | 'Module' | 'NumberLiteral' | 'Statement';
 
-export type ArithmeticsAstReference = 'FunctionCall:func';
-
 export class ArithmeticsAstReflection implements AstReflection {
 
     getAllTypes(): string[] {
@@ -152,7 +150,8 @@ export class ArithmeticsAstReflection implements AstReflection {
         }
     }
 
-    getReferenceType(referenceId: ArithmeticsAstReference): string {
+    getReferenceType(refInfo: ReferenceInfo): string {
+        const referenceId = `${refInfo.container.$type}:${refInfo.property}`;
         switch (referenceId) {
             case 'FunctionCall:func': {
                 return AbstractDefinition;

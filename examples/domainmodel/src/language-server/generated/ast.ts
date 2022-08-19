@@ -5,7 +5,7 @@
 
 /* eslint-disable @typescript-eslint/array-type */
 /* eslint-disable @typescript-eslint/no-empty-interface */
-import { AstNode, AstReflection, Reference, isAstNode, TypeMetaData } from 'langium';
+import { AstNode, AstReflection, Reference, ReferenceInfo, isAstNode, TypeMetaData } from 'langium';
 
 export type AbstractElement = PackageDeclaration | Type;
 
@@ -86,8 +86,6 @@ export function isPackageDeclaration(item: unknown): item is PackageDeclaration 
 
 export type DomainModelAstType = 'AbstractElement' | 'DataType' | 'Domainmodel' | 'Entity' | 'Feature' | 'PackageDeclaration' | 'Type';
 
-export type DomainModelAstReference = 'Entity:superType' | 'Feature:type';
-
 export class DomainModelAstReflection implements AstReflection {
 
     getAllTypes(): string[] {
@@ -117,7 +115,8 @@ export class DomainModelAstReflection implements AstReflection {
         }
     }
 
-    getReferenceType(referenceId: DomainModelAstReference): string {
+    getReferenceType(refInfo: ReferenceInfo): string {
+        const referenceId = `${refInfo.container.$type}:${refInfo.property}`;
         switch (referenceId) {
             case 'Entity:superType': {
                 return Entity;

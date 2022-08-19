@@ -5,7 +5,7 @@
 
 /* eslint-disable @typescript-eslint/array-type */
 /* eslint-disable @typescript-eslint/no-empty-interface */
-import { AstNode, AstReflection, Reference, isAstNode, TypeMetaData } from 'langium';
+import { AstNode, AstReflection, Reference, ReferenceInfo, isAstNode, TypeMetaData } from 'langium';
 
 export interface Command extends AstNode {
     readonly $container: Statemachine;
@@ -70,8 +70,6 @@ export function isTransition(item: unknown): item is Transition {
 
 export type StatemachineAstType = 'Command' | 'Event' | 'State' | 'Statemachine' | 'Transition';
 
-export type StatemachineAstReference = 'State:actions' | 'Statemachine:init' | 'Transition:event' | 'Transition:state';
-
 export class StatemachineAstReflection implements AstReflection {
 
     getAllTypes(): string[] {
@@ -93,7 +91,8 @@ export class StatemachineAstReflection implements AstReflection {
         }
     }
 
-    getReferenceType(referenceId: StatemachineAstReference): string {
+    getReferenceType(refInfo: ReferenceInfo): string {
+        const referenceId = `${refInfo.container.$type}:${refInfo.property}`;
         switch (referenceId) {
             case 'State:actions': {
                 return Command;
