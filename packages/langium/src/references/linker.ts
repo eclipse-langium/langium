@@ -40,7 +40,7 @@ export interface Linker {
      * @param refId The reference identifier used to build a scope.
      * @param reference The actual reference to resolve.
      */
-    getCandidate(node: AstNode, refId: string, reference: Reference): AstNodeDescription | LinkingError;
+    getCandidate(refInfo: ReferenceInfo): AstNodeDescription | LinkingError;
 
     /**
      * Creates a cross reference node being aware of its containing AstNode, the corresponding CstNode,
@@ -59,15 +59,7 @@ export interface Linker {
      * @param refText The cross reference text denoting the target AstNode
      * @returns the desired Reference node, whose behavior wrt. resolving the cross reference is implementation specific.
      */
-    buildReference(node: AstNode, refNode: CstNode, refId: string, refText: string): Reference;
-}
-
-export function getReferenceId(containerTypeName: string, propertyName: string): string {
-    return `${containerTypeName}:${propertyName}`;
-}
-
-export function getReferenceProperty(referenceId: string): string {
-    return referenceId.substring(referenceId.indexOf(':') + 1);
+    buildReference(node: AstNode, property: string, refNode: CstNode, refText: string): Reference;
 }
 
 interface DefaultReference extends Reference {
@@ -96,13 +88,12 @@ export class DefaultLinker implements Linker {
         document.state = DocumentState.Linked;
     }
 
-    protected doLink(info: ReferenceInfo, document: LangiumDocument): void {
-        const ref = info.reference as DefaultReference;
+    protected doLink(refInfo: ReferenceInfo, document: LangiumDocument): void {
+        const ref = refInfo.reference as DefaultReference;
         // The reference may already have been resolved lazily by accessing its `ref` property.
         if (ref._ref === undefined) {
             try {
-                const refId = getReferenceId(info.container.$type, info.property);
-                const description = this.getCandidate(info.container, refId, ref);
+                const description = this.getCandidate(refInfo);
                 if (isLinkingError(description)) {
                     ref._ref = description;
                 } else {
@@ -110,12 +101,12 @@ export class DefaultLinker implements Linker {
                     if (this.langiumDocuments().hasDocument(description.documentUri)) {
                         // The target document is already loaded
                         const linkedNode = this.loadAstNode(description);
-                        ref._ref = linkedNode ?? this.createLinkingError(info, refId, description);
+                        ref._ref = linkedNode ?? this.createLinkingError(refInfo, description);
                     }
                 }
             } catch (err) {
                 ref._ref = {
-                    ...info,
+                    ...refInfo,
                     message: `An error occurred while resolving reference to '${ref.$refText}': ${err}`
                 };
             }
@@ -132,13 +123,13 @@ export class DefaultLinker implements Linker {
         document.references = [];
     }
 
-    getCandidate(container: AstNode, refId: string, reference: Reference): AstNodeDescription | LinkingError {
-        const scope = this.scopeProvider.getScope(container, refId);
-        const description = scope.getElement(reference.$refText);
-        return description ?? this.createLinkingError({ container, property: getReferenceProperty(refId), reference }, refId);
+    getCandidate(refInfo: ReferenceInfo): AstNodeDescription | LinkingError {
+        const scope = this.scopeProvider.getScope(refInfo);
+        const description = scope.getElement(refInfo.reference.$refText);
+        return description ?? this.createLinkingError(refInfo);
     }
 
-    buildReference(node: AstNode, refNode: CstNode, refId: string, refText: string): Reference {
+    buildReference(node: AstNode, property: string, refNode: CstNode, refText: string): Reference {
         // See behavior description in doc of Linker, update that on changes in here.
         // eslint-disable-next-line @typescript-eslint/no-this-alias
         const linker = this;
@@ -154,10 +145,10 @@ export class DefaultLinker implements Linker {
                     // A candidate has been found before, but it is not loaded yet.
                     const linkedNode = linker.loadAstNode(this._nodeDescription);
                     this._ref = linkedNode ??
-                        linker.createLinkingError({ container: node, property: getReferenceProperty(refId), reference }, refId, this._nodeDescription);
+                        linker.createLinkingError({ reference, container: node, property }, this._nodeDescription);
                 } else if (this._ref === undefined) {
                     // The reference has not been linked yet, so do that now.
-                    const refData = linker.getLinkedNode(node, refId, reference);
+                    const refData = linker.getLinkedNode({ reference, container: node, property });
                     this._ref = refData.node ?? refData.error;
                     this._nodeDescription = refData.descr;
                 }
@@ -173,9 +164,9 @@ export class DefaultLinker implements Linker {
         return reference;
     }
 
-    protected getLinkedNode(container: AstNode, refId: string, reference: Reference): { node?: AstNode, descr?: AstNodeDescription, error?: LinkingError } {
+    protected getLinkedNode(refInfo: ReferenceInfo): { node?: AstNode, descr?: AstNodeDescription, error?: LinkingError } {
         try {
-            const description = this.getCandidate(container, refId, reference);
+            const description = this.getCandidate(refInfo);
             if (isLinkingError(description)) {
                 return { error: description };
             }
@@ -187,16 +178,14 @@ export class DefaultLinker implements Linker {
                 return {
                     descr: description,
                     error:
-                        this.createLinkingError({ container, property: getReferenceProperty(refId), reference }, refId, description)
+                        this.createLinkingError(refInfo, description)
                 };
             }
         } catch (err) {
             return {
                 error: {
-                    container,
-                    property: getReferenceProperty(refId),
-                    reference,
-                    message: `An error occurred while resolving reference to '${reference.$refText}': ${err}`
+                    ...refInfo,
+                    message: `An error occurred while resolving reference to '${refInfo.reference.$refText}': ${err}`
                 }
             };
         }
@@ -210,14 +199,14 @@ export class DefaultLinker implements Linker {
         return this.astNodeLocator.getAstNode(doc, nodeDescription.path);
     }
 
-    protected createLinkingError(refInfo: ReferenceInfo, refId: string, targetDescription?: AstNodeDescription): LinkingError {
+    protected createLinkingError(refInfo: ReferenceInfo, targetDescription?: AstNodeDescription): LinkingError {
         // Check whether the document is sufficiently processed by the DocumentBuilder. If not, this is a hint for a bug
         // in the language implementation.
         const document = getDocument(refInfo.container);
         if (document.state < DocumentState.ComputedScopes) {
             console.warn(`Attempted reference resolution before document reached ComputedScopes state (${document.uri}).`);
         }
-        const referenceType = this.reflection.getReferenceType(refId);
+        const referenceType = this.reflection.getReferenceType(refInfo);
         return {
             ...refInfo,
             message: `Could not resolve reference to ${referenceType} named '${refInfo.reference.$refText}'.`,

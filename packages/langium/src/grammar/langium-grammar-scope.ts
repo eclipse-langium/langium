@@ -6,7 +6,7 @@
 
 import { DefaultScopeComputation, DefaultScopeProvider, Scope } from '../references/scope';
 import { LangiumServices } from '../services';
-import { AstNode, AstNodeDescription } from '../syntax-tree';
+import { AstNode, AstNodeDescription, ReferenceInfo } from '../syntax-tree';
 import { findRootNode, getDocument } from '../utils/ast-util';
 import { stream, Stream } from '../utils/stream';
 import { LangiumDocument, PrecomputedScopes } from '../workspace/documents';
@@ -18,13 +18,13 @@ export class LangiumGrammarScopeProvider extends DefaultScopeProvider {
         super(services);
     }
 
-    getScope(node: AstNode, referenceId: string): Scope {
-        const referenceType = this.reflection.getReferenceType(referenceId);
-        if (referenceType !== 'AbstractType') return super.getScope(node, referenceId);
+    getScope(context: ReferenceInfo): Scope {
+        const referenceType = this.reflection.getReferenceType(context);
+        if (referenceType !== 'AbstractType') return super.getScope(context);
 
         const scopes: Array<Stream<AstNodeDescription>> = [];
-        const precomputed = getDocument(node).precomputedScopes;
-        const rootNode = findRootNode(node);
+        const precomputed = getDocument(context.container).precomputedScopes;
+        const rootNode = findRootNode(context.container);
         if (precomputed && rootNode) {
             const allDescriptions = precomputed.get(rootNode);
             const parserRuleScopesArray: AstNodeDescription[] = [];

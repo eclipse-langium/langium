@@ -5,7 +5,7 @@
 
 /* eslint-disable @typescript-eslint/array-type */
 /* eslint-disable @typescript-eslint/no-empty-interface */
-import { AstNode, AstReflection, Reference, TypeMetaData } from '../../syntax-tree';
+import type { AstNode, AstReflection, Reference, ReferenceInfo, TypeMetaData } from '../../syntax-tree';
 import { isAstNode } from '../../utils/ast-util';
 
 export type AbstractRule = ParserRule | TerminalRule;
@@ -455,8 +455,6 @@ export function isWildcard(item: unknown): item is Wildcard {
 
 export type LangiumGrammarAstType = 'AbstractElement' | 'AbstractRule' | 'AbstractType' | 'Action' | 'Alternatives' | 'Assignment' | 'AtomType' | 'CharacterRange' | 'Condition' | 'Conjunction' | 'CrossReference' | 'Disjunction' | 'Grammar' | 'GrammarImport' | 'Group' | 'InferredType' | 'Interface' | 'Keyword' | 'LiteralCondition' | 'NamedArgument' | 'NegatedToken' | 'Negation' | 'Parameter' | 'ParameterReference' | 'ParserRule' | 'RegexToken' | 'ReturnType' | 'RuleCall' | 'TerminalAlternatives' | 'TerminalGroup' | 'TerminalRule' | 'TerminalRuleCall' | 'Type' | 'TypeAttribute' | 'UnorderedGroup' | 'UntilToken' | 'Wildcard';
 
-export type LangiumGrammarAstReference = 'Action:type' | 'AtomType:refType' | 'CrossReference:type' | 'Grammar:hiddenTokens' | 'Grammar:usedGrammars' | 'Interface:superTypes' | 'NamedArgument:parameter' | 'ParameterReference:parameter' | 'ParserRule:hiddenTokens' | 'ParserRule:returnType' | 'RuleCall:rule' | 'TerminalRuleCall:rule';
-
 export class LangiumGrammarAstReflection implements AstReflection {
 
     getAllTypes(): string[] {
@@ -515,7 +513,8 @@ export class LangiumGrammarAstReflection implements AstReflection {
         }
     }
 
-    getReferenceType(referenceId: LangiumGrammarAstReference): string {
+    getReferenceType(refInfo: ReferenceInfo): string {
+        const referenceId = `${refInfo.container.$type}:${refInfo.property}`;
         switch (referenceId) {
             case 'Action:type': {
                 return AbstractType;

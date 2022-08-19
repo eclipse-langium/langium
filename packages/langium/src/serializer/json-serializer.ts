@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import { AstNode, Reference } from '../syntax-tree';
-import { Linker, getReferenceId } from '../references/linker';
+import { Linker } from '../references/linker';
 import { LangiumServices } from '../services';
 import { isAstNode, isReference } from '../utils/ast-util';
 
@@ -88,8 +88,7 @@ export class DefaultJsonSerializer implements JsonSerializer {
                 for (let i = 0; i < value.length; i++) {
                     const item = value[i];
                     if (isReference(item) && isAstNode(container)) {
-                        const refId = getReferenceId(container.$type, propName!);
-                        const reference = this.linker.buildReference(container, item.$refNode, refId, item.$refText);
+                        const reference = this.linker.buildReference(container, propName!, item.$refNode, item.$refText);
                         value[i] = reference;
                     } else if (typeof item === 'object' && item !== null) {
                         internalRevive(item);
@@ -102,8 +101,7 @@ export class DefaultJsonSerializer implements JsonSerializer {
                 for (const [name, item] of Object.entries(value)) {
                     if (typeof item === 'object' && item !== null) {
                         if (isReference(item)) {
-                            const refId = getReferenceId(value.$type, name);
-                            const reference = this.linker.buildReference(value as AstNode, item.$refNode, refId, item.$refText);
+                            const reference = this.linker.buildReference(value as AstNode, name, item.$refNode, item.$refText);
                             value[name] = reference;
                         } else if (Array.isArray(item)) {
                             internalRevive(item, value, name);

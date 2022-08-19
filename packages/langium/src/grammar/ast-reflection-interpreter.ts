@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { AstReflection, TypeMandatoryProperty, TypeMetaData } from '../syntax-tree';
+import { AstReflection, ReferenceInfo, TypeMandatoryProperty, TypeMetaData } from '../syntax-tree';
 import { isAstNode } from '../utils/ast-util';
 import { MultiMap } from '../utils/collections';
 import { LangiumDocuments } from '../workspace/documents';
@@ -37,7 +37,8 @@ export function interpretAstReflection(grammarOrTypes: Grammar | AstTypes, docum
         getAllTypes() {
             return allTypes;
         },
-        getReferenceType(referenceId: string): string {
+        getReferenceType(refInfo: ReferenceInfo): string {
+            const referenceId = `${refInfo.container.$type}:${refInfo.property}`;
             const referenceType = references.get(referenceId);
             if (referenceType) {
                 return referenceType;
