@@ -9,6 +9,7 @@ import { TextDocument } from 'vscode-languageserver-textdocument';
 import { Module } from './dependency-injection';
 import { createGrammarConfig } from './grammar/grammar-config';
 import { createCompletionParser } from './parser/completion-parser-builder';
+import { DefaultCallHierarchyProvider } from './lsp/call-hierarchy-provider';
 import { DefaultCompletionProvider } from './lsp/completion/completion-provider';
 import { DefaultDocumentHighlightProvider } from './lsp/document-highlight-provider';
 import { DefaultDocumentSymbolProvider } from './lsp/document-symbol-provider';
@@ -68,7 +69,8 @@ export function createDefaultModule(context: DefaultModuleContext): Module<Langi
             ReferencesProvider: (services) => new DefaultReferencesProvider(services),
             DefinitionProvider: (services) => new DefaultDefinitionProvider(services),
             DocumentHighlightProvider: (services) => new DefaultDocumentHighlightProvider(services),
-            RenameProvider: (services) => new DefaultRenameProvider(services)
+            RenameProvider: (services) => new DefaultRenameProvider(services),
+            CallHierarchyProvider: (services) => new DefaultCallHierarchyProvider(services),
         },
         workspace: {
             AstNodeLocator: () => new DefaultAstNodeLocator(),
