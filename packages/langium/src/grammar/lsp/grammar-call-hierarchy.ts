@@ -17,7 +17,8 @@ export class LangiumGrammarCallHierarchyProvider extends AbstractCallHierarchyPr
         if (!isParserRule(node)) {
             return undefined;
         }
-        const uniqueRules: IncomingCallHelper[] = [];
+        // This map is used to group incoming calls to avoid duplicates.
+        const uniqueRules = new Map<string, { parserRule: CstNode, nameNode: CstNode, targetNodes: CstNode[], docUri: string }>();
         references.forEach(ref => {
             const doc = this.documents.getOrCreateDocument(ref.sourceUri);
             const rootNode = doc.parseResult.value;
@@ -29,7 +30,7 @@ export class LangiumGrammarCallHierarchyProvider extends AbstractCallHierarchyPr
                 return;
             }
             const parserRule = getContainerOfType(targetNode.element, isParserRule);
-            if (!parserRule) {
+            if (!parserRule || !parserRule.$cstNode) {
                 return;
             }
             const nameNode = this.nameProvider.getNameNode(parserRule);
@@ -39,85 +40,64 @@ export class LangiumGrammarCallHierarchyProvider extends AbstractCallHierarchyPr
             const refDocUri = ref.sourceUri.toString();
             const ruleId = refDocUri + '@' + nameNode.text;
 
-            const indexInArray = uniqueRules.findIndex(r => r.ruleId === ruleId);
-            indexInArray === -1 ?
-                uniqueRules.push({ ruleId, parserRule: parserRule.$cstNode!, nameNode, targetNodes: [targetNode], docUri: refDocUri})
-                : uniqueRules[indexInArray].targetNodes = [...uniqueRules[indexInArray].targetNodes, targetNode];
+            uniqueRules.has(ruleId) ?
+                uniqueRules.set(ruleId, { parserRule: parserRule.$cstNode, nameNode, targetNodes: [...uniqueRules.get(ruleId)!.targetNodes, targetNode], docUri: refDocUri })
+                : uniqueRules.set(ruleId, { parserRule: parserRule.$cstNode, nameNode, targetNodes: [targetNode], docUri: refDocUri });
         });
-        if (uniqueRules.length === 0) {
+        if (uniqueRules.size === 0) {
             return undefined;
         }
-        return uniqueRules.map(r => {
-            return {
-                from: {
-                    kind: SymbolKind.Method,
-                    name: r.nameNode.text,
-                    range: r.parserRule.range,
-                    selectionRange: r.nameNode.range,
-                    uri: r.docUri
-                },
-                fromRanges: r.targetNodes.map(n => n.range)
-            };
-        });
+        return Array.from(uniqueRules.values()).map(rule => ({
+            from: {
+                kind: SymbolKind.Method,
+                name: rule.nameNode.text,
+                range: rule.parserRule.range,
+                selectionRange: rule.nameNode.range,
+                uri: rule.docUri
+            },
+            fromRanges: rule.targetNodes.map(node => node.range)
+        }));
     }
 
     protected getOutgoingCalls(node: AstNode): CallHierarchyOutgoingCall[] | undefined {
-        if (isParserRule(node)) {
-            const ruleCalls = streamAllContents(node).filter(isRuleCall).toArray();
-            const uniqueRules: OutgoingCallHelper[] = [];
-            ruleCalls.forEach(ruleCall => {
-                const cstNode = ruleCall.$cstNode;
-                if (!cstNode) {
-                    return;
-                }
-                const refCstNode = ruleCall.rule.ref?.$cstNode;
-                if (!refCstNode) {
-                    return;
-                }
-                const refNameNode = this.nameProvider.getNameNode(refCstNode.element);
-                if (!refNameNode) {
-                    return;
-                }
-                const refDocUri = getDocument(refCstNode.element).uri.toString();
-                const ruleId = refDocUri + '@' + refNameNode.text;
-
-                const indexInArray = uniqueRules.findIndex(r => r.ruleId === ruleId);
-                indexInArray === -1 ?
-                    uniqueRules.push({ ruleId, refCstNode: refCstNode, to: refNameNode, from: [cstNode.range], docUri: refDocUri })
-                    : uniqueRules[indexInArray].from = [...uniqueRules[indexInArray].from, cstNode.range];
-            });
-            if (uniqueRules.length === 0) {
-                return undefined;
-            }
-            return uniqueRules.map(rule =>{
-                return {
-                    to: {
-                        kind: SymbolKind.Method,
-                        name: rule.to.text,
-                        range: rule.refCstNode.range,
-                        selectionRange: rule.to.range,
-                        uri: rule.docUri
-                    },
-                    fromRanges: rule.from
-                };
-            });
+        if (!isParserRule(node)) {
+            return undefined;
         }
-        return undefined;
+        const ruleCalls = streamAllContents(node).filter(isRuleCall).toArray();
+        // This map is used to group outgoing calls to avoid duplicates.
+        const uniqueRules = new Map<string, { refCstNode: CstNode, to: CstNode, from: Range[], docUri: string }>();
+        ruleCalls.forEach(ruleCall => {
+            const cstNode = ruleCall.$cstNode;
+            if (!cstNode) {
+                return;
+            }
+            const refCstNode = ruleCall.rule.ref?.$cstNode;
+            if (!refCstNode) {
+                return;
+            }
+            const refNameNode = this.nameProvider.getNameNode(refCstNode.element);
+            if (!refNameNode) {
+                return;
+            }
+            const refDocUri = getDocument(refCstNode.element).uri.toString();
+            const ruleId = refDocUri + '@' + refNameNode.text;
+
+            uniqueRules.has(ruleId) ?
+                uniqueRules.set(ruleId, { refCstNode: refCstNode, to: refNameNode, from: [...uniqueRules.get(ruleId)!.from, cstNode.range], docUri: refDocUri })
+                : uniqueRules.set(ruleId, { refCstNode: refCstNode, to: refNameNode, from: [cstNode.range], docUri: refDocUri });
+        });
+        if (uniqueRules.size === 0) {
+            return undefined;
+        }
+        return Array.from(uniqueRules.values()).map(rule => ({
+            to: {
+                kind: SymbolKind.Method,
+                name: rule.to.text,
+                range: rule.refCstNode.range,
+                selectionRange: rule.to.range,
+                uri: rule.docUri
+            },
+            fromRanges: rule.from
+        }));
     }
-}
-
-interface IncomingCallHelper {
-    ruleId: string
-    parserRule: CstNode
-    nameNode: CstNode
-    targetNodes: CstNode[]
-    docUri: string
-}
-
-interface OutgoingCallHelper {
-    ruleId: string
-    refCstNode: CstNode
-    to: CstNode
-    from: Range[]
-    docUri: string
 }
