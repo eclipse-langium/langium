@@ -19,14 +19,14 @@ import { LangiumDocument, LangiumDocuments } from '../workspace/documents';
  * Language-specific service for handling call hierarchy requests.
  */
 export interface CallHierarchyProvider {
-    prepareCallHierarchy(document: LangiumDocument, params: CallHierarchyPrepareParams, cancelToken?: CancellationToken): CallHierarchyItem[] | null;
+    prepareCallHierarchy(document: LangiumDocument, params: CallHierarchyPrepareParams, cancelToken?: CancellationToken): CallHierarchyItem[] | undefined;
 
-    incomingCalls(params: CallHierarchyIncomingCallsParams,  cancelToken?: CancellationToken): CallHierarchyIncomingCall[] | null;
+    incomingCalls(params: CallHierarchyIncomingCallsParams,  cancelToken?: CancellationToken): CallHierarchyIncomingCall[] | undefined;
 
-    outgoingCalls(params: CallHierarchyOutgoingCallsParams, cancelToken?: CancellationToken): CallHierarchyOutgoingCall[] | null;
+    outgoingCalls(params: CallHierarchyOutgoingCallsParams, cancelToken?: CancellationToken): CallHierarchyOutgoingCall[] | undefined;
 }
 
-export class DefaultCallHierarchyProvider implements CallHierarchyProvider {
+export abstract class AbstractCallHierarchyProvider implements CallHierarchyProvider {
     protected readonly grammarConfig: GrammarConfig;
     protected readonly nameProvider: NameProvider;
     protected readonly documents: LangiumDocuments;
@@ -39,61 +39,59 @@ export class DefaultCallHierarchyProvider implements CallHierarchyProvider {
         this.references = services.references.References;
     }
 
-    prepareCallHierarchy(document: LangiumDocument<AstNode>, params: CallHierarchyPrepareParams): CallHierarchyItem[] | null {
+    prepareCallHierarchy(document: LangiumDocument<AstNode>, params: CallHierarchyPrepareParams): CallHierarchyItem[] | undefined {
         const rootNode = document.parseResult.value;
         const targetNode = findDeclarationNodeAtOffset(rootNode.$cstNode, document.textDocument.offsetAt(params.position), this.grammarConfig.nameRegexp);
         if (!targetNode) {
-            return null;
+            return undefined;
         }
 
         const declarationNode = this.references.findDeclaration(targetNode);
         if (!declarationNode) {
-            return null;
+            return undefined;
         }
 
-        return this.getCallHierarchyItems(declarationNode?.element, document);
+        return this.getCallHierarchyItems(declarationNode.element, document);
     }
 
-    protected getCallHierarchyItems(targetNode: AstNode, document: LangiumDocument<AstNode>): CallHierarchyItem[] {
+    protected getCallHierarchyItems(targetNode: AstNode, document: LangiumDocument<AstNode>): CallHierarchyItem[] | undefined {
         const nameNode = this.nameProvider.getNameNode(targetNode);
-        if (!nameNode) {
-            return [];
+        if (!nameNode || !targetNode.$cstNode) {
+            return undefined;
         }
 
         return [{
             kind: SymbolKind.Method,
             name: nameNode.text,
-            range: nameNode.range,
+            range: targetNode.$cstNode.range,
             selectionRange: nameNode.range,
             uri: document.uri.toString()
         }];
     }
 
-    incomingCalls(params: CallHierarchyIncomingCallsParams): CallHierarchyIncomingCall[] | null {
+    incomingCalls(params: CallHierarchyIncomingCallsParams): CallHierarchyIncomingCall[] | undefined {
         const document = this.documents.getOrCreateDocument(URI.parse(params.item.uri));
         const rootNode = document.parseResult.value;
         const targetNode = findDeclarationNodeAtOffset(rootNode.$cstNode, document.textDocument.offsetAt(params.item.range.start), this.grammarConfig.nameRegexp);
         if (!targetNode) {
-            return null;
+            return undefined;
         }
 
         const references = this.references.findReferences(targetNode.element, {includeDeclaration: false, onlyLocal: false}).toArray();
-        return this.getIncomingCalls(references);
+        return this.getIncomingCalls(targetNode.element, references);
     }
 
     /**
      * Override this method to collect the incoming calls for your language
      */
-    protected getIncomingCalls(_references: ReferenceDescription[]): CallHierarchyIncomingCall[] | null {
-        return null;
-    }
+    protected abstract getIncomingCalls(node: AstNode, references: ReferenceDescription[]): CallHierarchyIncomingCall[] | undefined;
 
-    outgoingCalls(params: CallHierarchyOutgoingCallsParams): CallHierarchyOutgoingCall[] | null {
+    outgoingCalls(params: CallHierarchyOutgoingCallsParams): CallHierarchyOutgoingCall[] | undefined {
         const document = this.documents.getOrCreateDocument(URI.parse(params.item.uri));
         const rootNode = document.parseResult.value;
         const targetNode = findDeclarationNodeAtOffset(rootNode.$cstNode, document.textDocument.offsetAt(params.item.range.start), this.grammarConfig.nameRegexp);
         if (!targetNode) {
-            return null;
+            return undefined;
         }
         return this.getOutgoingCalls(targetNode.element);
     }
@@ -101,7 +99,5 @@ export class DefaultCallHierarchyProvider implements CallHierarchyProvider {
     /**
      * Override this method to collect the outgoing calls for your language
      */
-    protected getOutgoingCalls(_node: AstNode): CallHierarchyOutgoingCall[] | null {
-        return null;
-    }
+    protected abstract getOutgoingCalls(node: AstNode): CallHierarchyOutgoingCall[] | undefined;
 }
