@@ -7,6 +7,7 @@
 import { CancellationToken, CompletionItem, CompletionItemKind, CompletionList, CompletionParams, Position } from 'vscode-languageserver';
 import { TextDocument, TextEdit } from 'vscode-languageserver-textdocument';
 import * as ast from '../../grammar/generated/ast';
+import { GrammarConfig } from '../../grammar/grammar-config';
 import { getEntryRule, getTypeNameAtElement } from '../../grammar/grammar-util';
 import { LangiumCompletionParser } from '../../parser/langium-parser';
 import { NameProvider } from '../../references/naming';
@@ -41,12 +42,14 @@ export class DefaultCompletionProvider implements CompletionProvider {
     protected readonly scopeProvider: ScopeProvider;
     protected readonly grammar: ast.Grammar;
     protected readonly nameProvider: NameProvider;
+    protected readonly grammarConfig: GrammarConfig;
 
     constructor(services: LangiumServices) {
         this.scopeProvider = services.references.ScopeProvider;
         this.grammar = services.Grammar;
         this.completionParser = services.parser.CompletionParser;
         this.nameProvider = services.references.NameProvider;
+        this.grammarConfig = services.parser.GrammarConfig;
     }
 
     async getCompletion(document: LangiumDocument, params: CompletionParams): Promise<CompletionList | undefined> {
@@ -266,6 +269,6 @@ export class DefaultCompletionProvider implements CompletionProvider {
     }
 
     protected isWordCharacterAt(content: string, index: number): boolean {
-        return /\w/.test(content.charAt(index));
+        return this.grammarConfig.nameRegexp.test(content.charAt(index));
     }
 }
