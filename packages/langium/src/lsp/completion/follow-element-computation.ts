@@ -12,14 +12,15 @@ import { Cardinality, getCrossReferenceTerminal, isArray, isOptional, terminalRe
  * Calculates any features that can follow the given feature stack.
  * This also includes features following optional features and features from previously called rules that could follow the last feature.
  * @param featureStack A stack of features starting at the entry rule and ending at the feature of the current cursor position.
+ * @param unparsedTokens All tokens which haven't been parsed successfully yet. This is the case when we call this function inside an alternative.
  * @returns Any `AbstractElement` that could be following the given feature stack.
  */
-export function findNextFeatures(featureStack: ast.AbstractElement[], unparsedTokens: IToken[]): ast.AbstractElement[] {
+export function findNextFeatures(featureStack: ast.AbstractElement[][], unparsedTokens: IToken[]): ast.AbstractElement[] {
     const context: InterpretationContext = {
-        stacks: [featureStack],
+        stacks: featureStack,
         tokens: unparsedTokens
     };
-    interpreteTokens(context);
+    interpretTokens(context);
     const nextStacks = findNextFeatureStacks(context.stacks);
     // We only need the last element of each stack
     return nextStacks.map(e => e[e.length - 1]);
@@ -69,7 +70,7 @@ function findNextFeaturesInternal(feature: ast.AbstractElement, cardinalities = 
  * @returns A list of features that could be the first feature of the given `AbstractElement`.
  * These features contain a modified `cardinality` property. If the given `feature` is optional, the returned features will be optional as well.
  */
-export function findFirstFeatures(feature: ast.AbstractElement | undefined, cardinalities: Map<ast.AbstractElement, Cardinality>, visited: Set<ast.AbstractElement>): ast.AbstractElement[] {
+export function findFirstFeatures(feature: ast.AbstractElement | undefined, cardinalities = new Map<ast.AbstractElement, Cardinality>(), visited = new Set<ast.AbstractElement>()): ast.AbstractElement[] {
     if (ast.isGroup(feature)) {
         if (visited.has(feature)) {
             return [];
@@ -77,24 +78,22 @@ export function findFirstFeatures(feature: ast.AbstractElement | undefined, card
             visited.add(feature);
         }
     }
-    const card = cardinalities ?? new Map();
-    visited = visited ?? new Set();
     if (feature === undefined) {
         return [];
     } else if (ast.isGroup(feature)) {
-        return findNextFeaturesInGroup(feature, 0, card, visited)
-            .map(e => modifyCardinality(e, feature.cardinality, card));
+        return findNextFeaturesInGroup(feature, 0, cardinalities, visited)
+            .map(e => modifyCardinality(e, feature.cardinality, cardinalities));
     } else if (ast.isAlternatives(feature) || ast.isUnorderedGroup(feature)) {
-        return feature.elements.flatMap(e => findFirstFeatures(e, card, visited))
-            .map(e => modifyCardinality(e, feature.cardinality, card));
+        return feature.elements.flatMap(e => findFirstFeatures(e, cardinalities, visited))
+            .map(e => modifyCardinality(e, feature.cardinality, cardinalities));
     } else if (ast.isAssignment(feature)) {
-        return findFirstFeatures(feature.terminal, card, visited)
-            .map(e => modifyCardinality(e, feature.cardinality, card));
+        return findFirstFeatures(feature.terminal, cardinalities, visited)
+            .map(e => modifyCardinality(e, feature.cardinality, cardinalities));
     } else if (ast.isAction(feature)) {
-        return findNextFeaturesInternal(feature, card, visited);
+        return findNextFeaturesInternal(feature, cardinalities, visited);
     } else if (ast.isRuleCall(feature) && ast.isParserRule(feature.rule.ref)) {
-        return findFirstFeatures(feature.rule.ref.definition, card, visited)
-            .map(e => modifyCardinality(e, feature.cardinality, card));
+        return findFirstFeatures(feature.rule.ref.definition, cardinalities, visited)
+            .map(e => modifyCardinality(e, feature.cardinality, cardinalities));
     } else {
         return [feature];
     }
@@ -133,9 +132,9 @@ interface InterpretationContext {
     stacks: ast.AbstractElement[][]
 }
 
-function interpreteTokens(context: InterpretationContext): void {
+function interpretTokens(context: InterpretationContext): void {
     while (context.tokens.length > 0) {
-        const token = context.tokens.pop()!;
+        const token = context.tokens.shift()!;
         const nextFeatureStacks = findNextFeatureStacks(context.stacks, token);
         context.stacks = nextFeatureStacks;
     }
@@ -144,12 +143,12 @@ function interpreteTokens(context: InterpretationContext): void {
 function findNextFeatureStacks(stacks: ast.AbstractElement[][], token?: IToken): ast.AbstractElement[][] {
     const newStacks: ast.AbstractElement[][] = [];
     for (const stack of stacks) {
-        newStacks.push(...interpreteStackToken(stack, token));
+        newStacks.push(...interpretStackToken(stack, token));
     }
     return newStacks;
 }
 
-function interpreteStackToken(stack: ast.AbstractElement[], token?: IToken): ast.AbstractElement[][] {
+function interpretStackToken(stack: ast.AbstractElement[], token?: IToken): ast.AbstractElement[][] {
     const cardinalities = new Map<ast.AbstractElement, Cardinality>();
     const newStacks: ast.AbstractElement[][] = [];
     while (stack.length > 0) {

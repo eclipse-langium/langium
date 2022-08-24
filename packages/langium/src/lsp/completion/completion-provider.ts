@@ -14,7 +14,7 @@ import { ScopeProvider } from '../../references/scope';
 import { LangiumServices } from '../../services';
 import { AstNode, AstNodeDescription } from '../../syntax-tree';
 import { getContainerOfType, isAstNode } from '../../utils/ast-util';
-import { findLeafNodeAtOffset, findRelevantNode } from '../../utils/cst-util';
+import { findLeafNodeAtOffset } from '../../utils/cst-util';
 import { MaybePromise } from '../../utils/promise-util';
 import { stream } from '../../utils/stream';
 import { LangiumDocument } from '../../workspace/documents';
@@ -49,7 +49,7 @@ export class DefaultCompletionProvider implements CompletionProvider {
         this.nameProvider = services.references.NameProvider;
     }
 
-    getCompletion(document: LangiumDocument, params: CompletionParams): MaybePromise<CompletionList | undefined> {
+    async getCompletion(document: LangiumDocument, params: CompletionParams): Promise<CompletionList | undefined> {
         const root = document.parseResult.value;
         const cst = root.$cstNode;
         if (!cst) {
@@ -68,102 +68,111 @@ export class DefaultCompletionProvider implements CompletionProvider {
 
         if (!node) {
             const parserRule = getEntryRule(this.grammar)!;
-            this.completionForRule(undefined, parserRule, acceptor);
+            await this.completionForRule(undefined, parserRule, acceptor);
             return CompletionList.create(items, true);
         }
 
         const parserStart = this.backtrackToTokenStart(document.textDocument.getText(), offset);
         const beforeFeatures = this.findFeaturesAt(document.textDocument, parserStart);
+        let afterFeatures: ast.AbstractElement[] = [];
+        const reparse = offset !== parserStart;
+        if (reparse) {
+            afterFeatures = this.findFeaturesAt(document.textDocument, offset);
+        }
 
-        if (!beforeFeatures) {
-            const parserRule = getEntryRule(this.grammar)!;
-            this.completionForRule(undefined, parserRule, acceptor);
-        } else {
-            let afterFeatures: ast.AbstractElement[] = [];
-            const reparse = offset !== parserStart;
-            if (reparse) {
-                const after = this.findFeaturesAt(document.textDocument, offset);
-                if (after) {
-                    afterFeatures = after;
-                }
+        const distinctionFunction = (element: ast.AbstractElement) => {
+            if (ast.isKeyword(element)) {
+                return element.value;
+            } else {
+                return element;
             }
+        };
 
-            const distinctionFunction = (element: ast.AbstractElement) => {
-                if (ast.isKeyword(element)) {
-                    return element.value;
-                } else {
-                    return element;
-                }
-            };
-
+        await Promise.all(
             stream(beforeFeatures)
                 .distinct(distinctionFunction)
-                .forEach(e => this.completionFor(findRelevantNode(node), e, acceptor));
+                .map(e => this.completionFor(node.element, e, acceptor))
+        );
 
-            if (reparse) {
-                const missingPart = document.textDocument.getText({
-                    start: document.textDocument.positionAt(parserStart),
-                    end: params.position
-                }).toLowerCase();
-                // Remove items from `beforeFeatures` which don't fit the current text
-                items = items.filter(e => e.label.toLowerCase().startsWith(missingPart));
+        if (reparse) {
+            const missingPart = document.textDocument.getText({
+                start: document.textDocument.positionAt(parserStart),
+                end: params.position
+            }).toLowerCase();
+            // Remove items from `beforeFeatures` which don't fit the current text
+            items = items.filter(e => e.label.toLowerCase().startsWith(missingPart));
 
+            await Promise.all(
                 stream(afterFeatures)
                     .exclude(beforeFeatures, distinctionFunction)
                     .distinct(distinctionFunction)
-                    .forEach(e => this.completionFor(findRelevantNode(node), e, acceptor));
-            }
+                    .map(e => this.completionFor(node.element, e, acceptor))
+            );
         }
+
         return CompletionList.create(items, true);
     }
 
-    protected findFeaturesAt(document: TextDocument, offset: number): ast.AbstractElement[] | false {
+    protected findFeaturesAt(document: TextDocument, offset: number): ast.AbstractElement[] {
         const text = document.getText({
             start: Position.create(0, 0),
             end: document.positionAt(offset)
         });
         const parserResult = this.completionParser.parse(text);
-        // If the parser didn't parse any tokens, just return false
-        if (!parserResult.token) {
-            return false;
+        const tokens = parserResult.tokens;
+        // If the parser didn't parse any tokens, return the next features of the entry rule
+        if (parserResult.tokenIndex === 0) {
+            const parserRule = getEntryRule(this.grammar)!;
+            const firstFeatures = findFirstFeatures(parserRule.definition);
+            if (tokens.length > 0) {
+                // We have to skip the first token
+                // The interpreter will only look at the next features, which requires every token after the first
+                tokens.shift();
+                return findNextFeatures(firstFeatures.map(e => [e]), tokens);
+            } else {
+                return firstFeatures;
+            }
         }
-        const leftoverTokens = [...parserResult.tokens].splice(parserResult.tokenIndex);
-        const features = findNextFeatures(parserResult.elementStack, leftoverTokens);
+        const leftoverTokens = [...tokens].splice(parserResult.tokenIndex);
+        const features = findNextFeatures([parserResult.elementStack], leftoverTokens);
         return features;
     }
 
     protected backtrackToTokenStart(text: string, offset: number): number {
+        if (offset < 1) {
+            return offset;
+        }
         const wordRegex = /\w/;
         const whiteSpaceRegex = /\s/;
         let lastCharacter = text.charAt(offset - 1);
         if (whiteSpaceRegex.test(lastCharacter)) {
             return offset;
         }
-        while (wordRegex.test(lastCharacter) && offset > 0) {
+        while (wordRegex.test(lastCharacter) && offset > 1) {
             offset--;
             lastCharacter = text.charAt(offset - 1);
         }
         return offset;
     }
 
-    protected completionForRule(astNode: AstNode | undefined, rule: ast.AbstractRule, acceptor: CompletionAcceptor): void {
+    protected async completionForRule(astNode: AstNode | undefined, rule: ast.AbstractRule, acceptor: CompletionAcceptor): Promise<void> {
         if (ast.isParserRule(rule)) {
-            const features = findFirstFeatures(rule.definition, new Map(), new Set());
-            features.flatMap(e => this.completionFor(astNode, e, acceptor));
+            const features = findFirstFeatures(rule.definition);
+            await Promise.all(features.map(e => this.completionFor(astNode, e, acceptor)));
         }
     }
 
-    protected completionFor(astNode: AstNode | undefined, feature: ast.AbstractElement, acceptor: CompletionAcceptor): void {
+    protected completionFor(astNode: AstNode | undefined, feature: ast.AbstractElement, acceptor: CompletionAcceptor): MaybePromise<void> {
         if (ast.isKeyword(feature)) {
-            this.completionForKeyword(feature, astNode, acceptor);
+            return this.completionForKeyword(feature, astNode, acceptor);
         } else if (ast.isRuleCall(feature) && feature.rule.ref) {
             return this.completionForRule(astNode, feature.rule.ref, acceptor);
         } else if (ast.isCrossReference(feature) && astNode) {
-            this.completionForCrossReference(feature, astNode, acceptor);
+            return this.completionForCrossReference(feature, astNode, acceptor);
         }
     }
 
-    protected completionForCrossReference(crossRef: ast.CrossReference, context: AstNode, acceptor: CompletionAcceptor): void {
+    protected completionForCrossReference(crossRef: ast.CrossReference, context: AstNode, acceptor: CompletionAcceptor): MaybePromise<void> {
         const assignment = getContainerOfType(crossRef, ast.isAssignment);
         const parserRule = getContainerOfType(crossRef, ast.isParserRule);
         if (assignment && parserRule) {
@@ -175,15 +184,34 @@ export class DefaultCompletionProvider implements CompletionProvider {
             const scope = this.scopeProvider.getScope(refInfo);
             const duplicateStore = new Set<string>();
             scope.getAllElements().forEach(e => {
-                if (!duplicateStore.has(e.name)) {
-                    acceptor(e, { kind: CompletionItemKind.Reference, detail: e.type, sortText: '0' });
+                if (!duplicateStore.has(e.name) && this.filterCrossReference(e)) {
+                    acceptor(e, this.createReferenceCompletionItem(e));
                     duplicateStore.add(e.name);
                 }
             });
         }
     }
 
-    protected completionForKeyword(keyword: ast.Keyword, context: AstNode | undefined, acceptor: CompletionAcceptor): void {
+    /**
+     * Override this method to change how reference completion items are created.
+     * Most notably useful to change the `kind` property which indicates which icon to display on the client.
+     *
+     * @param nodeDescription The description of a reference candidate
+     * @returns A partial completion item
+     */
+    protected createReferenceCompletionItem(nodeDescription: AstNodeDescription): Partial<CompletionItem> {
+        return {
+            kind: CompletionItemKind.Reference,
+            detail: nodeDescription.type,
+            sortText: '0'
+        };
+    }
+
+    protected filterCrossReference(_nodeDescription: AstNodeDescription): boolean {
+        return true;
+    }
+
+    protected completionForKeyword(keyword: ast.Keyword, context: AstNode | undefined, acceptor: CompletionAcceptor): MaybePromise<void> {
         acceptor(keyword.value, { kind: CompletionItemKind.Keyword, detail: 'Keyword', sortText: /\w/.test(keyword.value) ? '1' : '2' });
     }
 
@@ -206,10 +234,7 @@ export class DefaultCompletionProvider implements CompletionProvider {
         if (!textEdit) {
             return undefined;
         }
-        const item: CompletionItem = { label, textEdit };
-        if (info) {
-            Object.assign(item, info);
-        }
+        const item: CompletionItem = { label, textEdit, ...info };
         return item;
     }
 

@@ -98,9 +98,11 @@ export abstract class AbstractLangiumParser implements BaseParser {
     isRecording(): boolean {
         return this.wrapper.IS_RECORDING;
     }
+
     get unorderedGroups(): Map<string, boolean[]> {
         return this._unorderedGroups;
     }
+
     getRuleStack(): number[] {
         return (this.wrapper as any).RULE_STACK;
     }
@@ -389,17 +391,16 @@ export class LangiumParserErrorMessageProvider implements IParserErrorMessagePro
 export interface CompletionParserResult {
     tokens: IToken[]
     elementStack: AbstractElement[]
-    token?: IToken
     tokenIndex: number
 }
 
 export class LangiumCompletionParser extends AbstractLangiumParser {
     private mainRule!: RuleResult;
+    private tokens: IToken[] = [];
+
     private elementStack: AbstractElement[] = [];
     private lastElementStack: AbstractElement[] = [];
-    private lastToken?: IToken;
     private nextTokenIndex = 0;
-    private tokens: IToken[] = [];
     private stackSize = 0;
 
     action(): void {
@@ -421,7 +422,6 @@ export class LangiumCompletionParser extends AbstractLangiumParser {
         return {
             tokens: this.tokens,
             elementStack: [...this.lastElementStack],
-            token: this.lastToken,
             tokenIndex: this.nextTokenIndex
         };
     }
@@ -437,9 +437,8 @@ export class LangiumCompletionParser extends AbstractLangiumParser {
     private resetState(): void {
         this.elementStack = [];
         this.lastElementStack = [];
-        this.lastToken = undefined;
-        this.stackSize = 0;
         this.nextTokenIndex = 0;
+        this.stackSize = 0;
     }
 
     private startImplementation(implementation: RuleImpl): RuleImpl {
@@ -469,10 +468,9 @@ export class LangiumCompletionParser extends AbstractLangiumParser {
     }
 
     consume(idx: number, tokenType: TokenType, feature: AbstractElement): void {
-        const token = this.wrapper.wrapConsume(idx, tokenType);
+        this.wrapper.wrapConsume(idx, tokenType);
         if (!this.isRecording()) {
             this.lastElementStack = [...this.elementStack, feature];
-            this.lastToken = token;
             this.nextTokenIndex = this.currIdx + 1;
         }
     }

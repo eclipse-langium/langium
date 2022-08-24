@@ -4,20 +4,20 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { createLangiumGrammarServices, EmptyFileSystem } from '../../src';
+import { createLangiumGrammarServices, createServicesForGrammar, EmptyFileSystem } from '../../src';
 import { expectCompletion } from '../../src/test';
 import { expectFunction } from '../fixture';
 
-const text = `
-<|>gramm<|>ar g hid<|>den(hiddenTerminal)
-X: name="X";
-terminal hiddenTerminal: /x/;
-`;
+describe('Langium completion provider', () => {
 
-const grammarServices = createLangiumGrammarServices(EmptyFileSystem).grammar;
-const completion = expectCompletion(grammarServices, expectFunction);
+    const text = `
+    <|>gramm<|>ar g hid<|>den(hiddenTerminal)
+    X: name="X";
+    terminal hiddenTerminal: /x/;
+    `;
 
-describe('Completion Provider', () => {
+    const grammarServices = createLangiumGrammarServices(EmptyFileSystem).grammar;
+    const completion = expectCompletion(grammarServices, expectFunction);
 
     test('Finds starting rule', async () => {
         await completion({
@@ -41,7 +41,12 @@ describe('Completion Provider', () => {
         await completion({
             text,
             index: 1,
-            expectedItems: ['grammar']
+            expectedItems: [
+                'grammar',
+                '<',
+                '*',
+                ':'
+            ]
         });
     });
 
@@ -83,6 +88,60 @@ describe('Completion Provider', () => {
                 '|',
                 ';'
             ]
+        });
+    });
+});
+
+describe('Completion within alternatives', () => {
+
+    it('Should show correct keywords in completion of entry rule', async () => {
+
+        const grammar = `
+        grammar g
+        entry Main: a?='a' 'b' 'c' | a?='a' 'b' 'd';
+        hidden terminal WS: /\\s+/;
+        `;
+
+        const services = createServicesForGrammar({ grammar });
+        const completion = expectCompletion(services, expectFunction);
+        const text = '<|>a <|>b <|>c';
+
+        await completion({
+            text,
+            index: 0,
+            expectedItems: ['a']
+        });
+        await completion({
+            text,
+            index: 1,
+            expectedItems: ['b']
+        });
+        await completion({
+            text,
+            index: 2,
+            expectedItems: ['c', 'd']
+        });
+    });
+
+    it('Should show correct cross reference and keyword in completion', async () => {
+
+        const grammar = `
+        grammar g
+        entry Main: elements+=(Item | Ref)*;
+        Item: 'item' name=ID;
+        Ref: 'ref' (ref=[Item] | self?='self');
+        terminal ID: /\\^?[_a-zA-Z][\\w_]*/;
+        hidden terminal WS: /\\s+/;
+        `;
+
+        const services = createServicesForGrammar({ grammar });
+        const completion = expectCompletion(services, expectFunction);
+        const text = 'item A ref <|>A';
+
+        await completion({
+            text,
+            index: 0,
+            expectedItems: ['A', 'self']
         });
     });
 });

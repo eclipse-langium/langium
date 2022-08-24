@@ -4,8 +4,6 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import { EMPTY_ALT, IOrAlt, TokenType, TokenTypeDictionary, TokenVocabulary } from 'chevrotain';
 import { AbstractElement, Action, Alternatives, Condition, CrossReference, Grammar, Group, isAction, isAlternatives, isAssignment, isConjunction, isCrossReference, isDisjunction, isGroup, isKeyword, isLiteralCondition, isNegation, isParameterReference, isParserRule, isRuleCall, isTerminalRule, isUnorderedGroup, Keyword, NamedArgument, ParserRule, RuleCall, UnorderedGroup } from '../grammar/generated/ast';
 import { Cardinality, findNameAssignment, getTypeName } from '../grammar/grammar-util';
@@ -60,13 +58,8 @@ function buildRules(parserContext: ParserContext, grammar: Grammar): void {
             many: 1,
             or: 1
         };
-        ctx.rules.set(rule.name, parserContext.parser.rule(rule, buildRuleContent(ctx, rule)));
+        ctx.rules.set(rule.name, parserContext.parser.rule(rule, buildElement(ctx, rule.definition)));
     }
-}
-
-function buildRuleContent(ctx: RuleContext, rule: ParserRule): Method {
-    const method = buildElement(ctx, rule.definition);
-    return method;
 }
 
 function buildElement(ctx: RuleContext, element: AbstractElement, ignoreGuard = false): Method {
@@ -253,13 +246,8 @@ function buildUnorderedGroup(ctx: RuleContext, group: UnorderedGroup): Method {
 }
 
 function buildGroup(ctx: RuleContext, group: Group): Method {
-    const methods: Method[] = [];
-
-    for (const element of group.elements) {
-        methods.push(buildElement(ctx, element));
-    }
-
-    return (args) => methods.forEach(e => e(args));
+    const methods = group.elements.map(e => buildElement(ctx, e));
+    return (args) => methods.forEach(method => method(args));
 }
 
 function getGuardCondition(element: AbstractElement): Condition | undefined {
