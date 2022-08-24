@@ -145,7 +145,7 @@ describe('TerminalRule to regex', () => {
     test('Should create combined regexes', async () => {
         const terminal = await getTerminal('terminal X: /x/ /y/;');
         const regex = terminalRegex(terminal);
-        expect(regex).toBe('xy');
+        expect(regex).toBe('(xy)');
     });
 
     test('Should create optional alternatives with keywords', async () => {
@@ -160,7 +160,7 @@ describe('TerminalRule to regex', () => {
         terminal Y: 'a';
         `, 'X');
         const regex = terminalRegex(terminal);
-        expect(regex).toBe('aa');
+        expect(regex).toBe('((a)(a))');
     });
 
     test('Should create negated token', async () => {
