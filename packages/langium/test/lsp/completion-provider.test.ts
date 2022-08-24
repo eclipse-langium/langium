@@ -19,7 +19,7 @@ describe('Langium completion provider', () => {
     const grammarServices = createLangiumGrammarServices(EmptyFileSystem).grammar;
     const completion = expectCompletion(grammarServices, expectFunction);
 
-    test('Finds starting rule', async () => {
+    test('Should find starting rule', async () => {
         await completion({
             text,
             index: 0,
@@ -37,7 +37,7 @@ describe('Langium completion provider', () => {
         });
     });
 
-    test('Finds grammar keyword inside grammar keyword', async () => {
+    test('Should find grammar keyword inside grammar keyword', async () => {
         await completion({
             text,
             index: 1,
@@ -50,7 +50,7 @@ describe('Langium completion provider', () => {
         });
     });
 
-    test('Finds hidden keyword', async () => {
+    test('Should find hidden keyword', async () => {
         await completion({
             text,
             index: 2,
@@ -63,7 +63,7 @@ describe('Langium completion provider', () => {
         });
     });
 
-    test('Does case insensitive prefix matching', async () => {
+    test('Should perform case insensitive prefix matching', async () => {
         const model = `
         grammar g
         Aaaa: name="A";

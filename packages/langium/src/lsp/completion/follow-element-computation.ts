@@ -133,8 +133,7 @@ interface InterpretationContext {
 }
 
 function interpretTokens(context: InterpretationContext): void {
-    while (context.tokens.length > 0) {
-        const token = context.tokens.shift()!;
+    for (const token of context.tokens) {
         const nextFeatureStacks = findNextFeatureStacks(context.stacks, token);
         context.stacks = nextFeatureStacks;
     }
