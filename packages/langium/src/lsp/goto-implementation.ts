@@ -8,7 +8,7 @@ import { CancellationToken, ImplementationParams, LocationLink } from 'vscode-la
 import { References } from '../references/references';
 import { LangiumServices } from '../services';
 import { AstNode } from '../syntax-tree';
-import { findLeafNodeAtOffset } from '../utils/cst-util';
+import { findDeclarationNodeAtOffset } from '../utils/cst-util';
 import { MaybePromise } from '../utils/promise-util';
 import { LangiumDocument } from '../workspace/documents';
 
@@ -32,7 +32,7 @@ export abstract class AbstractGoToImplementationProvider implements GoToImplemen
     goToImplementation(document: LangiumDocument<AstNode>, params: ImplementationParams, cancelToken = CancellationToken.None): MaybePromise<LocationLink[] | undefined> {
         const rootNode = document.parseResult.value;
         if (rootNode.$cstNode) {
-            const sourceCstNode = findLeafNodeAtOffset(rootNode.$cstNode, document.textDocument.offsetAt(params.position));
+            const sourceCstNode = findDeclarationNodeAtOffset(rootNode.$cstNode, document.textDocument.offsetAt(params.position));
             if (sourceCstNode) {
                 const nodeDeclaration = this.references.findDeclaration(sourceCstNode);
                 if (nodeDeclaration) {
