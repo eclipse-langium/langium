@@ -109,12 +109,19 @@ export function findLeafNodeAtOffset(node: CstNode, offset: number): LeafCstNode
     if (isLeafCstNode(node)) {
         return node;
     } else if (isCompositeCstNode(node)) {
-        const children = node.children.filter(e => e.offset <= offset).reverse();
-        for (const child of children) {
-            const result = findLeafNodeAtOffset(child, offset);
-            if (result) {
-                return result;
+        let firstChild = 0;
+        let lastChild = node.children.length - 1;
+        while (firstChild <= lastChild) {
+            let middleChild = Math.floor((firstChild + lastChild) / 2);
+            const n = node.children[middleChild];
+            if (n.offset > offset) {
+                lastChild = middleChild - 1;
+            } else if (n.end <= offset) {
+                firstChild = middleChild + 1;
+            } else {
+                return findLeafNodeAtOffset(n, offset);
             }
+            middleChild = Math.floor((firstChild + lastChild) / 2);
         }
     }
     return undefined;
