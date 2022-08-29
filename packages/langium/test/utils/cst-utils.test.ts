@@ -21,11 +21,8 @@ describe('CST Utils', () => {
         `;
 
         const grammar = await parser(text);
-        const testOffset = grammar.parseResult.value.$document?.textDocument.getText().indexOf('AB');
-        const leafnode = c.findLeafNodeAtOffset(grammar.parseResult.value.$cstNode!, testOffset!);
-        console.log(leafnode);
-        console.log(testOffset);
-        console.log(grammar);
+        const offset = grammar.parseResult.value.$document?.textDocument.getText().indexOf('AB');
+        const leafnode = c.findLeafNodeAtOffset(grammar.parseResult.value.$cstNode!, offset!);
         expect(leafnode!.text).toBe('AB');
     });
 });
