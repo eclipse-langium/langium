@@ -21,7 +21,7 @@ describe('CST Utils', () => {
         `;
 
         const grammar = await parser(text);
-        const offset = grammar.parseResult.value.$document!.textDocument.getText().indexOf('AB');
+        const offset = grammar.textDocument.getText().indexOf('AB');
         const leafnode = cstUtil.findLeafNodeAtOffset(grammar.parseResult.value.$cstNode!, offset!);
         expect(leafnode!.text).toBe('AB');
     });
@@ -35,7 +35,7 @@ describe('CST Utils', () => {
         `;
 
         const grammar = await parser(text);
-        const offset = grammar.parseResult.value.$document!.textDocument.getText().indexOf('AB') + 1;
+        const offset = grammar.textDocument.getText().indexOf('AB') + 1;
         const leafnode = cstUtil.findLeafNodeAtOffset(grammar.parseResult.value.$cstNode!, offset!);
         expect(leafnode!.text).toBe('AB');
     });
@@ -49,7 +49,7 @@ describe('CST Utils', () => {
         `;
 
         const grammar = await parser(text);
-        const offset = grammar.parseResult.value.$document!.textDocument.getText().indexOf('AB') + 2;
+        const offset = grammar.textDocument.getText().indexOf('AB') + 2;
         const leafnode = cstUtil.findLeafNodeAtOffset(grammar.parseResult.value.$cstNode!, offset!);
         expect(leafnode!.text).toBe(';');
     });
