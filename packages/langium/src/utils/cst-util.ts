@@ -112,7 +112,7 @@ export function findLeafNodeAtOffset(node: CstNode, offset: number): LeafCstNode
         let firstChild = 0;
         let lastChild = node.children.length - 1;
         while (firstChild <= lastChild) {
-            let middleChild = Math.floor((firstChild + lastChild) / 2);
+            const middleChild = Math.floor((firstChild + lastChild) / 2);
             const n = node.children[middleChild];
             if (n.offset > offset) {
                 lastChild = middleChild - 1;
@@ -121,7 +121,6 @@ export function findLeafNodeAtOffset(node: CstNode, offset: number): LeafCstNode
             } else {
                 return findLeafNodeAtOffset(n, offset);
             }
-            middleChild = Math.floor((firstChild + lastChild) / 2);
         }
     }
     return undefined;

@@ -5,14 +5,14 @@
  ******************************************************************************/
 import { createLangiumGrammarServices, EmptyFileSystem, Grammar } from '../../src';
 import { parseHelper } from '../../src/test';
-import * as c from '../../src/utils/cst-util';
+import * as cstUtil from '../../src/utils/cst-util';
 
 const services = createLangiumGrammarServices(EmptyFileSystem);
 const parser = parseHelper<Grammar>(services.grammar);
 
 describe('CST Utils', () => {
 
-    test('Find Leaf Node at Offset', async () => {
+    test('Find Leaf Node at Offset: Main: value=<|>AB;', async () => {
         const text = `
         grammar test
         Main: value=AB;
@@ -21,8 +21,36 @@ describe('CST Utils', () => {
         `;
 
         const grammar = await parser(text);
-        const offset = grammar.parseResult.value.$document?.textDocument.getText().indexOf('AB');
-        const leafnode = c.findLeafNodeAtOffset(grammar.parseResult.value.$cstNode!, offset!);
+        const offset = grammar.parseResult.value.$document!.textDocument.getText().indexOf('AB');
+        const leafnode = cstUtil.findLeafNodeAtOffset(grammar.parseResult.value.$cstNode!, offset!);
         expect(leafnode!.text).toBe('AB');
+    });
+
+    test('Find Leaf Node at Offset: Main: value=A<|>B;', async () => {
+        const text = `
+        grammar test
+        Main: value=AB;
+        terminal fragment Frag: 'B';
+        terminal AB: 'A' Frag;
+        `;
+
+        const grammar = await parser(text);
+        const offset = grammar.parseResult.value.$document!.textDocument.getText().indexOf('AB') + 1;
+        const leafnode = cstUtil.findLeafNodeAtOffset(grammar.parseResult.value.$cstNode!, offset!);
+        expect(leafnode!.text).toBe('AB');
+    });
+
+    test('Find Leaf Node at Offset: Main: value=AB<|>;', async () => {
+        const text = `
+        grammar test
+        Main: value=AB;
+        terminal fragment Frag: 'B';
+        terminal AB: 'A' Frag;
+        `;
+
+        const grammar = await parser(text);
+        const offset = grammar.parseResult.value.$document!.textDocument.getText().indexOf('AB') + 2;
+        const leafnode = cstUtil.findLeafNodeAtOffset(grammar.parseResult.value.$cstNode!, offset!);
+        expect(leafnode!.text).toBe(';');
     });
 });
