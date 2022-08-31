@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import * as langium from 'langium';
-import { getTerminalParts, isCommentTerminal, isRegexToken, isTerminalRule, terminalRegex, CompositeGeneratorNode, NL, processGeneratorNode, TerminalRule } from 'langium';
+import { getTerminalParts, isCommentTerminal, isRegexToken, isTerminalRule, terminalRegex, CompositeGeneratorNode, NL, processGeneratorNode, TerminalRule, escapeRegExp } from 'langium';
 import { LangiumLanguageConfig } from '../../package';
 import { collectKeywords } from '../util';
 
@@ -204,7 +204,7 @@ function prettyPrint(monarchGrammar: MonarchGrammar): string {
         grammarDef.append(NL);
 
     });
-    node.append('};');
+    node.append('};', NL);
 
     return processGeneratorNode(node);
 }
@@ -234,7 +234,7 @@ function prettyPrintLangDef(languageDef: LanguageDefinition, node: CompositeGene
         genLanguageDefEntry('keywords', languageDef.keywords), NL,
         genLanguageDefEntry('operators', languageDef.operators), NL,
         // special case, identify symbols via singular regex
-        'symbols:  /' +  languageDef.symbols.join('|') + '/,'
+        'symbols:  /' +  languageDef.symbols.map(escapeRegExp).join('|') + '/,'
     );
 }
 

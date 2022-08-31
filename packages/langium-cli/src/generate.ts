@@ -194,7 +194,7 @@ export async function generate(config: LangiumConfig, options: GenerateOptions):
             await writeHighlightGrammar(genTmGrammar, textMatePath, options);
         }
 
-        if(languageConfig?.monarch) {
+        if (languageConfig?.monarch) {
             const genMonarchGrammar = generateMonarch(grammar, languageConfig);
             const monarchPath = path.resolve(relPath, languageConfig.monarch.out);
             log('log', options, `Writing monarch grammar to ${chalk.white.bold(monarchPath)}`);
