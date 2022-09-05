@@ -27,13 +27,17 @@ export interface Scope {
      *
      * @param name Name of the cross-reference target as it appears in the source text.
      */
-    getElement(name: string): AstNodeDescription | undefined
+    getElement(name: string): AstNodeDescription | undefined;
 
     /**
      * Create a stream of all elements in the scope. This is used to compute completion proposals to be
      * shown in the editor.
      */
-    getAllElements(): Stream<AstNodeDescription>
+    getAllElements(): Stream<AstNodeDescription>;
+}
+
+export interface ScopeOptions {
+    caseInsensitive?: boolean;
 }
 
 /**
@@ -46,7 +50,7 @@ export class StreamScope implements Scope {
     readonly outerScope?: Scope;
     readonly caseInsensitive?: boolean;
 
-    constructor(elements: Stream<AstNodeDescription>, outerScope?: Scope, options?: { caseInsensitive?: boolean }) {
+    constructor(elements: Stream<AstNodeDescription>, outerScope?: Scope, options?: ScopeOptions) {
         this.elements = elements;
         this.outerScope = outerScope;
         this.caseInsensitive = options?.caseInsensitive;
@@ -97,11 +101,16 @@ export interface ScopeProvider {
 }
 
 export class DefaultScopeProvider implements ScopeProvider {
+
     protected readonly reflection: AstReflection;
+    protected readonly nameProvider: NameProvider;
+    protected readonly descriptions: AstNodeDescriptionProvider;
     protected readonly indexManager: IndexManager;
 
     constructor(services: LangiumServices) {
         this.reflection = services.shared.AstReflection;
+        this.nameProvider = services.references.NameProvider;
+        this.descriptions = services.workspace.AstNodeDescriptionProvider;
         this.indexManager = services.shared.workspace.IndexManager;
     }
 
@@ -130,10 +139,25 @@ export class DefaultScopeProvider implements ScopeProvider {
     }
 
     /**
-     * Create a scope for the given precomputed stream of elements.
+     * Create a scope for the given collection of AST node descriptions.
      */
-    protected createScope(elements: Stream<AstNodeDescription>, outerScope: Scope): Scope {
-        return new StreamScope(elements, outerScope);
+    protected createScope(elements: Iterable<AstNodeDescription>, outerScope?: Scope, options?: ScopeOptions): Scope {
+        return new StreamScope(stream(elements), outerScope, options);
+    }
+
+    /**
+     * Create a scope for the given collection of AST nodes, which need to be transformed into respective
+     * descriptions first. This is done using the `NameProvider` and `AstNodeDescriptionProvider` services.
+     */
+    protected createScopeForNodes(elements: Iterable<AstNode>, outerScope?: Scope, options?: ScopeOptions): Scope {
+        const s = stream(elements).map(e => {
+            const name = this.nameProvider.getName(e);
+            if (name) {
+                return this.descriptions.createDescription(e, name);
+            }
+            return undefined;
+        }).nonNullable();
+        return new StreamScope(s, outerScope, options);
     }
 
     /**
