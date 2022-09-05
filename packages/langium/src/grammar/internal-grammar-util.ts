@@ -84,7 +84,7 @@ export function getActionAtElement(element: ast.AbstractElement): ast.Action | u
 
 export function getTypeName(type: ast.AbstractType | ast.InferredType): string {
     if (ast.isParserRule(type)) {
-        return getExplicitRuleType(type) ?? type.name;
+        return getExplicitRuleTypeName(type) ?? type.name;
     } else if (ast.isInterface(type) || ast.isType(type) || ast.isReturnType(type)) {
         return type.name;
     } else if (ast.isAction(type)) {
@@ -98,12 +98,30 @@ export function getTypeName(type: ast.AbstractType | ast.InferredType): string {
     throw new TypeResolutionError('Cannot get name of Unknown Type', type.$cstNode);
 }
 
+export function getExplicitRuleTypeName(rule: ast.ParserRule): string | undefined {
+    if (rule.inferredType) {
+        return rule.inferredType.name;
+    } else if (rule.dataType) {
+        return rule.name;
+    } else if (rule.returnType) {
+        const refType = rule.returnType.ref;
+        if(refType) {
+            // check if we need to check Action as return type
+            if (ast.isParserRule(refType)) {
+                return refType.name;
+            }  else if(ast.isInterface(refType) || ast.isType(refType)) {
+                return refType.name;
+            }
+        }
+    }
+    return undefined;
+}
+
 export function getExplicitRuleType(rule: ast.ParserRule): string | undefined {
     if (rule.inferredType) {
         return rule.inferredType.name;
     } else if (rule.dataType) {
-        //return rule.dataType;
-        return rule.name;
+        return rule.dataType;
     } else if (rule.returnType) {
         const refType = rule.returnType.ref;
         if(refType) {
