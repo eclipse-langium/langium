@@ -45,3 +45,4 @@ export * from './workspace/documents';
 export * from './workspace/index-manager';
 export * from './workspace/file-system-provider';
 export * from './workspace/workspace-manager';
+export * from './workspace/configuration';

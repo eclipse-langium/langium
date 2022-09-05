@@ -135,6 +135,7 @@ export function startLanguageServer(services: LangiumSharedServices): void {
     addSemanticTokenHandler(connection, services);
     addExecuteCommandHandler(connection, services);
     addSignatureHelpHandler(connection, services);
+    addConfigurationChangeHandler(connection, services);
 
     connection.onInitialize(params => {
         return services.lsp.LanguageServer.initialize(params);
@@ -314,6 +315,13 @@ export function addSemanticTokenHandler(connection: Connection, services: Langiu
         },
         services
     ));
+}
+export function addConfigurationChangeHandler(connection: Connection, services: LangiumSharedServices): void {
+    connection.onDidChangeConfiguration(change => {
+        if (change.settings) {
+            services.workspace.ConfigurationProvider.updateConfiguration(change);
+        }
+    });
 }
 
 export function addExecuteCommandHandler(connection: Connection, services: LangiumSharedServices): void {

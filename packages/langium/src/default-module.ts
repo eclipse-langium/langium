@@ -33,6 +33,7 @@ import { DefaultDocumentValidator } from './validation/document-validator';
 import { ValidationRegistry } from './validation/validation-registry';
 import { DefaultAstNodeDescriptionProvider, DefaultReferenceDescriptionProvider } from './workspace/ast-descriptions';
 import { DefaultAstNodeLocator } from './workspace/ast-node-locator';
+import { DefaultConfigurationProvider } from './workspace/configuration';
 import { DefaultDocumentBuilder } from './workspace/document-builder';
 import { DefaultLangiumDocumentFactory, DefaultLangiumDocuments, DefaultTextDocumentFactory } from './workspace/documents';
 import { FileSystemProvider } from './workspace/file-system-provider';
@@ -132,7 +133,8 @@ export function createDefaultSharedModule(context: DefaultSharedModuleContext): 
             IndexManager: (services) => new DefaultIndexManager(services),
             WorkspaceManager: (services) => new DefaultWorkspaceManager(services),
             FileSystemProvider: (services) => context.fileSystemProvider(services),
-            MutexLock: () => new MutexLock()
+            MutexLock: () => new MutexLock(),
+            ConfigurationProvider: (services) => new DefaultConfigurationProvider(services)
         }
     };
 }

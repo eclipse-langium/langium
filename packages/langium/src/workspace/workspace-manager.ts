@@ -37,6 +37,7 @@ export class DefaultWorkspaceManager implements WorkspaceManager {
     protected readonly documentBuilder: DocumentBuilder;
     protected readonly fileSystemProvider: FileSystemProvider;
     protected readonly mutex: MutexLock;
+    protected folders: WorkspaceFolder[] | null;
 
     constructor(services: LangiumSharedServices) {
         this.serviceRegistry = services.ServiceRegistry;
@@ -46,9 +47,13 @@ export class DefaultWorkspaceManager implements WorkspaceManager {
         this.mutex = services.workspace.MutexLock;
 
         services.lsp.LanguageServer.onInitialize(params => {
+            this.folders = params.workspaceFolders;
+        });
+
+        services.lsp.LanguageServer.onInitialized(_params => {
             // Initialize the workspace even if there are no workspace folders
             // We still want to load additional documents (language library or similar) during initialization
-            this.mutex.lock(token => this.initializeWorkspace(params.workspaceFolders ?? [], token));
+            this.mutex.lock(token => this.initializeWorkspace(this.folders ?? [], token));
         });
     }
 
@@ -66,8 +71,8 @@ export class DefaultWorkspaceManager implements WorkspaceManager {
         // The mutex prevents anything from performing a workspace build until we check the cancellation token
         await this.loadAdditionalDocuments(folders, collector);
         await Promise.all(
-            folders.map(wf => this.getRootFolder(wf))
-                .map(async rf => this.traverseFolder(rf, fileExtensions, collector))
+            folders.map(wf => [wf, this.getRootFolder(wf)] as [WorkspaceFolder, URI])
+                .map(async entry => this.traverseFolder(...entry, fileExtensions, collector))
         );
         // Only after creating all documents do we check whether we need to cancel the initialization
         // The document builder will later pick up on all unprocessed documents
@@ -97,12 +102,12 @@ export class DefaultWorkspaceManager implements WorkspaceManager {
      * Traverse the file system folder identified by the given URI and its subfolders. All
      * contained files that match the file extensions are added to the collector.
      */
-    protected async traverseFolder(folderPath: URI, fileExtensions: string[], collector: (document: LangiumDocument) => void): Promise<void> {
+    protected async traverseFolder(workspaceFolder: WorkspaceFolder, folderPath: URI, fileExtensions: string[], collector: (document: LangiumDocument) => void): Promise<void> {
         const content = await this.fileSystemProvider.readDirectory(folderPath);
         await Promise.all(content.map(async entry => {
-            if (this.includeEntry(entry, fileExtensions)) {
+            if (this.includeEntry(workspaceFolder, entry, fileExtensions)) {
                 if (entry.isDirectory) {
-                    await this.traverseFolder(entry.uri, fileExtensions, collector);
+                    await this.traverseFolder(workspaceFolder, entry.uri, fileExtensions, collector);
                 } else if (entry.isFile) {
                     const document = this.langiumDocuments.getOrCreateDocument(entry.uri);
                     collector(document);
@@ -114,7 +119,7 @@ export class DefaultWorkspaceManager implements WorkspaceManager {
     /**
      * Determine whether the given folder entry shall be included while indexing the workspace.
      */
-    protected includeEntry(entry: FileSystemNode, fileExtensions: string[]): boolean {
+    protected includeEntry(workspaceFolder: WorkspaceFolder, entry: FileSystemNode, fileExtensions: string[]): boolean {
         const name = Utils.basename(entry.uri);
         if (name.startsWith('.')) {
             return false;
