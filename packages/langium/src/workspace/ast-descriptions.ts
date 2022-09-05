@@ -6,10 +6,9 @@
 
 import { CancellationToken } from 'vscode-languageserver';
 import { URI } from 'vscode-uri';
-import { NameProvider } from '../references/naming';
 import { LangiumServices } from '../services';
-import { AstNode, AstNodeDescription } from '../syntax-tree';
-import { getDocument, isLinkingError, streamAst, streamContents, streamReferences } from '../utils/ast-util';
+import { AstNode, AstNodeDescription, ReferenceInfo } from '../syntax-tree';
+import { getDocument, isLinkingError, streamAst, streamReferences } from '../utils/ast-util';
 import { toDocumentSegment } from '../utils/cst-util';
 import { interruptAndCheck } from '../utils/promise-util';
 import { equalURI } from '../utils/uri-utils';
@@ -23,7 +22,7 @@ export interface AstNodeDescriptionProvider {
 
     /**
      * Create a description for the given AST node. This service method is typically used while indexing
-     * the contents of a document and during scope precomputation.
+     * the contents of a document and during scope computation.
      *
      * @param node An AST node.
      * @param name The name to be used to refer to the AST node. Typically this is determined by the
@@ -33,30 +32,14 @@ export interface AstNodeDescriptionProvider {
      */
     createDescription(node: AstNode, name: string, document?: LangiumDocument): AstNodeDescription;
 
-    /**
-     * Create descriptions of all AST nodes that shall be exported from the given document. These descriptions
-     * are gathered by the `IndexManager` and stored in the global index so they can be referenced from other
-     * documents.
-     *
-     * _Note:_ You should not resolve any cross-references in this service method. Cross-reference resolution
-     * depends on the preprocessing phase to be completed, which runs after the initial indexing where this
-     * method is used.
-     *
-     * @param document The document in which to gather exported AST nodes.
-     * @param cancelToken Indicates when to cancel the current operation.
-     * @throws `OperationCanceled` if a user action occurs during execution
-     */
-    createDescriptions(document: LangiumDocument, cancelToken?: CancellationToken): Promise<AstNodeDescription[]>;
 }
 
 export class DefaultAstNodeDescriptionProvider implements AstNodeDescriptionProvider {
 
     protected readonly astNodeLocator: AstNodeLocator;
-    protected readonly nameProvider: NameProvider;
 
     constructor(services: LangiumServices) {
         this.astNodeLocator = services.workspace.AstNodeLocator;
-        this.nameProvider = services.references.NameProvider;
     }
 
     createDescription(node: AstNode, name: string, document: LangiumDocument = getDocument(node)): AstNodeDescription {
@@ -69,22 +52,6 @@ export class DefaultAstNodeDescriptionProvider implements AstNodeDescriptionProv
         };
     }
 
-    async createDescriptions(document: LangiumDocument, cancelToken = CancellationToken.None): Promise<AstNodeDescription[]> {
-        const descr: AstNodeDescription[] = [];
-        const rootNode = document.parseResult.value;
-        const name = this.nameProvider.getName(rootNode);
-        if (name) {
-            descr.push(this.createDescription(rootNode, name, document));
-        }
-        for (const node of streamContents(rootNode)) {
-            await interruptAndCheck(cancelToken);
-            const name = this.nameProvider.getName(node);
-            if (name) {
-                descr.push(this.createDescription(node, name, document));
-            }
-        }
-        return descr;
-    }
 }
 
 /**
@@ -136,23 +103,28 @@ export class DefaultReferenceDescriptionProvider implements ReferenceDescription
         for (const astNode of streamAst(rootNode)) {
             await interruptAndCheck(cancelToken);
             streamReferences(astNode).filter(refInfo => !isLinkingError(refInfo)).forEach(refInfo => {
-                const refAstNodeDescr = refInfo.reference.$nodeDescription;
-                // Do not handle not yet linked references. Consider logging a warning or throw an exception when DocumentState is < than Linked
-                if (refAstNodeDescr) {
-                    const docUri = getDocument(refInfo.container).uri;
-                    const refCstNode = refInfo.reference.$refNode;
-                    const refDescr: ReferenceDescription = {
-                        sourceUri: docUri,
-                        sourcePath: this.nodeLocator.getAstNodePath(refInfo.container),
-                        targetUri: refAstNodeDescr.documentUri,
-                        targetPath: refAstNodeDescr.path,
-                        segment: toDocumentSegment(refCstNode),
-                        local: equalURI(refAstNodeDescr.documentUri, docUri)
-                    };
-                    descr.push(refDescr);
+                const targetNodeDesc = refInfo.reference.$nodeDescription;
+                // Do not handle not yet linked references.
+                // TODO: Consider logging a warning or throw an exception when DocumentState is < than Linked
+                if (targetNodeDesc) {
+                    descr.push(this.createDescription(refInfo, targetNodeDesc));
                 }
             });
         }
         return descr;
     }
+
+    protected createDescription(refInfo: ReferenceInfo, targetNodeDescr: AstNodeDescription): ReferenceDescription {
+        const docUri = getDocument(refInfo.container).uri;
+        const refCstNode = refInfo.reference.$refNode;
+        return {
+            sourceUri: docUri,
+            sourcePath: this.nodeLocator.getAstNodePath(refInfo.container),
+            targetUri: targetNodeDescr.documentUri,
+            targetPath: targetNodeDescr.path,
+            segment: toDocumentSegment(refCstNode),
+            local: equalURI(targetNodeDescr.documentUri, docUri)
+        };
+    }
+
 }

@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { AstNode, AstNodeDescription, DefaultScopeComputation, interruptAndCheck, LangiumDocument, LangiumServices, MultiMap, PrecomputedScopes } from 'langium';
+import { AstNode, AstNodeDescription, DefaultScopeComputation, interruptAndCheck, LangiumDocument, LangiumServices, MultiMap, PrecomputedScopes, streamAllContents } from 'langium';
 import { CancellationToken } from 'vscode-jsonrpc';
 import { DomainModelNameProvider } from './domain-model-naming';
 import { Domainmodel, isType, PackageDeclaration, isPackageDeclaration } from './generated/ast';
@@ -15,7 +15,27 @@ export class DomainModelScopeComputation extends DefaultScopeComputation {
         super(services);
     }
 
-    async computeScope(document: LangiumDocument, cancelToken = CancellationToken.None): Promise<PrecomputedScopes> {
+    /**
+     * Exports only types (`DataType or `Entity`) with their qualified names.
+     */
+    async getExports(document: LangiumDocument, cancelToken = CancellationToken.None): Promise<AstNodeDescription[]> {
+        const descr: AstNodeDescription[] = [];
+        for (const modelNode of streamAllContents(document.parseResult.value)) {
+            await interruptAndCheck(cancelToken);
+            if (isType(modelNode)) {
+                let name = this.nameProvider.getName(modelNode);
+                if (name) {
+                    if (isPackageDeclaration(modelNode.$container)) {
+                        name = (this.nameProvider as DomainModelNameProvider).getQualifiedName(modelNode.$container as PackageDeclaration, name);
+                    }
+                    descr.push(this.descriptions.createDescription(modelNode, name, document));
+                }
+            }
+        }
+        return descr;
+    }
+
+    async computeScopes(document: LangiumDocument, cancelToken = CancellationToken.None): Promise<PrecomputedScopes> {
         const model = document.parseResult.value as Domainmodel;
         const scopes = new MultiMap<AstNode, AstNodeDescription>();
         await this.processContainer(model, scopes, document, cancelToken);

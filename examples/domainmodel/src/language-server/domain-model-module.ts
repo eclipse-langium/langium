@@ -8,7 +8,6 @@ import { LangiumServices, Module, PartialLangiumServices, LangiumSharedServices,
 import { DomainModelGeneratedModule, DomainModelGeneratedSharedModule } from './generated/module';
 import { DomainModelValidationRegistry, DomainModelValidator } from './domain-model-validator';
 import { DomainModelScopeComputation } from './domain-model-scope';
-import { DomainModelDescriptionProvider } from './domain-model-index';
 import { DomainModelNameProvider } from './domain-model-naming';
 import { DomainModelFormatter } from './domain-model-formatter';
 
@@ -28,9 +27,6 @@ export const DomainModelModule: Module<DomainModelServices, PartialLangiumServic
     validation: {
         ValidationRegistry: (services) => new DomainModelValidationRegistry(services),
         DomainModelValidator: () => new DomainModelValidator()
-    },
-    workspace: {
-        AstNodeDescriptionProvider: (services) => new DomainModelDescriptionProvider(services)
     },
     lsp: {
         Formatter: () => new DomainModelFormatter()

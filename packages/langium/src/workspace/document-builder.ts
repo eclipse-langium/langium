@@ -134,7 +134,7 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
         );
         // 2. Compute scopes
         await this.runCancelable(documents, DocumentState.ComputedScopes, cancelToken, doc =>
-            this.computeScope(doc, cancelToken)
+            this.computeScopes(doc, cancelToken)
         );
         // 3. Linking
         await this.runCancelable(documents, DocumentState.Linked, cancelToken, doc =>
@@ -187,9 +187,9 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
      * you may follow the `ref` property of a reference, which triggers lazy resolution. The result is
      * either the respective target AST node or `undefined` in case the target is not in scope.
      */
-    protected async computeScope(document: LangiumDocument, cancelToken: CancellationToken): Promise<void> {
+    protected async computeScopes(document: LangiumDocument, cancelToken: CancellationToken): Promise<void> {
         const scopeComputation = this.serviceRegistry.getServices(document.uri).references.ScopeComputation;
-        document.precomputedScopes = await scopeComputation.computeScope(document, cancelToken);
+        document.precomputedScopes = await scopeComputation.computeScopes(document, cancelToken);
         document.state = DocumentState.ComputedScopes;
     }
 

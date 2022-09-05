@@ -7,7 +7,7 @@
 import { CancellationToken } from 'vscode-jsonrpc';
 import { LangiumServices } from '../services';
 import { AstNode, AstNodeDescription, AstReflection, ReferenceInfo } from '../syntax-tree';
-import { getDocument, streamAllContents } from '../utils/ast-util';
+import { getDocument, streamAllContents, streamContents } from '../utils/ast-util';
 import { MultiMap } from '../utils/collections';
 import { interruptAndCheck } from '../utils/promise-util';
 import { EMPTY_STREAM, Stream, stream } from '../utils/stream';
@@ -169,9 +169,26 @@ export class DefaultScopeProvider implements ScopeProvider {
 }
 
 /**
- * Language-specific service for precomputing the scope for a document. This service is executed as the second phase in the `DocumentBuilder`.
+ * Language-specific service for precomputing the scope for a document. The service methods are executed
+ * as the first and second phase in the `DocumentBuilder`.
  */
 export interface ScopeComputation {
+
+    /**
+     * Create descriptions of all AST nodes that shall be exported from the given document. These descriptions
+     * are gathered by the `IndexManager` and stored in the global index so they can be referenced from other
+     * documents.
+     *
+     * _Note:_ You should not resolve any cross-references in this service method. Cross-reference resolution
+     * depends on the scope computation phase to be completed (`computeScope` method), which runs after the
+     * initial indexing where this method is used.
+     *
+     * @param document The document from which to gather exported AST nodes.
+     * @param cancelToken Indicates when to cancel the current operation.
+     * @throws `OperationCanceled` if a user action occurs during execution
+     */
+    getExports(document: LangiumDocument, cancelToken?: CancellationToken): Promise<AstNodeDescription[]>;
+
     /**
      * Precomputes the scopes for a document. The result is a multimap assigning a set of AST node
      * descriptions to every level of the AST. These data are used by the `ScopeProvider` service
@@ -184,7 +201,8 @@ export interface ScopeComputation {
      * @param cancelToken Indicates when to cancel the current operation.
      * @throws `OperationCanceled` if a user action occurs during execution
      */
-    computeScope(document: LangiumDocument, cancelToken?: CancellationToken): Promise<PrecomputedScopes>;
+    computeScopes(document: LangiumDocument, cancelToken?: CancellationToken): Promise<PrecomputedScopes>;
+
 }
 
 /**
@@ -195,6 +213,7 @@ export interface ScopeComputation {
  * service.
  */
 export class DefaultScopeComputation implements ScopeComputation {
+
     protected readonly nameProvider: NameProvider;
     protected readonly descriptions: AstNodeDescriptionProvider;
 
@@ -203,9 +222,33 @@ export class DefaultScopeComputation implements ScopeComputation {
         this.descriptions = services.workspace.AstNodeDescriptionProvider;
     }
 
-    async computeScope(document: LangiumDocument, cancelToken = CancellationToken.None): Promise<PrecomputedScopes> {
+    async getExports(document: LangiumDocument, cancelToken = CancellationToken.None): Promise<AstNodeDescription[]> {
+        const exports: AstNodeDescription[] = [];
+        const rootNode = document.parseResult.value;
+        this.exportNode(rootNode, exports, document);
+        // Here we navigate only the top-level AST contents - nested nodes are not exported by default
+        for (const node of streamContents(rootNode)) {
+            await interruptAndCheck(cancelToken);
+            this.exportNode(node, exports, document);
+        }
+        return exports;
+    }
+
+    /**
+     * Add a single node to the list of exports if it has a name. Override this method to change how
+     * symbols are exported, e.g. by modifying their exported name.
+     */
+    protected exportNode(node: AstNode, exports: AstNodeDescription[], document: LangiumDocument): void {
+        const name = this.nameProvider.getName(node);
+        if (name) {
+            exports.push(this.descriptions.createDescription(node, name, document));
+        }
+    }
+
+    async computeScopes(document: LangiumDocument, cancelToken = CancellationToken.None): Promise<PrecomputedScopes> {
         const rootNode = document.parseResult.value;
         const scopes = new MultiMap<AstNode, AstNodeDescription>();
+        // Here we navigate the full AST - local scopes shall be available in the whole document
         for (const node of streamAllContents(rootNode)) {
             await interruptAndCheck(cancelToken);
             this.processNode(node, document, scopes);
@@ -213,6 +256,11 @@ export class DefaultScopeComputation implements ScopeComputation {
         return scopes;
     }
 
+    /**
+     * Process a single node during scopes computation. The default implementation makes the node visible
+     * in the subtree of its container (if the node has a name). Override this method to change this,
+     * e.g. by increasing the visibility to a higher level in the AST.
+     */
     protected processNode(node: AstNode, document: LangiumDocument, scopes: PrecomputedScopes): void {
         const container = node.$container;
         if (container) {
@@ -222,4 +270,5 @@ export class DefaultScopeComputation implements ScopeComputation {
             }
         }
     }
+
 }
