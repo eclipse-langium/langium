@@ -126,6 +126,12 @@ export interface Stream<T> extends Iterable<T> {
     filter(predicate: (value: T) => unknown): Stream<T>;
 
     /**
+     * Returns the elements of the stream that are _non-nullable_, which means they are neither `undefined`
+     * nor `null`.
+     */
+    nonNullable(): Stream<NonNullable<T>>;
+
+    /**
      * Calls the specified callback function for all elements in the stream. The return value of the
      * callback function is the accumulated result, and is provided as an argument in the next call to
      * the callback function.
@@ -440,6 +446,10 @@ export class StreamImpl<S, T> implements Stream<T> {
                 return DONE_RESULT;
             }
         );
+    }
+
+    nonNullable(): Stream<NonNullable<T>> {
+        return this.filter(e => e !== undefined && e !== null) as Stream<NonNullable<T>>;
     }
 
     reduce<U>(callbackfn: (previousValue: U | T, currentValue: T) => U, initialValue?: U): U | T | undefined {
