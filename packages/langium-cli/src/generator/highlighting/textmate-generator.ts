@@ -1,13 +1,13 @@
 /******************************************************************************
- * Copyright 2021 TypeFox GmbH
+ * Copyright 2021-2022 TypeFox GmbH
  * This program and the accompanying materials are made available under the
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
 import * as langium from 'langium';
 import { escapeRegExp, getCaseInsensitivePattern, getTerminalParts, isCommentTerminal, isTerminalRule, terminalRegex } from 'langium';
-import { LangiumLanguageConfig } from '../package';
-import { collectKeywords } from './util';
+import { LangiumLanguageConfig } from '../../package';
+import { collectKeywords } from '../util';
 
 export interface TextMateGrammar {
     repository: Repository;

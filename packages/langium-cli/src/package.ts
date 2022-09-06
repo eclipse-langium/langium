@@ -48,6 +48,11 @@ export interface LangiumLanguageConfig {
         /** Output path to syntax highlighting file */
         out: string
     }
+    /** Enable generating a Monarch syntax highlighting file */
+    monarch?: {
+        /** Output path to syntax highlighting file */
+        out: string
+    }
     /** Configure the chevrotain parser for a single language */
     chevrotainParserConfig?: IParserConfig
 }
