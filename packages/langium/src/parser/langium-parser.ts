@@ -208,14 +208,9 @@ export class LangiumParser extends AbstractLangiumParser {
     }
 
     private performSubruleAssignment(result: any, feature: AbstractElement, cstNode: CompositeCstNode | undefined): void {
-        const { assignment, crossRef } = this.getAssignment(feature);
+        const { assignment, isCrossRef } = this.getAssignment(feature);
         if (assignment && cstNode) {
-            // Perform assignment as usual
-            let crossRefId: string | undefined;
-            if (crossRef) {
-                crossRefId = `${this.current.$type}:${assignment.feature}`;
-            }
-            this.assign(assignment.operator, assignment.feature, result, cstNode, crossRefId);
+            this.assign(assignment.operator, assignment.feature, result, cstNode, isCrossRef);
         } else if (!assignment) {
             // If we call a subrule without an assignment
             // We either append the result of the subrule (data type rule)

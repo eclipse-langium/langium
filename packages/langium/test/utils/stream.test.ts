@@ -10,17 +10,17 @@ describe('stream', () => {
 
     test('from Set', () => {
         const stream = s.stream(new Set([1, 2, 3]));
-        expect(stream.toArray()).toMatchObject([1, 2, 3]);
+        expect(stream.toArray()).toEqual([1, 2, 3]);
     });
 
     test('from Map', () => {
         const stream = s.stream(new Map([['a', 1], ['b', 2], ['c', 3]]));
-        expect(stream.toArray()).toMatchObject([['a', 1], ['b', 2], ['c', 3]]);
+        expect(stream.toArray()).toEqual([['a', 1], ['b', 2], ['c', 3]]);
     });
 
     test('from array-like', () => {
         const stream = s.stream({ length: 3, 0: 'a', 1: 'b', 2: 'c' });
-        expect(stream.toArray()).toMatchObject(['a', 'b', 'c']);
+        expect(stream.toArray()).toEqual(['a', 'b', 'c']);
     });
 
     test('from multiple collections', () => {
@@ -31,7 +31,7 @@ describe('stream', () => {
             [],
             ['foo', 123]
         );
-        expect(stream.toArray()).toMatchObject([1, 2, 3, 'a', 'b', 'c', 'foo', 123]);
+        expect(stream.toArray()).toEqual([1, 2, 3, 'a', 'b', 'c', 'foo', 123]);
     });
 
 });
@@ -68,12 +68,12 @@ describe('Stream.toSet', () => {
 
     test('empty stream', () => {
         const stream = s.EMPTY_STREAM;
-        expect(stream.toSet()).toMatchObject(new Set());
+        expect(stream.toSet()).toEqual(new Set());
     });
 
     test('non-empty array', () => {
         const stream = s.stream([1, 2, 3]);
-        expect(stream.toSet()).toMatchObject(new Set([1, 2, 3]));
+        expect(stream.toSet()).toEqual(new Set([1, 2, 3]));
     });
 
 });
@@ -82,12 +82,12 @@ describe('Stream.toMap', () => {
 
     test('empty stream', () => {
         const stream = s.EMPTY_STREAM;
-        expect(stream.toMap()).toMatchObject(new Map());
+        expect(stream.toMap()).toEqual(new Map());
     });
 
     test('key and value unmapped', () => {
         const stream = s.stream([{ a: 1, b: 'foo' }, { a: 2, b: 'bar' }, { a: 3, b: 'baz' }]);
-        expect(stream.toMap()).toMatchObject(new Map([
+        expect(stream.toMap()).toEqual(new Map([
             [{ a: 1, b: 'foo' }, { a: 1, b: 'foo' }],
             [{ a: 2, b: 'bar' }, { a: 2, b: 'bar' }],
             [{ a: 3, b: 'baz' }, { a: 3, b: 'baz' }]
@@ -96,7 +96,7 @@ describe('Stream.toMap', () => {
 
     test('key mapped', () => {
         const stream = s.stream([{ a: 1, b: 'foo' }, { a: 2, b: 'bar' }, { a: 3, b: 'baz' }]);
-        expect(stream.toMap(e => e.b)).toMatchObject(new Map([
+        expect(stream.toMap(e => e.b)).toEqual(new Map([
             ['foo', { a: 1, b: 'foo' }],
             ['bar', { a: 2, b: 'bar' }],
             ['baz', { a: 3, b: 'baz' }]
@@ -105,7 +105,7 @@ describe('Stream.toMap', () => {
 
     test('value mapped', () => {
         const stream = s.stream([{ a: 1, b: 'foo' }, { a: 2, b: 'bar' }, { a: 3, b: 'baz' }]);
-        expect(stream.toMap(undefined, e => e.a)).toMatchObject(new Map([
+        expect(stream.toMap(undefined, e => e.a)).toEqual(new Map([
             [{ a: 1, b: 'foo' }, 1],
             [{ a: 2, b: 'bar' }, 2],
             [{ a: 3, b: 'baz' }, 3]
@@ -114,7 +114,7 @@ describe('Stream.toMap', () => {
 
     test('key and value mapped', () => {
         const stream = s.stream([{ a: 1, b: 'foo' }, { a: 2, b: 'bar' }, { a: 3, b: 'baz' }]);
-        expect(stream.toMap(e => e.b, e => e.a)).toMatchObject(new Map([
+        expect(stream.toMap(e => e.b, e => e.a)).toEqual(new Map([
             ['foo', 1],
             ['bar', 2],
             ['baz', 3]
@@ -129,26 +129,26 @@ describe('Stream.concat', () => {
         const a = s.stream(['a']);
         const b = s.stream(['b']);
         const c = s.stream(['c']);
-        expect(a.concat(b).concat(c).toArray()).toMatchObject(['a', 'b', 'c']);
+        expect(a.concat(b).concat(c).toArray()).toEqual(['a', 'b', 'c']);
     });
 
     test('nested concatenation', () => {
         const a = s.stream(['a']);
         const b = s.stream(['b']);
         const c = s.stream(['c']);
-        expect(a.concat(b.concat(c)).toArray()).toMatchObject(['a', 'b', 'c']);
+        expect(a.concat(b.concat(c)).toArray()).toEqual(['a', 'b', 'c']);
     });
 
     test('empty streams', () => {
         const a = s.EMPTY_STREAM;
         const b = s.EMPTY_STREAM;
-        expect(a.concat(b).toArray()).toMatchObject([]);
+        expect(a.concat(b).toArray()).toEqual([]);
     });
 
     test('empty stream and array', () => {
         const a = s.EMPTY_STREAM;
         const b = s.stream(['b']);
-        expect(a.concat(b).toArray()).toMatchObject(['b']);
+        expect(a.concat(b).toArray()).toEqual(['b']);
     });
 
 });
@@ -292,7 +292,7 @@ describe('Stream.map', () => {
 
     test('shift numbers', () => {
         const stream = s.stream([1, 2, 3]);
-        expect(stream.map(value => value + 1).toArray()).toMatchObject([2, 3, 4]);
+        expect(stream.map(value => value + 1).toArray()).toEqual([2, 3, 4]);
     });
 
 });
@@ -301,7 +301,7 @@ describe('Stream.filter', () => {
 
     test('compare numbers', () => {
         const stream = s.stream([1, 2, 3]);
-        expect(stream.filter(value => value >= 2).toArray()).toMatchObject([2, 3]);
+        expect(stream.filter(value => value >= 2).toArray()).toEqual([2, 3]);
     });
 
     test('type inference', () => {
@@ -335,7 +335,7 @@ describe('Stream.reduce', () => {
 
     test('compose array', () => {
         const stream = s.stream([1, 2, 3]);
-        expect(stream.reduce<number[]>((array, value) => array.concat([value]), [])).toMatchObject([1, 2, 3]);
+        expect(stream.reduce<number[]>((array, value) => array.concat([value]), [])).toEqual([1, 2, 3]);
     });
 
 });
@@ -359,7 +359,7 @@ describe('Stream.reduceRight', () => {
 
     test('compose array', () => {
         const stream = s.stream([1, 2, 3]);
-        expect(stream.reduceRight<number[]>((array, value) => array.concat([value]), [])).toMatchObject([3, 2, 1]);
+        expect(stream.reduceRight<number[]>((array, value) => array.concat([value]), [])).toEqual([3, 2, 1]);
     });
 
 });
@@ -436,12 +436,12 @@ describe('Stream.flatMap', () => {
 
     test('number stream', () => {
         const stream = s.stream([1, 2, 3]);
-        expect(stream.flatMap(value => [value]).toArray()).toMatchObject([1, 2, 3]);
+        expect(stream.flatMap(value => [value]).toArray()).toEqual([1, 2, 3]);
     });
 
     test('mixed number / array property', () => {
         const stream = s.stream([{ p: [1, 2] }, { p: 3 }, { p: [4, 5] }]);
-        expect(stream.flatMap(o => o.p).toArray()).toMatchObject([1, 2, 3, 4, 5]);
+        expect(stream.flatMap(o => o.p).toArray()).toEqual([1, 2, 3, 4, 5]);
     });
 
 });
@@ -451,23 +451,23 @@ describe('Stream.flat', () => {
     test('correct type with arrays', () => {
         const stream = s.stream([[1, 2], [[3, 4]]]);
         const flattened: s.Stream<number> = stream.flat(2);
-        expect(flattened.toArray()).toMatchObject([1, 2, 3, 4]);
+        expect(flattened.toArray()).toEqual([1, 2, 3, 4]);
     });
 
     test('correct type with streams', () => {
         const stream = s.stream([s.stream([1, 2]), s.stream([s.stream([3, 4])])]);
         const flattened: s.Stream<number> = stream.flat(2);
-        expect(flattened.toArray()).toMatchObject([1, 2, 3, 4]);
+        expect(flattened.toArray()).toEqual([1, 2, 3, 4]);
     });
 
     test('one level', () => {
         const stream = s.stream([1, [2, [3, [4, [5]]]]]);
-        expect(stream.flat().toArray()).toMatchObject([1, 2, [3, [4, [5]]]]);
+        expect(stream.flat().toArray()).toEqual([1, 2, [3, [4, [5]]]]);
     });
 
     test('three levels', () => {
         const stream = s.stream([1, [2, [3, [4, [5]]]]]);
-        expect(stream.flat(3).toArray()).toMatchObject([1, 2, 3, 4, [5]]);
+        expect(stream.flat(3).toArray()).toEqual([1, 2, 3, 4, [5]]);
     });
 
 });
@@ -490,17 +490,17 @@ describe('Stream.tail', () => {
 
     test('empty stream', () => {
         const stream = s.EMPTY_STREAM;
-        expect(stream.tail().toArray()).toMatchObject([]);
+        expect(stream.tail().toArray()).toEqual([]);
     });
 
     test('number stream', () => {
         const stream = s.stream([1, 2, 3]);
-        expect(stream.tail().toArray()).toMatchObject([2, 3]);
+        expect(stream.tail().toArray()).toEqual([2, 3]);
     });
 
     test('skip three elements', () => {
         const stream = s.stream([1, 2, 3, 4, 5]);
-        expect(stream.tail(3).toArray()).toMatchObject([4, 5]);
+        expect(stream.tail(3).toArray()).toEqual([4, 5]);
     });
 
 });
@@ -509,12 +509,12 @@ describe('Stream.limit', () => {
 
     test('size zero', () => {
         const stream = s.stream([1, 2, 3]);
-        expect(stream.limit(0).toArray()).toMatchObject([]);
+        expect(stream.limit(0).toArray()).toEqual([]);
     });
 
     test('size three', () => {
         const stream = s.stream([1, 2, 3, 4, 5]);
-        expect(stream.limit(3).toArray()).toMatchObject([1, 2, 3]);
+        expect(stream.limit(3).toArray()).toEqual([1, 2, 3]);
     });
 
 });
@@ -523,54 +523,81 @@ describe('Stream.distinct', () => {
 
     test('empty stream', () => {
         const stream = s.EMPTY_STREAM;
-        expect(stream.distinct().toArray()).toMatchObject([]);
+        expect(stream.distinct().toArray()).toEqual([]);
     });
 
     test('different items stay the same', () => {
         const stream = s.stream(['a', 'b', 'c']);
-        expect(stream.distinct().toArray()).toMatchObject(['a', 'b', 'c']);
+        expect(stream.distinct().toArray()).toEqual(['a', 'b', 'c']);
     });
 
     test('different items with different types stay the same', () => {
         const stream = s.stream(['a', 1, true]);
-        expect(stream.distinct().toArray()).toMatchObject(['a', 1, true]);
+        expect(stream.distinct().toArray()).toEqual(['a', 1, true]);
     });
 
     test('duplicate entries are removed', () => {
         const stream = s.stream(['a', 'a', 'b']);
-        expect(stream.distinct().toArray()).toMatchObject(['a', 'b']);
+        expect(stream.distinct().toArray()).toEqual(['a', 'b']);
     });
 
     test('duplicate entries of different types stay the same', () => {
         const stream = s.stream(['1', 1, '2']);
-        expect(stream.distinct().toArray()).toMatchObject(['1', 1, '2']);
+        expect(stream.distinct().toArray()).toEqual(['1', 1, '2']);
     });
 
     test('distinct empty objects stay the same', () => {
         const a = {};
         const b = {};
         const stream = s.stream([a, b]);
-        expect(stream.distinct().toArray()).toMatchObject([a, b]);
+        expect(stream.distinct().toArray()).toEqual([a, b]);
     });
 
     test('same objects are removed', () => {
         const a = {};
         const stream = s.stream([a, a]);
-        expect(stream.distinct().toArray()).toMatchObject([a]);
+        expect(stream.distinct().toArray()).toEqual([a]);
     });
 
     test('distinct objects by value are removed', () => {
         const a = { value: 'a' };
         const b = { value: 'a' };
         const stream = s.stream([a, b]);
-        expect(stream.distinct(e => e.value).toArray()).toMatchObject([a]);
+        expect(stream.distinct(e => e.value).toArray()).toEqual([a]);
     });
 
     test('distinct objects by value stay the same', () => {
         const a = { value: 'a' };
         const b = { value: 'b' };
         const stream = s.stream([a, b]);
-        expect(stream.distinct(e => e.value).toArray()).toMatchObject([a, b]);
+        expect(stream.distinct(e => e.value).toArray()).toEqual([a, b]);
+    });
+
+});
+
+describe('Stream.exclude', () => {
+
+    test('empty stream', () => {
+        const stream = s.EMPTY_STREAM;
+        expect(stream.exclude(['A', 'B']).toArray()).toEqual([]);
+    });
+
+    test('should exclude overlapping string values', () => {
+        const a = s.stream(['a', 'b']);
+        const b = s.stream(['b', 'c']);
+        expect(a.exclude(b).toArray()).toEqual(['a']);
+    });
+
+    test('should not change on non-overlapping values', () => {
+        const a = s.stream(['a', 'b']);
+        const b = s.stream(['c', 'd']);
+        expect(a.exclude(b).toArray()).toEqual(['a', 'b']);
+    });
+
+    test('should exclude overlapping objects by key', () => {
+        const a = s.stream([{ value: 'a' }, { value: 'b' }]);
+        const b = s.stream([{ value: 'b' }, { value: 'c' }]);
+        expect(a.exclude(b, e => e.value).toArray()).toEqual([{ value: 'a' }]);
     });
 
 });
