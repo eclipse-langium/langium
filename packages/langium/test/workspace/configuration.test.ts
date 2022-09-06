@@ -13,7 +13,7 @@ describe('ConfigurationProvider', () => {
     const langId = grammarServices.LanguageMetaData.languageId;
     const configs = grammarServices.shared.workspace.ConfigurationProvider;
     beforeEach(() => {
-        (configs as unknown as any).settings = {};
+        (configs as any).settings = {};
     });
 
     test('get missing settings', async () => {

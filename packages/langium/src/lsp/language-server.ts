@@ -66,8 +66,8 @@ export class DefaultLanguageServer implements LanguageServer {
         const hasSemanticTokensProvider = languages.some(e => e.lsp.SemanticTokenProvider !== undefined);
         const commandNames = this.services.lsp.ExecuteCommandHandler?.commands;
         const signatureHelpOptions = mergeSignatureHelpOptions(languages.map(e => e.lsp.SignatureHelp?.signatureHelpOptions));
-        const hasGoToTypeProvider = languages.some(e => e.lsp.GoToTypeResolver !== undefined);
-        const hasGoToImplementationProvider = languages.some(e => e.lsp.GoToImplementationResolver !== undefined);
+        const hasGoToTypeProvider = languages.some(e => e.lsp.GoToTypeProvider !== undefined);
+        const hasGoToImplementationProvider = languages.some(e => e.lsp.GoToImplementationProvider !== undefined);
 
         const result: InitializeResult = {
             capabilities: {
@@ -191,7 +191,7 @@ export function addDiagnosticsHandler(connection: Connection, services: LangiumS
 export function addCompletionHandler(connection: Connection, services: LangiumSharedServices): void {
     connection.onCompletion(createRequestHandler(
         (services, document, params, cancelToken) => {
-            return services.lsp.completion.CompletionProvider.getCompletion(document, params, cancelToken);
+            return services.lsp.completion.CompletionProvider?.getCompletion(document, params, cancelToken);
         },
         services
     ));
@@ -199,7 +199,7 @@ export function addCompletionHandler(connection: Connection, services: LangiumSh
 
 export function addFindReferencesHandler(connection: Connection, services: LangiumSharedServices): void {
     connection.onReferences(createRequestHandler(
-        (services, document, params, cancelToken) => services.lsp.ReferenceFinder.findReferences(document, params, cancelToken),
+        (services, document, params, cancelToken) => services.lsp.ReferenceFinder?.findReferences(document, params, cancelToken),
         services
     ));
 }
@@ -213,49 +213,49 @@ export function addCodeActionHandler(connection: Connection, services: LangiumSh
 
 export function addDocumentSymbolHandler(connection: Connection, services: LangiumSharedServices): void {
     connection.onDocumentSymbol(createRequestHandler(
-        (services, document, params, cancelToken) => services.lsp.DocumentSymbolProvider.getSymbols(document, params, cancelToken),
+        (services, document, params, cancelToken) => services.lsp.DocumentSymbolProvider?.getSymbols(document, params, cancelToken),
         services
     ));
 }
 
 export function addGotoDefinitionHandler(connection: Connection, services: LangiumSharedServices): void {
     connection.onDefinition(createRequestHandler(
-        (services, document, params, cancelToken) => services.lsp.GoToResolver.goToDefinition(document, params, cancelToken),
+        (services, document, params, cancelToken) => services.lsp.GoToDefinitionProvider?.goToDefinition(document, params, cancelToken),
         services
     ));
 }
 
 export function addGoToTypeDefinitionHandler(connection: Connection, services: LangiumSharedServices): void {
     connection.onTypeDefinition(createRequestHandler(
-        (services, document, params, cancelToken) => services.lsp.GoToTypeResolver?.goToTypeDefinition(document, params, cancelToken),
+        (services, document, params, cancelToken) => services.lsp.GoToTypeProvider?.goToTypeDefinition(document, params, cancelToken),
         services
     ));
 }
 
 export function addGoToImplementationHandler(connection: Connection, services: LangiumSharedServices) {
     connection.onImplementation(createRequestHandler(
-        (services, document, params, cancelToken) => services.lsp.GoToImplementationResolver?.goToImplementation(document, params, cancelToken),
+        (services, document, params, cancelToken) => services.lsp.GoToImplementationProvider?.goToImplementation(document, params, cancelToken),
         services
     ));
 }
 
 export function addDocumentHighlightsHandler(connection: Connection, services: LangiumSharedServices): void {
     connection.onDocumentHighlight(createRequestHandler(
-        (services, document, params, cancelToken) => services.lsp.DocumentHighlighter.findHighlights(document, params, cancelToken),
+        (services, document, params, cancelToken) => services.lsp.DocumentHighlighter?.findHighlights(document, params, cancelToken),
         services
     ));
 }
 
 export function addHoverHandler(connection: Connection, services: LangiumSharedServices): void {
     connection.onHover(createRequestHandler(
-        (services, document, params, cancelToken) => services.lsp.HoverProvider.getHoverContent(document, params, cancelToken),
+        (services, document, params, cancelToken) => services.lsp.HoverProvider?.getHoverContent(document, params, cancelToken),
         services
     ));
 }
 
 export function addFoldingRangeHandler(connection: Connection, services: LangiumSharedServices): void {
     connection.onFoldingRanges(createRequestHandler(
-        (services, document, params, cancelToken) => services.lsp.FoldingRangeProvider.getFoldingRanges(document, params, cancelToken),
+        (services, document, params, cancelToken) => services.lsp.FoldingRangeProvider?.getFoldingRanges(document, params, cancelToken),
         services
     ));
 }
@@ -277,11 +277,11 @@ export function addFormattingHandler(connection: Connection, services: LangiumSh
 
 export function addRenameHandler(connection: Connection, services: LangiumSharedServices): void {
     connection.onRenameRequest(createRequestHandler(
-        (services, document, params, cancelToken) => services.lsp.RenameHandler.renameElement(document, params, cancelToken),
+        (services, document, params, cancelToken) => services.lsp.RenameHandler?.renameElement(document, params, cancelToken),
         services
     ));
     connection.onPrepareRename(createRequestHandler(
-        (services, document, params, cancelToken) => services.lsp.RenameHandler.prepareRename(document, params, cancelToken),
+        (services, document, params, cancelToken) => services.lsp.RenameHandler?.prepareRename(document, params, cancelToken),
         services
     ));
 }

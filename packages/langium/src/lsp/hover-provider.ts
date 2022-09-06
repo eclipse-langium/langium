@@ -44,7 +44,7 @@ export abstract class AstNodeHoverProvider implements HoverProvider {
             if (cstNode && cstNode.offset + cstNode.length > offset) {
                 const targetNode = this.references.findDeclaration(cstNode);
                 if (targetNode) {
-                    return this.getAstNodeHoverContent(targetNode.element);
+                    return this.getAstNodeHoverContent(targetNode);
                 }
             }
         }

@@ -13,7 +13,7 @@ import { RuleInterpreter } from './lsp/completion/rule-interpreter';
 import { DefaultDocumentHighlighter } from './lsp/document-highlighter';
 import { DefaultDocumentSymbolProvider } from './lsp/document-symbol-provider';
 import { DefaultFoldingRangeProvider } from './lsp/folding-range-provider';
-import { DefaultGoToResolverProvider } from './lsp/goto';
+import { DefaultGoToDefinitionProvider } from './lsp/go-to-definition';
 import { MultilineCommentHoverProvider } from './lsp/hover-provider';
 import { DefaultLanguageServer } from './lsp/language-server';
 import { DefaultReferenceFinder } from './lsp/reference-finder';
@@ -68,7 +68,7 @@ export function createDefaultModule(context: DefaultModuleContext): Module<Langi
             HoverProvider: (services) => new MultilineCommentHoverProvider(services),
             FoldingRangeProvider: (services) => new DefaultFoldingRangeProvider(services),
             ReferenceFinder: (services) => new DefaultReferenceFinder(services),
-            GoToResolver: (services) => new DefaultGoToResolverProvider(services),
+            GoToDefinitionProvider: (services) => new DefaultGoToDefinitionProvider(services),
             DocumentHighlighter: (services) => new DefaultDocumentHighlighter(services),
             RenameHandler: (services) => new DefaultRenameHandler(services)
         },

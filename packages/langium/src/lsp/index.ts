@@ -12,7 +12,7 @@ export * from './document-highlighter';
 export * from './document-symbol-provider';
 export * from './execute-command-handler';
 export * from './folding-range-provider';
-export * from './goto';
+export * from './go-to-definition';
 export * from './hover-provider';
 export * from './formatter';
 export * from './language-server';

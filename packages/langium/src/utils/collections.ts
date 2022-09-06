@@ -142,10 +142,7 @@ export class MultiMap<K, V> {
      * Returns a stream of values in the map.
      */
     values(): Stream<V> {
-        return stream(this.map.values())
-            // TODO Type cast can be removed after the return type of `flat` is fixed
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            .flat() as any;
+        return stream(this.map.values()).flat();
     }
 
     /**

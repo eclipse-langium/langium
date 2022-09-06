@@ -15,14 +15,14 @@ import { LangiumDocument } from '../workspace/documents';
 /**
  * Language-specific service for handling go to implementation requests.
  */
-export interface GoToImplementationProvider {
+export interface ImplementationProvider {
     /**
      * Handles a go to implementation request.
      */
     goToImplementation(document: LangiumDocument, params: ImplementationParams, cancelToken?: CancellationToken): MaybePromise<LocationLink[] | undefined>;
 }
 
-export abstract class AbstractGoToImplementationProvider implements GoToImplementationProvider {
+export abstract class AbstractGoToImplementationProvider implements ImplementationProvider {
     protected readonly references: References;
 
     constructor(services: LangiumServices) {
@@ -36,7 +36,7 @@ export abstract class AbstractGoToImplementationProvider implements GoToImplemen
             if (sourceCstNode) {
                 const nodeDeclaration = this.references.findDeclaration(sourceCstNode);
                 if (nodeDeclaration) {
-                    return this.collectGoToImplementationLocationLinks(nodeDeclaration.element, cancelToken);
+                    return this.collectGoToImplementationLocationLinks(nodeDeclaration, cancelToken);
                 }
             }
         }

@@ -49,7 +49,7 @@ export class DefaultDocumentHighlighter implements DocumentHighlighter {
         if (!selectedNode) {
             return undefined;
         }
-        const targetAstNode = this.references.findDeclaration(selectedNode)?.element;
+        const targetAstNode = this.references.findDeclaration(selectedNode);
         if (targetAstNode) {
             const refs: DocumentHighlight[] = [];
             const includeDeclaration = equalURI(getDocument(targetAstNode).uri, document.uri);

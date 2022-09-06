@@ -18,7 +18,7 @@ import { LangiumDocument } from '../workspace/documents';
 /**
  * Language-specific service for handling go to definition requests.
  */
-export interface GoToResolver {
+export interface GoToDefinitionProvider {
     /**
      * Handle a go to definition request.
      *
@@ -34,7 +34,7 @@ export interface GoToLink {
     targetDocument: LangiumDocument
 }
 
-export class DefaultGoToResolverProvider implements GoToResolver {
+export class DefaultGoToDefinitionProvider implements GoToDefinitionProvider {
 
     protected readonly nameProvider: NameProvider;
     protected readonly references: References;
@@ -72,7 +72,7 @@ export class DefaultGoToResolverProvider implements GoToResolver {
     }
 
     protected findLink(source: CstNode): GoToLink | undefined {
-        const target = this.references.findDeclaration(source);
+        const target = this.references.findDeclarationNode(source);
         if (target?.element) {
             const targetDocument = getDocument(target.element);
             if (target && targetDocument) {

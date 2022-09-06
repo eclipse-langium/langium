@@ -47,7 +47,7 @@ export function expectSymbols(services: LangiumServices, expectEqual: ExpectFunc
     return async input => {
         const document = await parseDocument(services, input.text);
         const symbolProvider = services.lsp.DocumentSymbolProvider;
-        const symbols = await symbolProvider.getSymbols(document, textDocumentParams(document));
+        const symbols = await symbolProvider?.getSymbols(document, textDocumentParams(document)) ?? [];
         expectEqual(symbols.length, input.expectedSymbols.length);
         for (let i = 0; i < input.expectedSymbols.length; i++) {
             const expected = input.expectedSymbols[i];
@@ -66,7 +66,7 @@ export function expectFoldings(services: LangiumServices, expectEqual: ExpectFun
         const { output, ranges } = replaceIndices(input);
         const document = await parseDocument(services, output);
         const foldingRangeProvider = services.lsp.FoldingRangeProvider;
-        const foldings = await foldingRangeProvider.getFoldingRanges(document, textDocumentParams(document));
+        const foldings = await foldingRangeProvider?.getFoldingRanges(document, textDocumentParams(document)) ?? [];
         foldings.sort((a, b) => a.startLine - b.startLine);
         expectEqual(foldings.length, ranges.length);
         for (let i = 0; i < ranges.length; i++) {
@@ -93,7 +93,7 @@ export function expectCompletion(services: LangiumServices, expectEqual: ExpectF
         const document = await parseDocument(services, output);
         const completionProvider = services.lsp.completion.CompletionProvider;
         const offset = indices[expectedCompletion.index];
-        const completions = await completionProvider.getCompletion(document, textDocumentPositionParams(document, offset));
+        const completions = await completionProvider?.getCompletion(document, textDocumentPositionParams(document, offset)) ?? { items: [] };
         const items = completions.items.sort((a, b) => a.sortText?.localeCompare(b.sortText || '0') || 0);
         expectEqual(items.length, expectedCompletion.expectedItems.length);
         for (let i = 0; i < expectedCompletion.expectedItems.length; i++) {
@@ -117,8 +117,8 @@ export function expectGoToDefinition(services: LangiumServices, expectEqual: Exp
     return async expectedGoToDefinition => {
         const { output, indices, ranges } = replaceIndices(expectedGoToDefinition);
         const document = await parseDocument(services, output);
-        const goToResolver = services.lsp.GoToResolver;
-        const locationLink = await goToResolver.goToDefinition(document, textDocumentPositionParams(document, indices[expectedGoToDefinition.index])) ?? [];
+        const goToResolver = services.lsp.GoToDefinitionProvider;
+        const locationLink = await goToResolver?.goToDefinition(document, textDocumentPositionParams(document, indices[expectedGoToDefinition.index])) ?? [];
         const expectedRange: Range = {
             start: document.textDocument.positionAt(ranges[expectedGoToDefinition.rangeIndex][0]),
             end: document.textDocument.positionAt(ranges[expectedGoToDefinition.rangeIndex][1])
@@ -144,7 +144,7 @@ export function expectFindReferences(services: LangiumServices): (expectedFindRe
         const referenceFinder = services.lsp.ReferenceFinder;
         indices.forEach(async (index) => {
             const referenceParameters = referenceParams(document, index, expectedFindReferences.includeDeclaration);
-            const references = await referenceFinder.findReferences(document, referenceParameters);
+            const references = await referenceFinder?.findReferences(document, referenceParameters) ?? [];
 
             expect(references.length).toBe(expectedRanges.length);
             references.forEach(ref => {
@@ -172,7 +172,7 @@ export function expectHover(services: LangiumServices, cb: ExpectFunction): (exp
         const { output, indices } = replaceIndices(expectedHover);
         const document = await parseDocument(services, output);
         const hoverProvider = services.lsp.HoverProvider;
-        const hover = await hoverProvider.getHoverContent(document, textDocumentPositionParams(document, indices[expectedHover.index]));
+        const hover = await hoverProvider?.getHoverContent(document, textDocumentPositionParams(document, indices[expectedHover.index]));
         const hoverContent = hover && MarkupContent.is(hover.contents) ? hover.contents.value : undefined;
         cb(hoverContent, expectedHover.hover);
     };

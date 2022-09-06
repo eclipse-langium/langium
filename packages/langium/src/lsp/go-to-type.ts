@@ -15,14 +15,14 @@ import { LangiumDocument } from '../workspace/documents';
 /**
  * Language-specific service for handling go to type requests.
  */
-export interface GoToTypeProvider {
+export interface GoToTypeDefinitionProvider {
     /**
      * Handles a go to type definition request.
      */
     goToTypeDefinition(document: LangiumDocument, params: TypeDefinitionParams, cancelToken?: CancellationToken): MaybePromise<LocationLink[] | undefined>;
 }
 
-export abstract class AbstractGoToTypeProvider implements GoToTypeProvider {
+export abstract class AbstractGoToTypeDefinitionProvider implements GoToTypeDefinitionProvider {
 
     protected readonly references: References;
 
@@ -37,7 +37,7 @@ export abstract class AbstractGoToTypeProvider implements GoToTypeProvider {
             if (sourceCstNode) {
                 const nodeDeclaration = this.references.findDeclaration(sourceCstNode);
                 if (nodeDeclaration) {
-                    return this.collectGoToTypeLocationLinks(nodeDeclaration.element, cancelToken);
+                    return this.collectGoToTypeLocationLinks(nodeDeclaration, cancelToken);
                 }
             }
         }

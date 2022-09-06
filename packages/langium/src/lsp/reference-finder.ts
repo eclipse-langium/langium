@@ -57,7 +57,7 @@ export class DefaultReferenceFinder implements ReferenceFinder {
 
     protected getReferences(selectedNode: LeafCstNode, params: ReferenceParams, document: LangiumDocument<AstNode>): Location[] {
         const refs: Location[] = [];
-        const targetAstNode = this.references.findDeclaration(selectedNode)?.element;
+        const targetAstNode = this.references.findDeclaration(selectedNode);
         if (targetAstNode) {
             const options = { includeDeclaration: params.context.includeDeclaration };
             this.references.findReferences(targetAstNode, options).forEach(reference => {
