@@ -18,7 +18,7 @@ import { GrammarConfig } from '../grammar/grammar-config';
 /**
  * Language-specific service for handling find references requests.
  */
-export interface ReferenceFinder {
+export interface ReferencesProvider {
     /**
      * Handle a find references request.
      *
@@ -28,7 +28,7 @@ export interface ReferenceFinder {
     findReferences(document: LangiumDocument, params: ReferenceParams, cancelToken?: CancellationToken): MaybePromise<Location[]>;
 }
 
-export class DefaultReferenceFinder implements ReferenceFinder {
+export class DefaultReferencesProvider implements ReferencesProvider {
     protected readonly nameProvider: NameProvider;
     protected readonly references: References;
     protected readonly grammarConfig: GrammarConfig;

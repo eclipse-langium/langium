@@ -58,16 +58,28 @@ export class DefaultLanguageServer implements LanguageServer {
         this.services.ServiceRegistry.all.forEach(language => eagerLoad(language));
     }
 
+    protected hasService(callback: (language: LangiumServices) => object | undefined): boolean {
+        return this.services.ServiceRegistry.all.some(language => callback(language) !== undefined);
+    }
+
     protected buildInitializeResult(_params: InitializeParams): InitializeResult {
         const languages = this.services.ServiceRegistry.all;
-        const hasFormattingService = languages.some(e => e.lsp.Formatter !== undefined);
+        const hasFormattingService = this.hasService(e => e.lsp.Formatter);
         const formattingOnTypeOptions = languages.map(e => e.lsp.Formatter?.formatOnTypeOptions).find(e => !!e);
-        const hasCodeActionProvider = languages.some(e => e.lsp.CodeActionProvider !== undefined);
-        const hasSemanticTokensProvider = languages.some(e => e.lsp.SemanticTokenProvider !== undefined);
+        const hasCodeActionProvider = this.hasService(e => e.lsp.CodeActionProvider);
+        const hasSemanticTokensProvider = this.hasService(e => e.lsp.SemanticTokenProvider);
         const commandNames = this.services.lsp.ExecuteCommandHandler?.commands;
         const signatureHelpOptions = mergeSignatureHelpOptions(languages.map(e => e.lsp.SignatureHelp?.signatureHelpOptions));
-        const hasGoToTypeProvider = languages.some(e => e.lsp.TypeProvider !== undefined);
-        const hasGoToImplementationProvider = languages.some(e => e.lsp.ImplementationProvider !== undefined);
+        const hasGoToTypeProvider = this.hasService(e => e.lsp.TypeProvider);
+        const hasGoToImplementationProvider = this.hasService(e => e.lsp.ImplementationProvider);
+        const hasCompletionProvider = this.hasService(e => e.lsp.completion.CompletionProvider);
+        const hasReferencesProvider = this.hasService(e => e.lsp.ReferencesProvider);
+        const hasDocumentSymbolProvider = this.hasService(e => e.lsp.DocumentSymbolProvider);
+        const hasDefinitionProvider = this.hasService(e => e.lsp.DefinitionProvider);
+        const hasDocumentHighlightProvider = this.hasService(e => e.lsp.DocumentHighlightProvider);
+        const hasFoldingRangeProvider = this.hasService(e => e.lsp.FoldingRangeProvider);
+        const hasHoverProvider = this.hasService(e => e.lsp.HoverProvider);
+        const hasRenameProvider = this.hasService(e => e.lsp.RenameProvider);
 
         const result: InitializeResult = {
             capabilities: {
@@ -80,21 +92,21 @@ export class DefaultLanguageServer implements LanguageServer {
                     commands: commandNames
                 },
                 textDocumentSync: TextDocumentSyncKind.Incremental,
-                completionProvider: {},
-                referencesProvider: {}, // TODO enable workDoneProgress?
-                documentSymbolProvider: {},
-                definitionProvider: {},
+                completionProvider: hasCompletionProvider ? {} : undefined,
+                referencesProvider: hasReferencesProvider,
+                documentSymbolProvider: hasDocumentSymbolProvider,
+                definitionProvider: hasDefinitionProvider,
                 typeDefinitionProvider: hasGoToTypeProvider,
-                documentHighlightProvider: {},
+                documentHighlightProvider: hasDocumentHighlightProvider,
                 codeActionProvider: hasCodeActionProvider,
                 documentFormattingProvider: hasFormattingService,
                 documentRangeFormattingProvider: hasFormattingService,
                 documentOnTypeFormattingProvider: formattingOnTypeOptions,
-                foldingRangeProvider: {},
-                hoverProvider: {},
-                renameProvider: {
+                foldingRangeProvider: hasFoldingRangeProvider,
+                hoverProvider: hasHoverProvider,
+                renameProvider: hasRenameProvider ? {
                     prepareProvider: true
-                },
+                } : undefined,
                 semanticTokensProvider: hasSemanticTokensProvider
                     ? DefaultSemanticTokenOptions
                     : undefined,
@@ -199,7 +211,7 @@ export function addCompletionHandler(connection: Connection, services: LangiumSh
 
 export function addFindReferencesHandler(connection: Connection, services: LangiumSharedServices): void {
     connection.onReferences(createRequestHandler(
-        (services, document, params, cancelToken) => services.lsp.ReferenceFinder?.findReferences(document, params, cancelToken),
+        (services, document, params, cancelToken) => services.lsp.ReferencesProvider?.findReferences(document, params, cancelToken),
         services
     ));
 }
@@ -241,7 +253,7 @@ export function addGoToImplementationHandler(connection: Connection, services: L
 
 export function addDocumentHighlightsHandler(connection: Connection, services: LangiumSharedServices): void {
     connection.onDocumentHighlight(createRequestHandler(
-        (services, document, params, cancelToken) => services.lsp.DocumentHighlighter?.getDocumentHighlight(document, params, cancelToken),
+        (services, document, params, cancelToken) => services.lsp.DocumentHighlightProvider?.getDocumentHighlight(document, params, cancelToken),
         services
     ));
 }
@@ -277,11 +289,11 @@ export function addFormattingHandler(connection: Connection, services: LangiumSh
 
 export function addRenameHandler(connection: Connection, services: LangiumSharedServices): void {
     connection.onRenameRequest(createRequestHandler(
-        (services, document, params, cancelToken) => services.lsp.RenameHandler?.renameElement(document, params, cancelToken),
+        (services, document, params, cancelToken) => services.lsp.RenameProvider?.rename(document, params, cancelToken),
         services
     ));
     connection.onPrepareRename(createRequestHandler(
-        (services, document, params, cancelToken) => services.lsp.RenameHandler?.prepareRename(document, params, cancelToken),
+        (services, document, params, cancelToken) => services.lsp.RenameProvider?.prepareRename(document, params, cancelToken),
         services
     ));
 }

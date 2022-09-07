@@ -141,7 +141,7 @@ export function expectFindReferences(services: LangiumServices): (expectedFindRe
             const expectedRange: Range = {start: document.textDocument.positionAt(range[0]), end: document.textDocument.positionAt(range[1])};
             expectedRanges.push(expectedRange);
         });
-        const referenceFinder = services.lsp.ReferenceFinder;
+        const referenceFinder = services.lsp.ReferencesProvider;
         indices.forEach(async (index) => {
             const referenceParameters = referenceParams(document, index, expectedFindReferences.includeDeclaration);
             const references = await referenceFinder?.findReferences(document, referenceParameters) ?? [];

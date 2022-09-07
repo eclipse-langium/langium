@@ -17,14 +17,14 @@ import { LangiumDocument } from '../workspace/documents';
 /**
  * Language-specific service for handling rename requests and prepare rename requests.
  */
-export interface RenameHandler {
+export interface RenameProvider {
     /**
      * Handle a rename request.
      *
      * @throws `OperationCancelled` if cancellation is detected during execution
      * @throws `ResponseError` if an error is detected that should be sent as response to the client
      */
-    renameElement(document: LangiumDocument, params: RenameParams, cancelToken?: CancellationToken): MaybePromise<WorkspaceEdit | undefined>;
+    rename(document: LangiumDocument, params: RenameParams, cancelToken?: CancellationToken): MaybePromise<WorkspaceEdit | undefined>;
 
     /**
      * Handle a prepare rename request.
@@ -35,7 +35,7 @@ export interface RenameHandler {
     prepareRename(document: LangiumDocument, params: TextDocumentPositionParams, cancelToken?: CancellationToken): MaybePromise<Range | undefined>;
 }
 
-export class DefaultRenameHandler implements RenameHandler {
+export class DefaultRenameProvider implements RenameProvider {
 
     protected readonly references: References;
     protected readonly nameProvider: NameProvider;
@@ -47,7 +47,7 @@ export class DefaultRenameHandler implements RenameHandler {
         this.grammarConfig = services.parser.GrammarConfig;
     }
 
-    async renameElement(document: LangiumDocument, params: RenameParams): Promise<WorkspaceEdit | undefined> {
+    async rename(document: LangiumDocument, params: RenameParams): Promise<WorkspaceEdit | undefined> {
         const changes: Record<string, TextEdit[]> = {};
         const rootNode = document.parseResult.value.$cstNode;
         if (!rootNode) return undefined;

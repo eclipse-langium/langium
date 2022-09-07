@@ -20,8 +20,8 @@ import type { FoldingRangeProvider } from './lsp/folding-range-provider';
 import type { Formatter } from './lsp/formatter';
 import type { DefinitionProvider } from './lsp/definition-provider';
 import type { HoverProvider } from './lsp/hover-provider';
-import type { ReferenceFinder } from './lsp/reference-finder';
-import type { RenameHandler } from './lsp/rename-refactoring';
+import type { ReferencesProvider } from './lsp/references-provider';
+import type { RenameProvider } from './lsp/rename-provider';
 import type { SemanticTokenProvider } from './lsp/semantic-token-provider';
 import type { LangiumParser } from './parser/langium-parser';
 import type { IParserConfig } from './parser/parser-config';
@@ -70,17 +70,17 @@ export type LangiumLspServices = {
         CompletionProvider?: CompletionProvider
         RuleInterpreter: RuleInterpreter
     }
-    DocumentHighlighter?: DocumentHighlightProvider
+    DocumentHighlightProvider?: DocumentHighlightProvider
     DocumentSymbolProvider?: DocumentSymbolProvider
     HoverProvider?: HoverProvider
     FoldingRangeProvider?: FoldingRangeProvider
     DefinitionProvider?: DefinitionProvider
     TypeProvider?: TypeDefinitionProvider
     ImplementationProvider?: ImplementationProvider
-    ReferenceFinder?: ReferenceFinder
+    ReferencesProvider?: ReferencesProvider
     CodeActionProvider?: CodeActionProvider
     SemanticTokenProvider?: SemanticTokenProvider
-    RenameHandler?: RenameHandler
+    RenameProvider?: RenameProvider
     Formatter?: Formatter
     SignatureHelp?: SignatureHelpProvider
 }

@@ -16,8 +16,8 @@ import { DefaultFoldingRangeProvider } from './lsp/folding-range-provider';
 import { DefaultDefinitionProvider } from './lsp/definition-provider';
 import { MultilineCommentHoverProvider } from './lsp/hover-provider';
 import { DefaultLanguageServer } from './lsp/language-server';
-import { DefaultReferenceFinder } from './lsp/reference-finder';
-import { DefaultRenameHandler } from './lsp/rename-refactoring';
+import { DefaultReferencesProvider } from './lsp/references-provider';
+import { DefaultRenameProvider } from './lsp/rename-provider';
 import { createLangiumParser } from './parser/langium-parser-builder';
 import { DefaultTokenBuilder } from './parser/token-builder';
 import { DefaultValueConverter } from './parser/value-converter';
@@ -67,10 +67,10 @@ export function createDefaultModule(context: DefaultModuleContext): Module<Langi
             DocumentSymbolProvider: (services) => new DefaultDocumentSymbolProvider(services),
             HoverProvider: (services) => new MultilineCommentHoverProvider(services),
             FoldingRangeProvider: (services) => new DefaultFoldingRangeProvider(services),
-            ReferenceFinder: (services) => new DefaultReferenceFinder(services),
+            ReferencesProvider: (services) => new DefaultReferencesProvider(services),
             DefinitionProvider: (services) => new DefaultDefinitionProvider(services),
-            DocumentHighlighter: (services) => new DefaultDocumentHighlightProvider(services),
-            RenameHandler: (services) => new DefaultRenameHandler(services)
+            DocumentHighlightProvider: (services) => new DefaultDocumentHighlightProvider(services),
+            RenameProvider: (services) => new DefaultRenameProvider(services)
         },
         workspace: {
             AstNodeLocator: () => new DefaultAstNodeLocator(),
