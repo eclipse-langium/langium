@@ -485,7 +485,7 @@ export class LangiumCompletionParser extends AbstractLangiumParser {
     after(element: AbstractElement): void {
         if (!this.isRecording()) {
             const index = this.elementStack.lastIndexOf(element);
-            if (index > 0) {
+            if (index >= 0) {
                 this.elementStack.splice(index);
             }
         }

@@ -72,7 +72,7 @@ export class DefaultLanguageServer implements LanguageServer {
         const signatureHelpOptions = mergeSignatureHelpOptions(languages.map(e => e.lsp.SignatureHelp?.signatureHelpOptions));
         const hasGoToTypeProvider = this.hasService(e => e.lsp.TypeProvider);
         const hasGoToImplementationProvider = this.hasService(e => e.lsp.ImplementationProvider);
-        const hasCompletionProvider = this.hasService(e => e.lsp.completion.CompletionProvider);
+        const hasCompletionProvider = this.hasService(e => e.lsp.CompletionProvider);
         const hasReferencesProvider = this.hasService(e => e.lsp.ReferencesProvider);
         const hasDocumentSymbolProvider = this.hasService(e => e.lsp.DocumentSymbolProvider);
         const hasDefinitionProvider = this.hasService(e => e.lsp.DefinitionProvider);
