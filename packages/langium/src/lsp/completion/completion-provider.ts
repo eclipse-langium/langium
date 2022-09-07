@@ -67,7 +67,7 @@ export class DefaultCompletionProvider implements CompletionProvider {
             }
         };
 
-        const node = findLeafNodeAtOffset(cst, offset);
+        const node = findLeafNodeAtOffset(cst, Math.min(offset, cst.end - 1));
 
         if (!node) {
             const parserRule = getEntryRule(this.grammar)!;
