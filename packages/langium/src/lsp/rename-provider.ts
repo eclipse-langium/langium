@@ -13,19 +13,18 @@ import { CstNode } from '../syntax-tree';
 import { findDeclarationNodeAtOffset } from '../utils/cst-util';
 import { MaybePromise } from '../utils/promise-util';
 import { LangiumDocument } from '../workspace/documents';
-import { ReferenceFinder } from './reference-finder';
 
 /**
  * Language-specific service for handling rename requests and prepare rename requests.
  */
-export interface RenameHandler {
+export interface RenameProvider {
     /**
      * Handle a rename request.
      *
      * @throws `OperationCancelled` if cancellation is detected during execution
      * @throws `ResponseError` if an error is detected that should be sent as response to the client
      */
-    renameElement(document: LangiumDocument, params: RenameParams, cancelToken?: CancellationToken): MaybePromise<WorkspaceEdit | undefined>;
+    rename(document: LangiumDocument, params: RenameParams, cancelToken?: CancellationToken): MaybePromise<WorkspaceEdit | undefined>;
 
     /**
      * Handle a prepare rename request.
@@ -36,30 +35,29 @@ export interface RenameHandler {
     prepareRename(document: LangiumDocument, params: TextDocumentPositionParams, cancelToken?: CancellationToken): MaybePromise<Range | undefined>;
 }
 
-export class DefaultRenameHandler implements RenameHandler {
+export class DefaultRenameProvider implements RenameProvider {
 
-    protected readonly referenceFinder: ReferenceFinder;
     protected readonly references: References;
     protected readonly nameProvider: NameProvider;
     protected readonly grammarConfig: GrammarConfig;
 
     constructor(services: LangiumServices) {
-        this.referenceFinder = services.lsp.ReferenceFinder;
         this.references = services.references.References;
         this.nameProvider = services.references.NameProvider;
         this.grammarConfig = services.parser.GrammarConfig;
     }
 
-    async renameElement(document: LangiumDocument, params: RenameParams): Promise<WorkspaceEdit | undefined> {
+    async rename(document: LangiumDocument, params: RenameParams): Promise<WorkspaceEdit | undefined> {
         const changes: Record<string, TextEdit[]> = {};
         const rootNode = document.parseResult.value.$cstNode;
         if (!rootNode) return undefined;
         const offset = document.textDocument.offsetAt(params.position);
         const leafNode = findDeclarationNodeAtOffset(rootNode, offset, this.grammarConfig.nameRegexp);
         if (!leafNode) return undefined;
-        const targetNode = this.references.findDeclaration(leafNode) ?? leafNode;
+        const targetNode = this.references.findDeclaration(leafNode);
+        if (!targetNode) return undefined;
         const options = { onlyLocal: false, includeDeclaration: true };
-        const references = this.references.findReferences(targetNode.element, options);
+        const references = this.references.findReferences(targetNode, options);
         references.forEach(ref => {
             const change = TextEdit.replace(ref.segment.range, params.newName);
             const uri = ref.sourceUri.toString();

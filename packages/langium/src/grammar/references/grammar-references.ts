@@ -25,7 +25,7 @@ export class LangiumGrammarReferences extends DefaultReferences {
         this.documents = services.shared.workspace.LangiumDocuments;
     }
 
-    findDeclaration(sourceCstNode: CstNode): CstNode | undefined {
+    findDeclaration(sourceCstNode: CstNode): AstNode | undefined {
         const nodeElem = sourceCstNode.element;
         const assignment = findAssignment(sourceCstNode);
         if (assignment && assignment.feature === 'feature') {
@@ -144,7 +144,7 @@ export class LangiumGrammarReferences extends DefaultReferences {
         return refs;
     }
 
-    protected findAssignmentDeclaration(assignment: Assignment): CstNode | undefined {
+    protected findAssignmentDeclaration(assignment: Assignment): AstNode | undefined {
         const parserRule = getContainerOfType(assignment, isParserRule);
         const action = getActionAtElement(assignment);
         if (action) {
@@ -159,22 +159,22 @@ export class LangiumGrammarReferences extends DefaultReferences {
                 for (const interf of interfaces) {
                     const typeAttribute = interf.attributes.find(att => att.name === assignment.feature);
                     if (typeAttribute) {
-                        return this.nameProvider.getNameNode(typeAttribute);
+                        return typeAttribute;
                     }
                 }
             }
         }
-        return this.nameProvider.getNameNode(assignment);
+        return assignment;
     }
 
-    protected findActionDeclaration(action: Action, featureName?: string): CstNode | undefined {
+    protected findActionDeclaration(action: Action, featureName?: string): TypeAttribute | undefined {
         if (action.type?.ref) {
             const feature = featureName ?? action.feature;
             const interfaces = collectSuperTypes(action.type.ref);
             for (const interf of interfaces) {
                 const typeAttribute = interf.attributes.find(att => att.name === feature);
                 if (typeAttribute) {
-                    return this.nameProvider.getNameNode(typeAttribute);
+                    return typeAttribute;
                 }
             }
         }

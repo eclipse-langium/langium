@@ -16,7 +16,7 @@ import { LangiumGrammarFormatter } from './lsp/grammar-formatter';
 import { LangiumGrammarSemanticTokenProvider } from './lsp/grammar-semantic-tokens';
 import { LangiumGrammarNameProvider } from './references/grammar-naming';
 import { LangiumGrammarReferences } from './references/grammar-references';
-import { LangiumGrammarGoToResolver } from './lsp/grammar-goto';
+import { LangiumGrammarGoToDefinitionProvider } from './lsp/grammar-goto';
 
 export type LangiumGrammarAddedServices = {
     validation: {
@@ -36,7 +36,7 @@ export const LangiumGrammarModule: Module<LangiumGrammarServices, PartialLangium
         CodeActionProvider: () => new LangiumGrammarCodeActionProvider(),
         SemanticTokenProvider: (services) => new LangiumGrammarSemanticTokenProvider(services),
         Formatter: () => new LangiumGrammarFormatter(),
-        GoToResolver: (services) => new LangiumGrammarGoToResolver(services),
+        DefinitionProvider: (services) => new LangiumGrammarGoToDefinitionProvider(services),
     },
     references: {
         ScopeComputation: (services) => new LangiumGrammarScopeComputation(services),

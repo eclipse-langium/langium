@@ -10,14 +10,14 @@ import { Module } from './dependency-injection';
 import { createGrammarConfig } from './grammar/grammar-config';
 import { DefaultCompletionProvider } from './lsp/completion/completion-provider';
 import { RuleInterpreter } from './lsp/completion/rule-interpreter';
-import { DefaultDocumentHighlighter } from './lsp/document-highlighter';
+import { DefaultDocumentHighlightProvider } from './lsp/document-highlight-provider';
 import { DefaultDocumentSymbolProvider } from './lsp/document-symbol-provider';
 import { DefaultFoldingRangeProvider } from './lsp/folding-range-provider';
-import { DefaultGoToResolverProvider } from './lsp/goto';
+import { DefaultDefinitionProvider } from './lsp/definition-provider';
 import { MultilineCommentHoverProvider } from './lsp/hover-provider';
 import { DefaultLanguageServer } from './lsp/language-server';
-import { DefaultReferenceFinder } from './lsp/reference-finder';
-import { DefaultRenameHandler } from './lsp/rename-refactoring';
+import { DefaultReferencesProvider } from './lsp/references-provider';
+import { DefaultRenameProvider } from './lsp/rename-provider';
 import { createLangiumParser } from './parser/langium-parser-builder';
 import { DefaultTokenBuilder } from './parser/token-builder';
 import { DefaultValueConverter } from './parser/value-converter';
@@ -67,10 +67,10 @@ export function createDefaultModule(context: DefaultModuleContext): Module<Langi
             DocumentSymbolProvider: (services) => new DefaultDocumentSymbolProvider(services),
             HoverProvider: (services) => new MultilineCommentHoverProvider(services),
             FoldingRangeProvider: (services) => new DefaultFoldingRangeProvider(services),
-            ReferenceFinder: (services) => new DefaultReferenceFinder(services),
-            GoToResolver: (services) => new DefaultGoToResolverProvider(services),
-            DocumentHighlighter: (services) => new DefaultDocumentHighlighter(services),
-            RenameHandler: (services) => new DefaultRenameHandler(services)
+            ReferencesProvider: (services) => new DefaultReferencesProvider(services),
+            DefinitionProvider: (services) => new DefaultDefinitionProvider(services),
+            DocumentHighlightProvider: (services) => new DefaultDocumentHighlightProvider(services),
+            RenameProvider: (services) => new DefaultRenameProvider(services)
         },
         workspace: {
             AstNodeLocator: () => new DefaultAstNodeLocator(),

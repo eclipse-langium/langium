@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { AstNode, AstNodeDescription, LinkingError, Reference, ReferenceInfo } from '../syntax-tree';
+import { AstNode, AstNodeDescription, GenericAstNode, LinkingError, Reference, ReferenceInfo } from '../syntax-tree';
 import { DONE_RESULT, Stream, stream, StreamImpl, TreeStream, TreeStreamImpl } from '../utils/stream';
 import { LangiumDocument } from '../workspace/documents';
 
@@ -127,8 +127,7 @@ export function streamContents(node: AstNode): Stream<AstNode> {
         while (state.keyIndex < state.keys.length) {
             const property = state.keys[state.keyIndex];
             if (!property.startsWith('$')) {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const value = (node as any)[property];
+                const value = (node as GenericAstNode)[property];
                 if (isAstNode(value)) {
                     state.keyIndex++;
                     return { done: false, value };
@@ -179,8 +178,7 @@ export function streamReferences(node: AstNode): Stream<ReferenceInfo> {
         while (state.keyIndex < state.keys.length) {
             const property = state.keys[state.keyIndex];
             if (!property.startsWith('$')) {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const value = (node as any)[property];
+                const value = (node as GenericAstNode)[property];
                 if (isReference(value)) {
                     state.keyIndex++;
                     return { done: false, value: { reference: value, container: node, property } };
