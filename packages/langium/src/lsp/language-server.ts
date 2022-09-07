@@ -66,8 +66,8 @@ export class DefaultLanguageServer implements LanguageServer {
         const hasSemanticTokensProvider = languages.some(e => e.lsp.SemanticTokenProvider !== undefined);
         const commandNames = this.services.lsp.ExecuteCommandHandler?.commands;
         const signatureHelpOptions = mergeSignatureHelpOptions(languages.map(e => e.lsp.SignatureHelp?.signatureHelpOptions));
-        const hasGoToTypeProvider = languages.some(e => e.lsp.GoToTypeProvider !== undefined);
-        const hasGoToImplementationProvider = languages.some(e => e.lsp.GoToImplementationProvider !== undefined);
+        const hasGoToTypeProvider = languages.some(e => e.lsp.TypeProvider !== undefined);
+        const hasGoToImplementationProvider = languages.some(e => e.lsp.ImplementationProvider !== undefined);
 
         const result: InitializeResult = {
             capabilities: {
@@ -220,28 +220,28 @@ export function addDocumentSymbolHandler(connection: Connection, services: Langi
 
 export function addGotoDefinitionHandler(connection: Connection, services: LangiumSharedServices): void {
     connection.onDefinition(createRequestHandler(
-        (services, document, params, cancelToken) => services.lsp.GoToDefinitionProvider?.goToDefinition(document, params, cancelToken),
+        (services, document, params, cancelToken) => services.lsp.DefinitionProvider?.getDefinition(document, params, cancelToken),
         services
     ));
 }
 
 export function addGoToTypeDefinitionHandler(connection: Connection, services: LangiumSharedServices): void {
     connection.onTypeDefinition(createRequestHandler(
-        (services, document, params, cancelToken) => services.lsp.GoToTypeProvider?.goToTypeDefinition(document, params, cancelToken),
+        (services, document, params, cancelToken) => services.lsp.TypeProvider?.getTypeDefinition(document, params, cancelToken),
         services
     ));
 }
 
 export function addGoToImplementationHandler(connection: Connection, services: LangiumSharedServices) {
     connection.onImplementation(createRequestHandler(
-        (services, document, params, cancelToken) => services.lsp.GoToImplementationProvider?.goToImplementation(document, params, cancelToken),
+        (services, document, params, cancelToken) => services.lsp.ImplementationProvider?.getImplementation(document, params, cancelToken),
         services
     ));
 }
 
 export function addDocumentHighlightsHandler(connection: Connection, services: LangiumSharedServices): void {
     connection.onDocumentHighlight(createRequestHandler(
-        (services, document, params, cancelToken) => services.lsp.DocumentHighlighter?.findHighlights(document, params, cancelToken),
+        (services, document, params, cancelToken) => services.lsp.DocumentHighlighter?.getDocumentHighlight(document, params, cancelToken),
         services
     ));
 }

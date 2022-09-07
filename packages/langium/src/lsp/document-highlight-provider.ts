@@ -19,17 +19,17 @@ import { LangiumDocument } from '../workspace/documents';
 /**
  * Language-specific service for handling document highlight requests.
  */
-export interface DocumentHighlighter {
+export interface DocumentHighlightProvider {
     /**
      * Handle a document highlight request.
      *
      * @throws `OperationCancelled` if cancellation is detected during execution
      * @throws `ResponseError` if an error is detected that should be sent as response to the client
      */
-    findHighlights(document: LangiumDocument, params: DocumentHighlightParams, cancelToken?: CancellationToken): MaybePromise<DocumentHighlight[] | undefined>;
+    getDocumentHighlight(document: LangiumDocument, params: DocumentHighlightParams, cancelToken?: CancellationToken): MaybePromise<DocumentHighlight[] | undefined>;
 }
 
-export class DefaultDocumentHighlighter implements DocumentHighlighter {
+export class DefaultDocumentHighlightProvider implements DocumentHighlightProvider {
     protected readonly references: References;
     protected readonly nameProvider: NameProvider;
     protected readonly grammarConfig: GrammarConfig;
@@ -40,7 +40,7 @@ export class DefaultDocumentHighlighter implements DocumentHighlighter {
         this.grammarConfig = services.parser.GrammarConfig;
     }
 
-    findHighlights(document: LangiumDocument, params: DocumentHighlightParams): MaybePromise<DocumentHighlight[] | undefined> {
+    getDocumentHighlight(document: LangiumDocument, params: DocumentHighlightParams): MaybePromise<DocumentHighlight[] | undefined> {
         const rootNode = document.parseResult.value.$cstNode;
         if (!rootNode) {
             return undefined;

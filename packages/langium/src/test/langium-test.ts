@@ -117,8 +117,8 @@ export function expectGoToDefinition(services: LangiumServices, expectEqual: Exp
     return async expectedGoToDefinition => {
         const { output, indices, ranges } = replaceIndices(expectedGoToDefinition);
         const document = await parseDocument(services, output);
-        const goToResolver = services.lsp.GoToDefinitionProvider;
-        const locationLink = await goToResolver?.goToDefinition(document, textDocumentPositionParams(document, indices[expectedGoToDefinition.index])) ?? [];
+        const definitionProvider = services.lsp.DefinitionProvider;
+        const locationLink = await definitionProvider?.getDefinition(document, textDocumentPositionParams(document, indices[expectedGoToDefinition.index])) ?? [];
         const expectedRange: Range = {
             start: document.textDocument.positionAt(ranges[expectedGoToDefinition.rangeIndex][0]),
             end: document.textDocument.positionAt(ranges[expectedGoToDefinition.rangeIndex][1])

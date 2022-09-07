@@ -36,7 +36,7 @@ export const LangiumGrammarModule: Module<LangiumGrammarServices, PartialLangium
         CodeActionProvider: () => new LangiumGrammarCodeActionProvider(),
         SemanticTokenProvider: (services) => new LangiumGrammarSemanticTokenProvider(services),
         Formatter: () => new LangiumGrammarFormatter(),
-        GoToDefinitionProvider: (services) => new LangiumGrammarGoToDefinitionProvider(services),
+        DefinitionProvider: (services) => new LangiumGrammarGoToDefinitionProvider(services),
     },
     references: {
         ScopeComputation: (services) => new LangiumGrammarScopeComputation(services),

@@ -8,21 +8,21 @@ import { CancellationToken, LocationLink, TypeDefinitionParams } from 'vscode-la
 import { References } from '../references/references';
 import { LangiumServices } from '../services';
 import { AstNode } from '../syntax-tree';
-import { findLeafNodeAtOffset } from '../utils/cst-util';
+import { findDeclarationNodeAtOffset } from '../utils/cst-util';
 import { MaybePromise } from '../utils/promise-util';
 import { LangiumDocument } from '../workspace/documents';
 
 /**
  * Language-specific service for handling go to type requests.
  */
-export interface GoToTypeDefinitionProvider {
+export interface TypeDefinitionProvider {
     /**
      * Handles a go to type definition request.
      */
-    goToTypeDefinition(document: LangiumDocument, params: TypeDefinitionParams, cancelToken?: CancellationToken): MaybePromise<LocationLink[] | undefined>;
+    getTypeDefinition(document: LangiumDocument, params: TypeDefinitionParams, cancelToken?: CancellationToken): MaybePromise<LocationLink[] | undefined>;
 }
 
-export abstract class AbstractGoToTypeDefinitionProvider implements GoToTypeDefinitionProvider {
+export abstract class AbstractTypeDefinitionProvider implements TypeDefinitionProvider {
 
     protected readonly references: References;
 
@@ -30,10 +30,10 @@ export abstract class AbstractGoToTypeDefinitionProvider implements GoToTypeDefi
         this.references = services.references.References;
     }
 
-    goToTypeDefinition(document: LangiumDocument, params: TypeDefinitionParams, cancelToken = CancellationToken.None): MaybePromise<LocationLink[] | undefined> {
+    getTypeDefinition(document: LangiumDocument, params: TypeDefinitionParams, cancelToken = CancellationToken.None): MaybePromise<LocationLink[] | undefined> {
         const rootNode = document.parseResult.value;
         if (rootNode.$cstNode) {
-            const sourceCstNode = findLeafNodeAtOffset(rootNode.$cstNode, document.textDocument.offsetAt(params.position));
+            const sourceCstNode = findDeclarationNodeAtOffset(rootNode.$cstNode, document.textDocument.offsetAt(params.position));
             if (sourceCstNode) {
                 const nodeDeclaration = this.references.findDeclaration(sourceCstNode);
                 if (nodeDeclaration) {

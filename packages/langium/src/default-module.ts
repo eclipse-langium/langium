@@ -10,10 +10,10 @@ import { Module } from './dependency-injection';
 import { createGrammarConfig } from './grammar/grammar-config';
 import { DefaultCompletionProvider } from './lsp/completion/completion-provider';
 import { RuleInterpreter } from './lsp/completion/rule-interpreter';
-import { DefaultDocumentHighlighter } from './lsp/document-highlighter';
+import { DefaultDocumentHighlightProvider } from './lsp/document-highlight-provider';
 import { DefaultDocumentSymbolProvider } from './lsp/document-symbol-provider';
 import { DefaultFoldingRangeProvider } from './lsp/folding-range-provider';
-import { DefaultGoToDefinitionProvider } from './lsp/go-to-definition';
+import { DefaultDefinitionProvider } from './lsp/definition-provider';
 import { MultilineCommentHoverProvider } from './lsp/hover-provider';
 import { DefaultLanguageServer } from './lsp/language-server';
 import { DefaultReferenceFinder } from './lsp/reference-finder';
@@ -68,8 +68,8 @@ export function createDefaultModule(context: DefaultModuleContext): Module<Langi
             HoverProvider: (services) => new MultilineCommentHoverProvider(services),
             FoldingRangeProvider: (services) => new DefaultFoldingRangeProvider(services),
             ReferenceFinder: (services) => new DefaultReferenceFinder(services),
-            GoToDefinitionProvider: (services) => new DefaultGoToDefinitionProvider(services),
-            DocumentHighlighter: (services) => new DefaultDocumentHighlighter(services),
+            DefinitionProvider: (services) => new DefaultDefinitionProvider(services),
+            DocumentHighlighter: (services) => new DefaultDocumentHighlightProvider(services),
             RenameHandler: (services) => new DefaultRenameHandler(services)
         },
         workspace: {

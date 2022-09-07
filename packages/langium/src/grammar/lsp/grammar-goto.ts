@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import { DefinitionParams, LocationLink, Range } from 'vscode-languageserver';
-import { DefaultGoToDefinitionProvider } from '../../lsp';
+import { DefaultDefinitionProvider } from '../../lsp';
 import { LangiumServices } from '../../services';
 import { AstNode, LeafCstNode, Properties } from '../../syntax-tree';
 import { streamContents } from '../../utils/ast-util';
@@ -14,7 +14,7 @@ import { LangiumDocuments } from '../../workspace/documents';
 import { Grammar, GrammarImport, isGrammarImport } from '../generated/ast';
 import { findAssignment, resolveImport } from '../grammar-util';
 
-export class LangiumGrammarGoToDefinitionProvider extends DefaultGoToDefinitionProvider {
+export class LangiumGrammarGoToDefinitionProvider extends DefaultDefinitionProvider {
 
     protected documents: LangiumDocuments;
 
