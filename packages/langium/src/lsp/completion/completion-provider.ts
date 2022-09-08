@@ -59,15 +59,17 @@ export class DefaultCompletionProvider implements CompletionProvider {
             return undefined;
         }
         let items: CompletionItem[] = [];
-        const offset = document.textDocument.offsetAt(params.position);
+        const textDocument = document.textDocument;
+        const text = textDocument.getText();
+        const offset = textDocument.offsetAt(params.position);
         const acceptor = (value: string | AstNode | AstNodeDescription, item?: Partial<CompletionItem>) => {
-            const completionItem = this.fillCompletionItem(document.textDocument, offset, value, item);
+            const completionItem = this.fillCompletionItem(textDocument, offset, value, item);
             if (completionItem) {
                 items.push(completionItem);
             }
         };
 
-        const node = findLeafNodeAtOffset(cst, Math.min(offset, cst.end - 1));
+        const node = findLeafNodeAtOffset(cst, this.backtrackToAnyToken(text, offset));
 
         if (!node) {
             const parserRule = getEntryRule(this.grammar)!;
@@ -75,12 +77,12 @@ export class DefaultCompletionProvider implements CompletionProvider {
             return CompletionList.create(items, true);
         }
 
-        const parserStart = this.backtrackToTokenStart(document.textDocument.getText(), offset);
-        const beforeFeatures = this.findFeaturesAt(document.textDocument, parserStart);
+        const parserStart = this.backtrackToTokenStart(text, offset);
+        const beforeFeatures = this.findFeaturesAt(textDocument, parserStart);
         let afterFeatures: NextFeature[] = [];
         const reparse = offset !== parserStart;
         if (reparse) {
-            afterFeatures = this.findFeaturesAt(document.textDocument, offset);
+            afterFeatures = this.findFeaturesAt(textDocument, offset);
         }
 
         const distinctionFunction = (element: NextFeature) => {
@@ -98,8 +100,8 @@ export class DefaultCompletionProvider implements CompletionProvider {
         );
 
         if (reparse) {
-            const missingPart = document.textDocument.getText({
-                start: document.textDocument.positionAt(parserStart),
+            const missingPart = textDocument.getText({
+                start: textDocument.positionAt(parserStart),
                 end: params.position
             }).toLowerCase();
             // Remove items from `beforeFeatures` which don't fit the current text
@@ -143,6 +145,16 @@ export class DefaultCompletionProvider implements CompletionProvider {
         const leftoverTokens = [...tokens].splice(parserResult.tokenIndex);
         const features = findNextFeatures([parserResult.elementStack.map(feature => ({ feature }))], leftoverTokens);
         return features;
+    }
+
+    protected backtrackToAnyToken(text: string, offset: number): number {
+        if (offset >= text.length) {
+            offset = text.length - 1;
+        }
+        while (offset > 0 && /\s/.test(text.charAt(offset))) {
+            offset--;
+        }
+        return offset;
     }
 
     protected backtrackToTokenStart(text: string, offset: number): number {
