@@ -35,6 +35,16 @@
             ]
         },
         {
+            "name": "Run Requirements and Tests Extension",
+            "type": "extensionHost",
+            "request": "launch",
+            "runtimeExecutable": "${execPath}",
+            "args": [
+                "${workspaceFolder}/examples/requirements-and-tests/example",
+                "--extensionDevelopmentPath=${workspaceFolder}/examples/requirements-and-tests"
+            ]
+        },
+        {
             "name": "Run Statemachine Extension",
             "type": "extensionHost",
             "request": "launch",

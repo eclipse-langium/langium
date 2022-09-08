@@ -1,0 +1,19 @@
+{
+    "projectName": "Requirements and Tests",
+    "languages": [{
+        "id": "requirements-language",
+        "grammar": "src/language-server/requirements.langium",
+        "fileExtensions": [".req"],
+        "textMate": {
+            "out": "syntaxes/requirements.tmLanguage.json"
+        }
+    },{
+        "id": "tests-language",
+        "grammar": "src/language-server/tests.langium",
+        "fileExtensions": [".tst"],
+        "textMate": {
+            "out": "syntaxes/tests.tmLanguage.json"
+        }
+    }],
+    "out": "src/language-server/generated"
+}

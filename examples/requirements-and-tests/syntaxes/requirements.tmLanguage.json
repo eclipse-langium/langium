@@ -1,0 +1,57 @@
+{
+  "name": "requirements-language",
+  "scopeName": "source.requirements-language",
+  "fileTypes": [
+    ".req"
+  ],
+  "patterns": [
+    {
+      "include": "#comments"
+    },
+    {
+      "name": "keyword.control.requirements-language",
+      "match": "\\b(req)\\b"
+    },
+    {
+      "name": "string.quoted.double.requirements-language",
+      "begin": "\"",
+      "end": "\""
+    },
+    {
+      "name": "string.quoted.single.requirements-language",
+      "begin": "'",
+      "end": "'"
+    }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.block.requirements-language",
+          "begin": "/\\*",
+          "beginCaptures": {
+            "0": {
+              "name": "punctuation.definition.comment.requirements-language"
+            }
+          },
+          "end": "\\*/",
+          "endCaptures": {
+            "0": {
+              "name": "punctuation.definition.comment.requirements-language"
+            }
+          }
+        },
+        {
+          "begin": "//",
+          "beginCaptures": {
+            "1": {
+              "name": "punctuation.whitespace.comment.leading.requirements-language"
+            }
+          },
+          "end": "(?=$)",
+          "name": "comment.line.requirements-language"
+        }
+      ]
+    }
+  }
+}

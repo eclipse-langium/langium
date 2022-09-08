@@ -1,0 +1,57 @@
+{
+  "name": "tests-language",
+  "scopeName": "source.tests-language",
+  "fileTypes": [
+    ".tst"
+  ],
+  "patterns": [
+    {
+      "include": "#comments"
+    },
+    {
+      "name": "keyword.control.tests-language",
+      "match": "\\b(req|tests|tst)\\b"
+    },
+    {
+      "name": "string.quoted.double.tests-language",
+      "begin": "\"",
+      "end": "\""
+    },
+    {
+      "name": "string.quoted.single.tests-language",
+      "begin": "'",
+      "end": "'"
+    }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.block.tests-language",
+          "begin": "/\\*",
+          "beginCaptures": {
+            "0": {
+              "name": "punctuation.definition.comment.tests-language"
+            }
+          },
+          "end": "\\*/",
+          "endCaptures": {
+            "0": {
+              "name": "punctuation.definition.comment.tests-language"
+            }
+          }
+        },
+        {
+          "begin": "//",
+          "beginCaptures": {
+            "1": {
+              "name": "punctuation.whitespace.comment.leading.tests-language"
+            }
+          },
+          "end": "(?=$)",
+          "name": "comment.line.tests-language"
+        }
+      ]
+    }
+  }
+}
