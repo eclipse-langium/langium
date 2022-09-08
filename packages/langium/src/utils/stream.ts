@@ -219,14 +219,21 @@ export interface Stream<T> extends Iterable<T> {
     limit(maxSize: number): Stream<T>;
 
     /**
-     * Returns a stream containing only the distinct elements from this stream. Equality is determined
-     * with the same rules as a standard `Set`.
+     * Returns a stream containing only the distinct elements from this stream.
+     * Equality is determined with the same rules as a standard `Set`.
      *
      * @param by A function returning the key used to check equality with a previous stream element.
      *        If omitted, the stream elements themselves are used for comparison.
      */
     distinct<Key = T>(by?: (element: T) => Key): Stream<T>;
 
+    /**
+     * Returns a stream that contains all elements that don't exist in the {@link other} iterable.
+     * Equality is determined with the same rules as a standard `Set`.
+     * @param other The elements that should be exluded from this stream.
+     * @param key A function returning the key used to check quality.
+     *        If omitted, the stream elements themselves are used for comparison.
+     */
     exclude<Key = T>(other: Iterable<T>, key?: (element: T) => Key): Stream<T>;
 
 }
