@@ -13,7 +13,6 @@ import type { LanguageMetaData } from './grammar/language-meta-data';
 import type { ExecuteCommandHandler } from './lsp/execute-command-handler';
 import type { CodeActionProvider } from './lsp/code-action';
 import type { CompletionProvider } from './lsp/completion/completion-provider';
-import type { RuleInterpreter } from './lsp/completion/rule-interpreter';
 import type { DocumentHighlightProvider } from './lsp/document-highlight-provider';
 import type { DocumentSymbolProvider } from './lsp/document-symbol-provider';
 import type { FoldingRangeProvider } from './lsp/folding-range-provider';
@@ -23,7 +22,7 @@ import type { HoverProvider } from './lsp/hover-provider';
 import type { ReferencesProvider } from './lsp/references-provider';
 import type { RenameProvider } from './lsp/rename-provider';
 import type { SemanticTokenProvider } from './lsp/semantic-token-provider';
-import type { LangiumParser } from './parser/langium-parser';
+import type { LangiumCompletionParser, LangiumParser } from './parser/langium-parser';
 import type { IParserConfig } from './parser/parser-config';
 import type { TokenBuilder } from './parser/token-builder';
 import type { ValueConverter } from './parser/value-converter';
@@ -66,10 +65,7 @@ export type LangiumGeneratedServices = {
  * Services related to the Language Server Protocol (LSP).
  */
 export type LangiumLspServices = {
-    completion: {
-        CompletionProvider?: CompletionProvider
-        RuleInterpreter: RuleInterpreter
-    }
+    CompletionProvider?: CompletionProvider
     DocumentHighlightProvider?: DocumentHighlightProvider
     DocumentSymbolProvider?: DocumentSymbolProvider
     HoverProvider?: HoverProvider
@@ -94,6 +90,7 @@ export type LangiumDefaultServices = {
         GrammarConfig: GrammarConfig
         ValueConverter: ValueConverter
         LangiumParser: LangiumParser
+        CompletionParser: LangiumCompletionParser
         TokenBuilder: TokenBuilder
     }
     references: {

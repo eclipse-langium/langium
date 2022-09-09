@@ -8,8 +8,8 @@ import { Connection, TextDocuments } from 'vscode-languageserver';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { Module } from './dependency-injection';
 import { createGrammarConfig } from './grammar/grammar-config';
+import { createCompletionParser } from './parser/completion-parser-builder';
 import { DefaultCompletionProvider } from './lsp/completion/completion-provider';
-import { RuleInterpreter } from './lsp/completion/rule-interpreter';
 import { DefaultDocumentHighlightProvider } from './lsp/document-highlight-provider';
 import { DefaultDocumentSymbolProvider } from './lsp/document-symbol-provider';
 import { DefaultFoldingRangeProvider } from './lsp/folding-range-provider';
@@ -56,14 +56,12 @@ export function createDefaultModule(context: DefaultModuleContext): Module<Langi
         parser: {
             GrammarConfig: (services) => createGrammarConfig(services),
             LangiumParser: (services) => createLangiumParser(services),
+            CompletionParser: (services) => createCompletionParser(services),
             ValueConverter: () => new DefaultValueConverter(),
             TokenBuilder: () => new DefaultTokenBuilder()
         },
         lsp: {
-            completion: {
-                CompletionProvider: (services) => new DefaultCompletionProvider(services),
-                RuleInterpreter: () => new RuleInterpreter()
-            },
+            CompletionProvider: (services) => new DefaultCompletionProvider(services),
             DocumentSymbolProvider: (services) => new DefaultDocumentSymbolProvider(services),
             HoverProvider: (services) => new MultilineCommentHoverProvider(services),
             FoldingRangeProvider: (services) => new DefaultFoldingRangeProvider(services),

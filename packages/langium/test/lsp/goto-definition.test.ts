@@ -4,9 +4,9 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { createLangiumGrammarServices, EmptyFileSystem } from '../../../src';
-import { expectGoToDefinition } from '../../../src/test';
-import { expectFunction } from '../../fixture';
+import { createLangiumGrammarServices, EmptyFileSystem } from '../../src';
+import { expectGoToDefinition } from '../../src/test';
+import { expectFunction } from '../fixture';
 
 /**
  * Represents a grammar file

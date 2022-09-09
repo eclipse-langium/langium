@@ -6,7 +6,6 @@
 
 export * from './completion/completion-provider';
 export * from './completion/follow-element-computation';
-export * from './completion/rule-interpreter';
 export * from './code-action';
 export * from './document-highlight-provider';
 export * from './document-symbol-provider';
