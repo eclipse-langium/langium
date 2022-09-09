@@ -41,3 +41,7 @@ You also can use `requirements-and-tests-language-cli` as a replacement for `nod
 
 Please use the VSCode run configuration "Run Requirements and Tests Extension" to launch a new VSCode instance including the extension for this language.
 Use the run configuration "Attach" to attach the debugger.
+
+## Validators
+
+There is one validator per language to check the identifiers (names): a test identifier as well as a requirement identifier should contain a number. 
