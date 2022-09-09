@@ -1,4 +1,5 @@
-req R1_tstID "A test identifier shall contain a number."
-req RA_reqID "A requirement identifier shall contain a number."
-req R3_reqCov "A requirement shall be covered by at least one test"
+req ReqId000 "The cli-tool should allow to extract all test cases referencing a specific requirement"
+req ReqId001_tstID "A test identifier shall contain a number."
+req ReqIdABC_reqID "A requirement identifier shall contain a number."
+req ReqId003_reqCov "A requirement shall be covered by at least one test"
 req R4 "A test shall ride a unicorn"
