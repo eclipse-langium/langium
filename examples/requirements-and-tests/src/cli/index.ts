@@ -1,15 +1,14 @@
 import colors from 'colors';
 import { Command } from 'commander';
-import { RequirementModel } from '../language-server/generated/ast';
 import { RequirementsLanguageMetaData } from '../language-server/generated/module';
 import { createRequirementsAndTestsLanguageServices } from '../language-server/requirements-and-tests-language-module';
-import { extractAstNode } from './cli-util';
+import { extractRequirementModelWithTestModels } from './cli-util';
 import { generateSummary } from './generator';
 
 export const generateAction = async (fileName: string, opts: GenerateOptions): Promise<void> => {
     const services = createRequirementsAndTestsLanguageServices().RequirementsLanguage;
-    const model = await extractAstNode<RequirementModel>(fileName, services);
-    const generatedFilePath = generateSummary(model, fileName, opts.destination);
+    const [requirementModel, testModels]  = await extractRequirementModelWithTestModels(fileName, services);
+    const generatedFilePath = generateSummary(requirementModel, testModels, fileName, opts.destination);
     console.log(colors.green(`Requirement coverage generated successfully: ${generatedFilePath}`));
 };
 
