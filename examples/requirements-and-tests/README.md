@@ -44,4 +44,9 @@ Use the run configuration "Attach" to attach the debugger.
 
 ## Validators
 
-There is one validator per language to check the identifiers (names): a test identifier as well as a requirement identifier should contain a number. 
+```
+req R1_tstID "A test identifier shall contain a number."
+req RA_reqID "A requirement identifier shall contain a number."
+req R3_reqCov "A requirement shall be covered by at least one test"
+```
+(See example model for the linkage with unit tests.)
