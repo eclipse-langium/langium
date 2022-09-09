@@ -1,4 +1,4 @@
-req R1 "This is req. 1"
-req RA "This is req. 2"
-req R3 "This is req. 3"
-req R4 "This is req. 4"
+req R1_tstID "A test identifier shall contain a number."
+req RA_reqID "A requirement identifier shall contain a number."
+req R3_reqCov "A requirement shall be covered by at least one test"
+req R4 "A test shall ride a unicorn"

@@ -1,1 +1,1 @@
-tst T3 tests R1, R3
+tst T3 testFile="xxx" testMethod="yyy" tests R3_reqCov

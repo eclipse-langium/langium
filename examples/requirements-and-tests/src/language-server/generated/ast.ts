@@ -33,6 +33,8 @@ export interface Test extends AstNode {
     readonly $container: TestModel;
     name: string
     requirements: Array<Reference<Requirement>>
+    testFile?: string
+    testMethod?: string
 }
 
 export const Test = 'Test';
