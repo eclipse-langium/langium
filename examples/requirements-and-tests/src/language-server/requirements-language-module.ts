@@ -24,6 +24,6 @@ import { RequirementsLanguageValidationRegistry, RequirementsLanguageValidator }
  export const RequirementsLanguageModule: Module<RequirementsLanguageServices, PartialLangiumServices & RequirementsLanguageAddedServices> = {
     validation: {
         ValidationRegistry: (services) => new RequirementsLanguageValidationRegistry(services),
-        RequirementsLanguageValidator: () => new RequirementsLanguageValidator()
+        RequirementsLanguageValidator: (services) => new RequirementsLanguageValidator(services)
     }
 };

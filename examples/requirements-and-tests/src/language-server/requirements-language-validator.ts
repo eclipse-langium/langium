@@ -1,5 +1,5 @@
 import { ValidationAcceptor, ValidationChecks, ValidationRegistry } from 'langium';
-import { RequirementsAndTestsAstType, Requirement } from './generated/ast';
+import { RequirementsAndTestsAstType, Requirement, isTestModel } from './generated/ast';
 import { RequirementsLanguageServices } from './requirements-language-module';
 
 /**
@@ -10,7 +10,10 @@ export class RequirementsLanguageValidationRegistry extends ValidationRegistry {
         super(services);
         const validator = services.validation.RequirementsLanguageValidator;
         const checks: ValidationChecks<RequirementsAndTestsAstType> = {
-            Requirement: validator.checkRequirementNameContainsANumber
+            Requirement: [
+                validator.checkRequirementNameContainsANumber,
+                validator.checkRequirementIsCoveredByATest
+            ]
         };
         this.register(checks, validator);
     }
@@ -21,6 +24,8 @@ export class RequirementsLanguageValidationRegistry extends ValidationRegistry {
  */
  export class RequirementsLanguageValidator {
 
+    constructor(private services: RequirementsLanguageServices) {}
+
     checkRequirementNameContainsANumber(requirement: Requirement, accept: ValidationAcceptor): void {
         if (requirement.name) {
             if (!/.*\d.*/.test(requirement.name)) {
@@ -29,4 +34,17 @@ export class RequirementsLanguageValidationRegistry extends ValidationRegistry {
         }
     }
 
+    checkRequirementIsCoveredByATest(requirement: Requirement, accept: ValidationAcceptor): void {
+        let ok = false;
+        this.services.shared.workspace.LangiumDocuments.all.map(doc=>doc.parseResult?.value).filter(isTestModel).forEach(testModel=>{
+            testModel.tests.forEach(test=>{
+                if (test.requirements.map(r=>r.ref).includes(requirement)) {
+                    ok = true;
+                }
+            })
+        })
+        if (!ok) {
+            accept('warning', `Requirement ${requirement.name} not covered by a test.`, { node: requirement });
+        }
+    }
 }
