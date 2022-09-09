@@ -2,7 +2,7 @@ import colors from 'colors';
 import { Command } from 'commander';
 import { RequirementModel } from '../language-server/generated/ast';
 import { RequirementsLanguageMetaData } from '../language-server/generated/module';
-import { createRequirementsAndTestsLanguageServices } from '../language-server/requirements-and-tests-language-module';
+import { createRequirementsAndTestsLanguageServices } from '../language-server/requirements-language-module';
 import { extractAstNode } from './cli-util';
 import { generateJavaScript } from './generator';
 

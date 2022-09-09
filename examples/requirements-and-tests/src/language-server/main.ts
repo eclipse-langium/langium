@@ -1,6 +1,6 @@
 import { startLanguageServer } from 'langium';
 import { createConnection, ProposedFeatures } from 'vscode-languageserver/node';
-import { createRequirementsAndTestsLanguageServices } from './requirements-and-tests-language-module';
+import { createRequirementsAndTestsLanguageServices } from './requirements-language-module';
 
 // Create a connection to the client
 const connection = createConnection(ProposedFeatures.all);
