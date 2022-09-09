@@ -29,7 +29,7 @@ export class RequirementsLanguageValidationRegistry extends ValidationRegistry {
     checkRequirementNameContainsANumber(requirement: Requirement, accept: ValidationAcceptor): void {
         if (requirement.name) {
             if (!/.*\d.*/.test(requirement.name)) {
-                accept('warning', 'Requirement name should container a number.', { node: requirement, property: 'name' });
+                accept('warning', `Requirement name ${requirement.name} should container a number.`, { node: requirement, property: 'name' });
             }
         }
     }

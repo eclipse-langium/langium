@@ -24,7 +24,7 @@ export class TestsLanguageValidator {
     checkTestNameContainsANumber(test: Test, accept: ValidationAcceptor): void {
         if (test.name) {
             if (!/.*\d.*/.test(test.name)) {
-                accept('warning', 'Test name should container a number.', { node: test, property: 'name' });
+                accept('warning', `Test name ${test.name} should container a number.`, { node: test, property: 'name' });
             }
         }
     }
