@@ -6,12 +6,14 @@
 
 import { getExplicitRuleType, getRuleType, getTypeName, isOptional } from '../grammar-util';
 import { AbstractElement, Action, Alternatives, Assignment, Group, isAction, isAlternatives, isAssignment, isCrossReference, isGroup, isKeyword, isParserRule, isRuleCall, isUnorderedGroup, ParserRule, RuleCall, UnorderedGroup } from '../generated/ast';
+import { isNamed } from '../../references/naming';
 import { stream } from '../../utils/stream';
 import { AstTypes, distictAndSorted, Property, PropertyType, InterfaceType, UnionType } from './types-util';
 import { MultiMap } from '../../utils/collections';
 
 interface TypePart {
     name?: string
+    declaredType?: true
     properties: Property[]
     ruleCalls: string[]
     parents: TypePart[]
@@ -98,6 +100,9 @@ class TypeGraph {
         for (let i = 0; i < nextPath.next.length; i++) {
             const split = splits[i];
             const part = nextPath.next[i];
+            if (part.declaredType) {
+                continue;
+            }
             if (part.actionWithAssignment) {
                 // If the path enters an action with an assignment which changes the current name
                 // We already add a new path, since the next part of the part refers to a new inferred type
@@ -276,6 +281,17 @@ function collectElement(graph: TypeGraph, current: TypePart, element: AbstractEl
 
 function addAction(graph: TypeGraph, parent: TypePart, action: Action): TypePart {
     const typeNode = graph.connect(parent, newTypePart(action.inferredType?.name));
+
+    if (action.type) {
+        // if the cross reference 'type' is set we assume a declared type is referenced, hence
+        typeNode.declaredType = true;
+        const type = action.type?.ref;
+        if (type && isNamed(type))
+            // cs: if the (named) type could be resolved properly also set the name on 'typeNode'
+            //  for the sake of completeness and better comprehensibility during debugging,
+            //  it's not supposed to have a effect on the flow of control!
+            typeNode.name = type.name;
+    }
 
     if (action.feature && action.operator) {
         typeNode.actionWithAssignment = true;

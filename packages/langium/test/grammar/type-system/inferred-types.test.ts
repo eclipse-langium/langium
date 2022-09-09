@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { AstTypes, createLangiumGrammarServices, Grammar, InterfaceType, isDataTypeRule, isParserRule, Property, PropertyType, UnionType, EmptyFileSystem } from '../../../src';
+import { AstTypes, createLangiumGrammarServices, Grammar, InterfaceType, isDataTypeRule, isParserRule, Property, PropertyType, UnionType, EmptyFileSystem, collectAllAstResources, collectAst, s } from '../../../src';
 import { collectInferredTypes } from '../../../src/grammar/type-system/inferred-types';
 import { parseHelper } from '../../../src/test';
 
@@ -576,6 +576,135 @@ describeTypes('inferred types that are used by the grammar', `
         const b = getType(types, 'B') as InterfaceType;
         expect(b).toBeDefined();
     });
+});
+
+describe('expression rules with inferred and declared interfaces', () => {
+
+    test('separate rules with assigned actions with inferred type and declared sub type of the former', async () => {
+        const grammarServices = createLangiumGrammarServices(EmptyFileSystem).grammar;
+        const document = await parseHelper<Grammar>(grammarServices)(`
+            interface Symbol {}
+            interface SuperMemberAccess extends MemberAccess {}
+
+            Expression:
+                PrimaryExpression | MemberAccess | SuperMemberAccess
+            ;
+
+            PrimaryExpression:
+                BooleanLiteral
+            ;
+
+            MemberAccess infers Expression:
+                PrimaryExpression (
+                    {infer MemberAccess.receiver=current} '.' member=[Symbol:'foo']
+                )+
+            ;
+
+            SuperMemberAccess infers Expression:
+                PrimaryExpression (
+                    {SuperMemberAccess.receiver=current} '.' member=[Symbol:'super']
+                )+
+            ;
+
+            BooleanLiteral:
+                {infer BooleanLiteral} value?='true' | 'false'
+            ;
+        `);
+
+        expect(document.parseResult.lexerErrors).toHaveLength(0);
+        expect(document.parseResult.parserErrors).toHaveLength(0);
+
+        checkTypes(document.parseResult.value);
+    });
+
+    test('single rule with two assigned actions with inferred type and declared sub type of the former', async () => {
+        const grammarServices = createLangiumGrammarServices(EmptyFileSystem).grammar;
+        const document = await parseHelper<Grammar>(grammarServices)(`
+            interface Symbol {}
+            interface SuperMemberAccess extends MemberAccess {}
+
+            Expression:
+                PrimaryExpression | MemberAccess
+            ;
+
+            PrimaryExpression:
+                BooleanLiteral
+            ;
+
+            MemberAccess infers Expression:
+                PrimaryExpression (
+                    {SuperMemberAccess.receiver=current} '.' member=[Symbol:'super'] |
+                    {infer MemberAccess.receiver=current} '.' member=[Symbol:'foo']
+                )+
+            ;
+
+            BooleanLiteral:
+                {infer BooleanLiteral} value?='true' | 'false'
+            ;
+        `);
+
+        expect(document.parseResult.lexerErrors).toHaveLength(0);
+        expect(document.parseResult.parserErrors).toHaveLength(0);
+
+        checkTypes(document.parseResult.value);
+    });
+
+    function checkTypes(grammar: Grammar) {
+        const sortByName = (a: {name: string}, b: {name: string}) => (a.name?.localeCompare(b.name));
+        const toSubstring = (o: {toString: () => string}) => {
+            // this specialized 'toString' function uses the default 'toString' that is  producing the
+            //  code generation output, and strips everything not belonging to the actual interface/type declaration
+            const sRep = o.toString();
+            return sRep.substring(
+                0, 1 + (sRep.includes('interface') ? sRep.indexOf('}') : Math.min(sRep.indexOf(';') ))
+            );
+        };
+
+        const { parserRules, datatypeRules } = collectAllAstResources([grammar]);
+        const { interfaces: inferredInterfaces, unions } = collectInferredTypes(Array.from(parserRules), Array.from(datatypeRules));
+
+        const unionsString = unions.map(toSubstring).join('\n').trim();
+        expect(unionsString).toBe(s`
+            export type Expression = MemberAccess | PrimaryExpression;
+            export type PrimaryExpression = BooleanLiteral;
+        `);
+
+        const inferredInterfacesString = inferredInterfaces.sort(sortByName).map(toSubstring).join('\n').trim();
+        expect(inferredInterfacesString).toBe(s`
+            export interface BooleanLiteral extends AstNode {
+                readonly $container: MemberAccess;
+                value: boolean
+            }
+            export interface MemberAccess extends AstNode {
+                readonly $container: MemberAccess;
+                member: Reference<Symbol>
+                receiver: PrimaryExpression
+            }
+        `);
+
+        const allInterfaces = collectAst(undefined!, [grammar]).interfaces;
+        const allInterfacesString = allInterfaces.sort(sortByName).map(toSubstring).join('\n').trim();
+        expect(allInterfacesString).toBe(s`
+            export interface BooleanLiteral extends AstNode {
+                readonly $container: MemberAccess;
+                value: boolean
+            }
+            export interface MemberAccess extends AstNode {
+                readonly $container: MemberAccess;
+                member: Reference<Symbol>
+                receiver: PrimaryExpression
+            }
+            export interface SuperMemberAccess extends MemberAccess {
+            }
+            export interface Symbol extends AstNode {
+            }
+        `);
+
+        // the idea of the following is to double check that the declared definitions don't overwrite any
+        //  inferred definition; because of the sorting before joining the 'startsWith' doesn't work in general,
+        //  but it does work here due to the smart rule and interface name choice ;-)
+        expect(allInterfacesString.startsWith(inferredInterfacesString));
+    }
 });
 
 async function getTypes(grammar: string): Promise<AstTypes> {
