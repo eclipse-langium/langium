@@ -46,7 +46,6 @@
     },
     "main": "./out/extension.js",
     "scripts": {
-        "prepare": "npm run langium:generate && npm run build",
         "vscode:prepublish": "npm run build && npm run lint",
         "build": "tsc -b tsconfig.json",
         "watch": "tsc -b tsconfig.json --watch",
