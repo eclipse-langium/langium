@@ -85,6 +85,8 @@ function embedReferencedRules(grammar: Grammar, map: Map<Grammar, AbstractRule[]
             grammar.rules.push(...rules);
         }
     }
+    // Remove all imports, as their contents are now available in the grammar
+    grammar.imports = [];
 }
 
 async function buildAll(config: LangiumConfig): Promise<Map<string, LangiumDocument>> {
