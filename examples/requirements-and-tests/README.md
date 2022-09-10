@@ -26,6 +26,10 @@ Modules and Services:
   * `requirements-language-module.ts`: requirements service configuration
   * `tests-language-module.ts`: tests service configuration
 
+Language configuration:
+  * `langium-config.json`: TODO, what does this exactly.
+  * `package.json`: `contributes` section (TODO, what does this exactly).
+
 ## Generator CLI
 
 The Example features a generator that you can run via cli to process Requirement Model files. The outcome is a HTML table with a coverage matrix indicating which Test Cases test the Requirements of the file passed to the CLI.
