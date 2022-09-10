@@ -46,3 +46,6 @@ Use the run configuration "Attach" to attach the debugger.
 
 ## Validators
 
+ * A test identifier shall contain a number.
+ * A requirement identifier shall contain a number.
+ * A requirement shall be covered by at least one test (TODO: when updating the test model, the requirement is not checked automatically).
