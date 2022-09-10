@@ -3,7 +3,7 @@ import { createRequirementsAndTestsLanguageServices } from '../src/language-serv
 import * as path from 'path'
 
 describe('A requirement identifier and a test identifier shall contain a number.', () => {
-    test('T001: good case', async () => {
+    test('T001_good_case', async () => {
         const services = createRequirementsAndTestsLanguageServices();
         const [mainDoc,allDocs] = await extractDocuments(
             path.join(__dirname, "files", "good", "requirements.req"),
@@ -18,7 +18,7 @@ describe('A requirement identifier and a test identifier shall contain a number.
 });
 
 describe('A requirement identifier shall contain a number.', () => {
-    test('T002: bad case', async () => {
+    test('T002_badReqId: bad case', async () => {
         const services = createRequirementsAndTestsLanguageServices();
         const [mainDoc,] = await extractDocuments(
             path.join(__dirname, "files", "bad", "requirements.req"),
@@ -35,7 +35,7 @@ describe('A requirement identifier shall contain a number.', () => {
 });
 
 describe('A test identifier shall contain a number.', () => {
-    test('T003: bad case', async () => {
+    test('T003_badTstId: bad case', async () => {
         const services = createRequirementsAndTestsLanguageServices();
         const [,allDocs] = await extractDocuments(
             path.join(__dirname, "files", "bad", "requirements.req"),
@@ -54,7 +54,7 @@ describe('A test identifier shall contain a number.', () => {
 });
 
 describe('A requirement shall be covered by at least one test.', () => {
-    test('T004: bad case', async () => {
+    test('T004_cov: bad case', async () => {
         const services = createRequirementsAndTestsLanguageServices();
         const [mainDoc,] = await extractDocuments(
             path.join(__dirname, "files", "bad", "requirements.req"),

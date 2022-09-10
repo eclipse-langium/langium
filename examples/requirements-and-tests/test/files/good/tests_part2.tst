@@ -1,1 +1,1 @@
-tst T4 testFile="xxx" testMethod="yyy" tests ReqId000
+tst T005_generator testFile="xxx" tests ReqId000

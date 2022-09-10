@@ -4,10 +4,7 @@ import path from 'path';
 import { RequirementModel, TestModel } from '../language-server/generated/ast';
 import { extractDestinationAndName } from './cli-util';
 
-export function generateSummary(model: RequirementModel, testModels: TestModel[], filePath: string, destination: string | undefined): string {
-    const data = extractDestinationAndName(filePath, destination);
-    const generatedFilePath = `${path.join(data.destination, data.name)}.html`;
-
+export function generateSummaryFileHTMLContent(model: RequirementModel, testModels: TestModel[]): string {
     const fileNode = new CompositeGeneratorNode();
     fileNode.append('<html>', NL);
     fileNode.append('<body>', NL);
@@ -27,10 +24,16 @@ export function generateSummary(model: RequirementModel, testModels: TestModel[]
     fileNode.append('</table>', NL);
     fileNode.append('</body>', NL);
     fileNode.append('</html>', NL);
+    return processGeneratorNode(fileNode);
+}
+
+export function generateSummary(model: RequirementModel, testModels: TestModel[], filePath: string, destination: string | undefined): string {
+    const data = extractDestinationAndName(filePath, destination);
+    const generatedFilePath = `${path.join(data.destination, data.name)}.html`;
 
     if (!fs.existsSync(data.destination)) {
         fs.mkdirSync(data.destination, { recursive: true });
     }
-    fs.writeFileSync(generatedFilePath, processGeneratorNode(fileNode));
+    fs.writeFileSync(generatedFilePath, generateSummaryFileHTMLContent(model, testModels));
     return generatedFilePath;
 }
