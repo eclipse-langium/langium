@@ -46,4 +46,3 @@ Use the run configuration "Attach" to attach the debugger.
 
 ## Validators
 
-(See example model for the linkage with unit tests.)
