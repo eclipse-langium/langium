@@ -10,7 +10,8 @@ We model Requirements in a simple Requirement Model (Requirements consist of and
 req ReqId001 "The cli-tool should allow to extract all test cases referencing a specific requirement"
 req R1_tstID "A test identifier shall contain a number."
 req RA_reqID "A requirement identifier shall contain a number."
-req R3_reqCov "A requirement shall be covered by at least one test"```
+req R3_reqCov "A requirement shall be covered by at least one test"
+```
 
 Test Cases have also an identifier and the references to the Requirements checked by the test.
 
