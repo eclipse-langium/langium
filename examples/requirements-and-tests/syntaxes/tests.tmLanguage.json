@@ -10,7 +10,7 @@
     },
     {
       "name": "keyword.control.tests-language",
-      "match": "\\b(req|testFile|testMethod|tests|tst)\\b"
+      "match": "\\b(req|testFile|tests|tst)\\b"
     },
     {
       "name": "string.quoted.double.tests-language",

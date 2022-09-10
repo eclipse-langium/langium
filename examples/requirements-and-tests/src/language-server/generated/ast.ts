@@ -34,7 +34,6 @@ export interface Test extends AstNode {
     name: string
     requirements: Array<Reference<Requirement>>
     testFile?: string
-    testMethod?: string
 }
 
 export const Test = 'Test';

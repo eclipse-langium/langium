@@ -238,32 +238,6 @@ export const TestsGrammar = (): Grammar => loadedTestsGrammar ||(loadedTestsGram
                   },
                   "arguments": []
                 }
-              },
-              {
-                "$type": "Group",
-                "elements": [
-                  {
-                    "$type": "Keyword",
-                    "value": "testMethod"
-                  },
-                  {
-                    "$type": "Keyword",
-                    "value": "="
-                  },
-                  {
-                    "$type": "Assignment",
-                    "feature": "testMethod",
-                    "operator": "=",
-                    "terminal": {
-                      "$type": "RuleCall",
-                      "rule": {
-                        "$refText": "STRING"
-                      },
-                      "arguments": []
-                    }
-                  }
-                ],
-                "cardinality": "?"
               }
             ],
             "cardinality": "?"
