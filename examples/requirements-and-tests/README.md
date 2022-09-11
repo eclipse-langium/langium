@@ -6,7 +6,7 @@ This example allow to model Requirement and Tests Cases in two separate models (
 
 We model Requirements in a simple Requirement Model (Requirements consist of and identifier and a requirement text):
 
-```
+```text
 req ReqId001 "The cli-tool should allow to extract all test cases referencing a specific requirement"
 req R1_tstID "A test identifier shall contain a number."
 req RA_reqID "A requirement identifier shall contain a number."
@@ -18,18 +18,25 @@ Test Cases have also an identifier and the references to the Requirements checke
 ## Language Design
 
 Grammars:
-  * `common.langium`: common aspects used the main grammars.
-  * `requirements.langium`: requirements language (includes `common.langium`)
-  * `tests.langium`: requirements language (includes `common.langium` and `requirements.langium`, references `Requirement` elements from `requirements.langium`).
+
+* `common.langium`: common aspects used the main grammars.
+* `requirements.langium`: requirements language (includes `common.langium`)
+* `tests.langium`: requirements language (includes `common.langium` and `requirements.langium`, references `Requirement` elements from `requirements.langium`).
 
 Modules and Services:
-  * `createRequirementsAndTestsLanguageServices` creates the full set of services used by the CLI and the language server.
-  * `requirements-language-module.ts`: requirements service configuration
-  * `tests-language-module.ts`: tests service configuration
+
+* `createRequirementsAndTestsLanguageServices` creates the full set of services used by the CLI and the language server.
+* `requirements-language-module.ts`: requirements service configuration
+* `tests-language-module.ts`: tests service configuration
 
 Language configuration:
-  * `langium-config.json`: TODO, what does this exactly.
-  * `package.json`: `contributes` section (TODO, what does this exactly).
+
+* `langium-config.json`: TODO, what does this exactly.
+* `package.json`: `contributes` section (TODO, what does this exactly).
+
+CLI and tests:
+
+* `extractDocuments` in `cli-utils.ts` is responsible to load a requirement model file (`*.req`) and all test model files (`*.tst`) located in the folder of the processed requirement file. This is required in order to process the requirement model which needs all associated test models in the workspace.
 
 ## Generator CLI
 
@@ -41,6 +48,7 @@ The Example features a generator that you can run via cli to process Requirement
 The generator produces an HTML file.
 
 You also can use `requirements-and-tests-language-cli` as a replacement for `node ./bin/cli`, if you install the cli globally.
+
 * Run `npm install -g ./` from the requirements-and-tests directory.
 * Use `requirements-and-tests-language-cli` to run the cli. Follow the instructions or use `requirements-and-tests-language-cli generate-requirements-coverage <full-path-to-req-file>`.
 
@@ -51,6 +59,6 @@ Use the run configuration "Attach" to attach the debugger.
 
 ## Validators
 
- * A test identifier shall contain a number.
- * A requirement identifier shall contain a number.
- * A requirement shall be covered by at least one test (TODO: when updating the test model, the requirement is not rechecked automatically).
+* A test identifier shall contain a number.
+* A requirement identifier shall contain a number.
+* A requirement shall be covered by at least one test (TODO: when updating the test model, the requirement is not rechecked automatically).
