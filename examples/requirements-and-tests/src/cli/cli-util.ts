@@ -1,10 +1,10 @@
 import chalk from 'chalk';
 import path from 'path';
 import fs from 'fs';
-import { sync as globSync } from 'glob'
 import { LangiumDocument, LangiumServices } from 'langium';
 import { URI } from 'vscode-uri';
 import { isTestModel, RequirementModel, TestModel } from '../language-server/generated/ast';
+import { WorkspaceFolder } from 'vscode-languageclient';
 
 export async function extractDocuments(fileName: string, services: LangiumServices): Promise<[LangiumDocument, LangiumDocument[]]> {
     const extensions = services.LanguageMetaData.fileExtensions;
@@ -18,13 +18,13 @@ export async function extractDocuments(fileName: string, services: LangiumServic
         process.exit(1);
     }
 
-    const documents : Array<LangiumDocument> = [];
-    globSync(path.join(path.dirname(fileName), "**/*.tst")).forEach(testFileName=>{
-        documents.push(services.shared.workspace.LangiumDocuments.getOrCreateDocument(URI.file(path.resolve(testFileName))));
-    });
+    const folders : WorkspaceFolder[] = [{
+        uri: URI.file(path.resolve(path.dirname(fileName))).toString(), // TODO: why a string and not an URI?
+        name: 'main'
+    }];
+    await services.shared.workspace.WorkspaceManager.initializeWorkspace(folders);
 
-    const mainDocument = services.shared.workspace.LangiumDocuments.getOrCreateDocument(URI.file(path.resolve(fileName)));
-    documents.push(mainDocument);
+    const documents = services.shared.workspace.LangiumDocuments.all.toArray();
     await services.shared.workspace.DocumentBuilder.build(documents, { validationChecks: 'all' });
 
     documents.forEach(document=>{
@@ -39,6 +39,8 @@ export async function extractDocuments(fileName: string, services: LangiumServic
             process.exit(1);
         }
     });
+    const mainDocument = services.shared.workspace.LangiumDocuments.getOrCreateDocument(URI.file(path.resolve(fileName)));
+
     return [mainDocument, documents];
 }
 
