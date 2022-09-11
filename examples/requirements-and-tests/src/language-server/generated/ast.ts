@@ -5,7 +5,7 @@
 
 /* eslint-disable @typescript-eslint/array-type */
 /* eslint-disable @typescript-eslint/no-empty-interface */
-import { AstNode, AstReflection, Reference, isAstNode, TypeMetaData } from 'langium';
+import { AstNode, AstReflection, Reference, ReferenceInfo, isAstNode, TypeMetaData } from 'langium';
 
 export interface Requirement extends AstNode {
     readonly $container: RequirementModel;
@@ -54,8 +54,6 @@ export function isTestModel(item: unknown): item is TestModel {
 
 export type RequirementsAndTestsAstType = 'Requirement' | 'RequirementModel' | 'Test' | 'TestModel';
 
-export type RequirementsAndTestsAstReference = 'Test:requirements';
-
 export class RequirementsAndTestsAstReflection implements AstReflection {
 
     getAllTypes(): string[] {
@@ -77,7 +75,8 @@ export class RequirementsAndTestsAstReflection implements AstReflection {
         }
     }
 
-    getReferenceType(referenceId: RequirementsAndTestsAstReference): string {
+    getReferenceType(refInfo: ReferenceInfo): string {
+        const referenceId = `${refInfo.container.$type}:${refInfo.property}`;
         switch (referenceId) {
             case 'Test:requirements': {
                 return Requirement;

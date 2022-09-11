@@ -21,7 +21,7 @@ import { TestsLanguageModule, TestsLanguageServices } from './tests-language-mod
  * @param context Optional module context with the LSP connection
  * @returns An object wrapping the shared services and the language-specific services
  */
-export function createRequirementsAndTestsLanguageServices(context?: DefaultSharedModuleContext): {
+export function createRequirementsAndTestsLanguageServices(context: DefaultSharedModuleContext): {
     shared: LangiumSharedServices,
     RequirementsLanguage: RequirementsLanguageServices,
     TestsLanguage: TestsLanguageServices

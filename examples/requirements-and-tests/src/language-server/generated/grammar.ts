@@ -10,18 +10,13 @@ export const RequirementsGrammar = (): Grammar => loadedRequirementsGrammar ||(l
   "$type": "Grammar",
   "isDeclared": true,
   "name": "Requirements",
-  "imports": [
-    {
-      "$type": "GrammarImport",
-      "path": "./common"
-    }
-  ],
+  "imports": [],
   "rules": [
     {
       "$type": "ParserRule",
       "name": "RequirementModel",
       "entry": true,
-      "alternatives": {
+      "definition": {
         "$type": "Assignment",
         "feature": "requirements",
         "operator": "+=",
@@ -43,7 +38,7 @@ export const RequirementsGrammar = (): Grammar => loadedRequirementsGrammar ||(l
     {
       "$type": "ParserRule",
       "name": "Requirement",
-      "alternatives": {
+      "definition": {
         "$type": "Group",
         "elements": [
           {
@@ -87,7 +82,7 @@ export const RequirementsGrammar = (): Grammar => loadedRequirementsGrammar ||(l
       "$type": "TerminalRule",
       "hidden": true,
       "name": "WS",
-      "terminal": {
+      "definition": {
         "$type": "RegexToken",
         "regex": "\\\\s+"
       },
@@ -96,7 +91,7 @@ export const RequirementsGrammar = (): Grammar => loadedRequirementsGrammar ||(l
     {
       "$type": "TerminalRule",
       "name": "ID",
-      "terminal": {
+      "definition": {
         "$type": "RegexToken",
         "regex": "[_a-zA-Z][\\\\w_]*"
       },
@@ -110,7 +105,7 @@ export const RequirementsGrammar = (): Grammar => loadedRequirementsGrammar ||(l
         "$type": "ReturnType",
         "name": "number"
       },
-      "terminal": {
+      "definition": {
         "$type": "RegexToken",
         "regex": "[0-9]+"
       },
@@ -120,7 +115,7 @@ export const RequirementsGrammar = (): Grammar => loadedRequirementsGrammar ||(l
     {
       "$type": "TerminalRule",
       "name": "STRING",
-      "terminal": {
+      "definition": {
         "$type": "RegexToken",
         "regex": "\\"[^\\"]*\\"|'[^']*'"
       },
@@ -131,7 +126,7 @@ export const RequirementsGrammar = (): Grammar => loadedRequirementsGrammar ||(l
       "$type": "TerminalRule",
       "hidden": true,
       "name": "ML_COMMENT",
-      "terminal": {
+      "definition": {
         "$type": "RegexToken",
         "regex": "\\\\/\\\\*[\\\\s\\\\S]*?\\\\*\\\\/"
       },
@@ -141,7 +136,7 @@ export const RequirementsGrammar = (): Grammar => loadedRequirementsGrammar ||(l
       "$type": "TerminalRule",
       "hidden": true,
       "name": "SL_COMMENT",
-      "terminal": {
+      "definition": {
         "$type": "RegexToken",
         "regex": "\\\\/\\\\/[^\\\\n\\\\r]*"
       },
@@ -160,22 +155,13 @@ export const TestsGrammar = (): Grammar => loadedTestsGrammar ||(loadedTestsGram
   "$type": "Grammar",
   "isDeclared": true,
   "name": "Tests",
-  "imports": [
-    {
-      "$type": "GrammarImport",
-      "path": "./common"
-    },
-    {
-      "$type": "GrammarImport",
-      "path": "./requirements"
-    }
-  ],
+  "imports": [],
   "rules": [
     {
       "$type": "ParserRule",
       "name": "TestModel",
       "entry": true,
-      "alternatives": {
+      "definition": {
         "$type": "Assignment",
         "feature": "tests",
         "operator": "+=",
@@ -197,7 +183,7 @@ export const TestsGrammar = (): Grammar => loadedTestsGrammar ||(loadedTestsGram
     {
       "$type": "ParserRule",
       "name": "Test",
-      "alternatives": {
+      "definition": {
         "$type": "Group",
         "elements": [
           {
@@ -307,7 +293,7 @@ export const TestsGrammar = (): Grammar => loadedTestsGrammar ||(loadedTestsGram
       "$type": "TerminalRule",
       "hidden": true,
       "name": "WS",
-      "terminal": {
+      "definition": {
         "$type": "RegexToken",
         "regex": "\\\\s+"
       },
@@ -316,7 +302,7 @@ export const TestsGrammar = (): Grammar => loadedTestsGrammar ||(loadedTestsGram
     {
       "$type": "TerminalRule",
       "name": "ID",
-      "terminal": {
+      "definition": {
         "$type": "RegexToken",
         "regex": "[_a-zA-Z][\\\\w_]*"
       },
@@ -330,7 +316,7 @@ export const TestsGrammar = (): Grammar => loadedTestsGrammar ||(loadedTestsGram
         "$type": "ReturnType",
         "name": "number"
       },
-      "terminal": {
+      "definition": {
         "$type": "RegexToken",
         "regex": "[0-9]+"
       },
@@ -340,7 +326,7 @@ export const TestsGrammar = (): Grammar => loadedTestsGrammar ||(loadedTestsGram
     {
       "$type": "TerminalRule",
       "name": "STRING",
-      "terminal": {
+      "definition": {
         "$type": "RegexToken",
         "regex": "\\"[^\\"]*\\"|'[^']*'"
       },
@@ -351,7 +337,7 @@ export const TestsGrammar = (): Grammar => loadedTestsGrammar ||(loadedTestsGram
       "$type": "TerminalRule",
       "hidden": true,
       "name": "ML_COMMENT",
-      "terminal": {
+      "definition": {
         "$type": "RegexToken",
         "regex": "\\\\/\\\\*[\\\\s\\\\S]*?\\\\*\\\\/"
       },
@@ -361,7 +347,7 @@ export const TestsGrammar = (): Grammar => loadedTestsGrammar ||(loadedTestsGram
       "$type": "TerminalRule",
       "hidden": true,
       "name": "SL_COMMENT",
-      "terminal": {
+      "definition": {
         "$type": "RegexToken",
         "regex": "\\\\/\\\\/[^\\\\n\\\\r]*"
       },
@@ -371,7 +357,7 @@ export const TestsGrammar = (): Grammar => loadedTestsGrammar ||(loadedTestsGram
       "$type": "ParserRule",
       "name": "RequirementModel",
       "entry": false,
-      "alternatives": {
+      "definition": {
         "$type": "Assignment",
         "feature": "requirements",
         "operator": "+=",
@@ -393,7 +379,7 @@ export const TestsGrammar = (): Grammar => loadedTestsGrammar ||(loadedTestsGram
     {
       "$type": "ParserRule",
       "name": "Requirement",
-      "alternatives": {
+      "definition": {
         "$type": "Group",
         "elements": [
           {

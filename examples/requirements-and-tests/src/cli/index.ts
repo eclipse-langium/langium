@@ -1,15 +1,16 @@
-import colors from 'colors';
+import chalk from 'chalk';
 import { Command } from 'commander';
 import { RequirementsLanguageMetaData } from '../language-server/generated/module';
 import { createRequirementsAndTestsLanguageServices } from '../language-server/requirements-and-tests-language-module';
 import { extractRequirementModelWithTestModels } from './cli-util';
 import { generateSummary } from './generator';
+import { NodeFileSystem } from 'langium/node';
 
 export const generateAction = async (fileName: string, opts: GenerateOptions): Promise<void> => {
-    const services = createRequirementsAndTestsLanguageServices().RequirementsLanguage;
+    const services = createRequirementsAndTestsLanguageServices(NodeFileSystem).RequirementsLanguage;
     const [requirementModel, testModels]  = await extractRequirementModelWithTestModels(fileName, services);
     const generatedFilePath = generateSummary(requirementModel, testModels, fileName, opts.destination);
-    console.log(colors.green(`Requirement coverage generated successfully: ${generatedFilePath}`));
+    console.log(chalk.green(`Requirement coverage generated successfully: ${generatedFilePath}`));
 };
 
 export type GenerateOptions = {
