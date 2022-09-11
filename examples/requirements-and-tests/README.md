@@ -31,8 +31,8 @@ Modules and Services:
 
 Language configuration:
 
-* `langium-config.json`: TODO, what does this exactly.
-* `package.json`: `contributes` section (TODO, what does this exactly).
+* `langium-config.json`: TODO, what does this exactly (AST code generation, syntax highlighting, TextMate).
+* `package.json`: `contributes` section, TODO, what does this exactly (vscode extension linkage?).
 
 CLI and tests:
 
