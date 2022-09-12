@@ -14,7 +14,7 @@ import { LangiumDocuments } from '../../workspace/documents';
 import { Grammar, GrammarImport, isGrammarImport } from '../generated/ast';
 import { findAssignment, resolveImport } from '../grammar-util';
 
-export class LangiumGrammarGoToDefinitionProvider extends DefaultDefinitionProvider {
+export class LangiumGrammarDefinitionProvider extends DefaultDefinitionProvider {
 
     protected documents: LangiumDocuments;
 

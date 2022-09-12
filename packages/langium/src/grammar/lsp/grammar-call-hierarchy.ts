@@ -9,11 +9,12 @@ import { AbstractCallHierarchyProvider } from '../../lsp/call-hierarchy-provider
 import { AstNode, CstNode } from '../../syntax-tree';
 import { getContainerOfType, getDocument, streamAllContents } from '../../utils/ast-util';
 import { findLeafNodeAtOffset } from '../../utils/cst-util';
+import { Stream } from '../../utils/stream';
 import { ReferenceDescription } from '../../workspace/ast-descriptions';
 import { isParserRule, isRuleCall } from '../generated/ast';
 
 export class LangiumGrammarCallHierarchyProvider extends AbstractCallHierarchyProvider {
-    protected getIncomingCalls(node: AstNode, references: ReferenceDescription[]): CallHierarchyIncomingCall[] | undefined {
+    protected getIncomingCalls(node: AstNode, references: Stream<ReferenceDescription>): CallHierarchyIncomingCall[] | undefined {
         if (!isParserRule(node)) {
             return undefined;
         }
