@@ -18,7 +18,7 @@ describe('Module generator', () => {
             const moduleString = generateModule([], config, new Map());
 
             // assert
-            expect(moduleString).not.toContain('ParserConfig');
+            expect(moduleString).not.toMatch('ParserConfig');
         });
 
         test('should include an import of IParserConfig', () => {
@@ -44,8 +44,8 @@ describe('Module generator', () => {
             const moduleString = generateModule([grammar], config, grammarConfigMap);
 
             // assert
-            expect(moduleString).toContain('MagicGrammarParserConfig');
-            expect(moduleString.split('\n').filter(line => line.startsWith('import') && line.includes('IParserConfig'))).toHaveLength(1);
+            expect(moduleString).toMatch('MagicGrammarParserConfig');
+            expect(moduleString).toMatch(/^import .* IParserConfig/gm);
         });
     });
 });

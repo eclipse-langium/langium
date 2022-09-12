@@ -37,7 +37,7 @@ export class DefaultWorkspaceManager implements WorkspaceManager {
     protected readonly documentBuilder: DocumentBuilder;
     protected readonly fileSystemProvider: FileSystemProvider;
     protected readonly mutex: MutexLock;
-    protected folders: WorkspaceFolder[] | null;
+    protected folders?: WorkspaceFolder[];
 
     constructor(services: LangiumSharedServices) {
         this.serviceRegistry = services.ServiceRegistry;
@@ -47,7 +47,7 @@ export class DefaultWorkspaceManager implements WorkspaceManager {
         this.mutex = services.workspace.MutexLock;
 
         services.lsp.LanguageServer.onInitialize(params => {
-            this.folders = params.workspaceFolders;
+            this.folders = params.workspaceFolders ?? undefined;
         });
 
         services.lsp.LanguageServer.onInitialized(_params => {
