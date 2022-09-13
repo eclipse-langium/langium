@@ -1,1 +1,1 @@
-tst T005_generator testFile="xxx" tests ReqId000
+tst T005_generator tests ReqId000

@@ -1,3 +1,4 @@
-tst T1 tests ReqId001_tstID
-tst TA tests ReqIdABC_reqID
-tst T3 testFile="xxx" tests ReqId003_reqCov
+tst T001_good_case tests ReqId001_tstID, ReqId002_reqID
+tst T002_badReqId tests ReqId002_reqID
+tst T003_badTstId tests ReqId001_tstID
+tst T004_cov tests ReqId003_reqCov
