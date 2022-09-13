@@ -4,6 +4,12 @@ import path from 'path';
 import { RequirementModel, TestModel } from '../language-server/generated/ast';
 import { extractDestinationAndName } from './cli-util';
 
+/**
+ * main generator function: generate a summary in HTML.
+ * @param model the model with requirements
+ * @param testModels the models with test cases
+ * @returns the content of the HTML file.
+ */
 export function generateSummaryFileHTMLContent(model: RequirementModel, testModels: TestModel[]): string {
     const fileNode = new CompositeGeneratorNode();
     fileNode.append('<html>', NL);

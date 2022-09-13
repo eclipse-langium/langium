@@ -6,6 +6,14 @@ import { URI } from 'vscode-uri';
 import { isTestModel, RequirementModel, TestModel } from '../language-server/generated/ast';
 import { WorkspaceFolder } from 'vscode-languageclient';
 
+/**
+ * Read a requirement document with the complete workspace (with requirements and
+ * tests) located in the folder of the file. 
+ * @param fileName the main requirement model file
+ * @param services the language services
+ * @returns a tuple with the document indicated by the fileName and a list of
+ *          documents from the workspace.
+ */
 export async function extractDocuments(fileName: string, services: LangiumServices): Promise<[LangiumDocument, LangiumDocument[]]> {
     const extensions = services.LanguageMetaData.fileExtensions;
     if (!extensions.includes(path.extname(fileName))) {
@@ -44,6 +52,14 @@ export async function extractDocuments(fileName: string, services: LangiumServic
     return [mainDocument, documents];
 }
 
+/**
+ * Read a requirement model with the test models from workspace located in the same folder.
+ * @param fileName the main requirement model file
+ * @param services the language services
+ * @returns a tuple with the model indicated by the fileName and a list of
+ *          test models from the workspace.
+ * @returns 
+ */
 export async function extractRequirementModelWithTestModels(fileName: string, services: LangiumServices): Promise<[RequirementModel, TestModel[]]> {
     const [mainDocument, allDocuments] = await extractDocuments(fileName, services);
     return [
