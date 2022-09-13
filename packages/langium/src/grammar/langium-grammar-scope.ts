@@ -4,7 +4,8 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { DefaultScopeComputation, DefaultScopeProvider, Scope } from '../references/scope';
+import { DefaultScopeComputation } from '../references/scope-computation';
+import { DefaultScopeProvider, Scope } from '../references/scope-provider';
 import { LangiumServices } from '../services';
 import { AstNode, AstNodeDescription, ReferenceInfo } from '../syntax-tree';
 import { findRootNode, getDocument } from '../utils/ast-util';

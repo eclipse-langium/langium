@@ -11,7 +11,7 @@ import { GrammarConfig } from '../../grammar/grammar-config';
 import { getEntryRule, getExplicitRuleType } from '../../grammar/grammar-util';
 import { LangiumCompletionParser } from '../../parser/langium-parser';
 import { NameProvider } from '../../references/naming';
-import { ScopeProvider } from '../../references/scope';
+import { ScopeProvider } from '../../references/scope-provider';
 import { LangiumServices } from '../../services';
 import { AstNode, AstNodeDescription, Reference, ReferenceInfo } from '../../syntax-tree';
 import { getContainerOfType, isAstNode } from '../../utils/ast-util';

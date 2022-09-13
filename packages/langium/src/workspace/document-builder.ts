@@ -189,7 +189,7 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
      */
     protected async computeScopes(document: LangiumDocument, cancelToken: CancellationToken): Promise<void> {
         const scopeComputation = this.serviceRegistry.getServices(document.uri).references.ScopeComputation;
-        document.precomputedScopes = await scopeComputation.computeScopes(document, cancelToken);
+        document.precomputedScopes = await scopeComputation.computeLocalScopes(document, cancelToken);
         document.state = DocumentState.ComputedScopes;
     }
 

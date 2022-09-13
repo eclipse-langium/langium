@@ -131,7 +131,7 @@ export class DefaultIndexManager implements IndexManager {
     async updateContent(document: LangiumDocument, cancelToken = CancellationToken.None): Promise<void> {
         this.globalScopeCache.clear();
         const services = this.serviceRegistry.getServices(document.uri);
-        const exports: AstNodeDescription[] = await services.references.ScopeComputation.getExports(document, cancelToken);
+        const exports: AstNodeDescription[] = await services.references.ScopeComputation.computeExports(document, cancelToken);
         for (const data of exports) {
             data.node = undefined; // clear reference to the AST Node
         }
