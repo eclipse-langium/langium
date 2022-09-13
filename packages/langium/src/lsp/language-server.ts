@@ -5,6 +5,8 @@
  ******************************************************************************/
 
 import {
+    CallHierarchyIncomingCallsParams,
+    CallHierarchyOutgoingCallsParams,
     CancellationToken, Connection, Disposable, Emitter, Event, FileChangeType, HandlerResult, InitializedParams, InitializeParams, InitializeResult,
     LSPErrorCodes, RequestHandler, ResponseError, ServerRequestHandler, TextDocumentIdentifier, TextDocumentSyncKind
 } from 'vscode-languageserver';
@@ -80,6 +82,7 @@ export class DefaultLanguageServer implements LanguageServer {
         const hasFoldingRangeProvider = this.hasService(e => e.lsp.FoldingRangeProvider);
         const hasHoverProvider = this.hasService(e => e.lsp.HoverProvider);
         const hasRenameProvider = this.hasService(e => e.lsp.RenameProvider);
+        const hasCallHierarchyProvider = this.hasService(e => e.lsp.CallHierarchyProvider);
 
         const result: InitializeResult = {
             capabilities: {
@@ -111,7 +114,10 @@ export class DefaultLanguageServer implements LanguageServer {
                     ? DefaultSemanticTokenOptions
                     : undefined,
                 signatureHelpProvider: signatureHelpOptions,
-                implementationProvider: hasGoToImplementationProvider
+                implementationProvider: hasGoToImplementationProvider,
+                callHierarchyProvider: hasCallHierarchyProvider
+                    ? {}
+                    : undefined
             }
         };
 
@@ -147,6 +153,7 @@ export function startLanguageServer(services: LangiumSharedServices): void {
     addSemanticTokenHandler(connection, services);
     addExecuteCommandHandler(connection, services);
     addSignatureHelpHandler(connection, services);
+    addCallHierarchyHandler(connection, services);
     addConfigurationChangeHandler(connection, services);
 
     connection.onInitialize(params => {
@@ -354,6 +361,59 @@ export function addSignatureHelpHandler(connection: Connection, services: Langiu
         (services, document, params, cancelToken) => services.lsp.SignatureHelp?.provideSignatureHelp(document, params, cancelToken),
         services
     ));
+}
+
+export function addCallHierarchyHandler(connection: Connection, services: LangiumSharedServices): void {
+    const errorMessage = 'No call hierarchy provider registered';
+    connection.languages.callHierarchy.onPrepare(createServerRequestHandler(
+        (services, document, params, cancelToken) => {
+            if (services.lsp.CallHierarchyProvider) {
+                return services.lsp.CallHierarchyProvider.prepareCallHierarchy(document, params, cancelToken) ?? null;
+            }
+            return new ResponseError<void>(0, errorMessage);
+        },
+        services
+    ));
+
+    connection.languages.callHierarchy.onIncomingCalls(createCallHierarchyRequestHandler(
+        (services, params, cancelToken) => {
+            if (services.lsp.CallHierarchyProvider) {
+                return services.lsp.CallHierarchyProvider.incomingCalls(params, cancelToken) ?? null;
+            }
+            return new ResponseError<void>(0, errorMessage);
+        },
+        services
+    ));
+
+    connection.languages.callHierarchy.onOutgoingCalls(createCallHierarchyRequestHandler(
+        (services, params, cancelToken) => {
+            if (services.lsp.CallHierarchyProvider) {
+                return services.lsp.CallHierarchyProvider.outgoingCalls(params, cancelToken) ?? null;
+            }
+            return new ResponseError<void>(0, errorMessage);
+        },
+        services
+    ));
+}
+
+export function createCallHierarchyRequestHandler<P extends CallHierarchyIncomingCallsParams | CallHierarchyOutgoingCallsParams, R, PR, E = void>(
+    serviceCall: (services: LangiumServices, params: P, cancelToken: CancellationToken) => HandlerResult<R, E>,
+    sharedServices: LangiumSharedServices
+): ServerRequestHandler<P, R, PR, E> {
+    const serviceRegistry = sharedServices.ServiceRegistry;
+    return async (params: P, cancelToken: CancellationToken) => {
+        const uri = URI.parse(params.item.uri);
+        const language = serviceRegistry.getServices(uri);
+        if (!language) {
+            console.error(`Could not find service instance for uri: '${uri.toString()}'`);
+            throw new Error();
+        }
+        try {
+            return await serviceCall(language, params, cancelToken);
+        } catch (err) {
+            return responseError<E>(err);
+        }
+    };
 }
 
 export function createServerRequestHandler<P extends { textDocument: TextDocumentIdentifier }, R, PR, E = void>(
