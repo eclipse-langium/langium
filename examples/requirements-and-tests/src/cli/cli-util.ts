@@ -58,8 +58,7 @@ export async function extractDocuments(fileName: string, services: LangiumServic
  * @param services the language services
  * @returns a tuple with the model indicated by the fileName and a list of
  *          test models from the workspace.
- * @returns 
- */
+chr */
 export async function extractRequirementModelWithTestModels(fileName: string, services: LangiumServices): Promise<[RequirementModel, TestModel[]]> {
     const [mainDocument, allDocuments] = await extractDocuments(fileName, services);
     return [
