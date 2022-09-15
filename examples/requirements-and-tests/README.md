@@ -15,6 +15,13 @@ req R3_reqCov "A requirement shall be covered by at least one test"
 
 Test Cases have also an identifier and the references to the Requirements checked by the test.
 
+## What does this example demonstrate
+
+* How to integrate two languages to interact with each other: They use common rules (e.g., `ID` or `Contact`) and they have cross languages references (e.g. `Requirement` or `Environment`).
+* How to setup these languages with their services and grammars (file layout).
+* How to create cross language validations (are requirements covered by some tests?).
+* How to create a cross language generator (coverage matrix).
+
 ## Language Design
 
 Grammars:
