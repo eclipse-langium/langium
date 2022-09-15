@@ -1,18 +1,14 @@
 /******************************************************************************
- * Copyright 2021 TypeFox GmbH
+ * Copyright 2021-2022 TypeFox GmbH
  * This program and the accompanying materials are made available under the
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { CancellationToken } from 'vscode-jsonrpc';
 import { LangiumServices } from '../services';
 import { AstNode, AstNodeDescription, AstReflection, ReferenceInfo } from '../syntax-tree';
-import { getDocument, streamAllContents } from '../utils/ast-util';
-import { MultiMap } from '../utils/collections';
-import { interruptAndCheck } from '../utils/promise-util';
+import { getDocument } from '../utils/ast-util';
 import { EMPTY_STREAM, Stream, stream } from '../utils/stream';
 import { AstNodeDescriptionProvider } from '../workspace/ast-descriptions';
-import { LangiumDocument, PrecomputedScopes } from '../workspace/documents';
 import { IndexManager } from '../workspace/index-manager';
 import { NameProvider } from './naming';
 
@@ -20,6 +16,7 @@ import { NameProvider } from './naming';
  * A scope describes what target elements are visible from a specific cross-reference context.
  */
 export interface Scope {
+
     /**
      * Find a target element matching the given name. If no element is found, `undefined` is returned.
      * If multiple matching elements are present, the selection of the returned element should be done
@@ -34,6 +31,7 @@ export interface Scope {
      * shown in the editor.
      */
     getAllElements(): Stream<AstNodeDescription>;
+
 }
 
 export interface ScopeOptions {
@@ -91,6 +89,7 @@ export const EMPTY_SCOPE: Scope = {
  * Language-specific service for determining the scope of target elements visible in a specific cross-reference context.
  */
 export interface ScopeProvider {
+
     /**
      * Return a scope describing what elements are visible for the given AST node and cross-reference
      * identifier.
@@ -98,6 +97,7 @@ export interface ScopeProvider {
      * @param context Information about the reference for which a scope is requested.
      */
     getScope(context: ReferenceInfo): Scope;
+
 }
 
 export class DefaultScopeProvider implements ScopeProvider {
@@ -166,60 +166,5 @@ export class DefaultScopeProvider implements ScopeProvider {
     protected getGlobalScope(referenceType: string): Scope {
         return new StreamScope(this.indexManager.allElements(referenceType));
     }
-}
 
-/**
- * Language-specific service for precomputing the scope for a document. This service is executed as the second phase in the `DocumentBuilder`.
- */
-export interface ScopeComputation {
-    /**
-     * Precomputes the scopes for a document. The result is a multimap assigning a set of AST node
-     * descriptions to every level of the AST. These data are used by the `ScopeProvider` service
-     * to determine which target nodes are visible in the context of a specific cross-reference.
-     *
-     * _Note:_ You should not resolve any cross-references in this service method. Cross-reference
-     * resolution depends on the scope computation phase to be completed.
-     *
-     * @param document The document in which to compute scopes.
-     * @param cancelToken Indicates when to cancel the current operation.
-     * @throws `OperationCanceled` if a user action occurs during execution
-     */
-    computeScope(document: LangiumDocument, cancelToken?: CancellationToken): Promise<PrecomputedScopes>;
-}
-
-/**
- * The default scope computation gathers all AST nodes that have a name (according to the `NameProvider`
- * service) and makes them available in their container node. As a result, from every cross-reference in
- * the AST, target elements from the same level and further up towards the root are visible. Elements that
- * are nested inside lower levels are not visible by default, but that can be changed by customizing this
- * service.
- */
-export class DefaultScopeComputation implements ScopeComputation {
-    protected readonly nameProvider: NameProvider;
-    protected readonly descriptions: AstNodeDescriptionProvider;
-
-    constructor(services: LangiumServices) {
-        this.nameProvider = services.references.NameProvider;
-        this.descriptions = services.workspace.AstNodeDescriptionProvider;
-    }
-
-    async computeScope(document: LangiumDocument, cancelToken = CancellationToken.None): Promise<PrecomputedScopes> {
-        const rootNode = document.parseResult.value;
-        const scopes = new MultiMap<AstNode, AstNodeDescription>();
-        for (const node of streamAllContents(rootNode)) {
-            await interruptAndCheck(cancelToken);
-            this.processNode(node, document, scopes);
-        }
-        return scopes;
-    }
-
-    protected processNode(node: AstNode, document: LangiumDocument, scopes: PrecomputedScopes): void {
-        const container = node.$container;
-        if (container) {
-            const name = this.nameProvider.getName(node);
-            if (name) {
-                scopes.add(container, this.descriptions.createDescription(node, name, document));
-            }
-        }
-    }
 }

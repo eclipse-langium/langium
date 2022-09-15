@@ -1,0 +1,133 @@
+/******************************************************************************
+ * Copyright 2021-2022 TypeFox GmbH
+ * This program and the accompanying materials are made available under the
+ * terms of the MIT License, which is available in the project root.
+ ******************************************************************************/
+
+import { CancellationToken } from 'vscode-jsonrpc';
+import { LangiumServices } from '../services';
+import { AstNode, AstNodeDescription } from '../syntax-tree';
+import { streamAllContents, streamContents } from '../utils/ast-util';
+import { MultiMap } from '../utils/collections';
+import { interruptAndCheck } from '../utils/promise-util';
+import { AstNodeDescriptionProvider } from '../workspace/ast-descriptions';
+import { LangiumDocument, PrecomputedScopes } from '../workspace/documents';
+import { NameProvider } from './naming';
+
+/**
+ * Language-specific service for precomputing global and local scopes. The service methods are executed
+ * as the first and second phase in the `DocumentBuilder`.
+ */
+export interface ScopeComputation {
+
+    /**
+     * Creates descriptions of all AST nodes that shall be exported into the _global_ scope from the given
+     * document. These descriptions are gathered by the `IndexManager` and stored in the global index so
+     * they can be referenced from other documents.
+     *
+     * _Note:_ You should not resolve any cross-references in this service method. Cross-reference resolution
+     * depends on the scope computation phase to be completed (`computeScope` method), which runs after the
+     * initial indexing where this method is used.
+     *
+     * @param document The document from which to gather exported AST nodes.
+     * @param cancelToken Indicates when to cancel the current operation.
+     * @throws `OperationCanceled` if a user action occurs during execution
+     */
+    computeExports(document: LangiumDocument, cancelToken?: CancellationToken): Promise<AstNodeDescription[]>;
+
+    /**
+     * Precomputes the _local_ scopes for a document, which are necessary for the default way of
+     * resolving references to symbols in the same document. The result is a multimap assigning a
+     * set of AST node descriptions to every level of the AST. These data are used by the `ScopeProvider`
+     * service to determine which target nodes are visible in the context of a specific cross-reference.
+     *
+     * _Note:_ You should not resolve any cross-references in this service method. Cross-reference
+     * resolution depends on the scope computation phase to be completed.
+     *
+     * @param document The document in which to compute scopes.
+     * @param cancelToken Indicates when to cancel the current operation.
+     * @throws `OperationCanceled` if a user action occurs during execution
+     */
+    computeLocalScopes(document: LangiumDocument, cancelToken?: CancellationToken): Promise<PrecomputedScopes>;
+
+    /**
+     * @deprecated This method has been renamed to `computeLocalScopes`.
+     */
+    computeScope(document: LangiumDocument, cancelToken?: CancellationToken): never
+
+}
+
+/**
+ * The default scope computation gathers all AST nodes that have a name (according to the `NameProvider`
+ * service) and makes them available in their container node. As a result, from every cross-reference in
+ * the AST, target elements from the same level and further up towards the root are visible. Elements that
+ * are nested inside lower levels are not visible by default, but that can be changed by customizing this
+ * service.
+ */
+export class DefaultScopeComputation implements ScopeComputation {
+
+    protected readonly nameProvider: NameProvider;
+    protected readonly descriptions: AstNodeDescriptionProvider;
+
+    constructor(services: LangiumServices) {
+        this.nameProvider = services.references.NameProvider;
+        this.descriptions = services.workspace.AstNodeDescriptionProvider;
+    }
+
+    async computeExports(document: LangiumDocument, cancelToken = CancellationToken.None): Promise<AstNodeDescription[]> {
+        const exports: AstNodeDescription[] = [];
+        const rootNode = document.parseResult.value;
+        this.exportNode(rootNode, exports, document);
+        // Here we navigate only the top-level AST contents - nested nodes are not exported by default
+        for (const node of streamContents(rootNode)) {
+            await interruptAndCheck(cancelToken);
+            this.exportNode(node, exports, document);
+        }
+        return exports;
+    }
+
+    /**
+     * Add a single node to the list of exports if it has a name. Override this method to change how
+     * symbols are exported, e.g. by modifying their exported name.
+     */
+    protected exportNode(node: AstNode, exports: AstNodeDescription[], document: LangiumDocument): void {
+        const name = this.nameProvider.getName(node);
+        if (name) {
+            exports.push(this.descriptions.createDescription(node, name, document));
+        }
+    }
+
+    async computeLocalScopes(document: LangiumDocument, cancelToken = CancellationToken.None): Promise<PrecomputedScopes> {
+        const rootNode = document.parseResult.value;
+        const scopes = new MultiMap<AstNode, AstNodeDescription>();
+        // Here we navigate the full AST - local scopes shall be available in the whole document
+        for (const node of streamAllContents(rootNode)) {
+            await interruptAndCheck(cancelToken);
+            this.processNode(node, document, scopes);
+        }
+        return scopes;
+    }
+
+    /**
+     * Process a single node during scopes computation. The default implementation makes the node visible
+     * in the subtree of its container (if the node has a name). Override this method to change this,
+     * e.g. by increasing the visibility to a higher level in the AST.
+     */
+    protected processNode(node: AstNode, document: LangiumDocument, scopes: PrecomputedScopes): void {
+        const container = node.$container;
+        if (container) {
+            const name = this.nameProvider.getName(node);
+            if (name) {
+                scopes.add(container, this.descriptions.createDescription(node, name, document));
+            }
+        }
+    }
+
+    /**
+     * @deprecated This method has been renamed to `computeLocalScopes`.
+     */
+    computeScope(): never {
+        throw new Error('Deprecated: This method has been renamed to `computeLocalScopes`.');
+    }
+
+}

@@ -11,7 +11,7 @@ import { getDocument, isAstNode, isAstNodeDescription, isLinkingError, streamAst
 import { interruptAndCheck } from '../utils/promise-util';
 import { AstNodeLocator } from '../workspace/ast-node-locator';
 import { DocumentState, LangiumDocument, LangiumDocuments } from '../workspace/documents';
-import { ScopeProvider } from './scope';
+import { ScopeProvider } from './scope-provider';
 
 /**
  * Language-specific service for resolving cross-references in the AST.

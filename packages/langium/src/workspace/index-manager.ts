@@ -131,11 +131,11 @@ export class DefaultIndexManager implements IndexManager {
     async updateContent(document: LangiumDocument, cancelToken = CancellationToken.None): Promise<void> {
         this.globalScopeCache.clear();
         const services = this.serviceRegistry.getServices(document.uri);
-        const indexData: AstNodeDescription[] = await services.workspace.AstNodeDescriptionProvider.createDescriptions(document, cancelToken);
-        for (const data of indexData) {
+        const exports: AstNodeDescription[] = await services.references.ScopeComputation.computeExports(document, cancelToken);
+        for (const data of exports) {
             data.node = undefined; // clear reference to the AST Node
         }
-        this.simpleIndex.set(document.uri.toString(), indexData);
+        this.simpleIndex.set(document.uri.toString(), exports);
         document.state = DocumentState.IndexedContent;
     }
 
