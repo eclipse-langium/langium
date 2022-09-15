@@ -61,8 +61,8 @@
         "chalk": "^4.1.2",
         "commander": "^8.0.0",
         "langium": "0.4.0",
-        "vscode-languageclient": "^8.0.1",
-        "vscode-languageserver": "^8.0.1"
+        "vscode-languageclient": "^8.0.2",
+        "vscode-languageserver": "^8.0.2"
     },
     "devDependencies": {
         "langium-cli": "0.4.0"

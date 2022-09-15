@@ -64,8 +64,7 @@
   },
   "dependencies": {
     "langium": "0.4.0",
-    "vscode-languageclient": "^8.0.1",
-    "vscode-languageserver": "^8.0.1",
+    "vscode-languageserver": "^8.0.2",
     "ignore":"~5.2.0"
   },
   "devDependencies": {

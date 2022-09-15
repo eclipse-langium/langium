@@ -23,6 +23,6 @@ jobs:
     - name: Build
       shell: bash
       run: |
-        npm install
+        npm ci
         npm test
         npm run lint
