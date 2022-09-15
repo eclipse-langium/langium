@@ -34,6 +34,19 @@ export const RequirementsGrammar = (): Grammar => loadedRequirementsGrammar ||(l
           },
           {
             "$type": "Assignment",
+            "feature": "environments",
+            "operator": "+=",
+            "terminal": {
+              "$type": "RuleCall",
+              "rule": {
+                "$refText": "Environment"
+              },
+              "arguments": []
+            },
+            "cardinality": "*"
+          },
+          {
+            "$type": "Assignment",
             "feature": "requirements",
             "operator": "+=",
             "terminal": {
@@ -48,6 +61,53 @@ export const RequirementsGrammar = (): Grammar => loadedRequirementsGrammar ||(l
         ]
       },
       "definesHiddenTokens": false,
+      "fragment": false,
+      "hiddenTokens": [],
+      "parameters": [],
+      "wildcard": false
+    },
+    {
+      "$type": "ParserRule",
+      "name": "Environment",
+      "definition": {
+        "$type": "Group",
+        "elements": [
+          {
+            "$type": "Keyword",
+            "value": "environment"
+          },
+          {
+            "$type": "Assignment",
+            "feature": "name",
+            "operator": "=",
+            "terminal": {
+              "$type": "RuleCall",
+              "rule": {
+                "$refText": "ID"
+              },
+              "arguments": []
+            }
+          },
+          {
+            "$type": "Keyword",
+            "value": ":"
+          },
+          {
+            "$type": "Assignment",
+            "feature": "description",
+            "operator": "=",
+            "terminal": {
+              "$type": "RuleCall",
+              "rule": {
+                "$refText": "STRING"
+              },
+              "arguments": []
+            }
+          }
+        ]
+      },
+      "definesHiddenTokens": false,
+      "entry": false,
       "fragment": false,
       "hiddenTokens": [],
       "parameters": [],
@@ -86,6 +146,54 @@ export const RequirementsGrammar = (): Grammar => loadedRequirementsGrammar ||(l
               },
               "arguments": []
             }
+          },
+          {
+            "$type": "Group",
+            "elements": [
+              {
+                "$type": "Keyword",
+                "value": "applicable"
+              },
+              {
+                "$type": "Keyword",
+                "value": "for"
+              },
+              {
+                "$type": "Assignment",
+                "feature": "environments",
+                "operator": "+=",
+                "terminal": {
+                  "$type": "CrossReference",
+                  "type": {
+                    "$refText": "Environment"
+                  },
+                  "deprecatedSyntax": false
+                }
+              },
+              {
+                "$type": "Group",
+                "elements": [
+                  {
+                    "$type": "Keyword",
+                    "value": ","
+                  },
+                  {
+                    "$type": "Assignment",
+                    "feature": "environments",
+                    "operator": "+=",
+                    "terminal": {
+                      "$type": "CrossReference",
+                      "type": {
+                        "$refText": "Environment"
+                      },
+                      "deprecatedSyntax": false
+                    }
+                  }
+                ],
+                "cardinality": "*"
+              }
+            ],
+            "cardinality": "?"
           }
         ]
       },
@@ -350,6 +458,54 @@ export const TestsGrammar = (): Grammar => loadedTestsGrammar ||(loadedTestsGram
               }
             ],
             "cardinality": "*"
+          },
+          {
+            "$type": "Group",
+            "elements": [
+              {
+                "$type": "Keyword",
+                "value": "applicable"
+              },
+              {
+                "$type": "Keyword",
+                "value": "for"
+              },
+              {
+                "$type": "Assignment",
+                "feature": "environments",
+                "operator": "+=",
+                "terminal": {
+                  "$type": "CrossReference",
+                  "type": {
+                    "$refText": "Environment"
+                  },
+                  "deprecatedSyntax": false
+                }
+              },
+              {
+                "$type": "Group",
+                "elements": [
+                  {
+                    "$type": "Keyword",
+                    "value": ","
+                  },
+                  {
+                    "$type": "Assignment",
+                    "feature": "environments",
+                    "operator": "+=",
+                    "terminal": {
+                      "$type": "CrossReference",
+                      "type": {
+                        "$refText": "Environment"
+                      },
+                      "deprecatedSyntax": false
+                    }
+                  }
+                ],
+                "cardinality": "*"
+              }
+            ],
+            "cardinality": "?"
           }
         ]
       },
@@ -481,6 +637,19 @@ export const TestsGrammar = (): Grammar => loadedTestsGrammar ||(loadedTestsGram
           },
           {
             "$type": "Assignment",
+            "feature": "environments",
+            "operator": "+=",
+            "terminal": {
+              "$type": "RuleCall",
+              "rule": {
+                "$refText": "Environment"
+              },
+              "arguments": []
+            },
+            "cardinality": "*"
+          },
+          {
+            "$type": "Assignment",
             "feature": "requirements",
             "operator": "+=",
             "terminal": {
@@ -495,6 +664,53 @@ export const TestsGrammar = (): Grammar => loadedTestsGrammar ||(loadedTestsGram
         ]
       },
       "definesHiddenTokens": false,
+      "fragment": false,
+      "hiddenTokens": [],
+      "parameters": [],
+      "wildcard": false
+    },
+    {
+      "$type": "ParserRule",
+      "name": "Environment",
+      "definition": {
+        "$type": "Group",
+        "elements": [
+          {
+            "$type": "Keyword",
+            "value": "environment"
+          },
+          {
+            "$type": "Assignment",
+            "feature": "name",
+            "operator": "=",
+            "terminal": {
+              "$type": "RuleCall",
+              "rule": {
+                "$refText": "ID"
+              },
+              "arguments": []
+            }
+          },
+          {
+            "$type": "Keyword",
+            "value": ":"
+          },
+          {
+            "$type": "Assignment",
+            "feature": "description",
+            "operator": "=",
+            "terminal": {
+              "$type": "RuleCall",
+              "rule": {
+                "$refText": "STRING"
+              },
+              "arguments": []
+            }
+          }
+        ]
+      },
+      "definesHiddenTokens": false,
+      "entry": false,
       "fragment": false,
       "hiddenTokens": [],
       "parameters": [],
@@ -533,6 +749,54 @@ export const TestsGrammar = (): Grammar => loadedTestsGrammar ||(loadedTestsGram
               },
               "arguments": []
             }
+          },
+          {
+            "$type": "Group",
+            "elements": [
+              {
+                "$type": "Keyword",
+                "value": "applicable"
+              },
+              {
+                "$type": "Keyword",
+                "value": "for"
+              },
+              {
+                "$type": "Assignment",
+                "feature": "environments",
+                "operator": "+=",
+                "terminal": {
+                  "$type": "CrossReference",
+                  "type": {
+                    "$refText": "Environment"
+                  },
+                  "deprecatedSyntax": false
+                }
+              },
+              {
+                "$type": "Group",
+                "elements": [
+                  {
+                    "$type": "Keyword",
+                    "value": ","
+                  },
+                  {
+                    "$type": "Assignment",
+                    "feature": "environments",
+                    "operator": "+=",
+                    "terminal": {
+                      "$type": "CrossReference",
+                      "type": {
+                        "$refText": "Environment"
+                      },
+                      "deprecatedSyntax": false
+                    }
+                  }
+                ],
+                "cardinality": "*"
+              }
+            ],
+            "cardinality": "?"
           }
         ]
       },

@@ -18,8 +18,21 @@ export function isContact(item: unknown): item is Contact {
     return reflection.isInstance(item, Contact);
 }
 
+export interface Environment extends AstNode {
+    readonly $container: RequirementModel;
+    description: string
+    name: string
+}
+
+export const Environment = 'Environment';
+
+export function isEnvironment(item: unknown): item is Environment {
+    return reflection.isInstance(item, Environment);
+}
+
 export interface Requirement extends AstNode {
     readonly $container: RequirementModel;
+    environments: Array<Reference<Environment>>
     name: string
     text: string
 }
@@ -32,6 +45,7 @@ export function isRequirement(item: unknown): item is Requirement {
 
 export interface RequirementModel extends AstNode {
     contact?: Contact
+    environments: Array<Environment>
     requirements: Array<Requirement>
 }
 
@@ -43,6 +57,7 @@ export function isRequirementModel(item: unknown): item is RequirementModel {
 
 export interface Test extends AstNode {
     readonly $container: TestModel;
+    environments: Array<Reference<Environment>>
     name: string
     requirements: Array<Reference<Requirement>>
     testFile?: string
@@ -65,12 +80,12 @@ export function isTestModel(item: unknown): item is TestModel {
     return reflection.isInstance(item, TestModel);
 }
 
-export type RequirementsAndTestsAstType = 'Contact' | 'Requirement' | 'RequirementModel' | 'Test' | 'TestModel';
+export type RequirementsAndTestsAstType = 'Contact' | 'Environment' | 'Requirement' | 'RequirementModel' | 'Test' | 'TestModel';
 
 export class RequirementsAndTestsAstReflection implements AstReflection {
 
     getAllTypes(): string[] {
-        return ['Contact', 'Requirement', 'RequirementModel', 'Test', 'TestModel'];
+        return ['Contact', 'Environment', 'Requirement', 'RequirementModel', 'Test', 'TestModel'];
     }
 
     isInstance(node: unknown, type: string): boolean {
@@ -91,6 +106,12 @@ export class RequirementsAndTestsAstReflection implements AstReflection {
     getReferenceType(refInfo: ReferenceInfo): string {
         const referenceId = `${refInfo.container.$type}:${refInfo.property}`;
         switch (referenceId) {
+            case 'Requirement:environments': {
+                return Environment;
+            }
+            case 'Test:environments': {
+                return Environment;
+            }
             case 'Test:requirements': {
                 return Requirement;
             }
@@ -102,10 +123,19 @@ export class RequirementsAndTestsAstReflection implements AstReflection {
 
     getTypeMetaData(type: string): TypeMetaData {
         switch (type) {
+            case 'Requirement': {
+                return {
+                    name: 'Requirement',
+                    mandatory: [
+                        { name: 'environments', type: 'array' }
+                    ]
+                };
+            }
             case 'RequirementModel': {
                 return {
                     name: 'RequirementModel',
                     mandatory: [
+                        { name: 'environments', type: 'array' },
                         { name: 'requirements', type: 'array' }
                     ]
                 };
@@ -114,6 +144,7 @@ export class RequirementsAndTestsAstReflection implements AstReflection {
                 return {
                     name: 'Test',
                     mandatory: [
+                        { name: 'environments', type: 'array' },
                         { name: 'requirements', type: 'array' }
                     ]
                 };
