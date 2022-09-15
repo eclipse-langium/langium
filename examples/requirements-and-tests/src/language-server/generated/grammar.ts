@@ -17,17 +17,35 @@ export const RequirementsGrammar = (): Grammar => loadedRequirementsGrammar ||(l
       "name": "RequirementModel",
       "entry": true,
       "definition": {
-        "$type": "Assignment",
-        "feature": "requirements",
-        "operator": "+=",
-        "terminal": {
-          "$type": "RuleCall",
-          "rule": {
-            "$refText": "Requirement"
+        "$type": "Group",
+        "elements": [
+          {
+            "$type": "Assignment",
+            "feature": "contact",
+            "operator": "=",
+            "terminal": {
+              "$type": "RuleCall",
+              "rule": {
+                "$refText": "Contact"
+              },
+              "arguments": []
+            },
+            "cardinality": "?"
           },
-          "arguments": []
-        },
-        "cardinality": "*"
+          {
+            "$type": "Assignment",
+            "feature": "requirements",
+            "operator": "+=",
+            "terminal": {
+              "$type": "RuleCall",
+              "rule": {
+                "$refText": "Requirement"
+              },
+              "arguments": []
+            },
+            "cardinality": "*"
+          }
+        ]
       },
       "definesHiddenTokens": false,
       "fragment": false,
@@ -60,6 +78,41 @@ export const RequirementsGrammar = (): Grammar => loadedRequirementsGrammar ||(l
           {
             "$type": "Assignment",
             "feature": "text",
+            "operator": "=",
+            "terminal": {
+              "$type": "RuleCall",
+              "rule": {
+                "$refText": "STRING"
+              },
+              "arguments": []
+            }
+          }
+        ]
+      },
+      "definesHiddenTokens": false,
+      "entry": false,
+      "fragment": false,
+      "hiddenTokens": [],
+      "parameters": [],
+      "wildcard": false
+    },
+    {
+      "$type": "ParserRule",
+      "name": "Contact",
+      "definition": {
+        "$type": "Group",
+        "elements": [
+          {
+            "$type": "Keyword",
+            "value": "contact"
+          },
+          {
+            "$type": "Keyword",
+            "value": ":"
+          },
+          {
+            "$type": "Assignment",
+            "feature": "user_name",
             "operator": "=",
             "terminal": {
               "$type": "RuleCall",
@@ -162,17 +215,35 @@ export const TestsGrammar = (): Grammar => loadedTestsGrammar ||(loadedTestsGram
       "name": "TestModel",
       "entry": true,
       "definition": {
-        "$type": "Assignment",
-        "feature": "tests",
-        "operator": "+=",
-        "terminal": {
-          "$type": "RuleCall",
-          "rule": {
-            "$refText": "Test"
+        "$type": "Group",
+        "elements": [
+          {
+            "$type": "Assignment",
+            "feature": "contact",
+            "operator": "=",
+            "terminal": {
+              "$type": "RuleCall",
+              "rule": {
+                "$refText": "Contact"
+              },
+              "arguments": []
+            },
+            "cardinality": "?"
           },
-          "arguments": []
-        },
-        "cardinality": "*"
+          {
+            "$type": "Assignment",
+            "feature": "tests",
+            "operator": "+=",
+            "terminal": {
+              "$type": "RuleCall",
+              "rule": {
+                "$refText": "Test"
+              },
+              "arguments": []
+            },
+            "cardinality": "*"
+          }
+        ]
       },
       "definesHiddenTokens": false,
       "fragment": false,
@@ -290,6 +361,41 @@ export const TestsGrammar = (): Grammar => loadedTestsGrammar ||(loadedTestsGram
       "wildcard": false
     },
     {
+      "$type": "ParserRule",
+      "name": "Contact",
+      "definition": {
+        "$type": "Group",
+        "elements": [
+          {
+            "$type": "Keyword",
+            "value": "contact"
+          },
+          {
+            "$type": "Keyword",
+            "value": ":"
+          },
+          {
+            "$type": "Assignment",
+            "feature": "user_name",
+            "operator": "=",
+            "terminal": {
+              "$type": "RuleCall",
+              "rule": {
+                "$refText": "STRING"
+              },
+              "arguments": []
+            }
+          }
+        ]
+      },
+      "definesHiddenTokens": false,
+      "entry": false,
+      "fragment": false,
+      "hiddenTokens": [],
+      "parameters": [],
+      "wildcard": false
+    },
+    {
       "$type": "TerminalRule",
       "hidden": true,
       "name": "WS",
@@ -358,17 +464,35 @@ export const TestsGrammar = (): Grammar => loadedTestsGrammar ||(loadedTestsGram
       "name": "RequirementModel",
       "entry": false,
       "definition": {
-        "$type": "Assignment",
-        "feature": "requirements",
-        "operator": "+=",
-        "terminal": {
-          "$type": "RuleCall",
-          "rule": {
-            "$refText": "Requirement"
+        "$type": "Group",
+        "elements": [
+          {
+            "$type": "Assignment",
+            "feature": "contact",
+            "operator": "=",
+            "terminal": {
+              "$type": "RuleCall",
+              "rule": {
+                "$refText": "Contact"
+              },
+              "arguments": []
+            },
+            "cardinality": "?"
           },
-          "arguments": []
-        },
-        "cardinality": "*"
+          {
+            "$type": "Assignment",
+            "feature": "requirements",
+            "operator": "+=",
+            "terminal": {
+              "$type": "RuleCall",
+              "rule": {
+                "$refText": "Requirement"
+              },
+              "arguments": []
+            },
+            "cardinality": "*"
+          }
+        ]
       },
       "definesHiddenTokens": false,
       "fragment": false,

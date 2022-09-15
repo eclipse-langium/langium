@@ -7,6 +7,17 @@
 /* eslint-disable @typescript-eslint/no-empty-interface */
 import { AstNode, AstReflection, Reference, ReferenceInfo, isAstNode, TypeMetaData } from 'langium';
 
+export interface Contact extends AstNode {
+    readonly $container: RequirementModel | TestModel;
+    user_name: string
+}
+
+export const Contact = 'Contact';
+
+export function isContact(item: unknown): item is Contact {
+    return reflection.isInstance(item, Contact);
+}
+
 export interface Requirement extends AstNode {
     readonly $container: RequirementModel;
     name: string
@@ -20,6 +31,7 @@ export function isRequirement(item: unknown): item is Requirement {
 }
 
 export interface RequirementModel extends AstNode {
+    contact?: Contact
     requirements: Array<Requirement>
 }
 
@@ -43,6 +55,7 @@ export function isTest(item: unknown): item is Test {
 }
 
 export interface TestModel extends AstNode {
+    contact?: Contact
     tests: Array<Test>
 }
 
@@ -52,12 +65,12 @@ export function isTestModel(item: unknown): item is TestModel {
     return reflection.isInstance(item, TestModel);
 }
 
-export type RequirementsAndTestsAstType = 'Requirement' | 'RequirementModel' | 'Test' | 'TestModel';
+export type RequirementsAndTestsAstType = 'Contact' | 'Requirement' | 'RequirementModel' | 'Test' | 'TestModel';
 
 export class RequirementsAndTestsAstReflection implements AstReflection {
 
     getAllTypes(): string[] {
-        return ['Requirement', 'RequirementModel', 'Test', 'TestModel'];
+        return ['Contact', 'Requirement', 'RequirementModel', 'Test', 'TestModel'];
     }
 
     isInstance(node: unknown, type: string): boolean {

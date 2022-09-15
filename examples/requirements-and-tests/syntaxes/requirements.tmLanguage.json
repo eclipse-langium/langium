@@ -10,7 +10,7 @@
     },
     {
       "name": "keyword.control.requirements-language",
-      "match": "\\b(req)\\b"
+      "match": "\\b(contact|req)\\b"
     },
     {
       "name": "string.quoted.double.requirements-language",

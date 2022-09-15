@@ -3,6 +3,7 @@ import "./common"
 import "./requirements"
 
 entry TestModel:
+    (contact=Contact)?
     (tests+=Test)*;
 
 Test:
