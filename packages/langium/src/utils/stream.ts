@@ -126,6 +126,12 @@ export interface Stream<T> extends Iterable<T> {
     filter(predicate: (value: T) => unknown): Stream<T>;
 
     /**
+     * Returns the elements of the stream that are _non-nullable_, which means they are neither `undefined`
+     * nor `null`.
+     */
+    nonNullable(): Stream<NonNullable<T>>;
+
+    /**
      * Calls the specified callback function for all elements in the stream. The return value of the
      * callback function is the accumulated result, and is provided as an argument in the next call to
      * the callback function.
@@ -219,13 +225,22 @@ export interface Stream<T> extends Iterable<T> {
     limit(maxSize: number): Stream<T>;
 
     /**
-     * Returns a stream containing only the distinct elements from this stream. Equality is determined
-     * with the same rules as a standard `Set`.
+     * Returns a stream containing only the distinct elements from this stream.
+     * Equality is determined with the same rules as a standard `Set`.
      *
      * @param by A function returning the key used to check equality with a previous stream element.
      *        If omitted, the stream elements themselves are used for comparison.
      */
     distinct<Key = T>(by?: (element: T) => Key): Stream<T>;
+
+    /**
+     * Returns a stream that contains all elements that don't exist in the {@link other} iterable.
+     * Equality is determined with the same rules as a standard `Set`.
+     * @param other The elements that should be exluded from this stream.
+     * @param key A function returning the key used to check quality.
+     *        If omitted, the stream elements themselves are used for comparison.
+     */
+    exclude<Key = T>(other: Iterable<T>, key?: (element: T) => Key): Stream<T>;
 
 }
 
@@ -433,6 +448,10 @@ export class StreamImpl<S, T> implements Stream<T> {
         );
     }
 
+    nonNullable(): Stream<NonNullable<T>> {
+        return this.filter(e => e !== undefined && e !== null) as Stream<NonNullable<T>>;
+    }
+
     reduce<U>(callbackfn: (previousValue: U | T, currentValue: T) => U, initialValue?: U): U | T | undefined {
         const iterator = this.iterator();
         let previousValue: U | T | undefined = initialValue;
@@ -614,6 +633,18 @@ export class StreamImpl<S, T> implements Stream<T> {
                 set.add(value);
                 return true;
             }
+        });
+    }
+
+    exclude<Key = T>(other: Iterable<T>, key?: (element: T) => Key): Stream<T> {
+        const otherKeySet = new Set<Key | T>();
+        for (const item of other) {
+            const value = key ? key(item) : item;
+            otherKeySet.add(value);
+        }
+        return this.filter(e => {
+            const ownKey = key ? key(e) : e;
+            return !otherKeySet.has(ownKey);
         });
     }
 }

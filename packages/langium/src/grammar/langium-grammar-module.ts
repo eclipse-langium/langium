@@ -6,17 +6,18 @@
 
 import { createDefaultModule, createDefaultSharedModule, DefaultSharedModuleContext } from '../default-module';
 import { inject, Module } from '../dependency-injection';
-import { LangiumServices, LangiumSharedServices, PartialLangiumServices } from '../services';
+import { LangiumServices, LangiumSharedServices, PartialLangiumServices, PartialLangiumSharedServices } from '../services';
 import { LangiumGrammarGeneratedModule, LangiumGrammarGeneratedSharedModule } from './generated/module';
-import { LangiumGrammarCodeActionProvider } from './lsp/grammar-code-actions';
 import { LangiumGrammarScopeComputation, LangiumGrammarScopeProvider } from './langium-grammar-scope';
-import { LangiumGrammarSemanticTokenProvider } from './lsp/grammar-semantic-tokens';
 import { LangiumGrammarValidationRegistry, LangiumGrammarValidator } from './langium-grammar-validator';
+import { LangiumGrammarCodeActionProvider } from './lsp/grammar-code-actions';
 import { LangiumGrammarFoldingRangeProvider } from './lsp/grammar-folding-ranges';
 import { LangiumGrammarFormatter } from './lsp/grammar-formatter';
-import { LangiumGrammarReferences } from './references/grammar-references';
+import { LangiumGrammarSemanticTokenProvider } from './lsp/grammar-semantic-tokens';
 import { LangiumGrammarNameProvider } from './references/grammar-naming';
-import { LangiumGrammarGoToResolver } from './lsp/grammar-goto';
+import { LangiumGrammarReferences } from './references/grammar-references';
+import { LangiumGrammarDefinitionProvider } from './lsp/grammar-definition';
+import { LangiumGrammarCallHierarchyProvider } from './lsp/grammar-call-hierarchy';
 
 export type LangiumGrammarAddedServices = {
     validation: {
@@ -36,7 +37,8 @@ export const LangiumGrammarModule: Module<LangiumGrammarServices, PartialLangium
         CodeActionProvider: () => new LangiumGrammarCodeActionProvider(),
         SemanticTokenProvider: (services) => new LangiumGrammarSemanticTokenProvider(services),
         Formatter: () => new LangiumGrammarFormatter(),
-        GoToResolver: (services) => new LangiumGrammarGoToResolver(services),
+        DefinitionProvider: (services) => new LangiumGrammarDefinitionProvider(services),
+        CallHierarchyProvider: (services) => new LangiumGrammarCallHierarchyProvider(services)
     },
     references: {
         ScopeComputation: (services) => new LangiumGrammarScopeComputation(services),
@@ -46,13 +48,15 @@ export const LangiumGrammarModule: Module<LangiumGrammarServices, PartialLangium
     }
 };
 
-export function createLangiumGrammarServices(context: DefaultSharedModuleContext): {
-    shared: LangiumSharedServices,
-    grammar: LangiumGrammarServices
-} {
+export function createLangiumGrammarServices(context: DefaultSharedModuleContext,
+    sharedModule?: Module<LangiumSharedServices, PartialLangiumSharedServices>): {
+        shared: LangiumSharedServices,
+        grammar: LangiumGrammarServices
+    } {
     const shared = inject(
         createDefaultSharedModule(context),
-        LangiumGrammarGeneratedSharedModule
+        LangiumGrammarGeneratedSharedModule,
+        sharedModule
     );
     const grammar = inject(
         createDefaultModule({ shared }),

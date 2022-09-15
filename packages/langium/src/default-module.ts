@@ -8,16 +8,16 @@ import { Connection, TextDocuments } from 'vscode-languageserver';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { Module } from './dependency-injection';
 import { createGrammarConfig } from './grammar/grammar-config';
+import { createCompletionParser } from './parser/completion-parser-builder';
 import { DefaultCompletionProvider } from './lsp/completion/completion-provider';
-import { RuleInterpreter } from './lsp/completion/rule-interpreter';
-import { DefaultDocumentHighlighter } from './lsp/document-highlighter';
+import { DefaultDocumentHighlightProvider } from './lsp/document-highlight-provider';
 import { DefaultDocumentSymbolProvider } from './lsp/document-symbol-provider';
 import { DefaultFoldingRangeProvider } from './lsp/folding-range-provider';
-import { DefaultGoToResolverProvider } from './lsp/goto';
+import { DefaultDefinitionProvider } from './lsp/definition-provider';
 import { MultilineCommentHoverProvider } from './lsp/hover-provider';
 import { DefaultLanguageServer } from './lsp/language-server';
-import { DefaultReferenceFinder } from './lsp/reference-finder';
-import { DefaultRenameHandler } from './lsp/rename-refactoring';
+import { DefaultReferencesProvider } from './lsp/references-provider';
+import { DefaultRenameProvider } from './lsp/rename-provider';
 import { createLangiumParser } from './parser/langium-parser-builder';
 import { DefaultTokenBuilder } from './parser/token-builder';
 import { DefaultValueConverter } from './parser/value-converter';
@@ -33,6 +33,7 @@ import { DefaultDocumentValidator } from './validation/document-validator';
 import { ValidationRegistry } from './validation/validation-registry';
 import { DefaultAstNodeDescriptionProvider, DefaultReferenceDescriptionProvider } from './workspace/ast-descriptions';
 import { DefaultAstNodeLocator } from './workspace/ast-node-locator';
+import { DefaultConfigurationProvider } from './workspace/configuration';
 import { DefaultDocumentBuilder } from './workspace/document-builder';
 import { DefaultLangiumDocumentFactory, DefaultLangiumDocuments, DefaultTextDocumentFactory } from './workspace/documents';
 import { FileSystemProvider } from './workspace/file-system-provider';
@@ -55,21 +56,19 @@ export function createDefaultModule(context: DefaultModuleContext): Module<Langi
         parser: {
             GrammarConfig: (services) => createGrammarConfig(services),
             LangiumParser: (services) => createLangiumParser(services),
+            CompletionParser: (services) => createCompletionParser(services),
             ValueConverter: () => new DefaultValueConverter(),
             TokenBuilder: () => new DefaultTokenBuilder()
         },
         lsp: {
-            completion: {
-                CompletionProvider: (services) => new DefaultCompletionProvider(services),
-                RuleInterpreter: () => new RuleInterpreter()
-            },
+            CompletionProvider: (services) => new DefaultCompletionProvider(services),
             DocumentSymbolProvider: (services) => new DefaultDocumentSymbolProvider(services),
             HoverProvider: (services) => new MultilineCommentHoverProvider(services),
             FoldingRangeProvider: (services) => new DefaultFoldingRangeProvider(services),
-            ReferenceFinder: (services) => new DefaultReferenceFinder(services),
-            GoToResolver: (services) => new DefaultGoToResolverProvider(services),
-            DocumentHighlighter: (services) => new DefaultDocumentHighlighter(services),
-            RenameHandler: (services) => new DefaultRenameHandler(services)
+            ReferencesProvider: (services) => new DefaultReferencesProvider(services),
+            DefinitionProvider: (services) => new DefaultDefinitionProvider(services),
+            DocumentHighlightProvider: (services) => new DefaultDocumentHighlightProvider(services),
+            RenameProvider: (services) => new DefaultRenameProvider(services)
         },
         workspace: {
             AstNodeLocator: () => new DefaultAstNodeLocator(),
@@ -132,7 +131,8 @@ export function createDefaultSharedModule(context: DefaultSharedModuleContext): 
             IndexManager: (services) => new DefaultIndexManager(services),
             WorkspaceManager: (services) => new DefaultWorkspaceManager(services),
             FileSystemProvider: (services) => context.fileSystemProvider(services),
-            MutexLock: () => new MutexLock()
+            MutexLock: () => new MutexLock(),
+            ConfigurationProvider: (services) => new DefaultConfigurationProvider(services)
         }
     };
 }

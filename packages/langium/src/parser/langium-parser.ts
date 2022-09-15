@@ -6,7 +6,8 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { defaultParserErrorProvider, DSLMethodOpts, EmbeddedActionsParser, ILexingError, IMultiModeLexerDefinition, IOrAlt, IParserErrorMessageProvider, IRecognitionException, IToken, Lexer, TokenType, TokenTypeDictionary, TokenVocabulary } from 'chevrotain';
-import { AbstractElement, Action, Assignment, isAssignment, isCrossReference, isKeyword } from '../grammar/generated/ast';
+import { AbstractElement, Action, Assignment, isAssignment, isCrossReference, isKeyword, ParserRule } from '../grammar/generated/ast';
+import { getTypeName, isDataTypeRule } from '../grammar/grammar-util';
 import { Linker } from '../references/linker';
 import { LangiumServices } from '../services';
 import { AstNode, AstReflection, CompositeCstNode, CstNode } from '../syntax-tree';
@@ -41,52 +42,103 @@ type Args = Record<string, boolean>;
 
 type RuleImpl = (args: Args) => any;
 
-type Alternatives = Array<IOrAlt<any>>;
-
 interface AssignmentElement {
     assignment?: Assignment
     isCrossRef: boolean
 }
 
-export class LangiumParser {
+export interface BaseParser {
+    rule(rule: ParserRule, impl: RuleImpl): RuleResult;
+    alternatives(idx: number, choices: Array<IOrAlt<any>>): void;
+    optional(idx: number, callback: DSLMethodOpts<unknown>): void;
+    many(idx: number, callback: DSLMethodOpts<unknown>): void;
+    atLeastOne(idx: number, callback: DSLMethodOpts<unknown>): void;
+    consume(idx: number, tokenType: TokenType, feature: AbstractElement): void;
+    subrule(idx: number, rule: RuleResult, feature: AbstractElement, args: Args): void;
+    action($type: string, action: Action): void;
+    construct(): unknown;
+    isRecording(): boolean;
+    get unorderedGroups(): Map<string, boolean[]>;
+    getRuleStack(): number[];
+}
+
+export abstract class AbstractLangiumParser implements BaseParser {
+
+    protected readonly lexer: Lexer;
+    protected readonly wrapper: ChevrotainWrapper;
+    protected _unorderedGroups: Map<string, boolean[]> = new Map<string, boolean[]>();
+
+    constructor(services: LangiumServices, tokens: TokenVocabulary) {
+        this.lexer = new Lexer(isTokenTypeDictionary(tokens) ? Object.values(tokens) : tokens);
+        this.wrapper = new ChevrotainWrapper(tokens, services.parser.ParserConfig);
+    }
+
+    alternatives(idx: number, choices: Array<IOrAlt<any>>): void {
+        this.wrapper.wrapOr(idx, choices);
+    }
+
+    optional(idx: number, callback: DSLMethodOpts<unknown>): void {
+        this.wrapper.wrapOption(idx, callback);
+    }
+
+    many(idx: number, callback: DSLMethodOpts<unknown>): void {
+        this.wrapper.wrapMany(idx, callback);
+    }
+
+    atLeastOne(idx: number, callback: DSLMethodOpts<unknown>): void {
+        this.wrapper.wrapAtLeastOne(idx, callback);
+    }
+
+    abstract rule(rule: ParserRule, impl: RuleImpl): RuleResult;
+    abstract consume(idx: number, tokenType: TokenType, feature: AbstractElement): void;
+    abstract subrule(idx: number, rule: RuleResult, feature: AbstractElement, args: Args): void;
+    abstract action($type: string, action: Action): void;
+    abstract construct(): unknown;
+
+    isRecording(): boolean {
+        return this.wrapper.IS_RECORDING;
+    }
+
+    get unorderedGroups(): Map<string, boolean[]> {
+        return this._unorderedGroups;
+    }
+
+    getRuleStack(): number[] {
+        return (this.wrapper as any).RULE_STACK;
+    }
+
+    finalize(): void {
+        this.wrapper.wrapSelfAnalysis();
+    }
+}
+
+export class LangiumParser extends AbstractLangiumParser {
     private readonly linker: Linker;
     private readonly converter: ValueConverter;
-    private readonly lexer: Lexer;
     private readonly astReflection: AstReflection;
     private readonly nodeBuilder = new CstNodeBuilder();
-    private readonly wrapper: ChevrotainWrapper;
     private stack: any[] = [];
     private mainRule!: RuleResult;
     private assignmentMap = new Map<AbstractElement, AssignmentElement | undefined>();
-    private _unorderedGroups: Map<string, boolean[]> = new Map<string, boolean[]>();
 
     private get current(): any {
         return this.stack[this.stack.length - 1];
     }
 
     constructor(services: LangiumServices, tokens: TokenVocabulary) {
-        //IMPORTANT: Lexer must be built before the wrapper, otherwise multi-mode lexing will fail (chevrotain issue)
-        this.lexer = new Lexer(isTokenTypeDictionary(tokens) ? Object.values(tokens) : tokens);
-        this.wrapper = new ChevrotainWrapper(tokens, services.parser.ParserConfig);
+        super(services, tokens);
         this.linker = services.references.Linker;
         this.converter = services.parser.ValueConverter;
         this.astReflection = services.shared.AstReflection;
     }
 
-    MAIN_RULE(
-        name: string,
-        type: string | symbol | undefined,
-        implementation: RuleImpl
-    ): RuleResult {
-        return this.mainRule = this.DEFINE_RULE(name, type, implementation);
-    }
-
-    DEFINE_RULE(
-        name: string,
-        type: string | symbol | undefined,
-        implementation: RuleImpl
-    ): RuleResult {
-        return this.wrapper.DEFINE_RULE(name, this.startImplementation(type, implementation).bind(this));
+    rule(rule: ParserRule, impl: RuleImpl): RuleResult {
+        const type = rule.fragment ? undefined : isDataTypeRule(rule) ? DatatypeSymbol : getTypeName(rule);
+        const ruleMethod = this.wrapper.DEFINE_RULE(rule.name, this.startImplementation(type, impl).bind(this));
+        if (rule.entry) {
+            this.mainRule = ruleMethod;
+        }
+        return ruleMethod;
     }
 
     parse<T extends AstNode = AstNode>(input: string): ParseResult<T> {
@@ -105,7 +157,7 @@ export class LangiumParser {
 
     private startImplementation($type: string | symbol | undefined, implementation: RuleImpl): RuleImpl {
         return (args) => {
-            if (!this.wrapper.IS_RECORDING) {
+            if (!this.isRecording()) {
                 const node: any = { $type };
                 this.stack.push(node);
                 if ($type === DatatypeSymbol)  {
@@ -118,32 +170,16 @@ export class LangiumParser {
             } catch (err) {
                 result = undefined;
             }
-            if (!this.wrapper.IS_RECORDING && result === undefined) {
+            if (!this.isRecording() && result === undefined) {
                 result = this.construct();
             }
             return result;
         };
     }
 
-    alternatives(idx: number, choices: Alternatives): void {
-        this.wrapper.wrapOr(idx, choices);
-    }
-
-    optional(idx: number, callback: DSLMethodOpts<unknown>): void {
-        this.wrapper.wrapOption(idx, callback);
-    }
-
-    many(idx: number, callback: DSLMethodOpts<unknown>): void {
-        this.wrapper.wrapMany(idx, callback);
-    }
-
-    atLeastOne(idx: number, callback: DSLMethodOpts<unknown>): void {
-        this.wrapper.wrapAtLeastOne(idx, callback);
-    }
-
     consume(idx: number, tokenType: TokenType, feature: AbstractElement): void {
         const token = this.wrapper.wrapConsume(idx, tokenType);
-        if (!this.wrapper.IS_RECORDING) {
+        if (!this.isRecording()) {
             const leafNode = this.nodeBuilder.buildLeafNode(token, feature);
             const { assignment, isCrossRef } = this.getAssignment(feature);
             const current = this.current;
@@ -160,9 +196,25 @@ export class LangiumParser {
         }
     }
 
-    unassignedSubrule(idx: number, rule: RuleResult, feature: AbstractElement, args: Args): void {
-        const result = this.subrule(idx, rule, feature, args);
-        if (!this.wrapper.IS_RECORDING) {
+    subrule(idx: number, rule: RuleResult, feature: AbstractElement, args: Args): void {
+        let cstNode: CompositeCstNode | undefined;
+        if (!this.isRecording()) {
+            cstNode = this.nodeBuilder.buildCompositeNode(feature);
+        }
+        const subruleResult = this.wrapper.wrapSubrule(idx, rule, args) as any;
+        if (!this.isRecording()) {
+            this.performSubruleAssignment(subruleResult, feature, cstNode);
+        }
+    }
+
+    private performSubruleAssignment(result: any, feature: AbstractElement, cstNode: CompositeCstNode | undefined): void {
+        const { assignment, isCrossRef } = this.getAssignment(feature);
+        if (assignment && cstNode) {
+            this.assign(assignment.operator, assignment.feature, result, cstNode, isCrossRef);
+        } else if (!assignment) {
+            // If we call a subrule without an assignment
+            // We either append the result of the subrule (data type rule)
+            // Or override the current object with the newly parsed object
             const current = this.current;
             if (isDataTypeNode(current)) {
                 current.value += result.toString();
@@ -179,23 +231,8 @@ export class LangiumParser {
         }
     }
 
-    subrule(idx: number, rule: RuleResult, feature: AbstractElement, args: Args): any {
-        let cstNode: CompositeCstNode | undefined;
-        if (!this.wrapper.IS_RECORDING) {
-            cstNode = this.nodeBuilder.buildCompositeNode(feature);
-        }
-        const subruleResult = this.wrapper.wrapSubrule(idx, rule, args);
-        if (!this.wrapper.IS_RECORDING) {
-            const { assignment, isCrossRef } = this.getAssignment(feature);
-            if (assignment && cstNode) {
-                this.assign(assignment.operator, assignment.feature, subruleResult, cstNode, isCrossRef);
-            }
-        }
-        return subruleResult;
-    }
-
     action($type: string, action: Action): void {
-        if (!this.wrapper.IS_RECORDING) {
+        if (!this.isRecording()) {
             let last = this.current;
             // This branch is used for left recursive grammar rules.
             // Those don't call `construct` before another action.
@@ -215,7 +252,7 @@ export class LangiumParser {
     }
 
     construct(pop = true): unknown {
-        if (this.wrapper.IS_RECORDING) {
+        if (this.isRecording()) {
             return undefined;
         }
         const obj = this.current;
@@ -290,24 +327,8 @@ export class LangiumParser {
         return target;
     }
 
-    finalize(): void {
-        this.wrapper.wrapSelfAnalysis();
-    }
-
     get definitionErrors(): IParserDefinitionError[] {
         return this.wrapper.definitionErrors;
-    }
-
-    getRuleStack(): number[] {
-        return (this.wrapper as any).RULE_STACK;
-    }
-
-    isRecording(): boolean {
-        return this.wrapper.IS_RECORDING;
-    }
-
-    get unorderedGroups(): Map<string, boolean[]> {
-        return this._unorderedGroups;
     }
 }
 
@@ -362,6 +383,119 @@ export class LangiumParserErrorMessageProvider implements IParserErrorMessagePro
 
 }
 
+export interface CompletionParserResult {
+    tokens: IToken[]
+    elementStack: AbstractElement[]
+    tokenIndex: number
+}
+
+export class LangiumCompletionParser extends AbstractLangiumParser {
+    private mainRule!: RuleResult;
+    private tokens: IToken[] = [];
+
+    private elementStack: AbstractElement[] = [];
+    private lastElementStack: AbstractElement[] = [];
+    private nextTokenIndex = 0;
+    private stackSize = 0;
+
+    action(): void {
+        // NOOP
+    }
+
+    construct(): unknown {
+        // NOOP
+        return undefined;
+    }
+
+    parse(input: string): CompletionParserResult {
+        this.resetState();
+        const tokens = this.lexer.tokenize(input);
+        this.tokens = tokens.tokens;
+        this.wrapper.input = [...this.tokens];
+        this.mainRule.call(this.wrapper);
+        this.unorderedGroups.clear();
+        return {
+            tokens: this.tokens,
+            elementStack: [...this.lastElementStack],
+            tokenIndex: this.nextTokenIndex
+        };
+    }
+
+    rule(rule: ParserRule, impl: RuleImpl): RuleResult {
+        const ruleMethod = this.wrapper.DEFINE_RULE(rule.name, this.startImplementation(impl).bind(this));
+        if (rule.entry) {
+            this.mainRule = ruleMethod;
+        }
+        return ruleMethod;
+    }
+
+    private resetState(): void {
+        this.elementStack = [];
+        this.lastElementStack = [];
+        this.nextTokenIndex = 0;
+        this.stackSize = 0;
+    }
+
+    private startImplementation(implementation: RuleImpl): RuleImpl {
+        return (args) => {
+            const size = this.keepStackSize();
+            try {
+                implementation(args);
+            } finally {
+                this.resetStackSize(size);
+            }
+        };
+    }
+
+    private removeUnexpectedElements(): void {
+        this.elementStack.splice(this.stackSize);
+    }
+
+    keepStackSize(): number {
+        const size = this.elementStack.length;
+        this.stackSize = size;
+        return size;
+    }
+
+    resetStackSize(size: number): void {
+        this.removeUnexpectedElements();
+        this.stackSize = size;
+    }
+
+    consume(idx: number, tokenType: TokenType, feature: AbstractElement): void {
+        this.wrapper.wrapConsume(idx, tokenType);
+        if (!this.isRecording()) {
+            this.lastElementStack = [...this.elementStack, feature];
+            this.nextTokenIndex = this.currIdx + 1;
+        }
+    }
+
+    subrule(idx: number, rule: RuleResult, feature: AbstractElement, args: Args): void {
+        this.before(feature);
+        this.wrapper.wrapSubrule(idx, rule, args);
+        this.after(feature);
+    }
+
+    before(element: AbstractElement): void {
+        if (!this.isRecording()) {
+            this.elementStack.push(element);
+        }
+    }
+
+    after(element: AbstractElement): void {
+        if (!this.isRecording()) {
+            const index = this.elementStack.lastIndexOf(element);
+            if (index >= 0) {
+                this.elementStack.splice(index);
+            }
+        }
+    }
+
+    get currIdx(): number {
+        return (this.wrapper as any).currIdx;
+    }
+}
+
 const defaultConfig: IParserConfig = {
     recoveryEnabled: true,
     nodeLocationTracking: 'full',
@@ -407,7 +541,7 @@ class ChevrotainWrapper extends EmbeddedActionsParser {
         });
     }
 
-    wrapOr(idx: number, choices: Alternatives): void {
+    wrapOr(idx: number, choices: Array<IOrAlt<any>>): void {
         this.or(idx, choices);
     }
 

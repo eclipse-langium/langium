@@ -18,14 +18,14 @@ import { LangiumDocument } from '../workspace/documents';
 /**
  * Language-specific service for handling go to definition requests.
  */
-export interface GoToResolver {
+export interface DefinitionProvider {
     /**
      * Handle a go to definition request.
      *
      * @throws `OperationCancelled` if cancellation is detected during execution
      * @throws `ResponseError` if an error is detected that should be sent as response to the client
      */
-    goToDefinition(document: LangiumDocument, params: DefinitionParams, cancelToken?: CancellationToken): MaybePromise<LocationLink[] | undefined>;
+    getDefinition(document: LangiumDocument, params: DefinitionParams, cancelToken?: CancellationToken): MaybePromise<LocationLink[] | undefined>;
 }
 
 export interface GoToLink {
@@ -34,7 +34,7 @@ export interface GoToLink {
     targetDocument: LangiumDocument
 }
 
-export class DefaultGoToResolverProvider implements GoToResolver {
+export class DefaultDefinitionProvider implements DefinitionProvider {
 
     protected readonly nameProvider: NameProvider;
     protected readonly references: References;
@@ -46,7 +46,7 @@ export class DefaultGoToResolverProvider implements GoToResolver {
         this.grammarConfig = services.parser.GrammarConfig;
     }
 
-    goToDefinition(document: LangiumDocument, params: DefinitionParams): MaybePromise<LocationLink[] | undefined> {
+    getDefinition(document: LangiumDocument, params: DefinitionParams): MaybePromise<LocationLink[] | undefined> {
         const rootNode = document.parseResult.value;
         if (rootNode.$cstNode) {
             const cst = rootNode.$cstNode;
@@ -63,7 +63,7 @@ export class DefaultGoToResolverProvider implements GoToResolver {
         if (goToLink) {
             return [LocationLink.create(
                 goToLink.targetDocument.textDocument.uri,
-                (this.findActualNodeFor(goToLink.target) ?? goToLink.target).range,
+                (goToLink.target.element.$cstNode ?? goToLink.target).range,
                 goToLink.target.range,
                 goToLink.source.range
             )];
@@ -72,7 +72,7 @@ export class DefaultGoToResolverProvider implements GoToResolver {
     }
 
     protected findLink(source: CstNode): GoToLink | undefined {
-        const target = this.references.findDeclaration(source);
+        const target = this.references.findDeclarationNode(source);
         if (target?.element) {
             const targetDocument = getDocument(target.element);
             if (target && targetDocument) {
@@ -80,15 +80,5 @@ export class DefaultGoToResolverProvider implements GoToResolver {
             }
         }
         return undefined;
-    }
-
-    protected findActualNodeFor(cstNode: CstNode): CstNode | undefined {
-        let actualNode: CstNode | undefined = cstNode;
-        while (!actualNode?.element?.$cstNode) {
-            if (!actualNode)
-                return undefined;
-            actualNode = actualNode.parent;
-        }
-        return actualNode.element.$cstNode;
     }
 }

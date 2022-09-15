@@ -8,6 +8,9 @@
             "fileExtensions": [".statemachine"],
             "textMate": {
                 "out": "./syntaxes/statemachine.tmLanguage.json"
+            },
+            "monarch": {
+                "out": "./syntaxes/statemachine.monarch.ts"
             }
         }
     ]

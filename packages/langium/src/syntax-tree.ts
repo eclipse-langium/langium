@@ -27,6 +27,10 @@ export interface AstNode {
     readonly $document?: LangiumDocument;
 }
 
+export interface GenericAstNode extends AstNode {
+    [key: string]: unknown
+}
+
 type SpecificNodeProperties<N extends AstNode> = keyof Omit<N, keyof AstNode | number | symbol>;
 
 /**
