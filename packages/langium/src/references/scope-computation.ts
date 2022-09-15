@@ -58,11 +58,15 @@ export interface ScopeComputation {
 }
 
 /**
- * The default scope computation gathers all AST nodes that have a name (according to the `NameProvider`
- * service) and makes them available in their container node. As a result, from every cross-reference in
- * the AST, target elements from the same level and further up towards the root are visible. Elements that
- * are nested inside lower levels are not visible by default, but that can be changed by customizing this
- * service.
+ * The default scope computation creates and collectes descriptions of the AST nodes to be exported into the
+ * _global_ scope from the given document. By default those are the document's root AST node and its directly
+ * contained child nodes.
+ *
+ * Besides, it gathers all AST nodes that have a name (according to the `NameProvider` service) and includes them
+ * in the local scope of their particular container nodes. As a result, for every cross-reference in the AST,
+ * target elements from the same level (siblings) and further up towards the root (parents and siblings of parents)
+ * are visible. Elements being nested inside lower levels (children, children of siblings and parents' siblings)
+ * are _invisible_ by default, but that can be changed by customizing this service.
  */
 export class DefaultScopeComputation implements ScopeComputation {
 
@@ -75,11 +79,26 @@ export class DefaultScopeComputation implements ScopeComputation {
     }
 
     async computeExports(document: LangiumDocument, cancelToken = CancellationToken.None): Promise<AstNodeDescription[]> {
+        return this.computeExportsForNode(document.parseResult.value, document, undefined, cancelToken);
+    }
+
+    /**
+     * Creates {@link AstNodeDescription AstNodeDescriptions} for the given {@link AstNode parentNode} and its children.
+     * The list of children to be considered is determined by the function parameter {@link children}.
+     * By default only the direct children of {@link parentNode} are visited, nested nodes are not exported.
+     *
+     * @param parentNode AST node to be exported, i.e., of which an {@link AstNodeDescription} shall be added to the returned list.
+     * @param document The document containing the AST node to be exported.
+     * @param children A function called with {@link parentNode} as single argument and returning an {@link Iterable} supplying the children to be visited, which must be directly or transitively contained in {@link parentNode}.
+     * @param cancelToken Indicates when to cancel the current operation.
+     * @throws `OperationCanceled` if a user action occurs during execution.
+     * @returns A list of {@link AstNodeDescription AstNodeDescriptions} to be published to index.
+     */
+    async computeExportsForNode(parentNode: AstNode, document: LangiumDocument<AstNode>, children: (root: AstNode) => Iterable<AstNode> = streamContents, cancelToken: CancellationToken = CancellationToken.None ): Promise<AstNodeDescription[]> {
         const exports: AstNodeDescription[] = [];
-        const rootNode = document.parseResult.value;
-        this.exportNode(rootNode, exports, document);
-        // Here we navigate only the top-level AST contents - nested nodes are not exported by default
-        for (const node of streamContents(rootNode)) {
+
+        this.exportNode(parentNode, exports, document);
+        for (const node of children(parentNode)) {
             await interruptAndCheck(cancelToken);
             this.exportNode(node, exports, document);
         }
