@@ -18,7 +18,7 @@ describe('Module generator', () => {
             const moduleString = generateModule([], config, new Map());
 
             // assert
-            expect(moduleString).not.toMatch('ParserConfig');
+            expect(moduleString.includes('ParserConfig')).toBeFalsy();
         });
 
         test('should include an import of IParserConfig', () => {
