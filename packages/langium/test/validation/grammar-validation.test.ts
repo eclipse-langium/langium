@@ -73,8 +73,8 @@ describe('Check Rule Fragment Validation', () => {
     });
 
     test('Rule Fragment Validation', () => {
-        const fragmentType = validationResult.document.parseResult.value.types[0];
-        expectError(validationResult, 'Cannot use rule fragments in types.', { node: fragmentType, property: { name: 'typeAlternatives' } });
+        const range = { start: { character: 16, line: 1 }, end: { character: 24, line: 1 } };
+        expectError(validationResult, 'Cannot use rule fragments in types.', { range });
     });
 });
 
@@ -154,10 +154,9 @@ describe('Unordered group validations', () => {
 
         const validation = await validate(text);
         expect(validation.diagnostics).toHaveLength(1);
-        const range = { start: { character: 18, line: 7 }, end: { character: 45, line: 7 } };
-        const offset = validation.document.textDocument.getText().indexOf('("edition" version=STRING)?');
-        expectError(validation, 'Optional elements in Unordered groups are currently not supported', { range, code: IssueCodes.OptionalUnorderedGroup } );
-        expectError(validation, 'Optional elements in Unordered groups are currently not supported', { offset: offset, length: 27, code: IssueCodes.OptionalUnorderedGroup } );
+        const errorText = '("edition" version=STRING)?';
+        const offset = validation.document.textDocument.getText().indexOf(errorText);
+        expectError(validation, 'Optional elements in Unordered groups are currently not supported', { offset: offset, length: errorText.length, code: IssueCodes.OptionalUnorderedGroup } );
     });
 });
 
