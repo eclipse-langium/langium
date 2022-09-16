@@ -85,7 +85,7 @@ describe('A referenced environment in a test must be found in one of the referen
                 message: expect.stringMatching('Test T002_badReqId references environment Linux_x86 which is used in any referenced requirement.'),
                 range: expect.objectContaining({start:expect.objectContaining({
                     line: 3,
-                    column: 65
+                    character: 65
                 })}) // zero based
             })
         ]));
