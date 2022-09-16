@@ -10,7 +10,10 @@ export class TestsLanguageValidationRegistry extends ValidationRegistry {
         super(services);
         const validator = services.validation.TestsLanguageValidator;
         const checks: ValidationChecks<RequirementsAndTestsAstType> = {
-            Test: validator.checkTestNameContainsANumber
+            Test: [
+                validator.checkTestNameContainsANumber,
+                validator.checkTestReferencesOnlyEnvironmentsAlsoReferencedInSomeRequirement
+            ]
         };
         this.register(checks, validator);
     }
@@ -27,6 +30,18 @@ export class TestsLanguageValidator {
                 accept('warning', `Test name ${test.name} should container a number.`, { node: test, property: 'name' });
             }
         }
+    }
+
+    checkTestReferencesOnlyEnvironmentsAlsoReferencedInSomeRequirement(test: Test, accept: ValidationAcceptor): void {
+        test.environments.forEach((environmentReference, index)=>{
+            if (environmentReference.ref) {
+                if (!test.requirements.some(requirementReference=>{
+                    return requirementReference.ref && requirementReference.ref.environments.map(v=>v.ref).includes(environmentReference.ref);
+                })) {
+                    accept('warning', `Test ${test.name} references environment ${environmentReference.ref.name} which is used in any referenced requirement.`, { node: test, property: "environments", index: index });
+                }
+            }
+        })
     }
 
 }
