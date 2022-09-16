@@ -68,4 +68,4 @@ Use the run configuration "Attach" to attach the debugger.
 
 * A test identifier shall contain a number.
 * A requirement identifier shall contain a number.
-* A requirement shall be covered by at least one test (TODO: when updating the test model, the requirement is not rechecked automatically).
+* A requirement shall be covered by at least one test (note: when updating the test model, the requirement is not rechecked automatically: this point is hard to validate locally because we need to scan the whole workspace to find tests that cover a requirement. Typically this would rather be done as additional validation in a CLI or other processing tool, where you know the whole context.)
