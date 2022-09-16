@@ -38,8 +38,8 @@ Modules and Services:
 
 Language configuration:
 
-* `langium-config.json`: TODO, what does this exactly (AST code generation, syntax highlighting, TextMate).
-* `package.json`: `contributes` section, TODO, what does this exactly (vscode extension linkage?).
+* `langium-config.json`: see https://www.npmjs.com/package/langium-cli.
+* `package.json`: `contributes` section, see: https://code.visualstudio.com/api/references/contribution-points#contributes.languages.
 
 CLI and tests:
 
