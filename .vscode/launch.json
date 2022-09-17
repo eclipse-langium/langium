@@ -110,34 +110,5 @@
                 "--extensionTestsPath=${workspaceFolder}/out/test/suite/index"
             ]
         },
-        {
-            "name": "Jest: Run All",
-            "type": "node",
-            "request": "launch",
-            "program": "${workspaceFolder}/node_modules/jest/bin/jest.js",
-            "args": [
-                "--config=${workspaceFolder}/jest.config.json",
-                "--verbose",
-                "-i",
-                "--no-cache",
-            ],
-            "console": "integratedTerminal",
-            "internalConsoleOptions": "neverOpen"
-        },
-        {
-            "name": "Jest: Run Selected File",
-            "type": "node",
-            "request": "launch",
-            "program": "${workspaceFolder}/node_modules/jest/bin/jest.js",
-            "args": [
-                "${fileBasename}",
-                "--config=${workspaceFolder}/jest.config.json",
-                "--verbose",
-                "-i",
-                "--no-cache",
-            ],
-            "console": "integratedTerminal",
-            "internalConsoleOptions": "neverOpen"
-        }
     ]
 }

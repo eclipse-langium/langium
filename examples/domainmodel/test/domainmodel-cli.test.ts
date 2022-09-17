@@ -7,7 +7,6 @@
 import path from 'path';
 import fs from 'fs';
 import { exec, ExecException } from 'child_process';
-import 'jest-expect-message';
 import { generateAction } from '../src/cli/generator';
 
 describe('Test the domainmodel CLI', () => {
