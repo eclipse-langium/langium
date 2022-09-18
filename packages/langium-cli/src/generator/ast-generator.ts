@@ -21,11 +21,11 @@ export function generateAst(services: LangiumServices, grammars: Grammar[], conf
     const crossRef = grammars.some(grammar => hasCrossReferences(grammar));
     if (config.langiumInternal) {
         fileNode.append(
-            `import type { AstNode, AstReflection${crossRef ? ', Reference' : ''}, ReferenceInfo, TypeMetaData } from '../../syntax-tree';`, NL,
+            `import type { AstNode, AstReflection${crossRef ? ', Reference' : ''}, TypeMetaData } from '../../syntax-tree';`, NL,
             "import { isAstNode } from '../../utils/ast-util';", NL, NL
         );
     } else {
-        fileNode.append(`import { AstNode, AstReflection${crossRef ? ', Reference' : ''}, ReferenceInfo, isAstNode, TypeMetaData } from 'langium';`, NL, NL);
+        fileNode.append(`import { AstNode, AstReflection${crossRef ? ', Reference' : ''}, isAstNode, TypeMetaData } from 'langium';`, NL, NL);
     }
 
     for (const type of astTypes.unions) {
@@ -49,7 +49,6 @@ function generateAstReflection(config: LangiumConfig, astTypes: AstTypes): Gener
     const typeNames: string[] = astTypes.interfaces.map(t => `'${t.name}'`)
         .concat(astTypes.unions.map(t => `'${t.name}'`))
         .sort();
-    const crossReferenceTypes = buildCrossReferenceTypes(astTypes);
     const reflectionNode = new CompositeGeneratorNode();
 
     reflectionNode.append(
@@ -70,8 +69,6 @@ function generateAstReflection(config: LangiumConfig, astTypes: AstTypes): Gener
             '}', NL, NL,
             'isSubtype(subtype: string, supertype: string): boolean {', NL,
             buildIsSubtypeMethod(astTypes), '}', NL, NL,
-            'getReferenceType(refInfo: ReferenceInfo): string {', NL,
-            buildReferenceTypeMethod(crossReferenceTypes), '}', NL, NL,
             'getTypeMetaData(type: string): TypeMetaData {', NL,
             buildTypeMetaDataMethod(astTypes), '}', NL
         );
@@ -136,50 +133,6 @@ function buildMandatoryType(arrayProps: Property[], booleanProps: Property[]): G
         indent.append("{ name: '", property.name, "', type: '", type, "' }", i < all.length - 1 ? ',' : '', NL);
     }
     return indent;
-}
-
-function buildReferenceTypeMethod(crossReferenceTypes: CrossReferenceType[]): GeneratorNode {
-    const typeSwitchNode = new IndentNode();
-    typeSwitchNode.append('const referenceId = `${refInfo.container.$type}:${refInfo.property}`;', NL);
-    typeSwitchNode.append('switch (referenceId) {', NL);
-    typeSwitchNode.indent(caseNode => {
-        for (const crossRef of crossReferenceTypes) {
-            caseNode.append(`case '${crossRef.type}:${crossRef.feature}': {`, NL);
-            caseNode.indent(caseContent => {
-                caseContent.append(`return ${crossRef.referenceType};`, NL);
-            });
-            caseNode.append('}', NL);
-        }
-        caseNode.append('default: {', NL);
-        caseNode.indent(defaultNode => {
-            defaultNode.append('throw new Error(`${referenceId} is not a valid reference id.`);', NL);
-        });
-        caseNode.append('}', NL);
-    });
-    typeSwitchNode.append('}', NL);
-    return typeSwitchNode;
-}
-
-type CrossReferenceType = {
-    type: string,
-    feature: string,
-    referenceType: string
-}
-
-function buildCrossReferenceTypes(astTypes: AstTypes): CrossReferenceType[] {
-    const crossReferences: CrossReferenceType[] = [];
-    for (const typeInterface of astTypes.interfaces) {
-        for (const property of typeInterface.properties.sort((a, b) => a.name.localeCompare(b.name))) {
-            property.typeAlternatives.filter(e => e.reference).flatMap(e => e.types).forEach(type =>
-                crossReferences.push({
-                    type: typeInterface.name,
-                    feature: property.name,
-                    referenceType: type
-                })
-            );
-        }
-    }
-    return crossReferences.sort((a, b) => a.type.localeCompare(b.type));
 }
 
 function buildIsSubtypeMethod(astTypes: AstTypes): GeneratorNode {

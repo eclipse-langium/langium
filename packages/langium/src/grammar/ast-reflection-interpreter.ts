@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { AstReflection, ReferenceInfo, TypeMandatoryProperty, TypeMetaData } from '../syntax-tree';
+import { AstReflection, TypeMandatoryProperty, TypeMetaData } from '../syntax-tree';
 import { isAstNode } from '../utils/ast-util';
 import { MultiMap } from '../utils/collections';
 import { LangiumDocuments } from '../workspace/documents';
@@ -29,21 +29,12 @@ export function interpretAstReflection(grammarOrTypes: Grammar | AstTypes, docum
         collectedTypes = grammarOrTypes;
     }
     const allTypes = collectedTypes.interfaces.map(e => e.name).concat(collectedTypes.unions.map(e => e.name));
-    const references = buildReferenceTypes(collectedTypes);
     const metaData = buildTypeMetaData(collectedTypes);
     const superTypeMap = buildSupertypeMap(collectedTypes);
 
     return {
         getAllTypes() {
             return allTypes;
-        },
-        getReferenceType(refInfo: ReferenceInfo): string {
-            const referenceId = `${refInfo.container.$type}:${refInfo.property}`;
-            const referenceType = references.get(referenceId);
-            if (referenceType) {
-                return referenceType;
-            }
-            throw new Error('Could not find reference type for ' + referenceId);
         },
         getTypeMetaData(type: string): TypeMetaData {
             return metaData.get(type) ?? {
@@ -67,20 +58,6 @@ export function interpretAstReflection(grammarOrTypes: Grammar | AstTypes, docum
             return false;
         }
     };
-}
-
-function buildReferenceTypes(astTypes: AstTypes): Map<string, string> {
-    const references = new Map<string, string>();
-    for (const interfaceType of astTypes.interfaces) {
-        for (const property of interfaceType.properties) {
-            for (const propertyAlternative of property.typeAlternatives) {
-                if (propertyAlternative.reference) {
-                    references.set(`${interfaceType.name}:${property.name}`, propertyAlternative.types[0]);
-                }
-            }
-        }
-    }
-    return references;
 }
 
 function buildTypeMetaData(astTypes: AstTypes): Map<string, TypeMetaData> {

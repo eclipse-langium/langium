@@ -103,7 +103,6 @@ export interface LinkingError extends ReferenceInfo {
  */
 export interface AstReflection {
     getAllTypes(): string[]
-    getReferenceType(refInfo: ReferenceInfo): string
     getTypeMetaData(type: string): TypeMetaData
     isInstance(node: unknown, type: string): boolean
     isSubtype(subtype: string, supertype: string): boolean

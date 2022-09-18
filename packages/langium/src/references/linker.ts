@@ -231,10 +231,9 @@ export class DefaultLinker implements Linker {
         if (document.state < DocumentState.ComputedScopes) {
             console.warn(`Attempted reference resolution before document reached ComputedScopes state (${document.uri}).`);
         }
-        const referenceType = this.reflection.getReferenceType(refInfo);
         return {
             ...refInfo,
-            message: `Could not resolve reference to ${referenceType} named '${refInfo.reference.$refText}'.`,
+            message: `Could not resolve reference to ${refInfo.targetType} named '${refInfo.reference.$refText}'.`,
             targetDescription
         };
     }

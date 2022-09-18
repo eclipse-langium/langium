@@ -5,7 +5,7 @@
 
 /* eslint-disable @typescript-eslint/array-type */
 /* eslint-disable @typescript-eslint/no-empty-interface */
-import type { AstNode, AstReflection, Reference, ReferenceInfo, TypeMetaData } from '../../syntax-tree';
+import type { AstNode, AstReflection, Reference, TypeMetaData } from '../../syntax-tree';
 import { isAstNode } from '../../utils/ast-util';
 
 export type AbstractRule = ParserRule | TerminalRule;
@@ -509,51 +509,6 @@ export class LangiumGrammarAstReflection implements AstReflection {
             }
             default: {
                 return false;
-            }
-        }
-    }
-
-    getReferenceType(refInfo: ReferenceInfo): string {
-        const referenceId = `${refInfo.container.$type}:${refInfo.property}`;
-        switch (referenceId) {
-            case 'Action:type': {
-                return AbstractType;
-            }
-            case 'AtomType:refType': {
-                return AbstractType;
-            }
-            case 'CrossReference:type': {
-                return AbstractType;
-            }
-            case 'Grammar:hiddenTokens': {
-                return AbstractRule;
-            }
-            case 'Grammar:usedGrammars': {
-                return Grammar;
-            }
-            case 'Interface:superTypes': {
-                return AbstractType;
-            }
-            case 'NamedArgument:parameter': {
-                return Parameter;
-            }
-            case 'ParameterReference:parameter': {
-                return Parameter;
-            }
-            case 'ParserRule:hiddenTokens': {
-                return AbstractRule;
-            }
-            case 'ParserRule:returnType': {
-                return AbstractType;
-            }
-            case 'RuleCall:rule': {
-                return AbstractRule;
-            }
-            case 'TerminalRuleCall:rule': {
-                return TerminalRule;
-            }
-            default: {
-                throw new Error(`${referenceId} is not a valid reference id.`);
             }
         }
     }

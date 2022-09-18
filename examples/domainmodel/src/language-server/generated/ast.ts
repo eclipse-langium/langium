@@ -5,7 +5,7 @@
 
 /* eslint-disable @typescript-eslint/array-type */
 /* eslint-disable @typescript-eslint/no-empty-interface */
-import { AstNode, AstReflection, Reference, ReferenceInfo, isAstNode, TypeMetaData } from 'langium';
+import { AstNode, AstReflection, Reference, isAstNode, TypeMetaData } from 'langium';
 
 export type AbstractElement = PackageDeclaration | Type;
 
@@ -111,21 +111,6 @@ export class DomainModelAstReflection implements AstReflection {
             }
             default: {
                 return false;
-            }
-        }
-    }
-
-    getReferenceType(refInfo: ReferenceInfo): string {
-        const referenceId = `${refInfo.container.$type}:${refInfo.property}`;
-        switch (referenceId) {
-            case 'Entity:superType': {
-                return Entity;
-            }
-            case 'Feature:type': {
-                return Type;
-            }
-            default: {
-                throw new Error(`${referenceId} is not a valid reference id.`);
             }
         }
     }
