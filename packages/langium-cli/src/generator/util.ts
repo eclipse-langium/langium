@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import * as langium from 'langium';
-import { CompositeGeneratorNode, GeneratorNode, NL, stream } from 'langium';
+import { CompositeGeneratorNode, GeneratorNode, getAllReachableRules, isKeyword, NL, stream, streamAllContents } from 'langium';
 import fs from 'fs-extra';
 import path from 'path';
 import * as readline from 'readline';
@@ -57,24 +57,15 @@ function getGeneratedHeader(): GeneratorNode {
 
 export function collectKeywords(grammar: langium.Grammar): string[] {
     const keywords = new Set<string>();
+    const reachableRules = getAllReachableRules(grammar, false);
 
-    for (const rule of stream(grammar.rules).filter(langium.isParserRule)) {
-        collectElementKeywords(rule.definition, keywords);
+    for (const keyword of stream(reachableRules)
+        .filter(langium.isParserRule)
+        .flatMap(rule => streamAllContents(rule).filter(isKeyword))) {
+        keywords.add(keyword.value);
     }
 
     return Array.from(keywords).sort((a, b) => a.localeCompare(b));
-}
-
-function collectElementKeywords(element: langium.AbstractElement, keywords: Set<string>) {
-    if (langium.isAlternatives(element) || langium.isGroup(element) || langium.isUnorderedGroup(element)) {
-        for (const item of element.elements) {
-            collectElementKeywords(item, keywords);
-        }
-    } else if (langium.isAssignment(element)) {
-        collectElementKeywords(element.terminal, keywords);
-    } else if (langium.isKeyword(element)) {
-        keywords.add(element.value);
-    }
 }
 
 export function getUserInput(text: string): Promise<string> {

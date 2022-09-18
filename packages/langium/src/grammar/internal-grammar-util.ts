@@ -310,10 +310,9 @@ export function processTypeNodeWithNodeLocator(astNodeLocator: AstNodeLocator): 
 }
 
 /**
- * Add synthetic Interface in case of explicitly inferred type:<br>
+ * Add synthetic Interface in case of explicitly inferred type:
+ *
  * case: `{infer Action}`
- * @param astNodeLocator AstNodeLocator
- * @returns scope populator
  */
 export function processActionNodeWithNodeDescriptionProvider(descriptions: AstNodeDescriptionProvider): (node: AstNode, document: LangiumDocument, scopes: PrecomputedScopes) => void {
     return (node: AstNode, document: LangiumDocument, scopes: PrecomputedScopes) => {

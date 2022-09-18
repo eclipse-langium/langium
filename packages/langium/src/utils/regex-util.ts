@@ -110,6 +110,11 @@ export function isMultilineComment(regex: RegExp | string): boolean {
     }
 }
 
+export function isWhitespaceRegExp(value: RegExp | string): boolean {
+    const regexp = typeof value === 'string' ? new RegExp(value) : value;
+    return regexp.test(' ');
+}
+
 export function escapeRegExp(value: string): string {
     return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }

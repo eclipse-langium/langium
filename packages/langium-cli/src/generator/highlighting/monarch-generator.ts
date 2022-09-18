@@ -7,7 +7,7 @@
 import * as langium from 'langium';
 import {
     getTerminalParts, isCommentTerminal, isRegexToken, isTerminalRule, CompositeGeneratorNode, NL,
-    processGeneratorNode, TerminalRule, escapeRegExp
+    processGeneratorNode, TerminalRule, escapeRegExp, isWhitespaceRegExp
 } from 'langium';
 import { terminalRegex } from 'langium/lib/grammar/internal-grammar-util';
 import { LangiumLanguageConfig } from '../../package';
@@ -335,7 +335,7 @@ function getWhitespaceRules(grammar: langium.Grammar): Rule[] {
         if(isTerminalRule(rule) && isRegexToken(rule.definition)) {
             const regex = new RegExp(terminalRegex(rule));
 
-            if(!isCommentTerminal(rule) && !regex.test(' ')) {
+            if(!isCommentTerminal(rule) && !isWhitespaceRegExp(regex)) {
                 // skip rules that are not comments or whitespace
                 continue;
             }
@@ -419,7 +419,7 @@ function getTerminalRules(grammar: langium.Grammar): Rule[] {
         if (isTerminalRule(rule) && !isCommentTerminal(rule) && isRegexToken(rule.definition)) {
             const regex = new RegExp(terminalRegex(rule));
 
-            if (regex.test(' ')) {
+            if (isWhitespaceRegExp(regex)) {
                 // disallow terminal rules that match whitespace
                 continue;
             }
