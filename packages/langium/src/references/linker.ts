@@ -14,6 +14,32 @@ import { DocumentState, LangiumDocument, LangiumDocuments } from '../workspace/d
 import { ScopeProvider } from './scope-provider';
 
 /**
+ * Contains all properties that are relevant to constructing new references.
+ */
+export interface LinkerReferenceOptions {
+    /**
+     * The AST node that contains this reference.
+     */
+    node: AstNode;
+    /**
+     * The property that the reference is assigned to.
+     */
+    property: string;
+    /**
+     * The cst node that this reference was parsed from.
+     */
+    refNode: CstNode;
+    /**
+     * The name of the referenced element.
+     */
+    refText: string;
+    /**
+     * The type of the referenced element.
+     */
+    refType: string;
+}
+
+/**
  * Language-specific service for resolving cross-references in the AST.
  */
 export interface Linker {
@@ -53,13 +79,10 @@ export interface Linker {
      *  - If the target AstNode cannot be resolved on the first visit, an error indicator will be installed
      *    and further resolution attempts will *not* be performed.
      *
-     * @param node The containing AST node
-     * @param refNode The corresponding CST node
-     * @param refId The cross reference identifier like '<entityTypeName>:<propertyName>'
-     * @param refText The cross reference text denoting the target AstNode
+     * @param options Contains all properties that are relevant to constructing new references.
      * @returns the desired Reference node, whose behavior wrt. resolving the cross reference is implementation specific.
      */
-    buildReference(node: AstNode, property: string, refNode: CstNode, refText: string): Reference;
+    buildReference(options: LinkerReferenceOptions): Reference;
 }
 
 interface DefaultReference extends Reference {
@@ -129,13 +152,15 @@ export class DefaultLinker implements Linker {
         return description ?? this.createLinkingError(refInfo);
     }
 
-    buildReference(node: AstNode, property: string, refNode: CstNode, refText: string): Reference {
+    buildReference(options: LinkerReferenceOptions): Reference {
+        const { node: container, property, refNode, refText, refType: targetType } = options;
         // See behavior description in doc of Linker, update that on changes in here.
         // eslint-disable-next-line @typescript-eslint/no-this-alias
         const linker = this;
         const reference: DefaultReference = {
             $refNode: refNode,
             $refText: refText,
+            $refType: targetType,
 
             get ref() {
                 if (isAstNode(this._ref)) {
@@ -145,10 +170,10 @@ export class DefaultLinker implements Linker {
                     // A candidate has been found before, but it is not loaded yet.
                     const linkedNode = linker.loadAstNode(this._nodeDescription);
                     this._ref = linkedNode ??
-                        linker.createLinkingError({ reference, container: node, property }, this._nodeDescription);
+                        linker.createLinkingError({ reference, container, targetType, property }, this._nodeDescription);
                 } else if (this._ref === undefined) {
                     // The reference has not been linked yet, so do that now.
-                    const refData = linker.getLinkedNode({ reference, container: node, property });
+                    const refData = linker.getLinkedNode({ reference, container, targetType, property });
                     this._ref = refData.node ?? refData.error;
                     this._nodeDescription = refData.descr;
                 }

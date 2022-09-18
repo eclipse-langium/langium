@@ -29,7 +29,8 @@ export const StatemachineGrammar = (): Grammar => loadedStatemachineGrammar ?? (
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$refText": "ID"
+                "$refText": "ID",
+                "$refType": "AbstractRule"
               },
               "arguments": []
             }
@@ -48,7 +49,8 @@ export const StatemachineGrammar = (): Grammar => loadedStatemachineGrammar ?? (
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$refText": "Event"
+                    "$refText": "Event",
+                    "$refType": "AbstractRule"
                   },
                   "arguments": []
                 },
@@ -71,7 +73,8 @@ export const StatemachineGrammar = (): Grammar => loadedStatemachineGrammar ?? (
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$refText": "Command"
+                    "$refText": "Command",
+                    "$refType": "AbstractRule"
                   },
                   "arguments": []
                 },
@@ -91,7 +94,8 @@ export const StatemachineGrammar = (): Grammar => loadedStatemachineGrammar ?? (
             "terminal": {
               "$type": "CrossReference",
               "type": {
-                "$refText": "State"
+                "$refText": "State",
+                "$refType": "AbstractType"
               },
               "deprecatedSyntax": false
             }
@@ -103,7 +107,8 @@ export const StatemachineGrammar = (): Grammar => loadedStatemachineGrammar ?? (
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$refText": "State"
+                "$refText": "State",
+                "$refType": "AbstractRule"
               },
               "arguments": []
             },
@@ -127,7 +132,8 @@ export const StatemachineGrammar = (): Grammar => loadedStatemachineGrammar ?? (
         "terminal": {
           "$type": "RuleCall",
           "rule": {
-            "$refText": "ID"
+            "$refText": "ID",
+            "$refType": "AbstractRule"
           },
           "arguments": []
         }
@@ -149,7 +155,8 @@ export const StatemachineGrammar = (): Grammar => loadedStatemachineGrammar ?? (
         "terminal": {
           "$type": "RuleCall",
           "rule": {
-            "$refText": "ID"
+            "$refText": "ID",
+            "$refType": "AbstractRule"
           },
           "arguments": []
         }
@@ -178,7 +185,8 @@ export const StatemachineGrammar = (): Grammar => loadedStatemachineGrammar ?? (
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$refText": "ID"
+                "$refText": "ID",
+                "$refType": "AbstractRule"
               },
               "arguments": []
             }
@@ -201,7 +209,8 @@ export const StatemachineGrammar = (): Grammar => loadedStatemachineGrammar ?? (
                 "terminal": {
                   "$type": "CrossReference",
                   "type": {
-                    "$refText": "Command"
+                    "$refText": "Command",
+                    "$refType": "AbstractType"
                   },
                   "deprecatedSyntax": false
                 },
@@ -221,7 +230,8 @@ export const StatemachineGrammar = (): Grammar => loadedStatemachineGrammar ?? (
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$refText": "Transition"
+                "$refText": "Transition",
+                "$refType": "AbstractRule"
               },
               "arguments": []
             },
@@ -253,7 +263,8 @@ export const StatemachineGrammar = (): Grammar => loadedStatemachineGrammar ?? (
             "terminal": {
               "$type": "CrossReference",
               "type": {
-                "$refText": "Event"
+                "$refText": "Event",
+                "$refType": "AbstractType"
               },
               "deprecatedSyntax": false
             }
@@ -269,7 +280,8 @@ export const StatemachineGrammar = (): Grammar => loadedStatemachineGrammar ?? (
             "terminal": {
               "$type": "CrossReference",
               "type": {
-                "$refText": "State"
+                "$refText": "State",
+                "$refType": "AbstractType"
               },
               "deprecatedSyntax": false
             }

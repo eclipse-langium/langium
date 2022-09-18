@@ -8,7 +8,7 @@ import { CancellationToken, CompletionItem, CompletionItemKind, CompletionList, 
 import { TextDocument, TextEdit } from 'vscode-languageserver-textdocument';
 import * as ast from '../../grammar/generated/ast';
 import { GrammarConfig } from '../../grammar/grammar-config';
-import { getExplicitRuleType } from '../../grammar/internal-grammar-util';
+import { getExplicitRuleType, getTypeName } from '../../grammar/internal-grammar-util';
 import { LangiumCompletionParser } from '../../parser/langium-parser';
 import { NameProvider } from '../../references/naming';
 import { ScopeProvider } from '../../references/scope-provider';
@@ -202,7 +202,8 @@ export class DefaultCompletionProvider implements CompletionProvider {
             const refInfo: ReferenceInfo = {
                 reference: {} as Reference,
                 container: context,
-                property: assignment.feature
+                property: assignment.feature,
+                targetType: getTypeName(crossRef.feature.type.ref!)
             };
             try {
                 const scope = this.scopeProvider.getScope(refInfo);

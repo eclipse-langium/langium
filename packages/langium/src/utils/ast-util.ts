@@ -181,13 +181,13 @@ export function streamReferences(node: AstNode): Stream<ReferenceInfo> {
                 const value = (node as GenericAstNode)[property];
                 if (isReference(value)) {
                     state.keyIndex++;
-                    return { done: false, value: { reference: value, container: node, property } };
+                    return { done: false, value: { reference: value, container: node, property, targetType: value.$refType } };
                 } else if (Array.isArray(value)) {
                     while (state.arrayIndex < value.length) {
                         const index = state.arrayIndex++;
                         const element = value[index];
                         if (isReference(element)) {
-                            return { done: false, value: { reference: element, container: node, property, index } };
+                            return { done: false, value: { reference: element, container: node, property, index, targetType: element.$refType } };
                         }
                     }
                     state.arrayIndex = 0;

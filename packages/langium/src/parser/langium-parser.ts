@@ -44,7 +44,7 @@ type RuleImpl = (args: Args) => any;
 
 interface AssignmentElement {
     assignment?: Assignment
-    isCrossRef: boolean
+    targetType?: string
 }
 
 export interface BaseParser {
@@ -181,11 +181,11 @@ export class LangiumParser extends AbstractLangiumParser {
         const token = this.wrapper.wrapConsume(idx, tokenType);
         if (!this.isRecording()) {
             const leafNode = this.nodeBuilder.buildLeafNode(token, feature);
-            const { assignment, isCrossRef } = this.getAssignment(feature);
+            const { assignment, targetType } = this.getAssignment(feature);
             const current = this.current;
             if (assignment) {
                 const convertedValue = isKeyword(feature) ? token.image : this.converter.convert(token.image, leafNode);
-                this.assign(assignment.operator, assignment.feature, convertedValue, leafNode, isCrossRef);
+                this.assign(assignment.operator, assignment.feature, convertedValue, leafNode, targetType);
             } else if (isDataTypeNode(current)) {
                 let text = token.image;
                 if (!isKeyword(feature)) {
@@ -208,9 +208,9 @@ export class LangiumParser extends AbstractLangiumParser {
     }
 
     private performSubruleAssignment(result: any, feature: AbstractElement, cstNode: CompositeCstNode | undefined): void {
-        const { assignment, isCrossRef } = this.getAssignment(feature);
+        const { assignment, targetType } = this.getAssignment(feature);
         if (assignment && cstNode) {
-            this.assign(assignment.operator, assignment.feature, result, cstNode, isCrossRef);
+            this.assign(assignment.operator, assignment.feature, result, cstNode, targetType);
         } else if (!assignment) {
             // If we call a subrule without an assignment
             // We either append the result of the subrule (data type rule)
@@ -246,7 +246,7 @@ export class LangiumParser extends AbstractLangiumParser {
             this.stack.pop();
             this.stack.push(newItem);
             if (action.feature && action.operator) {
-                this.assign(action.operator, action.feature, last, last.$cstNode, false);
+                this.assign(action.operator, action.feature, last, last.$cstNode);
             }
         }
     }
@@ -284,19 +284,32 @@ export class LangiumParser extends AbstractLangiumParser {
     private getAssignment(feature: AbstractElement): AssignmentElement {
         if (!this.assignmentMap.has(feature)) {
             const assignment = getContainerOfType(feature, isAssignment);
+            let targetType: string | undefined;
+            if (assignment && isCrossReference(assignment.terminal) && assignment.terminal.type.ref) {
+                const type = assignment.terminal.type.ref;
+                if (type) {
+                    targetType = getTypeName(type);
+                }
+            }
             this.assignmentMap.set(feature, {
-                assignment: assignment,
-                isCrossRef: assignment ? isCrossReference(assignment.terminal) : false
+                assignment,
+                targetType
             });
         }
         return this.assignmentMap.get(feature)!;
     }
 
-    private assign(operator: string, feature: string, value: unknown, cstNode: CstNode, isCrossRef: boolean): void {
+    private assign(operator: string, feature: string, value: unknown, cstNode: CstNode, targetType?: string): void {
         const obj = this.current;
         let item: unknown;
-        if (isCrossRef && typeof value === 'string') {
-            item = this.linker.buildReference(obj, feature, cstNode, value);
+        if (targetType && typeof value === 'string') {
+            item = this.linker.buildReference({
+                node: obj,
+                property: feature,
+                refNode: cstNode,
+                refText: value,
+                refType: targetType
+            });
         } else {
             item = value;
         }

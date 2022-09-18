@@ -116,22 +116,22 @@ export class DefaultScopeProvider implements ScopeProvider {
 
     getScope(context: ReferenceInfo): Scope {
         const scopes: Array<Stream<AstNodeDescription>> = [];
-        const referenceType = this.reflection.getReferenceType(context);
+        const { targetType, container } = context;
 
-        const precomputed = getDocument(context.container).precomputedScopes;
+        const precomputed = getDocument(container).precomputedScopes;
         if (precomputed) {
-            let currentNode: AstNode | undefined = context.container;
+            let currentNode: AstNode | undefined = container;
             do {
                 const allDescriptions = precomputed.get(currentNode);
                 if (allDescriptions.length > 0) {
                     scopes.push(stream(allDescriptions).filter(
-                        desc => this.reflection.isSubtype(desc.type, referenceType)));
+                        desc => this.reflection.isSubtype(desc.type, targetType)));
                 }
                 currentNode = currentNode.$container;
             } while (currentNode);
         }
 
-        let result: Scope = this.getGlobalScope(referenceType);
+        let result: Scope = this.getGlobalScope(targetType);
         for (let i = scopes.length - 1; i >= 0; i--) {
             result = this.createScope(scopes[i], result);
         }

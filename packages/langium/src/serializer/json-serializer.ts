@@ -55,7 +55,10 @@ export class DefaultJsonSerializer implements JsonSerializer {
                 }
                 // If it is a reference, just return the name
                 if (isReference(item)) {
-                    return { $refText: item.$refText } as Reference; // surprisingly this cast works at the time of writing, although $refNode is absent
+                    return {
+                        $refText: item.$refText,
+                        $refType: item.$refType
+                    } as Reference; // surprisingly this cast works at the time of writing, although $refNode is absent
                 }
                 let newItem: Record<string, unknown> | unknown[];
                 // If it is an array, replicate the array.
@@ -88,7 +91,13 @@ export class DefaultJsonSerializer implements JsonSerializer {
                 for (let i = 0; i < value.length; i++) {
                     const item = value[i];
                     if (isReference(item) && isAstNode(container)) {
-                        const reference = this.linker.buildReference(container, propName!, item.$refNode, item.$refText);
+                        const reference = this.linker.buildReference({
+                            node: container,
+                            property: propName!,
+                            refText: item.$refText,
+                            refType: item.$refType,
+                            refNode: item.$refNode
+                        });
                         value[i] = reference;
                     } else if (typeof item === 'object' && item !== null) {
                         internalRevive(item);
@@ -101,7 +110,13 @@ export class DefaultJsonSerializer implements JsonSerializer {
                 for (const [name, item] of Object.entries(value)) {
                     if (typeof item === 'object' && item !== null) {
                         if (isReference(item)) {
-                            const reference = this.linker.buildReference(value as AstNode, name, item.$refNode, item.$refText);
+                            const reference = this.linker.buildReference({
+                                node: value as AstNode,
+                                property: name,
+                                refText: item.$refText,
+                                refType: item.$refType,
+                                refNode: item.$refNode
+                            });
                             value[name] = reference;
                         } else if (Array.isArray(item)) {
                             internalRevive(item, value, name);
