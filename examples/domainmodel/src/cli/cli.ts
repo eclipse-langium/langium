@@ -19,6 +19,7 @@ program
     .argument('<file>', `possible file extensions: ${DomainModelLanguageMetaData.fileExtensions.join(', ')}`)
     .option('-d, --destination <dir>', 'destination directory of generating')
     .option('-r, --root <dir>', 'source root folder')
+    .option('-q, --quiet', 'whether the program should print something', false)
     .description('generates Java classes by Entity description')
     .action(generateAction);
 

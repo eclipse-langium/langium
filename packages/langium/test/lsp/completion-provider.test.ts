@@ -6,7 +6,6 @@
 
 import { createLangiumGrammarServices, createServicesForGrammar, EmptyFileSystem } from '../../src';
 import { expectCompletion } from '../../src/test';
-import { expectFunction } from '../fixture';
 
 describe('Langium completion provider', () => {
 
@@ -17,7 +16,7 @@ describe('Langium completion provider', () => {
     `;
 
     const grammarServices = createLangiumGrammarServices(EmptyFileSystem).grammar;
-    const completion = expectCompletion(grammarServices, expectFunction);
+    const completion = expectCompletion(grammarServices);
 
     test('Should find starting rule', async () => {
         await completion({
@@ -103,7 +102,7 @@ describe('Completion within alternatives', () => {
         `;
 
         const services = createServicesForGrammar({ grammar });
-        const completion = expectCompletion(services, expectFunction);
+        const completion = expectCompletion(services);
         const text = '<|>a <|>b <|>c';
 
         await completion({
@@ -135,7 +134,7 @@ describe('Completion within alternatives', () => {
         `;
 
         const services = createServicesForGrammar({ grammar });
-        const completion = expectCompletion(services, expectFunction);
+        const completion = expectCompletion(services);
         const text = 'item A ref <|>A';
 
         await completion({
