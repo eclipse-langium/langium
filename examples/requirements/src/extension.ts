@@ -39,8 +39,8 @@ function startLanguageClient(context: vscode.ExtensionContext): LanguageClient {
     // Options to control the language client
     const clientOptions: LanguageClientOptions = {
         documentSelector: [
-            { scheme: 'file', language: 'tests-language' },
-            { scheme: 'file', language: 'requirements-language' }], // TODO: what does this do?
+            { scheme: 'file', language: 'tests-lang' },
+            { scheme: 'file', language: 'requirements-lang' }],
         synchronize: {
             // Notify the server about file changes to files contained in the workspace
             fileEvents: fileSystemWatcher
@@ -49,7 +49,7 @@ function startLanguageClient(context: vscode.ExtensionContext): LanguageClient {
 
     // Create the language client and start the client.
     const client = new LanguageClient(
-        'requirements-and-tests-language', // TODO: this is just a name? Does it do something?
+        'requirements-and-tests-language',
         'Requirements and Tests Language',
         serverOptions,
         clientOptions

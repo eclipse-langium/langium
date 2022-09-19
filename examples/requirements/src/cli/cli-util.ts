@@ -27,7 +27,7 @@ export async function extractDocuments(fileName: string, services: LangiumServic
     }
 
     const folders : WorkspaceFolder[] = [{
-        uri: URI.file(path.resolve(path.dirname(fileName))).toString(), // TODO: why a string and not an URI?
+        uri: URI.file(path.resolve(path.dirname(fileName))).toString(),
         name: 'main'
     }];
     await services.shared.workspace.WorkspaceManager.initializeWorkspace(folders);
