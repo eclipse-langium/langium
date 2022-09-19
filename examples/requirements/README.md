@@ -50,7 +50,7 @@ CLI and tests:
 The Example features a generator that you can run via cli to process Requirement Model files. The outcome is a HTML table with a coverage matrix indicating which Test Cases test the Requirements of the file passed to the CLI.
 
 * Ensure the complete project was properly built, otherwise run `npm install` from the root of the Langium project.
-* Use `node ./bin/cli` from the requirements-and-tests directory to run the cli. Follow the instructions or use `node ./bin/cli generate-requirements-coverage <full-path-to-req-file>`.
+* Use `node ./bin/cli` from the requirements directory to run the cli. Follow the instructions or use `node ./bin/cli generate-requirements-coverage <full-path-to-req-file>`.
 
 The generator produces an HTML file.
 

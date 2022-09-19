@@ -4,7 +4,7 @@
         "<rootDir>/packages/langium/test",
         "<rootDir>/packages/langium-cli/test",
         "<rootDir>/examples/arithmetics/test",
-        "<rootDir>/examples/requirements-and-tests/test",
+        "<rootDir>/examples/requirements/test",
         "<rootDir>/examples/domainmodel/test",
         "<rootDir>/examples/statemachine/test"
     ],

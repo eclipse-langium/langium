@@ -12,7 +12,7 @@
     "watch": "tsc -b tsconfig.build.json -w",
     "lint": "npm run lint --workspaces",
     "test": "jest --coverage",
-    "langium:generate": "npm run langium:generate --workspace=langium --workspace=domainmodel --workspace=arithmetics --workspace=statemachine --workspace=requirements-and-tests",
+    "langium:generate": "npm run langium:generate --workspace=langium --workspace=domainmodel --workspace=arithmetics --workspace=statemachine --workspace=requirements",
     "dev-build": "npm run dev-clean && npm install && npm link ./packages/langium && npm link ./packages/langium-cli && npm link ./packages/generator-langium",
     "dev-clean": "shx rm -rf packages/**/node_modules && npm uninstall -g langium-workspaces langium-cli generator-langium langium && npm unlink langium-workspaces langium-cli generator-langium langium"
   },
