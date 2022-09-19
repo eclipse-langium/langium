@@ -6,8 +6,9 @@
 
 import { IToken } from 'chevrotain';
 import * as ast from '../../grammar/generated/ast';
-import { Cardinality, getCrossReferenceTerminal, getExplicitRuleType, getTypeName, isArray, isOptional, terminalRegex } from '../../grammar/grammar-util';
+import { Cardinality, getExplicitRuleType, getTypeName, isArrayCardinality, isOptionalCardinality, terminalRegex } from '../../grammar/internal-grammar-util';
 import { getContainerOfType, isAstNode } from '../../utils/ast-util';
+import { getCrossReferenceTerminal } from '../../utils/grammar-util';
 
 export interface NextFeature<T extends ast.AbstractElement = ast.AbstractElement> {
     /**
@@ -70,7 +71,7 @@ function findNextFeaturesInternal(options: { next: NextFeature, cardinalities: M
         }
     }
     // First try to iterate the same element again
-    if (isArray(item.cardinality)) {
+    if (isArrayCardinality(item.cardinality)) {
         const repeatingFeatures = findFirstFeaturesInternal({
             next: {
                 feature: item,
@@ -98,7 +99,7 @@ function findNextFeaturesInternal(options: { next: NextFeature, cardinalities: M
         }
         // Try to find the next elements of the parent
         // Only do this if every following element is either optional or has been parsed as +
-        if (features.every(e => isOptional(e.feature.cardinality) || isOptional(cardinalities.get(e.feature)) || plus.has(e.feature))) {
+        if (features.every(e => isOptionalCardinality(e.feature.cardinality) || isOptionalCardinality(cardinalities.get(e.feature)) || plus.has(e.feature))) {
             features.push(...findNextFeaturesInternal({
                 next: {
                     feature: parent,
@@ -208,7 +209,7 @@ function findNextFeaturesInGroup(next: NextFeature<ast.Group>, index: number, ca
             visited,
             plus
         }));
-        if (!isOptional(firstFeature.feature.cardinality ?? cardinalities.get(firstFeature.feature))) {
+        if (!isOptionalCardinality(firstFeature.feature.cardinality ?? cardinalities.get(firstFeature.feature))) {
             break;
         }
     }
@@ -250,7 +251,7 @@ function interpretStackToken(stack: NextFeature[], token?: IToken): NextFeature[
         for (const nextFeature of allNextFeatures) {
             newStacks.push([...stack, nextFeature]);
         }
-        if (!allNextFeatures.every(e => isOptional(e.feature.cardinality) || isOptional(cardinalities.get(e.feature)))) {
+        if (!allNextFeatures.every(e => isOptionalCardinality(e.feature.cardinality) || isOptionalCardinality(cardinalities.get(e.feature)))) {
             break;
         }
     }

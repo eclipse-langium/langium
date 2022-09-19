@@ -3,10 +3,10 @@
  * DO NOT EDIT MANUALLY!
  ******************************************************************************/
 
-import { loadGrammar, Grammar } from 'langium';
+import { loadGrammarFromJson, Grammar } from 'langium';
 
 let loadedDomainModelGrammar: Grammar | undefined;
-export const DomainModelGrammar = (): Grammar => loadedDomainModelGrammar ||(loadedDomainModelGrammar = loadGrammar(`{
+export const DomainModelGrammar = (): Grammar => loadedDomainModelGrammar ?? (loadedDomainModelGrammar = loadGrammarFromJson(`{
   "$type": "Grammar",
   "isDeclared": true,
   "name": "DomainModel",

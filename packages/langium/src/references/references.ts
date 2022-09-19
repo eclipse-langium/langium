@@ -4,13 +4,13 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { findAssignment } from '../grammar/grammar-util';
+import { findAssignment } from '../utils/grammar-util';
 import { LangiumServices } from '../services';
 import { AstNode, CstNode, GenericAstNode, Reference } from '../syntax-tree';
 import { getDocument, isReference, streamAst, streamReferences } from '../utils/ast-util';
 import { toDocumentSegment } from '../utils/cst-util';
 import { stream, Stream } from '../utils/stream';
-import { equalURI } from '../utils/uri-utils';
+import { equalURI } from '../utils/uri-util';
 import { ReferenceDescription } from '../workspace/ast-descriptions';
 import { AstNodeLocator } from '../workspace/ast-node-locator';
 import { IndexManager } from '../workspace/index-manager';

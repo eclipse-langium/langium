@@ -7,7 +7,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { defaultParserErrorProvider, DSLMethodOpts, EmbeddedActionsParser, ILexingError, IMultiModeLexerDefinition, IOrAlt, IParserErrorMessageProvider, IRecognitionException, IToken, Lexer, TokenType, TokenTypeDictionary, TokenVocabulary } from 'chevrotain';
 import { AbstractElement, Action, Assignment, isAssignment, isCrossReference, isKeyword, ParserRule } from '../grammar/generated/ast';
-import { getTypeName, isDataTypeRule } from '../grammar/grammar-util';
+import { getTypeName, isDataTypeRule } from '../grammar/internal-grammar-util';
 import { Linker } from '../references/linker';
 import { LangiumServices } from '../services';
 import { AstNode, AstReflection, CompositeCstNode, CstNode } from '../syntax-tree';

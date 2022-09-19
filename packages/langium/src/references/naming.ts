@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { findNodeForFeature } from '../grammar/grammar-util';
+import { findNodeForProperty } from '../utils/grammar-util';
 import { AstNode, CstNode } from '../syntax-tree';
 
 export interface NamedAstNode extends AstNode {
@@ -40,6 +40,6 @@ export class DefaultNameProvider implements NameProvider {
     }
 
     getNameNode(node: AstNode): CstNode | undefined {
-        return findNodeForFeature(node.$cstNode, 'name');
+        return findNodeForProperty(node.$cstNode, 'name');
     }
 }
