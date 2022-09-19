@@ -110,5 +110,26 @@
                 "--extensionTestsPath=${workspaceFolder}/out/test/suite/index"
             ]
         },
+        {
+            "name": "Vitest: Run All",
+            "type": "pwa-node",
+            "request": "launch",
+            "skipFiles": ["<node_internals>/**", "**/node_modules/**"],
+            "program": "${workspaceRoot}/node_modules/vitest/vitest.mjs",
+            "args": ["run", "--no-color", "--no-coverage", "--no-watch"],
+            "smartStep": true,
+            "console": "integratedTerminal",
+        },
+        {
+            "name": "Vitest: Run Selected File",
+            "type": "pwa-node",
+            "request": "launch",
+            "autoAttachChildProcesses": true,
+            "skipFiles": ["<node_internals>/**", "**/node_modules/**"],
+            "program": "${workspaceRoot}/node_modules/vitest/vitest.mjs",
+            "args": ["run", "${relativeFile}"],
+            "smartStep": true,
+            "console": "integratedTerminal",
+        }
     ]
 }
