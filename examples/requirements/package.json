@@ -11,30 +11,30 @@
     ],
     "contributes": {
         "languages": [{
-            "id": "requirements-language",
+            "id": "requirements-lang",
             "aliases": ["Requirements Language", "requirements-language"],
             "extensions": [".req"],
             "configuration": "./language-configuration.json"
         },{
-            "id": "tests-language",
+            "id": "tests-lang",
             "aliases": ["Tests Language", "tests-language"],
             "extensions": [".tst"],
             "configuration": "./language-configuration.json"
         }],
         "grammars": [{
-            "language": "requirements-language",
+            "language": "requirements-lang",
             "scopeName": "source.requirements-language",
             "path": "./syntaxes/requirements.tmLanguage.json"
         },{
-            "language": "tests-language",
+            "language": "tests-lang",
             "scopeName": "source.tests-language",
             "path": "./syntaxes/tests.tmLanguage.json"
         }]
     },
     "activationEvents": [
         "onLanguage:requirements-and-tests-language",
-        "onLanguage:requirements-language",
-        "onLanguage:tests-language"
+        "onLanguage:requirements-lang",
+        "onLanguage:tests-lang"
     ],
     "files": [
         "bin",
