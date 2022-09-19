@@ -1,7 +1,7 @@
 {
-    "name": "requirements-and-tests",
-    "displayName": "requirements-and-tests",
-    "description": "Please enter a brief description here",
+    "name": "requirements",
+    "displayName": "requirements",
+    "description": "A demo showing how to combine two DSLs",
     "version": "0.0.1",
     "engines": {
         "vscode": "^1.56.0"
