@@ -86,9 +86,10 @@ In `.vscode/launch.json` of your language project add the following launch confi
         ],
         "sourceMaps": true,
         "outFiles": [
-            "${workspaceFolder}/out/**/*.js"
+            "${workspaceFolder}/out/**/*.js",
+            "${workspaceFolder}/node_modules/langium"
         ],
-        "type": "pwa-node"
+        "type": "node"
     }
 ```
 With the above configuration you can attach the debugger to the language server which effectively means you are able to debug your local version of Langium.
