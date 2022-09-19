@@ -318,7 +318,7 @@ function filterByOptions<T extends AstNode = AstNode, N extends AstNode = AstNod
     if ('offset' in options) {
         const outer = {
             start: validationResult.document.textDocument.positionAt(options.offset),
-            end: validationResult.document.textDocument.positionAt(options.offset + options.length - 1)
+            end: validationResult.document.textDocument.positionAt(options.offset + options.length)
         };
         filters.push(d => isRangeEqual(outer, d.range));
     }
