@@ -40,8 +40,8 @@
             "request": "launch",
             "runtimeExecutable": "${execPath}",
             "args": [
-                "${workspaceFolder}/examples/requirements-and-tests/example",
-                "--extensionDevelopmentPath=${workspaceFolder}/examples/requirements-and-tests"
+                "${workspaceFolder}/examples/requirements/example",
+                "--extensionDevelopmentPath=${workspaceFolder}/examples/requirements"
             ]
         },
         {
