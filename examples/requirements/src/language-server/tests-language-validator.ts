@@ -1,3 +1,9 @@
+/******************************************************************************
+ * Copyright 2022 TypeFox GmbH
+ * This program and the accompanying materials are made available under the
+ * terms of the MIT License, which is available in the project root.
+ ******************************************************************************/
+
 import { ValidationAcceptor, ValidationChecks, ValidationRegistry } from 'langium';
 import { RequirementsAndTestsAstType, Test } from './generated/ast';
 import { TestsLanguageServices } from './tests-language-module';
