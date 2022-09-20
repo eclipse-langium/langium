@@ -5,6 +5,7 @@
  ******************************************************************************/
 
 import { ExpectFunction } from '../src/test';
+import 'vitest/globals';
 
 /**
  * Expectation function for jest. Accepts any primitive/objects and does a deep recursive comparison.

@@ -4,15 +4,16 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-/// <reference types="vitest" />
-import { defineConfig } from 'vite';
+import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
     test: {
         globals: true,
         coverage: {
             provider: 'c8',
-            reporter: ['text', 'html']
+            reporter: ['text', 'html'],
+            include: ['packages/langium/src'],
+            exclude: ['**/generated'],
         }
     }
 });

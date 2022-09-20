@@ -112,7 +112,7 @@
         },
         {
             "name": "Vitest: Run All",
-            "type": "pwa-node",
+            "type": "node",
             "request": "launch",
             "skipFiles": ["<node_internals>/**", "**/node_modules/**"],
             "program": "${workspaceRoot}/node_modules/vitest/vitest.mjs",
@@ -122,7 +122,7 @@
         },
         {
             "name": "Vitest: Run Selected File",
-            "type": "pwa-node",
+            "type": "node",
             "request": "launch",
             "autoAttachChildProcesses": true,
             "skipFiles": ["<node_internals>/**", "**/node_modules/**"],
