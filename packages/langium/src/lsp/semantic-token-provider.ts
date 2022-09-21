@@ -7,7 +7,7 @@
 /* eslint-disable no-bitwise */
 
 import { CancellationToken, Range, SemanticTokenModifiers, SemanticTokens, SemanticTokensBuilder as BaseSemanticTokensBuilder, SemanticTokensClientCapabilities, SemanticTokensDelta, SemanticTokensDeltaParams, SemanticTokensOptions, SemanticTokensParams, SemanticTokensRangeParams, SemanticTokenTypes } from 'vscode-languageserver';
-import { findNodesForKeyword, findNodeForProperty } from '../utils/grammar-util';
+import { findNodesForKeyword, findNodeForProperty, findNodesForProperty, findNodeForKeyword } from '../utils/grammar-util';
 import { LangiumServices } from '../services';
 import { AstNode, CstNode, Properties } from '../syntax-tree';
 import { streamAllContents } from '../utils/ast-util';
@@ -77,21 +77,50 @@ export interface SemanticToken {
 }
 
 export type SemanticTokenAcceptorOptions<N extends AstNode = AstNode> = ({
-    line: number
-    char: number,
-    length: number
+    line: number;
+    char: number;
+    length: number;
 } | {
-    node: N,
-    feature: Properties<N>,
-    index?: number
+    node: N;
+    property: Properties<N>;
+    index?: number;
 } | {
-    node: N,
-    keyword: string
+    node: N;
+    keyword: string;
+    index?: number;
 } | {
-    cst: CstNode
+    cst: CstNode;
 } | {
-    range: Range
+    range: Range;
 }) & {
+    type: string;
+    modifier?: string | string[];
+}
+
+export interface SemanticTokenPropertyOptions<T extends AstNode> {
+    node: T;
+    property: Properties<T>;
+    index?: number;
+    type: string;
+    modifier?: string | string[];
+}
+
+export interface SemanticTokenKeywordOptions {
+    node: AstNode;
+    keyword: string;
+    index?: number;
+    type: string;
+    modifier?: string | string[];
+}
+
+export interface SemanticTokenNodeOptions {
+    node: CstNode;
+    type: string;
+    modifier?: string | string[];
+}
+
+export interface SemanticTokenRangeOptions {
+    range: Range
     type: string
     modifier?: string | string[]
 }
@@ -196,23 +225,31 @@ export abstract class AbstractSemanticTokenProvider implements SemanticTokenProv
         const acceptor: SemanticTokenAcceptor = options => {
             if ('line' in options) {
                 this.highlightToken({
-                    start: {
-                        line: options.line,
-                        character: options.char
+                    range: {
+                        start: {
+                            line: options.line,
+                            character: options.char
+                        },
+                        end: {
+                            line: options.line,
+                            character: options.char + options.length
+                        }
                     },
-                    end: {
-                        line: options.line,
-                        character: options.char + options.length
-                    }
-                }, options.type, options.modifier);
+                    type: options.type,
+                    modifier: options.modifier
+                });
             } else if ('range' in options) {
-                this.highlightToken(options.range, options.type, options.modifier);
+                this.highlightToken(options);
             } else if ('keyword' in options) {
-                this.highlightKeyword(options.node, options.keyword, options.type, options.modifier);
-            } else if ('feature' in options) {
-                this.highlightFeature(options.node, options.feature, options.index, options.type, options.modifier);
+                this.highlightKeyword(options);
+            } else if ('property' in options) {
+                this.highlightProperty(options);
             } else {
-                this.highlightNode(options.cst, options.type, options.modifier);
+                this.highlightNode({
+                    node: options.cst,
+                    type: options.type,
+                    modifier: options.modifier
+                });
             }
         };
         return acceptor;
@@ -277,7 +314,9 @@ export abstract class AbstractSemanticTokenProvider implements SemanticTokenProv
      */
     protected abstract highlightElement(node: AstNode, acceptor: SemanticTokenAcceptor): void | undefined | 'prune';
 
-    protected highlightToken(range: Range, type: string, modifiers?: string | string[]): void {
+    protected highlightToken(options: SemanticTokenRangeOptions): void {
+        const { range, type } = options;
+        let modifiers = options.modifier;
         if (this.compareRange(range) !== 0 || !this.currentDocument || !this.currentTokensBuilder) {
             return;
         }
@@ -346,22 +385,54 @@ export abstract class AbstractSemanticTokenProvider implements SemanticTokenProv
         }
     }
 
-    protected highlightFeature<N extends AstNode>(node: N, feature: Properties<N>, index: number | undefined, type: string, modifiers?: string | string[]): void {
-        const featureNode = findNodeForProperty(node.$cstNode, feature as string, index);
-        if (featureNode) {
-            this.highlightNode(featureNode, type, modifiers);
+    protected highlightProperty<N extends AstNode>(options: SemanticTokenPropertyOptions<N>): void {
+        const nodes: CstNode[] = [];
+        if (typeof options.index === 'number') {
+            const node = findNodeForProperty(options.node.$cstNode, options.property, options.index);
+            if (node) {
+                nodes.push(node);
+            }
+        } else {
+            nodes.push(...findNodesForProperty(options.node.$cstNode, options.property));
+        }
+        const { type, modifier } = options;
+        for (const node of nodes) {
+            this.highlightNode({
+                node,
+                type,
+                modifier
+            });
         }
     }
 
-    protected highlightKeyword(node: AstNode, keyword: string, type: string, modifiers?: string | string[]): void {
-        const keywordNodes = findNodesForKeyword(node.$cstNode, keyword);
-        for (const keywordNode of keywordNodes) {
-            this.highlightNode(keywordNode, type, modifiers);
+    protected highlightKeyword(options: SemanticTokenKeywordOptions): void {
+        const { node, keyword, type, index, modifier } = options;
+        const nodes: CstNode[] = [];
+        if (typeof index === 'number') {
+            const keywordNode = findNodeForKeyword(node.$cstNode, keyword, index);
+            if (keywordNode) {
+                nodes.push(keywordNode);
+            }
+        } else {
+            nodes.push(...findNodesForKeyword(node.$cstNode, keyword));
+        }
+        for (const keywordNode of nodes) {
+            this.highlightNode({
+                node: keywordNode,
+                type,
+                modifier
+            });
         }
     }
 
-    protected highlightNode(node: CstNode, type: string, modifiers?: string | string[]): void {
-        this.highlightToken(node.range, type, modifiers);
+    protected highlightNode(options: SemanticTokenNodeOptions): void {
+        const { node, type, modifier } = options;
+        const range = node.range;
+        this.highlightToken({
+            range,
+            type,
+            modifier
+        });
     }
 
 }

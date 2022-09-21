@@ -15,48 +15,48 @@ export class LangiumGrammarSemanticTokenProvider extends AbstractSemanticTokenPr
         if (isAssignment(node)) {
             acceptor({
                 node,
-                feature: 'feature',
+                property: 'feature',
                 type: SemanticTokenTypes.property
             });
         } else if (isAction(node)) {
             if (node.feature) {
                 acceptor({
                     node,
-                    feature: 'feature',
+                    property: 'feature',
                     type: SemanticTokenTypes.property
                 });
             }
         } else if (isReturnType(node)) {
             acceptor({
                 node,
-                feature: 'name',
+                property: 'name',
                 type: SemanticTokenTypes.type
             });
         } else if (isAtomType(node)) {
             if (node.primitiveType || node.refType) {
                 acceptor({
                     node,
-                    feature: 'primitiveType' in node ? 'primitiveType' : 'refType',
+                    property: node.primitiveType ? 'primitiveType' : 'refType',
                     type: SemanticTokenTypes.type
                 });
             }
         } else if (isParameter(node)) {
             acceptor({
                 node,
-                feature: 'name',
+                property: 'name',
                 type: SemanticTokenTypes.parameter
             });
         } else if (isParameterReference(node)) {
             acceptor({
                 node,
-                feature: 'parameter',
+                property: 'parameter',
                 type: SemanticTokenTypes.parameter
             });
         } else if (isRuleCall(node)) {
             if (node.rule.ref?.fragment) {
                 acceptor({
                     node,
-                    feature: 'rule',
+                    property: 'rule',
                     type: SemanticTokenTypes.type
                 });
             }
