@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import { URI } from 'vscode-uri';
-import { relativeURI, equalURI } from '../../src/utils/uri-utils';
+import { relativeURI, equalURI } from '../../src/utils/uri-util';
 
 describe('URI Utils', () => {
     test('relative path in same directory', () => {

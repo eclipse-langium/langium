@@ -4,15 +4,15 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { DefaultScopeComputation } from '../references/scope-computation';
-import { DefaultScopeProvider, Scope } from '../references/scope-provider';
-import { LangiumServices } from '../services';
-import { AstNode, AstNodeDescription, ReferenceInfo } from '../syntax-tree';
-import { findRootNode, getDocument } from '../utils/ast-util';
-import { stream, Stream } from '../utils/stream';
-import { LangiumDocument, PrecomputedScopes } from '../workspace/documents';
-import { isReturnType } from './generated/ast';
-import { processActionNodeWithNodeDescriptionProvider, processTypeNodeWithNodeLocator } from './grammar-util';
+import { DefaultScopeComputation } from '../../references/scope-computation';
+import { DefaultScopeProvider, Scope } from '../../references/scope-provider';
+import { LangiumServices } from '../../services';
+import { AstNode, AstNodeDescription, ReferenceInfo } from '../../syntax-tree';
+import { findRootNode, getDocument } from '../../utils/ast-util';
+import { stream, Stream } from '../../utils/stream';
+import { LangiumDocument, PrecomputedScopes } from '../../workspace/documents';
+import { isReturnType } from '../generated/ast';
+import { processActionNodeWithNodeDescriptionProvider, processTypeNodeWithNodeLocator } from '../internal-grammar-util';
 
 export class LangiumGrammarScopeProvider extends DefaultScopeProvider {
     constructor(services: LangiumServices) {

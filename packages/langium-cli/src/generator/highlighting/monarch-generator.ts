@@ -5,7 +5,11 @@
  ******************************************************************************/
 
 import * as langium from 'langium';
-import { getTerminalParts, isCommentTerminal, isRegexToken, isTerminalRule, terminalRegex, CompositeGeneratorNode, NL, processGeneratorNode, TerminalRule, escapeRegExp } from 'langium';
+import {
+    getTerminalParts, isCommentTerminal, isRegexToken, isTerminalRule, CompositeGeneratorNode, NL,
+    processGeneratorNode, TerminalRule, escapeRegExp
+} from 'langium';
+import { terminalRegex } from 'langium/lib/grammar/internal-grammar-util';
 import { LangiumLanguageConfig } from '../../package';
 import { collectKeywords } from '../util';
 

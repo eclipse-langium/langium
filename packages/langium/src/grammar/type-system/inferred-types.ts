@@ -4,12 +4,12 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { getExplicitRuleType, getRuleType, getTypeName, isOptional } from '../grammar-util';
 import { AbstractElement, Action, Alternatives, Assignment, Group, isAction, isAlternatives, isAssignment, isCrossReference, isGroup, isKeyword, isParserRule, isRuleCall, isUnorderedGroup, ParserRule, RuleCall, UnorderedGroup } from '../generated/ast';
 import { isNamed } from '../../references/naming';
 import { stream } from '../../utils/stream';
 import { AstTypes, distictAndSorted, Property, PropertyType, InterfaceType, UnionType } from './types-util';
 import { MultiMap } from '../../utils/collections';
+import { getExplicitRuleType, getRuleType, getTypeName, isOptionalCardinality } from '../internal-grammar-util';
 
 interface TypePart {
     name?: string
@@ -248,7 +248,7 @@ function newTypePart(rule?: ParserRule | string): TypePart {
  * @param element The given AST element, from which it's necessary to extract the type.
  */
 function collectElement(graph: TypeGraph, current: TypePart, element: AbstractElement): TypePart {
-    const optional = isOptional(element.cardinality);
+    const optional = isOptionalCardinality(element.cardinality);
     if (isAlternatives(element)) {
         const children: TypePart[] = [];
         if (optional) {
@@ -327,7 +327,7 @@ function addAssignment(current: TypePart, assignment: Assignment): void {
 
     current.properties.push({
         name: assignment.feature,
-        optional: isOptional(assignment.cardinality),
+        optional: isOptionalCardinality(assignment.cardinality),
         typeAlternatives
     });
 }
@@ -356,7 +356,7 @@ function addRuleCall(graph: TypeGraph, current: TypePart, ruleCall: RuleCall): v
     // Add all properties of fragments to the current type
     if (isParserRule(rule) && rule.fragment) {
         const properties = getFragmentProperties(rule, graph.context);
-        if (isOptional(ruleCall.cardinality)) {
+        if (isOptionalCardinality(ruleCall.cardinality)) {
             current.properties.push(...properties.map(e => ({
                 ...e,
                 optional: true

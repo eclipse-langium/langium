@@ -4,8 +4,9 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { createLangiumGrammarServices, EmptyFileSystem, findNameAssignment, getEntryRule, getTypeName, Grammar, InferredType, isDataTypeRule, isParserRule, isTerminalRule, ParserRule, stream, terminalRegex, TerminalRule } from '../../src';
+import { createLangiumGrammarServices, EmptyFileSystem, findNameAssignment, getEntryRule, Grammar, InferredType, isParserRule, isTerminalRule, ParserRule, stream, TerminalRule } from '../../src';
 import { LangiumGrammarGrammar } from '../../src/grammar/generated/grammar';
+import { getTypeName, isDataTypeRule, terminalRegex } from '../../src/grammar/internal-grammar-util';
 import { parseHelper } from '../../src/test';
 
 describe('Data type rules', () => {

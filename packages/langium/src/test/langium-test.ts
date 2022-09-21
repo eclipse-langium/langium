@@ -13,7 +13,7 @@ import { LangiumServices } from '../services';
 import { AstNode, Properties } from '../syntax-tree';
 import { escapeRegExp } from '../utils/regex-util';
 import { LangiumDocument } from '../workspace/documents';
-import { findNodeForFeature } from '../grammar/grammar-util';
+import { findNodeForProperty } from '../utils/grammar-util';
 import { SemanticTokensDecoder } from '../lsp/semantic-token-provider';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 
@@ -308,7 +308,7 @@ function filterByOptions<T extends AstNode = AstNode, N extends AstNode = AstNod
     const filters: Array<Predicate<Diagnostic>> = [];
     if ('node' in options) {
         const cstNode = options.property
-            ? findNodeForFeature(options.node?.$cstNode, options.property.name, options.property.index)
+            ? findNodeForProperty(options.node?.$cstNode, options.property.name, options.property.index)
             : options.node.$cstNode;
         if (!cstNode) {
             throw new Error('Cannot find the node!');

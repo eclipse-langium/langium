@@ -6,9 +6,10 @@
 
 import fs from 'fs-extra';
 import {
-    AbstractRule, createLangiumGrammarServices, getDocument, Grammar, isGrammar,
-    isParserRule, LangiumDocument, resolveImport, resolveTransitiveImports
+    AbstractRule, createLangiumGrammarServices, getDocument, Grammar, isGrammar, isParserRule,
+    LangiumDocument
 } from 'langium';
+import { resolveImport, resolveTransitiveImports } from 'langium/lib/grammar/internal-grammar-util';
 import { NodeFileSystem } from 'langium/node';
 import path from 'path';
 import { URI } from 'vscode-uri';

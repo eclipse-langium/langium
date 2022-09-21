@@ -4,8 +4,10 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import * as langium from 'langium';
-import { escapeRegExp, getCaseInsensitivePattern, getTerminalParts, isCommentTerminal, isTerminalRule, terminalRegex } from 'langium';
+import {
+    escapeRegExp, getCaseInsensitivePattern, getTerminalParts, Grammar, isCommentTerminal, isTerminalRule, stream
+} from 'langium';
+import { terminalRegex } from 'langium/lib/grammar/internal-grammar-util';
 import { LangiumLanguageConfig } from '../../package';
 import { collectKeywords } from '../util';
 
@@ -46,7 +48,7 @@ export interface Captures {
     [captureId: string]: Pattern;
 }
 
-export function generateTextMate(grammar: langium.Grammar, config: LangiumLanguageConfig): string {
+export function generateTextMate(grammar: Grammar, config: LangiumLanguageConfig): string {
     const json: TextMateGrammar = {
         name: config.id,
         scopeName: `source.${config.id}`,
@@ -58,7 +60,7 @@ export function generateTextMate(grammar: langium.Grammar, config: LangiumLangua
     return JSON.stringify(json, null, 2);
 }
 
-function getPatterns(grammar: langium.Grammar, config: LangiumLanguageConfig): Pattern[] {
+function getPatterns(grammar: Grammar, config: LangiumLanguageConfig): Pattern[] {
     const patterns: Pattern[] = [];
     patterns.push({
         include: '#comments'
@@ -68,7 +70,7 @@ function getPatterns(grammar: langium.Grammar, config: LangiumLanguageConfig): P
     return patterns;
 }
 
-function getRepository(grammar: langium.Grammar, config: LangiumLanguageConfig): Repository {
+function getRepository(grammar: Grammar, config: LangiumLanguageConfig): Repository {
     const commentPatterns: Pattern[] = [];
     for (const rule of grammar.rules) {
         if (isTerminalRule(rule) && isCommentTerminal(rule)) {
@@ -114,7 +116,7 @@ function getRepository(grammar: langium.Grammar, config: LangiumLanguageConfig):
     return repository;
 }
 
-function getControlKeywords(grammar: langium.Grammar, pack: LangiumLanguageConfig): Pattern {
+function getControlKeywords(grammar: Grammar, pack: LangiumLanguageConfig): Pattern {
     const regex = /[A-Za-z]/;
     const controlKeywords = collectKeywords(grammar).filter(kw => regex.test(kw));
     const groups = groupKeywords(controlKeywords, pack.caseInsensitive);
@@ -157,8 +159,8 @@ function groupKeywords(keywords: string[], caseInsensitive: boolean | undefined)
     return res;
 }
 
-function getStringPatterns(grammar: langium.Grammar, pack: LangiumLanguageConfig): Pattern[] {
-    const terminals = langium.stream(grammar.rules).filter(langium.isTerminalRule);
+function getStringPatterns(grammar: Grammar, pack: LangiumLanguageConfig): Pattern[] {
+    const terminals = stream(grammar.rules).filter(isTerminalRule);
     const stringTerminal = terminals.find(e => e.name.toLowerCase() === 'string');
     const stringPatterns: Pattern[] = [];
     if (stringTerminal) {

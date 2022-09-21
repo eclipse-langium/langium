@@ -9,12 +9,13 @@ import { LangiumServices } from '../../services';
 import { AstNode, CstNode } from '../../syntax-tree';
 import { getContainerOfType, getDocument, streamAst } from '../../utils/ast-util';
 import { toDocumentSegment } from '../../utils/cst-util';
+import { findAssignment, findNodeForProperty } from '../../utils/grammar-util';
 import { stream, Stream } from '../../utils/stream';
-import { equalURI } from '../../utils/uri-utils';
+import { equalURI } from '../../utils/uri-util';
 import { ReferenceDescription } from '../../workspace/ast-descriptions';
 import { LangiumDocuments } from '../../workspace/documents';
 import { Action, Assignment, Interface, isAction, isAssignment, isInterface, isParserRule, isType, isTypeAttribute, ParserRule, Type, TypeAttribute } from '../generated/ast';
-import { extractAssignments, findAssignment, findNodeForFeature, getActionAtElement } from '../grammar-util';
+import { extractAssignments, getActionAtElement } from '../internal-grammar-util';
 import { collectChildrenTypes, collectSuperTypes } from '../type-system/types-util';
 
 export class LangiumGrammarReferences extends DefaultReferences {
@@ -125,7 +126,7 @@ export class LangiumGrammarReferences extends DefaultReferences {
         } else {
             // If the action references the attribute directly
             if (ruleOrAction.feature === attribute.name) {
-                const leaf = findNodeForFeature(ruleOrAction.$cstNode, 'feature');
+                const leaf = findNodeForProperty(ruleOrAction.$cstNode, 'feature');
                 if (leaf) {
                     refs.push({
                         sourceUri: getDocument(ruleOrAction).uri,

@@ -15,10 +15,10 @@ export function serializeGrammar(services: LangiumServices, grammars: Grammar[],
 
     if (config.langiumInternal) {
         node.append(
-            "import { loadGrammar } from '../grammar-util';", NL,
+            "import { loadGrammarFromJson } from '../../utils/grammar-util';", NL,
             "import { Grammar } from './ast';");
     } else {
-        node.append("import { loadGrammar, Grammar } from 'langium';");
+        node.append("import { loadGrammarFromJson, Grammar } from 'langium';");
     }
     node.append(NL, NL);
 
@@ -30,7 +30,7 @@ export function serializeGrammar(services: LangiumServices, grammars: Grammar[],
             const json = services.serializer.JsonSerializer.serialize(grammar, 2).replace(/\\/g, '\\\\').replace(/`/g, '\\`').split('\n').join(EOL);
             node.append(
                 'let loaded', grammar.name, 'Grammar: Grammar | undefined;', NL,
-                'export const ', grammar.name, 'Grammar = (): Grammar => loaded', grammar.name, 'Grammar ||' ,'(loaded', grammar.name, 'Grammar = loadGrammar(`', json, '`));', NL
+                'export const ', grammar.name, 'Grammar = (): Grammar => loaded', grammar.name, 'Grammar ?? (loaded', grammar.name, 'Grammar = loadGrammarFromJson(`', json, '`));', NL
             );
             if (i < grammars.length - 1) {
                 node.append(NL);

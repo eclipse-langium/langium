@@ -6,8 +6,8 @@
 
 import { DefaultNameProvider } from '../../references/naming';
 import { AstNode, CstNode } from '../../syntax-tree';
+import { findNodeForProperty } from '../../utils/grammar-util';
 import { isAssignment } from '../generated/ast';
-import { findNodeForFeature } from '../grammar-util';
 
 export class LangiumGrammarNameProvider extends DefaultNameProvider {
 
@@ -21,7 +21,7 @@ export class LangiumGrammarNameProvider extends DefaultNameProvider {
 
     getNameNode(node: AstNode): CstNode | undefined {
         if (isAssignment(node)) {
-            return findNodeForFeature(node.$cstNode, 'feature');
+            return findNodeForProperty(node.$cstNode, 'feature');
         } else {
             return super.getNameNode(node);
         }

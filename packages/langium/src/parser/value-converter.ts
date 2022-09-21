@@ -5,9 +5,9 @@
  ******************************************************************************/
 
 import { AbstractElement, AbstractRule, isCrossReference, isRuleCall } from '../grammar/generated/ast';
-import { getCrossReferenceTerminal } from '../grammar/grammar-util';
-import { getRuleType } from '../grammar/grammar-util';
+import { getRuleType } from '../grammar/internal-grammar-util';
 import { CstNode } from '../syntax-tree';
+import { getCrossReferenceTerminal } from '../utils/grammar-util';
 
 /**
  * Language-specific service for converting string values from the source text format into a value to be held in the AST.

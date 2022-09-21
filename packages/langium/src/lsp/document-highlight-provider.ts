@@ -12,7 +12,7 @@ import { LangiumServices } from '../services';
 import { getDocument } from '../utils/ast-util';
 import { findDeclarationNodeAtOffset } from '../utils/cst-util';
 import { MaybePromise } from '../utils/promise-util';
-import { equalURI } from '../utils/uri-utils';
+import { equalURI } from '../utils/uri-util';
 import { ReferenceDescription } from '../workspace/ast-descriptions';
 import { LangiumDocument } from '../workspace/documents';
 

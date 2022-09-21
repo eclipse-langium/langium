@@ -6,7 +6,7 @@
 
 import { Lexer, TokenPattern, TokenType, TokenVocabulary } from 'chevrotain';
 import { Grammar, isKeyword, isParserRule, isTerminalRule, Keyword, TerminalRule } from '../grammar/generated/ast';
-import { terminalRegex } from '../grammar/grammar-util';
+import { terminalRegex } from '../grammar/internal-grammar-util';
 import { streamAllContents } from '../utils/ast-util';
 import { getCaseInsensitivePattern, partialMatches } from '../utils/regex-util';
 import { stream } from '../utils/stream';

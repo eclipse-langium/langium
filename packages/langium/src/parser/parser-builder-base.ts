@@ -6,11 +6,12 @@
 
 import { EMPTY_ALT, IOrAlt, TokenType, TokenTypeDictionary, TokenVocabulary } from 'chevrotain';
 import { AbstractElement, Action, Alternatives, Condition, CrossReference, Grammar, Group, isAction, isAlternatives, isAssignment, isConjunction, isCrossReference, isDisjunction, isGroup, isKeyword, isLiteralCondition, isNegation, isParameterReference, isParserRule, isRuleCall, isTerminalRule, isUnorderedGroup, Keyword, NamedArgument, ParserRule, RuleCall, UnorderedGroup } from '../grammar/generated/ast';
-import { Cardinality, findNameAssignment, getTypeName } from '../grammar/grammar-util';
 import { BaseParser, isIMultiModeLexerDefinition, isTokenTypeDictionary } from './langium-parser';
 import { AstNode } from '../syntax-tree';
 import { assertUnreachable, ErrorWithLocation } from '../utils/errors';
 import { stream } from '../utils/stream';
+import { Cardinality, getTypeName } from '../grammar/internal-grammar-util';
+import { findNameAssignment } from '../utils/grammar-util';
 
 type RuleContext = {
     optional: number,

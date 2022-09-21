@@ -191,7 +191,7 @@ export interface Stream<T> extends Iterable<T> {
      * Calls a defined callback function on each element of the stream and then flattens the result into
      * a new stream. This is identical to a `map` followed by `flat` with depth 1.
      *
-     * @param callback Lazily evaluated function mapping stream elements.
+     * @param callbackfn Lazily evaluated function mapping stream elements.
      */
     flatMap<U>(callbackfn: (value: T) => U | Iterable<U>): Stream<U>;
 
