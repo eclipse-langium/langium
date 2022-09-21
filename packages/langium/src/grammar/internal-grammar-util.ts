@@ -84,7 +84,7 @@ export function getActionAtElement(element: ast.AbstractElement): ast.Action | u
 
 export function getTypeName(type: ast.AbstractType | ast.InferredType): string {
     if (ast.isParserRule(type)) {
-        return getExplicitRuleType(type) ?? type.name;
+        return isDataTypeRule(type) ? type.name : getExplicitRuleType(type) ?? type.name;
     } else if (ast.isInterface(type) || ast.isType(type) || ast.isReturnType(type)) {
         return type.name;
     } else if (ast.isAction(type)) {
