@@ -19,6 +19,8 @@
     "dev-clean": "shx rm -rf packages/**/node_modules && npm uninstall -g langium-workspaces langium-cli generator-langium langium && npm unlink langium-workspaces langium-cli generator-langium langium"
   },
   "devDependencies": {
+    "@types/jest": "^29.0.3",
+    "@types/jest-expect-message": "^1.0.4",
     "@typescript-eslint/eslint-plugin": "^5.28.0",
     "@typescript-eslint/parser": "^5.28.0",
     "@vitest/coverage-c8": "^0.23.2",
