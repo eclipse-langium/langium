@@ -4,14 +4,21 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { AstNode, DefaultRenameProvider, findDeclarationNodeAtOffset, isNamed, LangiumDocument, ReferenceDescription, streamAst } from 'langium';
-import { Location, WorkspaceEdit } from 'vscode-languageserver';
+import { AstNode, DefaultRenameProvider, findDeclarationNodeAtOffset, getDocument, isNamed, LangiumDocument, LangiumDocuments, LangiumServices, ReferenceDescription, streamAst, toDocumentSegment } from 'langium';
+import { Location, Range, WorkspaceEdit } from 'vscode-languageserver';
 import { RenameParams } from 'vscode-languageserver-protocol';
 import { TextEdit } from 'vscode-languageserver-types';
+import { URI } from 'vscode-uri';
 import { DomainModelNameProvider } from './domain-model-naming';
 import { isPackageDeclaration } from './generated/ast';
 
 export class DomainModelRenameProvider extends DefaultRenameProvider {
+    protected readonly langiumDocuments: LangiumDocuments;
+
+    constructor(services: LangiumServices) {
+        super(services);
+        this.langiumDocuments = services.shared.workspace.LangiumDocuments;
+    }
 
     async rename(document: LangiumDocument, params: RenameParams): Promise<WorkspaceEdit | undefined> {
         const changes: Record<string, TextEdit[]> = {};
@@ -23,17 +30,18 @@ export class DomainModelRenameProvider extends DefaultRenameProvider {
         const targetNode = this.references.findDeclaration(leafNode);
         if (!targetNode) return undefined;
         if (isNamed(targetNode)) targetNode.name = params.newName;
-        const options = { onlyLocal: true, includeDeclaration: true };
-        const references = this.references.findReferences(targetNode, options);
-        references.forEach(ref => {
-            const change = TextEdit.replace(ref.segment.range, params.newName);
-            const uri = ref.sourceUri.toString();
-            if (changes[uri]) {
-                changes[uri].push(change);
-            } else {
-                changes[uri] = [change];
+        const location = this.getNodeLocation(targetNode);
+        if (location) {
+            const change = TextEdit.replace(location.range, params.newName);
+            const uri = location.uri;
+            if (uri) {
+                if (changes[uri]) {
+                    changes[uri].push(change);
+                } else {
+                    changes[uri] = [change];
+                }
             }
-        });
+        }
 
         for (const node of streamAst(targetNode)) {
             const qn = this.buildQualifiedName(node);
@@ -41,7 +49,10 @@ export class DomainModelRenameProvider extends DefaultRenameProvider {
                 const options = { onlyLocal: false, includeDeclaration: false };
                 this.references.findReferences(node, options).forEach(reference => {
                     const nodeLocation = this.getRefLocation(reference);
-                    const nodeChange = TextEdit.replace(nodeLocation.range, qn);
+                    const isQn = this.hasQualifiedNameText(reference.sourceUri, reference.segment.range);
+                    let newName = qn;
+                    if (!isQn) newName = params.newName;
+                    const nodeChange = TextEdit.replace(nodeLocation.range, newName);
                     if (changes[nodeLocation.uri]) {
                         changes[nodeLocation.uri].push(nodeChange);
                     } else {
@@ -53,6 +64,12 @@ export class DomainModelRenameProvider extends DefaultRenameProvider {
         return { changes };
     }
 
+    protected hasQualifiedNameText(uri: URI, range: Range) {
+        const langiumDoc = this.langiumDocuments.getOrCreateDocument(uri);
+        const rangeText = langiumDoc.textDocument.getText(range);
+        return rangeText.includes('.', 0);
+    }
+
     getRefLocation(ref: ReferenceDescription): Location {
         return Location.create(
             ref.sourceUri.toString(),
@@ -60,7 +77,20 @@ export class DomainModelRenameProvider extends DefaultRenameProvider {
         );
     }
 
+    getNodeLocation(targetNode: AstNode): Location | undefined {
+        const nameNode = this.nameProvider.getNameNode(targetNode);
+        if (nameNode) {
+            const doc = getDocument(targetNode);
+            return Location.create(
+                doc.uri.toString(),
+                toDocumentSegment(nameNode).range
+            );
+        }
+        return undefined;
+    }
+
     protected buildQualifiedName(node: AstNode): string | undefined {
+        if (node.$type === 'Feature') return undefined;
         let name = this.nameProvider.getName(node);
         if (name) {
             if (isPackageDeclaration(node.$container)) {
