@@ -6,7 +6,6 @@
 
 import path from 'path';
 import { exec, ExecException } from 'child_process';
-import 'jest-expect-message';
 
 describe('Test the arithmetics CLI', () => {
     const fileName = path.join(__dirname, '../example/example.calc');
