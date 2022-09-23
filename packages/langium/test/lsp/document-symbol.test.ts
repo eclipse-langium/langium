@@ -7,7 +7,6 @@
 import { Position, Range, SymbolKind } from 'vscode-languageserver';
 import { createLangiumGrammarServices, EmptyFileSystem } from '../../src';
 import { expectSymbols } from '../../src/test';
-import { expectFunction } from '../fixture';
 
 const text = `
  grammar g hidden(hiddenTerminal)
@@ -16,7 +15,7 @@ const text = `
  `.trim();
 
 const grammarServices = createLangiumGrammarServices(EmptyFileSystem).grammar;
-const symbols = expectSymbols(grammarServices, expectFunction);
+const symbols = expectSymbols(grammarServices);
 
 describe('Document symbols', () => {
 

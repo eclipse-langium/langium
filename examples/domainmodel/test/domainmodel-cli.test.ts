@@ -35,12 +35,12 @@ describe('Test the domainmodel CLI', () => {
     }
 
     test('Test action without CLI', async () => {
-        await generateAction(rawfileName, { destination });
+        await generateAction(rawfileName, { destination, quiet: true });
         commonExpectations();
     });
 
     test('Via CLI: Generator command returns code 0 and creates expected files', async () => {
-        const result = await cli(['generate', rawfileName, '-d', destination]);
+        const result = await cli(['generate', rawfileName, '-d', destination, '-q']);
         if(result.code !== 0) {
             console.log('Error code:', result.code);
             console.log('Error message:', result.error);

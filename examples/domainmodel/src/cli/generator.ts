@@ -21,15 +21,20 @@ export const generateAction = async (fileName: string, opts: GenerateOptions): P
         await setRootFolder(fileName, services, opts.root);
         const domainmodel = await extractAstNode<Domainmodel>(fileName, DomainModelLanguageMetaData.fileExtensions, services);
         const generatedDirPath = generateJava(domainmodel, fileName, opts.destination);
-        console.log(chalk.green(`Java classes generated successfully: ${chalk.yellow(generatedDirPath)}`));
+        if (!opts.quiet) {
+            console.log(chalk.green(`Java classes generated successfully: ${chalk.yellow(generatedDirPath)}`));
+        }
     } catch (error) {
-        console.error(chalk.red(String(error)));
+        if (!opts.quiet) {
+            console.error(chalk.red(String(error)));
+        }
     }
 };
 
 export type GenerateOptions = {
     destination?: string;
     root?: string;
+    quiet: boolean;
 }
 
 export function generateJava(domainmodel: Domainmodel, fileName: string, destination?: string): string {

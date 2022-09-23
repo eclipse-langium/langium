@@ -6,7 +6,6 @@
 
 import { createLangiumGrammarServices, EmptyFileSystem } from '../../src';
 import { expectHover } from '../../src/test';
-import { expectFunction } from '../fixture';
 
 const text = `
   /**
@@ -26,7 +25,7 @@ const text = `
   `;
 
 const grammarServices = createLangiumGrammarServices(EmptyFileSystem).grammar;
-const hover = expectHover(grammarServices, expectFunction);
+const hover = expectHover(grammarServices);
 
 describe('Hover', () => {
 

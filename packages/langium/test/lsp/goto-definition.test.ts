@@ -6,7 +6,6 @@
 
 import { createLangiumGrammarServices, EmptyFileSystem } from '../../src';
 import { expectGoToDefinition } from '../../src/test';
-import { expectFunction } from '../fixture';
 
 /**
  * Represents a grammar file
@@ -34,7 +33,7 @@ X returns A:
 `.trim();
 
 const grammarServices = createLangiumGrammarServices(EmptyFileSystem).grammar;
-const gotoDefinition = expectGoToDefinition(grammarServices, expectFunction);
+const gotoDefinition = expectGoToDefinition(grammarServices);
 
 describe('GoToResolver', () => {
 
