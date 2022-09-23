@@ -51,7 +51,8 @@ export function createParser<T extends BaseParser>(grammar: Grammar, parser: T, 
 
 function buildRules(parserContext: ParserContext, grammar: Grammar): void {
     const reachable = getAllReachableRules(grammar, false);
-    for (const rule of stream(grammar.rules).filter(isParserRule).filter(rule => reachable.has(rule))) {
+    const parserRules = stream(grammar.rules).filter(isParserRule).filter(rule => reachable.has(rule));
+    for (const rule of parserRules) {
         const ctx: RuleContext = {
             ...parserContext,
             consume: 1,
