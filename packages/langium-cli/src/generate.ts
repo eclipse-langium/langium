@@ -6,8 +6,8 @@
 
 import fs from 'fs-extra';
 import {
-    AbstractRule, createLangiumGrammarServices, getDocument, Grammar, isGrammar, isParserRule,
-    LangiumDocument
+    AbstractRule, createLangiumGrammarServices, getDocument, Grammar, Interface, isAbstractRule, isGrammar, isInterface, isParserRule, isType,
+    LangiumDocument, linkContentToContainer, Type
 } from 'langium';
 import { resolveImport, resolveTransitiveImports } from 'langium/lib/grammar/internal-grammar-util';
 import { NodeFileSystem } from 'langium/node';
@@ -29,6 +29,8 @@ export type GenerateOptions = {
 }
 
 export type GeneratorResult = 'success' | 'failure';
+
+type GrammarElement = AbstractRule | Type | Interface;
 
 const { shared: sharedServices, grammar: grammarServices } = createLangiumGrammarServices(NodeFileSystem);
 const documents = sharedServices.workspace.LangiumDocuments;
@@ -53,41 +55,53 @@ function eagerLoad(document: LangiumDocument, uris: Set<string> = new Set()): UR
 }
 
 /**
- * Creates a map that contains all rules of all grammars.
+ * Creates a map that contains elements of all grammars.
  * This includes both input grammars and their transitive dependencies.
  */
-function mapRules(grammars: Grammar[], visited: Set<string> = new Set(), map: Map<Grammar, AbstractRule[]> = new Map()): Map<Grammar, AbstractRule[]> {
+function mapGrammarElements(grammars: Grammar[], visited: Set<string> = new Set(), map: Map<Grammar, GrammarElement[]> = new Map()): Map<Grammar, GrammarElement[]> {
     for (const grammar of grammars) {
         const doc = getDocument(grammar);
         const uriString = doc.uri.toString();
         if (!visited.has(uriString)) {
             visited.add(uriString);
-            map.set(grammar, grammar.rules.map(e => {
-                // Create a new array of rules and copy all rules
-                // Also deactivate all entry rules
-                const shallowCopy = {...e};
-                if (isParserRule(shallowCopy)) {
-                    shallowCopy.entry = false;
-                }
-                return shallowCopy;
-            }));
+            map.set(
+                grammar,
+                (grammar.rules as GrammarElement[])
+                    .concat(grammar.types)
+                    .concat(grammar.interfaces)
+            );
             const importedGrammars = grammar.imports.map(e => resolveImport(documents, e)!);
-            mapRules(importedGrammars, visited, map);
+            mapGrammarElements(importedGrammars, visited, map);
         }
     }
     return map;
 }
 
-function embedReferencedRules(grammar: Grammar, map: Map<Grammar, AbstractRule[]>): void {
+function embedReferencedGrammar(grammar: Grammar, map: Map<Grammar, GrammarElement[]>): void {
     const allGrammars = resolveTransitiveImports(documents, grammar);
     for (const importedGrammar of allGrammars) {
-        const rules = map.get(importedGrammar);
-        if (rules) {
-            grammar.rules.push(...rules);
+        const grammarElements = map.get(importedGrammar) ?? [];
+        for (const element of grammarElements) {
+            const shallowCopy = { ...element };
+            // Deactivate copied entry rule
+            if (isParserRule(shallowCopy)) {
+                shallowCopy.entry = false;
+            }
+            if (isAbstractRule(shallowCopy)) {
+                grammar.rules.push(shallowCopy);
+            } else if (isType(shallowCopy)) {
+                grammar.types.push(shallowCopy);
+            } else if (isInterface(shallowCopy)) {
+                grammar.interfaces.push(shallowCopy);
+            } else {
+                throw new Error('Received invalid grammar element while generating project with multiple languages');
+            }
         }
     }
     // Remove all imports, as their contents are now available in the grammar
     grammar.imports = [];
+    // Link newly added elements to grammar
+    linkContentToContainer(grammar);
 }
 
 async function buildAll(config: LangiumConfig): Promise<Map<string, LangiumDocument>> {
@@ -156,10 +170,10 @@ export async function generate(config: LangiumConfig, options: GenerateOptions):
         }
     }
 
-    const ruleMap = mapRules(grammars);
+    const grammarElements = mapGrammarElements(grammars);
 
     for (const grammar of grammars) {
-        embedReferencedRules(grammar, ruleMap);
+        embedReferencedGrammar(grammar, grammarElements);
         // Create and validate the in-memory parser
         const parserAnalysis = validateParser(grammar, config, configMap, grammarServices);
         if (parserAnalysis instanceof Error) {
