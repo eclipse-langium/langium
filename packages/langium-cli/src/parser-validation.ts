@@ -56,7 +56,8 @@ function languageConfigToMetaData(config: LangiumLanguageConfig): LanguageMetaDa
     return {
         languageId: config.id,
         fileExtensions: config.fileExtensions ?? [],
-        caseInsensitive: !!config.caseInsensitive
+        caseInsensitive: !!config.caseInsensitive,
+        showNonAlphabeticKeywords: !!config.showNonAlphabeticKeywords
     };
 }
 

@@ -72,7 +72,11 @@
                         "caseInsensitive": {
                             "description": "Enable case-insensitive keywords parsing",
                             "type": "boolean"
-                        },        
+                        },
+                        "showNonAlphabeticKeywords": {
+                            "description": "Enable proposals for non-alphabetic keywords",
+                            "type": "boolean"
+                        },
                         "textMate": {
                             "description": "An object to describe the textMate grammar properties",
                             "type": "object",

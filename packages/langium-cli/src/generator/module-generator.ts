@@ -45,7 +45,8 @@ export function generateModule(grammars: langium.Grammar[], config: LangiumConfi
             node.indent(metaData => {
                 metaData.append(`languageId: '${config.id}',`, NL);
                 metaData.append(`fileExtensions: [${config.fileExtensions && config.fileExtensions.map(e => appendQuotesAndDot(e)).join(', ')}],`, NL);
-                metaData.append(`caseInsensitive: ${!!config.caseInsensitive}`, NL);
+                metaData.append(`caseInsensitive: ${!!config.caseInsensitive},`, NL);
+                metaData.append(`showNonAlphabeticKeywords: ${!!config.showNonAlphabeticKeywords}`, NL);
             });
             node.append('};', NL, NL);
         }

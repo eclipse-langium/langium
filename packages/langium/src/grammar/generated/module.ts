@@ -12,7 +12,8 @@ import { LangiumGrammarGrammar } from './grammar';
 export const LangiumGrammarLanguageMetaData: LanguageMetaData = {
     languageId: 'langium',
     fileExtensions: ['.langium'],
-    caseInsensitive: false
+    caseInsensitive: false,
+    showNonAlphabeticKeywords: false
 };
 
 export const LangiumGrammarGeneratedSharedModule: Module<LangiumSharedServices, LangiumGeneratedSharedServices> = {

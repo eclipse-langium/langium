@@ -10,7 +10,8 @@ import { ArithmeticsGrammar } from './grammar';
 export const ArithmeticsLanguageMetaData: LanguageMetaData = {
     languageId: 'arithmetics',
     fileExtensions: ['.calc'],
-    caseInsensitive: true
+    caseInsensitive: true,
+    showNonAlphabeticKeywords: false
 };
 
 export const ArithmeticsGeneratedSharedModule: Module<LangiumSharedServices, LangiumGeneratedSharedServices> = {

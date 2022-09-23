@@ -9,6 +9,7 @@ import { TextDocument, TextEdit } from 'vscode-languageserver-textdocument';
 import * as ast from '../../grammar/generated/ast';
 import { GrammarConfig } from '../../grammar/grammar-config';
 import { getExplicitRuleType } from '../../grammar/internal-grammar-util';
+import { LanguageMetaData } from '../../grammar/language-meta-data';
 import { LangiumCompletionParser } from '../../parser/langium-parser';
 import { NameProvider } from '../../references/naming';
 import { ScopeProvider } from '../../references/scope-provider';
@@ -44,6 +45,7 @@ export class DefaultCompletionProvider implements CompletionProvider {
     protected readonly grammar: ast.Grammar;
     protected readonly nameProvider: NameProvider;
     protected readonly grammarConfig: GrammarConfig;
+    protected readonly languageMetadata: LanguageMetaData;
 
     constructor(services: LangiumServices) {
         this.scopeProvider = services.references.ScopeProvider;
@@ -51,6 +53,7 @@ export class DefaultCompletionProvider implements CompletionProvider {
         this.completionParser = services.parser.CompletionParser;
         this.nameProvider = services.references.NameProvider;
         this.grammarConfig = services.parser.GrammarConfig;
+        this.languageMetadata = services.LanguageMetaData;
     }
 
     async getCompletion(document: LangiumDocument, params: CompletionParams): Promise<CompletionList | undefined> {
@@ -239,6 +242,9 @@ export class DefaultCompletionProvider implements CompletionProvider {
     }
 
     protected completionForKeyword(keyword: ast.Keyword, context: AstNode | undefined, acceptor: CompletionAcceptor): MaybePromise<void> {
+        if (keyword.value.match(/^[\W]/) && keyword.value.length === 1 && !this.languageMetadata.showNonAlphabeticKeywords) {
+            return Promise.resolve();
+        }
         acceptor(keyword.value, { kind: CompletionItemKind.Keyword, detail: 'Keyword', sortText: /\w/.test(keyword.value) ? '1' : '2' });
     }
 

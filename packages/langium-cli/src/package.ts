@@ -43,6 +43,8 @@ export interface LangiumLanguageConfig {
     fileExtensions?: string[]
     /** Enable case-insensitive keywords parsing */
     caseInsensitive?: boolean
+    /** Enable proposal for non-alphabetic keywords */
+    showNonAlphabeticKeywords?: boolean
     /** Enable generating a TextMate syntax highlighting file */
     textMate?: {
         /** Output path to syntax highlighting file */
