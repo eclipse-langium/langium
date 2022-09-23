@@ -46,7 +46,7 @@
         },
         {
             "name": "Attach to Language Server",
-            "type": "pwa-node",
+            "type": "node",
             "port": 6009,
             "request": "attach",
             "skipFiles": [
@@ -63,7 +63,7 @@
         },
         {
             "name": "Bootstrap",
-            "type": "pwa-node",
+            "type": "node",
             "request": "launch",
             "runtimeArgs": [
                 "${workspaceFolder}/packages/langium-cli/lib/langium",
@@ -82,7 +82,7 @@
         },
         {
             "name": "Generate Domainmodel",
-            "type": "pwa-node",
+            "type": "node",
             "request": "launch",
             "runtimeExecutable": "node",
             "runtimeArgs": [
