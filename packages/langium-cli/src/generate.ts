@@ -93,6 +93,8 @@ function embedReferencedGrammar(grammar: Grammar, map: Map<Grammar, GrammarEleme
                 grammar.types.push(shallowCopy);
             } else if (isInterface(shallowCopy)) {
                 grammar.interfaces.push(shallowCopy);
+            } else {
+                throw new Error('Received invalid grammar element while generating project with multiple languages');
             }
         }
     }
