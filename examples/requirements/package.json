@@ -12,27 +12,27 @@
     "contributes": {
         "languages": [{
             "id": "requirements-lang",
-            "aliases": ["Requirements Language", "requirements-language"],
+            "aliases": ["Requirements Language", "requirements-lang"],
             "extensions": [".req"],
             "configuration": "./language-configuration.json"
         },{
             "id": "tests-lang",
-            "aliases": ["Tests Language", "tests-language"],
+            "aliases": ["Tests Language", "tests-lang"],
             "extensions": [".tst"],
             "configuration": "./language-configuration.json"
         }],
         "grammars": [{
             "language": "requirements-lang",
-            "scopeName": "source.requirements-language",
+            "scopeName": "source.requirements-lang",
             "path": "./syntaxes/requirements.tmLanguage.json"
         },{
             "language": "tests-lang",
-            "scopeName": "source.tests-language",
+            "scopeName": "source.tests-lang",
             "path": "./syntaxes/tests.tmLanguage.json"
         }]
     },
     "activationEvents": [
-        "onLanguage:requirements-and-tests-language",
+        "onLanguage:requirements-and-tests",
         "onLanguage:requirements-lang",
         "onLanguage:tests-lang"
     ],
@@ -42,7 +42,7 @@
         "src"
     ],
     "bin": {
-        "requirements-and-tests-language-cli": "./bin/cli"
+        "requirements-and-tests-lang-cli": "./bin/cli"
     },
     "main": "./out/extension.js",
     "scripts": {

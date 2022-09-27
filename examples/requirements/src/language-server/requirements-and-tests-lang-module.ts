@@ -9,8 +9,8 @@ import {
     LangiumSharedServices
 } from 'langium';
 import { RequirementsAndTestsGeneratedSharedModule, RequirementsGeneratedModule, TestsGeneratedModule } from './generated/module';
-import { RequirementsLanguageModule, RequirementsLanguageServices } from './requirements-language-module';
-import { TestsLanguageModule, TestsLanguageServices } from './tests-language-module';
+import { RequirementsLangModule, RequirementsLangServices } from './requirements-lang-module';
+import { TestsLangModule, TestsLangServices } from './tests-lang-module';
 
 /**
  * Create the full set of services required by Langium.
@@ -27,26 +27,26 @@ import { TestsLanguageModule, TestsLanguageServices } from './tests-language-mod
  * @param context Optional module context with the LSP connection
  * @returns An object wrapping the shared services and the language-specific services
  */
-export function createRequirementsAndTestsLanguageServices(context: DefaultSharedModuleContext): {
+export function createRequirementsAndTestsLangServices(context: DefaultSharedModuleContext): {
     shared: LangiumSharedServices,
-    RequirementsLanguage: RequirementsLanguageServices,
-    TestsLanguage: TestsLanguageServices
+    RequirementsLang: RequirementsLangServices,
+    TestsLang: TestsLangServices
 } {
     const shared = inject(
         createDefaultSharedModule(context),
         RequirementsAndTestsGeneratedSharedModule
     );
-    const RequirementsLanguage = inject(
+    const RequirementsLang = inject(
         createDefaultModule({ shared }),
         RequirementsGeneratedModule,
-        RequirementsLanguageModule
+        RequirementsLangModule
     );
-    const TestsLanguage = inject(
+    const TestsLang = inject(
         createDefaultModule({ shared }),
         TestsGeneratedModule,
-        TestsLanguageModule
+        TestsLangModule
     );
-    shared.ServiceRegistry.register(RequirementsLanguage);
-    shared.ServiceRegistry.register(TestsLanguage);
-    return { shared, RequirementsLanguage, TestsLanguage };
+    shared.ServiceRegistry.register(RequirementsLang);
+    shared.ServiceRegistry.register(TestsLang);
+    return { shared, RequirementsLang: RequirementsLang, TestsLang: TestsLang };
 }

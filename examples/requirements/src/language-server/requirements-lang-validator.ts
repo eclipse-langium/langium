@@ -6,15 +6,15 @@
 
 import { ValidationAcceptor, ValidationChecks, ValidationRegistry } from 'langium';
 import { RequirementsAndTestsAstType, Requirement, isTestModel } from './generated/ast';
-import { RequirementsLanguageServices } from './requirements-language-module';
+import { RequirementsLangServices } from './requirements-lang-module';
 
 /**
  * Registry for validation checks.
  */
-export class RequirementsLanguageValidationRegistry extends ValidationRegistry {
-    constructor(services: RequirementsLanguageServices) {
+export class RequirementsLangValidationRegistry extends ValidationRegistry {
+    constructor(services: RequirementsLangServices) {
         super(services);
-        const validator = services.validation.RequirementsLanguageValidator;
+        const validator = services.validation.RequirementsLangValidator;
         const checks: ValidationChecks<RequirementsAndTestsAstType> = {
             Requirement: [
                 validator.checkRequirementNameContainsANumber,
@@ -28,9 +28,9 @@ export class RequirementsLanguageValidationRegistry extends ValidationRegistry {
 /**
  * Implementation of custom validations.
  */
- export class RequirementsLanguageValidator {
+export class RequirementsLangValidator {
 
-    constructor(private services: RequirementsLanguageServices) {}
+    constructor(private services: RequirementsLangServices) {}
 
     checkRequirementNameContainsANumber(requirement: Requirement, accept: ValidationAcceptor): void {
         if (requirement.name) {

@@ -32,14 +32,14 @@ Grammars:
 
 Modules and Services:
 
-* `createRequirementsAndTestsLanguageServices` creates the full set of services used by the CLI and the language server.
-* `requirements-language-module.ts`: requirements service configuration
-* `tests-language-module.ts`: tests service configuration
+* `createRequirementsAndTestsLangServices` creates the full set of services used by the CLI and the language server.
+* `requirements-lang-module.ts`: requirements service configuration
+* `tests-lang-module.ts`: tests service configuration
 
 Language configuration:
 
-* `langium-config.json`: see https://www.npmjs.com/package/langium-cli.
-* `package.json`: `contributes` section, see: https://code.visualstudio.com/api/references/contribution-points#contributes.languages.
+* `langium-config.json`: see [npm documentation on langium-cli](https://www.npmjs.com/package/langium-cli).
+* `package.json`: `contributes` section, see: [visualstudio reference](https://code.visualstudio.com/api/references/contribution-points#contributes.languages).
 
 CLI and tests:
 
@@ -54,10 +54,10 @@ The Example features a generator that you can run via cli to process Requirement
 
 The generator produces an HTML file.
 
-You also can use `requirements-and-tests-language-cli` as a replacement for `node ./bin/cli`, if you install the cli globally.
+You also can use `requirements-and-tests-lang-cli` as a replacement for `node ./bin/cli`, if you install the cli globally.
 
 * Run `npm install -g ./` from the requirements-and-tests directory.
-* Use `requirements-and-tests-language-cli` to run the cli. Follow the instructions or use `requirements-and-tests-language-cli generate-requirements-coverage <full-path-to-req-file>`.
+* Use `requirements-and-tests-lang-cli` to run the cli. Follow the instructions or use `requirements-and-tests-lang-cli generate-requirements-coverage <full-path-to-req-file>`.
 
 ## VSCode Extension
 

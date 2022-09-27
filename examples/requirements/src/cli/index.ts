@@ -7,13 +7,13 @@
 import chalk from 'chalk';
 import { Command } from 'commander';
 import { RequirementsLanguageMetaData } from '../language-server/generated/module';
-import { createRequirementsAndTestsLanguageServices } from '../language-server/requirements-and-tests-language-module';
+import { createRequirementsAndTestsLangServices } from '../language-server/requirements-and-tests-lang-module';
 import { extractRequirementModelWithTestModels } from './cli-util';
 import { generateSummary } from './generator';
 import { NodeFileSystem } from 'langium/node';
 
 export const generateAction = async (fileName: string, opts: GenerateOptions): Promise<void> => {
-    const services = createRequirementsAndTestsLanguageServices(NodeFileSystem).RequirementsLanguage;
+    const services = createRequirementsAndTestsLangServices(NodeFileSystem).RequirementsLang;
     const [requirementModel, testModels]  = await extractRequirementModelWithTestModels(fileName, services);
     const generatedFilePath = generateSummary(requirementModel, testModels, fileName, opts.destination);
     console.log(chalk.green(`Requirement coverage generated successfully: ${generatedFilePath}`));

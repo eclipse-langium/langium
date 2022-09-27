@@ -6,17 +6,17 @@
 
 import { extractRequirementModelWithTestModels } from '../src/cli/cli-util';
 import { generateSummaryFileHTMLContent } from '../src/cli/generator';
-import { createRequirementsAndTestsLanguageServices } from '../src/language-server/requirements-and-tests-language-module';
+import { createRequirementsAndTestsLangServices } from '../src/language-server/requirements-and-tests-lang-module';
 import * as path from 'path';
 import { NodeFileSystem } from 'langium/node';
 
 describe('The generator should allow to extract all test cases referencing a specific requirement.', () => {
     test('T005_generator', async () => {
         // load model
-        const services = createRequirementsAndTestsLanguageServices(NodeFileSystem);
+        const services = createRequirementsAndTestsLangServices(NodeFileSystem);
         const [requirementModel, testModels]  = await extractRequirementModelWithTestModels(
             path.join(__dirname, 'files', 'good', 'requirements.req'),
-            services.RequirementsLanguage
+            services.RequirementsLang
         );
 
         // generate summary

@@ -8,13 +8,13 @@ import { RequirementsAndTestsAstReflection } from './ast';
 import { RequirementsGrammar, TestsGrammar } from './grammar';
 
 export const RequirementsLanguageMetaData: LanguageMetaData = {
-    languageId: 'requirements-language',
+    languageId: 'requirements-lang',
     fileExtensions: ['.req'],
     caseInsensitive: false
 };
 
 export const TestsLanguageMetaData: LanguageMetaData = {
-    languageId: 'tests-language',
+    languageId: 'tests-lang',
     fileExtensions: ['.tst'],
     caseInsensitive: false
 };

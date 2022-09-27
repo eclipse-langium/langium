@@ -5,16 +5,16 @@
  ******************************************************************************/
 
 import { extractDocuments } from '../src/cli/cli-util';
-import { createRequirementsAndTestsLanguageServices } from '../src/language-server/requirements-and-tests-language-module';
+import { createRequirementsAndTestsLangServices } from '../src/language-server/requirements-and-tests-lang-module';
 import * as path from 'path';
 import { NodeFileSystem } from 'langium/node';
 
 describe('A requirement identifier and a test identifier shall contain a number.', () => {
     test('T001_good_case', async () => {
-        const services = createRequirementsAndTestsLanguageServices(NodeFileSystem);
+        const services = createRequirementsAndTestsLangServices(NodeFileSystem);
         const [mainDoc,allDocs] = await extractDocuments(
             path.join(__dirname, 'files', 'good', 'requirements.req'),
-            services.RequirementsLanguage
+            services.RequirementsLang
         );
         expect((mainDoc.diagnostics ?? [])).toEqual([]);
         expect(allDocs.length).toEqual(3);
@@ -26,10 +26,10 @@ describe('A requirement identifier and a test identifier shall contain a number.
 
 describe('A requirement identifier shall contain a number.', () => {
     test('T002_badReqId: bad case', async () => {
-        const services = createRequirementsAndTestsLanguageServices(NodeFileSystem);
+        const services = createRequirementsAndTestsLangServices(NodeFileSystem);
         const [mainDoc,] = await extractDocuments(
             path.join(__dirname, 'files', 'bad1', 'requirements.req'),
-            services.RequirementsLanguage
+            services.RequirementsLang
         );
         expect(mainDoc.diagnostics ?? []).toEqual(expect.arrayContaining([
             expect.objectContaining({
@@ -43,10 +43,10 @@ describe('A requirement identifier shall contain a number.', () => {
 
 describe('A test identifier shall contain a number.', () => {
     test('T003_badTstId: bad case', async () => {
-        const services = createRequirementsAndTestsLanguageServices(NodeFileSystem);
+        const services = createRequirementsAndTestsLangServices(NodeFileSystem);
         const [,allDocs] = await extractDocuments(
             path.join(__dirname, 'files', 'bad1', 'requirements.req'),
-            services.RequirementsLanguage
+            services.RequirementsLang
         );
         const doc = allDocs.find(doc=>/tests_part1.tst/.test(doc.uri.fsPath));
         expect(doc).toBeDefined();
@@ -62,10 +62,10 @@ describe('A test identifier shall contain a number.', () => {
 
 describe('A requirement shall be covered by at least one test.', () => {
     test('T004_cov: bad case', async () => {
-        const services = createRequirementsAndTestsLanguageServices(NodeFileSystem);
+        const services = createRequirementsAndTestsLangServices(NodeFileSystem);
         const [mainDoc,] = await extractDocuments(
             path.join(__dirname, 'files', 'bad1', 'requirements.req'),
-            services.RequirementsLanguage
+            services.RequirementsLang
         );
         expect(mainDoc.diagnostics ?? []).toEqual(expect.arrayContaining([
             expect.objectContaining({
@@ -78,10 +78,10 @@ describe('A requirement shall be covered by at least one test.', () => {
 
 describe('A referenced environment in a test must be found in one of the referenced requirements.', () => {
     test('referenced environment test', async () => {
-        const services = createRequirementsAndTestsLanguageServices(NodeFileSystem);
+        const services = createRequirementsAndTestsLangServices(NodeFileSystem);
         const [,allDocs] = await extractDocuments(
             path.join(__dirname, 'files', 'bad2', 'requirements.req'),
-            services.RequirementsLanguage
+            services.RequirementsLang
         );
         const doc = allDocs.find(doc=>/tests_part1.tst/.test(doc.uri.fsPath));
         expect(doc).toBeDefined();

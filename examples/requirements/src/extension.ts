@@ -55,8 +55,8 @@ function startLanguageClient(context: vscode.ExtensionContext): LanguageClient {
 
     // Create the language client and start the client.
     const client = new LanguageClient(
-        'requirements-and-tests-language',
-        'Requirements and Tests Language',
+        'requirements-and-tests',
+        'Requirements and Tests',
         serverOptions,
         clientOptions
     );
