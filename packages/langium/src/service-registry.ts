@@ -4,8 +4,9 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { URI, Utils } from 'vscode-uri';
+import { URI } from 'vscode-uri';
 import { LangiumServices } from './services';
+import * as path from 'path';
 
 /**
  * The service registry provides access to the language-specific services. These are resolved
@@ -67,7 +68,8 @@ export class DefaultServiceRegistry implements ServiceRegistry {
         if (this.map === undefined) {
             throw new Error('The service registry is empty. Use `register` to register the services of a language.');
         }
-        const ext = Utils.extname(uri);
+        const ext = path.extname(uri.toString()); // works somehow
+
         const services = this.map[ext];
         if (!services) {
             throw new Error(`The service registry contains no services for the extension '${ext}'.`);
