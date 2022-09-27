@@ -10,12 +10,12 @@ import { CodeAction, Command, Position, TextEdit } from 'vscode-languageserver-t
 import { CodeActionProvider } from '../../lsp/code-action';
 import { getContainerOfType } from '../../utils/ast-util';
 import { findLeafNodeAtOffset } from '../../utils/cst-util';
+import { findNodeForProperty } from '../../utils/grammar-util';
 import { MaybePromise } from '../../utils/promise-util';
 import { escapeRegExp } from '../../utils/regex-util';
 import { DocumentValidator, LinkingErrorData } from '../../validation/document-validator';
 import { DocumentSegment, LangiumDocument } from '../../workspace/documents';
 import * as ast from '../generated/ast';
-import { findNodeForFeature } from '../grammar-util';
 import { IssueCodes } from '../langium-grammar-validator';
 
 export class LangiumGrammarCodeActionProvider implements CodeActionProvider {
@@ -278,7 +278,7 @@ export class LangiumGrammarCodeActionProvider implements CodeActionProvider {
         const grammar = document.parseResult.value as ast.Grammar;
         const hiddenTokens = grammar.hiddenTokens;
         const changes: TextEdit[] = [];
-        const hiddenNode = findNodeForFeature(grammar.$cstNode, 'definesHiddenTokens');
+        const hiddenNode = findNodeForProperty(grammar.$cstNode, 'definesHiddenTokens');
         if (hiddenNode) {
             const start = hiddenNode.range.start;
             const offset = hiddenNode.offset;

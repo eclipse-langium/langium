@@ -6,7 +6,7 @@
 
 import { CancellationToken, DocumentFormattingParams, DocumentOnTypeFormattingOptions, DocumentOnTypeFormattingParams, DocumentRangeFormattingParams, FormattingOptions, Range, TextEdit } from 'vscode-languageserver';
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { findKeywordNode, findKeywordNodes, findNodeForFeature, findNodesForFeature } from '../grammar/grammar-util';
+import { findNodeForKeyword, findNodesForKeyword, findNodeForProperty, findNodesForProperty } from '../utils/grammar-util';
 import { AstNode, CstNode, isCompositeCstNode, isLeafCstNode, Properties } from '../syntax-tree';
 import { streamAllContents } from '../utils/ast-util';
 import { getInteriorNodes, getNextNode } from '../utils/cst-util';
@@ -528,28 +528,28 @@ export class DefaultNodeFormatter<T extends AstNode> implements NodeFormatter<T>
     }
 
     property(feature: Properties<T>, index?: number): FormattingRegion {
-        const cstNode = findNodeForFeature(this.astNode.$cstNode, feature, index);
+        const cstNode = findNodeForProperty(this.astNode.$cstNode, feature, index);
         return new FormattingRegion(cstNode ? [cstNode] : [], this.collector);
     }
 
     properties(...features: Array<Properties<T>>): FormattingRegion {
         const nodes: CstNode[] = [];
         for (const feature of features) {
-            const cstNodes = findNodesForFeature(this.astNode.$cstNode, feature);
+            const cstNodes = findNodesForProperty(this.astNode.$cstNode, feature);
             nodes.push(...cstNodes);
         }
         return new FormattingRegion(nodes, this.collector);
     }
 
     keyword(keyword: string, index?: number): FormattingRegion {
-        const cstNode = findKeywordNode(this.astNode.$cstNode, keyword, index);
+        const cstNode = findNodeForKeyword(this.astNode.$cstNode, keyword, index);
         return new FormattingRegion(cstNode ? [cstNode] : [], this.collector);
     }
 
     keywords(...keywords: string[]): FormattingRegion {
         const nodes: CstNode[] = [];
         for (const feature of keywords) {
-            const cstNodes = findKeywordNodes(this.astNode.$cstNode, feature);
+            const cstNodes = findNodesForKeyword(this.astNode.$cstNode, feature);
             nodes.push(...cstNodes);
         }
         return new FormattingRegion(nodes, this.collector);

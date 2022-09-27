@@ -9,10 +9,11 @@ import { DefaultDefinitionProvider } from '../../lsp';
 import { LangiumServices } from '../../services';
 import { AstNode, LeafCstNode, Properties } from '../../syntax-tree';
 import { streamContents } from '../../utils/ast-util';
+import { findAssignment } from '../../utils/grammar-util';
 import { MaybePromise } from '../../utils/promise-util';
 import { LangiumDocuments } from '../../workspace/documents';
 import { Grammar, GrammarImport, isGrammarImport } from '../generated/ast';
-import { findAssignment, resolveImport } from '../grammar-util';
+import { resolveImport } from '../internal-grammar-util';
 
 export class LangiumGrammarDefinitionProvider extends DefaultDefinitionProvider {
 

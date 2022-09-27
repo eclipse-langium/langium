@@ -5,13 +5,13 @@
  ******************************************************************************/
 
 import { Grammar, Interface, ParserRule, Type } from '../generated/ast';
-import { extractAssignments, getRuleType } from '../grammar-util';
 import { MultiMap } from '../../utils/collections';
 import { collectDeclaredTypes } from './declared-types';
 import { collectInferredTypes } from './inferred-types';
 import { AstTypes, collectAllAstResources, distictAndSorted, Property, PropertyType, propertyTypeArrayToString, InterfaceType, UnionType, AstResources } from './types-util';
 import { stream } from '../../utils/stream';
 import { ValidationAcceptor } from '../../validation/validation-registry';
+import { extractAssignments, getRuleType } from '../internal-grammar-util';
 
 export function validateTypesConsistency(grammar: Grammar, accept: ValidationAcceptor): void {
     function applyErrorToRuleNodes(nodes: readonly ParserRule[], typeName: string): (errorMessage: string) => void {

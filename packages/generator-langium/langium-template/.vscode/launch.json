@@ -15,7 +15,7 @@
         },
         {
             "name": "Attach to Language Server",
-            "type": "pwa-node",
+            "type": "node",
             "port": 6009,
             "request": "attach",
             "skipFiles": [
@@ -23,7 +23,8 @@
             ],
             "sourceMaps": true,
             "outFiles": [
-                "${workspaceFolder}/out/**/*.js"
+                "${workspaceFolder}/out/**/*.js",
+                "${workspaceFolder}/node_modules/langium"
             ]
         }
     ]

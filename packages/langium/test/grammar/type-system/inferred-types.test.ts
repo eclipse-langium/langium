@@ -4,7 +4,8 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { AstTypes, createLangiumGrammarServices, Grammar, InterfaceType, isDataTypeRule, isParserRule, Property, PropertyType, UnionType, EmptyFileSystem, collectAllAstResources, collectAst, s } from '../../../src';
+import { AstTypes, createLangiumGrammarServices, Grammar, InterfaceType, isParserRule, Property, PropertyType, UnionType, EmptyFileSystem, collectAllAstResources, collectAst, s } from '../../../src';
+import { isDataTypeRule } from '../../../src/grammar/internal-grammar-util';
 import { collectInferredTypes } from '../../../src/grammar/type-system/inferred-types';
 import { parseHelper } from '../../../src/test';
 
@@ -110,7 +111,7 @@ describeTypes('inferred types for alternatives', `
     C: A | B;
     D: A | B | name=ID;
     E: name=ID | value=NUMBER;
-    
+
 
     terminal ID returns string: /string/;
     terminal NUMBER returns number: /number/;
@@ -499,7 +500,7 @@ describeTypes('inferred types with common names and actions', `
     A infers X: {infer A} a=ID;
 	B infers X: {infer B} b=ID;
 
-    C: D ({infer C.item=current} value=ID); 
+    C: D ({infer C.item=current} value=ID);
     D infers Y: y=ID;
 
     terminal ID returns string: /string/;

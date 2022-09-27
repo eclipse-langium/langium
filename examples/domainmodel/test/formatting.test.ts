@@ -8,10 +8,8 @@ import { EmptyFileSystem } from 'langium';
 import { expectFormatting } from 'langium/test';
 import { createDomainModelServices } from '../src/language-server/domain-model-module';
 
-const cb = (a: unknown, b: unknown) => expect(a).toEqual(b);
-
 const services = createDomainModelServices({ ...EmptyFileSystem }).domainmodel;
-const formatting = expectFormatting(services, cb);
+const formatting = expectFormatting(services);
 
 describe('Domain model formatting', () => {
 

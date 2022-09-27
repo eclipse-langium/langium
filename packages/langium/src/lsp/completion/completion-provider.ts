@@ -8,7 +8,7 @@ import { CancellationToken, CompletionItem, CompletionItemKind, CompletionList, 
 import { TextDocument, TextEdit } from 'vscode-languageserver-textdocument';
 import * as ast from '../../grammar/generated/ast';
 import { GrammarConfig } from '../../grammar/grammar-config';
-import { getEntryRule, getExplicitRuleType } from '../../grammar/grammar-util';
+import { getExplicitRuleType } from '../../grammar/internal-grammar-util';
 import { LangiumCompletionParser } from '../../parser/langium-parser';
 import { NameProvider } from '../../references/naming';
 import { ScopeProvider } from '../../references/scope-provider';
@@ -16,6 +16,7 @@ import { LangiumServices } from '../../services';
 import { AstNode, AstNodeDescription, Reference, ReferenceInfo } from '../../syntax-tree';
 import { getContainerOfType, isAstNode } from '../../utils/ast-util';
 import { findLeafNodeAtOffset } from '../../utils/cst-util';
+import { getEntryRule } from '../../utils/grammar-util';
 import { MaybePromise } from '../../utils/promise-util';
 import { stream } from '../../utils/stream';
 import { LangiumDocument } from '../../workspace/documents';

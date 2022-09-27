@@ -6,7 +6,7 @@
 
 import { MismatchedTokenException } from 'chevrotain';
 import { CancellationToken, Diagnostic, DiagnosticSeverity, Position, Range } from 'vscode-languageserver';
-import { findKeywordNode, findNodeForFeature } from '../grammar/grammar-util';
+import { findNodeForKeyword, findNodeForProperty } from '../utils/grammar-util';
 import { LanguageMetaData } from '../grammar/language-meta-data';
 import { LangiumServices } from '../services';
 import { AstNode, CstNode } from '../syntax-tree';
@@ -176,9 +176,9 @@ export function getDiagnosticRange<N extends AstNode>(info: DiagnosticInfo<N, st
     }
     let cstNode: CstNode | undefined;
     if (typeof info.property === 'string') {
-        cstNode = findNodeForFeature(info.node.$cstNode, info.property, info.index);
+        cstNode = findNodeForProperty(info.node.$cstNode, info.property, info.index);
     } else if (typeof info.keyword === 'string') {
-        cstNode = findKeywordNode(info.node.$cstNode, info.keyword, info.index);
+        cstNode = findNodeForKeyword(info.node.$cstNode, info.keyword, info.index);
     }
     cstNode ??= info.node.$cstNode;
     if (!cstNode) {

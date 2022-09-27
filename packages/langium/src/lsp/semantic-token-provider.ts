@@ -7,7 +7,7 @@
 /* eslint-disable no-bitwise */
 
 import { CancellationToken, Range, SemanticTokenModifiers, SemanticTokens, SemanticTokensBuilder as BaseSemanticTokensBuilder, SemanticTokensClientCapabilities, SemanticTokensDelta, SemanticTokensDeltaParams, SemanticTokensOptions, SemanticTokensParams, SemanticTokensRangeParams, SemanticTokenTypes } from 'vscode-languageserver';
-import { findKeywordNodes, findNodeForFeature } from '../grammar/grammar-util';
+import { findNodesForKeyword, findNodeForProperty } from '../utils/grammar-util';
 import { LangiumServices } from '../services';
 import { AstNode, CstNode, Properties } from '../syntax-tree';
 import { streamAllContents } from '../utils/ast-util';
@@ -347,14 +347,14 @@ export abstract class AbstractSemanticTokenProvider implements SemanticTokenProv
     }
 
     protected highlightFeature<N extends AstNode>(node: N, feature: Properties<N>, index: number | undefined, type: string, modifiers?: string | string[]): void {
-        const featureNode = findNodeForFeature(node.$cstNode, feature as string, index);
+        const featureNode = findNodeForProperty(node.$cstNode, feature as string, index);
         if (featureNode) {
             this.highlightNode(featureNode, type, modifiers);
         }
     }
 
     protected highlightKeyword(node: AstNode, keyword: string, type: string, modifiers?: string | string[]): void {
-        const keywordNodes = findKeywordNodes(node.$cstNode, keyword);
+        const keywordNodes = findNodesForKeyword(node.$cstNode, keyword);
         for (const keywordNode of keywordNodes) {
             this.highlightNode(keywordNode, type, modifiers);
         }

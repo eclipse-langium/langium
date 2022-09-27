@@ -3,10 +3,10 @@
  * DO NOT EDIT MANUALLY!
  ******************************************************************************/
 
-import { loadGrammar, Grammar } from 'langium';
+import { loadGrammarFromJson, Grammar } from 'langium';
 
 let loadedStatemachineGrammar: Grammar | undefined;
-export const StatemachineGrammar = (): Grammar => loadedStatemachineGrammar ||(loadedStatemachineGrammar = loadGrammar(`{
+export const StatemachineGrammar = (): Grammar => loadedStatemachineGrammar ?? (loadedStatemachineGrammar = loadGrammarFromJson(`{
   "$type": "Grammar",
   "isDeclared": true,
   "name": "Statemachine",

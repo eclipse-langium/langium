@@ -13,7 +13,7 @@ import { LangiumServices } from '../services';
 import { AstNode, Properties } from '../syntax-tree';
 import { escapeRegExp } from '../utils/regex-util';
 import { LangiumDocument } from '../workspace/documents';
-import { findNodeForFeature } from '../grammar/grammar-util';
+import { findNodeForProperty } from '../utils/grammar-util';
 import { SemanticTokensDecoder } from '../lsp/semantic-token-provider';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 
@@ -30,7 +30,27 @@ export function parseHelper<T extends AstNode = AstNode>(services: LangiumServic
     };
 }
 
-export type ExpectFunction = (actual: unknown, expected: unknown) => void;
+export type ExpectFunction = (actual: unknown, expected: unknown, message?: string) => void;
+
+let expectedFunction: ExpectFunction = (actual, expected, message) => {
+    if (typeof expect === 'function') {
+        if (message && expect.length === 2) {
+            // With `jest-expect-message`
+            expect(actual, message).toEqual(expected);
+        } else {
+            expect(actual).toEqual(expected);
+        }
+    } else {
+        throw new Error('No expect function provided');
+    }
+};
+
+/**
+ * Overrides the assertion function used by tests. Tries to use Jest by default.
+ */
+export function expectFunction(functions: ExpectFunction): void {
+    expectedFunction = functions;
+}
 
 export interface ExpectedBase {
     text: string
@@ -43,37 +63,39 @@ export interface ExpectedSymbols extends ExpectedBase {
     expectedSymbols: DocumentSymbol[]
 }
 
-export function expectSymbols(services: LangiumServices, expectEqual: ExpectFunction): (input: ExpectedSymbols) => Promise<void> {
+export function expectSymbols(services: LangiumServices): (input: ExpectedSymbols) => Promise<void> {
     return async input => {
         const document = await parseDocument(services, input.text);
         const symbolProvider = services.lsp.DocumentSymbolProvider;
         const symbols = await symbolProvider?.getSymbols(document, textDocumentParams(document)) ?? [];
-        expectEqual(symbols.length, input.expectedSymbols.length);
+        expectedFunction(symbols.length, input.expectedSymbols.length, `Expected ${input.expectedSymbols.length} but found ${symbols.length} symbols in document.`);
         for (let i = 0; i < input.expectedSymbols.length; i++) {
             const expected = input.expectedSymbols[i];
             const item = symbols[i];
             if (typeof expected === 'string') {
-                expectEqual(item.name, expected);
+                expectedFunction(item.name, expected);
             } else {
-                expectEqual(item, expected);
+                expectedFunction(item, expected);
             }
         }
     };
 }
 
-export function expectFoldings(services: LangiumServices, expectEqual: ExpectFunction): (input: ExpectedBase) => Promise<void> {
+export function expectFoldings(services: LangiumServices): (input: ExpectedBase) => Promise<void> {
     return async input => {
         const { output, ranges } = replaceIndices(input);
         const document = await parseDocument(services, output);
         const foldingRangeProvider = services.lsp.FoldingRangeProvider;
         const foldings = await foldingRangeProvider?.getFoldingRanges(document, textDocumentParams(document)) ?? [];
         foldings.sort((a, b) => a.startLine - b.startLine);
-        expectEqual(foldings.length, ranges.length);
+        expectedFunction(foldings.length, ranges.length, `Expected ${ranges.length} but received ${foldings.length} foldings`);
         for (let i = 0; i < ranges.length; i++) {
             const expected = ranges[i];
             const item = foldings[i];
-            expectEqual(item.startLine, document.textDocument.positionAt(expected[0]).line);
-            expectEqual(item.endLine, document.textDocument.positionAt(expected[1]).line);
+            const expectedStart = document.textDocument.positionAt(expected[0]);
+            const expectedEnd = document.textDocument.positionAt(expected[1]);
+            expectedFunction(item.startLine, expectedStart.line, `Expected folding start at line ${expectedStart.line} but received folding start at line ${item.startLine} instead.`);
+            expectedFunction(item.endLine, expectedEnd.line, `Expected folding end at line ${expectedEnd.line} but received folding end at line ${item.endLine} instead.`);
         }
     };
 }
@@ -87,22 +109,23 @@ export interface ExpectedCompletion extends ExpectedBase {
     expectedItems: Array<string | CompletionItem>
 }
 
-export function expectCompletion(services: LangiumServices, expectEqual: ExpectFunction): (completion: ExpectedCompletion) => Promise<void> {
+export function expectCompletion(services: LangiumServices): (completion: ExpectedCompletion) => Promise<void> {
     return async expectedCompletion => {
         const { output, indices } = replaceIndices(expectedCompletion);
         const document = await parseDocument(services, output);
         const completionProvider = services.lsp.CompletionProvider;
         const offset = indices[expectedCompletion.index];
         const completions = await completionProvider?.getCompletion(document, textDocumentPositionParams(document, offset)) ?? { items: [] };
+        const expectedItems = expectedCompletion.expectedItems;
         const items = completions.items.sort((a, b) => a.sortText?.localeCompare(b.sortText || '0') || 0);
-        expectEqual(items.length, expectedCompletion.expectedItems.length);
-        for (let i = 0; i < expectedCompletion.expectedItems.length; i++) {
-            const expected = expectedCompletion.expectedItems[i];
+        expectedFunction(items.length, expectedItems.length, `Expected ${expectedItems.length} but received ${items.length} completion items`);
+        for (let i = 0; i < expectedItems.length; i++) {
+            const expected = expectedItems[i];
             const completion = items[i];
             if (typeof expected === 'string') {
-                expectEqual(completion.label, expected);
+                expectedFunction(completion.label, expected);
             } else {
-                expectEqual(completion, expected);
+                expectedFunction(completion, expected);
             }
         }
     };
@@ -113,18 +136,19 @@ export interface ExpectedGoToDefinition extends ExpectedBase {
     rangeIndex: number
 }
 
-export function expectGoToDefinition(services: LangiumServices, expectEqual: ExpectFunction): (expectedGoToDefinition: ExpectedGoToDefinition) => Promise<void> {
+export function expectGoToDefinition(services: LangiumServices): (expectedGoToDefinition: ExpectedGoToDefinition) => Promise<void> {
     return async expectedGoToDefinition => {
         const { output, indices, ranges } = replaceIndices(expectedGoToDefinition);
         const document = await parseDocument(services, output);
         const definitionProvider = services.lsp.DefinitionProvider;
-        const locationLink = await definitionProvider?.getDefinition(document, textDocumentPositionParams(document, indices[expectedGoToDefinition.index])) ?? [];
+        const locationLinks = await definitionProvider?.getDefinition(document, textDocumentPositionParams(document, indices[expectedGoToDefinition.index])) ?? [];
         const expectedRange: Range = {
             start: document.textDocument.positionAt(ranges[expectedGoToDefinition.rangeIndex][0]),
             end: document.textDocument.positionAt(ranges[expectedGoToDefinition.rangeIndex][1])
         };
-        expectEqual(locationLink.length, 1);
-        expectEqual(locationLink[0].targetSelectionRange, expectedRange);
+        expectedFunction(locationLinks.length, 1, `Expected a single definition but received ${locationLinks.length}`);
+        const range = locationLinks[0].targetSelectionRange;
+        expectedFunction(range, expectedRange, `Expected range ${rangeToString(expectedRange)} does not match actual range ${rangeToString(range)}`);
     };
 }
 
@@ -136,21 +160,20 @@ export function expectFindReferences(services: LangiumServices): (expectedFindRe
     return async expectedFindReferences => {
         const { output, indices, ranges } = replaceIndices(expectedFindReferences);
         const document = await parseDocument(services, output);
-        const expectedRanges: Range[] = [];
-        ranges.forEach(range => {
-            const expectedRange: Range = {start: document.textDocument.positionAt(range[0]), end: document.textDocument.positionAt(range[1])};
-            expectedRanges.push(expectedRange);
-        });
+        const expectedRanges: Range[] = ranges.map(range => ({
+            start: document.textDocument.positionAt(range[0]),
+            end: document.textDocument.positionAt(range[1])
+        }));
         const referenceFinder = services.lsp.ReferencesProvider;
-        indices.forEach(async (index) => {
+        for (const index of indices) {
             const referenceParameters = referenceParams(document, index, expectedFindReferences.includeDeclaration);
             const references = await referenceFinder?.findReferences(document, referenceParameters) ?? [];
 
-            expect(references.length).toBe(expectedRanges.length);
-            references.forEach(ref => {
-                expect(expectedRanges).toContainEqual(ref.range);
-            });
-        });
+            expectedFunction(references.length, expectedRanges.length, 'Found references do not match amount of expected references');
+            for (const reference of references) {
+                expectedFunction(expectedRanges.some(range => isRangeEqual(range, reference.range)), true, `Found unexpected reference at range ${rangeToString(reference.range)}`);
+            }
+        }
         clearDocuments(services);
     };
 }
@@ -167,14 +190,14 @@ export interface ExpectedHover extends ExpectedBase {
     hover?: string
 }
 
-export function expectHover(services: LangiumServices, cb: ExpectFunction): (expectedHover: ExpectedHover) => Promise<void> {
+export function expectHover(services: LangiumServices): (expectedHover: ExpectedHover) => Promise<void> {
     return async expectedHover => {
         const { output, indices } = replaceIndices(expectedHover);
         const document = await parseDocument(services, output);
         const hoverProvider = services.lsp.HoverProvider;
         const hover = await hoverProvider?.getHoverContent(document, textDocumentPositionParams(document, indices[expectedHover.index]));
         const hoverContent = hover && MarkupContent.is(hover.contents) ? hover.contents.value : undefined;
-        cb(hoverContent, expectedHover.hover);
+        expectedFunction(hoverContent, expectedHover.hover);
     };
 }
 
@@ -185,7 +208,7 @@ export interface ExpectFormatting {
     options?: FormattingOptions
 }
 
-export function expectFormatting(services: LangiumServices, cb: ExpectFunction): (expectedFormatting: ExpectFormatting) => Promise<void> {
+export function expectFormatting(services: LangiumServices): (expectedFormatting: ExpectFormatting) => Promise<void> {
     const formatter = services.lsp.Formatter;
     if (!formatter) {
         throw new Error(`No formatter registered for language ${services.LanguageMetaData.languageId}`);
@@ -202,7 +225,7 @@ export function expectFormatting(services: LangiumServices, cb: ExpectFunction):
             formatter.formatDocument(document, { options, textDocument: identifier }));
 
         const editedDocument = TextDocument.applyEdits(document.textDocument, edits);
-        cb(editedDocument, expectedFormatting.after);
+        expectedFunction(editedDocument, expectedFormatting.after);
     };
 }
 
@@ -304,11 +327,15 @@ function isRangeEqual(lhs: Range, rhs: Range): boolean {
         && lhs.end.line === rhs.end.line;
 }
 
+function rangeToString(range: Range): string {
+    return `${range.start.line}:${range.start.character}--${range.end.line}:${range.end.character}`;
+}
+
 function filterByOptions<T extends AstNode = AstNode, N extends AstNode = AstNode>(validationResult: ValidationResult<T>, options: ExpectDiagnosticOptions<N>) {
     const filters: Array<Predicate<Diagnostic>> = [];
     if ('node' in options) {
         const cstNode = options.property
-            ? findNodeForFeature(options.node?.$cstNode, options.property.name, options.property.index)
+            ? findNodeForProperty(options.node?.$cstNode, options.property.name, options.property.index)
             : options.node.$cstNode;
         if (!cstNode) {
             throw new Error('Cannot find the node!');
@@ -344,12 +371,12 @@ function filterByOptions<T extends AstNode = AstNode, N extends AstNode = AstNod
 
 export function expectNoIssues<T extends AstNode = AstNode, N extends AstNode = AstNode>(validationResult: ValidationResult<T>, filterOptions?: ExpectDiagnosticOptions<N>): void {
     const filtered = filterOptions ? filterByOptions<T, N>(validationResult, filterOptions) : validationResult.diagnostics;
-    expect(filtered).toHaveLength(0);
+    expectedFunction(filtered.length, 0, `Expected no issues, but found ${filtered.length}`);
 }
 
 export function expectIssue<T extends AstNode = AstNode, N extends AstNode = AstNode>(validationResult: ValidationResult<T>, filterOptions?: ExpectDiagnosticOptions<N>): void {
     const filtered = filterOptions ? filterByOptions<T, N>(validationResult, filterOptions) : validationResult.diagnostics;
-    expect(filtered).not.toHaveLength(0);
+    expectedFunction(filtered.length > 0, true, 'Found no issues');
 }
 
 export function expectError<T extends AstNode = AstNode, N extends AstNode = AstNode>(validationResult: ValidationResult<T>, message: string | RegExp, filterOptions: ExpectDiagnosticOptionsWithoutContent<N>): void {
@@ -407,5 +434,5 @@ export function expectSemanticToken(tokensWithRanges: DecodedSemanticTokensWithR
     const result = tokensWithRanges.tokens.filter(t => {
         return t.tokenType === options.tokenType && t.offset === range[0] && t.offset + t.text.length === range[1];
     });
-    expect(result).toHaveLength(1);
+    expectedFunction(result.length, 1, `Expected one token with the specified options but found ${result.length}`);
 }

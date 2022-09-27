@@ -8,7 +8,7 @@ import { createDefaultModule, createDefaultSharedModule, DefaultSharedModuleCont
 import { inject, Module } from '../dependency-injection';
 import { LangiumServices, LangiumSharedServices, PartialLangiumServices, PartialLangiumSharedServices } from '../services';
 import { LangiumGrammarGeneratedModule, LangiumGrammarGeneratedSharedModule } from './generated/module';
-import { LangiumGrammarScopeComputation, LangiumGrammarScopeProvider } from './langium-grammar-scope';
+import { LangiumGrammarScopeComputation, LangiumGrammarScopeProvider } from './references/grammar-scope';
 import { LangiumGrammarValidationRegistry, LangiumGrammarValidator } from './langium-grammar-validator';
 import { LangiumGrammarCodeActionProvider } from './lsp/grammar-code-actions';
 import { LangiumGrammarFoldingRangeProvider } from './lsp/grammar-folding-ranges';

@@ -6,9 +6,10 @@
 
 import { LangiumServices } from '../services';
 import { DefaultNameRegexp } from '../utils/cst-util';
+import { isCommentTerminal } from '../utils/grammar-util';
 import { isMultilineComment } from '../utils/regex-util';
 import { isTerminalRule } from './generated/ast';
-import { isCommentTerminal, terminalRegex } from './grammar-util';
+import { terminalRegex } from './internal-grammar-util';
 
 export interface GrammarConfig {
     /**

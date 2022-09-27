@@ -4,11 +4,16 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { ExpectFunction } from '../src/test';
+import { defineConfig } from 'vitest/config';
 
-/**
- * Expectation function for jest. Accepts any primitive/objects and does a deep recursive comparison.
- * @param a Actual element
- * @param e Expected element
- */
-export const expectFunction: ExpectFunction = (a, e) => expect(a).toEqual(e);
+export default defineConfig({
+    test: {
+        globals: true,
+        coverage: {
+            provider: 'c8',
+            reporter: ['text', 'html'],
+            include: ['packages/langium/src'],
+            exclude: ['**/generated'],
+        }
+    }
+});

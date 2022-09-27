@@ -14,7 +14,7 @@ import { MultiMap } from '../../utils/collections';
 import { AstNodeLocator } from '../../workspace/ast-node-locator';
 import { LangiumDocuments } from '../../workspace/documents';
 import { AbstractType, Grammar, Interface, isInterface, isParserRule, isType, ParserRule, Type } from '../generated/ast';
-import { isDataTypeRule, resolveImport } from '../grammar-util';
+import { isDataTypeRule, resolveImport } from '../internal-grammar-util';
 
 export type Property = {
     name: string,

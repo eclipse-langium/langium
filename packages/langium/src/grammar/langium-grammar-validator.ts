@@ -13,15 +13,15 @@ import { AstNode, Reference } from '../syntax-tree';
 import { getContainerOfType, getDocument, streamAllContents } from '../utils/ast-util';
 import { MultiMap } from '../utils/collections';
 import { toDocumentSegment } from '../utils/cst-util';
+import { findNodeForKeyword, findNameAssignment, findNodeForProperty, getEntryRule } from '../utils/grammar-util';
 import { Stream, stream } from '../utils/stream';
-import { relativeURI } from '../utils/uri-utils';
+import { relativeURI } from '../utils/uri-util';
 import { ValidationAcceptor, ValidationChecks, ValidationRegistry } from '../validation/validation-registry';
 import { LangiumDocument, LangiumDocuments } from '../workspace/documents';
 import * as ast from './generated/ast';
 import { isParserRule, isRuleCall } from './generated/ast';
-import { findKeywordNode, findNameAssignment, findNodeForFeature, getEntryRule, getTypeName, isDataTypeRule, isOptional, resolveImport, resolveTransitiveImports, terminalRegex } from './grammar-util';
+import { getTypeName, isDataTypeRule, isOptionalCardinality, resolveImport, resolveTransitiveImports, terminalRegex } from './internal-grammar-util';
 import type { LangiumGrammarServices } from './langium-grammar-module';
-import { collectInferredTypes } from './type-system/inferred-types';
 import { applyErrorToAssignment, collectAllInterfaces, InterfaceInfo, validateTypesConsistency } from './type-system/type-validator';
 
 export class LangiumGrammarValidationRegistry extends ValidationRegistry {
@@ -268,7 +268,7 @@ export class LangiumGrammarValidator {
             const isInfers = !rule.returnType && !rule.dataType;
             const ruleTypeName = getTypeName(rule);
             if (!isDataType && ruleTypeName && types.has(ruleTypeName) === isInfers) {
-                const keywordNode = isInfers ? findKeywordNode(rule.$cstNode, 'infer') : findKeywordNode(rule.$cstNode, 'returns');
+                const keywordNode = isInfers ? findNodeForKeyword(rule.$cstNode, 'infer') : findNodeForKeyword(rule.$cstNode, 'returns');
                 accept('error', getMessage(ruleTypeName, isInfers), {
                     node: rule.inferredType ?? rule,
                     property: 'name',
@@ -276,7 +276,7 @@ export class LangiumGrammarValidator {
                     data: keywordNode && toDocumentSegment(keywordNode)
                 });
             } else if (isDataType && isInfers) {
-                const inferNode = findKeywordNode(rule.$cstNode, 'infer');
+                const inferNode = findNodeForKeyword(rule.$cstNode, 'infer');
                 accept('error', 'Data type rules cannot infer a type.', {
                     node: rule,
                     property: 'inferredType',
@@ -291,7 +291,7 @@ export class LangiumGrammarValidator {
                 const isInfers = !!action.inferredType;
                 const typeName = getTypeName(action);
                 if (action.type && types.has(typeName) === isInfers) {
-                    const keywordNode = isInfers ? findKeywordNode(action.$cstNode, 'infer') : findKeywordNode(action.$cstNode, '{');
+                    const keywordNode = isInfers ? findNodeForKeyword(action.$cstNode, 'infer') : findNodeForKeyword(action.$cstNode, '{');
                     accept('error', getMessage(typeName, isInfers), {
                         node: action,
                         property: 'type',
@@ -301,8 +301,8 @@ export class LangiumGrammarValidator {
                 } else if(actionType && types.has(typeName) && isInfers) {
                     // error: action infers type that is already defined
                     if(action.$cstNode) {
-                        const inferredTypeNode = findNodeForFeature(action.inferredType?.$cstNode, 'name');
-                        const keywordNode = findKeywordNode(action.$cstNode, '{');
+                        const inferredTypeNode = findNodeForProperty(action.inferredType?.$cstNode, 'name');
+                        const keywordNode = findNodeForKeyword(action.$cstNode, '{');
                         if(inferredTypeNode && keywordNode) {
                             // remove everything from the opening { up to the type name
                             // we may lose comments in-between, but this can be undone as needed
@@ -446,18 +446,20 @@ export class LangiumGrammarValidator {
             interfaceType.superTypes.forEach((superType, i) => {
                 if (superType.ref && ast.isType(superType.ref)) {
                     accept('error', 'Interfaces cannot extend union types.', { node: interfaceType, property: 'superTypes', index: i });
-                } else if(superType.ref && ast.isParserRule(superType.ref)) {
-                    // collect just the beginning of whatever inferred types this standalone rule produces
-                    // looking to exclude anything that would be a union down the line
-                    const inferred = collectInferredTypes([superType.ref as ast.ParserRule], []);
-                    if(inferred.unions.length > 0) {
-                        // inferred union type also cannot be extended
-                        accept('error', `An interface cannot extend a union type, which was inferred from parser rule ${superType.ref.name}.`, { node: interfaceType, property: 'superTypes', index: i });
-                    } else {
-                        // otherwise we'll allow it, but issue a warning against basing declared off of inferred types
-                        accept('warning', 'Extending an interface by a parser rule gives an ambiguous type, instead of the expected declared type.', { node: interfaceType, property: 'superTypes', index: i });
-                    }
                 }
+                // TODO: needs to be reimplemented once the type system has been refactored
+                // else if(superType.ref && ast.isParserRule(superType.ref)) {
+                //     // collect just the beginning of whatever inferred types this standalone rule produces
+                //     // looking to exclude anything that would be a union down the line
+                //     const inferred = collectInferredTypes([superType.ref as ast.ParserRule], []);
+                //     if(inferred.unions.length > 0) {
+                //         // inferred union type also cannot be extended
+                //         accept('error', `An interface cannot extend a union type, which was inferred from parser rule ${superType.ref.name}.`, { node: interfaceType, property: 'superTypes', index: i });
+                //     } else {
+                //         // otherwise we'll allow it, but issue a warning against basing declared off of inferred types
+                //         accept('warning', 'Extending an interface by a parser rule gives an ambiguous type, instead of the expected declared type.', { node: interfaceType, property: 'superTypes', index: i });
+                //     }
+                // }
             });
         }
     }
@@ -580,7 +582,7 @@ export class LangiumGrammarValidator {
 
     checkUnorderedGroup(unorderedGroup: ast.UnorderedGroup, accept: ValidationAcceptor): void {
         unorderedGroup.elements.forEach((ele) => {
-            if (isOptional(ele.cardinality)) {
+            if (isOptionalCardinality(ele.cardinality)) {
                 accept('error', 'Optional elements in Unordered groups are currently not supported', { node: ele, code: IssueCodes.OptionalUnorderedGroup });
             }
         });

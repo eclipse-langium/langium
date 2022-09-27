@@ -56,7 +56,7 @@
         },
         {
             "name": "Attach to Language Server",
-            "type": "pwa-node",
+            "type": "node",
             "port": 6009,
             "request": "attach",
             "skipFiles": [
@@ -73,7 +73,7 @@
         },
         {
             "name": "Bootstrap",
-            "type": "pwa-node",
+            "type": "node",
             "request": "launch",
             "runtimeArgs": [
                 "${workspaceFolder}/packages/langium-cli/lib/langium",
@@ -92,7 +92,7 @@
         },
         {
             "name": "Generate Domainmodel",
-            "type": "pwa-node",
+            "type": "node",
             "request": "launch",
             "runtimeExecutable": "node",
             "runtimeArgs": [
@@ -121,33 +121,25 @@
             ]
         },
         {
-            "name": "Jest: Run All",
+            "name": "Vitest: Run All",
             "type": "node",
             "request": "launch",
-            "program": "${workspaceFolder}/node_modules/jest/bin/jest.js",
-            "args": [
-                "--config=${workspaceFolder}/jest.config.json",
-                "--verbose",
-                "-i",
-                "--no-cache",
-            ],
+            "skipFiles": ["<node_internals>/**", "**/node_modules/**"],
+            "program": "${workspaceRoot}/node_modules/vitest/vitest.mjs",
+            "args": ["run", "--no-color", "--no-coverage", "--no-watch"],
+            "smartStep": true,
             "console": "integratedTerminal",
-            "internalConsoleOptions": "neverOpen"
         },
         {
-            "name": "Jest: Run Selected File",
+            "name": "Vitest: Run Selected File",
             "type": "node",
             "request": "launch",
-            "program": "${workspaceFolder}/node_modules/jest/bin/jest.js",
-            "args": [
-                "${fileBasename}",
-                "--config=${workspaceFolder}/jest.config.json",
-                "--verbose",
-                "-i",
-                "--no-cache",
-            ],
+            "autoAttachChildProcesses": true,
+            "skipFiles": ["<node_internals>/**", "**/node_modules/**"],
+            "program": "${workspaceRoot}/node_modules/vitest/vitest.mjs",
+            "args": ["run", "${relativeFile}"],
+            "smartStep": true,
             "console": "integratedTerminal",
-            "internalConsoleOptions": "neverOpen"
         }
     ]
 }

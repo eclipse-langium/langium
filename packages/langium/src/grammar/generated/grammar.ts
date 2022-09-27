@@ -3,11 +3,11 @@
  * DO NOT EDIT MANUALLY!
  ******************************************************************************/
 
-import { loadGrammar } from '../grammar-util';
+import { loadGrammarFromJson } from '../../utils/grammar-util';
 import { Grammar } from './ast';
 
 let loadedLangiumGrammarGrammar: Grammar | undefined;
-export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar ||(loadedLangiumGrammarGrammar = loadGrammar(`{
+export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar ?? (loadedLangiumGrammarGrammar = loadGrammarFromJson(`{
   "$type": "Grammar",
   "isDeclared": true,
   "name": "LangiumGrammar",

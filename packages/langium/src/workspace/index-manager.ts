@@ -11,7 +11,7 @@ import { LangiumSharedServices } from '../services';
 import { AstNode, AstNodeDescription, AstReflection } from '../syntax-tree';
 import { getDocument } from '../utils/ast-util';
 import { stream, Stream } from '../utils/stream';
-import { equalURI } from '../utils/uri-utils';
+import { equalURI } from '../utils/uri-util';
 import { ReferenceDescription } from './ast-descriptions';
 import { DocumentState, LangiumDocument, LangiumDocuments } from './documents';
 

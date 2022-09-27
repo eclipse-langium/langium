@@ -7,7 +7,6 @@
 import path from 'path';
 import fs from 'fs';
 import { exec, ExecException } from 'child_process';
-import 'jest-expect-message';
 import { generateAction } from '../src/cli/generator';
 
 describe('Test the domainmodel CLI', () => {
@@ -36,12 +35,12 @@ describe('Test the domainmodel CLI', () => {
     }
 
     test('Test action without CLI', async () => {
-        await generateAction(rawfileName, { destination });
+        await generateAction(rawfileName, { destination, quiet: true });
         commonExpectations();
     });
 
     test('Via CLI: Generator command returns code 0 and creates expected files', async () => {
-        const result = await cli(['generate', rawfileName, '-d', destination]);
+        const result = await cli(['generate', rawfileName, '-d', destination, '-q']);
         if(result.code !== 0) {
             console.log('Error code:', result.code);
             console.log('Error message:', result.error);

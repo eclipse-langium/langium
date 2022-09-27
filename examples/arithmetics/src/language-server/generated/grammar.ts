@@ -3,10 +3,10 @@
  * DO NOT EDIT MANUALLY!
  ******************************************************************************/
 
-import { loadGrammar, Grammar } from 'langium';
+import { loadGrammarFromJson, Grammar } from 'langium';
 
 let loadedArithmeticsGrammar: Grammar | undefined;
-export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ||(loadedArithmeticsGrammar = loadGrammar(`{
+export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ?? (loadedArithmeticsGrammar = loadGrammarFromJson(`{
   "$type": "Grammar",
   "isDeclared": true,
   "name": "Arithmetics",

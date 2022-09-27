@@ -6,7 +6,6 @@
 
 import { createLangiumGrammarServices, EmptyFileSystem } from '../../src';
 import { expectFoldings } from '../../src/test';
-import { expectFunction } from '../fixture';
 
 const text = `
   grammar g hidden(hiddenTerminal)
@@ -21,7 +20,7 @@ const text = `
   `;
 
 const grammarServices = createLangiumGrammarServices(EmptyFileSystem).grammar;
-const foldings = expectFoldings(grammarServices, expectFunction);
+const foldings = expectFoldings(grammarServices);
 
 describe('Folding range provider', () => {
 

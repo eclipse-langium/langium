@@ -4,8 +4,8 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { getTypeName } from '../grammar-util';
 import { AtomType, Interface, Type } from '../generated/ast';
+import { getTypeName } from '../internal-grammar-util';
 import { AstTypes, Property, PropertyType, InterfaceType, UnionType } from './types-util';
 import { MultiMap } from '../../utils/collections';
 
