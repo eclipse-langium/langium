@@ -3,10 +3,10 @@
  * DO NOT EDIT MANUALLY!
  ******************************************************************************/
 
-import { loadGrammar, Grammar } from 'langium';
+import { loadGrammarFromJson, Grammar } from 'langium';
 
 let loadedRequirementsGrammar: Grammar | undefined;
-export const RequirementsGrammar = (): Grammar => loadedRequirementsGrammar ||(loadedRequirementsGrammar = loadGrammar(`{
+export const RequirementsGrammar = (): Grammar => loadedRequirementsGrammar ?? (loadedRequirementsGrammar = loadGrammarFromJson(`{
   "$type": "Grammar",
   "isDeclared": true,
   "name": "Requirements",
@@ -312,7 +312,7 @@ export const RequirementsGrammar = (): Grammar => loadedRequirementsGrammar ||(l
 }`));
 
 let loadedTestsGrammar: Grammar | undefined;
-export const TestsGrammar = (): Grammar => loadedTestsGrammar ||(loadedTestsGrammar = loadGrammar(`{
+export const TestsGrammar = (): Grammar => loadedTestsGrammar ?? (loadedTestsGrammar = loadGrammarFromJson(`{
   "$type": "Grammar",
   "isDeclared": true,
   "name": "Tests",
