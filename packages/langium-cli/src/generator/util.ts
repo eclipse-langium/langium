@@ -4,8 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import * as langium from 'langium';
-import { CompositeGeneratorNode, GeneratorNode, getAllReachableRules, isKeyword, NL, stream, streamAllContents } from 'langium';
+import { CompositeGeneratorNode, GeneratorNode, getAllReachableRules, Grammar, GrammarAST, NL, stream, streamAllContents } from 'langium';
 import fs from 'fs-extra';
 import path from 'path';
 import * as readline from 'readline';
@@ -55,13 +54,13 @@ function getGeneratedHeader(): GeneratorNode {
     return node;
 }
 
-export function collectKeywords(grammar: langium.Grammar): string[] {
+export function collectKeywords(grammar: Grammar): string[] {
     const keywords = new Set<string>();
     const reachableRules = getAllReachableRules(grammar, false);
 
     for (const keyword of stream(reachableRules)
-        .filter(langium.isParserRule)
-        .flatMap(rule => streamAllContents(rule).filter(isKeyword))) {
+        .filter(GrammarAST.isParserRule)
+        .flatMap(rule => streamAllContents(rule).filter(GrammarAST.isKeyword))) {
         keywords.add(keyword.value);
     }
 

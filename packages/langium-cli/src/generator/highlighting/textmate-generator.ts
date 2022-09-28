@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import {
-    escapeRegExp, getCaseInsensitivePattern, getTerminalParts, Grammar, isCommentTerminal, isTerminalRule, stream
+    escapeRegExp, getCaseInsensitivePattern, getTerminalParts, Grammar, GrammarAST, isCommentTerminal, stream
 } from 'langium';
 import { terminalRegex } from 'langium/lib/grammar/internal-grammar-util';
 import { LangiumLanguageConfig } from '../../package';
@@ -73,7 +73,7 @@ function getPatterns(grammar: Grammar, config: LangiumLanguageConfig): Pattern[]
 function getRepository(grammar: Grammar, config: LangiumLanguageConfig): Repository {
     const commentPatterns: Pattern[] = [];
     for (const rule of grammar.rules) {
-        if (isTerminalRule(rule) && isCommentTerminal(rule)) {
+        if (GrammarAST.isTerminalRule(rule) && isCommentTerminal(rule)) {
             const parts = getTerminalParts(terminalRegex(rule));
             for (const part of parts) {
                 if (part.end) {
@@ -160,7 +160,7 @@ function groupKeywords(keywords: string[], caseInsensitive: boolean | undefined)
 }
 
 function getStringPatterns(grammar: Grammar, pack: LangiumLanguageConfig): Pattern[] {
-    const terminals = stream(grammar.rules).filter(isTerminalRule);
+    const terminals = stream(grammar.rules).filter(GrammarAST.isTerminalRule);
     const stringTerminal = terminals.find(e => e.name.toLowerCase() === 'string');
     const stringPatterns: Pattern[] = [];
     if (stringTerminal) {

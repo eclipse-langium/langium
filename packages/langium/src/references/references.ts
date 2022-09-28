@@ -14,7 +14,7 @@ import { equalURI } from '../utils/uri-util';
 import { ReferenceDescription } from '../workspace/ast-descriptions';
 import { AstNodeLocator } from '../workspace/ast-node-locator';
 import { IndexManager } from '../workspace/index-manager';
-import { NameProvider } from './naming';
+import { NameProvider } from './name-provider';
 
 /**
  * Language-specific service for finding references and declaration of a given `CstNode`.

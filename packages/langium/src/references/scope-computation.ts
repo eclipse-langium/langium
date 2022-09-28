@@ -12,7 +12,7 @@ import { MultiMap } from '../utils/collections';
 import { interruptAndCheck } from '../utils/promise-util';
 import { AstNodeDescriptionProvider } from '../workspace/ast-descriptions';
 import { LangiumDocument, PrecomputedScopes } from '../workspace/documents';
-import { NameProvider } from './naming';
+import { NameProvider } from './name-provider';
 
 /**
  * Language-specific service for precomputing global and local scopes. The service methods are executed

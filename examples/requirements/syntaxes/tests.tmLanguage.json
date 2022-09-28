@@ -10,7 +10,7 @@
     },
     {
       "name": "keyword.control.tests-lang",
-      "match": "\\b(applicable|contact|environment|for|req|testFile|tests|tst)\\b"
+      "match": "\\b(applicable|contact|for|testFile|tests|tst)\\b"
     },
     {
       "name": "string.quoted.double.tests-lang",

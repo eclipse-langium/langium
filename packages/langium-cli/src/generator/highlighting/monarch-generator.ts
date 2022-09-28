@@ -6,8 +6,7 @@
 
 import * as langium from 'langium';
 import {
-    getTerminalParts, isCommentTerminal, isRegexToken, isTerminalRule, CompositeGeneratorNode, NL,
-    processGeneratorNode, TerminalRule, escapeRegExp, isWhitespaceRegExp
+    getTerminalParts, isCommentTerminal, CompositeGeneratorNode, NL, processGeneratorNode, escapeRegExp, GrammarAST, isWhitespaceRegExp
 } from 'langium';
 import { terminalRegex } from 'langium/lib/grammar/internal-grammar-util';
 import { LangiumLanguageConfig } from '../../package';
@@ -280,7 +279,7 @@ function prettyPrintState(state: State, node: CompositeGeneratorNode): void {
  * @returns Generator node containing this printed rule
  */
 function prettyPrintRule(ruleOrState: Rule | State): CompositeGeneratorNode {
-    if(isRule(ruleOrState)) {
+    if (isRule(ruleOrState)) {
         // extract rule pattern, either just a string or a regex w/ parts
         const rulePatt = ruleOrState.regex instanceof RegExp ? getTerminalParts(ruleOrState.regex).join('') : `/${ruleOrState.regex}/`;
         return new CompositeGeneratorNode('{ regex: ' + rulePatt + ', action: ' + prettyPrintAction(ruleOrState.action) + ' },');
@@ -296,7 +295,7 @@ function prettyPrintRule(ruleOrState: Rule | State): CompositeGeneratorNode {
  * @returns Action in concrete form
  */
 function prettyPrintAction(action: Action | Case[]): string {
-    if(!Array.isArray(action)) {
+    if (!Array.isArray(action)) {
         // plain action
         return JSON.stringify(action);
     } else {
@@ -311,8 +310,8 @@ function prettyPrintAction(action: Action | Case[]): string {
  * @param rule Rule to convert to a Monarch token name
  * @returns Returns the equivalent monarch token name, or the original rule name
  */
-function getMonarchTokenName(rule: TerminalRule): string {
-    if(rule.name.toLowerCase() === 'string') {
+function getMonarchTokenName(rule: GrammarAST.TerminalRule): string {
+    if (rule.name.toLowerCase() === 'string') {
         // string is clarified as a terminal by name, but not necessarily by type
         return 'string';
     } else if (rule.type) {
@@ -331,11 +330,11 @@ function getMonarchTokenName(rule: TerminalRule): string {
  */
 function getWhitespaceRules(grammar: langium.Grammar): Rule[] {
     const rules: Rule[] = [];
-    for(const rule of grammar.rules) {
-        if(isTerminalRule(rule) && isRegexToken(rule.definition)) {
+    for (const rule of grammar.rules) {
+        if (GrammarAST.isTerminalRule(rule) && GrammarAST.isRegexToken(rule.definition)) {
             const regex = new RegExp(terminalRegex(rule));
 
-            if(!isCommentTerminal(rule) && !isWhitespaceRegExp(regex)) {
+            if (!isCommentTerminal(rule) && !isWhitespaceRegExp(regex)) {
                 // skip rules that are not comments or whitespace
                 continue;
             }
@@ -346,7 +345,7 @@ function getWhitespaceRules(grammar: langium.Grammar): Rule[] {
             const part = getTerminalParts(terminalRegex(rule))[0];
 
             // check if this is a comment terminal w/ a start & end sequence (multi-line)
-            if(part.start !== '' && part.end !== '' && isCommentTerminal(rule)) {
+            if (part.start !== '' && part.end !== '' && isCommentTerminal(rule)) {
                 // state-based comment rule, only add push to jump into it
                 rules.push({
                     regex: part.start.replace('/', '\\/'),
@@ -374,10 +373,10 @@ function getWhitespaceRules(grammar: langium.Grammar): Rule[] {
 function getCommentRules(grammar: langium.Grammar): Rule[] {
     const rules: Rule[] = [];
     for(const rule of grammar.rules) {
-        if(isTerminalRule(rule) && isCommentTerminal(rule) && isRegexToken(rule.definition)) {
+        if (GrammarAST.isTerminalRule(rule) && isCommentTerminal(rule) && GrammarAST.isRegexToken(rule.definition)) {
             const tokenName = 'comment';
             const part = getTerminalParts(terminalRegex(rule))[0];
-            if(part.start !== '' && part.end !== '') {
+            if (part.start !== '' && part.end !== '') {
                 // rules to manage comment start/end
                 // rule order matters
 
@@ -416,7 +415,7 @@ function getCommentRules(grammar: langium.Grammar): Rule[] {
 function getTerminalRules(grammar: langium.Grammar): Rule[] {
     const rules: Rule[] = [];
     for (const rule of grammar.rules) {
-        if (isTerminalRule(rule) && !isCommentTerminal(rule) && isRegexToken(rule.definition)) {
+        if (GrammarAST.isTerminalRule(rule) && !isCommentTerminal(rule) && GrammarAST.isRegexToken(rule.definition)) {
             const regex = new RegExp(terminalRegex(rule));
 
             if (isWhitespaceRegExp(regex)) {
@@ -428,7 +427,7 @@ function getTerminalRules(grammar: langium.Grammar): Rule[] {
             // default action...
             let action: Action | Case[] = { token: tokenName };
 
-            if(getKeywords(grammar).some(keyword => regex.test(keyword))) {
+            if (getKeywords(grammar).some(keyword => regex.test(keyword))) {
                 // this rule overlaps with at least one keyword
                 // add case so keywords aren't tagged incorrectly as this token type
                 action = [{

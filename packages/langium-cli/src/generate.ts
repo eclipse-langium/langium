@@ -6,8 +6,7 @@
 
 import fs from 'fs-extra';
 import {
-    AbstractRule, createLangiumGrammarServices, getDocument, Grammar, Interface, isAbstractRule, isGrammar, isInterface, isParserRule, isType,
-    LangiumDocument, linkContentToContainer, Type
+    createLangiumGrammarServices, getDocument, Grammar, GrammarAST, LangiumDocument, linkContentToContainer
 } from 'langium';
 import { resolveImport, resolveTransitiveImports } from 'langium/lib/grammar/internal-grammar-util';
 import { NodeFileSystem } from 'langium/node';
@@ -30,7 +29,7 @@ export type GenerateOptions = {
 
 export type GeneratorResult = 'success' | 'failure';
 
-type GrammarElement = AbstractRule | Type | Interface;
+type GrammarElement = GrammarAST.AbstractRule | GrammarAST.Type | GrammarAST.Interface;
 
 const { shared: sharedServices, grammar: grammarServices } = createLangiumGrammarServices(NodeFileSystem);
 const documents = sharedServices.workspace.LangiumDocuments;
@@ -40,7 +39,7 @@ function eagerLoad(document: LangiumDocument, uris: Set<string> = new Set()): UR
     if (!uris.has(uriString)) {
         uris.add(uriString);
         const grammar = document.parseResult.value;
-        if (isGrammar(grammar)) {
+        if (GrammarAST.isGrammar(grammar)) {
             for (const imp of grammar.imports) {
                 const importedGrammar = resolveImport(documents, imp);
                 if (importedGrammar) {
@@ -84,14 +83,14 @@ function embedReferencedGrammar(grammar: Grammar, map: Map<Grammar, GrammarEleme
         for (const element of grammarElements) {
             const shallowCopy = { ...element };
             // Deactivate copied entry rule
-            if (isParserRule(shallowCopy)) {
+            if (GrammarAST.isParserRule(shallowCopy)) {
                 shallowCopy.entry = false;
             }
-            if (isAbstractRule(shallowCopy)) {
+            if (GrammarAST.isAbstractRule(shallowCopy)) {
                 grammar.rules.push(shallowCopy);
-            } else if (isType(shallowCopy)) {
+            } else if (GrammarAST.isType(shallowCopy)) {
                 grammar.types.push(shallowCopy);
-            } else if (isInterface(shallowCopy)) {
+            } else if (GrammarAST.isInterface(shallowCopy)) {
                 grammar.interfaces.push(shallowCopy);
             } else {
                 throw new Error('Received invalid grammar element while generating project with multiple languages');

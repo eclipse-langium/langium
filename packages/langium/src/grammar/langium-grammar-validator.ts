@@ -6,7 +6,7 @@
 
 import { DiagnosticTag } from 'vscode-languageserver-types';
 import { Utils } from 'vscode-uri';
-import { NamedAstNode } from '../references/naming';
+import { NamedAstNode } from '../references/name-provider';
 import { References } from '../references/references';
 import { LangiumServices } from '../services';
 import { AstNode, Reference } from '../syntax-tree';

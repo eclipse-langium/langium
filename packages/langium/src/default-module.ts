@@ -22,7 +22,7 @@ import { createLangiumParser } from './parser/langium-parser-builder';
 import { DefaultTokenBuilder } from './parser/token-builder';
 import { DefaultValueConverter } from './parser/value-converter';
 import { DefaultLinker } from './references/linker';
-import { DefaultNameProvider } from './references/naming';
+import { DefaultNameProvider } from './references/name-provider';
 import { DefaultReferences } from './references/references';
 import { DefaultScopeComputation } from './references/scope-computation';
 import { DefaultScopeProvider } from './references/scope-provider';
