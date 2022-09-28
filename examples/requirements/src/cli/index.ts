@@ -32,7 +32,7 @@ export default function(): void {
 
     const fileExtensions = RequirementsLanguageMetaData.fileExtensions.join(', ');
     program
-        .command('generate-requirements-coverage')
+        .command('generate')
         .argument('<file>', `source file (possible file extensions: ${fileExtensions})`)
         .option('-d, --destination <dir>', 'destination directory of generating')
         .description('generates a table for requirement coverage of requirements of that file')
