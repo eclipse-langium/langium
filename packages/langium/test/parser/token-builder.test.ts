@@ -14,23 +14,52 @@ const tokenBuilder = grammarServices.parser.TokenBuilder;
 
 describe('tokenBuilder', () => {
 
-    let tokens: TokenType[];
-
-    beforeAll(async () => {
-        const text = `
-        grammar test
-        Main: value=AB;
+    test('should only create non-fragment terminals', async () => {
+        const tokens = await getTokens(`
+        entry Main: value=AB;
         terminal fragment Frag: 'B';
         terminal AB: 'A' Frag;
-        `;
-        const grammar = (await helper(text)).parseResult.value;
-        tokens = tokenBuilder.buildTokens(grammar) as TokenType[];
+        `);
+        expect(tokens).toHaveLength(1);
+        expect(tokens[0].name).toBe('AB');
     });
 
-    test('should only create non-fragment terminals', () => {
+    test('should only create used terminals', async () => {
+        const tokens = await getTokens(`
+        entry Main: value=A;
+        terminal A: 'A';
+        terminal B: 'B';
+        `);
         expect(tokens).toHaveLength(1);
-        expect(tokens[0].name).toMatch(/^AB/);
+        expect(tokens[0].name).toBe('A');
     });
+
+    test('should only create used keywords', async () => {
+        const tokens = await getTokens(`
+        entry Main: value='A';
+        Second: value='B';
+        `);
+        expect(tokens).toHaveLength(1);
+        expect(tokens[0].name).toBe('A');
+    });
+
+    test('should preserve terminal order', async () => {
+        const tokens = await getTokens(`
+        entry Main: c=C b=B a=A;
+        terminal A: 'A';
+        terminal B: 'B';
+        terminal C: 'C';
+        `);
+        expect(tokens).toHaveLength(3);
+        expect(tokens[0].name).toBe('A');
+        expect(tokens[1].name).toBe('B');
+        expect(tokens[2].name).toBe('C');
+    });
+
+    async function getTokens(grammarString: string): Promise<TokenType[]> {
+        const grammar = (await helper(grammarString)).parseResult.value;
+        return tokenBuilder.buildTokens(grammar) as TokenType[];
+    }
 
 });
 

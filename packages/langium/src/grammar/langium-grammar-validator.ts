@@ -13,7 +13,7 @@ import { AstNode, Reference } from '../syntax-tree';
 import { getContainerOfType, getDocument, streamAllContents } from '../utils/ast-util';
 import { MultiMap } from '../utils/collections';
 import { toDocumentSegment } from '../utils/cst-util';
-import { findNodeForKeyword, findNameAssignment, findNodeForProperty, getEntryRule } from '../utils/grammar-util';
+import { findNodeForKeyword, findNameAssignment, findNodeForProperty, getAllReachableRules } from '../utils/grammar-util';
 import { Stream, stream } from '../utils/stream';
 import { relativeURI } from '../utils/uri-util';
 import { ValidationAcceptor, ValidationChecks, ValidationRegistry } from '../validation/validation-registry';
@@ -532,33 +532,16 @@ export class LangiumGrammarValidator {
     }
 
     checkGrammarForUnusedRules(grammar: ast.Grammar, accept: ValidationAcceptor): void {
-        const entry = getEntryRule(grammar);
-        if (entry) {
-            const visitedSet = new Set<string>();
-            this.ruleDfs(entry, visitedSet);
-            visitedSet.add(entry.name);
+        const reachableRules = getAllReachableRules(grammar, true);
 
-            for (const rule of grammar.rules) {
-                if (ast.isTerminalRule(rule) && rule.hidden || isEmptyRule(rule)) {
-                    continue;
-                }
-                if (!visitedSet.has(rule.name)) {
-                    accept('hint', 'This rule is declared but never referenced.', { node: rule, property: 'name', tags: [DiagnosticTag.Unnecessary] });
-                }
+        for (const rule of grammar.rules) {
+            if (ast.isTerminalRule(rule) && rule.hidden || isEmptyRule(rule)) {
+                continue;
+            }
+            if (!reachableRules.has(rule)) {
+                accept('hint', 'This rule is declared but never referenced.', { node: rule, property: 'name', tags: [DiagnosticTag.Unnecessary] });
             }
         }
-    }
-
-    private ruleDfs(rule: ast.AbstractRule, visitedSet: Set<string>): void {
-        streamAllContents(rule).forEach(node => {
-            if (ast.isRuleCall(node) || ast.isTerminalRuleCall(node)) {
-                const refRule = node.rule.ref;
-                if (refRule && !visitedSet.has(refRule.name)) {
-                    visitedSet.add(refRule.name);
-                    this.ruleDfs(refRule, visitedSet);
-                }
-            }
-        });
     }
 
     checkRuleName(rule: ast.AbstractRule, accept: ValidationAcceptor): void {

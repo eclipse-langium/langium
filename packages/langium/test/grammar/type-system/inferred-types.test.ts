@@ -655,7 +655,7 @@ describe('expression rules with inferred and declared interfaces', () => {
         const toSubstring = (o: {toString: () => string}) => {
             // this specialized 'toString' function uses the default 'toString' that is  producing the
             //  code generation output, and strips everything not belonging to the actual interface/type declaration
-            const sRep = o.toString();
+            const sRep = o.toString().replace(/\r/g, '');
             return sRep.substring(
                 0, 1 + (sRep.includes('interface') ? sRep.indexOf('}') : Math.min(sRep.indexOf(';') ))
             );

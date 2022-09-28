@@ -11,7 +11,7 @@ import { AstNode } from '../syntax-tree';
 import { assertUnreachable, ErrorWithLocation } from '../utils/errors';
 import { stream } from '../utils/stream';
 import { Cardinality, getTypeName } from '../grammar/internal-grammar-util';
-import { findNameAssignment } from '../utils/grammar-util';
+import { findNameAssignment, getAllReachableRules } from '../utils/grammar-util';
 
 type RuleContext = {
     optional: number,
@@ -50,7 +50,9 @@ export function createParser<T extends BaseParser>(grammar: Grammar, parser: T, 
 }
 
 function buildRules(parserContext: ParserContext, grammar: Grammar): void {
-    for (const rule of stream(grammar.rules).filter(isParserRule)) {
+    const reachable = getAllReachableRules(grammar, false);
+    const parserRules = stream(grammar.rules).filter(isParserRule).filter(rule => reachable.has(rule));
+    for (const rule of parserRules) {
         const ctx: RuleContext = {
             ...parserContext,
             consume: 1,
