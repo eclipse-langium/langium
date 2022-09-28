@@ -8,5 +8,4 @@ export interface LanguageMetaData {
     languageId: string;
     fileExtensions: string[];
     caseInsensitive: boolean;
-    showNonAlphabeticKeywords: boolean;
 }
