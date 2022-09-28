@@ -5,8 +5,9 @@
  ******************************************************************************/
 
 import {
-    GeneratorNode, Grammar, IndentNode, CompositeGeneratorNode, NL, processGeneratorNode, streamAllContents, isCrossReference, MultiMap, LangiumServices, collectAst, AstTypes, Property, collectAllProperties
+    GeneratorNode, Grammar, IndentNode, CompositeGeneratorNode, NL, processGeneratorNode, streamAllContents, MultiMap, LangiumServices, GrammarAST
 } from 'langium';
+import { AstTypes, collectAllProperties, collectAst, Property } from 'langium/lib/grammar/type-system';
 import { LangiumConfig } from '../package';
 import { generatedHeader } from './util';
 
@@ -42,7 +43,7 @@ export function generateAst(services: LangiumServices, grammars: Grammar[], conf
 }
 
 function hasCrossReferences(grammar: Grammar): boolean {
-    return !!streamAllContents(grammar).find(isCrossReference);
+    return !!streamAllContents(grammar).find(GrammarAST.isCrossReference);
 }
 
 function generateAstReflection(config: LangiumConfig, astTypes: AstTypes): GeneratorNode {

@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import { CancellationToken, DocumentSymbol, DocumentSymbolParams, SymbolKind } from 'vscode-languageserver';
-import { NameProvider } from '../references/naming';
+import { NameProvider } from '../references/name-provider';
 import { LangiumServices } from '../services';
 import { AstNode } from '../syntax-tree';
 import { streamContents } from '../utils/ast-util';

@@ -4,7 +4,10 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { createServicesForGrammar, getDocument, Grammar, IParserConfig, isGrammar, isParserRule, LangiumDocuments, LangiumGrammarServices, LangiumParser, LanguageMetaData, ParserRule, prepareLangiumParser } from 'langium';
+import {
+    createServicesForGrammar, getDocument, Grammar, GrammarAST, IParserConfig, LangiumDocuments, LangiumGrammarServices,
+    LangiumParser, LanguageMetaData, prepareLangiumParser
+} from 'langium';
 import { getFilePath, LangiumConfig, LangiumLanguageConfig } from './package';
 
 export function validateParser(grammar: Grammar, config: LangiumConfig, grammarConfigMap: Map<Grammar, LangiumLanguageConfig>,
@@ -60,17 +63,17 @@ function languageConfigToMetaData(config: LangiumLanguageConfig): LanguageMetaDa
     };
 }
 
-function findRule(name: string, grammar: Grammar, documents: LangiumDocuments): ParserRule | undefined {
+function findRule(name: string, grammar: Grammar, documents: LangiumDocuments): GrammarAST.ParserRule | undefined {
     for (const rule of grammar.rules) {
-        if (rule.name === name && isParserRule(rule)) {
+        if (rule.name === name && GrammarAST.isParserRule(rule)) {
             return rule;
         }
     }
     for (const document of documents.all) {
         const ast = document.parseResult.value;
-        if (isGrammar(ast)) {
+        if (GrammarAST.isGrammar(ast)) {
             for (const rule of ast.rules) {
-                if (rule.name === name && isParserRule(rule)) {
+                if (rule.name === name && GrammarAST.isParserRule(rule)) {
                     return rule;
                 }
             }

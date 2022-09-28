@@ -5,11 +5,11 @@
  ******************************************************************************/
 
 import ignore, { Ignore } from 'ignore';
-import { LangiumGrammarLanguageMetaData } from 'langium/src/grammar/generated/module';
-import { LangiumSharedServices } from 'langium/src/services';
-import { ConfigurationProvider } from 'langium/src/workspace/configuration';
-import { FileSystemNode } from 'langium/src/workspace/file-system-provider';
-import { DefaultWorkspaceManager } from 'langium/src/workspace/workspace-manager';
+import { LangiumGrammarLanguageMetaData } from 'langium/lib/grammar/generated/module';
+import { LangiumSharedServices } from 'langium/lib/services';
+import { ConfigurationProvider } from 'langium/lib/workspace/configuration';
+import { FileSystemNode } from 'langium/lib/workspace/file-system-provider';
+import { DefaultWorkspaceManager } from 'langium/lib/workspace/workspace-manager';
 import * as path from 'path';
 import { CancellationToken, WorkspaceFolder } from 'vscode-languageserver-protocol';
 import { URI, Utils } from 'vscode-uri';

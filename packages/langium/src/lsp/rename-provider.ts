@@ -6,7 +6,7 @@
 
 import { CancellationToken, Position, Range, RenameParams, TextDocumentPositionParams, TextEdit, WorkspaceEdit } from 'vscode-languageserver';
 import { GrammarConfig } from '../grammar/grammar-config';
-import { isNamed, NameProvider } from '../references/naming';
+import { isNamed, NameProvider } from '../references/name-provider';
 import { References } from '../references/references';
 import { LangiumServices } from '../services';
 import { CstNode } from '../syntax-tree';

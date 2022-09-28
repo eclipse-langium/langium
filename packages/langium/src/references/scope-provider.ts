@@ -10,7 +10,7 @@ import { getDocument } from '../utils/ast-util';
 import { EMPTY_STREAM, Stream, stream } from '../utils/stream';
 import { AstNodeDescriptionProvider } from '../workspace/ast-descriptions';
 import { IndexManager } from '../workspace/index-manager';
-import { NameProvider } from './naming';
+import { NameProvider } from './name-provider';
 
 /**
  * A scope describes what target elements are visible from a specific cross-reference context.

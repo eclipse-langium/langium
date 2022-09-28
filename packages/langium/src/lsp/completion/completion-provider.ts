@@ -10,7 +10,7 @@ import * as ast from '../../grammar/generated/ast';
 import { GrammarConfig } from '../../grammar/grammar-config';
 import { getExplicitRuleType } from '../../grammar/internal-grammar-util';
 import { LangiumCompletionParser } from '../../parser/langium-parser';
-import { NameProvider } from '../../references/naming';
+import { NameProvider } from '../../references/name-provider';
 import { ScopeProvider } from '../../references/scope-provider';
 import { LangiumServices } from '../../services';
 import { AstNode, AstNodeDescription, Reference, ReferenceInfo } from '../../syntax-tree';

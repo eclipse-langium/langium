@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import { AbstractElement, Action, Alternatives, Assignment, Group, isAction, isAlternatives, isAssignment, isCrossReference, isGroup, isKeyword, isParserRule, isRuleCall, isUnorderedGroup, ParserRule, RuleCall, UnorderedGroup } from '../generated/ast';
-import { isNamed } from '../../references/naming';
+import { isNamed } from '../../references/name-provider';
 import { stream } from '../../utils/stream';
 import { AstTypes, distictAndSorted, Property, PropertyType, InterfaceType, UnionType } from './types-util';
 import { MultiMap } from '../../utils/collections';

@@ -6,7 +6,7 @@
 
 import { CancellationToken, DefinitionParams, LocationLink } from 'vscode-languageserver';
 import { GrammarConfig } from '../grammar/grammar-config';
-import { NameProvider } from '../references/naming';
+import { NameProvider } from '../references/name-provider';
 import { References } from '../references/references';
 import { LangiumServices } from '../services';
 import { CstNode } from '../syntax-tree';

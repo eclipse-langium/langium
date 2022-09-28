@@ -7,7 +7,7 @@
 import { CallHierarchyIncomingCall, CallHierarchyIncomingCallsParams, CallHierarchyItem, CallHierarchyOutgoingCall, CallHierarchyOutgoingCallsParams, CallHierarchyPrepareParams, CancellationToken, SymbolKind} from 'vscode-languageserver';
 import { URI } from 'vscode-uri';
 import { GrammarConfig } from '../grammar/grammar-config';
-import { NameProvider } from '../references/naming';
+import { NameProvider } from '../references/name-provider';
 import { References } from '../references/references';
 import { LangiumServices } from '../services';
 import { AstNode } from '../syntax-tree';

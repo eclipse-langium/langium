@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import { CancellationToken, Location,  ReferenceParams } from 'vscode-languageserver';
-import { NameProvider } from '../references/naming';
+import { NameProvider } from '../references/name-provider';
 import { References } from '../references/references';
 import { AstNode, LeafCstNode } from '../syntax-tree';
 import { LangiumServices } from '../services';

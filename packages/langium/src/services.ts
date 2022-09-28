@@ -27,7 +27,7 @@ import type { IParserConfig } from './parser/parser-config';
 import type { TokenBuilder } from './parser/token-builder';
 import type { ValueConverter } from './parser/value-converter';
 import type { Linker } from './references/linker';
-import type { NameProvider } from './references/naming';
+import type { NameProvider } from './references/name-provider';
 import type { References } from './references/references';
 import type { ScopeComputation } from './references/scope-computation';
 import type { ScopeProvider } from './references/scope-provider';
