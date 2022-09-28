@@ -71,6 +71,7 @@ export class DefaultLanguageServer implements LanguageServer {
         const hasCodeActionProvider = this.hasService(e => e.lsp.CodeActionProvider);
         const hasSemanticTokensProvider = this.hasService(e => e.lsp.SemanticTokenProvider);
         const commandNames = this.services.lsp.ExecuteCommandHandler?.commands;
+        const documentLinkProvider = this.services.lsp.DocumentLinkProvider;
         const signatureHelpOptions = mergeSignatureHelpOptions(languages.map(e => e.lsp.SignatureHelp?.signatureHelpOptions));
         const hasGoToTypeProvider = this.hasService(e => e.lsp.TypeProvider);
         const hasGoToImplementationProvider = this.hasService(e => e.lsp.ImplementationProvider);
@@ -117,6 +118,9 @@ export class DefaultLanguageServer implements LanguageServer {
                 implementationProvider: hasGoToImplementationProvider,
                 callHierarchyProvider: hasCallHierarchyProvider
                     ? {}
+                    : undefined,
+                documentLinkProvider: documentLinkProvider
+                    ? { resolveProvider: !!documentLinkProvider.resolveDocumentLink }
                     : undefined
             }
         };
@@ -154,6 +158,7 @@ export function startLanguageServer(services: LangiumSharedServices): void {
     addExecuteCommandHandler(connection, services);
     addSignatureHelpHandler(connection, services);
     addCallHierarchyHandler(connection, services);
+    addDocumentLinkHandler(connection, services);
     addConfigurationChangeHandler(connection, services);
 
     connection.onInitialize(params => {
@@ -353,6 +358,27 @@ export function addExecuteCommandHandler(connection: Connection, services: Langi
                 return responseError(err);
             }
         });
+    }
+}
+
+export function addDocumentLinkHandler(connection: Connection, services: LangiumSharedServices): void {
+    const documentLinkProvider = services.lsp.DocumentLinkProvider;
+    if (documentLinkProvider) {
+        connection.onDocumentLinks(createServerRequestHandler(
+            (_, document, params, cancelToken) => documentLinkProvider.getDocumentLinks(document, params, cancelToken),
+            services
+        ));
+        // Make sure the function doesn't become undefined before actually executing it
+        const resolveDocumentLink = documentLinkProvider.resolveDocumentLink?.bind(documentLinkProvider);
+        if (resolveDocumentLink) {
+            connection.onDocumentLinkResolve(async (documentLink, token) => {
+                try {
+                    return await resolveDocumentLink(documentLink, token);
+                } catch (err) {
+                    return responseError(err);
+                }
+            });
+        }
     }
 }
 

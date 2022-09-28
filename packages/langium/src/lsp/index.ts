@@ -8,6 +8,7 @@ export * from './completion/completion-provider';
 export * from './completion/follow-element-computation';
 export * from './code-action';
 export * from './document-highlight-provider';
+export * from './document-link-provider';
 export * from './document-symbol-provider';
 export * from './execute-command-handler';
 export * from './folding-range-provider';
