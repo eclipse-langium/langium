@@ -44,10 +44,10 @@ export class TestsLangValidator {
                 if (!test.requirements.some(requirementReference=>{
                     return requirementReference.ref && requirementReference.ref.environments.map(v=>v.ref).includes(environmentReference.ref);
                 })) {
-                    accept('warning', `Test ${test.name} references environment ${environmentReference.ref.name} which is used in any referenced requirement.`, { node: test, property: "environments", index: index });
+                    accept('warning', `Test ${test.name} references environment ${environmentReference.ref.name} which is used in any referenced requirement.`, { node: test, property: 'environments', index: index });
                 }
             }
-        })
+        });
     }
 
 }

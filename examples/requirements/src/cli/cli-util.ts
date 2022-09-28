@@ -14,7 +14,7 @@ import { WorkspaceFolder } from 'vscode-languageclient';
 
 /**
  * Read a requirement document with the complete workspace (with requirements and
- * tests) located in the folder of the file. 
+ * tests) located in the folder of the file.
  * @param fileName the main requirement model file
  * @param services the language services
  * @returns a tuple with the document indicated by the fileName and a list of
@@ -32,7 +32,7 @@ export async function extractDocuments(fileName: string, services: LangiumServic
         process.exit(1);
     }
 
-    const folders : WorkspaceFolder[] = [{
+    const folders: WorkspaceFolder[] = [{
         uri: URI.file(path.resolve(path.dirname(fileName))).toString(),
         name: 'main'
     }];
@@ -68,7 +68,7 @@ chr */
 export async function extractRequirementModelWithTestModels(fileName: string, services: LangiumServices): Promise<[RequirementModel, TestModel[]]> {
     const [mainDocument, allDocuments] = await extractDocuments(fileName, services);
     return [
-        mainDocument.parseResult?.value as RequirementModel, 
+        mainDocument.parseResult?.value as RequirementModel,
         allDocuments
             .filter(d=>isTestModel(d.parseResult?.value))
             .map(d=>d.parseResult?.value as TestModel)

@@ -29,8 +29,11 @@ export class RequirementsLangValidationRegistry extends ValidationRegistry {
  * Implementation of custom validations.
  */
 export class RequirementsLangValidator {
+    private services: RequirementsLangServices;
 
-    constructor(private services: RequirementsLangServices) {}
+    constructor(services: RequirementsLangServices) {
+        this.services = services;
+    }
 
     checkRequirementNameContainsANumber(requirement: Requirement, accept: ValidationAcceptor): void {
         if (requirement.name) {
@@ -47,8 +50,8 @@ export class RequirementsLangValidator {
                 if (test.requirements.map(r=>r.ref).includes(requirement)) {
                     ok = true;
                 }
-            })
-        })
+            });
+        });
         if (!ok) {
             accept('warning', `Requirement ${requirement.name} not covered by a test.`, { node: requirement });
         }

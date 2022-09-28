@@ -23,15 +23,15 @@ export function generateSummaryFileHTMLContent(model: RequirementModel, testMode
     fileNode.append('<h1>Requirement coverage (demo generator)</h1>', NL);
     fileNode.append(`<div>Source: ${model.$document?.uri.fsPath}</div>`, NL);
     fileNode.append('<table border="1">', NL);
-    fileNode.append(`<TR><TH>Requirement ID</TH><TH>Testcase ID</TH></TR>`, NL)
+    fileNode.append('<TR><TH>Requirement ID</TH><TH>Testcase ID</TH></TR>', NL);
     model.requirements.forEach(requirement => {
-        fileNode.append(`<TR><TD>${requirement.name}</TD><TD>`, NL)
+        fileNode.append(`<TR><TD>${requirement.name}</TD><TD>`, NL);
         testModels.forEach(testModel=>testModel.tests.forEach(test=>{
             if (test.requirements.map(r=>r.ref).includes(requirement)) {
-                fileNode.append(`<div>${test.name} (from ${testModel.$document?.uri.fsPath})<div>`, NL)
+                fileNode.append(`<div>${test.name} (from ${testModel.$document?.uri.fsPath})<div>`, NL);
             }
         }));
-        fileNode.append(`</TD></TR>`, NL)
+        fileNode.append('</TD></TR>', NL);
     });
     fileNode.append('</table>', NL);
     fileNode.append('</body>', NL);
