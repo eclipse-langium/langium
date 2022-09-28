@@ -76,7 +76,7 @@ export function findNodesForProperty(node: CstNode | undefined, property: string
  *        the node with the specified index is returned.
  */
 export function findNodeForProperty(node: CstNode | undefined, property: string | undefined, index?: number): CstNode | undefined {
-    if (!node ||!property) {
+    if (!node || !property) {
         return undefined;
     }
     const nodes = findNodesForPropertyInternal(node, property, node.element, true);
@@ -199,23 +199,23 @@ export function findNameAssignment(type: ast.AbstractType | ast.InferredType): a
     return findNameAssignmentInternal(type, new Map());
 }
 
-function findNameAssignmentInternal(type: ast.AbstractType, cashed: Map<ast.AbstractType, ast.Assignment | undefined>): ast.Assignment | undefined {
+function findNameAssignmentInternal(type: ast.AbstractType, cache: Map<ast.AbstractType, ast.Assignment | undefined>): ast.Assignment | undefined {
     function go(node: AstNode, refType: ast.AbstractType): ast.Assignment | undefined {
         let childAssignment: ast.Assignment | undefined = undefined;
         const parentAssignment = getContainerOfType(node, ast.isAssignment);
         // No parent assignment implies unassigned rule call
         if (!parentAssignment) {
-            childAssignment = findNameAssignmentInternal(refType, cashed);
+            childAssignment = findNameAssignmentInternal(refType, cache);
         }
-        cashed.set(type, childAssignment);
+        cache.set(type, childAssignment);
         return childAssignment;
     }
 
-    if (cashed.has(type)) return cashed.get(type);
-    cashed.set(type, undefined);
+    if (cache.has(type)) return cache.get(type);
+    cache.set(type, undefined);
     for (const node of streamAllContents(type)) {
         if (ast.isAssignment(node) && node.feature.toLowerCase() === 'name') {
-            cashed.set(type, node);
+            cache.set(type, node);
             return node;
         } else if (ast.isRuleCall(node) && ast.isParserRule(node.rule.ref)) {
             return go(node, node.rule.ref);
