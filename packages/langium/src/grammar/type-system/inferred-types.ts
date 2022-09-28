@@ -554,16 +554,16 @@ function extractTypes(interfaces: InterfaceType[], unions: UnionType[]): AstType
     for (const interfaceType of interfaces) {
         // the criterion for converting an interface into a type
         if (interfaceType.properties.length === 0 && interfaceType.subTypes.size > 0) {
-            const alternative: PropertyType = {
-                types: [...interfaceType.subTypes].sort(),
+            const alternatives: PropertyType[] = [...interfaceType.subTypes].map(type => { return {
+                types: [type],
                 reference: false,
                 array: false
-            };
+            };});
             const existingUnion = unions.find(e => e.name === interfaceType.name);
             if (existingUnion) {
-                existingUnion.union.push(alternative);
+                existingUnion.union.push(...alternatives);
             } else {
-                const type = new UnionType(interfaceType.name, [alternative], { reflection: true });
+                const type = new UnionType(interfaceType.name, alternatives, { reflection: true });
                 type.superTypes = interfaceType.superTypes;
                 astTypes.unions.push(type);
                 typeNames.add(interfaceType.name);
