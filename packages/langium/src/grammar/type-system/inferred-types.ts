@@ -193,7 +193,7 @@ export function collectInferredTypes(parserRules: ParserRule[], datatypeRules: P
         const types = isAlternatives(rule.definition) && rule.definition.elements.every(e => isKeyword(e)) ?
             stream(rule.definition.elements).filter(isKeyword).map(e => `'${e.value}'`).toArray().sort() :
             [getExplicitRuleType(rule) ?? 'string'];
-        inferredTypes.unions.push(new UnionType(rule.name, [<PropertyType>{ types, reference: false, array: false }]));
+        inferredTypes.unions.push(new UnionType(rule.name, toPropertyType(false, false, types)));
     }
     return inferredTypes;
 }
@@ -210,11 +210,7 @@ function buildSuperUnions(interfaces: InterfaceType[]): UnionType[] {
         if (!interfaces.some(e => e.name === superType)) {
             unions.push(new UnionType(
                 superType,
-                [{
-                    array: false,
-                    reference: false,
-                    types
-                }],
+                toPropertyType(false, false, types),
                 { reflection: true }
             ));
         }
@@ -298,11 +294,10 @@ function addAction(graph: TypeGraph, parent: TypePart, action: Action): TypePart
         typeNode.properties.push({
             name: action.feature,
             optional: false,
-            typeAlternatives: [{
-                array: action.operator === '+=',
-                reference: false,
-                types: graph.root.ruleCalls.length !== 0 ? graph.root.ruleCalls : graph.getSuperTypes(typeNode)
-            }]
+            typeAlternatives: toPropertyType(
+                action.operator === '+=',
+                false,
+                graph.root.ruleCalls.length !== 0 ? graph.root.ruleCalls : graph.getSuperTypes(typeNode))
         });
     }
     return typeNode;
@@ -312,18 +307,11 @@ function addAssignment(current: TypePart, assignment: Assignment): void {
     const typeItems: TypeCollection = { types: new Set(), reference: false };
     findTypes(assignment.terminal, typeItems);
 
-    let typeAlternatives: PropertyType[] = [];
-    if (assignment.operator === '=' && !typeItems.reference) {
-        stream(typeItems.types)
-            .distinct()
-            .forEach(type => typeAlternatives.push({ array: false, types: [type], reference: false }));
-    } else {
-        typeAlternatives = [{
-            array: assignment.operator === '+=',
-            types: assignment.operator === '?=' ? ['boolean'] : Array.from(typeItems.types).sort(),
-            reference: typeItems.reference
-        }];
-    }
+    const typeAlternatives: PropertyType[] = toPropertyType(
+        assignment.operator === '+=',
+        typeItems.reference,
+        assignment.operator === '?=' ? ['boolean'] : Array.from(typeItems.types)
+    );
 
     current.properties.push({
         name: assignment.feature,
@@ -483,9 +471,10 @@ function comparePropertyType(a: PropertyType, b: PropertyType): boolean {
 }
 
 function compareLists<T>(a: T[], b: T[], eq: (x: T, y: T) => boolean = (x, y) => x === y): boolean {
-    if (a.length !== b.length) return false;
     const distictAndSortedA = distictAndSorted(a);
-    return distictAndSorted(b).every((e, i) => eq(e, distictAndSortedA[i]));
+    const distictAndSortedB = distictAndSorted(b);
+    if (distictAndSortedA.length !== distictAndSortedB.length) return false;
+    return distictAndSortedB.every((e, i) => eq(e, distictAndSortedA[i]));
 }
 
 /**
@@ -554,11 +543,7 @@ function extractTypes(interfaces: InterfaceType[], unions: UnionType[]): AstType
     for (const interfaceType of interfaces) {
         // the criterion for converting an interface into a type
         if (interfaceType.properties.length === 0 && interfaceType.subTypes.size > 0) {
-            const alternatives: PropertyType[] = [...interfaceType.subTypes].map(type => { return {
-                types: [type],
-                reference: false,
-                array: false
-            };});
+            const alternatives: PropertyType[] = toPropertyType(false, false, Array.from(interfaceType.subTypes));
             const existingUnion = unions.find(e => e.name === interfaceType.name);
             if (existingUnion) {
                 existingUnion.union.push(...alternatives);
@@ -577,4 +562,13 @@ function extractTypes(interfaces: InterfaceType[], unions: UnionType[]): AstType
         interfaceType.interfaceSuperTypes = [...interfaceType.superTypes].filter(superType => !typeNames.has(superType)).sort();
     }
     return astTypes;
+}
+
+function toPropertyType(array: boolean, reference: boolean, types: string[]): PropertyType[] {
+    if (array || reference) {
+        return [{ array, reference, types }];
+    }
+    return types.map(type => { return {
+        array, reference, types: [type]
+    }; });
 }
