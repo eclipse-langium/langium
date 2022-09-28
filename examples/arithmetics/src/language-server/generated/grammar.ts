@@ -559,7 +559,7 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ?? (lo
       },
       "definition": {
         "$type": "RegexToken",
-        "regex": "[0-9]+(\\\\.[0-9])?"
+        "regex": "[0-9]+(\\\\.[0-9]*)?"
       },
       "fragment": false,
       "hidden": false
