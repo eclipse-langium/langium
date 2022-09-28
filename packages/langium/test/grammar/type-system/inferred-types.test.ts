@@ -165,11 +165,18 @@ describeTypes('inferred types for alternatives', `
     test('C is inferred as union type A | B', () => {
         const c = getType(types, 'C') as UnionType;
         expect(c).toBeDefined();
-        expectUnion(c, [{
-            array: false,
-            reference: false,
-            types: ['A', 'B']
-        }]);
+        expectUnion(c, [
+            {
+                array: false,
+                reference: false,
+                types: ['A']
+            },
+            {
+                array: false,
+                reference: false,
+                types: ['B']
+            }
+        ]);
     });
 
     test('D is inferred as name:string', () => {
@@ -250,11 +257,23 @@ describeTypes('inferred types using chained actions', `
     test('RuleType is inferred as a union type', () => {
         const ruleType = getType(types, 'RuleType') as UnionType;
         expect(ruleType).toBeDefined();
-        expectUnion(ruleType, [{
-            array: false,
-            reference: false,
-            types: ['FirstBranch', 'IdRule', 'SecondBranch']
-        }]);
+        expectUnion(ruleType, [
+            {
+                array: false,
+                reference: false,
+                types: ['IdRule']
+            },
+            {
+                array: false,
+                reference: false,
+                types: ['FirstBranch']
+            },
+            {
+                array: false,
+                reference: false,
+                types: ['SecondBranch']
+            },
+        ]);
     });
 
     test('FirstBranch is inferred as first:string, value:IdRule', () => {
@@ -296,11 +315,18 @@ describeTypes('inferred types using chained actions', `
     test('Expr is inferred as a union type', () => {
         const expr = getType(types, 'Expr') as UnionType;
         expect(expr).toBeDefined();
-        expectUnion(expr, [{
-            array: false,
-            reference: false,
-            types: ['Ref', 'Access']
-        }]);
+        expectUnion(expr, [
+            {
+                array: false,
+                reference: false,
+                types: ['Ref']
+            },
+            {
+                array: false,
+                reference: false,
+                types: ['Access']
+            },
+        ]);
     });
 
     test('Ref is inferred as ref:string', () => {
@@ -424,11 +450,23 @@ describeTypes('inferred types using chained actions', `
         expectProperty(G, {
             name: 'front',
             optional: false,
-            typeAlternatives: [{
-                array: false,
-                reference: false,
-                types: ['X', 'Y', 'Z']
-            }]
+            typeAlternatives: [
+                {
+                    array: false,
+                    reference: false,
+                    types: ['X']
+                },
+                {
+                    array: false,
+                    reference: false,
+                    types: ['Y']
+                },
+                {
+                    array: false,
+                    reference: false,
+                    types: ['Z']
+                }
+            ]
         });
     });
 
@@ -526,11 +564,18 @@ describeTypes('inferred types with common names and actions', `
     test('X is inferred as A | B', () => {
         const x = getType(types, 'X') as UnionType;
         expect(x).toBeDefined();
-        expectUnion(x, [{
-            array: false,
-            reference: false,
-            types: ['A', 'B']
-        }]);
+        expectUnion(x, [
+            {
+                array: false,
+                reference: false,
+                types: ['A']
+            },
+            {
+                array: false,
+                reference: false,
+                types: ['B']
+            }
+        ]);
     });
 
     test('C is inferred with super type Y and properties item:Y, value:ID', () => {
