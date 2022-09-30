@@ -1,0 +1,10 @@
+contact: "Mickey Mouse"
+
+environment Windows10: "our standard PC"
+environment Windows11: "our standard PC, newer OS"
+environment Linux_x86: "for CI"
+
+req ReqId000 "The generator should allow to extract all test cases referencing a specific requirement"
+req ReqId001_tstID "A test identifier shall contain a number." applicable for Windows10, Windows11
+req ReqId002_reqID "A requirement identifier shall contain a number." applicable for Windows10, Windows11
+req ReqId003_reqCov "A requirement shall be covered by at least one test"

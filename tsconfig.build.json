@@ -8,6 +8,7 @@
         { "path": "packages/generator-langium" },
         { "path": "examples/arithmetics" },
         { "path": "examples/domainmodel" },
+        { "path": "examples/requirements" },
         { "path": "examples/statemachine" }
     ]
  }

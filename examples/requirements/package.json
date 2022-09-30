@@ -1,0 +1,67 @@
+{
+    "name": "langium-requirements-dsl",
+    "displayName": "Requirements DSL",
+    "description": "A demo showing how to combine two DSLs",
+    "version": "0.0.1",
+    "engines": {
+        "vscode": "^1.56.0"
+    },
+    "categories": [
+        "Programming Languages"
+    ],
+    "contributes": {
+        "languages": [{
+            "id": "requirements-lang",
+            "aliases": ["Requirements Language", "requirements-lang"],
+            "extensions": [".req"],
+            "configuration": "./language-configuration.json"
+        },{
+            "id": "tests-lang",
+            "aliases": ["Tests Language", "tests-lang"],
+            "extensions": [".tst"],
+            "configuration": "./language-configuration.json"
+        }],
+        "grammars": [{
+            "language": "requirements-lang",
+            "scopeName": "source.requirements-lang",
+            "path": "./syntaxes/requirements.tmLanguage.json"
+        },{
+            "language": "tests-lang",
+            "scopeName": "source.tests-lang",
+            "path": "./syntaxes/tests.tmLanguage.json"
+        }]
+    },
+    "activationEvents": [
+        "onLanguage:requirements-and-tests",
+        "onLanguage:requirements-lang",
+        "onLanguage:tests-lang"
+    ],
+    "files": [
+        "bin",
+        "out",
+        "src"
+    ],
+    "bin": {
+        "requirements-and-tests-lang-cli": "./bin/cli"
+    },
+    "main": "./out/extension.js",
+    "scripts": {
+        "vscode:prepublish": "npm run build && npm run lint",
+        "build": "tsc -b tsconfig.json",
+        "watch": "tsc -b tsconfig.json --watch",
+        "lint": "eslint src --ext ts",
+        "langium:generate": "langium generate",
+        "langium:watch": "langium generate --watch"
+    },
+    "dependencies": {
+        "chalk": "^4.1.2",
+        "commander": "^8.0.0",
+        "langium": "0.4.0",
+        "lodash": "^4.17.21",
+        "vscode-languageclient": "^8.0.1",
+        "vscode-languageserver": "^8.0.1"
+    },
+    "devDependencies": {
+        "langium-cli": "^0.4.0"
+    }
+}

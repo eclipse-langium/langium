@@ -1,0 +1,57 @@
+{
+  "name": "tests-lang",
+  "scopeName": "source.tests-lang",
+  "fileTypes": [
+    ".tst"
+  ],
+  "patterns": [
+    {
+      "include": "#comments"
+    },
+    {
+      "name": "keyword.control.tests-lang",
+      "match": "\\b(applicable|contact|environment|for|req|testFile|tests|tst)\\b"
+    },
+    {
+      "name": "string.quoted.double.tests-lang",
+      "begin": "\"",
+      "end": "\""
+    },
+    {
+      "name": "string.quoted.single.tests-lang",
+      "begin": "'",
+      "end": "'"
+    }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.block.tests-lang",
+          "begin": "/\\*",
+          "beginCaptures": {
+            "0": {
+              "name": "punctuation.definition.comment.tests-lang"
+            }
+          },
+          "end": "\\*/",
+          "endCaptures": {
+            "0": {
+              "name": "punctuation.definition.comment.tests-lang"
+            }
+          }
+        },
+        {
+          "begin": "//",
+          "beginCaptures": {
+            "1": {
+              "name": "punctuation.whitespace.comment.leading.tests-lang"
+            }
+          },
+          "end": "(?=$)",
+          "name": "comment.line.tests-lang"
+        }
+      ]
+    }
+  }
+}
