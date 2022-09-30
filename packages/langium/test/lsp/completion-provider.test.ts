@@ -42,10 +42,7 @@ describe('Langium completion provider', () => {
             text,
             index: 1,
             expectedItems: [
-                'grammar',
-                '<',
-                '*',
-                ':'
+                'grammar'
             ]
         });
     });
@@ -55,10 +52,7 @@ describe('Langium completion provider', () => {
             text,
             index: 2,
             expectedItems: [
-                'hidden',
-                '<',
-                '*',
-                ':'
+                'hidden'
             ]
         });
     });
@@ -76,17 +70,7 @@ describe('Langium completion provider', () => {
             index: 0,
             expectedItems: [
                 'Aaaa',
-                'aaaa',
-                '<',
-                '?',
-                '*',
-                '+',
-                '=>',
-                '->',
-                '{',
-                '&',
-                '|',
-                ';'
+                'aaaa'
             ]
         });
     });

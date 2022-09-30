@@ -239,7 +239,8 @@ export class DefaultCompletionProvider implements CompletionProvider {
     }
 
     protected completionForKeyword(keyword: ast.Keyword, context: AstNode | undefined, acceptor: CompletionAcceptor): MaybePromise<void> {
-        if (keyword.value.match(/^[\W]/) && keyword.value.length === 1) {
+        // Filter out keywords that do not contain any word character
+        if (!keyword.value.match(/[\w]+/)) {
             return Promise.resolve();
         }
         acceptor(keyword.value, { kind: CompletionItemKind.Keyword, detail: 'Keyword', sortText: /\w/.test(keyword.value) ? '1' : '2' });
