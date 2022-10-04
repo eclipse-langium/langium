@@ -8,7 +8,7 @@ import { Grammar, Interface, ParserRule, Type } from '../generated/ast';
 import { MultiMap } from '../../utils/collections';
 import { collectDeclaredTypes } from './declared-types';
 import { collectInferredTypes } from './inferred-types';
-import { AstTypes, collectAllAstResources, distictAndSorted, Property, PropertyType, propertyTypeArrayToString, InterfaceType, UnionType, AstResources } from './types-util';
+import { AstTypes, collectAllAstResources, distinctAndSorted, Property, PropertyType, propertyTypeArrayToString, InterfaceType, UnionType, AstResources } from './types-util';
 import { stream } from '../../utils/stream';
 import { ValidationAcceptor } from '../../validation/validation-registry';
 import { extractAssignments, getRuleType } from '../internal-grammar-util';
@@ -268,7 +268,7 @@ const arrRefError = (found: PropertyType, expected: PropertyType) =>
 
 function checkAlternativesConsistencyHelper(found: PropertyType[], expected: PropertyType[]): ErrorInfo[] {
     const stringToPropertyTypeList = (propertyTypeList: PropertyType[]) =>
-        propertyTypeList.reduce((acc, e) => acc.set(distictAndSorted(e.types).join(' | '), e), new Map<string, PropertyType>());
+        propertyTypeList.reduce((acc, e) => acc.set(distinctAndSorted(e.types).join(' | '), e), new Map<string, PropertyType>());
 
     const stringToFound = stringToPropertyTypeList(found);
     const stringToExpected = stringToPropertyTypeList(expected);
