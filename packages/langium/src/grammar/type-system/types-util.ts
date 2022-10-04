@@ -71,15 +71,15 @@ export class InterfaceType {
 
     toString(): string {
         const interfaceNode = new CompositeGeneratorNode();
-        const superTypes = this.interfaceSuperTypes.length > 0 ? distictAndSorted([...this.interfaceSuperTypes]) : ['AstNode'];
+        const superTypes = this.interfaceSuperTypes.length > 0 ? distinctAndSorted([...this.interfaceSuperTypes]) : ['AstNode'];
         interfaceNode.contents.push(`export interface ${this.name} extends ${superTypes.join(', ')} {`, NL);
 
         const propertiesNode = new IndentNode();
         if (this.containerTypes.size > 0) {
-            propertiesNode.contents.push(`readonly $container: ${distictAndSorted([...this.containerTypes]).join(' | ')};`, NL);
+            propertiesNode.contents.push(`readonly $container: ${distinctAndSorted([...this.containerTypes]).join(' | ')};`, NL);
         }
 
-        for (const property of distictAndSorted(this.properties, (a, b) => a.name.localeCompare(b.name))) {
+        for (const property of distinctAndSorted(this.properties, (a, b) => a.name.localeCompare(b.name))) {
             const optional = property.optional && !property.typeAlternatives.some(e => e.array) && !property.typeAlternatives.every(e => e.types.length === 1 && e.types[0] === 'boolean') ? '?' : '';
             const type = propertyTypeArrayToString(property.typeAlternatives);
             propertiesNode.contents.push(`${property.name}${optional}: ${type}`, NL);
@@ -157,15 +157,15 @@ export function collectAllAstResources(grammars: Grammar[], documents?: LangiumD
 }
 
 export function propertyTypeArrayToString(alternatives: PropertyType[]): string {
-    return distictAndSorted(alternatives.map(typePropertyToString)).join(' | ');
+    return distinctAndSorted(alternatives.map(typePropertyToString)).join(' | ');
 }
 
-export function distictAndSorted<T>(list: T[], compareFn?: (a: T, b: T) => number): T[] {
+export function distinctAndSorted<T>(list: T[], compareFn?: (a: T, b: T) => number): T[] {
     return Array.from(new Set(list)).sort(compareFn);
 }
 
 export function typePropertyToString(propertyType: PropertyType): string {
-    let res = distictAndSorted(propertyType.types).join(' | ');
+    let res = distinctAndSorted(propertyType.types).join(' | ');
     res = propertyType.reference ? `Reference<${res}>` : res;
     res = propertyType.array ? `Array<${res}>` : res;
     return res;

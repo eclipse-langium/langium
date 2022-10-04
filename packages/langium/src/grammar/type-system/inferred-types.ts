@@ -7,7 +7,7 @@
 import { AbstractElement, Action, Alternatives, Assignment, Group, isAction, isAlternatives, isAssignment, isCrossReference, isGroup, isKeyword, isParserRule, isRuleCall, isUnorderedGroup, ParserRule, RuleCall, UnorderedGroup } from '../generated/ast';
 import { isNamed } from '../../references/naming';
 import { stream } from '../../utils/stream';
-import { AstTypes, distictAndSorted, Property, PropertyType, InterfaceType, UnionType } from './types-util';
+import { AstTypes, distinctAndSorted, Property, PropertyType, InterfaceType, UnionType } from './types-util';
 import { MultiMap } from '../../utils/collections';
 import { getExplicitRuleType, getRuleType, getTypeName, isOptionalCardinality } from '../internal-grammar-util';
 
@@ -471,10 +471,10 @@ function comparePropertyType(a: PropertyType, b: PropertyType): boolean {
 }
 
 function compareLists<T>(a: T[], b: T[], eq: (x: T, y: T) => boolean = (x, y) => x === y): boolean {
-    const distictAndSortedA = distictAndSorted(a);
-    const distictAndSortedB = distictAndSorted(b);
-    if (distictAndSortedA.length !== distictAndSortedB.length) return false;
-    return distictAndSortedB.every((e, i) => eq(e, distictAndSortedA[i]));
+    const distinctAndSortedA = distinctAndSorted(a);
+    const distinctAndSortedB = distinctAndSorted(b);
+    if (distinctAndSortedA.length !== distinctAndSortedB.length) return false;
+    return distinctAndSortedB.every((e, i) => eq(e, distinctAndSortedA[i]));
 }
 
 /**
