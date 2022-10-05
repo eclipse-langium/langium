@@ -133,7 +133,8 @@ Currently the process of releasing a new version of Langium is done manually one
     * Update dependency to `langium` and dev-dependency to `langium-cli`
  8. `npm install` again in the repository root to update `package-lock.json`
  9. Commit, tag and push your changes
- 10. Close the corresponding GitHub milestone
+ 10. Create a GitHub release from the new tag
+ 11. Close the corresponding GitHub milestone
 
 In order to publish `next` versions from the current state of the `main` branch, use `npm run publish:next`, and don't update the `version` numbers manually as this is done by the npm script.
 The changes must not be committed to the repository after publishing a `next` version.
