@@ -9,6 +9,7 @@ We maintain separate change logs for the individual packages:
 
 ### Closed Issues and PRs
 
+ * [v0.5.0](https://github.com/langium/langium/milestone/4?closed=1)
  * [v0.4.0](https://github.com/langium/langium/milestone/3?closed=1)
  * [v0.3.0](https://github.com/langium/langium/milestone/2?closed=1)
  * [v0.2.0](https://github.com/langium/langium/milestone/1?closed=1)

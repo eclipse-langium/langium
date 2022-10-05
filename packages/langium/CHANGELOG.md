@@ -1,5 +1,36 @@
 # Change Log of `langium`
 
+## v0.5.0 (Oct. 2022)
+
+### New Features
+
+ * Added support for [configuration changes](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#workspace_didChangeConfiguration) ([#519](https://github.com/langium/langium/pull/519)). This can be used to synchronize the language server with VS Code settings.
+ * Added support for [executing commands](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#workspace_executeCommand) ([#592](https://github.com/langium/langium/pull/592)).
+ * Added support for [signature help](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_signatureHelp) ([#612](https://github.com/langium/langium/pull/612)).
+ * Added support for [go to type definition](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_typeDefinition) ([#618](https://github.com/langium/langium/pull/618)).
+ * Added support for [go to implementation](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_implementation) ([#627](https://github.com/langium/langium/pull/627)).
+ * Added support for [call hierarchy](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#callHierarchy_incomingCalls) ([#643](https://github.com/langium/langium/pull/643)).
+ * Added support for [document links](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_documentLink) ([#688](https://github.com/langium/langium/pull/688)).
+
+### General Improvements
+
+ * Improved handling of language server initialization and document changes ([#549](https://github.com/langium/langium/pull/549), [#553](https://github.com/langium/langium/pull/553), [#558](https://github.com/langium/langium/pull/558), [#593](https://github.com/langium/langium/pull/593)).
+ * Refactored parts of the code so [Langium can run in the browser](https://www.typefox.io/blog/langium-web-browser) ([#568](https://github.com/langium/langium/pull/568)).
+ * Reimplemented the completion provider for more reliable results ([#623](https://github.com/langium/langium/pull/623)).
+ * Added a method `createScopeForNodes` to the `DefaultScopeProvider` class to be used in customizing subclasses ([#665](https://github.com/langium/langium/pull/665)). The method can create a stream-based scope from a collection (array, stream etc.) of AST nodes.
+ * The default completion service hides non-alphabetic keywords like `.`, `(`, `+` etc. ([#697](https://github.com/langium/langium/pull/697)).
+
+### Breaking Changes
+
+ * Renamed "preprocessing" phase of the document builder to "scope computation" ([#622](https://github.com/langium/langium/pull/622)). Accordingly, the `Processed` document state was renamed to `ComputedScopes`.
+ * Changed signature of the `ScopeProvider` service: the method `getScope(node: AstNode, referenceId: string)` now has a single argument `getScope(context: ReferenceInfo)` ([#641](https://github.com/langium/langium/pull/641)).
+ * Moved the `createDescriptions` method used for indexing from the `AstNodeDescriptionProvider` service to `ScopeComputation` and renamed it to `computeExports` ([#664](https://github.com/langium/langium/pull/664)).
+ * Renamed the `computeScope` method of the `ScopeComputation` service to `computeLocalScopes` ([#664](https://github.com/langium/langium/pull/664)).
+ * Removed several declarations from the package index because they are meant to be used by the Langium Grammar language implementation ([#689](https://github.com/langium/langium/pull/689), [#703](https://github.com/langium/langium/pull/703)).
+ * Definitions of the Langium Grammar language are wrapped in the `GrammarAST` namespace ([#703](https://github.com/langium/langium/pull/703)).
+
+---
+
 ## v0.4.0 (Jun. 2022)
 
 ### Formatting

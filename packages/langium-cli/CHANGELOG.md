@@ -1,8 +1,15 @@
 # Change Log of `langium-cli`
 
+## v0.5.0 (Oct. 2022)
+
+ * Added an option to generate syntax highlighting in the [Monarch format](https://microsoft.github.io/monaco-editor/monarch.html) ([#620](https://github.com/langium/langium/pull/620)).
+ * Adapted to version `0.5.0` of the Langium core library.
+
 ## v0.4.0 (Jun. 2022)
 
 This release brings lots of bug fixes and is adapted to version `0.4.0` of the Langium core library.
+
+---
 
 ## v0.3.0 (Mar. 2022)
 

@@ -1,5 +1,15 @@
 # Change Log of `langium-vscode`
 
+## v0.5.0 (Oct. 2022)
+
+ * Support _find references_ for properties of declared types ([#528](https://github.com/langium/langium/pull/528)).
+ * Support _go to definition_ for grammar imports ([#613](https://github.com/langium/langium/pull/613)).
+ * Highlight usages of declared types ([#531](https://github.com/langium/langium/pull/531)).
+ * Added a code action to add new parser rule ([#543](https://github.com/langium/langium/pull/543)).
+ * Various improvements around grammar types ([#548](https://github.com/langium/langium/pull/548), [#551](https://github.com/langium/langium/pull/551), [#586](https://github.com/langium/langium/pull/586), [#670](https://github.com/langium/langium/pull/670), [#705](https://github.com/langium/langium/pull/705)).
+
+---
+
 ## v0.4.0 (Jun. 2022)
 
  * Hover pop-up shows information for cross-references ([#473](https://github.com/langium/langium/pull/473)).
