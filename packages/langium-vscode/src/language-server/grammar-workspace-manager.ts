@@ -33,14 +33,14 @@ export class LangiumGrammarWorkspaceManager extends DefaultWorkspaceManager {
         this.configurationProvider = services.workspace.ConfigurationProvider;
     }
 
-    async initializeWorkspace(folders: WorkspaceFolder[], cancelToken = CancellationToken.None): Promise<void> {
+    override async initializeWorkspace(folders: WorkspaceFolder[], cancelToken = CancellationToken.None): Promise<void> {
         const buildConf: WorkspaceManagerConf = await this.configurationProvider.getConfiguration(LangiumGrammarLanguageMetaData.languageId, CONFIG_KEY);
         const ignorePatterns = buildConf.ignorePatterns?.split(',')?.map(pattern => pattern.trim())?.filter(pattern => pattern.length > 0);
         this.matcher = ignorePatterns ? ignore().add(ignorePatterns) : undefined;
         return super.initializeWorkspace(folders, cancelToken);
     }
 
-    protected includeEntry(workspaceFolder: WorkspaceFolder, entry: FileSystemNode, fileExtensions: string[]): boolean {
+    protected override includeEntry(workspaceFolder: WorkspaceFolder, entry: FileSystemNode, fileExtensions: string[]): boolean {
         if (this.matcher) {
             // create path relative to workspace folder root: /user/foo/workspace/entry.txt -> entry.txt
             const relPath = path.relative(URI.parse(workspaceFolder.uri).path, entry.uri.path);

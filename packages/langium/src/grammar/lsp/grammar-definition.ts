@@ -24,7 +24,7 @@ export class LangiumGrammarDefinitionProvider extends DefaultDefinitionProvider 
         this.documents = services.shared.workspace.LangiumDocuments;
     }
 
-    protected collectLocationLinks(sourceCstNode: LeafCstNode, _params: DefinitionParams): MaybePromise<LocationLink[] | undefined> {
+    protected override collectLocationLinks(sourceCstNode: LeafCstNode, _params: DefinitionParams): MaybePromise<LocationLink[] | undefined> {
         const pathFeature: Properties<GrammarImport> = 'path';
         if (isGrammarImport(sourceCstNode.element) && findAssignment(sourceCstNode)?.feature === pathFeature) {
             const importedGrammar = resolveImport(this.documents, sourceCstNode.element);

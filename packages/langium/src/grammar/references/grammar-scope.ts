@@ -19,7 +19,7 @@ export class LangiumGrammarScopeProvider extends DefaultScopeProvider {
         super(services);
     }
 
-    getScope(context: ReferenceInfo): Scope {
+    override getScope(context: ReferenceInfo): Scope {
         const referenceType = this.reflection.getReferenceType(context);
         if (referenceType !== 'AbstractType') return super.getScope(context);
 
@@ -65,7 +65,7 @@ export class LangiumGrammarScopeComputation extends DefaultScopeComputation {
         this.processActionNode = processActionNodeWithNodeDescriptionProvider(services.workspace.AstNodeDescriptionProvider);
     }
 
-    protected processNode(node: AstNode, document: LangiumDocument, scopes: PrecomputedScopes): void {
+    protected override processNode(node: AstNode, document: LangiumDocument, scopes: PrecomputedScopes): void {
         if (isReturnType(node)) return;
         this.processTypeNode(node, document, scopes);
         this.processActionNode(node, document, scopes);

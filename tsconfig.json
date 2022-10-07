@@ -38,6 +38,7 @@
     "noUnusedLocals": true,                   /* Report errors on unused locals. */
     // "noUnusedParameters": true,            /* Report errors on unused parameters. */
     "noImplicitReturns": true,                /* Report error when not all code paths in function return a value. */
+    "noImplicitOverride": true,               /* Report error when a method is overridden without the `override` keyword. */
     // "noFallthroughCasesInSwitch": true,    /* Report errors for fallthrough cases in switch statement. */
     // "noUncheckedIndexedAccess": true,      /* Include 'undefined' in index signature results */
 

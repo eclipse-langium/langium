@@ -28,14 +28,14 @@ class CommentRegexVisitor extends BaseRegExpVisitor {
         this.endRegexStack = [];
     }
 
-    visitGroup(node: Group) {
+    override visitGroup(node: Group) {
         if (node.quantifier) {
             this.isStarting = false;
             this.endRegexStack = [];
         }
     }
 
-    visitCharacter(node: Character): void {
+    override visitCharacter(node: Character): void {
         const char = String.fromCharCode(node.value);
         if (!this.multiline && char === '\n') {
             this.multiline = true;
@@ -52,7 +52,7 @@ class CommentRegexVisitor extends BaseRegExpVisitor {
         }
     }
 
-    visitSet(node: Set): void {
+    override visitSet(node: Set): void {
         if (!this.multiline) {
             const set = this.regex.substring(node.loc.begin, node.loc.end);
             const regex = new RegExp(set);

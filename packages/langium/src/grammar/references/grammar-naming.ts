@@ -11,7 +11,7 @@ import { isAssignment } from '../generated/ast';
 
 export class LangiumGrammarNameProvider extends DefaultNameProvider {
 
-    getName(node: AstNode): string | undefined {
+    override getName(node: AstNode): string | undefined {
         if (isAssignment(node)) {
             return node.feature;
         } else {
@@ -19,7 +19,7 @@ export class LangiumGrammarNameProvider extends DefaultNameProvider {
         }
     }
 
-    getNameNode(node: AstNode): CstNode | undefined {
+    override getNameNode(node: AstNode): CstNode | undefined {
         if (isAssignment(node)) {
             return findNodeForProperty(node.$cstNode, 'feature');
         } else {
