@@ -20,7 +20,7 @@ export class DomainModelRenameProvider extends DefaultRenameProvider {
         this.langiumDocuments = services.shared.workspace.LangiumDocuments;
     }
 
-    async rename(document: LangiumDocument, params: RenameParams): Promise<WorkspaceEdit | undefined> {
+    override async rename(document: LangiumDocument, params: RenameParams): Promise<WorkspaceEdit | undefined> {
         const changes: Record<string, TextEdit[]> = {};
         const rootNode = document.parseResult.value.$cstNode;
         if (!rootNode) return undefined;

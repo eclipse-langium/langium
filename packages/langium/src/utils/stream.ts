@@ -796,7 +796,7 @@ export class TreeStreamImpl<T>
         );
     }
 
-    iterator(): TreeIterator<T> {
+    override iterator(): TreeIterator<T> {
         const iterator = {
             state: this.startFn(),
             next: () => this.nextFn(iterator.state),

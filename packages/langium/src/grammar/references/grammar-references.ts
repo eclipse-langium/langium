@@ -26,7 +26,7 @@ export class LangiumGrammarReferences extends DefaultReferences {
         this.documents = services.shared.workspace.LangiumDocuments;
     }
 
-    findDeclaration(sourceCstNode: CstNode): AstNode | undefined {
+    override findDeclaration(sourceCstNode: CstNode): AstNode | undefined {
         const nodeElem = sourceCstNode.element;
         const assignment = findAssignment(sourceCstNode);
         if (assignment && assignment.feature === 'feature') {
@@ -40,7 +40,7 @@ export class LangiumGrammarReferences extends DefaultReferences {
         return super.findDeclaration(sourceCstNode);
     }
 
-    protected findLocalReferences(targetNode: AstNode, includeDeclaration = false): Stream<ReferenceDescription> {
+    protected override findLocalReferences(targetNode: AstNode, includeDeclaration = false): Stream<ReferenceDescription> {
         if (isTypeAttribute(targetNode)) {
             const doc = getDocument(targetNode);
             const rootNode = doc.parseResult.value;
@@ -50,7 +50,7 @@ export class LangiumGrammarReferences extends DefaultReferences {
         }
     }
 
-    protected findGlobalReferences(targetNode: AstNode, includeDeclaration = false): Stream<ReferenceDescription> {
+    protected override findGlobalReferences(targetNode: AstNode, includeDeclaration = false): Stream<ReferenceDescription> {
         if (isTypeAttribute(targetNode)) {
             return this.findReferencesToTypeAttribute(targetNode, includeDeclaration);
         } else {

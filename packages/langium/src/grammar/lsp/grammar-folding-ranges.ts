@@ -13,7 +13,7 @@ import { isParserRule } from '../generated/ast';
  */
 export class LangiumGrammarFoldingRangeProvider extends DefaultFoldingRangeProvider {
 
-    shouldProcessContent(node: AstNode): boolean {
+    override shouldProcessContent(node: AstNode): boolean {
         // Exclude parser rules from folding
         return !isParserRule(node);
     }

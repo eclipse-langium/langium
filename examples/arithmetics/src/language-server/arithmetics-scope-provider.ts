@@ -4,18 +4,18 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { AstNodeDescription, DefaultScopeProvider, Scope, Stream, StreamScope } from 'langium';
+import { AstNodeDescription, DefaultScopeProvider, Scope, ScopeOptions, stream, StreamScope } from 'langium';
 
 /**
  * Special scope provider that matches symbol names regardless of lowercase or uppercase.
  */
 export class ArithmeticsScopeProvider extends DefaultScopeProvider {
 
-    protected createScope(elements: Stream<AstNodeDescription>, outerScope: Scope): Scope {
-        return new StreamScope(elements, outerScope, { caseInsensitive: true });
+    protected override createScope(elements: Iterable<AstNodeDescription>, outerScope: Scope, options?: ScopeOptions): Scope {
+        return new StreamScope(stream(elements), outerScope, { ...options, caseInsensitive: true });
     }
 
-    protected getGlobalScope(referenceType: string): Scope {
+    protected override getGlobalScope(referenceType: string): Scope {
         return new StreamScope(this.indexManager.allElements(referenceType), undefined, { caseInsensitive: true });
     }
 
