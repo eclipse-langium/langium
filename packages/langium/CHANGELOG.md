@@ -23,9 +23,10 @@
 ### Breaking Changes
 
  * Renamed "preprocessing" phase of the document builder to "scope computation" ([#622](https://github.com/langium/langium/pull/622)). Accordingly, the `Processed` document state was renamed to `ComputedScopes`.
- * Changed signature of the `ScopeProvider` service: the method `getScope(node: AstNode, referenceId: string)` now has a single argument `getScope(context: ReferenceInfo)` ([#641](https://github.com/langium/langium/pull/641)).
- * Moved the `createDescriptions` method used for indexing from the `AstNodeDescriptionProvider` service to `ScopeComputation` and renamed it to `computeExports` ([#664](https://github.com/langium/langium/pull/664)).
- * Renamed the `computeScope` method of the `ScopeComputation` service to `computeLocalScopes` ([#664](https://github.com/langium/langium/pull/664)).
+ * Changed signature of the `ScopeProvider` service: the method `getScope(node: AstNode, referenceId: string)` now has a single argument `getScope(context: ReferenceInfo)` ([#641](https://github.com/langium/langium/pull/641)). If you have overridden that service, you need to update the signature; you can get the AST node via `context.container`.
+ * Moved the `createDescriptions` method used for indexing from the `AstNodeDescriptionProvider` service to `ScopeComputation` and renamed it to `computeExports` ([#664](https://github.com/langium/langium/pull/664)). If you have overridden that method, you need to move it to a different class accordingly.
+ * Renamed the `computeScope` method of the `ScopeComputation` service to `computeLocalScopes` ([#664](https://github.com/langium/langium/pull/664)). If you have overridden that method, you need to rename it accordingly.
+ * Moved the `CompletionProvider` service declaration from the group `lsp.completion` to `lsp` ([#623](https://github.com/langium/langium/pull/623)). This needs to be changed in your dependency injection module in case you have overridden that service.
  * Removed several declarations from the package index because they are meant to be used by the Langium Grammar language implementation ([#689](https://github.com/langium/langium/pull/689), [#703](https://github.com/langium/langium/pull/703)).
  * Definitions of the Langium Grammar language are wrapped in the `GrammarAST` namespace ([#703](https://github.com/langium/langium/pull/703)).
 
