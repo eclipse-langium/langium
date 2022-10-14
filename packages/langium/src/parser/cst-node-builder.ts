@@ -68,13 +68,11 @@ export class CstNodeBuilder {
         }
     }
 
-    addHiddenTokens(hiddenTokens?: IToken[]): void {
-        if (hiddenTokens) {
-            for (const token of hiddenTokens) {
-                const hiddenNode = new LeafCstNodeImpl(token.startOffset, token.image.length, tokenToRange(token), token.tokenType, true);
-                hiddenNode.root = this.rootNode;
-                this.addHiddenToken(this.rootNode, hiddenNode);
-            }
+    addHiddenTokens(hiddenTokens: IToken[]): void {
+        for (const token of hiddenTokens) {
+            const hiddenNode = new LeafCstNodeImpl(token.startOffset, token.image.length, tokenToRange(token), token.tokenType, true);
+            hiddenNode.root = this.rootNode;
+            this.addHiddenToken(this.rootNode, hiddenNode);
         }
     }
 

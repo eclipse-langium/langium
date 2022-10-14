@@ -10,9 +10,9 @@ import { createParser } from './parser-builder-base';
 
 export function createCompletionParser(services: LangiumServices): LangiumCompletionParser {
     const grammar = services.Grammar;
-    const buildTokens = services.parser.TokenBuilder.buildTokens(grammar, { caseInsensitive: services.LanguageMetaData.caseInsensitive });
-    const parser = new LangiumCompletionParser(services, buildTokens);
-    createParser(grammar, parser, buildTokens);
+    const lexer = services.parser.Lexer;
+    const parser = new LangiumCompletionParser(services);
+    createParser(grammar, parser, lexer.definition);
     parser.finalize();
     return parser;
 }
