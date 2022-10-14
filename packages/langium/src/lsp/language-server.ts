@@ -84,6 +84,7 @@ export class DefaultLanguageServer implements LanguageServer {
         const hasHoverProvider = this.hasService(e => e.lsp.HoverProvider);
         const hasRenameProvider = this.hasService(e => e.lsp.RenameProvider);
         const hasCallHierarchyProvider = this.hasService(e => e.lsp.CallHierarchyProvider);
+        const codeLensProvider = this.services.lsp.CodeLensProvider;
 
         const result: InitializeResult = {
             capabilities: {
@@ -121,6 +122,9 @@ export class DefaultLanguageServer implements LanguageServer {
                     : undefined,
                 documentLinkProvider: documentLinkProvider
                     ? { resolveProvider: !!documentLinkProvider.resolveDocumentLink }
+                    : undefined,
+                codeLensProvider: codeLensProvider
+                    ? { resolveProvider: !!codeLensProvider.resolveCodeLens }
                     : undefined
             }
         };
@@ -158,6 +162,7 @@ export function startLanguageServer(services: LangiumSharedServices): void {
     addExecuteCommandHandler(connection, services);
     addSignatureHelpHandler(connection, services);
     addCallHierarchyHandler(connection, services);
+    addCodeLensHandler(connection, services);
     addDocumentLinkHandler(connection, services);
     addConfigurationChangeHandler(connection, services);
 
@@ -387,6 +392,26 @@ export function addSignatureHelpHandler(connection: Connection, services: Langiu
         (services, document, params, cancelToken) => services.lsp.SignatureHelp?.provideSignatureHelp(document, params, cancelToken),
         services
     ));
+}
+
+export function addCodeLensHandler(connection: Connection, services: LangiumSharedServices): void {
+    const codeLensProvider = services.lsp.CodeLensProvider;
+    if (codeLensProvider) {
+        connection.onCodeLens(createServerRequestHandler(
+            (_, document, params, cancelToken) => codeLensProvider.provideCodeLens(document, params, cancelToken),
+            services
+        ));
+        const resolveCodeLens = codeLensProvider.resolveCodeLens?.bind(codeLensProvider);
+        if (resolveCodeLens) {
+            connection.onCodeLensResolve(async (codeLens, token) => {
+                try {
+                    return await resolveCodeLens(codeLens, token);
+                } catch (err) {
+                    return responseError(err);
+                }
+            });
+        }
+    }
 }
 
 export function addCallHierarchyHandler(connection: Connection, services: LangiumSharedServices): void {
