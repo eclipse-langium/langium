@@ -211,14 +211,16 @@ export function findNodesForKeywordInternal(node: CstNode, keyword: string, elem
  * @param cstNode A CST node for which to find a property assignment.
  */
 export function findAssignment(cstNode: CstNode): ast.Assignment | undefined {
-    let n: CstNode | undefined = cstNode;
-    do {
-        const assignment = getContainerOfType(n.feature, ast.isAssignment);
+    const astNode = cstNode.element;
+    // Only search until the ast node of the parent cst node is no longer the original ast node
+    // This would make us jump to a preceding rule call, which contains only unrelated assignments
+    while (astNode === cstNode.parent?.element) {
+        const assignment = getContainerOfType(cstNode.feature, ast.isAssignment);
         if (assignment) {
             return assignment;
         }
-        n = n.parent;
-    } while (n);
+        cstNode = cstNode.parent;
+    }
     return undefined;
 }
 

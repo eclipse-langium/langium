@@ -8,7 +8,7 @@ import { findAssignment } from '../utils/grammar-util';
 import { LangiumServices } from '../services';
 import { AstNode, CstNode, GenericAstNode, Reference } from '../syntax-tree';
 import { getDocument, isReference, streamAst, streamReferences } from '../utils/ast-util';
-import { toDocumentSegment } from '../utils/cst-util';
+import { isCstChildNode, toDocumentSegment } from '../utils/cst-util';
 import { stream, Stream } from '../utils/stream';
 import { equalURI } from '../utils/uri-util';
 import { ReferenceDescription } from '../workspace/ast-descriptions';
@@ -70,8 +70,7 @@ export class DefaultReferences implements References {
 
                 if (isReference(reference)) {
                     return reference.ref;
-                }
-                else if (Array.isArray(reference)) {
+                } else if (Array.isArray(reference)) {
                     for (const ref of reference) {
                         if (isReference(ref)
                             && ref.$refNode.offset <= sourceCstNode.offset
@@ -80,7 +79,11 @@ export class DefaultReferences implements References {
                         }
                     }
                 }
-                else {
+            }
+            if (nodeElem) {
+                const nameNode = this.nameProvider.getNameNode(nodeElem);
+                // Only return the targeted node in case the targeted cst node is the name node or part of it
+                if (nameNode && (nameNode === sourceCstNode || isCstChildNode(sourceCstNode, nameNode))) {
                     return nodeElem;
                 }
             }
