@@ -31,6 +31,19 @@ export function flattenCst(node: CstNode): Stream<LeafCstNode> {
     return streamCst(node).filter(isLeafCstNode);
 }
 
+/**
+ * Determines whether the specified cst node is a child of the specified parent node.
+ */
+export function isCstChildNode(child: CstNode, parent: CstNode): boolean {
+    while (child.parent) {
+        child = child.parent;
+        if (child === parent) {
+            return true;
+        }
+    }
+    return false;
+}
+
 export function tokenToRange(token: IToken): Range {
     // Chevrotain uses 1-based indices everywhere
     // So we subtract 1 from every value to align with the LSP

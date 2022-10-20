@@ -133,7 +133,7 @@ export function expectCompletion(services: LangiumServices): (completion: Expect
 
 export interface ExpectedGoToDefinition extends ExpectedBase {
     index: number,
-    rangeIndex: number
+    rangeIndex: number | number[]
 }
 
 export function expectGoToDefinition(services: LangiumServices): (expectedGoToDefinition: ExpectedGoToDefinition) => Promise<void> {
@@ -142,13 +142,26 @@ export function expectGoToDefinition(services: LangiumServices): (expectedGoToDe
         const document = await parseDocument(services, output);
         const definitionProvider = services.lsp.DefinitionProvider;
         const locationLinks = await definitionProvider?.getDefinition(document, textDocumentPositionParams(document, indices[expectedGoToDefinition.index])) ?? [];
-        const expectedRange: Range = {
-            start: document.textDocument.positionAt(ranges[expectedGoToDefinition.rangeIndex][0]),
-            end: document.textDocument.positionAt(ranges[expectedGoToDefinition.rangeIndex][1])
-        };
-        expectedFunction(locationLinks.length, 1, `Expected a single definition but received ${locationLinks.length}`);
-        const range = locationLinks[0].targetSelectionRange;
-        expectedFunction(range, expectedRange, `Expected range ${rangeToString(expectedRange)} does not match actual range ${rangeToString(range)}`);
+        const rangeIndex = expectedGoToDefinition.rangeIndex;
+        if (Array.isArray(rangeIndex)) {
+            expectedFunction(locationLinks.length, rangeIndex.length, `Expected ${rangeIndex.length} definitions but received ${locationLinks.length}`);
+            for (const index of rangeIndex) {
+                const expectedRange: Range = {
+                    start: document.textDocument.positionAt(ranges[index][0]),
+                    end: document.textDocument.positionAt(ranges[index][1])
+                };
+                const range = locationLinks[0].targetSelectionRange;
+                expectedFunction(range, expectedRange, `Expected range ${rangeToString(expectedRange)} does not match actual range ${rangeToString(range)}`);
+            }
+        } else {
+            const expectedRange: Range = {
+                start: document.textDocument.positionAt(ranges[rangeIndex][0]),
+                end: document.textDocument.positionAt(ranges[rangeIndex][1])
+            };
+            expectedFunction(locationLinks.length, 1, `Expected a single definition but received ${locationLinks.length}`);
+            const range = locationLinks[0].targetSelectionRange;
+            expectedFunction(range, expectedRange, `Expected range ${rangeToString(expectedRange)} does not match actual range ${rangeToString(range)}`);
+        }
     };
 }
 
