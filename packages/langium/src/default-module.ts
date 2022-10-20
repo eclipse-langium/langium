@@ -40,6 +40,7 @@ import { DefaultLangiumDocumentFactory, DefaultLangiumDocuments, DefaultTextDocu
 import { FileSystemProvider } from './workspace/file-system-provider';
 import { DefaultIndexManager } from './workspace/index-manager';
 import { DefaultWorkspaceManager } from './workspace/workspace-manager';
+import { DefaultLexer } from './parser/lexer';
 
 /**
  * Context required for creating the default language-specific dependency injection module.
@@ -59,7 +60,8 @@ export function createDefaultModule(context: DefaultModuleContext): Module<Langi
             LangiumParser: (services) => createLangiumParser(services),
             CompletionParser: (services) => createCompletionParser(services),
             ValueConverter: () => new DefaultValueConverter(),
-            TokenBuilder: () => new DefaultTokenBuilder()
+            TokenBuilder: () => new DefaultTokenBuilder(),
+            Lexer: (services) => new DefaultLexer(services)
         },
         lsp: {
             CompletionProvider: (services) => new DefaultCompletionProvider(services),

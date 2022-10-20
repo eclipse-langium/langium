@@ -25,6 +25,7 @@ import type { SemanticTokenProvider } from './lsp/semantic-token-provider';
 import type { LangiumCompletionParser, LangiumParser } from './parser/langium-parser';
 import type { IParserConfig } from './parser/parser-config';
 import type { TokenBuilder } from './parser/token-builder';
+import type { Lexer } from './parser/lexer';
 import type { ValueConverter } from './parser/value-converter';
 import type { Linker } from './references/linker';
 import type { NameProvider } from './references/name-provider';
@@ -97,6 +98,7 @@ export type LangiumDefaultServices = {
         LangiumParser: LangiumParser
         CompletionParser: LangiumCompletionParser
         TokenBuilder: TokenBuilder
+        Lexer: Lexer
     }
     references: {
         Linker: Linker

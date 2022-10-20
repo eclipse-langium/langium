@@ -24,7 +24,7 @@ export function createLangiumParser(services: LangiumServices): LangiumParser {
  */
 export function prepareLangiumParser(services: LangiumServices): LangiumParser {
     const grammar = services.Grammar;
-    const buildTokens = services.parser.TokenBuilder.buildTokens(grammar, { caseInsensitive: services.LanguageMetaData.caseInsensitive });
-    const parser = new LangiumParser(services, buildTokens);
-    return createParser(grammar, parser, buildTokens);
+    const lexer = services.parser.Lexer;
+    const parser = new LangiumParser(services);
+    return createParser(grammar, parser, lexer.definition);
 }

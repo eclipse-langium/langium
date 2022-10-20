@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import { TokenType, TokenVocabulary } from 'chevrotain';
-import { AstNode, createServicesForGrammar, DefaultTokenBuilder, Grammar, LangiumParser, TerminalRule } from '../../src';
+import { AstNode, createServicesForGrammar, DefaultTokenBuilder, Grammar, GrammarAST, LangiumParser, TokenBuilderOptions } from '../../src';
 
 describe('Predicated grammar rules with alternatives', () => {
 
@@ -439,7 +439,7 @@ describe('MultiMode Lexing', () => {
     // Multi-mode token builder, filters tokens by state, and sets up push/pop behavior
     // Without this, we have no multi-mode lexing from the grammar alone
     class MultiModeTokenBuilder extends DefaultTokenBuilder {
-        buildTokens(grammar: Grammar, options?: { caseInsensitive?: boolean }): TokenVocabulary {
+        override buildTokens(grammar: Grammar, options?: TokenBuilderOptions): TokenVocabulary {
             const tokenTypes: TokenType[] = super.buildTokens(grammar, options) as TokenType[];
             return {
                 modes: {
@@ -450,7 +450,7 @@ describe('MultiMode Lexing', () => {
             };
         }
 
-        protected buildTerminalToken(terminal: TerminalRule): TokenType {
+        protected override buildTerminalToken(terminal: GrammarAST.TerminalRule): TokenType {
             const tokenType = super.buildTerminalToken(terminal);
             if(tokenType.name === 'Up') {
                 tokenType.PUSH_MODE = 'up';

@@ -18,6 +18,7 @@ export * from './parser/langium-parser-builder';
 export * from './parser/parser-config';
 export * from './parser/token-builder';
 export * from './parser/value-converter';
+export * from './parser/lexer';
 export * from './references/linker';
 export * from './references/name-provider';
 export * from './references/scope-computation';

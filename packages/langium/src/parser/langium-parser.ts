@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { defaultParserErrorProvider, DSLMethodOpts, EmbeddedActionsParser, ILexingError, IMultiModeLexerDefinition, IOrAlt, IParserErrorMessageProvider, IRecognitionException, IToken, Lexer, TokenType, TokenTypeDictionary, TokenVocabulary } from 'chevrotain';
+import { defaultParserErrorProvider, DSLMethodOpts, EmbeddedActionsParser, ILexingError, IOrAlt, IParserErrorMessageProvider, IRecognitionException, IToken, TokenType, TokenVocabulary } from 'chevrotain';
 import { AbstractElement, Action, Assignment, isAssignment, isCrossReference, isKeyword, ParserRule } from '../grammar/generated/ast';
 import { getTypeName, isDataTypeRule } from '../grammar/internal-grammar-util';
 import { Linker } from '../references/linker';
@@ -13,6 +13,7 @@ import { LangiumServices } from '../services';
 import { AstNode, AstReflection, CompositeCstNode, CstNode } from '../syntax-tree';
 import { getContainerOfType, linkContentToContainer } from '../utils/ast-util';
 import { CstNodeBuilder } from './cst-node-builder';
+import { Lexer } from './lexer';
 import { IParserConfig } from './parser-config';
 import { ValueConverter } from './value-converter';
 
@@ -62,14 +63,18 @@ export interface BaseParser {
     getRuleStack(): number[];
 }
 
+const ruleSuffix = '\u200B';
+const withRuleSuffix = (name: string): string => name.endsWith(ruleSuffix) ? name : name + ruleSuffix;
+
 export abstract class AbstractLangiumParser implements BaseParser {
 
     protected readonly lexer: Lexer;
     protected readonly wrapper: ChevrotainWrapper;
     protected _unorderedGroups: Map<string, boolean[]> = new Map<string, boolean[]>();
 
-    constructor(services: LangiumServices, tokens: TokenVocabulary) {
-        this.lexer = new Lexer(isTokenTypeDictionary(tokens) ? Object.values(tokens) : tokens);
+    constructor(services: LangiumServices) {
+        this.lexer = services.parser.Lexer;
+        const tokens = this.lexer.definition;
         this.wrapper = new ChevrotainWrapper(tokens, services.parser.ParserConfig);
     }
 
@@ -125,8 +130,8 @@ export class LangiumParser extends AbstractLangiumParser {
         return this.stack[this.stack.length - 1];
     }
 
-    constructor(services: LangiumServices, tokens: TokenVocabulary) {
-        super(services, tokens);
+    constructor(services: LangiumServices) {
+        super(services);
         this.linker = services.references.Linker;
         this.converter = services.parser.ValueConverter;
         this.astReflection = services.shared.AstReflection;
@@ -134,7 +139,7 @@ export class LangiumParser extends AbstractLangiumParser {
 
     rule(rule: ParserRule, impl: RuleImpl): RuleResult {
         const type = rule.fragment ? undefined : isDataTypeRule(rule) ? DatatypeSymbol : getTypeName(rule);
-        const ruleMethod = this.wrapper.DEFINE_RULE(rule.name, this.startImplementation(type, impl).bind(this));
+        const ruleMethod = this.wrapper.DEFINE_RULE(withRuleSuffix(rule.name), this.startImplementation(type, impl).bind(this));
         if (rule.entry) {
             this.mainRule = ruleMethod;
         }
@@ -146,7 +151,7 @@ export class LangiumParser extends AbstractLangiumParser {
         const lexerResult = this.lexer.tokenize(input);
         this.wrapper.input = lexerResult.tokens;
         const result = this.mainRule.call(this.wrapper);
-        this.nodeBuilder.addHiddenTokens(lexerResult.groups.hidden);
+        this.nodeBuilder.addHiddenTokens(lexerResult.hidden);
         this.unorderedGroups.clear();
         return {
             value: result,
@@ -422,7 +427,7 @@ export class LangiumCompletionParser extends AbstractLangiumParser {
     }
 
     rule(rule: ParserRule, impl: RuleImpl): RuleResult {
-        const ruleMethod = this.wrapper.DEFINE_RULE(rule.name, this.startImplementation(impl).bind(this));
+        const ruleMethod = this.wrapper.DEFINE_RULE(withRuleSuffix(rule.name), this.startImplementation(impl).bind(this));
         if (rule.entry) {
             this.mainRule = ruleMethod;
         }
@@ -556,25 +561,4 @@ class ChevrotainWrapper extends EmbeddedActionsParser {
     wrapAtLeastOne(idx: number, callback: DSLMethodOpts<unknown>): void {
         this.atLeastOne(idx, callback);
     }
-}
-
-/**
- * Returns a check whether the given TokenVocabulary is TokenType array
- */
-export function isTokenTypeArray(tokenVocabulary: TokenVocabulary): tokenVocabulary is TokenType[] {
-    return Array.isArray(tokenVocabulary) && (tokenVocabulary.length === 0 || 'name' in tokenVocabulary[0]);
-}
-
-/**
- * Returns a check whether the given TokenVocabulary is IMultiModeLexerDefinition
- */
-export function isIMultiModeLexerDefinition(tokenVocabulary: TokenVocabulary): tokenVocabulary is IMultiModeLexerDefinition {
-    return tokenVocabulary && 'modes' in tokenVocabulary && 'defaultMode' in tokenVocabulary;
-}
-
-/**
- * Returns a check whether the given TokenVocabulary is TokenTypeDictionary
- */
-export function isTokenTypeDictionary(tokenVocabulary: TokenVocabulary): tokenVocabulary is TokenTypeDictionary {
-    return !isTokenTypeArray(tokenVocabulary) && !isIMultiModeLexerDefinition(tokenVocabulary);
 }

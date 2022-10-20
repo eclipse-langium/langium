@@ -4,9 +4,9 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { EMPTY_ALT, IOrAlt, TokenType, TokenTypeDictionary, TokenVocabulary } from 'chevrotain';
+import { EMPTY_ALT, IOrAlt, TokenType, TokenTypeDictionary } from 'chevrotain';
 import { AbstractElement, Action, Alternatives, Condition, CrossReference, Grammar, Group, isAction, isAlternatives, isAssignment, isConjunction, isCrossReference, isDisjunction, isGroup, isKeyword, isLiteralCondition, isNegation, isParameterReference, isParserRule, isRuleCall, isTerminalRule, isUnorderedGroup, Keyword, NamedArgument, ParserRule, RuleCall, UnorderedGroup } from '../grammar/generated/ast';
-import { BaseParser, isIMultiModeLexerDefinition, isTokenTypeDictionary } from './langium-parser';
+import { BaseParser } from './langium-parser';
 import { AstNode } from '../syntax-tree';
 import { assertUnreachable, ErrorWithLocation } from '../utils/errors';
 import { stream } from '../utils/stream';
@@ -36,8 +36,7 @@ type Predicate = (args: Args) => boolean;
 
 type Method = (args: Args) => void;
 
-export function createParser<T extends BaseParser>(grammar: Grammar, parser: T, tokenVocabulary: TokenVocabulary): T {
-    const tokens = toTokenTypeDictionary(tokenVocabulary);
+export function createParser<T extends BaseParser>(grammar: Grammar, parser: T, tokens: TokenTypeDictionary): T {
     const rules = new Map<string, Rule>();
     const parserContext: ParserContext = {
         parser,
@@ -61,7 +60,10 @@ function buildRules(parserContext: ParserContext, grammar: Grammar): void {
             many: 1,
             or: 1
         };
-        ctx.rules.set(rule.name, parserContext.parser.rule(rule, buildElement(ctx, rule.definition)));
+        ctx.rules.set(
+            rule.name,
+            parserContext.parser.rule(rule, buildElement(ctx, rule.definition))
+        );
     }
 }
 
@@ -281,7 +283,6 @@ function buildCrossReference(ctx: RuleContext, crossRef: CrossReference, termina
     } else if (isKeyword(terminal)) {
         const idx = ctx.consume++;
         const keyword = getToken(ctx, terminal.value);
-        keyword.name = withKeywordSuffix(keyword.name);
         return () => ctx.parser.consume(idx, keyword, crossRef);
     }
     else {
@@ -289,15 +290,12 @@ function buildCrossReference(ctx: RuleContext, crossRef: CrossReference, termina
     }
 }
 
-const withKeywordSuffix = (name: string): string => name.endsWith(':KW') ? name : name + ':KW';
-
 function buildKeyword(ctx: RuleContext, keyword: Keyword): Method {
     const idx = ctx.consume++;
     const token = ctx.tokens[keyword.value];
     if (!token) {
         throw new Error('Could not find token for keyword: ' + keyword.value);
     }
-    token.name = withKeywordSuffix(token.name);
     return () => ctx.parser.consume(idx, token, keyword);
 }
 
@@ -362,14 +360,6 @@ function wrap(ctx: RuleContext, guard: Condition | undefined, method: Method, ca
     } else {
         assertUnreachable(cardinality);
     }
-}
-
-function toTokenTypeDictionary(buildTokens: TokenVocabulary): TokenTypeDictionary {
-    if (isTokenTypeDictionary(buildTokens)) return buildTokens;
-    const tokens = isIMultiModeLexerDefinition(buildTokens) ? Object.values(buildTokens.modes).flat() : buildTokens;
-    const res: TokenTypeDictionary = {};
-    tokens.forEach(token => res[token.name] = token);
-    return res;
 }
 
 function getRule(ctx: ParserContext, element: ParserRule | AbstractElement): Rule {
