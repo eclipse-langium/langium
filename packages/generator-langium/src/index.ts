@@ -8,9 +8,10 @@ import Generator from 'yeoman-generator';
 import _ from 'lodash';
 import chalk from 'chalk';
 import path from 'path';
+import { cwd } from 'node:process';
 
 const TEMPLATE_DIR = '../langium-template';
-const USER_DIR = '.';
+const USER_DIR = cwd();
 
 const OPEN = '<%= ';
 const CLOSE = ' %>';
