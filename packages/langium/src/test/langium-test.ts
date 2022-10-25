@@ -165,6 +165,40 @@ export function expectGoToDefinition(services: LangiumServices): (expectedGoToDe
     };
 }
 
+export interface ExpectedGoToDeclaration extends ExpectedBase {
+    index: number,
+    rangeIndex: number | number[]
+}
+
+export function expectGoToDeclaration(services: LangiumServices): (expectedGoToDeclaration: ExpectedGoToDeclaration) => Promise<void> {
+    return async expectedGoToDeclaration => {
+        const { output, indices, ranges } = replaceIndices(expectedGoToDeclaration);
+        const document = await parseDocument(services, output);
+        const declarationProvider = services.lsp.DeclarationProvider;
+        const locationLinks = await declarationProvider?.getDeclaration(document, textDocumentPositionParams(document, indices[expectedGoToDeclaration.index])) ?? [];
+        const rangeIndex = expectedGoToDeclaration.rangeIndex;
+        if (Array.isArray(rangeIndex)) {
+            expectedFunction(locationLinks.length, rangeIndex.length, `Expected ${rangeIndex.length} definitions but received ${locationLinks.length}`);
+            for (const index of rangeIndex) {
+                const expectedRange: Range = {
+                    start: document.textDocument.positionAt(ranges[index][0]),
+                    end: document.textDocument.positionAt(ranges[index][1])
+                };
+                const range = locationLinks[0].targetSelectionRange;
+                expectedFunction(range, expectedRange, `Expected range ${rangeToString(expectedRange)} does not match actual range ${rangeToString(range)}`);
+            }
+        } else {
+            const expectedRange: Range = {
+                start: document.textDocument.positionAt(ranges[rangeIndex][0]),
+                end: document.textDocument.positionAt(ranges[rangeIndex][1])
+            };
+            expectedFunction(locationLinks.length, 1, `Expected a single definition but received ${locationLinks.length}`);
+            const range = locationLinks[0].targetSelectionRange;
+            expectedFunction(range, expectedRange, `Expected range ${rangeToString(expectedRange)} does not match actual range ${rangeToString(range)}`);
+        }
+    };
+}
+
 export interface ExpectedFindReferences extends ExpectedBase {
     includeDeclaration: boolean
 }
