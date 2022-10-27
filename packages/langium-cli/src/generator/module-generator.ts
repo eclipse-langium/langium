@@ -17,13 +17,14 @@ export function generateModule(grammars: langium.Grammar[], config: LangiumConfi
     node.append(generatedHeader);
     if (config.langiumInternal) {
         node.append("import { LanguageMetaData } from '../language-meta-data';", NL);
-        node.append("import { Module } from '../../dependency-injection';", NL);
+        node.append("import { Module } from 'djinject';", NL);
         node.contents.push("import { LangiumGeneratedServices, LangiumGeneratedSharedServices, LangiumSharedServices, LangiumServices } from '../../services';", NL);
         if (hasIParserConfigImport) {
             node.append("import { IParserConfig } from '../../parser/parser-config';", NL);
         }
     } else {
-        node.append(`import { LangiumGeneratedServices, LangiumGeneratedSharedServices, LangiumSharedServices, LangiumServices, LanguageMetaData, Module${hasIParserConfigImport ? ', IParserConfig' : ''} } from 'langium';`, NL);
+        node.append("import { Module } from 'djinject';", NL);
+        node.append(`import { LangiumGeneratedServices, LangiumGeneratedSharedServices, LangiumSharedServices, LangiumServices, LanguageMetaData${hasIParserConfigImport ? ', IParserConfig' : ''} } from 'langium';`, NL);
     }
 
     node.append(

@@ -6,7 +6,7 @@
 
 import { Connection, TextDocuments } from 'vscode-languageserver';
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { Module } from './dependency-injection';
+import { Module } from 'djinject';
 import { createGrammarConfig } from './grammar/grammar-config';
 import { createCompletionParser } from './parser/completion-parser-builder';
 import { DefaultCompletionProvider } from './lsp/completion/completion-provider';

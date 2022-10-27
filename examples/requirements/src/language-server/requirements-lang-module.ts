@@ -4,8 +4,9 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { LangiumServices, Module, PartialLangiumServices } from 'langium';
+import { LangiumServices, PartialLangiumServices } from 'langium';
 import { RequirementsLangValidator } from './requirements-lang-validator';
+import { Module } from 'djinject';
 
 /**
  * Declaration of custom services - add your own service classes here.

@@ -3,7 +3,8 @@
  * DO NOT EDIT MANUALLY!
  ******************************************************************************/
 
-import { LangiumGeneratedServices, LangiumGeneratedSharedServices, LangiumSharedServices, LangiumServices, LanguageMetaData, Module } from 'langium';
+import { Module } from 'djinject';
+import { LangiumGeneratedServices, LangiumGeneratedSharedServices, LangiumSharedServices, LangiumServices, LanguageMetaData } from 'langium';
 import { ArithmeticsAstReflection } from './ast';
 import { ArithmeticsGrammar } from './grammar';
 

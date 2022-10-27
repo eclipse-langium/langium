@@ -6,14 +6,14 @@
 
 import { URI } from 'vscode-uri';
 import { createDefaultModule, createDefaultSharedModule } from '../default-module';
-import { inject, Module } from '../dependency-injection';
+import { inject, Module } from 'djinject';
 import { interpretAstReflection } from '../grammar/ast-reflection-interpreter';
 import * as ast from '../grammar/generated/ast';
 import { terminalRegex } from '../grammar/internal-grammar-util';
 import { createLangiumGrammarServices, LangiumGrammarServices } from '../grammar/langium-grammar-module';
 import { LanguageMetaData } from '../grammar/language-meta-data';
 import { IParserConfig } from '../parser/parser-config';
-import { LangiumGeneratedServices, LangiumGeneratedSharedServices, LangiumServices, LangiumSharedServices, PartialLangiumServices, PartialLangiumSharedServices } from '../services';
+import { LangiumGeneratedServices, LangiumGeneratedSharedServices, LangiumServices, LangiumSharedServices } from '../services';
 import { AstNode, CstNode, isCompositeCstNode } from '../syntax-tree';
 import { getContainerOfType, getDocument, Mutable, streamAllContents } from '../utils/ast-util';
 import { streamCst } from '../utils/cst-util';
@@ -285,8 +285,8 @@ export async function createServicesForGrammar(config: {
     grammarServices?: LangiumGrammarServices,
     parserConfig?: IParserConfig,
     languageMetaData?: LanguageMetaData,
-    module?: Module<LangiumServices, PartialLangiumServices>
-    sharedModule?: Module<LangiumSharedServices, PartialLangiumSharedServices>
+    module?: Module<LangiumServices>
+    sharedModule?: Module<LangiumSharedServices>
 }): Promise<LangiumServices> {
     const grammarServices = config.grammarServices ?? createLangiumGrammarServices(EmptyFileSystem).grammar;
     const uri = URI.parse('memory:///grammar.langium');
@@ -306,18 +306,18 @@ export async function createServicesForGrammar(config: {
         fileExtensions: [`.${grammarNode.name?.toLowerCase() ?? 'unknown'}`],
         languageId: grammarNode.name ?? 'UNKNOWN'
     };
-    const generatedSharedModule: Module<LangiumSharedServices, LangiumGeneratedSharedServices> = {
+    const generatedSharedModule: Module<LangiumGeneratedSharedServices> = {
         AstReflection: () => interpretAstReflection(grammarNode),
     };
-    const generatedModule: Module<LangiumServices, LangiumGeneratedServices> = {
+    const generatedModule: Module<LangiumGeneratedServices> = {
         Grammar: () => grammarNode,
         LanguageMetaData: () => languageMetaData,
         parser: {
             ParserConfig: () => parserConfig
         }
     };
-    const shared = inject(createDefaultSharedModule(EmptyFileSystem), generatedSharedModule, config.sharedModule);
-    const services = inject(createDefaultModule({ shared }), generatedModule, config.module);
+    const shared = inject(createDefaultSharedModule(EmptyFileSystem), generatedSharedModule, config.sharedModule || {});
+    const services = inject(createDefaultModule({ shared }), generatedModule, config.module || {});
     shared.ServiceRegistry.register(services);
     return services;
 }

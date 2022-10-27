@@ -4,7 +4,7 @@
  ******************************************************************************/
 
 import { LanguageMetaData } from '../language-meta-data';
-import { Module } from '../../dependency-injection';
+import { Module } from 'djinject';
 import { LangiumGeneratedServices, LangiumGeneratedSharedServices, LangiumSharedServices, LangiumServices } from '../../services';
 import { IParserConfig } from '../../parser/parser-config';
 import { LangiumGrammarAstReflection } from './ast';

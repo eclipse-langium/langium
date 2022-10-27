@@ -11,7 +11,6 @@ import {
     LSPErrorCodes, RequestHandler, ResponseError, ServerRequestHandler, TextDocumentIdentifier, TextDocumentSyncKind
 } from 'vscode-languageserver';
 import { URI } from 'vscode-uri';
-import { eagerLoad } from '../dependency-injection';
 import { LangiumServices, LangiumSharedServices } from '../services';
 import { isOperationCancelled } from '../utils/promise-util';
 import { DocumentState, LangiumDocument } from '../workspace/documents';
@@ -45,19 +44,9 @@ export class DefaultLanguageServer implements LanguageServer {
     }
 
     async initialize(params: InitializeParams): Promise<InitializeResult> {
-        this.eagerLoadServices();
         this.onInitializeEmitter.fire(params);
         this.onInitializeEmitter.dispose();
         return this.buildInitializeResult(params);
-    }
-
-    /**
-     * Eagerly loads all services before emitting the `onInitialize` event.
-     * Ensures that all services are able to catch the event.
-     */
-    protected eagerLoadServices(): void {
-        eagerLoad(this.services);
-        this.services.ServiceRegistry.all.forEach(language => eagerLoad(language));
     }
 
     protected hasService(callback: (language: LangiumServices) => object | undefined): boolean {

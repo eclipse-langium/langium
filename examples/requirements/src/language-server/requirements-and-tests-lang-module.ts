@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import {
-    createDefaultModule, createDefaultSharedModule, DefaultSharedModuleContext, inject,
+    createDefaultModule, createDefaultSharedModule, DefaultSharedModuleContext,
     LangiumSharedServices
 } from 'langium';
 import {
@@ -15,6 +15,7 @@ import { RequirementsLangModule, RequirementsLangServices } from './requirements
 import { registerRequirementsValidationChecks } from './requirements-lang-validator';
 import { TestsLangModule, TestsLangServices } from './tests-lang-module';
 import { registerTestsValidationChecks } from './tests-lang-validator';
+import { inject } from 'djinject';
 
 /**
  * Create the full set of services required by Langium.

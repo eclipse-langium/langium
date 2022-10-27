@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 export * from './default-module';
-export * from './dependency-injection';
+export * from 'djinject';
 export * from './generator/generator-node';
 export * from './generator/template-node';
 export { expandToString, expandToStringWithNL, normalizeEOL } from './generator/template-string';

@@ -29,6 +29,7 @@
     "publish:latest": "npm publish --tag latest"
   },
   "dependencies": {
+    "djinject": "^0.4.0",
     "langium": "~1.0.0",
     "sprotty-protocol": "^0.12.0"
   },
