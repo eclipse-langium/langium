@@ -31,6 +31,8 @@ export interface GenericAstNode extends AstNode {
     [key: string]: unknown
 }
 
+export type AstTypeList<T> = Record<keyof T, AstNode>;
+
 type SpecificNodeProperties<N extends AstNode> = keyof Omit<N, keyof AstNode | number | symbol>;
 
 /**

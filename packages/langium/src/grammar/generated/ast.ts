@@ -453,7 +453,45 @@ export function isWildcard(item: unknown): item is Wildcard {
     return reflection.isInstance(item, Wildcard);
 }
 
-export type LangiumGrammarAstType = 'AbstractElement' | 'AbstractRule' | 'AbstractType' | 'Action' | 'Alternatives' | 'Assignment' | 'AtomType' | 'CharacterRange' | 'Condition' | 'Conjunction' | 'CrossReference' | 'Disjunction' | 'Grammar' | 'GrammarImport' | 'Group' | 'InferredType' | 'Interface' | 'Keyword' | 'LiteralCondition' | 'NamedArgument' | 'NegatedToken' | 'Negation' | 'Parameter' | 'ParameterReference' | 'ParserRule' | 'RegexToken' | 'ReturnType' | 'RuleCall' | 'TerminalAlternatives' | 'TerminalGroup' | 'TerminalRule' | 'TerminalRuleCall' | 'Type' | 'TypeAttribute' | 'UnorderedGroup' | 'UntilToken' | 'Wildcard';
+export interface LangiumGrammarAstType {
+    AbstractElement: AbstractElement
+    AbstractRule: AbstractRule
+    AbstractType: AbstractType
+    Action: Action
+    Alternatives: Alternatives
+    Assignment: Assignment
+    AtomType: AtomType
+    CharacterRange: CharacterRange
+    Condition: Condition
+    Conjunction: Conjunction
+    CrossReference: CrossReference
+    Disjunction: Disjunction
+    Grammar: Grammar
+    GrammarImport: GrammarImport
+    Group: Group
+    InferredType: InferredType
+    Interface: Interface
+    Keyword: Keyword
+    LiteralCondition: LiteralCondition
+    NamedArgument: NamedArgument
+    NegatedToken: NegatedToken
+    Negation: Negation
+    Parameter: Parameter
+    ParameterReference: ParameterReference
+    ParserRule: ParserRule
+    RegexToken: RegexToken
+    ReturnType: ReturnType
+    RuleCall: RuleCall
+    TerminalAlternatives: TerminalAlternatives
+    TerminalGroup: TerminalGroup
+    TerminalRule: TerminalRule
+    TerminalRuleCall: TerminalRuleCall
+    Type: Type
+    TypeAttribute: TypeAttribute
+    UnorderedGroup: UnorderedGroup
+    UntilToken: UntilToken
+    Wildcard: Wildcard
+}
 
 export class LangiumGrammarAstReflection implements AstReflection {
 

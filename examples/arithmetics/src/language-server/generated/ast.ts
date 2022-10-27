@@ -113,7 +113,18 @@ export function isNumberLiteral(item: unknown): item is NumberLiteral {
     return reflection.isInstance(item, NumberLiteral);
 }
 
-export type ArithmeticsAstType = 'AbstractDefinition' | 'BinaryExpression' | 'DeclaredParameter' | 'Definition' | 'Evaluation' | 'Expression' | 'FunctionCall' | 'Module' | 'NumberLiteral' | 'Statement';
+export interface ArithmeticsAstType {
+    AbstractDefinition: AbstractDefinition
+    BinaryExpression: BinaryExpression
+    DeclaredParameter: DeclaredParameter
+    Definition: Definition
+    Evaluation: Evaluation
+    Expression: Expression
+    FunctionCall: FunctionCall
+    Module: Module
+    NumberLiteral: NumberLiteral
+    Statement: Statement
+}
 
 export class ArithmeticsAstReflection implements AstReflection {
 

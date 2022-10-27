@@ -68,7 +68,13 @@ export function isTransition(item: unknown): item is Transition {
     return reflection.isInstance(item, Transition);
 }
 
-export type StatemachineAstType = 'Command' | 'Event' | 'State' | 'Statemachine' | 'Transition';
+export interface StatemachineAstType {
+    Command: Command
+    Event: Event
+    State: State
+    Statemachine: Statemachine
+    Transition: Transition
+}
 
 export class StatemachineAstReflection implements AstReflection {
 
