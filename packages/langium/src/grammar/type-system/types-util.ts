@@ -20,7 +20,7 @@ export type Property = {
     name: string,
     optional: boolean,
     typeAlternatives: PropertyType[]
-    sourceNode: AbstractElement
+    astNode: AbstractElement
 }
 
 export type PropertyType = {
@@ -224,4 +224,17 @@ export function collectSuperTypes(ruleNode: AbstractType): Set<Interface> {
         });
     }
     return superTypes;
+}
+
+export function comparePropertyType(a: PropertyType, b: PropertyType): boolean {
+    return a.array === b.array &&
+        a.reference === b.reference &&
+        compareLists(a.types, b.types);
+}
+
+function compareLists<T>(a: T[], b: T[], eq: (x: T, y: T) => boolean = (x, y) => x === y): boolean {
+    const distinctAndSortedA = distinctAndSorted(a);
+    const distinctAndSortedB = distinctAndSorted(b);
+    if (distinctAndSortedA.length !== distinctAndSortedB.length) return false;
+    return distinctAndSortedB.every((e, i) => eq(e, distinctAndSortedA[i]));
 }
