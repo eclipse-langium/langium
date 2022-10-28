@@ -13,13 +13,14 @@ import { getDocument } from '../../utils/ast-util';
 import { MultiMap } from '../../utils/collections';
 import { AstNodeLocator } from '../../workspace/ast-node-locator';
 import { LangiumDocuments } from '../../workspace/documents';
-import { AbstractType, Grammar, Interface, isInterface, isParserRule, isType, ParserRule, Type } from '../generated/ast';
+import { AbstractElement, AbstractType, Grammar, Interface, isInterface, isParserRule, isType, ParserRule, Type } from '../generated/ast';
 import { isDataTypeRule, resolveImport } from '../internal-grammar-util';
 
 export type Property = {
     name: string,
     optional: boolean,
     typeAlternatives: PropertyType[]
+    sourceNode: AbstractElement
 }
 
 export type PropertyType = {

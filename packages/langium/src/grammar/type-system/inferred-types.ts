@@ -33,8 +33,22 @@ type TypeCollection = {
     reference: boolean
 }
 
-function copy<T>(value: T): T {
-    return JSON.parse(JSON.stringify(value));
+function copy(value: TypeAlternative): TypeAlternative {
+    return {
+        name: value.name,
+        super: value.super,
+        ruleCalls: value.ruleCalls,
+        properties: value.properties.map(e => copyProperty(e))
+    };
+}
+
+function copyProperty(value: Property): Property {
+    return {
+        name: value.name,
+        optional: value.optional,
+        typeAlternatives: value.typeAlternatives,
+        sourceNode: value.sourceNode
+    };
 }
 
 function collectSuperTypes(original: TypePart, part: TypePart, set: Set<string>): void {
@@ -297,7 +311,8 @@ function addAction(graph: TypeGraph, parent: TypePart, action: Action): TypePart
             typeAlternatives: toPropertyType(
                 action.operator === '+=',
                 false,
-                graph.root.ruleCalls.length !== 0 ? graph.root.ruleCalls : graph.getSuperTypes(typeNode))
+                graph.root.ruleCalls.length !== 0 ? graph.root.ruleCalls : graph.getSuperTypes(typeNode)),
+            sourceNode: action
         });
     }
     return typeNode;
@@ -316,7 +331,8 @@ function addAssignment(current: TypePart, assignment: Assignment): void {
     current.properties.push({
         name: assignment.feature,
         optional: isOptionalCardinality(assignment.cardinality),
-        typeAlternatives
+        typeAlternatives,
+        sourceNode: assignment
     });
 }
 
