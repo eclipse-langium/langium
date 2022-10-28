@@ -22,7 +22,11 @@ import { stream } from '../../utils/stream';
 import { LangiumDocument } from '../../workspace/documents';
 import { findFirstFeatures, findNextFeatures, NextFeature } from './follow-element-computation';
 
-export type CompletionAcceptor = (value: string | AstNode | AstNodeDescription, item?: Partial<CompletionItem>) => void
+export type CompletionAcceptor = (value: CompletionValueItem) => void
+
+export type CompletionValueItem = {
+    label?: string | AstNode | AstNodeDescription
+} & Partial<Omit<CompletionItem, 'label'>>;
 
 /**
  * Language-specific service for handling completion requests.
@@ -59,12 +63,12 @@ export class DefaultCompletionProvider implements CompletionProvider {
         if (!cst) {
             return undefined;
         }
-        let items: CompletionItem[] = [];
+        const items: CompletionItem[] = [];
         const textDocument = document.textDocument;
         const text = textDocument.getText();
         const offset = textDocument.offsetAt(params.position);
-        const acceptor = (value: string | AstNode | AstNodeDescription, item?: Partial<CompletionItem>) => {
-            const completionItem = this.fillCompletionItem(textDocument, offset, value, item);
+        const acceptor: CompletionAcceptor = value => {
+            const completionItem = this.fillCompletionItem(textDocument, offset, value);
             if (completionItem) {
                 items.push(completionItem);
             }
@@ -81,7 +85,7 @@ export class DefaultCompletionProvider implements CompletionProvider {
         const parserStart = this.backtrackToTokenStart(text, offset);
         const beforeFeatures = this.findFeaturesAt(textDocument, parserStart);
         let afterFeatures: NextFeature[] = [];
-        const reparse = offset !== parserStart;
+        const reparse = this.canReparse() && offset !== parserStart;
         if (reparse) {
             afterFeatures = this.findFeaturesAt(textDocument, offset);
         }
@@ -101,13 +105,6 @@ export class DefaultCompletionProvider implements CompletionProvider {
         );
 
         if (reparse) {
-            const missingPart = textDocument.getText({
-                start: textDocument.positionAt(parserStart),
-                end: params.position
-            }).toLowerCase();
-            // Remove items from `beforeFeatures` which don't fit the current text
-            items = items.filter(e => e.label.toLowerCase().startsWith(missingPart));
-
             await Promise.all(
                 stream(afterFeatures)
                     .exclude(beforeFeatures, distinctionFunction)
@@ -117,6 +114,10 @@ export class DefaultCompletionProvider implements CompletionProvider {
         }
 
         return CompletionList.create(items, true);
+    }
+
+    protected canReparse(): boolean {
+        return false;
     }
 
     protected findFeaturesAt(document: TextDocument, offset: number): NextFeature[] {
@@ -209,7 +210,7 @@ export class DefaultCompletionProvider implements CompletionProvider {
                 const duplicateStore = new Set<string>();
                 scope.getAllElements().forEach(e => {
                     if (!duplicateStore.has(e.name) && this.filterCrossReference(e)) {
-                        acceptor(e, this.createReferenceCompletionItem(e));
+                        acceptor(this.createReferenceCompletionItem(e));
                         duplicateStore.add(e.name);
                     }
                 });
@@ -226,8 +227,9 @@ export class DefaultCompletionProvider implements CompletionProvider {
      * @param nodeDescription The description of a reference candidate
      * @returns A partial completion item
      */
-    protected createReferenceCompletionItem(nodeDescription: AstNodeDescription): Partial<CompletionItem> {
+    protected createReferenceCompletionItem(nodeDescription: AstNodeDescription): CompletionValueItem {
         return {
+            label: nodeDescription,
             kind: CompletionItemKind.Reference,
             detail: nodeDescription.type,
             sortText: '0'
@@ -240,49 +242,54 @@ export class DefaultCompletionProvider implements CompletionProvider {
 
     protected completionForKeyword(keyword: ast.Keyword, context: AstNode | undefined, acceptor: CompletionAcceptor): MaybePromise<void> {
         // Filter out keywords that do not contain any word character
-        if (!keyword.value.match(/[\w]+/)) {
+        if (!keyword.value.match(/[\w]/)) {
             return;
         }
-        acceptor(keyword.value, { kind: CompletionItemKind.Keyword, detail: 'Keyword', sortText: /\w/.test(keyword.value) ? '1' : '2' });
+        acceptor({
+            label: keyword.value,
+            kind: CompletionItemKind.Keyword,
+            detail: 'Keyword',
+            sortText: '1'
+        });
     }
 
-    protected fillCompletionItem(document: TextDocument, offset: number, value: string | AstNode | AstNodeDescription, info: Partial<CompletionItem> | undefined): CompletionItem | undefined {
+    protected fillCompletionItem(document: TextDocument, offset: number, item: CompletionValueItem): CompletionItem | undefined {
         let label: string;
-        if (typeof value === 'string') {
-            label = value;
-        } else if (isAstNode(value)) {
-            const name = this.nameProvider.getName(value);
+        if (typeof item.label === 'string') {
+            label = item.label;
+        } else if (isAstNode(item.label)) {
+            const name = this.nameProvider.getName(item.label);
             if (!name) {
                 return undefined;
             }
             label = name;
-        } else if (!isAstNode(value)) {
-            label = value.name;
+        } else if (item.label && !isAstNode(item.label)) {
+            label = item.label.name;
         } else {
             return undefined;
         }
-        const textEdit = this.buildCompletionTextEdit(document, offset, label);
+        let insertText: string;
+        if (typeof item.textEdit?.newText === 'string') {
+            insertText = item.textEdit.newText;
+        } else if (typeof item.insertText === 'string') {
+            insertText = item.insertText;
+        } else {
+            insertText = label;
+        }
+        const textEdit = this.buildCompletionTextEdit(document, offset, insertText);
         if (!textEdit) {
             return undefined;
         }
-        const item: CompletionItem = { label, textEdit, ...info };
-        return item;
+        const completionItem: CompletionItem = { textEdit, ...item, label };
+        return completionItem;
     }
 
     protected buildCompletionTextEdit(document: TextDocument, offset: number, completion: string): TextEdit | undefined {
-        let negativeOffset = 0;
         const content = document.getText();
-        const contentLowerCase = content.toLowerCase();
-        const completionLowerCase = completion.toLowerCase();
-        for (let i = completionLowerCase.length; i > 0; i--) {
-            const contentLowerCaseSub = contentLowerCase.substring(offset - i, offset);
-            if (completionLowerCase.startsWith(contentLowerCaseSub) && (i === 0 || !this.isWordCharacterAt(contentLowerCase, offset - i - 1))) {
-                negativeOffset = i;
-                break;
-            }
-        }
-        if (negativeOffset > 0 || offset === 0 || !this.isWordCharacterAt(completion, 0) || !this.isWordCharacterAt(content, offset - 1)) {
-            const start = document.positionAt(offset - negativeOffset);
+        const tokenStart = this.backtrackToTokenStart(content, offset);
+        const identifier = content.substring(tokenStart, offset);
+        if (this.charactersFuzzyMatch(identifier, completion.toLowerCase())) {
+            const start = document.positionAt(tokenStart);
             const end = document.positionAt(offset);
             return {
                 newText: completion,
@@ -299,4 +306,50 @@ export class DefaultCompletionProvider implements CompletionProvider {
     protected isWordCharacterAt(content: string, index: number): boolean {
         return this.grammarConfig.nameRegexp.test(content.charAt(index));
     }
+
+    protected charactersFuzzyMatch(existingValue: string, completionValue: string): boolean {
+        if (existingValue.length === 0) {
+            return true;
+        }
+
+        let matchedFirstCharacter = false;
+        let previous: number | undefined;
+        let character = 0;
+        const len = completionValue.length;
+        for (let i = 0; i < len; i++) {
+            const strChar = completionValue.charCodeAt(i);
+            const testChar = existingValue.charCodeAt(character);
+            if (strChar === testChar || this.toUpperCharCode(strChar) === this.toUpperCharCode(testChar)) {
+                matchedFirstCharacter ||=
+                    previous === undefined || // Beginning of word
+                    this.isWordTransition(previous, strChar);
+                if (matchedFirstCharacter) {
+                    character++;
+                }
+                if (character === existingValue.length) {
+                    return true;
+                }
+            }
+            previous = strChar;
+        }
+        return false;
+    }
+
+    protected isWordTransition(previous: number, current: number): boolean {
+        return a <= previous && previous <= z && A <= current && current <= Z || // camelCase transition
+            previous === _ && current !== _; // snake_case transition
+    }
+
+    protected toUpperCharCode(charCode: number) {
+        if (a <= charCode && charCode <= z) {
+            return charCode - 32;
+        }
+        return charCode;
+    }
 }
+
+const a = 'a'.charCodeAt(0);
+const z = 'z'.charCodeAt(0);
+const A = 'A'.charCodeAt(0);
+const Z = 'Z'.charCodeAt(0);
+const _ = '_'.charCodeAt(0);
