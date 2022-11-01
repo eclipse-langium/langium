@@ -4,17 +4,13 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { AstNode, AstNodeDescription, GenericAstNode, LinkingError, Reference, ReferenceInfo } from '../syntax-tree';
+import { AstNode, GenericAstNode, isAstNode, isReference, Reference, ReferenceInfo } from '../syntax-tree';
 import { DONE_RESULT, Stream, stream, StreamImpl, TreeStream, TreeStreamImpl } from '../utils/stream';
 import { LangiumDocument } from '../workspace/documents';
 
 export type Mutable<T> = {
     -readonly [P in keyof T]: T[P]
 };
-
-export function isAstNode(obj: unknown): obj is AstNode {
-    return typeof obj === 'object' && obj !== null && typeof (obj as AstNode).$type === 'string';
-}
 
 /**
  * Link the `$container` and other related properties of every AST node that is directly contained
@@ -37,24 +33,6 @@ export function linkContentToContainer(node: AstNode): void {
             }
         }
     }
-}
-
-export function isReference(obj: unknown): obj is Reference {
-    return typeof obj === 'object' && obj !== null && typeof (obj as Reference).$refText === 'string';
-}
-
-export function isAstNodeDescription(obj: unknown): obj is AstNodeDescription {
-    return typeof obj === 'object' && obj !== null
-        && typeof (obj as AstNodeDescription).name === 'string'
-        && typeof (obj as AstNodeDescription).type === 'string'
-        && typeof (obj as AstNodeDescription).path === 'string';
-}
-
-export function isLinkingError(obj: unknown): obj is LinkingError {
-    return typeof obj === 'object' && obj !== null
-        && isAstNode((obj as LinkingError).container)
-        && isReference((obj as LinkingError).reference)
-        && typeof (obj as LinkingError).message === 'string';
 }
 
 /**

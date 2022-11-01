@@ -7,8 +7,8 @@
 import { CancellationToken } from 'vscode-languageserver';
 import { URI } from 'vscode-uri';
 import { LangiumServices } from '../services';
-import { AstNode, AstNodeDescription, ReferenceInfo } from '../syntax-tree';
-import { getDocument, isLinkingError, streamAst, streamReferences } from '../utils/ast-util';
+import { AstNode, AstNodeDescription, isLinkingError, ReferenceInfo } from '../syntax-tree';
+import { getDocument, streamAst, streamReferences } from '../utils/ast-util';
 import { toDocumentSegment } from '../utils/cst-util';
 import { interruptAndCheck } from '../utils/promise-util';
 import { equalURI } from '../utils/uri-util';

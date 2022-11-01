@@ -7,9 +7,8 @@
 import { CancellationToken, Location,  ReferenceParams } from 'vscode-languageserver';
 import { NameProvider } from '../references/name-provider';
 import { References } from '../references/references';
-import { AstNode, LeafCstNode } from '../syntax-tree';
+import { AstNode, isReference, LeafCstNode } from '../syntax-tree';
 import { LangiumServices } from '../services';
-import { isReference } from '../utils/ast-util';
 import { findDeclarationNodeAtOffset } from '../utils/cst-util';
 import { MaybePromise } from '../utils/promise-util';
 import { LangiumDocument } from '../workspace/documents';
