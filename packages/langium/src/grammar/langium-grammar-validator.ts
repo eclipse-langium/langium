@@ -71,6 +71,7 @@ export class LangiumGrammarValidationRegistry extends ValidationRegistry {
             CharacterRange: validator.checkInvalidCharacterRange,
             Interface: validator.checkReservedTypeName,
             Type: validator.checkReservedTypeName,
+            TypeAttribute: validator.checkReservedTypeName,
             RuleCall: [
                 validator.checkUsedHiddenTerminalRule,
                 validator.checkUsedFragmentTerminalRule,
@@ -565,7 +566,7 @@ export class LangiumGrammarValidator {
         }
     }
 
-    checkReservedTypeName(type: ast.Interface | ast.Type | ast.InferredType, accept: ValidationAcceptor): void {
+    checkReservedTypeName(type: ast.Interface | ast.TypeAttribute | ast.Type | ast.InferredType, accept: ValidationAcceptor): void {
         this.checkReservedName(type, 'name', accept);
     }
 
