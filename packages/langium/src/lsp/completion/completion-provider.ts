@@ -276,7 +276,7 @@ export class DefaultCompletionProvider implements CompletionProvider {
         } else {
             insertText = label;
         }
-        const textEdit = this.buildCompletionTextEdit(document, offset, insertText);
+        const textEdit = this.buildCompletionTextEdit(document, offset, label, insertText);
         if (!textEdit) {
             return undefined;
         }
@@ -284,15 +284,15 @@ export class DefaultCompletionProvider implements CompletionProvider {
         return completionItem;
     }
 
-    protected buildCompletionTextEdit(document: TextDocument, offset: number, completion: string): TextEdit | undefined {
+    protected buildCompletionTextEdit(document: TextDocument, offset: number, label: string, newText: string): TextEdit | undefined {
         const content = document.getText();
         const tokenStart = this.backtrackToTokenStart(content, offset);
         const identifier = content.substring(tokenStart, offset);
-        if (this.charactersFuzzyMatch(identifier, completion.toLowerCase())) {
+        if (this.charactersFuzzyMatch(identifier, label.toLowerCase())) {
             const start = document.positionAt(tokenStart);
             const end = document.positionAt(offset);
             return {
-                newText: completion,
+                newText,
                 range: {
                     start,
                     end
