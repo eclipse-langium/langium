@@ -5,8 +5,8 @@
  ******************************************************************************/
 
 import { DiagnosticSeverity } from 'vscode-languageserver';
-import { createLangiumGrammarServices, EmptyFileSystem } from '../../src';
-import { Assignment, CrossReference, Grammar, Group, ParserRule } from '../../src/grammar/generated/ast';
+import { AstNode, createLangiumGrammarServices, EmptyFileSystem, Properties, streamAllContents } from '../../src';
+import { Assignment, CrossReference, Grammar, Group, isAction, isAssignment, isInferredType, isInterface, isParserRule, isType, ParserRule } from '../../src/grammar/generated/ast';
 import { IssueCodes } from '../../src/grammar/langium-grammar-validator';
 import { expectError, expectIssue, expectNoIssues, expectWarning, validationHelper, ValidationResult } from '../../src/test';
 
@@ -105,15 +105,15 @@ describe('Check grammar with primitives', () => {
     const grammar = `
     grammar PrimGrammar
     entry Expr:
-        (String | Bool | Num | BigInt | DateObj)*;
-    String:
-        'String' val=STR;
+        (Word | Bool | Num | LargeInt | DateObj)*;
+    Word:
+        'Word' val=STR;
     Bool:
         'Bool' val?='true';
     Num:
         'Num' val=NUM;
-    BigInt:
-        'BigInt' val=BIG 'n';
+    LargeInt:
+        'LargeInt' val=BIG 'n';
     DateObj:
         'Date' val=DATE;
     terminal STR: /[_a-zA-Z][\\w_]*/;
@@ -216,5 +216,69 @@ describe('Unused rules validation', () => {
             severity: DiagnosticSeverity.Hint
         });
     });
+
+});
+
+describe('Reserved names', () => {
+
+    test('Reserved parser rule name', async () => {
+        const text = 'String: name="X";';
+        expectReservedName(await validate(text), isParserRule, 'name');
+    });
+
+    test('Reserved terminal rule name - negative', async () => {
+        const text = 'terminal String: /X/;';
+        const validation = await validate(text);
+        expect(validation.diagnostics).toHaveLength(0);
+    });
+
+    test('Reserved rule inferred type', async () => {
+        const text = 'X infers String: name="X";';
+        expectReservedName(await validate(text), isInferredType, 'name');
+    });
+
+    test('Reserved assignment feature', async () => {
+        const text = 'X: await="X";';
+        expectReservedName(await validate(text), isAssignment, 'feature');
+    });
+
+    test('Reserved action type', async () => {
+        const text = 'X: {infer String} name="X";';
+        expectReservedName(await validate(text), isInferredType, 'name');
+    });
+
+    test('Reserved action feature', async () => {
+        const text = 'X: Y {infer Z.async=current} name="X"; Y: name="Y";';
+        expectReservedName(await validate(text), isAction, 'feature');
+    });
+
+    test('Reserved interface name', async () => {
+        const text = 'interface String {}';
+        expectReservedName(await validate(text), isInterface, 'name');
+    });
+
+    test('Reserved interface name - negative', async () => {
+        const text = 'interface obj {}';
+        const validation = await validate(text);
+        expect(validation.diagnostics).toHaveLength(0);
+    });
+
+    test('Reserved type name', async () => {
+        const text = 'type String = X; X: name="X";';
+        expectReservedName(await validate(text), isType, 'name');
+    });
+
+    function expectReservedName<T extends AstNode>(validation: ValidationResult<Grammar>, predicate: (node: AstNode) => node is T, property: Properties<T>): void {
+        expect(validation.diagnostics).toHaveLength(1);
+        const node = streamAllContents(validation.document.parseResult.value).find(predicate)!;
+        expectIssue(validation, {
+            node,
+            message: / is a reserved name of the JavaScript runtime\.$/,
+            property: {
+                name: property
+            },
+            severity: DiagnosticSeverity.Error
+        });
+    }
 
 });

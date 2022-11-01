@@ -9,7 +9,7 @@ import { Utils } from 'vscode-uri';
 import { NamedAstNode } from '../references/name-provider';
 import { References } from '../references/references';
 import { LangiumServices } from '../services';
-import { AstNode, Reference } from '../syntax-tree';
+import { AstNode, Properties, Reference } from '../syntax-tree';
 import { getContainerOfType, getDocument, streamAllContents } from '../utils/ast-util';
 import { MultiMap } from '../utils/collections';
 import { toDocumentSegment } from '../utils/cst-util';
@@ -29,21 +29,27 @@ export class LangiumGrammarValidationRegistry extends ValidationRegistry {
         super(services);
         const validator = services.validation.LangiumGrammarValidator;
         const checks: ValidationChecks<ast.LangiumGrammarAstType> = {
-            Action: validator.checkActionTypeUnions,
+            Action: [
+                validator.checkActionTypeUnions,
+                validator.checkAssignmentReservedName
+            ],
             AbstractRule: validator.checkRuleName,
             Assignment: [
                 validator.checkAssignmentWithFeatureName,
-                validator.checkAssignmentToFragmentRule
+                validator.checkAssignmentToFragmentRule,
+                validator.checkAssignmentReservedName
             ],
             ParserRule: [
                 validator.checkParserRuleDataType,
-                validator.checkRuleParametersUsed
+                validator.checkRuleParametersUsed,
+                validator.checkParserRuleReservedName,
             ],
             TerminalRule: [
                 validator.checkTerminalRuleReturnType,
                 validator.checkHiddenTerminalRule,
                 validator.checkEmptyTerminalRule
             ],
+            InferredType: validator.checkReservedTypeName,
             Keyword: validator.checkKeyword,
             UnorderedGroup: validator.checkUnorderedGroup,
             Grammar: [
@@ -63,6 +69,8 @@ export class LangiumGrammarValidationRegistry extends ValidationRegistry {
             ],
             GrammarImport: validator.checkPackageImport,
             CharacterRange: validator.checkInvalidCharacterRange,
+            Interface: validator.checkReservedTypeName,
+            Type: validator.checkReservedTypeName,
             RuleCall: [
                 validator.checkUsedHiddenTerminalRule,
                 validator.checkUsedFragmentTerminalRule,
@@ -548,8 +556,36 @@ export class LangiumGrammarValidator {
         if (rule.name && !isEmptyRule(rule)) {
             const firstChar = rule.name.substring(0, 1);
             if (firstChar.toUpperCase() !== firstChar) {
-                accept('warning', 'Rule name should start with an upper case letter.', { node: rule, property: 'name', code: IssueCodes.RuleNameUppercase });
+                accept('warning', 'Rule name should start with an upper case letter.', {
+                    node: rule,
+                    property: 'name',
+                    code: IssueCodes.RuleNameUppercase
+                });
             }
+        }
+    }
+
+    checkReservedTypeName(type: ast.Interface | ast.Type | ast.InferredType, accept: ValidationAcceptor): void {
+        this.checkReservedName(type, 'name', accept);
+    }
+
+    checkAssignmentReservedName(assignment: ast.Assignment | ast.Action, accept: ValidationAcceptor): void {
+        this.checkReservedName(assignment, 'feature', accept);
+    }
+
+    checkParserRuleReservedName(rule: ast.ParserRule, accept: ValidationAcceptor): void {
+        if (!rule.inferredType) {
+            this.checkReservedName(rule, 'name', accept);
+        }
+    }
+
+    private checkReservedName<N extends AstNode>(node: N, property: Properties<N>, accept: ValidationAcceptor): void {
+        const name = node[property as keyof N];
+        if (typeof name === 'string' && reservedNames.has(name)) {
+            accept('error', `'${name}' is a reserved name of the JavaScript runtime.`, {
+                node,
+                property
+            });
         }
     }
 
@@ -684,3 +720,140 @@ function isPrimitiveType(type: string): boolean {
 function isEmptyRule(rule: ast.AbstractRule): boolean {
     return !rule.definition || !rule.definition.$cstNode || rule.definition.$cstNode.length === 0;
 }
+
+const reservedNames = new Set([
+    // Keywords
+    'abstract',
+    'arguments',
+    'async',
+    'await',
+    'break',
+    'byte',
+    'case',
+    'catch',
+    'class',
+    'const',
+    'continue',
+    'debugger',
+    'default',
+    'delete',
+    'do',
+    'else',
+    'enum',
+    'export',
+    'extends',
+    'false',
+    'finally',
+    'for',
+    'function',
+    'if',
+    'implements',
+    'import',
+    'in',
+    'instanceof',
+    'interface',
+    'let',
+    'long',
+    'new',
+    'null',
+    'package',
+    'private',
+    'protected',
+    'public',
+    'return',
+    'static',
+    'super',
+    'switch',
+    'this',
+    'throw',
+    'try',
+    'typeof',
+    'var',
+    'void',
+    'while',
+    'with',
+    'yield',
+    // Built-in objects, properties and methods
+    // Collections
+    'Array',
+    'Int8Array',
+    'Uint8Array',
+    'Uint8ClampedArray',
+    'Int16Array',
+    'Uint16Array',
+    'Int32Array',
+    'Uint32Array',
+    'Float32Array',
+    'Float64Array',
+    'BigInt64Array',
+    'BigUint64Array',
+    // Keyed collections
+    'Map',
+    'Set',
+    'WeakMap',
+    'WeakSet',
+    // Errors
+    'Error',
+    'AggregateError',
+    'EvalError',
+    'InternalError',
+    'RangeError',
+    'ReferenceError',
+    'SyntaxError',
+    'TypeError',
+    'URIError',
+    // Primitives
+    'BigInt',
+    'RegExp',
+    'Number',
+    'Object',
+    'Function',
+    'Symbol',
+    'String',
+    // Math
+    'Math',
+    'NaN',
+    'Infinity',
+    'isFinite',
+    'isNaN',
+    // Structured data
+    'Buffer',
+    'ArrayBuffer',
+    'SharedArrayBuffer',
+    'Atomics',
+    'DataView',
+    'JSON',
+    'globalThis',
+    'decodeURIComponent',
+    'decodeURI',
+    'encodeURIComponent',
+    'encodeURI',
+    'parseInt',
+    'parseFloat',
+    // Control abstraction
+    'Promise',
+    'Generator',
+    'GeneratorFunction',
+    'AsyncFunction',
+    'AsyncGenerator',
+    'AsyncGeneratorFunction',
+    // Reflection
+    'Reflect',
+    'Proxy',
+    // Others
+    'Date',
+    'Intl',
+    'eval',
+    'prototype',
+    'hasOwnProperty',
+    'isPrototypeOf',
+    'length',
+    'toString',
+    'undefined',
+    'valueOf',
+    'clearInterval',
+    'setInterval',
+    'clearTimeout',
+    'setTimeout',
+    'process',
+]);
