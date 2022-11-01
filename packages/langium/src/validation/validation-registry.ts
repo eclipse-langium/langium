@@ -6,7 +6,7 @@
 
 import { CancellationToken, CodeDescription, DiagnosticRelatedInformation, DiagnosticTag, integer, Range } from 'vscode-languageserver';
 import { LangiumServices } from '../services';
-import { AstNode, AstReflection, Properties } from '../syntax-tree';
+import { AstNode, AstReflection, AstTypeList, Properties } from '../syntax-tree';
 import { MultiMap } from '../utils/collections';
 import { isOperationCancelled, MaybePromise } from '../utils/promise-util';
 
@@ -35,10 +35,11 @@ export type DiagnosticInfo<N extends AstNode, P = Properties<N>> = {
 
 export type ValidationAcceptor = <N extends AstNode>(severity: 'error' | 'warning' | 'info' | 'hint', message: string, info: DiagnosticInfo<N>) => void
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type ValidationCheck = (node: any, accept: ValidationAcceptor, cancelToken: CancellationToken) => MaybePromise<void>;
+export type ValidationCheck<T extends AstNode = AstNode> = (node: T, accept: ValidationAcceptor, cancelToken: CancellationToken) => MaybePromise<void>;
 
-export type ValidationChecks<T extends string> = { [type in T]?: ValidationCheck | ValidationCheck[] }
+export type ValidationChecks<T extends AstTypeList<T>> = {
+    [K in keyof T]?: ValidationCheck<T[K]> | Array<ValidationCheck<T[K]>>
+}
 
 /**
  * Manages a set of `ValidationCheck`s to be applied when documents are validated.
@@ -51,14 +52,15 @@ export class ValidationRegistry {
         this.reflection = services.shared.AstReflection;
     }
 
-    register(checksRecord: { [type: string]: ValidationCheck | ValidationCheck[] | undefined }, thisObj: ThisParameterType<unknown> = this): void {
+    register<T extends AstTypeList<T>>(checksRecord: ValidationChecks<T>, thisObj: ThisParameterType<unknown> = this): void {
         for (const [type, ch] of Object.entries(checksRecord)) {
-            if (Array.isArray(ch)) {
-                for (const check of ch) {
+            const callbacks = ch as ValidationCheck | ValidationCheck[];
+            if (Array.isArray(callbacks)) {
+                for (const check of callbacks) {
                     this.doRegister(type, this.wrapValidationException(check, thisObj));
                 }
-            } else if (ch) {
-                this.doRegister(type, this.wrapValidationException(ch, thisObj));
+            } else if (typeof callbacks === 'function') {
+                this.doRegister(type, this.wrapValidationException(callbacks, thisObj));
             }
         }
     }
@@ -76,7 +78,7 @@ export class ValidationRegistry {
                 if(err instanceof Error && err.stack) {
                     console.error(err.stack);
                 }
-                accept('error', 'An error occurred during validation: ' + message, {node});
+                accept('error', 'An error occurred during validation: ' + message, { node });
             }
         };
     }

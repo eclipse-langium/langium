@@ -47,21 +47,28 @@ function hasCrossReferences(grammar: Grammar): boolean {
 }
 
 function generateAstReflection(config: LangiumConfig, astTypes: AstTypes): GeneratorNode {
-    const typeNames: string[] = astTypes.interfaces.map(t => `'${t.name}'`)
-        .concat(astTypes.unions.map(t => `'${t.name}'`))
+    const typeNames: string[] = astTypes.interfaces.map(t => t.name)
+        .concat(astTypes.unions.map(t => t.name))
         .sort();
     const crossReferenceTypes = buildCrossReferenceTypes(astTypes);
     const reflectionNode = new CompositeGeneratorNode();
 
+    reflectionNode.append(`export interface ${config.projectName}AstType {`, NL);
+    reflectionNode.indent(astTypeBody => {
+        for (const type of typeNames) {
+            astTypeBody.append(type, ': ', type, NL);
+        }
+    });
+    reflectionNode.append('}', NL, NL);
+
     reflectionNode.append(
-        `export type ${config.projectName}AstType = ${typeNames.join(' | ')};`, NL, NL,
         `export class ${config.projectName}AstReflection implements AstReflection {`, NL, NL
     );
 
     reflectionNode.indent(classBody => {
         classBody.append('getAllTypes(): string[] {', NL);
         classBody.indent(allTypes => {
-            allTypes.append(`return [${typeNames.join(', ')}];`, NL);
+            allTypes.append(`return [${typeNames.map(e => `'${e}'`).join(', ')}];`, NL);
         });
         classBody.append('}', NL, NL, 'isInstance(node: unknown, type: string): boolean {', NL);
         classBody.indent(isInstance => {

@@ -80,7 +80,14 @@ export function isTestModel(item: unknown): item is TestModel {
     return reflection.isInstance(item, TestModel);
 }
 
-export type RequirementsAndTestsAstType = 'Contact' | 'Environment' | 'Requirement' | 'RequirementModel' | 'Test' | 'TestModel';
+export interface RequirementsAndTestsAstType {
+    Contact: Contact
+    Environment: Environment
+    Requirement: Requirement
+    RequirementModel: RequirementModel
+    Test: Test
+    TestModel: TestModel
+}
 
 export class RequirementsAndTestsAstReflection implements AstReflection {
 

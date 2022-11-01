@@ -84,7 +84,15 @@ export function isPackageDeclaration(item: unknown): item is PackageDeclaration 
     return reflection.isInstance(item, PackageDeclaration);
 }
 
-export type DomainModelAstType = 'AbstractElement' | 'DataType' | 'Domainmodel' | 'Entity' | 'Feature' | 'PackageDeclaration' | 'Type';
+export interface DomainModelAstType {
+    AbstractElement: AbstractElement
+    DataType: DataType
+    Domainmodel: Domainmodel
+    Entity: Entity
+    Feature: Feature
+    PackageDeclaration: PackageDeclaration
+    Type: Type
+}
 
 export class DomainModelAstReflection implements AstReflection {
 
