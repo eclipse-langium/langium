@@ -330,7 +330,7 @@ describe('Reserved names', () => {
     });
 
     test('Reserved assignment feature', async () => {
-        const text = 'X: await="X";';
+        const text = 'X: Map="X";';
         expectReservedName(await validate(text), GrammarAST.isAssignment, 'feature');
     });
 
@@ -340,7 +340,7 @@ describe('Reserved names', () => {
     });
 
     test('Reserved action feature', async () => {
-        const text = 'X: Y {infer Z.async=current} name="X"; Y: name="Y";';
+        const text = 'X: Y {infer Z.Map=current} name="X"; Y: name="Y";';
         expectReservedName(await validate(text), GrammarAST.isAction, 'feature');
     });
 
@@ -356,7 +356,7 @@ describe('Reserved names', () => {
     });
 
     test('Reserved type attribute name', async () => {
-        const text = 'interface X { async: number }';
+        const text = 'interface X { Map: number }';
         expectReservedName(await validate(text), GrammarAST.isTypeAttribute, 'name');
     });
 

@@ -49,7 +49,7 @@ export class LangiumGrammarValidationRegistry extends ValidationRegistry {
                 validator.checkHiddenTerminalRule,
                 validator.checkEmptyTerminalRule
             ],
-            InferredType: validator.checkReservedTypeName,
+            InferredType: validator.checkTypeReservedName,
             Keyword: validator.checkKeyword,
             UnorderedGroup: validator.checkUnorderedGroup,
             Grammar: [
@@ -69,9 +69,9 @@ export class LangiumGrammarValidationRegistry extends ValidationRegistry {
             ],
             GrammarImport: validator.checkPackageImport,
             CharacterRange: validator.checkInvalidCharacterRange,
-            Interface: validator.checkReservedTypeName,
-            Type: validator.checkReservedTypeName,
-            TypeAttribute: validator.checkReservedTypeName,
+            Interface: validator.checkTypeReservedName,
+            Type: validator.checkTypeReservedName,
+            TypeAttribute: validator.checkTypeReservedName,
             RuleCall: [
                 validator.checkUsedHiddenTerminalRule,
                 validator.checkUsedFragmentTerminalRule,
@@ -566,7 +566,7 @@ export class LangiumGrammarValidator {
         }
     }
 
-    checkReservedTypeName(type: ast.Interface | ast.TypeAttribute | ast.Type | ast.InferredType, accept: ValidationAcceptor): void {
+    checkTypeReservedName(type: ast.Interface | ast.TypeAttribute | ast.Type | ast.InferredType, accept: ValidationAcceptor): void {
         this.checkReservedName(type, 'name', accept);
     }
 
@@ -723,57 +723,6 @@ function isEmptyRule(rule: ast.AbstractRule): boolean {
 }
 
 const reservedNames = new Set([
-    // Keywords
-    'abstract',
-    'arguments',
-    'async',
-    'await',
-    'break',
-    'byte',
-    'case',
-    'catch',
-    'class',
-    'const',
-    'continue',
-    'debugger',
-    'default',
-    'delete',
-    'do',
-    'else',
-    'enum',
-    'export',
-    'extends',
-    'false',
-    'finally',
-    'for',
-    'function',
-    'if',
-    'implements',
-    'import',
-    'in',
-    'instanceof',
-    'interface',
-    'let',
-    'long',
-    'new',
-    'null',
-    'package',
-    'private',
-    'protected',
-    'public',
-    'return',
-    'static',
-    'super',
-    'switch',
-    'this',
-    'throw',
-    'try',
-    'typeof',
-    'var',
-    'void',
-    'while',
-    'with',
-    'yield',
     // Built-in objects, properties and methods
     // Collections
     'Array',
@@ -845,16 +794,5 @@ const reservedNames = new Set([
     'Date',
     'Intl',
     'eval',
-    'prototype',
-    'hasOwnProperty',
-    'isPrototypeOf',
-    'length',
-    'toString',
-    'undefined',
-    'valueOf',
-    'clearInterval',
-    'setInterval',
-    'clearTimeout',
-    'setTimeout',
-    'process',
+    'undefined'
 ]);
