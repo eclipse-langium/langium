@@ -21,10 +21,17 @@ import { getUserChoice, log } from './generator/util';
 import { getFilePath, LangiumConfig, LangiumLanguageConfig, RelativePath } from './package';
 import { validateParser } from './parser-validation';
 import chalk from 'chalk';
+import { generateTypesFile } from './generator/types-generator';
 
 export type GenerateOptions = {
     file?: string;
     watch: boolean
+}
+
+export type ExtractTypesOptions = {
+    grammar: string;
+    output?: string;
+    force: boolean;
 }
 
 export type GeneratorResult = 'success' | 'failure';
@@ -160,7 +167,7 @@ export async function generate(config: LangiumConfig, options: GenerateOptions):
         const document = all.get(absGrammarPath);
         if (document) {
             const grammar = document.parseResult.value as Grammar;
-            if(!grammar.isDeclared) {
+            if (!grammar.isDeclared) {
                 log('error', options, chalk.red(`${absGrammarPath}: The entry grammar must start with the 'grammar' keyword.`));
                 return 'failure';
             }
@@ -221,6 +228,40 @@ export async function generate(config: LangiumConfig, options: GenerateOptions):
     return 'success';
 }
 
+export async function generateTypes(options: ExtractTypesOptions): Promise<void> {
+    const grammarPath = path.isAbsolute(options.grammar) ? options.grammar : path.resolve('.', options.grammar);
+    if (!fs.existsSync(grammarPath) || !fs.lstatSync(grammarPath).isFile()) {
+        log('error', { watch: false }, chalk.red(`Grammar file '${grammarPath}' doesn't exist or is not a file.`));
+        return;
+    }
+    const outputPath = options.output ?? path.join(path.resolve(grammarPath, '..'), 'types.langium');
+    const typesFilePath = path.isAbsolute(outputPath) ? outputPath : path.join('.', outputPath);
+    if (!options.force && fs.existsSync(typesFilePath)) {
+        const overwriteTypesFile =
+            await getUserChoice(`Target file '${path.relative('.', typesFilePath)}' already exists. Overwrite?`, ['yes', 'no'], 'yes') === 'yes';
+        if (!overwriteTypesFile) {
+            log('log', { watch: false }, 'Generation canceled.');
+            return;
+        }
+    }
+
+    const grammarFileUri = URI.file(grammarPath);
+    const document = documents.getOrCreateDocument(grammarFileUri);
+    const allUris = eagerLoad(document);
+    await sharedServices.workspace.DocumentBuilder.update(allUris, []);
+    let grammarDoc;
+    for (const doc of documents.all) {
+        await sharedServices.workspace.DocumentBuilder.build([doc]);
+        grammarDoc = doc;
+    }
+    if (grammarDoc) {
+        const genTypes = generateTypesFile(grammarServices, [grammarDoc.parseResult.value as Grammar]);
+        await writeWithFail(typesFilePath, genTypes, { watch: false });
+        log('log', { watch: false }, `Generated type definitions to: ${chalk.white.bold(typesFilePath)}`);
+    }
+    return;
+}
+
 /**
  * Writes contents of a grammar for syntax highlighting to a file, logging any errors and continuing without throwing
  * @param grammar Grammar contents to write
@@ -265,7 +306,7 @@ async function mkdirWithFail(path: string, options: GenerateOptions): Promise<bo
     }
 }
 
-async function writeWithFail(path: string, content: string, options: GenerateOptions): Promise<void> {
+async function writeWithFail(path: string, content: string, options: { watch: boolean }): Promise<void> {
     try {
         await fs.writeFile(path, content);
     } catch (e) {

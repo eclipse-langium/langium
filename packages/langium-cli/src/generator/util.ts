@@ -8,11 +8,10 @@ import { CompositeGeneratorNode, GeneratorNode, getAllReachableRules, Grammar, G
 import fs from 'fs-extra';
 import path from 'path';
 import * as readline from 'readline';
-import type { GenerateOptions } from '../generate';
 import chalk from 'chalk';
 
 //eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function log(level: 'log' | 'warn' | 'error', options: GenerateOptions, message: string, ...args: any[]): void {
+export function log(level: 'log' | 'warn' | 'error', options: { watch: boolean }, message: string, ...args: any[]): void {
     if (options.watch) {
         console[level](getTime() + message, ...args);
     } else {

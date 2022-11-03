@@ -8,7 +8,7 @@ import chalk from 'chalk';
 import fs from 'fs-extra';
 import { Command } from 'commander';
 import { validate } from 'jsonschema';
-import { generate, GenerateOptions, GeneratorResult } from './generate';
+import { ExtractTypesOptions, generate, GenerateOptions, generateTypes, GeneratorResult } from './generate';
 import { cliVersion, elapsedTime, getTime, log, schema } from './generator/util';
 import { LangiumConfig, loadConfigs, RelativePath } from './package';
 import path from 'path';
@@ -27,6 +27,18 @@ program
             process.exit(1);
         });
     });
+program.command('extract-types')
+    .argument('<file>', 'the langium grammar file to generate types for')
+    .option('-o, --output <file>', 'output file name. Default is types.langium next to the grammar file.')
+    .option('-f, --force', 'Force overwrite existing file.')
+    .action((file, options: ExtractTypesOptions) => {
+        options.grammar = file;
+        generateTypes(options).catch(err => {
+            console.error(err);
+            process.exit(1);
+        });
+    })
+    .action;
 
 program.parse(process.argv);
 
