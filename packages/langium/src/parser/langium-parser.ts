@@ -5,7 +5,8 @@
  ******************************************************************************/
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { defaultParserErrorProvider, DSLMethodOpts, EmbeddedActionsParser, ILexingError, IOrAlt, IParserErrorMessageProvider, IRecognitionException, IToken, TokenType, TokenVocabulary } from 'chevrotain';
+import { defaultParserErrorProvider, DSLMethodOpts, EmbeddedActionsParser, ILexingError, IOrAlt, IParserErrorMessageProvider, IRecognitionException, IToken, LLkLookaheadStrategy, TokenType, TokenVocabulary } from 'chevrotain';
+import { LLStarLookaheadStrategy } from 'chevrotain-allstar';
 import { AbstractElement, Action, Assignment, isAssignment, isCrossReference, isKeyword, ParserRule } from '../grammar/generated/ast';
 import { getTypeName, isDataTypeRule } from '../grammar/internal-grammar-util';
 import { Linker } from '../references/linker';
@@ -37,7 +38,7 @@ function isDataTypeNode(node: { $type: string | symbol | undefined }): node is D
     return node.$type === DatatypeSymbol;
 }
 
-type RuleResult = () => any;
+type RuleResult = (args: Args) => any;
 
 type Args = Record<string, boolean>;
 
@@ -150,7 +151,7 @@ export class LangiumParser extends AbstractLangiumParser {
         this.nodeBuilder.buildRootNode(input);
         const lexerResult = this.lexer.tokenize(input);
         this.wrapper.input = lexerResult.tokens;
-        const result = this.mainRule.call(this.wrapper);
+        const result = this.mainRule.call(this.wrapper, {});
         this.nodeBuilder.addHiddenTokens(lexerResult.hidden);
         this.unorderedGroups.clear();
         return {
@@ -417,7 +418,7 @@ export class LangiumCompletionParser extends AbstractLangiumParser {
         const tokens = this.lexer.tokenize(input);
         this.tokens = tokens.tokens;
         this.wrapper.input = [...this.tokens];
-        this.mainRule.call(this.wrapper);
+        this.mainRule.call(this.wrapper, {});
         this.unorderedGroups.clear();
         return {
             tokens: this.tokens,
@@ -518,9 +519,13 @@ class ChevrotainWrapper extends EmbeddedActionsParser {
     definitionErrors: IParserDefinitionError[];
 
     constructor(tokens: TokenVocabulary, config?: IParserConfig) {
+        const useDefaultLookahead = config && 'maxLookahead' in config;
         super(tokens, {
             ...defaultConfig,
-            ...config
+            lookaheadStrategy: useDefaultLookahead
+                ? new LLkLookaheadStrategy({ maxLookahead: config.maxLookahead })
+                : new LLStarLookaheadStrategy(),
+            ...config,
         });
     }
 

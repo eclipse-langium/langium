@@ -36,7 +36,8 @@
     "publish:latest": "npm publish --tag latest"
   },
   "dependencies": {
-    "chevrotain": "^9.1.0",
+    "chevrotain": "^10.4.1",
+    "chevrotain-allstar": "^0.1.1",
     "vscode-languageserver": "^8.0.2",
     "vscode-languageserver-textdocument": "^1.0.7",
     "vscode-uri": "^3.0.2"

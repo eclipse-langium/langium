@@ -50,12 +50,12 @@ export class DefaultDocumentValidator implements DocumentValidator {
                 severity: DiagnosticSeverity.Error,
                 range: {
                     start: {
-                        line: lexerError.line - 1,
-                        character: lexerError.column - 1
+                        line: lexerError.line! - 1,
+                        character: lexerError.column! - 1
                     },
                     end: {
-                        line: lexerError.line - 1,
-                        character: lexerError.column + lexerError.length - 1
+                        line: lexerError.line! - 1,
+                        character: lexerError.column! + lexerError.length - 1
                     }
                 },
                 message: lexerError.message,
