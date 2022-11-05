@@ -1,0 +1,1 @@
+# Stringification functions for Langium models

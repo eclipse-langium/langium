@@ -1,0 +1,43 @@
+{
+  "name": "langium-stringify",
+  "version": "0.5.0",
+  "description": "Serialize Langium AST models to string",
+  "homepage": "https://langium.org",
+  "keywords": [
+    "language",
+    "dsl",
+    "lsp",
+    "language-server",
+    "vscode",
+    "serialization",
+    "stringification"
+  ],
+  "license": "MIT",
+  "files": [
+    "lib",
+    "src"
+  ],
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "scripts": {
+    "clean": "shx rm -rf lib coverage",
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "lint": "eslint src --ext .ts",
+    "publish:next": "npm --no-git-tag-version version \"$(semver $npm_package_version -i minor)-next.$(git rev-parse --short HEAD)\" && npm publish --tag next",
+    "publish:latest": "npm publish --tag latest"
+  },
+  "dependencies": {
+    "langium": "~0.5.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/langium/langium",
+    "directory": "packages/langium-sprotty"
+  },
+  "bugs": "https://github.com/langium/langium/issues",
+  "author": {
+    "name": "TypeFox",
+    "url": "https://www.typefox.io"
+  }
+}
