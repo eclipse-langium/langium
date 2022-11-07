@@ -28,7 +28,7 @@ type ParserContext = {
     ruleNames: Map<AstNode, string>
 }
 
-type Rule = () => unknown;
+type Rule = (args: Args) => unknown;
 
 type Args = Record<string, boolean>;
 

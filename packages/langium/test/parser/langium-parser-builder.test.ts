@@ -19,11 +19,11 @@ describe('Predicated grammar rules with alternatives', () => {
     RuleC: 'c' TestSimple<true, false>;
     RuleD: 'd' TestSimple<false, false>;
     RuleE: 'e' TestComplex<true, true, true>;
-    RuleF: 'f' TestComplex<true, false, true>;
-    RuleG: 'g' TestComplex<false, true, false>;
+    RuleF: 'f' TestComplex<false, false, true>;
+    RuleG: 'g' TestComplex<true, false, true>;
 
-    TestSimple<A, B>: <A & B> a=ID | <B> b=ID | <A> c=ID | <!A> d=ID;
-    TestComplex<A, B, C>: <A & B & C> e=ID | <(B | C) & A> f=ID | <A | (C & false) | B> g=ID;
+    TestSimple<A, B>: <A & B> a=ID | <B & !A> b=ID | <A & !B> c=ID | <!A & !B> d=ID;
+    TestComplex<A, B, C>: <A & B & C> e=ID | <(B | C) & !A> f=ID | <(A | (C & false)) & !B> g=ID;
 
     terminal ID: '1';
     hidden terminal WS: /\\s+/;
@@ -565,6 +565,36 @@ describe('MultiMode Lexing', () => {
         expect(result.parserErrors).toHaveLength(0);
     });
 
+});
+
+describe('ALL(*) parser', () => {
+
+    const grammar = `
+    grammar UnboundedLookahead
+
+    entry Entry: A | B;
+
+    // Potentially unlimited amount of 'a' tokens
+    A: {infer A} 'a'* 'b';
+    B: {infer B} 'a'* 'c';
+
+    hidden terminal WS: /\\s+/;`;
+
+    const parser = parserFromGrammar(grammar);
+
+    test('can parse with unbounded lookahead #1', () => {
+        const result = parser.parse('aaaaaaaaaab');
+        expect(result.lexerErrors).toHaveLength(0);
+        expect(result.parserErrors).toHaveLength(0);
+        expect(result.value.$type).toBe('A');
+    });
+
+    test('can parse with unbounded lookahead #2', () => {
+        const result = parser.parse('aaaaaaaaaaaaaac');
+        expect(result.lexerErrors).toHaveLength(0);
+        expect(result.parserErrors).toHaveLength(0);
+        expect(result.value.$type).toBe('B');
+    });
 });
 
 function parserFromGrammar(grammar: string): LangiumParser {
