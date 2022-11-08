@@ -5,64 +5,109 @@
  ******************************************************************************/
 
 import { DefaultScopeComputation } from '../../references/scope-computation';
-import { DefaultScopeProvider, Scope } from '../../references/scope-provider';
+import { DefaultScopeProvider, EMPTY_SCOPE, Scope, StreamScope } from '../../references/scope-provider';
 import { LangiumServices } from '../../services';
 import { AstNode, AstNodeDescription, ReferenceInfo } from '../../syntax-tree';
-import { findRootNode, getDocument } from '../../utils/ast-util';
+import { findRootNode, getContainerOfType, getDocument, streamAllContents } from '../../utils/ast-util';
 import { stream, Stream } from '../../utils/stream';
+import { equalURI } from '../../utils/uri-util';
+import { AstNodeLocator } from '../../workspace/ast-node-locator';
 import { LangiumDocument, PrecomputedScopes } from '../../workspace/documents';
-import { isReturnType } from '../generated/ast';
-import { processActionNodeWithNodeDescriptionProvider, processTypeNodeWithNodeLocator } from '../internal-grammar-util';
+import { AbstractType, Interface, isAction, isGrammar, isParserRule, isReturnType, Type } from '../generated/ast';
+import { getActionType, processActionNodeWithNodeDescriptionProvider, processTypeNodeWithNodeLocator, resolveImportUri } from '../internal-grammar-util';
 
 export class LangiumGrammarScopeProvider extends DefaultScopeProvider {
+
     constructor(services: LangiumServices) {
         super(services);
     }
 
     override getScope(context: ReferenceInfo): Scope {
         const referenceType = this.reflection.getReferenceType(context);
-        if (referenceType !== 'AbstractType') return super.getScope(context);
+        if (referenceType === AbstractType) {
+            return this.getTypeScope(referenceType, context);
+        } else {
+            return super.getScope(context);
+        }
+    }
 
-        const scopes: Array<Stream<AstNodeDescription>> = [];
+    private getTypeScope(referenceType: string, context: ReferenceInfo): Scope {
+        let localScope: Stream<AstNodeDescription> | undefined;
         const precomputed = getDocument(context.container).precomputedScopes;
         const rootNode = findRootNode(context.container);
         if (precomputed && rootNode) {
             const allDescriptions = precomputed.get(rootNode);
-            const parserRuleScopesArray: AstNodeDescription[] = [];
-            const scopesArray: AstNodeDescription[] = [];
             if (allDescriptions.length > 0) {
-                for (const description of allDescriptions) {
-                    if (this.reflection.isSubtype(description.type, 'ParserRule')) {
-                        parserRuleScopesArray.push(description);
-                    } else if (this.reflection.isSubtype(description.type, referenceType)) {
-                        scopesArray.push(description);
-                    }
-                }
-                scopes.push(stream(
-                    scopesArray.concat(
-                        parserRuleScopesArray.filter(parserRule => !scopesArray.some(e => e.name === parserRule.name))
-                    )
-                ));
+                localScope = stream(allDescriptions).filter(des => des.type === Interface || des.type === Type);
             }
         }
 
-        let result: Scope = this.getGlobalScope(referenceType);
-        for (let i = scopes.length - 1; i >= 0; i--) {
-            result = this.createScope(scopes[i], result);
+        const globalScope = this.getGlobalScope(referenceType, context);
+        if (localScope) {
+            return this.createScope(localScope, globalScope);
+        } else {
+            return globalScope;
         }
-
-        return result;
     }
+
+    protected override getGlobalScope(referenceType: string, context: ReferenceInfo): Scope {
+        const grammar = getContainerOfType(context.container, isGrammar);
+        if (!grammar) {
+            return EMPTY_SCOPE;
+        }
+        const importedUris = stream(grammar.imports).map(resolveImportUri).nonNullable();
+        let importedElements = this.indexManager.allElements(referenceType)
+            .filter(des => importedUris.some(importedUri => equalURI(des.documentUri, importedUri)));
+        if (referenceType === AbstractType) {
+            importedElements = importedElements.filter(des => des.type === Interface || des.type === Type);
+        }
+        return new StreamScope(importedElements);
+    }
+
 }
 
 export class LangiumGrammarScopeComputation extends DefaultScopeComputation {
+    protected readonly astNodeLocator: AstNodeLocator;
     protected readonly processTypeNode: (node: AstNode, document: LangiumDocument, scopes: PrecomputedScopes) => void;
     protected readonly processActionNode: (node: AstNode, document: LangiumDocument, scopes: PrecomputedScopes) => void;
 
     constructor(services: LangiumServices) {
         super(services);
-        this.processTypeNode = processTypeNodeWithNodeLocator(services.workspace.AstNodeLocator);
-        this.processActionNode = processActionNodeWithNodeDescriptionProvider(services.workspace.AstNodeDescriptionProvider);
+        this.astNodeLocator = services.workspace.AstNodeLocator;
+        this.processTypeNode = processTypeNodeWithNodeLocator(this.astNodeLocator);
+        this.processActionNode = processActionNodeWithNodeDescriptionProvider(this.astNodeLocator);
+    }
+
+    protected override exportNode(node: AstNode, exports: AstNodeDescription[], document: LangiumDocument): void {
+        super.exportNode(node, exports, document);
+        if (isParserRule(node)) {
+            if (!node.returnType && !node.dataType) {
+                // Export inferred rule type as interface
+                const typeNode = node.inferredType ?? node;
+                exports.push({
+                    node: typeNode,
+                    name: typeNode.name,
+                    type: 'Interface',
+                    documentUri: document.uri,
+                    path: this.astNodeLocator.getAstNodePath(typeNode)
+                });
+            }
+            streamAllContents(node).forEach(childNode => {
+                if (isAction(childNode) && childNode.inferredType) {
+                    const typeName = getActionType(childNode);
+                    if (typeName) {
+                        // Export inferred action type as interface
+                        exports.push({
+                            node,
+                            name: typeName,
+                            type: 'Interface',
+                            documentUri: document.uri,
+                            path: this.astNodeLocator.getAstNodePath(node)
+                        });
+                    }
+                }
+            });
+        }
     }
 
     protected override processNode(node: AstNode, document: LangiumDocument, scopes: PrecomputedScopes): void {

@@ -7,58 +7,79 @@
 import { CodeActionKind, Diagnostic } from 'vscode-languageserver';
 import { CodeActionParams } from 'vscode-languageserver-protocol';
 import { CodeAction, Command, Position, TextEdit } from 'vscode-languageserver-types';
+import { URI, Utils } from 'vscode-uri';
 import { CodeActionProvider } from '../../lsp/code-action';
+import { LangiumServices } from '../../services';
+import { AstReflection, Reference, ReferenceInfo } from '../../syntax-tree';
 import { getContainerOfType } from '../../utils/ast-util';
 import { findLeafNodeAtOffset } from '../../utils/cst-util';
 import { findNodeForProperty } from '../../utils/grammar-util';
 import { MaybePromise } from '../../utils/promise-util';
 import { escapeRegExp } from '../../utils/regex-util';
+import { equalURI, relativeURI } from '../../utils/uri-util';
 import { DocumentValidator, LinkingErrorData } from '../../validation/document-validator';
 import { DocumentSegment, LangiumDocument } from '../../workspace/documents';
+import { IndexManager } from '../../workspace/index-manager';
 import * as ast from '../generated/ast';
 import { IssueCodes } from '../langium-grammar-validator';
 
 export class LangiumGrammarCodeActionProvider implements CodeActionProvider {
 
+    protected readonly reflection: AstReflection;
+    protected readonly indexManager: IndexManager;
+
+    constructor(services: LangiumServices) {
+        this.reflection = services.shared.AstReflection;
+        this.indexManager = services.shared.workspace.IndexManager;
+    }
+
     getCodeActions(document: LangiumDocument, params: CodeActionParams): MaybePromise<Array<Command | CodeAction>> {
         const result: CodeAction[] = [];
+        const acceptor = (ca: CodeAction | undefined) => ca && result.push(ca);
         for (const diagnostic of params.context.diagnostics) {
-            const codeAction = this.createCodeAction(diagnostic, document);
-            if (codeAction) {
-                result.push(codeAction);
-            }
+            this.createCodeActions(diagnostic, document, acceptor);
         }
         return result;
     }
 
-    private createCodeAction(diagnostic: Diagnostic, document: LangiumDocument): CodeAction | undefined {
+    private createCodeActions(diagnostic: Diagnostic, document: LangiumDocument, accept: (ca: CodeAction | undefined) => void): void {
         switch (diagnostic.code) {
             case IssueCodes.GrammarNameUppercase:
             case IssueCodes.RuleNameUppercase:
-                return this.makeUpperCase(diagnostic, document);
+                accept(this.makeUpperCase(diagnostic, document));
+                break;
             case IssueCodes.HiddenGrammarTokens:
-                return this.fixHiddenTerminals(diagnostic, document);
+                accept(this.fixHiddenTerminals(diagnostic, document));
+                break;
             case IssueCodes.UseRegexTokens:
-                return this.fixRegexTokens(diagnostic, document);
+                accept(this.fixRegexTokens(diagnostic, document));
+                break;
             case IssueCodes.EntryRuleTokenSyntax:
-                return this.addEntryKeyword(diagnostic, document);
+                accept(this.addEntryKeyword(diagnostic, document));
+                break;
             case IssueCodes.CrossRefTokenSyntax:
-                return this.fixCrossRefSyntax(diagnostic, document);
-            case IssueCodes.MissingImport:
-                return this.fixMissingImport(diagnostic, document);
+                accept(this.fixCrossRefSyntax(diagnostic, document));
+                break;
             case IssueCodes.UnnecessaryFileExtension:
-                return this.fixUnnecessaryFileExtension(diagnostic, document);
+                accept(this.fixUnnecessaryFileExtension(diagnostic, document));
+                break;
             case IssueCodes.InvalidInfers:
             case IssueCodes.InvalidReturns:
-                return this.fixInvalidReturnsInfers(diagnostic, document);
+                accept(this.fixInvalidReturnsInfers(diagnostic, document));
+                break;
             case IssueCodes.MissingInfer:
-                return this.fixMissingInfer(diagnostic, document);
+                accept(this.fixMissingInfer(diagnostic, document));
+                break;
             case IssueCodes.SuperfluousInfer:
-                return this.fixSuperfluousInfer(diagnostic, document);
+                accept(this.fixSuperfluousInfer(diagnostic, document));
+                break;
             case DocumentValidator.LinkingError: {
                 const data = diagnostic.data as LinkingErrorData;
                 if (data && data.containerType === 'RuleCall' && data.property === 'rule') {
-                    return this.addNewRule(diagnostic, data, document);
+                    accept(this.addNewRule(diagnostic, data, document));
+                }
+                if (data) {
+                    this.lookInGlobalScope(diagnostic, data, document).forEach(accept);
                 }
                 break;
             }
@@ -151,41 +172,6 @@ export class LangiumGrammarCodeActionProvider implements CodeActionProvider {
                 }
             }
         };
-    }
-
-    private fixMissingImport(diagnostic: Diagnostic, document: LangiumDocument): CodeAction | undefined {
-        let position: Position;
-        const grammar = document.parseResult.value as ast.Grammar;
-        const imports = grammar.imports;
-        const rules = grammar.rules;
-        if (imports.length > 0) { // Find first import
-            position = imports[0].$cstNode!.range.start;
-        } else if (rules.length > 0) { // Find first rule
-            position = rules[0].$cstNode!.range.start;
-        } else {
-            return undefined;
-        }
-        const path = diagnostic.data;
-        if (typeof path === 'string') {
-            return {
-                title: `Add import to '${path}'`,
-                kind: CodeActionKind.QuickFix,
-                diagnostics: [diagnostic],
-                isPreferred: true,
-                edit: {
-                    changes: {
-                        [document.textDocument.uri]: [{
-                            range: {
-                                start: position,
-                                end: position
-                            },
-                            newText: `import '${path}';\n`
-                        }]
-                    }
-                }
-            };
-        }
-        return undefined;
     }
 
     private makeUpperCase(diagnostic: Diagnostic, document: LangiumDocument): CodeAction {
@@ -328,7 +314,7 @@ export class LangiumGrammarCodeActionProvider implements CodeActionProvider {
                     title: `Add new rule '${data.refText}'`,
                     kind: CodeActionKind.QuickFix,
                     diagnostics: [diagnostic],
-                    isPreferred: true,
+                    isPreferred: false,
                     edit: {
                         changes: {
                             [document.textDocument.uri]: [{
@@ -346,4 +332,90 @@ export class LangiumGrammarCodeActionProvider implements CodeActionProvider {
         return undefined;
     }
 
+    private lookInGlobalScope(diagnostic: Diagnostic, data: LinkingErrorData, document: LangiumDocument): CodeAction[] {
+        const refInfo: ReferenceInfo = {
+            container: {
+                $type: data.containerType
+            },
+            property: data.property,
+            reference: {
+                $refText: data.refText
+            } as Reference
+        };
+        const referenceType = this.reflection.getReferenceType(refInfo);
+        const candidates = this.indexManager.allElements(referenceType).filter(e => e.name === data.refText);
+
+        const result: CodeAction[] = [];
+        let shortestPathIndex = -1;
+        let shortestPathLength = -1;
+        for (const candidate of candidates) {
+            if (equalURI(candidate.documentUri, document.uri)) {
+                continue;
+            }
+            // Find an import path and a position to insert the import
+            const importPath = getRelativeImport(document.uri, candidate.documentUri);
+            let position: Position | undefined;
+            let suffix = '';
+            const grammar = document.parseResult.value as ast.Grammar;
+            const nextImport = grammar.imports.find(imp => imp.path && importPath < imp.path);
+            if (nextImport) {
+                // Insert the new import alphabetically
+                position = nextImport.$cstNode?.range.start;
+            } else if (grammar.imports.length > 0) {
+                // Put the new import after the last import
+                const rangeEnd = grammar.imports[grammar.imports.length - 1].$cstNode!.range.end;
+                if (rangeEnd) {
+                    position = { line: rangeEnd.line + 1, character: 0 };
+                }
+            } else if (grammar.rules.length > 0) {
+                // Put the new import before the first rule
+                position = grammar.rules[0].$cstNode?.range.start;
+                suffix = '\n';
+            }
+
+            if (position) {
+                if (shortestPathIndex < 0 || importPath.length < shortestPathLength) {
+                    shortestPathIndex = result.length;
+                    shortestPathLength = importPath.length;
+                }
+                // Add an import declaration for the candidate in the global scope
+                result.push({
+                    title: `Add import to '${importPath}'`,
+                    kind: CodeActionKind.QuickFix,
+                    diagnostics: [diagnostic],
+                    isPreferred: false,
+                    edit: {
+                        changes: {
+                            [document.textDocument.uri]: [{
+                                range: {
+                                    start: position,
+                                    end: position
+                                },
+                                newText: `import '${importPath}'\n${suffix}`
+                            }]
+                        }
+                    }
+                });
+            }
+        }
+
+        // Mark the code action with the shortest import path as preferred
+        if (shortestPathIndex >= 0) {
+            result[shortestPathIndex].isPreferred = true;
+        }
+        return result;
+    }
+
+}
+
+function getRelativeImport(source: URI, target: URI): string {
+    const sourceDir = Utils.dirname(source);
+    let relativePath = relativeURI(sourceDir, target);
+    if (!relativePath.startsWith('./') && !relativePath.startsWith('../')) {
+        relativePath = './' + relativePath;
+    }
+    if (relativePath.endsWith('.langium')) {
+        relativePath = relativePath.substring(0, relativePath.length - '.langium'.length);
+    }
+    return relativePath;
 }

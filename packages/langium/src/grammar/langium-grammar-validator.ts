@@ -5,19 +5,17 @@
  ******************************************************************************/
 
 import { DiagnosticTag } from 'vscode-languageserver-types';
-import { Utils } from 'vscode-uri';
 import { NamedAstNode } from '../references/name-provider';
 import { References } from '../references/references';
 import { LangiumServices } from '../services';
 import { AstNode, Properties, Reference } from '../syntax-tree';
-import { getContainerOfType, getDocument, streamAllContents } from '../utils/ast-util';
+import { getContainerOfType, streamAllContents } from '../utils/ast-util';
 import { MultiMap } from '../utils/collections';
 import { toDocumentSegment } from '../utils/cst-util';
 import { findNodeForKeyword, findNameAssignment, findNodeForProperty, getAllReachableRules } from '../utils/grammar-util';
 import { Stream, stream } from '../utils/stream';
-import { relativeURI } from '../utils/uri-util';
 import { ValidationAcceptor, ValidationChecks, ValidationRegistry } from '../validation/validation-registry';
-import { LangiumDocument, LangiumDocuments } from '../workspace/documents';
+import { LangiumDocuments } from '../workspace/documents';
 import * as ast from './generated/ast';
 import { isParserRule, isRuleCall } from './generated/ast';
 import { getTypeName, isDataTypeRule, isOptionalCardinality, resolveImport, resolveTransitiveImports, terminalRegex } from './internal-grammar-util';
@@ -61,7 +59,6 @@ export class LangiumGrammarValidationRegistry extends ValidationRegistry {
                 validator.checkDuplicateImportedGrammar,
                 validator.checkGrammarHiddenTokens,
                 validator.checkGrammarForUnusedRules,
-                validator.checkGrammarImports,
                 validator.checkGrammarTypeUnions,
                 validator.checkGrammarTypeInfer,
                 validator.checkTypesConsistency,
@@ -100,7 +97,6 @@ export namespace IssueCodes {
     export const UseRegexTokens = 'use-regex-tokens';
     export const EntryRuleTokenSyntax = 'entry-rule-token-syntax';
     export const CrossRefTokenSyntax = 'cross-ref-token-syntax';
-    export const MissingImport = 'missing-import';
     export const UnnecessaryFileExtension = 'unnecessary-file-extension';
     export const InvalidReturns = 'invalid-returns';
     export const InvalidInfers = 'invalid-infers';
@@ -278,12 +274,14 @@ export class LangiumGrammarValidator {
             const ruleTypeName = getTypeName(rule);
             if (!isDataType && ruleTypeName && types.has(ruleTypeName) === isInfers) {
                 const keywordNode = isInfers ? findNodeForKeyword(rule.$cstNode, 'infer') : findNodeForKeyword(rule.$cstNode, 'returns');
-                accept('error', getMessage(ruleTypeName, isInfers), {
-                    node: rule.inferredType ?? rule,
-                    property: 'name',
-                    code: isInfers ? IssueCodes.InvalidInfers : IssueCodes.InvalidReturns,
-                    data: keywordNode && toDocumentSegment(keywordNode)
-                });
+                if (isInfers || rule.returnType?.ref !== undefined) {
+                    accept('error', getMessage(ruleTypeName, isInfers), {
+                        node: rule.inferredType ?? rule,
+                        property: 'name',
+                        code: isInfers ? IssueCodes.InvalidInfers : IssueCodes.InvalidReturns,
+                        data: keywordNode && toDocumentSegment(keywordNode)
+                    });
+                }
             } else if (isDataType && isInfers) {
                 const inferNode = findNodeForKeyword(rule.$cstNode, 'infer');
                 accept('error', 'Data type rules cannot infer a type.', {
@@ -406,41 +404,6 @@ export class LangiumGrammarValidator {
             accept('error', 'Import cannot be resolved.', { node: imp, property: 'path' });
         } else if (imp.path.endsWith('.langium')) {
             accept('warning', 'Imports do not need file extensions.', { node: imp, property: 'path', code: IssueCodes.UnnecessaryFileExtension });
-        }
-    }
-
-    checkGrammarImports(grammar: ast.Grammar, accept: ValidationAcceptor): void {
-        // Compute transitive grammar dependencies once for each grammar
-        const importedGrammars = new Set(resolveTransitiveImports(this.documents, grammar).map(e => getDocument(e)));
-        streamAllContents(grammar).forEach(e => {
-            if (ast.isRuleCall(e) || ast.isTerminalRuleCall(e)) {
-                this.checkRuleCallImport(e, importedGrammars, accept);
-            }
-        });
-    }
-
-    private checkRuleCallImport(ruleCall: ast.RuleCall | ast.TerminalRuleCall, importedDocuments: Set<LangiumDocument>, accept: ValidationAcceptor): void {
-        const ref = ruleCall.rule.ref;
-        if (ref) {
-            const refDoc = getDocument(ref);
-            const document = getDocument(ruleCall);
-            const grammar = document.parseResult.value;
-            // Only check if the rule is sourced from another document
-            if (ast.isGrammar(grammar) && refDoc !== document && !importedDocuments.has(refDoc)) {
-                let relative = relativeURI(Utils.dirname(document.uri), refDoc.uri);
-                if (relative.endsWith('.langium')) {
-                    relative = relative.substring(0, relative.length - '.langium'.length);
-                }
-                if (!relative.startsWith('.')) {
-                    relative = './' + relative;
-                }
-                accept('error', `Referenced rule "${ruleCall.rule.ref?.name}" is not imported.`, {
-                    node: ruleCall,
-                    property: 'rule',
-                    code: IssueCodes.MissingImport,
-                    data: relative
-                });
-            }
         }
     }
 
