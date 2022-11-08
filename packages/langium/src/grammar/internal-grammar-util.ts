@@ -10,7 +10,6 @@ import { LangiumServices } from '../services';
 import { AstNode, AstNodeDescription } from '../syntax-tree';
 import { findRootNode, getDocument, Mutable, streamAllContents } from '../utils/ast-util';
 import { MultiMap } from '../utils/collections';
-import { AstNodeDescriptionProvider } from '../workspace/ast-descriptions';
 import { AstNodeLocator } from '../workspace/ast-node-locator';
 import { LangiumDocument, LangiumDocuments, PrecomputedScopes } from '../workspace/documents';
 import { TypeResolutionError } from './type-system/types-util';
@@ -117,7 +116,7 @@ export function getExplicitRuleType(rule: ast.ParserRule): string | undefined {
     return undefined;
 }
 
-function getActionType(action: ast.Action): string | undefined {
+export function getActionType(action: ast.Action): string | undefined {
     if(action.inferredType) {
         return action.inferredType.name;
     } else if (action.type?.ref) {
@@ -204,21 +203,27 @@ function withCardinality(regex: string, cardinality?: string, wrap = true): stri
     return regex;
 }
 
-export function resolveImport(documents: LangiumDocuments, imp: ast.GrammarImport): ast.Grammar | undefined {
+export function resolveImportUri(imp: ast.GrammarImport): URI | undefined {
     if (imp.path === undefined || imp.path.length === 0) {
         return undefined;
     }
-    const uri = Utils.dirname(getDocument(imp).uri);
+    const dirUri = Utils.dirname(getDocument(imp).uri);
     let grammarPath = imp.path;
     if (!grammarPath.endsWith('.langium')) {
         grammarPath += '.langium';
     }
-    const resolvedUri = Utils.resolvePath(uri, grammarPath);
+    return Utils.resolvePath(dirUri, grammarPath);
+}
+
+export function resolveImport(documents: LangiumDocuments, imp: ast.GrammarImport): ast.Grammar | undefined {
+    const resolvedUri = resolveImportUri(imp);
     try {
-        const resolvedDocument = documents.getOrCreateDocument(resolvedUri);
-        const node = resolvedDocument.parseResult.value;
-        if (ast.isGrammar(node)) {
-            return node;
+        if (resolvedUri) {
+            const resolvedDocument = documents.getOrCreateDocument(resolvedUri);
+            const node = resolvedDocument.parseResult.value;
+            if (ast.isGrammar(node)) {
+                return node;
+            }
         }
     } catch {
         // NOOP
@@ -267,11 +272,12 @@ export function prepareGrammar(services: LangiumServices, grammar: ast.Grammar):
 
 function computeGrammarScope(services: LangiumServices, grammar: ast.Grammar): PrecomputedScopes {
     const nameProvider = services.references.NameProvider;
+    const astNodeLocator = services.workspace.AstNodeLocator;
     const descriptions = services.workspace.AstNodeDescriptionProvider;
     const document = getDocument(grammar);
     const scopes = new MultiMap<AstNode, AstNodeDescription>();
-    const processTypeNode = processTypeNodeWithNodeLocator(services.workspace.AstNodeLocator);
-    const processActionNode = processActionNodeWithNodeDescriptionProvider(descriptions);
+    const processTypeNode = processTypeNodeWithNodeLocator(astNodeLocator);
+    const processActionNode = processActionNodeWithNodeDescriptionProvider(astNodeLocator);
     for (const node of streamAllContents(grammar)) {
         if (ast.isReturnType(node)) continue;
         processActionNode(node, document, scopes);
@@ -314,13 +320,19 @@ export function processTypeNodeWithNodeLocator(astNodeLocator: AstNodeLocator): 
  *
  * case: `{infer Action}`
  */
-export function processActionNodeWithNodeDescriptionProvider(descriptions: AstNodeDescriptionProvider): (node: AstNode, document: LangiumDocument, scopes: PrecomputedScopes) => void {
+export function processActionNodeWithNodeDescriptionProvider(astNodeLocator: AstNodeLocator): (node: AstNode, document: LangiumDocument, scopes: PrecomputedScopes) => void {
     return (node: AstNode, document: LangiumDocument, scopes: PrecomputedScopes) => {
         const container = findRootNode(node);
         if (container && ast.isAction(node) && node.inferredType) {
             const typeName = getActionType(node);
             if (typeName) {
-                scopes.add(container, descriptions.createDescription(node, typeName, document));
+                scopes.add(container, {
+                    node,
+                    name: typeName,
+                    type: 'Interface',
+                    documentUri: document.uri,
+                    path: astNodeLocator.getAstNodePath(node)
+                });
             }
         }
     };

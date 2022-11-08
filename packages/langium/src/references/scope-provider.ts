@@ -131,7 +131,7 @@ export class DefaultScopeProvider implements ScopeProvider {
             } while (currentNode);
         }
 
-        let result: Scope = this.getGlobalScope(referenceType);
+        let result: Scope = this.getGlobalScope(referenceType, context);
         for (let i = scopes.length - 1; i >= 0; i--) {
             result = this.createScope(scopes[i], result);
         }
@@ -163,7 +163,7 @@ export class DefaultScopeProvider implements ScopeProvider {
     /**
      * Create a global scope filtered for the given reference type.
      */
-    protected getGlobalScope(referenceType: string): Scope {
+    protected getGlobalScope(referenceType: string, _context: ReferenceInfo): Scope {
         return new StreamScope(this.indexManager.allElements(referenceType));
     }
 

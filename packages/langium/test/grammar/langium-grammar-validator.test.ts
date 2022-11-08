@@ -113,12 +113,12 @@ describe('checkReferenceToRuleButNotType', () => {
         entry Model:
             'model' name=ID
             (elements+=Element)*;
-        
+
         type AbstractElement = Reference | string;
-        
+
         Element:
             Definition | Reference;
-        
+
         Definition infers DefType:
             name=ID;
         Reference infers RefType:
@@ -134,7 +134,7 @@ describe('checkReferenceToRuleButNotType', () => {
 
     test('CrossReference validation', () => {
         const crossRef = streamAllContents(validationResult.document.parseResult.value).find(GrammarAST.isCrossReference)!;
-        expectError(validationResult, "Use the rule type 'DefType' instead of the typed rule name 'Definition' for cross references.", {
+        expectError(validationResult, "Could not resolve reference to AbstractType named 'Definition'.", {
             node: crossRef,
             property: { name: 'type' }
         });
@@ -142,7 +142,7 @@ describe('checkReferenceToRuleButNotType', () => {
 
     test('AtomType validation', () => {
         const type = validationResult.document.parseResult.value.types[0];
-        expectError(validationResult, "Use the rule type 'RefType' instead of the typed rule name 'Reference' for cross references.", {
+        expectError(validationResult, "Could not resolve reference to AbstractType named 'Reference'.", {
             node: type,
             property: { name: 'typeAlternatives' }
         });
@@ -231,9 +231,9 @@ describe('Unordered group validations', () => {
     test('Unsupported optional element in unordered group error', async () => {
         const text = `
         grammar TestUnorderedGroup
-        
-        entry Book: 
-            'book' name=STRING 
+
+        entry Book:
+            'book' name=STRING
             (
                   ("description" descr=STRING)
                 & ("edition" version=STRING)?
@@ -257,7 +257,7 @@ describe('Unused rules validation', () => {
     test('Should not create validate for indirectly used terminal', async () => {
         const text = `
         grammar TestUsedTerminals
-        
+
         entry Used: name=ID;
         hidden terminal WS: /\\s+/;
         terminal ID: 'a' STRING;
@@ -270,7 +270,7 @@ describe('Unused rules validation', () => {
     test('Unused terminals are correctly identified', async () => {
         const text = `
         grammar TestUnusedTerminals
-        
+
         entry Used: name=ID;
         hidden terminal WS: /\\s+/;
         terminal ID: /[_a-zA-Z][\\w_]*/;
@@ -291,7 +291,7 @@ describe('Unused rules validation', () => {
     test('Unused parser rules are correctly identified', async () => {
         const text = `
         grammar TestUnusedParserRule
-        
+
         entry Used: name=ID;
         Unused: name=ID;
         hidden terminal WS: /\\s+/;
