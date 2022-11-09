@@ -85,6 +85,7 @@ export class DefaultLanguageServer implements LanguageServer {
         const hasRenameProvider = this.hasService(e => e.lsp.RenameProvider);
         const hasCallHierarchyProvider = this.hasService(e => e.lsp.CallHierarchyProvider);
         const codeLensProvider = this.services.lsp.CodeLensProvider;
+        const hasDeclarationProvider = this.hasService(e => e.lsp.DeclarationProvider);
 
         const result: InitializeResult = {
             capabilities: {
@@ -125,7 +126,8 @@ export class DefaultLanguageServer implements LanguageServer {
                     : undefined,
                 codeLensProvider: codeLensProvider
                     ? { resolveProvider: !!codeLensProvider.resolveCodeLens }
-                    : undefined
+                    : undefined,
+                declarationProvider: hasDeclarationProvider
             }
         };
 
@@ -165,6 +167,7 @@ export function startLanguageServer(services: LangiumSharedServices): void {
     addCodeLensHandler(connection, services);
     addDocumentLinkHandler(connection, services);
     addConfigurationChangeHandler(connection, services);
+    addGoToDeclarationHandler(connection, services);
 
     connection.onInitialize(params => {
         return services.lsp.LanguageServer.initialize(params);
@@ -264,6 +267,13 @@ export function addGoToTypeDefinitionHandler(connection: Connection, services: L
 export function addGoToImplementationHandler(connection: Connection, services: LangiumSharedServices) {
     connection.onImplementation(createRequestHandler(
         (services, document, params, cancelToken) => services.lsp.ImplementationProvider?.getImplementation(document, params, cancelToken),
+        services
+    ));
+}
+
+export function addGoToDeclarationHandler(connection: Connection, services: LangiumSharedServices) {
+    connection.onDeclaration(createRequestHandler(
+        (services, document, params, cancelToken) => services.lsp.DeclarationProvider?.getDeclaration(document, params, cancelToken),
         services
     ));
 }
