@@ -57,7 +57,7 @@ function generateAstReflection(config: LangiumConfig, astTypes: AstTypes): Gener
     reflectionNode.append('}', NL, NL);
 
     reflectionNode.append(
-        `export class ${config.projectName}AstReflection implements AstReflection {`, NL, NL
+        `export class ${config.projectName}AstReflection extends AbstractAstReflection {`, NL, NL
     );
 
     reflectionNode.indent(classBody => {
@@ -67,7 +67,7 @@ function generateAstReflection(config: LangiumConfig, astTypes: AstTypes): Gener
         });
         classBody.append(
             '}', NL, NL,
-            'isSubtypeOverride(subtype: string, supertype: string): boolean {', NL,
+            'protected override computeIsSubtype(subtype: string, supertype: string): boolean {', NL,
             buildIsSubtypeMethod(astTypes), '}', NL, NL,
             'getReferenceType(refInfo: ReferenceInfo): string {', NL,
             buildReferenceTypeMethod(crossReferenceTypes), '}', NL, NL,

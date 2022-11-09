@@ -497,7 +497,7 @@ export class LangiumGrammarAstReflection extends AbstractAstReflection {
         return ['AbstractElement', 'AbstractRule', 'AbstractType', 'Action', 'Alternatives', 'Assignment', 'AtomType', 'CharacterRange', 'Condition', 'Conjunction', 'CrossReference', 'Disjunction', 'Grammar', 'GrammarImport', 'Group', 'InferredType', 'Interface', 'Keyword', 'LiteralCondition', 'NamedArgument', 'NegatedToken', 'Negation', 'Parameter', 'ParameterReference', 'ParserRule', 'RegexToken', 'ReturnType', 'RuleCall', 'TerminalAlternatives', 'TerminalGroup', 'TerminalRule', 'TerminalRuleCall', 'Type', 'TypeAttribute', 'UnorderedGroup', 'UntilToken', 'Wildcard'];
     }
 
-    isSubtypeOverride(subtype: string, supertype: string): boolean {
+    protected override computeIsSubtype(subtype: string, supertype: string): boolean {
         switch (subtype) {
             case Action: {
                 return this.isSubtype(AbstractElement, supertype) || this.isSubtype(AbstractType, supertype);

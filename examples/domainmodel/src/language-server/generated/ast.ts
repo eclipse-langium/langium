@@ -99,7 +99,7 @@ export class DomainModelAstReflection extends AbstractAstReflection {
         return ['AbstractElement', 'DataType', 'Domainmodel', 'Entity', 'Feature', 'PackageDeclaration', 'Type'];
     }
 
-    isSubtypeOverride(subtype: string, supertype: string): boolean {
+    protected override computeIsSubtype(subtype: string, supertype: string): boolean {
         switch (subtype) {
             case DataType:
             case Entity: {

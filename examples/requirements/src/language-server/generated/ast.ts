@@ -94,7 +94,7 @@ export class RequirementsAndTestsAstReflection extends AbstractAstReflection {
         return ['Contact', 'Environment', 'Requirement', 'RequirementModel', 'Test', 'TestModel'];
     }
 
-    isSubtypeOverride(subtype: string, supertype: string): boolean {
+    protected override computeIsSubtype(subtype: string, supertype: string): boolean {
         switch (subtype) {
             default: {
                 return false;

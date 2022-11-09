@@ -81,7 +81,7 @@ export class StatemachineAstReflection extends AbstractAstReflection {
         return ['Command', 'Event', 'State', 'Statemachine', 'Transition'];
     }
 
-    isSubtypeOverride(subtype: string, supertype: string): boolean {
+    protected override computeIsSubtype(subtype: string, supertype: string): boolean {
         switch (subtype) {
             default: {
                 return false;

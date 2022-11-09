@@ -130,14 +130,18 @@ export interface AstReflection {
     isSubtype(subtype: string, supertype: string): boolean
 }
 
+/**
+ * An abstract implementation of the {@link AstReflection} interface.
+ * Serves to cache subtype computation results to improve performance throughout different parts of Langium.
+ */
 export abstract class AbstractAstReflection implements AstReflection {
 
-    protected subtypes: Record<string, Record<string, boolean>> = {};
+    protected subtypes: Record<string, Record<string, boolean | undefined>> = {};
 
     abstract getAllTypes(): string[];
     abstract getReferenceType(refInfo: ReferenceInfo): string;
     abstract getTypeMetaData(type: string): TypeMetaData;
-    abstract isSubtypeOverride(subtype: string, supertype: string): boolean;
+    protected abstract computeIsSubtype(subtype: string, supertype: string): boolean;
 
     isInstance(node: unknown, type: string): boolean {
         return isAstNode(node) && this.isSubtype(node.$type, type);
@@ -155,7 +159,7 @@ export abstract class AbstractAstReflection implements AstReflection {
         if (existing !== undefined) {
             return existing;
         } else {
-            const result = this.isSubtypeOverride(subtype, supertype);
+            const result = this.computeIsSubtype(subtype, supertype);
             nested[supertype] = result;
             return result;
         }

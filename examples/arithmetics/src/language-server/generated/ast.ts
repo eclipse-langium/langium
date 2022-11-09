@@ -131,7 +131,7 @@ export class ArithmeticsAstReflection extends AbstractAstReflection {
         return ['AbstractDefinition', 'BinaryExpression', 'DeclaredParameter', 'Definition', 'Evaluation', 'Expression', 'FunctionCall', 'Module', 'NumberLiteral', 'Statement'];
     }
 
-    isSubtypeOverride(subtype: string, supertype: string): boolean {
+    protected override computeIsSubtype(subtype: string, supertype: string): boolean {
         switch (subtype) {
             case BinaryExpression:
             case FunctionCall:
