@@ -41,7 +41,6 @@ import { FileSystemProvider } from './workspace/file-system-provider';
 import { DefaultIndexManager } from './workspace/index-manager';
 import { DefaultWorkspaceManager } from './workspace/workspace-manager';
 import { DefaultLexer } from './parser/lexer';
-import { DefaultDeclarationProvider } from './lsp/declaration-provider';
 
 /**
  * Context required for creating the default language-specific dependency injection module.
@@ -72,8 +71,7 @@ export function createDefaultModule(context: DefaultModuleContext): Module<Langi
             ReferencesProvider: (services) => new DefaultReferencesProvider(services),
             DefinitionProvider: (services) => new DefaultDefinitionProvider(services),
             DocumentHighlightProvider: (services) => new DefaultDocumentHighlightProvider(services),
-            RenameProvider: (services) => new DefaultRenameProvider(services),
-            DeclarationProvider: (services) => new DefaultDeclarationProvider(services)
+            RenameProvider: (services) => new DefaultRenameProvider(services)
         },
         workspace: {
             AstNodeLocator: () => new DefaultAstNodeLocator(),
