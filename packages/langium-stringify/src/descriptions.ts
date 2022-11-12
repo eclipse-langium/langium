@@ -4,9 +4,37 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { GrammarAST } from 'langium';
+import { AstNode, GrammarAST } from 'langium';
 import { SerializationContext } from './serialization-cache';
 import { isOptionalCardinality } from './utils';
+
+export function getValueDescriptions(node: AstNode): ValueDescriptionMap {
+    const descriptions: ValueDescription[] = [];
+    for (const [name, value] of Object.entries(node)) {
+        if (!name.startsWith('$') && !(Array.isArray(value) && value.length === 0)) {
+            descriptions.push({
+                property: name,
+                value
+            });
+        }
+    }
+    return toValueDescriptionMap(descriptions);
+}
+
+export function removeValueDescription(map: ValueDescriptionMap, property: string): void {
+    const description = map.get(property);
+    if (description) {
+        const value = description.value;
+        if (Array.isArray(value)) {
+            value.shift();
+            if (value.length === 0) {
+                map.delete(property);
+            }
+        } else {
+            map.delete(property);
+        }
+    }
+}
 
 export interface ValueDescription {
     property: string
@@ -51,11 +79,20 @@ export function isAlternativesPropertyDescription(item: ItemDescription): item i
     return 'alternatives' in item;
 }
 
-export function getGrammarPropertyDescriptions(context: SerializationContext, element: GrammarAST.AbstractElement): ItemDescription | undefined {
-    return context.cache.getPropertyDescriptions(element, item => buildPropertyDescription(context, item));
+export function getPropertyDescriptions(context: SerializationContext, element: GrammarAST.AbstractElement): ItemDescription | undefined {
+    return getPropertyDescriptionsInternal(context, element, new Set());
 }
 
-function buildPropertyDescription(context: SerializationContext, element: GrammarAST.AbstractElement): ItemDescription | undefined {
+function getPropertyDescriptionsInternal(context: SerializationContext, element: GrammarAST.AbstractElement, visited: Set<GrammarAST.AbstractElement>): ItemDescription | undefined {
+    return context.cache.getPropertyDescriptions(element, item => buildPropertyDescription(context, item, visited));
+}
+
+function buildPropertyDescription(context: SerializationContext, element: GrammarAST.AbstractElement, visited: Set<GrammarAST.AbstractElement>): ItemDescription | undefined {
+    if (visited.has(element)) {
+        return undefined;
+    } else {
+        visited.add(element);
+    }
     if (GrammarAST.isAssignment(element)) {
         return {
             property: element.feature,
@@ -64,7 +101,7 @@ function buildPropertyDescription(context: SerializationContext, element: Gramma
         };
     } else if (GrammarAST.isRuleCall(element)) {
         const rule = element.rule.ref!;
-        const ruleDescriptions = getGrammarPropertyDescriptions(context, rule.definition);
+        const ruleDescriptions = getPropertyDescriptionsInternal(context, rule.definition, visited);
         if (ruleDescriptions) {
             return {
                 ...ruleDescriptions,
@@ -77,7 +114,7 @@ function buildPropertyDescription(context: SerializationContext, element: Gramma
     } else if (GrammarAST.isGroup(element)) {
         const descriptions: ItemDescription[] = [];
         for (const item of element.elements) {
-            const description = getGrammarPropertyDescriptions(context, item);
+            const description = getPropertyDescriptionsInternal(context, item, visited);
             if (description) {
                 descriptions.push(description);
             }
@@ -100,7 +137,7 @@ function buildPropertyDescription(context: SerializationContext, element: Gramma
     } else if (GrammarAST.isAlternatives(element)) {
         const alternatives: ItemDescription[] = [];
         for (const item of element.elements) {
-            const description = getGrammarPropertyDescriptions(context, item);
+            const description = getPropertyDescriptionsInternal(context, item, visited);
             if (description) {
                 alternatives.push(description);
             }

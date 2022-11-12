@@ -4,7 +4,8 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { AstNode, AstReflection, GrammarAST } from 'langium';
+import { AstReflection, GrammarAST } from 'langium';
+import type { NodePath } from './candidate-selector';
 import type { ItemDescription } from './descriptions';
 import type { ValueExpectation } from './matching';
 
@@ -15,39 +16,40 @@ export interface SerializationContext {
 
 export class SerializationCache {
 
-    protected nodeCandidates = new Map<string, GrammarAST.AbstractElement[]>();
+    protected reachableCandidates = new Map<GrammarAST.ParserRule, NodePath[]>();
+    protected nodeCandidates = new Map<string, NodePath[]>();
     protected propertyDescriptions = new Map<GrammarAST.AbstractElement, ItemDescription | undefined>();
     protected possibleExpectations = new Map<GrammarAST.AbstractElement, ValueExpectation[]>();
 
-    getNodeCandidates(node: AstNode, rule: GrammarAST.ParserRule, callback: (node: AstNode, rule: GrammarAST.ParserRule) => GrammarAST.AbstractElement[]): GrammarAST.AbstractElement[] {
-        const key = node.$type + ':' + rule.name;
-        const existing = this.nodeCandidates.get(key);
-        if (existing) {
-            return existing;
-        }
-        const value = callback(node, rule);
-        this.nodeCandidates.set(key, value);
-        return value;
+    getReachableCandidates(rule: GrammarAST.ParserRule, callback: (rule: GrammarAST.ParserRule) => NodePath[]): NodePath[] {
+        return this.get(this.reachableCandidates, rule, callback);
+    }
+
+    getNodeCandidates(type: string, rule: GrammarAST.ParserRule, callback: (type: string, rule: GrammarAST.ParserRule) => NodePath[]): NodePath[] {
+        return this.get(
+            this.nodeCandidates,
+            [type, rule] as const,
+            ([type, rule]) => callback(type, rule),
+            ([type, rule]) => type + ':' + rule.name
+        );
     }
 
     getPropertyDescriptions(element: GrammarAST.AbstractElement, callback: (element: GrammarAST.AbstractElement) => ItemDescription | undefined): ItemDescription | undefined {
-        const existing = this.propertyDescriptions.get(element);
-        if (existing) {
-            return existing;
-        }
-        const value = callback(element);
-        this.propertyDescriptions.set(element, value);
-        return value;
+        return this.get(this.propertyDescriptions, element, callback);
     }
 
     getPossibleExpectations(element: GrammarAST.AbstractElement, callback: (element: GrammarAST.AbstractElement) => ValueExpectation[]): ValueExpectation[] {
-        const existing = this.possibleExpectations.get(element);
+        return this.get(this.possibleExpectations, element, callback);
+    }
+
+    protected get<T, V, K>(map: Map<K, V>, item: T, valueGenerator: (item: T) => V, keyGenerator?: (item: T) => K): V {
+        const key = keyGenerator ? keyGenerator(item) : item as unknown as K;
+        const existing = map.get(key);
         if (existing) {
             return existing;
         }
-        const value = callback(element);
-        this.possibleExpectations.set(element, value);
+        const value = valueGenerator(item);
+        map.set(key, value);
         return value;
     }
-
 }
