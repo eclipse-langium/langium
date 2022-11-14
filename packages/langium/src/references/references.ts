@@ -6,8 +6,8 @@
 
 import { findAssignment } from '../utils/grammar-util';
 import { LangiumServices } from '../services';
-import { AstNode, CstNode, GenericAstNode, Reference } from '../syntax-tree';
-import { getDocument, isReference, streamAst, streamReferences } from '../utils/ast-util';
+import { AstNode, CstNode, GenericAstNode, isReference, Reference } from '../syntax-tree';
+import { getDocument, streamAst, streamReferences } from '../utils/ast-util';
 import { isCstChildNode, toDocumentSegment } from '../utils/cst-util';
 import { stream, Stream } from '../utils/stream';
 import { equalURI } from '../utils/uri-util';

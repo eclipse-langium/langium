@@ -7,7 +7,8 @@
 import { IToken } from 'chevrotain';
 import * as ast from '../../grammar/generated/ast';
 import { Cardinality, getExplicitRuleType, getTypeName, isArrayCardinality, isOptionalCardinality, terminalRegex } from '../../grammar/internal-grammar-util';
-import { getContainerOfType, isAstNode } from '../../utils/ast-util';
+import { isAstNode } from '../../syntax-tree';
+import { getContainerOfType } from '../../utils/ast-util';
 import { getCrossReferenceTerminal } from '../../utils/grammar-util';
 
 export interface NextFeature<T extends ast.AbstractElement = ast.AbstractElement> {

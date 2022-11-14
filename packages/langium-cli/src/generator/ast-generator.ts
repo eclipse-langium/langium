@@ -16,18 +16,13 @@ export function generateAst(services: LangiumServices, grammars: Grammar[], conf
     const fileNode = new CompositeGeneratorNode();
     fileNode.append(
         generatedHeader,
-        '/* eslint-disable @typescript-eslint/array-type */', NL,
-        '/* eslint-disable @typescript-eslint/no-empty-interface */', NL,
+        '/* eslint-disable */', NL,
     );
     const crossRef = grammars.some(grammar => hasCrossReferences(grammar));
-    if (config.langiumInternal) {
-        fileNode.append(
-            `import type { AstNode, AstReflection${crossRef ? ', Reference' : ''}, ReferenceInfo, TypeMetaData } from '../../syntax-tree';`, NL,
-            "import { isAstNode } from '../../utils/ast-util';", NL, NL
-        );
-    } else {
-        fileNode.append(`import { AstNode, AstReflection${crossRef ? ', Reference' : ''}, ReferenceInfo, isAstNode, TypeMetaData } from 'langium';`, NL, NL);
-    }
+    const importFrom = config.langiumInternal ? '../../syntax-tree' : 'langium';
+    fileNode.append(
+        `import { AstNode, AbstractAstReflection${crossRef ? ', Reference' : ''}, ReferenceInfo, TypeMetaData } from '${importFrom}';`, NL, NL
+    );
 
     for (const type of astTypes.unions) {
         fileNode.append(type.toString(), NL);
@@ -62,7 +57,7 @@ function generateAstReflection(config: LangiumConfig, astTypes: AstTypes): Gener
     reflectionNode.append('}', NL, NL);
 
     reflectionNode.append(
-        `export class ${config.projectName}AstReflection implements AstReflection {`, NL, NL
+        `export class ${config.projectName}AstReflection extends AbstractAstReflection {`, NL, NL
     );
 
     reflectionNode.indent(classBody => {
@@ -70,13 +65,9 @@ function generateAstReflection(config: LangiumConfig, astTypes: AstTypes): Gener
         classBody.indent(allTypes => {
             allTypes.append(`return [${typeNames.map(e => `'${e}'`).join(', ')}];`, NL);
         });
-        classBody.append('}', NL, NL, 'isInstance(node: unknown, type: string): boolean {', NL);
-        classBody.indent(isInstance => {
-            isInstance.append('return isAstNode(node) && this.isSubtype(node.$type, type);', NL);
-        });
         classBody.append(
             '}', NL, NL,
-            'isSubtype(subtype: string, supertype: string): boolean {', NL,
+            'protected override computeIsSubtype(subtype: string, supertype: string): boolean {', NL,
             buildIsSubtypeMethod(astTypes), '}', NL, NL,
             'getReferenceType(refInfo: ReferenceInfo): string {', NL,
             buildReferenceTypeMethod(crossReferenceTypes), '}', NL, NL,
@@ -192,12 +183,7 @@ function buildCrossReferenceTypes(astTypes: AstTypes): CrossReferenceType[] {
 
 function buildIsSubtypeMethod(astTypes: AstTypes): GeneratorNode {
     const methodNode = new IndentNode();
-    methodNode.append('if (subtype === supertype) {', NL);
-    methodNode.indent(ifNode => {
-        ifNode.append('return true;', NL);
-    });
     methodNode.append(
-        '}', NL,
         'switch (subtype) {', NL
     );
     methodNode.indent(switchNode => {

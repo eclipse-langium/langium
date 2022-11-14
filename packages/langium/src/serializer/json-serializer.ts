@@ -4,10 +4,9 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { AstNode, Reference } from '../syntax-tree';
+import { AstNode, isAstNode, Reference, isReference } from '../syntax-tree';
 import { Linker } from '../references/linker';
 import { LangiumServices } from '../services';
-import { isAstNode, isReference } from '../utils/ast-util';
 
 /**
  * Utility service for transforming an `AstNode` into a JSON string and vice versa.

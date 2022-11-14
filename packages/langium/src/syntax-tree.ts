@@ -27,6 +27,10 @@ export interface AstNode {
     readonly $document?: LangiumDocument;
 }
 
+export function isAstNode(obj: unknown): obj is AstNode {
+    return typeof obj === 'object' && obj !== null && typeof (obj as AstNode).$type === 'string';
+}
+
 export interface GenericAstNode extends AstNode {
     [key: string]: unknown
 }
@@ -61,6 +65,10 @@ export interface Reference<T extends AstNode = AstNode> {
     readonly $nodeDescription?: AstNodeDescription;
 }
 
+export function isReference(obj: unknown): obj is Reference {
+    return typeof obj === 'object' && obj !== null && typeof (obj as Reference).$refText === 'string';
+}
+
 /**
  * A description of an AST node is used when constructing scopes and looking up cross-reference targets.
  */
@@ -75,6 +83,13 @@ export interface AstNodeDescription {
     documentUri: URI;
     /** Navigation path inside the document */
     path: string;
+}
+
+export function isAstNodeDescription(obj: unknown): obj is AstNodeDescription {
+    return typeof obj === 'object' && obj !== null
+        && typeof (obj as AstNodeDescription).name === 'string'
+        && typeof (obj as AstNodeDescription).type === 'string'
+        && typeof (obj as AstNodeDescription).path === 'string';
 }
 
 /**
@@ -96,6 +111,13 @@ export interface LinkingError extends ReferenceInfo {
     targetDescription?: AstNodeDescription;
 }
 
+export function isLinkingError(obj: unknown): obj is LinkingError {
+    return typeof obj === 'object' && obj !== null
+        && isAstNode((obj as LinkingError).container)
+        && isReference((obj as LinkingError).reference)
+        && typeof (obj as LinkingError).message === 'string';
+}
+
 /**
  * Service used for generic access to the structure of the AST. This service is shared between
  * all involved languages, so it operates on the superset of types of these languages.
@@ -106,6 +128,42 @@ export interface AstReflection {
     getTypeMetaData(type: string): TypeMetaData
     isInstance(node: unknown, type: string): boolean
     isSubtype(subtype: string, supertype: string): boolean
+}
+
+/**
+ * An abstract implementation of the {@link AstReflection} interface.
+ * Serves to cache subtype computation results to improve performance throughout different parts of Langium.
+ */
+export abstract class AbstractAstReflection implements AstReflection {
+
+    protected subtypes: Record<string, Record<string, boolean | undefined>> = {};
+
+    abstract getAllTypes(): string[];
+    abstract getReferenceType(refInfo: ReferenceInfo): string;
+    abstract getTypeMetaData(type: string): TypeMetaData;
+    protected abstract computeIsSubtype(subtype: string, supertype: string): boolean;
+
+    isInstance(node: unknown, type: string): boolean {
+        return isAstNode(node) && this.isSubtype(node.$type, type);
+    }
+
+    isSubtype(subtype: string, supertype: string): boolean {
+        if (subtype === supertype) {
+            return true;
+        }
+        let nested = this.subtypes[subtype];
+        if (!nested) {
+            nested = this.subtypes[subtype] = {};
+        }
+        const existing = nested[supertype];
+        if (existing !== undefined) {
+            return existing;
+        } else {
+            const result = this.computeIsSubtype(subtype, supertype);
+            nested[supertype] = result;
+            return result;
+        }
+    }
 }
 
 /**

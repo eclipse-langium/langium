@@ -6,8 +6,8 @@
 
 import { CancellationToken } from 'vscode-languageserver';
 import { LangiumServices } from '../services';
-import { AstNode, AstNodeDescription, AstReflection, CstNode, LinkingError, Reference, ReferenceInfo } from '../syntax-tree';
-import { getDocument, isAstNode, isAstNodeDescription, isLinkingError, streamAst, streamReferences } from '../utils/ast-util';
+import { AstNode, AstNodeDescription, AstReflection, CstNode, isAstNode, isAstNodeDescription, isLinkingError, LinkingError, Reference, ReferenceInfo } from '../syntax-tree';
+import { getDocument, streamAst, streamReferences } from '../utils/ast-util';
 import { interruptAndCheck } from '../utils/promise-util';
 import { AstNodeLocator } from '../workspace/ast-node-locator';
 import { DocumentState, LangiumDocument, LangiumDocuments } from '../workspace/documents';

@@ -3,9 +3,8 @@
  * DO NOT EDIT MANUALLY!
  ******************************************************************************/
 
-/* eslint-disable @typescript-eslint/array-type */
-/* eslint-disable @typescript-eslint/no-empty-interface */
-import { AstNode, AstReflection, Reference, ReferenceInfo, isAstNode, TypeMetaData } from 'langium';
+/* eslint-disable */
+import { AstNode, AbstractAstReflection, Reference, ReferenceInfo, TypeMetaData } from 'langium';
 
 export type AbstractDefinition = DeclaredParameter | Definition;
 
@@ -126,20 +125,13 @@ export interface ArithmeticsAstType {
     Statement: Statement
 }
 
-export class ArithmeticsAstReflection implements AstReflection {
+export class ArithmeticsAstReflection extends AbstractAstReflection {
 
     getAllTypes(): string[] {
         return ['AbstractDefinition', 'BinaryExpression', 'DeclaredParameter', 'Definition', 'Evaluation', 'Expression', 'FunctionCall', 'Module', 'NumberLiteral', 'Statement'];
     }
 
-    isInstance(node: unknown, type: string): boolean {
-        return isAstNode(node) && this.isSubtype(node.$type, type);
-    }
-
-    isSubtype(subtype: string, supertype: string): boolean {
-        if (subtype === supertype) {
-            return true;
-        }
+    protected override computeIsSubtype(subtype: string, supertype: string): boolean {
         switch (subtype) {
             case BinaryExpression:
             case FunctionCall:

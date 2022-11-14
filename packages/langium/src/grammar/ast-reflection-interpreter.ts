@@ -4,8 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { AstReflection, ReferenceInfo, TypeMandatoryProperty, TypeMetaData } from '../syntax-tree';
-import { isAstNode } from '../utils/ast-util';
+import { AstReflection, isAstNode, ReferenceInfo, TypeMandatoryProperty, TypeMetaData } from '../syntax-tree';
 import { MultiMap } from '../utils/collections';
 import { LangiumDocuments } from '../workspace/documents';
 import { EmptyFileSystem } from '../workspace/file-system-provider';
