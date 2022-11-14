@@ -275,10 +275,11 @@ export interface LangiumDocuments {
 
 export class DefaultLangiumDocuments implements LangiumDocuments {
 
-    protected readonly documentMap: Map<string, LangiumDocument> = new Map();
     protected readonly textDocuments: TextDocuments<TextDocument>;
     protected readonly fileSystemProvider: FileSystemProvider;
     protected readonly langiumDocumentFactory: LangiumDocumentFactory;
+
+    protected readonly documentMap: Map<string, LangiumDocument> = new Map();
 
     constructor(services: LangiumSharedServices) {
         this.textDocuments = services.workspace.TextDocuments;

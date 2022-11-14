@@ -4,8 +4,8 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { highlightHelper, expectSemanticToken } from '../../src/test';
-import { createLangiumGrammarServices, EmptyFileSystem } from '../../src';
+import { highlightHelper, expectSemanticToken } from '../../../src/test';
+import { createLangiumGrammarServices, EmptyFileSystem } from '../../../src';
 import { SemanticTokenTypes } from 'vscode-languageserver';
 
 const services = createLangiumGrammarServices(EmptyFileSystem);
@@ -86,7 +86,7 @@ describe('Langium grammar semantic token provider', () => {
     test('should highlight parameter\'s name and parameter reference\'s parameter as token type "parameter"', async () => {
         // arrange
         const grammarText = `grammar Test
-        entry Main <<|abc|>>: 
+        entry Main <<|abc|>>:
           <<|abc|>> name=ID;
         terminal ID: /[a-z]+/;
         `.trim();

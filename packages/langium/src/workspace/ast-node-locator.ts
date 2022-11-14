@@ -30,7 +30,7 @@ export interface AstNodeLocator {
      * @returns The `AstNode` located under the given path, or `undefined` if the path cannot be resolved.
      * @see AstNodeLocator.getAstNodePath
      */
-    getAstNode(document: LangiumDocument, path: string): AstNode | undefined;
+    getAstNode<T extends AstNode = AstNode>(document: LangiumDocument, path: string): T | undefined;
 
 }
 
@@ -58,7 +58,7 @@ export class DefaultAstNodeLocator implements AstNodeLocator {
         return $containerProperty;
     }
 
-    getAstNode(document: LangiumDocument, path: string): AstNode | undefined {
+    getAstNode<T extends AstNode = AstNode>(document: LangiumDocument, path: string): T | undefined {
         const segments = path.split(this.segmentSeparator);
         return segments.reduce((previousValue, currentValue) => {
             if (!previousValue || currentValue.length === 0) {
@@ -72,7 +72,7 @@ export class DefaultAstNodeLocator implements AstNodeLocator {
                 return array[arrayIndex];
             }
             return (previousValue as unknown as Record<string, AstNode>)[currentValue];
-        }, document.parseResult.value);
+        }, document.parseResult.value) as T;
     }
 
 }
