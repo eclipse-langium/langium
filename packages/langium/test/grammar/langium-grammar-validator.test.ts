@@ -10,6 +10,7 @@ import { IssueCodes } from '../../src/grammar/langium-grammar-validator';
 import { DiagnosticSeverity } from 'vscode-languageserver';
 
 const services = createLangiumGrammarServices(EmptyFileSystem);
+const locator = services.grammar.workspace.AstNodeLocator;
 const validate = validationHelper<GrammarAST.Grammar>(services.grammar);
 
 describe('Langium grammar validation', () => {
@@ -377,5 +378,54 @@ describe('Reserved names', () => {
             severity: DiagnosticSeverity.Error
         });
     }
+
+});
+
+describe('Whitespace keywords', () => {
+
+    const grammar = `
+    ParserRule: name='x' ' ' '' 'x y';
+    terminal TerminalRule: ' ' | 'x'; 
+    terminal STR: /[_a-zA-Z][\\w_]*/;
+    `.trim();
+
+    let validationResult: ValidationResult<GrammarAST.Grammar>;
+
+    // 1. build a parser from this grammar, verify it works
+    beforeAll(async () => {
+        validationResult = await validate(grammar);
+    });
+
+    test('No validation errors for whitespace keywords in terminal rule', () => {
+        const node = locator.getAstNode<GrammarAST.Keyword>(
+            validationResult.document,
+            'rules@1/definition/elements@1'
+        )!;
+        expectNoIssues(validationResult, { node });
+    });
+
+    test('Should error for whitespace keyword in parser rule', () => {
+        const node = locator.getAstNode<GrammarAST.Keyword>(
+            validationResult.document,
+            'rules@0/definition/elements@1'
+        )!;
+        expectError(validationResult, 'Keywords cannot only consist of whitespace characters.', { node });
+    });
+
+    test('Should error for empty keyword in parser rule', () => {
+        const node = locator.getAstNode<GrammarAST.Keyword>(
+            validationResult.document,
+            'rules@0/definition/elements@2'
+        )!;
+        expectError(validationResult, 'Keywords cannot be empty.', { node });
+    });
+
+    test('Should warn for keywords with whitespaces in parser rule', () => {
+        const node = locator.getAstNode<GrammarAST.Keyword>(
+            validationResult.document,
+            'rules@0/definition/elements@3'
+        )!;
+        expectWarning(validationResult, 'Keywords should not contain whitespace characters.', { node });
+    });
 
 });
