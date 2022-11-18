@@ -554,12 +554,14 @@ export class LangiumGrammarValidator {
     }
 
     checkKeyword(keyword: ast.Keyword, accept: ValidationAcceptor): void {
-        if (keyword.value.length === 0) {
-            accept('error', 'Keywords cannot be empty.', { node: keyword });
-        } else if (keyword.value.trim().length === 0) {
-            accept('error', 'Keywords cannot only consist of whitespace characters.', { node: keyword });
-        } else if (/\s/g.test(keyword.value)) {
-            accept('warning', 'Keywords should not contain whitespace characters.', { node: keyword });
+        if (getContainerOfType(keyword, isParserRule)) {
+            if (keyword.value.length === 0) {
+                accept('error', 'Keywords cannot be empty.', { node: keyword });
+            } else if (keyword.value.trim().length === 0) {
+                accept('error', 'Keywords cannot only consist of whitespace characters.', { node: keyword });
+            } else if (/\s/g.test(keyword.value)) {
+                accept('warning', 'Keywords should not contain whitespace characters.', { node: keyword });
+            }
         }
     }
 
