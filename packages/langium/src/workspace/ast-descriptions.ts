@@ -115,20 +115,23 @@ export class DefaultReferenceDescriptionProvider implements ReferenceDescription
         for (const astNode of streamAst(rootNode)) {
             await interruptAndCheck(cancelToken);
             streamReferences(astNode).filter(refInfo => !isLinkingError(refInfo)).forEach(refInfo => {
-                const targetNodeDesc = refInfo.reference.$nodeDescription;
-                // Do not handle not yet linked references.
                 // TODO: Consider logging a warning or throw an exception when DocumentState is < than Linked
-                if (targetNodeDesc) {
-                    descr.push(this.createDescription(refInfo, targetNodeDesc));
+                const description = this.createDescription(refInfo);
+                if (description) {
+                    descr.push(description);
                 }
             });
         }
         return descr;
     }
 
-    protected createDescription(refInfo: ReferenceInfo, targetNodeDescr: AstNodeDescription): ReferenceDescription {
-        const docUri = getDocument(refInfo.container).uri;
+    protected createDescription(refInfo: ReferenceInfo): ReferenceDescription | undefined {
+        const targetNodeDescr = refInfo.reference.$nodeDescription;
         const refCstNode = refInfo.reference.$refNode;
+        if (!targetNodeDescr || !refCstNode) {
+            return undefined;
+        }
+        const docUri = getDocument(refInfo.container).uri;
         return {
             sourceUri: docUri,
             sourcePath: this.nodeLocator.getAstNodePath(refInfo.container),

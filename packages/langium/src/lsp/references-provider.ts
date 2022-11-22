@@ -60,7 +60,7 @@ export class DefaultReferencesProvider implements ReferencesProvider {
         if (targetAstNode) {
             const options = { includeDeclaration: params.context.includeDeclaration };
             this.references.findReferences(targetAstNode, options).forEach(reference => {
-                if (isReference(reference)) {
+                if (isReference(reference) && reference.$refNode) {
                     refs.push(Location.create(document.uri.toString(), reference.$refNode.range));
                 } else {
                     refs.push(Location.create(reference.sourceUri.toString(), reference.segment.range));

@@ -6,7 +6,7 @@
 
 import { findAssignment } from '../utils/grammar-util';
 import { LangiumServices } from '../services';
-import { AstNode, CstNode, GenericAstNode, isReference, Reference } from '../syntax-tree';
+import { AstNode, CstNode, GenericAstNode, isReference } from '../syntax-tree';
 import { getDocument, streamAst, streamReferences } from '../utils/ast-util';
 import { isCstChildNode, toDocumentSegment } from '../utils/cst-util';
 import { stream, Stream } from '../utils/stream';
@@ -72,7 +72,7 @@ export class DefaultReferences implements References {
                     return reference.ref;
                 } else if (Array.isArray(reference)) {
                     for (const ref of reference) {
-                        if (isReference(ref)
+                        if (isReference(ref) && ref.$refNode
                             && ref.$refNode.offset <= sourceCstNode.offset
                             && ref.$refNode.end >= sourceCstNode.end) {
                             return ref.ref;
@@ -134,22 +134,19 @@ export class DefaultReferences implements References {
                 refs.push(ref);
             }
         }
-        const localReferences: Reference[] = [];
         streamAst(rootNode).forEach(node => {
-            streamReferences(node).forEach(refInfo => {
-                if (refInfo.reference.ref === targetNode) {
-                    localReferences.push(refInfo.reference);
+            streamReferences(node).forEach(({ reference }) => {
+                if (reference.ref === targetNode && reference.$refNode) {
+                    const cstNode = reference.$refNode;
+                    refs.push({
+                        sourceUri: getDocument(cstNode.element).uri,
+                        sourcePath: this.nodeLocator.getAstNodePath(cstNode.element),
+                        targetUri: getDocument(targetNode).uri,
+                        targetPath: this.nodeLocator.getAstNodePath(targetNode),
+                        segment: toDocumentSegment(cstNode),
+                        local: equalURI(getDocument(cstNode.element).uri, getDocument(targetNode).uri)
+                    });
                 }
-            });
-        });
-        localReferences.forEach(ref => {
-            refs.push({
-                sourceUri: getDocument(ref.$refNode.element).uri,
-                sourcePath: this.nodeLocator.getAstNodePath(ref.$refNode.element),
-                targetUri: getDocument(targetNode).uri,
-                targetPath: this.nodeLocator.getAstNodePath(targetNode),
-                segment: toDocumentSegment(ref.$refNode),
-                local: equalURI(getDocument(ref.$refNode.element).uri, getDocument(targetNode).uri)
             });
         });
         return stream(refs);
