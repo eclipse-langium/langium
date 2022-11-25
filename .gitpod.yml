@@ -1,5 +1,5 @@
 tasks:
-  - before: npm install -g npm@^7.7.0
+  - before: npm install -g npm
     init: npm install
 
 ports:
