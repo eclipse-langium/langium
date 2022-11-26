@@ -7,6 +7,9 @@
         "caseInsensitive": true,
         "textMate": {
             "out": "syntaxes/arithmetics.tmLanguage.json"
+        },
+        "monarch": {
+            "out": "./syntaxes/arithmetics.monarch.ts"
         }
     }],
     "out": "src/language-server/generated"
