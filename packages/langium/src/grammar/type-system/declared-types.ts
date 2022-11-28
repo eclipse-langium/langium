@@ -7,19 +7,10 @@
 import { AtomType, Interface, Type } from '../generated/ast';
 import { getTypeName } from '../internal-grammar-util';
 import { AstTypes, Property, PropertyType, InterfaceType, UnionType } from './types-util';
-import { MultiMap } from '../../utils/collections';
 
-export function collectDeclaredTypes(interfaces: Interface[], types: Type[], inferredTypes: AstTypes): AstTypes {
-
-    function addSuperTypes(child: string, types: AstTypes) {
-        const childType = types.unions.find(e => e.name === child) ??
-            types.interfaces.find(e => e.name === child);
-        if (childType) {
-            childToSuper.get(child).forEach(e => childType.superTypes.add(e));
-        }
-    }
-
+export function collectDeclaredTypes(interfaces: Interface[], unions: Type[]): AstTypes {
     const declaredTypes: AstTypes = { unions: [], interfaces: [] };
+
     // add interfaces
     for (const interfaceType of interfaces) {
         const superTypes = interfaceType.superTypes.filter(e => e.ref).map(e => getTypeName(e.ref!));
@@ -32,24 +23,10 @@ export function collectDeclaredTypes(interfaces: Interface[], types: Type[], inf
     }
 
     // add types
-    const childToSuper = new MultiMap<string, string>();
-    for (const type of types) {
-        const alternatives = type.typeAlternatives.map(atomTypeToPropertyType);
-        const reflection = type.typeAlternatives.length > 1 && type.typeAlternatives.some(e => e.refType?.ref !== undefined);
-        declaredTypes.unions.push(new UnionType(type.name, alternatives, { reflection }));
-
-        if (reflection) {
-            for (const maybeRef of type.typeAlternatives) {
-                if (maybeRef.refType?.ref) {
-                    childToSuper.add(getTypeName(maybeRef.refType.ref), type.name);
-                }
-            }
-        }
-    }
-
-    for (const child of childToSuper.keys()) {
-        addSuperTypes(child, inferredTypes);
-        addSuperTypes(child, declaredTypes);
+    for (const union of unions) {
+        const alternatives = union.typeAlternatives.map(atomTypeToPropertyType);
+        const reflection = union.typeAlternatives.length > 1 && union.typeAlternatives.some(e => e.refType?.ref !== undefined);
+        declaredTypes.unions.push(new UnionType(union.name, alternatives, { reflection }));
     }
 
     return declaredTypes;

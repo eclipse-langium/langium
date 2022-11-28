@@ -10,6 +10,7 @@ import { stream } from '../../utils/stream';
 import { collectInferredTypes } from './inferred-types';
 import { collectDeclaredTypes } from './declared-types';
 import { AstTypes, collectAllAstResources, InterfaceType, UnionType } from './types-util';
+import { MultiMap } from '../../utils/collections';
 
 /**
  * Collects all types for the generated AST. The types collector entry point.
@@ -19,7 +20,8 @@ import { AstTypes, collectAllAstResources, InterfaceType, UnionType } from './ty
 export function collectAst(documents: LangiumDocuments, grammars: Grammar[]): AstTypes {
     const astResources = collectAllAstResources(grammars, documents);
     const inferred = collectInferredTypes(Array.from(astResources.parserRules), Array.from(astResources.datatypeRules));
-    const declared = collectDeclaredTypes(Array.from(astResources.interfaces), Array.from(astResources.types), inferred);
+    const declared = collectDeclaredTypes(Array.from(astResources.interfaces), Array.from(astResources.types));
+    shareSuperTypesFromUnions(inferred, declared);
 
     const interfaces: InterfaceType[] = inferred.interfaces.concat(declared.interfaces);
     const types: UnionType[] = inferred.unions.concat(declared.unions);
@@ -31,6 +33,31 @@ export function collectAst(documents: LangiumDocuments, grammars: Grammar[]): As
         interfaces: stream(interfaces).distinct(e => e.name).toArray(),
         unions: stream(types).distinct(e => e.name).toArray(),
     };
+}
+
+export function shareSuperTypesFromUnions(inferred: AstTypes, declared: AstTypes): void {
+    const childToSuper = new MultiMap<string, string>();
+    const allUnions = inferred.unions.concat(declared.unions);
+    for (const union of allUnions) {
+        if (union.reflection) {
+            for (const propType of union.union) {
+                propType.types.forEach(type => childToSuper.add(type, union.name));
+            }
+        }
+    }
+
+    function addSuperTypes(types: AstTypes, child: string) {
+        const childType = types.unions.find(e => e.name === child) ??
+            types.interfaces.find(e => e.name === child);
+        if (childType) {
+            childToSuper.get(child).forEach(e => childType.superTypes.add(e));
+        }
+    }
+
+    for (const child of childToSuper.keys()) {
+        addSuperTypes(inferred, child);
+        addSuperTypes(declared, child);
+    }
 }
 
 /**

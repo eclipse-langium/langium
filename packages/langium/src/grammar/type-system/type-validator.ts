@@ -12,6 +12,7 @@ import { AstTypes, collectAllAstResources, distinctAndSorted, Property, Property
 import { stream } from '../../utils/stream';
 import { ValidationAcceptor } from '../../validation/validation-registry';
 import { extractAssignments, getRuleType } from '../internal-grammar-util';
+import { shareSuperTypesFromUnions } from './type-collector';
 
 export function validateTypesConsistency(grammar: Grammar, accept: ValidationAcceptor): void {
     function applyErrorToRuleNodes(nodes: readonly ParserRule[], typeName: string): (errorMessage: string) => void {
@@ -219,7 +220,8 @@ type ValidationResources = Map<string, InferredInfo | DeclaredInfo | InferredInf
 export function collectValidationResources(grammar: Grammar): ValidationResources {
     const astResources = collectAllAstResources([grammar]);
     const inferred = collectInferredTypes(Array.from(astResources.parserRules), Array.from(astResources.datatypeRules));
-    const declared = collectDeclaredTypes(Array.from(astResources.interfaces), Array.from(astResources.types), inferred);
+    const declared = collectDeclaredTypes(Array.from(astResources.interfaces), Array.from(astResources.types));
+    shareSuperTypesFromUnions(inferred, declared);
 
     const typeNameToRules = getTypeNameToRules(astResources);
     const inferredInfo = mergeTypesAndInterfaces(inferred)
@@ -356,7 +358,8 @@ export type InterfaceInfo = {
 export function collectAllInterfaces(grammar: Grammar): Map<string, InterfaceInfo> {
     const astResources = collectAllAstResources([grammar]);
     const inferred = collectInferredTypes(Array.from(astResources.parserRules), Array.from(astResources.datatypeRules));
-    const declared = collectDeclaredTypes(Array.from(astResources.interfaces), Array.from(astResources.types), inferred);
+    const declared = collectDeclaredTypes(Array.from(astResources.interfaces), Array.from(astResources.types));
+    shareSuperTypesFromUnions(inferred, declared);
 
     const typeNameToRules = getTypeNameToRules(astResources);
     const inferredInterfaces = inferred.interfaces
