@@ -6,12 +6,8 @@
 
 import * as ast from '../grammar/generated/ast';
 import { URI, Utils } from 'vscode-uri';
-import { LangiumServices } from '../services';
-import { AstNode, AstNodeDescription } from '../syntax-tree';
-import { findRootNode, getDocument, Mutable, streamAllContents } from '../utils/ast-util';
-import { MultiMap } from '../utils/collections';
-import { AstNodeLocator } from '../workspace/ast-node-locator';
-import { LangiumDocument, LangiumDocuments, PrecomputedScopes } from '../workspace/documents';
+import { getDocument, streamAllContents } from '../utils/ast-util';
+import { LangiumDocuments } from '../workspace/documents';
 import { TypeResolutionError } from './type-system/types-util';
 import { escapeRegExp } from '../utils/regex-util';
 
@@ -260,82 +256,6 @@ function resolveTransitiveImportsInternal(documents: LangiumDocuments, grammar: 
         }
     }
     return Array.from(grammars);
-}
-
-export function prepareGrammar(services: LangiumServices, grammar: ast.Grammar): ast.Grammar {
-    const mutableGrammar = grammar as Mutable<ast.Grammar>;
-    const document = services.shared.workspace.LangiumDocumentFactory.fromModel(grammar, URI.parse('memory://grammar.langium'));
-    mutableGrammar.$document = document;
-    document.precomputedScopes = computeGrammarScope(services, grammar);
-    return grammar;
-}
-
-function computeGrammarScope(services: LangiumServices, grammar: ast.Grammar): PrecomputedScopes {
-    const nameProvider = services.references.NameProvider;
-    const astNodeLocator = services.workspace.AstNodeLocator;
-    const descriptions = services.workspace.AstNodeDescriptionProvider;
-    const document = getDocument(grammar);
-    const scopes = new MultiMap<AstNode, AstNodeDescription>();
-    const processTypeNode = processTypeNodeWithNodeLocator(astNodeLocator);
-    const processActionNode = processActionNodeWithNodeDescriptionProvider(astNodeLocator);
-    for (const node of streamAllContents(grammar)) {
-        if (ast.isReturnType(node)) continue;
-        processActionNode(node, document, scopes);
-        processTypeNode(node, document, scopes);
-        const container = node.$container;
-        if (container) {
-            const name = nameProvider.getName(node);
-            if (name) {
-                scopes.add(container, descriptions.createDescription(node, name, document));
-            }
-        }
-    }
-    return scopes;
-}
-
-/**
- * Add synthetic Interface in case of explicitly or implicitly inferred type:<br>
- * cases: `ParserRule: ...;` or `ParserRule infers Type: ...;`
- * @param astNodeLocator AstNodeLocator
- * @returns scope populator
- */
-export function processTypeNodeWithNodeLocator(astNodeLocator: AstNodeLocator): (node: AstNode, document: LangiumDocument, scopes: PrecomputedScopes) => void {
-    return (node: AstNode, document: LangiumDocument, scopes: PrecomputedScopes) => {
-        const container = node.$container;
-        if (container && ast.isParserRule(node) && !node.returnType && !node.dataType) {
-            const typeNode = node.inferredType ?? node;
-            scopes.add(container, {
-                node: typeNode,
-                name: typeNode.name,
-                type: 'Interface',
-                documentUri: document.uri,
-                path: astNodeLocator.getAstNodePath(typeNode)
-            });
-        }
-    };
-}
-
-/**
- * Add synthetic Interface in case of explicitly inferred type:
- *
- * case: `{infer Action}`
- */
-export function processActionNodeWithNodeDescriptionProvider(astNodeLocator: AstNodeLocator): (node: AstNode, document: LangiumDocument, scopes: PrecomputedScopes) => void {
-    return (node: AstNode, document: LangiumDocument, scopes: PrecomputedScopes) => {
-        const container = findRootNode(node);
-        if (container && ast.isAction(node) && node.inferredType) {
-            const typeName = getActionType(node);
-            if (typeName) {
-                scopes.add(container, {
-                    node,
-                    name: typeName,
-                    type: 'Interface',
-                    documentUri: document.uri,
-                    path: astNodeLocator.getAstNodePath(node)
-                });
-            }
-        }
-    };
 }
 
 export function extractAssignments(element: ast.AbstractElement): ast.Assignment[] {

@@ -85,7 +85,7 @@ describe('Completion within alternatives', () => {
         hidden terminal WS: /\\s+/;
         `;
 
-        const services = createServicesForGrammar({ grammar });
+        const services = await createServicesForGrammar({ grammar });
         const completion = expectCompletion(services);
         const text = '<|>a <|>b <|>c';
 
@@ -117,7 +117,7 @@ describe('Completion within alternatives', () => {
         hidden terminal WS: /\\s+/;
         `;
 
-        const services = createServicesForGrammar({ grammar });
+        const services = await createServicesForGrammar({ grammar });
         const completion = expectCompletion(services);
         const text = 'item A ref <|>A';
 

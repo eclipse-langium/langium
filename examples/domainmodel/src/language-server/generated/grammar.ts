@@ -22,7 +22,7 @@ export const DomainModelGrammar = (): Grammar => loadedDomainModelGrammar ?? (lo
         "terminal": {
           "$type": "RuleCall",
           "rule": {
-            "$refText": "AbstractElement"
+            "$ref": "/rules@1"
           },
           "arguments": []
         },
@@ -43,14 +43,14 @@ export const DomainModelGrammar = (): Grammar => loadedDomainModelGrammar ?? (lo
           {
             "$type": "RuleCall",
             "rule": {
-              "$refText": "PackageDeclaration"
+              "$ref": "/rules@2"
             },
             "arguments": []
           },
           {
             "$type": "RuleCall",
             "rule": {
-              "$refText": "Type"
+              "$ref": "/rules@3"
             },
             "arguments": []
           }
@@ -80,7 +80,7 @@ export const DomainModelGrammar = (): Grammar => loadedDomainModelGrammar ?? (lo
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$refText": "QualifiedName"
+                "$ref": "/rules@7"
               },
               "arguments": []
             }
@@ -96,7 +96,7 @@ export const DomainModelGrammar = (): Grammar => loadedDomainModelGrammar ?? (lo
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$refText": "AbstractElement"
+                "$ref": "/rules@1"
               },
               "arguments": []
             },
@@ -124,14 +124,14 @@ export const DomainModelGrammar = (): Grammar => loadedDomainModelGrammar ?? (lo
           {
             "$type": "RuleCall",
             "rule": {
-              "$refText": "DataType"
+              "$ref": "/rules@4"
             },
             "arguments": []
           },
           {
             "$type": "RuleCall",
             "rule": {
-              "$refText": "Entity"
+              "$ref": "/rules@5"
             },
             "arguments": []
           }
@@ -161,7 +161,7 @@ export const DomainModelGrammar = (): Grammar => loadedDomainModelGrammar ?? (lo
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$refText": "ID"
+                "$ref": "/rules@9"
               },
               "arguments": []
             }
@@ -192,7 +192,7 @@ export const DomainModelGrammar = (): Grammar => loadedDomainModelGrammar ?? (lo
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$refText": "ID"
+                "$ref": "/rules@9"
               },
               "arguments": []
             }
@@ -211,12 +211,12 @@ export const DomainModelGrammar = (): Grammar => loadedDomainModelGrammar ?? (lo
                 "terminal": {
                   "$type": "CrossReference",
                   "type": {
-                    "$refText": "Entity"
+                    "$ref": "/rules@5"
                   },
                   "terminal": {
                     "$type": "RuleCall",
                     "rule": {
-                      "$refText": "QualifiedName"
+                      "$ref": "/rules@7"
                     },
                     "arguments": []
                   },
@@ -237,7 +237,7 @@ export const DomainModelGrammar = (): Grammar => loadedDomainModelGrammar ?? (lo
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$refText": "Feature"
+                "$ref": "/rules@6"
               },
               "arguments": []
             },
@@ -279,7 +279,7 @@ export const DomainModelGrammar = (): Grammar => loadedDomainModelGrammar ?? (lo
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$refText": "ID"
+                "$ref": "/rules@9"
               },
               "arguments": []
             }
@@ -295,12 +295,12 @@ export const DomainModelGrammar = (): Grammar => loadedDomainModelGrammar ?? (lo
             "terminal": {
               "$type": "CrossReference",
               "type": {
-                "$refText": "Type"
+                "$ref": "/rules@3"
               },
               "terminal": {
                 "$type": "RuleCall",
                 "rule": {
-                  "$refText": "QualifiedName"
+                  "$ref": "/rules@7"
                 },
                 "arguments": []
               },
@@ -326,7 +326,7 @@ export const DomainModelGrammar = (): Grammar => loadedDomainModelGrammar ?? (lo
           {
             "$type": "RuleCall",
             "rule": {
-              "$refText": "ID"
+              "$ref": "/rules@9"
             },
             "arguments": []
           },
@@ -340,7 +340,7 @@ export const DomainModelGrammar = (): Grammar => loadedDomainModelGrammar ?? (lo
               {
                 "$type": "RuleCall",
                 "rule": {
-                  "$refText": "ID"
+                  "$ref": "/rules@9"
                 },
                 "arguments": []
               }

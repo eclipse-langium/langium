@@ -14,7 +14,7 @@ import { equalURI } from '../../utils/uri-util';
 import { AstNodeLocator } from '../../workspace/ast-node-locator';
 import { LangiumDocument, PrecomputedScopes } from '../../workspace/documents';
 import { AbstractType, Interface, isAction, isGrammar, isParserRule, isReturnType, Type } from '../generated/ast';
-import { getActionType, processActionNodeWithNodeDescriptionProvider, processTypeNodeWithNodeLocator, resolveImportUri } from '../internal-grammar-util';
+import { getActionType, resolveImportUri } from '../internal-grammar-util';
 
 export class LangiumGrammarScopeProvider extends DefaultScopeProvider {
 
@@ -68,14 +68,10 @@ export class LangiumGrammarScopeProvider extends DefaultScopeProvider {
 
 export class LangiumGrammarScopeComputation extends DefaultScopeComputation {
     protected readonly astNodeLocator: AstNodeLocator;
-    protected readonly processTypeNode: (node: AstNode, document: LangiumDocument, scopes: PrecomputedScopes) => void;
-    protected readonly processActionNode: (node: AstNode, document: LangiumDocument, scopes: PrecomputedScopes) => void;
 
     constructor(services: LangiumServices) {
         super(services);
         this.astNodeLocator = services.workspace.AstNodeLocator;
-        this.processTypeNode = processTypeNodeWithNodeLocator(this.astNodeLocator);
-        this.processActionNode = processActionNodeWithNodeDescriptionProvider(this.astNodeLocator);
     }
 
     protected override exportNode(node: AstNode, exports: AstNodeDescription[], document: LangiumDocument): void {
@@ -115,5 +111,46 @@ export class LangiumGrammarScopeComputation extends DefaultScopeComputation {
         this.processTypeNode(node, document, scopes);
         this.processActionNode(node, document, scopes);
         super.processNode(node, document, scopes);
+    }
+
+    /**
+     * Add synthetic Interface in case of explicitly or implicitly inferred type:<br>
+     * cases: `ParserRule: ...;` or `ParserRule infers Type: ...;`
+     * @param astNodeLocator AstNodeLocator
+     * @returns scope populator
+     */
+    protected processTypeNode(node: AstNode, document: LangiumDocument, scopes: PrecomputedScopes): void {
+        const container = node.$container;
+        if (container && isParserRule(node) && !node.returnType && !node.dataType) {
+            const typeNode = node.inferredType ?? node;
+            scopes.add(container, {
+                node: typeNode,
+                name: typeNode.name,
+                type: 'Interface',
+                documentUri: document.uri,
+                path: this.astNodeLocator.getAstNodePath(typeNode)
+            });
+        }
+    }
+
+    /**
+     * Add synthetic Interface in case of explicitly inferred type:
+     *
+     * case: `{infer Action}`
+     */
+    protected processActionNode(node: AstNode, document: LangiumDocument, scopes: PrecomputedScopes): void {
+        const container = findRootNode(node);
+        if (container && isAction(node) && node.inferredType) {
+            const typeName = getActionType(node);
+            if (typeName) {
+                scopes.add(container, {
+                    node,
+                    name: typeName,
+                    type: 'Interface',
+                    documentUri: document.uri,
+                    path: this.astNodeLocator.getAstNodePath(node)
+                });
+            }
+        }
     }
 }

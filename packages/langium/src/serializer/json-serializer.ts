@@ -4,9 +4,9 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { AstNode, isAstNode, Reference, isReference } from '../syntax-tree';
-import { Linker } from '../references/linker';
 import { LangiumServices } from '../services';
+import { AstNode, isAstNode, isReference } from '../syntax-tree';
+import { AstNodeLocator } from '../workspace/ast-node-locator';
 
 /**
  * Utility service for transforming an `AstNode` into a JSON string and vice versa.
@@ -17,20 +17,28 @@ export interface JsonSerializer {
      * @param node The `AstNode` to be serialized.
      * @param space Adds indentation, white space, and line break characters to the return-value JSON text to make it easier to read.
      */
-    serialize(node: AstNode, space?: string | number): string
+    serialize(node: AstNode, space?: string | number): string;
     /**
      * Deserialize (parse) a JSON `string` into an `AstNode`.
      */
-    deserialize(content: string): AstNode
+    deserialize(content: string): AstNode;
+}
+
+interface IntermediateReference {
+    $ref: string
+}
+
+function isIntermediateReference(obj: unknown): obj is IntermediateReference {
+    return typeof obj === 'object' && !!obj && '$ref' in obj;
 }
 
 export class DefaultJsonSerializer implements JsonSerializer {
 
-    private readonly linker: Linker;
     protected ignoreProperties = ['$container', '$containerProperty', '$containerIndex', '$document', '$cstNode'];
+    protected readonly astNodeLocator: AstNodeLocator;
 
     constructor(services: LangiumServices) {
-        this.linker = services.references.Linker;
+        this.astNodeLocator = services.workspace.AstNodeLocator;
     }
 
     serialize(node: AstNode, space?: string | number): string {
@@ -52,9 +60,12 @@ export class DefaultJsonSerializer implements JsonSerializer {
                 } else {
                     objects.add(item);
                 }
-                // If it is a reference, just return the name
+                // If it is a reference, transform it into a path
                 if (isReference(item)) {
-                    return { $refText: item.$refText } as Reference; // surprisingly this cast works at the time of writing, although $refNode is absent
+                    const refValue = item.ref;
+                    return {
+                        $ref: refValue && this.astNodeLocator.getAstNodePath(refValue)
+                    };
                 }
                 let newItem: Record<string, unknown> | unknown[];
                 // If it is an array, replicate the array.
@@ -76,19 +87,23 @@ export class DefaultJsonSerializer implements JsonSerializer {
             }
             return item;
         };
-        return replace(object);
+        const result = replace(object);
+        return result;
     }
 
-    protected revive(object: AstNode): AstNode {
+    protected revive(root: AstNode): AstNode {
+        const pathActions: Array<() => void> = [];
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const internalRevive = (value: Record<string, any>, container?: unknown, propName?: string) => {
             if (Array.isArray(value)) {
-                // eslint-disable-next-line @typescript-eslint/prefer-for-of
                 for (let i = 0; i < value.length; i++) {
                     const item = value[i];
-                    if (isReference(item) && isAstNode(container)) {
-                        const reference = this.linker.buildReference(container, propName!, item.$refNode, item.$refText);
-                        value[i] = reference;
+                    if (isIntermediateReference(item) && isAstNode(container)) {
+                        const index = i;
+                        pathActions.push(() => {
+                            const ref = this.evalRef(root, item.$ref);
+                            value[index] = { ref, $refText: '' };
+                        });
                     } else if (typeof item === 'object' && item !== null) {
                         internalRevive(item);
                         item.$container = container;
@@ -99,9 +114,11 @@ export class DefaultJsonSerializer implements JsonSerializer {
             } else if (typeof value === 'object' && value !== null) {
                 for (const [name, item] of Object.entries(value)) {
                     if (typeof item === 'object' && item !== null) {
-                        if (isReference(item)) {
-                            const reference = this.linker.buildReference(value as AstNode, name, item.$refNode, item.$refText);
-                            value[name] = reference;
+                        if (isIntermediateReference(item)) {
+                            pathActions.push(() => {
+                                const ref = this.evalRef(root, item.$ref);
+                                value[name] = { ref, $refText: '' };
+                            });
                         } else if (Array.isArray(item)) {
                             internalRevive(item, value, name);
                         } else {
@@ -113,7 +130,12 @@ export class DefaultJsonSerializer implements JsonSerializer {
                 }
             }
         };
-        internalRevive(object);
-        return object;
+        internalRevive(root);
+        pathActions.forEach(e => e());
+        return root;
+    }
+
+    protected evalRef(root: AstNode, path: string): AstNode {
+        return this.astNodeLocator.getAstNode(root, path)!;
     }
 }

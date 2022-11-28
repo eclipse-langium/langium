@@ -187,7 +187,7 @@ export class LangiumGrammarReferences extends DefaultReferences {
         const refs = this.index.findAllReferences(interf, this.nodeLocator.getAstNodePath(interf));
         refs.forEach(ref => {
             const doc = this.documents.getOrCreateDocument(ref.sourceUri);
-            const astNode = this.nodeLocator.getAstNode(doc, ref.sourcePath);
+            const astNode = this.nodeLocator.getAstNode(doc.parseResult.value, ref.sourcePath);
             if (isParserRule(astNode) || isAction(astNode)) {
                 rules.push(astNode);
             }

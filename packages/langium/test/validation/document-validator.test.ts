@@ -5,8 +5,8 @@
  ******************************************************************************/
 
 import { Position, Range } from 'vscode-languageserver';
-import { createServicesForGrammar } from '../../src';
-import { validationHelper } from '../../src/test';
+import { AstNode, createServicesForGrammar } from '../../src';
+import { validationHelper, ValidationResult } from '../../src/test';
 
 // Related to https://github.com/langium/langium/issues/571
 describe('Parser error is thrown on resynced token with NaN position', () => {
@@ -27,11 +27,15 @@ describe('Parser error is thrown on resynced token with NaN position', () => {
     terminal INT returns number: /[0-9]+/;
     terminal STRING: /"[^"]*"|'[^']*'/;
     `;
-    const services = createServicesForGrammar({
-        grammar
-    });
 
-    const validate = validationHelper(services);
+    let validate: (input: string) => Promise<ValidationResult<AstNode>>;
+
+    beforeEach(async () => {
+        const services = await createServicesForGrammar({
+            grammar
+        });
+        validate = validationHelper(services);
+    });
 
     test('Diagnostic is shown on at the end of the previous token', async () => {
         const text = `person Aasdf
