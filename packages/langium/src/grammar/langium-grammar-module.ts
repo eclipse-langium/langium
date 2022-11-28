@@ -18,6 +18,8 @@ import { LangiumGrammarNameProvider } from './references/grammar-naming';
 import { LangiumGrammarReferences } from './references/grammar-references';
 import { LangiumGrammarDefinitionProvider } from './lsp/grammar-definition';
 import { LangiumGrammarCallHierarchyProvider } from './lsp/grammar-call-hierarchy';
+import { LangiumGrammarDocumentBuilder } from './workspace/document-builder';
+import { LangiumGrammarTypeCollector } from './workspace/type-collector';
 
 export type LangiumGrammarAddedServices = {
     validation: {
@@ -48,15 +50,30 @@ export const LangiumGrammarModule: Module<LangiumGrammarServices, PartialLangium
     }
 };
 
+export type LangiumGrammarAddedSharedServices = {
+    workspace: {
+        TypeCollector: LangiumGrammarTypeCollector
+    }
+}
+
+export type LangiumGrammarSharedServices = LangiumSharedServices & LangiumGrammarAddedSharedServices
+
 export function createLangiumGrammarServices(context: DefaultSharedModuleContext,
     sharedModule?: Module<LangiumSharedServices, PartialLangiumSharedServices>): {
-        shared: LangiumSharedServices,
+        shared: LangiumGrammarSharedServices,
         grammar: LangiumGrammarServices
     } {
     const shared = inject(
         createDefaultSharedModule(context),
         LangiumGrammarGeneratedSharedModule,
-        sharedModule
+        {
+            ...(sharedModule ?? {}),
+            workspace: {
+                DocumentBuilder: (services) => new LangiumGrammarDocumentBuilder(services),
+                TypeCollector: () => new LangiumGrammarTypeCollector(),
+                ...(sharedModule?.workspace ?? {})
+            }
+        }
     );
     const grammar = inject(
         createDefaultModule({ shared }),
