@@ -12,10 +12,12 @@ import { getActionType, getRuleType } from '../internal-grammar-util';
 import { collectDeclaredTypes } from '../type-system/declared-types';
 import { collectInferredTypes } from '../type-system/inferred-types';
 import { shareSuperTypesFromUnions } from '../type-system/type-collector';
-import { AstResources, AstTypes, collectAllAstResources, InterfaceType, UnionType } from '../type-system/types-util';
+import { AstResources, AstTypes, collectAllAstResources, InterfaceType, Property, UnionType } from '../type-system/types-util';
 
 export class LangiumGrammarTypeCollector {
-    private validationResources = new Map<string, InferredInfo | DeclaredInfo | InferredInfo & DeclaredInfo>();
+    readonly validationResources = new Map<string, InferredInfo | DeclaredInfo | InferredInfo & DeclaredInfo>();
+    // todo using type graph allows to remove this `superPropertiesMap`
+    readonly superPropertiesMap = new Map<string, Property[]>();
 
     private collectTypeResources(documents: LangiumDocuments, grammars: Grammar[]): TypeResources {
         const astResources = collectAllAstResources(grammars, documents);
@@ -23,12 +25,32 @@ export class LangiumGrammarTypeCollector {
         const declared = collectDeclaredTypes(Array.from(astResources.interfaces), Array.from(astResources.types));
 
         shareSuperTypesFromUnions(inferred, declared);
+        this.addSuperProperties(inferred);
+        this.addSuperProperties(declared);
 
         return { astResources, inferred, declared };
     }
 
-    getValidationResources() {
-        return this.validationResources;
+    private addSuperProperties({ interfaces }: AstTypes) {
+        function addSuperPropertiesInternal(type: InterfaceType) {
+            if (visited.has(type)) return;
+            visited.add(type);
+
+            for (const superTypeName of type.printingSuperTypes) {
+                const superType = interfaces.find(e => e.name === superTypeName);
+                if (superType && isInterface(superType)) {
+                    addSuperPropertiesInternal(superType);
+                    superType.superProperties
+                        .entriesGroupedByKey()
+                        .forEach(propInfo => type.superProperties.addAll(propInfo[0], propInfo[1]));
+                }
+            }
+        }
+
+        const visited = new Set<InterfaceType>();
+        for (const type of interfaces) {
+            addSuperPropertiesInternal(type);
+        }
     }
 
     collectValidationResources(documents: LangiumDocuments, grammars: Grammar[]) {
@@ -41,7 +63,7 @@ export class LangiumGrammarTypeCollector {
         for (const type of mergeTypesAndInterfaces(inferred)) {
             this.validationResources.set(
                 type.name,
-                { inferred: type, infNodes: typeNameToRulesActions.get(type.name) }
+                { inferred: type, inferredNodes: typeNameToRulesActions.get(type.name) }
             );
         }
 
@@ -56,9 +78,17 @@ export class LangiumGrammarTypeCollector {
                 const inferred = this.validationResources.get(type.name);
                 this.validationResources.set(
                     type.name,
-                    inferred ? {...inferred, declared: type, deckNode: node } : { declared: type, deckNode: node }
+                    inferred ? {...inferred, declared: type, declaredNode: node } : { declared: type, declaredNode: node }
                 );
             }
+        }
+
+        this.collectSuperPropertiesMap(declared);
+    }
+
+    private collectSuperPropertiesMap({ interfaces }: AstTypes) {
+        for (const type of interfaces) {
+            this.superPropertiesMap.set(type.name, Array.from(type.superProperties.values()));
         }
     }
 
@@ -104,12 +134,20 @@ export function isInterface(type: TypeOption): type is InterfaceType {
 
 export type InferredInfo = {
     inferred: TypeOption,
-    infNodes: ReadonlyArray<ParserRule | Action>
+    inferredNodes: ReadonlyArray<ParserRule | Action>
 }
 
 export type DeclaredInfo = {
     declared: TypeOption,
-    deckNode: Type | Interface,
+    declaredNode: Type | Interface,
+}
+
+export function isDeclared(type: InferredInfo | DeclaredInfo | InferredInfo & DeclaredInfo): type is DeclaredInfo {
+    return type && 'declared' in type;
+}
+
+export function isInferred(type: InferredInfo | DeclaredInfo | InferredInfo & DeclaredInfo): type is InferredInfo {
+    return type && 'inferred' in type;
 }
 
 export function isInferredAndDeclared(type: InferredInfo | DeclaredInfo | InferredInfo & DeclaredInfo): type is InferredInfo & DeclaredInfo {

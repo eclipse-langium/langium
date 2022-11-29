@@ -13,14 +13,14 @@ import { getDocument } from '../../utils/ast-util';
 import { MultiMap } from '../../utils/collections';
 import { AstNodeLocator } from '../../workspace/ast-node-locator';
 import { LangiumDocuments } from '../../workspace/documents';
-import { AbstractElement, AbstractType, Grammar, Interface, isInterface, isParserRule, isType, ParserRule, Type } from '../generated/ast';
+import { AbstractType, Action, Assignment, Grammar, Interface, isInterface, isParserRule, isType, ParserRule, Type, TypeAttribute } from '../generated/ast';
 import { isDataTypeRule, resolveImport } from '../internal-grammar-util';
 
 export type Property = {
     name: string,
     optional: boolean,
     typeAlternatives: PropertyType[]
-    astNode: AbstractElement
+    astNode: Assignment | Action | TypeAttribute
 }
 
 export type PropertyType = {
@@ -58,16 +58,19 @@ export class UnionType {
 export class InterfaceType {
     name: string;
     realSuperTypes = new Set<string>();
-    printingSuperTypes: string[]  = [];
+    printingSuperTypes: string[] = [];
     subTypes = new Set<string>();
     containerTypes = new Set<string>();
     properties: Property[];
+    // todo find a better place for `superProperties` -- it's a validation resource and not for the AST generation
+    superProperties: MultiMap<string, Property> = new MultiMap();
 
     constructor(name: string, superTypes: string[], properties: Property[]) {
         this.name = name;
         this.realSuperTypes = new Set(superTypes);
         this.printingSuperTypes = [...superTypes];
         this.properties = properties;
+        properties.forEach(prop => this.superProperties.add(prop.name, prop));
     }
 
     toString(): string {

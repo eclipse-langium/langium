@@ -17,7 +17,8 @@ export function collectDeclaredTypes(interfaces: Interface[], unions: Type[]): A
         const properties: Property[] = type.attributes.map(e => <Property>{
             name: e.name,
             optional: e.isOptional === true,
-            typeAlternatives: e.typeAlternatives.map(atomTypeToPropertyType)
+            typeAlternatives: e.typeAlternatives.map(atomTypeToPropertyType),
+            astNode: e
         });
         declaredTypes.interfaces.push(new InterfaceType(type.name, superTypes, properties));
     }
