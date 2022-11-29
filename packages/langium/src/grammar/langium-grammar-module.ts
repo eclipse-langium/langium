@@ -27,7 +27,9 @@ export type LangiumGrammarAddedServices = {
     }
 }
 
-export type LangiumGrammarServices = LangiumServices & LangiumGrammarAddedServices
+export type LangiumGrammarServices = LangiumServices & LangiumGrammarAddedServices & {
+    shared: LangiumGrammarSharedServices
+}
 
 export const LangiumGrammarModule: Module<LangiumGrammarServices, PartialLangiumServices & LangiumGrammarAddedServices> = {
     validation: {
@@ -58,6 +60,13 @@ export type LangiumGrammarAddedSharedServices = {
 
 export type LangiumGrammarSharedServices = LangiumSharedServices & LangiumGrammarAddedSharedServices
 
+export const LangiumGrammarSharedModule = {
+    workspace: {
+        DocumentBuilder: (services: LangiumGrammarSharedServices) => new LangiumGrammarDocumentBuilder(services),
+        TypeCollector: () => new LangiumGrammarTypeCollector(),
+    }
+};
+
 export function createLangiumGrammarServices(context: DefaultSharedModuleContext,
     sharedModule?: Module<LangiumSharedServices, PartialLangiumSharedServices>): {
         shared: LangiumGrammarSharedServices,
@@ -69,8 +78,7 @@ export function createLangiumGrammarServices(context: DefaultSharedModuleContext
         {
             ...(sharedModule ?? {}),
             workspace: {
-                DocumentBuilder: (services) => new LangiumGrammarDocumentBuilder(services),
-                TypeCollector: () => new LangiumGrammarTypeCollector(),
+                ...LangiumGrammarSharedModule.workspace,
                 ...(sharedModule?.workspace ?? {})
             }
         }

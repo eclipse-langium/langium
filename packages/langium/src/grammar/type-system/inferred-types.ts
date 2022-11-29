@@ -13,7 +13,6 @@ import { getExplicitRuleType, getRuleType, getTypeName, isOptionalCardinality } 
 
 interface TypePart {
     name?: string
-    declaredType?: true
     properties: Property[]
     ruleCalls: string[]
     parents: TypePart[]
@@ -74,9 +73,6 @@ class TypeGraph {
         for (let i = 0; i < nextPath.next.length; i++) {
             const split = splits[i];
             const part = nextPath.next[i];
-            if (part.declaredType) {
-                continue;
-            }
             if (part.actionWithAssignment) {
                 // If the path enters an action with an assignment which changes the current name
                 // We already add a new path, since the next part of the part refers to a new inferred type
@@ -218,9 +214,9 @@ function getRuleTypes(context: TypeCollectionContext, rule: ParserRule): TypeAlt
     return graph.getTypes();
 }
 
-function newTypePart(rule?: ParserRule | string): TypePart {
+function newTypePart(element?: ParserRule | Action | string): TypePart {
     return {
-        name: isParserRule(rule) ? getTypeName(rule) : rule,
+        name: isParserRule(element) || isAction(element) ? getTypeName(element) : element,
         properties: [],
         ruleCalls: [],
         children: [],
@@ -268,11 +264,9 @@ function collectElement(graph: TypeGraph, current: TypePart, element: AbstractEl
 }
 
 function addAction(graph: TypeGraph, parent: TypePart, action: Action): TypePart {
-    const typeNode = graph.connect(parent, newTypePart(action.inferredType?.name));
+    const typeNode = graph.connect(parent, newTypePart(action));
 
     if (action.type) {
-        // if the cross reference 'type' is set we assume a declared type is referenced, hence
-        typeNode.declaredType = true;
         const type = action.type?.ref;
         if (type && isNamed(type))
             // cs: if the (named) type could be resolved properly also set the name on 'typeNode'

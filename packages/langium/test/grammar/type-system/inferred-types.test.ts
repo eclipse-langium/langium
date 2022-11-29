@@ -697,6 +697,9 @@ describe('expression rules with inferred and declared interfaces', () => {
         checkTypes(document.parseResult.value);
     });
 
+    // todo make tests like in this PR: https://github.com/langium/langium/pull/670
+    // the PR #670 fixes the demonstrated bug, but cancels type inferrence for declared actions
+    // we should fix the issue another way
     function checkTypes(grammar: Grammar) {
         const sortByName = (a: {name: string}, b: {name: string}) => (a.name?.localeCompare(b.name));
         const toSubstring = (o: {toString: () => string}) => {
@@ -713,18 +716,23 @@ describe('expression rules with inferred and declared interfaces', () => {
 
         const unionsString = unions.map(toSubstring).join('\n').trim();
         expect(unionsString).toBe(s`
-            export type Expression = MemberAccess | PrimaryExpression;
+            export type Expression = MemberAccess | PrimaryExpression | SuperMemberAccess;
             export type PrimaryExpression = BooleanLiteral;
         `);
 
         const inferredInterfacesString = inferredInterfaces.sort(sortByName).map(toSubstring).join('\n').trim();
         expect(inferredInterfacesString).toBe(s`
             export interface BooleanLiteral extends AstNode {
-                readonly $container: MemberAccess;
+                readonly $container: MemberAccess | SuperMemberAccess;
                 value: boolean
             }
             export interface MemberAccess extends AstNode {
-                readonly $container: MemberAccess;
+                readonly $container: MemberAccess | SuperMemberAccess;
+                member: Reference<Symbol>
+                receiver: PrimaryExpression
+            }
+            export interface SuperMemberAccess extends AstNode {
+                readonly $container: MemberAccess | SuperMemberAccess;
                 member: Reference<Symbol>
                 receiver: PrimaryExpression
             }
@@ -734,15 +742,18 @@ describe('expression rules with inferred and declared interfaces', () => {
         const allInterfacesString = allInterfaces.sort(sortByName).map(toSubstring).join('\n').trim();
         expect(allInterfacesString).toBe(s`
             export interface BooleanLiteral extends AstNode {
-                readonly $container: MemberAccess;
+                readonly $container: MemberAccess | SuperMemberAccess;
                 value: boolean
             }
             export interface MemberAccess extends AstNode {
-                readonly $container: MemberAccess;
+                readonly $container: MemberAccess | SuperMemberAccess;
                 member: Reference<Symbol>
                 receiver: PrimaryExpression
             }
-            export interface SuperMemberAccess extends MemberAccess {
+            export interface SuperMemberAccess extends AstNode {
+                readonly $container: MemberAccess | SuperMemberAccess;
+                member: Reference<Symbol>
+                receiver: PrimaryExpression
             }
             export interface Symbol extends AstNode {
             }

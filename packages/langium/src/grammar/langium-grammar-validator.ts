@@ -21,11 +21,16 @@ import { isParserRule, isRuleCall } from './generated/ast';
 import { getTypeName, isDataTypeRule, isOptionalCardinality, resolveImport, resolveTransitiveImports, terminalRegex } from './internal-grammar-util';
 import type { LangiumGrammarServices } from './langium-grammar-module';
 import { applyErrorToAssignment, collectAllInterfaces, InterfaceInfo, validateTypesConsistency } from './type-system/type-validator';
+import { LangiumGrammarTypeCollector } from './workspace/type-collector';
 
 export class LangiumGrammarValidationRegistry extends ValidationRegistry {
+    private typeCollector: LangiumGrammarTypeCollector;
+
     constructor(services: LangiumGrammarServices) {
         super(services);
         const validator = services.validation.LangiumGrammarValidator;
+        this.typeCollector = services.shared.workspace.TypeCollector;
+        this.typeCollector;
         const checks: ValidationChecks<ast.LangiumGrammarAstType> = {
             Action: [
                 validator.checkActionTypeUnions,

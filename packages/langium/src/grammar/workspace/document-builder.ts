@@ -21,8 +21,10 @@ export class LangiumGrammarDocumentBuilder extends DefaultDocumentBuilder {
 
     private addTypeCollectionPhase() {
         super.onBuildPhase(DocumentState.IndexedReferences, async (documents, _cancelToken) => {
-            const grammars = documents.map(doc => doc.parseResult.value as Grammar);
-            this.typeCollector.collectAst(super.langiumDocuments, grammars);
+            const grammars = documents
+                .map(doc => doc.parseResult.value as Grammar)
+                .filter(doc => doc.isDeclared);
+            this.typeCollector.collectValidationResources(super.langiumDocuments, grammars);
         });
     }
 }
