@@ -21,7 +21,9 @@ export class LangiumGrammarTypeCollector {
         const astResources = collectAllAstResources(grammars, documents);
         const inferred = collectInferredTypes(Array.from(astResources.parserRules), Array.from(astResources.datatypeRules));
         const declared = collectDeclaredTypes(Array.from(astResources.interfaces), Array.from(astResources.types));
+
         shareSuperTypesFromUnions(inferred, declared);
+
         return { astResources, inferred, declared };
     }
 
@@ -92,6 +94,14 @@ export type ValidationResources = Map<string, InferredInfo | DeclaredInfo | Infe
 
 export type TypeOption = UnionType | InterfaceType;
 
+export function isType(type: TypeOption): type is UnionType {
+    return type && 'union' in type;
+}
+
+export function isInterface(type: TypeOption): type is InterfaceType {
+    return type && 'properties' in type;
+}
+
 export type InferredInfo = {
     inferred: TypeOption,
     infNodes: ReadonlyArray<ParserRule | Action>
@@ -100,6 +110,10 @@ export type InferredInfo = {
 export type DeclaredInfo = {
     declared: TypeOption,
     deckNode: Type | Interface,
+}
+
+export function isInferredAndDeclared(type: InferredInfo | DeclaredInfo | InferredInfo & DeclaredInfo): type is InferredInfo & DeclaredInfo {
+    return type && 'inferred' in type && 'declared' in type;
 }
 
 export type TypeResources = {

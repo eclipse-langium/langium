@@ -7,7 +7,6 @@
 import { DiagnosticTag } from 'vscode-languageserver-types';
 import { NamedAstNode } from '../references/name-provider';
 import { References } from '../references/references';
-import { LangiumServices } from '../services';
 import { AstNode, Properties, Reference } from '../syntax-tree';
 import { getContainerOfType, streamAllContents } from '../utils/ast-util';
 import { MultiMap } from '../utils/collections';
@@ -21,16 +20,12 @@ import { isParserRule, isRuleCall } from './generated/ast';
 import { getTypeName, isDataTypeRule, isOptionalCardinality, resolveImport, resolveTransitiveImports, terminalRegex } from './internal-grammar-util';
 import type { LangiumGrammarServices } from './langium-grammar-module';
 import { applyErrorToAssignment, collectAllInterfaces, InterfaceInfo, validateTypesConsistency } from './type-system/type-validator';
-import { LangiumGrammarTypeCollector } from './workspace/type-collector';
+import { isInferredAndDeclared, LangiumGrammarTypeCollector } from './workspace/type-collector';
 
 export class LangiumGrammarValidationRegistry extends ValidationRegistry {
-    private typeCollector: LangiumGrammarTypeCollector;
-
     constructor(services: LangiumGrammarServices) {
         super(services);
         const validator = services.validation.LangiumGrammarValidator;
-        this.typeCollector = services.shared.workspace.TypeCollector;
-        this.typeCollector;
         const checks: ValidationChecks<ast.LangiumGrammarAstType> = {
             Action: [
                 validator.checkActionTypeUnions,
@@ -66,14 +61,20 @@ export class LangiumGrammarValidationRegistry extends ValidationRegistry {
                 validator.checkGrammarForUnusedRules,
                 validator.checkGrammarTypeUnions,
                 validator.checkGrammarTypeInfer,
-                validator.checkTypesConsistency,
+                validator.checkTypesConsistencyOld,
                 validator.checkPropertyNameDuplication,
                 validator.checkClashingTerminalNames
             ],
             GrammarImport: validator.checkPackageImport,
             CharacterRange: validator.checkInvalidCharacterRange,
-            Interface: validator.checkTypeReservedName,
-            Type: validator.checkTypeReservedName,
+            Interface: [
+                validator.checkTypeReservedName,
+                validator.checkTypesConsistency,
+            ],
+            Type: [
+                validator.checkTypeReservedName,
+                validator.checkTypesConsistency,
+            ],
             TypeAttribute: validator.checkTypeReservedName,
             RuleCall: [
                 validator.checkUsedHiddenTerminalRule,
@@ -116,10 +117,12 @@ export class LangiumGrammarValidator {
 
     protected readonly references: References;
     protected readonly documents: LangiumDocuments;
+    private typeCollector: LangiumGrammarTypeCollector;
 
-    constructor(services: LangiumServices) {
+    constructor(services: LangiumGrammarServices) {
         this.references = services.references.References;
         this.documents = services.shared.workspace.LangiumDocuments;
+        this.typeCollector = services.shared.workspace.TypeCollector;
     }
 
     checkGrammarName(grammar: ast.Grammar, accept: ValidationAcceptor): void {
@@ -462,8 +465,17 @@ export class LangiumGrammarValidator {
         }
     }
 
-    checkTypesConsistency(grammar: ast.Grammar, accept: ValidationAcceptor): void {
+    checkTypesConsistencyOld(grammar: ast.Grammar, accept: ValidationAcceptor): void {
         validateTypesConsistency(grammar, accept);
+    }
+
+    checkTypesConsistency(declaredType: ast.Type | ast.Interface, accept: ValidationAcceptor): void {
+        const typeInfo = this.typeCollector.getValidationResources().get(declaredType.name);
+        if (typeInfo && isInferredAndDeclared(typeInfo)) {
+            console.log(declaredType.name);
+            accept;
+            // validateTypesConsistency(typeInfo, accept);
+        }
     }
 
     checkPropertyNameDuplication(grammar: ast.Grammar, accept: ValidationAcceptor): void {
@@ -499,7 +511,7 @@ export class LangiumGrammarValidator {
             const interfaceInfo = nameToInterfaceInfo.get(interfaceName);
             if (interfaceInfo) {
                 interfaceInfo.type.properties.forEach(property => result.add(property.name, interfaceInfo.node));
-                interfaceInfo.type.interfaceSuperTypes.forEach(superType => collectPropertyNamesForHierarchyInternal(superType));
+                interfaceInfo.type.printingSuperTypes.forEach(superType => collectPropertyNamesForHierarchyInternal(superType));
             }
         }
         collectPropertyNamesForHierarchyInternal(interfaceName);

@@ -15,9 +15,9 @@ describe('AST reflection interpreter', () => {
                 {
                     name: 'Super',
                     containerTypes: new Set(),
-                    interfaceSuperTypes: [],
+                    printingSuperTypes: [],
                     subTypes: new Set(['Sub']),
-                    superTypes: new Set(),
+                    realSuperTypes: new Set(),
                     properties: [{
                         name: 'A',
                         optional: false,
@@ -31,9 +31,9 @@ describe('AST reflection interpreter', () => {
                 {
                     name: 'Sub',
                     containerTypes: new Set(),
-                    interfaceSuperTypes: ['Super'],
+                    printingSuperTypes: ['Super'],
                     subTypes: new Set(),
-                    superTypes: new Set(['Super']),
+                    realSuperTypes: new Set(['Super']),
                     properties: [{
                         name: 'B',
                         optional: false,

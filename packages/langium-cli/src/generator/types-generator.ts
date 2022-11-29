@@ -20,7 +20,7 @@ export function generateTypesFile(services: LangiumServices, grammars: Grammar[]
         fileNode.append(NL).append(NL);
     });
     astTypes.interfaces.forEach((iFace) => {
-        fileNode.append(`interface ${escapeReservedWords(iFace.name, reservedWords)}${iFace.interfaceSuperTypes.length > 0 ? (' extends ' + Array.from(iFace.interfaceSuperTypes).join(', ')) : ''} {`);
+        fileNode.append(`interface ${escapeReservedWords(iFace.name, reservedWords)}${iFace.printingSuperTypes.length > 0 ? (' extends ' + Array.from(iFace.printingSuperTypes).join(', ')) : ''} {`);
         fileNode.append(NL);
         fileNode.indent((body) => {
             iFace.properties.forEach(property => {

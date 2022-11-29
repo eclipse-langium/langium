@@ -213,17 +213,17 @@ function buildIsSubtypeMethod(astTypes: AstTypes): GeneratorNode {
 
 type ChildToSuper = {
     name: string,
-    superTypes: Set<string>
+    realSuperTypes: Set<string>
 }
 
 function groupBySupertypes(astTypes: AstTypes): MultiMap<string, string> {
     const allTypes: ChildToSuper[] = (astTypes.interfaces as ChildToSuper[])
         .concat(astTypes.unions)
-        .filter(e => e.superTypes.size > 0);
+        .filter(e => e.realSuperTypes.size > 0);
 
     const superToChild = new MultiMap<string, string>();
     for (const item of allTypes) {
-        superToChild.add([...item.superTypes].join(':'), item.name);
+        superToChild.add([...item.realSuperTypes].join(':'), item.name);
     }
 
     return superToChild;

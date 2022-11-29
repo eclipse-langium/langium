@@ -115,10 +115,10 @@ function buildMandatoryMetaData(arrayProps: Property[], booleanProps: Property[]
 function buildSupertypeMap(astTypes: AstTypes): MultiMap<string, string> {
     const map = new MultiMap<string, string>();
     for (const interfaceType of astTypes.interfaces) {
-        map.addAll(interfaceType.name, interfaceType.superTypes);
+        map.addAll(interfaceType.name, interfaceType.realSuperTypes);
     }
     for (const unionType of astTypes.unions) {
-        map.addAll(unionType.name, unionType.superTypes);
+        map.addAll(unionType.name, unionType.realSuperTypes);
     }
     return map;
 }

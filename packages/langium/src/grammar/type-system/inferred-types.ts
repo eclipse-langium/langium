@@ -393,7 +393,7 @@ function calculateInterfaces(alternatives: TypeAlternative[]): InterfaceType[] {
             const calledInterface = interfaces.get(ruleCall);
             if (calledInterface) {
                 if (calledInterface.name !== ruleCallType.name) {
-                    calledInterface.superTypes.add(ruleCallType.name);
+                    calledInterface.realSuperTypes.add(ruleCallType.name);
                 }
             }
         }
@@ -463,7 +463,7 @@ function buildContainerTypes(interfaces: InterfaceType[]): void {
             interfaces.find(e => e.name === typeName)
                 ?.containerTypes.add(interfaceType.name);
         }
-        for (const superTypeName of interfaceType.superTypes) {
+        for (const superTypeName of interfaceType.realSuperTypes) {
             interfaces.find(e => e.name === superTypeName)
                 ?.subTypes.add(interfaceType.name);
         }
@@ -478,7 +478,7 @@ function calculateConnectedComponents(connectedComponents: InterfaceType[][], in
     function dfs(typeInterface: InterfaceType): InterfaceType[] {
         const component: InterfaceType[] = [typeInterface];
         visited.add(typeInterface.name);
-        const allTypes = [...typeInterface.subTypes, ...typeInterface.superTypes];
+        const allTypes = [...typeInterface.subTypes, ...typeInterface.realSuperTypes];
         for (const nextTypeInterfaceName of allTypes) {
             if (!visited.has(nextTypeInterfaceName)) {
                 const nextTypeInterface = interfaces.find(e => e.name === nextTypeInterfaceName);
@@ -510,7 +510,7 @@ function buildSuperUnions(interfaces: InterfaceType[]): UnionType[] {
     const unions: UnionType[] = [];
     const allSupertypes = new MultiMap<string, string>();
     for (const interfaceType of interfaces) {
-        for (const superType of interfaceType.superTypes) {
+        for (const superType of interfaceType.realSuperTypes) {
             allSupertypes.add(superType, interfaceType.name);
         }
     }
@@ -545,7 +545,7 @@ function extractTypes(interfaces: InterfaceType[], unions: UnionType[]): AstType
                 existingUnion.union.push(...alternatives);
             } else {
                 const type = new UnionType(interfaceType.name, alternatives, { reflection: true });
-                type.superTypes = interfaceType.superTypes;
+                type.realSuperTypes = interfaceType.realSuperTypes;
                 astTypes.unions.push(type);
                 typeNames.add(interfaceType.name);
             }
@@ -555,7 +555,7 @@ function extractTypes(interfaces: InterfaceType[], unions: UnionType[]): AstType
     }
     // After converting some interfaces into union types, these interfaces are no longer valid super types
     for (const interfaceType of astTypes.interfaces) {
-        interfaceType.interfaceSuperTypes = [...interfaceType.superTypes].filter(superType => !typeNames.has(superType));
+        interfaceType.printingSuperTypes = [...interfaceType.realSuperTypes].filter(superType => !typeNames.has(superType));
     }
     return astTypes;
 }

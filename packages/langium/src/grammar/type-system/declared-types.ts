@@ -12,21 +12,21 @@ export function collectDeclaredTypes(interfaces: Interface[], unions: Type[]): A
     const declaredTypes: AstTypes = { unions: [], interfaces: [] };
 
     // add interfaces
-    for (const interfaceType of interfaces) {
-        const superTypes = interfaceType.superTypes.filter(e => e.ref).map(e => getTypeName(e.ref!));
-        const properties: Property[] = interfaceType.attributes.map(e => <Property>{
+    for (const type of interfaces) {
+        const superTypes = type.superTypes.filter(e => e.ref).map(e => getTypeName(e.ref!));
+        const properties: Property[] = type.attributes.map(e => <Property>{
             name: e.name,
             optional: e.isOptional === true,
             typeAlternatives: e.typeAlternatives.map(atomTypeToPropertyType)
         });
-        declaredTypes.interfaces.push(new InterfaceType(interfaceType.name, superTypes, properties));
+        declaredTypes.interfaces.push(new InterfaceType(type.name, superTypes, properties));
     }
 
     // add types
-    for (const union of unions) {
-        const alternatives = union.typeAlternatives.map(atomTypeToPropertyType);
-        const reflection = union.typeAlternatives.length > 1 && union.typeAlternatives.some(e => e.refType?.ref !== undefined);
-        declaredTypes.unions.push(new UnionType(union.name, alternatives, { reflection }));
+    for (const type of unions) {
+        const alternatives = type.typeAlternatives.map(atomTypeToPropertyType);
+        const reflection = type.typeAlternatives.length > 1 && type.typeAlternatives.some(e => e.refType?.ref !== undefined);
+        declaredTypes.unions.push(new UnionType(type.name, alternatives, { reflection }));
     }
 
     return declaredTypes;

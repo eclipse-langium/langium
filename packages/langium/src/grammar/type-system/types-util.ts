@@ -38,7 +38,7 @@ export class UnionType {
     name: string;
     union: PropertyType[];
     reflection: boolean;
-    superTypes = new Set<string>();
+    realSuperTypes = new Set<string>();
 
     constructor(name: string, union: PropertyType[], options?: { reflection: boolean }) {
         this.name = name;
@@ -57,22 +57,22 @@ export class UnionType {
 
 export class InterfaceType {
     name: string;
-    superTypes = new Set<string>();
-    interfaceSuperTypes: string[]  = [];
+    realSuperTypes = new Set<string>();
+    printingSuperTypes: string[]  = [];
     subTypes = new Set<string>();
     containerTypes = new Set<string>();
     properties: Property[];
 
     constructor(name: string, superTypes: string[], properties: Property[]) {
         this.name = name;
-        this.superTypes = new Set(superTypes);
-        this.interfaceSuperTypes = [...superTypes];
+        this.realSuperTypes = new Set(superTypes);
+        this.printingSuperTypes = [...superTypes];
         this.properties = properties;
     }
 
     toString(): string {
         const interfaceNode = new CompositeGeneratorNode();
-        const superTypes = this.interfaceSuperTypes.length > 0 ? distinctAndSorted([...this.interfaceSuperTypes]) : ['AstNode'];
+        const superTypes = this.printingSuperTypes.length > 0 ? distinctAndSorted([...this.printingSuperTypes]) : ['AstNode'];
         interfaceNode.contents.push(`export interface ${this.name} extends ${superTypes.join(', ')} {`, NL);
 
         const propertiesNode = new IndentNode();
@@ -118,7 +118,7 @@ export function collectAllProperties(interfaces: InterfaceType[]): MultiMap<stri
         map.addAll(interfaceType.name, interfaceType.properties);
     }
     for (const interfaceType of interfaces) {
-        for (const superType of interfaceType.interfaceSuperTypes) {
+        for (const superType of interfaceType.printingSuperTypes) {
             const superTypeProperties = map.get(superType);
             if (superTypeProperties) {
                 map.addAll(interfaceType.name, superTypeProperties);

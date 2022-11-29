@@ -80,7 +80,7 @@ function checkConsistentlyDeclaredType(declaredInfo: DeclaredInfo, properties: M
     if (!isInterface(declaredType)) {
         return;
     }
-    const allSuperTypes = declaredType.interfaceSuperTypes;
+    const allSuperTypes = declaredType.printingSuperTypes;
     for (let i = 0; i < allSuperTypes.length; i++) {
         for (let j = i + 1; j < allSuperTypes.length; j++) {
             const outerType = allSuperTypes[i];
@@ -167,7 +167,7 @@ function collectAllSuperProperties(
     for (const property of typeProps) {
         map.add(property.name, property);
     }
-    for (const superType of type.interfaceSuperTypes) {
+    for (const superType of type.printingSuperTypes) {
         const typeInfo = resources.get(superType) as InferredInfo & DeclaredInfo;
         const type = typeInfo?.[mode];
         if (isInterface(type)) {
