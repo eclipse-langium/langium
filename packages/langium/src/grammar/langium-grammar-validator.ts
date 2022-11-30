@@ -102,6 +102,7 @@ export namespace IssueCodes {
     export const InvalidReturns = 'invalid-returns';
     export const InvalidInfers = 'invalid-infers';
     export const MissingInfer = 'missing-infer';
+    export const MissingReturns = 'missing-returns';
     export const SuperfluousInfer = 'superfluous-infer';
     export const OptionalUnorderedGroup = 'optional-unordered-group';
 }
@@ -279,13 +280,21 @@ export class LangiumGrammarValidator {
             const isInfers = !rule.returnType && !rule.dataType;
             const ruleTypeName = getTypeName(rule);
             if (!isDataType && ruleTypeName && types.has(ruleTypeName) === isInfers) {
-                const keywordNode = isInfers ? findNodeForKeyword(rule.$cstNode, 'infer') : findNodeForKeyword(rule.$cstNode, 'returns');
-                if (isInfers || rule.returnType?.ref !== undefined) {
+                if ((isInfers || rule.returnType?.ref !== undefined) && rule.inferredType === undefined) {
+                    // report missing returns (a type of the same name is declared)
                     accept('error', getMessage(ruleTypeName, isInfers), {
-                        node: rule.inferredType ?? rule,
+                        node: rule,
                         property: 'name',
-                        code: isInfers ? IssueCodes.InvalidInfers : IssueCodes.InvalidReturns,
-                        data: keywordNode && toDocumentSegment(keywordNode)
+                        code: IssueCodes.MissingReturns
+                    });
+                } else if (isInfers || rule.returnType?.ref !== undefined) {
+                    // report bad infers (should be corrected to 'returns' to match existing type)
+                    const infersNode = findNodeForKeyword(rule.inferredType!.$cstNode, 'infers');
+                    accept('error', getMessage(ruleTypeName, isInfers), {
+                        node: rule.inferredType!,
+                        property: 'name',
+                        code: IssueCodes.InvalidInfers,
+                        data: infersNode && toDocumentSegment(infersNode)
                     });
                 }
             } else if (isDataType && isInfers) {
