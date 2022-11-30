@@ -63,6 +63,9 @@ export class LangiumGrammarCodeActionProvider implements CodeActionProvider {
             case IssueCodes.UnnecessaryFileExtension:
                 accept(this.fixUnnecessaryFileExtension(diagnostic, document));
                 break;
+            case IssueCodes.MissingReturns:
+                accept(this.fixMissingReturns(diagnostic, document));
+                break;
             case IssueCodes.InvalidInfers:
             case IssueCodes.InvalidReturns:
                 accept(this.fixInvalidReturnsInfers(diagnostic, document));
@@ -83,6 +86,29 @@ export class LangiumGrammarCodeActionProvider implements CodeActionProvider {
                 }
                 break;
             }
+        }
+        return undefined;
+    }
+
+    /**
+     * Adds missing returns for parser rule
+     */
+    private fixMissingReturns(diagnostic: Diagnostic, document: LangiumDocument): CodeAction | undefined {
+        const text = document.textDocument.getText(diagnostic.range);
+        if (text) {
+            return {
+                title: `Add explicit return type for parser rule ${text}`,
+                kind: CodeActionKind.QuickFix,
+                diagnostics: [diagnostic],
+                edit: {
+                    changes: {
+                        [document.textDocument.uri]: [{
+                            range: diagnostic.range,
+                            newText: `${text} returns ${text}` // suggestion adds missing 'return'
+                        }]
+                    }
+                }
+            };
         }
         return undefined;
     }
