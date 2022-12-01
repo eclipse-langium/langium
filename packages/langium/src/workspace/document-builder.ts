@@ -12,7 +12,7 @@ import { AstNode } from '../syntax-tree';
 import { MultiMap } from '../utils/collections';
 import { interruptAndCheck, MaybePromise } from '../utils/promise-util';
 import { IndexManager } from '../workspace/index-manager';
-import { DocumentState, LangiumDocument, LangiumDocuments } from './documents';
+import { DocumentState, LangiumDocument, LangiumDocuments, LangiumDocumentFactory } from './documents';
 
 export interface BuildOptions {
     validationChecks?: 'none' | 'all'
@@ -62,6 +62,7 @@ export type DocumentUpdateListener = (changed: URI[], deleted: URI[]) => void
 export type DocumentBuildListener = (built: LangiumDocument[], cancelToken: CancellationToken) => Promise<void>
 export class DefaultDocumentBuilder implements DocumentBuilder {
     protected readonly langiumDocuments: LangiumDocuments;
+    protected readonly langiumDocumentFactory: LangiumDocumentFactory;
     protected readonly indexManager: IndexManager;
     protected readonly serviceRegistry: ServiceRegistry;
     protected readonly updateListeners: DocumentUpdateListener[] = [];
@@ -69,6 +70,7 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
 
     constructor(services: LangiumSharedServices) {
         this.langiumDocuments = services.workspace.LangiumDocuments;
+        this.langiumDocumentFactory = services.workspace.LangiumDocumentFactory;
         this.indexManager = services.workspace.IndexManager;
         this.serviceRegistry = services.ServiceRegistry;
     }
@@ -79,7 +81,7 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
 
     async update(changed: URI[], deleted: URI[], cancelToken = CancellationToken.None): Promise<void> {
         for (const deletedDocument of deleted) {
-            this.langiumDocuments.invalidateDocument(deletedDocument);
+            this.langiumDocuments.deleteDocument(deletedDocument);
         }
         this.indexManager.remove(deleted);
         for (const changedUri of changed) {
@@ -128,6 +130,12 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
     }
 
     protected async buildDocuments(documents: LangiumDocument[], options: BuildOptions, cancelToken: CancellationToken): Promise<void> {
+        // 0. Parse content
+        //  parsing is done initially for each document, but
+        //  re-parsing after changes reported by the client might have been canceled by subsequent changes, so re-parse now
+        await this.runCancelable(documents, DocumentState.Parsed, cancelToken, doc =>
+            this.langiumDocumentFactory.update(doc)
+        );
         // 1. Index content
         await this.runCancelable(documents, DocumentState.IndexedContent, cancelToken, doc =>
             this.indexManager.updateContent(doc, cancelToken)

@@ -135,6 +135,10 @@ export class DefaultTextDocumentFactory implements TextDocumentFactory {
 
 /**
  * Shared service for creating `LangiumDocument` instances.
+ *
+ * Register a custom implementation if special (additional) behavior is required for your language(s).
+ * Note: If you specialize {@link fromString} or {@link fromTextDocument} you probably might want to
+ * specialize {@link update}, too!
  */
 export interface LangiumDocumentFactory {
     /**
@@ -151,14 +155,27 @@ export interface LangiumDocumentFactory {
      * Create an Langium document from a model that has been constructed in memory.
      */
     fromModel<T extends AstNode = AstNode>(model: T, uri: URI): LangiumDocument<T>;
+
+    /**
+     * Update the given document after changes in the corresponding textual representation.
+     * Method is called by the document builder after it has been requested to build an exisiting
+     * document and the document's state is {@link DocumentState.Changed}.
+     * The text parsing is expected to be done the same way as in {@link fromTextDocument}
+     * and {@link fromString}.
+     */
+    update<T extends AstNode = AstNode>(document: LangiumDocument<T>): LangiumDocument<T>
 }
 
 export class DefaultLangiumDocumentFactory implements LangiumDocumentFactory {
 
     protected readonly serviceRegistry: ServiceRegistry;
+    protected readonly textDocuments: TextDocuments<TextDocument>;
+    protected readonly fileSystemProvider: FileSystemProvider;
 
     constructor(services: LangiumSharedServices) {
         this.serviceRegistry = services.ServiceRegistry;
+        this.textDocuments = services.workspace.TextDocuments;
+        this.fileSystemProvider = services.workspace.FileSystemProvider;
     }
 
     fromTextDocument<T extends AstNode = AstNode>(textDocument: TextDocument, uri?: URI): LangiumDocument<T> {
@@ -177,19 +194,15 @@ export class DefaultLangiumDocumentFactory implements LangiumDocumentFactory {
         if (uri === undefined) {
             uri = URI.parse(textDocument!.uri);
         }
-        const services = this.serviceRegistry.getServices(uri);
+
         let parseResult: ParseResult<T>;
         if (model === undefined) {
-            parseResult = services.parser.LangiumParser.parse<T>(text ?? textDocument!.getText());
+            parseResult = this.parse<T>(uri, text ?? textDocument!.getText());
         } else {
             parseResult = { value: model, parserErrors: [], lexerErrors: [] };
         }
-        return this.createLangiumDocument<T>(parseResult, uri, textDocument ?? {
-            $template: true,
-            languageId: services.LanguageMetaData.languageId,
-            uri,
-            text
-        });
+
+        return this.createLangiumDocument<T>(parseResult, uri, textDocument, text);
     }
 
     /**
@@ -198,43 +211,81 @@ export class DefaultLangiumDocumentFactory implements LangiumDocumentFactory {
      * A TextDocument is created on demand if it is not provided as argument here. Usually this
      * should not be necessary because the main purpose of the TextDocument is to convert between
      * text ranges and offsets, which is done solely in LSP request handling.
+     *
+     * With the introduction of {@link update} below this method is supposed to be mainly called
+     * during workspace initialization and on addition/recognition of new files, while changes in
+     * existing documents are processed via {@link update}.
      */
-    protected createLangiumDocument<T extends AstNode = AstNode>(parseResult: ParseResult<T>, uri: URI, textDocument: TextDocument | TextDocumentTemplate): LangiumDocument<T> {
-        let textDoc: TextDocument | undefined = undefined;
-        // eslint-disable-next-line @typescript-eslint/no-this-alias
-        const factory = this;
-        const doc: LangiumDocument<T> = {
-            parseResult,
-            uri: uri,
-            state: DocumentState.Parsed,
-            references: [],
-            get textDocument() {
-                if (!textDoc) {
-                    textDoc = (textDocument as TextDocumentTemplate).$template
-                        ? factory.createTextDocument(textDocument as TextDocumentTemplate)
-                        : textDocument as TextDocument;
+    protected createLangiumDocument<T extends AstNode = AstNode>(parseResult: ParseResult<T>, uri: URI, textDocument?: TextDocument, text?: string): LangiumDocument<T> {
+        let document: LangiumDocument<T>;
+        if (textDocument) {
+            document = {
+                parseResult,
+                uri,
+                state: DocumentState.Parsed,
+                references: [],
+                textDocument
+            };
+        } else {
+            const textDocumentGetter = this.createTextDocumentGetter(uri, text);
+            document = {
+                parseResult,
+                uri,
+                state: DocumentState.Parsed,
+                references: [],
+                get textDocument() {
+                    return textDocumentGetter();
                 }
-                return textDoc;
-            }
+            };
+        }
+        (parseResult.value as Mutable<AstNode>).$document = document;
+        return document;
+    }
+
+    update<T extends AstNode = AstNode>(document: Mutable<LangiumDocument<T>>): LangiumDocument<T> {
+        const textDocument = this.textDocuments.get(document.uri.toString());
+        const text = textDocument ? textDocument.getText() : this.getContent(document.uri);
+
+        if (textDocument) {
+            Object.defineProperty(
+                document, 'textDocument', {
+                    value: textDocument
+                }
+            );
+        } else {
+            const textDocumentGetter = this.createTextDocumentGetter(document.uri, text);
+            Object.defineProperty(
+                document, 'textDocument', {
+                    get: textDocumentGetter
+                }
+            );
+        }
+
+        document.parseResult = this.parse(document.uri, text);
+        (document.parseResult.value as Mutable<AstNode>).$document = document;
+        document.state = DocumentState.Parsed;
+        return document;
+    }
+
+    /** Counterpart of {@link DefaultLangiumDocuments.getContent}. */
+    protected getContent(uri: URI): string {
+        return this.fileSystemProvider.readFileSync(uri);
+    }
+
+    protected parse<T extends AstNode>(uri: URI, text: string): ParseResult<T> {
+        const services = this.serviceRegistry.getServices(uri);
+        return services.parser.LangiumParser.parse<T>(text);
+    }
+
+    protected createTextDocumentGetter(uri: URI, text?: string): () => TextDocument {
+        const serviceRegistry = this.serviceRegistry;
+        let textDoc: TextDocument | undefined = undefined;
+        return () => {
+            return textDoc ??= TextDocument.create(
+                uri.toString(), serviceRegistry.getServices(uri).LanguageMetaData.languageId, 0, text ?? ''
+            );
         };
-        (parseResult.value as Mutable<AstNode>).$document = doc;
-        return doc;
     }
-
-    protected createTextDocument(template: TextDocumentTemplate): TextDocument {
-        return TextDocument.create(template.uri.toString(), template.languageId, 0, template.text ?? '');
-    }
-
-}
-
-/**
- * Necessary information to create a TextDocument.
- */
-export interface TextDocumentTemplate {
-    $template: true
-    languageId: string
-    uri: URI
-    text?: string
 }
 
 /**
@@ -265,12 +316,22 @@ export interface LangiumDocuments {
     hasDocument(uri: URI): boolean;
 
     /**
+     * Flag the document with the given URI as `Changed`, if present, meaning that its content
+     * is no longer valid. The content (parseResult) stays untouched, while internal data may
+     * be dropped to reduce memory footprint.
+     *
+     * @returns the affected {@link LangiumDocument} if existing for convenience
+     */
+    invalidateDocument(uri: URI): LangiumDocument | undefined;
+
+    /**
      * Remove the document with the given URI, if present, and mark it as `Changed`, meaning
      * that its content is no longer valid. The next call to `getOrCreateDocument` with the same
      * URI will create a new document instance.
+     *
+     * @returns the affected {@link LangiumDocument} if existing for convenience
      */
-    invalidateDocument(uri: URI): void;
-
+    deleteDocument(uri: URI): LangiumDocument | undefined;
 }
 
 export class DefaultLangiumDocuments implements LangiumDocuments {
@@ -326,12 +387,25 @@ export class DefaultLangiumDocuments implements LangiumDocuments {
         return this.documentMap.has(uri.toString());
     }
 
-    invalidateDocument(uri: URI): void {
+    invalidateDocument(uri: URI): LangiumDocument | undefined {
+        const uriString = uri.toString();
+        const langiumDoc = this.documentMap.get(uriString);
+        if (langiumDoc) {
+            langiumDoc.state = DocumentState.Changed;
+            langiumDoc.references = [];
+            langiumDoc.precomputedScopes = undefined;
+            langiumDoc.diagnostics = [];
+        }
+        return langiumDoc;
+    }
+
+    deleteDocument(uri: URI): LangiumDocument | undefined {
         const uriString = uri.toString();
         const langiumDoc = this.documentMap.get(uriString);
         if (langiumDoc) {
             langiumDoc.state = DocumentState.Changed;
             this.documentMap.delete(uriString);
         }
+        return langiumDoc;
     }
 }
