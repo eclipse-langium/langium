@@ -161,3 +161,113 @@ describe('validate declared types', () => {
 
     });
 });
+
+describe('NEW TESTS', () => {
+
+    test('verify extra properties in some actions', async () => {
+        const prog = `
+        Expression: Addition;
+        interface BinaryExpression {
+            right: Expression
+            operator: '+' | '-' | '*' | '/'
+        }
+        Addition infers Expression:
+            Multiplication ({BinaryExpression.left=current} operator=('+' | '-') right=Multiplication)*;
+        Multiplication infers Expression:
+            PrimaryExpression ({BinaryExpression.left=current} operator=('*' | '/') right=PrimaryExpression)*;
+        PrimaryExpression infers Expression:
+            {infer NumberLiteral} value=NUMBER;
+        terminal NUMBER returns number: /[0-9]+(\\.[0-9]+)?/;
+        `.trim();
+
+        // verify we have 2 errors: extra assignment `left` for `Addition` and `Multiplication` rules
+        const document = await parseDocument(grammarServices, prog);
+        const diagnostics: Diagnostic[] = await grammarServices.validation.DocumentValidator.validateDocument(document);
+        expect(diagnostics.filter(d => d.severity === DiagnosticSeverity.Error)).toHaveLength(2);
+    });
+
+    test('verify extra properties in some parser rules', async () => {
+        const prog = `
+        interface A {
+            name: string
+        }
+        X returns A : name=ID count=ID;
+        Y returns A : name=ID count=ID;
+        terminal ID: /[_a-zA-Z][\\w_]*/;        
+        `.trim();
+
+        // verify we have 2 errors: extra assignment `count` for `X` and `Y` rules
+        const document = await parseDocument(grammarServices, prog);
+        const diagnostics: Diagnostic[] = await grammarServices.validation.DocumentValidator.validateDocument(document);
+        expect(diagnostics.filter(d => d.severity === DiagnosticSeverity.Error)).toHaveLength(2);
+    });
+
+    test('verify 2 parents have the same property', async () => {
+        const prog = `
+        interface Y {
+            y_prop: string
+            common: number
+        }
+        interface Z {
+            z_prop: string
+            common: number
+        }
+        interface X extends Y, Z {
+            name: string
+        }
+        `.trim();
+
+        // verify we have no errors
+        const document = await parseDocument(grammarServices, prog);
+        const diagnostics: Diagnostic[] = await grammarServices.validation.DocumentValidator.validateDocument(document);
+        expect(diagnostics.filter(d => d.severity === DiagnosticSeverity.Error)).toHaveLength(0);
+    });
+
+    test('verify parent and child have the same property', async () => {
+        const prog = `
+        interface Y {
+            y_prop: string
+            common: number
+        }
+        interface X extends Y {
+            name: string
+            common: number
+        }
+        `.trim();
+
+        // verify we have no errors
+        const document = await parseDocument(grammarServices, prog);
+        const diagnostics: Diagnostic[] = await grammarServices.validation.DocumentValidator.validateDocument(document);
+        expect(diagnostics.filter(d => d.severity === DiagnosticSeverity.Error)).toHaveLength(1);
+    });
+
+    test('verify a type has properties duplication', async () => {
+        const prog = `
+        interface X {
+            name: string
+            name: string
+        }
+        `.trim();
+
+        // verify we have the only 1 error
+        const document = await parseDocument(grammarServices, prog);
+        const diagnostics: Diagnostic[] = await grammarServices.validation.DocumentValidator.validateDocument(document);
+        expect(diagnostics.filter(d => d.severity === DiagnosticSeverity.Error)).toHaveLength(1);
+    });
+
+    test('verify incompatible types of parents properties', async () => {
+        const prog = `
+        X : name=ID;
+        Y : name=NUMBER;
+        interface Z extends X, Y {}
+        terminal ID: /[_a-zA-Z][\\w_]*/;
+        terminal NUMBER returns number: /[0-9]+(\\.[0-9]*)?/;
+        `.trim();
+
+        // verify we have 1 error: a property `name` exists in both parents but has different type
+        const document = await parseDocument(grammarServices, prog);
+        const diagnostics: Diagnostic[] = await grammarServices.validation.DocumentValidator.validateDocument(document);
+        expect(diagnostics.filter(d => d.severity === DiagnosticSeverity.Error)).toHaveLength(1);
+    });
+
+});
