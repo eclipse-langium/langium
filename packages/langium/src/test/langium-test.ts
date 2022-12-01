@@ -16,8 +16,9 @@ import { LangiumDocument } from '../workspace/documents';
 import { findNodeForProperty } from '../utils/grammar-util';
 import { SemanticTokensDecoder } from '../lsp/semantic-token-provider';
 import { TextDocument } from 'vscode-languageserver-textdocument';
+import { LangiumGrammarServices } from '../grammar/langium-grammar-module';
 
-export function parseHelper<T extends AstNode = AstNode>(services: LangiumServices): (input: string) => Promise<LangiumDocument<T>> {
+export function parseHelper<T extends AstNode = AstNode>(services: LangiumGrammarServices): (input: string) => Promise<LangiumDocument<T>> {
     const metaData = services.LanguageMetaData;
     const documentBuilder = services.shared.workspace.DocumentBuilder;
     return async input => {
@@ -63,7 +64,7 @@ export interface ExpectedSymbols extends ExpectedBase {
     expectedSymbols: DocumentSymbol[]
 }
 
-export function expectSymbols(services: LangiumServices): (input: ExpectedSymbols) => Promise<void> {
+export function expectSymbols(services: LangiumGrammarServices): (input: ExpectedSymbols) => Promise<void> {
     return async input => {
         const document = await parseDocument(services, input.text);
         const symbolProvider = services.lsp.DocumentSymbolProvider;
@@ -81,7 +82,7 @@ export function expectSymbols(services: LangiumServices): (input: ExpectedSymbol
     };
 }
 
-export function expectFoldings(services: LangiumServices): (input: ExpectedBase) => Promise<void> {
+export function expectFoldings(services: LangiumGrammarServices): (input: ExpectedBase) => Promise<void> {
     return async input => {
         const { output, ranges } = replaceIndices(input);
         const document = await parseDocument(services, output);
@@ -109,7 +110,7 @@ export interface ExpectedCompletion extends ExpectedBase {
     expectedItems: Array<string | CompletionItem>
 }
 
-export function expectCompletion(services: LangiumServices): (completion: ExpectedCompletion) => Promise<void> {
+export function expectCompletion(services: LangiumGrammarServices): (completion: ExpectedCompletion) => Promise<void> {
     return async expectedCompletion => {
         const { output, indices } = replaceIndices(expectedCompletion);
         const document = await parseDocument(services, output);
@@ -136,7 +137,7 @@ export interface ExpectedGoToDefinition extends ExpectedBase {
     rangeIndex: number | number[]
 }
 
-export function expectGoToDefinition(services: LangiumServices): (expectedGoToDefinition: ExpectedGoToDefinition) => Promise<void> {
+export function expectGoToDefinition(services: LangiumGrammarServices): (expectedGoToDefinition: ExpectedGoToDefinition) => Promise<void> {
     return async expectedGoToDefinition => {
         const { output, indices, ranges } = replaceIndices(expectedGoToDefinition);
         const document = await parseDocument(services, output);
@@ -169,7 +170,7 @@ export interface ExpectedFindReferences extends ExpectedBase {
     includeDeclaration: boolean
 }
 
-export function expectFindReferences(services: LangiumServices): (expectedFindReferences: ExpectedFindReferences) => Promise<void> {
+export function expectFindReferences(services: LangiumGrammarServices): (expectedFindReferences: ExpectedFindReferences) => Promise<void> {
     return async expectedFindReferences => {
         const { output, indices, ranges } = replaceIndices(expectedFindReferences);
         const document = await parseDocument(services, output);
@@ -203,7 +204,7 @@ export interface ExpectedHover extends ExpectedBase {
     hover?: string
 }
 
-export function expectHover(services: LangiumServices): (expectedHover: ExpectedHover) => Promise<void> {
+export function expectHover(services: LangiumGrammarServices): (expectedHover: ExpectedHover) => Promise<void> {
     return async expectedHover => {
         const { output, indices } = replaceIndices(expectedHover);
         const document = await parseDocument(services, output);
@@ -221,7 +222,7 @@ export interface ExpectFormatting {
     options?: FormattingOptions
 }
 
-export function expectFormatting(services: LangiumServices): (expectedFormatting: ExpectFormatting) => Promise<void> {
+export function expectFormatting(services: LangiumGrammarServices): (expectedFormatting: ExpectFormatting) => Promise<void> {
     const formatter = services.lsp.Formatter;
     if (!formatter) {
         throw new Error(`No formatter registered for language ${services.LanguageMetaData.languageId}`);
@@ -246,7 +247,7 @@ function textDocumentPositionParams(document: LangiumDocument, offset: number): 
     return { textDocument: { uri: document.textDocument.uri }, position: document.textDocument.positionAt(offset) };
 }
 
-export async function parseDocument<T extends AstNode = AstNode>(services: LangiumServices, input: string): Promise<LangiumDocument<T>> {
+export async function parseDocument<T extends AstNode = AstNode>(services: LangiumGrammarServices, input: string): Promise<LangiumDocument<T>> {
     const document = await parseHelper<T>(services)(input);
     if (!document.parseResult) {
         throw new Error('Could not parse document');
@@ -297,7 +298,7 @@ export interface ValidationResult<T extends AstNode = AstNode> {
     document: LangiumDocument<T>;
 }
 
-export function validationHelper<T extends AstNode = AstNode>(services: LangiumServices): (input: string) => Promise<ValidationResult<T>> {
+export function validationHelper<T extends AstNode = AstNode>(services: LangiumGrammarServices): (input: string) => Promise<ValidationResult<T>> {
     const parse = parseHelper<T>(services);
     return async (input) => {
         const document = await parse(input);
@@ -423,7 +424,7 @@ export interface DecodedSemanticTokensWithRanges {
     ranges: Array<[number, number]>;
 }
 
-export function highlightHelper<T extends AstNode = AstNode>(services: LangiumServices): (input: string) => Promise<DecodedSemanticTokensWithRanges> {
+export function highlightHelper<T extends AstNode = AstNode>(services: LangiumGrammarServices): (input: string) => Promise<DecodedSemanticTokensWithRanges> {
     const parse = parseHelper<T>(services);
     const tokenProvider = services.lsp.SemanticTokenProvider!;
     return async text => {

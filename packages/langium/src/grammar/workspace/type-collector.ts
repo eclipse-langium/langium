@@ -53,7 +53,11 @@ export class LangiumGrammarTypeCollector {
         }
     }
 
+    // todo cimprove resources collection
+    // currently, all previously collected resources will be lost after an update of any document
+    // and data only from updated documents will exist
     collectValidationResources(documents: LangiumDocuments, grammars: Grammar[]) {
+        this.clear();
         const { astResources, inferred, declared } = this.collectTypeResources(documents, grammars);
 
         const typeNameToRulesActions = new MultiMap<string, ParserRule | Action>();
@@ -84,6 +88,11 @@ export class LangiumGrammarTypeCollector {
         }
 
         this.collectSuperPropertiesMap(declared);
+    }
+
+    private clear() {
+        this.validationResources.clear();
+        this.superPropertiesMap.clear();
     }
 
     private collectSuperPropertiesMap({ interfaces }: AstTypes) {

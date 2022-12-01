@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { Action, Assignment, Grammar, InferredType, Interface, isAction, isAssignment, ParserRule, TypeAttribute } from '../generated/ast';
+import { Action, Assignment, Grammar, InferredType, Interface, isAction, isAssignment, isParserRule, ParserRule, TypeAttribute } from '../generated/ast';
 import { MultiMap } from '../../utils/collections';
 import { collectDeclaredTypes } from './declared-types';
 import { collectInferredTypes } from './inferred-types';
@@ -90,27 +90,44 @@ export function validateDeclaredAndInferredConsistency(typeInfo: InferredInfo & 
     const { inferred, declared, declaredNode, inferredNodes } = typeInfo;
     const typeName = declared.name;
 
-    const applyErrorToInferredTypes = (msgPostfix='') => (errorMsg: string) =>
+    const applyErrorToRulesAndActions = (msgPostfix='') => (errorMsg: string) =>
         inferredNodes.forEach(node => accept('error', errorMsg + msgPostfix,
             (node?.inferredType) ?
                 <DiagnosticInfo<InferredType, string>>{ node: node?.inferredType, property: 'name' } :
                 <DiagnosticInfo<ParserRule | Action | InferredType, string>>{ node, property: isAction(node) ? 'type' : 'name' }
         ));
-    const applyErrorToProp = (node: Assignment | Action | TypeAttribute, errorMessage: string) =>
-        accept('error', errorMessage, { node, property: isAssignment(node) || isAction(node) ? 'name' : 'feature' });
+
+    const applyErrorToProperty = (node: Assignment | Action | TypeAttribute, errorMessage: string) =>
+        accept('error', errorMessage, { node, property: isAssignment(node) || isAction(node) ? 'feature' : 'name' });
+
+    // todo add actions
+    const applyMissingPropErrorToRules = (missingProp: string) => {
+        inferredNodes.forEach(node => {
+            if (isParserRule(node)) {
+                const assignments = extractAssignments(node.definition);
+                if (assignments.find(e => e.feature === missingProp) === undefined) {
+                    accept('error',
+                        `Property '${missingProp}' is missing in a rule '${node.name}', but is required in type '${typeName}'.`,
+                        {node, property: 'parameters'}
+                    );
+                }
+            }
+        });
+    };
 
     if (isType(inferred) && isType(declared)) {
         validateAlternativesConsistency(inferred.union, declared.union,
-            applyErrorToInferredTypes(` in a rule that returns type '${typeName}'.`),
+            applyErrorToRulesAndActions(` in a rule that returns type '${typeName}'.`),
         );
     } else if (isInterface(inferred) && isInterface(declared)) {
         validatePropertiesConsistency(inferred.superProperties, declared.superProperties,
-            applyErrorToInferredTypes(` in a rule that returns type '${typeName}'.`),
-            applyErrorToProp
+            applyErrorToRulesAndActions(` in a rule that returns type '${typeName}'.`),
+            applyErrorToProperty,
+            applyMissingPropErrorToRules
         );
     } else {
         const errorMessage = `Inferred and declared versions of type ${typeName} both have to be interfaces or unions.`;
-        applyErrorToInferredTypes()(errorMessage);
+        applyErrorToRulesAndActions()(errorMessage);
         accept('error', errorMessage, { node: declaredNode, property: 'name' });
     }
 }
@@ -158,8 +175,9 @@ function checkAlternativesConsistencyHelper(found: PropertyType[], expected: Pro
 }
 
 function validatePropertiesConsistency(inferred: MultiMap<string, Property>, declared: MultiMap<string, Property>,
-    applyErrorToInferredTypes: (errorMessage: string) => void,
-    applyErrorToProp: (node: Assignment | Action | TypeAttribute, errorMessage: string) => void,
+    applyErrorToType: (errorMessage: string) => void,
+    applyErrorToProperty: (node: Assignment | Action | TypeAttribute, errorMessage: string) => void,
+    applyMissingPropErrorToRules: (missingProp: string) => void
 ) {
     const areBothNotArrays = (found: Property, expected: Property) =>
         !(found.typeAlternatives.length === 1 && found.typeAlternatives[0].array) &&
@@ -178,16 +196,15 @@ function validatePropertiesConsistency(inferred: MultiMap<string, Property>, dec
                     const propError: string[] =
                         [`The assigned type '${foundTypeAsStr}' is not compatible with the declared property '${name}' of type '${expectedTypeAsStr}': `];
                     propError.push(...(typeAlternativesErrors.map(errorInfo => ` '${errorInfo.typeAsString}' ${errorInfo.errorMessage};`)));
-                    applyErrorToProp(foundProp.astNode, propError.join().replace(/;$/, '.'));
+                    applyErrorToProperty(foundProp.astNode, propError.join().replace(/;$/, '.'));
                 }
             }
 
             if (!expectedProp.optional && foundProp.optional && areBothNotArrays(foundProp, expectedProp)) {
-                const declTypeName = (expectedProp.astNode.$container as Interface).name;
-                applyErrorToProp(foundProp.astNode, `Property '${name}' is missing, but is required for type '${declTypeName}'.`);
+                applyMissingPropErrorToRules(name);
             }
         } else {
-            applyErrorToProp(foundProp.astNode, `A property '${name}' is not expected.`);
+            applyErrorToProperty(foundProp.astNode, `A property '${name}' is not expected.`);
         }
     }
 
@@ -195,7 +212,7 @@ function validatePropertiesConsistency(inferred: MultiMap<string, Property>, dec
     for (const [name, expectedProperties] of declared.entriesGroupedByKey()) {
         const foundProperty = inferred.get(name);
         if (foundProperty.length === 0 && !expectedProperties.some(e => e.optional)) {
-            applyErrorToInferredTypes(`A property '${name}' is expected.`);
+            applyErrorToType(`A property '${name}' is expected.`);
         }
     }
 }

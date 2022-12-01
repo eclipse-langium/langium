@@ -47,7 +47,7 @@ describe('validate params in types', () => {
         terminal NUMBER returns number: /[0-9]+(\\.[0-9]+)?/;
         `.trim();
 
-        // expect exactly 2 errors, associated with a missing 'name' prop for type 'A'
+        // expect exactly 1 error, associated with a missing 'name' prop for type 'A'
         const document = await parseDocument(grammarServices, prog);
         let diagnostics: Diagnostic[] = await grammarServices.validation.DocumentValidator.validateDocument(document);
         diagnostics = diagnostics.filter(d => d.severity === DiagnosticSeverity.Error);
