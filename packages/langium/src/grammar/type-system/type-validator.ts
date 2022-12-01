@@ -4,15 +4,11 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { Action, Assignment, Grammar, InferredType, Interface, isAction, isAssignment, isParserRule, ParserRule, TypeAttribute } from '../generated/ast';
+import { Action, Assignment, InferredType, Interface, isAction, isAssignment, isParserRule, ParserRule, TypeAttribute } from '../generated/ast';
 import { MultiMap } from '../../utils/collections';
-import { collectDeclaredTypes } from './declared-types';
-import { collectInferredTypes } from './inferred-types';
-import { collectAllAstResources, InterfaceType, AstResources, Property, PropertyType, distinctAndSorted, propertyTypeArrayToString } from './types-util';
-import { stream } from '../../utils/stream';
+import { Property, PropertyType, distinctAndSorted, propertyTypeArrayToString } from './types-util';
 import { DiagnosticInfo, ValidationAcceptor } from '../../validation/validation-registry';
-import { extractAssignments, getRuleType } from '../internal-grammar-util';
-import { shareSuperTypesFromUnions } from './type-collector';
+import { extractAssignments } from '../internal-grammar-util';
 import { DeclaredInfo, InferredInfo, isInterface, isType } from '../workspace/type-collector';
 
 export function validateDeclaredConsistency(declaredInfo: DeclaredInfo, properties: Map<string, Property[]>, accept: ValidationAcceptor): void {
@@ -215,55 +211,4 @@ function validatePropertiesConsistency(inferred: MultiMap<string, Property>, dec
             applyErrorToType(`A property '${name}' is expected.`);
         }
     }
-}
-
-///////////////////////////////////////////////////////////////////////////////
-
-export function applyErrorToAssignment(nodes: readonly ParserRule[], accept: ValidationAcceptor): (propertyName: string, errorMessage: string) => void {
-    const assignmentNodes = nodes.flatMap(node => extractAssignments(node.definition));
-    return (propertyName: string, errorMessage: string) => {
-        const node = assignmentNodes.find(assignment => assignment.feature === propertyName);
-        if (node) {
-            accept('error',
-                errorMessage,
-                { node, property: 'feature' }
-            );
-        }
-    };
-}
-
-export type InterfaceInfo = {
-    type: InterfaceType;
-    node: Interface | readonly ParserRule[];
-}
-
-// use only after type consistancy validation
-export function collectAllInterfaces(grammar: Grammar): Map<string, InterfaceInfo> {
-    function getTypeNameToRules(astResources: AstResources): MultiMap<string, ParserRule> {
-        return stream(astResources.parserRules)
-            .concat(astResources.datatypeRules)
-            .reduce((acc, rule) => acc.add(getRuleType(rule), rule),
-                new MultiMap<string, ParserRule>()
-            );
-    }
-
-    const astResources = collectAllAstResources([grammar]);
-    const inferred = collectInferredTypes(Array.from(astResources.parserRules), Array.from(astResources.datatypeRules));
-    const declared = collectDeclaredTypes(Array.from(astResources.interfaces), Array.from(astResources.types));
-    shareSuperTypesFromUnions(inferred, declared);
-
-    const typeNameToRules = getTypeNameToRules(astResources);
-    const inferredInterfaces = inferred.interfaces
-        .reduce((acc, type) => acc.set(type.name, { type, node: typeNameToRules.get(type.name) }),
-            new Map<string, InterfaceInfo>()
-        );
-
-    return declared.interfaces
-        .reduce((acc, type) => {
-            if (!acc.has(type.name)) {
-                const node = stream(astResources.interfaces).find(e => e.name === type.name);
-                if (node) acc.set(type.name, { type, node });
-            }
-            return acc;
-        }, inferredInterfaces);
 }
