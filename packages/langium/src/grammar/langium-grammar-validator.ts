@@ -468,7 +468,7 @@ export class LangiumGrammarValidator {
     checkSuperPropertiesConsistency(declaredInterface: ast.Interface, accept: ValidationAcceptor): void {
         const interfaceInfo = this.typeCollector.validationResources.get(declaredInterface.name);
         if (interfaceInfo && isDeclared(interfaceInfo)) {
-            validateDeclaredConsistency(interfaceInfo, this.typeCollector.superPropertiesMap, accept);
+            validateDeclaredConsistency(interfaceInfo, this.typeCollector.typeToItsSuperProperties, accept);
         }
     }
 

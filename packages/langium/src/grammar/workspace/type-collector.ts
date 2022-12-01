@@ -17,7 +17,7 @@ import { AstResources, AstTypes, collectAllAstResources, InterfaceType, Property
 export class LangiumGrammarTypeCollector {
     readonly validationResources = new Map<string, InferredInfo | DeclaredInfo | InferredInfo & DeclaredInfo>();
     // todo using type graph allows to remove this `superPropertiesMap`
-    readonly superPropertiesMap = new Map<string, Property[]>();
+    readonly typeToItsSuperProperties = new Map<string, Property[]>();
 
     private collectTypeResources(documents: LangiumDocuments, grammars: Grammar[]): TypeResources {
         const astResources = collectAllAstResources(grammars, documents);
@@ -25,19 +25,20 @@ export class LangiumGrammarTypeCollector {
         const declared = collectDeclaredTypes(Array.from(astResources.interfaces), Array.from(astResources.types));
 
         shareSuperTypesFromUnions(inferred, declared);
-        this.addSuperProperties(inferred);
-        this.addSuperProperties(declared);
+        this.addSuperProperties(inferred.interfaces, declared.interfaces);
 
         return { astResources, inferred, declared };
     }
 
-    private addSuperProperties({ interfaces }: AstTypes) {
+    private addSuperProperties(inferred: InterfaceType[], declared: InterfaceType[]) {
         function addSuperPropertiesInternal(type: InterfaceType) {
             if (visited.has(type)) return;
             visited.add(type);
 
             for (const superTypeName of type.printingSuperTypes) {
-                const superType = interfaces.find(e => e.name === superTypeName);
+                const superType = declared.find(e => e.name === superTypeName) ??
+                    inferred.find(e => e.name === superTypeName);
+
                 if (superType && isInterface(superType)) {
                     addSuperPropertiesInternal(superType);
                     superType.superProperties
@@ -48,12 +49,18 @@ export class LangiumGrammarTypeCollector {
         }
 
         const visited = new Set<InterfaceType>();
-        for (const type of interfaces) {
+        for (const type of inferred) {
             addSuperPropertiesInternal(type);
         }
+
+        visited.clear();
+        for (const type of declared) {
+            addSuperPropertiesInternal(type);
+        }
+
     }
 
-    // todo cimprove resources collection
+    // todo improve resources collection
     // currently, all previously collected resources will be lost after an update of any document
     // and data only from updated documents will exist
     collectValidationResources(documents: LangiumDocuments, grammars: Grammar[]) {
@@ -92,12 +99,12 @@ export class LangiumGrammarTypeCollector {
 
     private clear() {
         this.validationResources.clear();
-        this.superPropertiesMap.clear();
+        this.typeToItsSuperProperties.clear();
     }
 
     private collectSuperPropertiesMap({ interfaces }: AstTypes) {
         for (const type of interfaces) {
-            this.superPropertiesMap.set(type.name, Array.from(type.superProperties.values()));
+            this.typeToItsSuperProperties.set(type.name, Array.from(type.superProperties.values()));
         }
     }
 
