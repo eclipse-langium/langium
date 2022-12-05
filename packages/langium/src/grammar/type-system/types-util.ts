@@ -20,7 +20,7 @@ export type Property = {
     name: string,
     optional: boolean,
     typeAlternatives: PropertyType[]
-    astNode: Assignment | Action | TypeAttribute
+    astNodes: Set<Assignment | Action | TypeAttribute>
 }
 
 export type PropertyType = {

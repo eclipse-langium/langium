@@ -93,8 +93,10 @@ export function validateDeclaredAndInferredConsistency(typeInfo: InferredInfo & 
                 <DiagnosticInfo<ParserRule | Action | InferredType, string>>{ node, property: isAction(node) ? 'type' : 'name' }
         ));
 
-    const applyErrorToProperty = (node: Assignment | Action | TypeAttribute, errorMessage: string) =>
-        accept('error', errorMessage, { node, property: isAssignment(node) || isAction(node) ? 'feature' : 'name' });
+    const applyErrorToProperties = (nodes: Set<Assignment | Action | TypeAttribute>, errorMessage: string) =>
+        nodes.forEach(node =>
+            accept('error', errorMessage, { node, property: isAssignment(node) || isAction(node) ? 'feature' : 'name' })
+        );
 
     // todo add actions
     const applyMissingPropErrorToRules = (missingProp: string) => {
@@ -118,7 +120,7 @@ export function validateDeclaredAndInferredConsistency(typeInfo: InferredInfo & 
     } else if (isInterface(inferred) && isInterface(declared)) {
         validatePropertiesConsistency(inferred.superProperties, declared.superProperties,
             applyErrorToRulesAndActions(` in a rule that returns type '${typeName}'.`),
-            applyErrorToProperty,
+            applyErrorToProperties,
             applyMissingPropErrorToRules
         );
     } else {
@@ -172,7 +174,7 @@ function checkAlternativesConsistencyHelper(found: PropertyType[], expected: Pro
 
 function validatePropertiesConsistency(inferred: MultiMap<string, Property>, declared: MultiMap<string, Property>,
     applyErrorToType: (errorMessage: string) => void,
-    applyErrorToProperty: (node: Assignment | Action | TypeAttribute, errorMessage: string) => void,
+    applyErrorToProperties: (nodes: Set<Assignment | Action | TypeAttribute>, errorMessage: string) => void,
     applyMissingPropErrorToRules: (missingProp: string) => void
 ) {
     const areBothNotArrays = (found: Property, expected: Property) =>
@@ -192,7 +194,7 @@ function validatePropertiesConsistency(inferred: MultiMap<string, Property>, dec
                     const propError: string[] =
                         [`The assigned type '${foundTypeAsStr}' is not compatible with the declared property '${name}' of type '${expectedTypeAsStr}': `];
                     propError.push(...(typeAlternativesErrors.map(errorInfo => ` '${errorInfo.typeAsString}' ${errorInfo.errorMessage};`)));
-                    applyErrorToProperty(foundProp.astNode, propError.join().replace(/;$/, '.'));
+                    applyErrorToProperties(foundProp.astNodes, propError.join().replace(/;$/, '.'));
                 }
             }
 
@@ -200,7 +202,7 @@ function validatePropertiesConsistency(inferred: MultiMap<string, Property>, dec
                 applyMissingPropErrorToRules(name);
             }
         } else {
-            applyErrorToProperty(foundProp.astNode, `A property '${name}' is not expected.`);
+            applyErrorToProperties(foundProp.astNodes, `A property '${name}' is not expected.`);
         }
     }
 

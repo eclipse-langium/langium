@@ -123,7 +123,7 @@ class TypeGraph {
                 name: value.name,
                 optional: value.optional,
                 typeAlternatives: value.typeAlternatives,
-                astNode: value.astNode
+                astNodes: value.astNodes,
             };
         }
         return {
@@ -284,7 +284,7 @@ function addAction(graph: TypeGraph, parent: TypePart, action: Action): TypePart
                 action.operator === '+=',
                 false,
                 graph.root.ruleCalls.length !== 0 ? graph.root.ruleCalls : graph.getSuperTypes(typeNode)),
-            astNode: action
+            astNodes: new Set([action])
         });
     }
     return typeNode;
@@ -304,7 +304,7 @@ function addAssignment(current: TypePart, assignment: Assignment): void {
         name: assignment.feature,
         optional: isOptionalCardinality(assignment.cardinality),
         typeAlternatives,
-        astNode: assignment
+        astNodes: new Set([assignment])
     });
 }
 
@@ -412,14 +412,13 @@ function flattenTypes(alternatives: TypeAlternative[]): TypeAlternative[] {
         for (const alt of namedAlternatives) {
             type.super.push(...alt.super);
             const altProperties = alt.properties;
-            const foundProperties = new Set<string>();
             for (const altProperty of altProperties) {
-                foundProperties.add(altProperty.name);
                 const existingProperty = properties.find(e => e.name === altProperty.name);
                 if (existingProperty) {
                     altProperty.typeAlternatives
                         .filter(isNotInTypeAlternatives(existingProperty.typeAlternatives))
                         .forEach(type => existingProperty.typeAlternatives.push(type));
+                    altProperty.astNodes.forEach(e => existingProperty.astNodes.add(e));
                 } else {
                     properties.push({ ...altProperty });
                 }

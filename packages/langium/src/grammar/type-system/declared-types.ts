@@ -18,7 +18,7 @@ export function collectDeclaredTypes(interfaces: Interface[], unions: Type[]): A
             name: e.name,
             optional: e.isOptional === true,
             typeAlternatives: e.typeAlternatives.map(atomTypeToPropertyType),
-            astNode: e
+            astNodes: new Set([e])
         });
         declaredTypes.interfaces.push(new InterfaceType(type.name, superTypes, properties));
     }
