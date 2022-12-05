@@ -207,3 +207,35 @@ function compareLists<T>(a: T[], b: T[], eq: (x: T, y: T) => boolean = (x, y) =>
 export function mergeInterfaces(inferred: AstTypes, declared: AstTypes): InterfaceType[] {
     return inferred.interfaces.concat(declared.interfaces);
 }
+
+/**
+ * Performs topological sorting on the generated interfaces.
+ * @param interfaces The interfaces to sort topologically.
+ * @returns A topologically sorted set of interfaces.
+ */
+export function sortInterfacesTopologically(interfaces: InterfaceType[]): InterfaceType[] {
+    type TypeNode = {
+        value: InterfaceType;
+        nodes: TypeNode[];
+    }
+
+    const nodes: TypeNode[] = interfaces
+        .sort((a, b) => a.name.localeCompare(b.name))
+        .map(e => <TypeNode>{ value: e, nodes: [] });
+    for (const node of nodes) {
+        node.nodes = nodes.filter(e => node.value.realSuperTypes.has(e.value.name));
+    }
+    const l: TypeNode[] = [];
+    const s = nodes.filter(e => e.nodes.length === 0);
+    while (s.length > 0) {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        const n = s.shift()!;
+        if (!l.includes(n)) {
+            l.push(n);
+            nodes
+                .filter(e => e.nodes.includes(n))
+                .forEach(m => s.push(m));
+        }
+    }
+    return l.map(e => e.value);
+}

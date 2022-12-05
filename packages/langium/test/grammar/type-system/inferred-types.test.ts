@@ -10,7 +10,7 @@ import { isDataTypeRule } from '../../../src/grammar/internal-grammar-util';
 import { collectAst } from '../../../src/grammar/type-system/ast-collector';
 import { collectAllAstResources } from '../../../src/grammar/type-system/type-collector/all-types';
 import { collectInferredTypes } from '../../../src/grammar/type-system/type-collector/inferred-types';
-import { AstTypes, InterfaceType, Property, PropertyType, UnionType } from '../../../src/grammar/type-system/types-util';
+import { AstTypes, InterfaceType, Property, PropertyType, sortInterfacesTopologically, UnionType } from '../../../src/grammar/type-system/types-util';
 import { parseHelper } from '../../../src/test';
 
 function describeTypes(name: string, grammar: string, description: (types: AstTypes) => void | Promise<void>): void {
@@ -724,7 +724,6 @@ describe('expression rules with inferred and declared interfaces', () => {
     // the PR #670 fixes the demonstrated bug, but cancels type inferrence for declared actions
     // we should fix the issue another way
     function checkTypes(grammar: Grammar) {
-        const sortByName = (a: {name: string}, b: {name: string}) => (a.name?.localeCompare(b.name));
         const toSubstring = (o: {toString: () => string}) => {
             // this specialized 'toString' function uses the default 'toString' that is  producing the
             //  code generation output, and strips everything not belonging to the actual interface/type declaration
@@ -735,7 +734,7 @@ describe('expression rules with inferred and declared interfaces', () => {
         };
 
         const { parserRules, datatypeRules } = collectAllAstResources([grammar]);
-        const { interfaces: inferredInterfaces, unions } = collectInferredTypes(Array.from(parserRules), Array.from(datatypeRules));
+        const { interfaces: inferredInterfaces, unions } = collectInferredTypes(parserRules, datatypeRules);
 
         const unionsString = unions.map(toSubstring).join('\n').trim();
         expect(unionsString).toBe(s`
@@ -743,7 +742,7 @@ describe('expression rules with inferred and declared interfaces', () => {
             export type PrimaryExpression = BooleanLiteral;
         `);
 
-        const inferredInterfacesString = inferredInterfaces.sort(sortByName).map(toSubstring).join('\n').trim();
+        const inferredInterfacesString = sortInterfacesTopologically(inferredInterfaces).map(toSubstring).join('\n').trim();
         expect(inferredInterfacesString).toBe(s`
             export interface BooleanLiteral extends AstNode {
                 readonly $container: MemberAccess | SuperMemberAccess;
@@ -762,7 +761,7 @@ describe('expression rules with inferred and declared interfaces', () => {
         `);
 
         const allInterfaces = collectAst(undefined!, [grammar]).interfaces;
-        const allInterfacesString = allInterfaces.sort(sortByName).map(toSubstring).join('\n').trim();
+        const allInterfacesString = sortInterfacesTopologically(allInterfaces).map(toSubstring).join('\n').trim();
         expect(allInterfacesString).toBe(s`
             export interface BooleanLiteral extends AstNode {
                 readonly $container: MemberAccess | SuperMemberAccess;
@@ -773,19 +772,16 @@ describe('expression rules with inferred and declared interfaces', () => {
                 member: Reference<Symbol>
                 receiver: PrimaryExpression
             }
-            export interface SuperMemberAccess extends AstNode {
-                readonly $container: MemberAccess | SuperMemberAccess;
-                member: Reference<Symbol>
-                receiver: PrimaryExpression
-            }
             export interface Symbol extends AstNode {
+            }
+            export interface SuperMemberAccess extends MemberAccess {
             }
         `);
 
         // the idea of the following is to double check that the declared definitions don't overwrite any
         //  inferred definition; because of the sorting before joining the 'startsWith' doesn't work in general,
         //  but it does work here due to the smart rule and interface name choice ;-)
-        expect(allInterfacesString.startsWith(inferredInterfacesString));
+        // expect(allInterfacesString.startsWith(inferredInterfacesString));
     }
 });
 
