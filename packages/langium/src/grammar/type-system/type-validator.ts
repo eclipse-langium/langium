@@ -16,6 +16,19 @@ export function validateDeclaredConsistency(declaredInfo: DeclaredInfo, properti
     if (!isInterface(declaredType)) {
         return;
     }
+
+    const nameToProp = declaredType.properties.reduce((acc, e) => acc.add(e.name, e), new MultiMap<string, Property>());
+    for (const [name, props] of nameToProp.entriesGroupedByKey()) {
+        if (props.length > 1) {
+            for (const prop of props) {
+                accept('error', `Cannot have two properties with the same name '${name}'.`, {
+                    node: Array.from(prop.astNodes)[0],
+                    property: 'name'
+                });
+            }
+        }
+    }
+
     const allSuperTypes = declaredType.printingSuperTypes;
     for (let i = 0; i < allSuperTypes.length; i++) {
         for (let j = i + 1; j < allSuperTypes.length; j++) {

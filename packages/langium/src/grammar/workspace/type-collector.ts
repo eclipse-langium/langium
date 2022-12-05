@@ -25,19 +25,18 @@ export class LangiumGrammarTypeCollector {
         const declared = collectDeclaredTypes(Array.from(astResources.interfaces), Array.from(astResources.types));
 
         shareSuperTypesFromUnions(inferred, declared);
-        this.addSuperProperties(inferred.interfaces, declared.interfaces);
+        this.addSuperProperties(mergeInterfaces(inferred, declared));
 
         return { astResources, inferred, declared };
     }
 
-    private addSuperProperties(inferred: InterfaceType[], declared: InterfaceType[]) {
-        function addSuperPropertiesInternal(type: InterfaceType) {
+    private addSuperProperties(allTypes: InterfaceType[]) {
+        function addSuperPropertiesInternal(type: InterfaceType, visited = new Set<InterfaceType>()) {
             if (visited.has(type)) return;
             visited.add(type);
 
             for (const superTypeName of type.printingSuperTypes) {
-                const superType = declared.find(e => e.name === superTypeName) ??
-                    inferred.find(e => e.name === superTypeName);
+                const superType = allTypes.find(e => e.name === superTypeName);
 
                 if (superType && isInterface(superType)) {
                     addSuperPropertiesInternal(superType);
@@ -48,16 +47,9 @@ export class LangiumGrammarTypeCollector {
             }
         }
 
-        const visited = new Set<InterfaceType>();
-        for (const type of inferred) {
+        for (const type of allTypes) {
             addSuperPropertiesInternal(type);
         }
-
-        visited.clear();
-        for (const type of declared) {
-            addSuperPropertiesInternal(type);
-        }
-
     }
 
     // todo improve resources collection
@@ -94,7 +86,7 @@ export class LangiumGrammarTypeCollector {
             }
         }
 
-        this.collectSuperPropertiesMap(declared);
+        this.collectSuperPropertiesMap(mergeInterfaces(inferred, declared));
     }
 
     private clear() {
@@ -102,7 +94,7 @@ export class LangiumGrammarTypeCollector {
         this.typeToItsSuperProperties.clear();
     }
 
-    private collectSuperPropertiesMap({ interfaces }: AstTypes) {
+    private collectSuperPropertiesMap(interfaces: InterfaceType[]) {
         for (const type of interfaces) {
             this.typeToItsSuperProperties.set(type.name, Array.from(type.superProperties.values()));
         }
@@ -134,6 +126,10 @@ export class LangiumGrammarTypeCollector {
 
 function mergeTypesAndInterfaces(astTypes: AstTypes): TypeOption[] {
     return (astTypes.interfaces as TypeOption[]).concat(astTypes.unions);
+}
+
+function mergeInterfaces(inferred: AstTypes, declared: AstTypes): InterfaceType[] {
+    return inferred.interfaces.concat(declared.interfaces);
 }
 
 export type ValidationResources = Map<string, InferredInfo | DeclaredInfo | InferredInfo & DeclaredInfo>;

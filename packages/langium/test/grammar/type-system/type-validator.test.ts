@@ -252,15 +252,16 @@ describe('NEW TESTS', () => {
         // verify we have the only 1 error
         const document = await parseDocument(grammarServices, prog);
         const diagnostics: Diagnostic[] = await grammarServices.validation.DocumentValidator.validateDocument(document);
-        expect(diagnostics.filter(d => d.severity === DiagnosticSeverity.Error)).toHaveLength(1);
+        expect(diagnostics.filter(d => d.severity === DiagnosticSeverity.Error)).toHaveLength(2);
     });
 
     test('verify incompatible types of parents properties', async () => {
         const prog = `
-        X : name=ID;
+        interface X {
+            name: string
+        }
         Y : name=NUMBER;
         interface Z extends X, Y {}
-        terminal ID: /[_a-zA-Z][\\w_]*/;
         terminal NUMBER returns number: /[0-9]+(\\.[0-9]*)?/;
         `.trim();
 
