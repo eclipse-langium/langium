@@ -4,17 +4,14 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { URI } from 'vscode-uri';
 import { CompositeGeneratorNode, IndentNode, NL } from '../../generator/generator-node';
 import { processGeneratorNode } from '../../generator/node-processor';
 import { References } from '../../references/references';
 import { CstNode } from '../../syntax-tree';
-import { getDocument } from '../../utils/ast-util';
 import { MultiMap } from '../../utils/collections';
 import { AstNodeLocator } from '../../workspace/ast-node-locator';
 import { LangiumDocuments } from '../../workspace/documents';
-import { AbstractType, Action, Assignment, Grammar, Interface, isInterface, isParserRule, isType, ParserRule, Type, TypeAttribute } from '../generated/ast';
-import { isDataTypeRule, resolveImport } from '../internal-grammar-util';
+import { Assignment, Action, TypeAttribute, Interface, Type, AbstractType, isInterface, isType } from '../generated/ast';
 
 export type Property = {
     name: string,
@@ -104,12 +101,6 @@ export class TypeResolutionError extends Error {
     }
 
 }
-export type AstResources = {
-    parserRules: Set<ParserRule>,
-    datatypeRules: Set<ParserRule>,
-    interfaces: Set<Interface>,
-    types: Set<Type>
-}
 
 /**
  * Collects all properties of all interface types. Includes super type properties.
@@ -129,35 +120,6 @@ export function collectAllProperties(interfaces: InterfaceType[]): MultiMap<stri
         }
     }
     return map;
-}
-
-export function collectAllAstResources(grammars: Grammar[], documents?: LangiumDocuments, visited: Set<URI> = new Set(),
-    astResources: AstResources = { parserRules: new Set(), datatypeRules: new Set(), interfaces: new Set(), types: new Set() }): AstResources {
-
-    for (const grammar of grammars) {
-        const doc = getDocument(grammar);
-        if (visited.has(doc.uri)) {
-            continue;
-        }
-        visited.add(doc.uri);
-        for (const rule of grammar.rules) {
-            if (isParserRule(rule) && !rule.fragment) {
-                if (isDataTypeRule(rule)) {
-                    astResources.datatypeRules.add(rule);
-                } else {
-                    astResources.parserRules.add(rule);
-                }
-            }
-        }
-        grammar.interfaces.forEach(e => astResources.interfaces.add(e));
-        grammar.types.forEach(e => astResources.types.add(e));
-
-        if (documents) {
-            const importedGrammars = grammar.imports.map(e => resolveImport(documents, e)!);
-            collectAllAstResources(importedGrammars, documents, visited, astResources);
-        }
-    }
-    return astResources;
 }
 
 export function propertyTypeArrayToString(alternatives: PropertyType[]): string {
@@ -240,4 +202,8 @@ function compareLists<T>(a: T[], b: T[], eq: (x: T, y: T) => boolean = (x, y) =>
     const distinctAndSortedB = distinctAndSorted(b);
     if (distinctAndSortedA.length !== distinctAndSortedB.length) return false;
     return distinctAndSortedB.every((e, i) => eq(e, distinctAndSortedA[i]));
+}
+
+export function mergeInterfaces(inferred: AstTypes, declared: AstTypes): InterfaceType[] {
+    return inferred.interfaces.concat(declared.interfaces);
 }

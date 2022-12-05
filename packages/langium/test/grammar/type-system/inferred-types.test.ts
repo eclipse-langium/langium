@@ -7,8 +7,10 @@
 import { createLangiumGrammarServices, Grammar, EmptyFileSystem, s } from '../../../src';
 import { isParserRule } from '../../../src/grammar/generated/ast';
 import { isDataTypeRule } from '../../../src/grammar/internal-grammar-util';
-import { AstTypes, collectAllAstResources, collectAst, InterfaceType, Property, PropertyType, UnionType } from '../../../src/grammar/type-system';
-import { collectInferredTypes } from '../../../src/grammar/type-system/inferred-types';
+import { collectAst } from '../../../src/grammar/type-system/ast-collector';
+import { collectAllAstResources } from '../../../src/grammar/type-system/type-collector/all-types';
+import { collectInferredTypes } from '../../../src/grammar/type-system/type-collector/inferred-types';
+import { AstTypes, InterfaceType, Property, PropertyType, UnionType } from '../../../src/grammar/type-system/types-util';
 import { parseHelper } from '../../../src/test';
 
 function describeTypes(name: string, grammar: string, description: (types: AstTypes) => void | Promise<void>): void {
@@ -45,7 +47,8 @@ describeTypes('inferred types of simple grammars', `
                 array: false,
                 reference: false,
                 types: ['string']
-            }]
+            }],
+            astNodes: new Set(),
         });
         expectProperty(a, {
             name: 'value',
@@ -54,7 +57,8 @@ describeTypes('inferred types of simple grammars', `
                 array: false,
                 reference: false,
                 types: ['number']
-            }]
+            }],
+            astNodes: new Set(),
         });
     });
 
@@ -67,8 +71,9 @@ describeTypes('inferred types of simple grammars', `
             typeAlternatives: [{
                 array: false,
                 reference: false,
-                types: ['FQN']
-            }]
+                types: ['FQN'],
+            }],
+            astNodes: new Set(),
         });
         expectProperty(b, {
             name: 'values',
@@ -77,7 +82,8 @@ describeTypes('inferred types of simple grammars', `
                 array: true,
                 reference: false,
                 types: ['number']
-            }]
+            }],
+            astNodes: new Set(),
         });
     });
 
@@ -91,7 +97,8 @@ describeTypes('inferred types of simple grammars', `
                 array: false,
                 reference: true,
                 types: ['A']
-            }]
+            }],
+            astNodes: new Set(),
         });
     });
 
@@ -137,7 +144,8 @@ describeTypes('inferred types for alternatives', `
                     reference: false,
                     types: ['number']
                 }
-            ]
+            ],
+            astNodes: new Set(),
         });
     });
 
@@ -160,7 +168,8 @@ describeTypes('inferred types for alternatives', `
                     reference: false,
                     types: ['number']
                 }
-            ]
+            ],
+            astNodes: new Set(),
         });
     });
 
@@ -193,7 +202,8 @@ describeTypes('inferred types for alternatives', `
                 array: false,
                 reference: false,
                 types: ['string']
-            }]
+            }],
+            astNodes: new Set(),
         });
     });
 
@@ -209,7 +219,8 @@ describeTypes('inferred types for alternatives', `
                     reference: false,
                     types: ['string']
                 }
-            ]
+            ],
+            astNodes: new Set(),
         });
         expectProperty(e, {
             name: 'value',
@@ -220,7 +231,8 @@ describeTypes('inferred types for alternatives', `
                     reference: false,
                     types: ['number']
                 }
-            ]
+            ],
+            astNodes: new Set(),
         });
     });
 
@@ -290,7 +302,8 @@ describeTypes('inferred types using chained actions', `
                 array: false,
                 reference: false,
                 types: ['string']
-            }]
+            }],
+            astNodes: new Set(),
         });
         expectProperty(firstBranch, {
             name: 'value',
@@ -299,7 +312,8 @@ describeTypes('inferred types using chained actions', `
                 array: false,
                 reference: false,
                 types: ['IdRule']
-            }]
+            }],
+            astNodes: new Set(),
         });
 
     });
@@ -343,7 +357,8 @@ describeTypes('inferred types using chained actions', `
                 array: false,
                 reference: false,
                 types: ['string']
-            }]
+            }],
+            astNodes: new Set(),
         });
     });
 
@@ -359,7 +374,8 @@ describeTypes('inferred types using chained actions', `
                 array: false,
                 reference: false,
                 types: ['Ref']
-            }]
+            }],
+            astNodes: new Set(),
         });
         expectProperty(access, {
             name: 'member',
@@ -368,7 +384,8 @@ describeTypes('inferred types using chained actions', `
                 array: false,
                 reference: false,
                 types: ['string']
-            }]
+            }],
+            astNodes: new Set(),
         });
     });
 
@@ -414,7 +431,8 @@ describeTypes('inferred types using chained actions', `
                 array: false,
                 reference: false,
                 types: ['E']
-            }]
+            }],
+            astNodes: new Set(),
         });
         expectProperty(d, 'd');
     });
@@ -440,7 +458,8 @@ describeTypes('inferred types using chained actions', `
                 array: false,
                 reference: false,
                 types: ['F']
-            }]
+            }],
+            astNodes: new Set(),
         });
     });
 
@@ -468,7 +487,8 @@ describeTypes('inferred types using chained actions', `
                     reference: false,
                     types: ['Z']
                 }
-            ]
+            ],
+            astNodes: new Set(),
         });
     });
 
@@ -512,7 +532,8 @@ describeTypes('inferred types with common names', `
                 array: false,
                 reference: false,
                 types: ['string']
-            }]
+            }],
+            astNodes: new Set(),
         });
         expectProperty(x, {
             name: 'c',
@@ -521,7 +542,8 @@ describeTypes('inferred types with common names', `
                 array: false,
                 reference: false,
                 types: ['string']
-            }]
+            }],
+            astNodes: new Set(),
         });
     });
 
@@ -593,7 +615,8 @@ describeTypes('inferred types with common names and actions', `
                 array: false,
                 reference: false,
                 types: ['Y']
-            }]
+            }],
+            astNodes: new Set(),
         });
     });
 

@@ -9,11 +9,11 @@ import { MultiMap } from '../../utils/collections';
 import { Property, PropertyType, distinctAndSorted, propertyTypeArrayToString } from './types-util';
 import { DiagnosticInfo, ValidationAcceptor } from '../../validation/validation-registry';
 import { extractAssignments } from '../internal-grammar-util';
-import { DeclaredInfo, InferredInfo, isInterface, isType } from '../workspace/type-collector';
+import { DeclaredInfo, InferredInfo, isInterfaceType, isUnionType } from '../workspace/type-collector';
 
 export function validateDeclaredConsistency(declaredInfo: DeclaredInfo, properties: Map<string, Property[]>, accept: ValidationAcceptor): void {
     const declaredType = declaredInfo.declared;
-    if (!isInterface(declaredType)) {
+    if (!isInterfaceType(declaredType)) {
         return;
     }
 
@@ -112,6 +112,7 @@ export function validateDeclaredAndInferredConsistency(typeInfo: InferredInfo & 
         );
 
     // todo add actions
+    // currently we don't track which assignments belong to which actions and can't apply this error
     const applyMissingPropErrorToRules = (missingProp: string) => {
         inferredNodes.forEach(node => {
             if (isParserRule(node)) {
@@ -126,11 +127,11 @@ export function validateDeclaredAndInferredConsistency(typeInfo: InferredInfo & 
         });
     };
 
-    if (isType(inferred) && isType(declared)) {
+    if (isUnionType(inferred) && isUnionType(declared)) {
         validateAlternativesConsistency(inferred.union, declared.union,
             applyErrorToRulesAndActions(` in a rule that returns type '${typeName}'.`),
         );
-    } else if (isInterface(inferred) && isInterface(declared)) {
+    } else if (isInterfaceType(inferred) && isInterfaceType(declared)) {
         validatePropertiesConsistency(inferred.superProperties, declared.superProperties,
             applyErrorToRulesAndActions(` in a rule that returns type '${typeName}'.`),
             applyErrorToProperties,

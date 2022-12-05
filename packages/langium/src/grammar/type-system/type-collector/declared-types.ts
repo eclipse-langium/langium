@@ -4,9 +4,9 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { AtomType, Interface, Type } from '../generated/ast';
-import { getTypeName } from '../internal-grammar-util';
-import { AstTypes, Property, PropertyType, InterfaceType, UnionType } from './types-util';
+import { Interface, Type, AtomType } from '../../generated/ast';
+import { getTypeName } from '../../internal-grammar-util';
+import { AstTypes, Property, InterfaceType, UnionType, PropertyType } from '../types-util';
 
 export function collectDeclaredTypes(interfaces: Interface[], unions: Type[]): AstTypes {
     const declaredTypes: AstTypes = { unions: [], interfaces: [] };

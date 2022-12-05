@@ -4,12 +4,12 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { AbstractElement, Action, Alternatives, Assignment, Group, isAction, isAlternatives, isAssignment, isCrossReference, isGroup, isKeyword, isParserRule, isRuleCall, isUnorderedGroup, ParserRule, RuleCall, UnorderedGroup } from '../generated/ast';
-import { isNamed } from '../../references/name-provider';
-import { stream } from '../../utils/stream';
-import { AstTypes, Property, PropertyType, InterfaceType, UnionType, comparePropertyType } from './types-util';
-import { MultiMap } from '../../utils/collections';
-import { getExplicitRuleType, getRuleType, getTypeName, isOptionalCardinality } from '../internal-grammar-util';
+import { isNamed } from '../../../references/name-provider';
+import { MultiMap } from '../../../utils/collections';
+import { stream } from '../../../utils/stream';
+import { ParserRule, isAlternatives, isKeyword, Action, isParserRule, isAction, AbstractElement, isGroup, isUnorderedGroup, isAssignment, isRuleCall, Assignment, isCrossReference, RuleCall } from '../../generated/ast';
+import { getExplicitRuleType, getTypeName, isOptionalCardinality, getRuleType } from '../../internal-grammar-util';
+import { Property, AstTypes, UnionType, PropertyType, InterfaceType, comparePropertyType } from '../types-util';
 
 interface TypePart {
     name?: string
@@ -310,7 +310,9 @@ function addAssignment(current: TypePart, assignment: Assignment): void {
 
 function findTypes(terminal: AbstractElement, types: TypeCollection): void {
     if (isAlternatives(terminal) || isUnorderedGroup(terminal) || isGroup(terminal)) {
-        findInCollection(terminal, types);
+        for (const element of terminal.elements) {
+            findTypes(element, types);
+        }
     } else if (isKeyword(terminal)) {
         types.types.add(`'${terminal.value}'`);
     } else if (isRuleCall(terminal) && terminal.rule.ref) {
@@ -318,12 +320,6 @@ function findTypes(terminal: AbstractElement, types: TypeCollection): void {
     } else if (isCrossReference(terminal) && terminal.type.ref) {
         types.types.add(getTypeName(terminal.type.ref));
         types.reference = true;
-    }
-}
-
-function findInCollection(collection: Alternatives | Group | UnorderedGroup, types: TypeCollection): void {
-    for (const element of collection.elements) {
-        findTypes(element, types);
     }
 }
 

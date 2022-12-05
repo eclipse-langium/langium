@@ -10,7 +10,7 @@ import { LangiumDocuments } from '../workspace/documents';
 import { EmptyFileSystem } from '../workspace/file-system-provider';
 import { Grammar, isGrammar } from './generated/ast';
 import { createLangiumGrammarServices } from './langium-grammar-module';
-import { collectAst } from './type-system/type-collector';
+import { collectAst } from './type-system/ast-collector';
 import { AstTypes, collectAllProperties, Property } from './type-system/types-util';
 
 let emptyDocuments: LangiumDocuments;

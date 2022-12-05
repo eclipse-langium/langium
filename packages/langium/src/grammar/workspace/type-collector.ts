@@ -9,55 +9,20 @@ import { stream } from '../../utils/stream';
 import { LangiumDocuments } from '../../workspace/documents';
 import { AbstractElement, Action, Grammar, Interface, isAction, isAlternatives, isGroup, isUnorderedGroup, ParserRule, Type } from '../generated/ast';
 import { getActionType, getRuleType } from '../internal-grammar-util';
-import { collectDeclaredTypes } from '../type-system/declared-types';
-import { collectInferredTypes } from '../type-system/inferred-types';
-import { shareSuperTypesFromUnions } from '../type-system/type-collector';
-import { AstResources, AstTypes, collectAllAstResources, InterfaceType, Property, UnionType } from '../type-system/types-util';
+import { AstResources, collectTypeResources } from '../type-system/type-collector/all-types';
+import { AstTypes, InterfaceType, mergeInterfaces, Property, UnionType } from '../type-system/types-util';
 
 export class LangiumGrammarTypeCollector {
     readonly validationResources = new Map<string, InferredInfo | DeclaredInfo | InferredInfo & DeclaredInfo>();
     // todo using type graph allows to remove this `superPropertiesMap`
     readonly typeToItsSuperProperties = new Map<string, Property[]>();
 
-    private collectTypeResources(documents: LangiumDocuments, grammars: Grammar[]): TypeResources {
-        const astResources = collectAllAstResources(grammars, documents);
-        const inferred = collectInferredTypes(Array.from(astResources.parserRules), Array.from(astResources.datatypeRules));
-        const declared = collectDeclaredTypes(Array.from(astResources.interfaces), Array.from(astResources.types));
-
-        shareSuperTypesFromUnions(inferred, declared);
-        this.addSuperProperties(mergeInterfaces(inferred, declared));
-
-        return { astResources, inferred, declared };
-    }
-
-    private addSuperProperties(allTypes: InterfaceType[]) {
-        function addSuperPropertiesInternal(type: InterfaceType, visited = new Set<InterfaceType>()) {
-            if (visited.has(type)) return;
-            visited.add(type);
-
-            for (const superTypeName of type.printingSuperTypes) {
-                const superType = allTypes.find(e => e.name === superTypeName);
-
-                if (superType && isInterface(superType)) {
-                    addSuperPropertiesInternal(superType);
-                    superType.superProperties
-                        .entriesGroupedByKey()
-                        .forEach(propInfo => type.superProperties.addAll(propInfo[0], propInfo[1]));
-                }
-            }
-        }
-
-        for (const type of allTypes) {
-            addSuperPropertiesInternal(type);
-        }
-    }
-
     // todo improve resources collection
     // currently, all previously collected resources will be lost after an update of any document
     // and data only from updated documents will exist
     collectValidationResources(documents: LangiumDocuments, grammars: Grammar[]) {
         this.clear();
-        const { astResources, inferred, declared } = this.collectTypeResources(documents, grammars);
+        const { astResources, inferred, declared } = collectTypeResources(documents, grammars);
 
         const typeNameToRulesActions = new MultiMap<string, ParserRule | Action>();
         this.collectNameToRules(typeNameToRulesActions, astResources);
@@ -128,19 +93,15 @@ function mergeTypesAndInterfaces(astTypes: AstTypes): TypeOption[] {
     return (astTypes.interfaces as TypeOption[]).concat(astTypes.unions);
 }
 
-function mergeInterfaces(inferred: AstTypes, declared: AstTypes): InterfaceType[] {
-    return inferred.interfaces.concat(declared.interfaces);
-}
-
 export type ValidationResources = Map<string, InferredInfo | DeclaredInfo | InferredInfo & DeclaredInfo>;
 
 export type TypeOption = UnionType | InterfaceType;
 
-export function isType(type: TypeOption): type is UnionType {
+export function isUnionType(type: TypeOption): type is UnionType {
     return type && 'union' in type;
 }
 
-export function isInterface(type: TypeOption): type is InterfaceType {
+export function isInterfaceType(type: TypeOption): type is InterfaceType {
     return type && 'properties' in type;
 }
 
@@ -164,10 +125,4 @@ export function isInferred(type: InferredInfo | DeclaredInfo | InferredInfo & De
 
 export function isInferredAndDeclared(type: InferredInfo | DeclaredInfo | InferredInfo & DeclaredInfo): type is InferredInfo & DeclaredInfo {
     return type && 'inferred' in type && 'declared' in type;
-}
-
-export type TypeResources = {
-    inferred: AstTypes,
-    declared: AstTypes,
-    astResources: AstResources,
 }
