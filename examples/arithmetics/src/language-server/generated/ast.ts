@@ -31,7 +31,7 @@ export function isStatement(item: unknown): item is Statement {
 }
 
 export interface BinaryExpression extends AstNode {
-    readonly $container: BinaryExpression | Definition | Evaluation | FunctionCall;
+    readonly $container: BinaryExpression | Definition | Evaluation | Expression | FunctionCall;
     left: Expression
     operator: '*' | '+' | '-' | '/'
     right: Expression
@@ -44,7 +44,7 @@ export function isBinaryExpression(item: unknown): item is BinaryExpression {
 }
 
 export interface DeclaredParameter extends AstNode {
-    readonly $container: Definition;
+    readonly $container: AbstractDefinition | Definition | Module | Statement;
     name: string
 }
 
@@ -55,7 +55,7 @@ export function isDeclaredParameter(item: unknown): item is DeclaredParameter {
 }
 
 export interface Definition extends AstNode {
-    readonly $container: Module;
+    readonly $container: AbstractDefinition | Definition | Module | Statement;
     args: Array<DeclaredParameter>
     expr: Expression
     name: string
@@ -68,7 +68,7 @@ export function isDefinition(item: unknown): item is Definition {
 }
 
 export interface Evaluation extends AstNode {
-    readonly $container: Module;
+    readonly $container: AbstractDefinition | Definition | Module | Statement;
     expression: Expression
 }
 
@@ -79,7 +79,7 @@ export function isEvaluation(item: unknown): item is Evaluation {
 }
 
 export interface FunctionCall extends AstNode {
-    readonly $container: BinaryExpression | Definition | Evaluation | FunctionCall;
+    readonly $container: BinaryExpression | Definition | Evaluation | Expression | FunctionCall;
     args: Array<Expression>
     func: Reference<AbstractDefinition>
 }
@@ -102,7 +102,7 @@ export function isModule(item: unknown): item is Module {
 }
 
 export interface NumberLiteral extends AstNode {
-    readonly $container: BinaryExpression | Definition | Evaluation | FunctionCall;
+    readonly $container: BinaryExpression | Definition | Evaluation | Expression | FunctionCall;
     value: number
 }
 

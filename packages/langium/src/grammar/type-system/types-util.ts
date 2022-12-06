@@ -36,6 +36,8 @@ export class UnionType {
     union: PropertyType[];
     reflection: boolean;
     realSuperTypes = new Set<string>();
+    containerTypes = new Set<string>();
+    subTypes = new Set<string>();
 
     constructor(name: string, union: PropertyType[], options?: { reflection: boolean }) {
         this.name = name;
