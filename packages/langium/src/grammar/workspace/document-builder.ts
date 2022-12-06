@@ -4,25 +4,25 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import { LangiumSharedServices } from '../../services';
 import { DefaultDocumentBuilder } from '../../workspace/document-builder';
 import { DocumentState } from '../../workspace/documents';
-import { Grammar } from '../generated/ast';
-import { LangiumGrammarSharedServices } from '../langium-grammar-module';
-import { LangiumGrammarTypeCollector } from './type-collector';
+import { LangiumGrammarServices } from '../langium-grammar-module';
+import { LangiumGrammarDocument } from './documents';
 
 export class LangiumGrammarDocumentBuilder extends DefaultDocumentBuilder {
-    protected readonly typeCollector: LangiumGrammarTypeCollector;
-
-    constructor(services: LangiumGrammarSharedServices) {
+    constructor(services: LangiumSharedServices) {
         super(services);
-        this.typeCollector = services.workspace.TypeCollector;
         this.addTypeCollectionPhase();
     }
 
     private addTypeCollectionPhase() {
         super.onBuildPhase(DocumentState.IndexedReferences, async (documents, _cancelToken) => {
-            const grammars = documents.map(doc => doc.parseResult.value as Grammar);
-            this.typeCollector.collectValidationResources(super.langiumDocuments, grammars);
+            documents.forEach(document => {
+                const services = this.serviceRegistry.getServices(document.uri) as LangiumGrammarServices;
+                const typeCollector = services.validation.TypeCollector;
+                typeCollector.collectValidationResources(super.langiumDocuments, document as LangiumGrammarDocument);
+            });
         });
     }
 }

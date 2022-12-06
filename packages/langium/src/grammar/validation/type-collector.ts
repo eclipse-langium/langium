@@ -7,29 +7,24 @@
 import { MultiMap } from '../../utils/collections';
 import { stream } from '../../utils/stream';
 import { LangiumDocuments } from '../../workspace/documents';
-import { AbstractElement, Action, Grammar, Interface, isAction, isAlternatives, isGroup, isUnorderedGroup, ParserRule, Type } from '../generated/ast';
+import { AbstractElement, Action, Interface, isAction, isAlternatives, isGroup, isUnorderedGroup, ParserRule, Type } from '../generated/ast';
 import { getActionType, getRuleType } from '../internal-grammar-util';
 import { AstResources, collectTypeResources } from '../type-system/type-collector/all-types';
-import { AstTypes, InterfaceType, mergeInterfaces, Property, UnionType } from '../type-system/types-util';
+import { AstTypes, mergeInterfaces, Property } from '../type-system/types-util';
+import { LangiumGrammarDocument, TypeOption, ValidationResources } from '../workspace/documents';
 
 export class LangiumGrammarTypeCollector {
-    readonly validationResources = new Map<string, InferredInfo | DeclaredInfo | InferredInfo & DeclaredInfo>();
-    // todo using type graph allows to remove this `superPropertiesMap`
-    readonly typeToItsSuperProperties = new Map<string, Property[]>();
 
-    // todo improve resources collection
-    // currently, all previously collected resources will be lost after an update of any document
-    // and data only from updated documents will exist
-    collectValidationResources(documents: LangiumDocuments, grammars: Grammar[]) {
-        this.clear();
-        const { astResources, inferred, declared } = collectTypeResources(documents, grammars);
+    collectValidationResources(documents: LangiumDocuments, document: LangiumGrammarDocument) {
+        const validationResources: ValidationResources = new Map();
+        const { astResources, inferred, declared } = collectTypeResources(documents, [document.parseResult.value]);
 
         const typeNameToRulesActions = new MultiMap<string, ParserRule | Action>();
         this.collectNameToRules(typeNameToRulesActions, astResources);
         this.collectNameToActions(typeNameToRulesActions, astResources);
 
         for (const type of mergeTypesAndInterfaces(inferred)) {
-            this.validationResources.set(
+            validationResources.set(
                 type.name,
                 { inferred: type, inferredNodes: typeNameToRulesActions.get(type.name) }
             );
@@ -43,26 +38,21 @@ export class LangiumGrammarTypeCollector {
         for (const type of mergeTypesAndInterfaces(declared)) {
             const node = typeNametoInterfacesUnions.get(type.name);
             if (node) {
-                const inferred = this.validationResources.get(type.name);
-                this.validationResources.set(
+                const inferred = validationResources.get(type.name);
+                validationResources.set(
                     type.name,
                     inferred ? {...inferred, declared: type, declaredNode: node } : { declared: type, declaredNode: node }
                 );
             }
         }
 
-        this.collectSuperPropertiesMap(mergeInterfaces(inferred, declared));
-    }
-
-    private clear() {
-        this.validationResources.clear();
-        this.typeToItsSuperProperties.clear();
-    }
-
-    private collectSuperPropertiesMap(interfaces: InterfaceType[]) {
-        for (const type of interfaces) {
-            this.typeToItsSuperProperties.set(type.name, Array.from(type.superProperties.values()));
+        const typeToItsSuperProperties: Map<string, Property[]> = new Map();
+        for (const type of mergeInterfaces(inferred, declared)) {
+            typeToItsSuperProperties.set(type.name, Array.from(type.superProperties.values()));
         }
+
+        document.validationResources = validationResources;
+        document.typeToItsSuperProperties = typeToItsSuperProperties;
     }
 
     private collectNameToRules(acc: MultiMap<string, ParserRule | Action>, {parserRules, datatypeRules}: AstResources) {
@@ -91,38 +81,4 @@ export class LangiumGrammarTypeCollector {
 
 function mergeTypesAndInterfaces(astTypes: AstTypes): TypeOption[] {
     return (astTypes.interfaces as TypeOption[]).concat(astTypes.unions);
-}
-
-export type ValidationResources = Map<string, InferredInfo | DeclaredInfo | InferredInfo & DeclaredInfo>;
-
-export type TypeOption = UnionType | InterfaceType;
-
-export function isUnionType(type: TypeOption): type is UnionType {
-    return type && 'union' in type;
-}
-
-export function isInterfaceType(type: TypeOption): type is InterfaceType {
-    return type && 'properties' in type;
-}
-
-export type InferredInfo = {
-    inferred: TypeOption,
-    inferredNodes: ReadonlyArray<ParserRule | Action>
-}
-
-export type DeclaredInfo = {
-    declared: TypeOption,
-    declaredNode: Type | Interface,
-}
-
-export function isDeclared(type: InferredInfo | DeclaredInfo | InferredInfo & DeclaredInfo): type is DeclaredInfo {
-    return type && 'declared' in type;
-}
-
-export function isInferred(type: InferredInfo | DeclaredInfo | InferredInfo & DeclaredInfo): type is InferredInfo {
-    return type && 'inferred' in type;
-}
-
-export function isInferredAndDeclared(type: InferredInfo | DeclaredInfo | InferredInfo & DeclaredInfo): type is InferredInfo & DeclaredInfo {
-    return type && 'inferred' in type && 'declared' in type;
 }

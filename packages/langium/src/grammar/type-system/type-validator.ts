@@ -4,12 +4,12 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { Action, Assignment, InferredType, Interface, isAction, isAssignment, isParserRule, ParserRule, TypeAttribute } from '../generated/ast';
+import { Interface, InferredType, ParserRule, Action, isAction, Assignment, TypeAttribute, isAssignment, isParserRule } from '../generated/ast';
 import { MultiMap } from '../../utils/collections';
 import { Property, PropertyType, distinctAndSorted, propertyTypeArrayToString } from './types-util';
 import { DiagnosticInfo, ValidationAcceptor } from '../../validation/validation-registry';
 import { extractAssignments } from '../internal-grammar-util';
-import { DeclaredInfo, InferredInfo, isInterfaceType, isUnionType } from '../workspace/type-collector';
+import { DeclaredInfo, InferredInfo, isInterfaceType, isUnionType } from '../workspace/documents';
 
 export function validateDeclaredConsistency(declaredInfo: DeclaredInfo, properties: Map<string, Property[]>, accept: ValidationAcceptor): void {
     const declaredType = declaredInfo.declared;

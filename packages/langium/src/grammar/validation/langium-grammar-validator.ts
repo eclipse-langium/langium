@@ -5,22 +5,22 @@
  ******************************************************************************/
 
 import { DiagnosticTag } from 'vscode-languageserver-types';
-import { NamedAstNode } from '../references/name-provider';
-import { References } from '../references/references';
-import { AstNode, Properties, Reference } from '../syntax-tree';
-import { getContainerOfType, streamAllContents } from '../utils/ast-util';
-import { MultiMap } from '../utils/collections';
-import { toDocumentSegment } from '../utils/cst-util';
-import { findNodeForKeyword, findNameAssignment, findNodeForProperty, getAllReachableRules } from '../utils/grammar-util';
-import { Stream, stream } from '../utils/stream';
-import { ValidationAcceptor, ValidationChecks, ValidationRegistry } from '../validation/validation-registry';
-import { LangiumDocuments } from '../workspace/documents';
-import * as ast from './generated/ast';
-import { isParserRule, isRuleCall } from './generated/ast';
-import { getTypeName, isDataTypeRule, isOptionalCardinality, resolveImport, resolveTransitiveImports, terminalRegex } from './internal-grammar-util';
-import type { LangiumGrammarServices } from './langium-grammar-module';
-import { validateDeclaredAndInferredConsistency, validateDeclaredConsistency } from './type-system/type-validator';
-import { isDeclared, isInferredAndDeclared, LangiumGrammarTypeCollector } from './workspace/type-collector';
+import { NamedAstNode } from '../../references/name-provider';
+import { References } from '../../references/references';
+import { AstNode, Properties, Reference } from '../../syntax-tree';
+import { getContainerOfType, streamAllContents } from '../../utils/ast-util';
+import { MultiMap } from '../../utils/collections';
+import { toDocumentSegment } from '../../utils/cst-util';
+import { findNodeForKeyword, findNameAssignment, findNodeForProperty, getAllReachableRules } from '../../utils/grammar-util';
+import { Stream, stream } from '../../utils/stream';
+import { ValidationAcceptor, ValidationChecks, ValidationRegistry } from '../../validation/validation-registry';
+import { LangiumDocuments } from '../../workspace/documents';
+import * as ast from '../generated/ast';
+import { isParserRule, isRuleCall } from '../generated/ast';
+import { getTypeName, isDataTypeRule, isOptionalCardinality, resolveImport, resolveTransitiveImports, terminalRegex } from '../internal-grammar-util';
+import type { LangiumGrammarServices } from '../langium-grammar-module';
+import { validateDeclaredAndInferredConsistency, validateDeclaredConsistency } from '../type-system/type-validator';
+import { isDeclared, isInferredAndDeclared, LangiumGrammarDocument } from '../workspace/documents';
 
 export class LangiumGrammarValidationRegistry extends ValidationRegistry {
     constructor(services: LangiumGrammarServices) {
@@ -62,17 +62,16 @@ export class LangiumGrammarValidationRegistry extends ValidationRegistry {
                 validator.checkGrammarTypeUnions,
                 validator.checkGrammarTypeInfer,
                 validator.checkClashingTerminalNames,
+                validator.checkSuperPropertiesConsistency,
+                validator.checkConsistencyWithInferredType,
             ],
             GrammarImport: validator.checkPackageImport,
             CharacterRange: validator.checkInvalidCharacterRange,
             Interface: [
                 validator.checkTypeReservedName,
-                validator.checkSuperPropertiesConsistency,
-                validator.checkConsistencyWithInferredType,
             ],
             Type: [
                 validator.checkTypeReservedName,
-                validator.checkConsistencyWithInferredType,
             ],
             TypeAttribute: validator.checkTypeReservedName,
             RuleCall: [
@@ -116,12 +115,10 @@ export class LangiumGrammarValidator {
 
     protected readonly references: References;
     protected readonly documents: LangiumDocuments;
-    private typeCollector: LangiumGrammarTypeCollector;
 
     constructor(services: LangiumGrammarServices) {
         this.references = services.references.References;
         this.documents = services.shared.workspace.LangiumDocuments;
-        this.typeCollector = services.shared.workspace.TypeCollector;
     }
 
     checkGrammarName(grammar: ast.Grammar, accept: ValidationAcceptor): void {
@@ -464,17 +461,28 @@ export class LangiumGrammarValidator {
         }
     }
 
-    checkSuperPropertiesConsistency(declaredInterface: ast.Interface, accept: ValidationAcceptor): void {
-        const interfaceInfo = this.typeCollector.validationResources.get(declaredInterface.name);
-        if (interfaceInfo && isDeclared(interfaceInfo)) {
-            validateDeclaredConsistency(interfaceInfo, this.typeCollector.typeToItsSuperProperties, accept);
+    checkSuperPropertiesConsistency(grammar: ast.Grammar, accept: ValidationAcceptor): void {
+        const document = grammar.$document as LangiumGrammarDocument;
+        const validationResources = document?.validationResources;
+        const typeToItsSuperProperties = document?.typeToItsSuperProperties ?? new Map();
+        if (validationResources) {
+            for (const typeInfo of validationResources.values()) {
+                if (isDeclared(typeInfo)) {
+                    validateDeclaredConsistency(typeInfo, typeToItsSuperProperties, accept);
+                }
+            }
         }
     }
 
-    checkConsistencyWithInferredType(declaredType: ast.Type | ast.Interface, accept: ValidationAcceptor): void {
-        const typeInfo = this.typeCollector.validationResources.get(declaredType.name);
-        if (typeInfo && isInferredAndDeclared(typeInfo)) {
-            validateDeclaredAndInferredConsistency(typeInfo, accept);
+    checkConsistencyWithInferredType(grammar: ast.Grammar, accept: ValidationAcceptor): void {
+        const document = grammar.$document as LangiumGrammarDocument;
+        const validationResources = document?.validationResources;
+        if (validationResources) {
+            for (const typeInfo of validationResources.values()) {
+                if (isInferredAndDeclared(typeInfo)) {
+                    validateDeclaredAndInferredConsistency(typeInfo, accept);
+                }
+            }
         }
     }
 

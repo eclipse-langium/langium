@@ -9,7 +9,7 @@ import { inject, Module } from '../dependency-injection';
 import { LangiumServices, LangiumSharedServices, PartialLangiumServices, PartialLangiumSharedServices } from '../services';
 import { LangiumGrammarGeneratedModule, LangiumGrammarGeneratedSharedModule } from './generated/module';
 import { LangiumGrammarScopeComputation, LangiumGrammarScopeProvider } from './references/grammar-scope';
-import { LangiumGrammarValidationRegistry, LangiumGrammarValidator } from './langium-grammar-validator';
+import { LangiumGrammarValidationRegistry, LangiumGrammarValidator } from './validation/langium-grammar-validator';
 import { LangiumGrammarCodeActionProvider } from './lsp/grammar-code-actions';
 import { LangiumGrammarFoldingRangeProvider } from './lsp/grammar-folding-ranges';
 import { LangiumGrammarFormatter } from './lsp/grammar-formatter';
@@ -19,22 +19,22 @@ import { LangiumGrammarReferences } from './references/grammar-references';
 import { LangiumGrammarDefinitionProvider } from './lsp/grammar-definition';
 import { LangiumGrammarCallHierarchyProvider } from './lsp/grammar-call-hierarchy';
 import { LangiumGrammarDocumentBuilder } from './workspace/document-builder';
-import { LangiumGrammarTypeCollector } from './workspace/type-collector';
+import { LangiumGrammarTypeCollector } from './validation/type-collector';
 
 export type LangiumGrammarAddedServices = {
     validation: {
-        LangiumGrammarValidator: LangiumGrammarValidator
+        LangiumGrammarValidator: LangiumGrammarValidator,
+        TypeCollector: LangiumGrammarTypeCollector,
     }
 }
 
-export type LangiumGrammarServices = LangiumServices & LangiumGrammarAddedServices & {
-    shared: LangiumGrammarSharedServices
-}
+export type LangiumGrammarServices = LangiumServices & LangiumGrammarAddedServices;
 
 export const LangiumGrammarModule: Module<LangiumGrammarServices, PartialLangiumServices & LangiumGrammarAddedServices> = {
     validation: {
         ValidationRegistry: (services) => new LangiumGrammarValidationRegistry(services),
-        LangiumGrammarValidator: (services) => new LangiumGrammarValidator(services)
+        LangiumGrammarValidator: (services) => new LangiumGrammarValidator(services),
+        TypeCollector: () => new LangiumGrammarTypeCollector(),
     },
     lsp: {
         FoldingRangeProvider: (services) => new LangiumGrammarFoldingRangeProvider(services),
@@ -52,24 +52,15 @@ export const LangiumGrammarModule: Module<LangiumGrammarServices, PartialLangium
     }
 };
 
-export type LangiumGrammarAddedSharedServices = {
-    workspace: {
-        TypeCollector: LangiumGrammarTypeCollector
-    }
-}
-
-export type LangiumGrammarSharedServices = LangiumSharedServices & LangiumGrammarAddedSharedServices
-
 export const LangiumGrammarSharedModule = {
     workspace: {
-        DocumentBuilder: (services: LangiumGrammarSharedServices) => new LangiumGrammarDocumentBuilder(services),
-        TypeCollector: () => new LangiumGrammarTypeCollector(),
+        DocumentBuilder: (services: LangiumSharedServices) => new LangiumGrammarDocumentBuilder(services),
     }
 };
 
 export function createLangiumGrammarServices(context: DefaultSharedModuleContext,
     sharedModule?: Module<LangiumSharedServices, PartialLangiumSharedServices>): {
-        shared: LangiumGrammarSharedServices,
+        shared: LangiumSharedServices,
         grammar: LangiumGrammarServices
     } {
     const shared = inject(

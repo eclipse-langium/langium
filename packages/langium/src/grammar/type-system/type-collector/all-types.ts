@@ -13,7 +13,7 @@ import { ParserRule, Interface, Type, isParserRule } from '../../generated/ast';
 import { isDataTypeRule, resolveImport } from '../../internal-grammar-util';
 import { AstTypes, mergeInterfaces, InterfaceType } from '../types-util';
 import { URI } from 'vscode-uri';
-import { isInterfaceType } from '../../workspace/type-collector';
+import { isInterfaceType } from '../../workspace/documents';
 
 export type AstResources = {
     parserRules: ParserRule[],
