@@ -61,7 +61,7 @@ export class DefaultTokenBuilder implements TokenBuilder {
             .distinct(e => e.value).toArray()
             // Sort keywords by descending length
             .sort((a, b) => b.value.length - a.value.length)
-            .map(keyword => this.buildKeywordToken(keyword, terminalTokens, !!options?.caseInsensitive));
+            .map(keyword => this.buildKeywordToken(keyword, terminalTokens, Boolean(options?.caseInsensitive)));
     }
 
     protected buildKeywordToken(keyword: Keyword, terminalTokens: TokenType[], caseInsensitive: boolean): TokenType {

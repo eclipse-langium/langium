@@ -67,7 +67,7 @@ export class DefaultLanguageServer implements LanguageServer {
     protected buildInitializeResult(_params: InitializeParams): InitializeResult {
         const languages = this.services.ServiceRegistry.all;
         const hasFormattingService = this.hasService(e => e.lsp.Formatter);
-        const formattingOnTypeOptions = languages.map(e => e.lsp.Formatter?.formatOnTypeOptions).find(e => !!e);
+        const formattingOnTypeOptions = languages.map(e => e.lsp.Formatter?.formatOnTypeOptions).find(e => Boolean(e));
         const hasCodeActionProvider = this.hasService(e => e.lsp.CodeActionProvider);
         const hasSemanticTokensProvider = this.hasService(e => e.lsp.SemanticTokenProvider);
         const commandNames = this.services.lsp.ExecuteCommandHandler?.commands;
@@ -122,10 +122,10 @@ export class DefaultLanguageServer implements LanguageServer {
                     ? {}
                     : undefined,
                 documentLinkProvider: documentLinkProvider
-                    ? { resolveProvider: !!documentLinkProvider.resolveDocumentLink }
+                    ? { resolveProvider: Boolean(documentLinkProvider.resolveDocumentLink) }
                     : undefined,
                 codeLensProvider: codeLensProvider
-                    ? { resolveProvider: !!codeLensProvider.resolveCodeLens }
+                    ? { resolveProvider: Boolean(codeLensProvider.resolveCodeLens) }
                     : undefined,
                 declarationProvider: hasDeclarationProvider
             }

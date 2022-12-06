@@ -282,7 +282,7 @@ export class StreamImpl<S, T> implements Stream<T> {
 
     isEmpty(): boolean {
         const iterator = this.iterator();
-        return !!iterator.next().done;
+        return Boolean(iterator.next().done);
     }
 
     count(): number {

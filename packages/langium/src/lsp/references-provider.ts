@@ -7,7 +7,7 @@
 import { CancellationToken, Location,  ReferenceParams } from 'vscode-languageserver';
 import { NameProvider } from '../references/name-provider';
 import { References } from '../references/references';
-import { AstNode, isReference, LeafCstNode } from '../syntax-tree';
+import { LeafCstNode } from '../syntax-tree';
 import { LangiumServices } from '../services';
 import { findDeclarationNodeAtOffset } from '../utils/cst-util';
 import { MaybePromise } from '../utils/promise-util';
@@ -49,24 +49,18 @@ export class DefaultReferencesProvider implements ReferencesProvider {
             return [];
         }
 
-        const refs: Location[] = this.getReferences(selectedNode, params, document);
-
-        return refs;
+        return this.getReferences(selectedNode, params, document);
     }
 
-    protected getReferences(selectedNode: LeafCstNode, params: ReferenceParams, document: LangiumDocument<AstNode>): Location[] {
-        const refs: Location[] = [];
+    protected getReferences(selectedNode: LeafCstNode, params: ReferenceParams, _document: LangiumDocument): Location[] {
+        const locations: Location[] = [];
         const targetAstNode = this.references.findDeclaration(selectedNode);
         if (targetAstNode) {
             const options = { includeDeclaration: params.context.includeDeclaration };
             this.references.findReferences(targetAstNode, options).forEach(reference => {
-                if (isReference(reference) && reference.$refNode) {
-                    refs.push(Location.create(document.uri.toString(), reference.$refNode.range));
-                } else {
-                    refs.push(Location.create(reference.sourceUri.toString(), reference.segment.range));
-                }
+                locations.push(Location.create(reference.sourceUri.toString(), reference.segment.range));
             });
         }
-        return refs;
+        return locations;
     }
 }

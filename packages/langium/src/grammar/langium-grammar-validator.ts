@@ -295,7 +295,7 @@ export class LangiumGrammarValidator {
         for (const action of streamAllContents(grammar).filter(ast.isAction)) {
             const actionType = this.getActionType(action);
             if (actionType) {
-                const isInfers = !!action.inferredType;
+                const isInfers = Boolean(action.inferredType);
                 const typeName = getTypeName(action);
                 if (action.type && types.has(typeName) === isInfers) {
                     const keywordNode = isInfers ? findNodeForKeyword(action.$cstNode, 'infer') : findNodeForKeyword(action.$cstNode, '{');

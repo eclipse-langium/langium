@@ -337,7 +337,7 @@ export abstract class AbstractFormatter implements Formatter {
         } else if (lines !== undefined) {
             edits.push(this.createLineTextEdit(betweenRange, lines, context, formatting.options));
         } else if (tabs !== undefined) {
-            edits.push(this.createTabTextEdit(betweenRange, !!a, context));
+            edits.push(this.createTabTextEdit(betweenRange, Boolean(a), context));
         }
         if (isLeafCstNode(b)) {
             context.indentation = existingIndentation;

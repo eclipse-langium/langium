@@ -11,7 +11,7 @@ import { generatedHeader } from './util';
 
 export function generateModule(grammars: langium.Grammar[], config: LangiumConfig, grammarConfigMap: Map<langium.Grammar, LangiumLanguageConfig>): string {
     const parserConfig = config.chevrotainParserConfig;
-    const hasIParserConfigImport: boolean = !!parserConfig || grammars.some(grammar => grammarConfigMap.get(grammar)?.chevrotainParserConfig !== undefined);
+    const hasIParserConfigImport = Boolean(parserConfig) || grammars.some(grammar => grammarConfigMap.get(grammar)?.chevrotainParserConfig !== undefined);
     const node = new CompositeGeneratorNode();
 
     node.append(generatedHeader);
@@ -45,7 +45,7 @@ export function generateModule(grammars: langium.Grammar[], config: LangiumConfi
             node.indent(metaData => {
                 metaData.append(`languageId: '${config.id}',`, NL);
                 metaData.append(`fileExtensions: [${config.fileExtensions && config.fileExtensions.map(e => appendQuotesAndDot(e)).join(', ')}],`, NL);
-                metaData.append(`caseInsensitive: ${!!config.caseInsensitive}`, NL);
+                metaData.append(`caseInsensitive: ${Boolean(config.caseInsensitive)}`, NL);
             });
             node.append('};', NL, NL);
         }

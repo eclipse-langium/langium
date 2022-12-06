@@ -211,7 +211,7 @@ export interface CompositeCstNode extends CstNode {
 }
 
 export function isCompositeCstNode(node: unknown): node is CompositeCstNode {
-    return typeof node === 'object' && !!node && 'children' in node;
+    return typeof node === 'object' && node !== null && 'children' in node;
 }
 
 /**
@@ -222,7 +222,7 @@ export interface LeafCstNode extends CstNode {
 }
 
 export function isLeafCstNode(node: unknown): node is LeafCstNode {
-    return typeof node === 'object' && !!node && 'tokenType' in node;
+    return typeof node === 'object' && node !== null && 'tokenType' in node;
 }
 
 export interface RootCstNode extends CompositeCstNode {
