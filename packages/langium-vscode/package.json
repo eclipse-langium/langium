@@ -19,12 +19,18 @@
     "vscode": "^1.53.0"
   },
   "contributes": {
-    "languages": [{
-      "id": "langium",
-      "extensions": [ ".langium" ],
-      "aliases": [ "Langium" ],
-      "configuration": "./data/langium.configuration.json"
-    }],
+    "languages": [
+      {
+        "id": "langium",
+        "extensions": [
+          ".langium"
+        ],
+        "aliases": [
+          "Langium"
+        ],
+        "configuration": "./data/langium.configuration.json"
+      }
+    ],
     "grammars": [
       {
         "language": "langium",
@@ -65,7 +71,7 @@
   "dependencies": {
     "langium": "0.5.0",
     "vscode-languageserver": "^8.0.2",
-    "ignore":"~5.2.0"
+    "ignore": "~5.2.0"
   },
   "devDependencies": {
     "@types/vscode": "^1.53.0",
@@ -78,7 +84,7 @@
   },
   "bugs": "https://github.com/langium/langium/issues",
   "author": {
-      "name": "TypeFox",
-      "url": "https://www.typefox.io"
+    "name": "TypeFox",
+    "url": "https://www.typefox.io"
   }
 }
