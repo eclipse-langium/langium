@@ -147,7 +147,7 @@ function buildPredicate(condition: Condition): Predicate {
         const name = condition.parameter.ref!.name;
         return (args) => args !== undefined && args[name] === true;
     } else if (isLiteralCondition(condition)) {
-        const value = !!condition.true;
+        const value = Boolean(condition.true);
         return () => value;
     }
     assertUnreachable(condition);

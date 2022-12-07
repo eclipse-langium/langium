@@ -38,7 +38,7 @@ export function generateAst(services: LangiumServices, grammars: Grammar[], conf
 }
 
 function hasCrossReferences(grammar: Grammar): boolean {
-    return !!streamAllContents(grammar).find(GrammarAST.isCrossReference);
+    return Boolean(streamAllContents(grammar).find(GrammarAST.isCrossReference));
 }
 
 function generateAstReflection(config: LangiumConfig, astTypes: AstTypes): GeneratorNode {

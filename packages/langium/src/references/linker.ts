@@ -59,7 +59,7 @@ export interface Linker {
      * @param refText The cross reference text denoting the target AstNode
      * @returns the desired Reference node, whose behavior wrt. resolving the cross reference is implementation specific.
      */
-    buildReference(node: AstNode, property: string, refNode: CstNode, refText: string): Reference;
+    buildReference(node: AstNode, property: string, refNode: CstNode | undefined, refText: string): Reference;
 }
 
 interface DefaultReference extends Reference {
@@ -129,7 +129,7 @@ export class DefaultLinker implements Linker {
         return description ?? this.createLinkingError(refInfo);
     }
 
-    buildReference(node: AstNode, property: string, refNode: CstNode, refText: string): Reference {
+    buildReference(node: AstNode, property: string, refNode: CstNode | undefined, refText: string): Reference {
         // See behavior description in doc of Linker, update that on changes in here.
         // eslint-disable-next-line @typescript-eslint/no-this-alias
         const linker = this;

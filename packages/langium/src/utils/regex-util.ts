@@ -56,7 +56,7 @@ class CommentRegexVisitor extends BaseRegExpVisitor {
         if (!this.multiline) {
             const set = this.regex.substring(node.loc.begin, node.loc.end);
             const regex = new RegExp(set);
-            this.multiline = !!'\n'.match(regex);
+            this.multiline = Boolean('\n'.match(regex));
         }
         if (node.quantifier) {
             this.isStarting = false;
