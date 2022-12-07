@@ -157,6 +157,12 @@ export interface LangiumDocumentFactory {
     fromModel<T extends AstNode = AstNode>(model: T, uri: URI): LangiumDocument<T>;
 
     /**
+     * Create a Langium document for the given URI. The document shall be fetched from the {@link TextDocuments}
+     * service if present, and loaded via the configured {@link FileSystemProvider} otherwise.
+     */
+    create<T extends AstNode = AstNode>(uri: URI): LangiumDocument<T>
+
+    /**
      * Update the given document after changes in the corresponding textual representation.
      * Method is called by the document builder after it has been requested to build an exisiting
      * document and the document's state is {@link DocumentState.Changed}.
@@ -179,30 +185,35 @@ export class DefaultLangiumDocumentFactory implements LangiumDocumentFactory {
     }
 
     fromTextDocument<T extends AstNode = AstNode>(textDocument: TextDocument, uri?: URI): LangiumDocument<T> {
-        return this.create<T>(textDocument, undefined, undefined, uri);
+        return this.create<T>(uri ?? URI.parse(textDocument.uri), textDocument);
     }
 
     fromString<T extends AstNode = AstNode>(text: string, uri: URI): LangiumDocument<T> {
-        return this.create<T>(undefined, text, undefined, uri);
+        return this.create<T>(uri, text);
     }
 
     fromModel<T extends AstNode = AstNode>(model: T, uri: URI): LangiumDocument<T> {
-        return this.create<T>(undefined, undefined, model, uri);
+        return this.create<T>(uri, { $model: model });
     }
 
-    protected create<T extends AstNode>(textDocument: TextDocument | undefined, text: string | undefined, model: T | undefined, uri: URI | undefined): LangiumDocument<T> {
-        if (uri === undefined) {
-            uri = URI.parse(textDocument!.uri);
-        }
+    create<T extends AstNode = AstNode>(uri: URI, content?: string | TextDocument | { $model: T }): LangiumDocument<T> {
+        // if no document is given, check the textDocuments service first, it maintains documents being opened in an editor
+        content ??= this.textDocuments.get(uri.toString());
+        // if still no document is found try to load it from the file system
+        content ??= this.getContentFromFileSystem(uri);
 
-        let parseResult: ParseResult<T>;
-        if (model === undefined) {
-            parseResult = this.parse<T>(uri, text ?? textDocument!.getText());
+        if (typeof content === 'string') {
+            const parseResult = this.parse<T>(uri, content);
+            return this.createLangiumDocument<T>(parseResult, uri, undefined, content);
+
+        } else if ('$model' in content) {
+            const parseResult = { value: content.$model, parserErrors: [], lexerErrors: [] };
+            return this.createLangiumDocument<T>(parseResult, uri);
+
         } else {
-            parseResult = { value: model, parserErrors: [], lexerErrors: [] };
+            const parseResult = this.parse<T>(uri, content.getText());
+            return this.createLangiumDocument(parseResult, uri, content);
         }
-
-        return this.createLangiumDocument<T>(parseResult, uri, textDocument, text);
     }
 
     /**
@@ -244,7 +255,7 @@ export class DefaultLangiumDocumentFactory implements LangiumDocumentFactory {
 
     update<T extends AstNode = AstNode>(document: Mutable<LangiumDocument<T>>): LangiumDocument<T> {
         const textDocument = this.textDocuments.get(document.uri.toString());
-        const text = textDocument ? textDocument.getText() : this.getContent(document.uri);
+        const text = textDocument ? textDocument.getText() : this.getContentFromFileSystem(document.uri);
 
         if (textDocument) {
             Object.defineProperty(
@@ -267,8 +278,7 @@ export class DefaultLangiumDocumentFactory implements LangiumDocumentFactory {
         return document;
     }
 
-    /** Counterpart of {@link DefaultLangiumDocuments.getContent}. */
-    protected getContent(uri: URI): string {
+    protected getContentFromFileSystem(uri: URI): string {
         return this.fileSystemProvider.readFileSync(uri);
     }
 
@@ -336,15 +346,11 @@ export interface LangiumDocuments {
 
 export class DefaultLangiumDocuments implements LangiumDocuments {
 
-    protected readonly textDocuments: TextDocuments<TextDocument>;
-    protected readonly fileSystemProvider: FileSystemProvider;
     protected readonly langiumDocumentFactory: LangiumDocumentFactory;
 
     protected readonly documentMap: Map<string, LangiumDocument> = new Map();
 
     constructor(services: LangiumSharedServices) {
-        this.textDocuments = services.workspace.TextDocuments;
-        this.fileSystemProvider = services.workspace.FileSystemProvider;
         this.langiumDocumentFactory = services.workspace.LangiumDocumentFactory;
     }
 
@@ -367,20 +373,9 @@ export class DefaultLangiumDocuments implements LangiumDocuments {
             // The document is already present in our map
             return langiumDoc;
         }
-        const textDoc = this.textDocuments.get(uriString);
-        if (textDoc) {
-            // The document is managed by the TextDocuments service, which means it is opened in the editor
-            langiumDoc = this.langiumDocumentFactory.fromTextDocument(textDoc, uri);
-        } else {
-            // Load the document from file
-            langiumDoc = this.langiumDocumentFactory.fromString(this.getContent(uri), uri);
-        }
+        langiumDoc = this.langiumDocumentFactory.create(uri);
         this.documentMap.set(uriString, langiumDoc);
         return langiumDoc;
-    }
-
-    protected getContent(uri: URI): string {
-        return this.fileSystemProvider.readFileSync(uri);
     }
 
     hasDocument(uri: URI): boolean {
