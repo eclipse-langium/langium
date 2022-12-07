@@ -104,10 +104,12 @@ function mapGrammarElements(grammars: Grammar[], visited: Set<string> = new Set(
 
 function embedReferencedGrammar(grammar: Grammar, map: Map<Grammar, GrammarElement[]>): void {
     const allGrammars = resolveTransitiveImports(documents, grammar);
+    const linker = grammarServices.references.Linker;
+    const buildReference = linker.buildReference.bind(linker);
     for (const importedGrammar of allGrammars) {
         const grammarElements = map.get(importedGrammar) ?? [];
         for (const element of grammarElements) {
-            const copy = copyAstNode(element, grammarServices.references.Linker);
+            const copy = copyAstNode(element, buildReference);
             // Deactivate copied entry rule
             if (GrammarAST.isParserRule(copy)) {
                 copy.entry = false;

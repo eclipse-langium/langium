@@ -116,8 +116,6 @@ export class LangiumGrammarScopeComputation extends DefaultScopeComputation {
     /**
      * Add synthetic Interface in case of explicitly or implicitly inferred type:<br>
      * cases: `ParserRule: ...;` or `ParserRule infers Type: ...;`
-     * @param astNodeLocator AstNodeLocator
-     * @returns scope populator
      */
     protected processTypeNode(node: AstNode, document: LangiumDocument, scopes: PrecomputedScopes): void {
         const container = node.$container;

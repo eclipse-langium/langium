@@ -26,7 +26,7 @@ export const RequirementsGrammar = (): Grammar => loadedRequirementsGrammar ?? (
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "/rules@3"
+                "$ref": "#/rules@3"
               },
               "arguments": []
             },
@@ -39,7 +39,7 @@ export const RequirementsGrammar = (): Grammar => loadedRequirementsGrammar ?? (
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "/rules@1"
+                "$ref": "#/rules@1"
               },
               "arguments": []
             },
@@ -52,7 +52,7 @@ export const RequirementsGrammar = (): Grammar => loadedRequirementsGrammar ?? (
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "/rules@2"
+                "$ref": "#/rules@2"
               },
               "arguments": []
             },
@@ -83,7 +83,7 @@ export const RequirementsGrammar = (): Grammar => loadedRequirementsGrammar ?? (
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "/rules@5"
+                "$ref": "#/rules@5"
               },
               "arguments": []
             }
@@ -99,7 +99,7 @@ export const RequirementsGrammar = (): Grammar => loadedRequirementsGrammar ?? (
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "/rules@7"
+                "$ref": "#/rules@7"
               },
               "arguments": []
             }
@@ -130,7 +130,7 @@ export const RequirementsGrammar = (): Grammar => loadedRequirementsGrammar ?? (
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "/rules@5"
+                "$ref": "#/rules@5"
               },
               "arguments": []
             }
@@ -142,7 +142,7 @@ export const RequirementsGrammar = (): Grammar => loadedRequirementsGrammar ?? (
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "/rules@7"
+                "$ref": "#/rules@7"
               },
               "arguments": []
             }
@@ -165,7 +165,7 @@ export const RequirementsGrammar = (): Grammar => loadedRequirementsGrammar ?? (
                 "terminal": {
                   "$type": "CrossReference",
                   "type": {
-                    "$ref": "/rules@1"
+                    "$ref": "#/rules@1"
                   },
                   "deprecatedSyntax": false
                 }
@@ -184,7 +184,7 @@ export const RequirementsGrammar = (): Grammar => loadedRequirementsGrammar ?? (
                     "terminal": {
                       "$type": "CrossReference",
                       "type": {
-                        "$ref": "/rules@1"
+                        "$ref": "#/rules@1"
                       },
                       "deprecatedSyntax": false
                     }
@@ -225,7 +225,7 @@ export const RequirementsGrammar = (): Grammar => loadedRequirementsGrammar ?? (
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "/rules@7"
+                "$ref": "#/rules@7"
               },
               "arguments": []
             }
@@ -332,7 +332,7 @@ export const TestsGrammar = (): Grammar => loadedTestsGrammar ?? (loadedTestsGra
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "/rules@2"
+                "$ref": "#/rules@2"
               },
               "arguments": []
             },
@@ -345,7 +345,7 @@ export const TestsGrammar = (): Grammar => loadedTestsGrammar ?? (loadedTestsGra
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "/rules@1"
+                "$ref": "#/rules@1"
               },
               "arguments": []
             },
@@ -376,7 +376,7 @@ export const TestsGrammar = (): Grammar => loadedTestsGrammar ?? (loadedTestsGra
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "/rules@4"
+                "$ref": "#/rules@4"
               },
               "arguments": []
             }
@@ -399,7 +399,7 @@ export const TestsGrammar = (): Grammar => loadedTestsGrammar ?? (loadedTestsGra
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "/rules@6"
+                    "$ref": "#/rules@6"
                   },
                   "arguments": []
                 }
@@ -418,12 +418,12 @@ export const TestsGrammar = (): Grammar => loadedTestsGrammar ?? (loadedTestsGra
             "terminal": {
               "$type": "CrossReference",
               "type": {
-                "$ref": "/rules@11"
+                "$ref": "#/rules@11"
               },
               "terminal": {
                 "$type": "RuleCall",
                 "rule": {
-                  "$ref": "/rules@4"
+                  "$ref": "#/rules@4"
                 },
                 "arguments": []
               },
@@ -444,12 +444,12 @@ export const TestsGrammar = (): Grammar => loadedTestsGrammar ?? (loadedTestsGra
                 "terminal": {
                   "$type": "CrossReference",
                   "type": {
-                    "$ref": "/rules@11"
+                    "$ref": "#/rules@11"
                   },
                   "terminal": {
                     "$type": "RuleCall",
                     "rule": {
-                      "$ref": "/rules@4"
+                      "$ref": "#/rules@4"
                     },
                     "arguments": []
                   },
@@ -477,7 +477,7 @@ export const TestsGrammar = (): Grammar => loadedTestsGrammar ?? (loadedTestsGra
                 "terminal": {
                   "$type": "CrossReference",
                   "type": {
-                    "$ref": "/rules@10"
+                    "$ref": "#/rules@10"
                   },
                   "deprecatedSyntax": false
                 }
@@ -496,7 +496,7 @@ export const TestsGrammar = (): Grammar => loadedTestsGrammar ?? (loadedTestsGra
                     "terminal": {
                       "$type": "CrossReference",
                       "type": {
-                        "$ref": "/rules@10"
+                        "$ref": "#/rules@10"
                       },
                       "deprecatedSyntax": false
                     }
@@ -537,7 +537,7 @@ export const TestsGrammar = (): Grammar => loadedTestsGrammar ?? (loadedTestsGra
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "/rules@6"
+                "$ref": "#/rules@6"
               },
               "arguments": []
             }
@@ -629,7 +629,7 @@ export const TestsGrammar = (): Grammar => loadedTestsGrammar ?? (loadedTestsGra
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "/rules@2"
+                "$ref": "#/rules@2"
               },
               "arguments": []
             },
@@ -642,7 +642,7 @@ export const TestsGrammar = (): Grammar => loadedTestsGrammar ?? (loadedTestsGra
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "/rules@10"
+                "$ref": "#/rules@10"
               },
               "arguments": []
             },
@@ -655,7 +655,7 @@ export const TestsGrammar = (): Grammar => loadedTestsGrammar ?? (loadedTestsGra
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "/rules@11"
+                "$ref": "#/rules@11"
               },
               "arguments": []
             },
@@ -686,7 +686,7 @@ export const TestsGrammar = (): Grammar => loadedTestsGrammar ?? (loadedTestsGra
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "/rules@4"
+                "$ref": "#/rules@4"
               },
               "arguments": []
             }
@@ -702,7 +702,7 @@ export const TestsGrammar = (): Grammar => loadedTestsGrammar ?? (loadedTestsGra
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "/rules@6"
+                "$ref": "#/rules@6"
               },
               "arguments": []
             }
@@ -733,7 +733,7 @@ export const TestsGrammar = (): Grammar => loadedTestsGrammar ?? (loadedTestsGra
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "/rules@4"
+                "$ref": "#/rules@4"
               },
               "arguments": []
             }
@@ -745,7 +745,7 @@ export const TestsGrammar = (): Grammar => loadedTestsGrammar ?? (loadedTestsGra
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "/rules@6"
+                "$ref": "#/rules@6"
               },
               "arguments": []
             }
@@ -768,7 +768,7 @@ export const TestsGrammar = (): Grammar => loadedTestsGrammar ?? (loadedTestsGra
                 "terminal": {
                   "$type": "CrossReference",
                   "type": {
-                    "$ref": "/rules@10"
+                    "$ref": "#/rules@10"
                   },
                   "deprecatedSyntax": false
                 }
@@ -787,7 +787,7 @@ export const TestsGrammar = (): Grammar => loadedTestsGrammar ?? (loadedTestsGra
                     "terminal": {
                       "$type": "CrossReference",
                       "type": {
-                        "$ref": "/rules@10"
+                        "$ref": "#/rules@10"
                       },
                       "deprecatedSyntax": false
                     }
