@@ -50,7 +50,9 @@ describe('Test the domainmodel CLI', () => {
     });
 
     afterEach(() => {
-        fs.rmdirSync(destination, { recursive: true });
+        if (fs.existsSync(destination)) {
+            fs.rmdirSync(destination, { recursive: true });
+        }
     });
 
 });
