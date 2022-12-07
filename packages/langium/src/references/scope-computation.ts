@@ -50,11 +50,6 @@ export interface ScopeComputation {
      */
     computeLocalScopes(document: LangiumDocument, cancelToken?: CancellationToken): Promise<PrecomputedScopes>;
 
-    /**
-     * @deprecated This method has been renamed to `computeLocalScopes`.
-     */
-    computeScope(document: LangiumDocument, cancelToken?: CancellationToken): never
-
 }
 
 /**
@@ -140,13 +135,6 @@ export class DefaultScopeComputation implements ScopeComputation {
                 scopes.add(container, this.descriptions.createDescription(node, name, document));
             }
         }
-    }
-
-    /**
-     * @deprecated This method has been renamed to `computeLocalScopes`.
-     */
-    computeScope(): never {
-        throw new Error('Deprecated: This method has been renamed to `computeLocalScopes`.');
     }
 
 }
