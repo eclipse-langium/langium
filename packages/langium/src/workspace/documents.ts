@@ -98,42 +98,6 @@ export interface DocumentSegment {
 }
 
 /**
- * Shared service for creating `TextDocument` instances.
- * @deprecated This service is no longer necessary and will be removed.
- */
-export interface TextDocumentFactory {
-    /**
-     * Creates a `TextDocument` from a given `URI`.
-     */
-    fromUri(uri: URI): TextDocument;
-}
-
-/**
- * @deprecated This service implementation is no longer necessary and will be removed.
- */
-export class DefaultTextDocumentFactory implements TextDocumentFactory {
-
-    protected readonly serviceRegistry: ServiceRegistry;
-    protected readonly fileSystemProvider: FileSystemProvider;
-
-    constructor(services: LangiumSharedServices) {
-        this.serviceRegistry = services.ServiceRegistry;
-        this.fileSystemProvider = services.workspace.FileSystemProvider;
-    }
-
-    fromUri(uri: URI): TextDocument {
-        const content = this.getContent(uri);
-        const services = this.serviceRegistry.getServices(uri);
-        return TextDocument.create(uri.toString(), services.LanguageMetaData.languageId, 0, content);
-    }
-
-    protected getContent(uri: URI): string {
-        return this.fileSystemProvider.readFileSync(uri);
-    }
-
-}
-
-/**
  * Shared service for creating `LangiumDocument` instances.
  *
  * Register a custom implementation if special (additional) behavior is required for your language(s).

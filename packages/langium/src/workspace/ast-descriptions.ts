@@ -32,11 +32,6 @@ export interface AstNodeDescriptionProvider {
      */
     createDescription(node: AstNode, name: string, document?: LangiumDocument): AstNodeDescription;
 
-    /**
-     * @deprecated This method has been moved to the `ScopeComputation` service and renamed to `computeExports`.
-     */
-    createDescriptions(document: LangiumDocument, cancelToken?: CancellationToken): never;
-
 }
 
 export class DefaultAstNodeDescriptionProvider implements AstNodeDescriptionProvider {
@@ -55,13 +50,6 @@ export class DefaultAstNodeDescriptionProvider implements AstNodeDescriptionProv
             documentUri: document.uri,
             path: this.astNodeLocator.getAstNodePath(node)
         };
-    }
-
-    /**
-     * @deprecated This method has been moved to the `ScopeComputation` service and renamed to `computeExports`.
-     */
-    createDescriptions(): never {
-        throw new Error('Deprecated: This method has been moved to the `ScopeComputation` service and renamed to `computeExports`.');
     }
 
 }
