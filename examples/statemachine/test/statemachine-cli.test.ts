@@ -24,7 +24,9 @@ describe('Test the statemachine CLI', () => {
     });
 
     afterAll(() => {
-        fs.rmdirSync(destination, { recursive: true });
+        if (fs.existsSync(destination)) {
+            fs.rmdirSync(destination, { recursive: true });
+        }
     });
 
 });
