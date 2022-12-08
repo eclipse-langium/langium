@@ -14,12 +14,10 @@ describe('Types generator', () => {
 
     test('should generate types file', async () => {
         const result = (await parseHelper<Grammar>(grammar)(TEST_GRAMMAR)).parseResult;
-        const typesFileContent = generateTypesFile(grammar, [result.value]);
-        let expectedTypes = EXPECTED_TYPES;
-        if (process.platform === 'win32') {
-            expectedTypes = EXPECTED_TYPES.replaceAll('\n', '\r\n');
-        }
-        expect(typesFileContent).toMatch(expectedTypes);
+        // on Windows system the line ending of result is "\r\n"
+        // Therefore typesFileContent is normalized to prevent false negatives
+        const typesFileContent = generateTypesFile(grammar, [result.value]).replace(/\r/g, '');
+        expect(typesFileContent).toMatch(EXPECTED_TYPES);
     });
 
 });
