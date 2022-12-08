@@ -15,7 +15,11 @@ describe('Types generator', () => {
     test('should generate types file', async () => {
         const result = (await parseHelper<Grammar>(grammar)(TEST_GRAMMAR)).parseResult;
         const typesFileContent = generateTypesFile(grammar, [result.value]);
-        expect(typesFileContent).toMatch(EXPECTED_TYPES);
+        let expectedTypes = EXPECTED_TYPES;
+        if (process.platform === 'win32') {
+            expectedTypes = EXPECTED_TYPES.replaceAll('\n', '\r\n');
+        }
+        expect(typesFileContent).toMatch(expectedTypes);
     });
 
 });
