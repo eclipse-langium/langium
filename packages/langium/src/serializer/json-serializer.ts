@@ -71,48 +71,6 @@ export class DefaultJsonSerializer implements JsonSerializer {
         return value;
     }
 
-    protected decycle(object: AstNode, ignore: Set<string>): unknown {
-        const objects = new Set<unknown>(); // Keep references to each unique object
-
-        const replace = (item: unknown) => {
-            // The replace function recurses through the object, producing the deep copy.
-            if (typeof item === 'object' && item !== null) {
-                if (objects.has(item)) {
-                    throw new Error('Cycle in ast detected.');
-                } else {
-                    objects.add(item);
-                }
-                // If it is a reference, transform it into a path
-                if (isReference(item)) {
-                    const refValue = item.ref;
-                    return {
-                        $ref: refValue && this.astNodeLocator.getAstNodePath(refValue)
-                    };
-                }
-                let newItem: Record<string, unknown> | unknown[];
-                // If it is an array, replicate the array.
-                if (Array.isArray(item)) {
-                    newItem = [];
-                    for (let i = 0; i < item.length; i++) {
-                        newItem[i] = replace(item[i]);
-                    }
-                } else {
-                    // If it is an object, replicate the object.
-                    newItem = {};
-                    for (const [name, itemValue] of Object.entries(item)) {
-                        if (!ignore.has(name)) {
-                            newItem[name] = replace(itemValue);
-                        }
-                    }
-                }
-                return newItem;
-            }
-            return item;
-        };
-        const result = replace(object);
-        return result;
-    }
-
     protected linkNode(node: GenericAstNode, root: AstNode, container?: AstNode, containerProperty?: string, containerIndex?: number) {
         for (const [propertyName, item] of Object.entries(node)) {
             if (Array.isArray(item)) {
