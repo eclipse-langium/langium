@@ -7,7 +7,7 @@
   },
   "scripts": {
     "prepare": "npm run clean && npm run build && npm run build --workspace=langium-vscode",
-    "clean": "shx rm -rf packages/**/lib packages/**/tsconfig.tsbuildinfo",
+    "clean": "shx rm -rf packages/**/lib packages/**/out packages/**/tsconfig.tsbuildinfo",
     "build": "tsc -b tsconfig.build.json",
     "watch": "tsc -b tsconfig.build.json -w",
     "lint": "npm run lint --workspaces",
@@ -30,6 +30,10 @@
     "shx": "^0.3.4",
     "typescript": "^4.7.4",
     "vitest": "^0.23.2"
+  },
+  "volta": {
+    "node": "16.18.1",
+    "npm": "8.19.3"
   },
   "workspaces": [
     "packages/*",
