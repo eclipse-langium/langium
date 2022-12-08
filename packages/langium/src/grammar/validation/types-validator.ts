@@ -48,7 +48,6 @@ export class LangiumGrammarTypesValidator {
 
 function validateInterfaceSuperTypes(
     { declared, declaredNode }: { declared: InterfaceType, declaredNode: ast.Interface },
-    // todo remove after adding the type graph
     validationInfo: TypeToValidationInfo,
     accept: ValidationAcceptor): void {
 
