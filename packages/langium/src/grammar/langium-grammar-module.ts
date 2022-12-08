@@ -9,7 +9,7 @@ import { inject, Module } from '../dependency-injection';
 import { LangiumServices, LangiumSharedServices, PartialLangiumServices, PartialLangiumSharedServices } from '../services';
 import { LangiumGrammarGeneratedModule, LangiumGrammarGeneratedSharedModule } from './generated/module';
 import { LangiumGrammarScopeComputation, LangiumGrammarScopeProvider } from './references/grammar-scope';
-import { LangiumGrammarValidationRegistry, LangiumGrammarValidator } from './validation/langium-grammar-validator';
+import { LangiumGrammarValidationRegistry, LangiumGrammarValidator } from './validation/validator';
 import { LangiumGrammarCodeActionProvider } from './lsp/grammar-code-actions';
 import { LangiumGrammarFoldingRangeProvider } from './lsp/grammar-folding-ranges';
 import { LangiumGrammarFormatter } from './lsp/grammar-formatter';
@@ -19,12 +19,12 @@ import { LangiumGrammarReferences } from './references/grammar-references';
 import { LangiumGrammarDefinitionProvider } from './lsp/grammar-definition';
 import { LangiumGrammarCallHierarchyProvider } from './lsp/grammar-call-hierarchy';
 import { LangiumGrammarDocumentBuilder } from './workspace/document-builder';
-import { LangiumGrammarTypeCollector } from './validation/type-collector';
+import { LangiumGrammarValidationResourcesCollector } from './validation/validation-resources-collector';
 
 export type LangiumGrammarAddedServices = {
     validation: {
         LangiumGrammarValidator: LangiumGrammarValidator,
-        TypeCollector: LangiumGrammarTypeCollector,
+        TypeCollector: LangiumGrammarValidationResourcesCollector,
     }
 }
 
@@ -34,7 +34,7 @@ export const LangiumGrammarModule: Module<LangiumGrammarServices, PartialLangium
     validation: {
         ValidationRegistry: (services) => new LangiumGrammarValidationRegistry(services),
         LangiumGrammarValidator: (services) => new LangiumGrammarValidator(services),
-        TypeCollector: () => new LangiumGrammarTypeCollector(),
+        TypeCollector: () => new LangiumGrammarValidationResourcesCollector(),
     },
     lsp: {
         FoldingRangeProvider: (services) => new LangiumGrammarFoldingRangeProvider(services),

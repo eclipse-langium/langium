@@ -21,7 +21,7 @@ import { DocumentValidator, LinkingErrorData } from '../../validation/document-v
 import { DocumentSegment, LangiumDocument } from '../../workspace/documents';
 import { IndexManager } from '../../workspace/index-manager';
 import * as ast from '../generated/ast';
-import { IssueCodes } from '../validation/langium-grammar-validator';
+import { IssueCodes } from '../validation/validator';
 
 export class LangiumGrammarCodeActionProvider implements CodeActionProvider {
 

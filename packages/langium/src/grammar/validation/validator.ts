@@ -464,11 +464,10 @@ export class LangiumGrammarValidator {
     checkSuperPropertiesConsistency(grammar: ast.Grammar, accept: ValidationAcceptor): void {
         const document = grammar.$document as LangiumGrammarDocument;
         const validationResources = document?.validationResources;
-        const typeToItsSuperProperties = document?.typeToItsSuperProperties ?? new Map();
         if (validationResources) {
-            for (const typeInfo of validationResources.values()) {
+            for (const typeInfo of validationResources.typeToValidationInfo.values()) {
                 if (isDeclared(typeInfo)) {
-                    validateDeclaredConsistency(typeInfo, typeToItsSuperProperties, accept);
+                    validateDeclaredConsistency(typeInfo, validationResources.typeToSuperProperties, accept);
                 }
             }
         }
@@ -478,7 +477,7 @@ export class LangiumGrammarValidator {
         const document = grammar.$document as LangiumGrammarDocument;
         const validationResources = document?.validationResources;
         if (validationResources) {
-            for (const typeInfo of validationResources.values()) {
+            for (const typeInfo of validationResources.typeToValidationInfo.values()) {
                 if (isInferredAndDeclared(typeInfo)) {
                     validateDeclaredAndInferredConsistency(typeInfo, accept);
                 }

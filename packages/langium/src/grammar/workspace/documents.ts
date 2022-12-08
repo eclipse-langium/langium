@@ -13,11 +13,15 @@ import { InterfaceType, Property, UnionType } from '../type-system/types-util';
  * from the AST, e.g. the result of scope precomputation.
  */
 export interface LangiumGrammarDocument extends LangiumDocument<Grammar> {
-    validationResources?: ValidationResources;
-    typeToItsSuperProperties?: Map<string, Property[]>;
+    validationResources?: ValidationResources
 }
 
-export type ValidationResources = Map<string, InferredInfo | DeclaredInfo | InferredInfo & DeclaredInfo>;
+export type ValidationResources = {
+    typeToValidationInfo: TypeToValidationInfo,
+    typeToSuperProperties: Map<string, Property[]>,
+}
+
+export type TypeToValidationInfo = Map<string, InferredInfo | DeclaredInfo | InferredInfo & DeclaredInfo>;
 
 export type TypeOption = UnionType | InterfaceType;
 

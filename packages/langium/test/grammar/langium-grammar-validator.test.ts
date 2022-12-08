@@ -7,7 +7,7 @@
 import { AstNode, createLangiumGrammarServices, EmptyFileSystem, Properties, streamAllContents, GrammarAST } from '../../src';
 import { clearDocuments, expectError, expectIssue, expectNoIssues, expectWarning, parseHelper, validationHelper, ValidationResult } from '../../src/test';
 import { DiagnosticSeverity } from 'vscode-languageserver';
-import { IssueCodes } from '../../src/grammar/validation/langium-grammar-validator';
+import { IssueCodes } from '../../src/grammar/validation/validator';
 
 const services = createLangiumGrammarServices(EmptyFileSystem);
 const parse = parseHelper(services.grammar);
