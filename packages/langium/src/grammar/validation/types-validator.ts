@@ -4,20 +4,74 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { Interface, InferredType, ParserRule, Action, isAction, Assignment, TypeAttribute, isAssignment, isParserRule } from '../generated/ast';
+import * as ast from '../generated/ast';
 import { MultiMap } from '../../utils/collections';
-import { Property, PropertyType, distinctAndSorted, propertyTypeArrayToString } from './types-util';
+import { Property, PropertyType, distinctAndSorted, propertyTypeArrayToString, InterfaceType } from '../type-system/types-util';
 import { DiagnosticInfo, ValidationAcceptor } from '../../validation/validation-registry';
 import { extractAssignments } from '../internal-grammar-util';
-import { DeclaredInfo, InferredInfo, isInterfaceType, isUnionType } from '../workspace/documents';
+import { DeclaredInfo, InferredInfo, isDeclared, isInferred, isInferredAndDeclared, isInterfaceType, isUnionType, LangiumGrammarDocument, TypeToValidationInfo } from '../workspace/documents';
 
-export function validateDeclaredConsistency(declaredInfo: DeclaredInfo, properties: Map<string, Property[]>, accept: ValidationAcceptor): void {
-    const declaredType = declaredInfo.declared;
-    if (!isInterfaceType(declaredType)) {
-        return;
+export class LangiumGrammarTypesValidator {
+
+    checkDeclaredTypesConsistency(grammar: ast.Grammar, accept: ValidationAcceptor): void {
+        const validationResources = (grammar.$document as LangiumGrammarDocument)?.validationResources;
+        if (validationResources) {
+            for (const typeInfo of validationResources.typeToValidationInfo.values()) {
+                if (isDeclared(typeInfo) && isInterfaceType(typeInfo.declared) && ast.isInterface(typeInfo.declaredNode)) {
+                    const declInterface = typeInfo as { declared: InterfaceType, declaredNode: ast.Interface };
+                    validateInterfaceSuperTypes(declInterface, validationResources.typeToValidationInfo, accept);
+                    validateSuperTypesConsistency(declInterface, validationResources.typeToSuperProperties, accept);
+                }
+            }
+        }
     }
 
-    const nameToProp = declaredType.properties.reduce((acc, e) => acc.add(e.name, e), new MultiMap<string, Property>());
+    checkDeclaredAndInferredTypesConsistency(grammar: ast.Grammar, accept: ValidationAcceptor): void {
+        const validationResources = (grammar.$document as LangiumGrammarDocument)?.validationResources;
+        if (validationResources) {
+            for (const typeInfo of validationResources.typeToValidationInfo.values()) {
+                if (isInferredAndDeclared(typeInfo)) {
+                    validateDeclaredAndInferredConsistency(typeInfo, accept);
+                }
+            }
+        }
+    }
+
+    checkActionIsNotUnionType(action: ast.Action, accept: ValidationAcceptor): void {
+        if (ast.isType(action.type)) {
+            accept('error', 'Actions cannot create union types.', { node: action, property: 'type' });
+        }
+    }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+function validateInterfaceSuperTypes(
+    { declared, declaredNode }: { declared: InterfaceType, declaredNode: ast.Interface },
+    // todo remove after adding the type graph
+    validationInfo: TypeToValidationInfo,
+    accept: ValidationAcceptor): void {
+
+    declared.printingSuperTypes.forEach((superTypeName, i) => {
+        const superType = validationInfo.get(superTypeName);
+        if (superType) {
+            if (isInferred(superType) && isUnionType(superType.inferred) || isDeclared(superType) && isUnionType(superType.declared)) {
+                accept('error', 'Interfaces cannot extend union types.', { node: declaredNode, property: 'superTypes', index: i });
+            }
+            if (isInferred(superType)) {
+                accept('warning', 'Extending an interface by a parser rule gives an ambiguous type, instead of the expected declared type.', { node: declaredNode, property: 'superTypes', index: i });
+            }
+        }
+    });
+}
+
+function validateSuperTypesConsistency(
+    { declared, declaredNode }: { declared: InterfaceType, declaredNode: ast.Interface},
+    // todo remove after adding the type graph
+    properties: Map<string, Property[]>,
+    accept: ValidationAcceptor): void {
+
+    const nameToProp = declared.properties.reduce((acc, e) => acc.add(e.name, e), new MultiMap<string, Property>());
     for (const [name, props] of nameToProp.entriesGroupedByKey()) {
         if (props.length > 1) {
             for (const prop of props) {
@@ -29,7 +83,7 @@ export function validateDeclaredConsistency(declaredInfo: DeclaredInfo, properti
         }
     }
 
-    const allSuperTypes = declaredType.printingSuperTypes;
+    const allSuperTypes = declared.printingSuperTypes;
     for (let i = 0; i < allSuperTypes.length; i++) {
         for (let j = i + 1; j < allSuperTypes.length; j++) {
             const outerType = allSuperTypes[i];
@@ -39,7 +93,7 @@ export function validateDeclaredConsistency(declaredInfo: DeclaredInfo, properti
             const nonIdentical = getNonIdenticalProps(outerProps, innerProps);
             if (nonIdentical.length > 0) {
                 accept('error', `Cannot simultaneously inherit from '${outerType}' and '${innerType}'. Their ${nonIdentical.map(e => "'" + e + "'").join(', ')} properties are not identical.`, {
-                    node: declaredInfo.declaredNode,
+                    node: declaredNode,
                     property: 'name'
                 });
             }
@@ -52,9 +106,9 @@ export function validateDeclaredConsistency(declaredInfo: DeclaredInfo, properti
             allSuperProps.add(prop.name);
         }
     }
-    for (const ownProp of declaredType.properties) {
+    for (const ownProp of declared.properties) {
         if (allSuperProps.has(ownProp.name)) {
-            const interfaceNode = declaredInfo.declaredNode as Interface;
+            const interfaceNode = declaredNode as ast.Interface;
             const propNode = interfaceNode.attributes.find(e => e.name === ownProp.name);
             if (propNode) {
                 accept('error', `Cannot redeclare property '${ownProp.name}'. It is already inherited from another interface.`, {
@@ -95,27 +149,27 @@ function arePropTypesIdentical(a: Property, b: Property): boolean {
 
 ///////////////////////////////////////////////////////////////////////////////
 
-export function validateDeclaredAndInferredConsistency(typeInfo: InferredInfo & DeclaredInfo, accept: ValidationAcceptor) {
+function validateDeclaredAndInferredConsistency(typeInfo: InferredInfo & DeclaredInfo, accept: ValidationAcceptor) {
     const { inferred, declared, declaredNode, inferredNodes } = typeInfo;
     const typeName = declared.name;
 
     const applyErrorToRulesAndActions = (msgPostfix='') => (errorMsg: string) =>
         inferredNodes.forEach(node => accept('error', errorMsg + msgPostfix,
             (node?.inferredType) ?
-                <DiagnosticInfo<InferredType, string>>{ node: node?.inferredType, property: 'name' } :
-                <DiagnosticInfo<ParserRule | Action | InferredType, string>>{ node, property: isAction(node) ? 'type' : 'name' }
+                <DiagnosticInfo<ast.InferredType, string>>{ node: node?.inferredType, property: 'name' } :
+                <DiagnosticInfo<ast.ParserRule | ast.Action | ast.InferredType, string>>{ node, property: ast.isAction(node) ? 'type' : 'name' }
         ));
 
-    const applyErrorToProperties = (nodes: Set<Assignment | Action | TypeAttribute>, errorMessage: string) =>
+    const applyErrorToProperties = (nodes: Set<ast.Assignment | ast.Action | ast.TypeAttribute>, errorMessage: string) =>
         nodes.forEach(node =>
-            accept('error', errorMessage, { node, property: isAssignment(node) || isAction(node) ? 'feature' : 'name' })
+            accept('error', errorMessage, { node, property: ast.isAssignment(node) || ast.isAction(node) ? 'feature' : 'name' })
         );
 
     // todo add actions
     // currently we don't track which assignments belong to which actions and can't apply this error
     const applyMissingPropErrorToRules = (missingProp: string) => {
         inferredNodes.forEach(node => {
-            if (isParserRule(node)) {
+            if (ast.isParserRule(node)) {
                 const assignments = extractAssignments(node.definition);
                 if (assignments.find(e => e.feature === missingProp) === undefined) {
                     accept('error',
@@ -188,7 +242,7 @@ function checkAlternativesConsistencyHelper(found: PropertyType[], expected: Pro
 
 function validatePropertiesConsistency(inferred: MultiMap<string, Property>, declared: MultiMap<string, Property>,
     applyErrorToType: (errorMessage: string) => void,
-    applyErrorToProperties: (nodes: Set<Assignment | Action | TypeAttribute>, errorMessage: string) => void,
+    applyErrorToProperties: (nodes: Set<ast.Assignment | ast.Action | ast.TypeAttribute>, errorMessage: string) => void,
     applyMissingPropErrorToRules: (missingProp: string) => void
 ) {
     const areBothNotArrays = (found: Property, expected: Property) =>

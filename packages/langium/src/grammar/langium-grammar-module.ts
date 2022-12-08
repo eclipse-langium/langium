@@ -20,11 +20,13 @@ import { LangiumGrammarDefinitionProvider } from './lsp/grammar-definition';
 import { LangiumGrammarCallHierarchyProvider } from './lsp/grammar-call-hierarchy';
 import { LangiumGrammarDocumentBuilder } from './workspace/document-builder';
 import { LangiumGrammarValidationResourcesCollector } from './validation/validation-resources-collector';
+import { LangiumGrammarTypesValidator } from './validation/types-validator';
 
 export type LangiumGrammarAddedServices = {
     validation: {
         LangiumGrammarValidator: LangiumGrammarValidator,
-        TypeCollector: LangiumGrammarValidationResourcesCollector,
+        ValidationResourcesCollector: LangiumGrammarValidationResourcesCollector,
+        LangiumGrammarTypesValidator: LangiumGrammarTypesValidator,
     }
 }
 
@@ -34,7 +36,8 @@ export const LangiumGrammarModule: Module<LangiumGrammarServices, PartialLangium
     validation: {
         ValidationRegistry: (services) => new LangiumGrammarValidationRegistry(services),
         LangiumGrammarValidator: (services) => new LangiumGrammarValidator(services),
-        TypeCollector: () => new LangiumGrammarValidationResourcesCollector(),
+        ValidationResourcesCollector: () => new LangiumGrammarValidationResourcesCollector(),
+        LangiumGrammarTypesValidator: () => new LangiumGrammarTypesValidator(),
     },
     lsp: {
         FoldingRangeProvider: (services) => new LangiumGrammarFoldingRangeProvider(services),

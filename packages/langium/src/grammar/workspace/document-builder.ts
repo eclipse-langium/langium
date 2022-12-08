@@ -23,7 +23,7 @@ export class LangiumGrammarDocumentBuilder extends DefaultDocumentBuilder {
             documents.forEach(async document => {
                 await interruptAndCheck(cancelToken);
                 const services = this.serviceRegistry.getServices(document.uri) as LangiumGrammarServices;
-                const typeCollector = services.validation.TypeCollector;
+                const typeCollector = services.validation.ValidationResourcesCollector;
                 const grammar = document.parseResult.value as Grammar;
                 (document as LangiumGrammarDocument).validationResources = typeCollector.collectValidationResources(super.langiumDocuments, grammar);
             });

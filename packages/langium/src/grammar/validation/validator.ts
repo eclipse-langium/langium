@@ -19,17 +19,16 @@ import * as ast from '../generated/ast';
 import { isParserRule, isRuleCall } from '../generated/ast';
 import { getTypeName, isDataTypeRule, isOptionalCardinality, resolveImport, resolveTransitiveImports, terminalRegex } from '../internal-grammar-util';
 import type { LangiumGrammarServices } from '../langium-grammar-module';
-import { validateDeclaredAndInferredConsistency, validateDeclaredConsistency } from '../type-system/type-validator';
-import { isDeclared, isInferredAndDeclared, LangiumGrammarDocument } from '../workspace/documents';
 
 export class LangiumGrammarValidationRegistry extends ValidationRegistry {
     constructor(services: LangiumGrammarServices) {
         super(services);
         const validator = services.validation.LangiumGrammarValidator;
+        const typesValidator = services.validation.LangiumGrammarTypesValidator;
         const checks: ValidationChecks<ast.LangiumGrammarAstType> = {
             Action: [
-                validator.checkActionTypeUnions,
-                validator.checkAssignmentReservedName
+                validator.checkAssignmentReservedName,
+                typesValidator.checkActionIsNotUnionType,
             ],
             AbstractRule: validator.checkRuleName,
             Assignment: [
@@ -59,11 +58,10 @@ export class LangiumGrammarValidationRegistry extends ValidationRegistry {
                 validator.checkDuplicateImportedGrammar,
                 validator.checkGrammarHiddenTokens,
                 validator.checkGrammarForUnusedRules,
-                validator.checkGrammarTypeUnions,
                 validator.checkGrammarTypeInfer,
                 validator.checkClashingTerminalNames,
-                validator.checkSuperPropertiesConsistency,
-                validator.checkConsistencyWithInferredType,
+                typesValidator.checkDeclaredTypesConsistency,
+                typesValidator.checkDeclaredAndInferredTypesConsistency,
             ],
             GrammarImport: validator.checkPackageImport,
             CharacterRange: validator.checkInvalidCharacterRange,
@@ -423,65 +421,6 @@ export class LangiumGrammarValidator {
             accept('error', 'Import cannot be resolved.', { node: imp, property: 'path' });
         } else if (imp.path.endsWith('.langium')) {
             accept('warning', 'Imports do not need file extensions.', { node: imp, property: 'path', code: IssueCodes.UnnecessaryFileExtension });
-        }
-    }
-
-    checkGrammarTypeUnions(grammar: ast.Grammar, accept: ValidationAcceptor): void {
-        for (const rule of grammar.rules) {
-            if (ast.isParserRule(rule) && ast.isType(rule.returnType)) {
-                accept('error', 'Rules are not allowed to return union types.', { node: rule, property: 'returnType' });
-            }
-        }
-
-        for (const interfaceType of grammar.interfaces) {
-            interfaceType.superTypes.forEach((superType, i) => {
-                if (superType.ref && ast.isType(superType.ref)) {
-                    accept('error', 'Interfaces cannot extend union types.', { node: interfaceType, property: 'superTypes', index: i });
-                }
-                // TODO: needs to be reimplemented once the type system has been refactored
-                // else if(superType.ref && ast.isParserRule(superType.ref)) {
-                //     // collect just the beginning of whatever inferred types this standalone rule produces
-                //     // looking to exclude anything that would be a union down the line
-                //     const inferred = collectInferredTypes([superType.ref as ast.ParserRule], []);
-                //     if(inferred.unions.length > 0) {
-                //         // inferred union type also cannot be extended
-                //         accept('error', `An interface cannot extend a union type, which was inferred from parser rule ${superType.ref.name}.`, { node: interfaceType, property: 'superTypes', index: i });
-                //     } else {
-                //         // otherwise we'll allow it, but issue a warning against basing declared off of inferred types
-                //         accept('warning', 'Extending an interface by a parser rule gives an ambiguous type, instead of the expected declared type.', { node: interfaceType, property: 'superTypes', index: i });
-                //     }
-                // }
-            });
-        }
-    }
-
-    checkActionTypeUnions(action: ast.Action, accept: ValidationAcceptor): void {
-        if (ast.isType(action.type)) {
-            accept('error', 'Actions cannot create union types.', { node: action, property: 'type' });
-        }
-    }
-
-    checkSuperPropertiesConsistency(grammar: ast.Grammar, accept: ValidationAcceptor): void {
-        const document = grammar.$document as LangiumGrammarDocument;
-        const validationResources = document?.validationResources;
-        if (validationResources) {
-            for (const typeInfo of validationResources.typeToValidationInfo.values()) {
-                if (isDeclared(typeInfo)) {
-                    validateDeclaredConsistency(typeInfo, validationResources.typeToSuperProperties, accept);
-                }
-            }
-        }
-    }
-
-    checkConsistencyWithInferredType(grammar: ast.Grammar, accept: ValidationAcceptor): void {
-        const document = grammar.$document as LangiumGrammarDocument;
-        const validationResources = document?.validationResources;
-        if (validationResources) {
-            for (const typeInfo of validationResources.typeToValidationInfo.values()) {
-                if (isInferredAndDeclared(typeInfo)) {
-                    validateDeclaredAndInferredConsistency(typeInfo, accept);
-                }
-            }
         }
     }
 
