@@ -409,7 +409,7 @@ export function isType(item: unknown): item is Type {
 export interface TypeAttribute extends AstNode {
     readonly $container: Interface;
     isOptional: boolean
-    name: string
+    name: FeatureName
     typeAlternatives: Array<AtomType>
 }
 
