@@ -4,8 +4,9 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import { NameProvider } from '../references/name-provider';
 import { LangiumServices } from '../services';
-import { AstNode, GenericAstNode, isAstNode, isReference } from '../syntax-tree';
+import { AstNode, GenericAstNode, isAstNode, isReference, Reference } from '../syntax-tree';
 import { Mutable } from '../utils/ast-util';
 import { AstNodeLocator } from '../workspace/ast-node-locator';
 
@@ -32,20 +33,23 @@ export interface JsonSerializer {
 
 interface IntermediateReference {
     $refText?: string
-    $ref: string
+    $ref?: string
+    $error?: string
 }
 
 function isIntermediateReference(obj: unknown): obj is IntermediateReference {
-    return typeof obj === 'object' && !!obj && '$ref' in obj;
+    return typeof obj === 'object' && !!obj && ('$ref' in obj || '$error' in obj);
 }
 
 export class DefaultJsonSerializer implements JsonSerializer {
 
     protected ignoreProperties = new Set(['$container', '$containerProperty', '$containerIndex', '$document', '$cstNode']);
     protected readonly astNodeLocator: AstNodeLocator;
+    protected readonly nameProvider: NameProvider;
 
     constructor(services: LangiumServices) {
         this.astNodeLocator = services.workspace.AstNodeLocator;
+        this.nameProvider = services.references.NameProvider;
     }
 
     serialize(node: AstNode, options?: JsonSerializeOptions): string {
@@ -63,10 +67,18 @@ export class DefaultJsonSerializer implements JsonSerializer {
             return undefined;
         } else if (isReference(value)) {
             const refValue = value.ref;
-            return {
-                $refText: refText ? value.$refText : undefined,
-                $ref: '#' + (refValue && this.astNodeLocator.getAstNodePath(refValue))
-            };
+            const $refText = refText ? value.$refText : undefined;
+            if (refValue) {
+                return {
+                    $refText,
+                    $ref: '#' + (refValue && this.astNodeLocator.getAstNodePath(refValue))
+                };
+            } else {
+                return {
+                    $refText,
+                    $error: value.error?.message ?? 'Could not resolve reference'
+                };
+            }
         }
         return value;
     }
@@ -77,19 +89,13 @@ export class DefaultJsonSerializer implements JsonSerializer {
                 for (let index = 0; index < item.length; index++) {
                     const element = item[index];
                     if (isIntermediateReference(element)) {
-                        item[index] = {
-                            $refText: element.$refText ?? '',
-                            ref: this.getRefNode(root, element.$ref),
-                        };
+                        item[index] = this.reviveReference(node, propertyName, root, element);
                     } else if (isAstNode(element)) {
                         this.linkNode(element as GenericAstNode, root, node, propertyName, index);
                     }
                 }
             } else if (isIntermediateReference(item)) {
-                node[propertyName] = {
-                    $refText: item.$refText ?? '',
-                    ref: this.getRefNode(root, item.$ref),
-                };
+                node[propertyName] = this.reviveReference(node, propertyName, root, item);
             } else if (isAstNode(item)) {
                 this.linkNode(item as GenericAstNode, root, node, propertyName);
             }
@@ -98,6 +104,33 @@ export class DefaultJsonSerializer implements JsonSerializer {
         mutable.$container = container;
         mutable.$containerProperty = containerProperty;
         mutable.$containerIndex = containerIndex;
+    }
+
+    protected reviveReference(container: AstNode, property: string, root: AstNode, reference: IntermediateReference): Reference | undefined {
+        let refText = reference.$refText;
+        if (reference.$ref) {
+            const ref = this.getRefNode(root, reference.$ref);
+            if (!refText) {
+                refText = this.nameProvider.getName(ref);
+            }
+            return {
+                $refText: refText ?? '',
+                ref
+            };
+        } else if (reference.$error) {
+            const ref: Mutable<Reference> = {
+                $refText: refText ?? ''
+            };
+            ref.error = {
+                container,
+                property,
+                message: reference.$error,
+                reference: ref
+            };
+            return ref;
+        } else {
+            return undefined;
+        }
     }
 
     protected getRefNode(root: AstNode, path: string): AstNode {
