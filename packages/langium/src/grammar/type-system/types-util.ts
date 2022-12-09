@@ -165,7 +165,7 @@ export function distinctAndSorted<T>(list: T[], compareFn?: (a: T, b: T) => numb
     return Array.from(new Set(list)).sort(compareFn);
 }
 
-export function typePropertyToString(propertyType: PropertyType): string {
+function typePropertyToString(propertyType: PropertyType): string {
     let res = distinctAndSorted(propertyType.types).join(' | ');
     res = propertyType.reference ? `Reference<${res}>` : res;
     res = propertyType.array ? `Array<${res}>` : res;

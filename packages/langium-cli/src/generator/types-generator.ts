@@ -23,9 +23,10 @@ export function generateTypesFile(services: LangiumServices, grammars: Grammar[]
         fileNode.append(`interface ${escapeReservedWords(iFace.name, reservedWords)}${iFace.interfaceSuperTypes.length > 0 ? (' extends ' + Array.from(iFace.interfaceSuperTypes).join(', ')) : ''} {`);
         fileNode.append(NL);
         fileNode.indent((body) => {
-            iFace.properties.forEach(property =>
-                body.append(`${escapeReservedWords(property.name, reservedWords)}${property.optional ? '?' : ''}: ${propertyTypesToString(property.typeAlternatives)}`).append(NL)
-            );
+            iFace.properties.forEach(property => {
+                const optional = property.optional && !property.typeAlternatives.some(e => e.array) && !property.typeAlternatives.every(e => e.types.length === 1 && e.types[0] === 'boolean') ? '?' : '';
+                body.append(`${escapeReservedWords(property.name, reservedWords)}${optional ? '?' : ''}: ${propertyTypesToString(property.typeAlternatives)}`).append(NL);
+            });
         });
         fileNode.append('}').append(NL).append(NL);
     }

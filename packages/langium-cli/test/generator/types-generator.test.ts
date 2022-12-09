@@ -41,7 +41,7 @@ interface DeclaredParameter {
 
 interface Definition {
     name: string
-    args?: DeclaredParameter[]
+    args: DeclaredParameter[]
     expr: Expression
 }
 
@@ -51,12 +51,12 @@ interface Evaluation {
 
 interface FunctionCall {
     func: @AbstractDefinition
-    args?: Expression[]
+    args: Expression[]
 }
 
 interface Module {
     name: string
-    statements?: Statement[]
+    statements: Statement[]
 }
 
 interface NumberLiteral {
