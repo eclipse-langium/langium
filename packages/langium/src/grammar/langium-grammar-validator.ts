@@ -125,6 +125,10 @@ export class LangiumGrammarValidator {
     }
 
     checkEntryGrammarRule(grammar: ast.Grammar, accept: ValidationAcceptor): void {
+        if(grammar.isDeclared && !grammar.name) {
+            // Incomplete syntax: grammar without a name.
+            return;
+        }
         const entryRules = grammar.rules.filter(e => ast.isParserRule(e) && e.entry) as ast.ParserRule[];
         if (grammar.isDeclared && entryRules.length === 0) {
             const possibleEntryRule = grammar.rules.find(e => ast.isParserRule(e) && !isDataTypeRule(e));
@@ -269,6 +273,7 @@ export class LangiumGrammarValidator {
             if (isEmptyRule(rule)) {
                 continue;
             }
+
             const isDataType = isDataTypeRule(rule);
             const isInfers = !rule.returnType && !rule.dataType;
             const ruleTypeName = getTypeName(rule);
@@ -305,12 +310,12 @@ export class LangiumGrammarValidator {
                         code: isInfers ? IssueCodes.SuperfluousInfer : IssueCodes.MissingInfer,
                         data: keywordNode && toDocumentSegment(keywordNode)
                     });
-                } else if(actionType && types.has(typeName) && isInfers) {
+                } else if (actionType && types.has(typeName) && isInfers) {
                     // error: action infers type that is already defined
-                    if(action.$cstNode) {
+                    if (action.$cstNode) {
                         const inferredTypeNode = findNodeForProperty(action.inferredType?.$cstNode, 'name');
                         const keywordNode = findNodeForKeyword(action.$cstNode, '{');
-                        if(inferredTypeNode && keywordNode) {
+                        if (inferredTypeNode && keywordNode) {
                             // remove everything from the opening { up to the type name
                             // we may lose comments in-between, but this can be undone as needed
                             accept('error', `${typeName} is a declared type and cannot be redefined.`, {

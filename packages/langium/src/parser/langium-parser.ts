@@ -185,7 +185,7 @@ export class LangiumParser extends AbstractLangiumParser {
 
     consume(idx: number, tokenType: TokenType, feature: AbstractElement): void {
         const token = this.wrapper.wrapConsume(idx, tokenType);
-        if (!this.isRecording()) {
+        if (!this.isRecording() && !token.isInsertedInRecovery) {
             const leafNode = this.nodeBuilder.buildLeafNode(token, feature);
             const { assignment, isCrossRef } = this.getAssignment(feature);
             const current = this.current;
