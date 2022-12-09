@@ -95,6 +95,7 @@ describe('validate inferred types', () => {
 
     });
 });
+
 describe('Work with imported declared types', () => {
 
     test('Returning imported type should not produce an error #507', async () => {
@@ -110,6 +111,50 @@ describe('Work with imported declared types', () => {
 
         terminal ID: /\\^?[_a-zA-Z][\\w_]*/;
         `.trim();
+        const document = await parseDocument(grammarServices, prog);
+        const diagnostics: Diagnostic[] = await grammarServices.validation.DocumentValidator.validateDocument(document);
+        expect(diagnostics.filter(d => d.severity === DiagnosticSeverity.Error)).toHaveLength(0);
+
+    });
+});
+
+describe('validate declared types', () => {
+
+    test('use langium keywords as properties in declared types', async () => {
+
+        const validKeywordsAsId = [
+            'current',
+            'entry',
+            'extends',
+            'false',
+            'fragment',
+            'grammar',
+            'hidden',
+            'import',
+            'infer',
+            'infers',
+            'interface',
+            'returns',
+            'terminal',
+            'true',
+            'type',
+            'with',
+            // primitive type, excluding Date
+            'string',
+            'number',
+            'boolean',
+            'bigint'
+        ];
+
+        const prog = `
+        interface Keywords {
+            ${validKeywordsAsId.map(keyword => keyword + ': string').join('\n    ')}
+        }
+        Keywords returns Keywords: ${validKeywordsAsId.map(keyword => keyword + '=ID').join(' ')};
+        hidden terminal WS: /\\s+/;
+        terminal ID: /[a-zA-Z_][a-zA-Z0-9_]*/;
+        `.trim();
+
         const document = await parseDocument(grammarServices, prog);
         const diagnostics: Diagnostic[] = await grammarServices.validation.DocumentValidator.validateDocument(document);
         expect(diagnostics.filter(d => d.severity === DiagnosticSeverity.Error)).toHaveLength(0);

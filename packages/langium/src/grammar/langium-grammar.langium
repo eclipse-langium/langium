@@ -22,7 +22,7 @@ fragment SchemaType:
     '{' attributes+=TypeAttribute* '}' ';'?;
 
 TypeAttribute:
-    name=ID (isOptional?='?')? ':' TypeAlternatives ';'?;
+    name=FeatureName (isOptional?='?')? ':' TypeAlternatives ';'?;
 
 fragment TypeAlternatives:
     typeAlternatives+=AtomType ('|' typeAlternatives+=AtomType)*;
