@@ -185,7 +185,7 @@ export function collectChildrenTypes(interfaceNode: Interface, references: Refer
     const refs = references.findReferences(interfaceNode, {});
     refs.forEach(ref => {
         const doc = langiumDocuments.getOrCreateDocument(ref.sourceUri);
-        const astNode = nodeLocator.getAstNode(doc, ref.sourcePath);
+        const astNode = nodeLocator.getAstNode(doc.parseResult.value, ref.sourcePath);
         if (isInterface(astNode)) {
             childrenTypes.add(astNode);
             const childrenOfInterface = collectChildrenTypes(astNode, references, langiumDocuments, nodeLocator);

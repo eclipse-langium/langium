@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { AstNode, getDocument, LangiumDocument, EmptyFileSystem } from 'langium';
+import { AstNode, EmptyFileSystem } from 'langium';
 import { parseDocument } from 'langium/test';
 import { createDomainModelServices } from '../src/language-server/domain-model-module';
 import { Domainmodel, PackageDeclaration } from '../src/language-server/generated/ast';
@@ -29,8 +29,8 @@ describe('AstNode location', () => {
     });
     test('Locate node for path', async () => {
         const model = await getModel();
-        expect(findNode(getDocument(model), '/elements@0')).toEqual(model.elements[0]);
-        expect(findNode(getDocument(model), '/elements@2/elements@0')).toEqual((model.elements[2] as PackageDeclaration).elements[0]);
+        expect(findNode(model, '/elements@0')).toEqual(model.elements[0]);
+        expect(findNode(model, '/elements@2/elements@0')).toEqual((model.elements[2] as PackageDeclaration).elements[0]);
     });
 });
 
@@ -44,6 +44,6 @@ function createPath(node: AstNode): string {
     return services.workspace.AstNodeLocator.getAstNodePath(node);
 }
 
-function findNode(document: LangiumDocument, path: string): AstNode | undefined {
-    return services.workspace.AstNodeLocator.getAstNode(document, path);
+function findNode(node: AstNode, path: string): AstNode | undefined {
+    return services.workspace.AstNodeLocator.getAstNode(node, path);
 }

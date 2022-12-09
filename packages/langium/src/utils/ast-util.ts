@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { AstNode, GenericAstNode, isAstNode, isReference, Reference, ReferenceInfo } from '../syntax-tree';
+import { AstNode, CstNode, GenericAstNode, isAstNode, isReference, Reference, ReferenceInfo } from '../syntax-tree';
 import { DONE_RESULT, Stream, stream, StreamImpl, TreeStream, TreeStreamImpl } from '../utils/stream';
 import { LangiumDocument } from '../workspace/documents';
 
@@ -193,4 +193,53 @@ export function findLocalReferences(targetNode: AstNode, lookup = getDocument(ta
         });
     });
     return stream(refs);
+}
+
+/**
+ * Creates a deep copy of the specified AST node.
+ * The resulting copy will only contain semantically relevant information, such as the `$type` property and AST properties.
+ *
+ * References are copied without resolved cross reference. The specified function is used to rebuild them.
+ */
+export function copyAstNode<T extends AstNode = AstNode>(node: T, buildReference: (node: AstNode, property: string, refNode: CstNode | undefined, refText: string) => Reference<AstNode>): T {
+    const copy: GenericAstNode = { $type: node.$type };
+
+    for (const [name, value] of Object.entries(node)) {
+        if (!name.startsWith('$')) {
+            if (isAstNode(value)) {
+                copy[name] = copyAstNode(value, buildReference);
+            } else if (isReference(value)) {
+                copy[name] = buildReference(
+                    copy,
+                    name,
+                    value.$refNode,
+                    value.$refText
+                );
+            } else if (Array.isArray(value)) {
+                const copiedArray: unknown[] = [];
+                for (const element of value) {
+                    if (isAstNode(element)) {
+                        copiedArray.push(copyAstNode(element, buildReference));
+                    } else if (isReference(element)) {
+                        copiedArray.push(
+                            buildReference(
+                                copy,
+                                name,
+                                element.$refNode,
+                                element.$refText
+                            )
+                        );
+                    } else {
+                        copiedArray.push(element);
+                    }
+                }
+                copy[name] = copiedArray;
+            } else {
+                copy[name] = value;
+            }
+        }
+    }
+
+    linkContentToContainer(copy);
+    return copy as unknown as T;
 }

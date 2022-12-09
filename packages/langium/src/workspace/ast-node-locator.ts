@@ -5,7 +5,6 @@
  ******************************************************************************/
 
 import { AstNode } from '../syntax-tree';
-import { LangiumDocument } from './documents';
 
 /**
  * Language-specific service for locating an `AstNode` in a document.
@@ -23,14 +22,14 @@ export interface AstNodeLocator {
     getAstNodePath(node: AstNode): string;
 
     /**
-     * Locates an `AstNode` inside a document by following the given path.
+     * Locates an `AstNode` inside another node by following the given path.
      *
-     * @param document The document in which to look up.
-     * @param path Describes how to locate the `AstNode` inside the given `document`.
+     * @param node Parent element.
+     * @param path Describes how to locate the `AstNode` inside the given `node`.
      * @returns The `AstNode` located under the given path, or `undefined` if the path cannot be resolved.
      * @see AstNodeLocator.getAstNodePath
      */
-    getAstNode<T extends AstNode = AstNode>(document: LangiumDocument, path: string): T | undefined;
+    getAstNode<T extends AstNode = AstNode>(node: AstNode, path: string): T | undefined;
 
 }
 
@@ -58,7 +57,7 @@ export class DefaultAstNodeLocator implements AstNodeLocator {
         return $containerProperty;
     }
 
-    getAstNode<T extends AstNode = AstNode>(document: LangiumDocument, path: string): T | undefined {
+    getAstNode<T extends AstNode = AstNode>(node: AstNode, path: string): T | undefined {
         const segments = path.split(this.segmentSeparator);
         return segments.reduce((previousValue, currentValue) => {
             if (!previousValue || currentValue.length === 0) {
@@ -69,10 +68,10 @@ export class DefaultAstNodeLocator implements AstNodeLocator {
                 const property = currentValue.substring(0, propertyIndex);
                 const arrayIndex = parseInt(currentValue.substring(propertyIndex + 1));
                 const array = (previousValue as unknown as Record<string, AstNode[]>)[property];
-                return array[arrayIndex];
+                return array?.[arrayIndex];
             }
             return (previousValue as unknown as Record<string, AstNode>)[currentValue];
-        }, document.parseResult.value) as T;
+        }, node) as T;
     }
 
 }

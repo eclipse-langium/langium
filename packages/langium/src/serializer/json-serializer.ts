@@ -4,9 +4,16 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { AstNode, isAstNode, Reference, isReference } from '../syntax-tree';
-import { Linker } from '../references/linker';
+import { NameProvider } from '../references/name-provider';
 import { LangiumServices } from '../services';
+import { AstNode, GenericAstNode, isAstNode, isReference, Reference } from '../syntax-tree';
+import { Mutable } from '../utils/ast-util';
+import { AstNodeLocator } from '../workspace/ast-node-locator';
+
+export interface JsonSerializeOptions {
+    space?: string | number
+    refText?: boolean
+}
 
 /**
  * Utility service for transforming an `AstNode` into a JSON string and vice versa.
@@ -17,103 +24,116 @@ export interface JsonSerializer {
      * @param node The `AstNode` to be serialized.
      * @param space Adds indentation, white space, and line break characters to the return-value JSON text to make it easier to read.
      */
-    serialize(node: AstNode, space?: string | number): string
+    serialize(node: AstNode, options?: JsonSerializeOptions): string;
     /**
      * Deserialize (parse) a JSON `string` into an `AstNode`.
      */
-    deserialize(content: string): AstNode
+    deserialize(content: string): AstNode;
+}
+
+interface IntermediateReference {
+    $refText?: string
+    $ref?: string
+    $error?: string
+}
+
+function isIntermediateReference(obj: unknown): obj is IntermediateReference {
+    return typeof obj === 'object' && !!obj && ('$ref' in obj || '$error' in obj);
 }
 
 export class DefaultJsonSerializer implements JsonSerializer {
 
-    private readonly linker: Linker;
-    protected ignoreProperties = ['$container', '$containerProperty', '$containerIndex', '$document', '$cstNode'];
+    protected ignoreProperties = new Set(['$container', '$containerProperty', '$containerIndex', '$document', '$cstNode']);
+    protected readonly astNodeLocator: AstNodeLocator;
+    protected readonly nameProvider: NameProvider;
 
     constructor(services: LangiumServices) {
-        this.linker = services.references.Linker;
+        this.astNodeLocator = services.workspace.AstNodeLocator;
+        this.nameProvider = services.references.NameProvider;
     }
 
-    serialize(node: AstNode, space?: string | number): string {
-        return JSON.stringify(this.decycle(node, this.ignoreProperties), undefined, space);
+    serialize(node: AstNode, options?: JsonSerializeOptions): string {
+        return JSON.stringify(node, (key, value) => this.replacer(key, value, options?.refText), options?.space);
     }
 
     deserialize(content: string): AstNode {
-        return this.revive(JSON.parse(content));
+        const root = JSON.parse(content);
+        this.linkNode(root, root);
+        return root;
     }
 
-    protected decycle(object: AstNode, ignore: string[]): unknown {
-        const objects = new Set<unknown>(); // Keep references to each unique object
-
-        const replace = (item: unknown) => {
-            // The replace function recurses through the object, producing the deep copy.
-            if (typeof item === 'object' && item !== null) {
-                if (objects.has(item)) {
-                    throw new Error('Cycle in ast detected.');
-                } else {
-                    objects.add(item);
-                }
-                // If it is a reference, just return the name
-                if (isReference(item)) {
-                    return { $refText: item.$refText } as Reference; // surprisingly this cast works at the time of writing, although $refNode is absent
-                }
-                let newItem: Record<string, unknown> | unknown[];
-                // If it is an array, replicate the array.
-                if (Array.isArray(item)) {
-                    newItem = [];
-                    for (let i = 0; i < item.length; i++) {
-                        newItem[i] = replace(item[i]);
-                    }
-                } else {
-                    // If it is an object, replicate the object.
-                    newItem = {};
-                    for (const [name, itemValue] of Object.entries(item)) {
-                        if (!ignore.includes(name)) {
-                            newItem[name] = replace(itemValue);
-                        }
-                    }
-                }
-                return newItem;
+    protected replacer(key: string, value: unknown, refText?: boolean): unknown {
+        if (this.ignoreProperties.has(key)) {
+            return undefined;
+        } else if (isReference(value)) {
+            const refValue = value.ref;
+            const $refText = refText ? value.$refText : undefined;
+            if (refValue) {
+                return {
+                    $refText,
+                    $ref: '#' + (refValue && this.astNodeLocator.getAstNodePath(refValue))
+                };
+            } else {
+                return {
+                    $refText,
+                    $error: value.error?.message ?? 'Could not resolve reference'
+                };
             }
-            return item;
-        };
-        return replace(object);
+        }
+        return value;
     }
 
-    protected revive(object: AstNode): AstNode {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const internalRevive = (value: Record<string, any>, container?: unknown, propName?: string) => {
-            if (Array.isArray(value)) {
-                // eslint-disable-next-line @typescript-eslint/prefer-for-of
-                for (let i = 0; i < value.length; i++) {
-                    const item = value[i];
-                    if (isReference(item) && isAstNode(container)) {
-                        const reference = this.linker.buildReference(container, propName!, item.$refNode, item.$refText);
-                        value[i] = reference;
-                    } else if (typeof item === 'object' && item !== null) {
-                        internalRevive(item);
-                        item.$container = container;
-                        item.$containerProperty = propName;
-                        item.$containerIndex = i;
+    protected linkNode(node: GenericAstNode, root: AstNode, container?: AstNode, containerProperty?: string, containerIndex?: number) {
+        for (const [propertyName, item] of Object.entries(node)) {
+            if (Array.isArray(item)) {
+                for (let index = 0; index < item.length; index++) {
+                    const element = item[index];
+                    if (isIntermediateReference(element)) {
+                        item[index] = this.reviveReference(node, propertyName, root, element);
+                    } else if (isAstNode(element)) {
+                        this.linkNode(element as GenericAstNode, root, node, propertyName, index);
                     }
                 }
-            } else if (typeof value === 'object' && value !== null) {
-                for (const [name, item] of Object.entries(value)) {
-                    if (typeof item === 'object' && item !== null) {
-                        if (isReference(item)) {
-                            const reference = this.linker.buildReference(value as AstNode, name, item.$refNode, item.$refText);
-                            value[name] = reference;
-                        } else if (Array.isArray(item)) {
-                            internalRevive(item, value, name);
-                        } else {
-                            internalRevive(item);
-                            item.$container = value;
-                            item.$containerProperty = name;
-                        }
-                    }
-                }
+            } else if (isIntermediateReference(item)) {
+                node[propertyName] = this.reviveReference(node, propertyName, root, item);
+            } else if (isAstNode(item)) {
+                this.linkNode(item as GenericAstNode, root, node, propertyName);
             }
-        };
-        internalRevive(object);
-        return object;
+        }
+        const mutable = node as Mutable<GenericAstNode>;
+        mutable.$container = container;
+        mutable.$containerProperty = containerProperty;
+        mutable.$containerIndex = containerIndex;
+    }
+
+    protected reviveReference(container: AstNode, property: string, root: AstNode, reference: IntermediateReference): Reference | undefined {
+        let refText = reference.$refText;
+        if (reference.$ref) {
+            const ref = this.getRefNode(root, reference.$ref);
+            if (!refText) {
+                refText = this.nameProvider.getName(ref);
+            }
+            return {
+                $refText: refText ?? '',
+                ref
+            };
+        } else if (reference.$error) {
+            const ref: Mutable<Reference> = {
+                $refText: refText ?? ''
+            };
+            ref.error = {
+                container,
+                property,
+                message: reference.$error,
+                reference: ref
+            };
+            return ref;
+        } else {
+            return undefined;
+        }
+    }
+
+    protected getRefNode(root: AstNode, path: string): AstNode {
+        return this.astNodeLocator.getAstNode(root, path.substring(1))!;
     }
 }

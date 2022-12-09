@@ -29,7 +29,11 @@ describe('Predicated grammar rules with alternatives', () => {
     hidden terminal WS: /\\s+/;
     `;
 
-    const parser = parserFromGrammar(content);
+    let parser: LangiumParser;
+
+    beforeEach(async () => {
+        parser = await parserFromGrammar(content);
+    });
 
     function hasProp(prop: string): void {
         const main = parser.parse(prop + '1').value;
@@ -79,7 +83,11 @@ describe('Predicated groups', () => {
     hidden terminal WS: /\\s+/;
     `;
 
-    const parser = parserFromGrammar(content);
+    let parser: LangiumParser;
+
+    beforeEach(async () => {
+        parser = await parserFromGrammar(content);
+    });
 
     function expectCorrectParse(text: string, a: number, b = 0): void {
         const result = parser.parse(text);
@@ -164,7 +172,11 @@ describe('Handle unordered group', () => {
     terminal STRING: /"[^"]*"|'[^']*'/;
     `;
 
-    const parser = parserFromGrammar(content);
+    let parser: LangiumParser;
+
+    beforeEach(async () => {
+        parser = await parserFromGrammar(content);
+    });
 
     test('Should parse documents without Errors', () => {
         type bookType = { version?: string, author?: string, descr?: string }
@@ -262,10 +274,8 @@ describe('One name for terminal and non-terminal rules', () => {
     hidden terminal WS: /\\s+/;
     `;
 
-    test('Should work without Parser Definition Errors', () => {
-        expect(() => {
-            parserFromGrammar(content);
-        }).not.toThrow();
+    test('Should work without Parser Definition Errors', async () => {
+        await parserFromGrammar(content).catch(e => fail(e));
     });
 
 });
@@ -277,7 +287,11 @@ describe('Boolean value converter', () => {
     hidden terminal WS: /\\s+/;
     `;
 
-    const parser = parserFromGrammar(content);
+    let parser: LangiumParser;
+
+    beforeEach(async () => {
+        parser = await parserFromGrammar(content);
+    });
 
     function expectValue(input: string, value: unknown): void {
         const main = parser.parse(input).value as unknown as { value: unknown };
@@ -305,7 +319,11 @@ describe('BigInt Parser value converter', () => {
     hidden terminal WS: /\\s+/;
     `;
 
-    const parser = parserFromGrammar(content);
+    let parser: LangiumParser;
+
+    beforeEach(async () => {
+        parser = await parserFromGrammar(content);
+    });
 
     function expectValue(input: string, value: unknown): void {
         const main = parser.parse(input).value as unknown as { value: unknown };
@@ -330,7 +348,11 @@ describe('Date Parser value converter', () => {
     hidden terminal WS: /\\s+/;
     `;
 
-    const parser = parserFromGrammar(content);
+    let parser: LangiumParser;
+
+    beforeEach(async () => {
+        parser = await parserFromGrammar(content);
+    });
 
     test('Should have no definition errors', () => {
         expect(parser.definitionErrors).toHaveLength(0);
@@ -369,7 +391,11 @@ describe('Parser calls value converter', () => {
     hidden terminal ML_COMMENT: /\\/\\*[\\s\\S]*?\\*\\//;
     `;
 
-    const parser = parserFromGrammar(content);
+    let parser: LangiumParser;
+
+    beforeEach(async () => {
+        parser = await parserFromGrammar(content);
+    });
 
     function expectValue(input: string, value: unknown): void {
         const main = parser.parse(input).value as unknown as { value: unknown };
@@ -491,15 +517,19 @@ describe('MultiMode Lexing', () => {
 
     hidden terminal WS: /\\s+/;`;
 
-    const services = createServicesForGrammar({
-        grammar,
-        module: {
-            parser: {
-                TokenBuilder: () => new MultiModeTokenBuilder()
+    let parser: LangiumParser;
+
+    beforeEach(async () => {
+        const services = await createServicesForGrammar({
+            grammar,
+            module: {
+                parser: {
+                    TokenBuilder: () => new MultiModeTokenBuilder()
+                }
             }
-        }
+        });
+        parser = services.parser.LangiumParser;
     });
-    const parser = services.parser.LangiumParser;
 
     test('multimode lexing works in default mode as expected', () => {
         const result = parser.parse('apple banana cherry');
@@ -580,16 +610,16 @@ describe('ALL(*) parser', () => {
 
     hidden terminal WS: /\\s+/;`;
 
-    const parser = parserFromGrammar(grammar);
-
-    test('can parse with unbounded lookahead #1', () => {
+    test('can parse with unbounded lookahead #1', async () => {
+        const parser = await parserFromGrammar(grammar);
         const result = parser.parse('aaaaaaaaaab');
         expect(result.lexerErrors).toHaveLength(0);
         expect(result.parserErrors).toHaveLength(0);
         expect(result.value.$type).toBe('A');
     });
 
-    test('can parse with unbounded lookahead #2', () => {
+    test('can parse with unbounded lookahead #2', async () => {
+        const parser = await parserFromGrammar(grammar);
         const result = parser.parse('aaaaaaaaaaaaaac');
         expect(result.lexerErrors).toHaveLength(0);
         expect(result.parserErrors).toHaveLength(0);
@@ -597,6 +627,6 @@ describe('ALL(*) parser', () => {
     });
 });
 
-function parserFromGrammar(grammar: string): LangiumParser {
-    return createServicesForGrammar({ grammar }).parser.LangiumParser;
+async function parserFromGrammar(grammar: string): Promise<LangiumParser> {
+    return (await createServicesForGrammar({ grammar })).parser.LangiumParser;
 }

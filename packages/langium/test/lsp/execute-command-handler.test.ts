@@ -23,7 +23,7 @@ describe('AbstractExecuteCommandHandler', () => {
             }
         }
 
-        const services = createServicesForGrammar({
+        const services = await createServicesForGrammar({
             grammar: grammarStub,
             sharedModule: {
                 lsp: {
@@ -50,7 +50,7 @@ describe('AbstractExecuteCommandHandler', () => {
             }
         }
 
-        const services = createServicesForGrammar({
+        const services = await createServicesForGrammar({
             grammar: grammarStub,
             sharedModule: {
                 lsp: {

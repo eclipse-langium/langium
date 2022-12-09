@@ -125,6 +125,7 @@ export class DefaultIndexManager implements IndexManager {
             const uriString = uri.toString();
             this.simpleIndex.delete(uriString);
             this.referenceIndex.delete(uriString);
+            this.globalScopeCache.clear();
         }
     }
 

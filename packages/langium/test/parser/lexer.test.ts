@@ -8,8 +8,8 @@ import { createServicesForGrammar, Lexer } from '../../src';
 
 describe('DefaultLexer', () => {
 
-    test('should expose lexer definition', () => {
-        const lexer = getLexer(`
+    test('should expose lexer definition', async () => {
+        const lexer = await getLexer(`
         grammar X
         entry Y: y='Y';
         hidden terminal WS: /\\s+/;
@@ -19,8 +19,8 @@ describe('DefaultLexer', () => {
         expect(lexer.definition.WS.name).toBe('WS');
     });
 
-    test('should lex input', () => {
-        const lexer = getLexer(`
+    test('should lex input', async () => {
+        const lexer = await getLexer(`
         grammar X
         entry Y: name='Y';
         hidden terminal WS: /\\s+/;
@@ -32,8 +32,8 @@ describe('DefaultLexer', () => {
         expect(result.hidden).toHaveLength(0);
     });
 
-    test('should return lexer errors', () => {
-        const lexer = getLexer(`
+    test('should return lexer errors', async () => {
+        const lexer = await getLexer(`
         grammar X
         entry Y: name=ID;
         terminal ID: /\\^?[_a-zA-Z][\\w_]*/;
@@ -45,8 +45,8 @@ describe('DefaultLexer', () => {
         expect(result.hidden).toHaveLength(0);
     });
 
-    test('should lex hidden terminals', () => {
-        const lexer = getLexer(`
+    test('should lex hidden terminals', async () => {
+        const lexer = await getLexer(`
         grammar X
         entry Y: name=ID;
         terminal ID: /\\^?[_a-zA-Z][\\w_]*/;
@@ -63,8 +63,8 @@ describe('DefaultLexer', () => {
 
 });
 
-function getLexer(grammar: string): Lexer {
-    const services = createServicesForGrammar({
+async function getLexer(grammar: string): Promise<Lexer> {
+    const services = await createServicesForGrammar({
         grammar
     });
     return services.parser.Lexer;

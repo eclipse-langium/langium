@@ -10,14 +10,14 @@ import {
 } from 'langium';
 import { getFilePath, LangiumConfig, LangiumLanguageConfig } from './package';
 
-export function validateParser(grammar: Grammar, config: LangiumConfig, grammarConfigMap: Map<Grammar, LangiumLanguageConfig>,
-    grammarServices: LangiumGrammarServices): Error | undefined {
+export async function validateParser(grammar: Grammar, config: LangiumConfig, grammarConfigMap: Map<Grammar, LangiumLanguageConfig>,
+    grammarServices: LangiumGrammarServices): Promise<Error | undefined> {
     const parserConfig: IParserConfig = {
         ...config.chevrotainParserConfig,
         ...grammarConfigMap.get(grammar)?.chevrotainParserConfig,
         skipValidations: false
     };
-    const services = createServicesForGrammar({
+    const services = await createServicesForGrammar({
         grammarServices,
         grammar,
         languageMetaData: languageConfigToMetaData(grammarConfigMap.get(grammar)!),

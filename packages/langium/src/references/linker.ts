@@ -196,7 +196,7 @@ export class DefaultLinker implements Linker {
             return nodeDescription.node;
         }
         const doc = this.langiumDocuments().getOrCreateDocument(nodeDescription.documentUri);
-        return this.astNodeLocator.getAstNode(doc, nodeDescription.path);
+        return this.astNodeLocator.getAstNode(doc.parseResult.value, nodeDescription.path);
     }
 
     protected createLinkingError(refInfo: ReferenceInfo, targetDescription?: AstNodeDescription): LinkingError {
