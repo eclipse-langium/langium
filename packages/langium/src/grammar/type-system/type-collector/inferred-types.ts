@@ -356,12 +356,8 @@ function getFragmentProperties(fragment: ParserRule, context: TypeCollectionCont
     const properties: Property[] = [];
     context.fragments.set(fragment, properties);
     const fragmentName = getTypeName(fragment);
-    const typeAlternatives = getRuleTypes(context, fragment);
-    const interfaces = calculateInterfaces(typeAlternatives);
-    const foundType = interfaces.find(e => e.name === fragmentName);
-    if (foundType) {
-        properties.push(...foundType.properties);
-    }
+    const typeAlternatives = getRuleTypes(context, fragment).filter(e => e.name === fragmentName);
+    properties.push(...typeAlternatives.flatMap(e => e.properties));
     return properties;
 }
 
