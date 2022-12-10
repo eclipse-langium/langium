@@ -72,17 +72,17 @@ function shareSuperTypesFromUnions(inferred: AstTypes, declared: AstTypes): void
         }
     }
 
-    function addSuperTypes(types: AstTypes, child: string) {
-        const childType = types.unions.find(e => e.name === child) ??
-            types.interfaces.find(e => e.name === child);
+    function addSuperTypes(types: AstTypes, child: string, parents: string[]) {
+        const childType = types.interfaces.find(e => e.name === child) ??
+            types.unions.find(e => e.name === child);
         if (childType) {
-            childToSuper.get(child).forEach(e => childType.realSuperTypes.add(e));
+            parents.forEach(e => childType.realSuperTypes.add(e));
         }
     }
 
-    for (const child of childToSuper.keys()) {
-        addSuperTypes(inferred, child);
-        addSuperTypes(declared, child);
+    for (const [child, parents] of childToSuper.entriesGroupedByKey()) {
+        addSuperTypes(inferred, child, parents);
+        addSuperTypes(declared, child, parents);
     }
 }
 

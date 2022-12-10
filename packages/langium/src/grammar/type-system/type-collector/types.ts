@@ -44,8 +44,6 @@ export class UnionType {
     alternatives: PropertyType[];
     reflection: boolean;
     realSuperTypes = new Set<string>();
-    containerTypes = new Set<string>();
-    subTypes = new Set<string>();
 
     constructor(name: string, alts: PropertyType[], options?: { reflection: boolean }) {
         this.name = name;
@@ -78,7 +76,6 @@ export class InterfaceType {
     subTypes = new Set<string>();
     containerTypes = new Set<string>();
     properties: Property[];
-    // todo find a better place for `superProperties` -- it's a validation resource and not for the AST generation
     superProperties: MultiMap<string, Property> = new MultiMap();
 
     constructor(name: string, superTypes: string[], properties: Property[]) {

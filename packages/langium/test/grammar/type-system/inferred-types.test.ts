@@ -11,7 +11,7 @@ import { collectAst } from '../../../src/grammar/type-system/ast-collector';
 import { collectAllAstResources } from '../../../src/grammar/type-system/type-collector/all-types';
 import { collectDeclaredTypes } from '../../../src/grammar/type-system/type-collector/declared-types';
 import { collectInferredTypes } from '../../../src/grammar/type-system/type-collector/inferred-types';
-import { AstTypes, InterfaceType, Property, PropertyType, UnionType } from '../../../src/grammar/type-system/type-collector/type-collector-types';
+import { AstTypes, InterfaceType, Property, PropertyType, UnionType } from '../../../src/grammar/type-system/type-collector/types';
 import { sortInterfacesTopologically } from '../../../src/grammar/type-system/types-util';
 import { parseHelper } from '../../../src/test';
 
@@ -805,11 +805,11 @@ describe('types of `$container` property are correct', () => {
         const grammarServices = createLangiumGrammarServices(EmptyFileSystem).grammar;
         const document = await parseHelper<Grammar>(grammarServices)(`
             terminal ID: /[_a-zA-Z][\\w_]*/;
-            A: 'A' strA=ID C;
-            B: 'B' strB=ID C;
+            A: 'A' C;
+            B: 'B' C;
             C: 'C' strC=ID;
             D: 'D' a=A;
-            E: 'E' b=B;      
+            E: 'E' b=B;   
         `);
         checkTypes(document.parseResult.value, 'inferred');
     });

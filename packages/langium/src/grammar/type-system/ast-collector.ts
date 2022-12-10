@@ -9,7 +9,6 @@ import { LangiumDocuments } from '../../workspace/documents';
 import { sortInterfacesTopologically } from './types-util';
 import { AstTypes, InterfaceType, UnionType } from './type-collector/types';
 import { collectTypeResources } from './type-collector/all-types';
-import { buildContainerTypes } from './type-collector/container-property';
 
 /**
  * Collects all types for the generated AST. The types collector entry point.
@@ -20,30 +19,30 @@ export function collectAst(documents: LangiumDocuments, grammars: Grammar[]): As
     const { inferred, declared } = collectTypeResources(documents, grammars);
 
     const astTypes = {
-        interfaces: mergeAndRemoveDuplicates({ inferred: inferred.interfaces, declared: declared.interfaces }),
-        unions: mergeAndRemoveDuplicates({ inferred: inferred.unions, declared: declared.unions }),
+        interfaces: removeDuplicatesForInterfaces(inferred.interfaces,declared.interfaces),
+        unions: removeDuplicatesForUnions(inferred.unions, declared.unions),
     };
 
     sortInterfacesTopologically(astTypes.interfaces);
     astTypes.unions.sort((a, b) => a.name.localeCompare(b.name));
 
-    addSubTypes(astTypes);
-    buildContainerTypes(astTypes);
-
     return astTypes;
 }
 
-function addSubTypes({ interfaces, unions }: AstTypes) {
-    const allTypes = (interfaces as Array<InterfaceType | UnionType>).concat(unions);
-    for (const type of allTypes) {
-        for (const superTypeName of type.realSuperTypes) {
-            allTypes.find(e => e.name === superTypeName)?.subTypes.add(type.name);
-        }
-    }
+function removeDuplicatesForUnions(inferred: UnionType[], declared: UnionType[]): UnionType[] {
+    return Array.from(inferred.concat(declared)
+        .reduce((acc, type) => { acc.set(type.name, type); return acc; }, new Map<string, UnionType>())
+        .values());
 }
 
-function mergeAndRemoveDuplicates<T extends { name: string }>({ inferred, declared }: { inferred: T[], declared: T[]}): T[] {
-    return Array.from(inferred.concat(declared)
-        .reduce((acc, type) => { acc.set(type.name, type); return acc; }, new Map<string, T>())
-        .values());
+function removeDuplicatesForInterfaces(inferred: InterfaceType[], declared: InterfaceType[]): InterfaceType[] {
+    const res = inferred.reduce((acc, e) => { acc.set(e.name, e); return acc; }, new Map<string, InterfaceType>());
+    for (const decl of declared) {
+        const infer = res.get(decl.name);
+        if (infer) {
+            decl.containerTypes = infer.containerTypes;
+            res.set(decl.name, decl);
+        }
+    }
+    return Array.from(res.values());
 }
