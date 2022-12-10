@@ -11,9 +11,9 @@ import { getDocument } from '../../../utils/ast-util';
 import { MultiMap } from '../../../utils/collections';
 import { ParserRule, Interface, Type, isParserRule } from '../../generated/ast';
 import { isDataTypeRule, resolveImport } from '../../internal-grammar-util';
-import { AstTypes, mergeInterfaces, InterfaceType } from '../types-util';
+import { mergeInterfaces } from '../types-util';
+import { AstTypes, InterfaceType, isInterfaceType } from './types';
 import { URI } from 'vscode-uri';
-import { isInterfaceType } from '../../workspace/documents';
 
 export type AstResources = {
     parserRules: ParserRule[],
@@ -66,7 +66,7 @@ function shareSuperTypesFromUnions(inferred: AstTypes, declared: AstTypes): void
     const allUnions = inferred.unions.concat(declared.unions);
     for (const union of allUnions) {
         if (union.reflection) {
-            for (const propType of union.union) {
+            for (const propType of union.alternatives) {
                 propType.types.forEach(type => childToSuper.add(type, union.name));
             }
         }

@@ -9,7 +9,8 @@ import { MultiMap } from '../../../utils/collections';
 import { stream } from '../../../utils/stream';
 import { ParserRule, isAlternatives, isKeyword, Action, isParserRule, isAction, AbstractElement, isGroup, isUnorderedGroup, isAssignment, isRuleCall, Assignment, isCrossReference, RuleCall } from '../../generated/ast';
 import { getExplicitRuleType, getTypeName, isOptionalCardinality, getRuleType } from '../../internal-grammar-util';
-import { Property, AstTypes, UnionType, PropertyType, InterfaceType, comparePropertyType } from '../types-util';
+import { comparePropertyType } from '../types-util';
+import { Property, AstTypes, UnionType, PropertyType, InterfaceType } from './types';
 
 interface TypePart {
     name?: string
@@ -486,7 +487,7 @@ function extractUnions(interfaces: InterfaceType[], unions: UnionType[]): AstTyp
             const alternatives: PropertyType[] = toPropertyType(false, false, Array.from(interfaceType.subTypes));
             const existingUnion = unions.find(e => e.name === interfaceType.name);
             if (existingUnion) {
-                existingUnion.union.push(...alternatives);
+                existingUnion.alternatives.push(...alternatives);
             } else {
                 const type = new UnionType(interfaceType.name, alternatives, { reflection: true });
                 type.realSuperTypes = interfaceType.realSuperTypes;

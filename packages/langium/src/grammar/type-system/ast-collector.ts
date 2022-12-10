@@ -6,7 +6,8 @@
 
 import { Grammar } from '../generated/ast';
 import { LangiumDocuments } from '../../workspace/documents';
-import { AstTypes, InterfaceType, sortInterfacesTopologically, UnionType } from './types-util';
+import { sortInterfacesTopologically } from './types-util';
+import { AstTypes, InterfaceType, UnionType } from './type-collector/types';
 import { collectTypeResources } from './type-collector/all-types';
 import { buildContainerTypes } from './type-collector/container-property';
 

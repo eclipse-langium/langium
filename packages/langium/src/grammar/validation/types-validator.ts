@@ -6,10 +6,11 @@
 
 import * as ast from '../generated/ast';
 import { MultiMap } from '../../utils/collections';
-import { Property, PropertyType, distinctAndSorted, propertyTypeArrayToString, InterfaceType } from '../type-system/types-util';
+import { distinctAndSorted, propertyTypeArrayToString } from '../type-system/types-util';
+import { InterfaceType, isInterfaceType, isUnionType, Property, PropertyType } from '../type-system/type-collector/types';
 import { DiagnosticInfo, ValidationAcceptor } from '../../validation/validation-registry';
 import { extractAssignments } from '../internal-grammar-util';
-import { DeclaredInfo, InferredInfo, isDeclared, isInferred, isInferredAndDeclared, isInterfaceType, isUnionType, LangiumGrammarDocument, TypeToValidationInfo } from '../workspace/documents';
+import { DeclaredInfo, InferredInfo, isDeclared, isInferred, isInferredAndDeclared, LangiumGrammarDocument, TypeToValidationInfo } from '../workspace/documents';
 
 export class LangiumGrammarTypesValidator {
 
@@ -181,7 +182,7 @@ function validateDeclaredAndInferredConsistency(typeInfo: InferredInfo & Declare
     };
 
     if (isUnionType(inferred) && isUnionType(declared)) {
-        validateAlternativesConsistency(inferred.union, declared.union,
+        validateAlternativesConsistency(inferred.alternatives, declared.alternatives,
             applyErrorToRulesAndActions(` in a rule that returns type '${typeName}'.`),
         );
     } else if (isInterfaceType(inferred) && isInterfaceType(declared)) {

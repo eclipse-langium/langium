@@ -11,7 +11,8 @@ import { EmptyFileSystem } from '../workspace/file-system-provider';
 import { Grammar, isGrammar } from './generated/ast';
 import { createLangiumGrammarServices } from './langium-grammar-module';
 import { collectAst } from './type-system/ast-collector';
-import { AstTypes, collectAllProperties, Property } from './type-system/types-util';
+import { AstTypes, Property } from './type-system/type-collector/types';
+import { collectAllProperties } from './type-system/types-util';
 
 let emptyDocuments: LangiumDocuments;
 

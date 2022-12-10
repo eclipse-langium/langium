@@ -10,7 +10,8 @@ import { isDataTypeRule } from '../../../src/grammar/internal-grammar-util';
 import { collectAst } from '../../../src/grammar/type-system/ast-collector';
 import { collectAllAstResources } from '../../../src/grammar/type-system/type-collector/all-types';
 import { collectInferredTypes } from '../../../src/grammar/type-system/type-collector/inferred-types';
-import { AstTypes, InterfaceType, Property, PropertyType, sortInterfacesTopologically, UnionType } from '../../../src/grammar/type-system/types-util';
+import { AstTypes, InterfaceType, Property, PropertyType, UnionType } from '../../../src/grammar/type-system/type-collector/type-collector-types';
+import { sortInterfacesTopologically } from '../../../src/grammar/type-system/types-util';
 import { parseHelper } from '../../../src/test';
 
 function describeTypes(name: string, grammar: string, description: (types: AstTypes) => void | Promise<void>): void {
@@ -724,10 +725,10 @@ describe('expression rules with inferred and declared interfaces', () => {
     // the PR #670 fixes the demonstrated bug, but cancels type inferrence for declared actions
     // we should fix the issue another way
     function checkTypes(grammar: Grammar) {
-        const toSubstring = (o: {toString: () => string}) => {
+        const toSubstring = (o: {toAstTypesString: () => string}) => {
             // this specialized 'toString' function uses the default 'toString' that is  producing the
             //  code generation output, and strips everything not belonging to the actual interface/type declaration
-            const sRep = o.toString().replace(/\r/g, '');
+            const sRep = o.toAstTypesString().replace(/\r/g, '');
             return sRep.substring(
                 0, 1 + (sRep.includes('interface') ? sRep.indexOf('}') : Math.min(sRep.indexOf(';') ))
             );
@@ -828,9 +829,9 @@ function expectProperty(interfaceType: InterfaceType, property: Property | strin
 }
 
 function expectUnion(unionType: UnionType, types: PropertyType[]): void {
-    expect(unionType.union.length).toStrictEqual(types.length);
-    for (let i = 0; i < unionType.union.length; i++) {
-        const actualType = unionType.union[i];
+    expect(unionType.alternatives.length).toStrictEqual(types.length);
+    for (let i = 0; i < unionType.alternatives.length; i++) {
+        const actualType = unionType.alternatives[i];
         const expectedType = types[i];
         expect(actualType.types).toEqual(expectedType.types);
         expect(actualType.array).toEqual(expectedType.array);

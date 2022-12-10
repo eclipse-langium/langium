@@ -4,5 +4,6 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-export * from './ast-collector';
+export { collectAst } from './ast-collector';
+export * from './type-collector/types';
 export * from './types-util';

@@ -40,9 +40,9 @@ interface DeclaredParameter {
 }
 
 interface Definition {
-    name: string
     args: DeclaredParameter[]
     expr: Expression
+    name: string
 }
 
 interface Evaluation {
@@ -50,8 +50,8 @@ interface Evaluation {
 }
 
 interface FunctionCall {
-    func: @AbstractDefinition
     args: Expression[]
+    func: @AbstractDefinition
 }
 
 interface Module {

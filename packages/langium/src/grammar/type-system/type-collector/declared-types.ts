@@ -6,7 +6,7 @@
 
 import { Interface, Type, AtomType } from '../../generated/ast';
 import { getTypeName } from '../../internal-grammar-util';
-import { AstTypes, Property, InterfaceType, UnionType, PropertyType } from '../types-util';
+import { AstTypes, Property, InterfaceType, UnionType, PropertyType } from './types';
 
 export function collectDeclaredTypes(interfaces: Interface[], unions: Type[]): AstTypes {
     const declaredTypes: AstTypes = { unions: [], interfaces: [] };

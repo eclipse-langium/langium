@@ -4,105 +4,12 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { CompositeGeneratorNode, IndentNode, NL } from '../../generator/generator-node';
-import { processGeneratorNode } from '../../generator/node-processor';
 import { References } from '../../references/references';
-import { CstNode } from '../../syntax-tree';
 import { MultiMap } from '../../utils/collections';
 import { AstNodeLocator } from '../../workspace/ast-node-locator';
 import { LangiumDocuments } from '../../workspace/documents';
-import { Assignment, Action, TypeAttribute, Interface, Type, AbstractType, isInterface, isType } from '../generated/ast';
-
-export type Property = {
-    name: string,
-    optional: boolean,
-    typeAlternatives: PropertyType[]
-    astNodes: Set<Assignment | Action | TypeAttribute>
-}
-
-export type PropertyType = {
-    types: string[],
-    reference: boolean,
-    array: boolean
-}
-
-export type AstTypes = {
-    interfaces: InterfaceType[];
-    unions: UnionType[];
-}
-
-export class UnionType {
-    name: string;
-    union: PropertyType[];
-    reflection: boolean;
-    realSuperTypes = new Set<string>();
-    containerTypes = new Set<string>();
-    subTypes = new Set<string>();
-
-    constructor(name: string, union: PropertyType[], options?: { reflection: boolean }) {
-        this.name = name;
-        this.union = union;
-        this.reflection = options?.reflection ?? false;
-    }
-
-    toString(): string {
-        const typeNode = new CompositeGeneratorNode();
-        typeNode.contents.push(`export type ${this.name} = ${propertyTypeArrayToString(this.union)};`, NL);
-
-        if (this.reflection) pushReflectionInfo(this.name, typeNode);
-        return processGeneratorNode(typeNode);
-    }
-}
-
-export class InterfaceType {
-    name: string;
-    realSuperTypes = new Set<string>();
-    printingSuperTypes: string[] = [];
-    subTypes = new Set<string>();
-    containerTypes = new Set<string>();
-    properties: Property[];
-    // todo find a better place for `superProperties` -- it's a validation resource and not for the AST generation
-    superProperties: MultiMap<string, Property> = new MultiMap();
-
-    constructor(name: string, superTypes: string[], properties: Property[]) {
-        this.name = name;
-        this.realSuperTypes = new Set(superTypes);
-        this.printingSuperTypes = [...superTypes];
-        this.properties = properties;
-        properties.forEach(prop => this.superProperties.add(prop.name, prop));
-    }
-
-    toString(): string {
-        const interfaceNode = new CompositeGeneratorNode();
-        const superTypes = this.printingSuperTypes.length > 0 ? distinctAndSorted([...this.printingSuperTypes]) : ['AstNode'];
-        interfaceNode.contents.push(`export interface ${this.name} extends ${superTypes.join(', ')} {`, NL);
-
-        const propertiesNode = new IndentNode();
-        if (this.containerTypes.size > 0) {
-            propertiesNode.contents.push(`readonly $container: ${distinctAndSorted([...this.containerTypes]).join(' | ')};`, NL);
-        }
-
-        for (const property of distinctAndSorted(this.properties, (a, b) => a.name.localeCompare(b.name))) {
-            const optional = property.optional && !property.typeAlternatives.some(e => e.array) && !property.typeAlternatives.every(e => e.types.length === 1 && e.types[0] === 'boolean') ? '?' : '';
-            const type = propertyTypeArrayToString(property.typeAlternatives);
-            propertiesNode.contents.push(`${property.name}${optional}: ${type}`, NL);
-        }
-        interfaceNode.contents.push(propertiesNode, '}', NL);
-
-        pushReflectionInfo(this.name, interfaceNode);
-        return processGeneratorNode(interfaceNode);
-    }
-}
-export class TypeResolutionError extends Error {
-    readonly target: CstNode | undefined;
-
-    constructor(message: string, target: CstNode | undefined) {
-        super(message);
-        this.name = 'TypeResolutionError';
-        this.target = target;
-    }
-
-}
+import { Interface, Type, AbstractType, isInterface, isType } from '../generated/ast';
+import { AstTypes, InterfaceType, Property, PropertyType } from './type-collector/types';
 
 /**
  * Collects all properties of all interface types. Includes super type properties.
@@ -137,14 +44,6 @@ function typePropertyToString(propertyType: PropertyType): string {
     res = propertyType.reference ? `Reference<${res}>` : res;
     res = propertyType.array ? `Array<${res}>` : res;
     return res;
-}
-
-function pushReflectionInfo(name: string, node: CompositeGeneratorNode) {
-    node.contents.push(NL, `export const ${name} = '${name}';`, NL, NL);
-    node.contents.push(`export function is${name}(item: unknown): item is ${name} {`, NL);
-    const methodBody = new IndentNode();
-    methodBody.contents.push(`return reflection.isInstance(item, ${name});`, NL);
-    node.contents.push(methodBody, '}', NL);
 }
 
 export function collectChildrenTypes(interfaceNode: Interface, references: References, langiumDocuments: LangiumDocuments, nodeLocator: AstNodeLocator): Set<Interface | Type> {

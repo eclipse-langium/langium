@@ -6,7 +6,7 @@
 
 import { LangiumDocument } from '../../workspace/documents';
 import { Action, Grammar, Interface, ParserRule, Type } from '../generated/ast';
-import { InterfaceType, Property, UnionType } from '../type-system/types-util';
+import { Property, TypeOption } from '../type-system/type-collector/types';
 
 /**
  * A Langium document holds the parse result (AST and CST) and any additional state that is derived
@@ -22,16 +22,6 @@ export type ValidationResources = {
 }
 
 export type TypeToValidationInfo = Map<string, InferredInfo | DeclaredInfo | InferredInfo & DeclaredInfo>;
-
-export type TypeOption = UnionType | InterfaceType;
-
-export function isUnionType(type: TypeOption): type is UnionType {
-    return type && 'union' in type;
-}
-
-export function isInterfaceType(type: TypeOption): type is InterfaceType {
-    return type && 'properties' in type;
-}
 
 export type InferredInfo = {
     inferred: TypeOption,

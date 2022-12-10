@@ -10,8 +10,9 @@ import { LangiumDocuments } from '../../workspace/documents';
 import { AbstractElement, Action, Grammar, Interface, isAction, isAlternatives, isGroup, isUnorderedGroup, ParserRule, Type } from '../generated/ast';
 import { getActionType, getRuleType } from '../internal-grammar-util';
 import { AstResources, collectTypeResources, TypeResources } from '../type-system/type-collector/all-types';
-import { AstTypes, mergeInterfaces, Property } from '../type-system/types-util';
-import { TypeOption, TypeToValidationInfo, ValidationResources } from '../workspace/documents';
+import { mergeInterfaces } from '../type-system/types-util';
+import { AstTypes, Property, TypeOption } from '../type-system/type-collector/types';
+import { TypeToValidationInfo, ValidationResources } from '../workspace/documents';
 
 export class LangiumGrammarValidationResourcesCollector {
 

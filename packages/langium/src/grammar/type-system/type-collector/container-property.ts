@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { AstTypes } from '../types-util';
+import { AstTypes } from './types';
 
 /**
  * Builds types of `$container` property for given interfaces.
@@ -22,7 +22,7 @@ export function buildContainerTypes({ interfaces, unions }: AstTypes) {
     }
 
     for (const type of unions) {
-        const ruleCalls = type.union.filter(e => !e.reference).flatMap(e => e.types);
+        const ruleCalls = type.alternatives.filter(e => !e.reference).flatMap(e => e.types);
         for (const typeName of ruleCalls) {
             interfaces.find(e => e.name === typeName)?.containerTypes.add(type.name);
             unions.find(e => e.name === typeName)?.containerTypes.add(type.name);
