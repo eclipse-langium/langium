@@ -9,6 +9,7 @@ import { isParserRule } from '../../../src/grammar/generated/ast';
 import { isDataTypeRule } from '../../../src/grammar/internal-grammar-util';
 import { collectAst } from '../../../src/grammar/type-system/ast-collector';
 import { collectAllAstResources } from '../../../src/grammar/type-system/type-collector/all-types';
+import { collectDeclaredTypes } from '../../../src/grammar/type-system/type-collector/declared-types';
 import { collectInferredTypes } from '../../../src/grammar/type-system/type-collector/inferred-types';
 import { AstTypes, InterfaceType, Property, PropertyType, UnionType } from '../../../src/grammar/type-system/type-collector/type-collector-types';
 import { sortInterfacesTopologically } from '../../../src/grammar/type-system/types-util';
@@ -780,9 +781,81 @@ describe('expression rules with inferred and declared interfaces', () => {
         `);
 
         // the idea of the following is to double check that the declared definitions don't overwrite any
-        //  inferred definition; because of the sorting before joining the 'startsWith' doesn't work in general,
-        //  but it does work here due to the smart rule and interface name choice ;-)
-        // expect(allInterfacesString.startsWith(inferredInterfacesString));
+        // inferred definition; because of the sorting before joining the 'startsWith' doesn't work in general,
+        // but it does work here due to the smart rule and interface name choice ;-)
+        expect(allInterfacesString.startsWith(inferredInterfacesString));
+    }
+});
+
+describe('types of `$container` property are correct', () => {
+
+    test('parent types conflict for declared types', async () => {
+        const grammarServices = createLangiumGrammarServices(EmptyFileSystem).grammar;
+        const document = await parseHelper<Grammar>(grammarServices)(`
+            interface A { strA: string }
+            interface B { strB: string }
+            interface C extends A, B { strC: string }
+            interface D { a: A }
+            interface E { b: B }
+        `);
+        checkTypes(document.parseResult.value, 'declared');
+    });
+
+    test('parent types conflict for inferred types', async () => {
+        const grammarServices = createLangiumGrammarServices(EmptyFileSystem).grammar;
+        const document = await parseHelper<Grammar>(grammarServices)(`
+            terminal ID: /[_a-zA-Z][\\w_]*/;
+            A: 'A' strA=ID C;
+            B: 'B' strB=ID C;
+            C: 'C' strC=ID;
+            D: 'D' a=A;
+            E: 'E' b=B;      
+        `);
+        checkTypes(document.parseResult.value, 'inferred');
+    });
+
+    function checkTypes(grammar: Grammar, mode: 'inferred' | 'declared') {
+        const toSubstring = (o: {toAstTypesString: () => string}) => {
+            // this specialized 'toString' function uses the default 'toString' that is  producing the
+            //  code generation output, and strips everything not belonging to the actual interface/type declaration
+            const sRep = o.toAstTypesString().replace(/\r/g, '');
+            return sRep.substring(
+                0, 1 + (sRep.includes('interface') ? sRep.indexOf('}') : Math.min(sRep.indexOf(';') ))
+            );
+        };
+
+        const astResources = collectAllAstResources([grammar]);
+        let astTypes: AstTypes;
+        if (mode === 'declared') {
+            astTypes = collectDeclaredTypes(astResources.interfaces, astResources.types);
+        } else {
+            astTypes = collectInferredTypes(astResources.parserRules, astResources.datatypeRules);
+        }
+        const { interfaces, unions} = astTypes;
+
+        const unionsString = unions.map(toSubstring).join('\n').trim();
+        expect(unionsString).toBe(s``);
+
+        const interfacesString = sortInterfacesTopologically(interfaces).map(toSubstring).join('\n').trim();
+        expect(interfacesString).toBe(s`
+            export interface A extends AstNode {
+                readonly $container: D;
+                strA: string
+            }
+            export interface B extends AstNode {
+                readonly $container: E;
+                strB: string
+            }
+            export interface C extends A, B {
+                strC: string
+            }
+            export interface D extends AstNode {
+                a: A
+            }
+            export interface E extends AstNode {
+                b: B
+            }
+        `);
     }
 });
 
