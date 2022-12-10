@@ -195,24 +195,17 @@ export function collectInferredTypes(parserRules: ParserRule[], datatypeRules: P
     }
     const interfaces = calculateInterfaces(allTypes);
 
-    // calculate subtypes for 'extractUnions'
-    for (const interfaceType of interfaces) {
-        for (const superTypeName of interfaceType.realSuperTypes) {
-            interfaces.find(e => e.name === superTypeName)?.subTypes.add(interfaceType.name);
-        }
-    }
-
     const unions = buildSuperUnions(interfaces);
-    const inferredTypes = extractUnions(interfaces, unions);
+    const astTypes = extractUnions(interfaces, unions);
 
     // extract types from datatype rules
     for (const rule of datatypeRules) {
         const types = isAlternatives(rule.definition) && rule.definition.elements.every(e => isKeyword(e)) ?
             stream(rule.definition.elements).filter(isKeyword).map(e => `'${e.value}'`).toArray() :
             [getExplicitRuleType(rule) ?? 'string'];
-        inferredTypes.unions.push(new UnionType(rule.name, toPropertyType(false, false, types)));
+        astTypes.unions.push(new UnionType(rule.name, toPropertyType(false, false, types)));
     }
-    return inferredTypes;
+    return astTypes;
 }
 
 function getRuleTypes(context: TypeCollectionContext, rule: ParserRule): TypeAlternative[] {
@@ -479,6 +472,12 @@ function buildSuperUnions(interfaces: InterfaceType[]): UnionType[] {
  * @returns Types and not transformed interfaces.
  */
 function extractUnions(interfaces: InterfaceType[], unions: UnionType[]): AstTypes {
+    for (const interfaceType of interfaces) {
+        for (const superTypeName of interfaceType.realSuperTypes) {
+            interfaces.find(e => e.name === superTypeName)?.subTypes.add(interfaceType.name);
+        }
+    }
+
     const astTypes: AstTypes = { interfaces: [], unions };
     const typeNames = new Set<string>(unions.map(e => e.name));
     for (const interfaceType of interfaces) {
