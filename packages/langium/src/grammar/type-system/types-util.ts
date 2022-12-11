@@ -9,7 +9,7 @@ import { MultiMap } from '../../utils/collections';
 import { AstNodeLocator } from '../../workspace/ast-node-locator';
 import { LangiumDocuments } from '../../workspace/documents';
 import { Interface, Type, AbstractType, isInterface, isType } from '../generated/ast';
-import { AstTypes, InterfaceType, Property, PropertyType } from './type-collector/types';
+import { AstTypes, InterfaceType, Property, PropertyType, TypeOption } from './type-collector/types';
 
 /**
  * Collects all properties of all interface types. Includes super type properties.
@@ -31,19 +31,8 @@ export function collectAllProperties(interfaces: InterfaceType[]): MultiMap<stri
     return map;
 }
 
-export function propertyTypeArrayToString(alternatives: PropertyType[]): string {
-    return distinctAndSorted(alternatives.map(typePropertyToString)).join(' | ');
-}
-
 export function distinctAndSorted<T>(list: T[], compareFn?: (a: T, b: T) => number): T[] {
     return Array.from(new Set(list)).sort(compareFn);
-}
-
-function typePropertyToString(propertyType: PropertyType): string {
-    let res = distinctAndSorted(propertyType.types).join(' | ');
-    res = propertyType.reference ? `Reference<${res}>` : res;
-    res = propertyType.array ? `Array<${res}>` : res;
-    return res;
 }
 
 export function collectChildrenTypes(interfaceNode: Interface, references: References, langiumDocuments: LangiumDocuments, nodeLocator: AstNodeLocator): Set<Interface | Type> {
@@ -107,6 +96,10 @@ function compareLists<T>(a: T[], b: T[], eq: (x: T, y: T) => boolean = (x, y) =>
 
 export function mergeInterfaces(inferred: AstTypes, declared: AstTypes): InterfaceType[] {
     return inferred.interfaces.concat(declared.interfaces);
+}
+
+export function mergeTypesAndInterfaces(astTypes: AstTypes): TypeOption[] {
+    return (astTypes.interfaces as TypeOption[]).concat(astTypes.unions);
 }
 
 /**

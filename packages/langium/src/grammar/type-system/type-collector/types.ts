@@ -132,7 +132,7 @@ export class TypeResolutionError extends Error {
 
 }
 
-function propertyTypesToString(alternatives: PropertyType[], mode: 'AstType' | 'DeclaredType'): string {
+export function propertyTypesToString(alternatives: PropertyType[], mode: 'AstType' | 'DeclaredType'='AstType'): string {
     function propertyTypeToString(propertyType: PropertyType): string {
         let res = distinctAndSorted(propertyType.types).join(' | ');
         res = propertyType.reference ? (mode === 'AstType' ? `Reference<${res}>` : `@${res}`) : res;

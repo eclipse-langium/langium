@@ -10,8 +10,8 @@ import { LangiumDocuments } from '../../workspace/documents';
 import { AbstractElement, Action, Grammar, Interface, isAction, isAlternatives, isGroup, isUnorderedGroup, ParserRule, Type } from '../generated/ast';
 import { getActionType, getRuleType } from '../internal-grammar-util';
 import { AstResources, collectTypeResources, TypeResources } from '../type-system/type-collector/all-types';
-import { mergeInterfaces } from '../type-system/types-util';
-import { AstTypes, Property, TypeOption } from '../type-system/type-collector/types';
+import { mergeInterfaces, mergeTypesAndInterfaces } from '../type-system/types-util';
+import { Property } from '../type-system/type-collector/types';
 import { TypeToValidationInfo, ValidationResources } from '../workspace/documents';
 
 export class LangiumGrammarValidationResourcesCollector {
@@ -87,8 +87,4 @@ function collectNameToRulesActions({ parserRules, datatypeRules }: AstResources)
         .forEach(rule => collectActions(rule.definition));
 
     return acc;
-}
-
-function mergeTypesAndInterfaces(astTypes: AstTypes): TypeOption[] {
-    return (astTypes.interfaces as TypeOption[]).concat(astTypes.unions);
 }

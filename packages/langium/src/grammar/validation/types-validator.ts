@@ -6,8 +6,8 @@
 
 import * as ast from '../generated/ast';
 import { MultiMap } from '../../utils/collections';
-import { distinctAndSorted, propertyTypeArrayToString } from '../type-system/types-util';
-import { InterfaceType, isInterfaceType, isUnionType, Property, PropertyType } from '../type-system/type-collector/types';
+import { distinctAndSorted } from '../type-system/types-util';
+import { InterfaceType, isInterfaceType, isUnionType, Property, PropertyType, propertyTypesToString } from '../type-system/type-collector/types';
 import { DiagnosticInfo, ValidationAcceptor } from '../../validation/validation-registry';
 import { extractAssignments } from '../internal-grammar-util';
 import { DeclaredInfo, InferredInfo, isDeclared, isInferred, isInferredAndDeclared, LangiumGrammarDocument, TypeToValidationInfo } from '../workspace/documents';
@@ -254,8 +254,8 @@ function validatePropertiesConsistency(inferred: MultiMap<string, Property>, dec
         const foundProp = foundProps[0];
         const expectedProp = declared.get(name)[0];
         if (expectedProp) {
-            const foundTypeAsStr = propertyTypeArrayToString(foundProp.typeAlternatives);
-            const expectedTypeAsStr = propertyTypeArrayToString(expectedProp.typeAlternatives);
+            const foundTypeAsStr = propertyTypesToString(foundProp.typeAlternatives);
+            const expectedTypeAsStr = propertyTypesToString(expectedProp.typeAlternatives);
             if (foundTypeAsStr !== expectedTypeAsStr) {
                 const typeAlternativesErrors = checkAlternativesConsistencyHelper(foundProp.typeAlternatives, expectedProp.typeAlternatives);
                 if (typeAlternativesErrors.length > 0) {
