@@ -7,7 +7,7 @@
 import { createLangiumGrammarServices, Grammar, EmptyFileSystem, s } from '../../../src';
 import { isParserRule } from '../../../src/grammar/generated/ast';
 import { isDataTypeRule } from '../../../src/grammar/internal-grammar-util';
-import { collectAst } from '../../../src/grammar/type-system/ast-collector';
+import { collectAst, specifyAstNodeProperies } from '../../../src/grammar/type-system/ast-collector';
 import { collectAllAstResources } from '../../../src/grammar/type-system/type-collector/all-types';
 import { collectDeclaredTypes } from '../../../src/grammar/type-system/type-collector/declared-types';
 import { collectInferredTypes } from '../../../src/grammar/type-system/type-collector/inferred-types';
@@ -726,25 +726,14 @@ describe('expression rules with inferred and declared interfaces', () => {
     // the PR #670 fixes the demonstrated bug, but cancels type inferrence for declared actions
     // we should fix the issue another way
     function checkTypes(grammar: Grammar) {
-        const toSubstring = (o: {toAstTypesString: () => string}) => {
-            // this specialized 'toString' function uses the default 'toString' that is  producing the
-            //  code generation output, and strips everything not belonging to the actual interface/type declaration
-            const sRep = o.toAstTypesString().replace(/\r/g, '');
-            return sRep.substring(
-                0, 1 + (sRep.includes('interface') ? sRep.indexOf('}') : Math.min(sRep.indexOf(';') ))
-            );
-        };
+        const { parserRules, datatypeRules, interfaces, types } = collectAllAstResources([grammar]);
 
-        const { parserRules, datatypeRules } = collectAllAstResources([grammar]);
-        const { interfaces: inferredInterfaces, unions } = collectInferredTypes(parserRules, datatypeRules);
+        // check only inferred types
+        const inferred = collectInferredTypes(parserRules, datatypeRules);
+        sortInterfacesTopologically(inferred.interfaces);
+        specifyAstNodeProperies(inferred);
 
-        const unionsString = unions.map(toSubstring).join('\n').trim();
-        expect(unionsString).toBe(s`
-            export type Expression = MemberAccess | PrimaryExpression | SuperMemberAccess;
-            export type PrimaryExpression = BooleanLiteral;
-        `);
-
-        const inferredInterfacesString = sortInterfacesTopologically(inferredInterfaces).map(toSubstring).join('\n').trim();
+        const inferredInterfacesString = inferred.interfaces.map(toSubstring).join('\n').trim();
         expect(inferredInterfacesString).toBe(s`
             export interface BooleanLiteral extends AstNode {
                 readonly $container: MemberAccess | SuperMemberAccess;
@@ -762,21 +751,41 @@ describe('expression rules with inferred and declared interfaces', () => {
             }
         `);
 
-        const allInterfaces = collectAst(undefined!, [grammar]).interfaces;
-        const allInterfacesString = sortInterfacesTopologically(allInterfaces).map(toSubstring).join('\n').trim();
-        expect(allInterfacesString).toBe(s`
-            export interface BooleanLiteral extends AstNode {
-                readonly $container: MemberAccess | SuperMemberAccess;
-                value: boolean
-            }
-            export interface MemberAccess extends AstNode {
-                readonly $container: MemberAccess | SuperMemberAccess;
-                member: Reference<Symbol>
-                receiver: PrimaryExpression
+        // check only declared types
+        const declared = collectDeclaredTypes(interfaces, types);
+        sortInterfacesTopologically(declared.interfaces);
+        specifyAstNodeProperies(declared);
+
+        expect(declared.interfaces.map(toSubstring).join('\n').trim()).toBe(s`
+            export interface SuperMemberAccess extends MemberAccess {
             }
             export interface Symbol extends AstNode {
             }
+        `);
+
+        // check ast.ts types
+        const allTypes = collectAst(undefined!, [grammar]);
+
+        expect(allTypes.unions.map(toSubstring).join('\n').trim()).toBe(s`
+            export type Expression = MemberAccess | PrimaryExpression | SuperMemberAccess;
+            export type PrimaryExpression = BooleanLiteral;
+        `);
+
+        const allInterfacesString = allTypes.interfaces.map(toSubstring).join('\n').trim();
+        expect(allInterfacesString).toBe(s`
+            export interface BooleanLiteral extends AstNode {
+                readonly $container: MemberAccess;
+                value: boolean
+            }
+            export interface MemberAccess extends AstNode {
+                readonly $container: MemberAccess;
+                member: Reference<Symbol>
+                receiver: PrimaryExpression
+            }
             export interface SuperMemberAccess extends MemberAccess {
+                readonly $container: MemberAccess;
+            }
+            export interface Symbol extends AstNode {
             }
         `);
 
@@ -789,7 +798,8 @@ describe('expression rules with inferred and declared interfaces', () => {
 
 describe('types of `$container` property are correct', () => {
 
-    test('parent types conflict for declared types', async () => {
+    // `$container`-types are appear only from inferred types
+    test('`$container`-types for declared types', async () => {
         const grammarServices = createLangiumGrammarServices(EmptyFileSystem).grammar;
         const document = await parseHelper<Grammar>(grammarServices)(`
             interface A { strA: string }
@@ -798,10 +808,35 @@ describe('types of `$container` property are correct', () => {
             interface D { a: A }
             interface E { b: B }
         `);
-        checkTypes(document.parseResult.value, 'declared');
+        const { unions, interfaces } = collectAst(undefined!, [document.parseResult.value]);
+
+        const unionsString = unions.map(toSubstring).join('\n').trim();
+        expect(unionsString).toBe(s``);
+
+        const interfacesString = sortInterfacesTopologically(interfaces).map(toSubstring).join('\n').trim();
+        expect(interfacesString).toBe(s`
+            export interface A extends AstNode {
+                readonly $container: D | E;
+                strA: string
+            }
+            export interface B extends AstNode {
+                readonly $container: D | E;
+                strB: string
+            }
+            export interface D extends AstNode {
+                a: A
+            }
+            export interface E extends AstNode {
+                b: B
+            }
+            export interface C extends A, B {
+                readonly $container: D | E;
+                strC: string
+            }
+        `);
     });
 
-    test('parent types conflict for inferred types', async () => {
+    test('`$container`-types for inferred types', async () => {
         const grammarServices = createLangiumGrammarServices(EmptyFileSystem).grammar;
         const document = await parseHelper<Grammar>(grammarServices)(`
             terminal ID: /[_a-zA-Z][\\w_]*/;
@@ -811,42 +846,18 @@ describe('types of `$container` property are correct', () => {
             D: 'D' a=A;
             E: 'E' b=B;   
         `);
-        checkTypes(document.parseResult.value, 'inferred');
-    });
-
-    function checkTypes(grammar: Grammar, mode: 'inferred' | 'declared') {
-        const toSubstring = (o: {toAstTypesString: () => string}) => {
-            // this specialized 'toString' function uses the default 'toString' that is  producing the
-            //  code generation output, and strips everything not belonging to the actual interface/type declaration
-            const sRep = o.toAstTypesString().replace(/\r/g, '');
-            return sRep.substring(
-                0, 1 + (sRep.includes('interface') ? sRep.indexOf('}') : Math.min(sRep.indexOf(';') ))
-            );
-        };
-
-        const astResources = collectAllAstResources([grammar]);
-        let astTypes: AstTypes;
-        if (mode === 'declared') {
-            astTypes = collectDeclaredTypes(astResources.interfaces, astResources.types);
-        } else {
-            astTypes = collectInferredTypes(astResources.parserRules, astResources.datatypeRules);
-        }
-        const { interfaces, unions} = astTypes;
+        const { unions, interfaces } = collectAst(undefined!, [document.parseResult.value]);
 
         const unionsString = unions.map(toSubstring).join('\n').trim();
-        expect(unionsString).toBe(s``);
+        expect(unionsString).toBe(s`
+            export type A = C;
+            export type B = C;
+        `);
 
         const interfacesString = sortInterfacesTopologically(interfaces).map(toSubstring).join('\n').trim();
         expect(interfacesString).toBe(s`
-            export interface A extends AstNode {
-                readonly $container: D;
-                strA: string
-            }
-            export interface B extends AstNode {
-                readonly $container: E;
-                strB: string
-            }
-            export interface C extends A, B {
+            export interface C extends AstNode {
+                readonly $container: D | E;
                 strC: string
             }
             export interface D extends AstNode {
@@ -856,7 +867,47 @@ describe('types of `$container` property are correct', () => {
                 b: B
             }
         `);
-    }
+    });
+
+    test('`$container`-types for inferred and declared types', async () => {
+        const grammarServices = createLangiumGrammarServices(EmptyFileSystem).grammar;
+        const document = await parseHelper<Grammar>(grammarServices)(`
+            A: 'A' strA=ID;
+            B: 'B' strB=ID;
+            C returns C: 'C' strA=ID strB=ID strC=ID;
+            interface C extends A, B { strC: string }
+            D: 'D' a=A;
+            E: 'E' b=B;
+            terminal ID: /[a-zA-Z_][a-zA-Z0-9_]*/;
+        `);
+        const { unions, interfaces } = collectAst(undefined!, [document.parseResult.value]);
+
+        const unionsString = unions.map(toSubstring).join('\n').trim();
+        expect(unionsString).toBe(s``);
+
+        const interfacesString = sortInterfacesTopologically(interfaces).map(toSubstring).join('\n').trim();
+        expect(interfacesString).toBe(s`
+            export interface A extends AstNode {
+                readonly $container: D | E;
+                strA: string
+            }
+            export interface B extends AstNode {
+                readonly $container: D | E;
+                strB: string
+            }
+            export interface D extends AstNode {
+                a: A
+            }
+            export interface E extends AstNode {
+                b: B
+            }
+            export interface C extends A, B {
+                readonly $container: D | E;
+                strC: string
+            }
+        `);
+
+    });
 });
 
 async function getTypes(grammar: string): Promise<AstTypes> {
@@ -911,3 +962,12 @@ function expectUnion(unionType: UnionType, types: PropertyType[]): void {
         expect(actualType.reference).toEqual(expectedType.reference);
     }
 }
+
+const toSubstring = (o: { toAstTypesString: () => string }) => {
+    // this specialized 'toString' function uses the default 'toString' that is  producing the
+    //  code generation output, and strips everything not belonging to the actual interface/type declaration
+    const sRep = o.toAstTypesString().replace(/\r/g, '');
+    return sRep.substring(
+        0, 1 + (sRep.includes('interface') ? sRep.indexOf('}') : Math.min(sRep.indexOf(';') ))
+    );
+};

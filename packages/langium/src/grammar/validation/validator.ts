@@ -17,7 +17,7 @@ import { ValidationAcceptor, ValidationChecks, ValidationRegistry } from '../../
 import { LangiumDocuments } from '../../workspace/documents';
 import * as ast from '../generated/ast';
 import { isParserRule, isRuleCall } from '../generated/ast';
-import { getTypeName, isDataTypeRule, isOptionalCardinality, resolveImport, resolveTransitiveImports, terminalRegex } from '../internal-grammar-util';
+import { getTypeName, isDataTypeRule, isOptionalCardinality, isPrimitiveType, resolveImport, resolveTransitiveImports, terminalRegex } from '../internal-grammar-util';
 import type { LangiumGrammarServices } from '../langium-grammar-module';
 
 export class LangiumGrammarValidationRegistry extends ValidationRegistry {
@@ -711,12 +711,6 @@ export class LangiumGrammarValidator {
             accept('warning', 'The "name" property is not recommended for cross-references.', { node: assignment, property: 'feature' });
         }
     }
-}
-
-const primitiveTypes = ['string', 'number', 'boolean', 'Date', 'bigint'];
-
-function isPrimitiveType(type: string): boolean {
-    return primitiveTypes.includes(type);
 }
 
 function isEmptyRule(rule: ast.AbstractRule): boolean {

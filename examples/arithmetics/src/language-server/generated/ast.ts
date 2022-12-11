@@ -44,7 +44,7 @@ export function isBinaryExpression(item: unknown): item is BinaryExpression {
 }
 
 export interface DeclaredParameter extends AstNode {
-    readonly $container: Definition;
+    readonly $container: Definition | Module;
     name: string
 }
 
@@ -55,7 +55,7 @@ export function isDeclaredParameter(item: unknown): item is DeclaredParameter {
 }
 
 export interface Definition extends AstNode {
-    readonly $container: Module;
+    readonly $container: Definition | Module;
     args: Array<DeclaredParameter>
     expr: Expression
     name: string
@@ -68,7 +68,7 @@ export function isDefinition(item: unknown): item is Definition {
 }
 
 export interface Evaluation extends AstNode {
-    readonly $container: Module;
+    readonly $container: Definition | Module;
     expression: Expression
 }
 

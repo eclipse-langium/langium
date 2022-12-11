@@ -194,8 +194,6 @@ export function collectInferredTypes(parserRules: ParserRule[], datatypeRules: P
         allTypes.push(...getRuleTypes(context, rule));
     }
     const interfaces = calculateInterfaces(allTypes);
-    addSubtypes(interfaces);
-    addContainerTypes(interfaces);
     const unions = buildSuperUnions(interfaces);
     const astTypes = extractUnions(interfaces, unions);
 
@@ -466,65 +464,6 @@ function buildSuperUnions(interfaces: InterfaceType[]): UnionType[] {
     return unions;
 }
 
-function addSubtypes(interfaces: InterfaceType[]) {
-    for (const interfaceType of interfaces) {
-        for (const superTypeName of interfaceType.realSuperTypes) {
-            interfaces.find(e => e.name === superTypeName)
-                ?.subTypes.add(interfaceType.name);
-        }
-    }
-}
-
-/**
- * Builds container types for given interfaces.
- * @param interfaces The interfaces that have to get container types.
- */
-function addContainerTypes(interfaces: InterfaceType[]): void {
-    // 1st stage: collect container types
-    for (const interfaceType of interfaces) {
-        for (const typeName of interfaceType.properties.flatMap(property => property.typeAlternatives.filter(e => !e.reference).flatMap(e => e.types))) {
-            interfaces.find(e => e.name === typeName)
-                ?.containerTypes.add(interfaceType.name);
-        }
-    }
-    // 2nd stage: share container types
-    const connectedComponents: InterfaceType[][] = [];
-    calculateConnectedComponents(connectedComponents, interfaces);
-    shareContainerTypes(connectedComponents);
-}
-
-function calculateConnectedComponents(connectedComponents: InterfaceType[][], interfaces: InterfaceType[]): void {
-    function dfs(typeInterface: InterfaceType): InterfaceType[] {
-        const component: InterfaceType[] = [typeInterface];
-        visited.add(typeInterface.name);
-        const allTypes = [...typeInterface.subTypes, ...typeInterface.realSuperTypes];
-        for (const nextTypeInterfaceName of allTypes) {
-            if (!visited.has(nextTypeInterfaceName)) {
-                const nextTypeInterface = interfaces.find(e => e.name === nextTypeInterfaceName);
-                if (nextTypeInterface) {
-                    component.push(...dfs(nextTypeInterface));
-                }
-            }
-        }
-        return component;
-    }
-
-    const visited: Set<string> = new Set();
-    for (const typeInterface of interfaces) {
-        if (!visited.has(typeInterface.name)) {
-            connectedComponents.push(dfs(typeInterface));
-        }
-    }
-}
-
-function shareContainerTypes(connectedComponents: InterfaceType[][]): void {
-    for (const component of connectedComponents) {
-        const superSet = new Set<string>();
-        component.forEach(type => type.containerTypes.forEach(e => superSet.add(e)));
-        component.forEach(type => type.containerTypes = superSet);
-    }
-}
-
 /**
  * Filters interfaces, transforming some of them in unions.
  * The transformation criterion: no properties, but have subtypes.
@@ -532,6 +471,13 @@ function shareContainerTypes(connectedComponents: InterfaceType[][]): void {
  * @returns Types and not transformed interfaces.
  */
 function extractUnions(interfaces: InterfaceType[], unions: UnionType[]): AstTypes {
+    for (const interfaceType of interfaces) {
+        for (const superTypeName of interfaceType.realSuperTypes) {
+            interfaces.find(e => e.name === superTypeName)
+                ?.subTypes.add(interfaceType.name);
+        }
+    }
+
     const astTypes: AstTypes = { interfaces: [], unions };
     const typeNames = new Set<string>(unions.map(e => e.name));
     for (const interfaceType of interfaces) {

@@ -268,3 +268,9 @@ export function extractAssignments(element: ast.AbstractElement): ast.Assignment
     }
     return [];
 }
+
+const primitiveTypes = ['string', 'number', 'boolean', 'Date', 'bigint'];
+
+export function isPrimitiveType(type: string): boolean {
+    return primitiveTypes.includes(type);
+}
