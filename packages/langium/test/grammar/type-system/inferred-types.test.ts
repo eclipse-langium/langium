@@ -915,6 +915,37 @@ describe('types of `$container` and `$type` are correct', () => {
     });
 });
 
+// https://github.com/langium/langium/issues/744
+describe('generated types from declared types include all of them', () => {
+
+    test('using declared types has no impact on the generated types', async () => {
+        const grammarServices = createLangiumGrammarServices(EmptyFileSystem).grammar;
+        const document = await parseHelper<Grammar>(grammarServices)(`
+            A: 'A' a=ID;
+            AB: A ({infer B} b+=ID)*;
+            terminal ID: /[_a-zA-Z][\\w_]*/;
+        `);
+        const types = collectAst(undefined!, [document.parseResult.value]);
+
+        const documentWithDeclaredTypes = await parseHelper<Grammar>(grammarServices)(`
+            interface A { a: string; }
+            interface B { b: string[]; }
+            type AB = A | B;
+            A returns A:  'A' a=ID;
+            AB returns AB: A ({B} b+=ID)*;
+            terminal ID: /[_a-zA-Z][\\w_]*/;        
+        `);
+        const typesWithDeclared = collectAst(undefined!, [documentWithDeclaredTypes.parseResult.value]);
+
+        expect(typesWithDeclared.unions.map(toSubstring).join('\n').trim())
+            .toBe(types.unions.map(toSubstring).join('\n').trim());
+
+        expect(typesWithDeclared.interfaces.map(toSubstring).join('\n').trim())
+            .toBe(types.interfaces.map(toSubstring).join('\n').trim());
+    });
+
+});
+
 async function getTypes(grammar: string): Promise<AstTypes> {
     const services = createLangiumGrammarServices(EmptyFileSystem).grammar;
     const helper = parseHelper<Grammar>(services);
