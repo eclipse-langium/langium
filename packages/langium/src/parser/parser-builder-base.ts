@@ -377,7 +377,7 @@ function getRuleName(ctx: ParserContext, element: ParserRule | AbstractElement):
     } else {
         let item: AstNode = element;
         let parent: AstNode = item.$container!;
-        let ruleName = element.$type;
+        let ruleName: string = element.$type;
         while (!isParserRule(parent)) {
             if (isGroup(parent) || isAlternatives(parent) || isUnorderedGroup(parent)) {
                 const index = parent.elements.indexOf(item as AbstractElement);

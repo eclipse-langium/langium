@@ -41,6 +41,23 @@ export function specifyAstNodeProperies(astTypes: AstTypes) {
     const nameToType = filterInterfaceLikeTypes(astTypes);
     addSubTypes(nameToType);
     buildContainerTypes(nameToType);
+    buildTypeTypes(nameToType);
+}
+
+function buildTypeTypes(nameToType: Map<string, TypeOption>) {
+    const queue = Array.from(nameToType.values()).filter(e => e.subTypes.size === 0);
+    const visited = new Set<TypeOption>();
+    for (const type of queue) {
+        visited.add(type);
+        const superTypes = Array.from(type.realSuperTypes)
+            .map(superType => nameToType.get(superType))
+            .filter(e => e !== undefined) as TypeOption[];
+        for (const subType of type.subTypes) {
+            type.typeTypes.add(subType);
+            superTypes.forEach(superType => superType.typeTypes.add(subType));
+        }
+        queue.push(...superTypes.filter(e => !visited.has(e)));
+    }
 }
 
 /**
@@ -96,7 +113,7 @@ function addSubTypes(nameToType: Map<string, TypeOption>) {
  * Builds container types for given interfaces.
  * @param interfaces The interfaces that have to get container types.
  */
-function buildContainerTypes(nameToType: Map<string, TypeOption>): void {
+function buildContainerTypes(nameToType: Map<string, TypeOption>) {
     const types = Array.from(nameToType.values());
 
     // 1st stage: collect container types
@@ -109,12 +126,11 @@ function buildContainerTypes(nameToType: Map<string, TypeOption>): void {
     }
 
     // 2nd stage: share container types
-    const connectedComponents: TypeOption[][] = [];
-    calculateConnectedComponents(connectedComponents, types);
+    const connectedComponents = calculateConnectedComponents(types);
     shareContainerTypes(connectedComponents);
 }
 
-function calculateConnectedComponents(connectedComponents: TypeOption[][], interfaces: TypeOption[]): void {
+function calculateConnectedComponents(interfaces: TypeOption[]): TypeOption[][] {
     function dfs(typeInterface: TypeOption): TypeOption[] {
         const component: TypeOption[] = [typeInterface];
         visited.add(typeInterface.name);
@@ -130,12 +146,14 @@ function calculateConnectedComponents(connectedComponents: TypeOption[][], inter
         return component;
     }
 
+    const connectedComponents: TypeOption[][] = [];
     const visited: Set<string> = new Set();
     for (const typeInterface of interfaces) {
         if (!visited.has(typeInterface.name)) {
             connectedComponents.push(dfs(typeInterface));
         }
     }
+    return connectedComponents;
 }
 
 function shareContainerTypes(connectedComponents: TypeOption[][]): void {

@@ -779,6 +779,7 @@ describe('expression rules with inferred and declared interfaces', () => {
             }
             export interface MemberAccess extends AstNode {
                 readonly $container: MemberAccess;
+                readonly $type: 'SuperMemberAccess';
                 member: Reference<Symbol>
                 receiver: PrimaryExpression
             }
@@ -796,10 +797,10 @@ describe('expression rules with inferred and declared interfaces', () => {
     }
 });
 
-describe('types of `$container` property are correct', () => {
+describe('types of `$container` and `$type` are correct', () => {
 
     // `$container`-types are appear only from inferred types
-    test('`$container`-types for declared types', async () => {
+    test('types of `$container` and `$type` for declared types', async () => {
         const grammarServices = createLangiumGrammarServices(EmptyFileSystem).grammar;
         const document = await parseHelper<Grammar>(grammarServices)(`
             interface A { strA: string }
@@ -817,10 +818,12 @@ describe('types of `$container` property are correct', () => {
         expect(interfacesString).toBe(s`
             export interface A extends AstNode {
                 readonly $container: D | E;
+                readonly $type: 'C';
                 strA: string
             }
             export interface B extends AstNode {
                 readonly $container: D | E;
+                readonly $type: 'C';
                 strB: string
             }
             export interface D extends AstNode {
@@ -836,7 +839,7 @@ describe('types of `$container` property are correct', () => {
         `);
     });
 
-    test('`$container`-types for inferred types', async () => {
+    test('types of `$container` and `$type` for inferred types', async () => {
         const grammarServices = createLangiumGrammarServices(EmptyFileSystem).grammar;
         const document = await parseHelper<Grammar>(grammarServices)(`
             terminal ID: /[_a-zA-Z][\\w_]*/;
@@ -869,7 +872,7 @@ describe('types of `$container` property are correct', () => {
         `);
     });
 
-    test('`$container`-types for inferred and declared types', async () => {
+    test('types of `$container` and `$type` for inferred and declared types', async () => {
         const grammarServices = createLangiumGrammarServices(EmptyFileSystem).grammar;
         const document = await parseHelper<Grammar>(grammarServices)(`
             A: 'A' strA=ID;
@@ -889,10 +892,12 @@ describe('types of `$container` property are correct', () => {
         expect(interfacesString).toBe(s`
             export interface A extends AstNode {
                 readonly $container: D | E;
+                readonly $type: 'C';
                 strA: string
             }
             export interface B extends AstNode {
                 readonly $container: D | E;
+                readonly $type: 'C';
                 strB: string
             }
             export interface D extends AstNode {

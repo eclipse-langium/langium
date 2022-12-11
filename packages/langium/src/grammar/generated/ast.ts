@@ -36,6 +36,7 @@ export type PrimitiveType = 'Date' | 'bigint' | 'boolean' | 'number' | 'string';
 
 export interface AbstractElement extends AstNode {
     readonly $container: Alternatives | Assignment | AtomType | CharacterRange | CrossReference | Grammar | Group | NegatedToken | ParserRule | TerminalAlternatives | TerminalGroup | TerminalRule | UnorderedGroup | UntilToken;
+    readonly $type: 'Action' | 'Alternatives' | 'Assignment' | 'CharacterRange' | 'CrossReference' | 'Group' | 'Keyword' | 'NegatedToken' | 'RegexToken' | 'RuleCall' | 'TerminalAlternatives' | 'TerminalGroup' | 'TerminalRuleCall' | 'UnorderedGroup' | 'UntilToken' | 'Wildcard';
     cardinality?: '*' | '+' | '?'
 }
 

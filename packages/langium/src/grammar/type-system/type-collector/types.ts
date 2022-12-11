@@ -98,6 +98,9 @@ export class InterfaceType extends TypeOption {
             if (this.containerTypes.size > 0) {
                 body.append(`readonly $container: ${distinctAndSorted([...this.containerTypes]).join(' | ')};`, NL);
             }
+            if (this.typeTypes.size > 0) {
+                body.append(`readonly $type: ${distinctAndSorted([...this.typeTypes]).map(e => `'${e}'`).join(' | ')};`, NL);
+            }
             pushProperties(body, this.properties, 'AstType');
         });
         interfaceNode.append('}', NL);
