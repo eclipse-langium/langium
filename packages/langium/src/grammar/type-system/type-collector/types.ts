@@ -29,8 +29,6 @@ export type AstTypes = {
     unions: UnionType[],
 }
 
-export type TypeOption = UnionType | InterfaceType;
-
 export function isUnionType(type: TypeOption): type is UnionType {
     return type && 'alternatives' in type;
 }
@@ -39,15 +37,20 @@ export function isInterfaceType(type: TypeOption): type is InterfaceType {
     return type && 'properties' in type;
 }
 
-export class UnionType {
+export abstract class TypeOption {
     name: string;
-    alternatives: PropertyType[];
-    reflection: boolean;
     realSuperTypes = new Set<string>();
     subTypes = new Set<string>();
     containerTypes = new Set<string>();
+    typeTypes = new Set<string>();
+}
+
+export class UnionType extends TypeOption {
+    alternatives: PropertyType[];
+    reflection: boolean;
 
     constructor(name: string, alts: PropertyType[], options?: { reflection: boolean }) {
+        super();
         this.name = name;
         this.alternatives = alts;
         this.reflection = options?.reflection ?? false;
@@ -71,16 +74,13 @@ export class UnionType {
     }
 }
 
-export class InterfaceType {
-    name: string;
-    realSuperTypes = new Set<string>();
+export class InterfaceType extends TypeOption {
     printingSuperTypes: string[] = [];
-    subTypes = new Set<string>();
-    containerTypes = new Set<string>();
     properties: Property[];
     superProperties: MultiMap<string, Property> = new MultiMap();
 
     constructor(name: string, superTypes: string[], properties: Property[]) {
+        super();
         this.name = name;
         this.realSuperTypes = new Set(superTypes);
         this.printingSuperTypes = [...superTypes];

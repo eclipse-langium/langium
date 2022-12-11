@@ -7,7 +7,7 @@
 import { Grammar } from '../generated/ast';
 import { LangiumDocuments } from '../../workspace/documents';
 import { sortInterfacesTopologically } from './types-util';
-import { AstTypes, InterfaceType, isInterfaceType, TypeOption, UnionType } from './type-collector/types';
+import { AstTypes, InterfaceType, isInterfaceType, isUnionType, TypeOption, UnionType } from './type-collector/types';
 import { collectTypeResources } from './type-collector/all-types';
 import { isPrimitiveType } from '../internal-grammar-util';
 
@@ -63,7 +63,7 @@ function filterInterfaceLikeTypes({ interfaces, unions }: AstTypes): Map<string,
         }
         for (const ruleCall of ruleCalls) {
             const type = nameToType.get(ruleCall);
-            if (type && (isInterfaceType(type) || !isDataTypeUnion(type, visited))) {
+            if (type && (isInterfaceType(type) || isUnionType(type) && !isDataTypeUnion(type, visited))) {
                 return false;
             }
         }
