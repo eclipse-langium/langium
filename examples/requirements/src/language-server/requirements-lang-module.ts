@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import { LangiumServices, Module, PartialLangiumServices } from 'langium';
-import { RequirementsLangValidationRegistry, RequirementsLangValidator } from './requirements-lang-validator';
+import { RequirementsLangValidator } from './requirements-lang-validator';
 
 /**
  * Declaration of custom services - add your own service classes here.
@@ -29,7 +29,6 @@ export type RequirementsLangServices = LangiumServices & RequirementsLangAddedSe
  */
 export const RequirementsLangModule: Module<RequirementsLangServices, PartialLangiumServices & RequirementsLangAddedServices> = {
     validation: {
-        ValidationRegistry: (services) => new RequirementsLangValidationRegistry(services),
         RequirementsLangValidator: (services) => new RequirementsLangValidator(services)
     }
 };

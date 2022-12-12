@@ -6,7 +6,7 @@
 
 import { createDefaultModule, createDefaultSharedModule, DefaultSharedModuleContext, inject, LangiumServices, LangiumSharedServices, Module, PartialLangiumServices } from 'langium';
 import { ArithmeticsGeneratedModule, ArithmeticsGeneratedSharedModule } from './generated/module';
-import { ArithmeticsValidationRegistry, ArithmeticsValidator } from './arithmetics-validator';
+import { ArithmeticsValidator, registerValidationChecks } from './arithmetics-validator';
 import { ArithmeticsScopeProvider } from './arithmetics-scope-provider';
 
 /**
@@ -34,7 +34,6 @@ export const ArithmeticsModule: Module<ArithmeticsServices, PartialLangiumServic
         ScopeProvider: (services) => new ArithmeticsScopeProvider(services)
     },
     validation: {
-        ValidationRegistry: (services) => new ArithmeticsValidationRegistry(services),
         ArithmeticsValidator: () => new ArithmeticsValidator()
     }
 };
@@ -68,5 +67,6 @@ export function createArithmeticsServices(context: DefaultSharedModuleContext): 
         ArithmeticsModule
     );
     shared.ServiceRegistry.register(arithmetics);
+    registerValidationChecks(arithmetics);
     return { shared, arithmetics };
 }

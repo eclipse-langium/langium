@@ -13,7 +13,7 @@ import { generateSummary } from './generator';
 import { NodeFileSystem } from 'langium/node';
 
 export const generateAction = async (fileName: string, opts: GenerateOptions): Promise<void> => {
-    const services = createRequirementsAndTestsLangServices(NodeFileSystem).RequirementsLang;
+    const services = createRequirementsAndTestsLangServices(NodeFileSystem).requirements;
     const [requirementModel, testModels]  = await extractRequirementModelWithTestModels(fileName, services);
     const generatedFilePath = generateSummary(requirementModel, testModels, fileName, opts.destination);
     console.log(chalk.green(`Requirement coverage generated successfully: ${generatedFilePath}`));

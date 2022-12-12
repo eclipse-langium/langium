@@ -16,7 +16,7 @@ describe('The generator should allow to extract all test cases referencing a spe
         const services = createRequirementsAndTestsLangServices(NodeFileSystem);
         const [requirementModel, testModels]  = await extractRequirementModelWithTestModels(
             path.join(__dirname, 'files', 'good', 'requirements.req'),
-            services.RequirementsLang
+            services.requirements
         );
 
         // generate summary

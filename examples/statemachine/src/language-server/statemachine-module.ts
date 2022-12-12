@@ -9,7 +9,7 @@ import {
     LangiumServices, LangiumSharedServices, Module, PartialLangiumServices
 } from 'langium';
 import { StatemachineGeneratedModule, StatemachineGeneratedSharedModule } from './generated/module';
-import { StatemachineValidationRegistry, StatemachineValidator } from './statemachine-validator';
+import { registerValidationChecks, StatemachineValidator } from './statemachine-validator';
 
 /**
  * Declaration of custom services - add your own service classes here.
@@ -33,7 +33,6 @@ export type StatemachineServices = LangiumServices & StatemachineAddedServices
  */
 export const StatemachineModule: Module<StatemachineServices, PartialLangiumServices & StatemachineAddedServices> = {
     validation: {
-        ValidationRegistry: (services) => new StatemachineValidationRegistry(services),
         StatemachineValidator: () => new StatemachineValidator()
     }
 };
@@ -67,5 +66,6 @@ export function createStatemachineServices(context: DefaultSharedModuleContext):
         StatemachineModule
     );
     shared.ServiceRegistry.register(statemachine);
+    registerValidationChecks(statemachine);
     return { shared, statemachine };
 }

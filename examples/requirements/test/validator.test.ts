@@ -14,7 +14,7 @@ describe('A requirement identifier and a test identifier shall contain a number.
         const services = createRequirementsAndTestsLangServices(NodeFileSystem);
         const [mainDoc,allDocs] = await extractDocuments(
             path.join(__dirname, 'files', 'good', 'requirements.req'),
-            services.RequirementsLang
+            services.requirements
         );
         expect((mainDoc.diagnostics ?? [])).toEqual([]);
         expect(allDocs.length).toEqual(3);
@@ -29,7 +29,7 @@ describe('A requirement identifier shall contain a number.', () => {
         const services = createRequirementsAndTestsLangServices(NodeFileSystem);
         const [mainDoc,] = await extractDocuments(
             path.join(__dirname, 'files', 'bad1', 'requirements.req'),
-            services.RequirementsLang
+            services.requirements
         );
         expect(mainDoc.diagnostics ?? []).toEqual(expect.arrayContaining([
             expect.objectContaining({
@@ -46,7 +46,7 @@ describe('A test identifier shall contain a number.', () => {
         const services = createRequirementsAndTestsLangServices(NodeFileSystem);
         const [,allDocs] = await extractDocuments(
             path.join(__dirname, 'files', 'bad1', 'requirements.req'),
-            services.RequirementsLang
+            services.requirements
         );
         const doc = allDocs.find(doc=>/tests_part1.tst/.test(doc.uri.fsPath));
         expect(doc).toBeDefined();
@@ -65,7 +65,7 @@ describe('A requirement shall be covered by at least one test.', () => {
         const services = createRequirementsAndTestsLangServices(NodeFileSystem);
         const [mainDoc,] = await extractDocuments(
             path.join(__dirname, 'files', 'bad1', 'requirements.req'),
-            services.RequirementsLang
+            services.requirements
         );
         expect(mainDoc.diagnostics ?? []).toEqual(expect.arrayContaining([
             expect.objectContaining({
@@ -81,7 +81,7 @@ describe('A referenced environment in a test must be found in one of the referen
         const services = createRequirementsAndTestsLangServices(NodeFileSystem);
         const [,allDocs] = await extractDocuments(
             path.join(__dirname, 'files', 'bad2', 'requirements.req'),
-            services.RequirementsLang
+            services.requirements
         );
         const doc = allDocs.find(doc=>/tests_part1.tst/.test(doc.uri.fsPath));
         expect(doc).toBeDefined();
