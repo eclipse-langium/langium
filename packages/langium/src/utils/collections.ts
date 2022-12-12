@@ -13,6 +13,16 @@ export class MultiMap<K, V> {
 
     private map = new Map<K, V[]>();
 
+    constructor()
+    constructor(elements: Array<[K, V]>)
+    constructor(elements?: Array<[K, V]>) {
+        if (elements) {
+            for (const [key, value] of elements) {
+                this.add(key, value);
+            }
+        }
+    }
+
     /**
      * The total number of values in the multimap.
      */

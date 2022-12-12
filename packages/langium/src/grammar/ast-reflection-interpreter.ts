@@ -63,17 +63,25 @@ export function interpretAstReflection(grammarOrTypes: Grammar | AstTypes, docum
 }
 
 function buildReferenceTypes(astTypes: AstTypes): Map<string, string> {
-    const references = new Map<string, string>();
+    const references = new MultiMap<string, [string, string]>();
     for (const interfaceType of astTypes.interfaces) {
         for (const property of interfaceType.properties) {
             for (const propertyAlternative of property.typeAlternatives) {
                 if (propertyAlternative.reference) {
-                    references.set(`${interfaceType.name}:${property.name}`, propertyAlternative.types[0]);
+                    references.add(interfaceType.name, [property.name, propertyAlternative.types[0]]);
                 }
             }
         }
+        for (const superType of interfaceType.interfaceSuperTypes) {
+            const superTypeReferences = references.get(superType);
+            references.addAll(interfaceType.name, superTypeReferences);
+        }
     }
-    return references;
+    const map = new Map<string, string>();
+    for (const [type, [property, target]] of references) {
+        map.set(`${type}:${property}`, target);
+    }
+    return map;
 }
 
 function buildTypeMetaData(astTypes: AstTypes): Map<string, TypeMetaData> {
