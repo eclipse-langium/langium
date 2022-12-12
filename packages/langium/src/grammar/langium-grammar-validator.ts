@@ -512,26 +512,33 @@ export class LangiumGrammarValidator {
                 continue;
             }
             if (!reachableRules.has(rule)) {
-                accept('hint', 'This rule is declared but never referenced.', { node: rule, property: 'name', tags: [DiagnosticTag.Unnecessary] });
+                accept('hint', 'This rule is declared but never referenced.', {
+                    node: rule,
+                    property: 'name',
+                    tags: [DiagnosticTag.Unnecessary]
+                });
             }
         }
     }
 
     checkClashingTerminalNames(grammar: ast.Grammar, accept: ValidationAcceptor): void {
-        const localTerminals = new Map<string, ast.TerminalRule>();
+        const localTerminals = new MultiMap<string, ast.TerminalRule>();
         const localKeywords = new Set<string>();
 
+        // Collect locally defined terminals/keywords
         for (const rule of grammar.rules) {
             if (ast.isTerminalRule(rule) && rule.name) {
-                localTerminals.set(rule.name, rule);
+                localTerminals.add(rule.name, rule);
             }
             if (ast.isParserRule(rule)) {
                 const keywords = streamAllContents(rule).filter(ast.isKeyword);
                 keywords.forEach(e => localKeywords.add(e.value));
             }
         }
+
+        // Collect imported terminals/keywords and their respectives imports
         const importedTerminals = new MultiMap<string, ast.GrammarImport>();
-        const importedKeywords = new Map<string, ast.GrammarImport>();
+        const importedKeywords = new MultiMap<string, ast.GrammarImport>();
 
         for (const importNode of grammar.imports) {
             const importedGrammars = resolveTransitiveImports(this.documents, importNode);
@@ -541,7 +548,7 @@ export class LangiumGrammarValidator {
                         importedTerminals.add(rule.name, importNode);
                     } else if (ast.isParserRule(rule) && rule.name) {
                         const keywords = streamAllContents(rule).filter(ast.isKeyword);
-                        keywords.forEach(e => importedKeywords.set(e.value, importNode));
+                        keywords.forEach(e => importedKeywords.add(e.value, importNode));
                     }
                 }
             }
@@ -557,24 +564,49 @@ export class LangiumGrammarValidator {
             } else if (importedKeywords.has(localTerminal.name)) {
                 const importNode = importedKeywords.get(localTerminal.name)!;
                 // 2nd case: Local terminal with imported keyword (error on terminal)
-                accept('error', `Terminal name clashes with imported keyword from "${importNode.path}".`, {
+                accept('error', `Terminal name clashes with imported keyword from "${importNode[0].path}".`, {
                     node: localTerminal,
                     property: 'name'
                 });
             }
         }
 
-        const importMap = new MultiMap<ast.GrammarImport, string>();
+        // Collect all imported terminals that share a name with a local keyword
+        const importTerminalMap = new MultiMap<ast.GrammarImport, string>();
         for (const localKeyword of localKeywords) {
             for (const importNode of importedTerminals.get(localKeyword)) {
-                importMap.add(importNode, localKeyword);
+                importTerminalMap.add(importNode, localKeyword);
             }
         }
 
-        for (const [importNode, keywords] of importMap.entriesGroupedByKey()) {
+        for (const [importNode, keywords] of importTerminalMap.entriesGroupedByKey()) {
             if (keywords.length > 0) {
                 // 3rd case: Imported terminal with local keyword (error on import)
                 accept('error', `Imported terminals (${keywords.join(', ')}) clash with locally defined keywords.`, {
+                    node: importNode,
+                    property: 'path'
+                });
+            }
+        }
+
+        // Collect all imported terminals that share a name with imported keywords
+        const importKeywordMap = new MultiMap<ast.GrammarImport, string>();
+        for (const [name, imports] of importedTerminals.entriesGroupedByKey()) {
+            const keywordImports = importedKeywords.get(name);
+            if (keywordImports.length > 0) {
+                imports
+                    // Exclude transitive keyword/terminal clashing
+                    // These errors are already shown in another file
+                    // So no need to validate these again here
+                    .filter(e => !keywordImports.includes(e))
+                    .forEach(e => importKeywordMap.add(e, name));
+            }
+        }
+
+        for (const [importNode, keywords] of importKeywordMap.entriesGroupedByKey()) {
+            if (keywords.length > 0) {
+                // 4th case: Imported terminal with imported keyword (error on import)
+                accept('error', `Imported terminals (${keywords.join(', ')}) clash with imported keywords.`, {
                     node: importNode,
                     property: 'path'
                 });

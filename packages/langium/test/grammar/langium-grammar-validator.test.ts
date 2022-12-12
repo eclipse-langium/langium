@@ -490,4 +490,44 @@ describe('Clashing token names', () => {
         });
     });
 
+    test('Imported terminal clashing with imported keywords', async () => {
+        const importedTerminal = await parse(`
+        terminal a: /a/;
+        `);
+        const importedKeyword = await parse(`
+        Rule: a='a';
+        `);
+        const terminalPath = importedTerminal.uri.path;
+        const keywordPath = importedKeyword.uri.path;
+        const grammar = `
+        import ".${terminalPath}";
+        import ".${keywordPath}";
+        Test: x='x';
+        `;
+        const validation = await validate(grammar);
+        const importNode = validation.document.parseResult.value.imports[0];
+        expectError(validation, 'Imported terminals (a) clash with imported keywords.', {
+            node: importNode,
+            property: {
+                name: 'path'
+            }
+        });
+    });
+
+    test('Imported terminal not clashing with transitive imported keywords', async () => {
+        const importedGrammar = await parse(`
+        Rule: a='a';
+        terminal a: /a/;
+        `);
+        let path = importedGrammar.uri.path;
+        // remove '.langium' extension
+        path = path.substring(0, path.indexOf('.'));
+        const grammar = `
+        import ".${path}";
+        Test: x='x';
+        `;
+        const validation = await validate(grammar);
+        expectNoIssues(validation);
+    });
+
 });
