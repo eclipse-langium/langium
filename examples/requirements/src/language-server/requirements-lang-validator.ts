@@ -4,30 +4,22 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { ValidationAcceptor, ValidationChecks, ValidationRegistry } from 'langium';
+import { ValidationAcceptor, ValidationChecks } from 'langium';
 import { RequirementsAndTestsAstType, Requirement, isTestModel } from './generated/ast';
-import { RequirementsLangServices } from './requirements-lang-module';
+import type { RequirementsLangServices } from './requirements-lang-module';
 
-/**
- * Registry for validation checks.
- */
-export class RequirementsLangValidationRegistry extends ValidationRegistry {
-    constructor(services: RequirementsLangServices) {
-        super(services);
-        const validator = services.validation.RequirementsLangValidator;
-        const checks: ValidationChecks<RequirementsAndTestsAstType> = {
-            Requirement: [
-                validator.checkRequirementNameContainsANumber,
-                validator.checkRequirementIsCoveredByATest
-            ]
-        };
-        this.register(checks, validator);
-    }
+export function registerRequirementsValidationChecks(services: RequirementsLangServices) {
+    const registry = services.validation.ValidationRegistry;
+    const validator = services.validation.RequirementsLangValidator;
+    const checks: ValidationChecks<RequirementsAndTestsAstType> = {
+        Requirement: [
+            validator.checkRequirementNameContainsANumber,
+            validator.checkRequirementIsCoveredByATest
+        ]
+    };
+    registry.register(checks, validator);
 }
 
-/**
- * Implementation of custom validations.
- */
 export class RequirementsLangValidator {
     private services: RequirementsLangServices;
 

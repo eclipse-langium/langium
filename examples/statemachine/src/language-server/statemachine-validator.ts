@@ -4,19 +4,17 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { ValidationAcceptor, ValidationChecks, ValidationRegistry } from 'langium';
+import { ValidationAcceptor, ValidationChecks } from 'langium';
 import { State, StatemachineAstType } from './generated/ast';
-import { StatemachineServices } from './statemachine-module';
+import type { StatemachineServices } from './statemachine-module';
 
-export class StatemachineValidationRegistry extends ValidationRegistry {
-    constructor(services: StatemachineServices) {
-        super(services);
-        const validator = services.validation.StatemachineValidator;
-        const checks: ValidationChecks<StatemachineAstType> = {
-            State: validator.checkStateNameStartsWithCapital
-        };
-        this.register(checks, validator);
-    }
+export function registerValidationChecks(services: StatemachineServices) {
+    const registry = services.validation.ValidationRegistry;
+    const validator = services.validation.StatemachineValidator;
+    const checks: ValidationChecks<StatemachineAstType> = {
+        State: validator.checkStateNameStartsWithCapital
+    };
+    registry.register(checks, validator);
 }
 
 export class StatemachineValidator {

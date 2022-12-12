@@ -3,7 +3,7 @@ import {
     LangiumServices, LangiumSharedServices, Module, PartialLangiumServices
 } from 'langium';
 import { <%= LanguageName %>GeneratedModule, <%= LanguageName %>GeneratedSharedModule } from './generated/module';
-import { <%= LanguageName %>ValidationRegistry, <%= LanguageName %>Validator } from './<%= language-id %>-validator';
+import { <%= LanguageName %>Validator, registerValidationChecks } from './<%= language-id %>-validator';
 
 /**
  * Declaration of custom services - add your own service classes here.
@@ -27,7 +27,6 @@ export type <%= LanguageName %>Services = LangiumServices & <%= LanguageName %>A
  */
 export const <%= LanguageName %>Module: Module<<%= LanguageName %>Services, PartialLangiumServices & <%= LanguageName %>AddedServices> = {
     validation: {
-        ValidationRegistry: (services) => new <%= LanguageName %>ValidationRegistry(services),
         <%= LanguageName %>Validator: () => new <%= LanguageName %>Validator()
     }
 };
@@ -61,5 +60,6 @@ export function create<%= LanguageName %>Services(context: DefaultSharedModuleCo
         <%= LanguageName %>Module
     );
     shared.ServiceRegistry.register(<%= LanguageName %>);
+    registerValidationChecks(<%= LanguageName %>);
     return { shared, <%= LanguageName %> };
 }

@@ -6,7 +6,7 @@
 
 import { LangiumServices, Module, PartialLangiumServices, LangiumSharedServices, DefaultSharedModuleContext, inject, createDefaultSharedModule, createDefaultModule } from 'langium';
 import { DomainModelGeneratedModule, DomainModelGeneratedSharedModule } from './generated/module';
-import { DomainModelValidationRegistry, DomainModelValidator } from './domain-model-validator';
+import { DomainModelValidator, registerValidationChecks } from './domain-model-validator';
 import { DomainModelScopeComputation } from './domain-model-scope';
 import { DomainModelNameProvider } from './domain-model-naming';
 import { DomainModelFormatter } from './domain-model-formatter';
@@ -26,7 +26,6 @@ export const DomainModelModule: Module<DomainModelServices, PartialLangiumServic
         NameProvider: () => new DomainModelNameProvider()
     },
     validation: {
-        ValidationRegistry: (services) => new DomainModelValidationRegistry(services),
         DomainModelValidator: () => new DomainModelValidator()
     },
     lsp: {
@@ -49,5 +48,6 @@ export function createDomainModelServices(context: DefaultSharedModuleContext): 
         DomainModelModule
     );
     shared.ServiceRegistry.register(domainmodel);
+    registerValidationChecks(domainmodel);
     return { shared, domainmodel };
 }

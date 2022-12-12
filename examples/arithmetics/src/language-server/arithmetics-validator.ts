@@ -4,22 +4,21 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { ValidationAcceptor, ValidationChecks, ValidationRegistry } from 'langium';
+import { ValidationAcceptor, ValidationChecks } from 'langium';
 import { ArithmeticsAstType, isNumberLiteral, Definition, isFunctionCall, Expression, BinaryExpression, isBinaryExpression } from './generated/ast';
-import { ArithmeticsServices } from './arithmetics-module';
+import type { ArithmeticsServices } from './arithmetics-module';
 import { applyOp } from '../cli/cli-util';
 
-export class ArithmeticsValidationRegistry extends ValidationRegistry {
-    constructor(services: ArithmeticsServices) {
-        super(services);
-        const validator = services.validation.ArithmeticsValidator;
-        const checks: ValidationChecks<ArithmeticsAstType> = {
-            BinaryExpression: validator.checkDivByZero,
-            Definition: validator.checkNormalisable
-        };
-        this.register(checks, validator);
-    }
+export function registerValidationChecks(services: ArithmeticsServices): void {
+    const registry = services.validation.ValidationRegistry;
+    const validator = services.validation.ArithmeticsValidator;
+    const checks: ValidationChecks<ArithmeticsAstType> = {
+        BinaryExpression: validator.checkDivByZero,
+        Definition: validator.checkNormalisable
+    };
+    registry.register(checks, validator);
 }
+
 export class ArithmeticsValidator {
     checkDivByZero(binExpr: BinaryExpression, accept: ValidationAcceptor): void {
         if (binExpr.operator === '/' && isNumberLiteral(binExpr.right) && binExpr.right.value === 0) {

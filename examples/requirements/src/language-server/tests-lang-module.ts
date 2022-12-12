@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import { LangiumServices, Module, PartialLangiumServices } from 'langium';
-import { TestsLangValidationRegistry, TestsLangValidator } from './tests-lang-validator';
+import { TestsLangValidator } from './tests-lang-validator';
 
 /**
  * Declaration of custom services - add your own service classes here.
@@ -29,7 +29,6 @@ export type TestsLangServices = LangiumServices & TestsLangAddedServices
  */
 export const TestsLangModule: Module<TestsLangServices, PartialLangiumServices & TestsLangAddedServices> = {
     validation: {
-        ValidationRegistry: (services) => new TestsLangValidationRegistry(services),
         TestsLangValidator: () => new TestsLangValidator()
     }
 };

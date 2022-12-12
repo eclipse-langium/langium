@@ -1,19 +1,17 @@
-import { ValidationAcceptor, ValidationChecks, ValidationRegistry } from 'langium';
+import { ValidationAcceptor, ValidationChecks } from 'langium';
 import { <%= LanguageName %>AstType, Person } from './generated/ast';
 import type { <%= LanguageName %>Services } from './<%= language-id %>-module';
 
 /**
- * Registry for validation checks.
+ * Register custom validation checks.
  */
-export class <%= LanguageName %>ValidationRegistry extends ValidationRegistry {
-    constructor(services: <%= LanguageName %>Services) {
-        super(services);
-        const validator = services.validation.<%= LanguageName %>Validator;
-        const checks: ValidationChecks<<%= LanguageName %>AstType> = {
-            Person: validator.checkPersonStartsWithCapital
-        };
-        this.register(checks, validator);
-    }
+export function registerValidationChecks(services: <%= LanguageName %>Services) {
+    const registry = services.validation.ValidationRegistry;
+    const validator = services.validation.<%= LanguageName %>Validator;
+    const checks: ValidationChecks<<%= LanguageName %>AstType> = {
+        Person: validator.checkPersonStartsWithCapital
+    };
+    registry.register(checks, validator);
 }
 
 /**

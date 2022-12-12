@@ -8,9 +8,13 @@ import {
     createDefaultModule, createDefaultSharedModule, DefaultSharedModuleContext, inject,
     LangiumSharedServices
 } from 'langium';
-import { RequirementsAndTestsGeneratedSharedModule, RequirementsGeneratedModule, TestsGeneratedModule } from './generated/module';
+import {
+    RequirementsAndTestsGeneratedSharedModule, RequirementsGeneratedModule, TestsGeneratedModule
+} from './generated/module';
 import { RequirementsLangModule, RequirementsLangServices } from './requirements-lang-module';
+import { registerRequirementsValidationChecks } from './requirements-lang-validator';
 import { TestsLangModule, TestsLangServices } from './tests-lang-module';
+import { registerTestsValidationChecks } from './tests-lang-validator';
 
 /**
  * Create the full set of services required by Langium.
@@ -29,24 +33,26 @@ import { TestsLangModule, TestsLangServices } from './tests-lang-module';
  */
 export function createRequirementsAndTestsLangServices(context: DefaultSharedModuleContext): {
     shared: LangiumSharedServices,
-    RequirementsLang: RequirementsLangServices,
-    TestsLang: TestsLangServices
+    requirements: RequirementsLangServices,
+    tests: TestsLangServices
 } {
     const shared = inject(
         createDefaultSharedModule(context),
         RequirementsAndTestsGeneratedSharedModule
     );
-    const RequirementsLang = inject(
+    const requirements = inject(
         createDefaultModule({ shared }),
         RequirementsGeneratedModule,
         RequirementsLangModule
     );
-    const TestsLang = inject(
+    const tests = inject(
         createDefaultModule({ shared }),
         TestsGeneratedModule,
         TestsLangModule
     );
-    shared.ServiceRegistry.register(RequirementsLang);
-    shared.ServiceRegistry.register(TestsLang);
-    return { shared, RequirementsLang: RequirementsLang, TestsLang: TestsLang };
+    shared.ServiceRegistry.register(requirements);
+    shared.ServiceRegistry.register(tests);
+    registerRequirementsValidationChecks(requirements);
+    registerTestsValidationChecks(tests);
+    return { shared, requirements, tests };
 }

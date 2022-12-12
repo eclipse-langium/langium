@@ -4,30 +4,22 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { ValidationAcceptor, ValidationChecks, ValidationRegistry } from 'langium';
+import { ValidationAcceptor, ValidationChecks } from 'langium';
 import { RequirementsAndTestsAstType, Test } from './generated/ast';
-import { TestsLangServices } from './tests-lang-module';
+import type { TestsLangServices } from './tests-lang-module';
 
-/**
- * Registry for validation checks.
- */
-export class TestsLangValidationRegistry extends ValidationRegistry {
-    constructor(services: TestsLangServices) {
-        super(services);
-        const validator = services.validation.TestsLangValidator;
-        const checks: ValidationChecks<RequirementsAndTestsAstType> = {
-            Test: [
-                validator.checkTestNameContainsANumber,
-                validator.checkTestReferencesOnlyEnvironmentsAlsoReferencedInSomeRequirement
-            ]
-        };
-        this.register(checks, validator);
-    }
+export function registerTestsValidationChecks(services: TestsLangServices) {
+    const registry = services.validation.ValidationRegistry;
+    const validator = services.validation.TestsLangValidator;
+    const checks: ValidationChecks<RequirementsAndTestsAstType> = {
+        Test: [
+            validator.checkTestNameContainsANumber,
+            validator.checkTestReferencesOnlyEnvironmentsAlsoReferencedInSomeRequirement
+        ]
+    };
+    registry.register(checks, validator);
 }
 
-/**
- * Implementation of custom validations.
- */
 export class TestsLangValidator {
 
     checkTestNameContainsANumber(test: Test, accept: ValidationAcceptor): void {
