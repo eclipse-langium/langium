@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import { Interface, Type, AtomType } from '../../generated/ast';
-import { getTypeName } from '../../internal-grammar-util';
+import { getTypeNameWithoutError } from '../../internal-grammar-util';
 import { AstTypes, Property, InterfaceType, UnionType, PropertyType } from './types';
 
 export function collectDeclaredTypes(interfaces: Interface[], unions: Type[]): AstTypes {
@@ -13,7 +13,7 @@ export function collectDeclaredTypes(interfaces: Interface[], unions: Type[]): A
 
     // add interfaces
     for (const type of interfaces) {
-        const superTypes = type.superTypes.filter(e => e.ref).map(e => getTypeName(e.ref!));
+        const superTypes = type.superTypes.filter(e => e.ref).map(e => getTypeNameWithoutError(e.ref!));
         const properties: Property[] = type.attributes.map(e => <Property>{
             name: e.name,
             optional: e.isOptional === true,
@@ -36,7 +36,7 @@ export function collectDeclaredTypes(interfaces: Interface[], unions: Type[]): A
 function atomTypeToPropertyType(type: AtomType): PropertyType {
     let types: string[] = [];
     if (type.refType) {
-        types = [type.refType.ref ? getTypeName(type.refType.ref) : type.refType.$refText];
+        types = [type.refType.ref ? getTypeNameWithoutError(type.refType.ref) : type.refType.$refText];
     } else {
         types = [type.primitiveType ?? `'${type.keywordType?.value}'`];
     }

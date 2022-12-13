@@ -17,7 +17,7 @@ import { ValidationAcceptor, ValidationChecks, ValidationRegistry } from '../../
 import { LangiumDocuments } from '../../workspace/documents';
 import * as ast from '../generated/ast';
 import { isParserRule, isRuleCall } from '../generated/ast';
-import { getTypeName, isDataTypeRule, isOptionalCardinality, isPrimitiveType, resolveImport, resolveTransitiveImports, terminalRegex } from '../internal-grammar-util';
+import { getTypeNameWithoutError, isDataTypeRule, isOptionalCardinality, isPrimitiveType, resolveImport, resolveTransitiveImports, terminalRegex } from '../internal-grammar-util';
 import type { LangiumGrammarServices } from '../langium-grammar-module';
 
 export class LangiumGrammarValidationRegistry extends ValidationRegistry {
@@ -280,7 +280,7 @@ export class LangiumGrammarValidator {
 
             const isDataType = isDataTypeRule(rule);
             const isInfers = !rule.returnType && !rule.dataType;
-            const ruleTypeName = getTypeName(rule);
+            const ruleTypeName = getTypeNameWithoutError(rule);
             if (!isDataType && ruleTypeName && types.has(ruleTypeName) === isInfers) {
                 if ((isInfers || rule.returnType?.ref !== undefined) && rule.inferredType === undefined) {
                     // report missing returns (a type of the same name is declared)
@@ -313,7 +313,7 @@ export class LangiumGrammarValidator {
             const actionType = this.getActionType(action);
             if (actionType) {
                 const isInfers = Boolean(action.inferredType);
-                const typeName = getTypeName(action);
+                const typeName = getTypeNameWithoutError(action);
                 if (action.type && types.has(typeName) === isInfers) {
                     const keywordNode = isInfers ? findNodeForKeyword(action.$cstNode, 'infer') : findNodeForKeyword(action.$cstNode, '{');
                     accept('error', getMessage(typeName, isInfers), {
@@ -698,7 +698,7 @@ export class LangiumGrammarValidator {
 
     protected checkReferenceToRuleButNotType(type: Reference<ast.AbstractType>): string | undefined {
         if (type && ast.isParserRule(type.ref) && !isDataTypeRule(type.ref) && (type.ref.returnType || type.ref.inferredType)) {
-            const typeName = getTypeName(type.ref);
+            const typeName = getTypeNameWithoutError(type.ref);
             if (typeName) {
                 return `Use the rule type '${typeName}' instead of the typed rule name '${type.ref.name}' for cross references.`;
             }

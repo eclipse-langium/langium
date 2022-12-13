@@ -8,7 +8,7 @@ import { isNamed } from '../../../references/name-provider';
 import { MultiMap } from '../../../utils/collections';
 import { stream } from '../../../utils/stream';
 import { ParserRule, isAlternatives, isKeyword, Action, isParserRule, isAction, AbstractElement, isGroup, isUnorderedGroup, isAssignment, isRuleCall, Assignment, isCrossReference, RuleCall } from '../../generated/ast';
-import { getExplicitRuleType, getTypeName, isOptionalCardinality, getRuleType } from '../../internal-grammar-util';
+import { getExplicitRuleType, getTypeNameWithoutError, isOptionalCardinality, getRuleType } from '../../internal-grammar-util';
 import { comparePropertyType } from '../types-util';
 import { Property, AstTypes, UnionType, PropertyType, InterfaceType } from './types';
 
@@ -216,7 +216,7 @@ function getRuleTypes(context: TypeCollectionContext, rule: ParserRule): TypeAlt
 
 function newTypePart(element?: ParserRule | Action | string): TypePart {
     return {
-        name: isParserRule(element) || isAction(element) ? getTypeName(element) : element,
+        name: isParserRule(element) || isAction(element) ? getTypeNameWithoutError(element) : element,
         properties: [],
         ruleCalls: [],
         children: [],
@@ -318,7 +318,7 @@ function findTypes(terminal: AbstractElement, types: TypeCollection): void {
     } else if (isRuleCall(terminal) && terminal.rule.ref) {
         types.types.add(getRuleType(terminal.rule.ref));
     } else if (isCrossReference(terminal) && terminal.type.ref) {
-        types.types.add(getTypeName(terminal.type.ref));
+        types.types.add(getTypeNameWithoutError(terminal.type.ref));
         types.reference = true;
     }
 }
@@ -348,7 +348,7 @@ function getFragmentProperties(fragment: ParserRule, context: TypeCollectionCont
     }
     const properties: Property[] = [];
     context.fragments.set(fragment, properties);
-    const fragmentName = getTypeName(fragment);
+    const fragmentName = getTypeNameWithoutError(fragment);
     const typeAlternatives = getRuleTypes(context, fragment).filter(e => e.name === fragmentName);
     properties.push(...typeAlternatives.flatMap(e => e.properties));
     return properties;

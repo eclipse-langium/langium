@@ -93,6 +93,14 @@ export function getTypeName(type: ast.AbstractType | ast.InferredType): string {
     throw new TypeResolutionError('Cannot get name of Unknown Type', type.$cstNode);
 }
 
+export function getTypeNameWithoutError(type: ast.AbstractType | ast.InferredType): string {
+    try {
+        return getTypeName(type);
+    } catch {
+        return 'never';
+    }
+}
+
 export function getExplicitRuleType(rule: ast.ParserRule): string | undefined {
     if (rule.inferredType) {
         return rule.inferredType.name;
