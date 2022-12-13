@@ -18,9 +18,12 @@ import { LangiumGrammarNameProvider } from './references/grammar-naming';
 import { LangiumGrammarReferences } from './references/grammar-references';
 import { LangiumGrammarDefinitionProvider } from './lsp/grammar-definition';
 import { LangiumGrammarCallHierarchyProvider } from './lsp/grammar-call-hierarchy';
-import { LangiumGrammarDocumentBuilder } from './workspace/document-builder';
 import { LangiumGrammarValidationResourcesCollector } from './validation/validation-resources-collector';
 import { LangiumGrammarTypesValidator } from './validation/types-validator';
+import { LangiumGrammarDocument } from './workspace/documents';
+import { Grammar } from './generated/ast';
+import { interruptAndCheck } from '../utils/promise-util';
+import { DocumentState } from '../workspace/documents';
 
 export type LangiumGrammarAddedServices = {
     validation: {
@@ -55,12 +58,6 @@ export const LangiumGrammarModule: Module<LangiumGrammarServices, PartialLangium
     }
 };
 
-export const LangiumGrammarSharedModule = {
-    workspace: {
-        DocumentBuilder: (services: LangiumSharedServices) => new LangiumGrammarDocumentBuilder(services),
-    }
-};
-
 export function createLangiumGrammarServices(context: DefaultSharedModuleContext,
     sharedModule?: Module<LangiumSharedServices, PartialLangiumSharedServices>): {
         shared: LangiumSharedServices,
@@ -69,14 +66,9 @@ export function createLangiumGrammarServices(context: DefaultSharedModuleContext
     const shared = inject(
         createDefaultSharedModule(context),
         LangiumGrammarGeneratedSharedModule,
-        {
-            ...(sharedModule ?? {}),
-            workspace: {
-                ...LangiumGrammarSharedModule.workspace,
-                ...(sharedModule?.workspace ?? {})
-            }
-        }
+        sharedModule
     );
+    addTypeCollectionPhase(shared);
     const grammar = inject(
         createDefaultModule({ shared }),
         LangiumGrammarGeneratedModule,
@@ -84,4 +76,20 @@ export function createLangiumGrammarServices(context: DefaultSharedModuleContext
     );
     shared.ServiceRegistry.register(grammar);
     return { shared, grammar };
+}
+
+function addTypeCollectionPhase(services: LangiumSharedServices) {
+    const documentBuilder = services.workspace.DocumentBuilder;
+    const langiumDocuments = services.workspace.LangiumDocuments;
+    const serviceRegistry = services.ServiceRegistry;
+
+    documentBuilder.onBuildPhase(DocumentState.IndexedReferences, async (documents, cancelToken) => {
+        documents.forEach(async document => {
+            await interruptAndCheck(cancelToken);
+            const docServices = serviceRegistry.getServices(document.uri) as LangiumGrammarServices;
+            const typeCollector = docServices.validation.ValidationResourcesCollector;
+            const grammar = document.parseResult.value as Grammar;
+            (document as LangiumGrammarDocument).validationResources = typeCollector.collectValidationResources(langiumDocuments, grammar);
+        });
+    });
 }

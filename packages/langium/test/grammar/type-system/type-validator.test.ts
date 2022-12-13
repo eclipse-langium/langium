@@ -101,7 +101,7 @@ describe('Work with imported declared types', () => {
     test('Returning imported type should not produce an error #507', async () => {
 
         const referencingDoc = await parseDocument(grammarServices, `
-        interface IRoot {}
+        interface IRoot { name: string }
         `);
         const prog = `
         grammar Test_file_ref
