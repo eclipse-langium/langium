@@ -89,7 +89,7 @@ function addTypeCollectionPhase(services: LangiumSharedServices) {
             const docServices = serviceRegistry.getServices(document.uri) as LangiumGrammarServices;
             const typeCollector = docServices.validation.ValidationResourcesCollector;
             const grammar = document.parseResult.value as Grammar;
-            (document as LangiumGrammarDocument).validationResources = typeCollector.collectValidationResources(langiumDocuments, grammar);
+            (document as LangiumGrammarDocument).validationResources = typeCollector.collectValidationResources(grammar, langiumDocuments);
         });
     });
 }

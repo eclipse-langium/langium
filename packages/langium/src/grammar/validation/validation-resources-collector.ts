@@ -16,8 +16,8 @@ import { TypeToValidationInfo, ValidationResources } from '../workspace/document
 
 export class LangiumGrammarValidationResourcesCollector {
 
-    collectValidationResources(documents: LangiumDocuments, grammar: Grammar): ValidationResources {
-        const typeResources = collectTypeResources(documents, [grammar]);
+    collectValidationResources(grammar: Grammar, documents: LangiumDocuments): ValidationResources {
+        const typeResources = collectTypeResources(grammar, documents);
         return {
             typeToValidationInfo: this.collectValidationInfo(typeResources),
             typeToSuperProperties: this.collectSuperProperties(typeResources),

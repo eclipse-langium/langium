@@ -7,24 +7,17 @@
 import { AstReflection, isAstNode, ReferenceInfo, TypeMandatoryProperty, TypeMetaData } from '../syntax-tree';
 import { MultiMap } from '../utils/collections';
 import { LangiumDocuments } from '../workspace/documents';
-import { EmptyFileSystem } from '../workspace/file-system-provider';
 import { Grammar, isGrammar } from './generated/ast';
-import { createLangiumGrammarServices } from './langium-grammar-module';
 import { collectAst } from './type-system/ast-collector';
 import { AstTypes, Property } from './type-system/type-collector/types';
 import { collectAllProperties } from './type-system/types-util';
-
-let emptyDocuments: LangiumDocuments;
 
 export function interpretAstReflection(astTypes: AstTypes): AstReflection;
 export function interpretAstReflection(grammar: Grammar, documents?: LangiumDocuments): AstReflection;
 export function interpretAstReflection(grammarOrTypes: Grammar | AstTypes, documents?: LangiumDocuments): AstReflection {
     let collectedTypes: AstTypes;
     if (isGrammar(grammarOrTypes)) {
-        if (!emptyDocuments && !documents) {
-            emptyDocuments = createLangiumGrammarServices(EmptyFileSystem).shared.workspace.LangiumDocuments;
-        }
-        collectedTypes = collectAst(documents ?? emptyDocuments, [grammarOrTypes]);
+        collectedTypes = collectAst(grammarOrTypes, documents);
     } else {
         collectedTypes = grammarOrTypes;
     }

@@ -28,7 +28,7 @@ export type TypeResources = {
     astResources: AstResources,
 }
 
-export function collectTypeResources(documents: LangiumDocuments, grammars: Grammar[]): TypeResources {
+export function collectTypeResources(grammars: Grammar | Grammar[], documents?: LangiumDocuments): TypeResources {
     const astResources = collectAllAstResources(grammars, documents);
     const inferred = collectInferredTypes(astResources.parserRules, astResources.datatypeRules);
     const declared = collectDeclaredTypes(astResources.interfaces, astResources.types);
@@ -88,9 +88,10 @@ function shareSuperTypesFromUnions(inferred: AstTypes, declared: AstTypes): void
 
 ///////////////////////////////////////////////////////////////////////////////
 
-export function collectAllAstResources(grammars: Grammar[], documents?: LangiumDocuments, visited: Set<URI> = new Set(),
+export function collectAllAstResources(grammars: Grammar | Grammar[], documents?: LangiumDocuments, visited: Set<URI> = new Set(),
     astResources: AstResources = { parserRules: [], datatypeRules: [], interfaces: [], types: [] }): AstResources {
 
+    if (!Array.isArray(grammars)) grammars = [grammars];
     for (const grammar of grammars) {
         const doc = getDocument(grammar);
         if (visited.has(doc.uri)) {

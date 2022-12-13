@@ -12,7 +12,7 @@ import { LangiumConfig } from '../package';
 import { generatedHeader } from './util';
 
 export function generateAst(services: LangiumServices, grammars: Grammar[], config: LangiumConfig): string {
-    const astTypes = collectAst(services.shared.workspace.LangiumDocuments, grammars);
+    const astTypes = collectAst(grammars, services.shared.workspace.LangiumDocuments);
     const fileNode = new CompositeGeneratorNode();
     fileNode.append(
         generatedHeader,

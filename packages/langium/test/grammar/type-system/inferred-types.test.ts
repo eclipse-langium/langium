@@ -764,7 +764,7 @@ describe('expression rules with inferred and declared interfaces', () => {
         `);
 
         // check ast.ts types
-        const allTypes = collectAst(undefined!, [grammar]);
+        const allTypes = collectAst(grammar);
 
         expect(allTypes.unions.map(toSubstring).join('\n').trim()).toBe(s`
             export type Expression = MemberAccess | PrimaryExpression | SuperMemberAccess;
@@ -809,7 +809,7 @@ describe('types of `$container` and `$type` are correct', () => {
             interface D { a: A }
             interface E { b: B }
         `);
-        const { unions, interfaces } = collectAst(undefined!, [document.parseResult.value]);
+        const { unions, interfaces } = collectAst(document.parseResult.value);
 
         const unionsString = unions.map(toSubstring).join('\n').trim();
         expect(unionsString).toBe(s``);
@@ -849,7 +849,7 @@ describe('types of `$container` and `$type` are correct', () => {
             D: 'D' a=A;
             E: 'E' b=B;   
         `);
-        const { unions, interfaces } = collectAst(undefined!, [document.parseResult.value]);
+        const { unions, interfaces } = collectAst(document.parseResult.value);
 
         const unionsString = unions.map(toSubstring).join('\n').trim();
         expect(unionsString).toBe(s`
@@ -883,7 +883,7 @@ describe('types of `$container` and `$type` are correct', () => {
             E: 'E' b=B;
             terminal ID: /[a-zA-Z_][a-zA-Z0-9_]*/;
         `);
-        const { unions, interfaces } = collectAst(undefined!, [document.parseResult.value]);
+        const { unions, interfaces } = collectAst(document.parseResult.value);
 
         const unionsString = unions.map(toSubstring).join('\n').trim();
         expect(unionsString).toBe(s``);
@@ -925,7 +925,7 @@ describe('generated types from declared types include all of them', () => {
             AB: A ({infer B} b+=ID)*;
             terminal ID: /[_a-zA-Z][\\w_]*/;
         `);
-        const types = collectAst(undefined!, [document.parseResult.value]);
+        const types = collectAst(document.parseResult.value);
 
         const documentWithDeclaredTypes = await parseHelper<Grammar>(grammarServices)(`
             interface A { a: string; }
@@ -935,7 +935,7 @@ describe('generated types from declared types include all of them', () => {
             AB returns AB: A ({B} b+=ID)*;
             terminal ID: /[_a-zA-Z][\\w_]*/;        
         `);
-        const typesWithDeclared = collectAst(undefined!, [documentWithDeclaredTypes.parseResult.value]);
+        const typesWithDeclared = collectAst(documentWithDeclaredTypes.parseResult.value);
 
         expect(typesWithDeclared.unions.map(toSubstring).join('\n').trim())
             .toBe(types.unions.map(toSubstring).join('\n').trim());

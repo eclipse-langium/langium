@@ -16,8 +16,8 @@ import { isPrimitiveType } from '../internal-grammar-util';
  * @param documents Documents to resolve imports that were used in the given grammars.
  * @param grammars Grammars for which it's necessary to build an AST.
  */
-export function collectAst(documents: LangiumDocuments, grammars: Grammar[]): AstTypes {
-    const { inferred, declared } = collectTypeResources(documents, grammars);
+export function collectAst(grammars: Grammar | Grammar[], documents?: LangiumDocuments): AstTypes {
+    const { inferred, declared } = collectTypeResources(grammars, documents);
 
     const astTypes = {
         interfaces: mergeAndRemoveDuplicates<InterfaceType>(inferred.interfaces,declared.interfaces),
