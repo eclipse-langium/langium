@@ -259,10 +259,11 @@ function validatePropertiesConsistency(inferred: MultiMap<string, Property>, dec
             if (foundTypeAsStr !== expectedTypeAsStr) {
                 const typeAlternativesErrors = checkAlternativesConsistencyHelper(foundProp.typeAlternatives, expectedProp.typeAlternatives);
                 if (typeAlternativesErrors.length > 0) {
-                    const propError: string[] =
-                        [`The assigned type '${foundTypeAsStr}' is not compatible with the declared property '${name}' of type '${expectedTypeAsStr}': `];
-                    propError.push(...(typeAlternativesErrors.map(errorInfo => ` '${errorInfo.typeAsString}' ${errorInfo.errorMessage};`)));
-                    applyErrorToProperties(foundProp.astNodes, propError.join().replace(/;$/, '.'));
+                    const errorMsgPrefix = `The assigned type '${foundTypeAsStr}' is not compatible with the declared property '${name}' of type '${expectedTypeAsStr}'`;
+                    const propErrors = typeAlternativesErrors
+                        .map(errorInfo => ` '${errorInfo.typeAsString}' ${errorInfo.errorMessage}`)
+                        .join('; ');
+                    applyErrorToProperties(foundProp.astNodes, `${errorMsgPrefix}: ${propErrors}.`);
                 }
             }
 
