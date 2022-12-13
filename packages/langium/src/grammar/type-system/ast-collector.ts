@@ -27,7 +27,7 @@ export function collectAst(documents: LangiumDocuments, grammars: Grammar[]): As
     sortInterfacesTopologically(astTypes.interfaces);
     astTypes.unions.sort((a, b) => a.name.localeCompare(b.name));
 
-    specifyAstNodeProperies(astTypes);
+    specifyAstNodeProperties(astTypes);
     return astTypes;
 }
 
@@ -37,7 +37,7 @@ function mergeAndRemoveDuplicates<T extends { name: string }>(inferred: T[], dec
         .values());
 }
 
-export function specifyAstNodeProperies(astTypes: AstTypes) {
+export function specifyAstNodeProperties(astTypes: AstTypes) {
     const nameToType = filterInterfaceLikeTypes(astTypes);
     addSubTypes(nameToType);
     buildContainerTypes(nameToType);

@@ -162,7 +162,7 @@ describe('validate declared types', () => {
     });
 });
 
-describe('NEW TESTS', () => {
+describe('validate actions that use declared types', () => {
 
     test('verify extra properties in some actions', async () => {
         const prog = `
@@ -185,6 +185,10 @@ describe('NEW TESTS', () => {
         const diagnostics: Diagnostic[] = await grammarServices.validation.DocumentValidator.validateDocument(document);
         expect(diagnostics.filter(d => d.severity === DiagnosticSeverity.Error)).toHaveLength(2);
     });
+
+});
+
+describe('validate properties duplication in types hierarchy', () => {
 
     test('verify extra properties in some parser rules', async () => {
         const prog = `

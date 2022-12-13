@@ -7,7 +7,7 @@
 import { createLangiumGrammarServices, Grammar, EmptyFileSystem, s } from '../../../src';
 import { isParserRule } from '../../../src/grammar/generated/ast';
 import { isDataTypeRule } from '../../../src/grammar/internal-grammar-util';
-import { collectAst, specifyAstNodeProperies } from '../../../src/grammar/type-system/ast-collector';
+import { collectAst, specifyAstNodeProperties } from '../../../src/grammar/type-system/ast-collector';
 import { collectAllAstResources } from '../../../src/grammar/type-system/type-collector/all-types';
 import { collectDeclaredTypes } from '../../../src/grammar/type-system/type-collector/declared-types';
 import { collectInferredTypes } from '../../../src/grammar/type-system/type-collector/inferred-types';
@@ -731,7 +731,7 @@ describe('expression rules with inferred and declared interfaces', () => {
         // check only inferred types
         const inferred = collectInferredTypes(parserRules, datatypeRules);
         sortInterfacesTopologically(inferred.interfaces);
-        specifyAstNodeProperies(inferred);
+        specifyAstNodeProperties(inferred);
 
         const inferredInterfacesString = inferred.interfaces.map(toSubstring).join('\n').trim();
         expect(inferredInterfacesString).toBe(s`
@@ -754,7 +754,7 @@ describe('expression rules with inferred and declared interfaces', () => {
         // check only declared types
         const declared = collectDeclaredTypes(interfaces, types);
         sortInterfacesTopologically(declared.interfaces);
-        specifyAstNodeProperies(declared);
+        specifyAstNodeProperties(declared);
 
         expect(declared.interfaces.map(toSubstring).join('\n').trim()).toBe(s`
             export interface SuperMemberAccess extends MemberAccess {
