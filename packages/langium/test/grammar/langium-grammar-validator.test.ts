@@ -5,11 +5,12 @@
  ******************************************************************************/
 
 import { AstNode, createLangiumGrammarServices, EmptyFileSystem, Properties, streamAllContents, GrammarAST } from '../../src';
-import { expectError, expectIssue, expectNoIssues, expectWarning, validationHelper, ValidationResult } from '../../src/test';
+import { clearDocuments, expectError, expectIssue, expectNoIssues, expectWarning, parseHelper, validationHelper, ValidationResult } from '../../src/test';
 import { IssueCodes } from '../../src/grammar/langium-grammar-validator';
 import { DiagnosticSeverity } from 'vscode-languageserver';
 
 const services = createLangiumGrammarServices(EmptyFileSystem);
+const parse = parseHelper(services.grammar);
 const locator = services.grammar.workspace.AstNodeLocator;
 const validate = validationHelper<GrammarAST.Grammar>(services.grammar);
 
@@ -426,6 +427,107 @@ describe('Whitespace keywords', () => {
             'rules@0/definition/elements@3'
         )!;
         expectWarning(validationResult, 'Keywords should not contain whitespace characters.', { node });
+    });
+
+});
+
+describe('Clashing token names', () => {
+
+    afterEach(() => {
+        clearDocuments(services.grammar);
+    });
+
+    test('Local terminal clashing with local keyword', async () => {
+        const text = `
+        Rule: a='a';
+        terminal a: /a/; 
+        `;
+        const validation = await validate(text);
+        const terminal = locator.getAstNode(validation.document.parseResult.value, '/rules@1')!;
+        expectError(validation, 'Terminal name clashes with existing keyword.', {
+            node: terminal,
+            property: {
+                name: 'name'
+            }
+        });
+    });
+
+    test('Local terminal clashing with imported keyword', async () => {
+        const importedGrammar = await parse(`
+        Rule: a='a';
+        `);
+        const path = importedGrammar.uri.path;
+        const grammar = `
+        import ".${path}";
+        terminal a: /a/;
+        `;
+        const validation = await validate(grammar);
+        const terminal = locator.getAstNode(validation.document.parseResult.value, '/rules@0')!;
+        expectError(validation, /Terminal name clashes with imported keyword from/, {
+            node: terminal,
+            property: {
+                name: 'name'
+            }
+        });
+    });
+
+    test('Imported terminal clashing with local keyword', async () => {
+        const importedGrammar = await parse(`
+        terminal a: /a/;
+        `);
+        const path = importedGrammar.uri.path;
+        const grammar = `
+        import ".${path}";
+        Rule: a='a';
+        `;
+        const validation = await validate(grammar);
+        const importNode = validation.document.parseResult.value.imports[0];
+        expectError(validation, 'Imported terminals (a) clash with locally defined keywords.', {
+            node: importNode,
+            property: {
+                name: 'path'
+            }
+        });
+    });
+
+    test('Imported terminal clashing with imported keywords', async () => {
+        const importedTerminal = await parse(`
+        terminal a: /a/;
+        `);
+        const importedKeyword = await parse(`
+        Rule: a='a';
+        `);
+        const terminalPath = importedTerminal.uri.path;
+        const keywordPath = importedKeyword.uri.path;
+        const grammar = `
+        import ".${terminalPath}";
+        import ".${keywordPath}";
+        Test: x='x';
+        `;
+        const validation = await validate(grammar);
+        const importNode = validation.document.parseResult.value.imports[0];
+        expectError(validation, 'Imported terminals (a) clash with imported keywords.', {
+            node: importNode,
+            property: {
+                name: 'path'
+            }
+        });
+    });
+
+    test('Imported terminal not clashing with transitive imported keywords', async () => {
+        const importedGrammar = await parse(`
+        Rule: a='a';
+        terminal a: /a/;
+        `);
+        let path = importedGrammar.uri.path;
+        // remove '.langium' extension
+        path = path.substring(0, path.indexOf('.'));
+        const grammar = `
+        import ".${path}";
+        Test: x='x';
+        `;
+        const validation = await validate(grammar);
+        expectNoIssues(validation);
     });
 
 });
