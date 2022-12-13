@@ -8,6 +8,7 @@ import { AstNode, AbstractAstReflection, Reference, ReferenceInfo, TypeMetaData 
 
 export interface Contact extends AstNode {
     readonly $container: RequirementModel | TestModel;
+    readonly $type: 'Contact';
     user_name: string
 }
 
@@ -19,6 +20,7 @@ export function isContact(item: unknown): item is Contact {
 
 export interface Environment extends AstNode {
     readonly $container: RequirementModel;
+    readonly $type: 'Environment';
     description: string
     name: string
 }
@@ -31,6 +33,7 @@ export function isEnvironment(item: unknown): item is Environment {
 
 export interface Requirement extends AstNode {
     readonly $container: RequirementModel;
+    readonly $type: 'Requirement';
     environments: Array<Reference<Environment>>
     name: string
     text: string
@@ -43,6 +46,7 @@ export function isRequirement(item: unknown): item is Requirement {
 }
 
 export interface RequirementModel extends AstNode {
+    readonly $type: 'RequirementModel';
     contact?: Contact
     environments: Array<Environment>
     requirements: Array<Requirement>
@@ -56,6 +60,7 @@ export function isRequirementModel(item: unknown): item is RequirementModel {
 
 export interface Test extends AstNode {
     readonly $container: TestModel;
+    readonly $type: 'Test';
     environments: Array<Reference<Environment>>
     name: string
     requirements: Array<Reference<Requirement>>
@@ -69,6 +74,7 @@ export function isTest(item: unknown): item is Test {
 }
 
 export interface TestModel extends AstNode {
+    readonly $type: 'TestModel';
     contact?: Contact
     tests: Array<Test>
 }

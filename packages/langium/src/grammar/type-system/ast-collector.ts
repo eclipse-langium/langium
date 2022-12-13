@@ -49,12 +49,12 @@ function buildTypeTypes(nameToType: Map<string, TypeOption>) {
     const visited = new Set<TypeOption>();
     for (const type of queue) {
         visited.add(type);
+        type.typeTypes.add(type.name);
         const superTypes = Array.from(type.realSuperTypes)
             .map(superType => nameToType.get(superType))
             .filter(e => e !== undefined) as TypeOption[];
-        for (const subType of type.subTypes) {
-            type.typeTypes.add(subType);
-            superTypes.forEach(superType => superType.typeTypes.add(subType));
+        for (const superType of superTypes) {
+            type.typeTypes.forEach(e => superType.typeTypes.add(e));
         }
         queue.push(...superTypes.filter(e => !visited.has(e)));
     }

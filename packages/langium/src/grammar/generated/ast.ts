@@ -36,7 +36,7 @@ export type PrimitiveType = 'Date' | 'bigint' | 'boolean' | 'number' | 'string';
 
 export interface AbstractElement extends AstNode {
     readonly $container: Alternatives | Assignment | AtomType | CharacterRange | CrossReference | Grammar | Group | NegatedToken | ParserRule | TerminalAlternatives | TerminalGroup | TerminalRule | UnorderedGroup | UntilToken;
-    readonly $type: 'Action' | 'Alternatives' | 'Assignment' | 'CharacterRange' | 'CrossReference' | 'Group' | 'Keyword' | 'NegatedToken' | 'RegexToken' | 'RuleCall' | 'TerminalAlternatives' | 'TerminalGroup' | 'TerminalRuleCall' | 'UnorderedGroup' | 'UntilToken' | 'Wildcard';
+    readonly $type: 'AbstractElement' | 'Action' | 'Alternatives' | 'Assignment' | 'CharacterRange' | 'CrossReference' | 'Group' | 'Keyword' | 'NegatedToken' | 'RegexToken' | 'RuleCall' | 'TerminalAlternatives' | 'TerminalGroup' | 'TerminalRuleCall' | 'UnorderedGroup' | 'UntilToken' | 'Wildcard';
     cardinality?: '*' | '+' | '?'
 }
 
@@ -48,6 +48,7 @@ export function isAbstractElement(item: unknown): item is AbstractElement {
 
 export interface Action extends AbstractElement {
     readonly $container: Alternatives | Assignment | AtomType | CharacterRange | CrossReference | Grammar | Group | NegatedToken | ParserRule | TerminalAlternatives | TerminalGroup | TerminalRule | UnorderedGroup | UntilToken;
+    readonly $type: 'Action';
     feature?: FeatureName
     inferredType?: InferredType
     operator?: '+=' | '='
@@ -62,6 +63,7 @@ export function isAction(item: unknown): item is Action {
 
 export interface Alternatives extends AbstractElement {
     readonly $container: Alternatives | Assignment | AtomType | CharacterRange | CrossReference | Grammar | Group | NegatedToken | ParserRule | TerminalAlternatives | TerminalGroup | TerminalRule | UnorderedGroup | UntilToken;
+    readonly $type: 'Alternatives';
     elements: Array<AbstractElement>
 }
 
@@ -73,6 +75,7 @@ export function isAlternatives(item: unknown): item is Alternatives {
 
 export interface Assignment extends AbstractElement {
     readonly $container: Alternatives | Assignment | AtomType | CharacterRange | CrossReference | Grammar | Group | NegatedToken | ParserRule | TerminalAlternatives | TerminalGroup | TerminalRule | UnorderedGroup | UntilToken;
+    readonly $type: 'Assignment';
     feature: FeatureName
     operator: '+=' | '=' | '?='
     terminal: AbstractElement
@@ -86,6 +89,7 @@ export function isAssignment(item: unknown): item is Assignment {
 
 export interface AtomType extends AstNode {
     readonly $container: Type | TypeAttribute;
+    readonly $type: 'AtomType';
     isArray: boolean
     isRef: boolean
     keywordType?: Keyword
@@ -101,6 +105,7 @@ export function isAtomType(item: unknown): item is AtomType {
 
 export interface CharacterRange extends AbstractElement {
     readonly $container: Alternatives | Assignment | AtomType | CharacterRange | CrossReference | Grammar | Group | NegatedToken | ParserRule | TerminalAlternatives | TerminalGroup | TerminalRule | UnorderedGroup | UntilToken;
+    readonly $type: 'CharacterRange';
     left: Keyword
     right?: Keyword
 }
@@ -113,6 +118,7 @@ export function isCharacterRange(item: unknown): item is CharacterRange {
 
 export interface Conjunction extends AstNode {
     readonly $container: Conjunction | Disjunction | Group | NamedArgument | Negation;
+    readonly $type: 'Conjunction';
     left: Condition
     right: Condition
 }
@@ -125,6 +131,7 @@ export function isConjunction(item: unknown): item is Conjunction {
 
 export interface CrossReference extends AbstractElement {
     readonly $container: Alternatives | Assignment | AtomType | CharacterRange | CrossReference | Grammar | Group | NegatedToken | ParserRule | TerminalAlternatives | TerminalGroup | TerminalRule | UnorderedGroup | UntilToken;
+    readonly $type: 'CrossReference';
     deprecatedSyntax: boolean
     terminal?: AbstractElement
     type: Reference<AbstractType>
@@ -138,6 +145,7 @@ export function isCrossReference(item: unknown): item is CrossReference {
 
 export interface Disjunction extends AstNode {
     readonly $container: Conjunction | Disjunction | Group | NamedArgument | Negation;
+    readonly $type: 'Disjunction';
     left: Condition
     right: Condition
 }
@@ -149,6 +157,7 @@ export function isDisjunction(item: unknown): item is Disjunction {
 }
 
 export interface Grammar extends AstNode {
+    readonly $type: 'Grammar';
     definesHiddenTokens: boolean
     hiddenTokens: Array<Reference<AbstractRule>>
     imports: Array<GrammarImport>
@@ -168,6 +177,7 @@ export function isGrammar(item: unknown): item is Grammar {
 
 export interface GrammarImport extends AstNode {
     readonly $container: Grammar;
+    readonly $type: 'GrammarImport';
     path: string
 }
 
@@ -179,6 +189,7 @@ export function isGrammarImport(item: unknown): item is GrammarImport {
 
 export interface Group extends AbstractElement {
     readonly $container: Alternatives | Assignment | AtomType | CharacterRange | CrossReference | Grammar | Group | NegatedToken | ParserRule | TerminalAlternatives | TerminalGroup | TerminalRule | UnorderedGroup | UntilToken;
+    readonly $type: 'Group';
     elements: Array<AbstractElement>
     guardCondition?: Condition
 }
@@ -191,6 +202,7 @@ export function isGroup(item: unknown): item is Group {
 
 export interface InferredType extends AstNode {
     readonly $container: Action | ParserRule;
+    readonly $type: 'InferredType';
     name: string
 }
 
@@ -202,6 +214,7 @@ export function isInferredType(item: unknown): item is InferredType {
 
 export interface Interface extends AstNode {
     readonly $container: Alternatives | Assignment | AtomType | CharacterRange | CrossReference | Grammar | Group | NegatedToken | ParserRule | TerminalAlternatives | TerminalGroup | TerminalRule | UnorderedGroup | UntilToken;
+    readonly $type: 'Interface';
     attributes: Array<TypeAttribute>
     name: string
     superTypes: Array<Reference<AbstractType>>
@@ -215,6 +228,7 @@ export function isInterface(item: unknown): item is Interface {
 
 export interface Keyword extends AbstractElement {
     readonly $container: Alternatives | Assignment | AtomType | CharacterRange | CrossReference | Grammar | Group | NegatedToken | ParserRule | TerminalAlternatives | TerminalGroup | TerminalRule | UnorderedGroup | UntilToken;
+    readonly $type: 'Keyword';
     value: string
 }
 
@@ -226,6 +240,7 @@ export function isKeyword(item: unknown): item is Keyword {
 
 export interface LiteralCondition extends AstNode {
     readonly $container: Conjunction | Disjunction | Group | NamedArgument | Negation;
+    readonly $type: 'LiteralCondition';
     true: boolean
 }
 
@@ -237,6 +252,7 @@ export function isLiteralCondition(item: unknown): item is LiteralCondition {
 
 export interface NamedArgument extends AstNode {
     readonly $container: RuleCall;
+    readonly $type: 'NamedArgument';
     calledByName: boolean
     parameter?: Reference<Parameter>
     value: Condition
@@ -250,6 +266,7 @@ export function isNamedArgument(item: unknown): item is NamedArgument {
 
 export interface NegatedToken extends AbstractElement {
     readonly $container: Alternatives | Assignment | AtomType | CharacterRange | CrossReference | Grammar | Group | NegatedToken | ParserRule | TerminalAlternatives | TerminalGroup | TerminalRule | UnorderedGroup | UntilToken;
+    readonly $type: 'NegatedToken';
     terminal: AbstractElement
 }
 
@@ -261,6 +278,7 @@ export function isNegatedToken(item: unknown): item is NegatedToken {
 
 export interface Negation extends AstNode {
     readonly $container: Conjunction | Disjunction | Group | NamedArgument | Negation;
+    readonly $type: 'Negation';
     value: Condition
 }
 
@@ -272,6 +290,7 @@ export function isNegation(item: unknown): item is Negation {
 
 export interface Parameter extends AstNode {
     readonly $container: ParserRule;
+    readonly $type: 'Parameter';
     name: string
 }
 
@@ -283,6 +302,7 @@ export function isParameter(item: unknown): item is Parameter {
 
 export interface ParameterReference extends AstNode {
     readonly $container: Conjunction | Disjunction | Group | NamedArgument | Negation;
+    readonly $type: 'ParameterReference';
     parameter: Reference<Parameter>
 }
 
@@ -294,6 +314,7 @@ export function isParameterReference(item: unknown): item is ParameterReference 
 
 export interface ParserRule extends AstNode {
     readonly $container: Alternatives | Assignment | AtomType | CharacterRange | CrossReference | Grammar | Group | NegatedToken | ParserRule | TerminalAlternatives | TerminalGroup | TerminalRule | UnorderedGroup | UntilToken;
+    readonly $type: 'ParserRule';
     dataType?: PrimitiveType
     definesHiddenTokens: boolean
     definition: AbstractElement
@@ -315,6 +336,7 @@ export function isParserRule(item: unknown): item is ParserRule {
 
 export interface RegexToken extends AbstractElement {
     readonly $container: Alternatives | Assignment | AtomType | CharacterRange | CrossReference | Grammar | Group | NegatedToken | ParserRule | TerminalAlternatives | TerminalGroup | TerminalRule | UnorderedGroup | UntilToken;
+    readonly $type: 'RegexToken';
     regex: string
 }
 
@@ -326,6 +348,7 @@ export function isRegexToken(item: unknown): item is RegexToken {
 
 export interface ReturnType extends AstNode {
     readonly $container: TerminalRule;
+    readonly $type: 'ReturnType';
     name: PrimitiveType | string
 }
 
@@ -337,6 +360,7 @@ export function isReturnType(item: unknown): item is ReturnType {
 
 export interface RuleCall extends AbstractElement {
     readonly $container: Alternatives | Assignment | AtomType | CharacterRange | CrossReference | Grammar | Group | NegatedToken | ParserRule | TerminalAlternatives | TerminalGroup | TerminalRule | UnorderedGroup | UntilToken;
+    readonly $type: 'RuleCall';
     arguments: Array<NamedArgument>
     rule: Reference<AbstractRule>
 }
@@ -349,6 +373,7 @@ export function isRuleCall(item: unknown): item is RuleCall {
 
 export interface TerminalAlternatives extends AbstractElement {
     readonly $container: Alternatives | Assignment | AtomType | CharacterRange | CrossReference | Grammar | Group | NegatedToken | ParserRule | TerminalAlternatives | TerminalGroup | TerminalRule | UnorderedGroup | UntilToken;
+    readonly $type: 'TerminalAlternatives';
     elements: Array<AbstractElement>
 }
 
@@ -360,6 +385,7 @@ export function isTerminalAlternatives(item: unknown): item is TerminalAlternati
 
 export interface TerminalGroup extends AbstractElement {
     readonly $container: Alternatives | Assignment | AtomType | CharacterRange | CrossReference | Grammar | Group | NegatedToken | ParserRule | TerminalAlternatives | TerminalGroup | TerminalRule | UnorderedGroup | UntilToken;
+    readonly $type: 'TerminalGroup';
     elements: Array<AbstractElement>
 }
 
@@ -371,6 +397,7 @@ export function isTerminalGroup(item: unknown): item is TerminalGroup {
 
 export interface TerminalRule extends AstNode {
     readonly $container: Alternatives | Assignment | AtomType | CharacterRange | CrossReference | Grammar | Group | NegatedToken | ParserRule | TerminalAlternatives | TerminalGroup | TerminalRule | UnorderedGroup | UntilToken;
+    readonly $type: 'TerminalRule';
     definition: AbstractElement
     fragment: boolean
     hidden: boolean
@@ -386,6 +413,7 @@ export function isTerminalRule(item: unknown): item is TerminalRule {
 
 export interface TerminalRuleCall extends AbstractElement {
     readonly $container: Alternatives | Assignment | AtomType | CharacterRange | CrossReference | Grammar | Group | NegatedToken | ParserRule | TerminalAlternatives | TerminalGroup | TerminalRule | UnorderedGroup | UntilToken;
+    readonly $type: 'TerminalRuleCall';
     rule: Reference<TerminalRule>
 }
 
@@ -397,6 +425,7 @@ export function isTerminalRuleCall(item: unknown): item is TerminalRuleCall {
 
 export interface Type extends AstNode {
     readonly $container: Alternatives | Assignment | AtomType | CharacterRange | CrossReference | Grammar | Group | NegatedToken | ParserRule | TerminalAlternatives | TerminalGroup | TerminalRule | UnorderedGroup | UntilToken;
+    readonly $type: 'Type';
     name: string
     typeAlternatives: Array<AtomType>
 }
@@ -409,6 +438,7 @@ export function isType(item: unknown): item is Type {
 
 export interface TypeAttribute extends AstNode {
     readonly $container: Interface;
+    readonly $type: 'TypeAttribute';
     isOptional: boolean
     name: FeatureName
     typeAlternatives: Array<AtomType>
@@ -422,6 +452,7 @@ export function isTypeAttribute(item: unknown): item is TypeAttribute {
 
 export interface UnorderedGroup extends AbstractElement {
     readonly $container: Alternatives | Assignment | AtomType | CharacterRange | CrossReference | Grammar | Group | NegatedToken | ParserRule | TerminalAlternatives | TerminalGroup | TerminalRule | UnorderedGroup | UntilToken;
+    readonly $type: 'UnorderedGroup';
     elements: Array<AbstractElement>
 }
 
@@ -433,6 +464,7 @@ export function isUnorderedGroup(item: unknown): item is UnorderedGroup {
 
 export interface UntilToken extends AbstractElement {
     readonly $container: Alternatives | Assignment | AtomType | CharacterRange | CrossReference | Grammar | Group | NegatedToken | ParserRule | TerminalAlternatives | TerminalGroup | TerminalRule | UnorderedGroup | UntilToken;
+    readonly $type: 'UntilToken';
     terminal: AbstractElement
 }
 
@@ -444,6 +476,7 @@ export function isUntilToken(item: unknown): item is UntilToken {
 
 export interface Wildcard extends AbstractElement {
     readonly $container: Alternatives | Assignment | AtomType | CharacterRange | CrossReference | Grammar | Group | NegatedToken | ParserRule | TerminalAlternatives | TerminalGroup | TerminalRule | UnorderedGroup | UntilToken;
+    readonly $type: 'Wildcard';
 }
 
 export const Wildcard = 'Wildcard';

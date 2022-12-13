@@ -737,15 +737,18 @@ describe('expression rules with inferred and declared interfaces', () => {
         expect(inferredInterfacesString).toBe(s`
             export interface BooleanLiteral extends AstNode {
                 readonly $container: MemberAccess | SuperMemberAccess;
+                readonly $type: 'BooleanLiteral';
                 value: boolean
             }
             export interface MemberAccess extends AstNode {
                 readonly $container: MemberAccess | SuperMemberAccess;
+                readonly $type: 'MemberAccess';
                 member: Reference<Symbol>
                 receiver: PrimaryExpression
             }
             export interface SuperMemberAccess extends AstNode {
                 readonly $container: MemberAccess | SuperMemberAccess;
+                readonly $type: 'SuperMemberAccess';
                 member: Reference<Symbol>
                 receiver: PrimaryExpression
             }
@@ -758,8 +761,10 @@ describe('expression rules with inferred and declared interfaces', () => {
 
         expect(declared.interfaces.map(toSubstring).join('\n').trim()).toBe(s`
             export interface SuperMemberAccess extends MemberAccess {
+                readonly $type: 'SuperMemberAccess';
             }
             export interface Symbol extends AstNode {
+                readonly $type: 'Symbol';
             }
         `);
 
@@ -775,18 +780,21 @@ describe('expression rules with inferred and declared interfaces', () => {
         expect(allInterfacesString).toBe(s`
             export interface BooleanLiteral extends AstNode {
                 readonly $container: MemberAccess;
+                readonly $type: 'BooleanLiteral';
                 value: boolean
             }
             export interface MemberAccess extends AstNode {
                 readonly $container: MemberAccess;
-                readonly $type: 'SuperMemberAccess';
+                readonly $type: 'MemberAccess' | 'SuperMemberAccess';
                 member: Reference<Symbol>
                 receiver: PrimaryExpression
             }
             export interface SuperMemberAccess extends MemberAccess {
                 readonly $container: MemberAccess;
+                readonly $type: 'SuperMemberAccess';
             }
             export interface Symbol extends AstNode {
+                readonly $type: 'Symbol';
             }
         `);
 
@@ -818,22 +826,25 @@ describe('types of `$container` and `$type` are correct', () => {
         expect(interfacesString).toBe(s`
             export interface A extends AstNode {
                 readonly $container: D | E;
-                readonly $type: 'C';
+                readonly $type: 'A' | 'C';
                 strA: string
             }
             export interface B extends AstNode {
                 readonly $container: D | E;
-                readonly $type: 'C';
+                readonly $type: 'B' | 'C';
                 strB: string
             }
             export interface D extends AstNode {
+                readonly $type: 'D';
                 a: A
             }
             export interface E extends AstNode {
+                readonly $type: 'E';
                 b: B
             }
             export interface C extends A, B {
                 readonly $container: D | E;
+                readonly $type: 'C';
                 strC: string
             }
         `);
@@ -861,12 +872,15 @@ describe('types of `$container` and `$type` are correct', () => {
         expect(interfacesString).toBe(s`
             export interface C extends AstNode {
                 readonly $container: D | E;
+                readonly $type: 'C';
                 strC: string
             }
             export interface D extends AstNode {
+                readonly $type: 'D';
                 a: A
             }
             export interface E extends AstNode {
+                readonly $type: 'E';
                 b: B
             }
         `);
@@ -892,22 +906,25 @@ describe('types of `$container` and `$type` are correct', () => {
         expect(interfacesString).toBe(s`
             export interface A extends AstNode {
                 readonly $container: D | E;
-                readonly $type: 'C';
+                readonly $type: 'A' | 'C';
                 strA: string
             }
             export interface B extends AstNode {
                 readonly $container: D | E;
-                readonly $type: 'C';
+                readonly $type: 'B' | 'C';
                 strB: string
             }
             export interface D extends AstNode {
+                readonly $type: 'D';
                 a: A
             }
             export interface E extends AstNode {
+                readonly $type: 'E';
                 b: B
             }
             export interface C extends A, B {
                 readonly $container: D | E;
+                readonly $type: 'C';
                 strC: string
             }
         `);

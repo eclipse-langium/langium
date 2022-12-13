@@ -26,6 +26,7 @@ export function isType(item: unknown): item is Type {
 
 export interface DataType extends AstNode {
     readonly $container: Domainmodel | PackageDeclaration;
+    readonly $type: 'DataType';
     name: string
 }
 
@@ -36,6 +37,7 @@ export function isDataType(item: unknown): item is DataType {
 }
 
 export interface Domainmodel extends AstNode {
+    readonly $type: 'Domainmodel';
     elements: Array<AbstractElement>
 }
 
@@ -47,6 +49,7 @@ export function isDomainmodel(item: unknown): item is Domainmodel {
 
 export interface Entity extends AstNode {
     readonly $container: Domainmodel | PackageDeclaration;
+    readonly $type: 'Entity';
     features: Array<Feature>
     name: string
     superType?: Reference<Entity>
@@ -60,6 +63,7 @@ export function isEntity(item: unknown): item is Entity {
 
 export interface Feature extends AstNode {
     readonly $container: Entity;
+    readonly $type: 'Feature';
     many: boolean
     name: string
     type: Reference<Type>
@@ -73,6 +77,7 @@ export function isFeature(item: unknown): item is Feature {
 
 export interface PackageDeclaration extends AstNode {
     readonly $container: Domainmodel | PackageDeclaration;
+    readonly $type: 'PackageDeclaration';
     elements: Array<AbstractElement>
     name: QualifiedName
 }
