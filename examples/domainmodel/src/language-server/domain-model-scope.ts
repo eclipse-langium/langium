@@ -4,15 +4,22 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { AstNode, AstNodeDescription, DefaultScopeComputation, interruptAndCheck, LangiumDocument, LangiumServices, MultiMap, PrecomputedScopes, streamAllContents } from 'langium';
+import {
+    AstNode, AstNodeDescription, DefaultScopeComputation, interruptAndCheck, LangiumDocument, MultiMap,
+    PrecomputedScopes, streamAllContents
+} from 'langium';
 import { CancellationToken } from 'vscode-jsonrpc';
-import { DomainModelNameProvider } from './domain-model-naming';
+import type { DomainModelServices } from './domain-model-module';
+import { QualifiedNameProvider } from './domain-model-naming';
 import { Domainmodel, isType, PackageDeclaration, isPackageDeclaration } from './generated/ast';
 
 export class DomainModelScopeComputation extends DefaultScopeComputation {
 
-    constructor(services: LangiumServices) {
+    qualifiedNameProvider: QualifiedNameProvider;
+
+    constructor(services: DomainModelServices) {
         super(services);
+        this.qualifiedNameProvider = services.references.QualifiedNameProvider;
     }
 
     /**
@@ -26,7 +33,7 @@ export class DomainModelScopeComputation extends DefaultScopeComputation {
                 let name = this.nameProvider.getName(modelNode);
                 if (name) {
                     if (isPackageDeclaration(modelNode.$container)) {
-                        name = (this.nameProvider as DomainModelNameProvider).getQualifiedName(modelNode.$container as PackageDeclaration, name);
+                        name = this.qualifiedNameProvider.getQualifiedName(modelNode.$container as PackageDeclaration, name);
                     }
                     descr.push(this.descriptions.createDescription(modelNode, name, document));
                 }
@@ -63,7 +70,7 @@ export class DomainModelScopeComputation extends DefaultScopeComputation {
     }
 
     protected createQualifiedDescription(pack: PackageDeclaration, description: AstNodeDescription, document: LangiumDocument): AstNodeDescription {
-        const name = (this.nameProvider as DomainModelNameProvider).getQualifiedName(pack.name, description.name);
+        const name = this.qualifiedNameProvider.getQualifiedName(pack.name, description.name);
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         return this.descriptions.createDescription(description.node!, name, document);
     }
