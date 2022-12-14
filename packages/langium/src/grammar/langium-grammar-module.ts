@@ -38,7 +38,7 @@ export type LangiumGrammarServices = LangiumServices & LangiumGrammarAddedServic
 export const LangiumGrammarModule: Module<LangiumGrammarServices, PartialLangiumServices & LangiumGrammarAddedServices> = {
     validation: {
         LangiumGrammarValidator: (services) => new LangiumGrammarValidator(services),
-        ValidationResourcesCollector: () => new LangiumGrammarValidationResourcesCollector(),
+        ValidationResourcesCollector: (services) => new LangiumGrammarValidationResourcesCollector(services),
         LangiumGrammarTypesValidator: () => new LangiumGrammarTypesValidator(),
     },
     lsp: {
@@ -83,14 +83,12 @@ export function createLangiumGrammarServices(context: DefaultSharedModuleContext
 
 function addTypeCollectionPhase(sharedServices: LangiumSharedServices, grammarServices: LangiumGrammarServices) {
     const documentBuilder = sharedServices.workspace.DocumentBuilder;
-    const langiumDocuments = sharedServices.workspace.LangiumDocuments;
-
     documentBuilder.onBuildPhase(DocumentState.IndexedReferences, async (documents, cancelToken) => {
         for (const document of documents) {
             await interruptAndCheck(cancelToken);
             const typeCollector = grammarServices.validation.ValidationResourcesCollector;
             const grammar = document.parseResult.value as Grammar;
-            (document as LangiumGrammarDocument).validationResources = typeCollector.collectValidationResources(grammar, langiumDocuments);
+            (document as LangiumGrammarDocument).validationResources = typeCollector.collectValidationResources(grammar);
         }
     });
 }

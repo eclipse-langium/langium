@@ -13,11 +13,17 @@ import { AstResources, collectTypeResources, TypeResources } from '../type-syste
 import { mergeInterfaces, mergeTypesAndInterfaces } from '../type-system/types-util';
 import { Property } from '../type-system/type-collector/types';
 import { TypeToValidationInfo, ValidationResources } from '../workspace/documents';
+import { LangiumGrammarServices } from '../langium-grammar-module';
 
 export class LangiumGrammarValidationResourcesCollector {
+    private readonly documents: LangiumDocuments;
 
-    collectValidationResources(grammar: Grammar, documents: LangiumDocuments): ValidationResources {
-        const typeResources = collectTypeResources(grammar, documents);
+    constructor(services: LangiumGrammarServices) {
+        this.documents = services.shared.workspace.LangiumDocuments;
+    }
+
+    collectValidationResources(grammar: Grammar): ValidationResources {
+        const typeResources = collectTypeResources(grammar, this.documents);
         return {
             typeToValidationInfo: this.collectValidationInfo(typeResources),
             typeToSuperProperties: this.collectSuperProperties(typeResources),
