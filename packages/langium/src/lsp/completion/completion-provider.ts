@@ -13,7 +13,7 @@ import { LangiumCompletionParser } from '../../parser/langium-parser';
 import { NameProvider } from '../../references/name-provider';
 import { ScopeProvider } from '../../references/scope-provider';
 import { LangiumServices } from '../../services';
-import { AstNode, AstNodeDescription, isAstNode, Reference, ReferenceInfo } from '../../syntax-tree';
+import { AstNode, AstNodeDescription, Reference, ReferenceInfo } from '../../syntax-tree';
 import { getContainerOfType } from '../../utils/ast-util';
 import { findLeafNodeAtOffset } from '../../utils/cst-util';
 import { getEntryRule } from '../../utils/grammar-util';
@@ -24,9 +24,21 @@ import { findFirstFeatures, findNextFeatures, NextFeature } from './follow-eleme
 
 export type CompletionAcceptor = (value: CompletionValueItem) => void
 
-export type CompletionValueItem = {
-    label?: string | AstNode | AstNodeDescription
-} & Partial<Omit<CompletionItem, 'label'>>;
+export type CompletionValueItem = ({
+    label?: string
+} | {
+    node: AstNode
+} | {
+    nodeDescription: AstNodeDescription
+}) & Partial<CompletionItem>;
+
+export interface CompletionContext {
+    node?: AstNode
+    document: LangiumDocument
+    textDocument: TextDocument
+    offset: number
+    position: Position
+}
 
 /**
  * Language-specific service for handling completion requests.
@@ -76,9 +88,17 @@ export class DefaultCompletionProvider implements CompletionProvider {
 
         const node = findLeafNodeAtOffset(cst, this.backtrackToAnyToken(text, offset));
 
+        const context: CompletionContext = {
+            document,
+            textDocument,
+            node: node?.element,
+            offset,
+            position: params.position
+        };
+
         if (!node) {
             const parserRule = getEntryRule(this.grammar)!;
-            await this.completionForRule(undefined, parserRule, acceptor);
+            await this.completionForRule(context, parserRule, acceptor);
             return CompletionList.create(items, true);
         }
 
@@ -101,7 +121,7 @@ export class DefaultCompletionProvider implements CompletionProvider {
         await Promise.all(
             stream(beforeFeatures)
                 .distinct(distinctionFunction)
-                .map(e => this.completionFor(node.element, e, acceptor))
+                .map(e => this.completionFor(context, e, acceptor))
         );
 
         if (reparse) {
@@ -109,13 +129,19 @@ export class DefaultCompletionProvider implements CompletionProvider {
                 stream(afterFeatures)
                     .exclude(beforeFeatures, distinctionFunction)
                     .distinct(distinctionFunction)
-                    .map(e => this.completionFor(node.element, e, acceptor))
+                    .map(e => this.completionFor(context, e, acceptor))
             );
         }
 
         return CompletionList.create(items, true);
     }
 
+    /**
+     * Determines whether the completion parser will reparse the input at the point of completion.
+     * By default, this returns `false`, indicating that the completion will only look for completion results starting from the token at the cursor position.
+     * Override this and return `true` to indicate that the completion should parse the input a second time.
+     * This might add some missing completions at the cost at parsing the input twice.
+     */
     protected canReparse(): boolean {
         return false;
     }
@@ -172,28 +198,29 @@ export class DefaultCompletionProvider implements CompletionProvider {
         return offset;
     }
 
-    protected async completionForRule(astNode: AstNode | undefined, rule: ast.AbstractRule, acceptor: CompletionAcceptor): Promise<void> {
+    protected async completionForRule(context: CompletionContext, rule: ast.AbstractRule, acceptor: CompletionAcceptor): Promise<void> {
         if (ast.isParserRule(rule)) {
             const firstFeatures = findFirstFeatures(rule.definition);
-            await Promise.all(firstFeatures.map(next => this.completionFor(astNode, next, acceptor)));
+            await Promise.all(firstFeatures.map(next => this.completionFor(context, next, acceptor)));
         }
     }
 
-    protected completionFor(astNode: AstNode | undefined, next: NextFeature, acceptor: CompletionAcceptor): MaybePromise<void> {
+    protected completionFor(context: CompletionContext, next: NextFeature, acceptor: CompletionAcceptor): MaybePromise<void> {
         if (ast.isKeyword(next.feature)) {
-            return this.completionForKeyword(next.feature, astNode, acceptor);
-        } else if (ast.isCrossReference(next.feature) && astNode) {
-            return this.completionForCrossReference(next as NextFeature<ast.CrossReference>, astNode, acceptor);
+            return this.completionForKeyword(context, next.feature, acceptor);
+        } else if (ast.isCrossReference(next.feature) && context.node) {
+            return this.completionForCrossReference(context, next as NextFeature<ast.CrossReference>, acceptor);
         }
     }
 
-    protected completionForCrossReference(crossRef: NextFeature<ast.CrossReference>, context: AstNode | undefined, acceptor: CompletionAcceptor): MaybePromise<void> {
+    protected completionForCrossReference(context: CompletionContext, crossRef: NextFeature<ast.CrossReference>, acceptor: CompletionAcceptor): MaybePromise<void> {
         const assignment = getContainerOfType(crossRef.feature, ast.isAssignment);
-        if (assignment) {
-            if (crossRef.type && (crossRef.new || context?.$type !== crossRef.type)) {
-                context = {
+        let node = context.node;
+        if (assignment && node) {
+            if (crossRef.type && (crossRef.new || node?.$type !== crossRef.type)) {
+                node = {
                     $type: crossRef.type,
-                    $container: context,
+                    $container: node,
                     $containerProperty: crossRef.property
                 };
             }
@@ -202,7 +229,7 @@ export class DefaultCompletionProvider implements CompletionProvider {
             }
             const refInfo: ReferenceInfo = {
                 reference: {} as Reference,
-                container: context,
+                container: node,
                 property: assignment.feature
             };
             try {
@@ -229,7 +256,7 @@ export class DefaultCompletionProvider implements CompletionProvider {
      */
     protected createReferenceCompletionItem(nodeDescription: AstNodeDescription): CompletionValueItem {
         return {
-            label: nodeDescription,
+            nodeDescription,
             kind: CompletionItemKind.Reference,
             detail: nodeDescription.type,
             sortText: '0'
@@ -240,7 +267,7 @@ export class DefaultCompletionProvider implements CompletionProvider {
         return true;
     }
 
-    protected completionForKeyword(keyword: ast.Keyword, context: AstNode | undefined, acceptor: CompletionAcceptor): MaybePromise<void> {
+    protected completionForKeyword(context: CompletionContext, keyword: ast.Keyword, acceptor: CompletionAcceptor): MaybePromise<void> {
         // Filter out keywords that do not contain any word character
         if (!keyword.value.match(/[\w]/)) {
             return;
@@ -257,14 +284,14 @@ export class DefaultCompletionProvider implements CompletionProvider {
         let label: string;
         if (typeof item.label === 'string') {
             label = item.label;
-        } else if (isAstNode(item.label)) {
-            const name = this.nameProvider.getName(item.label);
+        } else if ('node' in item) {
+            const name = this.nameProvider.getName(item.node);
             if (!name) {
                 return undefined;
             }
             label = name;
-        } else if (item.label && !isAstNode(item.label)) {
-            label = item.label.name;
+        } else if ('nodeDescription' in item) {
+            label = item.nodeDescription.name;
         } else {
             return undefined;
         }
@@ -276,11 +303,31 @@ export class DefaultCompletionProvider implements CompletionProvider {
         } else {
             insertText = label;
         }
-        const textEdit = this.buildCompletionTextEdit(document, offset, label, insertText);
+        const textEdit = item.textEdit ?? this.buildCompletionTextEdit(document, offset, label, insertText);
         if (!textEdit) {
             return undefined;
         }
-        const completionItem: CompletionItem = { textEdit, ...item, label };
+        // Copy all valid properties of `CompletionItem`
+        const completionItem: CompletionItem = {
+            additionalTextEdits: item.additionalTextEdits,
+            command: item.command,
+            commitCharacters: item.commitCharacters,
+            data: item.data,
+            detail: item.detail,
+            documentation: item.documentation,
+            filterText: item.filterText,
+            insertText: item.insertText,
+            insertTextFormat: item.insertTextFormat,
+            insertTextMode: item.insertTextMode,
+            kind: item.kind,
+            labelDetails: item.labelDetails,
+            preselect: item.preselect,
+            sortText: item.sortText,
+            tags: item.tags,
+            textEditText: item.textEditText,
+            textEdit,
+            label
+        };
         return completionItem;
     }
 
@@ -288,7 +335,7 @@ export class DefaultCompletionProvider implements CompletionProvider {
         const content = document.getText();
         const tokenStart = this.backtrackToTokenStart(content, offset);
         const identifier = content.substring(tokenStart, offset);
-        if (this.charactersFuzzyMatch(identifier, label.toLowerCase())) {
+        if (this.charactersFuzzyMatch(identifier, label)) {
             const start = document.positionAt(tokenStart);
             const end = document.positionAt(offset);
             return {
@@ -312,6 +359,7 @@ export class DefaultCompletionProvider implements CompletionProvider {
             return true;
         }
 
+        completionValue = completionValue.toLowerCase();
         let matchedFirstCharacter = false;
         let previous: number | undefined;
         let character = 0;
