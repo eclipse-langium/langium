@@ -7,7 +7,6 @@
 export * from './default-module';
 export * from './dependency-injection';
 export * from './generator/generator-node';
-export * from './generator/node-processor';
 export * from './generator/template-node';
 export { expandToString, expandToStringWithNL } from './generator/template-string';
 export * from './grammar/ast-reflection-interpreter';

@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import fs from 'fs';
-import { CompositeGeneratorNode, NL, processGeneratorNode } from 'langium';
+import { CompositeGeneratorNode, NL, toString } from 'langium';
 import { State, Statemachine } from '../language-server/generated/ast';
 import { extractDestinationAndName } from './cli-util';
 import path from 'path';
@@ -60,7 +60,7 @@ function generate(ctx: GeneratorContext): string {
         fs.mkdirSync(ctx.destination, { recursive: true });
     }
     const generatedFilePath = path.join(ctx.destination, ctx.fileName);
-    fs.writeFileSync(generatedFilePath, processGeneratorNode(ctx.fileNode));
+    fs.writeFileSync(generatedFilePath, toString(ctx.fileNode));
     return generatedFilePath;
 }
 

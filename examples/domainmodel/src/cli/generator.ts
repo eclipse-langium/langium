@@ -8,7 +8,7 @@ import fs from 'fs';
 import path from 'path';
 import chalk from 'chalk';
 import _ from 'lodash';
-import { CompositeGeneratorNode, IndentNode, NL, processGeneratorNode } from 'langium';
+import { CompositeGeneratorNode, IndentNode, NL, toString } from 'langium';
 import { AbstractElement, Domainmodel, Entity, Feature, isEntity, isPackageDeclaration, Type } from '../language-server/generated/ast';
 import { extractAstNode, extractDestinationAndName, setRootFolder } from './cli-util';
 import { createDomainModelServices } from '../language-server/domain-model-module';
@@ -58,7 +58,7 @@ function generateAbstractElements(destination: string, elements: Array<AbstractE
                 const fileNode = new CompositeGeneratorNode();
                 fileNode.append(`package ${packagePath};`, NL, NL);
                 generateEntity(elem, fileNode);
-                fs.writeFileSync(path.join(fullPath, `${elem.name}.java`), processGeneratorNode(fileNode));
+                fs.writeFileSync(path.join(fullPath, `${elem.name}.java`), toString(fileNode));
             }
         }
         return fullPath;
