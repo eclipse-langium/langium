@@ -181,7 +181,8 @@ export async function generate(config: LangiumConfig, options: GenerateOptions):
 
     let hasErrors = false;
     for (const [path, document] of all) {
-        const diagnostics = document.diagnostics ?? [];
+        const diagnostics = Array.from(document.diagnostics ?? []);
+        diagnostics.sort((a, b) => a.range.start.line - b.range.start.line);
         for (const diagnostic of diagnostics) {
             const message = `${getFilePath(path, config)}:${diagnostic.range.start.line + 1}:${diagnostic.range.start.character + 1} - ${diagnostic.message}`;
             if (diagnostic.severity === 1) {
