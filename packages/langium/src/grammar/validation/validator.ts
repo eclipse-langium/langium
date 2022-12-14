@@ -11,7 +11,7 @@ import { AstNode, Properties, Reference } from '../../syntax-tree';
 import { getContainerOfType, streamAllContents } from '../../utils/ast-util';
 import { MultiMap } from '../../utils/collections';
 import { toDocumentSegment } from '../../utils/cst-util';
-import { findNodeForKeyword, findNameAssignment, findNodeForProperty, getAllReachableRules } from '../../utils/grammar-util';
+import { findNameAssignment, findNodeForKeyword, findNodeForProperty, getAllReachableRules } from '../../utils/grammar-util';
 import { Stream, stream } from '../../utils/stream';
 import { ValidationAcceptor, ValidationChecks } from '../../validation/validation-registry';
 import { LangiumDocuments } from '../../workspace/documents';
@@ -31,6 +31,7 @@ export function registerValidationChecks(services: LangiumGrammarServices): void
         Assignment: [
             validator.checkAssignmentWithFeatureName,
             validator.checkAssignmentToFragmentRule,
+            validator.checkAssignmentTypes,
             validator.checkAssignmentReservedName
         ],
         ParserRule: [
@@ -62,6 +63,7 @@ export function registerValidationChecks(services: LangiumGrammarServices): void
         CharacterRange: validator.checkInvalidCharacterRange,
         Interface: [
             validator.checkTypeReservedName,
+            validator.checkInterfacePropertyTypes,
         ],
         Type: [
             validator.checkTypeReservedName,
@@ -123,7 +125,7 @@ export class LangiumGrammarValidator {
     }
 
     checkEntryGrammarRule(grammar: ast.Grammar, accept: ValidationAcceptor): void {
-        if(grammar.isDeclared && !grammar.name) {
+        if (grammar.isDeclared && !grammar.name) {
             // Incomplete syntax: grammar without a name.
             return;
         }
@@ -635,6 +637,34 @@ export class LangiumGrammarValidator {
         if (isRuleCall(assignment.terminal) && isParserRule(assignment.terminal.rule.ref) && assignment.terminal.rule.ref.fragment) {
             accept('error', `Cannot use fragment rule '${assignment.terminal.rule.ref.name}' for assignment of property '${assignment.feature}'.`, { node: assignment, property: 'terminal' });
         }
+    }
+
+    checkAssignmentTypes(assignment: ast.Assignment, accept: ValidationAcceptor): void {
+        let firstType: 'ref' | 'other';
+        const foundMixed = streamAllContents(assignment.terminal).map(node => ast.isCrossReference(node) ? 'ref' : 'other').find(type => {
+            if (!firstType) {
+                firstType = type;
+                return false;
+            }
+            return type !== firstType;
+        });
+        if (foundMixed) {
+            accept('error', this.createMixedTypeError(assignment.feature), { node: assignment, property: 'terminal' });
+        }
+    }
+
+    checkInterfacePropertyTypes(interfaceDecl: ast.Interface, accept: ValidationAcceptor): void {
+        interfaceDecl.attributes.filter(attr => attr.typeAlternatives.length > 1).forEach(attr => {
+            const typeKind = (type: ast.AtomType) => type.isRef ? 'ref' : 'other';
+            const firstKind = typeKind(attr.typeAlternatives[0]);
+            if (attr.typeAlternatives.slice(1).some(type => typeKind(type) !== firstKind)) {
+                accept('error', this.createMixedTypeError(attr.name), { node: attr, property: 'typeAlternatives' });
+            }
+        });
+    }
+
+    protected createMixedTypeError(propName: string) {
+        return `Mixing a cross-reference with other types is not supported. Consider splitting property "${propName}" into two or more different properties.`;
     }
 
     checkTerminalRuleReturnType(rule: ast.TerminalRule, accept: ValidationAcceptor): void {

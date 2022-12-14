@@ -4,10 +4,11 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { AstNode, createLangiumGrammarServices, EmptyFileSystem, Properties, streamAllContents, GrammarAST } from '../../src';
-import { clearDocuments, expectError, expectIssue, expectNoIssues, expectWarning, parseHelper, validationHelper, ValidationResult } from '../../src/test';
 import { DiagnosticSeverity } from 'vscode-languageserver';
+import { AstNode, createLangiumGrammarServices, EmptyFileSystem, GrammarAST, Properties, streamAllContents, streamContents } from '../../src';
+import { Assignment, isAssignment } from '../../src/grammar/generated/ast';
 import { IssueCodes } from '../../src/grammar/validation/validator';
+import { clearDocuments, expectError, expectIssue, expectNoIssues, expectWarning, parseHelper, validationHelper, ValidationResult } from '../../src/test';
 
 const services = createLangiumGrammarServices(EmptyFileSystem);
 const parse = parseHelper(services.grammar);
@@ -25,7 +26,7 @@ describe('Langium grammar validation', () => {
         // should get a warning when basing declared types on inferred types
         expectError(validationResult, /Extending an inferred type is discouraged./, {
             node: validationResult.document.parseResult.value.interfaces[0],
-            property: {name: 'superTypes'}
+            property: { name: 'superTypes' }
         });
     });
 
@@ -44,7 +45,7 @@ describe('Langium grammar validation', () => {
         // assert
         expectError(validationResult, /Cannot use fragment rule 'B' for assignment of property 'b'./, {
             node: (validationResult.document.parseResult.value.rules[0] as GrammarAST.ParserRule).definition as GrammarAST.Assignment,
-            property: {name: 'terminal'}
+            property: { name: 'terminal' }
         });
     });
 
@@ -62,11 +63,11 @@ describe('Langium grammar validation', () => {
 
         expectError(validationResult, /Interfaces cannot extend union types./, {
             node: validationResult.document.parseResult.value.interfaces[0],
-            property: {name: 'superTypes'}
+            property: { name: 'superTypes' }
         });
         expectError(validationResult, /Extending an inferred type is discouraged./, {
             node: validationResult.document.parseResult.value.interfaces[0],
-            property: {name: 'superTypes'}
+            property: { name: 'superTypes' }
         });
     });
 
@@ -87,11 +88,11 @@ describe('Langium grammar validation', () => {
 
         expectError(validationResult, /Interfaces cannot extend union types./, {
             node: validationResult.document.parseResult.value.interfaces[0],
-            property: {name: 'superTypes'}
+            property: { name: 'superTypes' }
         });
         expectError(validationResult, /Extending an inferred type is discouraged./, {
             node: validationResult.document.parseResult.value.interfaces[0],
-            property: {name: 'superTypes'}
+            property: { name: 'superTypes' }
         });
     });
 
@@ -106,8 +107,8 @@ describe('Langium grammar validation', () => {
         `);
         expectError(validationResult, /A is a declared type and cannot be redefined./, {
             range: {
-                start: {character: 15, line: 6},
-                end: {character: 24, line: 6}
+                start: { character: 15, line: 6 },
+                end: { character: 24, line: 6 }
             },
             code: IssueCodes.SuperfluousInfer
         });
@@ -282,7 +283,7 @@ describe('Unordered group validations', () => {
         expect(validation.diagnostics).toHaveLength(1);
         const errorText = '("edition" version=STRING)?';
         const offset = validation.document.textDocument.getText().indexOf(errorText);
-        expectError(validation, 'Optional elements in Unordered groups are currently not supported', { offset: offset, length: errorText.length, code: IssueCodes.OptionalUnorderedGroup } );
+        expectError(validation, 'Optional elements in Unordered groups are currently not supported', { offset: offset, length: errorText.length, code: IssueCodes.OptionalUnorderedGroup });
     });
 });
 
@@ -560,6 +561,64 @@ describe('Clashing token names', () => {
         `;
         const validation = await validate(grammar);
         expectNoIssues(validation);
+    });
+});
+
+describe('Property type is not a mix of cross-ref and non-cross-ref types.', () => {
+
+    test('Parser rule property not mixed.', async () => {
+        const validation = await validate(`
+        Rule:
+            name = 'string'
+        ;
+        Rule1:
+            prop = [Rule]
+        ;
+        Rule2:
+            prop = Rule
+        ;
+        Rule3:
+            prop = ('string' | Rule)
+        ;
+        `);
+        expectNoIssues(validation);
+    });
+
+    test('Parser rule property mixed.', async () => {
+        const validation = await validate(`
+        Rule:
+            name = 'string'
+        ;
+        Rule1:
+            prop = ('string' | [Rule])
+        ;
+        `);
+        const rule1Assignment = streamContents(validation.document.parseResult.value.rules[1])
+            .filter(node => isAssignment(node)).head() as Assignment;
+        expect(rule1Assignment).not.toBe(undefined);
+
+        expectError(validation, /Mixing a cross-reference with other types is not supported. Consider splitting property /, {
+            node: rule1Assignment!,
+            property: { name: 'terminal' }
+        });
+    });
+    test('Parser rule property complex mixed.', async () => {
+        const validation = await validate(`
+        Rule:
+            name = 'string'
+        ;
+        Rule1:
+            prop = ('int' | ('string' | [Rule]))
+        ;
+        `);
+        const rule1Assignment = streamContents(validation.document.parseResult.value.rules[1])
+            .filter(node => isAssignment(node)).head() as Assignment;
+        expect(rule1Assignment).not.toBe(undefined);
+
+        expectError(validation, /Mixing a cross-reference with other types is not supported. Consider splitting property /, {
+            node: rule1Assignment!,
+            property: { name: 'terminal' }
+        });
     });
 
 });

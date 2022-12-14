@@ -4,14 +4,14 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import * as ast from '../generated/ast';
 import { MultiMap } from '../../utils/collections';
-import { distinctAndSorted } from '../type-system/types-util';
-import { InterfaceType, isInterfaceType, isUnionType, Property, PropertyType, propertyTypesToString } from '../type-system/type-collector/types';
 import { DiagnosticInfo, ValidationAcceptor, ValidationChecks } from '../../validation/validation-registry';
+import * as ast from '../generated/ast';
 import { extractAssignments } from '../internal-grammar-util';
-import { DeclaredInfo, InferredInfo, isDeclared, isInferred, isInferredAndDeclared, LangiumGrammarDocument, TypeToValidationInfo } from '../workspace/documents';
 import { LangiumGrammarServices } from '../langium-grammar-module';
+import { InterfaceType, isInterfaceType, isUnionType, Property, PropertyType, propertyTypesToString } from '../type-system/type-collector/types';
+import { distinctAndSorted } from '../type-system/types-util';
+import { DeclaredInfo, InferredInfo, isDeclared, isInferred, isInferredAndDeclared, LangiumGrammarDocument, TypeToValidationInfo } from '../workspace/documents';
 
 export function registerTypeValidationChecks(services: LangiumGrammarServices): void {
     const registry = services.validation.ValidationRegistry;
@@ -47,6 +47,9 @@ export class LangiumGrammarTypesValidator {
         const validationResources = (grammar.$document as LangiumGrammarDocument)?.validationResources;
         if (validationResources) {
             for (const typeInfo of validationResources.typeToValidationInfo.values()) {
+                if(isInferred(typeInfo) && typeInfo.inferred instanceof InterfaceType) {
+                    validateInferredInterface(typeInfo.inferred as InterfaceType, accept);
+                }
                 if (isInferredAndDeclared(typeInfo)) {
                     validateDeclaredAndInferredConsistency(typeInfo, accept);
                 }
@@ -62,6 +65,23 @@ export class LangiumGrammarTypesValidator {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+
+function validateInferredInterface(inferredInterface: InterfaceType, accept: ValidationAcceptor): void {
+    inferredInterface.properties.filter(prop => prop.typeAlternatives.length > 1).forEach(prop => {
+        const typeKind = (type: PropertyType) => type.reference ? 'ref' : 'other';
+        const firstKind = typeKind(prop.typeAlternatives[0]);
+        if (prop.typeAlternatives.slice(1).some(type => typeKind(type) !== firstKind)) {
+            const targetNode = prop.astNodes.values().next().value;
+            if(targetNode) {
+                accept(
+                    'error',
+                    `Mixing a cross-reference with other types is not supported. Consider splitting property "${prop.name}" into two or more different properties.`,
+                    { node:  targetNode}
+                );
+            }
+        }
+    });
+}
 
 function validateInterfaceSuperTypes(
     { declared, declaredNode }: { declared: InterfaceType, declaredNode: ast.Interface },
