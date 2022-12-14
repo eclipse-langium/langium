@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { createLangiumGrammarServices, Grammar, EmptyFileSystem, s } from '../../../src';
+import { createLangiumGrammarServices, Grammar, EmptyFileSystem, expandToString } from '../../../src';
 import { isParserRule } from '../../../src/grammar/generated/ast';
 import { isDataTypeRule } from '../../../src/grammar/internal-grammar-util';
 import { collectAst, specifyAstNodeProperties } from '../../../src/grammar/type-system/ast-collector';
@@ -734,7 +734,7 @@ describe('expression rules with inferred and declared interfaces', () => {
         specifyAstNodeProperties(inferred);
 
         const inferredInterfacesString = inferred.interfaces.map(toSubstring).join('\n').trim();
-        expect(inferredInterfacesString).toBe(s`
+        expect(inferredInterfacesString).toBe(expandToString`
             export interface BooleanLiteral extends AstNode {
                 readonly $container: MemberAccess | SuperMemberAccess;
                 readonly $type: 'BooleanLiteral';
@@ -759,7 +759,7 @@ describe('expression rules with inferred and declared interfaces', () => {
         sortInterfacesTopologically(declared.interfaces);
         specifyAstNodeProperties(declared);
 
-        expect(declared.interfaces.map(toSubstring).join('\n').trim()).toBe(s`
+        expect(declared.interfaces.map(toSubstring).join('\n').trim()).toBe(expandToString`
             export interface SuperMemberAccess extends MemberAccess {
                 readonly $type: 'SuperMemberAccess';
             }
@@ -771,13 +771,13 @@ describe('expression rules with inferred and declared interfaces', () => {
         // check ast.ts types
         const allTypes = collectAst(grammar);
 
-        expect(allTypes.unions.map(toSubstring).join('\n').trim()).toBe(s`
+        expect(allTypes.unions.map(toSubstring).join('\n').trim()).toBe(expandToString`
             export type Expression = MemberAccess | PrimaryExpression | SuperMemberAccess;
             export type PrimaryExpression = BooleanLiteral;
         `);
 
         const allInterfacesString = allTypes.interfaces.map(toSubstring).join('\n').trim();
-        expect(allInterfacesString).toBe(s`
+        expect(allInterfacesString).toBe(expandToString`
             export interface BooleanLiteral extends AstNode {
                 readonly $container: MemberAccess;
                 readonly $type: 'BooleanLiteral';
@@ -820,10 +820,10 @@ describe('types of `$container` and `$type` are correct', () => {
         const { unions, interfaces } = collectAst(document.parseResult.value);
 
         const unionsString = unions.map(toSubstring).join('\n').trim();
-        expect(unionsString).toBe(s``);
+        expect(unionsString).toBe(expandToString``);
 
         const interfacesString = sortInterfacesTopologically(interfaces).map(toSubstring).join('\n').trim();
-        expect(interfacesString).toBe(s`
+        expect(interfacesString).toBe(expandToString`
             export interface A extends AstNode {
                 readonly $container: D | E;
                 readonly $type: 'A' | 'C';
@@ -863,13 +863,13 @@ describe('types of `$container` and `$type` are correct', () => {
         const { unions, interfaces } = collectAst(document.parseResult.value);
 
         const unionsString = unions.map(toSubstring).join('\n').trim();
-        expect(unionsString).toBe(s`
+        expect(unionsString).toBe(expandToString`
             export type A = C;
             export type B = C;
         `);
 
         const interfacesString = sortInterfacesTopologically(interfaces).map(toSubstring).join('\n').trim();
-        expect(interfacesString).toBe(s`
+        expect(interfacesString).toBe(expandToString`
             export interface C extends AstNode {
                 readonly $container: D | E;
                 readonly $type: 'C';
@@ -900,10 +900,10 @@ describe('types of `$container` and `$type` are correct', () => {
         const { unions, interfaces } = collectAst(document.parseResult.value);
 
         const unionsString = unions.map(toSubstring).join('\n').trim();
-        expect(unionsString).toBe(s``);
+        expect(unionsString).toBe(expandToString``);
 
         const interfacesString = sortInterfacesTopologically(interfaces).map(toSubstring).join('\n').trim();
-        expect(interfacesString).toBe(s`
+        expect(interfacesString).toBe(expandToString`
             export interface A extends AstNode {
                 readonly $container: D | E;
                 readonly $type: 'A' | 'C';

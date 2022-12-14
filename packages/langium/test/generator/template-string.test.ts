@@ -4,14 +4,28 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { s } from '../../src/generator/template-string';
+import { expandToString as s } from '../../src/generator/template-string';
 
 test('Should not throw when substituting null', () => {
     expect(s`${null}`).toBe('null');
 });
 
 test('Should not throw when substituting undefined', () => {
-    expect(s`${undefined}`).toBe('undefined');
+    expect(s`${undefined}`).toBe('');
+});
+
+test('Should omit lines containing just a subsitution being undefined', () => {
+    const expected = `123
+456
+abc
+def`;
+    expect(s`
+        123
+        ${456}
+        ${undefined}
+        ${'abc'}
+        def
+    `).toBe(expected);
 });
 
 test('Should indent empty string', () => {

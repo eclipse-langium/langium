@@ -64,7 +64,7 @@ export function processGeneratorNode(node: GeneratorNode, defaultIndentation?: s
     return context.content;
 }
 
-function processNodeInternal(node: GeneratorNode, context: Context) {
+function processNodeInternal(node: GeneratorNode | string, context: Context) {
     if (typeof(node) === 'string') {
         processStringNode(node, context);
     } else if (node instanceof IndentNode) {
@@ -76,7 +76,7 @@ function processNodeInternal(node: GeneratorNode, context: Context) {
     }
 }
 
-function hasContent(node: GeneratorNode, ctx: Context): boolean {
+function hasContent(node: GeneratorNode | string, ctx: Context): boolean {
     if (typeof(node) === 'string') {
         return hasNonWhitespace(node);
     } else if (node instanceof CompositeGeneratorNode) {

@@ -5,7 +5,8 @@
  ******************************************************************************/
 
 import { EOL } from 'os';
-import { processGeneratorNode as process, CompositeGeneratorNode, NL, NLEmpty, NewLineNode, IndentNode } from '../../src';
+import { CompositeGeneratorNode, NL, NLEmpty, NewLineNode, IndentNode } from '../../src';
+import { processGeneratorNode as process } from '../../src/generator/node-processor';
 
 describe('new lines', () => {
 
