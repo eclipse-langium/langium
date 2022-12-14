@@ -13,84 +13,78 @@ import { MultiMap } from '../../utils/collections';
 import { toDocumentSegment } from '../../utils/cst-util';
 import { findNodeForKeyword, findNameAssignment, findNodeForProperty, getAllReachableRules } from '../../utils/grammar-util';
 import { Stream, stream } from '../../utils/stream';
-import { ValidationAcceptor, ValidationChecks, ValidationRegistry } from '../../validation/validation-registry';
+import { ValidationAcceptor, ValidationChecks } from '../../validation/validation-registry';
 import { LangiumDocuments } from '../../workspace/documents';
 import * as ast from '../generated/ast';
 import { isParserRule, isRuleCall } from '../generated/ast';
 import { getTypeNameWithoutError, isDataTypeRule, isOptionalCardinality, isPrimitiveType, resolveImport, resolveTransitiveImports, terminalRegex } from '../internal-grammar-util';
 import type { LangiumGrammarServices } from '../langium-grammar-module';
 
-export class LangiumGrammarValidationRegistry extends ValidationRegistry {
-    constructor(services: LangiumGrammarServices) {
-        super(services);
-        const validator = services.validation.LangiumGrammarValidator;
-        const typesValidator = services.validation.LangiumGrammarTypesValidator;
-        const checks: ValidationChecks<ast.LangiumGrammarAstType> = {
-            Action: [
-                validator.checkAssignmentReservedName,
-                typesValidator.checkActionIsNotUnionType,
-            ],
-            AbstractRule: validator.checkRuleName,
-            Assignment: [
-                validator.checkAssignmentWithFeatureName,
-                validator.checkAssignmentToFragmentRule,
-                validator.checkAssignmentReservedName
-            ],
-            ParserRule: [
-                validator.checkParserRuleDataType,
-                validator.checkRuleParametersUsed,
-                validator.checkParserRuleReservedName,
-            ],
-            TerminalRule: [
-                validator.checkTerminalRuleReturnType,
-                validator.checkHiddenTerminalRule,
-                validator.checkEmptyTerminalRule
-            ],
-            InferredType: validator.checkTypeReservedName,
-            Keyword: validator.checkKeyword,
-            UnorderedGroup: validator.checkUnorderedGroup,
-            Grammar: [
-                validator.checkGrammarName,
-                validator.checkEntryGrammarRule,
-                validator.checkUniqueRuleName,
-                validator.checkUniqueTypeName,
-                validator.checkUniqueImportedRules,
-                validator.checkDuplicateImportedGrammar,
-                validator.checkGrammarHiddenTokens,
-                validator.checkGrammarForUnusedRules,
-                validator.checkGrammarTypeInfer,
-                validator.checkClashingTerminalNames,
-                typesValidator.checkDeclaredTypesConsistency,
-                typesValidator.checkDeclaredAndInferredTypesConsistency,
-            ],
-            GrammarImport: validator.checkPackageImport,
-            CharacterRange: validator.checkInvalidCharacterRange,
-            Interface: [
-                validator.checkTypeReservedName,
-            ],
-            Type: [
-                validator.checkTypeReservedName,
-            ],
-            TypeAttribute: validator.checkTypeReservedName,
-            RuleCall: [
-                validator.checkUsedHiddenTerminalRule,
-                validator.checkUsedFragmentTerminalRule,
-                validator.checkRuleCallParameters,
-            ],
-            TerminalRuleCall: validator.checkUsedHiddenTerminalRule,
-            CrossReference: [
-                validator.checkCrossReferenceSyntax,
-                validator.checkCrossRefNameAssignment,
-                validator.checkCrossRefTerminalType,
-                validator.checkCrossRefType
-            ],
-            AtomType: [
-                validator.checkAtomTypeRefType,
-                validator.checkFragmentsInTypes
-            ]
-        };
-        this.register(checks, validator);
-    }
+export function registerValidationChecks(services: LangiumGrammarServices): void {
+    const registry = services.validation.ValidationRegistry;
+    const validator = services.validation.LangiumGrammarValidator;
+    const checks: ValidationChecks<ast.LangiumGrammarAstType> = {
+        Action: [
+            validator.checkAssignmentReservedName,
+        ],
+        AbstractRule: validator.checkRuleName,
+        Assignment: [
+            validator.checkAssignmentWithFeatureName,
+            validator.checkAssignmentToFragmentRule,
+            validator.checkAssignmentReservedName
+        ],
+        ParserRule: [
+            validator.checkParserRuleDataType,
+            validator.checkRuleParametersUsed,
+            validator.checkParserRuleReservedName,
+        ],
+        TerminalRule: [
+            validator.checkTerminalRuleReturnType,
+            validator.checkHiddenTerminalRule,
+            validator.checkEmptyTerminalRule
+        ],
+        InferredType: validator.checkTypeReservedName,
+        Keyword: validator.checkKeyword,
+        UnorderedGroup: validator.checkUnorderedGroup,
+        Grammar: [
+            validator.checkGrammarName,
+            validator.checkEntryGrammarRule,
+            validator.checkUniqueRuleName,
+            validator.checkUniqueTypeName,
+            validator.checkUniqueImportedRules,
+            validator.checkDuplicateImportedGrammar,
+            validator.checkGrammarHiddenTokens,
+            validator.checkGrammarForUnusedRules,
+            validator.checkGrammarTypeInfer,
+            validator.checkClashingTerminalNames,
+        ],
+        GrammarImport: validator.checkPackageImport,
+        CharacterRange: validator.checkInvalidCharacterRange,
+        Interface: [
+            validator.checkTypeReservedName,
+        ],
+        Type: [
+            validator.checkTypeReservedName,
+        ],
+        TypeAttribute: validator.checkTypeReservedName,
+        RuleCall: [
+            validator.checkUsedHiddenTerminalRule,
+            validator.checkUsedFragmentTerminalRule,
+            validator.checkRuleCallParameters,
+        ],
+        TerminalRuleCall: validator.checkUsedHiddenTerminalRule,
+        CrossReference: [
+            validator.checkCrossReferenceSyntax,
+            validator.checkCrossRefNameAssignment,
+            validator.checkCrossRefTerminalType,
+            validator.checkCrossRefType
+        ],
+        AtomType: [
+            validator.checkAtomTypeRefType,
+            validator.checkFragmentsInTypes
+        ]
+    };
+    registry.register(checks, validator);
 }
 
 export namespace IssueCodes {

@@ -9,7 +9,7 @@ import { inject, Module } from '../dependency-injection';
 import { LangiumServices, LangiumSharedServices, PartialLangiumServices, PartialLangiumSharedServices } from '../services';
 import { LangiumGrammarGeneratedModule, LangiumGrammarGeneratedSharedModule } from './generated/module';
 import { LangiumGrammarScopeComputation, LangiumGrammarScopeProvider } from './references/grammar-scope';
-import { LangiumGrammarValidationRegistry, LangiumGrammarValidator } from './validation/validator';
+import { LangiumGrammarValidator, registerValidationChecks } from './validation/validator';
 import { LangiumGrammarCodeActionProvider } from './lsp/grammar-code-actions';
 import { LangiumGrammarFoldingRangeProvider } from './lsp/grammar-folding-ranges';
 import { LangiumGrammarFormatter } from './lsp/grammar-formatter';
@@ -19,7 +19,7 @@ import { LangiumGrammarReferences } from './references/grammar-references';
 import { LangiumGrammarDefinitionProvider } from './lsp/grammar-definition';
 import { LangiumGrammarCallHierarchyProvider } from './lsp/grammar-call-hierarchy';
 import { LangiumGrammarValidationResourcesCollector } from './validation/validation-resources-collector';
-import { LangiumGrammarTypesValidator } from './validation/types-validator';
+import { LangiumGrammarTypesValidator, registerTypeValidationChecks } from './validation/types-validator';
 import { LangiumGrammarDocument } from './workspace/documents';
 import { Grammar } from './generated/ast';
 import { interruptAndCheck } from '../utils/promise-util';
@@ -37,7 +37,6 @@ export type LangiumGrammarServices = LangiumServices & LangiumGrammarAddedServic
 
 export const LangiumGrammarModule: Module<LangiumGrammarServices, PartialLangiumServices & LangiumGrammarAddedServices> = {
     validation: {
-        ValidationRegistry: (services) => new LangiumGrammarValidationRegistry(services),
         LangiumGrammarValidator: (services) => new LangiumGrammarValidator(services),
         ValidationResourcesCollector: () => new LangiumGrammarValidationResourcesCollector(),
         LangiumGrammarTypesValidator: () => new LangiumGrammarTypesValidator(),
@@ -68,28 +67,30 @@ export function createLangiumGrammarServices(context: DefaultSharedModuleContext
         LangiumGrammarGeneratedSharedModule,
         sharedModule
     );
-    addTypeCollectionPhase(shared);
     const grammar = inject(
         createDefaultModule({ shared }),
         LangiumGrammarGeneratedModule,
         LangiumGrammarModule
     );
+    addTypeCollectionPhase(shared, grammar);
     shared.ServiceRegistry.register(grammar);
+
+    registerValidationChecks(grammar);
+    registerTypeValidationChecks(grammar);
+
     return { shared, grammar };
 }
 
-function addTypeCollectionPhase(services: LangiumSharedServices) {
-    const documentBuilder = services.workspace.DocumentBuilder;
-    const langiumDocuments = services.workspace.LangiumDocuments;
-    const serviceRegistry = services.ServiceRegistry;
+function addTypeCollectionPhase(sharedServices: LangiumSharedServices, grammarServices: LangiumGrammarServices) {
+    const documentBuilder = sharedServices.workspace.DocumentBuilder;
+    const langiumDocuments = sharedServices.workspace.LangiumDocuments;
 
     documentBuilder.onBuildPhase(DocumentState.IndexedReferences, async (documents, cancelToken) => {
-        documents.forEach(async document => {
+        for (const document of documents) {
             await interruptAndCheck(cancelToken);
-            const docServices = serviceRegistry.getServices(document.uri) as LangiumGrammarServices;
-            const typeCollector = docServices.validation.ValidationResourcesCollector;
+            const typeCollector = grammarServices.validation.ValidationResourcesCollector;
             const grammar = document.parseResult.value as Grammar;
             (document as LangiumGrammarDocument).validationResources = typeCollector.collectValidationResources(grammar, langiumDocuments);
-        });
+        }
     });
 }

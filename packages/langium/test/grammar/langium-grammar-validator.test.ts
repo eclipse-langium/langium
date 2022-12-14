@@ -23,7 +23,7 @@ describe('Langium grammar validation', () => {
         interface DeclaredExtendsInferred extends InferredT {}`);
 
         // should get a warning when basing declared types on inferred types
-        expectWarning(validationResult, /Extending an interface by a parser rule gives an ambiguous type, instead of the expected declared type./, {
+        expectError(validationResult, /Extending an inferred type is discouraged./, {
             node: validationResult.document.parseResult.value.interfaces[0],
             property: {name: 'superTypes'}
         });
@@ -64,7 +64,7 @@ describe('Langium grammar validation', () => {
             node: validationResult.document.parseResult.value.interfaces[0],
             property: {name: 'superTypes'}
         });
-        expectWarning(validationResult, /Extending an interface by a parser rule gives an ambiguous type, instead of the expected declared type./, {
+        expectError(validationResult, /Extending an inferred type is discouraged./, {
             node: validationResult.document.parseResult.value.interfaces[0],
             property: {name: 'superTypes'}
         });
@@ -89,7 +89,7 @@ describe('Langium grammar validation', () => {
             node: validationResult.document.parseResult.value.interfaces[0],
             property: {name: 'superTypes'}
         });
-        expectWarning(validationResult, /Extending an interface by a parser rule gives an ambiguous type, instead of the expected declared type./, {
+        expectError(validationResult, /Extending an inferred type is discouraged./, {
             node: validationResult.document.parseResult.value.interfaces[0],
             property: {name: 'superTypes'}
         });

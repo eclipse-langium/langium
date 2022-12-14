@@ -272,7 +272,7 @@ describe('validate properties duplication in types hierarchy', () => {
         // verify we have 1 error: a property `name` exists in both parents but has different type
         const document = await parseDocument(grammarServices, prog);
         const diagnostics: Diagnostic[] = await grammarServices.validation.DocumentValidator.validateDocument(document);
-        expect(diagnostics.filter(d => d.severity === DiagnosticSeverity.Error)).toHaveLength(1);
+        expect(diagnostics.filter(d => d.severity === DiagnosticSeverity.Error)).toHaveLength(2);
     });
 
 });

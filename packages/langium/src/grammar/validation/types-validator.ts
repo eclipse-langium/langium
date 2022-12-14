@@ -8,9 +8,25 @@ import * as ast from '../generated/ast';
 import { MultiMap } from '../../utils/collections';
 import { distinctAndSorted } from '../type-system/types-util';
 import { InterfaceType, isInterfaceType, isUnionType, Property, PropertyType, propertyTypesToString } from '../type-system/type-collector/types';
-import { DiagnosticInfo, ValidationAcceptor } from '../../validation/validation-registry';
+import { DiagnosticInfo, ValidationAcceptor, ValidationChecks } from '../../validation/validation-registry';
 import { extractAssignments } from '../internal-grammar-util';
 import { DeclaredInfo, InferredInfo, isDeclared, isInferred, isInferredAndDeclared, LangiumGrammarDocument, TypeToValidationInfo } from '../workspace/documents';
+import { LangiumGrammarServices } from '../langium-grammar-module';
+
+export function registerTypeValidationChecks(services: LangiumGrammarServices): void {
+    const registry = services.validation.ValidationRegistry;
+    const typesValidator = services.validation.LangiumGrammarTypesValidator;
+    const checks: ValidationChecks<ast.LangiumGrammarAstType> = {
+        Action: [
+            typesValidator.checkActionIsNotUnionType,
+        ],
+        Grammar: [
+            typesValidator.checkDeclaredTypesConsistency,
+            typesValidator.checkDeclaredAndInferredTypesConsistency,
+        ],
+    };
+    registry.register(checks, typesValidator);
+}
 
 export class LangiumGrammarTypesValidator {
 
@@ -58,8 +74,8 @@ function validateInterfaceSuperTypes(
             if (isInferred(superType) && isUnionType(superType.inferred) || isDeclared(superType) && isUnionType(superType.declared)) {
                 accept('error', 'Interfaces cannot extend union types.', { node: declaredNode, property: 'superTypes', index: i });
             }
-            if (isInferred(superType)) {
-                accept('warning', 'Extending an interface by a parser rule gives an ambiguous type, instead of the expected declared type.', { node: declaredNode, property: 'superTypes', index: i });
+            if (isInferred(superType) && !isDeclared(superType)) {
+                accept('error', 'Extending an inferred type is discouraged.', { node: declaredNode, property: 'superTypes', index: i });
             }
         }
     });
@@ -153,8 +169,8 @@ function validateDeclaredAndInferredConsistency(typeInfo: InferredInfo & Declare
     const { inferred, declared, declaredNode, inferredNodes } = typeInfo;
     const typeName = declared.name;
 
-    const applyErrorToRulesAndActions = (msgPostfix='') => (errorMsg: string) =>
-        inferredNodes.forEach(node => accept('error', errorMsg + msgPostfix,
+    const applyErrorToRulesAndActions = (msgPostfix?: string) => (errorMsg: string) =>
+        inferredNodes.forEach(node => accept('error', `${errorMsg}${msgPostfix ? ` ${msgPostfix}` : ''}.`,
             (node?.inferredType) ?
                 <DiagnosticInfo<ast.InferredType, string>>{ node: node?.inferredType, property: 'name' } :
                 <DiagnosticInfo<ast.ParserRule | ast.Action | ast.InferredType, string>>{ node, property: ast.isAction(node) ? 'type' : 'name' }
@@ -183,11 +199,11 @@ function validateDeclaredAndInferredConsistency(typeInfo: InferredInfo & Declare
 
     if (isUnionType(inferred) && isUnionType(declared)) {
         validateAlternativesConsistency(inferred.alternatives, declared.alternatives,
-            applyErrorToRulesAndActions(` in a rule that returns type '${typeName}'.`),
+            applyErrorToRulesAndActions(`in a rule that returns type '${typeName}'`),
         );
     } else if (isInterfaceType(inferred) && isInterfaceType(declared)) {
         validatePropertiesConsistency(inferred.superProperties, declared.superProperties,
-            applyErrorToRulesAndActions(` in a rule that returns type '${typeName}'.`),
+            applyErrorToRulesAndActions(`in a rule that returns type '${typeName}'`),
             applyErrorToProperties,
             applyMissingPropErrorToRules
         );
@@ -279,7 +295,7 @@ function validatePropertiesConsistency(inferred: MultiMap<string, Property>, dec
     for (const [name, expectedProperties] of declared.entriesGroupedByKey()) {
         const foundProperty = inferred.get(name);
         if (foundProperty.length === 0 && !expectedProperties.some(e => e.optional)) {
-            applyErrorToType(`A property '${name}' is expected.`);
+            applyErrorToType(`A property '${name}' is expected`);
         }
     }
 }
