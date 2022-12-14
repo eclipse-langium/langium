@@ -5,10 +5,12 @@
  ******************************************************************************/
 
 import { Diagnostic, DiagnosticSeverity } from 'vscode-languageserver';
-import { createLangiumGrammarServices, EmptyFileSystem } from '../../../src';
-import { parseDocument } from '../../../src/test';
+import { createLangiumGrammarServices, EmptyFileSystem, GrammarAST, streamAllContents, streamContents } from '../../../src';
+import { Assignment, isAssignment } from '../../../src/grammar/generated/ast';
+import { expectError, expectNoIssues, parseDocument, validationHelper } from '../../../src/test';
 
 const grammarServices = createLangiumGrammarServices(EmptyFileSystem).grammar;
+const validate = validationHelper<GrammarAST.Grammar>(grammarServices);
 
 describe('validate params in types', () => {
 
@@ -273,6 +275,85 @@ describe('validate properties duplication in types hierarchy', () => {
         const document = await parseDocument(grammarServices, prog);
         const diagnostics: Diagnostic[] = await grammarServices.validation.DocumentValidator.validateDocument(document);
         expect(diagnostics.filter(d => d.severity === DiagnosticSeverity.Error)).toHaveLength(2);
+    });
+
+    describe('Property type is not a mix of cross-ref and non-cross-ref types.', () => {
+
+        test('Parser rule property inferred mixed.', async () => {
+            const validation = await validate(`
+                entry AbstractElement:
+                    Foo | Bar;
+
+                Foo infers AbstractElement:
+                    prop=[AbstractElement:ID]
+                ;
+                
+                Bar infers AbstractElement:
+                    prop='Bar'
+                ;
+                
+                terminal ID: /[_a-zA-Z][\\w_]*/;
+            `);
+            const rule1Assignment = streamContents(validation.document.parseResult.value.rules[1])
+                .filter(node => isAssignment(node)).head() as Assignment;
+            expect(rule1Assignment).not.toBe(undefined);
+
+            expectError(validation, /Mixing a cross-reference with other types is not supported. Consider splitting property /, {
+                node: rule1Assignment!
+            });
+        });
+
+        test('Parser rule properties inferred mixed.', async () => {
+            const validation = await validate(`
+                Rule:
+                    prop = 'string' | prop = [Rule:ID]
+                ;
+                terminal ID: /[_a-zA-Z][\\w_]*/;
+            `);
+            const propAssignments = streamAllContents(validation.document.parseResult.value.rules[0])
+                .filter(node => isAssignment(node)).toArray();
+            expect(propAssignments.length).toBe(2);
+
+            expectError(validation, /Mixing a cross-reference with other types is not supported. Consider splitting property /, {
+                node: propAssignments[0]!
+            });
+        });
+
+        test('Interface declaration property not mixed.', async () => {
+            const validation = await validate(`
+                interface Rule {
+                    name: 'string'
+                }
+                
+                interface Rule1 {
+                    prop: @Rule
+                }
+                
+                interface Rule2 {
+                    prop: Rule
+                }
+                
+                interface Rule3 {
+                    prop: 'string' | Rule
+                }
+            `);
+            expectNoIssues(validation);
+        });
+
+        test('Interface declaration property mixed.', async () => {
+            const validation = await validate(`
+                interface Rule {
+                    prop: @Rule | 'string'
+                }
+            `);
+            const attribute = validation.document.parseResult.value.interfaces[0].attributes[0];
+            expect(attribute).not.toBe(undefined);
+
+            expectError(validation, /Mixing a cross-reference with other types is not supported. Consider splitting property /, {
+                node: attribute!,
+                property: { name: 'typeAlternatives' }
+            });
+        });
     });
 
 });
