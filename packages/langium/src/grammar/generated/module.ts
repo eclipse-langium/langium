@@ -3,9 +3,10 @@
  * DO NOT EDIT MANUALLY!
  ******************************************************************************/
 
-import { LanguageMetaData } from '../..';
+import { LanguageMetaData } from '../language-meta-data';
 import { Module } from '../../dependency-injection';
 import { LangiumGeneratedServices, LangiumGeneratedSharedServices, LangiumSharedServices, LangiumServices } from '../../services';
+import { IParserConfig } from '../../parser/parser-config';
 import { LangiumGrammarAstReflection } from './ast';
 import { LangiumGrammarGrammar } from './grammar';
 
@@ -15,6 +16,10 @@ export const LangiumGrammarLanguageMetaData: LanguageMetaData = {
     caseInsensitive: false
 };
 
+export const LangiumGrammarParserConfig: IParserConfig = {
+    maxLookahead: 3,
+};
+
 export const LangiumGrammarGeneratedSharedModule: Module<LangiumSharedServices, LangiumGeneratedSharedServices> = {
     AstReflection: () => new LangiumGrammarAstReflection()
 };
@@ -22,5 +27,7 @@ export const LangiumGrammarGeneratedSharedModule: Module<LangiumSharedServices, 
 export const LangiumGrammarGeneratedModule: Module<LangiumServices, LangiumGeneratedServices> = {
     Grammar: () => LangiumGrammarGrammar(),
     LanguageMetaData: () => LangiumGrammarLanguageMetaData,
-    parser: {}
+    parser: {
+        ParserConfig: () => LangiumGrammarParserConfig
+    }
 };
