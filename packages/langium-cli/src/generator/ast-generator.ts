@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import {
-    GeneratorNode, Grammar, IndentNode, CompositeGeneratorNode, NL, processGeneratorNode, streamAllContents, MultiMap, LangiumServices, GrammarAST
+    GeneratorNode, Grammar, IndentNode, CompositeGeneratorNode, NL, toString, streamAllContents, MultiMap, LangiumServices, GrammarAST
 } from 'langium';
 import { AstTypes, collectAllProperties, collectAst, Property } from 'langium/lib/grammar/type-system';
 import { LangiumConfig } from '../package';
@@ -30,7 +30,7 @@ export function generateAst(services: LangiumServices, grammars: Grammar[], conf
     astTypes.unions = astTypes.unions.filter(e => e.reflection);
     fileNode.append(generateAstReflection(config, astTypes));
 
-    return processGeneratorNode(fileNode);
+    return toString(fileNode);
 }
 
 function hasCrossReferences(grammar: Grammar): boolean {

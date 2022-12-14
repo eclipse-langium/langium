@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { CompositeGeneratorNode, Grammar, LangiumServices, NL, processGeneratorNode } from 'langium';
+import { CompositeGeneratorNode, Grammar, LangiumServices, NL, toString } from 'langium';
 import { EOL } from 'os';
 import { LangiumConfig } from '../package';
 import { generatedHeader } from './util';
@@ -37,5 +37,5 @@ export function serializeGrammar(services: LangiumServices, grammars: Grammar[],
             }
         }
     }
-    return processGeneratorNode(node);
+    return toString(node);
 }

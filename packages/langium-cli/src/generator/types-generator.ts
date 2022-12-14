@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { CompositeGeneratorNode, Grammar, LangiumServices, NL, processGeneratorNode } from 'langium';
+import { CompositeGeneratorNode, Grammar, LangiumServices, NL, toString } from 'langium';
 import { collectAst } from 'langium/lib/grammar/type-system';
 import { LangiumGrammarGrammar } from 'langium/lib/grammar/generated/grammar';
 import { collectKeywords } from './util';
@@ -17,5 +17,5 @@ export function generateTypesFile(services: LangiumServices, grammars: Grammar[]
     unions.forEach(union => fileNode.append(union.toDeclaredTypesString(reservedWords)).append(NL));
     interfaces.forEach(iFace => fileNode.append(iFace.toDeclaredTypesString(reservedWords)).append(NL));
 
-    return processGeneratorNode(fileNode);
+    return toString(fileNode);
 }

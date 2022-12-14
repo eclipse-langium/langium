@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import fs from 'fs';
-import { CompositeGeneratorNode, NL, processGeneratorNode } from 'langium';
+import { CompositeGeneratorNode, NL, toString } from 'langium';
 import path from 'path';
 import { RequirementModel, TestModel } from '../language-server/generated/ast';
 import { extractDestinationAndName } from './cli-util';
@@ -36,7 +36,7 @@ export function generateSummaryFileHTMLContent(model: RequirementModel, testMode
     fileNode.append('</table>', NL);
     fileNode.append('</body>', NL);
     fileNode.append('</html>', NL);
-    return processGeneratorNode(fileNode);
+    return toString(fileNode);
 }
 
 export function generateSummary(model: RequirementModel, testModels: TestModel[], filePath: string, destination: string | undefined): string {

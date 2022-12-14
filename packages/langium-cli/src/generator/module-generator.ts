@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import * as langium from 'langium';
-import { CompositeGeneratorNode, NL, processGeneratorNode } from 'langium';
+import { CompositeGeneratorNode, NL, toString } from 'langium';
 import { LangiumConfig, LangiumLanguageConfig } from '../package';
 import { generatedHeader } from './util';
 
@@ -106,7 +106,7 @@ export function generateModule(grammars: langium.Grammar[], config: LangiumConfi
         }
     }
 
-    return processGeneratorNode(node);
+    return toString(node);
 }
 
 function generateParserConfig(config: langium.IParserConfig): CompositeGeneratorNode {

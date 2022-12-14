@@ -6,7 +6,7 @@
 
 import * as langium from 'langium';
 import {
-    getTerminalParts, isCommentTerminal, CompositeGeneratorNode, NL, processGeneratorNode, escapeRegExp, GrammarAST, isWhitespaceRegExp
+    getTerminalParts, isCommentTerminal, CompositeGeneratorNode, NL, toString, escapeRegExp, GrammarAST, isWhitespaceRegExp
 } from 'langium';
 import { terminalRegex } from 'langium/lib/grammar/internal-grammar-util';
 import { LangiumLanguageConfig } from '../../package';
@@ -209,7 +209,7 @@ function prettyPrint(monarchGrammar: MonarchGrammar): string {
     });
     node.append('};', NL);
 
-    return processGeneratorNode(node);
+    return toString(node);
 }
 
 /**
