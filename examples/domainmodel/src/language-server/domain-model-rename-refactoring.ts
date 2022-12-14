@@ -4,20 +4,27 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { AstNode, DefaultRenameProvider, findDeclarationNodeAtOffset, getDocument, isNamed, LangiumDocument, LangiumDocuments, LangiumServices, ReferenceDescription, streamAst, toDocumentSegment } from 'langium';
+import {
+    AstNode, DefaultRenameProvider, findDeclarationNodeAtOffset, getDocument, isNamed, LangiumDocument,
+    LangiumDocuments, ReferenceDescription, streamAst, toDocumentSegment
+} from 'langium';
 import { Location, Range, WorkspaceEdit } from 'vscode-languageserver';
 import { RenameParams } from 'vscode-languageserver-protocol';
 import { TextEdit } from 'vscode-languageserver-types';
 import { URI } from 'vscode-uri';
-import { DomainModelNameProvider } from './domain-model-naming';
+import type { DomainModelServices } from './domain-model-module';
+import { QualifiedNameProvider } from './domain-model-naming';
 import { isPackageDeclaration } from './generated/ast';
 
 export class DomainModelRenameProvider extends DefaultRenameProvider {
-    protected readonly langiumDocuments: LangiumDocuments;
 
-    constructor(services: LangiumServices) {
+    protected readonly langiumDocuments: LangiumDocuments;
+    protected readonly qualifiedNameProvider: QualifiedNameProvider;
+
+    constructor(services: DomainModelServices) {
         super(services);
         this.langiumDocuments = services.shared.workspace.LangiumDocuments;
+        this.qualifiedNameProvider = services.references.QualifiedNameProvider;
     }
 
     override async rename(document: LangiumDocument, params: RenameParams): Promise<WorkspaceEdit | undefined> {
@@ -94,7 +101,7 @@ export class DomainModelRenameProvider extends DefaultRenameProvider {
         let name = this.nameProvider.getName(node);
         if (name) {
             if (isPackageDeclaration(node.$container)) {
-                name = (this.nameProvider as DomainModelNameProvider).getQualifiedName(node.$container, name);
+                name = this.qualifiedNameProvider.getQualifiedName(node.$container, name);
             }
         }
         return name;

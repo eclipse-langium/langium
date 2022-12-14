@@ -8,11 +8,14 @@ import { LangiumServices, Module, PartialLangiumServices, LangiumSharedServices,
 import { DomainModelGeneratedModule, DomainModelGeneratedSharedModule } from './generated/module';
 import { DomainModelValidator, registerValidationChecks } from './domain-model-validator';
 import { DomainModelScopeComputation } from './domain-model-scope';
-import { DomainModelNameProvider } from './domain-model-naming';
+import { QualifiedNameProvider } from './domain-model-naming';
 import { DomainModelFormatter } from './domain-model-formatter';
 import { DomainModelRenameProvider } from './domain-model-rename-refactoring';
 
 export type DomainModelAddedServices = {
+    references: {
+        QualifiedNameProvider: QualifiedNameProvider
+    },
     validation: {
         DomainModelValidator: DomainModelValidator
     }
@@ -23,7 +26,7 @@ export type DomainModelServices = LangiumServices & DomainModelAddedServices
 export const DomainModelModule: Module<DomainModelServices, PartialLangiumServices & DomainModelAddedServices> = {
     references: {
         ScopeComputation: (services) => new DomainModelScopeComputation(services),
-        NameProvider: () => new DomainModelNameProvider()
+        QualifiedNameProvider: () => new QualifiedNameProvider()
     },
     validation: {
         DomainModelValidator: () => new DomainModelValidator()
