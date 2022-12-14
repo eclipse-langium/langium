@@ -5,46 +5,50 @@
  ******************************************************************************/
 
 import { interpretAstReflection } from '../../src';
+import { InterfaceType } from '../../src/grammar/type-system/type-collector/types';
 
 describe('AST reflection interpreter', () => {
 
     describe('Inheritance with sub- and super-types', () => {
 
+        const superType = new InterfaceType('Super', [], [
+            {
+                name: 'A',
+                optional: false,
+                typeAlternatives: [{
+                    array: true,
+                    reference: false,
+                    types: ['string']
+                }],
+                astNodes: new Set()
+            },
+            {
+                name: 'Ref',
+                optional: true,
+                typeAlternatives: [{
+                    array: false,
+                    reference: true,
+                    types: ['RefTarget']
+                }],
+                astNodes: new Set()
+            }
+        ]);
+
+        const subType = new InterfaceType('Sub', ['Super'], [
+            {
+                name: 'B',
+                optional: false,
+                typeAlternatives: [{
+                    array: true,
+                    reference: false,
+                    types: ['string']
+                }],
+                astNodes: new Set()
+            }
+        ]);
+
         const reflectionForInheritance = interpretAstReflection({
-            interfaces: [
-                {
-                    name: 'Super',
-                    containerTypes: new Set(),
-                    printingSuperTypes: [],
-                    subTypes: new Set(['Sub']),
-                    realSuperTypes: new Set(),
-                    properties: [{
-                        name: 'A',
-                        optional: false,
-                        typeAlternatives: [{
-                            array: true,
-                            reference: false,
-                            types: ['string']
-                        }]
-                    }]
-                },
-                {
-                    name: 'Sub',
-                    containerTypes: new Set(),
-                    printingSuperTypes: ['Super'],
-                    subTypes: new Set(),
-                    realSuperTypes: new Set(['Super']),
-                    properties: [{
-                        name: 'B',
-                        optional: false,
-                        typeAlternatives: [{
-                            array: true,
-                            reference: false,
-                            types: ['string']
-                        }]
-                    }]
-                }
-            ],
+            interfaces: [superType, subType],
             unions: []
         });
 
@@ -57,6 +61,23 @@ describe('AST reflection interpreter', () => {
 
         test('getAllTypes returns "Super", "Sub"', () => {
             expect(reflectionForInheritance.getAllTypes()).toMatchObject(['Super', 'Sub']);
+        });
+
+        test('Creates reference types with super types in mind', () => {
+            expect(reflectionForInheritance.getReferenceType({
+                container: {
+                    $type: 'Super'
+                },
+                property: 'Ref',
+                reference: undefined!
+            })).toBe('RefTarget');
+            expect(reflectionForInheritance.getReferenceType({
+                container: {
+                    $type: 'Sub'
+                },
+                property: 'Ref',
+                reference: undefined!
+            })).toBe('RefTarget');
         });
 
         test('Creates metadata with super types', () => {

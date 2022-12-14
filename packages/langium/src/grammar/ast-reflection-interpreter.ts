@@ -72,7 +72,7 @@ function buildReferenceTypes(astTypes: AstTypes): Map<string, string> {
                 }
             }
         }
-        for (const superType of interfaceType.interfaceSuperTypes) {
+        for (const superType of interfaceType.printingSuperTypes) {
             const superTypeReferences = references.get(superType);
             references.addAll(interfaceType.name, superTypeReferences);
         }

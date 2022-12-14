@@ -184,7 +184,7 @@ function buildCrossReferenceTypes(astTypes: AstTypes): CrossReferenceType[] {
         }
         // Since the types are topologically sorted we can assume
         // that all super type properties have already been processed
-        for (const superType of typeInterface.interfaceSuperTypes) {
+        for (const superType of typeInterface.printingSuperTypes) {
             const superTypeCrossReferences = crossReferences.get(superType).map(e => ({
                 ...e,
                 type: typeInterface.name
