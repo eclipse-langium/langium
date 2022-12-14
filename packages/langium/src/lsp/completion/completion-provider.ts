@@ -217,7 +217,7 @@ export class DefaultCompletionProvider implements CompletionProvider {
         const assignment = getContainerOfType(crossRef.feature, ast.isAssignment);
         let node = context.node;
         if (assignment && node) {
-            if (crossRef.type && (crossRef.new || node?.$type !== crossRef.type)) {
+            if (crossRef.type && (crossRef.new || node.$type !== crossRef.type)) {
                 node = {
                     $type: crossRef.type,
                     $container: node,
