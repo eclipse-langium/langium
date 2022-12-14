@@ -7,23 +7,17 @@
 import { AstReflection, isAstNode, ReferenceInfo, TypeMandatoryProperty, TypeMetaData } from '../syntax-tree';
 import { MultiMap } from '../utils/collections';
 import { LangiumDocuments } from '../workspace/documents';
-import { EmptyFileSystem } from '../workspace/file-system-provider';
 import { Grammar, isGrammar } from './generated/ast';
-import { createLangiumGrammarServices } from './langium-grammar-module';
-import { collectAst } from './type-system/type-collector';
-import { AstTypes, collectAllProperties, Property } from './type-system/types-util';
-
-let emptyDocuments: LangiumDocuments;
+import { collectAst } from './type-system/ast-collector';
+import { AstTypes, Property } from './type-system/type-collector/types';
+import { collectAllProperties } from './type-system/types-util';
 
 export function interpretAstReflection(astTypes: AstTypes): AstReflection;
 export function interpretAstReflection(grammar: Grammar, documents?: LangiumDocuments): AstReflection;
 export function interpretAstReflection(grammarOrTypes: Grammar | AstTypes, documents?: LangiumDocuments): AstReflection {
     let collectedTypes: AstTypes;
     if (isGrammar(grammarOrTypes)) {
-        if (!emptyDocuments && !documents) {
-            emptyDocuments = createLangiumGrammarServices(EmptyFileSystem).shared.workspace.LangiumDocuments;
-        }
-        collectedTypes = collectAst(documents ?? emptyDocuments, [grammarOrTypes]);
+        collectedTypes = collectAst(grammarOrTypes, documents);
     } else {
         collectedTypes = grammarOrTypes;
     }
@@ -115,10 +109,10 @@ function buildMandatoryMetaData(arrayProps: Property[], booleanProps: Property[]
 function buildSupertypeMap(astTypes: AstTypes): MultiMap<string, string> {
     const map = new MultiMap<string, string>();
     for (const interfaceType of astTypes.interfaces) {
-        map.addAll(interfaceType.name, interfaceType.superTypes);
+        map.addAll(interfaceType.name, interfaceType.realSuperTypes);
     }
     for (const unionType of astTypes.unions) {
-        map.addAll(unionType.name, unionType.superTypes);
+        map.addAll(unionType.name, unionType.realSuperTypes);
     }
     return map;
 }

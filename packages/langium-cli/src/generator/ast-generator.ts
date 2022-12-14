@@ -12,7 +12,7 @@ import { LangiumConfig } from '../package';
 import { generatedHeader } from './util';
 
 export function generateAst(services: LangiumServices, grammars: Grammar[], config: LangiumConfig): string {
-    const astTypes = collectAst(services.shared.workspace.LangiumDocuments, grammars);
+    const astTypes = collectAst(grammars, services.shared.workspace.LangiumDocuments);
     const fileNode = new CompositeGeneratorNode();
     fileNode.append(
         generatedHeader,
@@ -24,12 +24,8 @@ export function generateAst(services: LangiumServices, grammars: Grammar[], conf
         `import { AstNode, AbstractAstReflection${crossRef ? ', Reference' : ''}, ReferenceInfo, TypeMetaData } from '${importFrom}';`, NL, NL
     );
 
-    for (const type of astTypes.unions) {
-        fileNode.append(type.toString(), NL);
-    }
-    for (const interfaceType of astTypes.interfaces) {
-        fileNode.append(interfaceType.toString(), NL);
-    }
+    astTypes.unions.forEach(union => fileNode.append(union.toAstTypesString(), NL));
+    astTypes.interfaces.forEach(iFace => fileNode.append(iFace.toAstTypesString(), NL));
 
     astTypes.unions = astTypes.unions.filter(e => e.reflection);
     fileNode.append(generateAstReflection(config, astTypes));
@@ -213,17 +209,17 @@ function buildIsSubtypeMethod(astTypes: AstTypes): GeneratorNode {
 
 type ChildToSuper = {
     name: string,
-    superTypes: Set<string>
+    realSuperTypes: Set<string>
 }
 
 function groupBySupertypes(astTypes: AstTypes): MultiMap<string, string> {
     const allTypes: ChildToSuper[] = (astTypes.interfaces as ChildToSuper[])
         .concat(astTypes.unions)
-        .filter(e => e.superTypes.size > 0);
+        .filter(e => e.realSuperTypes.size > 0);
 
     const superToChild = new MultiMap<string, string>();
     for (const item of allTypes) {
-        superToChild.add([...item.superTypes].join(':'), item.name);
+        superToChild.add([...item.realSuperTypes].join(':'), item.name);
     }
 
     return superToChild;

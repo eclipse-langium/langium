@@ -7,8 +7,12 @@
 import { createLangiumGrammarServices, Grammar, EmptyFileSystem, s } from '../../../src';
 import { isParserRule } from '../../../src/grammar/generated/ast';
 import { isDataTypeRule } from '../../../src/grammar/internal-grammar-util';
-import { AstTypes, collectAllAstResources, collectAst, InterfaceType, Property, PropertyType, UnionType } from '../../../src/grammar/type-system';
-import { collectInferredTypes } from '../../../src/grammar/type-system/inferred-types';
+import { collectAst, specifyAstNodeProperties } from '../../../src/grammar/type-system/ast-collector';
+import { collectAllAstResources } from '../../../src/grammar/type-system/type-collector/all-types';
+import { collectDeclaredTypes } from '../../../src/grammar/type-system/type-collector/declared-types';
+import { collectInferredTypes } from '../../../src/grammar/type-system/type-collector/inferred-types';
+import { AstTypes, InterfaceType, Property, PropertyType, UnionType } from '../../../src/grammar/type-system/type-collector/types';
+import { sortInterfacesTopologically } from '../../../src/grammar/type-system/types-util';
 import { parseHelper } from '../../../src/test';
 
 function describeTypes(name: string, grammar: string, description: (types: AstTypes) => void | Promise<void>): void {
@@ -45,7 +49,8 @@ describeTypes('inferred types of simple grammars', `
                 array: false,
                 reference: false,
                 types: ['string']
-            }]
+            }],
+            astNodes: new Set(),
         });
         expectProperty(a, {
             name: 'value',
@@ -54,7 +59,8 @@ describeTypes('inferred types of simple grammars', `
                 array: false,
                 reference: false,
                 types: ['number']
-            }]
+            }],
+            astNodes: new Set(),
         });
     });
 
@@ -67,8 +73,9 @@ describeTypes('inferred types of simple grammars', `
             typeAlternatives: [{
                 array: false,
                 reference: false,
-                types: ['FQN']
-            }]
+                types: ['FQN'],
+            }],
+            astNodes: new Set(),
         });
         expectProperty(b, {
             name: 'values',
@@ -77,7 +84,8 @@ describeTypes('inferred types of simple grammars', `
                 array: true,
                 reference: false,
                 types: ['number']
-            }]
+            }],
+            astNodes: new Set(),
         });
     });
 
@@ -91,7 +99,8 @@ describeTypes('inferred types of simple grammars', `
                 array: false,
                 reference: true,
                 types: ['A']
-            }]
+            }],
+            astNodes: new Set(),
         });
     });
 
@@ -121,7 +130,7 @@ describeTypes('inferred types for alternatives', `
     test('A is inferred with name:(string)|(number)', () => {
         const a = getType(types, 'A') as InterfaceType;
         expect(a).toBeDefined();
-        expect(a.interfaceSuperTypes).toEqual(['D']);
+        expect(a.printingSuperTypes).toEqual(['D']);
         expect(a.properties).toHaveLength(1);
         expectProperty(a, {
             name: 'name',
@@ -137,14 +146,15 @@ describeTypes('inferred types for alternatives', `
                     reference: false,
                     types: ['number']
                 }
-            ]
+            ],
+            astNodes: new Set(),
         });
     });
 
     test('B is inferred with name:(number|string)', () => {
         const b = getType(types, 'B') as InterfaceType;
         expect(b).toBeDefined();
-        expect(b.interfaceSuperTypes).toEqual(['D']);
+        expect(b.printingSuperTypes).toEqual(['D']);
         expect(b.properties).toHaveLength(1);
         expectProperty(b, {
             name: 'name',
@@ -160,7 +170,8 @@ describeTypes('inferred types for alternatives', `
                     reference: false,
                     types: ['number']
                 }
-            ]
+            ],
+            astNodes: new Set(),
         });
     });
 
@@ -184,7 +195,7 @@ describeTypes('inferred types for alternatives', `
     test('D is inferred as name:string', () => {
         const d = getType(types, 'D') as InterfaceType;
         expect(d).toBeDefined();
-        expect(d.interfaceSuperTypes).toHaveLength(0);
+        expect(d.printingSuperTypes).toHaveLength(0);
         expect(d.properties).toHaveLength(1);
         expectProperty(d, {
             name: 'name',
@@ -193,7 +204,8 @@ describeTypes('inferred types for alternatives', `
                 array: false,
                 reference: false,
                 types: ['string']
-            }]
+            }],
+            astNodes: new Set(),
         });
     });
 
@@ -209,7 +221,8 @@ describeTypes('inferred types for alternatives', `
                     reference: false,
                     types: ['string']
                 }
-            ]
+            ],
+            astNodes: new Set(),
         });
         expectProperty(e, {
             name: 'value',
@@ -220,7 +233,8 @@ describeTypes('inferred types for alternatives', `
                     reference: false,
                     types: ['number']
                 }
-            ]
+            ],
+            astNodes: new Set(),
         });
     });
 
@@ -281,7 +295,7 @@ describeTypes('inferred types using chained actions', `
     test('FirstBranch is inferred as first:string, value:IdRule', () => {
         const firstBranch = getType(types, 'FirstBranch') as InterfaceType;
         expect(firstBranch).toBeDefined();
-        expect(firstBranch.interfaceSuperTypes).toHaveLength(0);
+        expect(firstBranch.printingSuperTypes).toHaveLength(0);
         expect(firstBranch.properties).toHaveLength(2);
         expectProperty(firstBranch, {
             name: 'first',
@@ -290,7 +304,8 @@ describeTypes('inferred types using chained actions', `
                 array: false,
                 reference: false,
                 types: ['string']
-            }]
+            }],
+            astNodes: new Set(),
         });
         expectProperty(firstBranch, {
             name: 'value',
@@ -299,7 +314,8 @@ describeTypes('inferred types using chained actions', `
                 array: false,
                 reference: false,
                 types: ['IdRule']
-            }]
+            }],
+            astNodes: new Set(),
         });
 
     });
@@ -334,7 +350,7 @@ describeTypes('inferred types using chained actions', `
     test('Ref is inferred as ref:string', () => {
         const ref = getType(types, 'Ref') as InterfaceType;
         expect(ref).toBeDefined();
-        expect(ref.interfaceSuperTypes).toHaveLength(0);
+        expect(ref.printingSuperTypes).toHaveLength(0);
         expect(ref.properties).toHaveLength(1);
         expectProperty(ref, {
             name: 'ref',
@@ -343,14 +359,15 @@ describeTypes('inferred types using chained actions', `
                 array: false,
                 reference: false,
                 types: ['string']
-            }]
+            }],
+            astNodes: new Set(),
         });
     });
 
     test('Access is inferred as receiver:Ref, member:string', () => {
         const access = getType(types, 'Access') as InterfaceType;
         expect(access).toBeDefined();
-        expect(access.interfaceSuperTypes).toHaveLength(0);
+        expect(access.printingSuperTypes).toHaveLength(0);
         expect(access.properties).toHaveLength(2);
         expectProperty(access, {
             name: 'receiver',
@@ -359,7 +376,8 @@ describeTypes('inferred types using chained actions', `
                 array: false,
                 reference: false,
                 types: ['Ref']
-            }]
+            }],
+            astNodes: new Set(),
         });
         expectProperty(access, {
             name: 'member',
@@ -368,14 +386,15 @@ describeTypes('inferred types using chained actions', `
                 array: false,
                 reference: false,
                 types: ['string']
-            }]
+            }],
+            astNodes: new Set(),
         });
     });
 
     test('A is inferred with a:string, d:string', () => {
         const a = getType(types, 'A') as InterfaceType;
         expect(a).toBeDefined();
-        expect(a.interfaceSuperTypes).toHaveLength(0);
+        expect(a.printingSuperTypes).toHaveLength(0);
         expect(a.properties).toHaveLength(2);
         expectProperty(a, 'a');
         expectProperty(a, 'd');
@@ -384,7 +403,7 @@ describeTypes('inferred types using chained actions', `
     test('B is inferred with super type A and a:string, b:string, d:string', () => {
         const b = getType(types, 'B') as InterfaceType;
         expect(b).toBeDefined();
-        expect(b.interfaceSuperTypes).toEqual(['A']);
+        expect(b.printingSuperTypes).toEqual(['A']);
         expect(b.properties).toHaveLength(3);
         expectProperty(b, 'a');
         expectProperty(b, 'b');
@@ -394,7 +413,7 @@ describeTypes('inferred types using chained actions', `
     test('C is inferred with super type B and a:string, b:string, c:string d:string', () => {
         const c = getType(types, 'C') as InterfaceType;
         expect(c).toBeDefined();
-        expect(c.interfaceSuperTypes).toEqual(['B']);
+        expect(c.printingSuperTypes).toEqual(['B']);
         expect(c.properties).toHaveLength(4);
         expectProperty(c, 'a');
         expectProperty(c, 'b');
@@ -405,7 +424,7 @@ describeTypes('inferred types using chained actions', `
     test('D is inferred with e:E, d:string', () => {
         const d = getType(types, 'D') as InterfaceType;
         expect(d).toBeDefined();
-        expect(d.interfaceSuperTypes).toHaveLength(0);
+        expect(d.printingSuperTypes).toHaveLength(0);
         expect(d.properties).toHaveLength(2);
         expectProperty(d, {
             name: 'e',
@@ -414,7 +433,8 @@ describeTypes('inferred types using chained actions', `
                 array: false,
                 reference: false,
                 types: ['E']
-            }]
+            }],
+            astNodes: new Set(),
         });
         expectProperty(d, 'd');
     });
@@ -422,7 +442,7 @@ describeTypes('inferred types using chained actions', `
     test('E is inferred with super type D and property e', () => {
         const e = getType(types, 'E') as InterfaceType;
         expect(e).toBeDefined();
-        expect(e.interfaceSuperTypes).toEqual(['D']);
+        expect(e.printingSuperTypes).toEqual(['D']);
         expect(e.properties).toHaveLength(1);
         expectProperty(e, 'e');
     });
@@ -430,7 +450,7 @@ describeTypes('inferred types using chained actions', `
     test('F is inferred with value:string, item?:F', () => {
         const f = getType(types, 'F') as InterfaceType;
         expect(f).toBeDefined();
-        expect(f.interfaceSuperTypes).toHaveLength(0);
+        expect(f.printingSuperTypes).toHaveLength(0);
         expect(f.properties).toHaveLength(2);
         expectProperty(f, 'value');
         expectProperty(f, {
@@ -440,14 +460,15 @@ describeTypes('inferred types using chained actions', `
                 array: false,
                 reference: false,
                 types: ['F']
-            }]
+            }],
+            astNodes: new Set(),
         });
     });
 
     test('G is inferred with front:(X|Y|Z), back:string', () => {
         const G = getType(types, 'G') as InterfaceType;
         expect(G).toBeDefined();
-        expect(G.interfaceSuperTypes).toHaveLength(0);
+        expect(G.printingSuperTypes).toHaveLength(0);
         expect(G.properties).toHaveLength(2);
         expectProperty(G, {
             name: 'front',
@@ -468,24 +489,25 @@ describeTypes('inferred types using chained actions', `
                     reference: false,
                     types: ['Z']
                 }
-            ]
+            ],
+            astNodes: new Set(),
         });
     });
 
     test('X, Y, Z are inferred from G as simple types', () => {
         const x = getType(types, 'X') as InterfaceType;
         expect(x).toBeDefined();
-        expect(x.interfaceSuperTypes).toEqual(['G']);
+        expect(x.printingSuperTypes).toEqual(['G']);
         expect(x.properties).toHaveLength(1);
         expectProperty(x, 'x');
         const y = getType(types, 'Y') as InterfaceType;
         expect(y).toBeDefined();
-        expect(x.interfaceSuperTypes).toEqual(['G']);
+        expect(x.printingSuperTypes).toEqual(['G']);
         expect(y.properties).toHaveLength(1);
         expectProperty(y, 'y');
         const z = getType(types, 'Z') as InterfaceType;
         expect(z).toBeDefined();
-        expect(x.interfaceSuperTypes).toEqual(['G']);
+        expect(x.printingSuperTypes).toEqual(['G']);
         expect(z.properties).toHaveLength(1);
         expectProperty(z, 'z');
     });
@@ -502,7 +524,7 @@ describeTypes('inferred types with common names', `
     test('X is inferred with a:string, b?:string, c?:string', () => {
         const x = getType(types, 'X') as InterfaceType;
         expect(x).toBeDefined();
-        expect(x.interfaceSuperTypes).toHaveLength(0);
+        expect(x.printingSuperTypes).toHaveLength(0);
         expect(x.properties).toHaveLength(3);
         expectProperty(x, 'a');
         expectProperty(x, {
@@ -512,7 +534,8 @@ describeTypes('inferred types with common names', `
                 array: false,
                 reference: false,
                 types: ['string']
-            }]
+            }],
+            astNodes: new Set(),
         });
         expectProperty(x, {
             name: 'c',
@@ -521,7 +544,8 @@ describeTypes('inferred types with common names', `
                 array: false,
                 reference: false,
                 types: ['string']
-            }]
+            }],
+            astNodes: new Set(),
         });
     });
 
@@ -549,7 +573,7 @@ describeTypes('inferred types with common names and actions', `
         const a = getType(types, 'A') as InterfaceType;
         expect(a).toBeDefined();
         // Since 'X' is not an actual type (but a union), it is removed as a super type.
-        expect(a.interfaceSuperTypes).toHaveLength(0);
+        expect(a.printingSuperTypes).toHaveLength(0);
         expect(a.properties).toHaveLength(1);
         expectProperty(a, 'a');
     });
@@ -558,7 +582,7 @@ describeTypes('inferred types with common names and actions', `
         const b = getType(types, 'B') as InterfaceType;
         expect(b).toBeDefined();
         // Since 'X' is not an actual type (but a union), it is removed as a super type.
-        expect(b.interfaceSuperTypes).toHaveLength(0);
+        expect(b.printingSuperTypes).toHaveLength(0);
         expect(b.properties).toHaveLength(1);
         expectProperty(b, 'b');
     });
@@ -583,7 +607,7 @@ describeTypes('inferred types with common names and actions', `
     test('C is inferred with super type Y and properties item:Y, value:ID', () => {
         const c = getType(types, 'C') as InterfaceType;
         expect(c).toBeDefined();
-        expect(c.interfaceSuperTypes).toHaveLength(0);
+        expect(c.printingSuperTypes).toHaveLength(0);
         expect(c.properties).toHaveLength(2);
         expectProperty(c, 'value');
         expectProperty(c, {
@@ -593,14 +617,15 @@ describeTypes('inferred types with common names and actions', `
                 array: false,
                 reference: false,
                 types: ['Y']
-            }]
+            }],
+            astNodes: new Set(),
         });
     });
 
     test('Y is inferred from D with y:ID', () => {
         const y = getType(types, 'Y') as InterfaceType;
         expect(y).toBeDefined();
-        expect(y.interfaceSuperTypes).toEqual(['C']);
+        expect(y.printingSuperTypes).toEqual(['C']);
         expect(y.properties).toHaveLength(1);
         expectProperty(y, 'y');
     });
@@ -697,62 +722,245 @@ describe('expression rules with inferred and declared interfaces', () => {
         checkTypes(document.parseResult.value);
     });
 
+    // todo make tests like in this PR: https://github.com/langium/langium/pull/670
+    // the PR #670 fixes the demonstrated bug, but cancels type inferrence for declared actions
+    // we should fix the issue another way
     function checkTypes(grammar: Grammar) {
-        const sortByName = (a: {name: string}, b: {name: string}) => (a.name?.localeCompare(b.name));
-        const toSubstring = (o: {toString: () => string}) => {
-            // this specialized 'toString' function uses the default 'toString' that is  producing the
-            //  code generation output, and strips everything not belonging to the actual interface/type declaration
-            const sRep = o.toString().replace(/\r/g, '');
-            return sRep.substring(
-                0, 1 + (sRep.includes('interface') ? sRep.indexOf('}') : Math.min(sRep.indexOf(';') ))
-            );
-        };
+        const { parserRules, datatypeRules, interfaces, types } = collectAllAstResources([grammar]);
 
-        const { parserRules, datatypeRules } = collectAllAstResources([grammar]);
-        const { interfaces: inferredInterfaces, unions } = collectInferredTypes(Array.from(parserRules), Array.from(datatypeRules));
+        // check only inferred types
+        const inferred = collectInferredTypes(parserRules, datatypeRules);
+        sortInterfacesTopologically(inferred.interfaces);
+        specifyAstNodeProperties(inferred);
 
-        const unionsString = unions.map(toSubstring).join('\n').trim();
-        expect(unionsString).toBe(s`
-            export type Expression = MemberAccess | PrimaryExpression;
-            export type PrimaryExpression = BooleanLiteral;
-        `);
-
-        const inferredInterfacesString = inferredInterfaces.sort(sortByName).map(toSubstring).join('\n').trim();
+        const inferredInterfacesString = inferred.interfaces.map(toSubstring).join('\n').trim();
         expect(inferredInterfacesString).toBe(s`
             export interface BooleanLiteral extends AstNode {
-                readonly $container: MemberAccess;
+                readonly $container: MemberAccess | SuperMemberAccess;
+                readonly $type: 'BooleanLiteral';
                 value: boolean
             }
             export interface MemberAccess extends AstNode {
-                readonly $container: MemberAccess;
+                readonly $container: MemberAccess | SuperMemberAccess;
+                readonly $type: 'MemberAccess';
+                member: Reference<Symbol>
+                receiver: PrimaryExpression
+            }
+            export interface SuperMemberAccess extends AstNode {
+                readonly $container: MemberAccess | SuperMemberAccess;
+                readonly $type: 'SuperMemberAccess';
                 member: Reference<Symbol>
                 receiver: PrimaryExpression
             }
         `);
 
-        const allInterfaces = collectAst(undefined!, [grammar]).interfaces;
-        const allInterfacesString = allInterfaces.sort(sortByName).map(toSubstring).join('\n').trim();
+        // check only declared types
+        const declared = collectDeclaredTypes(interfaces, types);
+        sortInterfacesTopologically(declared.interfaces);
+        specifyAstNodeProperties(declared);
+
+        expect(declared.interfaces.map(toSubstring).join('\n').trim()).toBe(s`
+            export interface SuperMemberAccess extends MemberAccess {
+                readonly $type: 'SuperMemberAccess';
+            }
+            export interface Symbol extends AstNode {
+                readonly $type: 'Symbol';
+            }
+        `);
+
+        // check ast.ts types
+        const allTypes = collectAst(grammar);
+
+        expect(allTypes.unions.map(toSubstring).join('\n').trim()).toBe(s`
+            export type Expression = MemberAccess | PrimaryExpression | SuperMemberAccess;
+            export type PrimaryExpression = BooleanLiteral;
+        `);
+
+        const allInterfacesString = allTypes.interfaces.map(toSubstring).join('\n').trim();
         expect(allInterfacesString).toBe(s`
             export interface BooleanLiteral extends AstNode {
                 readonly $container: MemberAccess;
+                readonly $type: 'BooleanLiteral';
                 value: boolean
             }
             export interface MemberAccess extends AstNode {
                 readonly $container: MemberAccess;
+                readonly $type: 'MemberAccess' | 'SuperMemberAccess';
                 member: Reference<Symbol>
                 receiver: PrimaryExpression
             }
             export interface SuperMemberAccess extends MemberAccess {
+                readonly $container: MemberAccess;
+                readonly $type: 'SuperMemberAccess';
             }
             export interface Symbol extends AstNode {
+                readonly $type: 'Symbol';
             }
         `);
 
         // the idea of the following is to double check that the declared definitions don't overwrite any
-        //  inferred definition; because of the sorting before joining the 'startsWith' doesn't work in general,
-        //  but it does work here due to the smart rule and interface name choice ;-)
+        // inferred definition; because of the sorting before joining the 'startsWith' doesn't work in general,
+        // but it does work here due to the smart rule and interface name choice ;-)
         expect(allInterfacesString.startsWith(inferredInterfacesString));
     }
+});
+
+describe('types of `$container` and `$type` are correct', () => {
+
+    // `$container`-types are appear only from inferred types
+    test('types of `$container` and `$type` for declared types', async () => {
+        const grammarServices = createLangiumGrammarServices(EmptyFileSystem).grammar;
+        const document = await parseHelper<Grammar>(grammarServices)(`
+            interface A { strA: string }
+            interface B { strB: string }
+            interface C extends A, B { strC: string }
+            interface D { a: A }
+            interface E { b: B }
+        `);
+        const { unions, interfaces } = collectAst(document.parseResult.value);
+
+        const unionsString = unions.map(toSubstring).join('\n').trim();
+        expect(unionsString).toBe(s``);
+
+        const interfacesString = sortInterfacesTopologically(interfaces).map(toSubstring).join('\n').trim();
+        expect(interfacesString).toBe(s`
+            export interface A extends AstNode {
+                readonly $container: D | E;
+                readonly $type: 'A' | 'C';
+                strA: string
+            }
+            export interface B extends AstNode {
+                readonly $container: D | E;
+                readonly $type: 'B' | 'C';
+                strB: string
+            }
+            export interface D extends AstNode {
+                readonly $type: 'D';
+                a: A
+            }
+            export interface E extends AstNode {
+                readonly $type: 'E';
+                b: B
+            }
+            export interface C extends A, B {
+                readonly $container: D | E;
+                readonly $type: 'C';
+                strC: string
+            }
+        `);
+    });
+
+    test('types of `$container` and `$type` for inferred types', async () => {
+        const grammarServices = createLangiumGrammarServices(EmptyFileSystem).grammar;
+        const document = await parseHelper<Grammar>(grammarServices)(`
+            terminal ID: /[_a-zA-Z][\\w_]*/;
+            A: 'A' C;
+            B: 'B' C;
+            C: 'C' strC=ID;
+            D: 'D' a=A;
+            E: 'E' b=B;   
+        `);
+        const { unions, interfaces } = collectAst(document.parseResult.value);
+
+        const unionsString = unions.map(toSubstring).join('\n').trim();
+        expect(unionsString).toBe(s`
+            export type A = C;
+            export type B = C;
+        `);
+
+        const interfacesString = sortInterfacesTopologically(interfaces).map(toSubstring).join('\n').trim();
+        expect(interfacesString).toBe(s`
+            export interface C extends AstNode {
+                readonly $container: D | E;
+                readonly $type: 'C';
+                strC: string
+            }
+            export interface D extends AstNode {
+                readonly $type: 'D';
+                a: A
+            }
+            export interface E extends AstNode {
+                readonly $type: 'E';
+                b: B
+            }
+        `);
+    });
+
+    test('types of `$container` and `$type` for inferred and declared types', async () => {
+        const grammarServices = createLangiumGrammarServices(EmptyFileSystem).grammar;
+        const document = await parseHelper<Grammar>(grammarServices)(`
+            A: 'A' strA=ID;
+            B: 'B' strB=ID;
+            C returns C: 'C' strA=ID strB=ID strC=ID;
+            interface C extends A, B { strC: string }
+            D: 'D' a=A;
+            E: 'E' b=B;
+            terminal ID: /[a-zA-Z_][a-zA-Z0-9_]*/;
+        `);
+        const { unions, interfaces } = collectAst(document.parseResult.value);
+
+        const unionsString = unions.map(toSubstring).join('\n').trim();
+        expect(unionsString).toBe(s``);
+
+        const interfacesString = sortInterfacesTopologically(interfaces).map(toSubstring).join('\n').trim();
+        expect(interfacesString).toBe(s`
+            export interface A extends AstNode {
+                readonly $container: D | E;
+                readonly $type: 'A' | 'C';
+                strA: string
+            }
+            export interface B extends AstNode {
+                readonly $container: D | E;
+                readonly $type: 'B' | 'C';
+                strB: string
+            }
+            export interface D extends AstNode {
+                readonly $type: 'D';
+                a: A
+            }
+            export interface E extends AstNode {
+                readonly $type: 'E';
+                b: B
+            }
+            export interface C extends A, B {
+                readonly $container: D | E;
+                readonly $type: 'C';
+                strC: string
+            }
+        `);
+
+    });
+});
+
+// https://github.com/langium/langium/issues/744
+describe('generated types from declared types include all of them', () => {
+
+    test('using declared types has no impact on the generated types', async () => {
+        const grammarServices = createLangiumGrammarServices(EmptyFileSystem).grammar;
+        const document = await parseHelper<Grammar>(grammarServices)(`
+            A: 'A' a=ID;
+            AB: A ({infer B} b+=ID)*;
+            terminal ID: /[_a-zA-Z][\\w_]*/;
+        `);
+        const types = collectAst(document.parseResult.value);
+
+        const documentWithDeclaredTypes = await parseHelper<Grammar>(grammarServices)(`
+            interface A { a: string; }
+            interface B { b: string[]; }
+            type AB = A | B;
+            A returns A:  'A' a=ID;
+            AB returns AB: A ({B} b+=ID)*;
+            terminal ID: /[_a-zA-Z][\\w_]*/;        
+        `);
+        const typesWithDeclared = collectAst(documentWithDeclaredTypes.parseResult.value);
+
+        expect(typesWithDeclared.unions.map(toSubstring).join('\n').trim())
+            .toBe(types.unions.map(toSubstring).join('\n').trim());
+
+        expect(typesWithDeclared.interfaces.map(toSubstring).join('\n').trim())
+            .toBe(types.interfaces.map(toSubstring).join('\n').trim());
+    });
+
 });
 
 async function getTypes(grammar: string): Promise<AstTypes> {
@@ -798,12 +1006,21 @@ function expectProperty(interfaceType: InterfaceType, property: Property | strin
 }
 
 function expectUnion(unionType: UnionType, types: PropertyType[]): void {
-    expect(unionType.union.length).toStrictEqual(types.length);
-    for (let i = 0; i < unionType.union.length; i++) {
-        const actualType = unionType.union[i];
+    expect(unionType.alternatives.length).toStrictEqual(types.length);
+    for (let i = 0; i < unionType.alternatives.length; i++) {
+        const actualType = unionType.alternatives[i];
         const expectedType = types[i];
         expect(actualType.types).toEqual(expectedType.types);
         expect(actualType.array).toEqual(expectedType.array);
         expect(actualType.reference).toEqual(expectedType.reference);
     }
 }
+
+const toSubstring = (o: { toAstTypesString: () => string }) => {
+    // this specialized 'toString' function uses the default 'toString' that is  producing the
+    //  code generation output, and strips everything not belonging to the actual interface/type declaration
+    const sRep = o.toAstTypesString().replace(/\r/g, '');
+    return sRep.substring(
+        0, 1 + (sRep.includes('interface') ? sRep.indexOf('}') : Math.min(sRep.indexOf(';') ))
+    );
+};

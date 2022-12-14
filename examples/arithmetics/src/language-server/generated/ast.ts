@@ -32,6 +32,7 @@ export function isStatement(item: unknown): item is Statement {
 
 export interface BinaryExpression extends AstNode {
     readonly $container: BinaryExpression | Definition | Evaluation | FunctionCall;
+    readonly $type: 'BinaryExpression';
     left: Expression
     operator: '*' | '+' | '-' | '/'
     right: Expression
@@ -44,7 +45,8 @@ export function isBinaryExpression(item: unknown): item is BinaryExpression {
 }
 
 export interface DeclaredParameter extends AstNode {
-    readonly $container: Definition;
+    readonly $container: Definition | Module;
+    readonly $type: 'DeclaredParameter';
     name: string
 }
 
@@ -55,7 +57,8 @@ export function isDeclaredParameter(item: unknown): item is DeclaredParameter {
 }
 
 export interface Definition extends AstNode {
-    readonly $container: Module;
+    readonly $container: Definition | Module;
+    readonly $type: 'Definition';
     args: Array<DeclaredParameter>
     expr: Expression
     name: string
@@ -68,7 +71,8 @@ export function isDefinition(item: unknown): item is Definition {
 }
 
 export interface Evaluation extends AstNode {
-    readonly $container: Module;
+    readonly $container: Definition | Module;
+    readonly $type: 'Evaluation';
     expression: Expression
 }
 
@@ -80,6 +84,7 @@ export function isEvaluation(item: unknown): item is Evaluation {
 
 export interface FunctionCall extends AstNode {
     readonly $container: BinaryExpression | Definition | Evaluation | FunctionCall;
+    readonly $type: 'FunctionCall';
     args: Array<Expression>
     func: Reference<AbstractDefinition>
 }
@@ -91,6 +96,7 @@ export function isFunctionCall(item: unknown): item is FunctionCall {
 }
 
 export interface Module extends AstNode {
+    readonly $type: 'Module';
     name: string
     statements: Array<Statement>
 }
@@ -103,6 +109,7 @@ export function isModule(item: unknown): item is Module {
 
 export interface NumberLiteral extends AstNode {
     readonly $container: BinaryExpression | Definition | Evaluation | FunctionCall;
+    readonly $type: 'NumberLiteral';
     value: number
 }
 

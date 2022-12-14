@@ -8,7 +8,7 @@ import * as ast from '../grammar/generated/ast';
 import { URI, Utils } from 'vscode-uri';
 import { getDocument, streamAllContents } from '../utils/ast-util';
 import { LangiumDocuments } from '../workspace/documents';
-import { TypeResolutionError } from './type-system/types-util';
+import { TypeResolutionError } from './type-system/type-collector/types';
 import { escapeRegExp } from '../utils/regex-util';
 
 export type Cardinality = '?' | '*' | '+' | undefined;
@@ -91,6 +91,14 @@ export function getTypeName(type: ast.AbstractType | ast.InferredType): string {
         return type.name;
     }
     throw new TypeResolutionError('Cannot get name of Unknown Type', type.$cstNode);
+}
+
+export function getTypeNameWithoutError(type: ast.AbstractType | ast.InferredType): string {
+    try {
+        return getTypeName(type);
+    } catch {
+        return 'never';
+    }
 }
 
 export function getExplicitRuleType(rule: ast.ParserRule): string | undefined {
@@ -267,4 +275,10 @@ export function extractAssignments(element: ast.AbstractElement): ast.Assignment
         return element.elements.flatMap(e => extractAssignments(e));
     }
     return [];
+}
+
+const primitiveTypes = ['string', 'number', 'boolean', 'Date', 'bigint'];
+
+export function isPrimitiveType(type: string): boolean {
+    return primitiveTypes.includes(type);
 }

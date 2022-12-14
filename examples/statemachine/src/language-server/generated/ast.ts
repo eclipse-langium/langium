@@ -8,6 +8,7 @@ import { AstNode, AbstractAstReflection, Reference, ReferenceInfo, TypeMetaData 
 
 export interface Command extends AstNode {
     readonly $container: Statemachine;
+    readonly $type: 'Command';
     name: string
 }
 
@@ -19,6 +20,7 @@ export function isCommand(item: unknown): item is Command {
 
 export interface Event extends AstNode {
     readonly $container: Statemachine;
+    readonly $type: 'Event';
     name: string
 }
 
@@ -30,6 +32,7 @@ export function isEvent(item: unknown): item is Event {
 
 export interface State extends AstNode {
     readonly $container: Statemachine;
+    readonly $type: 'State';
     actions: Array<Reference<Command>>
     name: string
     transitions: Array<Transition>
@@ -42,6 +45,7 @@ export function isState(item: unknown): item is State {
 }
 
 export interface Statemachine extends AstNode {
+    readonly $type: 'Statemachine';
     commands: Array<Command>
     events: Array<Event>
     init: Reference<State>
@@ -57,6 +61,7 @@ export function isStatemachine(item: unknown): item is Statemachine {
 
 export interface Transition extends AstNode {
     readonly $container: State;
+    readonly $type: 'Transition';
     event: Reference<Event>
     state: Reference<State>
 }
