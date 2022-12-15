@@ -212,7 +212,9 @@ export function collectInferredTypes(parserRules: ParserRule[], datatypeRules: P
 function getRuleTypes(context: TypeCollectionContext, rule: ParserRule): TypePath[] {
     const type = newTypePart(rule);
     const graph = new TypeGraph(context, type);
-    collectElement(graph, graph.root, rule.definition);
+    if (rule.definition) {
+        collectElement(graph, graph.root, rule.definition);
+    }
     return graph.getTypes();
 }
 
