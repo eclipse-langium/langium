@@ -133,3 +133,12 @@ export function sortInterfacesTopologically(interfaces: InterfaceType[]): Interf
     }
     return l.map(e => e.value);
 }
+
+export function addSubTypes(nameToType: Map<string, TypeOption>) {
+    for (const interfaceType of nameToType.values()) {
+        for (const superTypeName of interfaceType.realSuperTypes) {
+            nameToType.get(superTypeName)
+                ?.subTypes.add(interfaceType.name);
+        }
+    }
+}

@@ -51,7 +51,7 @@ export class LangiumGrammarTypesValidator {
                     validateInferredInterface(typeInfo.inferred as InterfaceType, accept);
                 }
                 if (isInferredAndDeclared(typeInfo)) {
-                    validateDeclaredAndInferredConsistency(typeInfo, accept);
+                    validateDeclaredAndInferredConsistency(typeInfo, validationResources.typeToAliases, accept);
                 }
             }
         }
@@ -103,7 +103,6 @@ function validateInterfaceSuperTypes(
 
 function validateSuperTypesConsistency(
     { declared, declaredNode }: { declared: InterfaceType, declaredNode: ast.Interface},
-    // todo remove after adding the type graph
     properties: Map<string, Property[]>,
     accept: ValidationAcceptor): void {
 
@@ -183,7 +182,7 @@ function arePropTypesIdentical(a: Property, b: Property): boolean {
     return true;
 }
 
-function validateDeclaredAndInferredConsistency(typeInfo: InferredInfo & DeclaredInfo, accept: ValidationAcceptor) {
+function validateDeclaredAndInferredConsistency(typeInfo: InferredInfo & DeclaredInfo, typeToAliases: MultiMap<string, string>, accept: ValidationAcceptor) {
     const { inferred, declared, declaredNode, inferredNodes } = typeInfo;
     const typeName = declared.name;
 
@@ -199,7 +198,6 @@ function validateDeclaredAndInferredConsistency(typeInfo: InferredInfo & Declare
             accept('error', errorMessage, { node, property: ast.isAssignment(node) || ast.isAction(node) ? 'feature' : 'name' })
         );
 
-    // todo add actions
     // currently we don't track which assignments belong to which actions and can't apply this error
     const applyMissingPropErrorToRules = (missingProp: string) => {
         inferredNodes.forEach(node => {
@@ -217,10 +215,12 @@ function validateDeclaredAndInferredConsistency(typeInfo: InferredInfo & Declare
 
     if (isUnionType(inferred) && isUnionType(declared)) {
         validateAlternativesConsistency(inferred.alternatives, declared.alternatives,
+            typeToAliases,
             applyErrorToRulesAndActions(`in a rule that returns type '${typeName}'`),
         );
     } else if (isInterfaceType(inferred) && isInterfaceType(declared)) {
         validatePropertiesConsistency(inferred.superProperties, declared.superProperties,
+            typeToAliases,
             applyErrorToRulesAndActions(`in a rule that returns type '${typeName}'`),
             applyErrorToProperties,
             applyMissingPropErrorToRules
@@ -238,15 +238,16 @@ type ErrorInfo = {
 }
 
 function validateAlternativesConsistency(inferred: PropertyType[], declared: PropertyType[],
+    typeToAliases: MultiMap<string, string>,
     applyErrorToInferredTypes: (errorMessage: string) => void) {
 
-    const errorsInfo = checkAlternativesConsistencyHelper(inferred, declared);
+    const errorsInfo = checkAlternativesConsistencyHelper(inferred, declared, typeToAliases);
     for (const errorInfo of errorsInfo) {
         applyErrorToInferredTypes(`A type '${errorInfo.typeAsString}' ${errorInfo.errorMessage}`);
     }
 }
 
-function checkAlternativesConsistencyHelper(found: PropertyType[], expected: PropertyType[]): ErrorInfo[] {
+function checkAlternativesConsistencyHelper(found: PropertyType[], expected: PropertyType[], typeToAliases: MultiMap<string, string>): ErrorInfo[] {
     const arrayReferenceError = (found: PropertyType, expected: PropertyType) =>
         found.array && !expected.array && found.reference && !expected.reference ? 'can\'t be an array and a reference' :
             !found.array && expected.array && !found.reference && expected.reference ? 'has to be an array and a reference' :
@@ -256,7 +257,9 @@ function checkAlternativesConsistencyHelper(found: PropertyType[], expected: Pro
                             !found.reference && expected.reference ? 'has to be a reference' : '';
 
     const stringToPropertyTypeList = (propertyTypeList: PropertyType[]) =>
-        propertyTypeList.reduce((acc, e) => acc.set(distinctAndSorted(e.types).join(' | '), e), new Map<string, PropertyType>());
+        propertyTypeList.reduce((acc, e) =>
+            acc.set(distinctAndSorted(e.types.map(type => typeToAliases.has(type) ? typeToAliases.get(type)[0] : type)).join(' | '), e),
+        new Map<string, PropertyType>());
 
     const stringToFound = stringToPropertyTypeList(found);
     const stringToExpected = stringToPropertyTypeList(expected);
@@ -275,6 +278,7 @@ function checkAlternativesConsistencyHelper(found: PropertyType[], expected: Pro
 }
 
 function validatePropertiesConsistency(inferred: MultiMap<string, Property>, declared: MultiMap<string, Property>,
+    typeToAliases: MultiMap<string, string>,
     applyErrorToType: (errorMessage: string) => void,
     applyErrorToProperties: (nodes: Set<ast.Assignment | ast.Action | ast.TypeAttribute>, errorMessage: string) => void,
     applyMissingPropErrorToRules: (missingProp: string) => void
@@ -291,7 +295,7 @@ function validatePropertiesConsistency(inferred: MultiMap<string, Property>, dec
             const foundTypeAsStr = propertyTypesToString(foundProp.typeAlternatives);
             const expectedTypeAsStr = propertyTypesToString(expectedProp.typeAlternatives);
             if (foundTypeAsStr !== expectedTypeAsStr) {
-                const typeAlternativesErrors = checkAlternativesConsistencyHelper(foundProp.typeAlternatives, expectedProp.typeAlternatives);
+                const typeAlternativesErrors = checkAlternativesConsistencyHelper(foundProp.typeAlternatives, expectedProp.typeAlternatives, typeToAliases);
                 if (typeAlternativesErrors.length > 0) {
                     const errorMsgPrefix = `The assigned type '${foundTypeAsStr}' is not compatible with the declared property '${name}' of type '${expectedTypeAsStr}'`;
                     const propErrors = typeAlternativesErrors

@@ -4,6 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import { MultiMap } from '../../utils/collections';
 import { LangiumDocument } from '../../workspace/documents';
 import { Action, Grammar, Interface, ParserRule, Type } from '../generated/ast';
 import { Property, TypeOption } from '../type-system/type-collector/types';
@@ -19,6 +20,7 @@ export interface LangiumGrammarDocument extends LangiumDocument<Grammar> {
 export type ValidationResources = {
     typeToValidationInfo: TypeToValidationInfo,
     typeToSuperProperties: Map<string, Property[]>,
+    typeToAliases: MultiMap<string, string>,
 }
 
 export type TypeToValidationInfo = Map<string, InferredInfo | DeclaredInfo | InferredInfo & DeclaredInfo>;
