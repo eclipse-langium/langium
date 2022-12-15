@@ -40,8 +40,12 @@ function isDataTypeRuleInternal(rule: ast.ParserRule, visited: Set<ast.ParserRul
     }
     visited.add(rule);
     for (const node of streamAllContents(rule)) {
-        if (ast.isRuleCall(node) && ast.isParserRule(node.rule.ref)) {
-            if (!isDataTypeRuleInternal(node.rule.ref, visited)) {
+        if (ast.isRuleCall(node)) {
+            if (!node.rule.ref) {
+                // RuleCall to unresolved rule. Don't assume `rule` is a DataType rule.
+                return false;
+            }
+            if (ast.isParserRule(node.rule.ref) && !isDataTypeRuleInternal(node.rule.ref, visited)) {
                 return false;
             }
         } else if (ast.isAssignment(node)) {
@@ -50,7 +54,7 @@ function isDataTypeRuleInternal(rule: ast.ParserRule, visited: Set<ast.ParserRul
             return false;
         }
     }
-    return true;
+    return Boolean(rule.definition);
 }
 
 export function getActionAtElement(element: ast.AbstractElement): ast.Action | undefined {
