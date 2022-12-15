@@ -246,6 +246,7 @@ describeTypes('inferred types using chained actions', `
     E: e=ID;
     F: value=ID ({infer F.item=current} value=ID)*;
     G: ({infer X} x=ID | {infer Y} y=ID | {infer Z} z=ID) {infer G.front=current} back=ID;
+    H infers E: E {infer H} h=ID;
 
     Entry:
 	    Expr;
@@ -404,8 +405,7 @@ describeTypes('inferred types using chained actions', `
         const b = getType(types, 'B') as InterfaceType;
         expect(b).toBeDefined();
         expect(b.printingSuperTypes).toEqual(['A']);
-        expect(b.properties).toHaveLength(3);
-        expectProperty(b, 'a');
+        expect(b.properties).toHaveLength(2);
         expectProperty(b, 'b');
         expectProperty(b, 'd');
     });
@@ -414,9 +414,7 @@ describeTypes('inferred types using chained actions', `
         const c = getType(types, 'C') as InterfaceType;
         expect(c).toBeDefined();
         expect(c.printingSuperTypes).toEqual(['B']);
-        expect(c.properties).toHaveLength(4);
-        expectProperty(c, 'a');
-        expectProperty(c, 'b');
+        expect(c.properties).toHaveLength(2);
         expectProperty(c, 'c');
         expectProperty(c, 'd');
     });
@@ -488,6 +486,25 @@ describeTypes('inferred types using chained actions', `
                     array: false,
                     reference: false,
                     types: ['Z']
+                }
+            ],
+            astNodes: new Set(),
+        });
+    });
+
+    test('H is inferred as extending E and with h:string', () => {
+        const H = getType(types, 'H') as InterfaceType;
+        expect(H).toBeDefined();
+        expect(H.printingSuperTypes).toEqual(['E']);
+        expect(H.properties).toHaveLength(1);
+        expectProperty(H, {
+            name: 'h',
+            optional: false,
+            typeAlternatives: [
+                {
+                    array: false,
+                    reference: false,
+                    types: ['string']
                 }
             ],
             astNodes: new Set(),
@@ -946,7 +963,7 @@ describe('generated types from declared types include all of them', () => {
 
         const documentWithDeclaredTypes = await parseHelper<Grammar>(grammarServices)(`
             interface A { a: string; }
-            interface B { b: string[]; }
+            interface B extends A { b: string[]; }
             type AB = A | B;
             A returns A:  'A' a=ID;
             AB returns AB: A ({B} b+=ID)*;
