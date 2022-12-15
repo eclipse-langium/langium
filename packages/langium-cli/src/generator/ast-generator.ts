@@ -135,13 +135,22 @@ function buildMandatoryType(arrayProps: Property[], booleanProps: Property[]): G
 
 function buildReferenceTypeMethod(crossReferenceTypes: CrossReferenceType[]): GeneratorNode {
     const typeSwitchNode = new IndentNode();
+    const buckets = new MultiMap<string, string>(crossReferenceTypes.map(e => [e.referenceType, `${e.type}:${e.feature}`]));
     typeSwitchNode.append('const referenceId = `${refInfo.container.$type}:${refInfo.property}`;', NL);
     typeSwitchNode.append('switch (referenceId) {', NL);
     typeSwitchNode.indent(caseNode => {
-        for (const crossRef of crossReferenceTypes) {
-            caseNode.append(`case '${crossRef.type}:${crossRef.feature}': {`, NL);
+        for (const [target, refs] of buckets.entriesGroupedByKey()) {
+            for (let i = 0; i < refs.length; i++) {
+                const ref = refs[i];
+                caseNode.append(`case '${ref}':`);
+                if (i === refs.length - 1) {
+                    caseNode.append(' {', NL);
+                } else {
+                    caseNode.append(NL);
+                }
+            }
             caseNode.indent(caseContent => {
-                caseContent.append(`return ${crossRef.referenceType};`, NL);
+                caseContent.append(`return ${target};`, NL);
             });
             caseNode.append('}', NL);
         }
@@ -162,19 +171,28 @@ type CrossReferenceType = {
 }
 
 function buildCrossReferenceTypes(astTypes: AstTypes): CrossReferenceType[] {
-    const crossReferences: CrossReferenceType[] = [];
+    const crossReferences = new MultiMap<string, CrossReferenceType>();
     for (const typeInterface of astTypes.interfaces) {
         for (const property of typeInterface.properties.sort((a, b) => a.name.localeCompare(b.name))) {
             property.typeAlternatives.filter(e => e.reference).flatMap(e => e.types).forEach(type =>
-                crossReferences.push({
+                crossReferences.add(typeInterface.name, {
                     type: typeInterface.name,
                     feature: property.name,
                     referenceType: type
                 })
             );
         }
+        // Since the types are topologically sorted we can assume
+        // that all super type properties have already been processed
+        for (const superType of typeInterface.printingSuperTypes) {
+            const superTypeCrossReferences = crossReferences.get(superType).map(e => ({
+                ...e,
+                type: typeInterface.name
+            }));
+            crossReferences.addAll(typeInterface.name, superTypeCrossReferences);
+        }
     }
-    return crossReferences.sort((a, b) => a.type.localeCompare(b.type));
+    return Array.from(crossReferences.values()).sort((a, b) => a.type.localeCompare(b.type));
 }
 
 function buildIsSubtypeMethod(astTypes: AstTypes): GeneratorNode {
