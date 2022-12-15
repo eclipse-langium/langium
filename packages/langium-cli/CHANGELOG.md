@@ -1,9 +1,19 @@
 # Change Log of `langium-cli`
 
+## v1.0.0 (Dec. 2022) 🎉
+
+ * New command `extract-types` generates type declarations to be used in your grammar file ([#754](https://github.com/langium/langium/pull/754)). This utility can be used to move from _inferred_ types to _declared_ types, which makes sense when your language project becomes more mature.
+ * New reference format in JSON-serialized grammars ([#787](https://github.com/langium/langium/pull/787)).
+ * Adapted to version `1.0.0` of the Langium core library.
+
+---
+
 ## v0.5.0 (Oct. 2022)
 
  * Added an option to generate syntax highlighting in the [Monarch format](https://microsoft.github.io/monaco-editor/monarch.html) ([#620](https://github.com/langium/langium/pull/620)).
  * Adapted to version `0.5.0` of the Langium core library.
+
+---
 
 ## v0.4.0 (Jun. 2022)
 

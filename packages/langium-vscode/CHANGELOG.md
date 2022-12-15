@@ -1,5 +1,17 @@
 # Change Log of `langium-vscode`
 
+## v1.0.0 (Dec. 2022) 🎉
+
+ * Improved linking of types ([#763](https://github.com/langium/langium/pull/763)).
+ * Various improvements around the inference and validation of types ([#819](https://github.com/langium/langium/pull/819)).
+ * White space strings can be used in terminal rules ([#771](https://github.com/langium/langium/pull/771)).
+ * Keywords of the grammar language can be used as property names ([#811](https://github.com/langium/langium/pull/811)).
+ * Reserved words of the JavaScript runtime can no longer be used in grammar definitions ([#749](https://github.com/langium/langium/pull/749)).
+ * The name of a terminal rule must not clash with a keyword ([#820](https://github.com/langium/langium/pull/820)).
+ * The type of a property must not combine a cross-reference with something else ([#826](https://github.com/langium/langium/pull/826)).
+
+---
+
 ## v0.5.0 (Oct. 2022)
 
  * Support _find references_ for properties of declared types ([#528](https://github.com/langium/langium/pull/528)).
