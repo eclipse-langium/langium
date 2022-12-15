@@ -96,6 +96,9 @@ export function findRootNode(node: AstNode): AstNode {
  * single-valued as well as multi-valued (array) properties.
  */
 export function streamContents(node: AstNode): Stream<AstNode> {
+    if(!node) {
+        throw new Error('Node must be an AstNode.');
+    }
     type State = { keys: string[], keyIndex: number, arrayIndex: number };
     return new StreamImpl<State, AstNode>(() => ({
         keys: Object.keys(node),
@@ -131,6 +134,9 @@ export function streamContents(node: AstNode): Stream<AstNode> {
  * This does not include the root node itself.
  */
 export function streamAllContents(root: AstNode): TreeStream<AstNode> {
+    if(!root) {
+        throw new Error('Root node must be an AstNode.');
+    }
     return new TreeStreamImpl(root, node => streamContents(node));
 }
 
@@ -139,6 +145,9 @@ export function streamAllContents(root: AstNode): TreeStream<AstNode> {
  * including the root node itself.
  */
 export function streamAst(root: AstNode): TreeStream<AstNode> {
+    if(!root) {
+        throw new Error('Root node must be an AstNode.');
+    }
     return new TreeStreamImpl(root, node => streamContents(node), { includeRoot: true });
 }
 

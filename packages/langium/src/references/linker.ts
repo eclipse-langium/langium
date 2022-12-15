@@ -149,6 +149,10 @@ export class DefaultLinker implements Linker {
                 } else if (this._ref === undefined) {
                     // The reference has not been linked yet, so do that now.
                     const refData = linker.getLinkedNode({ reference, container: node, property });
+                    if(refData.error && getDocument(node).state < DocumentState.ComputedScopes) {
+                        // Document scope is not ready, don't set `this._ref` so linker can retry later.
+                        return undefined;
+                    }
                     this._ref = refData.node ?? refData.error;
                     this._nodeDescription = refData.descr;
                 }

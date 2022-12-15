@@ -634,12 +634,18 @@ export class LangiumGrammarValidator {
     }
 
     checkAssignmentToFragmentRule(assignment: ast.Assignment, accept: ValidationAcceptor): void {
+        if(!assignment.terminal) {
+            return;
+        }
         if (isRuleCall(assignment.terminal) && isParserRule(assignment.terminal.rule.ref) && assignment.terminal.rule.ref.fragment) {
             accept('error', `Cannot use fragment rule '${assignment.terminal.rule.ref.name}' for assignment of property '${assignment.feature}'.`, { node: assignment, property: 'terminal' });
         }
     }
 
     checkAssignmentTypes(assignment: ast.Assignment, accept: ValidationAcceptor): void {
+        if(!assignment.terminal) {
+            return;
+        }
         let firstType: 'ref' | 'other';
         const foundMixed = streamAllContents(assignment.terminal).map(node => ast.isCrossReference(node) ? 'ref' : 'other').find(type => {
             if (!firstType) {
