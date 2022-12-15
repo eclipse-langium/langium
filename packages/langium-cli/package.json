@@ -28,7 +28,6 @@
     "clean": "shx rm -rf lib coverage",
     "build": "tsc",
     "watch": "tsc --watch",
-    "test": "jest --coverage --config=../../jest.config.json --passWithNoTests",
     "lint": "eslint src --ext .ts",
     "publish:next": "npm --no-git-tag-version version \"$(semver $npm_package_version -i minor)-next.$(git rev-parse --short HEAD)\" && npm publish --tag next",
     "publish:latest": "npm publish --tag latest"
