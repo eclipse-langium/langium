@@ -394,4 +394,20 @@ describe('Property types validation takes in account types hierarchy', () => {
         expect(validation.diagnostics).toStrictEqual([]);
     });
 
+    // todo: a type can have 2 and more parents
+    // here `X` can be `string` or `XY` and `Y` cab be `number` or `XY
+    // test('Usage of child type with some parents is validated correctly.', async () => {
+    //     const validation = await validate(`
+    //         X returns string: 'X';
+    //         Y returns number: NUMBER;
+    //         QualifiedRef: name=NUMBER;
+    //         XY returns XY: X | Y | QualifiedRef;
+    //         terminal NUMBER returns number: /[0-9]+(\\.[0-9]+)?/;
+
+    //         type XY = string | number | QualifiedRef;
+    //     `);
+
+    //     expect(validation.diagnostics).toStrictEqual([]);
+    // });
+
 });

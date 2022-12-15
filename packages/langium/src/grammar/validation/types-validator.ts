@@ -187,7 +187,8 @@ function validateDeclaredAndInferredConsistency(typeInfo: InferredInfo & Declare
     const typeName = declared.name;
 
     const applyErrorToRulesAndActions = (msgPostfix?: string) => (errorMsg: string) =>
-        inferredNodes.forEach(node => accept('error', `${errorMsg.slice(0, -1)}${msgPostfix ? ` ${msgPostfix}` : ''}.`,
+        inferredNodes.forEach(node => accept('error',
+            `${errorMsg[-1] === '.' ? errorMsg.slice(0, -1) : errorMsg}${msgPostfix ? ` ${msgPostfix}` : ''}.`,
             (node?.inferredType) ?
                 <DiagnosticInfo<ast.InferredType, string>>{ node: node?.inferredType, property: 'name' } :
                 <DiagnosticInfo<ast.ParserRule | ast.Action | ast.InferredType, string>>{ node, property: ast.isAction(node) ? 'type' : 'name' }
