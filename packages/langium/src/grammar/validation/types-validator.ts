@@ -76,7 +76,7 @@ function validateInferredInterface(inferredInterface: InterfaceType, accept: Val
                 accept(
                     'error',
                     `Mixing a cross-reference with other types is not supported. Consider splitting property "${prop.name}" into two or more different properties.`,
-                    { node:  targetNode}
+                    { node: targetNode }
                 );
             }
         }
@@ -183,14 +183,12 @@ function arePropTypesIdentical(a: Property, b: Property): boolean {
     return true;
 }
 
-///////////////////////////////////////////////////////////////////////////////
-
 function validateDeclaredAndInferredConsistency(typeInfo: InferredInfo & DeclaredInfo, accept: ValidationAcceptor) {
     const { inferred, declared, declaredNode, inferredNodes } = typeInfo;
     const typeName = declared.name;
 
     const applyErrorToRulesAndActions = (msgPostfix?: string) => (errorMsg: string) =>
-        inferredNodes.forEach(node => accept('error', `${errorMsg}${msgPostfix ? ` ${msgPostfix}` : ''}.`,
+        inferredNodes.forEach(node => accept('error', `${errorMsg.slice(0, -1)}${msgPostfix ? ` ${msgPostfix}` : ''}.`,
             (node?.inferredType) ?
                 <DiagnosticInfo<ast.InferredType, string>>{ node: node?.inferredType, property: 'name' } :
                 <DiagnosticInfo<ast.ParserRule | ast.Action | ast.InferredType, string>>{ node, property: ast.isAction(node) ? 'type' : 'name' }
@@ -228,7 +226,7 @@ function validateDeclaredAndInferredConsistency(typeInfo: InferredInfo & Declare
             applyMissingPropErrorToRules
         );
     } else {
-        const errorMessage = `Inferred and declared versions of type ${typeName} both have to be interfaces or unions.`;
+        const errorMessage = `Inferred and declared versions of type '${typeName}' both have to be interfaces or unions.`;
         applyErrorToRulesAndActions()(errorMessage);
         accept('error', errorMessage, { node: declaredNode, property: 'name' });
     }
@@ -315,7 +313,7 @@ function validatePropertiesConsistency(inferred: MultiMap<string, Property>, dec
     for (const [name, expectedProperties] of declared.entriesGroupedByKey()) {
         const foundProperty = inferred.get(name);
         if (foundProperty.length === 0 && !expectedProperties.some(e => e.optional)) {
-            applyErrorToType(`A property '${name}' is expected`);
+            applyErrorToType(`A property '${name}' is expected.`);
         }
     }
 }
