@@ -1,5 +1,48 @@
 # Change Log of `langium`
 
+## v1.0.0 (Dec. 2022) 🎉
+
+### ALL(*) Lookahead Algorithm
+
+Langium now uses the [_ALL(*)_ algorithm](https://www.typefox.io/blog/allstar-lookahead) to compute the lookahead for the [Chevrotain](https://chevrotain.io/) parser. This brings a huge improvement to the expressibility of Langium grammars: you no longer have to worry about how many tokens are required in the lookahead or how to order alternatives to ensure that all branches are considered.
+
+You can still switch back to the _LL(k)_ algorithm that is shipped with Chevrotain by adding the following configuration to your `langium-config.json`. Here we set _k_ = 3, but you can increase that if necessary.
+
+```
+"chevrotainParserConfig": {
+    "maxLookahead": 3
+}
+```
+
+### Extended Code Generator Support
+
+There is a new API to support generating code from your AST ([#825](https://github.com/langium/langium/pull/825)). It works by constructing a tree structure (`GeneratorNode`) that gathers all the text snippets in its leafs. The tree can be serialized with the exported `toString` function.
+
+The code generator infrastructure also brings two template string tag functions: `expandToString` removes leading whitespace to produce well-readable output code as a string, and `expandToNode` does the same while creating a `GeneratorNode` tree. A good example of the usefulness of these functions is in the [C++ code generator of the statemachine language](https://github.com/langium/langium/blob/main/examples/statemachine/src/cli/generator.ts).
+
+In a later release, we are going to add tracing support to generator trees. This will enable generating source maps, which are the basis for debugging in your language.
+
+### Other New Features
+
+ * Added `Lexer` service to enable customizing the lexer ([#721](https://github.com/langium/langium/pull/721)).
+ * Added support for [code lens](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_codeLens) ([#722](https://github.com/langium/langium/pull/722)).
+ * Added support for [go to declaration](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_declaration) ([#734](https://github.com/langium/langium/pull/734)).
+
+### General Improvements
+
+ * Improved completion API and implemented fuzzy matching ([#739](https://github.com/langium/langium/pull/739)).
+ * Simplified programmatic construction of ASTs with references ([#774](https://github.com/langium/langium/pull/774)).
+ * New reference format in JSON serializer enables to export ASTs to other processes or applications ([#787](https://github.com/langium/langium/pull/787)).
+ * The `LangiumDocumentFactory` can now update the content of a `LangiumDocument` by reparsing its text ([#801](https://github.com/langium/langium/pull/801)). This means that an instance of a document remains valid after a text change.
+
+### Breaking Changes
+
+ * Changed the generated `{LanguageName}AstType` (in `ast.ts`) from an enumeration of string types to an object type mapping AST type names to their type declarations ([#738](https://github.com/langium/langium/pull/738)).
+ * Changed the customization API of `DefaultCompletionProvider` ([#739](https://github.com/langium/langium/pull/739)).
+ * Reworked the code generator API ([#825](https://github.com/langium/langium/pull/825)).
+
+---
+
 ## v0.5.0 (Oct. 2022)
 
 ### New Features

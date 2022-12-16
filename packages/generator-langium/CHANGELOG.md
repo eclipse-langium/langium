@@ -1,5 +1,11 @@
 # Change Log of `generator-langium`
 
+## v1.0.0 (Dec. 2022) 🎉
+
+ * Validation checks are registered in a plain function instead of a registry subclass ([#821](https://github.com/langium/langium/pull/821)).
+
+---
+
 ## v0.5.0 (Oct. 2022)
 
 This release updates the generated dependencies to Langium version `0.5.0`.
@@ -9,7 +15,6 @@ This release updates the generated dependencies to Langium version `0.5.0`.
 This release updates the generated dependencies to Langium version `0.4.0`.
 
 ---
-
 
 ## v0.3.0 (Mar. 2022)
 
