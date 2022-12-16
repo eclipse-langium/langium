@@ -22,10 +22,6 @@ The code generator infrastructure also brings two template string tag functions:
 
 In a later release, we are going to add tracing support to generator trees. This will enable generating source maps, which are the basis for debugging in your language.
 
-### Extracted Dependency Injection
-
-Langium's dependency injection tool has been extracted to a separate library named [Djinject](https://github.com/langium/djinject) ([#802](https://github.com/langium/langium/pull/802)). The new version features a more generic API and stronger type safety. This library can be useful beyond developing Langium languages, so feel free to integrate it with your code in VS Code extensions, frontends, or Node.js based backends.
-
 ### Other New Features
 
  * Added `Lexer` service to enable customizing the lexer ([#721](https://github.com/langium/langium/pull/721)).
@@ -44,7 +40,6 @@ Langium's dependency injection tool has been extracted to a separate library nam
  * Changed the generated `{LanguageName}AstType` (in `ast.ts`) from an enumeration of string types to an object type mapping AST type names to their type declarations ([#738](https://github.com/langium/langium/pull/738)).
  * Changed the customization API of `DefaultCompletionProvider` ([#739](https://github.com/langium/langium/pull/739)).
  * Reworked the code generator API ([#825](https://github.com/langium/langium/pull/825)).
- * Removed internal dependency injection tool and switched to the new Djinject library ([#802](https://github.com/langium/langium/pull/802)).
 
 ---
 

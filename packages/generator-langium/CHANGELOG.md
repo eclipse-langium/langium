@@ -3,7 +3,6 @@
 ## v1.0.0 (Dec. 2022) 🎉
 
  * Validation checks are registered in a plain function instead of a registry subclass ([#821](https://github.com/langium/langium/pull/821)).
- * Dependency injection is now done with the new [Djinject](https://github.com/langium/djinject) library ([#802](https://github.com/langium/langium/pull/802)).
 
 ---
 
