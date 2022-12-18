@@ -450,4 +450,34 @@ describe('Property types validation takes in account types hierarchy', () => {
         expect(validation.diagnostics).toStrictEqual([]);
     });
 
+    test('Handling type aliases shouldn\'t disable other validations.', async () => {
+        const validation = await validate(`
+            interface Y {
+                y: Z1
+            }
+            
+            interface Z {
+                name: string
+            }
+            
+            interface Z1 extends Z {
+                z: number
+            }
+            
+            interface Z2 extends Z {
+                a: string
+            }
+            
+            Y returns Y: y=Z2;
+            
+            Z1 returns Z1: z=NUMBER name=ID;
+            Z2 returns Z2: a=ID name=ID;
+
+            terminal ID: /[_a-zA-Z][\\w_]*/;
+            terminal NUMBER returns number: /[0-9]+(\\.[0-9]*)?/;
+        `);
+
+        expect(validation.diagnostics.filter(d => d.severity === DiagnosticSeverity.Error)).toHaveLength(1);
+    });
+
 });
