@@ -8,7 +8,7 @@ import { MultiMap } from '../../utils/collections';
 import { stream } from '../../utils/stream';
 import { LangiumDocuments } from '../../workspace/documents';
 import { AbstractElement, Action, Grammar, Interface, isAction, isAlternatives, isGroup, isUnorderedGroup, ParserRule, Type } from '../generated/ast';
-import { getActionType, getRuleType, isPrimitiveType } from '../internal-grammar-util';
+import { getActionType, getRuleType } from '../internal-grammar-util';
 import { AstResources, collectTypeResources, TypeResources } from '../type-system/type-collector/all-types';
 import { addSubTypes, mergeInterfaces, mergeTypesAndInterfaces } from '../type-system/types-util';
 import { isUnionType, Property, TypeOption } from '../type-system/type-collector/types';
@@ -68,31 +68,47 @@ export class LangiumGrammarValidationResourcesCollector {
         return typeToSuperProperties;
     }
 
-    private collectSubTypesAndAliases(typeToValidationInfo: TypeToValidationInfo): MultiMap<string, string> {
+    private collectSubTypesAndAliases(typeToValidationInfo: TypeToValidationInfo): Map<string, Set<string>> {
         const nameToType = stream(typeToValidationInfo.entries())
             .reduce((acc, [name, info]) => { acc.set(name, isDeclared(info) ? info.declared : info.inferred);  return acc; },
                 new Map<string, TypeOption>()
             );
         addSubTypes(nameToType);
 
-        const typeToAliases = new MultiMap<string, string>();
-        const queue = Array.from(nameToType.values()).filter(e => e.realSuperTypes.size === 0);
+        const typeToAliases = new Map<string, Set<string>>();
+        function addAlias(name: string, alias: string) {
+            const aliases = typeToAliases.get(name);
+            if (aliases) {
+                aliases.add(alias);
+            } else {
+                typeToAliases.set(name, new Set([alias]));
+            }
+        }
+
+        const queue = Array.from(nameToType.values()).filter(e => e.subTypes.size === 0);
         const visited = new Set<TypeOption>();
         for (const type of queue) {
             visited.add(type);
-            const subTypes = Array.from(type.subTypes)
-                .map(subType => nameToType.get(subType))
-                .filter(e => e !== undefined) as TypeOption[];
-            const superTypes = typeToAliases.get(type.name);
-            subTypes.forEach(subType => typeToAliases.addAll(subType.name, superTypes.length === 0 ? [type.name] : superTypes));
-            queue.push(...subTypes.filter(e => !visited.has(e)));
+            addAlias(type.name, type.name);
 
-            if (isUnionType(type) && subTypes.length === 0) {
-                const primitiveTypes = type.alternatives
+            for (const superTypeName of stream(type.realSuperTypes)) {
+                addAlias(superTypeName, type.name);
+
+                const superType = nameToType.get(superTypeName);
+                if (superType && !visited.has(superType)) {
+                    queue.push(superType);
+                }
+            }
+
+            if (isUnionType(type) && type.alternatives.length === 1) {
+                type.alternatives
                     .filter(alt => !alt.array && !alt.reference)
                     .flatMap(alt => alt.types)
-                    .filter(e => isPrimitiveType(e));
-                primitiveTypes.forEach(primType => typeToAliases.add(type.name, primType));
+                    .forEach(e => {
+                        addAlias(type.name, e);
+                        addAlias(e, e);
+                        addAlias(e, type.name);
+                    });
             }
         }
         return typeToAliases;

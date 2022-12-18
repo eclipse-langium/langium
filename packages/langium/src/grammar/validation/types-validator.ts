@@ -182,7 +182,7 @@ function arePropTypesIdentical(a: Property, b: Property): boolean {
     return true;
 }
 
-function validateDeclaredAndInferredConsistency(typeInfo: InferredInfo & DeclaredInfo, typeToAliases: MultiMap<string, string>, accept: ValidationAcceptor) {
+function validateDeclaredAndInferredConsistency(typeInfo: InferredInfo & DeclaredInfo, typeToAliases: Map<string, Set<string>>, accept: ValidationAcceptor) {
     const { inferred, declared, declaredNode, inferredNodes } = typeInfo;
     const typeName = declared.name;
 
@@ -239,7 +239,7 @@ type ErrorInfo = {
 }
 
 function validateAlternativesConsistency(inferred: PropertyType[], declared: PropertyType[],
-    typeToAliases: MultiMap<string, string>,
+    typeToAliases: Map<string, Set<string>>,
     applyErrorToInferredTypes: (errorMessage: string) => void) {
 
     const errorsInfo = checkAlternativesConsistencyHelper(inferred, declared, typeToAliases);
@@ -248,7 +248,35 @@ function validateAlternativesConsistency(inferred: PropertyType[], declared: Pro
     }
 }
 
-function checkAlternativesConsistencyHelper(found: PropertyType[], expected: PropertyType[], typeToAliases: MultiMap<string, string>): ErrorInfo[] {
+function getAllAliases(expected: PropertyType, typeToAliases: Map<string, Set<string>>): string[] {
+    const allAliases = expected.types.map(typeName => Array.from(typeToAliases.get(typeName) ?? new Set([typeName])));
+    let branches: string[][] = [];
+    for (const aliasGroup of allAliases) {
+        if (branches.length === 0) {
+            branches.push([]);
+        }
+        if (aliasGroup.length === 1) {
+            branches.forEach(branch => branch.push(aliasGroup[0]));
+        } else {
+            const backup_branches = JSON.parse(JSON.stringify(branches));
+            branches = [];
+            for (const alias of aliasGroup) {
+                const alias_branches: string[][] = JSON.parse(JSON.stringify(backup_branches));
+                alias_branches.forEach(alias_branch => alias_branch.push(alias));
+                branches.push(...alias_branches);
+            }
+        }
+    }
+    return branches.map(branch => distinctAndSorted(branch).join(' | '));
+}
+
+function typeAsStringKeywordsReplacement(found: PropertyType): string {
+    const propTypeWithStr = found.types.filter(e => !e.startsWith('\''));
+    propTypeWithStr.push('string');
+    return distinctAndSorted(propTypeWithStr).join(' | ');
+}
+
+function checkAlternativesConsistencyHelper(found: PropertyType[], expected: PropertyType[], typeToAliases: Map<string, Set<string>>): ErrorInfo[] {
     const arrayReferenceError = (found: PropertyType, expected: PropertyType) =>
         found.array && !expected.array && found.reference && !expected.reference ? 'can\'t be an array and a reference' :
             !found.array && expected.array && !found.reference && expected.reference ? 'has to be an array and a reference' :
@@ -257,18 +285,18 @@ function checkAlternativesConsistencyHelper(found: PropertyType[], expected: Pro
                         found.reference && !expected.reference ? 'can\'t be a reference' :
                             !found.reference && expected.reference ? 'has to be a reference' : '';
 
-    const stringToPropertyTypeList = (propertyTypeList: PropertyType[]) =>
-        propertyTypeList.reduce((acc, e) =>
-            acc.set(distinctAndSorted(e.types.map(type => typeToAliases.has(type) ? typeToAliases.get(type)[0] : type)).join(' | '), e),
+    const stringToFound = found.reduce((acc, propType) => acc.set(distinctAndSorted(propType.types).join(' | '), propType),
         new Map<string, PropertyType>());
 
-    const stringToFound = stringToPropertyTypeList(found);
-    const stringToExpected = stringToPropertyTypeList(expected);
+    const stringToExpected = expected.reduce((acc, propType) => {
+        getAllAliases(propType, typeToAliases).forEach(alias => acc.set(alias, propType));
+        return acc;
+    }, new Map<string, PropertyType>());
     const errorsInfo: ErrorInfo[] = [];
 
     // detects extra type alternatives & check matched ones on consistency by 'array' and 'reference'
     for (const [typeAsString, foundPropertyType] of stringToFound) {
-        const expectedPropertyType = stringToExpected.get(typeAsString);
+        const expectedPropertyType = stringToExpected.get(typeAsString) ?? stringToExpected.get(typeAsStringKeywordsReplacement(foundPropertyType));
         if (!expectedPropertyType) {
             errorsInfo.push({ typeAsString, errorMessage: 'is not expected' });
         } else if (expectedPropertyType.array !== foundPropertyType.array || expectedPropertyType.reference !== foundPropertyType.reference) {
@@ -279,7 +307,7 @@ function checkAlternativesConsistencyHelper(found: PropertyType[], expected: Pro
 }
 
 function validatePropertiesConsistency(inferred: MultiMap<string, Property>, declared: MultiMap<string, Property>,
-    typeToAliases: MultiMap<string, string>,
+    typeToAliases: Map<string, Set<string>>,
     applyErrorToType: (errorMessage: string) => void,
     applyErrorToProperties: (nodes: Set<ast.Assignment | ast.Action | ast.TypeAttribute>, errorMessage: string) => void,
     applyMissingPropErrorToRules: (missingProp: string) => void
