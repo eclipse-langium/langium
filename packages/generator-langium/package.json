@@ -27,6 +27,7 @@
     "watch": "tsc --watch",
     "lint": "eslint src --ext .ts",
     "run": "yo langium",
+    "test": "vitest run",
     "debug": "npx --node-arg=--inspect yo langium",
     "publish:next": "npm --no-git-tag-version version \"$(semver $npm_package_version -i minor)-next.$(git rev-parse --short HEAD)\" && npm publish --tag next",
     "publish:latest": "npm publish --tag latest"
@@ -38,7 +39,9 @@
   },
   "devDependencies": {
     "@types/lodash": "^4.14.170",
-    "@types/yeoman-generator": "^5.0.0"
+    "@types/yeoman-generator": "^5.0.0",
+    "@types/yeoman-test": "^4.0.3",
+    "yeoman-test": "^7.0.0"
   },
   "repository": {
     "type": "git",
