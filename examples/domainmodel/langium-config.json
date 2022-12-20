@@ -6,6 +6,9 @@
         "fileExtensions": [".dmodel"],
         "textMate": {
             "out": "syntaxes/domain-model.tmLanguage.json"
+        },
+        "monarch": {
+            "out": "syntaxes/domainmodel.monarch.ts"
         }
     }],
     "out": "src/language-server/generated",
