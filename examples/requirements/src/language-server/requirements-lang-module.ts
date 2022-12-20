@@ -32,3 +32,4 @@ export const RequirementsLangModule: Module<RequirementsLangServices, PartialLan
         RequirementsLangValidator: (services) => new RequirementsLangValidator(services)
     }
 };
+
