@@ -19,19 +19,26 @@ const defaultAnswers = {
 describe('Check yeoman generator works', () => {
 
     test('Should produce files', async () => {
+
         const context = createHelpers({}).run(path.join(__dirname, '../app'));
-        context.targetDirectory = path.join(__dirname, '../test-temp'); // generate in test-temp
-        context.cleanTestDirectory(true); // clean-up test-temp
-        await context.onGenerator(generator => generator.destinationRoot(context.targetDirectory, false))
+        context.targetDirectory = path.join(__dirname, '../../../examples/hello-world'); // generate in examples
+        const targetRoot = path.join(__dirname, '../../../examples');
+        context.cleanTestDirectory(true); // clean-up examples/hello-world
+        await context
+            .onGenerator(async (generator) => {
+                // will generate into examples/hello-world instead of examples/hello-world/hello-world
+                generator.destinationRoot(targetRoot, false);
+            })
             .withAnswers(defaultAnswers)
+            .withArguments('skip-install')
             .then((result) => {
-                result.assertFile(['hello-world/package.json']);
-                result.assertFileContent('hello-world/package.json', PACKAGE_JSON_EXPECTATION);
-                result.assertFile(['hello-world/.vscode/tasks.json']);
-                result.assertFileContent('hello-world/.vscode/tasks.json', TASKS_JSON_EXPECTATION);
-                result.assertFile(['hello-world/.gitignore']);
-            });
-        context.cleanup(); // clean-up
+                const generatedRoot = targetRoot + '/hello-world/';
+                result.assertFile(generatedRoot + 'package.json');
+                result.assertFileContent(generatedRoot + 'package.json', PACKAGE_JSON_EXPECTATION);
+                result.assertFile(generatedRoot + '.vscode/tasks.json');
+                result.assertFileContent(generatedRoot + '.vscode/tasks.json', TASKS_JSON_EXPECTATION);
+                result.assertFile(generatedRoot + '.gitignore');
+            }).finally(() => context.cleanup() /*clean-up*/ );
     }, 120_000);
 
 });
