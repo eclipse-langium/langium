@@ -140,6 +140,14 @@
             "args": ["run", "${relativeFile}"],
             "smartStep": true,
             "console": "integratedTerminal",
-        }
+        },
+        {
+            "name": "Version Upgrade",
+            "type": "node",
+            "request": "launch",
+            "program": "${workspaceFolder}/versions.mjs",
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal"
+        },
     ]
 }

@@ -54,6 +54,7 @@ export interface DefaultModuleContext {
  * set of services that are used by exactly one language.
  */
 export function createDefaultModule(context: DefaultModuleContext): Module<LangiumServices, LangiumDefaultServices> {
+    console.log('tester3');
     return {
         parser: {
             GrammarConfig: (services) => createGrammarConfig(services),

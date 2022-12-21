@@ -1,6 +1,6 @@
 {
   "name": "langium",
-  "version": "1.0.0",
+  "version": "1.0.0-dev.0",
   "description": "A language engineering tool for the Language Server Protocol",
   "homepage": "https://langium.org",
   "engines": {
@@ -43,7 +43,7 @@
     "vscode-uri": "^3.0.2"
   },
   "devDependencies": {
-    "langium-cli": "1.0.0"
+    "langium-cli": "1.0.0-dev.0"
   },
   "repository": {
     "type": "git",
