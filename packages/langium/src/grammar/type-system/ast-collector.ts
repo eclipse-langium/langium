@@ -20,12 +20,9 @@ export function collectAst(grammars: Grammar | Grammar[], documents?: LangiumDoc
     const { inferred, declared } = collectTypeResources(grammars, documents);
 
     const astTypes = {
-        interfaces: mergeAndRemoveDuplicates<InterfaceType>(inferred.interfaces,declared.interfaces),
+        interfaces: sortInterfacesTopologically(mergeAndRemoveDuplicates<InterfaceType>(inferred.interfaces, declared.interfaces)),
         unions: mergeAndRemoveDuplicates<UnionType>(inferred.unions, declared.unions),
     };
-
-    sortInterfacesTopologically(astTypes.interfaces);
-    astTypes.unions.sort((a, b) => a.name.localeCompare(b.name));
 
     specifyAstNodeProperties(astTypes);
     return astTypes;
@@ -34,7 +31,7 @@ export function collectAst(grammars: Grammar | Grammar[], documents?: LangiumDoc
 function mergeAndRemoveDuplicates<T extends { name: string }>(inferred: T[], declared: T[]): T[] {
     return Array.from(inferred.concat(declared)
         .reduce((acc, type) => { acc.set(type.name, type); return acc; }, new Map<string, T>())
-        .values());
+        .values()).sort((a, b) => a.name.localeCompare(b.name));
 }
 
 export function specifyAstNodeProperties(astTypes: AstTypes) {
