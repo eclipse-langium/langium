@@ -59,7 +59,7 @@ export interface DocumentBuilder {
 }
 
 export type DocumentUpdateListener = (changed: URI[], deleted: URI[]) => void
-export type DocumentBuildListener = (built: LangiumDocument[], cancelToken: CancellationToken) => Promise<void>
+export type DocumentBuildListener = (built: LangiumDocument[], cancelToken: CancellationToken) => void | Promise<void>
 export class DefaultDocumentBuilder implements DocumentBuilder {
     protected readonly langiumDocuments: LangiumDocuments;
     protected readonly langiumDocumentFactory: LangiumDocumentFactory;
