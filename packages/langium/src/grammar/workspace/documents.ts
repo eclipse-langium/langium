@@ -19,6 +19,7 @@ export interface LangiumGrammarDocument extends LangiumDocument<Grammar> {
 export type ValidationResources = {
     typeToValidationInfo: TypeToValidationInfo,
     typeToSuperProperties: Map<string, Property[]>,
+    typeToAliases: Map<string, Set<string>>,
 }
 
 export type TypeToValidationInfo = Map<string, InferredInfo | DeclaredInfo | InferredInfo & DeclaredInfo>;

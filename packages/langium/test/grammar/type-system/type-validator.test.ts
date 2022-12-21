@@ -277,82 +277,212 @@ describe('validate properties duplication in types hierarchy', () => {
         expect(diagnostics.filter(d => d.severity === DiagnosticSeverity.Error)).toHaveLength(2);
     });
 
-    describe('Property type is not a mix of cross-ref and non-cross-ref types.', () => {
+});
 
-        test('Parser rule property inferred mixed.', async () => {
-            const validation = await validate(`
-                entry AbstractElement:
-                    Foo | Bar;
+describe('Property type is not a mix of cross-ref and non-cross-ref types.', () => {
 
-                Foo infers AbstractElement:
-                    prop=[AbstractElement:ID]
-                ;
-                
-                Bar infers AbstractElement:
-                    prop='Bar'
-                ;
-                
-                terminal ID: /[_a-zA-Z][\\w_]*/;
-            `);
-            const rule1Assignment = streamContents(validation.document.parseResult.value.rules[1])
-                .filter(node => isAssignment(node)).head() as Assignment;
-            expect(rule1Assignment).not.toBe(undefined);
+    test('Parser rule property inferred mixed.', async () => {
+        const validation = await validate(`
+            entry AbstractElement:
+                Foo | Bar;
 
-            expectError(validation, /Mixing a cross-reference with other types is not supported. Consider splitting property /, {
-                node: rule1Assignment!
-            });
+            Foo infers AbstractElement:
+                prop=[AbstractElement:ID]
+            ;
+            
+            Bar infers AbstractElement:
+                prop='Bar'
+            ;
+            
+            terminal ID: /[_a-zA-Z][\\w_]*/;
+        `);
+        const rule1Assignment = streamContents(validation.document.parseResult.value.rules[1])
+            .filter(node => isAssignment(node)).head() as Assignment;
+        expect(rule1Assignment).not.toBe(undefined);
+
+        expectError(validation, /Mixing a cross-reference with other types is not supported. Consider splitting property /, {
+            node: rule1Assignment!
         });
+    });
 
-        test('Parser rule properties inferred mixed.', async () => {
-            const validation = await validate(`
-                Rule:
-                    prop = 'string' | prop = [Rule:ID]
-                ;
-                terminal ID: /[_a-zA-Z][\\w_]*/;
-            `);
-            const propAssignments = streamAllContents(validation.document.parseResult.value.rules[0])
-                .filter(node => isAssignment(node)).toArray();
-            expect(propAssignments.length).toBe(2);
+    test('Parser rule properties inferred mixed.', async () => {
+        const validation = await validate(`
+            Rule:
+                prop = 'string' | prop = [Rule:ID]
+            ;
+            terminal ID: /[_a-zA-Z][\\w_]*/;
+        `);
+        const propAssignments = streamAllContents(validation.document.parseResult.value.rules[0])
+            .filter(node => isAssignment(node)).toArray();
+        expect(propAssignments.length).toBe(2);
 
-            expectError(validation, /Mixing a cross-reference with other types is not supported. Consider splitting property /, {
-                node: propAssignments[0]!
-            });
+        expectError(validation, /Mixing a cross-reference with other types is not supported. Consider splitting property /, {
+            node: propAssignments[0]!
         });
+    });
 
-        test('Interface declaration property not mixed.', async () => {
-            const validation = await validate(`
-                interface Rule {
-                    name: 'string'
-                }
-                
-                interface Rule1 {
-                    prop: @Rule
-                }
-                
-                interface Rule2 {
-                    prop: Rule
-                }
-                
-                interface Rule3 {
-                    prop: 'string' | Rule
-                }
-            `);
-            expectNoIssues(validation);
+    test('Interface declaration property not mixed.', async () => {
+        const validation = await validate(`
+            interface Rule {
+                name: 'string'
+            }
+            
+            interface Rule1 {
+                prop: @Rule
+            }
+            
+            interface Rule2 {
+                prop: Rule
+            }
+            
+            interface Rule3 {
+                prop: 'string' | Rule
+            }
+        `);
+        expectNoIssues(validation);
+    });
+
+    test('Interface declaration property mixed.', async () => {
+        const validation = await validate(`
+            interface Rule {
+                prop: @Rule | 'string'
+            }
+        `);
+        const attribute = validation.document.parseResult.value.interfaces[0].attributes[0];
+        expect(attribute).not.toBe(undefined);
+
+        expectError(validation, /Mixing a cross-reference with other types is not supported. Consider splitting property /, {
+            node: attribute!,
+            property: { name: 'typeAlternatives' }
         });
+    });
+});
 
-        test('Interface declaration property mixed.', async () => {
-            const validation = await validate(`
-                interface Rule {
-                    prop: @Rule | 'string'
-                }
-            `);
-            const attribute = validation.document.parseResult.value.interfaces[0].attributes[0];
-            expect(attribute).not.toBe(undefined);
+// https://github.com/langium/langium/issues/823
+describe('Property types validation takes in account types hierarchy', () => {
 
-            expectError(validation, /Mixing a cross-reference with other types is not supported. Consider splitting property /, {
-                node: attribute!,
-                property: { name: 'typeAlternatives' }
-            });
+    test('Type aliases can be assigned to primitive types.', async () => {
+        const validation = await validate(`
+            interface TypeA {
+                name: string
+            }
+            A returns TypeA: name=QualifiedName;
+            QualifiedName returns string: 'QualifiedName';
+        `);
+
+        expectNoIssues(validation);
+    });
+
+    test('Child type can be assigned correctly.', async () => {
+        const validation = await validate(`
+            Named: name = ID;
+            Expression: NamedRef;
+            NamedRef returns NamedRef: ref=[Named];
+            QualifiedRef returns QualifiedRef: qualifier=NamedRef ref=[Named];
+            QualifiedRefWithAction infers Expression: NamedRef {QualifiedRef.qualifier=current} '.' ref=[Named];
+            terminal ID: /[_a-zA-Z][\\w_]*/;
+            
+            interface NamedRef {
+                ref: @Named
+            }
+            
+            interface QualifiedRef extends NamedRef {
+                qualifier: Expression
+            }        
+        `);
+
+        expectNoIssues(validation);
+    });
+
+    // here `X` can be `string` or `XY` and `Y` cab be `number` or `XY
+    test('Usage of child type with some parents is validated correctly.', async () => {
+        const validation = await validate(`
+            X returns string: 'X';
+            Y returns number: NUMBER;
+            QualifiedRef: name=NUMBER;
+            XY returns XY: X | Y | QualifiedRef;
+            terminal NUMBER returns number: /[0-9]+(\\.[0-9]+)?/;
+
+            type XY = string | number | QualifiedRef;
+        `);
+
+        expectNoIssues(validation);
+    });
+
+    test('Keywords are subtypes of strings.', async () => {
+        const validation = await validate(`
+            interface BinaryExpression {
+                left: Expression
+                right: Expression
+                operator: string
+            }
+            
+            Expression:
+                PrimaryExpression ({BinaryExpression.left=current} operator=('+' | '-') right=PrimaryExpression)*;
+            
+            PrimaryExpression infers Expression:
+                {infer NumberLiteral} value=NUMBER;
+
+            terminal NUMBER returns number: /[0-9]+(\\.[0-9]*)?/;
+        `);
+
+        expectNoIssues(validation);
+    });
+
+    test('Type aliases can be assigned correctly for types.', async () => {
+        const validation = await validate(`
+            X: name=ID;
+            AliasX: X;
+            
+            interface YType {
+                prop: AliasX
+            }
+            Y returns YType: prop=X;
+            
+            interface ZType {
+                prop: X
+            }
+            Z returns ZType: prop=AliasX;
+
+            terminal ID: /[_a-zA-Z][\\w_]*/;
+        `);
+
+        expectNoIssues(validation);
+    });
+
+    test('Should create error on assignments with incorrect hierarchy.', async () => {
+        const validation = await validate(`
+            interface Y {
+                y: Z1
+            }
+            
+            interface Z {
+                name: string
+            }
+            
+            interface Z1 extends Z {
+                z: number
+            }
+            
+            interface Z2 extends Z {
+                a: string
+            }
+            
+            Y returns Y: y=Z2;
+            
+            Z1 returns Z1: z=NUMBER name=ID;
+            Z2 returns Z2: a=ID name=ID;
+
+            terminal ID: /[_a-zA-Z][\\w_]*/;
+            terminal NUMBER returns number: /[0-9]+(\\.[0-9]*)?/;
+        `);
+
+        const assignment = streamAllContents(validation.document.parseResult.value).filter(isAssignment).toArray()[0];
+        expectError(validation, "The assigned type 'Z2' is not compatible with the declared property 'y' of type 'Z1':  'Z2' is not expected.", {
+            node: assignment,
+            property: {
+                name: 'feature'
+            }
         });
     });
 

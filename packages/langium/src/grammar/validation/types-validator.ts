@@ -51,7 +51,7 @@ export class LangiumGrammarTypesValidator {
                     validateInferredInterface(typeInfo.inferred as InterfaceType, accept);
                 }
                 if (isInferredAndDeclared(typeInfo)) {
-                    validateDeclaredAndInferredConsistency(typeInfo, accept);
+                    validateDeclaredAndInferredConsistency(typeInfo, validationResources.typeToAliases, accept);
                 }
             }
         }
@@ -76,7 +76,7 @@ function validateInferredInterface(inferredInterface: InterfaceType, accept: Val
                 accept(
                     'error',
                     `Mixing a cross-reference with other types is not supported. Consider splitting property "${prop.name}" into two or more different properties.`,
-                    { node:  targetNode}
+                    { node: targetNode }
                 );
             }
         }
@@ -103,7 +103,6 @@ function validateInterfaceSuperTypes(
 
 function validateSuperTypesConsistency(
     { declared, declaredNode }: { declared: InterfaceType, declaredNode: ast.Interface},
-    // todo remove after adding the type graph
     properties: Map<string, Property[]>,
     accept: ValidationAcceptor): void {
 
@@ -183,14 +182,13 @@ function arePropTypesIdentical(a: Property, b: Property): boolean {
     return true;
 }
 
-///////////////////////////////////////////////////////////////////////////////
-
-function validateDeclaredAndInferredConsistency(typeInfo: InferredInfo & DeclaredInfo, accept: ValidationAcceptor) {
+function validateDeclaredAndInferredConsistency(typeInfo: InferredInfo & DeclaredInfo, typeToAliases: Map<string, Set<string>>, accept: ValidationAcceptor) {
     const { inferred, declared, declaredNode, inferredNodes } = typeInfo;
     const typeName = declared.name;
 
     const applyErrorToRulesAndActions = (msgPostfix?: string) => (errorMsg: string) =>
-        inferredNodes.forEach(node => accept('error', `${errorMsg}${msgPostfix ? ` ${msgPostfix}` : ''}.`,
+        inferredNodes.forEach(node => accept('error',
+            `${errorMsg[-1] === '.' ? errorMsg.slice(0, -1) : errorMsg}${msgPostfix ? ` ${msgPostfix}` : ''}.`,
             (node?.inferredType) ?
                 <DiagnosticInfo<ast.InferredType, string>>{ node: node?.inferredType, property: 'name' } :
                 <DiagnosticInfo<ast.ParserRule | ast.Action | ast.InferredType, string>>{ node, property: ast.isAction(node) ? 'type' : 'name' }
@@ -201,7 +199,6 @@ function validateDeclaredAndInferredConsistency(typeInfo: InferredInfo & Declare
             accept('error', errorMessage, { node, property: ast.isAssignment(node) || ast.isAction(node) ? 'feature' : 'name' })
         );
 
-    // todo add actions
     // currently we don't track which assignments belong to which actions and can't apply this error
     const applyMissingPropErrorToRules = (missingProp: string) => {
         inferredNodes.forEach(node => {
@@ -219,16 +216,18 @@ function validateDeclaredAndInferredConsistency(typeInfo: InferredInfo & Declare
 
     if (isUnionType(inferred) && isUnionType(declared)) {
         validateAlternativesConsistency(inferred.alternatives, declared.alternatives,
+            typeToAliases,
             applyErrorToRulesAndActions(`in a rule that returns type '${typeName}'`),
         );
     } else if (isInterfaceType(inferred) && isInterfaceType(declared)) {
         validatePropertiesConsistency(inferred.superProperties, declared.superProperties,
+            typeToAliases,
             applyErrorToRulesAndActions(`in a rule that returns type '${typeName}'`),
             applyErrorToProperties,
             applyMissingPropErrorToRules
         );
     } else {
-        const errorMessage = `Inferred and declared versions of type ${typeName} both have to be interfaces or unions.`;
+        const errorMessage = `Inferred and declared versions of type '${typeName}' both have to be interfaces or unions.`;
         applyErrorToRulesAndActions()(errorMessage);
         accept('error', errorMessage, { node: declaredNode, property: 'name' });
     }
@@ -240,15 +239,44 @@ type ErrorInfo = {
 }
 
 function validateAlternativesConsistency(inferred: PropertyType[], declared: PropertyType[],
+    typeToAliases: Map<string, Set<string>>,
     applyErrorToInferredTypes: (errorMessage: string) => void) {
 
-    const errorsInfo = checkAlternativesConsistencyHelper(inferred, declared);
+    const errorsInfo = checkAlternativesConsistencyHelper(inferred, declared, typeToAliases);
     for (const errorInfo of errorsInfo) {
         applyErrorToInferredTypes(`A type '${errorInfo.typeAsString}' ${errorInfo.errorMessage}`);
     }
 }
 
-function checkAlternativesConsistencyHelper(found: PropertyType[], expected: PropertyType[]): ErrorInfo[] {
+function getAllAliases(expected: PropertyType, typeToAliases: Map<string, Set<string>>): string[] {
+    const allAliases = expected.types.map(typeName => Array.from(typeToAliases.get(typeName) ?? new Set([typeName])));
+    let branches: string[][] = [];
+    for (const aliasGroup of allAliases) {
+        if (branches.length === 0) {
+            branches.push([]);
+        }
+        if (aliasGroup.length === 1) {
+            branches.forEach(branch => branch.push(aliasGroup[0]));
+        } else {
+            const backup_branches = JSON.parse(JSON.stringify(branches));
+            branches = [];
+            for (const alias of aliasGroup) {
+                const alias_branches: string[][] = JSON.parse(JSON.stringify(backup_branches));
+                alias_branches.forEach(alias_branch => alias_branch.push(alias));
+                branches.push(...alias_branches);
+            }
+        }
+    }
+    return branches.map(branch => distinctAndSorted(branch).join(' | '));
+}
+
+function typeAsStringKeywordsReplacement(found: PropertyType): string {
+    const propTypeWithStr = found.types.filter(e => !e.startsWith('\''));
+    propTypeWithStr.push('string');
+    return distinctAndSorted(propTypeWithStr).join(' | ');
+}
+
+function checkAlternativesConsistencyHelper(found: PropertyType[], expected: PropertyType[], typeToAliases: Map<string, Set<string>>): ErrorInfo[] {
     const arrayReferenceError = (found: PropertyType, expected: PropertyType) =>
         found.array && !expected.array && found.reference && !expected.reference ? 'can\'t be an array and a reference' :
             !found.array && expected.array && !found.reference && expected.reference ? 'has to be an array and a reference' :
@@ -257,16 +285,18 @@ function checkAlternativesConsistencyHelper(found: PropertyType[], expected: Pro
                         found.reference && !expected.reference ? 'can\'t be a reference' :
                             !found.reference && expected.reference ? 'has to be a reference' : '';
 
-    const stringToPropertyTypeList = (propertyTypeList: PropertyType[]) =>
-        propertyTypeList.reduce((acc, e) => acc.set(distinctAndSorted(e.types).join(' | '), e), new Map<string, PropertyType>());
+    const stringToFound = found.reduce((acc, propType) => acc.set(distinctAndSorted(propType.types).join(' | '), propType),
+        new Map<string, PropertyType>());
 
-    const stringToFound = stringToPropertyTypeList(found);
-    const stringToExpected = stringToPropertyTypeList(expected);
+    const stringToExpected = expected.reduce((acc, propType) => {
+        getAllAliases(propType, typeToAliases).forEach(alias => acc.set(alias, propType));
+        return acc;
+    }, new Map<string, PropertyType>());
     const errorsInfo: ErrorInfo[] = [];
 
     // detects extra type alternatives & check matched ones on consistency by 'array' and 'reference'
     for (const [typeAsString, foundPropertyType] of stringToFound) {
-        const expectedPropertyType = stringToExpected.get(typeAsString);
+        const expectedPropertyType = stringToExpected.get(typeAsString) ?? stringToExpected.get(typeAsStringKeywordsReplacement(foundPropertyType));
         if (!expectedPropertyType) {
             errorsInfo.push({ typeAsString, errorMessage: 'is not expected' });
         } else if (expectedPropertyType.array !== foundPropertyType.array || expectedPropertyType.reference !== foundPropertyType.reference) {
@@ -277,6 +307,7 @@ function checkAlternativesConsistencyHelper(found: PropertyType[], expected: Pro
 }
 
 function validatePropertiesConsistency(inferred: MultiMap<string, Property>, declared: MultiMap<string, Property>,
+    typeToAliases: Map<string, Set<string>>,
     applyErrorToType: (errorMessage: string) => void,
     applyErrorToProperties: (nodes: Set<ast.Assignment | ast.Action | ast.TypeAttribute>, errorMessage: string) => void,
     applyMissingPropErrorToRules: (missingProp: string) => void
@@ -293,7 +324,7 @@ function validatePropertiesConsistency(inferred: MultiMap<string, Property>, dec
             const foundTypeAsStr = propertyTypesToString(foundProp.typeAlternatives);
             const expectedTypeAsStr = propertyTypesToString(expectedProp.typeAlternatives);
             if (foundTypeAsStr !== expectedTypeAsStr) {
-                const typeAlternativesErrors = checkAlternativesConsistencyHelper(foundProp.typeAlternatives, expectedProp.typeAlternatives);
+                const typeAlternativesErrors = checkAlternativesConsistencyHelper(foundProp.typeAlternatives, expectedProp.typeAlternatives, typeToAliases);
                 if (typeAlternativesErrors.length > 0) {
                     const errorMsgPrefix = `The assigned type '${foundTypeAsStr}' is not compatible with the declared property '${name}' of type '${expectedTypeAsStr}'`;
                     const propErrors = typeAlternativesErrors
@@ -315,7 +346,7 @@ function validatePropertiesConsistency(inferred: MultiMap<string, Property>, dec
     for (const [name, expectedProperties] of declared.entriesGroupedByKey()) {
         const foundProperty = inferred.get(name);
         if (foundProperty.length === 0 && !expectedProperties.some(e => e.optional)) {
-            applyErrorToType(`A property '${name}' is expected`);
+            applyErrorToType(`A property '${name}' is expected.`);
         }
     }
 }

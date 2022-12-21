@@ -6,7 +6,7 @@
 
 import { Grammar } from '../generated/ast';
 import { LangiumDocuments } from '../../workspace/documents';
-import { sortInterfacesTopologically } from './types-util';
+import { addSubTypes, sortInterfacesTopologically } from './types-util';
 import { AstTypes, InterfaceType, isInterfaceType, isUnionType, TypeOption, UnionType } from './type-collector/types';
 import { collectTypeResources } from './type-collector/all-types';
 import { isPrimitiveType } from '../internal-grammar-util';
@@ -97,16 +97,6 @@ function filterInterfaceLikeTypes({ interfaces, unions }: AstTypes): Map<string,
         }
     }
     return nameToType;
-}
-
-function addSubTypes(nameToType: Map<string, TypeOption>) {
-    for (const interfaceType of nameToType.values()) {
-        for (const superTypeName of interfaceType.realSuperTypes) {
-            nameToType.get(superTypeName)
-                ?.subTypes.add(interfaceType.name);
-        }
-    }
-
 }
 
 /**
