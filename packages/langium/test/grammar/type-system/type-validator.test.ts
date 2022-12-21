@@ -361,7 +361,7 @@ describe('Property type is not a mix of cross-ref and non-cross-ref types.', () 
 // https://github.com/langium/langium/issues/823
 describe('Property types validation takes in account types hierarchy', () => {
 
-    test('Type aliases are validated correctly.', async () => {
+    test('Type aliases can be assigned to primitive types.', async () => {
         const validation = await validate(`
             interface TypeA {
                 name: string
@@ -370,10 +370,10 @@ describe('Property types validation takes in account types hierarchy', () => {
             QualifiedName returns string: 'QualifiedName';
         `);
 
-        expect(validation.diagnostics).toStrictEqual([]);
+        expectNoIssues(validation);
     });
 
-    test('Usage of child type is validated correctly.', async () => {
+    test('Child type can be assigned correctly.', async () => {
         const validation = await validate(`
             Named: name = ID;
             Expression: NamedRef;
@@ -391,7 +391,7 @@ describe('Property types validation takes in account types hierarchy', () => {
             }        
         `);
 
-        expect(validation.diagnostics).toStrictEqual([]);
+        expectNoIssues(validation);
     });
 
     // here `X` can be `string` or `XY` and `Y` cab be `number` or `XY
@@ -406,7 +406,7 @@ describe('Property types validation takes in account types hierarchy', () => {
             type XY = string | number | QualifiedRef;
         `);
 
-        expect(validation.diagnostics).toStrictEqual([]);
+        expectNoIssues(validation);
     });
 
     test('Keywords are subtypes of strings.', async () => {
@@ -426,10 +426,10 @@ describe('Property types validation takes in account types hierarchy', () => {
             terminal NUMBER returns number: /[0-9]+(\\.[0-9]*)?/;
         `);
 
-        expect(validation.diagnostics).toStrictEqual([]);
+        expectNoIssues(validation);
     });
 
-    test('Type aliases replace types correctly.', async () => {
+    test('Type aliases can be assigned correctly for types.', async () => {
         const validation = await validate(`
             X: name=ID;
             AliasX: X;
@@ -447,10 +447,10 @@ describe('Property types validation takes in account types hierarchy', () => {
             terminal ID: /[_a-zA-Z][\\w_]*/;
         `);
 
-        expect(validation.diagnostics).toStrictEqual([]);
+        expectNoIssues(validation);
     });
 
-    test('Handling type aliases shouldn\'t disable other validations.', async () => {
+    test('Should create error on assignments with incorrect hierarchy.', async () => {
         const validation = await validate(`
             interface Y {
                 y: Z1
@@ -477,7 +477,13 @@ describe('Property types validation takes in account types hierarchy', () => {
             terminal NUMBER returns number: /[0-9]+(\\.[0-9]*)?/;
         `);
 
-        expect(validation.diagnostics.filter(d => d.severity === DiagnosticSeverity.Error)).toHaveLength(1);
+        const assignment = streamAllContents(validation.document.parseResult.value).filter(isAssignment).toArray()[0];
+        expectError(validation, "The assigned type 'Z2' is not compatible with the declared property 'y' of type 'Z1':  'Z2' is not expected.", {
+            node: assignment,
+            property: {
+                name: 'feature'
+            }
+        });
     });
 
 });
