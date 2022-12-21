@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import { startLanguageServer, EmptyFileSystem, DocumentState } from 'langium';
-import { BrowserMessageReader, BrowserMessageWriter, createConnection, NotificationType } from 'vscode-languageserver/browser';
+import { BrowserMessageReader, BrowserMessageWriter, createConnection, Diagnostic, NotificationType } from 'vscode-languageserver/browser';
 import { createDomainModelServices } from './domain-model-module';
 
 /* browser specific setup code */
@@ -21,7 +21,7 @@ const { shared, domainmodel } = createDomainModelServices({ connection, ...Empty
 startLanguageServer(shared);
 
 // Send a notification with the serialized AST after every document change
-type DocumentChange = { uri: string, content: string };
+type DocumentChange = { uri: string, content: string, diagnostics: Diagnostic[] };
 const documentChangeNotification = new NotificationType<DocumentChange>('browser/DocumentChange');
 const jsonSerializer = domainmodel.serializer.JsonSerializer;
 shared.workspace.DocumentBuilder.onBuildPhase(DocumentState.Validated, documents => {
@@ -29,7 +29,8 @@ shared.workspace.DocumentBuilder.onBuildPhase(DocumentState.Validated, documents
         const json = jsonSerializer.serialize(document.parseResult.value);
         connection.sendNotification(documentChangeNotification, {
             uri: document.uri.toString(),
-            content: json
+            content: json,
+            diagnostics: document.diagnostics ?? []
         });
     }
 });
