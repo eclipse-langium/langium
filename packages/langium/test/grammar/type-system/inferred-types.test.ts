@@ -806,12 +806,12 @@ describe('expression rules with inferred and declared interfaces', () => {
                 member: Reference<Symbol>
                 receiver: PrimaryExpression
             }
+            export interface Symbol extends AstNode {
+                readonly $type: 'Symbol';
+            }
             export interface SuperMemberAccess extends MemberAccess {
                 readonly $container: MemberAccess;
                 readonly $type: 'SuperMemberAccess';
-            }
-            export interface Symbol extends AstNode {
-                readonly $type: 'Symbol';
             }
         `);
 
