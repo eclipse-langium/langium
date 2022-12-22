@@ -7,9 +7,8 @@
 import { Grammar } from '../generated/ast';
 import { LangiumDocuments } from '../../workspace/documents';
 import { addSubTypes, sortInterfacesTopologically } from './types-util';
-import { AstTypes, InterfaceType, isInterfaceType, isUnionType, TypeOption, UnionType } from './type-collector/types';
+import { AstTypes, InterfaceType, isInterfaceType, TypeOption, UnionType } from './type-collector/types';
 import { collectTypeResources } from './type-collector/all-types';
-import { isPrimitiveType } from '../internal-grammar-util';
 
 /**
  * Collects all types for the generated AST. The types collector entry point.
@@ -35,7 +34,11 @@ function mergeAndRemoveDuplicates<T extends { name: string }>(inferred: T[], dec
 }
 
 export function specifyAstNodeProperties(astTypes: AstTypes) {
-    const nameToType = filterInterfaceLikeTypes(astTypes);
+    const nameToType = (astTypes.interfaces as TypeOption[]).concat(astTypes.unions)
+        .reduce((acc, type) => { acc.set(type.name, type);  return acc; },
+            new Map<string, TypeOption>()
+        );
+
     addSubTypes(nameToType);
     buildContainerTypes(nameToType);
     buildTypeTypes(nameToType);
@@ -58,47 +61,8 @@ function buildTypeTypes(nameToType: Map<string, TypeOption>) {
 }
 
 /**
- * Removes union types that reference only to primitive types or
- * types that reference only to primitive types.
- */
-function filterInterfaceLikeTypes({ interfaces, unions }: AstTypes): Map<string, TypeOption> {
-    const nameToType = (interfaces as TypeOption[]).concat(unions)
-        .reduce((acc, e) => { acc.set(e.name, e); return acc; }, new Map<string, TypeOption>());
-
-    const cache = new Map<UnionType, boolean>();
-    function isDataTypeUnion(union: UnionType, visited = new Set<UnionType>()): boolean {
-        if (cache.has(union)) return cache.get(union)!;
-        if (visited.has(union)) return true;
-        visited.add(union);
-
-        const ruleCalls = union.alternatives.flatMap(e => e.types).filter(e => !isPrimitiveType(e));
-        if (ruleCalls.length === 0) {
-            return true;
-        }
-        for (const ruleCall of ruleCalls) {
-            const type = nameToType.get(ruleCall);
-            if (type && (isInterfaceType(type) || isUnionType(type) && !isDataTypeUnion(type, visited))) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    for (const union of unions) {
-        const isDataType = isDataTypeUnion(union);
-        cache.set(union, isDataType);
-    }
-    for (const [union, isDataType] of cache) {
-        if (isDataType) {
-            nameToType.delete(union.name);
-        }
-    }
-    return nameToType;
-}
-
-/**
  * Builds container types for given interfaces.
- * @param interfaces The interfaces that have to get container types.
+ * @param nameToType Map name of a type to its representation.
  */
 function buildContainerTypes(nameToType: Map<string, TypeOption>) {
     const types = Array.from(nameToType.values());
