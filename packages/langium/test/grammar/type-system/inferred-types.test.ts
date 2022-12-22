@@ -753,18 +753,15 @@ describe('expression rules with inferred and declared interfaces', () => {
         const inferredInterfacesString = inferred.interfaces.map(toSubstring).join('\n').trim();
         expect(inferredInterfacesString).toBe(expandToString`
             export interface BooleanLiteral extends AstNode {
-                readonly $container: MemberAccess | SuperMemberAccess;
                 readonly $type: 'BooleanLiteral';
                 value: boolean
             }
             export interface MemberAccess extends AstNode {
-                readonly $container: MemberAccess | SuperMemberAccess;
                 readonly $type: 'MemberAccess';
                 member: Reference<Symbol>
                 receiver: PrimaryExpression
             }
             export interface SuperMemberAccess extends AstNode {
-                readonly $container: MemberAccess | SuperMemberAccess;
                 readonly $type: 'SuperMemberAccess';
                 member: Reference<Symbol>
                 receiver: PrimaryExpression
@@ -796,12 +793,10 @@ describe('expression rules with inferred and declared interfaces', () => {
         const allInterfacesString = allTypes.interfaces.map(toSubstring).join('\n').trim();
         expect(allInterfacesString).toBe(expandToString`
             export interface BooleanLiteral extends AstNode {
-                readonly $container: MemberAccess;
                 readonly $type: 'BooleanLiteral';
                 value: boolean
             }
             export interface MemberAccess extends AstNode {
-                readonly $container: MemberAccess;
                 readonly $type: 'MemberAccess' | 'SuperMemberAccess';
                 member: Reference<Symbol>
                 receiver: PrimaryExpression
@@ -810,7 +805,6 @@ describe('expression rules with inferred and declared interfaces', () => {
                 readonly $type: 'Symbol';
             }
             export interface SuperMemberAccess extends MemberAccess {
-                readonly $container: MemberAccess;
                 readonly $type: 'SuperMemberAccess';
             }
         `);
@@ -888,7 +882,6 @@ describe('types of `$container` and `$type` are correct', () => {
         const interfacesString = sortInterfacesTopologically(interfaces).map(toSubstring).join('\n').trim();
         expect(interfacesString).toBe(expandToString`
             export interface C extends AstNode {
-                readonly $container: D | E;
                 readonly $type: 'C';
                 strC: string
             }

@@ -7,7 +7,7 @@
 import { Grammar } from '../generated/ast';
 import { LangiumDocuments } from '../../workspace/documents';
 import { addSubTypes, sortInterfacesTopologically } from './types-util';
-import { AstTypes, InterfaceType, isInterfaceType, TypeOption, UnionType } from './type-collector/types';
+import { AstTypes, InterfaceType, TypeOption, UnionType } from './type-collector/types';
 import { collectTypeResources } from './type-collector/all-types';
 
 /**
@@ -40,10 +40,14 @@ export function specifyAstNodeProperties(astTypes: AstTypes) {
         );
 
     addSubTypes(nameToType);
-    buildContainerTypes(nameToType);
+    buildContainerTypes(astTypes.interfaces);
     buildTypeTypes(nameToType);
 }
 
+/**
+ * Builds types of `$type` property.
+ * @param nameToType Map name of a type to its representation.
+ */
 function buildTypeTypes(nameToType: Map<string, TypeOption>) {
     const queue = Array.from(nameToType.values()).filter(e => e.subTypes.size === 0);
     const visited = new Set<TypeOption>();
@@ -61,23 +65,26 @@ function buildTypeTypes(nameToType: Map<string, TypeOption>) {
 }
 
 /**
- * Builds container types for given interfaces.
- * @param nameToType Map name of a type to its representation.
+ * Builds types of `$container` property.
+ * @param interfaces Interfaces for which container types are calculated.
  */
-function buildContainerTypes(nameToType: Map<string, TypeOption>) {
-    const types = Array.from(nameToType.values());
+function buildContainerTypes(interfaces: InterfaceType[]) {
+    const nameToInterface = interfaces
+        .reduce((acc, type) => { acc.set(type.name, type);  return acc; },
+            new Map<string, InterfaceType>()
+        );
 
     // 1st stage: collect container types
-    const interfaces = types.filter(e => isInterfaceType(e)) as InterfaceType[];
     for (const interfaceType of interfaces) {
-        const refTypes = interfaceType.properties.flatMap(property => property.typeAlternatives.filter(e => !e.reference).flatMap(e => e.types));
+        const refTypes = interfaceType.properties
+            .flatMap(property => property.typeAlternatives.filter(e => !e.reference).flatMap(e => e.types));
         for (const refType of refTypes) {
-            nameToType.get(refType)?.containerTypes.add(interfaceType.name);
+            nameToInterface.get(refType)?.containerTypes.add(interfaceType.name);
         }
     }
 
     // 2nd stage: share container types
-    const connectedComponents = calculateConnectedComponents(types);
+    const connectedComponents = calculateConnectedComponents(interfaces);
     shareContainerTypes(connectedComponents);
 }
 
