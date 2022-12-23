@@ -1,5 +1,10 @@
 # Change Log of `langium`
 
+## v1.0.1 (Dec. 2022)
+
+ * Add type validation with respect to the hierarchy ([#840](https://github.com/langium/langium/pull/840))
+ * Correctly sort types topologically ([#850](https://github.com/langium/langium/pull/850))
+
 ## v1.0.0 (Dec. 2022) 🎉
 
 ### ALL(*) Lookahead Algorithm
