@@ -6,6 +6,7 @@
 
 import { CancellationToken } from 'vscode-languageserver';
 import { URI } from 'vscode-uri';
+import { NameProvider } from '../references/name-provider';
 import { LangiumServices } from '../services';
 import { AstNode, AstNodeDescription, isLinkingError, ReferenceInfo } from '../syntax-tree';
 import { getDocument, streamAst, streamReferences } from '../utils/ast-util';
@@ -37,15 +38,20 @@ export interface AstNodeDescriptionProvider {
 export class DefaultAstNodeDescriptionProvider implements AstNodeDescriptionProvider {
 
     protected readonly astNodeLocator: AstNodeLocator;
+    protected readonly nameProvider: NameProvider;
 
     constructor(services: LangiumServices) {
         this.astNodeLocator = services.workspace.AstNodeLocator;
+        this.nameProvider = services.references.NameProvider;
     }
 
     createDescription(node: AstNode, name: string, document: LangiumDocument = getDocument(node)): AstNodeDescription {
+        const nameNode = this.nameProvider.getNameNode(node) ?? node.$cstNode;
         return {
             node,
             name,
+            segment: nameNode && toDocumentSegment(nameNode),
+            selectionSegment: node.$cstNode && toDocumentSegment(node.$cstNode),
             type: node.$type,
             documentUri: document.uri,
             path: this.astNodeLocator.getAstNodePath(node)

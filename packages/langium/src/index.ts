@@ -31,6 +31,7 @@ export * from './utils/ast-util';
 export * from './utils/collections';
 export * from './utils/cst-util';
 export * from './utils/grammar-util';
+export * from './utils/jsdoc-util';
 export * from './utils/promise-util';
 export * from './utils/uri-util';
 export * from './utils/regex-util';
