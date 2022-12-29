@@ -4,8 +4,8 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { CompositeGeneratorNode, EOL, Generated, GeneratorNode, isGeneratorNode, isNewLineNode, NewLineNode } from './generator-node';
-import { findIndentation } from './template-string';
+import { CompositeGeneratorNode, Generated, GeneratorNode, isGeneratorNode, isNewLineNode, NewLineNode } from './generator-node';
+import { findIndentation, NEWLINE_REGEXP } from './template-string';
 
 const NEWLINE = Object.freeze(new NewLineNode());
 const UNDEFINED_SEGMENT = Object.freeze(new CompositeGeneratorNode());
@@ -76,7 +76,7 @@ type TemplateProps = {
 }
 
 function findIndentationAndTemplateStructure(staticParts: TemplateStringsArray): TemplateProps {
-    const lines = staticParts.join('_').split(EOL);
+    const lines = staticParts.join('_').split(NEWLINE_REGEXP);
     const omitFirstLine = lines.length > 1 && lines[0].trim().length === 0;
     const omitLastLine = omitFirstLine && lines.length > 1 && lines[lines.length - 1].trim().length === 0;
 
@@ -138,7 +138,7 @@ function splitTemplateLinesAndMergeWithSubstitions(
     staticParts.forEach((part, i) => {
         splitAndMerged.push(
             ...part.split(
-                EOL
+                NEWLINE_REGEXP
             ).map((e, j) => j === 0 || e.length < indentation ? e : e.substring(indentation)
             ).reduce<Generated[]>(
                 // treat the particular (potentially multiple) lines of the <i>th template segment (part),

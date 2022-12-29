@@ -18,11 +18,14 @@ export function expandToStringWithNL(staticParts: TemplateStringsArray, ...subst
  * @returns an aligned string that consists of the given parts
  */
 export function expandToString(staticParts: TemplateStringsArray, ...substitutions: unknown[]): string {
-    let lines = substitutions                        // align substitutions and fuse them with static parts
+    let lines = substitutions
+        // align substitutions and fuse them with static parts
         .reduce((acc: string, subst: unknown, i: number) => acc + (subst === undefined ? SNLE : align(toString(subst), acc)) + (staticParts[i + 1] ?? ''), staticParts[0])
-        .split(EOL)                                  // converts text to lines
+        // converts text to lines
+        .split(NEWLINE_REGEXP)
         .filter(l => l.trim() !== SNLE)
-        .map(l => l.replace(SNLE, '').trimRight());  // whitespace-only lines are empty (preserving leading whitespace)
+        // whitespace-only lines are empty (preserving leading whitespace)
+        .map(l => l.replace(SNLE, '').trimRight());
 
     // in order to nicely handle single line templates with the leading and trailing termintators (``) on separate lines, like
     //   expandToString`foo
@@ -44,21 +47,24 @@ export function expandToString(staticParts: TemplateStringsArray, ...substitutio
     const containsTrailingLinebreak = lines.length !== 0 && lines[lines.length-1].trimRight().length === 0;
     lines = containsTrailingLinebreak ? lines.slice(0, lines.length-1) : lines;
 
-    const indent = findIndentation(lines);           // finds the minimum indentation
+    // finds the minimum indentation
+    const indent = findIndentation(lines);
     return lines
-        .map(line => line.slice(indent).trimRight()) // shifts lines to the left
-        .join('\n');                                 // convert lines to string
+        // shifts lines to the left
+        .map(line => line.slice(indent).trimRight())
+        // convert lines to string
+        .join(EOL);
 }
 
 export const SNLE = Object.freeze('__«SKIP^NEW^LINE^IF^EMPTY»__');
-const newline = new RegExp(EOL, 'g');
+export const NEWLINE_REGEXP = /\r?\n/g;
 const nonWhitespace = /\S|$/;
 
 // add the alignment of the previous static part to all lines of the following substitution
 function align(subst: string, acc: string): string {
     const length = Math.max(0, acc.length - acc.lastIndexOf('\n') - 1);
     const indent = ' '.repeat(length);
-    return subst.replace(newline, EOL + indent);
+    return subst.replace(NEWLINE_REGEXP, EOL + indent);
 }
 
 // finds the indentation of a text block represented by a sequence of lines
@@ -66,4 +72,8 @@ export function findIndentation(lines: string[]): number {
     const indents = lines.filter(line => line.length > 0).map(line => line.search(nonWhitespace));
     const min = indents.length === 0 ? 0 : Math.min(...indents); // min(...[]) = min() = Infinity
     return Math.max(0, min);
+}
+
+export function normalizeEOL(input: string): string {
+    return input.replace(NEWLINE_REGEXP, EOL);
 }

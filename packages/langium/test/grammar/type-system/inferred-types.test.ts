@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { createLangiumGrammarServices, Grammar, EmptyFileSystem, expandToString } from '../../../src';
+import { createLangiumGrammarServices, Grammar, EmptyFileSystem, expandToString, EOL } from '../../../src';
 import { isParserRule } from '../../../src/grammar/generated/ast';
 import { isDataTypeRule } from '../../../src/grammar/internal-grammar-util';
 import { collectAst, specifyAstNodeProperties } from '../../../src/grammar/type-system/ast-collector';
@@ -750,7 +750,7 @@ describe('expression rules with inferred and declared interfaces', () => {
         sortInterfacesTopologically(inferred.interfaces);
         specifyAstNodeProperties(inferred);
 
-        const inferredInterfacesString = inferred.interfaces.map(toSubstring).join('\n').trim();
+        const inferredInterfacesString = inferred.interfaces.map(toSubstring).join(EOL).trim();
         expect(inferredInterfacesString).toBe(expandToString`
             export interface BooleanLiteral extends AstNode {
                 readonly $container: MemberAccess | SuperMemberAccess;
@@ -776,7 +776,7 @@ describe('expression rules with inferred and declared interfaces', () => {
         sortInterfacesTopologically(declared.interfaces);
         specifyAstNodeProperties(declared);
 
-        expect(declared.interfaces.map(toSubstring).join('\n').trim()).toBe(expandToString`
+        expect(declared.interfaces.map(toSubstring).join(EOL).trim()).toBe(expandToString`
             export interface SuperMemberAccess extends MemberAccess {
                 readonly $type: 'SuperMemberAccess';
             }
@@ -788,12 +788,12 @@ describe('expression rules with inferred and declared interfaces', () => {
         // check ast.ts types
         const allTypes = collectAst(grammar);
 
-        expect(allTypes.unions.map(toSubstring).join('\n').trim()).toBe(expandToString`
+        expect(allTypes.unions.map(toSubstring).join(EOL).trim()).toBe(expandToString`
             export type Expression = MemberAccess | PrimaryExpression | SuperMemberAccess;
             export type PrimaryExpression = BooleanLiteral;
         `);
 
-        const allInterfacesString = allTypes.interfaces.map(toSubstring).join('\n').trim();
+        const allInterfacesString = allTypes.interfaces.map(toSubstring).join(EOL).trim();
         expect(allInterfacesString).toBe(expandToString`
             export interface BooleanLiteral extends AstNode {
                 readonly $container: MemberAccess;
@@ -836,10 +836,10 @@ describe('types of `$container` and `$type` are correct', () => {
         `);
         const { unions, interfaces } = collectAst(document.parseResult.value);
 
-        const unionsString = unions.map(toSubstring).join('\n').trim();
+        const unionsString = unions.map(toSubstring).join(EOL).trim();
         expect(unionsString).toBe(expandToString``);
 
-        const interfacesString = sortInterfacesTopologically(interfaces).map(toSubstring).join('\n').trim();
+        const interfacesString = sortInterfacesTopologically(interfaces).map(toSubstring).join(EOL).trim();
         expect(interfacesString).toBe(expandToString`
             export interface A extends AstNode {
                 readonly $container: D | E;
@@ -879,13 +879,13 @@ describe('types of `$container` and `$type` are correct', () => {
         `);
         const { unions, interfaces } = collectAst(document.parseResult.value);
 
-        const unionsString = unions.map(toSubstring).join('\n').trim();
+        const unionsString = unions.map(toSubstring).join(EOL).trim();
         expect(unionsString).toBe(expandToString`
             export type A = C;
             export type B = C;
         `);
 
-        const interfacesString = sortInterfacesTopologically(interfaces).map(toSubstring).join('\n').trim();
+        const interfacesString = sortInterfacesTopologically(interfaces).map(toSubstring).join(EOL).trim();
         expect(interfacesString).toBe(expandToString`
             export interface C extends AstNode {
                 readonly $container: D | E;
@@ -916,10 +916,10 @@ describe('types of `$container` and `$type` are correct', () => {
         `);
         const { unions, interfaces } = collectAst(document.parseResult.value);
 
-        const unionsString = unions.map(toSubstring).join('\n').trim();
+        const unionsString = unions.map(toSubstring).join(EOL).trim();
         expect(unionsString).toBe(expandToString``);
 
-        const interfacesString = sortInterfacesTopologically(interfaces).map(toSubstring).join('\n').trim();
+        const interfacesString = interfaces.map(toSubstring).join(EOL).trim();
         expect(interfacesString).toBe(expandToString`
             export interface A extends AstNode {
                 readonly $container: D | E;
@@ -971,11 +971,11 @@ describe('generated types from declared types include all of them', () => {
         `);
         const typesWithDeclared = collectAst(documentWithDeclaredTypes.parseResult.value);
 
-        expect(typesWithDeclared.unions.map(toSubstring).join('\n').trim())
-            .toBe(types.unions.map(toSubstring).join('\n').trim());
+        expect(typesWithDeclared.unions.map(toSubstring).join(EOL).trim())
+            .toBe(types.unions.map(toSubstring).join(EOL).trim());
 
-        expect(typesWithDeclared.interfaces.map(toSubstring).join('\n').trim())
-            .toBe(types.interfaces.map(toSubstring).join('\n').trim());
+        expect(typesWithDeclared.interfaces.map(toSubstring).join(EOL).trim())
+            .toBe(types.interfaces.map(toSubstring).join(EOL).trim());
     });
 
 });
@@ -1036,7 +1036,7 @@ function expectUnion(unionType: UnionType, types: PropertyType[]): void {
 const toSubstring = (o: { toAstTypesString: () => string }) => {
     // this specialized 'toString' function uses the default 'toString' that is  producing the
     //  code generation output, and strips everything not belonging to the actual interface/type declaration
-    const sRep = o.toAstTypesString().replace(/\r/g, '');
+    const sRep = o.toAstTypesString();
     return sRep.substring(
         0, 1 + (sRep.includes('interface') ? sRep.indexOf('}') : Math.min(sRep.indexOf(';') ))
     );
