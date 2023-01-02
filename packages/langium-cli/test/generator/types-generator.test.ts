@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { createLangiumGrammarServices, EmptyFileSystem, Grammar } from 'langium';
+import { createLangiumGrammarServices, EmptyFileSystem, Grammar, normalizeEOL } from 'langium';
 import { parseHelper } from 'langium/test';
 import { generateTypesFile } from '../../src/generator/types-generator';
 
@@ -16,14 +16,14 @@ describe('Types generator', () => {
         const result = (await parseHelper<Grammar>(grammar)(TEST_GRAMMAR)).parseResult;
         // on Windows system the line ending of result is "\r\n"
         // Therefore typesFileContent is normalized to prevent false negatives
-        const typesFileContent = generateTypesFile(grammar, [result.value]).replace(/\r/g, '');
+        const typesFileContent = generateTypesFile(grammar, [result.value]);
         expect(typesFileContent).toMatch(EXPECTED_TYPES);
     });
 
 });
 
 const EXPECTED_TYPES =
-    `type AbstractDefinition = DeclaredParameter | Definition;
+normalizeEOL(`type AbstractDefinition = DeclaredParameter | Definition;
 
 type Expression = BinaryExpression | FunctionCall | NumberLiteral;
 
@@ -63,7 +63,7 @@ interface NumberLiteral {
     value: number
 }
 
-`;
+`);
 
 const TEST_GRAMMAR =
     `

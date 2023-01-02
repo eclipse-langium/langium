@@ -3,6 +3,7 @@
  * This program and the accompanying materials are made available under the
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
+import { normalizeEOL } from 'langium';
 import path from 'path';
 import { createHelpers } from 'yeoman-test';
 
@@ -30,7 +31,7 @@ describe('Check yeoman generator works', () => {
 });
 
 const PACKAGE_JSON_EXPECTATION =
-    `{
+normalizeEOL(`{
     "name": "hello-world",
     "displayName": "hello-world",
     "description": "Please enter a brief description here",
@@ -92,4 +93,4 @@ const PACKAGE_JSON_EXPECTATION =
         "langium-cli": "~1.0.0",
         "typescript": "^4.9.4"
     }
-}`;
+}`);

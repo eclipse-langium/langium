@@ -4,8 +4,8 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { EmptyFileSystem, Generated, toString } from 'langium';
-import { parseHelper } from "langium/lib/test";
+import { EmptyFileSystem, Generated, normalizeEOL, toString } from 'langium';
+import { parseHelper } from 'langium/test';
 import { generateCppContent } from '../src/cli/generator';
 import { Statemachine } from '../src/language-server/generated/ast';
 import { createStatemachineServices } from '../src/language-server/statemachine-module';
@@ -56,10 +56,10 @@ const input = `
         switchCapacity => PowerOff
         next => YellowLight
     end
-`
+`;
 
-const expectedOutput = 
-`#include <iostream>
+const expectedOutput =
+normalizeEOL(`#include <iostream>
 #include <map>
 #include <string>
 
@@ -211,4 +211,4 @@ int main() {
     delete statemachine;
     return 0;
 }
-`;
+`);
