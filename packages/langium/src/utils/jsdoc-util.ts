@@ -6,6 +6,7 @@
 
 import { Position, Range } from 'vscode-languageserver';
 import { URI } from 'vscode-uri';
+import { NEWLINE_REGEXP } from '../generator/template-string';
 import { LeafCstNode } from '../syntax-tree';
 import { escapeRegExp } from './regex-util';
 
@@ -105,15 +106,14 @@ function getLines(node: LeafCstNode | string): string[] {
     } else {
         content = node.text;
     }
-    const normalized = content.replace(/\r/g, '');
-    const lines = normalized.split('\n');
+    const lines = content.split(NEWLINE_REGEXP);
     return lines;
 }
 
 // TOKENIZATION
 
 interface JSDocToken {
-    type: 'text' | 'tag' | 'break'
+    type: 'text' | 'tag' | 'inline-tag' | 'break'
     content: string
     range: Range
 }
@@ -150,6 +150,7 @@ function tokenize(context: TokenizationContext): JSDocToken[] {
         }
 
         index = skipWhitespace(line, index);
+        line = line.substring(0, lastCharacter(line));
 
         if (index >= line.length) {
             // Only create a break token when we already have previous tokens
@@ -225,7 +226,7 @@ function buildInlineTokens(tags: RegExpMatchArray[], line: string, lineIndex: nu
             let offset = startContent.length + 1;
             const tagName = match[1];
             tokens.push({
-                type: 'tag',
+                type: 'inline-tag',
                 content: tagName,
                 range: Range.create(
                     Position.create(lineIndex, lastIndex + offset + characterIndex),
@@ -263,7 +264,7 @@ function buildInlineTokens(tags: RegExpMatchArray[], line: string, lineIndex: nu
                 content: endContent,
                 range: Range.create(
                     Position.create(lineIndex, lastIndex + characterIndex),
-                    Position.create(lineIndex, line.length + characterIndex)
+                    Position.create(lineIndex, lastIndex + characterIndex + endContent.length)
                 )
             });
         }
@@ -272,15 +273,24 @@ function buildInlineTokens(tags: RegExpMatchArray[], line: string, lineIndex: nu
     return tokens;
 }
 
-const whitespaceRegex = /\S/;
+const nonWhitespaceRegex = /\S/;
+const whitespaceEndRegex = /\s*$/;
 
 function skipWhitespace(line: string, index: number): number {
-    const match = line.substring(index).match(whitespaceRegex);
+    const match = line.substring(index).match(nonWhitespaceRegex);
     if (match) {
         return index + match.index!;
     } else {
         return line.length;
     }
+}
+
+function lastCharacter(line: string): number | undefined {
+    const match = line.match(whitespaceEndRegex);
+    if (match && typeof match.index === 'number') {
+        return match.index;
+    }
+    return undefined;
 }
 
 // PARSING
@@ -304,7 +314,7 @@ function parseJSDocElement(context: ParseContext, last?: JSDocElement): JSDocEle
     const next = context.tokens[context.index];
     if (next.type === 'tag') {
         return parseJSDocTag(context, false);
-    } else if (next.type === 'text') {
+    } else if (next.type === 'text' || next.type === 'inline-tag') {
         return parseJSDocText(context);
     } else {
         appendEmptyLine(next, last);
@@ -329,7 +339,7 @@ function parseJSDocText(context: ParseContext): JSDocParagraph {
     const firstToken = token;
     let lastToken = token;
     const lines: JSDocInline[] = [];
-    while (token && token.type !== 'break') {
+    while (token && token.type !== 'break' && token.type !== 'tag') {
         lines.push(parseJSDocInline(context));
         lastToken = token;
         token = context.tokens[context.index];
@@ -339,7 +349,7 @@ function parseJSDocText(context: ParseContext): JSDocParagraph {
 
 function parseJSDocInline(context: ParseContext): JSDocInline {
     const token = context.tokens[context.index];
-    if (token.type === 'tag') {
+    if (token.type === 'inline-tag') {
         return parseJSDocTag(context, true);
     } else {
         return parseJSDocLine(context);
@@ -419,7 +429,7 @@ function normalizeOption(option: RegExp | string | undefined, start: boolean): R
         if (start) {
             return new RegExp(`^\\s*${escaped}`);
         } else {
-            return new RegExp(`${escaped}\\s*$`);
+            return new RegExp(`\\s*${escaped}\\s*$`);
         }
     } else {
         return option;
@@ -455,7 +465,8 @@ class JSDocCommentImpl implements JSDocComment {
             if (value.length === 0) {
                 value = element.toMarkdown(options);
             } else {
-                const newLines = '\n\n';
+                const text = element.toMarkdown(options);
+                const newLines = text.endsWith('\n') ? '' : '\n\n';
                 value += newLines + element.toMarkdown(options);
             }
         }
