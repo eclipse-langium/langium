@@ -4,6 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import { Range } from 'vscode-languageserver';
 import { JSDocLine, JSDocParagraph, JSDocTag, parseJSDoc } from '../../src';
 
 describe('JSDoc parsing', () => {
@@ -11,7 +12,7 @@ describe('JSDoc parsing', () => {
     describe('Comment start and end symbols', () => {
 
         test('Correctly deals with the default JSDoc symbols', () => {
-            const defaultText = '/** A \n * B */';
+            const defaultText = '/** A \n * B \n */';
             const parsed = parseJSDoc(defaultText);
             expect(parsed.toString()).toBe('A\nB');
         });
@@ -37,36 +38,45 @@ describe('JSDoc parsing', () => {
         test('Can parse multiline text', () => {
             const parsed = parseJSDoc('/** A \n   *   B  \n*C \n\n D*/');
             expect(parsed.elements).toHaveLength(2);
+            expectRange(parsed.range, { start: { line: 0, character: 4 }, end: { line: 4, character: 2 } });
             const text = parsed.elements[0] as JSDocParagraph;
+            expectRange(text.range, { start: { line: 0, character: 4 }, end: { line: 2, character: 2 } });
+            expect(text).toHaveProperty('inlines');
             expect(text.inlines).toHaveLength(4);
-            const lines = text.inlines as JSDocLine[];
-            expect(lines[0].text).toBe('A');
-            expect(lines[1].text).toBe('B');
-            expect(lines[2].text).toBe('C');
-            expect(lines[3].text).toBe('');
+            const lines = text.inlines;
+            expect(lines[0]).toHaveProperty('text', 'A');
+            expectRange(lines[0].range, { start: { line: 0, character: 4 }, end: { line: 0, character: 5 } });
+            expect(lines[1]).toHaveProperty('text', 'B');
+            expectRange(lines[1].range, { start: { line: 1, character: 7 }, end: { line: 1, character: 8 } });
+            expect(lines[2]).toHaveProperty('text', 'C');
+            expectRange(lines[2].range, { start: { line: 2, character: 1 }, end: { line: 2, character: 2 } });
+            expect(lines[3]).toHaveProperty('text', '');
+            expectRange(lines[3].range, { start: { line: 3, character: 0 }, end: { line: 3, character: 0 } });
             const d = parsed.elements[1] as JSDocParagraph;
-            const dLines = d.inlines as JSDocLine[];
+            expectRange(d.range, { start: { line: 4, character: 1 }, end: { line: 4, character: 2 } });
+            expect(d).toHaveProperty('inlines');
+            const dLines = d.inlines;
             expect(dLines).toHaveLength(1);
-            expect(dLines[0].text).toBe('D');
+            expect(dLines[0]).toHaveProperty('text', 'D');
         });
 
         test('Can parse multiline text with tags', () => {
             const parsed = parseJSDoc('/** A \n   *  @B  \n* @C D \n*/');
             expect(parsed.elements).toHaveLength(3);
             const text = parsed.elements[0] as JSDocParagraph;
+            expect(text).toHaveProperty('inlines');
             expect(text.inlines).toHaveLength(1);
-            const lines = text.inlines as [JSDocLine];
-            expect(lines[0].text).toBe('A');
+            expect(text.inlines[0]).toHaveProperty('text', 'A');
             const bTag = parsed.elements[1] as JSDocTag;
-            expect(bTag.name).toBe('B');
-            expect(bTag.inline).toBeFalsy();
+            expect(bTag).toHaveProperty('name', 'B');
+            expect(bTag).toHaveProperty('inline', false);
             expect(bTag.content.inlines).toHaveLength(0);
             const cTag = parsed.elements[2] as JSDocTag;
-            expect(cTag.name).toBe('C');
-            expect(cTag.inline).toBeFalsy();
+            expect(cTag).toHaveProperty('name', 'C');
+            expect(cTag).toHaveProperty('inline', false);
             expect(cTag.content.inlines).toHaveLength(1);
-            const cTagLine = cTag.content.inlines[0] as JSDocLine;
-            expect(cTagLine.text).toBe('D');
+            const cTagLine = cTag.content.inlines[0];
+            expect(cTagLine).toHaveProperty('text', 'D');
         });
 
         test('Can parse inline tags', () => {
@@ -75,14 +85,21 @@ describe('JSDoc parsing', () => {
             const text = parsed.elements[0] as JSDocParagraph;
             expect(text.inlines).toHaveLength(3);
             const lines = text.inlines as [JSDocLine, JSDocTag, JSDocLine];
-            expect(lines[0].text).toBe('A ');
-            expect(lines[1].inline).toBeTruthy();
-            expect(lines[1].name).toBe('link');
-            const bTagLine = lines[1].content.inlines[0] as JSDocLine;
-            expect(bTagLine.text).toBe('B');
-            expect(lines[2].text).toBe(' C');
+            expect(lines[0]).toHaveProperty('text', 'A ');
+            expect(lines[1]).toHaveProperty('name', 'link');
+            expect(lines[1]).toHaveProperty('inline', true);
+            const bTagLine = lines[1].content.inlines[0];
+            expect(bTagLine).toHaveProperty('text', 'B');
+            expect(lines[2]).toHaveProperty('text', ' C');
         });
     });
+
+    function expectRange(range: Range, expected: Range): void {
+        expect(range.start.line, 'Unexpected start line value').toBe(expected.start.line);
+        expect(range.start.character, 'Unexpected start character value').toBe(expected.start.character);
+        expect(range.end.line, 'Unexpected end line value').toBe(expected.end.line);
+        expect(range.end.character, 'Unexpected end character value').toBe(expected.end.character);
+    }
 
 });
 
@@ -125,18 +142,29 @@ describe('JSDoc rendering', () => {
     });
 
     test('Renders empty lines', () => {
-        const parsed = parseJSDoc('/** ```\nA\n\n``` */');
-        expect(parsed.toMarkdown()).toBe('```\nA\n\n```');
+        // This test ensures that newlines are rendered as they are in the input
+        const parsed = parseJSDoc('/** ```\nA\n\n\nB\nC\n\n``` */');
+        expect(parsed.toMarkdown()).toBe('```\nA\n\n\nB\nC\n\n```');
     });
 
-    test('Renders single line tags', () => {
+    test('Renders single-line tags in markdown', () => {
         const parsed = parseJSDoc('/** @deprecated Since 1.0 */');
         expect(parsed.toMarkdown()).toBe('*@deprecated* — Since 1.0');
     });
 
-    test('Renders multi line tags', () => {
+    test('Renders single-line tags in plain text', () => {
+        const parsed = parseJSDoc('/** @deprecated Since 1.0 */');
+        expect(parsed.toString()).toBe('@deprecated Since 1.0');
+    });
+
+    test('Renders multi-line tags in markdown', () => {
         const parsed = parseJSDoc('/** @deprecated Since\n1.0*/');
         expect(parsed.toMarkdown()).toBe('*@deprecated*\nSince\n1.0');
+    });
+
+    test('Renders multi-line tags in plain text', () => {
+        const parsed = parseJSDoc('/** @deprecated Since\n1.0*/');
+        expect(parsed.toString()).toBe('@deprecated\nSince\n1.0');
     });
 
 });

@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright 2022 TypeFox GmbH
+ * Copyright 2023 TypeFox GmbH
  * This program and the accompanying materials are made available under the
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
@@ -7,7 +7,7 @@
 import { Position, Range } from 'vscode-languageserver';
 import { URI } from 'vscode-uri';
 import { NEWLINE_REGEXP } from '../generator/template-string';
-import { LeafCstNode } from '../syntax-tree';
+import { CstNode } from '../syntax-tree';
 import { escapeRegExp } from './regex-util';
 
 export interface JSDocComment extends JSDocValue {
@@ -19,8 +19,20 @@ export type JSDocElement = JSDocParagraph | JSDocTag;
 export type JSDocInline = JSDocTag | JSDocLine;
 
 export interface JSDocValue {
+    /**
+     * Represents the range that this JSDoc element occupies.
+     * If the JSDoc was parsed from a `CstNode`, the range will represent the location in the source document.
+     */
     readonly range: Range
+    /**
+     * Renders this JSDoc element to a plain text representation.
+     */
     toString(): string
+    /**
+     * Renders this JSDoc element to a markdown representation.
+     *
+     * @param options Rendering options to customize the markdown result.
+     */
     toMarkdown(options?: JSDocRenderOptions): string
 }
 
@@ -39,22 +51,52 @@ export interface JSDocTag extends JSDocValue {
 }
 
 export interface JSDocParseOptions {
+    /**
+     * The start symbol of your comment format. Defaults to `/**`.
+     */
     readonly start?: RegExp | string
+    /**
+     * The symbol that start a line of your comment format. Defaults to `*`.
+     */
     readonly end?: RegExp | string
+    /**
+     * The end symbol of your comment format. Defaults to `*\/`.
+     */
     readonly line?: RegExp | string
 }
 
-/**
- * {@link JSDocRenderOptions}
- */
 export interface JSDocRenderOptions {
+    /**
+     * Determines the style for rendering tags. Defaults to `italic`.
+     */
+    tag?: 'plain' | 'italic' | 'bold' | 'bold-italic'
+    /**
+     * Determines the default for rendering `@link` tags. Defaults to `plain`.
+     */
     link?: 'code' | 'plain'
+    /**
+     * Custom link rendering function. Accepts a link target and a display value for the link.
+     * Return a markdown formatted link with the format `[$display]($link)` or `undefined` if the link is not a valid target.
+     */
     renderLink?(link: string, display: string): string | undefined
 }
 
-export function parseJSDoc(node: LeafCstNode, options?: JSDocParseOptions): JSDocComment;
+/**
+ * Parses a JSDoc from a `CstNode` containing a comment.
+ *
+ * @param node A `CstNode` from a parsed Langium document.
+ * @param options Parsing options specialized to your language. See {@link JSDocParseOptions}.
+ */
+export function parseJSDoc(node: CstNode, options?: JSDocParseOptions): JSDocComment;
+/**
+ * Parses a JSDoc from a string comment.
+ *
+ * @param content A string containing the source of the JSDoc comment.
+ * @param start The start position the comment occupies in the source document.
+ * @param options Parsing options specialized to your language. See {@link JSDocParseOptions}.
+ */
 export function parseJSDoc(content: string, start?: Position, options?: JSDocParseOptions): JSDocComment;
-export function parseJSDoc(node: LeafCstNode | string, start?: Position | JSDocParseOptions, options?: JSDocParseOptions): JSDocComment {
+export function parseJSDoc(node: CstNode | string, start?: Position | JSDocParseOptions, options?: JSDocParseOptions): JSDocComment {
     let opts: JSDocParseOptions | undefined;
     let position: Position | undefined;
     if (typeof node === 'string') {
@@ -84,7 +126,7 @@ export function parseJSDoc(node: LeafCstNode | string, start?: Position | JSDocP
     });
 }
 
-export function isJSDoc(node: LeafCstNode | string, options?: JSDocParseOptions): boolean {
+export function isJSDoc(node: CstNode | string, options?: JSDocParseOptions): boolean {
     const normalizedOptions = normalizeOptions(options);
     const lines = getLines(node);
     if (lines.length === 0) {
@@ -99,7 +141,7 @@ export function isJSDoc(node: LeafCstNode | string, options?: JSDocParseOptions)
     return Boolean(firstRegex?.exec(first)) && Boolean(lastRegex?.exec(last));
 }
 
-function getLines(node: LeafCstNode | string): string[] {
+function getLines(node: CstNode | string): string[] {
     let content = '';
     if (typeof node === 'string') {
         content = node;
@@ -110,7 +152,7 @@ function getLines(node: LeafCstNode | string): string[] {
     return lines;
 }
 
-// TOKENIZATION
+// Tokenization
 
 interface JSDocToken {
     type: 'text' | 'tag' | 'inline-tag' | 'break'
@@ -293,12 +335,12 @@ function lastCharacter(line: string): number | undefined {
     return undefined;
 }
 
-// PARSING
+// Parsing
 
 function parseJSDocComment(context: ParseContext): JSDocComment {
     const startPosition: Position = Position.create(context.position.line, context.position.character);
     if (context.tokens.length === 0) {
-        return new JSDocCommentImpl([], Range.create(context.position, context.position));
+        return new JSDocCommentImpl([], Range.create(startPosition, startPosition));
     }
     const elements: JSDocElement[] = [];
     while (context.index < context.tokens.length) {
@@ -307,7 +349,9 @@ function parseJSDocComment(context: ParseContext): JSDocComment {
             elements.push(element);
         }
     }
-    return new JSDocCommentImpl(elements, Range.create(startPosition, context.position));
+    const start = elements[0]?.range.start ?? startPosition;
+    const end = elements[elements.length - 1]?.range.end ?? startPosition;
+    return new JSDocCommentImpl(elements, Range.create(start, end));
 }
 
 function parseJSDocElement(context: ParseContext, last?: JSDocElement): JSDocElement | undefined {
@@ -424,8 +468,8 @@ function normalizeOptions(options?: JSDocParseOptions): NormalizedOptions {
 }
 
 function normalizeOption(option: RegExp | string | undefined, start: boolean): RegExp | undefined {
-    if (typeof option === 'string') {
-        const escaped = escapeRegExp(option);
+    if (typeof option === 'string' || typeof option === 'object') {
+        const escaped = typeof option === 'string' ? escapeRegExp(option) : option.source;
         if (start) {
             return new RegExp(`^\\s*${escaped}`);
         } else {
@@ -452,11 +496,11 @@ class JSDocCommentImpl implements JSDocComment {
             if (value.length === 0) {
                 value = element.toString();
             } else {
-                const newLines = 'inlines' in element ? '\n\n' : '\n';
-                value += newLines + element.toString();
+                const text = element.toString();
+                value += fillNewlines(value) + text;
             }
         }
-        return value;
+        return value.trim();
     }
 
     toMarkdown(options?: JSDocRenderOptions): string {
@@ -466,11 +510,10 @@ class JSDocCommentImpl implements JSDocComment {
                 value = element.toMarkdown(options);
             } else {
                 const text = element.toMarkdown(options);
-                const newLines = text.endsWith('\n') ? '' : '\n\n';
-                value += newLines + element.toMarkdown(options);
+                value += fillNewlines(value) + text;
             }
         }
-        return value;
+        return value.trim();
     }
 }
 
@@ -511,7 +554,15 @@ class JSDocTagImpl implements JSDocTag {
                 return rendered;
             }
         }
-        let text = `*@${this.name}*`;
+        let marker = '';
+        if (options?.tag === 'italic' || options?.tag === undefined) {
+            marker = '*';
+        } else if (options?.tag === 'bold') {
+            marker = '**';
+        } else if (options?.tag === 'bold-italic') {
+            marker = '***';
+        }
+        let text = `${marker}@${this.name}${marker}`;
         if (this.content.inlines.length === 1) {
             text = `${text} — ${content}`;
         } else if (this.content.inlines.length > 1) {
@@ -606,4 +657,12 @@ class JSDocLineImpl implements JSDocLine {
         return this.text;
     }
 
+}
+
+function fillNewlines(text: string): string {
+    if (text.endsWith('\n')) {
+        return '\n';
+    } else {
+        return '\n\n';
+    }
 }

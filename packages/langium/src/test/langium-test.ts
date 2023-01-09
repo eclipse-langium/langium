@@ -200,7 +200,7 @@ function referenceParams(document: LangiumDocument, offset: number, includeDecla
 }
 export interface ExpectedHover extends ExpectedBase {
     index: number
-    hover?: string
+    hover?: string | RegExp
 }
 
 export function expectHover(services: LangiumServices): (expectedHover: ExpectedHover) => Promise<void> {
@@ -210,7 +210,16 @@ export function expectHover(services: LangiumServices): (expectedHover: Expected
         const hoverProvider = services.lsp.HoverProvider;
         const hover = await hoverProvider?.getHoverContent(document, textDocumentPositionParams(document, indices[expectedHover.index]));
         const hoverContent = hover && MarkupContent.is(hover.contents) ? hover.contents.value : undefined;
-        expectedFunction(hoverContent, expectedHover.hover);
+        if (typeof expectedHover.hover !== 'object') {
+            expectedFunction(hoverContent, expectedHover.hover);
+        } else {
+            const value = hoverContent ?? '';
+            expectedFunction(
+                expectedHover.hover.test(value),
+                true,
+                `Hover '${value}' does not match regex /${expectedHover.hover.source}/${expectedHover.hover.flags}.`
+            );
+        }
     };
 }
 
