@@ -27,6 +27,10 @@ export function getEntryRule(grammar: ast.Grammar): ast.ParserRule | undefined {
     return grammar.rules.find(e => ast.isParserRule(e) && e.entry) as ast.ParserRule;
 }
 
+export function getHiddenRules(grammar: ast.Grammar): ast.TerminalRule[] {
+    return grammar.rules.filter(e => ast.isTerminalRule(e) && e.hidden) as ast.TerminalRule[];
+}
+
 /**
  * Returns all rules that can be reached from the entry point of the specified grammar.
  *
@@ -41,7 +45,12 @@ export function getAllReachableRules(grammar: ast.Grammar, allTerminals: boolean
     if (!entryRule) {
         return new Set(grammar.rules);
     }
-    ruleDfs(entryRule, ruleNames, allTerminals);
+
+    const topMostRules = [entryRule as ast.AbstractRule].concat(getHiddenRules(grammar)); //TODO Markus: naming entryRules? rootRules?
+    for (const rule of topMostRules) {
+        ruleDfs(rule, ruleNames, allTerminals);
+    }
+
     const rules = new Set<ast.AbstractRule>();
     for (const rule of grammar.rules) {
         if (ruleNames.has(rule.name) || (ast.isTerminalRule(rule) && rule.hidden)) {

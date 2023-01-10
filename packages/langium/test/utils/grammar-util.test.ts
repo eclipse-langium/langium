@@ -1,0 +1,36 @@
+/******************************************************************************
+ * Copyright 2022 TypeFox GmbH
+ * This program and the accompanying materials are made available under the
+ * terms of the MIT License, which is available in the project root.
+ ******************************************************************************/
+import { createLangiumGrammarServices, EmptyFileSystem, getAllReachableRules, Grammar } from '../../src';
+import { parseHelper } from '../../src/test';
+
+const services = createLangiumGrammarServices(EmptyFileSystem);
+const parse = parseHelper<Grammar>(services.grammar);
+
+describe('Grammar Utils', () => {
+
+    test('Terminal fragment rule should be reachable when only used by hidden terminal rule', async () => {
+        // the actual bug was that the 'Ws' rule marked as unused - so a 'Error: Missing rule reference!' was thrown
+        // arrange
+        const input = `
+            grammar HelloWorld
+
+            entry Model: Hello;
+
+            Hello: greeting='Hello!';
+
+            hidden terminal COMMON__WS: Ws+;
+            terminal fragment Ws: /[ \t\r\n\f]/;
+        `;
+        const output = await parse(input);
+
+        // act
+        const reachableRules = [...getAllReachableRules(output.parseResult.value, true)].map(r => r.name);
+
+        // assert
+        expect(reachableRules).toContain('Ws');
+    });
+
+});
