@@ -60,7 +60,7 @@ describe('Hover', () => {
         await hover({
             text,
             index: 2,
-            hover: /Hi I reference Rule \[`X`\]\(file:\/\/\/\w*\.langium#L14%2C2\)/
+            hover: /Hi I reference Rule \[`X`\]\(file:\/\/\/\w*\.langium#L14%2C3\)/
         });
     });
 });

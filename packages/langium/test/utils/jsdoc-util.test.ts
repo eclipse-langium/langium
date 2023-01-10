@@ -14,13 +14,13 @@ describe('JSDoc parsing', () => {
         test('Correctly deals with the default JSDoc symbols', () => {
             const defaultText = '/** A \n * B \n */';
             const parsed = parseJSDoc(defaultText);
-            expect(parsed.toString()).toBe('A\nB');
+            expect(parsed.toString()).toBe('A\n B');
         });
 
         test('Ignores missing symbols', () => {
             const defaultText = '/** A \n B */';
             const parsed = parseJSDoc(defaultText);
-            expect(parsed.toString()).toBe('A\nB');
+            expect(parsed.toString()).toBe('A\n B');
         });
 
         test('Can use XML comment symbols instead', () => {
@@ -29,7 +29,7 @@ describe('JSDoc parsing', () => {
                 start: '<!--',
                 end: '-->'
             });
-            expect(parsed.toString()).toBe('A\nB');
+            expect(parsed.toString()).toBe('A\n B');
         });
     });
 
@@ -38,26 +38,26 @@ describe('JSDoc parsing', () => {
         test('Can parse multiline text', () => {
             const parsed = parseJSDoc('/** A \n   *   B  \n*C \n\n D*/');
             expect(parsed.elements).toHaveLength(2);
-            expectRange(parsed.range, { start: { line: 0, character: 4 }, end: { line: 4, character: 2 } });
+            expectRange(parsed.range, { start: { line: 0, character: 3 }, end: { line: 4, character: 2 } });
             const text = parsed.elements[0] as JSDocParagraph;
-            expectRange(text.range, { start: { line: 0, character: 4 }, end: { line: 2, character: 2 } });
+            expectRange(text.range, { start: { line: 0, character: 3 }, end: { line: 2, character: 2 } });
             expect(text).toHaveProperty('inlines');
             expect(text.inlines).toHaveLength(4);
             const lines = text.inlines;
-            expect(lines[0]).toHaveProperty('text', 'A');
-            expectRange(lines[0].range, { start: { line: 0, character: 4 }, end: { line: 0, character: 5 } });
-            expect(lines[1]).toHaveProperty('text', 'B');
-            expectRange(lines[1].range, { start: { line: 1, character: 7 }, end: { line: 1, character: 8 } });
+            expect(lines[0]).toHaveProperty('text', ' A');
+            expectRange(lines[0].range, { start: { line: 0, character: 3 }, end: { line: 0, character: 5 } });
+            expect(lines[1]).toHaveProperty('text', '   B');
+            expectRange(lines[1].range, { start: { line: 1, character: 4 }, end: { line: 1, character: 8 } });
             expect(lines[2]).toHaveProperty('text', 'C');
             expectRange(lines[2].range, { start: { line: 2, character: 1 }, end: { line: 2, character: 2 } });
             expect(lines[3]).toHaveProperty('text', '');
             expectRange(lines[3].range, { start: { line: 3, character: 0 }, end: { line: 3, character: 0 } });
             const d = parsed.elements[1] as JSDocParagraph;
-            expectRange(d.range, { start: { line: 4, character: 1 }, end: { line: 4, character: 2 } });
+            expectRange(d.range, { start: { line: 4, character: 0 }, end: { line: 4, character: 2 } });
             expect(d).toHaveProperty('inlines');
             const dLines = d.inlines;
             expect(dLines).toHaveLength(1);
-            expect(dLines[0]).toHaveProperty('text', 'D');
+            expect(dLines[0]).toHaveProperty('text', ' D');
         });
 
         test('Can parse multiline text with tags', () => {
@@ -66,8 +66,9 @@ describe('JSDoc parsing', () => {
             const text = parsed.elements[0] as JSDocParagraph;
             expect(text).toHaveProperty('inlines');
             expect(text.inlines).toHaveLength(1);
-            expect(text.inlines[0]).toHaveProperty('text', 'A');
+            expect(text.inlines[0]).toHaveProperty('text', ' A');
             const bTag = parsed.elements[1] as JSDocTag;
+            expectRange(bTag.range, { start: { line: 1, character: 4 }, end: { line: 1, character: 8 } });
             expect(bTag).toHaveProperty('name', 'B');
             expect(bTag).toHaveProperty('inline', false);
             expect(bTag.content.inlines).toHaveLength(0);
@@ -85,7 +86,7 @@ describe('JSDoc parsing', () => {
             const text = parsed.elements[0] as JSDocParagraph;
             expect(text.inlines).toHaveLength(3);
             const lines = text.inlines as [JSDocLine, JSDocTag, JSDocLine];
-            expect(lines[0]).toHaveProperty('text', 'A ');
+            expect(lines[0]).toHaveProperty('text', ' A ');
             expect(lines[1]).toHaveProperty('name', 'link');
             expect(lines[1]).toHaveProperty('inline', true);
             const bTagLine = lines[1].content.inlines[0];

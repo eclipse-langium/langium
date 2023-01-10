@@ -160,7 +160,7 @@ interface JSDocToken {
     range: Range
 }
 
-const tagRegex = /@([\p{L}][\p{L}\p{N}]*)?/uy;
+const tagRegex = /\s*(@([\p{L}][\p{L}\p{N}]*)?)/uy;
 const inlineTagRegex = /\{(@[\p{L}][\p{L}\p{N}]*)(\s*)([^\r\n}]+)?\}/gu;
 
 function tokenize(context: TokenizationContext): JSDocToken[] {
@@ -191,10 +191,10 @@ function tokenize(context: TokenizationContext): JSDocToken[] {
             }
         }
 
-        index = skipWhitespace(line, index);
         line = line.substring(0, lastCharacter(line));
+        const whitespaceEnd = skipWhitespace(line, 0);
 
-        if (index >= line.length) {
+        if (whitespaceEnd >= line.length) {
             // Only create a break token when we already have previous tokens
             if (tokens.length > 0) {
                 const position = Position.create(currentLine, currentCharacter);
@@ -208,15 +208,16 @@ function tokenize(context: TokenizationContext): JSDocToken[] {
             tagRegex.lastIndex = index;
             const tagMatch = tagRegex.exec(line);
             if (tagMatch) {
-                const value = tagMatch[0];
+                const fullMatch = tagMatch[0];
+                const value = tagMatch[1];
                 const start = Position.create(currentLine, currentCharacter + index);
-                const end = Position.create(currentLine, currentCharacter + index + value.length);
+                const end = Position.create(currentLine, currentCharacter + index + fullMatch.length);
                 tokens.push({
                     type: 'tag',
                     content: value,
                     range: Range.create(start, end)
                 });
-                index += value.length;
+                index += fullMatch.length;
                 index = skipWhitespace(line, index);
             }
 

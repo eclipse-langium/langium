@@ -104,7 +104,7 @@ export class MultilineCommentHoverProvider extends AstNodeHoverProvider {
         const description = this.findNameInPrecomputedScopes(node, name) ?? this.findNameInGlobalScope(node, name);
         if (description && description.segment) {
             const line = description.segment.range.start.line + 1;
-            const character = description.segment.range.start.character;
+            const character = description.segment.range.start.character + 1;
             const uri = description.documentUri.with({ fragment: `L${line},${character}` });
             return `[${display}](${uri.toString()})`;
         } else {
