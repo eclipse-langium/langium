@@ -31,7 +31,7 @@ export function getEntryRule(grammar: ast.Grammar): ast.ParserRule | undefined {
  * Returns all hidden terminal rules of the given grammar, if any.
  */
 export function getHiddenRules(grammar: ast.Grammar) {
-    return grammar.rules.filter(e => ast.isTerminalRule(e) && e.hidden);
+    return grammar.rules.filter((e): e is ast.TerminalRule => ast.isTerminalRule(e) && e.hidden);
 }
 
 /**
