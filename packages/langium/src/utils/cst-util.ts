@@ -135,6 +135,9 @@ export function findLeafNodeAtOffset(node: CstNode, offset: number): LeafCstNode
                 return findLeafNodeAtOffset(n, offset);
             }
         }
+        if (firstChild === lastChild) {
+            return findLeafNodeAtOffset(node.children[firstChild], offset);
+        }
     }
     return undefined;
 }
