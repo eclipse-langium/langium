@@ -292,7 +292,7 @@ export class LangiumGrammarValidator {
                         node: rule.inferredType!,
                         property: 'name',
                         code: IssueCodes.InvalidInfers,
-                        data: infersNode && toDocumentSegment(infersNode)
+                        data: toDocumentSegment(infersNode)
                     });
                 }
             } else if (isDataType && isInfers) {
@@ -301,7 +301,7 @@ export class LangiumGrammarValidator {
                     node: rule,
                     property: 'inferredType',
                     code: IssueCodes.InvalidInfers,
-                    data: inferNode && toDocumentSegment(inferNode)
+                    data: toDocumentSegment(inferNode)
                 });
             }
         }
@@ -316,7 +316,7 @@ export class LangiumGrammarValidator {
                         node: action,
                         property: 'type',
                         code: isInfers ? IssueCodes.SuperfluousInfer : IssueCodes.MissingInfer,
-                        data: keywordNode && toDocumentSegment(keywordNode)
+                        data: toDocumentSegment(keywordNode)
                     });
                 } else if (actionType && types.has(typeName) && isInfers) {
                     // error: action infers type that is already defined

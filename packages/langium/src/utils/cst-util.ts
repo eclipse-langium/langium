@@ -59,7 +59,12 @@ export function tokenToRange(token: IToken): Range {
     };
 }
 
-export function toDocumentSegment(node: CstNode): DocumentSegment {
+export function toDocumentSegment(node: CstNode): DocumentSegment;
+export function toDocumentSegment(node?: CstNode): DocumentSegment | undefined;
+export function toDocumentSegment(node?: CstNode): DocumentSegment | undefined {
+    if (!node) {
+        return undefined;
+    }
     const { offset, end, range } = node;
     return {
         range,

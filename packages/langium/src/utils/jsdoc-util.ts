@@ -12,6 +12,8 @@ import { escapeRegExp } from './regex-util';
 
 export interface JSDocComment extends JSDocValue {
     readonly elements: JSDocElement[]
+    getTag(name: string): JSDocTag | undefined
+    getTags(name: string): JSDocTag[]
 }
 
 export type JSDocElement = JSDocParagraph | JSDocTag;
@@ -489,6 +491,18 @@ class JSDocCommentImpl implements JSDocComment {
     constructor(elements: JSDocElement[], range: Range) {
         this.elements = elements;
         this.range = range;
+    }
+
+    getTag(name: string): JSDocTag | undefined {
+        return this.getAllTags().find(e => e.name === name);
+    }
+
+    getTags(name: string): JSDocTag[] {
+        return this.getAllTags().filter(e => e.name === name);
+    }
+
+    private getAllTags(): JSDocTag[] {
+        return this.elements.filter((e): e is JSDocTag => 'name' in e);
     }
 
     toString(): string {

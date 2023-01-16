@@ -134,8 +134,8 @@ export class LangiumGrammarScopeComputation extends DefaultScopeComputation {
         return {
             node,
             name,
-            segment: nameNode && toDocumentSegment(nameNode),
-            selectionSegment: node.$cstNode && toDocumentSegment(node.$cstNode),
+            nameSegment: toDocumentSegment(nameNode),
+            selectionSegment: toDocumentSegment(node.$cstNode),
             type: 'Interface',
             documentUri: document.uri,
             path: this.astNodeLocator.getAstNodePath(node)

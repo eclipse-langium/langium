@@ -78,9 +78,9 @@ export interface AstNodeDescription {
     /**
      * The document segment that represents the range of the name of the AST node.
      */
-    segment?: DocumentSegment;
+    nameSegment?: DocumentSegment;
     /**
-     * The documetn segment that represents the full range of the AST node.
+     * The document segment that represents the full range of the AST node.
      */
     selectionSegment?: DocumentSegment;
     /** `$type` property value of the AST node */
