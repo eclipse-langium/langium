@@ -28,7 +28,14 @@ export function getEntryRule(grammar: ast.Grammar): ast.ParserRule | undefined {
 }
 
 /**
- * Returns all rules that can be reached from the entry point of the specified grammar.
+ * Returns all hidden terminal rules of the given grammar, if any.
+ */
+export function getHiddenRules(grammar: ast.Grammar) {
+    return grammar.rules.filter((e): e is ast.TerminalRule => ast.isTerminalRule(e) && e.hidden);
+}
+
+/**
+ * Returns all rules that can be reached from the topmost rules of the specified grammar (entry and hidden terminal rules).
  *
  * @param grammar The grammar that contains all rules
  * @param allTerminals Whether or not to include terminals that are referenced only by other terminals
@@ -41,7 +48,12 @@ export function getAllReachableRules(grammar: ast.Grammar, allTerminals: boolean
     if (!entryRule) {
         return new Set(grammar.rules);
     }
-    ruleDfs(entryRule, ruleNames, allTerminals);
+
+    const topMostRules = [entryRule as ast.AbstractRule].concat(getHiddenRules(grammar));
+    for (const rule of topMostRules) {
+        ruleDfs(rule, ruleNames, allTerminals);
+    }
+
     const rules = new Set<ast.AbstractRule>();
     for (const rule of grammar.rules) {
         if (ruleNames.has(rule.name) || (ast.isTerminalRule(rule) && rule.hidden)) {
