@@ -43,7 +43,7 @@
     "vscode-uri": "~3.0.7"
   },
   "devDependencies": {
-    "langium-cli": "1.0.0"
+    "langium-cli": "~1.0.0"
   },
   "volta": {
     "node": "16.19.0",
