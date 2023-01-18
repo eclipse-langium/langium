@@ -5,10 +5,8 @@
  ******************************************************************************/
 
 import { createLangiumGrammarServices, Grammar, EmptyFileSystem, expandToString, EOL } from '../../../src';
-import { isParserRule } from '../../../src/grammar/generated/ast';
-import { isDataTypeRule } from '../../../src/grammar/internal-grammar-util';
 import { collectAst, specifyAstNodeProperties } from '../../../src/grammar/type-system/ast-collector';
-import { collectAllAstResources } from '../../../src/grammar/type-system/type-collector/all-types';
+import { collectAllAstResources, collectTypeResources } from '../../../src/grammar/type-system/type-collector/all-types';
 import { collectDeclaredTypes } from '../../../src/grammar/type-system/type-collector/declared-types';
 import { collectInferredTypes } from '../../../src/grammar/type-system/type-collector/inferred-types';
 import { AstTypes, InterfaceType, Property, PropertyType, UnionType } from '../../../src/grammar/type-system/type-collector/types';
@@ -668,6 +666,28 @@ describeTypes('inferred types that are used by the grammar', `
     });
 });
 
+describeTypes('inferred and declared types', `
+    X returns X: Y | Z;
+    Y: y='y';
+    Z: z='z';
+
+    interface X { }
+`, types => {
+
+    test('X is preserved as an interface', () => {
+        const x = getType(types, 'X') as InterfaceType;
+        expect(x).toBeDefined();
+        expect(x.properties).toHaveLength(0);
+        const y = getType(types, 'Y') as InterfaceType;
+        expect(y).toBeDefined();
+        expect(y.realSuperTypes).toContain('X');
+        const z = getType(types, 'Z') as InterfaceType;
+        expect(z).toBeDefined();
+        expect(z.realSuperTypes).toContain('X');
+    });
+
+});
+
 describe('expression rules with inferred and declared interfaces', () => {
 
     test('separate rules with assigned actions with inferred type and declared sub type of the former', async () => {
@@ -746,8 +766,11 @@ describe('expression rules with inferred and declared interfaces', () => {
         const { parserRules, datatypeRules, interfaces, types } = collectAllAstResources([grammar]);
 
         // check only inferred types
-        const inferred = collectInferredTypes(parserRules, datatypeRules);
-        sortInterfacesTopologically(inferred.interfaces);
+        const inferred = collectInferredTypes(parserRules, datatypeRules, {
+            interfaces: [],
+            unions: []
+        });
+        inferred.interfaces = sortInterfacesTopologically(inferred.interfaces);
         specifyAstNodeProperties(inferred);
 
         const inferredInterfacesString = inferred.interfaces.map(toSubstring).join(EOL).trim();
@@ -773,7 +796,7 @@ describe('expression rules with inferred and declared interfaces', () => {
 
         // check only declared types
         const declared = collectDeclaredTypes(interfaces, types);
-        sortInterfacesTopologically(declared.interfaces);
+        inferred.interfaces = sortInterfacesTopologically(declared.interfaces);
         specifyAstNodeProperties(declared);
 
         expect(declared.interfaces.map(toSubstring).join(EOL).trim()).toBe(expandToString`
@@ -985,10 +1008,7 @@ async function getTypes(grammar: string): Promise<AstTypes> {
     const helper = parseHelper<Grammar>(services);
     const result = await helper(grammar);
     const gram = result.parseResult.value;
-    const rules = gram.rules.filter(isParserRule);
-    const datatypeRules = rules.filter(e => isDataTypeRule(e));
-    const parserRules = rules.filter(e => !isDataTypeRule(e));
-    return collectInferredTypes(parserRules, datatypeRules);
+    return collectTypeResources(gram).inferred;
 }
 
 function getType(types: AstTypes, name: string): InterfaceType | UnionType | undefined {
