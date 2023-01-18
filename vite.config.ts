@@ -14,6 +14,9 @@ export default defineConfig({
             reporter: ['text', 'html'],
             include: ['packages/langium/src'],
             exclude: ['**/generated'],
+        },
+        deps: {
+            interopDefault: true,
         }
     }
 });
