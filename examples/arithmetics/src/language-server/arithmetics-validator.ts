@@ -7,7 +7,7 @@
 import { ValidationAcceptor, ValidationChecks } from 'langium';
 import { ArithmeticsAstType, isNumberLiteral, Definition, isFunctionCall, Expression, BinaryExpression, isBinaryExpression } from './generated/ast';
 import type { ArithmeticsServices } from './arithmetics-module';
-import { applyOp } from '../cli/cli-util';
+import { applyOp } from './arithmetics-util';
 
 export function registerValidationChecks(services: ArithmeticsServices): void {
     const registry = services.validation.ValidationRegistry;

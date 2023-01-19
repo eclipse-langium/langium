@@ -7,8 +7,9 @@
 import { NodeFileSystem } from 'langium/node';
 import { createArithmeticsServices } from '../language-server/arithmetics-module';
 import { AbstractDefinition, Definition, Evaluation, Expression, isBinaryExpression, isDefinition, isEvaluation, isFunctionCall, isNumberLiteral, Module, Statement } from '../language-server/generated/ast';
+import { applyOp } from '../language-server/arithmetics-util';
 import { ArithmeticsLanguageMetaData } from '../language-server/generated/module';
-import { applyOp, extractDocument } from './cli-util';
+import { extractDocument } from './cli-util';
 import chalk from 'chalk';
 
 export const evalAction = async (fileName: string): Promise<void> => {
