@@ -48,7 +48,7 @@ function addSuperProperties(allTypes: InterfaceType[]) {
             const superType = allTypes.find(e => e.name === superTypeName);
 
             if (superType && isInterfaceType(superType)) {
-                addSuperPropertiesInternal(superType);
+                addSuperPropertiesInternal(superType, visited);
                 superType.superProperties
                     .entriesGroupedByKey()
                     .forEach(propInfo => type.superProperties.addAll(propInfo[0], propInfo[1]));
