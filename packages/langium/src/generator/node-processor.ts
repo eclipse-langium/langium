@@ -11,6 +11,7 @@ class Context {
     defaultIndentation = '    ';
     pendingIndent = true;
     readonly currentIndents: IndentNode[] = [];
+    readonly recentNonImmediateIndents: IndentNode[] = [];
 
     private lines: string[][] = [[]];
 
@@ -42,10 +43,17 @@ class Context {
 
     increaseIndent(node: IndentNode) {
         this.currentIndents.push(node);
+        if (!node.indentImmediately) {
+            this.recentNonImmediateIndents.push(node);
+        }
     }
 
     decreaseIndent() {
         this.currentIndents.pop();
+    }
+
+    get relevantIndents() {
+        return this.currentIndents.filter(i => !this.recentNonImmediateIndents.includes(i));
     }
 
     resetCurrentLine() {
@@ -55,6 +63,7 @@ class Context {
     addNewLine() {
         this.pendingIndent = true;
         this.lines.push([]);
+        this.recentNonImmediateIndents.length = 0;
     }
 }
 
@@ -78,7 +87,7 @@ function processNodeInternal(node: GeneratorNode | string, context: Context) {
 
 function hasContent(node: GeneratorNode | string, ctx: Context): boolean {
     if (typeof(node) === 'string') {
-        return hasNonWhitespace(node);
+        return node.length !== 0; // cs: do not ignore ws only content here, enclosed within other nodes it will matter!
     } else if (node instanceof CompositeGeneratorNode) {
         return node.contents.some(e => hasContent(e, ctx));
     } else if (node instanceof NewLineNode) {
@@ -99,7 +108,7 @@ function processStringNode(node: string, context: Context) {
 
 function handlePendingIndent(ctx: Context, endOfLine: boolean) {
     let indent = '';
-    for (const indentNode of ctx.currentIndents.filter(e => e.indentEmptyLines || !endOfLine)) {
+    for (const indentNode of ctx.relevantIndents.filter(e => e.indentEmptyLines || !endOfLine)) {
         indent += indentNode.indentation ?? ctx.defaultIndentation;
     }
     ctx.append(indent);

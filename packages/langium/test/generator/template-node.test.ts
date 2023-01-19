@@ -7,6 +7,7 @@
 import { EOL, toString } from '../../src/generator/generator-node';
 import { expandToNode as n, joinToNode } from '../../src/generator/template-node';
 import { expandToString as s } from '../../src/generator/template-string';
+import { stream } from '../../src/utils/stream';
 
 // deactivate the eslint check 'no-unexpected-multiline' with the message
 //  'Unexpected newline between template tag and template literal', as that's done on purposes in tests below!
@@ -456,6 +457,39 @@ describe('Single substitution templates', () => {
     });
 });
 
+describe('Multiple substitution templates', () => {
+
+    test('One line 2 substitutions', () => {
+        const node = n`${TEXT_TEMPLATE} ${TEXT_TEMPLATE}`;
+        const text = toString(node);
+        expect(text).toBe(`${TEXT_TEMPLATE} ${TEXT_TEMPLATE}`);
+    });
+
+    test('Two lines 2 substitutions', () => {
+        const node = n`
+                ${TEXT_TEMPLATE} ${TEXT_TEMPLATE}
+            ${TEXT_TEMPLATE} ${TEXT_TEMPLATE}
+        `;
+        const text = toString(node);
+        expect(text).toBe(`    ${TEXT_TEMPLATE} ${TEXT_TEMPLATE}${EOL}${TEXT_TEMPLATE} ${TEXT_TEMPLATE}`);
+    });
+
+    test('One line 3 substitutions', () => {
+        const node = n`${TEXT_TEMPLATE} ${TEXT_TEMPLATE} ${TEXT_TEMPLATE}`;
+        const text = toString(node);
+        expect(text).toBe(`${TEXT_TEMPLATE} ${TEXT_TEMPLATE} ${TEXT_TEMPLATE}`);
+    });
+
+    test('Two lines 3 substitutions', () => {
+        const node = n`
+                ${TEXT_TEMPLATE} ${TEXT_TEMPLATE} ${TEXT_TEMPLATE}
+            ${TEXT_TEMPLATE} ${TEXT_TEMPLATE} ${TEXT_TEMPLATE}
+        `;
+        const text = toString(node);
+        expect(text).toBe(`    ${TEXT_TEMPLATE} ${TEXT_TEMPLATE} ${TEXT_TEMPLATE}${EOL}${TEXT_TEMPLATE} ${TEXT_TEMPLATE} ${TEXT_TEMPLATE}`);
+    });
+});
+
 describe('Nested substitution templates', () => {
     const nestedNode = n`
         ${TEXT_TEMPLATE}
@@ -559,6 +593,14 @@ describe('Nested multiline substitution templates', () => {
         const text = toString(node);
         expect(text).toBe('  ' + ML_TEXT_TEMPLATE.replace('' + EOL, EOL + '  ') + EOL);
     });
+    test('With additional leading line breaks, and with leading WS', () => {
+        const node = n`
+            
+              ${nestedNode}
+        `;
+        const text = toString(node);
+        expect(text).toBe(EOL + '  ' + ML_TEXT_TEMPLATE.replace('' + EOL, EOL + '  '));
+    });
     test('Plain text and multiple nested node references', () => {
         const node = n`
             Hans:
@@ -618,6 +660,17 @@ describe('Embedded forEach loops', () => {
             Footer:
         `);
     });
+    test('ForEach loop with separator and Array input', () => {
+        const node = n`
+            Data:
+              ${joinToNode(['a', 'b'], String, { separator: ', ' })}
+        `;
+        const text = toString(node);
+        expect(text).toBe(s`
+            Data:
+              a, b
+        `);
+    });
     test('ForEach loop with element prefix and Array input', () => {
         const node = n`
             Data:
@@ -640,16 +693,69 @@ describe('Embedded forEach loops', () => {
               a, b
         `);
     });
-    test('ForEach loop with line breaks', () => {
+    test('ForEach loop with line breaks and Stream input', () => {
         const node = n`
             Data:
-              ${joinToNode(['a', 'b'], String, { appendNewLineIfNotEmpty: true})}
+              ${joinToNode(stream(['a', 'b']), String, { appendNewLineIfNotEmpty: true})}
         `;
         const text = toString(node);
         expect(text).toBe(s`
             Data:
               a
               b
+            
+        `);
+    });
+    test('ForEach loop with separator, line breaks, and Stream input', () => {
+        const node = n`
+            Data:
+              ${joinToNode(stream(['a', undefined, 'b']), String, { separator: ',', appendNewLineIfNotEmpty: true})}
+        `;
+        const text = toString(node);
+        expect(text).toBe(s`
+            Data:
+              a,
+              undefined,
+              b
+            
+        `);
+    });
+    test('ForEach loop with omitted `undefined`, separator, line breaks and Stream input', () => {
+        const node = n`
+            Data:
+              ${joinToNode(stream(['a', undefined, 'b']), e => e && String(e), { separator: ',', appendNewLineIfNotEmpty: true})}
+        `;
+        const text = toString(node);
+        expect(text).toBe(s`
+            Data:
+              a,
+              b
+            
+        `);
+    });
+});
+
+describe('Appending templates to existing nodes', () => {
+
+    test('Append template to node', () => {
+        const node = n`Prefix`.appendNewLine()
+            .appendTemplate` some content: ${1}`.appendNewLineIfNotEmpty();
+        const text = toString(node);
+        expect(text).toBe(s`
+            Prefix
+             some content: 1
+            
+        `);
+    });
+
+    test('Conditionally append template to node', () => {
+        const node = n`Prefix`.appendNewLine()
+            .appendTemplateIf(!!0)` some content: ${0}`.appendNewLineIfNotEmpty()
+            .appendTemplateIf(!!1)` some content: ${1}`.appendNewLineIfNotEmpty();
+        const text = toString(node);
+        expect(text).toBe(s`
+            Prefix
+             some content: 1
             
         `);
     });

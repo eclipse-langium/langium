@@ -4,8 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { CompositeGeneratorNode, NL } from '../../../generator/generator-node';
-import { processGeneratorNode } from '../../../generator/node-processor';
+import { CompositeGeneratorNode, NL, toString } from '../../../generator/generator-node';
 import { CstNode } from '../../../syntax-tree';
 import { MultiMap } from '../../../utils/collections';
 import { Assignment, Action, TypeAttribute } from '../../generated/ast';
@@ -63,13 +62,13 @@ export class UnionType {
             unionNode.append(NL);
             pushReflectionInfo(unionNode, this.name);
         }
-        return processGeneratorNode(unionNode);
+        return toString(unionNode);
     }
 
     toDeclaredTypesString(reservedWords: Set<string>): string {
         const unionNode = new CompositeGeneratorNode();
         unionNode.append(`type ${escapeReservedWords(this.name, reservedWords)} = ${propertyTypesToString(this.alternatives, 'DeclaredType')};`, NL);
-        return processGeneratorNode(unionNode);
+        return toString(unionNode);
     }
 }
 
@@ -111,7 +110,7 @@ export class InterfaceType {
 
         interfaceNode.append(NL);
         pushReflectionInfo(interfaceNode, this.name);
-        return processGeneratorNode(interfaceNode);
+        return toString(interfaceNode);
     }
 
     toDeclaredTypesString(reservedWords: Set<string>): string {
@@ -124,7 +123,7 @@ export class InterfaceType {
         interfaceNode.indent(body => pushProperties(body, this.properties, 'DeclaredType', reservedWords));
 
         interfaceNode.append('}', NL);
-        return processGeneratorNode(interfaceNode);
+        return toString(interfaceNode);
     }
 }
 

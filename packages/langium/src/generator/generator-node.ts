@@ -5,6 +5,7 @@
  ******************************************************************************/
 
 import { processGeneratorNode } from './node-processor';
+import { expandToNode } from './template-node';
 
 export const EOL = (typeof process === 'undefined') ? '\n' : (process.platform === 'win32') ? '\r\n' : '\n';
 
@@ -16,6 +17,13 @@ export const EOL = (typeof process === 'undefined') ? '\n' : (process.platform =
  */
 export type Generated = GeneratorNode | string | undefined;
 export type GeneratorNode = CompositeGeneratorNode | IndentNode | NewLineNode;
+
+export interface IndentConfig {
+    indentedChildren?: Generated[] | ((indented: IndentNode) => void);
+    indentation?: string|number;
+    indentEmptyLines?: boolean;
+    indentImmediately?: boolean;
+}
 
 export function isGeneratorNode(node: unknown): node is CompositeGeneratorNode | IndentNode | NewLineNode {
     return node instanceof CompositeGeneratorNode
@@ -85,7 +93,7 @@ export class CompositeGeneratorNode {
      *      'The end!'
      *   );
      */
-    append(...content: Array<Generated | ((node: CompositeGeneratorNode) => void)>): this {
+    append(...content: Array<Generated | ((node: this) => void)>): this {
         for (const arg of content) {
             if (typeof arg === 'function') {
                 arg(this);
@@ -100,7 +108,7 @@ export class CompositeGeneratorNode {
      * Appends `strings` and instances of {@link GeneratorNode} to `this` generator node, if `condition` is `truthy`.
      * The aim of this method is to extend this class' fluent interface API by enabling chained method calls for conditionally appended parts.
      *
-     * If `condition` is `true` this method delegates to {@link append}, otherwise it returns just `this`.
+     * If `condition` is satisfied this method delegates to {@link append}, otherwise it returns just `this`.
      *
      * @param condition a boolean value indicating whether to append the elements of `args` to `this`.
      *
@@ -116,7 +124,7 @@ export class CompositeGeneratorNode {
      *      entity !== undefined, `Hello ${entity?.name}!`
      *   ).appendNewLineIfNotEmpty();
      */
-    appendIf(condition: boolean, content: Array<Generated | ((node: CompositeGeneratorNode) => void)>): this {
+    appendIf(condition: boolean, ...content: Array<Generated | ((node: CompositeGeneratorNode) => void)>): this {
         return condition ? this.append(...content) : this;
     }
 
@@ -146,7 +154,7 @@ export class CompositeGeneratorNode {
      * @example
      *   new CompositeGeneratorNode().append(
      *      'Hello World!'
-     *   ).appendNewLine(entity !== undefined).appendIf(
+     *   ).appendNewLineIf(entity !== undefined).appendIf(
      *      entity !== undefined, `Hello ${entity?.name}!`
      *   )
      */
@@ -191,13 +199,64 @@ export class CompositeGeneratorNode {
     }
 
     /**
-     * Starts an area of indented text output.
-     * The content to be indented shall be appended to `indentingNode` that is offered to the single argument `configurator` function.
+     * Tag function appending content in form of a template to `this` generation node.
+     * The aim of this method is to extend this class' fluent interface API by enabling chained method calls for appending templates.
      *
-     * @param configurator a callback offering the container to append the indented content to
+     * See {@link expandToNode} for details.
      *
-     * @param indentation the indentation to be applied, either a `string` or a `number` of repeated single spaces,
-     *    defaults to the indentation that might be determined when executing {@link toString}.
+     * @returns `this` {@link CompositeGeneratorNode} for convenience.
+     *
+     * @example
+     *   new CompositeGeneratorNode().appendTemplate
+     *       `Hello World!`
+     *   .appendNewLine()
+     */
+    appendTemplate(staticParts: TemplateStringsArray, ...substitutions: unknown[]): this {
+        return this.append(
+            expandToNode(staticParts, ...substitutions)
+        );
+    }
+
+    /**
+     * Returns a tag function for appending content in form of a template to `this` generator node, if `condition` is `truthy`.
+     * The aim of this method is to extend this class' fluent interface API by enabling chained method calls for conditionally appending templates.
+     *
+     * If `condition` is satisfied the tagged template delegates to {@link appendTemplate}, otherwise it returns just `this`.
+     *
+     * See {@link expandToNode} for details.
+     *
+     * @param condition a boolean value indicating whether to append the template content to `this`.
+     *
+     * @returns `this` {@link CompositeGeneratorNode} for convenience.
+     *
+     * @example
+     *   new CompositeGeneratorNode().appendTemplate
+     *       `Hello World!`
+     *   .appendNewLine().appendTemplateIf(entity !== undefined)
+     *       `Hello ${entity?.name}!`
+     *   .appendNewLineIfNotEmpty()
+     */
+    appendTemplateIf(condition: boolean): (staticParts: TemplateStringsArray, ...substitutions: unknown[]) => this {
+        return (staticParts, ...substitutions) => {
+            return condition ? this.appendTemplate(staticParts, ...substitutions) : this;
+        };
+    }
+
+    /**
+     * Adds an area of indented text output.
+     * The content to be indented can be provided as an array consisting of strings and/or generation nodes
+     * (undefined is permitted), or via a callback offering the `indentingNode` to which the content shall be appended.
+     * Alternatively, an object satisfying {@link IndentConfig} can be provided taking the children as Array or via
+     * a callback as described previously via the `indentedChildren` property.
+     *
+     * The remaining properties of {@link IndentConfig} have the following effects:
+     *  - `indentation`: a specific indentation length or string, defaults to the global indentation setting if omitted, see {@link toString},
+     *  - `indentEmptyLines`: apply indentation to empty lines, defaults to `false`
+     *  - `indentImmediately`: apply the indentation immediately starting at the first line, defaults to `true`, might be set to `false`
+     *    if preceding content is not terminated by any `newline`. If `false` the indentation is inserted only after child `newline` nodes
+     *    followed by further content.
+     *
+     * @param childrenOrConfig an {@link Array} or callback contributing the children, or a config object satisfying {@link IndentConfig} alternatively.
      *
      * @returns `this` {@link CompositeGeneratorNode} for convenience.
      *
@@ -214,11 +273,19 @@ export class CompositeGeneratorNode {
      *       '}'
      *   );
      */
-    indent(configurator?: (indentingNode: IndentNode) => void, indentation?: string|number): this {
-        const node = new IndentNode(indentation, false);
+    indent(childrenOrConfig?: Generated[] | ((indented: IndentNode) => void) | IndentConfig ): this {
+        const { indentedChildren, indentation, indentEmptyLines, indentImmediately }: IndentConfig =
+            Array.isArray(childrenOrConfig) || typeof childrenOrConfig === 'function'
+                ? { indentedChildren: childrenOrConfig }
+                : typeof childrenOrConfig === 'object' ? childrenOrConfig : {};
+
+        const node = new IndentNode(indentation, indentImmediately, indentEmptyLines);
         this.contents.push(node);
-        if (configurator) {
-            configurator(node);
+
+        if (Array.isArray(indentedChildren)) {
+            node.append(...indentedChildren);
+        } else if (indentedChildren) {
+            node.append(indentedChildren);
         }
         return this;
     }

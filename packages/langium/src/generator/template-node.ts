@@ -4,11 +4,8 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { CompositeGeneratorNode, Generated, GeneratorNode, isGeneratorNode, isNewLineNode, NewLineNode } from './generator-node';
+import { CompositeGeneratorNode, Generated, GeneratorNode, IndentNode, isGeneratorNode } from './generator-node';
 import { findIndentation, NEWLINE_REGEXP } from './template-string';
-
-const NEWLINE = Object.freeze(new NewLineNode());
-const UNDEFINED_SEGMENT = Object.freeze(new CompositeGeneratorNode());
 
 /**
  * A tag function that attaches the template's content to a {@link CompositeGeneratorNode}.
@@ -62,7 +59,7 @@ export function expandToNode(staticParts: TemplateStringsArray, ...substitutions
 
     // 2nd part: for all the static template parts: split them and inject a NEW_LINE marker where linebreaks shall be a present in the final result,
     //  and create a flatten list of strings, NEW_LINE marker occurrences, and subsitutions
-    const splitAndMerged: Generated[] = splitTemplateLinesAndMergeWithSubstitions(staticParts, substitutions, templateProps);
+    const splitAndMerged: GeneratedOrMarker[] = splitTemplateLinesAndMergeWithSubstitions(staticParts, substitutions, templateProps);
 
     // eventually, inject indentation nodes and append the segments to final desired composite generator node
     return composeFinalGeneratorNode(splitAndMerged);
@@ -133,14 +130,14 @@ function findIndentationAndTemplateStructure(staticParts: TemplateStringsArray):
 
 function splitTemplateLinesAndMergeWithSubstitions(
     staticParts: TemplateStringsArray, substitutions: unknown[], { indentation, omitFirstLine, omitLastLine, trimLastLine }: TemplateProps
-): Generated[] {
-    const splitAndMerged: Generated[] = [];
+): GeneratedOrMarker[] {
+    const splitAndMerged: GeneratedOrMarker[] = [];
     staticParts.forEach((part, i) => {
         splitAndMerged.push(
             ...part.split(
                 NEWLINE_REGEXP
             ).map((e, j) => j === 0 || e.length < indentation ? e : e.substring(indentation)
-            ).reduce<Generated[]>(
+            ).reduce<GeneratedOrMarker[]>(
                 // treat the particular (potentially multiple) lines of the <i>th template segment (part),
                 //  s.t. all the effective lines are collected and separated by the NEWLINE node
                 // note: different reduce functions are provided for the initial template segment vs. the remaining segments
@@ -208,7 +205,18 @@ function splitTemplateLinesAndMergeWithSubstitions(
     }
 }
 
-function composeFinalGeneratorNode(splitAndMerged: Generated[]): CompositeGeneratorNode {
+type NewLineMarker = { isNewLine: true };
+type UndefinedSegmentMarker = { isUndefinedSegment: true };
+
+const NEWLINE = <NewLineMarker>{ isNewLine: true };
+const UNDEFINED_SEGMENT = <UndefinedSegmentMarker>{ isUndefinedSegment: true };
+
+const isNewLineMarker = (nl: unknown): nl is NewLineMarker => nl === NEWLINE;
+const isUndefinedSegmentMarker = (us: unknown): us is UndefinedSegmentMarker => us === UNDEFINED_SEGMENT;
+
+type GeneratedOrMarker = Generated | NewLineMarker | UndefinedSegmentMarker;
+
+function composeFinalGeneratorNode(splitAndMerged: GeneratedOrMarker[]): CompositeGeneratorNode {
     // in order to properly handle the indentation of nested multi-line substitutions,
     //  track the length of static (string) parts per line and wrap the substitution(s) in indentation nodes, if needed
     //
@@ -216,12 +224,12 @@ function composeFinalGeneratorNode(splitAndMerged: Generated[]): CompositeGenera
     // in case of dynamic content (with a potentially unknown length) followed by a multi-line substitution
     //  the latter's indentation cannot be determined properly...
     const result = splitAndMerged.reduce<{
-        indent: string,
-        node: CompositeGeneratorNode
+        node: CompositeGeneratorNode,
+        indented?: IndentNode
     }>(
-        (res, segment, i) => segment === UNDEFINED_SEGMENT
+        (res, segment, i) => isUndefinedSegmentMarker(segment)
             // ignore all occurences of UNDEFINED_SEGMENT, they are just in there for the below test
-            //  of 'isNewLineNode(splitAndMerged[i-1])' not to evaluate to 'truthy' in case of consecutive lines
+            //  of 'isNewLineMarker(splitAndMerged[i-1])' not to evaluate to 'truthy' in case of consecutive lines
             //  with no actual content in templates like
             //   expandToNode`
             //     Foo
@@ -231,10 +239,9 @@ function composeFinalGeneratorNode(splitAndMerged: Generated[]): CompositeGenera
             //     Bar
             //   `
             ? res
-            : segment === NEWLINE
+            : isNewLineMarker(segment)
                 ? {
-                    indent: '',
-                    node: (i === 0 || isNewLineNode(splitAndMerged[i-1]) || typeof splitAndMerged[i - 1] === 'string')
+                    node: (i === 0 || isNewLineMarker(splitAndMerged[i-1]) || typeof splitAndMerged[i - 1] === 'string')
                         ? res.node.appendNewLine() : res.node.appendNewLineIfNotEmpty()
                 } : (() => {
                     // the indentation handling is supposed to handle use cases like
@@ -247,15 +254,29 @@ function composeFinalGeneratorNode(splitAndMerged: Generated[]): CompositeGenera
                     //   }
                     // assuming that ${foo(bar)} yields a multiline result;
                     // the whitespace between 'return' and '${foo(bar)}' shall not add to the indentation of '${foo(bar)}'s result!
-                    const indent: string = res.indent === '' && typeof segment === 'string' && segment.length !== 0 ? ''.padStart(segment.length - segment.trimLeft().length) : res.indent;
+                    const indent: string = (i === 0 || isNewLineMarker(splitAndMerged[ i-1 ])) && typeof segment === 'string' && segment.length !== 0 ? ''.padStart(segment.length - segment.trimLeft().length) : '';
+                    let indented: IndentNode | undefined;
                     return {
-                        indent,
-                        node: res.indent.length === 0
-                            ? res.node.append(segment)
-                            : res.node.indent((indented) => indented.append(segment), res.indent)
+                        node: res.indented
+                            // in case an indentNode has been registered earlier for the current line,
+                            //  just return 'node' without manipulation, the current segment will be added to the indentNode
+                            ? res.node
+                            // otherwise (no indentNode is registered by now)...
+                            : indent.length !== 0
+                                // in case an indentation has been identified add a non-immediate indentNode to 'node' and
+                                //  add the currrent segment (containing its the indentation) to that indentNode,
+                                //  and keep the indentNode in a local variable 'indented' for registering below,
+                                //  and return 'node'
+                                ? res.node.indent({ indentation: indent, indentImmediately: false, indentedChildren: ind => indented = ind.append(segment) })
+                                // otherwise just add the content to 'node' and return it
+                                : res.node.append(segment),
+                        indented:
+                            // if an indentNode has been created in this cycle, just register it,
+                            //  otherwise check for a earlier registered indentNode and add the current segment to that one
+                            indented ?? res.indented?.append(segment),
                     };
                 })(),
-        {indent: '', node: new CompositeGeneratorNode()}
+        { node: new CompositeGeneratorNode() }
     );
 
     return result.node;
@@ -264,21 +285,47 @@ function composeFinalGeneratorNode(splitAndMerged: Generated[]): CompositeGenera
 export interface JoinOptions<T> {
     prefix?: (element: T, index: number, isLast: boolean) => Generated|undefined;
     suffix?: (element: T, index: number, isLast: boolean) => Generated|undefined;
+    separator?: Generated;
     appendNewLineIfNotEmpty?: true;
 }
 
+/**
+ * Joins the elements of the given `iterable` by applying `toGenerated` to each element
+ * and appending the results to a {@link CompositeGeneratorNode} being returned finally.
+ *
+ * Note: empty strings being returned by `toGenerated` are treated as ordinary string
+ * representations, while the result of `undefined` makes this function to ignore the
+ * corresponding item and no separator is appended, if configured.
+ *
+ * Examples:
+ * ```
+ *   exandToNode`
+ *       ${ joinToNode(['a', 'b'], String, { appendNewLineIfNotEmpty: true }) }
+ *
+ *       ${ joinToNode(new Set(['a', undefined, 'b']), e => e && String(e), { separator: ',', appendNewLineIfNotEmpty: true }) }
+ *   `
+ * ```
+ *
+ * @param iterable an {@link Array} or {@link Iterable} providing the elements to be joined
+ * @param toGenerated a callback converting each individual element to a string, a
+ *  {@link CompositeGeneratorNode}, or undefined if to be omitted, defaults to {@link String}
+ * @param options optional config object for defining a `separator`, contributing specialized
+ *  `prefix` and/or `suffix` providers, and activating conditional line-break insertion.
+ * @returns the resulting {@link CompositeGeneratorNode} representing `iterable`'s content
+ */
 export function joinToNode<T>(
     iterable: Iterable<T>|T[],
-    toString: (element: T, index: number, isLast: boolean) => Generated = String,
-    { prefix, suffix, appendNewLineIfNotEmpty }: JoinOptions<T> = {}
+    toGenerated: (element: T, index: number, isLast: boolean) => Generated = String,
+    { prefix, suffix, separator, appendNewLineIfNotEmpty }: JoinOptions<T> = {}
 ): CompositeGeneratorNode|undefined {
 
     return reduceWithIsLast(iterable, (node, it, i, isLast) => {
-        node ??= new CompositeGeneratorNode();
-        return node
+        const content = toGenerated(it, i, isLast);
+        return (node ??= new CompositeGeneratorNode())
             .append(prefix && prefix(it, i, isLast))
-            .append(toString(it, i, isLast))
+            .append(content)
             .append(suffix && suffix(it, i, isLast))
+            .appendIf(!isLast && content !== undefined, separator)
             .appendNewLineIfNotEmptyIf(
                 // append 'newLineIfNotEmpty' elements only if 'node' has some content already,
                 //  as if the parent is an IndentNode with 'indentImmediately' set to 'false'
