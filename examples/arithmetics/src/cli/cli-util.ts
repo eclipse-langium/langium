@@ -41,10 +41,3 @@ export async function extractDocument<T extends AstNode>(fileName: string, exten
 export async function extractAstNode<T extends AstNode>(fileName: string, extensions: string[], services: LangiumServices): Promise<T> {
     return (await extractDocument(fileName, extensions, services)).parseResult.value as T;
 }
-
-export function applyOp(op: '+' | '-' | '*' | '/'): (x: number, y: number) => number {
-    if (op === '+') return (x, y) => x + y;
-    if (op === '-') return (x, y) => x - y;
-    if (op === '*') return (x, y) => x * y;
-    return (x, y) => y === 0 ? x : x / y;
-}

@@ -47,6 +47,17 @@
         "arithmetics-cli": "./bin/cli"
     },
     "main": "./out/extension.js",
+    "types": "./out/extension.d.ts",
+    "exports": {
+        ".": {
+            "types": "./out/extension.d.ts",
+            "default": "./out/extension.js"
+        },
+        "./api": {
+            "types": "./out/language-server/generated/ast.d.ts",
+            "default": "./out/language-server/generated/ast.js"
+        }
+    },
     "scripts": {
         "vscode:prepublish": "npm run build && npm run lint",
         "build": "tsc",
