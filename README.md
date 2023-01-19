@@ -17,9 +17,9 @@
 
 ---
 
-Langium is a language engineering tool for [TypeScript](https://www.typescriptlang.org/) with built-in support for the [Language Server Protocol](https://microsoft.github.io/language-server-protocol/). The framework is an all-in-one solution for building programming languages, domain specific languages, code generators, interpreters and compilers.
+Langium is a language engineering tool for [TypeScript](https://www.typescriptlang.org/) with built-in support for the [Language Server Protocol](https://microsoft.github.io/language-server-protocol/). The framework is an all-in-one solution for building programming languages, domain specific languages, code generators, interpreters and compilers. It serves as a spiritual successor to the [Eclipse Xtext framework](https://www.eclipse.org/Xtext/).
 
-* **Semantics First:** Building on top of a [grammar declaration language](https://langium.org/docs/grammar-language/), Langium enables you to build the abstract model of your language in parallel to its syntax.
+* **Semantics First:** Building on top of a [grammar declaration language](https://langium.org/docs/grammar-language/), Langium enables you to build the abstract model of your language in parallel to its syntax. Langium parsers are powered by [Chevrotain](https://chevrotain.io).
 * **Lean by Default, Customizable by Design:** Langium offers the infrastructure you need to build languages purely by defining their grammar. If that is not enough, you can fine tune every detail of your language using our [dependency injection system](https://langium.org/docs/configuration-services/).
 * **Write Once, Run Everywhere:** By leveraging the flexibility of JavaScript and the [Language Server Protocol](https://microsoft.github.io/language-server-protocol/), a language written using Langium can run in all kind of IDEs, browsers or embedded in CLIs and server applications.
 
