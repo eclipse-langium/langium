@@ -5,8 +5,7 @@
  ******************************************************************************/
 
 import { EOL } from 'os';
-import { CompositeGeneratorNode, NL, NLEmpty, NewLineNode, IndentNode } from '../../src';
-import { processGeneratorNode as process } from '../../src/generator/node-processor';
+import { CompositeGeneratorNode, IndentNode, NewLineNode, NL, NLEmpty, toString as process } from '../../src';
 
 describe('new lines', () => {
 
@@ -70,13 +69,57 @@ describe('indentation', () => {
         expect(node.indentation).toBe('  ');
     });
 
-    test('should indent 4 spaces by default after new line', () => {
+    test('should indent 4 spaces by default after new line (via children array)', () => {
+        const comp = new CompositeGeneratorNode();
+        comp.append('No indent', NL);
+        comp.indent( [ 'Indent' ]);
+        expect(process(comp)).toBe(`No indent${EOL}    Indent`);
+    });
+
+    test('should indent 4 spaces by default after new line (via callback)', () => {
         const comp = new CompositeGeneratorNode();
         comp.append('No indent', NL);
         comp.indent(node => {
             node.append('Indent');
         });
         expect(process(comp)).toBe(`No indent${EOL}    Indent`);
+    });
+
+    test('should indent 4 spaces by default after new line (via configurator and array)', () => {
+        const comp = new CompositeGeneratorNode();
+        comp.append('No indent', NL);
+        comp.indent( {
+            indentedChildren:  ['Indent' ]
+        });
+        expect(process(comp)).toBe(`No indent${EOL}    Indent`);
+    });
+
+    test('should indent 4 spaces by default after new line (via configurator and callback)', () => {
+        const comp = new CompositeGeneratorNode();
+        comp.append('No indent', NL);
+        comp.indent( {
+            indentedChildren:  node => {
+                node.append('Indent');
+            }
+        });
+        expect(process(comp)).toBe(`No indent${EOL}    Indent`);
+    });
+
+    test('should indent [2, 3] spaces (via configurator)', () => {
+        const comp = new CompositeGeneratorNode();
+        comp.append('No indent', NL);
+        comp.indent( {
+            indentation: 2,
+            indentedChildren:  ['Indent 2', NL, NL ]
+        });
+        comp.append('No indent', NL);
+        comp.indent( {
+            indentation: '   ',
+            indentEmptyLines: true,
+            indentImmediately: false,
+            indentedChildren:  node => node.append('Not yet indented', NL, NL, 'Indent 3')
+        });
+        expect(process(comp, 7)).toBe(`No indent${EOL}  Indent 2${EOL}${EOL}No indent${EOL}Not yet indented${EOL}   ${EOL}   Indent 3`);
     });
 
     test('should indent 2 spaces if specified after new line', () => {
