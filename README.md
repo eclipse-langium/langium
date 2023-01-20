@@ -21,15 +21,18 @@ Langium is a language engineering tool for [TypeScript](https://www.typescriptla
 
 * **Semantics First:** Building on top of a [grammar declaration language](https://langium.org/docs/grammar-language/), Langium enables you to build the abstract model of your language in parallel to its syntax. Langium parsers are powered by [Chevrotain](https://chevrotain.io).
 * **Lean by Default, Customizable by Design:** Langium offers the infrastructure you need to build languages purely by defining their grammar. If that is not enough, you can fine tune every detail of your language using our [dependency injection system](https://langium.org/docs/configuration-services/).
-* **Write Once, Run Everywhere:** By leveraging the flexibility of JavaScript and the [Language Server Protocol](https://microsoft.github.io/language-server-protocol/), a language written using Langium can run in all kind of IDEs, browsers or embedded in CLIs and server applications.
-
-[Learn how to use Langium in your project](https://langium.org/docs/getting-started/).
+* **Write Once, Run Everywhere:** By leveraging the flexibility of JavaScript and the [Language Server Protocol](https://microsoft.github.io/language-server-protocol/), a language written using Langium can run in all kinds of IDEs and browsers or be embedded in CLIs and server applications.
 
 ## Installation
 
 Build your first language with Langium in our [online playground](https://langium.org/playground/).
 
-Alternatively you can use yeoman to generate a [sample Langium project](https://langium.org/docs/getting-started/).
+Once you're ready to set up a project, you can use yeoman to generate a [sample Langium project](https://langium.org/docs/getting-started/):
+
+```sh
+npm i -g yo generator-langium
+yo langium
+```
 
 ## Documentation
 
@@ -58,7 +61,7 @@ We host a number of simple examples in our [main repo](https://github.com/langiu
 More complex examples are available as separate repositories in [our GitHub organization](https://github.com/langium):
 
 * **[lox](https://github.com/langium/langium-lox)**: Implementation of the Lox language from the popular book [Crafting Interpreters](https://craftinginterpreters.com/the-lox-language.html).
-* **[minilogo](https://github.com/langium/langium-minilogo)**: A language to draw logos. Shows how to integrate Langium in the browser.
+* **[minilogo](https://github.com/langium/langium-minilogo)**: Implementation of a [logo](https://el.media.mit.edu/logo-foundation/what_is_logo/logo_programming.html) language dialect. Shows how to integrate Langium in the browser.
 
 ## Contributing
 
