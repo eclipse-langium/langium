@@ -8,13 +8,11 @@ import { CancellationToken, Hover, HoverParams } from 'vscode-languageserver';
 import { GrammarConfig } from '../grammar/grammar-config';
 import { References } from '../references/references';
 import { LangiumServices } from '../services';
-import { AstNode, AstNodeDescription, isLeafCstNode } from '../syntax-tree';
-import { getDocument } from '../utils/ast-util';
-import { findCommentNode, findDeclarationNodeAtOffset } from '../utils/cst-util';
-import { isJSDoc, parseJSDoc } from '../utils/jsdoc-util';
+import { AstNode } from '../syntax-tree';
+import { findDeclarationNodeAtOffset } from '../utils/cst-util';
 import { MaybePromise } from '../utils/promise-util';
 import { LangiumDocument } from '../workspace/documents';
-import { IndexManager } from '../workspace/index-manager';
+import { DocumentationProvider } from '../documentation';
 
 /**
  * Language-specific service for handling hover requests.
@@ -60,32 +58,17 @@ export abstract class AstNodeHoverProvider implements HoverProvider {
 
 export class MultilineCommentHoverProvider extends AstNodeHoverProvider {
 
-    protected readonly indexManager: IndexManager;
+    protected readonly documentationProvider: DocumentationProvider;
 
     constructor(services: LangiumServices) {
         super(services);
-        this.indexManager = services.shared.workspace.IndexManager;
+        this.documentationProvider = services.documentation.DocumentationProvider;
     }
 
     protected getAstNodeHoverContent(node: AstNode): MaybePromise<Hover | undefined> {
-        const lastNode = findCommentNode(node.$cstNode, this.grammarConfig.multilineCommentRules);
-        let content = '';
-        if (isLeafCstNode(lastNode) && isJSDoc(lastNode)) {
-            const parsedJSDoc = parseJSDoc(lastNode);
-            content = parsedJSDoc.toMarkdown({
-                renderLink: (link, display) => {
-                    return this.hoverLinkRenderer(node, link, display);
-                }
-            });
-        }
+        const content = this.documentationProvider.getDocumentation(node);
 
-        const additionalContent = this.getAdditionalHoverContent(node);
-
-        if (additionalContent && additionalContent.length > 0) {
-            content = additionalContent + '\n\n---\n\n' + content;
-        }
-
-        if (content.length > 0) {
+        if (content) {
             return {
                 contents: {
                     kind: 'markdown',
@@ -94,45 +77,5 @@ export class MultilineCommentHoverProvider extends AstNodeHoverProvider {
             };
         }
         return undefined;
-    }
-
-    protected getAdditionalHoverContent(_node: AstNode): string | undefined {
-        return undefined;
-    }
-
-    protected hoverLinkRenderer(node: AstNode, name: string, display: string): string | undefined {
-        const description = this.findNameInPrecomputedScopes(node, name) ?? this.findNameInGlobalScope(node, name);
-        if (description && description.nameSegment) {
-            const line = description.nameSegment.range.start.line + 1;
-            const character = description.nameSegment.range.start.character + 1;
-            const uri = description.documentUri.with({ fragment: `L${line},${character}` });
-            return `[${display}](${uri.toString()})`;
-        } else {
-            return undefined;
-        }
-    }
-
-    protected findNameInPrecomputedScopes(node: AstNode, name: string): AstNodeDescription | undefined {
-        const document = getDocument(node);
-        const precomputed = document.precomputedScopes;
-        if (!precomputed) {
-            return undefined;
-        }
-        let currentNode: AstNode | undefined = node;
-        do {
-            const allDescriptions = precomputed.get(currentNode);
-            const description = allDescriptions.find(e => e.name === name);
-            if (description) {
-                return description;
-            }
-            currentNode = currentNode.$container;
-        } while (currentNode);
-
-        return undefined;
-    }
-
-    protected findNameInGlobalScope(node: AstNode, name: string): AstNodeDescription | undefined {
-        const description = this.indexManager.allElements().find(e => e.name === name);
-        return description;
     }
 }

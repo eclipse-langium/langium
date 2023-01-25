@@ -8,7 +8,7 @@ import { Position, Range } from 'vscode-languageserver';
 import { URI } from 'vscode-uri';
 import { NEWLINE_REGEXP } from '../generator/template-string';
 import { CstNode } from '../syntax-tree';
-import { escapeRegExp } from './regex-util';
+import { escapeRegExp } from '../utils/regex-util';
 
 export interface JSDocComment extends JSDocValue {
     readonly elements: JSDocElement[]
