@@ -30,8 +30,8 @@ export type TypeResources = {
 
 export function collectTypeResources(grammars: Grammar | Grammar[], documents?: LangiumDocuments): TypeResources {
     const astResources = collectAllAstResources(grammars, documents);
-    const inferred = collectInferredTypes(astResources.parserRules, astResources.datatypeRules);
     const declared = collectDeclaredTypes(astResources.interfaces, astResources.types);
+    const inferred = collectInferredTypes(astResources.parserRules, astResources.datatypeRules, declared);
 
     shareSuperTypesFromUnions(inferred, declared);
     addSuperProperties(mergeInterfaces(inferred, declared));
@@ -48,7 +48,7 @@ function addSuperProperties(allTypes: InterfaceType[]) {
             const superType = allTypes.find(e => e.name === superTypeName);
 
             if (superType && isInterfaceType(superType)) {
-                addSuperPropertiesInternal(superType);
+                addSuperPropertiesInternal(superType, visited);
                 superType.superProperties
                     .entriesGroupedByKey()
                     .forEach(propInfo => type.superProperties.addAll(propInfo[0], propInfo[1]));

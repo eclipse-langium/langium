@@ -162,6 +162,19 @@ describe('validate declared types', () => {
         expect(diagnostics.filter(d => d.severity === DiagnosticSeverity.Error)).toHaveLength(0);
 
     });
+
+    test('Can return an interface from a rule that would return a union type', async () => {
+        const grammar = `
+        X returns X: Y | Z;
+        Y: y='y';
+        Z: z='z';
+        // X would normally return a union type of Y | Z
+        // This forces it into an interface
+        interface X { }
+        `;
+        const validation = await validate(grammar);
+        expectNoIssues(validation);
+    });
 });
 
 describe('validate actions that use declared types', () => {

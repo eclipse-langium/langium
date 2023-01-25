@@ -186,7 +186,7 @@ class TypeGraph {
     }
 }
 
-export function collectInferredTypes(parserRules: ParserRule[], datatypeRules: ParserRule[]): AstTypes {
+export function collectInferredTypes(parserRules: ParserRule[], datatypeRules: ParserRule[], declaredTypes: AstTypes): AstTypes {
     // extract interfaces and types from parser rules
     const allTypes: TypePath[] = [];
     const context: TypeCollectionContext = {
@@ -197,7 +197,7 @@ export function collectInferredTypes(parserRules: ParserRule[], datatypeRules: P
     }
     const interfaces = calculateInterfaces(allTypes);
     const unions = buildSuperUnions(interfaces);
-    const astTypes = extractUnions(interfaces, unions);
+    const astTypes = extractUnions(interfaces, unions, declaredTypes);
 
     // extract types from datatype rules
     for (const rule of datatypeRules) {
@@ -477,7 +477,7 @@ function buildSuperUnions(interfaces: InterfaceType[]): UnionType[] {
  * @param interfaces The interfaces that have to be transformed on demand.
  * @returns Types and not transformed interfaces.
  */
-function extractUnions(interfaces: InterfaceType[], unions: UnionType[]): AstTypes {
+function extractUnions(interfaces: InterfaceType[], unions: UnionType[], declaredTypes: AstTypes): AstTypes {
     for (const interfaceType of interfaces) {
         for (const superTypeName of interfaceType.realSuperTypes) {
             interfaces.find(e => e.name === superTypeName)
@@ -486,10 +486,11 @@ function extractUnions(interfaces: InterfaceType[], unions: UnionType[]): AstTyp
     }
 
     const astTypes: AstTypes = { interfaces: [], unions };
-    const typeNames = new Set<string>(unions.map(e => e.name));
+    const typeNames = new Set(unions.map(e => e.name));
+    const declaredInterfaces = new Set(declaredTypes.interfaces.map(e => e.name));
     for (const interfaceType of interfaces) {
         // the criterion for converting an interface into a type
-        if (interfaceType.properties.length === 0 && interfaceType.subTypes.size > 0) {
+        if (interfaceType.properties.length === 0 && interfaceType.subTypes.size > 0 && !declaredInterfaces.has(interfaceType.name)) {
             const alternatives: PropertyType[] = toPropertyType(false, false, Array.from(interfaceType.subTypes));
             const existingUnion = unions.find(e => e.name === interfaceType.name);
             if (existingUnion) {
