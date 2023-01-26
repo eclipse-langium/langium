@@ -9,9 +9,10 @@ import { GrammarConfig } from '../grammar/grammar-config';
 import { References } from '../references/references';
 import { LangiumServices } from '../services';
 import { AstNode } from '../syntax-tree';
-import { findCommentNode, findDeclarationNodeAtOffset } from '../utils/cst-util';
+import { findDeclarationNodeAtOffset } from '../utils/cst-util';
 import { MaybePromise } from '../utils/promise-util';
 import { LangiumDocument } from '../workspace/documents';
+import { DocumentationProvider } from '../documentation';
 
 /**
  * Language-specific service for handling hover requests.
@@ -57,17 +58,16 @@ export abstract class AstNodeHoverProvider implements HoverProvider {
 
 export class MultilineCommentHoverProvider extends AstNodeHoverProvider {
 
-    protected readonly commentContentRegex = /\/\*([\s\S]*?)\*\//;
+    protected readonly documentationProvider: DocumentationProvider;
+
+    constructor(services: LangiumServices) {
+        super(services);
+        this.documentationProvider = services.documentation.DocumentationProvider;
+    }
 
     protected getAstNodeHoverContent(node: AstNode): MaybePromise<Hover | undefined> {
-        const lastNode = findCommentNode(node.$cstNode, this.grammarConfig.multilineCommentRules);
-        let content: string | undefined;
-        if (lastNode) {
-            const exec = this.commentContentRegex.exec(lastNode.text);
-            if (exec && exec[1]) {
-                content = this.getCommentContent(exec[1]);
-            }
-        }
+        const content = this.documentationProvider.getDocumentation(node);
+
         if (content) {
             return {
                 contents: {
@@ -78,16 +78,4 @@ export class MultilineCommentHoverProvider extends AstNodeHoverProvider {
         }
         return undefined;
     }
-
-    protected getCommentContent(commentText: string): string {
-        const split = commentText.split('\n').map(e => {
-            e = e.trim();
-            if (e.startsWith('*')) {
-                e = e.substring(1).trim();
-            }
-            return e;
-        });
-        return split.join(' ').trim();
-    }
-
 }

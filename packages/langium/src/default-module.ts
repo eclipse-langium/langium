@@ -41,6 +41,7 @@ import { FileSystemProvider } from './workspace/file-system-provider';
 import { DefaultIndexManager } from './workspace/index-manager';
 import { DefaultWorkspaceManager } from './workspace/workspace-manager';
 import { DefaultLexer } from './parser/lexer';
+import { JSDocDocumentationProvider } from './documentation';
 
 /**
  * Context required for creating the default language-specific dependency injection module.
@@ -55,6 +56,9 @@ export interface DefaultModuleContext {
  */
 export function createDefaultModule(context: DefaultModuleContext): Module<LangiumServices, LangiumDefaultServices> {
     return {
+        documentation: {
+            DocumentationProvider: (services) => new JSDocDocumentationProvider(services)
+        },
         parser: {
             GrammarConfig: (services) => createGrammarConfig(services),
             LangiumParser: (services) => createLangiumParser(services),

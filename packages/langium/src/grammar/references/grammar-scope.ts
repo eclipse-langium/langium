@@ -9,6 +9,7 @@ import { DefaultScopeProvider, EMPTY_SCOPE, Scope, StreamScope } from '../../ref
 import { LangiumServices } from '../../services';
 import { AstNode, AstNodeDescription, ReferenceInfo } from '../../syntax-tree';
 import { findRootNode, getContainerOfType, getDocument, streamAllContents } from '../../utils/ast-util';
+import { toDocumentSegment } from '../../utils/cst-util';
 import { stream, Stream } from '../../utils/stream';
 import { equalURI } from '../../utils/uri-util';
 import { AstNodeLocator } from '../../workspace/ast-node-locator';
@@ -80,26 +81,14 @@ export class LangiumGrammarScopeComputation extends DefaultScopeComputation {
             if (!node.returnType && !node.dataType) {
                 // Export inferred rule type as interface
                 const typeNode = node.inferredType ?? node;
-                exports.push({
-                    node: typeNode,
-                    name: typeNode.name,
-                    type: 'Interface',
-                    documentUri: document.uri,
-                    path: this.astNodeLocator.getAstNodePath(typeNode)
-                });
+                exports.push(this.createInterfaceDescription(typeNode, typeNode.name, document));
             }
             streamAllContents(node).forEach(childNode => {
                 if (isAction(childNode) && childNode.inferredType) {
                     const typeName = getActionType(childNode);
                     if (typeName) {
                         // Export inferred action type as interface
-                        exports.push({
-                            node,
-                            name: typeName,
-                            type: 'Interface',
-                            documentUri: document.uri,
-                            path: this.astNodeLocator.getAstNodePath(node)
-                        });
+                        exports.push(this.createInterfaceDescription(childNode, typeName, document));
                     }
                 }
             });
@@ -121,13 +110,7 @@ export class LangiumGrammarScopeComputation extends DefaultScopeComputation {
         const container = node.$container;
         if (container && isParserRule(node) && !node.returnType && !node.dataType) {
             const typeNode = node.inferredType ?? node;
-            scopes.add(container, {
-                node: typeNode,
-                name: typeNode.name,
-                type: 'Interface',
-                documentUri: document.uri,
-                path: this.astNodeLocator.getAstNodePath(typeNode)
-            });
+            scopes.add(container, this.createInterfaceDescription(typeNode, typeNode.name, document));
         }
     }
 
@@ -141,14 +124,21 @@ export class LangiumGrammarScopeComputation extends DefaultScopeComputation {
         if (container && isAction(node) && node.inferredType) {
             const typeName = getActionType(node);
             if (typeName) {
-                scopes.add(container, {
-                    node,
-                    name: typeName,
-                    type: 'Interface',
-                    documentUri: document.uri,
-                    path: this.astNodeLocator.getAstNodePath(node)
-                });
+                scopes.add(container, this.createInterfaceDescription(node, typeName, document));
             }
         }
+    }
+
+    protected createInterfaceDescription(node: AstNode, name: string, document: LangiumDocument = getDocument(node)): AstNodeDescription {
+        const nameNode = this.nameProvider.getNameNode(node) ?? node.$cstNode;
+        return {
+            node,
+            name,
+            nameSegment: toDocumentSegment(nameNode),
+            selectionSegment: toDocumentSegment(node.$cstNode),
+            type: 'Interface',
+            documentUri: document.uri,
+            path: this.astNodeLocator.getAstNodePath(node)
+        };
     }
 }

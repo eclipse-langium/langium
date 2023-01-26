@@ -75,6 +75,14 @@ export function isReference(obj: unknown): obj is Reference {
 export interface AstNodeDescription {
     /** The target node; should be present only for local references (linking to the same document). */
     node?: AstNode;
+    /**
+     * The document segment that represents the range of the name of the AST node.
+     */
+    nameSegment?: DocumentSegment;
+    /**
+     * The document segment that represents the full range of the AST node.
+     */
+    selectionSegment?: DocumentSegment;
     /** `$type` property value of the AST node */
     type: string;
     /** Name of the AST node; this is usually determined by the `NameProvider` service. */

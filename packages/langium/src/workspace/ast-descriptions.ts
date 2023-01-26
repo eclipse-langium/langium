@@ -6,6 +6,7 @@
 
 import { CancellationToken } from 'vscode-languageserver';
 import { URI } from 'vscode-uri';
+import { NameProvider } from '../references/name-provider';
 import { LangiumServices } from '../services';
 import { AstNode, AstNodeDescription, isLinkingError, ReferenceInfo } from '../syntax-tree';
 import { getDocument, streamAst, streamReferences } from '../utils/ast-util';
@@ -25,30 +26,40 @@ export interface AstNodeDescriptionProvider {
      * the contents of a document and during scope computation.
      *
      * @param node An AST node.
-     * @param name The name to be used to refer to the AST node. Typically this is determined by the
+     * @param name The name to be used to refer to the AST node. By default, this is determined by the
      *     `NameProvider` service, but alternative names may be provided according to the semantics
      *     of your language.
      * @param document The document containing the AST node. If omitted, it is taken from the root AST node.
      */
-    createDescription(node: AstNode, name: string, document?: LangiumDocument): AstNodeDescription;
+    createDescription(node: AstNode, name: string | undefined, document?: LangiumDocument): AstNodeDescription;
 
 }
 
 export class DefaultAstNodeDescriptionProvider implements AstNodeDescriptionProvider {
 
     protected readonly astNodeLocator: AstNodeLocator;
+    protected readonly nameProvider: NameProvider;
 
     constructor(services: LangiumServices) {
         this.astNodeLocator = services.workspace.AstNodeLocator;
+        this.nameProvider = services.references.NameProvider;
     }
 
-    createDescription(node: AstNode, name: string, document: LangiumDocument = getDocument(node)): AstNodeDescription {
+    createDescription(node: AstNode, name: string | undefined, document: LangiumDocument = getDocument(node)): AstNodeDescription {
+        name ??= this.nameProvider.getName(node);
+        const path = this.astNodeLocator.getAstNodePath(node);
+        if (!name) {
+            throw new Error(`Node at path ${path} has no name.`);
+        }
+        const nameNode = this.nameProvider.getNameNode(node) ?? node.$cstNode;
         return {
             node,
             name,
+            nameSegment: toDocumentSegment(nameNode),
+            selectionSegment: toDocumentSegment(node.$cstNode),
             type: node.$type,
             documentUri: document.uri,
-            path: this.astNodeLocator.getAstNodePath(node)
+            path
         };
     }
 

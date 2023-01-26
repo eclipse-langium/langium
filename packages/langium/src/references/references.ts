@@ -95,11 +95,7 @@ export class DefaultReferences implements References {
         const astNode = this.findDeclaration(sourceCstNode);
         if (astNode?.$cstNode) {
             const targetNode = this.nameProvider.getNameNode(astNode);
-            if (!targetNode) {
-                return astNode.$cstNode;
-            } else {
-                return targetNode;
-            }
+            return targetNode ?? astNode.$cstNode;
         }
         return undefined;
     }
