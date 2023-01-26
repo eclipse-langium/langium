@@ -48,7 +48,7 @@ export class DefaultAstNodeDescriptionProvider implements AstNodeDescriptionProv
     createDescription(node: AstNode, name: string | undefined, document: LangiumDocument = getDocument(node)): AstNodeDescription {
         name ??= this.nameProvider.getName(node);
         const path = this.astNodeLocator.getAstNodePath(node);
-        if (name === undefined) {
+        if (!name) {
             throw new Error(`Node at path ${path} has no name.`);
         }
         const nameNode = this.nameProvider.getNameNode(node) ?? node.$cstNode;
