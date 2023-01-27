@@ -2,7 +2,7 @@
  * Copyright 2021-2022 TypeFox GmbH
  * This program and the accompanying materials are made available under the
  * terms of the MIT License, which is available in the project root.
- ******************************************************************************/
+******************************************************************************/
 
 import {
     escapeRegExp, getCaseInsensitivePattern, getTerminalParts, Grammar, GrammarAST, isCommentTerminal, stream
@@ -10,6 +10,8 @@ import {
 import { terminalRegex } from 'langium/lib/grammar/internal-grammar-util';
 import { LangiumLanguageConfig } from '../../package';
 import { collectKeywords } from '../util';
+
+/* eslint-disable dot-notation */
 
 export interface TextMateGrammar {
     repository: Repository;
@@ -71,7 +73,9 @@ function getPatterns(grammar: Grammar, config: LangiumLanguageConfig): Pattern[]
 }
 
 function getRepository(grammar: Grammar, config: LangiumLanguageConfig): Repository {
+    const repository: Repository = {};
     const commentPatterns: Pattern[] = [];
+    let stringEscapePattern: Pattern | undefined;
     for (const rule of grammar.rules) {
         if (GrammarAST.isTerminalRule(rule) && isCommentTerminal(rule)) {
             const parts = getTerminalParts(terminalRegex(rule));
@@ -105,14 +109,22 @@ function getRepository(grammar: Grammar, config: LangiumLanguageConfig): Reposit
                     });
                 }
             }
+        } else if (GrammarAST.isTerminalRule(rule) && rule.name.toLowerCase() === 'string') {
+            stringEscapePattern = {
+                'name': `constant.character.escape.${config.id}`,
+                'match': '\\\\(x[0-9A-Fa-f]{2}|u[0-9A-Fa-f]{4}|u\\{[0-9A-Fa-f]+\\}|[0-2][0-7]{0,2}|3[0-6][0-7]?|37[0-7]?|[4-7][0-7]?|.|$)'
+            };
         }
     }
-    const repository: Repository = {
-        'comments': {
-            'patterns': commentPatterns
-        }
-    };
 
+    if (commentPatterns.length > 0) {
+        repository['comments'] = {
+            'patterns': commentPatterns
+        };
+    }
+    if (stringEscapePattern) {
+        repository['string-character-escape'] = stringEscapePattern;
+    }
     return repository;
 }
 
@@ -170,7 +182,12 @@ function getStringPatterns(grammar: Grammar, pack: LangiumLanguageConfig): Patte
                 stringPatterns.push({
                     'name': `string.quoted.${delimiterName(part.start)}.${pack.id}`,
                     'begin': part.start,
-                    'end': part.end
+                    'end': part.end,
+                    'patterns': [
+                        {
+                            'include': '#string-character-escape'
+                        }
+                    ]
                 });
             }
         }

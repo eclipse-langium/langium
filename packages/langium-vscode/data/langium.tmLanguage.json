@@ -26,12 +26,22 @@
         {
             "name": "string.quoted.double.langium",
             "begin": "\"",
-            "end": "\""
+            "end": "\"",
+            "patterns": [
+				{
+					"include": "#string-character-escape"
+				}
+			]
         },
         {
             "name": "string.quoted.single.langium",
             "begin": "'",
-            "end": "'"
+            "end": "'",
+            "patterns": [
+				{
+					"include": "#string-character-escape"
+				}
+			]
         }
     ],
     "repository": {
@@ -64,23 +74,27 @@
                 }
             ]
         },
+        "string-character-escape": {
+            "name": "constant.character.escape.langium",
+            "match": "\\\\(x[0-9A-Fa-f]{2}|u[0-9A-Fa-f]{4}|u\\{[0-9A-Fa-f]+\\}|[0-2][0-7]{0,2}|3[0-6][0-7]?|37[0-7]?|[4-7][0-7]?|.|$)"
+        },
         "regex": {
             "patterns": [
                 {
-                    "name": "string.regex.ts",
+                    "name": "string.regex.langium",
                     "begin": "/(?![/*])(?=(?:[^/\\\\\\[]|\\\\.|\\[([^\\]\\\\]|\\\\.)+\\])+/(?![/*]))",
                     "beginCaptures": {
                         "0": {
-                            "name": "punctuation.definition.string.begin.ts"
+                            "name": "punctuation.definition.string.begin.langium"
                         }
                     },
                     "end": "/",
                     "endCaptures": {
                         "1": {
-                            "name": "punctuation.definition.string.end.ts"
+                            "name": "punctuation.definition.string.end.langium"
                         },
                         "2": {
-                            "name": "keyword.other.ts"
+                            "name": "keyword.other.langium"
                         }
                     },
                     "patterns": [

@@ -11,16 +11,6 @@
     {
       "name": "keyword.control.domain-model",
       "match": "\\b(datatype|entity|extends|many|package)\\b"
-    },
-    {
-      "name": "string.quoted.double.domain-model",
-      "begin": "\"",
-      "end": "\""
-    },
-    {
-      "name": "string.quoted.single.domain-model",
-      "begin": "'",
-      "end": "'"
     }
   ],
   "repository": {

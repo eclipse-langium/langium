@@ -160,8 +160,6 @@ TerminalRule:
         definition=TerminalAlternatives
     ';';
 
-terminal RegexLiteral returns string: /\/(?![*+?])(?:[^\r\n\[/\\]|\\.|\[(?:[^\r\n\]\\]|\\.)*\])+\//;
-
 TerminalAlternatives infers AbstractElement:
     TerminalGroup ({infer TerminalAlternatives.elements+=current} '|' elements+=TerminalGroup)*;
 
@@ -199,7 +197,8 @@ FeatureName returns string:
     'current' | 'entry' | 'extends' | 'false' | 'fragment' | 'grammar' | 'hidden' | 'import' | 'interface' | 'returns' | 'terminal' | 'true' | 'type' | 'infer' | 'infers' | 'with' | PrimitiveType | ID;
 
 terminal ID: /\^?[_a-zA-Z][\w_]*/;
-terminal STRING: /"[^"]*"|'[^']*'/;
+terminal STRING: /"(\\.|[^"\\])*"|'(\\.|[^'\\])*'/;
+terminal RegexLiteral returns string: /\/(?![*+?])(?:[^\r\n\[/\\]|\\.|\[(?:[^\r\n\]\\]|\\.)*\])+\//;
 
 hidden terminal WS: /\s+/;
 hidden terminal ML_COMMENT: /\/\*[\s\S]*?\*\//;

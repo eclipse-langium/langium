@@ -11,16 +11,6 @@
     {
       "name": "keyword.control.statemachine",
       "match": "\\b(actions|commands|end|events|initialState|state|statemachine)\\b"
-    },
-    {
-      "name": "string.quoted.double.statemachine",
-      "begin": "\"",
-      "end": "\""
-    },
-    {
-      "name": "string.quoted.single.statemachine",
-      "begin": "'",
-      "end": "'"
     }
   ],
   "repository": {
