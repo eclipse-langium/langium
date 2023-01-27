@@ -4,11 +4,13 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { CompositeGeneratorNode, Generated, GeneratorNode, IndentNode, isGeneratorNode } from './generator-node';
+import type { AstNode, Properties } from '../syntax-tree';
+import { CompositeGeneratorNode, Generated, GeneratorNode, IndentNode, isGeneratorNode, traceToNode } from './generator-node';
 import { findIndentation, NEWLINE_REGEXP } from './template-string';
 
 /**
  * A tag function that attaches the template's content to a {@link CompositeGeneratorNode}.
+ *
  * This is done segment by segment, and static template portions as well as substitutions
  * are added individually to the returned {@link CompositeGeneratorNode}.
  * At that common leading indentation of all the template's static parts is trimmed,
@@ -63,6 +65,38 @@ export function expandToNode(staticParts: TemplateStringsArray, ...substitutions
 
     // eventually, inject indentation nodes and append the segments to final desired composite generator node
     return composeFinalGeneratorNode(splitAndMerged);
+}
+
+/**
+ * Convenience function for creating a {@link CompositeGeneratorNode} being configured with the
+ *  provided tracing information and appending content in form of a template.
+ *
+ * This function returns a tag function that takes the desired template and does the processing
+ *  by delegating to {@link expandToNode} and {@link traceToNode} and finally returning the
+ *  resulting generator node.
+ *
+ * @param astNode the AstNode corresponding to the appended content
+ *
+ * @param property the value property name (string) corresponding to the appended content,
+ *  if e.g. the content corresponds to some `string` or `number` property of `astNode`, is optional
+ *
+ * @param index the index of the value within a list property corresponding to the appended content,
+ *  if the property contains a list of elements, is ignored otherwise, is optinal,
+ *  should not be given if no `property` is given
+ *
+ * @returns a tag function behaving as described above, which in turn returns a {@link CompositeGeneratorNode}.
+ *
+ * @example
+ *   expandTracedToNode(entity)`
+ *       Hello ${ traceToNode(entity, name)(entity.name) }
+ *   `.appendNewLine()
+ */
+export function expandTracedToNode<T extends AstNode>(astNode: T, property?: Properties<T>, index?: number): (staticParts: TemplateStringsArray, ...substitutions: unknown[]) => CompositeGeneratorNode {
+    return (staticParts: TemplateStringsArray, ...substitutions: unknown[]) => {
+        return traceToNode(astNode, property, index)(
+            expandToNode(staticParts, ...substitutions)
+        );
+    };
 }
 
 type TemplateProps = {
@@ -283,6 +317,7 @@ function composeFinalGeneratorNode(splitAndMerged: GeneratedOrMarker[]): Composi
 }
 
 export interface JoinOptions<T> {
+    filter?: (element: T, index: number, isLast: boolean) => boolean;
     prefix?: (element: T, index: number, isLast: boolean) => Generated|undefined;
     suffix?: (element: T, index: number, isLast: boolean) => Generated|undefined;
     separator?: Generated;
@@ -307,19 +342,29 @@ export interface JoinOptions<T> {
  * ```
  *
  * @param iterable an {@link Array} or {@link Iterable} providing the elements to be joined
+ *
  * @param toGenerated a callback converting each individual element to a string, a
  *  {@link CompositeGeneratorNode}, or undefined if to be omitted, defaults to {@link String}
+ *
  * @param options optional config object for defining a `separator`, contributing specialized
- *  `prefix` and/or `suffix` providers, and activating conditional line-break insertion.
+ *  `prefix` and/or `suffix` providers, and activating conditional line-break insertion. In addition,
+ *  a dedicated `filter` function can be provided that is required get provided with the original
+ *  element indices in the aformentioned functions, if the list is to be filtered. If
+ *  {@link Array.filter} would be applied to the original list, the indices will be those of the
+ *  filtered list during subsequent processing that in particular will cause confusion when using
+ *  the tracing variant of this function named ({@link joinTracedToNode}).
  * @returns the resulting {@link CompositeGeneratorNode} representing `iterable`'s content
  */
 export function joinToNode<T>(
     iterable: Iterable<T>|T[],
     toGenerated: (element: T, index: number, isLast: boolean) => Generated = String,
-    { prefix, suffix, separator, appendNewLineIfNotEmpty }: JoinOptions<T> = {}
+    { filter, prefix, suffix, separator, appendNewLineIfNotEmpty }: JoinOptions<T> = {}
 ): CompositeGeneratorNode|undefined {
 
     return reduceWithIsLast(iterable, (node, it, i, isLast) => {
+        if (filter && !filter(it, i, isLast)) {
+            return node;
+        }
         const content = toGenerated(it, i, isLast);
         return (node ??= new CompositeGeneratorNode())
             .append(prefix && prefix(it, i, isLast))
@@ -335,9 +380,51 @@ export function joinToNode<T>(
     });
 }
 
+/**
+ * Convenience function for joining the elements of some `iterable` and gathering tracing information.
+ *
+ * This function returns another function that does the processing, and that expects same list of
+ *  arguments as expected by {@link joinToNode}, i.e. an `iterable`, a function `toGenerated`
+ *  converting each element into a `Generated`, as well as some `options`.
+ *
+ * That function than joins the elements of `iterable` by delegating to {@link joinToNode}.
+ * Via {@link traceToNode} the resulting generator node is supplemented with the provided tracing
+ *  information, and finally returned. In addition, if `property` is given each element's
+ *  generator node representation is augmented with the provided tracing information
+ *  plus the index of the element within `iterable`.
+ *
+ * @param astNode the AstNode corresponding to the appended content
+ *
+ * @param property the value property name (string) corresponding to the appended content,
+ *  if e.g. the content corresponds to some `string` or `number` property of `astNode`, is optional
+ *
+ * @param index the index of the value within a list property corresponding to the appended content,
+ *  if the property contains a list of elements, is ignored otherwise, is optinal,
+ *  should not be given if no `property` is given
+ *
+ * @returns a function behaving as described above, which in turn returns a {@link CompositeGeneratorNode}.
+ *
+ * @example
+ *   expandToNode`
+ *       children: ${ joinTracedToNode(entity, 'children')(entity.children, child => child.name, { separator: ' ' }) };
+ *   `.appendNewLine()
+ */
+export function joinTracedToNode<T extends AstNode>(astNode: T, property?: Properties<T>): // eslint-disable-next-line @typescript-eslint/indent
+        <E>(iterable: Iterable<E>|E[], toGenerated?: (element: E, index: number, isLast: boolean) => Generated, options?: JoinOptions<E>) => CompositeGeneratorNode|undefined {
+    return (iterable, toGenerated = String, options) => {
+        return traceToNode(astNode, property)(
+            joinToNode(
+                iterable,
+                astNode && property ? (element, index, isLast) => traceToNode(astNode, property, index)(toGenerated(element, index, isLast)) : toGenerated,
+                options
+            )
+        );
+    };
+}
+
 function reduceWithIsLast<T, R>(
     iterable: Iterable<T>|T[],
-    callbackfn: (previous: R|undefined, current: T, currentIndex: number, isLast: boolean) => R,
+    callbackfn: (previous: R|undefined, current: T, currentIndex: number, isLast: boolean) => R | undefined,
     initial?: R
 ) {
     const iterator = iterable[Symbol.iterator]();

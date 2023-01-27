@@ -6,14 +6,44 @@
 
 import { NameProvider } from '../references/name-provider';
 import { LangiumServices } from '../services';
-import { AstNode, GenericAstNode, isAstNode, isReference, Reference } from '../syntax-tree';
-import { Mutable } from '../utils/ast-util';
+import { AstNode, CstNode, GenericAstNode, isAstNode, isReference, Reference } from '../syntax-tree';
+import { getDocument, Mutable } from '../utils/ast-util';
+import { findNodesForProperty } from '../utils/grammar-util';
 import { AstNodeLocator } from '../workspace/ast-node-locator';
+import type { DocumentSegment } from '../workspace/documents';
 
 export interface JsonSerializeOptions {
-    space?: string | number
-    refText?: boolean
+    space?: string | number;
+    refText?: boolean;
+    sourceText?: boolean;
+    textRegions?: boolean;
     replacer?: (key: string, value: unknown, defaultReplacer: (key: string, value: unknown) => unknown) => unknown
+}
+
+/**
+ * {@link AstNode}s that may carry information on their definition area within the DSL text.
+ */
+export interface AstNodeWithTextRegion extends AstNode {
+    $sourceText?: string;
+    $textRegion?: AstNodeRegionWithAssignments;
+}
+
+/**
+ * A {@DocumentSegment} representing the definition area of an AstNode within the DSL text.
+ * Usually contains text region information on all assigned property values of the AstNode,
+ * and may contain the defining file's URI as string.
+ */
+export interface AstNodeRegionWithAssignments extends DocumentSegment {
+    /**
+     * A record containing an entry for each assignd property of the AstNode.
+     * The key is equal to the property name and the value is an array of the property values'
+     * text regions, regardless of whether the property is a single value or list property.
+     */
+    assignments?: Record<string, DocumentSegment[]>;
+    /**
+     * The AstNode defining file's URI as string
+     */
+    documentURI?: string;
 }
 
 /**
@@ -67,7 +97,7 @@ export class DefaultJsonSerializer implements JsonSerializer {
         return root;
     }
 
-    protected replacer(key: string, value: unknown, { refText }: JsonSerializeOptions = {}): unknown {
+    protected replacer(key: string, value: unknown, { refText, sourceText, textRegions }: JsonSerializeOptions = {}): unknown {
         if (this.ignoreProperties.has(key)) {
             return undefined;
         } else if (isReference(value)) {
@@ -84,8 +114,46 @@ export class DefaultJsonSerializer implements JsonSerializer {
                     $error: value.error?.message ?? 'Could not resolve reference'
                 };
             }
+        } else {
+            let astNode: AstNodeWithTextRegion | undefined = undefined;
+            if (textRegions && isAstNode(value)) {
+                astNode = this.addAstNodeRegionWithAssignmentsTo({ ...value });
+                if ((!key || value.$document) && astNode?.$textRegion) {
+                    try {
+                        astNode.$textRegion.documentURI = getDocument(value).uri.toString();
+                    } catch (e) { /* do nothing */ }
+                }
+            }
+            if (sourceText && !key && isAstNode(value)) {
+                astNode ??= { ...value };
+                astNode.$sourceText = value.$cstNode?.text;
+            }
+            return astNode ?? value;
         }
-        return value;
+    }
+
+    protected addAstNodeRegionWithAssignmentsTo(node: AstNodeWithTextRegion) {
+        const createDocumentSegment: (cstNode: CstNode) => AstNodeRegionWithAssignments = cstNode => <DocumentSegment>{
+            offset: cstNode.offset,
+            end:    cstNode.end,
+            length: cstNode.length,
+            range:  cstNode.range,
+        };
+
+        if (node.$cstNode) {
+            const textRegion = node.$textRegion = createDocumentSegment(node.$cstNode);
+            const assignments: Record<string, DocumentSegment[]> = textRegion.assignments = {};
+
+            Object.keys(node).filter(key => !key.startsWith('$')).forEach( key => {
+                const propertyAssignments = findNodesForProperty(node.$cstNode, key).map( createDocumentSegment );
+                if (propertyAssignments.length !== 0) {
+                    assignments[key] = propertyAssignments;
+                }
+            });
+
+            return node;
+        }
+        return undefined;
     }
 
     protected linkNode(node: GenericAstNode, root: AstNode, container?: AstNode, containerProperty?: string, containerIndex?: number) {

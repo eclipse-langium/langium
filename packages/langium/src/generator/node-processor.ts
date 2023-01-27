@@ -5,6 +5,7 @@
  ******************************************************************************/
 
 import { CompositeGeneratorNode, GeneratorNode, IndentNode, NewLineNode } from './generator-node';
+import { DocumentSegmentWithFileURI, getSourceRegion, TextRange, TraceRegion } from './generator-tracing';
 
 class Context {
 
@@ -12,6 +13,8 @@ class Context {
     pendingIndent = true;
     readonly currentIndents: IndentNode[] = [];
     readonly recentNonImmediateIndents: IndentNode[] = [];
+
+    readonly traceData: InternalTraceRegion[] = [];
 
     private lines: string[][] = [[]];
 
@@ -67,10 +70,51 @@ class Context {
     }
 }
 
-export function processGeneratorNode(node: GeneratorNode, defaultIndentation?: string | number): string {
+export function processGeneratorNode(node: GeneratorNode, defaultIndentation?: string | number): { text: string, trace: TraceRegion } {
     const context = new Context(defaultIndentation);
+    context.traceData.push(createTraceRegion(undefined, 0));
+
     processNodeInternal(node, context);
-    return context.content;
+
+    const trace = context.traceData.pop()!;
+    trace.complete && trace.complete(context.content.length);
+
+    const singleChild = trace.children && trace.children.length === 1 ? trace.children[0] : undefined;
+    const singleChildTargetRegion = singleChild?.targetRegion;
+    const rootTargetRegion = trace.targetRegion;
+
+    if (singleChildTargetRegion && singleChild.sourceRegion
+            && singleChildTargetRegion.offset === rootTargetRegion.offset
+            && singleChildTargetRegion.length === rootTargetRegion.length) {
+        // some optimization:
+        // if (the root) `node` is traced (`singleChild.sourceRegion` !== undefined) and spans the entire `context.content`
+        //  we skip the wrapping root trace object created above at the beginning of this method
+        return { text: context.content, trace: singleChild };
+
+    } else {
+        return { text: context.content, trace };
+    }
+}
+
+interface InternalTraceRegion extends TraceRegion {
+    complete?: (targetEnd: number) => TraceRegion;
+}
+
+function createTraceRegion(sourceRegion: DocumentSegmentWithFileURI | undefined, targetStart: number): TraceRegion {
+    const result = <InternalTraceRegion>{
+        sourceRegion,
+        targetRegion: undefined!,
+        children: [],
+        complete: (targetEnd: number) => {
+            result.targetRegion = <TextRange>{ offset: targetStart, length: targetEnd - targetStart };
+            if (result.children?.length === 0) {
+                delete result.children;
+            }
+            delete result.complete;
+            return result;
+        }
+    };
+    return result;
 }
 
 function processNodeInternal(node: GeneratorNode | string, context: Context) {
@@ -116,8 +160,40 @@ function handlePendingIndent(ctx: Context, endOfLine: boolean) {
 }
 
 function processCompositeNode(node: CompositeGeneratorNode, context: Context) {
+    let traceRegion: InternalTraceRegion | undefined = undefined;
+
+    const sourceRegion: DocumentSegmentWithFileURI | undefined = getSourceRegion(node.tracedSource);
+    if (sourceRegion) {
+        context.traceData.push(traceRegion = createTraceRegion(sourceRegion, context.content.length));
+    }
+
     for (const child of node.contents) {
         processNodeInternal(child, context);
+    }
+
+    if (traceRegion?.complete) {
+        traceRegion.complete(context.content.length);
+        const droppedRegion = context.traceData.pop();
+
+        // the following assertion can be dropped once the tracing is considered stable
+        assertTrue(droppedRegion === traceRegion, 'Trace region mismatch!');
+
+        const parentsFileURI = context.traceData.reduceRight<string|undefined>((prev, curr) => prev || curr.sourceRegion?.fileURI, undefined);
+        if (parentsFileURI && sourceRegion?.fileURI === parentsFileURI) {
+            // if some parent's sourceRegion refers to the same source file uri (and no other source file was referenced inbetween)
+            // we can drop the file uri in order to reduce repeated strings
+            delete sourceRegion.fileURI;
+        }
+
+        if (traceRegion.targetRegion?.length) {
+            context.traceData[ context.traceData.length - 1 ]?.children?.push(traceRegion);
+        }
+    }
+}
+
+function assertTrue(condition: boolean, msg: string): asserts condition is true {
+    if (!condition) {
+        throw new Error(msg);
     }
 }
 

@@ -56,6 +56,7 @@
             "default": "array-simple"
         }],
         "@typescript-eslint/ban-types": "error",                    // bans types like String in favor of string
+        "@typescript-eslint/no-inferrable-types": "off",            // don't blame decls like "index: number = 0", esp. in api signatures!
         "@typescript-eslint/indent": "error",                       // consistent indentation
         "@typescript-eslint/no-explicit-any": "error",              // don't use :any type
         "@typescript-eslint/no-misused-new": "error",               // no constructors for interfaces or new for classes
