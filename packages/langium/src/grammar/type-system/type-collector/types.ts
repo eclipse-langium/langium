@@ -5,7 +5,6 @@
  ******************************************************************************/
 
 import { CompositeGeneratorNode, NL, toString } from '../../../generator/generator-node';
-import { processGeneratorNode } from '../../../generator/node-processor';
 import { CstNode } from '../../../syntax-tree';
 import { Assignment, Action, TypeAttribute } from '../../generated/ast';
 import { distinctAndSorted } from '../types-util';
@@ -133,7 +132,7 @@ export class UnionType {
     toDeclaredTypesString(reservedWords: Set<string>): string {
         const unionNode = new CompositeGeneratorNode();
         unionNode.append(`type ${escapeReservedWords(this.name, reservedWords)} = ${propertyTypeToString(this.type, 'DeclaredType')};`, NL);
-        return processGeneratorNode(unionNode);
+        return toString(unionNode);
     }
 }
 
