@@ -44,7 +44,7 @@ export class DefaultValueConverter implements ValueConverter {
             case 'INT': return convertInt(input);
             case 'STRING': return convertString(input);
             case 'ID': return convertID(input);
-            case 'REGEXLITERAL': return convertString(input);
+            case 'REGEXLITERAL': return convertRegexLiteral(input);
         }
         switch (getRuleType(rule)?.toLowerCase()) {
             case 'number': return convertNumber(input);
@@ -57,6 +57,33 @@ export class DefaultValueConverter implements ValueConverter {
 }
 
 export function convertString(input: string): string {
+    let result = '';
+    for (let i = 1; i < input.length - 1; i++) {
+        const c = input.charAt(i);
+        if (c === '\\') {
+            const c1 = input.charAt(++i);
+            result += convertEscapeCharacter(c1);
+        } else {
+            result += c;
+        }
+    }
+    return result;
+}
+
+function convertEscapeCharacter(char: string): string {
+    switch (char) {
+        case 'b': return '\b';
+        case 'f': return '\f';
+        case 'n': return '\n';
+        case 'r': return '\r';
+        case 't': return '\t';
+        case 'v': return '\v';
+        case '0': return '\0';
+        default: return char;
+    }
+}
+
+export function convertRegexLiteral(input: string): string {
     return input.substring(1, input.length - 1);
 }
 

@@ -119,7 +119,7 @@ describe('tokenBuilder#caseInsensitivePattern', () => {
     beforeAll(async () => {
         const text = `
         grammar test
-        Main: 'A' 'ab' 'AbC' | Implement | '\\strange\\';
+        Main: 'A' 'ab' 'AbC' | Implement | '\\\\strange\\\\';
         Implement: '@implement' AB;
         terminal BOOLEAN returns boolean: /true|false/;
         terminal AB: /ABD?/;

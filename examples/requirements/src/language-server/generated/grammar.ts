@@ -278,7 +278,7 @@ export const RequirementsGrammar = (): Grammar => loadedRequirementsGrammar ?? (
       "name": "STRING",
       "definition": {
         "$type": "RegexToken",
-        "regex": "\\"[^\\"]*\\"|'[^']*'"
+        "regex": "\\"(\\\\\\\\.|[^\\"\\\\\\\\])*\\"|'(\\\\\\\\.|[^'\\\\\\\\])*'"
       },
       "fragment": false,
       "hidden": false
@@ -590,7 +590,7 @@ export const TestsGrammar = (): Grammar => loadedTestsGrammar ?? (loadedTestsGra
       "name": "STRING",
       "definition": {
         "$type": "RegexToken",
-        "regex": "\\"[^\\"]*\\"|'[^']*'"
+        "regex": "\\"(\\\\\\\\.|[^\\"\\\\\\\\])*\\"|'(\\\\\\\\.|[^'\\\\\\\\])*'"
       },
       "fragment": false,
       "hidden": false
