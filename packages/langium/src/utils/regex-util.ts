@@ -4,11 +4,24 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { RegExpParser, BaseRegExpVisitor, Set, Group, Character } from 'regexp-to-ast';
+import { RegExpParser, BaseRegExpVisitor, Set, Group, Character, IRegExpAST } from 'regexp-to-ast';
 
 const regexParser = new RegExpParser();
 
-class CommentRegexVisitor extends BaseRegExpVisitor {
+/**
+ * This class is in charge of heuristically identifying start/end tokens of terminals.
+ *
+ * The way this works is by doing the following:
+ * 1. Traverse the regular expression in the "start state"
+ * 2. Add any encountered sets/single characters to the "start regex"
+ * 3. Once we encounter any variable-length content (i.e. with quantifiers such as +/?/*), we enter the "end state"
+ * 4. In the end state, any sets/single characters are added to an "end stack".
+ * 5. If we re-encounter any variable-length content we reset the end stack
+ * 6. We continue visiting the regex until the end, reseting the end stack and rebuilding it as necessary
+ *
+ * After traversing a regular expression the `startRegex/endRegex` properties allow access to the stored start/end of the terminal
+ */
+class TerminalRegexVisitor extends BaseRegExpVisitor {
 
     private isStarting = true;
     startRegex: string;
@@ -69,9 +82,21 @@ class CommentRegexVisitor extends BaseRegExpVisitor {
             }
         }
     }
+
+    override visitChildren(node: IRegExpAST): void {
+        if (node.type === 'Group') {
+            // Ignore children of groups with quantifier (+/*/?)
+            // These groups are unrelated to start/end tokens of terminals
+            const group = node as Group;
+            if (group.quantifier) {
+                return;
+            }
+        }
+        super.visitChildren(node);
+    }
 }
 
-const visitor = new CommentRegexVisitor();
+const visitor = new TerminalRegexVisitor();
 
 export function getTerminalParts(regex: RegExp | string): Array<{ start: string, end: string }> {
     try {
