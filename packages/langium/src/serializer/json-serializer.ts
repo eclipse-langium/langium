@@ -13,6 +13,7 @@ import { AstNodeLocator } from '../workspace/ast-node-locator';
 export interface JsonSerializeOptions {
     space?: string | number
     refText?: boolean
+    replacer?: (key: string, value: unknown, defaultReplacer: (key: string, value: unknown) => unknown) => unknown
 }
 
 /**
@@ -53,7 +54,11 @@ export class DefaultJsonSerializer implements JsonSerializer {
     }
 
     serialize(node: AstNode, options?: JsonSerializeOptions): string {
-        return JSON.stringify(node, (key, value) => this.replacer(key, value, options?.refText), options?.space);
+        const specificReplacer = options?.replacer;
+        const defaultReplacer = (key: string, value: unknown) => this.replacer(key, value, options);
+        const replacer = specificReplacer ? (key: string, value: unknown) => specificReplacer(key, value, defaultReplacer) : defaultReplacer;
+
+        return JSON.stringify(node, replacer, options?.space);
     }
 
     deserialize(content: string): AstNode {
@@ -62,7 +67,7 @@ export class DefaultJsonSerializer implements JsonSerializer {
         return root;
     }
 
-    protected replacer(key: string, value: unknown, refText?: boolean): unknown {
+    protected replacer(key: string, value: unknown, { refText }: JsonSerializeOptions = {}): unknown {
         if (this.ignoreProperties.has(key)) {
             return undefined;
         } else if (isReference(value)) {
