@@ -5,6 +5,7 @@
  ******************************************************************************/
 
 export * from './generator-node';
-export { TextRange, TraceRegion, TraceSourceSpec } from './generator-tracing';
+export { SourceRegion, TextRegion, TraceRegion, TraceSourceSpec } from './generator-tracing';
+export * from './node-joiner';
 export * from './template-node';
 export { expandToString, expandToStringWithNL, normalizeEOL } from './template-string';

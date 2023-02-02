@@ -6,7 +6,8 @@
 
 import { describe, expect, test } from 'vitest';
 import { EOL, toString } from '../../src/generator/generator-node';
-import { expandToNode as n, joinToNode } from '../../src/generator/template-node';
+import { joinToNode } from '../../src/generator/node-joiner';
+import { expandToNode as n } from '../../src/generator/template-node';
 import { expandToString as s } from '../../src/generator/template-string';
 import { stream } from '../../src/utils/stream';
 

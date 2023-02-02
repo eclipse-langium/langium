@@ -4,8 +4,11 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import type { Position, Range } from 'vscode-languageserver-textdocument';
 import { CompositeGeneratorNode, GeneratorNode, IndentNode, NewLineNode } from './generator-node';
-import { DocumentSegmentWithFileURI, getSourceRegion, TextRange, TraceRegion } from './generator-tracing';
+import { getSourceRegion, SourceRegion, TextRegion, TraceRegion } from './generator-tracing';
+
+type OffsetAndPosition = { offset: number } & Position
 
 class Context {
 
@@ -14,7 +17,7 @@ class Context {
     readonly currentIndents: IndentNode[] = [];
     readonly recentNonImmediateIndents: IndentNode[] = [];
 
-    readonly traceData: InternalTraceRegion[] = [];
+    private traceData: InternalTraceRegion[] = [];
 
     private lines: string[][] = [[]];
 
@@ -38,9 +41,29 @@ class Context {
         return this.lines[this.currentLineNumber].join('');
     }
 
-    append(value: string) {
+    get currentPosition(): OffsetAndPosition {
+        return {
+            offset: this.content.length,
+            line: this.currentLineNumber,
+            character: this.currentLineContent.length
+        };
+    }
+
+    append(value: string, isIndent?: boolean) {
         if (value.length > 0) {
+            const beforePos = isIndent && this.currentPosition;
             this.lines[this.currentLineNumber].push(value);
+            if (beforePos) {
+                this.indentPendingTraceRegions(beforePos);
+            }
+        }
+    }
+
+    private indentPendingTraceRegions(before: OffsetAndPosition) {
+        for (let i = this.traceData.length - 1; i >= 0; i--) {
+            const tr = this.traceData[i];
+            if (tr.targetStart && tr.targetStart.offset === before.offset /* tr.targetStart.line == before.line && tr.targetStart.character === before.character*/)
+                tr.targetStart = this.currentPosition;
         }
     }
 
@@ -68,16 +91,89 @@ class Context {
         this.lines.push([]);
         this.recentNonImmediateIndents.length = 0;
     }
+
+    pushTraceRegion(sourceRegion: SourceRegion | undefined): InternalTraceRegion {
+        const region = createTraceRegion(
+            sourceRegion,
+            this.currentPosition,
+            it => this.traceData[ this.traceData.length - 1 ]?.children?.push(it));
+        this.traceData.push(region);
+        return region;
+    }
+
+    popTraceRegion(expected: TraceRegion): InternalTraceRegion {
+        const traceRegion = this.traceData.pop()!;
+        // the following assertion can be dropped once the tracing is considered stable
+        this.assertTrue(traceRegion === expected, 'Trace region mismatch!');
+
+        return traceRegion;
+    }
+
+    getParentTraceSourceFileURI() {
+        for (let i = this.traceData.length - 1; i > -1; i--) {
+            const fileUri = this.traceData[i].sourceRegion?.fileURI;
+            if (fileUri)
+                return fileUri;
+        }
+        return undefined;
+    }
+
+    private assertTrue(condition: boolean, msg: string): asserts condition is true {
+        if (!condition) {
+            throw new Error(msg);
+        }
+    }
+}
+
+interface InternalTraceRegion extends TraceRegion {
+    targetStart?: OffsetAndPosition;
+    complete?: (targetEnd: OffsetAndPosition) => TraceRegion;
+}
+
+function createTraceRegion(sourceRegion: SourceRegion | undefined, targetStart: OffsetAndPosition, accept: (it: TraceRegion) => void ): TraceRegion {
+    const result = <InternalTraceRegion>{
+        sourceRegion,
+        targetRegion: undefined!,
+        children: [],
+        targetStart,
+        complete: (targetEnd: OffsetAndPosition) => {
+            result.targetRegion = <TextRegion>{
+                offset: result.targetStart!.offset,
+                end:    targetEnd.offset,
+                length: targetEnd.offset - result.targetStart!.offset,
+                range: <Range>{
+                    start: {
+                        line: result.targetStart!.line,
+                        character: result.targetStart!.character
+                    },
+                    end: {
+                        line: targetEnd.line,
+                        character: targetEnd.character
+                    },
+                }
+            };
+            delete result.targetStart;
+            if (result.children?.length === 0) {
+                delete result.children;
+            }
+            if (result.targetRegion?.length) {
+                accept(result);
+            }
+            delete result.complete;
+            return result;
+        }
+    };
+    return result;
 }
 
 export function processGeneratorNode(node: GeneratorNode, defaultIndentation?: string | number): { text: string, trace: TraceRegion } {
     const context = new Context(defaultIndentation);
-    context.traceData.push(createTraceRegion(undefined, 0));
+    const trace = context.pushTraceRegion(undefined);
 
     processNodeInternal(node, context);
 
-    const trace = context.traceData.pop()!;
-    trace.complete && trace.complete(context.content.length);
+    context.popTraceRegion(trace);
+    trace.complete && trace.complete(context.currentPosition);
 
     const singleChild = trace.children && trace.children.length === 1 ? trace.children[0] : undefined;
     const singleChildTargetRegion = singleChild?.targetRegion;
@@ -94,27 +190,6 @@ export function processGeneratorNode(node: GeneratorNode, defaultIndentation?: s
     } else {
         return { text: context.content, trace };
     }
-}
-
-interface InternalTraceRegion extends TraceRegion {
-    complete?: (targetEnd: number) => TraceRegion;
-}
-
-function createTraceRegion(sourceRegion: DocumentSegmentWithFileURI | undefined, targetStart: number): TraceRegion {
-    const result = <InternalTraceRegion>{
-        sourceRegion,
-        targetRegion: undefined!,
-        children: [],
-        complete: (targetEnd: number) => {
-            result.targetRegion = <TextRange>{ offset: targetStart, length: targetEnd - targetStart };
-            if (result.children?.length === 0) {
-                delete result.children;
-            }
-            delete result.complete;
-            return result;
-        }
-    };
-    return result;
 }
 
 function processNodeInternal(node: GeneratorNode | string, context: Context) {
@@ -155,52 +230,40 @@ function handlePendingIndent(ctx: Context, endOfLine: boolean) {
     for (const indentNode of ctx.relevantIndents.filter(e => e.indentEmptyLines || !endOfLine)) {
         indent += indentNode.indentation ?? ctx.defaultIndentation;
     }
-    ctx.append(indent);
+    ctx.append(indent, true);
     ctx.pendingIndent = false;
 }
 
 function processCompositeNode(node: CompositeGeneratorNode, context: Context) {
     let traceRegion: InternalTraceRegion | undefined = undefined;
 
-    const sourceRegion: DocumentSegmentWithFileURI | undefined = getSourceRegion(node.tracedSource);
+    const sourceRegion: SourceRegion | undefined = getSourceRegion(node.tracedSource);
     if (sourceRegion) {
-        context.traceData.push(traceRegion = createTraceRegion(sourceRegion, context.content.length));
+        traceRegion = context.pushTraceRegion(sourceRegion);
     }
 
     for (const child of node.contents) {
         processNodeInternal(child, context);
     }
 
-    if (traceRegion?.complete) {
-        traceRegion.complete(context.content.length);
-        const droppedRegion = context.traceData.pop();
+    if (traceRegion) {
+        context.popTraceRegion(traceRegion);
 
-        // the following assertion can be dropped once the tracing is considered stable
-        assertTrue(droppedRegion === traceRegion, 'Trace region mismatch!');
-
-        const parentsFileURI = context.traceData.reduceRight<string|undefined>((prev, curr) => prev || curr.sourceRegion?.fileURI, undefined);
+        const parentsFileURI = context.getParentTraceSourceFileURI();
         if (parentsFileURI && sourceRegion?.fileURI === parentsFileURI) {
             // if some parent's sourceRegion refers to the same source file uri (and no other source file was referenced inbetween)
             // we can drop the file uri in order to reduce repeated strings
             delete sourceRegion.fileURI;
         }
 
-        if (traceRegion.targetRegion?.length) {
-            context.traceData[ context.traceData.length - 1 ]?.children?.push(traceRegion);
-        }
-    }
-}
-
-function assertTrue(condition: boolean, msg: string): asserts condition is true {
-    if (!condition) {
-        throw new Error(msg);
+        traceRegion.complete && traceRegion.complete(context.currentPosition);
     }
 }
 
 function processIndentNode(node: IndentNode, context: Context) {
     if (hasContent(node, context)) {
         if (node.indentImmediately && !context.pendingIndent) {
-            context.append(node.indentation ?? context.defaultIndentation);
+            context.append(node.indentation ?? context.defaultIndentation, true);
         }
         try {
             context.increaseIndent(node);
