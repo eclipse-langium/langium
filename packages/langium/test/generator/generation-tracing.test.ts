@@ -1,18 +1,23 @@
 /******************************************************************************
- * Copyright 2022 TypeFox GmbH
+ * Copyright 2023 TypeFox GmbH
  * This program and the accompanying materials are made available under the
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
 import { beforeAll, describe, expect, test } from 'vitest';
 import { toStringAndTrace, traceToNode } from '../../src/generator/generator-node';
-import { TraceRegion } from '../../src/generator/generator-tracing';
-import { expandToNode, expandTracedToNode, joinTracedToNode } from '../../src/generator/template-node';
-import { AstNodeWithTextRegion } from '../../src/serializer/json-serializer';
+import type { SourceRegion, TraceRegion } from '../../src/generator/generator-tracing';
+import { joinTracedToNode, joinTracedToNodeIf } from '../../src/generator/node-joiner';
+import { expandToNode, expandTracedToNode } from '../../src/generator/template-node';
+import { expandToString } from '../../src/generator/template-string';
+import type { AstNodeWithTextRegion } from '../../src/serializer/json-serializer';
 import type { AstNode } from '../../src/syntax-tree';
-import { parseHelper } from '../../src/test';
-import { createServicesForGrammar } from '../../src/utils/grammar-util';
+import { parseHelper } from '../../src/test/langium-test';
+import { createServicesForGrammar, findNodeForKeyword, findNodesForProperty } from '../../src/utils/grammar-util';
 import { TreeStreamImpl } from '../../src/utils/stream';
+
+// don't bather because of unexpected indentations, e.g. within template substitutions
+/* eslint-disable @typescript-eslint/indent */
 
 let parse: (text: string) => Promise<AstNode>;
 let parse2: (text: string) => Promise<AstNode>;
@@ -49,12 +54,268 @@ function persistSourceRegions(trace: TraceRegion): TraceRegion {
     new TreeStreamImpl(trace, tr => tr?.children ?? [], { includeRoot: true }).forEach(
         tr => tr.sourceRegion = tr.sourceRegion && {
             offset: tr.sourceRegion.offset,
+            end:    tr.sourceRegion.end,
             length: tr.sourceRegion.length,
             fileURI: tr.sourceRegion?.fileURI
         }
     );
     return trace;
 }
+
+describe('tracing based on provided text regions', () => {
+    function documentURI(root: AstNodeWithTextRegion) {
+        return root.$document?.uri?.toString();
+    }
+
+    test('should not fail on undefined trace region', async () => {
+        const { trace } = toStringAndTrace(
+            expandTracedToNode(undefined)`
+                beginning ... end
+            `
+        );
+        persistSourceRegions(trace);
+
+        expect( trace ).toMatchObject( <TraceRegion>{
+            targetRegion: {
+                offset: 0, length: 17,
+                range: {
+                    start: { line: 0, character: 0},
+                    end:   { line: 0, character: 17}
+                }
+            },
+        });
+    });
+
+    test('should trace single region based on a given text region', async () => {
+        const { trace } = toStringAndTrace(
+            expandTracedToNode(<SourceRegion>{ offset: 0, length: 999 })`
+                beginning ... end
+            `
+        );
+        persistSourceRegions(trace);
+
+        expect( trace ).toMatchObject( <TraceRegion>{
+            sourceRegion: { offset: 0, length: 999, fileURI: undefined },
+            targetRegion: { offset: 0, length: 17 },
+        });
+    });
+
+    test('should trace single region based on multiple given text regions', async () => {
+        const { trace } = toStringAndTrace(
+            expandTracedToNode([
+                <SourceRegion>{ offset: 3, end: 8 },
+                <SourceRegion>{ offset: 10, end: 999 }
+            ])`
+                beginning ... end
+            `
+        );
+        persistSourceRegions(trace);
+
+        expect( trace ).toMatchObject( <TraceRegion>{
+            sourceRegion: { offset: 3, length: 996, fileURI: undefined },
+            targetRegion: { offset: 0, length: 17 },
+        });
+    });
+
+    test('should trace single region based on cstNode', async () => {
+        const source = await parse('AH "IH" OH');
+        const { trace } = toStringAndTrace(
+            expandTracedToNode(source.$cstNode)`
+                beginning ... end
+            `
+        );
+        persistSourceRegions(trace);
+
+        expect( trace ).toMatchObject( <TraceRegion>{
+            sourceRegion: { offset: 0, length: 10, fileURI: documentURI(source) },
+            targetRegion: { offset: 0, length: 17 },
+        });
+    });
+
+    test('should trace nested regions with different fileURIs based on cstNode', async () => {
+        const source = await parse('AH "IH" OH');
+        const { trace } = toStringAndTrace(
+            traceToNode(<SourceRegion>{ offset: 3, end: 7, fileURI: 'file://foo'})(
+                expandTracedToNode(source.$cstNode)`
+                    beginning ... end
+                `
+            )
+        );
+        persistSourceRegions(trace);
+
+        expect( trace ).toMatchObject( <TraceRegion>{
+            sourceRegion: { offset: 3, length: 4, fileURI: 'file://foo' },
+            targetRegion: { offset: 0, length: 17 },
+            children: [ {
+                sourceRegion: { offset: 0, length: 10, fileURI: documentURI(source) },
+                targetRegion: { offset: 0, length: 17 }
+            } ]
+        });
+    });
+
+    test('should trace region based on union of cstNodes', async () => {
+        const source = await parse('AH "IH" OH children { name=bar }') as AstNode & { children: Array<AstNode & { name: string }> };
+        const { text, trace } = toStringAndTrace(
+            expandTracedToNode(source.$cstNode)`
+                beginning ${
+                    joinTracedToNodeIf(source.children.length > 0, () => [
+                        findNodeForKeyword(source.$cstNode, '{')!,
+                        findNodeForKeyword(source.$cstNode, '}')!
+                    ] )(source.children, c => c.name)
+                } end
+            `
+        );
+        persistSourceRegions(trace);
+
+        expect( text ).toBe('beginning bar end');
+        expect( trace ).toMatchObject( <TraceRegion>{
+            sourceRegion: { offset: 0, length: 32, fileURI: documentURI(source) },
+            targetRegion: { offset: 0, length: 17 },
+            children: [ {
+                sourceRegion: { offset: 20, length: 12, fileURI: undefined },
+                targetRegion: { offset: 10, length: 3 },
+            } ]
+        });
+    });
+
+    test('should trace region based on union of list of property entries\' cstNodes', async () => {
+        const source = await parse('AH "IH" OH') as AstNode & { values: string[] };
+        const { text, trace } = toStringAndTrace(
+            expandTracedToNode(source.$cstNode)`
+                beginning ${
+                    joinTracedToNodeIf(source.values.length > 0, () => findNodesForProperty(source.$cstNode, 'values'))(source.values)
+                } end
+            `
+        );
+        persistSourceRegions(trace);
+
+        expect( text ).toBe('beginning AHIHOH end');
+        expect( trace ).toMatchObject( <TraceRegion>{
+            sourceRegion: { offset: 0, length: 10, fileURI: documentURI(source) },
+            targetRegion: { offset: 0, length: 20 },
+            children: [ {
+                sourceRegion: { offset: 0, length: 10, fileURI: undefined },
+                targetRegion: { offset: 10, length: 6 },
+            } ]
+        });
+    });
+
+    test('should trace region based on union of cstNodes with broken condition', async () => {
+        const source = await parse('AH "IH" OH') as AstNode & { children?: Array<AstNode & { name: string }> };
+        const { text, trace } = toStringAndTrace(
+            expandTracedToNode(source.$cstNode)`
+                beginning ${
+                    joinTracedToNodeIf(!!source.children /* incomplete condition, array is always initialized, but possibly empty */, () => [
+                        findNodeForKeyword(source.$cstNode, '{')!,
+                        findNodeForKeyword(source.$cstNode, '}')!
+                    ] )(source.children!, c => c.name)
+                } end
+            `
+        );
+        persistSourceRegions(trace);
+
+        expect( text ).toBe('beginning  end');
+        expect( trace ).toMatchObject( <TraceRegion>{
+            sourceRegion: { offset: 0, length: 10, fileURI: documentURI(source) },
+            targetRegion: { offset: 0, length: 14 },
+        });
+    });
+});
+
+describe('tracing of indented text based on provided text regions', () => {
+
+    test('should indent text regions of indented multi-line text', () => {
+        const { text, trace } = toStringAndTrace(
+            expandTracedToNode({ offset: 0, end: 100 })`
+                ${ traceToNode({ offset: 1, end: 3 })('A')} {
+                    ${ /* indented multi-line substition: */ expandTracedToNode({ offset: 10, end: 50 })`
+                        ${ traceToNode({ offset: 11, end: 13 })('B')} {
+                            ${ traceToNode({ offset: 21, end: 23 })('C')}
+                        }
+                        ${ traceToNode({ offset: 31, end: 33 })('D')} {
+                            ${ traceToNode({ offset: 41, end: 43 })('E')}
+                        }
+                    `}
+                }
+                ${ traceToNode({ offset: 51, end: 53 })('F')}
+            `/*
+                the foregoing template has just 3 single lines, with the second of 3 substitions being an indented multi-line substition;
+                that substition's indentation need to be repeated to all its lines and also applied to the various trace regions within those lines!
+            */
+        );
+
+        expect( text ).toBe( expandToString`
+            A {
+                B {
+                    C
+                }
+                D {
+                    E
+                }
+            }
+            F
+        `);
+        expect( trace ).toMatchObject( <TraceRegion>{
+            sourceRegion: { offset: 0, end: 100 },
+            children: [
+                {
+                    sourceRegion: { offset: 1, end: 3 },
+                    targetRegion: {
+                        range: {
+                            start: { line: 0, character: 0},  // <= expected (zero) indentation
+                            end:   { line: 0, character: 1},  // <= expected (zero) indentation
+                        }
+                    }
+                }, {
+                    sourceRegion: { offset: 10, end: 50 },
+                    children: [
+                        {
+                            sourceRegion: { offset: 11, end: 13 },
+                            targetRegion: {
+                                range: {
+                                    start: { line: 1, character: 4},  // <= expected indentation
+                                    end:   { line: 1, character: 5},  // <= expected indentation
+                                }
+                            }
+                        }, {
+                            sourceRegion: { offset: 21, end: 23 },
+                            targetRegion: {
+                                range: {
+                                    start: { line: 2, character: 8},  // <= expected indentation
+                                    end:   { line: 2, character: 9},  // <= expected indentation
+                                }
+                            }
+                        }, {
+                            sourceRegion: { offset: 31, end: 33 },
+                            targetRegion: {
+                                range: {
+                                    start: { line: 4, character: 4},  // <= expected indentation
+                                    end:   { line: 4, character: 5},  // <= expected indentation
+                                }
+                            }
+                        }, {
+                            sourceRegion: { offset: 41, end: 43 },
+                            targetRegion: {
+                                range: {
+                                    start: { line: 5, character: 8},  // <= expected indentation
+                                    end:   { line: 5, character: 9},  // <= expected indentation
+                                }
+                            }
+                        }
+                    ]
+                }, {
+                    sourceRegion: { offset: 51, end: 53 },
+                    targetRegion: {
+                        range: {
+                            start: { line: 8, character: 0},  // <= expected (zero) indentation
+                            end:   { line: 8, character: 1},  // <= expected (zero) indentation
+                        }
+                    }
+                }
+            ]
+        });
+    });
+});
 
 // the vscode vitest extension doesn't support describe.each() (or any other tweak I could imagine) that is a real pity,
 //  so we need to manually flip this flag if we want to test '$textRegion' version

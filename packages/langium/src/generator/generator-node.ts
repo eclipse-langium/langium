@@ -4,8 +4,8 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { AstNode, Properties } from '../syntax-tree';
-import type { TraceRegion, TraceSourceSpec } from './generator-tracing';
+import { AstNode, isAstNode, Properties } from '../syntax-tree';
+import type { SourceRegion, TraceRegion, TraceSourceSpec } from './generator-tracing';
 import { processGeneratorNode } from './node-processor';
 import { expandToNode, expandTracedToNode } from './template-node';
 
@@ -76,7 +76,7 @@ export class CompositeGeneratorNode {
 
     readonly contents: Array<(GeneratorNode | string)> = [];
 
-    tracedSource?: TraceSourceSpec;
+    tracedSource?: TraceSourceSpec | SourceRegion | SourceRegion[];
 
     /**
      * Constructor.
@@ -98,7 +98,8 @@ export class CompositeGeneratorNode {
     }
 
     /**
-     * Adds tracing information to `this` generator node. Overwrites existing trace data, if set previously.
+     * Adds tracing information in form of `{astNode, property?, index?}` to `this` generator node.
+     * Overwrites existing trace data, if set previously.
      *
      * The given data are kept as they are, the actual resolution of text positions within the DSL text
      * is done at the final processing of `this` node as part of {@link toStringAndTrace()}.
@@ -114,10 +115,42 @@ export class CompositeGeneratorNode {
      *
      * @returns `this` {@link CompositeGeneratorNode} for convenience.
      */
-    trace<T extends AstNode>(astNode: T, property?: Properties<T>, index?: number): this {
-        this.tracedSource = <TraceSourceSpec>{ astNode, property, index };
-        if (this.tracedSource.property === undefined && this.tracedSource.index !== undefined && this.tracedSource.index > -1) {
-            throw new Error("Generation support: 'property' argument must not be 'undefined' if a non-negative value is assigned to 'index' in 'CompositeGeneratorNode.trace(...)'.");
+    trace<T extends AstNode>(astNode: T, property?: Properties<T>, index?: number): this;
+
+    /**
+     * Adds tracing information in form of concrete coordinates to `this` generator node. Complete coordinates
+     * are provided by the {@link AstNode AstNodes}' corresponding {@link AstNode.$cstNode AstNode.$cstNodes}.
+     * Overwrites existing trace data, if set previously.
+     *
+     * @param sourceRegion a text region within some file in form of concrete coordinates,
+     *  if `undefined` no tracing will happen
+     *
+     * @returns `this` {@link CompositeGeneratorNode} for convenience.
+     */
+    trace(sourceRegion: SourceRegion | undefined): this;
+
+    /**
+     * Adds tracing information in form of a list of concrete coordinates to `this` generator node.
+     * Overwrites existing trace data, if set previously.
+     *
+     * The list of regions in `sourceRegion` is reduced to the smallest encompassing region
+     *  of all the contained source regions.
+     *
+     * @param sourceRegion a list of text regions within some file in form of concrete coordinates,
+     *  if empty no tracing will happen
+     *
+     * @returns `this` {@link CompositeGeneratorNode} for convenience.
+     */
+    trace(sourceRegion: SourceRegion[]): this;
+
+    trace<T extends AstNode>(source: T | undefined | SourceRegion | SourceRegion[], property?: Properties<T>, index?: number): this {
+        if (isAstNode(source)) {
+            this.tracedSource = <TraceSourceSpec>{ astNode: source, property, index };
+            if (this.tracedSource.property === undefined && this.tracedSource.index !== undefined && this.tracedSource.index > -1) {
+                throw new Error("Generation support: 'property' argument must not be 'undefined' if a non-negative value is assigned to 'index' in 'CompositeGeneratorNode.trace(...)'.");
+            }
+        } else {
+            this.tracedSource = source;
         }
         return this;
     }
@@ -280,9 +313,7 @@ export class CompositeGeneratorNode {
      *   .appendNewLineIfNotEmpty()
      */
     appendTemplateIf(condition: boolean): (staticParts: TemplateStringsArray, ...substitutions: unknown[]) => this {
-        return (staticParts, ...substitutions) => {
-            return condition ? this.appendTemplate(staticParts, ...substitutions) : this;
-        };
+        return condition ? (staticParts, ...substitutions) => this.appendTemplate(staticParts, ...substitutions) : () => this;
     }
 
     /**
@@ -334,7 +365,8 @@ export class CompositeGeneratorNode {
     }
 
     /**
-     * Convenience method for appending content to `this` generator node including tracing information.
+     * Convenience method for appending content to `this` generator node including tracing information
+     * in form of `{astNode, property?, index?}`.
      *
      * This method returns a helper function that takes the desired `content` and does the processing.
      * The returned function delegates to {@link append}, with the provided `content` being
@@ -357,16 +389,65 @@ export class CompositeGeneratorNode {
      *   .appendNewLine().append('Hello ').appendTraced(entity, 'name')(entity.name)
      *   .appendNewLineIfNotEmpty()
      */
-    appendTraced<T extends AstNode>(astNode: T, property?: Properties<T>, index?: number): (...content: Array<Generated | ((node: CompositeGeneratorNode) => void)>) => this {
+    appendTraced<T extends AstNode>(astNode: T, property?: Properties<T>, index?: number): (...content: Array<Generated | ((node: CompositeGeneratorNode) => void)>) => this;
+
+    /**
+     * Convenience method for appending content to `this` generator node including tracing information
+     * in form of concrete coordinates.
+     *
+     * This method returns a helper function that takes the desired `content` and does the processing.
+     * The returned function delegates to {@link append}, with the provided `content` being
+     *  wrapped by an additional {@link CompositeGeneratorNode} configured with the tracing information.
+     *
+     * @param sourceRegion a text region within some file in form of concrete coordinates,
+     *  if `undefined` no tracing will happen
+     *
+     * @returns a function behaving as described above, which in turn returns `this` {@link CompositeGeneratorNode} for convenience.
+     *
+     * @example
+     *   new CompositeGeneratorNode().appendTemplate
+     *       `Hello World!`
+     *   .appendNewLine().append('Hello ').appendTraced(findNodeForProperty(entity.$cstNode, 'name'))(entity.name)
+     *   .appendNewLineIfNotEmpty()
+     */
+    appendTraced(sourceRegion: SourceRegion | undefined): (...content: Array<Generated | ((node: CompositeGeneratorNode) => void)>) => this;
+
+    /**
+     * Convenience method for appending content to `this` generator node including tracing information
+     * in form of a list of concrete coordinates.
+     *
+     * This method returns a helper function that takes the desired `content` and does the processing.
+     * The returned function delegates to {@link append}, with the provided `content` being
+     *  wrapped by an additional {@link CompositeGeneratorNode} configured with the tracing information.
+     *
+     * The list of regions in `sourceRegions` will later be reduced to the smallest encompassing region
+     *  of all the contained source regions.
+     *
+     * @param sourceRegions a list of text regions within some file in form of concrete coordinates,
+     *  if empty no tracing will happen
+     *
+     * @returns a function behaving as described above, which in turn returns `this` {@link CompositeGeneratorNode} for convenience.
+     *
+     * @example
+     *   new CompositeGeneratorNode().appendTemplate
+     *       `Hello World!`
+     *   .appendNewLine().append('Hello ').appendTraced([ findNodeForProperty(entity.$cstNode, 'name') ])(entity.name)
+     *   .appendNewLineIfNotEmpty()
+     */
+    appendTraced(sourceRegions: SourceRegion[]): (...content: Array<Generated | ((node: CompositeGeneratorNode) => void)>) => this;
+
+    // implementation:
+    appendTraced<T extends AstNode>(source: T | undefined | SourceRegion | SourceRegion[], property?: Properties<T>, index?: number): (...content: Array<Generated | ((node: CompositeGeneratorNode) => void)>) => this {
         return content => {
             return this.append(
-                new CompositeGeneratorNode().trace(astNode, property, index).append(content)
+                new CompositeGeneratorNode().trace(source as T, property, index).append(content)
             );
         };
     }
 
     /**
-     * Convenience method for appending content to `this` generator node including tracing information, if `condition` is equal to `true`.
+     * Convenience method for appending content to `this` generator node including tracing information
+     *  in form of `{astNode, property?, index?}`, if `condition` is equal to `true`.
      *
      * This method returns a tag function that takes the desired template and does the processing.
      *
@@ -391,14 +472,68 @@ export class CompositeGeneratorNode {
      *   .appendNewLine().appendIf(entity !== undefined, 'Hello ').appendTracedIf(entity !== undefined, entity, 'name')(entity?.name)
      *   .appendNewLineIfNotEmpty()
      */
-    appendTracedIf<T extends AstNode>(condition: boolean, astNode: T, property?: Properties<T>, index?: number): (...content: Array<Generated | ((node: CompositeGeneratorNode) => void)>) => this {
-        return content => {
-            return condition ? this.appendTraced(astNode, property, index)(content) : this;
-        };
+    appendTracedIf<T extends AstNode>(condition: boolean, astNode: T, property?: Properties<T>, index?: number): (...content: Array<Generated | ((node: CompositeGeneratorNode) => void)>) => this;
+
+    /**
+     * Convenience method for appending content to `this` generator node including tracing information
+     *  in form of concrete coordinates, if `condition` is equal to `true`.
+     *
+     * This method returns a tag function that takes the desired template and does the processing.
+     *
+     * If `condition` is satisfied the returned function delegates to {@link appendTraced}, otherwise it returns just `this`.
+     *
+     * If `sourceRegion` is a function supplying the corresponding region, it's only called if `condition` is satisfied.
+     *
+     * @param condition a boolean value indicating whether to append the template content to `this`.
+     *
+     * @param sourceRegion a text region within some file in form of concrete coordinates,
+     *  if `undefined` no tracing will happen
+     *
+     * @returns a function behaving as described above, which in turn returns `this` {@link CompositeGeneratorNode} for convenience.
+     *
+     * @example
+     *   new CompositeGeneratorNode().appendTemplate
+     *       `Hello World!`
+     *   .appendNewLine().appendIf(entity !== undefined, 'Hello ').appendTracedIf(entity !== undefined, () => findNodeForProperty(entity.$cstNode, 'name'))(entity?.name)
+     *   .appendNewLineIfNotEmpty()
+     */
+    appendTracedIf(condition: boolean, sourceRegion: SourceRegion | undefined | (() => SourceRegion | undefined)): (...content: Array<Generated | ((node: CompositeGeneratorNode) => void)>) => this;
+
+    /**
+     * Convenience method for appending content to `this` generator node including tracing information
+     *  in form of a list of concrete coordinates, if `condition` is equal to `true`.
+     *
+     * This method returns a tag function that takes the desired template and does the processing.
+     *
+     * If `condition` is satisfied the returned function delegates to {@link appendTraced}, otherwise it returns just `this`.
+     *
+     * The list of regions in `sourceRegions` will later be reduced to the smallest encompassing region
+     *  of all the contained source regions.
+     * If `sourceRegions` is a function supplying the corresponding regions, it's only called if `condition` is satisfied.
+     *
+     * @param condition a boolean value indicating whether to append the template content to `this`.
+     *
+     * @param sourceRegions a list of text regions within some file in form of concrete coordinates,
+     *  if empty no tracing will happen
+     *
+     * @returns a function behaving as described above, which in turn returns `this` {@link CompositeGeneratorNode} for convenience.
+     *
+     * @example
+     *   new CompositeGeneratorNode().appendTemplate
+     *       `Hello World!`
+     *   .appendNewLine().appendIf(entity !== undefined, 'Hello ').appendTracedIf(entity !== undefined, () => [ findNodeForProperty(entity.$cstNode, 'name') ])(entity?.name)
+     *   .appendNewLineIfNotEmpty()
+     */
+    appendTracedIf(condition: boolean, sourceRegions: SourceRegion[] | (() => SourceRegion[])): (...content: Array<Generated | ((node: CompositeGeneratorNode) => void)>) => this;
+
+    // implementation:
+    appendTracedIf<T extends AstNode>(condition: boolean, source: T | undefined | SourceRegion | SourceRegion[] | (() => undefined | SourceRegion | SourceRegion[]), property?: Properties<T>, index?: number): (...content: Array<Generated | ((node: CompositeGeneratorNode) => void)>) => this {
+        return condition ? this.appendTraced((typeof source === 'function' ? source() : source) as T, property, index) : () => this;
     }
 
     /**
-     * Convenience method for appending content in form of a template to `this` generator node including tracing information.
+     * Convenience method for appending content in form of a template to `this` generator node including tracing
+     *  information in form of `{astNode, property?, index?}`.
      *
      * This method returns a tag function that takes the desired template and does the processing by delegating to
      * {@link expandTracedToNode}.
@@ -421,22 +556,70 @@ export class CompositeGeneratorNode {
      *       `Hello ${entity?.name}!`
      *   .appendNewLineIfNotEmpty()
      */
-    appendTracedTemplate<T extends AstNode>(astNode: T, property?: Properties<T>, index?: number): (staticParts: TemplateStringsArray, ...substitutions: unknown[]) => this {
+    appendTracedTemplate<T extends AstNode>(astNode: T, property?: Properties<T>, index?: number): (staticParts: TemplateStringsArray, ...substitutions: unknown[]) => this;
+
+    /**
+     * Convenience method for appending content in form of a template to `this` generator node including tracing
+     *  information in form of concrete coordinates.
+     *
+     * This method returns a tag function that takes the desired template and does the processing by delegating to
+     * {@link expandTracedToNode}.
+     *
+     * @param sourceRegion a text region within some file in form of concrete coordinates,
+     *  if `undefined` no tracing will happen
+     *
+     * @returns a tag function behaving as described above, which in turn returns `this` {@link CompositeGeneratorNode} for convenience.
+     *
+     * @example
+     *   new CompositeGeneratorNode().appendTemplate
+     *       `Hello World!`
+     *   .appendNewLine().appendTracedTemplate(findNodeForProperty(entity.$cstNode, 'name'))
+     *       `Hello ${entity?.name}!`
+     *   .appendNewLineIfNotEmpty()
+     */
+    appendTracedTemplate(sourceRegion: SourceRegion | undefined): (staticParts: TemplateStringsArray, ...substitutions: unknown[]) => this;
+
+    /**
+     * Convenience method for appending content in form of a template to `this` generator node including tracing
+     *  information in form of concrete coordinates.
+     *
+     * This method returns a tag function that takes the desired template and does the processing by delegating to
+     * {@link expandTracedToNode}.
+     *
+     * The list of regions in `sourceRegions` will later be reduced to the smallest encompassing region
+     *  of all the contained source regions.
+     *
+     * @param sourceRegions a list of text regions within some file in form of concrete coordinates,
+     *  if empty no tracing will happen
+     *
+     * @returns a tag function behaving as described above, which in turn returns `this` {@link CompositeGeneratorNode} for convenience.
+     *
+     * @example
+     *   new CompositeGeneratorNode().appendTemplate
+     *       `Hello World!`
+     *   .appendNewLine().appendTracedTemplate( findNodesForProperty(entity.$cstNode, 'name'))
+     *       `Hello ${entity?.name}!`
+     *   .appendNewLineIfNotEmpty()
+     */
+    appendTracedTemplate(sourceRegions: SourceRegion[]): (staticParts: TemplateStringsArray, ...substitutions: unknown[]) => this;
+
+    // implementation:
+    appendTracedTemplate<T extends AstNode>(source: T | undefined | SourceRegion | SourceRegion[], property?: Properties<T>, index?: number): (staticParts: TemplateStringsArray, ...substitutions: unknown[]) => this {
         return (staticParts: TemplateStringsArray, ...substitutions: unknown[]) => {
             return this.append(
-                expandTracedToNode( astNode, property, index )(staticParts, ...substitutions)
+                expandTracedToNode(source as T, property, index )(staticParts, ...substitutions)
             );
         };
     }
 
     /**
-     * Convenience method for appending content in form of a template to `this` generator node including tracing information, if `condition` is equal to `true`.
+     * Convenience method for appending content in form of a template to `this` generator node including tracing information
+     *  in form of `{astNode, property?, index?}`, if `condition` is equal to `true`.
      *
      * This method returns a tag function that takes the desired template and does the processing.
      *
      * If `condition` is satisfied the tagged template delegates to {@link appendTracedTemplate}, otherwise it returns just `this`.
-     *
-     * See {@link expandTracedToNode} for details.
+     * See also {@link expandTracedToNode} for details.
      *
      * @param condition a boolean value indicating whether to append the template content to `this`.
      *
@@ -458,15 +641,73 @@ export class CompositeGeneratorNode {
      *       `Hello ${entity?.name}!`
      *   .appendNewLineIfNotEmpty()
      */
-    appendTracedTemplateIf<T extends AstNode>(condition: boolean, astNode: T, property?: Properties<T>, index?: number): (staticParts: TemplateStringsArray, ...substitutions: unknown[]) => this {
-        return (staticParts: TemplateStringsArray, ...substitutions: unknown[]) => {
-            return condition ? this.appendTracedTemplate(astNode, property, index)(staticParts, ...substitutions) : this;
-        };
+    appendTracedTemplateIf<T extends AstNode>(condition: boolean, astNode: T, property?: Properties<T>, index?: number): (staticParts: TemplateStringsArray, ...substitutions: unknown[]) => this;
+
+    /**
+     * Convenience method for appending content in form of a template to `this` generator node including tracing information
+     *  in form of concrete coordinates, if `condition` is equal to `true`.
+     *
+     * This method returns a tag function that takes the desired template and does the processing.
+     *
+     * If `condition` is satisfied the tagged template delegates to {@link appendTracedTemplate}, otherwise it returns just `this`.
+     * See also {@link expandTracedToNode} for details.
+     *
+      * If `sourceRegion` is a function supplying the corresponding region, it's only called if `condition` is satisfied.
+     *
+     * @param condition a boolean value indicating whether to append the template content to `this`.
+     *
+     * @param sourceRegion a text region within some file in form of concrete coordinates,
+     *  if `undefined` no tracing will happen
+     *
+     * @returns a tag function behaving as described above, which in turn returns `this` {@link CompositeGeneratorNode} for convenience.
+     *
+     * @example
+     *   new CompositeGeneratorNode().appendTemplate
+     *       `Hello World!`
+     *   .appendNewLine().appendTracedTemplateIf(entity?.name !== undefined, entity.$cstNode)
+     *       `Hello ${entity?.name}!`
+     *   .appendNewLineIfNotEmpty()
+     */
+    appendTracedTemplateIf(condition: boolean, sourceRegion: SourceRegion | undefined | (() => SourceRegion | undefined)): (staticParts: TemplateStringsArray, ...substitutions: unknown[]) => this;
+
+    /**
+     * Convenience method for appending content in form of a template to `this` generator node including tracing information
+     *  in form of a list of concrete coordinates, if `condition` is equal to `true`.
+     *
+     * This method returns a tag function that takes the desired template and does the processing.
+     *
+     * If `condition` is satisfied the tagged template delegates to {@link appendTracedTemplate}, otherwise it returns just `this`.
+     * See also {@link expandTracedToNode} for details.
+     *
+     * The list of regions in `sourceRegions` will later be reduced to the smallest encompassing region
+     *  of all the contained source regions.
+     * If `sourceRegions` is a function supplying the corresponding regions, it's only called if `condition` is satisfied.
+     *
+     * @param condition a boolean value indicating whether to append the template content to `this`.
+     *
+     * @param sourceRegions a list of text regions within some file in form of concrete coordinates,
+     *  if empty no tracing will happen
+     *
+     * @returns a tag function behaving as described above, which in turn returns `this` {@link CompositeGeneratorNode} for convenience.
+     *
+     * @example
+     *   new CompositeGeneratorNode().appendTemplate
+     *       `Hello World!`
+     *   .appendNewLine().appendTracedTemplateIf(entity?.name !== undefined, () => [ findNodeForProperty(entity.$cstNode, 'name')! ])
+     *       `Hello ${entity?.name}!`
+     *   .appendNewLineIfNotEmpty()
+     */
+    appendTracedTemplateIf(condition: boolean, sourceRegions: SourceRegion[] | (() => SourceRegion[])): (staticParts: TemplateStringsArray, ...substitutions: unknown[]) => this;
+
+    // implementation:
+    appendTracedTemplateIf<T extends AstNode>(condition: boolean, source: T | undefined | SourceRegion | SourceRegion[] | (() => undefined | SourceRegion | SourceRegion[]), property?: Properties<T>, index?: number): (staticParts: TemplateStringsArray, ...substitutions: unknown[]) => this {
+        return condition ? this.appendTracedTemplate((typeof source === 'function' ? source() : source) as T, property, index) : () => this;
     }
 }
 
 /**
- * Convenience function for attaching tracing information to content of type `Generated`.
+ * Convenience function for attaching tracing information to content of type `Generated`,
+ *  in form of `{astNode, property?, index?}`.
  *
  * This method returns a helper function that takes the desired `content` and does the processing.
  * The returned function will create and return a new {@link CompositeGeneratorNode} being initialized
@@ -490,19 +731,177 @@ export class CompositeGeneratorNode {
  *   new CompositeGeneratorNode().appendTemplate
  *       `Hello World!`
  *   .appendNewLine().appendTracedTemplate(entity)
- *       `Hello ${ traceToNode(entity, name)(entity.name) }`
+ *       `Hello ${ traceToNode(entity, 'name')(entity.name) }`
  *   .appendNewLineIfNotEmpty()
  */
-export function traceToNode<T extends AstNode>(astNode: T, property?: Properties<T>, index?: number): (content?: Generated | ((node: CompositeGeneratorNode) => void)) => CompositeGeneratorNode {
+export function traceToNode<T extends AstNode>(astNode: T, property?: Properties<T>, index?: number): (content?: Generated | ((node: CompositeGeneratorNode) => void)) => CompositeGeneratorNode;
+
+/**
+ * Convenience function for attaching tracing information to content of type `Generated`,
+ *  in form of concrete coordinates.
+ *
+ * This method returns a helper function that takes the desired `content` and does the processing.
+ * The returned function will create and return a new {@link CompositeGeneratorNode} being initialized
+ *  with the given tracing information and add some `content`, if provided.
+ *
+ * Exception: if `content` is already a {@link CompositeGeneratorNode} containing no tracing information,
+ *  that node is enriched with the given tracing information and returned, and no wrapping node is created.
+ *
+ * @param sourceRegion a text region within some file in form of concrete coordinates,
+ *  if `undefined` no tracing will happen
+ *
+ * @returns a function behaving as described above, which in turn returns a {@link CompositeGeneratorNode}.
+ *
+ * @example
+ *   new CompositeGeneratorNode().appendTemplate
+ *       `Hello World!`
+ *   .appendNewLine().appendTracedTemplate(entity.$cstNode)
+ *       `Hello ${ traceToNode(findNodeForProperty(entity.$cstNode, 'name'))(entity.name) }`
+ *   .appendNewLineIfNotEmpty()
+ */
+export function traceToNode(sourceRegion: SourceRegion | undefined): (content?: Generated | ((node: CompositeGeneratorNode) => void)) => CompositeGeneratorNode;
+
+/**
+ * Convenience function for attaching tracing information to content of type `Generated`,
+ *  in form of a list of concrete coordinates.
+ *
+ * This method returns a helper function that takes the desired `content` and does the processing.
+ * The returned function will create and return a new {@link CompositeGeneratorNode} being initialized
+ *  with the given tracing information and add some `content`, if provided.
+ *
+ * Exception: if `content` is already a {@link CompositeGeneratorNode} containing no tracing information,
+ *  that node is enriched with the given tracing information and returned, and no wrapping node is created.
+ *
+ * The list of regions in `sourceRegions` will later be reduced to the smallest encompassing region
+ *  of all the contained source regions.
+ *
+ * @param sourceRegions a list of text region within some file in form of concrete coordinates,
+ *  if empty no tracing will happen
+ *
+ * @returns a function behaving as described above, which in turn returns a {@link CompositeGeneratorNode}.
+ *
+ * @example
+ *   new CompositeGeneratorNode().appendTemplate
+ *       `Hello World!`
+ *   .appendNewLine().appendTracedTemplate(entity.$cstNode)
+ *       `Hello ${ traceToNode(findNodesForProperty(entity.$cstNode, 'name'))(entity.name) }`
+ *   .appendNewLineIfNotEmpty()
+ */
+export function traceToNode(sourceRegions: SourceRegion[]): (content?: Generated | ((node: CompositeGeneratorNode) => void)) => CompositeGeneratorNode;
+
+// implementation
+export function traceToNode<T extends AstNode>(astNode: T | undefined | SourceRegion | SourceRegion[], property?: Properties<T>, index?: number): (content?: Generated | ((node: CompositeGeneratorNode) => void)) => CompositeGeneratorNode {
     return content => {
         if (content instanceof CompositeGeneratorNode && content.tracedSource === undefined) {
-            return content.trace(astNode, property, index);
+            return (content as CompositeGeneratorNode).trace(astNode as T, property, index);
         } else {
             // a `content !== undefined` check is skipped here on purpose in order to let this method always return a result;
             // dropping empty generator nodes is considered a post processing optimization.
-            return new CompositeGeneratorNode().trace(astNode, property, index).append(content);
+            return new CompositeGeneratorNode().trace(astNode as T, property, index).append(content);
         }
     };
+}
+
+/**
+ * Convenience function for attaching tracing information to content of type `Generated`,
+ *  in form of `{astNode, property?, index?}`, if `condition` is equal to `true`.
+ *
+ * If `condition` is satisfied, this method returns a helper function that takes the desired
+ * `content` and does the processing. The returned function will create and return a new
+ * {@link CompositeGeneratorNode} being initialized with the given tracing information and
+ * add some `content`, if provided. Otherwise, the returned function just returns `undefined`.
+ *
+ * Exception: if `content` is already a {@link CompositeGeneratorNode} containing no tracing information,
+ *  that node is enriched with the given tracing information and returned, and no wrapping node is created.
+ *
+ * @param condition a boolean value indicating whether to apply the provided tracing information to the desired content.
+ *
+ * @param astNode the AstNode corresponding to the appended content
+ *
+ * @param property the value property name (string) corresponding to the appended content,
+ *  if e.g. the content corresponds to some `string` or `number` property of `astNode`, is optional
+ *
+ * @param index the index of the value within a list property corresponding to the appended content,
+ *  if the property contains a list of elements, is ignored otherwise, is optinal,
+ *  should not be given if no `property` is given
+ *
+ * @returns a function behaving as described above, which in turn returns a {@link CompositeGeneratorNode}.
+ *
+ * @example
+ *   new CompositeGeneratorNode().appendTemplate
+ *       `Hello World!`
+ *   .appendNewLine().appendTracedTemplate(entity)
+ *       `Hello ${ traceToNodeIf(!!entity.name, entity, 'name')(entity.name) }`
+ *   .appendNewLineIfNotEmpty()
+ */
+export function traceToNodeIf<T extends AstNode>(condition: boolean, astNode: T, property?: Properties<T>, index?: number): (content?: Generated | ((node: CompositeGeneratorNode) => void)) => CompositeGeneratorNode | undefined ;
+
+/**
+ * Convenience function for attaching tracing information to content of type `Generated`,
+ *  in form of concrete coordinates, if `condition` is equal to `true`.
+ *
+ * If `condition` is satisfied, this method returns a helper function that takes the desired
+ * `content` and does the processing. The returned function will create and return a new
+ * {@link CompositeGeneratorNode} being initialized with the given tracing information and
+ * add some `content`, if provided. Otherwise, the returned function just returns `undefined`.
+ *
+ * Exception: if `content` is already a {@link CompositeGeneratorNode} containing no tracing information,
+ *  that node is enriched with the given tracing information and returned, and no wrapping node is created.
+ *
+ * If `sourceRegions` is a function supplying the corresponding regions, it's only called if `condition` is satisfied.
+ *
+ * @param condition a boolean value indicating whether to apply the provided tracing information to the desired content.
+ *
+ * @param sourceRegion a text region within some file in form of concrete coordinates,
+ *  if `undefined` no tracing will happen
+ *
+ * @returns a function behaving as described above, which in turn returns a {@link CompositeGeneratorNode}.
+ *
+ * @example
+ *   new CompositeGeneratorNode().appendTemplate
+ *       `Hello World!`
+ *   .appendNewLine().appendTracedTemplate(entity.$cstNode)
+ *       `Hello ${ traceToNodeIf(!!entity.name, () => findNodeForProperty(entity.$cstNode, 'name'))(entity.name) }`
+ *   .appendNewLineIfNotEmpty()
+ */
+export function traceToNodeIf(condition: boolean, sourceRegion: SourceRegion | undefined | (() => SourceRegion | undefined)): (content?: Generated | ((node: CompositeGeneratorNode) => void)) => CompositeGeneratorNode | undefined ;
+
+/**
+ * Convenience function for attaching tracing information to content of type `Generated`,
+ *  in form of a list of concrete coordinates, if `condition` is equal to `true`.
+ *
+ * If `condition` is satisfied, this method returns a helper function that takes the desired
+ * `content` and does the processing. The returned function will create and return a new
+ * {@link CompositeGeneratorNode} being initialized with the given tracing information and
+ * add some `content`, if provided. Otherwise, the returned function just returns `undefined`.
+ *
+ * Exception: if `content` is already a {@link CompositeGeneratorNode} containing no tracing information,
+ *  that node is enriched with the given tracing information and returned, and no wrapping node is created.
+ *
+ * The list of regions in `sourceRegions` will later be reduced to the smallest encompassing region
+ *  of all the contained source regions.
+ * If `sourceRegions` is a function supplying the corresponding regions, it's only called if `condition` is satisfied.
+ *
+ * @param condition a boolean value indicating whether to apply the provided tracing information to the desired content.
+ *
+ * @param sourceRegions a list of text region within some file in form of concrete coordinates,
+ *  if empty no tracing will happen
+ *
+ * @returns a function behaving as described above, which in turn returns a {@link CompositeGeneratorNode}.
+ *
+ * @example
+ *   new CompositeGeneratorNode().appendTemplate
+ *       `Hello World!`
+ *   .appendNewLine().appendTracedTemplate(entity.$cstNode)
+ *       `Hello ${ traceToNodeIf(!!entity.name, () => findNodesForProperty(entity.$cstNode, 'name'))(entity.name) }`
+ *   .appendNewLineIfNotEmpty()
+ */
+export function traceToNodeIf(condition: boolean, sourceRegions: SourceRegion[] | (() => SourceRegion[])): (content?: Generated | ((node: CompositeGeneratorNode) => void)) => CompositeGeneratorNode | undefined ;
+
+// implementation
+export function traceToNodeIf<T extends AstNode>(condition: boolean, source: T | undefined | SourceRegion | SourceRegion[] | (() => undefined | SourceRegion | SourceRegion[]), property?: Properties<T>, index?: number): // eslint-disable-next-line @typescript-eslint/indent
+        (content?: Generated | ((node: CompositeGeneratorNode) => void)) => CompositeGeneratorNode | undefined {
+    return condition ? traceToNode((typeof source === 'function' ? source() : source) as T, property, index) : () => undefined;
 }
 
 /**
