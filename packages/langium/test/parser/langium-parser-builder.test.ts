@@ -597,6 +597,25 @@ describe('MultiMode Lexing', () => {
 
 });
 
+describe('Fragment rules', () => {
+
+    test('Fragment rules with arrays are correctly assigned to property', async () => {
+        const parser = await parserFromGrammar(`
+        grammar FragmentRuleArrays
+        entry Entry: Fragment*;
+        fragment Fragment: values+=ID;
+        terminal ID: /\\^?[_a-zA-Z][\\w_]*/;
+
+        hidden terminal WS: /\\s+/;
+        `);
+        const result = parser.parse('ab cd ef');
+        expect(result.lexerErrors).toHaveLength(0);
+        expect(result.parserErrors).toHaveLength(0);
+        expect(result.value).toHaveProperty('values', ['ab', 'cd', 'ef']);
+    });
+
+});
+
 describe('ALL(*) parser', () => {
 
     const grammar = `
