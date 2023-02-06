@@ -280,7 +280,11 @@ export abstract class AbstractSemanticTokenProvider implements SemanticTokenProv
                     break;
                 }
                 const node = result.value;
-                const nodeRange = node.$cstNode!.range;
+
+                // CST nodes can be undefined, e.g. programmatically created AST
+                const nodeRange = node.$cstNode?.range;
+                if (!nodeRange) continue;
+
                 const comparedRange = this.compareRange(nodeRange);
                 if (comparedRange === 1) {
                     break; // Every following element will not be in range, so end the loop
