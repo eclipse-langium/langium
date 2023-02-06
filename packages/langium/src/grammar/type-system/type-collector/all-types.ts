@@ -56,8 +56,9 @@ function addSuperProperties(allTypes: InterfaceType[]) {
         }
     }
 
+    const visited = new Set<InterfaceType>();
     for (const type of allTypes) {
-        addSuperPropertiesInternal(type);
+        addSuperPropertiesInternal(type, visited);
     }
 }
 
