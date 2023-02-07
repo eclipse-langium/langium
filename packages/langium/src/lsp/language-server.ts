@@ -7,8 +7,29 @@
 import {
     CallHierarchyIncomingCallsParams,
     CallHierarchyOutgoingCallsParams,
-    CancellationToken, Connection, Disposable, Emitter, Event, FileChangeType, HandlerResult, InitializedParams, InitializeParams, InitializeResult,
-    LSPErrorCodes, RequestHandler, ResponseError, ServerRequestHandler, TextDocumentIdentifier, TextDocumentSyncKind
+    CancellationToken,
+    Connection,
+    Disposable,
+    Emitter,
+    Event,
+    FileChangeType,
+    HandlerResult,
+    InitializedParams,
+    InitializeParams,
+    InitializeResult,
+    LSPErrorCodes,
+    RequestHandler,
+    ResponseError,
+    SemanticTokens,
+    SemanticTokensDelta,
+    SemanticTokensDeltaParams,
+    SemanticTokensDeltaPartialResult,
+    SemanticTokensParams,
+    SemanticTokensPartialResult,
+    SemanticTokensRangeParams,
+    ServerRequestHandler,
+    TextDocumentIdentifier,
+    TextDocumentSyncKind
 } from 'vscode-languageserver';
 import { URI } from 'vscode-uri';
 import { eagerLoad } from '../dependency-injection';
@@ -197,8 +218,16 @@ export function addDocumentsHandler(connection: Connection, services: LangiumSha
         onDidChange([URI.parse(change.document.uri)], []);
     });
     connection.onDidChangeWatchedFiles(params => {
-        const changedUris = params.changes.filter(e => e.type !== FileChangeType.Deleted).map(e => URI.parse(e.uri));
-        const deletedUris = params.changes.filter(e => e.type === FileChangeType.Deleted).map(e => URI.parse(e.uri));
+        const changedUris: URI[] = [];
+        const deletedUris: URI[] = [];
+        for (const change of params.changes) {
+            const uri = URI.parse(change.uri);
+            if (change.type === FileChangeType.Deleted) {
+                deletedUris.push(uri);
+            } else {
+                changedUris.push(uri);
+            }
+        }
         onDidChange(changedUris, deletedUris);
     });
 }
@@ -326,31 +355,32 @@ export function addRenameHandler(connection: Connection, services: LangiumShared
 }
 
 export function addSemanticTokenHandler(connection: Connection, services: LangiumSharedServices): void {
-    const errorMessage = 'No semantic token provider registered';
-    connection.languages.semanticTokens.on(createServerRequestHandler(
+    // If no semantic token provider is registered that's fine. Just return an empty result
+    const emptyResult: SemanticTokens = { data: [] };
+    connection.languages.semanticTokens.on(createServerRequestHandler<SemanticTokensParams, SemanticTokens, SemanticTokensPartialResult, void>(
         (services, document, params, cancelToken) => {
             if (services.lsp.SemanticTokenProvider) {
                 return services.lsp.SemanticTokenProvider.semanticHighlight(document, params, cancelToken);
             }
-            return new ResponseError<void>(0, errorMessage);
+            return emptyResult;
         },
         services
     ));
-    connection.languages.semanticTokens.onDelta(createServerRequestHandler(
+    connection.languages.semanticTokens.onDelta(createServerRequestHandler<SemanticTokensDeltaParams, SemanticTokens | SemanticTokensDelta, SemanticTokensDeltaPartialResult, void>(
         (services, document, params, cancelToken) => {
             if (services.lsp.SemanticTokenProvider) {
                 return services.lsp.SemanticTokenProvider.semanticHighlightDelta(document, params, cancelToken);
             }
-            return new ResponseError<void>(0, errorMessage);
+            return emptyResult;
         },
         services
     ));
-    connection.languages.semanticTokens.onRange(createServerRequestHandler(
+    connection.languages.semanticTokens.onRange(createServerRequestHandler<SemanticTokensRangeParams, SemanticTokens, SemanticTokensPartialResult, void>(
         (services, document, params, cancelToken) => {
             if (services.lsp.SemanticTokenProvider) {
                 return services.lsp.SemanticTokenProvider.semanticHighlightRange(document, params, cancelToken);
             }
-            return new ResponseError<void>(0, errorMessage);
+            return emptyResult;
         },
         services
     ));
@@ -425,13 +455,12 @@ export function addCodeLensHandler(connection: Connection, services: LangiumShar
 }
 
 export function addCallHierarchyHandler(connection: Connection, services: LangiumSharedServices): void {
-    const errorMessage = 'No call hierarchy provider registered';
     connection.languages.callHierarchy.onPrepare(createServerRequestHandler(
         (services, document, params, cancelToken) => {
             if (services.lsp.CallHierarchyProvider) {
                 return services.lsp.CallHierarchyProvider.prepareCallHierarchy(document, params, cancelToken) ?? null;
             }
-            return new ResponseError<void>(0, errorMessage);
+            return null;
         },
         services
     ));
@@ -441,7 +470,7 @@ export function addCallHierarchyHandler(connection: Connection, services: Langiu
             if (services.lsp.CallHierarchyProvider) {
                 return services.lsp.CallHierarchyProvider.incomingCalls(params, cancelToken) ?? null;
             }
-            return new ResponseError<void>(0, errorMessage);
+            return null;
         },
         services
     ));
@@ -451,7 +480,7 @@ export function addCallHierarchyHandler(connection: Connection, services: Langiu
             if (services.lsp.CallHierarchyProvider) {
                 return services.lsp.CallHierarchyProvider.outgoingCalls(params, cancelToken) ?? null;
             }
-            return new ResponseError<void>(0, errorMessage);
+            return null;
         },
         services
     ));
@@ -466,8 +495,9 @@ export function createCallHierarchyRequestHandler<P extends CallHierarchyIncomin
         const uri = URI.parse(params.item.uri);
         const language = serviceRegistry.getServices(uri);
         if (!language) {
-            console.error(`Could not find service instance for uri: '${uri.toString()}'`);
-            throw new Error();
+            const message = `Could not find service instance for uri: '${uri.toString()}'`;
+            console.error(message);
+            throw new Error(message);
         }
         try {
             return await serviceCall(language, params, cancelToken);
