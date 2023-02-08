@@ -6,10 +6,10 @@
     "npm": ">= 7.7.0"
   },
   "scripts": {
-    "prepare": "npm run clean && npm run build && npm run build --workspace=langium-vscode",
-    "clean": "shx rm -rf packages/**/lib packages/**/out packages/**/tsconfig.tsbuildinfo",
+    "clean": "shx rm -rf packages/**/lib packages/**/out packages/**/*.tsbuildinfo",
     "build": "tsc -b tsconfig.build.json",
     "watch": "tsc -b tsconfig.build.json -w",
+    "build:clean": "npm run clean && npm run build && npm run build --workspace=langium-vscode",
     "lint": "npm run lint --workspaces",
     "test": "vitest",
     "test-ui": "vitest --ui",
@@ -19,17 +19,16 @@
     "dev-clean": "shx rm -rf packages/**/node_modules && npm uninstall -g langium-workspaces langium-cli generator-langium langium && npm unlink langium-workspaces langium-cli generator-langium langium"
   },
   "devDependencies": {
-    "@types/jest": "^29.2.5",
-    "@types/jest-expect-message": "^1.1.0",
-    "@typescript-eslint/eslint-plugin": "^5.47.1",
-    "@typescript-eslint/parser": "^5.47.1",
-    "@vitest/coverage-c8": "^0.27.1",
-    "@vitest/ui": "^0.27.1",
-    "eslint": "^8.31.0",
+    "@typescript-eslint/eslint-plugin": "^5.51.0",
+    "@typescript-eslint/parser": "^5.51.0",
+    "@vitest/coverage-c8": "~0.28.4",
+    "@vitest/ui": "~0.28.4",
+    "eslint": "^8.33.0",
     "eslint-plugin-header": "^3.1.1",
+    "editorconfig": "~1.0.2",
     "shx": "^0.3.4",
-    "typescript": "^4.9.4",
-    "vitest": "^0.27.1"
+    "typescript": "~4.9.5",
+    "vitest": "~0.28.4"
   },
   "volta": {
     "node": "16.18.1",

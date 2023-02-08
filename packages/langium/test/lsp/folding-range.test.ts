@@ -4,6 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import { describe, test } from 'vitest';
 import { createLangiumGrammarServices, EmptyFileSystem } from '../../src';
 import { expectFoldings } from '../../src/test';
 
@@ -13,7 +14,7 @@ const text = `
    * Multiline
    * Comment|>
    */
-  <|X: 
+  <|X:
     name="X"
     value="Y";|>
   terminal hiddenTerminal: /x/;

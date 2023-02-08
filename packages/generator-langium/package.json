@@ -25,7 +25,7 @@
     "clean": "shx rm -rf app",
     "build": "tsc",
     "watch": "tsc --watch",
-    "lint": "eslint src --ext .ts",
+    "lint": "eslint src test --ext .ts",
     "run": "yo langium",
     "test": "vitest run",
     "debug": "npx --node-arg=--inspect yo langium",
@@ -42,6 +42,10 @@
     "@types/yeoman-generator": "^5.0.0",
     "@types/yeoman-test": "^4.0.3",
     "yeoman-test": "^7.0.0"
+  },
+  "volta": {
+    "node": "16.19.0",
+    "npm": "8.19.3"
   },
   "repository": {
     "type": "git",

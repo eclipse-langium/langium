@@ -1,6 +1,8 @@
 {
     "recommendations": [
         "langium.langium-vscode",
-        "dbaeumer.vscode-eslint"
+        "dbaeumer.vscode-eslint",
+        "editorconfig.editorconfig",
+        "zixuanchen.vitest-explorer"
     ]
 }

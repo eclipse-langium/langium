@@ -16,6 +16,7 @@ import { LangiumDocument } from '../workspace/documents';
 import { findNodeForProperty } from '../utils/grammar-util';
 import { SemanticTokensDecoder } from '../lsp/semantic-token-provider';
 import { TextDocument } from 'vscode-languageserver-textdocument';
+import { expect } from 'vitest';
 
 export function parseHelper<T extends AstNode = AstNode>(services: LangiumServices): (input: string) => Promise<LangiumDocument<T>> {
     const metaData = services.LanguageMetaData;

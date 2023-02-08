@@ -4,6 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import { beforeEach, describe, expect, test } from 'vitest';
 import { Position, Range } from 'vscode-languageserver';
 import { AstNode, createServicesForGrammar } from '../../src';
 import { validationHelper, ValidationResult } from '../../src/test';
@@ -15,13 +16,13 @@ describe('Parser error is thrown on resynced token with NaN position', () => {
 
     entry Model:
         (persons+=Person | greetings+=Greeting)+;
-    
+
     Person:
         'person' name=ID;
-    
+
     Greeting:
         'Hello' person=[Person:ID] '!';
-    
+
     hidden terminal WS: /\\s+/;
     terminal ID: /[_a-zA-Z][\\w_]*/;
     terminal INT returns number: /[0-9]+/;
@@ -40,7 +41,7 @@ describe('Parser error is thrown on resynced token with NaN position', () => {
     test('Diagnostic is shown on at the end of the previous token', async () => {
         const text = `person Aasdf
         person Jo
-        
+
         Hello Jo!
         Hello `;
 

@@ -4,6 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import { beforeAll, describe, expect, test } from 'vitest';
 import { createLangiumGrammarServices, Grammar, EmptyFileSystem, expandToString, EOL } from '../../../src';
 import { collectAst, specifyAstNodeProperties } from '../../../src/grammar/type-system/ast-collector';
 import { collectAllAstResources, collectTypeResources } from '../../../src/grammar/type-system/type-collector/all-types';
@@ -898,7 +899,7 @@ describe('types of `$container` and `$type` are correct', () => {
             B: 'B' C;
             C: 'C' strC=ID;
             D: 'D' a=A;
-            E: 'E' b=B;   
+            E: 'E' b=B;
         `);
         const { unions, interfaces } = collectAst(document.parseResult.value);
 
@@ -990,7 +991,7 @@ describe('generated types from declared types include all of them', () => {
             type AB = A | B;
             A returns A:  'A' a=ID;
             AB returns AB: A ({B} b+=ID)*;
-            terminal ID: /[_a-zA-Z][\\w_]*/;        
+            terminal ID: /[_a-zA-Z][\\w_]*/;
         `);
         const typesWithDeclared = collectAst(documentWithDeclaredTypes.parseResult.value);
 

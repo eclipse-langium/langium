@@ -4,6 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import { describe, expect, test } from 'vitest';
 import { EmptyFileSystem, Generated, normalizeEOL, toString } from 'langium';
 import { parseHelper } from 'langium/test';
 import { generateCppContent } from '../src/cli/generator';
@@ -32,7 +33,7 @@ describe('Tests the code generator', () => {
 const input = `
     statemachine TrafficLight
 
-    events 
+    events
         switchCapacity
         next
 

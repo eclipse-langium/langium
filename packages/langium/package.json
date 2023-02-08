@@ -45,6 +45,10 @@
   "devDependencies": {
     "langium-cli": "1.0.0"
   },
+  "volta": {
+    "node": "16.19.0",
+    "npm": "8.19.3"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/langium/langium",

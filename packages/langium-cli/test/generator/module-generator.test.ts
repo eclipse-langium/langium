@@ -4,6 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import { describe, expect, test } from 'vitest';
 import { generateModule } from '../../src/generator/module-generator';
 import { LangiumConfig, LangiumLanguageConfig, RelativePath } from '../../src/package';
 import { Grammar } from 'langium';

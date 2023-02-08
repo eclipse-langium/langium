@@ -74,8 +74,11 @@
     "ignore": "~5.2.0"
   },
   "devDependencies": {
-    "@types/vscode": "^1.53.0",
-    "esbuild": "^0.14.25"
+    "@types/vscode": "^1.53.0"
+  },
+  "volta": {
+    "node": "16.19.0",
+    "npm": "8.19.3"
   },
   "repository": {
     "type": "git",

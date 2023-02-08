@@ -3,6 +3,8 @@
  * This program and the accompanying materials are made available under the
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
+
+import { describe, test } from 'vitest';
 import { normalizeEOL } from 'langium';
 import path from 'path';
 import { createHelpers } from 'yeoman-test';

@@ -28,7 +28,12 @@ jobs:
       shell: bash
       run: |
         npm ci
-        npm test
+        npm run build:clean
+    - name: Test
+      if: success() || failure()
+      shell: bash
+      run: |
+        npm run test
   lint:
     name: Langium Lint
     runs-on: ubuntu-latest
@@ -44,5 +49,5 @@ jobs:
       shell: bash
       run: |
         npm ci
+        npm run build:clean
         npm run lint
-
