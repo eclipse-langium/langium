@@ -26,7 +26,7 @@ describe('Langium grammar validation', () => {
         // should get a warning when basing declared types on inferred types
         expectError(validationResult, /Extending an inferred type is discouraged./, {
             node: validationResult.document.parseResult.value.interfaces[0],
-            property: { name: 'superTypes' }
+            property: 'superTypes'
         });
     });
 
@@ -45,7 +45,7 @@ describe('Langium grammar validation', () => {
         // assert
         expectError(validationResult, /Cannot use fragment rule 'B' for assignment of property 'b'./, {
             node: (validationResult.document.parseResult.value.rules[0] as GrammarAST.ParserRule).definition as GrammarAST.Assignment,
-            property: { name: 'terminal' }
+            property: 'terminal'
         });
     });
 
@@ -63,11 +63,11 @@ describe('Langium grammar validation', () => {
 
         expectError(validationResult, /Interfaces cannot extend union types./, {
             node: validationResult.document.parseResult.value.interfaces[0],
-            property: { name: 'superTypes' }
+            property: 'superTypes'
         });
         expectError(validationResult, /Extending an inferred type is discouraged./, {
             node: validationResult.document.parseResult.value.interfaces[0],
-            property: { name: 'superTypes' }
+            property: 'superTypes'
         });
     });
 
@@ -88,11 +88,11 @@ describe('Langium grammar validation', () => {
 
         expectError(validationResult, /Interfaces cannot extend union types./, {
             node: validationResult.document.parseResult.value.interfaces[0],
-            property: { name: 'superTypes' }
+            property: 'superTypes'
         });
         expectError(validationResult, /Extending an inferred type is discouraged./, {
             node: validationResult.document.parseResult.value.interfaces[0],
-            property: { name: 'superTypes' }
+            property: 'superTypes'
         });
     });
 
@@ -123,7 +123,7 @@ describe('Langium grammar validation', () => {
         `);
         expectError(validationResult, /The type 'T' is already explicitly declared and cannot be inferred./, {
             node: validationResult.document.parseResult.value.rules[0],
-            property: {name: 'name'},
+            property: 'name',
             code: IssueCodes.MissingReturns
         });
     });
@@ -171,7 +171,7 @@ describe('checkReferenceToRuleButNotType', () => {
         const crossRef = streamAllContents(validationResult.document.parseResult.value).find(GrammarAST.isCrossReference)!;
         expectError(validationResult, "Could not resolve reference to AbstractType named 'Definition'.", {
             node: crossRef,
-            property: { name: 'type' }
+            property: 'type'
         });
     });
 
@@ -179,7 +179,7 @@ describe('checkReferenceToRuleButNotType', () => {
         const type = validationResult.document.parseResult.value.types[0];
         expectError(validationResult, "Could not resolve reference to AbstractType named 'Reference'.", {
             node: type,
-            property: { name: 'typeAlternatives' }
+            property: 'typeAlternatives'
         });
     });
 
@@ -223,7 +223,7 @@ describe('Checked Named CrossRefs', () => {
         const rule = ((validationResult.document.parseResult.value.rules[1] as GrammarAST.ParserRule).definition as GrammarAST.Group).elements[1] as GrammarAST.Assignment;
         expectWarning(validationResult, 'The "name" property is not recommended for cross-references.', {
             node: rule,
-            property: { name: 'feature' }
+            property: 'feature'
         });
     });
 });
@@ -316,9 +316,7 @@ describe('Unused rules validation', () => {
         const stringTerminal = validation.document.parseResult.value.rules.find(e => e.name === 'STRING')!;
         expectIssue(validation, {
             node: stringTerminal,
-            property: {
-                name: 'name'
-            },
+            property: 'name',
             severity: DiagnosticSeverity.Hint
         });
     });
@@ -337,9 +335,7 @@ describe('Unused rules validation', () => {
         const unusedRule = validation.document.parseResult.value.rules.find(e => e.name === 'Unused')!;
         expectIssue(validation, {
             node: unusedRule,
-            property: {
-                name: 'name'
-            },
+            property: 'name',
             severity: DiagnosticSeverity.Hint
         });
     });
@@ -406,9 +402,7 @@ describe('Reserved names', () => {
         expectIssue(validation, {
             node,
             message: / is a reserved name of the JavaScript runtime\.$/,
-            property: {
-                name: property
-            },
+            property,
             severity: DiagnosticSeverity.Error
         });
     }
@@ -479,9 +473,7 @@ describe('Clashing token names', () => {
         const terminal = locator.getAstNode(validation.document.parseResult.value, '/rules@1')!;
         expectError(validation, 'Terminal name clashes with existing keyword.', {
             node: terminal,
-            property: {
-                name: 'name'
-            }
+            property: 'name'
         });
     });
 
@@ -498,9 +490,7 @@ describe('Clashing token names', () => {
         const terminal = locator.getAstNode(validation.document.parseResult.value, '/rules@0')!;
         expectError(validation, /Terminal name clashes with imported keyword from/, {
             node: terminal,
-            property: {
-                name: 'name'
-            }
+            property: 'name'
         });
     });
 
@@ -517,9 +507,7 @@ describe('Clashing token names', () => {
         const importNode = validation.document.parseResult.value.imports[0];
         expectError(validation, 'Imported terminals (a) clash with locally defined keywords.', {
             node: importNode,
-            property: {
-                name: 'path'
-            }
+            property: 'path'
         });
     });
 
@@ -541,9 +529,7 @@ describe('Clashing token names', () => {
         const importNode = validation.document.parseResult.value.imports[0];
         expectError(validation, 'Imported terminals (a) clash with imported keywords.', {
             node: importNode,
-            property: {
-                name: 'path'
-            }
+            property: 'path'
         });
     });
 
@@ -599,7 +585,7 @@ describe('Property type is not a mix of cross-ref and non-cross-ref types.', () 
 
         expectError(validation, /Mixing a cross-reference with other types is not supported. Consider splitting property /, {
             node: rule1Assignment!,
-            property: { name: 'terminal' }
+            property: 'terminal'
         });
     });
     test('Parser rule property complex mixed.', async () => {
@@ -617,7 +603,7 @@ describe('Property type is not a mix of cross-ref and non-cross-ref types.', () 
 
         expectError(validation, /Mixing a cross-reference with other types is not supported. Consider splitting property /, {
             node: rule1Assignment!,
-            property: { name: 'terminal' }
+            property: 'terminal'
         });
     });
 
