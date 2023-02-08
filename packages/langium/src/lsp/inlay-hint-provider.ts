@@ -12,8 +12,23 @@ import { LangiumDocument } from '../workspace/documents';
 
 export type InlayHintAcceptor = (inlayHint: InlayHint) => void;
 
+/**
+ * Provider for the inlay hint LSP type.
+ */
 export interface InlayHintProvider {
+    /**
+     * Handle the `textDocument.inlayHint` language server request.
+     *
+     * The inlay hints returned in this method don't need to contain all information about the hint.
+     * Instead, the {@link resolveInlayHint} method can be used to provide further information about the hint.
+     */
     getInlayHints(document: LangiumDocument, params: InlayHintParams, cancelToken?: CancellationToken): MaybePromise<InlayHint[] | undefined>;
+    /**
+     * Handle a resolve inlay request. Allows to provide additional information for an inlay hint.
+     *
+     * This request is performed when a user clicks on a hint provided by the {@link getInlayHints} method.
+     * Only needs to be implemented if full inlay link creation is expensive.
+     */
     resolveInlayHint?(inlayHint: InlayHint, cancelToken?: CancellationToken): MaybePromise<InlayHint>;
 }
 
