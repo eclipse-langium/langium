@@ -53,7 +53,10 @@ export type ExtractTypesOptions = {
     force: boolean;
 }
 
-export type GeneratorResult = 'success' | 'failure';
+export type GeneratorResult = {
+    success: boolean
+    files: string[]
+}
 
 type GrammarElement = GrammarAST.AbstractRule | GrammarAST.Type | GrammarAST.Interface;
 
@@ -95,7 +98,7 @@ function mapGrammarElements(grammars: Grammar[], visited: Set<string> = new Set(
                     .concat(grammar.types)
                     .concat(grammar.interfaces)
             );
-            const importedGrammars = grammar.imports.map(e => resolveImport(documents, e)!);
+            const importedGrammars = grammar.imports.map(e => resolveImport(documents, e)).filter((e): e is Grammar => e !== undefined);
             mapGrammarElements(importedGrammars, visited, map);
         }
     }
@@ -155,29 +158,38 @@ async function relinkGrammars(grammars: Grammar[]): Promise<void> {
 
 async function buildAll(config: LangiumConfig): Promise<Map<string, LangiumDocument>> {
     for (const doc of documents.all) {
-        documents.invalidateDocument(doc.uri);
+        documents.deleteDocument(doc.uri);
     }
     const map = new Map<string, LangiumDocument>();
     const relPath = config[RelativePath];
+    const uris = new Set<string>();
     for (const languageConfig of config.languages) {
         const absGrammarPath = URI.file(path.resolve(relPath, languageConfig.grammar));
         const document = documents.getOrCreateDocument(absGrammarPath);
-        const allUris = eagerLoad(document);
-        await sharedServices.workspace.DocumentBuilder.update(allUris, []);
+        eagerLoad(document, uris);
     }
     for (const doc of documents.all) {
-        await sharedServices.workspace.DocumentBuilder.build([doc]);
         map.set(doc.uri.fsPath, doc);
     }
+    await sharedServices.workspace.DocumentBuilder.build(documents.all.toArray(), {
+        validationChecks: 'all'
+    });
     return map;
 }
 
 export async function generate(config: LangiumConfig, options: GenerateOptions): Promise<GeneratorResult> {
     if (!config.languages || config.languages.length === 0) {
         log('error', options, 'No languages specified in config.');
-        return 'failure';
+        return {
+            success: false,
+            files: []
+        };
     }
     const all = await buildAll(config);
+    const buildResult: (success: boolean) => GeneratorResult = (success: boolean) => ({
+        success,
+        files: Array.from(all.keys())
+    });
 
     let hasErrors = false;
     for (const [path, document] of all) {
@@ -200,7 +212,7 @@ export async function generate(config: LangiumConfig, options: GenerateOptions):
 
     if (hasErrors) {
         log('error', options, `Langium generator ${chalk.red.bold('failed')}.`);
-        return 'failure';
+        return buildResult(false);
     }
 
     const grammars: Grammar[] = [];
@@ -213,7 +225,7 @@ export async function generate(config: LangiumConfig, options: GenerateOptions):
             const grammar = document.parseResult.value as Grammar;
             if (!grammar.isDeclared) {
                 log('error', options, chalk.red(`${absGrammarPath}: The entry grammar must start with the 'grammar' keyword.`));
-                return 'failure';
+                return buildResult(false);
             }
             grammars.push(grammar);
             configMap.set(grammar, languageConfig);
@@ -234,7 +246,7 @@ export async function generate(config: LangiumConfig, options: GenerateOptions):
         const parserAnalysis = await validateParser(grammar, config, configMap, grammarServices);
         if (parserAnalysis instanceof Error) {
             log('error', options, chalk.red(parserAnalysis.toString()));
-            return 'failure';
+            return buildResult(false);
         }
     }
 
@@ -243,10 +255,10 @@ export async function generate(config: LangiumConfig, options: GenerateOptions):
     log('log', options, `Writing generated files to ${chalk.white.bold(output)}`);
 
     if (await rmdirWithFail(output, ['ast.ts', 'grammar.ts', 'module.ts'], options)) {
-        return 'failure';
+        return buildResult(false);
     }
     if (await mkdirWithFail(output, options)) {
-        return 'failure';
+        return buildResult(false);
     }
 
     const genAst = generateAst(grammarServices, grammars, config);
@@ -275,7 +287,7 @@ export async function generate(config: LangiumConfig, options: GenerateOptions):
         }
     }
 
-    return 'success';
+    return buildResult(true);
 }
 
 export async function generateTypes(options: ExtractTypesOptions): Promise<void> {

@@ -5,7 +5,7 @@
 ******************************************************************************/
 
 import {
-    escapeRegExp, getCaseInsensitivePattern, getTerminalParts, Grammar, GrammarAST, isCommentTerminal, stream
+    EOL, escapeRegExp, getCaseInsensitivePattern, getTerminalParts, Grammar, GrammarAST, isCommentTerminal, stream
 } from 'langium';
 import { terminalRegex } from 'langium/lib/grammar/internal-grammar-util';
 import { LangiumLanguageConfig } from '../../package';
@@ -59,7 +59,7 @@ export function generateTextMate(grammar: Grammar, config: LangiumLanguageConfig
         repository: getRepository(grammar, config)
     };
 
-    return JSON.stringify(json, null, 2);
+    return JSON.stringify(json, null, 2) + EOL;
 }
 
 function getPatterns(grammar: Grammar, config: LangiumLanguageConfig): Pattern[] {
