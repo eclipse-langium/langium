@@ -72,7 +72,7 @@ export class DefaultLanguageServer implements LanguageServer {
         const hasSemanticTokensProvider = this.hasService(e => e.lsp.SemanticTokenProvider);
         const commandNames = this.services.lsp.ExecuteCommandHandler?.commands;
         const documentLinkProvider = this.services.lsp.DocumentLinkProvider;
-        const signatureHelpOptions = mergeSignatureHelpOptions(languages.map(e => e.lsp.SignatureHelp?.signatureHelpOptions));
+        const signatureHelpOptions = mergeSignatureHelpOptions(languages.map(e => e.lsp.SignatureHelpProvider?.signatureHelpOptions));
         const hasGoToTypeProvider = this.hasService(e => e.lsp.TypeProvider);
         const hasGoToImplementationProvider = this.hasService(e => e.lsp.ImplementationProvider);
         const hasCompletionProvider = this.hasService(e => e.lsp.CompletionProvider);
@@ -86,6 +86,7 @@ export class DefaultLanguageServer implements LanguageServer {
         const hasCallHierarchyProvider = this.hasService(e => e.lsp.CallHierarchyProvider);
         const codeLensProvider = this.services.lsp.CodeLensProvider;
         const hasDeclarationProvider = this.hasService(e => e.lsp.DeclarationProvider);
+        const inlayHintProvider = this.services.lsp.InlayHintProvider;
 
         const result: InitializeResult = {
             capabilities: {
@@ -127,7 +128,10 @@ export class DefaultLanguageServer implements LanguageServer {
                 codeLensProvider: codeLensProvider
                     ? { resolveProvider: Boolean(codeLensProvider.resolveCodeLens) }
                     : undefined,
-                declarationProvider: hasDeclarationProvider
+                declarationProvider: hasDeclarationProvider,
+                inlayHintProvider: inlayHintProvider
+                    ? { resolveProvider: Boolean(inlayHintProvider.resolveInlayHint) }
+                    : undefined
             }
         };
 
@@ -160,6 +164,7 @@ export function startLanguageServer(services: LangiumSharedServices): void {
     addCodeActionHandler(connection, services);
     addRenameHandler(connection, services);
     addHoverHandler(connection, services);
+    addInlayHintHandler(connection, services);
     addSemanticTokenHandler(connection, services);
     addExecuteCommandHandler(connection, services);
     addSignatureHelpHandler(connection, services);
@@ -325,6 +330,27 @@ export function addRenameHandler(connection: Connection, services: LangiumShared
     ));
 }
 
+export function addInlayHintHandler(connection: Connection, services: LangiumSharedServices): void {
+    const inlayHintProvider = services.lsp.InlayHintProvider;
+    if (inlayHintProvider) {
+        connection.languages.inlayHint.on(createServerRequestHandler(
+            (_, document, params, cancelToken) => inlayHintProvider.getInlayHints(document, params, cancelToken),
+            services
+        ));
+        // Make sure the function doesn't become undefined before actually executing it
+        const resolveInlayHint = inlayHintProvider.resolveInlayHint?.bind(inlayHintProvider);
+        if (resolveInlayHint) {
+            connection.languages.inlayHint.resolve(async (inlayHint, token) => {
+                try {
+                    return await resolveInlayHint(inlayHint, token);
+                } catch (err) {
+                    return responseError(err);
+                }
+            });
+        }
+    }
+}
+
 export function addSemanticTokenHandler(connection: Connection, services: LangiumSharedServices): void {
     const errorMessage = 'No semantic token provider registered';
     connection.languages.semanticTokens.on(createServerRequestHandler(
@@ -399,7 +425,7 @@ export function addDocumentLinkHandler(connection: Connection, services: Langium
 
 export function addSignatureHelpHandler(connection: Connection, services: LangiumSharedServices): void {
     connection.onSignatureHelp(createServerRequestHandler(
-        (services, document, params, cancelToken) => services.lsp.SignatureHelp?.provideSignatureHelp(document, params, cancelToken),
+        (services, document, params, cancelToken) => services.lsp.SignatureHelpProvider?.provideSignatureHelp(document, params, cancelToken),
         services
     ));
 }

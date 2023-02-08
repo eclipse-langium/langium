@@ -74,6 +74,36 @@ export function toDocumentSegment(node?: CstNode): DocumentSegment | undefined {
     };
 }
 
+export enum RangeComparison {
+    Before = 0,
+    OverlapFront = 1,
+    Inside = 2,
+    OverlapBack = 3,
+    After = 4
+}
+
+export function compareRange(range: Range, to: Range): RangeComparison {
+    if (range.end.line < to.start.line || (range.end.line === to.start.line && range.end.character < range.start.character)) {
+        return RangeComparison.Before;
+    } else if (range.start.line > to.end.line || (range.start.line === to.end.line && range.start.character > to.end.character)) {
+        return RangeComparison.After;
+    }
+    const startInside = range.start.line > to.start.line || (range.start.line === to.start.line && range.start.character >= to.start.character);
+    const endInside = range.end.line < to.end.line || (range.end.line === to.end.line && range.end.character <= to.end.character);
+    if (startInside && endInside) {
+        return RangeComparison.Inside;
+    } else if (startInside) {
+        return RangeComparison.OverlapBack;
+    } else {
+        return RangeComparison.OverlapFront;
+    }
+}
+
+export function inRange(range: Range, to: Range): boolean {
+    const comparison = compareRange(range, to);
+    return comparison === RangeComparison.Inside || comparison === RangeComparison.OverlapBack || comparison === RangeComparison.OverlapFront;
+}
+
 // The \p{L} regex matches any unicode letter character, i.e. characters from non-english alphabets
 // Together with \w it matches any kind of character which can commonly appear in IDs
 export const DefaultNameRegexp = /^[\w\p{L}]$/u;

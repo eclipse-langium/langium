@@ -4,9 +4,11 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import { Range } from 'vscode-languageserver';
 import { AstNode, CstNode, GenericAstNode, isAstNode, isReference, Reference, ReferenceInfo } from '../syntax-tree';
 import { DONE_RESULT, Stream, stream, StreamImpl, TreeStream, TreeStreamImpl } from '../utils/stream';
 import { LangiumDocument } from '../workspace/documents';
+import { compareRange, RangeComparison } from './cst-util';
 
 export type Mutable<T> = {
     -readonly [P in keyof T]: T[P]
@@ -91,14 +93,22 @@ export function findRootNode(node: AstNode): AstNode {
     return node;
 }
 
+export interface AstStreamOptions {
+    /**
+     * Optional target range that the nodes in the stream need to intersect
+     */
+    range?: Range
+}
+
 /**
  * Create a stream of all AST nodes that are directly contained in the given node. This includes
  * single-valued as well as multi-valued (array) properties.
  */
-export function streamContents(node: AstNode): Stream<AstNode> {
+export function streamContents(node: AstNode, options?: AstStreamOptions): Stream<AstNode> {
     if(!node) {
         throw new Error('Node must be an AstNode.');
     }
+    const range = options?.range;
     type State = { keys: string[], keyIndex: number, arrayIndex: number };
     return new StreamImpl<State, AstNode>(() => ({
         keys: Object.keys(node),
@@ -111,12 +121,14 @@ export function streamContents(node: AstNode): Stream<AstNode> {
                 const value = (node as GenericAstNode)[property];
                 if (isAstNode(value)) {
                     state.keyIndex++;
-                    return { done: false, value };
+                    if (isAstNodeInRange(value, range)) {
+                        return { done: false, value };
+                    }
                 } else if (Array.isArray(value)) {
                     while (state.arrayIndex < value.length) {
                         const index = state.arrayIndex++;
                         const element = value[index];
-                        if (isAstNode(element)) {
+                        if (isAstNode(element) && isAstNodeInRange(element, range)) {
                             return { done: false, value: element };
                         }
                     }
@@ -133,22 +145,37 @@ export function streamContents(node: AstNode): Stream<AstNode> {
  * Create a stream of all AST nodes that are directly and indirectly contained in the given root node.
  * This does not include the root node itself.
  */
-export function streamAllContents(root: AstNode): TreeStream<AstNode> {
-    if(!root) {
+export function streamAllContents(root: AstNode, options?: AstStreamOptions): TreeStream<AstNode> {
+    if (!root) {
         throw new Error('Root node must be an AstNode.');
     }
-    return new TreeStreamImpl(root, node => streamContents(node));
+    return new TreeStreamImpl(root, node => streamContents(node, options));
 }
 
 /**
  * Create a stream of all AST nodes that are directly and indirectly contained in the given root node,
  * including the root node itself.
  */
-export function streamAst(root: AstNode): TreeStream<AstNode> {
-    if(!root) {
+export function streamAst(root: AstNode, options?: AstStreamOptions): TreeStream<AstNode> {
+    if (!root) {
         throw new Error('Root node must be an AstNode.');
+    } else if (options?.range && !isAstNodeInRange(root, options.range)) {
+        // Return an empty stream if the root node isn't in range
+        return new TreeStreamImpl(root, () => []);
     }
-    return new TreeStreamImpl(root, node => streamContents(node), { includeRoot: true });
+    return new TreeStreamImpl(root, node => streamContents(node, options), { includeRoot: true });
+}
+
+function isAstNodeInRange(astNode: AstNode, range?: Range): boolean {
+    if (!range) {
+        return true;
+    }
+    const nodeRange = astNode.$cstNode?.range;
+    if (!nodeRange) {
+        return false;
+    }
+    const comparison = compareRange(nodeRange, range);
+    return comparison === RangeComparison.Inside || comparison === RangeComparison.OverlapBack || comparison === RangeComparison.OverlapFront;
 }
 
 /**

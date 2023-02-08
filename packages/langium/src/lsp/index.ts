@@ -19,6 +19,7 @@ export * from './folding-range-provider';
 export * from './formatter';
 export * from './hover-provider';
 export * from './implementation-provider';
+export * from './inlay-hint-provider';
 export * from './language-server';
 export * from './references-provider';
 export * from './rename-provider';
