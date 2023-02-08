@@ -29,8 +29,8 @@
     "publish:latest": "npm publish --tag latest"
   },
   "dependencies": {
-    "langium": "~1.0.0",
-    "sprotty-protocol": "^0.12.0"
+    "langium": "1.0.1",
+    "sprotty-protocol": "~0.13.0"
   },
   "volta": {
     "node": "16.19.0",

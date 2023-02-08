@@ -70,12 +70,12 @@
         "langium:watch": "langium generate --watch"
     },
     "dependencies": {
-        "chalk": "^4.1.2",
-        "commander": "^8.0.0",
-        "langium": "~1.0.0",
-        "lodash": "^4.17.21",
-        "vscode-languageclient": "^8.0.1",
-        "vscode-languageserver": "^8.0.1"
+        "chalk": "~4.1.2",
+        "commander": "~10.0.0",
+        "langium": "~1.0.1",
+        "lodash": "~4.17.21",
+        "vscode-languageclient": "~8.0.2",
+        "vscode-languageserver": "~8.0.2"
     },
     "devDependencies": {
         "langium-cli": "~1.0.0"

@@ -19,6 +19,8 @@
     "dev-clean": "shx rm -rf packages/**/node_modules && npm uninstall -g langium-workspaces langium-cli generator-langium langium && npm unlink langium-workspaces langium-cli generator-langium langium"
   },
   "devDependencies": {
+    "@types/node": "~16.18.11",
+    "@types/vscode": "~1.67.0",
     "@typescript-eslint/eslint-plugin": "^5.51.0",
     "@typescript-eslint/parser": "^5.51.0",
     "@vitest/coverage-c8": "~0.28.4",
@@ -31,7 +33,7 @@
     "vitest": "~0.28.4"
   },
   "volta": {
-    "node": "16.18.1",
+    "node": "16.19.0",
     "npm": "8.19.3"
   },
   "workspaces": [
