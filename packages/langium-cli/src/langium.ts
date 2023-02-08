@@ -20,7 +20,7 @@ program
     .option('-f, --file <file>', 'the configuration file or package.json setting up the generator')
     .option('-w, --watch', 'enables watch mode', false)
     .action((options: GenerateOptions) => {
-        forEachConfig(options).catch(err => {
+        runGenerator(options).catch(err => {
             console.error(err);
             process.exit(1);
         });
@@ -35,12 +35,11 @@ program.command('extract-types')
             console.error(err);
             process.exit(1);
         });
-    })
-    .action;
+    });
 
 program.parse(process.argv);
 
-async function forEachConfig(options: GenerateOptions): Promise<void> {
+async function runGenerator(options: GenerateOptions): Promise<void> {
     const configs = await loadConfigs(options);
     const validation = validate(configs, schema, {
         nestedErrors: true
@@ -68,7 +67,7 @@ async function forEachConfig(options: GenerateOptions): Promise<void> {
 
 async function allGeneratorFiles(results: GeneratorResult[]): Promise<string[]> {
     const files = Array.from(new Set(results.flatMap(e => e.files)));
-    const filesExist = await Promise.all(Array.from(files).map(e => fs.exists(e)));
+    const filesExist = await Promise.all(files.map(e => fs.exists(e)));
     return files.filter((_, i) => filesExist[i]);
 }
 
