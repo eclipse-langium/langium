@@ -325,9 +325,13 @@ export class LangiumParser extends AbstractLangiumParser {
     }
 
     private assignWithoutOverride(target: any, source: any): any {
-        for (const [name, value] of Object.entries(source)) {
-            if (target[name] === undefined) {
-                target[name] = value;
+        for (const [name, existingValue] of Object.entries(source)) {
+            const newValue = target[name];
+            if (newValue === undefined) {
+                target[name] = existingValue;
+            } else if (Array.isArray(newValue) && Array.isArray(existingValue)) {
+                existingValue.push(...newValue);
+                target[name] = existingValue;
             }
         }
         return target;
