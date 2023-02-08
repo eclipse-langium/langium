@@ -315,7 +315,7 @@ describe('Boolean value converter', () => {
 describe('BigInt Parser value converter', () => {
     const content = `
     grammar G
-    entry M: value=BIGINT;
+    entry M: value=BIGINT?;
     terminal BIGINT returns bigint: /[0-9]+/;
     hidden terminal WS: /\\s+/;
     `;
@@ -338,6 +338,10 @@ describe('BigInt Parser value converter', () => {
     test('Parsed BigInt is correct', () => {
         expectValue('149587349587234971', BigInt('149587349587234971'));
         expectValue('9007199254740991', BigInt('9007199254740991')); // === 0x1fffffffffffff
+    });
+
+    test('Missing value is implicitly undefined', () => {
+        expectValue('', undefined);
     });
 });
 
@@ -438,25 +442,25 @@ describe('Parser calls value converter', () => {
 
     test('Should parse bool correctly', () => {
         expectValue('b true', true);
-        // this is the current 'boolean' behavior when a prop type can't be resolved to just a boolean
-        // either true/undefined, no false in this case
-        expectValue('b false', undefined);
-        // ...then no distinguishing between the bad parse case when the type is unclear
-        expectValue('b asdfg', undefined);
+        expectValue('b false', false);
+        // Any value that cannot be parsed correctly is automatically false
+        expectValue('b asdfg', false);
     });
 
     test('Should parse BigInt correctly', () => {
         expectValue('big 9007199254740991n', BigInt('9007199254740991'));
-        expectValue('big 9007199254740991', undefined);
-        expectValue('big 1.1', undefined);
-        expectValue('big -19458438592374', undefined);
+        // Any value that cannot be parsed correctly is automatically false
+        expectValue('big 9007199254740991', false);
+        expectValue('big 1.1', false);
+        expectValue('big -19458438592374', false);
     });
 
     test('Should parse Date correctly', () => {
         expectEqual('d 2020-01-01', new Date('2020-01-01'));
         expectEqual('d 2020-01-01T00:00', new Date('2020-01-01T00:00'));
         expectEqual('d 2022-10-04T12:13', new Date('2022-10-04T12:13'));
-        expectEqual('d 2022-Peach', undefined);
+        // Any value that cannot be parsed correctly is automatically false
+        expectEqual('d 2022-Peach', false);
     });
 });
 

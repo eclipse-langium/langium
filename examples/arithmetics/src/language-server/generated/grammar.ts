@@ -588,25 +588,24 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ?? (lo
   "types": [
     {
       "$type": "Type",
-      "typeAlternatives": [
-        {
-          "$type": "AtomType",
-          "refType": {
-            "$ref": "#/rules@2"
+      "name": "AbstractDefinition",
+      "type": {
+        "$type": "UnionType",
+        "types": [
+          {
+            "$type": "SimpleType",
+            "typeRef": {
+              "$ref": "#/rules@2"
+            }
           },
-          "isArray": false,
-          "isRef": false
-        },
-        {
-          "$type": "AtomType",
-          "refType": {
-            "$ref": "#/rules@3"
-          },
-          "isArray": false,
-          "isRef": false
-        }
-      ],
-      "name": "AbstractDefinition"
+          {
+            "$type": "SimpleType",
+            "typeRef": {
+              "$ref": "#/rules@3"
+            }
+          }
+        ]
+      }
     }
   ],
   "definesHiddenTokens": false,

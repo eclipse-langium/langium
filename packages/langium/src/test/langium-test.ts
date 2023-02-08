@@ -426,9 +426,9 @@ export function expectWarning<T extends AstNode = AstNode, N extends AstNode = A
     });
 }
 
-export function clearDocuments(services: LangiumServices): void {
+export function clearDocuments(services: LangiumServices): Promise<void> {
     const allDocs = services.shared.workspace.LangiumDocuments.all.map(x => x.uri).toArray();
-    services.shared.workspace.DocumentBuilder.update([], allDocs);
+    return services.shared.workspace.DocumentBuilder.update([], allDocs);
 }
 
 export interface DecodedSemanticTokensWithRanges {

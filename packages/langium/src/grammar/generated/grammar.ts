@@ -38,7 +38,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@56"
+                    "$ref": "#/rules@59"
                   },
                   "arguments": []
                 }
@@ -62,7 +62,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                       "terminal": {
                         "$type": "RuleCall",
                         "rule": {
-                          "$ref": "#/rules@56"
+                          "$ref": "#/rules@59"
                         },
                         "arguments": []
                       },
@@ -88,7 +88,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                           "terminal": {
                             "$type": "RuleCall",
                             "rule": {
-                              "$ref": "#/rules@56"
+                              "$ref": "#/rules@59"
                             },
                             "arguments": []
                           },
@@ -127,12 +127,12 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                         "terminal": {
                           "$type": "CrossReference",
                           "type": {
-                            "$ref": "#/rules@8"
+                            "$ref": "#/rules@11"
                           },
                           "terminal": {
                             "$type": "RuleCall",
                             "rule": {
-                              "$ref": "#/rules@56"
+                              "$ref": "#/rules@59"
                             },
                             "arguments": []
                           },
@@ -153,12 +153,12 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                             "terminal": {
                               "$type": "CrossReference",
                               "type": {
-                                "$ref": "#/rules@8"
+                                "$ref": "#/rules@11"
                               },
                               "terminal": {
                                 "$type": "RuleCall",
                                 "rule": {
-                                  "$ref": "#/rules@56"
+                                  "$ref": "#/rules@59"
                                 },
                                 "arguments": []
                               },
@@ -188,7 +188,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@9"
+                "$ref": "#/rules@12"
               },
               "arguments": []
             },
@@ -204,7 +204,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@8"
+                    "$ref": "#/rules@11"
                   },
                   "arguments": []
                 }
@@ -228,7 +228,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@7"
+                    "$ref": "#/rules@10"
                   },
                   "arguments": []
                 }
@@ -261,7 +261,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@56"
+                "$ref": "#/rules@59"
               },
               "arguments": []
             }
@@ -282,6 +282,13 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                   "type": {
                     "$ref": "#/types@0"
                   },
+                  "terminal": {
+                    "$type": "RuleCall",
+                    "rule": {
+                      "$ref": "#/rules@59"
+                    },
+                    "arguments": []
+                  },
                   "deprecatedSyntax": false
                 }
               },
@@ -300,6 +307,13 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                       "$type": "CrossReference",
                       "type": {
                         "$ref": "#/types@0"
+                      },
+                      "terminal": {
+                        "$type": "RuleCall",
+                        "rule": {
+                          "$ref": "#/rules@59"
+                        },
+                        "arguments": []
                       },
                       "deprecatedSyntax": false
                     }
@@ -380,7 +394,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@55"
+                "$ref": "#/rules@58"
               },
               "arguments": []
             }
@@ -400,11 +414,16 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "value": ":"
           },
           {
-            "$type": "RuleCall",
-            "rule": {
-              "$ref": "#/rules@4"
-            },
-            "arguments": []
+            "$type": "Assignment",
+            "feature": "type",
+            "operator": "=",
+            "terminal": {
+              "$type": "RuleCall",
+              "rule": {
+                "$ref": "#/rules@4"
+              },
+              "arguments": []
+            }
           },
           {
             "$type": "Keyword",
@@ -422,69 +441,61 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
     },
     {
       "$type": "ParserRule",
-      "name": "TypeAlternatives",
-      "fragment": true,
+      "name": "TypeDefinition",
       "definition": {
-        "$type": "Group",
-        "elements": [
-          {
-            "$type": "Assignment",
-            "feature": "typeAlternatives",
-            "operator": "+=",
-            "terminal": {
-              "$type": "RuleCall",
-              "rule": {
-                "$ref": "#/rules@5"
-              },
-              "arguments": []
-            }
-          },
-          {
-            "$type": "Group",
-            "elements": [
-              {
-                "$type": "Keyword",
-                "value": "|"
-              },
-              {
-                "$type": "Assignment",
-                "feature": "typeAlternatives",
-                "operator": "+=",
-                "terminal": {
-                  "$type": "RuleCall",
-                  "rule": {
-                    "$ref": "#/rules@5"
-                  },
-                  "arguments": []
-                }
-              }
-            ],
-            "cardinality": "*"
-          }
-        ]
+        "$type": "RuleCall",
+        "rule": {
+          "$ref": "#/rules@5"
+        },
+        "arguments": []
       },
       "definesHiddenTokens": false,
       "entry": false,
+      "fragment": false,
       "hiddenTokens": [],
       "parameters": [],
       "wildcard": false
     },
     {
       "$type": "ParserRule",
-      "name": "AtomType",
+      "name": "UnionType",
+      "inferredType": {
+        "$type": "InferredType",
+        "name": "TypeDefinition"
+      },
       "definition": {
-        "$type": "Alternatives",
+        "$type": "Group",
         "elements": [
+          {
+            "$type": "RuleCall",
+            "rule": {
+              "$ref": "#/rules@6"
+            },
+            "arguments": []
+          },
           {
             "$type": "Group",
             "elements": [
               {
-                "$type": "Alternatives",
+                "$type": "Action",
+                "inferredType": {
+                  "$type": "InferredType",
+                  "name": "UnionType"
+                },
+                "feature": "types",
+                "operator": "+="
+              },
+              {
+                "$type": "Group",
                 "elements": [
                   {
+                    "$type": "Keyword",
+                    "value": "|"
+                  },
+                  {
                     "$type": "Assignment",
-                    "feature": "primitiveType",
-                    "operator": "=",
+                    "feature": "types",
+                    "operator": "+=",
                     "terminal": {
                       "$type": "RuleCall",
                       "rule": {
@@ -492,59 +503,214 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                       },
                       "arguments": []
                     }
-                  },
-                  {
-                    "$type": "Group",
-                    "elements": [
-                      {
-                        "$type": "Assignment",
-                        "feature": "isRef",
-                        "operator": "?=",
-                        "terminal": {
-                          "$type": "Keyword",
-                          "value": "@"
-                        },
-                        "cardinality": "?"
-                      },
-                      {
-                        "$type": "Assignment",
-                        "feature": "refType",
-                        "operator": "=",
-                        "terminal": {
-                          "$type": "CrossReference",
-                          "type": {
-                            "$ref": "#/types@0"
-                          },
-                          "deprecatedSyntax": false
-                        }
-                      }
-                    ]
                   }
-                ]
+                ],
+                "cardinality": "+"
+              }
+            ],
+            "cardinality": "?"
+          }
+        ]
+      },
+      "definesHiddenTokens": false,
+      "entry": false,
+      "fragment": false,
+      "hiddenTokens": [],
+      "parameters": [],
+      "wildcard": false
+    },
+    {
+      "$type": "ParserRule",
+      "name": "ArrayType",
+      "inferredType": {
+        "$type": "InferredType",
+        "name": "TypeDefinition"
+      },
+      "definition": {
+        "$type": "Group",
+        "elements": [
+          {
+            "$type": "RuleCall",
+            "rule": {
+              "$ref": "#/rules@7"
+            },
+            "arguments": []
+          },
+          {
+            "$type": "Group",
+            "elements": [
+              {
+                "$type": "Action",
+                "inferredType": {
+                  "$type": "InferredType",
+                  "name": "ArrayType"
+                },
+                "feature": "elementType",
+                "operator": "="
+              },
+              {
+                "$type": "Keyword",
+                "value": "["
+              },
+              {
+                "$type": "Keyword",
+                "value": "]"
+              }
+            ],
+            "cardinality": "?"
+          }
+        ]
+      },
+      "definesHiddenTokens": false,
+      "entry": false,
+      "fragment": false,
+      "hiddenTokens": [],
+      "parameters": [],
+      "wildcard": false
+    },
+    {
+      "$type": "ParserRule",
+      "name": "ReferenceType",
+      "inferredType": {
+        "$type": "InferredType",
+        "name": "TypeDefinition"
+      },
+      "definition": {
+        "$type": "Alternatives",
+        "elements": [
+          {
+            "$type": "RuleCall",
+            "rule": {
+              "$ref": "#/rules@8"
+            },
+            "arguments": []
+          },
+          {
+            "$type": "Group",
+            "elements": [
+              {
+                "$type": "Action",
+                "inferredType": {
+                  "$type": "InferredType",
+                  "name": "ReferenceType"
+                }
+              },
+              {
+                "$type": "Keyword",
+                "value": "@"
               },
               {
                 "$type": "Assignment",
-                "feature": "isArray",
-                "operator": "?=",
+                "feature": "referenceType",
+                "operator": "=",
                 "terminal": {
-                  "$type": "Keyword",
-                  "value": "[]"
+                  "$type": "RuleCall",
+                  "rule": {
+                    "$ref": "#/rules@8"
+                  },
+                  "arguments": []
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "definesHiddenTokens": false,
+      "entry": false,
+      "fragment": false,
+      "hiddenTokens": [],
+      "parameters": [],
+      "wildcard": false
+    },
+    {
+      "$type": "ParserRule",
+      "name": "SimpleType",
+      "inferredType": {
+        "$type": "InferredType",
+        "name": "TypeDefinition"
+      },
+      "definition": {
+        "$type": "Alternatives",
+        "elements": [
+          {
+            "$type": "Group",
+            "elements": [
+              {
+                "$type": "Keyword",
+                "value": "("
+              },
+              {
+                "$type": "RuleCall",
+                "rule": {
+                  "$ref": "#/rules@4"
                 },
-                "cardinality": "?"
+                "arguments": []
+              },
+              {
+                "$type": "Keyword",
+                "value": ")"
               }
             ]
           },
           {
-            "$type": "Assignment",
-            "feature": "keywordType",
-            "operator": "=",
-            "terminal": {
-              "$type": "RuleCall",
-              "rule": {
-                "$ref": "#/rules@22"
+            "$type": "Group",
+            "elements": [
+              {
+                "$type": "Action",
+                "inferredType": {
+                  "$type": "InferredType",
+                  "name": "SimpleType"
+                }
               },
-              "arguments": []
-            }
+              {
+                "$type": "Alternatives",
+                "elements": [
+                  {
+                    "$type": "Assignment",
+                    "feature": "typeRef",
+                    "operator": "=",
+                    "terminal": {
+                      "$type": "CrossReference",
+                      "type": {
+                        "$ref": "#/types@0"
+                      },
+                      "terminal": {
+                        "$type": "RuleCall",
+                        "rule": {
+                          "$ref": "#/rules@59"
+                        },
+                        "arguments": []
+                      },
+                      "deprecatedSyntax": false
+                    }
+                  },
+                  {
+                    "$type": "Assignment",
+                    "feature": "primitiveType",
+                    "operator": "=",
+                    "terminal": {
+                      "$type": "RuleCall",
+                      "rule": {
+                        "$ref": "#/rules@9"
+                      },
+                      "arguments": []
+                    }
+                  },
+                  {
+                    "$type": "Assignment",
+                    "feature": "stringType",
+                    "operator": "=",
+                    "terminal": {
+                      "$type": "RuleCall",
+                      "rule": {
+                        "$ref": "#/rules@60"
+                      },
+                      "arguments": []
+                    }
+                  }
+                ]
+              }
+            ]
           }
         ]
       },
@@ -608,7 +774,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@56"
+                "$ref": "#/rules@59"
               },
               "arguments": []
             }
@@ -618,11 +784,16 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "value": "="
           },
           {
-            "$type": "RuleCall",
-            "rule": {
-              "$ref": "#/rules@4"
-            },
-            "arguments": []
+            "$type": "Assignment",
+            "feature": "type",
+            "operator": "=",
+            "terminal": {
+              "$type": "RuleCall",
+              "rule": {
+                "$ref": "#/rules@4"
+              },
+              "arguments": []
+            }
           },
           {
             "$type": "Keyword",
@@ -647,14 +818,14 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           {
             "$type": "RuleCall",
             "rule": {
-              "$ref": "#/rules@10"
+              "$ref": "#/rules@13"
             },
             "arguments": []
           },
           {
             "$type": "RuleCall",
             "rule": {
-              "$ref": "#/rules@43"
+              "$ref": "#/rules@46"
             },
             "arguments": []
           }
@@ -684,7 +855,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@57"
+                "$ref": "#/rules@60"
               },
               "arguments": []
             }
@@ -736,7 +907,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           {
             "$type": "RuleCall",
             "rule": {
-              "$ref": "#/rules@12"
+              "$ref": "#/rules@15"
             },
             "arguments": []
           },
@@ -774,7 +945,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                           "terminal": {
                             "$type": "RuleCall",
                             "rule": {
-                              "$ref": "#/rules@56"
+                              "$ref": "#/rules@59"
                             },
                             "arguments": []
                           },
@@ -788,7 +959,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                         "terminal": {
                           "$type": "RuleCall",
                           "rule": {
-                            "$ref": "#/rules@6"
+                            "$ref": "#/rules@9"
                           },
                           "arguments": []
                         }
@@ -804,7 +975,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@11"
+                    "$ref": "#/rules@14"
                   },
                   "arguments": [
                     {
@@ -847,12 +1018,12 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                     "terminal": {
                       "$type": "CrossReference",
                       "type": {
-                        "$ref": "#/rules@8"
+                        "$ref": "#/rules@11"
                       },
                       "terminal": {
                         "$type": "RuleCall",
                         "rule": {
-                          "$ref": "#/rules@56"
+                          "$ref": "#/rules@59"
                         },
                         "arguments": []
                       },
@@ -873,12 +1044,12 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                         "terminal": {
                           "$type": "CrossReference",
                           "type": {
-                            "$ref": "#/rules@8"
+                            "$ref": "#/rules@11"
                           },
                           "terminal": {
                             "$type": "RuleCall",
                             "rule": {
-                              "$ref": "#/rules@56"
+                              "$ref": "#/rules@59"
                             },
                             "arguments": []
                           },
@@ -909,7 +1080,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@14"
+                "$ref": "#/rules@17"
               },
               "arguments": []
             }
@@ -947,7 +1118,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                 "guardCondition": {
                   "$type": "ParameterReference",
                   "parameter": {
-                    "$ref": "#/rules@11/parameters@0"
+                    "$ref": "#/rules@14/parameters@0"
                   }
                 },
                 "elements": [
@@ -964,7 +1135,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                   "value": {
                     "$type": "ParameterReference",
                     "parameter": {
-                      "$ref": "#/rules@11/parameters@0"
+                      "$ref": "#/rules@14/parameters@0"
                     }
                   }
                 },
@@ -984,7 +1155,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@56"
+                "$ref": "#/rules@59"
               },
               "arguments": []
             }
@@ -1011,7 +1182,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@56"
+                "$ref": "#/rules@59"
               },
               "arguments": []
             }
@@ -1033,7 +1204,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                     "terminal": {
                       "$type": "RuleCall",
                       "rule": {
-                        "$ref": "#/rules@13"
+                        "$ref": "#/rules@16"
                       },
                       "arguments": []
                     }
@@ -1052,7 +1223,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                         "terminal": {
                           "$type": "RuleCall",
                           "rule": {
-                            "$ref": "#/rules@13"
+                            "$ref": "#/rules@16"
                           },
                           "arguments": []
                         }
@@ -1088,7 +1259,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
         "terminal": {
           "$type": "RuleCall",
           "rule": {
-            "$ref": "#/rules@56"
+            "$ref": "#/rules@59"
           },
           "arguments": []
         }
@@ -1113,7 +1284,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           {
             "$type": "RuleCall",
             "rule": {
-              "$ref": "#/rules@15"
+              "$ref": "#/rules@18"
             },
             "arguments": []
           },
@@ -1143,7 +1314,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                     "terminal": {
                       "$type": "RuleCall",
                       "rule": {
-                        "$ref": "#/rules@15"
+                        "$ref": "#/rules@18"
                       },
                       "arguments": []
                     }
@@ -1176,7 +1347,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           {
             "$type": "RuleCall",
             "rule": {
-              "$ref": "#/rules@16"
+              "$ref": "#/rules@19"
             },
             "arguments": []
           },
@@ -1201,7 +1372,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@26"
+                    "$ref": "#/rules@29"
                   },
                   "arguments": []
                 }
@@ -1217,7 +1388,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@18"
+                    "$ref": "#/rules@21"
                   },
                   "arguments": []
                 },
@@ -1247,7 +1418,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           {
             "$type": "RuleCall",
             "rule": {
-              "$ref": "#/rules@17"
+              "$ref": "#/rules@20"
             },
             "arguments": []
           },
@@ -1277,7 +1448,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                     "terminal": {
                       "$type": "RuleCall",
                       "rule": {
-                        "$ref": "#/rules@17"
+                        "$ref": "#/rules@20"
                       },
                       "arguments": []
                     }
@@ -1310,7 +1481,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           {
             "$type": "RuleCall",
             "rule": {
-              "$ref": "#/rules@18"
+              "$ref": "#/rules@21"
             },
             "arguments": []
           },
@@ -1333,7 +1504,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@18"
+                    "$ref": "#/rules@21"
                   },
                   "arguments": []
                 },
@@ -1364,14 +1535,14 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           {
             "$type": "RuleCall",
             "rule": {
-              "$ref": "#/rules@19"
+              "$ref": "#/rules@22"
             },
             "arguments": []
           },
           {
             "$type": "RuleCall",
             "rule": {
-              "$ref": "#/rules@20"
+              "$ref": "#/rules@23"
             },
             "arguments": []
           }
@@ -1400,14 +1571,14 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
               {
                 "$type": "RuleCall",
                 "rule": {
-                  "$ref": "#/rules@34"
+                  "$ref": "#/rules@37"
                 },
                 "arguments": []
               },
               {
                 "$type": "RuleCall",
                 "rule": {
-                  "$ref": "#/rules@21"
+                  "$ref": "#/rules@24"
                 },
                 "arguments": []
               }
@@ -1481,7 +1652,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                   "terminal": {
                     "$type": "RuleCall",
                     "rule": {
-                      "$ref": "#/rules@56"
+                      "$ref": "#/rules@59"
                     },
                     "arguments": []
                   },
@@ -1495,7 +1666,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@11"
+                    "$ref": "#/rules@14"
                   },
                   "arguments": [
                     {
@@ -1525,7 +1696,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@55"
+                    "$ref": "#/rules@58"
                   },
                   "arguments": []
                 }
@@ -1581,42 +1752,42 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           {
             "$type": "RuleCall",
             "rule": {
-              "$ref": "#/rules@22"
+              "$ref": "#/rules@25"
             },
             "arguments": []
           },
           {
             "$type": "RuleCall",
             "rule": {
-              "$ref": "#/rules@23"
+              "$ref": "#/rules@26"
             },
             "arguments": []
           },
           {
             "$type": "RuleCall",
             "rule": {
-              "$ref": "#/rules@40"
+              "$ref": "#/rules@43"
             },
             "arguments": []
           },
           {
             "$type": "RuleCall",
             "rule": {
-              "$ref": "#/rules@32"
+              "$ref": "#/rules@35"
             },
             "arguments": []
           },
           {
             "$type": "RuleCall",
             "rule": {
-              "$ref": "#/rules@33"
+              "$ref": "#/rules@36"
             },
             "arguments": []
           },
           {
             "$type": "RuleCall",
             "rule": {
-              "$ref": "#/rules@41"
+              "$ref": "#/rules@44"
             },
             "arguments": []
           }
@@ -1639,7 +1810,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
         "terminal": {
           "$type": "RuleCall",
           "rule": {
-            "$ref": "#/rules@57"
+            "$ref": "#/rules@60"
           },
           "arguments": []
         }
@@ -1664,12 +1835,12 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "terminal": {
               "$type": "CrossReference",
               "type": {
-                "$ref": "#/rules@8"
+                "$ref": "#/rules@11"
               },
               "terminal": {
                 "$type": "RuleCall",
                 "rule": {
-                  "$ref": "#/rules@56"
+                  "$ref": "#/rules@59"
                 },
                 "arguments": []
               },
@@ -1690,7 +1861,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@24"
+                    "$ref": "#/rules@27"
                   },
                   "arguments": []
                 }
@@ -1709,7 +1880,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                     "terminal": {
                       "$type": "RuleCall",
                       "rule": {
-                        "$ref": "#/rules@24"
+                        "$ref": "#/rules@27"
                       },
                       "arguments": []
                     }
@@ -1749,12 +1920,12 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                 "terminal": {
                   "$type": "CrossReference",
                   "type": {
-                    "$ref": "#/rules@13"
+                    "$ref": "#/rules@16"
                   },
                   "terminal": {
                     "$type": "RuleCall",
                     "rule": {
-                      "$ref": "#/rules@56"
+                      "$ref": "#/rules@59"
                     },
                     "arguments": []
                   },
@@ -1780,7 +1951,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@26"
+                "$ref": "#/rules@29"
               },
               "arguments": []
             }
@@ -1835,7 +2006,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           {
             "$type": "RuleCall",
             "rule": {
-              "$ref": "#/rules@27"
+              "$ref": "#/rules@30"
             },
             "arguments": []
           },
@@ -1862,7 +2033,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@27"
+                    "$ref": "#/rules@30"
                   },
                   "arguments": []
                 }
@@ -1892,7 +2063,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           {
             "$type": "RuleCall",
             "rule": {
-              "$ref": "#/rules@28"
+              "$ref": "#/rules@31"
             },
             "arguments": []
           },
@@ -1919,7 +2090,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@28"
+                    "$ref": "#/rules@31"
                   },
                   "arguments": []
                 }
@@ -1949,7 +2120,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           {
             "$type": "RuleCall",
             "rule": {
-              "$ref": "#/rules@29"
+              "$ref": "#/rules@32"
             },
             "arguments": []
           },
@@ -1974,7 +2145,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@28"
+                    "$ref": "#/rules@31"
                   },
                   "arguments": []
                 }
@@ -2003,21 +2174,21 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           {
             "$type": "RuleCall",
             "rule": {
-              "$ref": "#/rules@31"
+              "$ref": "#/rules@34"
             },
             "arguments": []
           },
           {
             "$type": "RuleCall",
             "rule": {
-              "$ref": "#/rules@30"
+              "$ref": "#/rules@33"
             },
             "arguments": []
           },
           {
             "$type": "RuleCall",
             "rule": {
-              "$ref": "#/rules@25"
+              "$ref": "#/rules@28"
             },
             "arguments": []
           }
@@ -2047,7 +2218,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           {
             "$type": "RuleCall",
             "rule": {
-              "$ref": "#/rules@26"
+              "$ref": "#/rules@29"
             },
             "arguments": []
           },
@@ -2074,12 +2245,12 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
         "terminal": {
           "$type": "CrossReference",
           "type": {
-            "$ref": "#/rules@13"
+            "$ref": "#/rules@16"
           },
           "terminal": {
             "$type": "RuleCall",
             "rule": {
-              "$ref": "#/rules@56"
+              "$ref": "#/rules@59"
             },
             "arguments": []
           },
@@ -2123,7 +2294,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@57"
+                "$ref": "#/rules@60"
               },
               "arguments": []
             }
@@ -2167,12 +2338,12 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "terminal": {
               "$type": "CrossReference",
               "type": {
-                "$ref": "#/rules@8"
+                "$ref": "#/rules@11"
               },
               "terminal": {
                 "$type": "RuleCall",
                 "rule": {
-                  "$ref": "#/rules@56"
+                  "$ref": "#/rules@59"
                 },
                 "arguments": []
               },
@@ -2193,7 +2364,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@24"
+                    "$ref": "#/rules@27"
                   },
                   "arguments": []
                 }
@@ -2212,7 +2383,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                     "terminal": {
                       "$type": "RuleCall",
                       "rule": {
-                        "$ref": "#/rules@24"
+                        "$ref": "#/rules@27"
                       },
                       "arguments": []
                     }
@@ -2274,7 +2445,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@55"
+                "$ref": "#/rules@58"
               },
               "arguments": []
             }
@@ -2308,7 +2479,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@35"
+                "$ref": "#/rules@38"
               },
               "arguments": []
             }
@@ -2335,28 +2506,28 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           {
             "$type": "RuleCall",
             "rule": {
-              "$ref": "#/rules@22"
+              "$ref": "#/rules@25"
             },
             "arguments": []
           },
           {
             "$type": "RuleCall",
             "rule": {
-              "$ref": "#/rules@23"
+              "$ref": "#/rules@26"
             },
             "arguments": []
           },
           {
             "$type": "RuleCall",
             "rule": {
-              "$ref": "#/rules@36"
+              "$ref": "#/rules@39"
             },
             "arguments": []
           },
           {
             "$type": "RuleCall",
             "rule": {
-              "$ref": "#/rules@38"
+              "$ref": "#/rules@41"
             },
             "arguments": []
           }
@@ -2386,7 +2557,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           {
             "$type": "RuleCall",
             "rule": {
-              "$ref": "#/rules@37"
+              "$ref": "#/rules@40"
             },
             "arguments": []
           },
@@ -2416,7 +2587,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           {
             "$type": "RuleCall",
             "rule": {
-              "$ref": "#/rules@35"
+              "$ref": "#/rules@38"
             },
             "arguments": []
           },
@@ -2446,7 +2617,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                     "terminal": {
                       "$type": "RuleCall",
                       "rule": {
-                        "$ref": "#/rules@35"
+                        "$ref": "#/rules@38"
                       },
                       "arguments": []
                     }
@@ -2527,7 +2698,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@39"
+                    "$ref": "#/rules@42"
                   },
                   "arguments": []
                 }
@@ -2561,14 +2732,14 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           {
             "$type": "RuleCall",
             "rule": {
-              "$ref": "#/rules@22"
+              "$ref": "#/rules@25"
             },
             "arguments": []
           },
           {
             "$type": "RuleCall",
             "rule": {
-              "$ref": "#/rules@23"
+              "$ref": "#/rules@26"
             },
             "arguments": []
           }
@@ -2598,7 +2769,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           {
             "$type": "RuleCall",
             "rule": {
-              "$ref": "#/rules@14"
+              "$ref": "#/rules@17"
             },
             "arguments": []
           },
@@ -2649,7 +2820,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@14"
+                "$ref": "#/rules@17"
               },
               "arguments": []
             }
@@ -2680,14 +2851,14 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@6"
+                "$ref": "#/rules@9"
               },
               "arguments": []
             },
             {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@56"
+                "$ref": "#/rules@59"
               },
               "arguments": []
             }
@@ -2743,7 +2914,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                     "terminal": {
                       "$type": "RuleCall",
                       "rule": {
-                        "$ref": "#/rules@56"
+                        "$ref": "#/rules@59"
                       },
                       "arguments": []
                     }
@@ -2760,7 +2931,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                     "terminal": {
                       "$type": "RuleCall",
                       "rule": {
-                        "$ref": "#/rules@56"
+                        "$ref": "#/rules@59"
                       },
                       "arguments": []
                     }
@@ -2779,7 +2950,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                         "terminal": {
                           "$type": "RuleCall",
                           "rule": {
-                            "$ref": "#/rules@42"
+                            "$ref": "#/rules@45"
                           },
                           "arguments": []
                         }
@@ -2802,7 +2973,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@44"
+                "$ref": "#/rules@47"
               },
               "arguments": []
             }
@@ -2833,7 +3004,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           {
             "$type": "RuleCall",
             "rule": {
-              "$ref": "#/rules@45"
+              "$ref": "#/rules@48"
             },
             "arguments": []
           },
@@ -2860,7 +3031,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@45"
+                    "$ref": "#/rules@48"
                   },
                   "arguments": []
                 }
@@ -2890,7 +3061,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           {
             "$type": "RuleCall",
             "rule": {
-              "$ref": "#/rules@46"
+              "$ref": "#/rules@49"
             },
             "arguments": []
           },
@@ -2913,7 +3084,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@46"
+                    "$ref": "#/rules@49"
                   },
                   "arguments": []
                 },
@@ -2944,7 +3115,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           {
             "$type": "RuleCall",
             "rule": {
-              "$ref": "#/rules@47"
+              "$ref": "#/rules@50"
             },
             "arguments": []
           },
@@ -2993,35 +3164,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           {
             "$type": "RuleCall",
             "rule": {
-              "$ref": "#/rules@54"
-            },
-            "arguments": []
-          },
-          {
-            "$type": "RuleCall",
-            "rule": {
-              "$ref": "#/rules@49"
-            },
-            "arguments": []
-          },
-          {
-            "$type": "RuleCall",
-            "rule": {
-              "$ref": "#/rules@48"
-            },
-            "arguments": []
-          },
-          {
-            "$type": "RuleCall",
-            "rule": {
-              "$ref": "#/rules@50"
-            },
-            "arguments": []
-          },
-          {
-            "$type": "RuleCall",
-            "rule": {
-              "$ref": "#/rules@51"
+              "$ref": "#/rules@57"
             },
             "arguments": []
           },
@@ -3035,7 +3178,35 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           {
             "$type": "RuleCall",
             "rule": {
+              "$ref": "#/rules@51"
+            },
+            "arguments": []
+          },
+          {
+            "$type": "RuleCall",
+            "rule": {
               "$ref": "#/rules@53"
+            },
+            "arguments": []
+          },
+          {
+            "$type": "RuleCall",
+            "rule": {
+              "$ref": "#/rules@54"
+            },
+            "arguments": []
+          },
+          {
+            "$type": "RuleCall",
+            "rule": {
+              "$ref": "#/rules@55"
+            },
+            "arguments": []
+          },
+          {
+            "$type": "RuleCall",
+            "rule": {
+              "$ref": "#/rules@56"
             },
             "arguments": []
           }
@@ -3065,7 +3236,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           {
             "$type": "RuleCall",
             "rule": {
-              "$ref": "#/rules@44"
+              "$ref": "#/rules@47"
             },
             "arguments": []
           },
@@ -3106,12 +3277,12 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "terminal": {
               "$type": "CrossReference",
               "type": {
-                "$ref": "#/rules@43"
+                "$ref": "#/rules@46"
               },
               "terminal": {
                 "$type": "RuleCall",
                 "rule": {
-                  "$ref": "#/rules@56"
+                  "$ref": "#/rules@59"
                 },
                 "arguments": []
               },
@@ -3155,7 +3326,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@47"
+                "$ref": "#/rules@50"
               },
               "arguments": []
             }
@@ -3197,7 +3368,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@47"
+                "$ref": "#/rules@50"
               },
               "arguments": []
             }
@@ -3235,7 +3406,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@58"
+                "$ref": "#/rules@61"
               },
               "arguments": []
             }
@@ -3303,7 +3474,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "terminal": {
               "$type": "RuleCall",
               "rule": {
-                "$ref": "#/rules@22"
+                "$ref": "#/rules@25"
               },
               "arguments": []
             }
@@ -3322,7 +3493,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                 "terminal": {
                   "$type": "RuleCall",
                   "rule": {
-                    "$ref": "#/rules@22"
+                    "$ref": "#/rules@25"
                   },
                   "arguments": []
                 }
@@ -3413,14 +3584,14 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           {
             "$type": "RuleCall",
             "rule": {
-              "$ref": "#/rules@6"
+              "$ref": "#/rules@9"
             },
             "arguments": []
           },
           {
             "$type": "RuleCall",
             "rule": {
-              "$ref": "#/rules@56"
+              "$ref": "#/rules@59"
             },
             "arguments": []
           }
@@ -3501,41 +3672,36 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
   "types": [
     {
       "$type": "Type",
-      "typeAlternatives": [
-        {
-          "$type": "AtomType",
-          "refType": {
-            "$ref": "#/rules@1"
+      "name": "AbstractType",
+      "type": {
+        "$type": "UnionType",
+        "types": [
+          {
+            "$type": "SimpleType",
+            "typeRef": {
+              "$ref": "#/rules@1"
+            }
           },
-          "isArray": false,
-          "isRef": false
-        },
-        {
-          "$type": "AtomType",
-          "refType": {
-            "$ref": "#/rules@7"
+          {
+            "$type": "SimpleType",
+            "typeRef": {
+              "$ref": "#/rules@10"
+            }
           },
-          "isArray": false,
-          "isRef": false
-        },
-        {
-          "$type": "AtomType",
-          "refType": {
-            "$ref": "#/rules@20/definition/elements@0"
+          {
+            "$type": "SimpleType",
+            "typeRef": {
+              "$ref": "#/rules@23/definition/elements@0"
+            }
           },
-          "isArray": false,
-          "isRef": false
-        },
-        {
-          "$type": "AtomType",
-          "refType": {
-            "$ref": "#/rules@10"
-          },
-          "isArray": false,
-          "isRef": false
-        }
-      ],
-      "name": "AbstractType"
+          {
+            "$type": "SimpleType",
+            "typeRef": {
+              "$ref": "#/rules@13"
+            }
+          }
+        ]
+      }
     }
   ],
   "definesHiddenTokens": false,

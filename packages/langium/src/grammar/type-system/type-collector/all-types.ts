@@ -6,14 +6,13 @@
 
 import { collectInferredTypes } from './inferred-types';
 import { collectDeclaredTypes } from './declared-types';
-import { LangiumDocuments, Grammar } from '../../..';
 import { getDocument } from '../../../utils/ast-util';
-import { MultiMap } from '../../../utils/collections';
-import { ParserRule, Interface, Type, isParserRule } from '../../generated/ast';
+import { ParserRule, Interface, Type, isParserRule, Grammar } from '../../generated/ast';
 import { isDataTypeRule, resolveImport } from '../../internal-grammar-util';
-import { mergeInterfaces } from '../types-util';
-import { AstTypes, InterfaceType, isInterfaceType } from './types';
 import { URI } from 'vscode-uri';
+import { LangiumDocuments } from '../../../workspace/documents';
+import { PlainAstTypes } from './plain-types';
+import { AstTypes } from './types';
 
 export type AstResources = {
     parserRules: ParserRule[],
@@ -23,9 +22,15 @@ export type AstResources = {
 }
 
 export type TypeResources = {
-    inferred: AstTypes,
-    declared: AstTypes,
+    inferred: PlainAstTypes,
+    declared: PlainAstTypes,
     astResources: AstResources,
+}
+
+export interface ValidationAstTypes {
+    inferred: AstTypes
+    declared: AstTypes
+    astResources: AstResources
 }
 
 export function collectTypeResources(grammars: Grammar | Grammar[], documents?: LangiumDocuments): TypeResources {
@@ -33,58 +38,11 @@ export function collectTypeResources(grammars: Grammar | Grammar[], documents?: 
     const declared = collectDeclaredTypes(astResources.interfaces, astResources.types);
     const inferred = collectInferredTypes(astResources.parserRules, astResources.datatypeRules, declared);
 
-    shareSuperTypesFromUnions(inferred, declared);
-    addSuperProperties(mergeInterfaces(inferred, declared));
-
-    return { astResources, inferred, declared };
-}
-
-function addSuperProperties(allTypes: InterfaceType[]) {
-    function addSuperPropertiesInternal(type: InterfaceType, visited = new Set<InterfaceType>()) {
-        if (visited.has(type)) return;
-        visited.add(type);
-
-        for (const superTypeName of type.printingSuperTypes) {
-            const superType = allTypes.find(e => e.name === superTypeName);
-
-            if (superType && isInterfaceType(superType)) {
-                addSuperPropertiesInternal(superType, visited);
-                superType.superProperties
-                    .entriesGroupedByKey()
-                    .forEach(propInfo => type.superProperties.addAll(propInfo[0], propInfo[1]));
-            }
-        }
-    }
-
-    const visited = new Set<InterfaceType>();
-    for (const type of allTypes) {
-        addSuperPropertiesInternal(type, visited);
-    }
-}
-
-function shareSuperTypesFromUnions(inferred: AstTypes, declared: AstTypes): void {
-    const childToSuper = new MultiMap<string, string>();
-    const allUnions = inferred.unions.concat(declared.unions);
-    for (const union of allUnions) {
-        if (union.reflection) {
-            for (const propType of union.alternatives) {
-                propType.types.forEach(type => childToSuper.add(type, union.name));
-            }
-        }
-    }
-
-    function addSuperTypes(types: AstTypes, child: string, parents: string[]) {
-        const childType = types.interfaces.find(e => e.name === child) ??
-            types.unions.find(e => e.name === child);
-        if (childType) {
-            parents.forEach(e => childType.realSuperTypes.add(e));
-        }
-    }
-
-    for (const [child, parents] of childToSuper.entriesGroupedByKey()) {
-        addSuperTypes(inferred, child, parents);
-        addSuperTypes(declared, child, parents);
-    }
+    return {
+        astResources,
+        inferred,
+        declared
+    };
 }
 
 ///////////////////////////////////////////////////////////////////////////////

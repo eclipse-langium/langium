@@ -6,52 +6,80 @@
 
 import { Grammar } from '../generated/ast';
 import { LangiumDocuments } from '../../workspace/documents';
-import { addSubTypes, sortInterfacesTopologically } from './types-util';
-import { AstTypes, InterfaceType, isInterfaceType, isUnionType, TypeOption, UnionType } from './type-collector/types';
-import { collectTypeResources } from './type-collector/all-types';
-import { isPrimitiveType } from '../internal-grammar-util';
+import { collectTypeHierarchy, sortInterfacesTopologically } from './types-util';
+import { AstTypes, isArrayType, isInterfaceType, isPrimitiveType, isPropertyUnion, isStringType, isUnionType, isValueType, PropertyType, TypeOption, UnionType } from './type-collector/types';
+import { collectTypeResources, ValidationAstTypes } from './type-collector/all-types';
+import { PlainAstTypes, PlainInterface, plainToTypes, PlainUnion } from './type-collector/plain-types';
 
 /**
  * Collects all types for the generated AST. The types collector entry point.
- * @param documents Documents to resolve imports that were used in the given grammars.
- * @param grammars Grammars for which it's necessary to build an AST.
+ *
+ * @param grammars All grammars involved in the type generation process
+ * @param documents Additional documents so that imports can be resolved as necessary
  */
 export function collectAst(grammars: Grammar | Grammar[], documents?: LangiumDocuments): AstTypes {
     const { inferred, declared } = collectTypeResources(grammars, documents);
-
-    const astTypes = {
-        interfaces: sortInterfacesTopologically(mergeAndRemoveDuplicates<InterfaceType>(inferred.interfaces, declared.interfaces)),
-        unions: mergeAndRemoveDuplicates<UnionType>(inferred.unions, declared.unions),
-    };
-
-    specifyAstNodeProperties(astTypes);
-    return astTypes;
+    return createAstTypes(inferred, declared);
 }
 
-function mergeAndRemoveDuplicates<T extends { name: string }>(inferred: T[], declared: T[]): T[] {
-    return Array.from(inferred.concat(declared)
+/**
+ * Collects all types used during the validation process.
+ * The validation process requires us to compare our inferred types with our declared types.
+ *
+ * @param grammars All grammars involved in the validation process
+ * @param documents Additional documents so that imports can be resolved as necessary
+ */
+export function collectValidationAst(grammars: Grammar | Grammar[], documents?: LangiumDocuments): ValidationAstTypes {
+    const { inferred, declared, astResources } = collectTypeResources(grammars, documents);
+
+    return {
+        astResources,
+        inferred: createAstTypes(declared, inferred),
+        declared: createAstTypes(inferred, declared)
+    };
+}
+
+export function createAstTypes(first: PlainAstTypes, second?: PlainAstTypes): AstTypes {
+    const astTypes: PlainAstTypes = {
+        interfaces: sortInterfacesTopologically(mergeAndRemoveDuplicates<PlainInterface>(...first.interfaces, ...second?.interfaces ?? [])),
+        unions: mergeAndRemoveDuplicates<PlainUnion>(...first.unions, ...second?.unions ?? []),
+    };
+
+    const finalTypes = plainToTypes(astTypes);
+    specifyAstNodeProperties(finalTypes);
+    return finalTypes;
+}
+
+/**
+ * Merges the lists of given elements into a single list and removes duplicates. Elements later in the lists get precedence over earlier elements.
+ *
+ * The distinction is performed over the `name` property of the element. The result is a name-sorted list of elements.
+ */
+function mergeAndRemoveDuplicates<T extends { name: string }>(...elements: T[]): T[] {
+    return Array.from(elements
         .reduce((acc, type) => { acc.set(type.name, type); return acc; }, new Map<string, T>())
         .values()).sort((a, b) => a.name.localeCompare(b.name));
 }
 
 export function specifyAstNodeProperties(astTypes: AstTypes) {
     const nameToType = filterInterfaceLikeTypes(astTypes);
-    addSubTypes(nameToType);
-    buildContainerTypes(nameToType);
-    buildTypeTypes(nameToType);
+    const array = Array.from(nameToType.values());
+    addSubTypes(array);
+    buildContainerTypes(array);
+    buildTypeNames(nameToType);
 }
 
-function buildTypeTypes(nameToType: Map<string, TypeOption>) {
+function buildTypeNames(nameToType: Map<string, TypeOption>) {
     const queue = Array.from(nameToType.values()).filter(e => e.subTypes.size === 0);
     const visited = new Set<TypeOption>();
     for (const type of queue) {
         visited.add(type);
-        type.typeTypes.add(type.name);
-        const superTypes = Array.from(type.realSuperTypes)
-            .map(superType => nameToType.get(superType))
+        type.typeNames.add(type.name);
+        const superTypes = Array.from(type.superTypes)
+            .map(superType => nameToType.get(superType.name))
             .filter(e => e !== undefined) as TypeOption[];
         for (const superType of superTypes) {
-            type.typeTypes.forEach(e => superType.typeTypes.add(e));
+            type.typeNames.forEach(e => superType.typeNames.add(e));
         }
         queue.push(...superTypes.filter(e => !visited.has(e)));
     }
@@ -66,27 +94,9 @@ function filterInterfaceLikeTypes({ interfaces, unions }: AstTypes): Map<string,
         .reduce((acc, e) => { acc.set(e.name, e); return acc; }, new Map<string, TypeOption>());
 
     const cache = new Map<UnionType, boolean>();
-    function isDataTypeUnion(union: UnionType, visited = new Set<UnionType>()): boolean {
-        if (cache.has(union)) return cache.get(union)!;
-        if (visited.has(union)) return true;
-        visited.add(union);
-
-        const ruleCalls = union.alternatives.flatMap(e => e.types).filter(e => !isPrimitiveType(e));
-        if (ruleCalls.length === 0) {
-            return true;
-        }
-        for (const ruleCall of ruleCalls) {
-            const type = nameToType.get(ruleCall);
-            if (type && (isInterfaceType(type) || isUnionType(type) && !isDataTypeUnion(type, visited))) {
-                return false;
-            }
-        }
-        return true;
-    }
 
     for (const union of unions) {
-        const isDataType = isDataTypeUnion(union);
-        cache.set(union, isDataType);
+        cache.set(union, isDataType(union.type, new Set()));
     }
     for (const [union, isDataType] of cache) {
         if (isDataType) {
@@ -96,19 +106,44 @@ function filterInterfaceLikeTypes({ interfaces, unions }: AstTypes): Map<string,
     return nameToType;
 }
 
+function isDataType(property: PropertyType, visited: Set<PropertyType>): boolean {
+    if (visited.has(property)) {
+        return true;
+    }
+    visited.add(property);
+    if (isPropertyUnion(property)) {
+        return property.types.every(e => isDataType(e, visited));
+    } else if (isValueType(property)) {
+        const value = property.value;
+        if (isUnionType(value)) {
+            return isDataType(value.type, visited);
+        } else {
+            return false;
+        }
+    } else {
+        return isPrimitiveType(property) || isStringType(property);
+    }
+}
+
+function addSubTypes(types: TypeOption[]) {
+    for (const interfaceType of types) {
+        for (const superTypeName of interfaceType.superTypes) {
+            superTypeName.subTypes.add(interfaceType);
+        }
+    }
+}
+
 /**
  * Builds container types for given interfaces.
  * @param interfaces The interfaces that have to get container types.
  */
-function buildContainerTypes(nameToType: Map<string, TypeOption>) {
-    const types = Array.from(nameToType.values());
-
+function buildContainerTypes(types: TypeOption[]) {
     // 1st stage: collect container types
-    const interfaces = types.filter(e => isInterfaceType(e)) as InterfaceType[];
+    const interfaces = types.filter(isInterfaceType);
     for (const interfaceType of interfaces) {
-        const refTypes = interfaceType.properties.flatMap(property => property.typeAlternatives.filter(e => !e.reference).flatMap(e => e.types));
+        const refTypes = interfaceType.properties.flatMap(property => findChildTypes(property.type, new Set()));
         for (const refType of refTypes) {
-            nameToType.get(refType)?.containerTypes.add(interfaceType.name);
+            refType.containerTypes.add(interfaceType);
         }
     }
 
@@ -117,26 +152,46 @@ function buildContainerTypes(nameToType: Map<string, TypeOption>) {
     shareContainerTypes(connectedComponents);
 }
 
+function findChildTypes(type: PropertyType, set: Set<TypeOption>): TypeOption[] {
+    if (isPropertyUnion(type)) {
+        return type.types.flatMap(e => findChildTypes(e, set));
+    } else if (isValueType(type)) {
+        if (set.has(type.value)) {
+            return [];
+        } else {
+            set.add(type.value);
+        }
+        return [type.value];
+    } else if (isArrayType(type)) {
+        return findChildTypes(type.elementType, set);
+    } else {
+        return [];
+    }
+}
+
 function calculateConnectedComponents(interfaces: TypeOption[]): TypeOption[][] {
     function dfs(typeInterface: TypeOption): TypeOption[] {
         const component: TypeOption[] = [typeInterface];
-        visited.add(typeInterface.name);
-        const allTypes = [...typeInterface.subTypes, ...typeInterface.realSuperTypes];
-        for (const nextTypeInterfaceName of allTypes) {
-            if (!visited.has(nextTypeInterfaceName)) {
-                const nextTypeInterface = interfaces.find(e => e.name === nextTypeInterfaceName);
-                if (nextTypeInterface) {
-                    component.push(...dfs(nextTypeInterface));
-                }
+        visited.add(typeInterface);
+        const allTypes = [
+            ...hierarchy.subTypes.get(typeInterface.name),
+            ...hierarchy.superTypes.get(typeInterface.name)
+        ];
+        for (const nextTypeInterface of allTypes) {
+            const nextType = map.get(nextTypeInterface);
+            if (nextType && !visited.has(nextType)) {
+                component.push(...dfs(nextType));
             }
         }
         return component;
     }
 
+    const map = new Map(interfaces.map(e => [e.name, e]));
     const connectedComponents: TypeOption[][] = [];
-    const visited: Set<string> = new Set();
+    const hierarchy = collectTypeHierarchy(interfaces);
+    const visited = new Set<TypeOption>();
     for (const typeInterface of interfaces) {
-        if (!visited.has(typeInterface.name)) {
+        if (!visited.has(typeInterface)) {
             connectedComponents.push(dfs(typeInterface));
         }
     }
@@ -145,7 +200,7 @@ function calculateConnectedComponents(interfaces: TypeOption[]): TypeOption[][] 
 
 function shareContainerTypes(connectedComponents: TypeOption[][]): void {
     for (const component of connectedComponents) {
-        const superSet = new Set<string>();
+        const superSet = new Set<TypeOption>();
         component.forEach(type => type.containerTypes.forEach(e => superSet.add(e)));
         component.forEach(type => type.containerTypes = superSet);
     }

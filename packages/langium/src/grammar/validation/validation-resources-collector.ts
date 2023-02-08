@@ -9,11 +9,12 @@ import { stream } from '../../utils/stream';
 import { LangiumDocuments } from '../../workspace/documents';
 import { AbstractElement, Action, Grammar, Interface, isAction, isAlternatives, isGroup, isUnorderedGroup, ParserRule, Type } from '../generated/ast';
 import { getActionType, getRuleType } from '../internal-grammar-util';
-import { AstResources, collectTypeResources, TypeResources } from '../type-system/type-collector/all-types';
-import { addSubTypes, mergeInterfaces, mergeTypesAndInterfaces } from '../type-system/types-util';
-import { isUnionType, Property, TypeOption } from '../type-system/type-collector/types';
-import { isDeclared, TypeToValidationInfo, ValidationResources } from '../workspace/documents';
+import { AstResources, ValidationAstTypes } from '../type-system/type-collector/all-types';
+import { mergeInterfaces, mergeTypesAndInterfaces } from '../type-system/types-util';
+import { TypeToValidationInfo, ValidationResources } from '../workspace/documents';
 import { LangiumGrammarServices } from '../langium-grammar-module';
+import { collectValidationAst } from '../type-system/ast-collector';
+import { InterfaceType, Property } from '../type-system';
 
 export class LangiumGrammarValidationResourcesCollector {
     private readonly documents: LangiumDocuments;
@@ -23,14 +24,14 @@ export class LangiumGrammarValidationResourcesCollector {
     }
 
     collectValidationResources(grammar: Grammar): ValidationResources {
-        const typeResources = collectTypeResources(grammar, this.documents);
-        const typeToValidationInfo = this.collectValidationInfo(typeResources);
-        const typeToSuperProperties = this.collectSuperProperties(typeResources);
-        const typeToAliases = this.collectSubTypesAndAliases(typeToValidationInfo);
-        return { typeToValidationInfo, typeToSuperProperties, typeToAliases };
+        const typeResources = collectValidationAst(grammar, this.documents);
+        return {
+            typeToValidationInfo: this.collectValidationInfo(typeResources),
+            typeToSuperProperties: this.collectSuperProperties(typeResources),
+        };
     }
 
-    private collectValidationInfo({ astResources, inferred, declared }: TypeResources) {
+    private collectValidationInfo({ astResources, inferred, declared }: ValidationAstTypes) {
         const res: TypeToValidationInfo = new Map();
         const typeNameToRulesActions = collectNameToRulesActions(astResources);
 
@@ -52,7 +53,7 @@ export class LangiumGrammarValidationResourcesCollector {
                 const inferred = res.get(type.name);
                 res.set(
                     type.name,
-                    inferred ? {...inferred, declared: type, declaredNode: node } : { declared: type, declaredNode: node }
+                    { ...inferred ?? {}, declared: type, declaredNode: node }
                 );
             }
         }
@@ -60,58 +61,29 @@ export class LangiumGrammarValidationResourcesCollector {
         return res;
     }
 
-    private collectSuperProperties({ inferred, declared }: TypeResources): Map<string, Property[]> {
+    private collectSuperProperties({ inferred, declared }: ValidationAstTypes): Map<string, Property[]> {
         const typeToSuperProperties: Map<string, Property[]> = new Map();
+        const interfaces = mergeInterfaces(inferred, declared);
+        const interfaceMap = new Map(interfaces.map(e => [e.name, e]));
         for (const type of mergeInterfaces(inferred, declared)) {
-            typeToSuperProperties.set(type.name, Array.from(type.superProperties.values()));
+            typeToSuperProperties.set(type.name, this.addSuperProperties(type, interfaceMap, new Set()));
         }
         return typeToSuperProperties;
     }
 
-    private collectSubTypesAndAliases(typeToValidationInfo: TypeToValidationInfo): Map<string, Set<string>> {
-        const nameToType = stream(typeToValidationInfo.entries())
-            .reduce((acc, [name, info]) => { acc.set(name, isDeclared(info) ? info.declared : info.inferred);  return acc; },
-                new Map<string, TypeOption>()
-            );
-        addSubTypes(nameToType);
-
-        const typeToAliases = new Map<string, Set<string>>();
-        function addAlias(name: string, alias: string) {
-            const aliases = typeToAliases.get(name);
-            if (aliases) {
-                aliases.add(alias);
-            } else {
-                typeToAliases.set(name, new Set([alias]));
+    private addSuperProperties(interfaceType: InterfaceType, map: Map<string, InterfaceType>, visited: Set<string>): Property[] {
+        if (visited.has(interfaceType.name)) {
+            return [];
+        }
+        visited.add(interfaceType.name);
+        const properties: Property[] = [...interfaceType.properties];
+        for (const superType of interfaceType.superTypes) {
+            const value = map.get(superType.name);
+            if (value) {
+                properties.push(...this.addSuperProperties(value, map, visited));
             }
         }
-
-        const queue = Array.from(nameToType.values()).filter(e => e.subTypes.size === 0);
-        const visited = new Set<TypeOption>();
-        for (const type of queue) {
-            visited.add(type);
-            addAlias(type.name, type.name);
-
-            for (const superTypeName of stream(type.realSuperTypes)) {
-                addAlias(superTypeName, type.name);
-
-                const superType = nameToType.get(superTypeName);
-                if (superType && !visited.has(superType)) {
-                    queue.push(superType);
-                }
-            }
-
-            if (isUnionType(type) && type.alternatives.length === 1) {
-                type.alternatives
-                    .filter(alt => !alt.array && !alt.reference)
-                    .flatMap(alt => alt.types)
-                    .forEach(e => {
-                        addAlias(type.name, e);
-                        addAlias(e, e);
-                        addAlias(e, type.name);
-                    });
-            }
-        }
-        return typeToAliases;
+        return properties;
     }
 }
 

@@ -4,41 +4,99 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { Interface, Type, AtomType } from '../../generated/ast';
-import { getTypeNameWithoutError } from '../../internal-grammar-util';
-import { AstTypes, Property, InterfaceType, UnionType, PropertyType } from './types';
+import { Interface, Type, TypeDefinition, isArrayType, isReferenceType, isUnionType, isSimpleType } from '../../generated/ast';
+import { getTypeName, getTypeNameWithoutError, isPrimitiveType } from '../../internal-grammar-util';
+import { PlainAstTypes, PlainInterface, PlainProperty, PlainPropertyType, PlainUnion } from './plain-types';
 
-export function collectDeclaredTypes(interfaces: Interface[], unions: Type[]): AstTypes {
-    const declaredTypes: AstTypes = { unions: [], interfaces: [] };
+export function collectDeclaredTypes(interfaces: Interface[], unions: Type[]): PlainAstTypes {
+    const declaredTypes: PlainAstTypes = { unions: [], interfaces: [] };
 
     // add interfaces
     for (const type of interfaces) {
-        const superTypes = type.superTypes.filter(e => e.ref).map(e => getTypeNameWithoutError(e.ref!));
-        const properties: Property[] = type.attributes.map(e => <Property>{
-            name: e.name,
-            optional: e.isOptional === true,
-            typeAlternatives: e.typeAlternatives.map(atomTypeToPropertyType),
-            astNodes: new Set([e])
-        });
-        declaredTypes.interfaces.push(new InterfaceType(type.name, superTypes, properties));
+        const properties: PlainProperty[] = [];
+        for (const attribute of type.attributes) {
+            properties.push({
+                name: attribute.name,
+                optional: attribute.isOptional,
+                astNodes: new Set([attribute]),
+                type: typeDefinitionToPropertyType(attribute.type)
+            });
+        }
+        const superTypes = new Set<string>();
+        for (const superType of type.superTypes) {
+            if (superType.ref) {
+                superTypes.add(getTypeName(superType.ref));
+            }
+        }
+        const interfaceType: PlainInterface = {
+            name: type.name,
+            declared: true,
+            abstract: false,
+            properties: properties,
+            superTypes: superTypes,
+            subTypes: new Set()
+        };
+        declaredTypes.interfaces.push(interfaceType);
     }
 
     // add types
-    for (const type of unions) {
-        const alternatives = type.typeAlternatives.map(atomTypeToPropertyType);
-        const reflection = type.typeAlternatives.length > 1 && type.typeAlternatives.some(e => e.refType?.ref !== undefined);
-        declaredTypes.unions.push(new UnionType(type.name, alternatives, { reflection }));
+    for (const union of unions) {
+        const unionType: PlainUnion = {
+            name: union.name,
+            declared: true,
+            reflection: true,
+            type: typeDefinitionToPropertyType(union.type),
+            superTypes: new Set(),
+            subTypes: new Set()
+        };
+        declaredTypes.unions.push(unionType);
     }
 
     return declaredTypes;
 }
 
-function atomTypeToPropertyType(type: AtomType): PropertyType {
-    let types: string[] = [];
-    if (type.refType) {
-        types = [type.refType.ref ? getTypeNameWithoutError(type.refType.ref) : type.refType.$refText];
-    } else {
-        types = [type.primitiveType ?? `'${type.keywordType?.value}'`];
+export function typeDefinitionToPropertyType(type: TypeDefinition): PlainPropertyType {
+    if (isArrayType(type)) {
+        return {
+            elementType: typeDefinitionToPropertyType(type.elementType)
+        };
+    } else if (isReferenceType(type)) {
+        return {
+            referenceType: typeDefinitionToPropertyType(type.referenceType)
+        };
+    } else if (isUnionType(type)) {
+        return {
+            types: type.types.map(typeDefinitionToPropertyType)
+        };
+    } else if (isSimpleType(type)) {
+        let value: string | undefined;
+        if (type.primitiveType) {
+            value = type.primitiveType;
+            return {
+                primitive: value
+            };
+        } else if (type.stringType) {
+            value = type.stringType;
+            return {
+                string: value
+            };
+        } else if (type.typeRef) {
+            const ref = type.typeRef.ref;
+            const value = getTypeNameWithoutError(ref);
+            if (value) {
+                if (isPrimitiveType(value)) {
+                    return {
+                        primitive: value
+                    };
+                } else {
+                    return {
+                        value
+                    };
+                }
+            }
+        }
     }
-    return { types, reference: type.isRef === true, array: type.isArray === true };
+    return {
+        primitive: 'unknown'
+    };
 }

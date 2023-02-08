@@ -19,6 +19,8 @@ import * as ast from '../generated/ast';
 import { isParserRule, isRuleCall } from '../generated/ast';
 import { getTypeNameWithoutError, isDataTypeRule, isOptionalCardinality, isPrimitiveType, resolveImport, resolveTransitiveImports, terminalRegex } from '../internal-grammar-util';
 import type { LangiumGrammarServices } from '../langium-grammar-module';
+import { typeDefinitionToPropertyType } from '../type-system/type-collector/declared-types';
+import { flattenPlainType, isPlainReferenceType } from '../type-system/type-collector/plain-types';
 
 export function registerValidationChecks(services: LangiumGrammarServices): void {
     const registry = services.validation.ValidationRegistry;
@@ -81,10 +83,8 @@ export function registerValidationChecks(services: LangiumGrammarServices): void
             validator.checkCrossRefTerminalType,
             validator.checkCrossRefType
         ],
-        AtomType: [
-            validator.checkAtomTypeRefType,
-            validator.checkFragmentsInTypes
-        ]
+        SimpleType: validator.checkFragmentsInTypes,
+        ReferenceType: validator.checkReferenceTypeUnion
     };
     registry.register(checks, validator);
 }
@@ -310,7 +310,7 @@ export class LangiumGrammarValidator {
             if (actionType) {
                 const isInfers = Boolean(action.inferredType);
                 const typeName = getTypeNameWithoutError(action);
-                if (action.type && types.has(typeName) === isInfers) {
+                if (action.type && typeName && types.has(typeName) === isInfers) {
                     const keywordNode = isInfers ? findNodeForKeyword(action.$cstNode, 'infer') : findNodeForKeyword(action.$cstNode, '{');
                     accept('error', getMessage(typeName, isInfers), {
                         node: action,
@@ -318,7 +318,7 @@ export class LangiumGrammarValidator {
                         code: isInfers ? IssueCodes.SuperfluousInfer : IssueCodes.MissingInfer,
                         data: toDocumentSegment(keywordNode)
                     });
-                } else if (actionType && types.has(typeName) && isInfers) {
+                } else if (actionType && typeName && types.has(typeName) && isInfers) {
                     // error: action infers type that is already defined
                     if (action.$cstNode) {
                         const inferredTypeNode = findNodeForProperty(action.inferredType?.$cstNode, 'name');
@@ -647,26 +647,53 @@ export class LangiumGrammarValidator {
             return;
         }
         let firstType: 'ref' | 'other';
-        const foundMixed = streamAllContents(assignment.terminal).map(node => ast.isCrossReference(node) ? 'ref' : 'other').find(type => {
-            if (!firstType) {
-                firstType = type;
-                return false;
-            }
-            return type !== firstType;
-        });
+        const foundMixed = streamAllContents(assignment.terminal)
+            .map(node => ast.isCrossReference(node) ? 'ref' : 'other')
+            .find(type => {
+                if (!firstType) {
+                    firstType = type;
+                    return false;
+                }
+                return type !== firstType;
+            });
         if (foundMixed) {
-            accept('error', this.createMixedTypeError(assignment.feature), { node: assignment, property: 'terminal' });
+            accept(
+                'error',
+                this.createMixedTypeError(assignment.feature),
+                {
+                    node: assignment,
+                    property: 'terminal'
+                }
+            );
         }
     }
 
     checkInterfacePropertyTypes(interfaceDecl: ast.Interface, accept: ValidationAcceptor): void {
-        interfaceDecl.attributes.filter(attr => attr.typeAlternatives.length > 1).forEach(attr => {
-            const typeKind = (type: ast.AtomType) => type.isRef ? 'ref' : 'other';
-            const firstKind = typeKind(attr.typeAlternatives[0]);
-            if (attr.typeAlternatives.slice(1).some(type => typeKind(type) !== firstKind)) {
-                accept('error', this.createMixedTypeError(attr.name), { node: attr, property: 'typeAlternatives' });
+        for (const attribute of interfaceDecl.attributes) {
+            if (attribute.type) {
+                const plainType = typeDefinitionToPropertyType(attribute.type);
+                const flattened = flattenPlainType(plainType);
+                let hasRef = false;
+                let hasNonRef = false;
+                for (const flat of flattened) {
+                    if (isPlainReferenceType(flat)) {
+                        hasRef = true;
+                    } else if (!isPlainReferenceType(flat)) {
+                        hasNonRef = true;
+                    }
+                }
+                if (hasRef && hasNonRef) {
+                    accept(
+                        'error',
+                        this.createMixedTypeError(attribute.name),
+                        {
+                            node: attribute,
+                            property: 'type'
+                        }
+                    );
+                }
             }
-        });
+        }
     }
 
     protected createMixedTypeError(propName: string) {
@@ -711,18 +738,15 @@ export class LangiumGrammarValidator {
         }
     }
 
-    checkAtomTypeRefType(atomType: ast.AtomType, accept: ValidationAcceptor): void {
-        if (atomType?.refType) {
-            const issue = this.checkReferenceToRuleButNotType(atomType?.refType);
-            if (issue) {
-                accept('error', issue, { node: atomType, property: 'refType' });
-            }
+    checkFragmentsInTypes(type: ast.SimpleType, accept: ValidationAcceptor): void {
+        if (ast.isParserRule(type.typeRef?.ref) && type.typeRef?.ref.fragment) {
+            accept('error', 'Cannot use rule fragments in types.', { node: type, property: 'typeRef' });
         }
     }
 
-    checkFragmentsInTypes(atomType: ast.AtomType, accept: ValidationAcceptor): void {
-        if (ast.isParserRule(atomType.refType?.ref) && atomType.refType?.ref.fragment) {
-            accept('error', 'Cannot use rule fragments in types.', { node: atomType, property: 'refType' });
+    checkReferenceTypeUnion(type: ast.ReferenceType, accept: ValidationAcceptor): void {
+        if (!ast.isSimpleType(type.referenceType)) {
+            accept('error', 'Only direct rule references are allowed in reference types.', { node: type, property: 'referenceType' });
         }
     }
 

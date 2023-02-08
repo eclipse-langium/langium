@@ -6,15 +6,13 @@
 
 import { isNamed } from '../../../references/name-provider';
 import { MultiMap } from '../../../utils/collections';
-import { stream } from '../../../utils/stream';
-import { ParserRule, isAlternatives, isKeyword, Action, isParserRule, isAction, AbstractElement, isGroup, isUnorderedGroup, isAssignment, isRuleCall, Assignment, isCrossReference, RuleCall } from '../../generated/ast';
-import { getExplicitRuleType, getTypeNameWithoutError, isOptionalCardinality, getRuleType } from '../../internal-grammar-util';
-import { comparePropertyType } from '../types-util';
-import { Property, AstTypes, UnionType, PropertyType, InterfaceType } from './types';
+import { ParserRule, isAlternatives, isKeyword, Action, isParserRule, isAction, AbstractElement, isGroup, isUnorderedGroup, isAssignment, isRuleCall, Assignment, isCrossReference, RuleCall, isTerminalRule } from '../../generated/ast';
+import { getTypeNameWithoutError, isOptionalCardinality, getRuleType, isPrimitiveType } from '../../internal-grammar-util';
+import { mergePropertyTypes, PlainAstTypes, PlainInterface, PlainProperty, PlainPropertyType, PlainUnion } from './plain-types';
 
 interface TypePart {
     name?: string
-    properties: Property[]
+    properties: PlainProperty[]
     ruleCalls: string[]
     parents: TypePart[]
     children: TypePart[]
@@ -24,17 +22,17 @@ interface TypePart {
 type TypeAlternative = {
     name: string
     super: string[]
-    properties: Property[]
+    properties: PlainProperty[]
     ruleCalls: string[]
 }
 
 type TypeCollection = {
-    types: Set<string>,
+    types: Set<string>
     reference: boolean
 }
 
 interface TypeCollectionContext {
-    fragments: Map<ParserRule, Property[]>
+    fragments: Map<ParserRule, PlainProperty[]>
 }
 
 interface TypePath {
@@ -78,7 +76,7 @@ class TypeGraph {
                 // If the path enters an action with an assignment which changes the current name
                 // We already add a new path, since the next part of the part refers to a new inferred type
                 paths.push({
-                    alt: this.copyTypeAlternative(split),
+                    alt: copyTypeAlternative(split),
                     next: []
                 });
             }
@@ -115,26 +113,9 @@ class TypeGraph {
     private splitType(type: TypeAlternative, count: number): TypeAlternative[] {
         const alternatives: TypeAlternative[] = [];
         for (let i = 0; i < count; i++) {
-            alternatives.push(this.copyTypeAlternative(type));
+            alternatives.push(copyTypeAlternative(type));
         }
         return alternatives;
-    }
-
-    private copyTypeAlternative(value: TypeAlternative): TypeAlternative {
-        function copyProperty(value: Property): Property {
-            return {
-                name: value.name,
-                optional: value.optional,
-                typeAlternatives: value.typeAlternatives,
-                astNodes: value.astNodes,
-            };
-        }
-        return {
-            name: value.name,
-            super: value.super,
-            ruleCalls: value.ruleCalls,
-            properties: value.properties.map(e => copyProperty(e))
-        };
     }
 
     getSuperTypes(node: TypePart): string[] {
@@ -184,9 +165,52 @@ class TypeGraph {
         }
         return node;
     }
+
+    hasLeafNode(part: TypePart): boolean {
+        return this.partHasLeafNode(part);
+    }
+
+    private partHasLeafNode(part: TypePart, ignore?: TypePart): boolean {
+        if (part.children.some(e => e !== ignore)) {
+            return true;
+        } else if (part.name) {
+            return false;
+        } else {
+            return part.parents.some(e => this.partHasLeafNode(e, part));
+        }
+    }
 }
 
-export function collectInferredTypes(parserRules: ParserRule[], datatypeRules: ParserRule[], declaredTypes: AstTypes): AstTypes {
+function copyTypePart(value: TypePart): TypePart {
+    return {
+        name: value.name,
+        children: [],
+        parents: [],
+        actionWithAssignment: value.actionWithAssignment,
+        ruleCalls: [...value.ruleCalls],
+        properties: value.properties.map(copyProperty),
+    };
+}
+
+function copyTypeAlternative(value: TypeAlternative): TypeAlternative {
+    return {
+        name: value.name,
+        super: value.super,
+        ruleCalls: value.ruleCalls,
+        properties: value.properties.map(e => copyProperty(e))
+    };
+}
+
+function copyProperty(value: PlainProperty): PlainProperty {
+    return {
+        name: value.name,
+        optional: value.optional,
+        type: value.type,
+        astNodes: value.astNodes,
+    };
+}
+
+export function collectInferredTypes(parserRules: ParserRule[], datatypeRules: ParserRule[], declared: PlainAstTypes): PlainAstTypes {
     // extract interfaces and types from parser rules
     const allTypes: TypePath[] = [];
     const context: TypeCollectionContext = {
@@ -197,16 +221,82 @@ export function collectInferredTypes(parserRules: ParserRule[], datatypeRules: P
     }
     const interfaces = calculateInterfaces(allTypes);
     const unions = buildSuperUnions(interfaces);
-    const astTypes = extractUnions(interfaces, unions, declaredTypes);
+    const astTypes = extractUnions(interfaces, unions, declared);
 
     // extract types from datatype rules
     for (const rule of datatypeRules) {
-        const types = isAlternatives(rule.definition) && rule.definition.elements.every(e => isKeyword(e)) ?
-            stream(rule.definition.elements).filter(isKeyword).map(e => `'${e.value}'`).toArray() :
-            [getExplicitRuleType(rule) ?? 'string'];
-        astTypes.unions.push(new UnionType(rule.name, toPropertyType(false, false, types)));
+        const type = getDataRuleType(rule);
+        astTypes.unions.push({
+            name: rule.name,
+            reflection: false,
+            declared: false,
+            type,
+            subTypes: new Set(),
+            superTypes: new Set()
+        });
     }
     return astTypes;
+}
+
+function getDataRuleType(rule: ParserRule): PlainPropertyType {
+    if (rule.dataType && rule.dataType !== 'string') {
+        return {
+            primitive: rule.dataType
+        };
+    }
+    let cancelled = false;
+    const cancel = (): PlainPropertyType => {
+        cancelled = true;
+        return {
+            primitive: 'unknown'
+        };
+    };
+    const type = buildDataRuleType(rule.definition, cancel);
+    if (cancelled) {
+        return {
+            primitive: 'string'
+        };
+    } else {
+        return type;
+    }
+}
+
+function buildDataRuleType(element: AbstractElement, cancel: () => PlainPropertyType): PlainPropertyType {
+    if (element.cardinality) {
+        // Multiplicity/optionality is not supported for types
+        return cancel();
+    }
+    if (isAlternatives(element)) {
+        return {
+            types: element.elements.map(e => buildDataRuleType(e, cancel))
+        };
+    } else if (isGroup(element) || isUnorderedGroup(element)) {
+        if (element.elements.length !== 1) {
+            return cancel();
+        } else {
+            return buildDataRuleType(element.elements[0], cancel);
+        }
+    } else if (isRuleCall(element)) {
+        const ref = element.rule?.ref;
+        if (ref) {
+            if (isTerminalRule(ref)) {
+                return {
+                    primitive: ref.type?.name ?? 'string'
+                };
+            } else {
+                return {
+                    value: ref.name
+                };
+            }
+        } else {
+            return cancel();
+        }
+    } else if (isKeyword(element)) {
+        return {
+            string: element.value
+        };
+    }
+    return cancel();
 }
 
 function getRuleTypes(context: TypeCollectionContext, rule: ParserRule): TypePath[] {
@@ -250,11 +340,14 @@ function collectElement(graph: TypeGraph, current: TypePart, element: AbstractEl
         return graph.merge(...children);
     } else if (isGroup(element) || isUnorderedGroup(element)) {
         let groupNode = graph.connect(current, newTypePart());
+        let skipNode: TypePart | undefined;
+        if (optional) {
+            skipNode = graph.connect(current, newTypePart());
+        }
         for (const item of element.elements) {
             groupNode = collectElement(graph, groupNode, item);
         }
-        if (optional) {
-            const skipNode = graph.connect(current, newTypePart());
+        if (skipNode) {
             return graph.merge(skipNode, groupNode);
         } else {
             return groupNode;
@@ -270,6 +363,16 @@ function collectElement(graph: TypeGraph, current: TypePart, element: AbstractEl
 }
 
 function addAction(graph: TypeGraph, parent: TypePart, action: Action): TypePart {
+
+    // We create a copy of the current type part
+    // This is essentially a leaf node of the current type
+    // Otherwise we might lose information, such as properties
+    // We do this if there's no leaf node for the current type yet
+    if (!graph.hasLeafNode(parent)) {
+        const copy = copyTypePart(parent);
+        graph.connect(parent, copy);
+    }
+
     const typeNode = graph.connect(parent, newTypePart(action));
 
     if (action.type) {
@@ -286,7 +389,7 @@ function addAction(graph: TypeGraph, parent: TypePart, action: Action): TypePart
         typeNode.properties.push({
             name: action.feature,
             optional: false,
-            typeAlternatives: toPropertyType(
+            type: toPropertyType(
                 action.operator === '+=',
                 false,
                 graph.root.ruleCalls.length !== 0 ? graph.root.ruleCalls : graph.getSuperTypes(typeNode)),
@@ -300,7 +403,7 @@ function addAssignment(current: TypePart, assignment: Assignment): void {
     const typeItems: TypeCollection = { types: new Set(), reference: false };
     findTypes(assignment.terminal, typeItems);
 
-    const typeAlternatives: PropertyType[] = toPropertyType(
+    const type: PlainPropertyType = toPropertyType(
         assignment.operator === '+=',
         typeItems.reference,
         assignment.operator === '?=' ? ['boolean'] : Array.from(typeItems.types)
@@ -309,7 +412,7 @@ function addAssignment(current: TypePart, assignment: Assignment): void {
     current.properties.push({
         name: assignment.feature,
         optional: isOptionalCardinality(assignment.cardinality),
-        typeAlternatives,
+        type,
         astNodes: new Set([assignment])
     });
 }
@@ -324,7 +427,10 @@ function findTypes(terminal: AbstractElement, types: TypeCollection): void {
     } else if (isRuleCall(terminal) && terminal.rule.ref) {
         types.types.add(getRuleType(terminal.rule.ref));
     } else if (isCrossReference(terminal) && terminal.type.ref) {
-        types.types.add(getTypeNameWithoutError(terminal.type.ref));
+        const refTypeName = getTypeNameWithoutError(terminal.type.ref);
+        if (refTypeName) {
+            types.types.add(refTypeName);
+        }
         types.reference = true;
     }
 }
@@ -347,12 +453,12 @@ function addRuleCall(graph: TypeGraph, current: TypePart, ruleCall: RuleCall): v
     }
 }
 
-function getFragmentProperties(fragment: ParserRule, context: TypeCollectionContext): Property[] {
+function getFragmentProperties(fragment: ParserRule, context: TypeCollectionContext): PlainProperty[] {
     const existing = context.fragments.get(fragment);
     if (existing) {
         return existing;
     }
-    const properties: Property[] = [];
+    const properties: PlainProperty[] = [];
     context.fragments.set(fragment, properties);
     const fragmentName = getTypeNameWithoutError(fragment);
     const typeAlternatives = getRuleTypes(context, fragment).filter(e => e.alt.name === fragmentName);
@@ -366,13 +472,20 @@ function getFragmentProperties(fragment: ParserRule, context: TypeCollectionCont
  * @param alternatives The type branches that will be squashed in interfaces.
  * @returns Interfaces.
  */
-function calculateInterfaces(alternatives: TypePath[]): InterfaceType[] {
-    const interfaces = new Map<string, InterfaceType>();
+function calculateInterfaces(alternatives: TypePath[]): PlainInterface[] {
+    const interfaces = new Map<string, PlainInterface>();
     const ruleCallAlternatives: TypeAlternative[] = [];
     const flattened = flattenTypes(alternatives).map(e => e.alt);
 
     for (const flat of flattened) {
-        const interfaceType = new InterfaceType(flat.name, flat.super, flat.properties);
+        const interfaceType: PlainInterface = {
+            name: flat.name,
+            properties: flat.properties,
+            superTypes: new Set(flat.super),
+            subTypes: new Set(),
+            declared: false,
+            abstract: false
+        };
         interfaces.set(interfaceType.name, interfaceType);
         if (flat.ruleCalls.length > 0) {
             ruleCallAlternatives.push(flat);
@@ -391,7 +504,7 @@ function calculateInterfaces(alternatives: TypePath[]): InterfaceType[] {
             const calledInterface = interfaces.get(ruleCall);
             if (calledInterface) {
                 if (calledInterface.name !== ruleCallType.name) {
-                    calledInterface.realSuperTypes.add(ruleCallType.name);
+                    calledInterface.superTypes.add(ruleCallType.name);
                 }
             }
         }
@@ -404,7 +517,7 @@ function flattenTypes(alternatives: TypePath[]): TypePath[] {
     const types: TypePath[] = [];
 
     for (const [name, namedAlternatives] of nameToAlternatives.entriesGroupedByKey()) {
-        const properties: Property[] = [];
+        const properties: PlainProperty[] = [];
         const ruleCalls = new Set<string>();
         const type: TypePath = { alt: { name, properties, ruleCalls: [], super: [] }, next: [] };
         for (const path of namedAlternatives) {
@@ -415,9 +528,7 @@ function flattenTypes(alternatives: TypePath[]): TypePath[] {
             for (const altProperty of altProperties) {
                 const existingProperty = properties.find(e => e.name === altProperty.name);
                 if (existingProperty) {
-                    altProperty.typeAlternatives
-                        .filter(isNotInTypeAlternatives(existingProperty.typeAlternatives))
-                        .forEach(type => existingProperty.typeAlternatives.push(type));
+                    existingProperty.type = mergePropertyTypes(existingProperty.type, altProperty.type);
                     altProperty.astNodes.forEach(e => existingProperty.astNodes.add(e));
                 } else {
                     properties.push({ ...altProperty });
@@ -444,27 +555,26 @@ function flattenTypes(alternatives: TypePath[]): TypePath[] {
     return types;
 }
 
-function isNotInTypeAlternatives(typeAlternatives: PropertyType[]): (type: PropertyType) => boolean {
-    return (type: PropertyType) => {
-        return !typeAlternatives.some(e => comparePropertyType(e, type));
-    };
-}
-
-function buildSuperUnions(interfaces: InterfaceType[]): UnionType[] {
-    const unions: UnionType[] = [];
+function buildSuperUnions(interfaces: PlainInterface[]): PlainUnion[] {
+    const interfaceMap = new Map(interfaces.map(e => [e.name, e]));
+    const unions: PlainUnion[] = [];
     const allSupertypes = new MultiMap<string, string>();
     for (const interfaceType of interfaces) {
-        for (const superType of interfaceType.realSuperTypes) {
+        for (const superType of interfaceType.superTypes) {
             allSupertypes.add(superType, interfaceType.name);
         }
     }
     for (const [superType, types] of allSupertypes.entriesGroupedByKey()) {
-        if (!interfaces.some(e => e.name === superType)) {
-            unions.push(new UnionType(
-                superType,
-                toPropertyType(false, false, types),
-                { reflection: true }
-            ));
+        if (!interfaceMap.has(superType)) {
+            const union: PlainUnion = {
+                declared: false,
+                name: superType,
+                reflection: true,
+                subTypes: new Set(),
+                superTypes: new Set(),
+                type: toPropertyType(false, false, types)
+            };
+            unions.push(union);
         }
     }
 
@@ -477,29 +587,45 @@ function buildSuperUnions(interfaces: InterfaceType[]): UnionType[] {
  * @param interfaces The interfaces that have to be transformed on demand.
  * @returns Types and not transformed interfaces.
  */
-function extractUnions(interfaces: InterfaceType[], unions: UnionType[], declaredTypes: AstTypes): AstTypes {
+function extractUnions(interfaces: PlainInterface[], unions: PlainUnion[], declared: PlainAstTypes): {
+    interfaces: PlainInterface[],
+    unions: PlainUnion[]
+} {
+    const subTypes = new MultiMap<string, string>();
     for (const interfaceType of interfaces) {
-        for (const superTypeName of interfaceType.realSuperTypes) {
-            interfaces.find(e => e.name === superTypeName)
-                ?.subTypes.add(interfaceType.name);
+        for (const superTypeName of interfaceType.superTypes) {
+            subTypes.add(superTypeName, interfaceType.name);
         }
     }
-
-    const astTypes: AstTypes = { interfaces: [], unions };
-    const typeNames = new Set(unions.map(e => e.name));
-    const declaredInterfaces = new Set(declaredTypes.interfaces.map(e => e.name));
+    const declaredInterfaces = new Set(declared.interfaces.map(e => e.name));
+    const astTypes = { interfaces: [] as PlainInterface[], unions };
+    const unionTypes = new Map<string, PlainUnion>(unions.map(e => [e.name, e]));
     for (const interfaceType of interfaces) {
-        // the criterion for converting an interface into a type
-        if (interfaceType.properties.length === 0 && interfaceType.subTypes.size > 0 && !declaredInterfaces.has(interfaceType.name)) {
-            const alternatives: PropertyType[] = toPropertyType(false, false, Array.from(interfaceType.subTypes));
-            const existingUnion = unions.find(e => e.name === interfaceType.name);
-            if (existingUnion) {
-                existingUnion.alternatives.push(...alternatives);
+        const interfaceSubTypes = new Set(subTypes.get(interfaceType.name));
+        // Convert an interface into a union type if it has subtypes and no properties on its own
+        if (interfaceType.properties.length === 0 && interfaceSubTypes.size > 0) {
+            // In case we have an explicitly declared interface
+            // Mark the interface as `abstract` and do not create a union type
+            if (declaredInterfaces.has(interfaceType.name)) {
+                interfaceType.abstract = true;
+                astTypes.interfaces.push(interfaceType);
             } else {
-                const type = new UnionType(interfaceType.name, alternatives, { reflection: true });
-                type.realSuperTypes = interfaceType.realSuperTypes;
-                astTypes.unions.push(type);
-                typeNames.add(interfaceType.name);
+                const interfaceTypeValue = toPropertyType(false, false, Array.from(interfaceSubTypes));
+                const existingUnion = unionTypes.get(interfaceType.name);
+                if (existingUnion) {
+                    existingUnion.type = mergePropertyTypes(existingUnion.type, interfaceTypeValue);
+                } else {
+                    const unionType: PlainUnion = {
+                        name: interfaceType.name,
+                        declared: false,
+                        reflection: true,
+                        subTypes: interfaceSubTypes,
+                        superTypes: interfaceType.superTypes,
+                        type: interfaceTypeValue
+                    };
+                    astTypes.unions.push(unionType);
+                    unionTypes.set(interfaceType.name, unionType);
+                }
             }
         } else {
             astTypes.interfaces.push(interfaceType);
@@ -507,16 +633,39 @@ function extractUnions(interfaces: InterfaceType[], unions: UnionType[], declare
     }
     // After converting some interfaces into union types, these interfaces are no longer valid super types
     for (const interfaceType of astTypes.interfaces) {
-        interfaceType.printingSuperTypes = [...interfaceType.realSuperTypes].filter(superType => !typeNames.has(superType));
+        interfaceType.superTypes = new Set([...interfaceType.superTypes].filter(superType => !unionTypes.has(superType)));
     }
     return astTypes;
 }
 
-function toPropertyType(array: boolean, reference: boolean, types: string[]): PropertyType[] {
-    if (array || reference) {
-        return [{ array, reference, types }];
+function toPropertyType(array: boolean, reference: boolean, types: string[]): PlainPropertyType {
+    if (array) {
+        return {
+            elementType: toPropertyType(false, reference, types)
+        };
+    } else if (reference) {
+        return {
+            referenceType: toPropertyType(false, false, types)
+        };
+    } else if (types.length === 1) {
+        const type = types[0];
+        if (type.startsWith("'")) {
+            return {
+                string: type.substring(1, type.length - 1)
+            };
+        }
+        if (isPrimitiveType(type)) {
+            return {
+                primitive: type
+            };
+        } else {
+            return {
+                value: type
+            };
+        }
+    } else {
+        return {
+            types: types.map(e => toPropertyType(false, false, [e]))
+        };
     }
-    return types.map(type => { return {
-        array, reference, types: [type]
-    }; });
 }

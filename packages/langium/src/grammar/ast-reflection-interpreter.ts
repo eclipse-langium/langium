@@ -4,13 +4,13 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { AstReflection, isAstNode, ReferenceInfo, TypeMandatoryProperty, TypeMetaData } from '../syntax-tree';
+import { AbstractAstReflection, AstReflection, ReferenceInfo, TypeMandatoryProperty, TypeMetaData } from '../syntax-tree';
 import { MultiMap } from '../utils/collections';
 import { LangiumDocuments } from '../workspace/documents';
 import { Grammar, isGrammar } from './generated/ast';
 import { collectAst } from './type-system/ast-collector';
 import { AstTypes, Property } from './type-system/type-collector/types';
-import { collectAllProperties } from './type-system/types-util';
+import { collectTypeHierarchy, findReferenceTypes, hasArrayType, hasBooleanType, mergeTypesAndInterfaces } from './type-system/types-util';
 
 export function interpretAstReflection(astTypes: AstTypes): AstReflection;
 export function interpretAstReflection(grammar: Grammar, documents?: LangiumDocuments): AstReflection;
@@ -24,56 +24,78 @@ export function interpretAstReflection(grammarOrTypes: Grammar | AstTypes, docum
     const allTypes = collectedTypes.interfaces.map(e => e.name).concat(collectedTypes.unions.map(e => e.name));
     const references = buildReferenceTypes(collectedTypes);
     const metaData = buildTypeMetaData(collectedTypes);
-    const superTypeMap = buildSupertypeMap(collectedTypes);
+    const superTypes = collectTypeHierarchy(mergeTypesAndInterfaces(collectedTypes)).superTypes;
 
-    return {
-        getAllTypes() {
-            return allTypes;
-        },
-        getReferenceType(refInfo: ReferenceInfo): string {
-            const referenceId = `${refInfo.container.$type}:${refInfo.property}`;
-            const referenceType = references.get(referenceId);
-            if (referenceType) {
-                return referenceType;
-            }
-            throw new Error('Could not find reference type for ' + referenceId);
-        },
-        getTypeMetaData(type: string): TypeMetaData {
-            return metaData.get(type) ?? {
-                name: type,
-                mandatory: []
-            };
-        },
-        isInstance(node: unknown, type: string): boolean {
-            return isAstNode(node) && this.isSubtype(node.$type, type);
-        },
-        isSubtype(subtype: string, originalSuperType: string): boolean {
-            if (subtype === originalSuperType) {
+    return new InterpretedAstReflection({
+        allTypes,
+        references,
+        metaData,
+        superTypes
+    });
+}
+
+class InterpretedAstReflection extends AbstractAstReflection {
+
+    private readonly allTypes: string[];
+    private readonly references: Map<string, string>;
+    private readonly metaData: Map<string, TypeMetaData>;
+    private readonly superTypes: MultiMap<string, string>;
+
+    constructor(options: {
+        allTypes: string[]
+        references: Map<string, string>
+        metaData: Map<string, TypeMetaData>
+        superTypes: MultiMap<string, string>
+    }) {
+        super();
+        this.allTypes = options.allTypes;
+        this.references = options.references;
+        this.metaData = options.metaData;
+        this.superTypes = options.superTypes;
+    }
+
+    getAllTypes(): string[] {
+        return this.allTypes;
+    }
+
+    getReferenceType(refInfo: ReferenceInfo): string {
+        const referenceId = `${refInfo.container.$type}:${refInfo.property}`;
+        const referenceType = this.references.get(referenceId);
+        if (referenceType) {
+            return referenceType;
+        }
+        throw new Error('Could not find reference type for ' + referenceId);
+    }
+
+    getTypeMetaData(type: string): TypeMetaData {
+        return this.metaData.get(type) ?? {
+            name: type,
+            mandatory: []
+        };
+    }
+
+    protected computeIsSubtype(subtype: string, originalSuperType: string): boolean {
+        const superTypes = this.superTypes.get(subtype);
+        for (const superType of superTypes) {
+            if (this.isSubtype(superType, originalSuperType)) {
                 return true;
             }
-            const superTypes = superTypeMap.get(subtype);
-            for (const superType of superTypes) {
-                if (this.isSubtype(superType, originalSuperType)) {
-                    return true;
-                }
-            }
-            return false;
         }
-    };
+        return false;
+    }
+
 }
 
 function buildReferenceTypes(astTypes: AstTypes): Map<string, string> {
     const references = new MultiMap<string, [string, string]>();
     for (const interfaceType of astTypes.interfaces) {
         for (const property of interfaceType.properties) {
-            for (const propertyAlternative of property.typeAlternatives) {
-                if (propertyAlternative.reference) {
-                    references.add(interfaceType.name, [property.name, propertyAlternative.types[0]]);
-                }
+            for (const referenceType of findReferenceTypes(property.type)) {
+                references.add(interfaceType.name, [property.name, referenceType]);
             }
         }
-        for (const superType of interfaceType.printingSuperTypes) {
-            const superTypeReferences = references.get(superType);
+        for (const superType of interfaceType.interfaceSuperTypes) {
+            const superTypeReferences = references.get(superType.name);
             references.addAll(interfaceType.name, superTypeReferences);
         }
     }
@@ -86,11 +108,10 @@ function buildReferenceTypes(astTypes: AstTypes): Map<string, string> {
 
 function buildTypeMetaData(astTypes: AstTypes): Map<string, TypeMetaData> {
     const map = new Map<string, TypeMetaData>();
-    const allProperties = collectAllProperties(astTypes.interfaces);
     for (const interfaceType of astTypes.interfaces) {
-        const props = allProperties.get(interfaceType.name)!;
-        const arrayProps = props.filter(e => e.typeAlternatives.some(e => e.array));
-        const booleanProps = props.filter(e => e.typeAlternatives.every(e => !e.array && e.types.includes('boolean')));
+        const props = interfaceType.superProperties;
+        const arrayProps = props.filter(e => hasArrayType(e.type));
+        const booleanProps = props.filter(e => !hasArrayType(e.type) && hasBooleanType(e.type));
         if (arrayProps.length > 0 || booleanProps.length > 0) {
             map.set(interfaceType.name, {
                 name: interfaceType.name,
@@ -112,15 +133,4 @@ function buildMandatoryMetaData(arrayProps: Property[], booleanProps: Property[]
         });
     }
     return array;
-}
-
-function buildSupertypeMap(astTypes: AstTypes): MultiMap<string, string> {
-    const map = new MultiMap<string, string>();
-    for (const interfaceType of astTypes.interfaces) {
-        map.addAll(interfaceType.name, interfaceType.realSuperTypes);
-    }
-    for (const unionType of astTypes.unions) {
-        map.addAll(unionType.name, unionType.realSuperTypes);
-    }
-    return map;
 }
