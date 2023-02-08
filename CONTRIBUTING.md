@@ -114,7 +114,9 @@ Currently the process of releasing a new version of Langium is done manually one
 
  1. Prepare the workspace
     * Pull the latest changes
-    * `npm install`
+    * `npm ci`
+    * `npm run build:clean`
+    * `npm run lint`
     * `npm test`
  2. `packages/langium`
     * Update version in `package.json`

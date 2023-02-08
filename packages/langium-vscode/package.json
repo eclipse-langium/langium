@@ -16,7 +16,7 @@
     "theme": "dark"
   },
   "engines": {
-    "vscode": "^1.53.0"
+    "vscode": "1.67.0"
   },
   "contributes": {
     "languages": [
@@ -70,12 +70,12 @@
   },
   "dependencies": {
     "langium": "1.0.1",
-    "vscode-languageserver": "^8.0.2",
-    "ignore": "~5.2.0"
+    "vscode-languageserver": "~8.0.2",
+    "ignore": "~5.2.4"
   },
-  "devDependencies": {
-    "@types/vscode": "^1.53.0",
-    "esbuild": "^0.14.25"
+  "volta": {
+    "node": "16.19.0",
+    "npm": "8.19.3"
   },
   "repository": {
     "type": "git",

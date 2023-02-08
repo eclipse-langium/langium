@@ -62,21 +62,25 @@
         "vscode:prepublish": "npm run build && npm run lint",
         "build": "tsc",
         "watch": "tsc -watch",
-        "lint": "eslint src --ext ts",
+        "lint": "eslint src test --ext ts",
         "langium:generate": "langium generate",
         "langium:watch": "langium generate --watch",
         "publish:next": "npm --no-git-tag-version version \"$(semver $npm_package_version -i minor)-next.$(git rev-parse --short HEAD)\" && npm publish --tag next",
         "publish:latest": "npm publish --tag latest"
     },
     "dependencies": {
-        "chalk": "^4.1.2",
-        "commander": "^8.0.0",
-        "langium": "~1.0.0",
-        "vscode-languageclient": "^8.0.2",
-        "vscode-languageserver": "^8.0.2"
+        "chalk": "~4.1.2",
+        "commander": "~10.0.0",
+        "langium": "~1.0.1",
+        "vscode-languageclient": "~8.0.2",
+        "vscode-languageserver": "~8.0.2"
     },
     "devDependencies": {
         "langium-cli": "~1.0.0"
+    },
+    "volta": {
+        "node": "16.19.0",
+        "npm": "8.19.3"
     },
     "repository": {
         "type": "git",

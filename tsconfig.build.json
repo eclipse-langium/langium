@@ -3,12 +3,19 @@
     "files": [],
     "references": [
         { "path": "packages/langium" },
+        { "path": "packages/langium/tsconfig.test.json" },
         { "path": "packages/langium-cli" },
+        { "path": "packages/langium-cli/tsconfig.test.json" },
         { "path": "packages/langium-sprotty" },
         { "path": "packages/generator-langium" },
+        { "path": "packages/generator-langium/tsconfig.test.json" },
         { "path": "examples/arithmetics" },
+        { "path": "examples/arithmetics/tsconfig.test.json" },
         { "path": "examples/domainmodel" },
+        { "path": "examples/domainmodel/tsconfig.test.json" },
         { "path": "examples/requirements" },
-        { "path": "examples/statemachine" }
+        { "path": "examples/requirements/tsconfig.test.json" },
+        { "path": "examples/statemachine" },
+        { "path": "examples/statemachine/tsconfig.test.json" }
     ]
  }

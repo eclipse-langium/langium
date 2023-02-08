@@ -4,6 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import { beforeAll, describe, expect, test } from 'vitest';
 import { createLangiumGrammarServices, EmptyFileSystem, findNameAssignment, getEntryRule, Grammar, stream } from '../../src';
 import { InferredType, isParserRule, isTerminalRule, ParserRule, TerminalRule } from '../../src/grammar/generated/ast';
 import { LangiumGrammarGrammar } from '../../src/grammar/generated/grammar';
@@ -109,8 +110,8 @@ describe('Get Name from Type', () => {
         //AbstractType case
         expect(getTypeName({
             name: typeName,
-            $type: 'Type'
-        } as InferredType)).toBe(typeName);
+            $type: 'Type',
+        } as unknown as InferredType)).toBe(typeName);
     });
 
     test('Should get name for InferredType', () => {
@@ -126,7 +127,7 @@ describe('Get Name from Type', () => {
         expect(() => getTypeName({
             name: typeName,
             $type: 'BadType'
-        } as InferredType)).toThrow('Cannot get name of Unknown Type');
+        } as unknown as InferredType)).toThrow('Cannot get name of Unknown Type');
     });
 });
 

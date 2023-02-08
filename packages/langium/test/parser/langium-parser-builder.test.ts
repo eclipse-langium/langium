@@ -4,6 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import { beforeEach, describe, expect, onTestFailed, test } from 'vitest';
 import { TokenType, TokenVocabulary } from 'chevrotain';
 import { AstNode, createServicesForGrammar, DefaultTokenBuilder, Grammar, GrammarAST, LangiumParser, TokenBuilderOptions } from '../../src';
 
@@ -156,12 +157,12 @@ describe('Handle unordered group', () => {
 
     const content = `
     grammar TestUnorderedGroup
-    
+
     entry Lib:
 	    books+=Book*;
-    
-    Book: 
-        'book' name=STRING 
+
+    Book:
+        'book' name=STRING
         (
               ("description" descr=STRING)
             & ("edition" version=STRING)
@@ -199,7 +200,7 @@ describe('Handle unordered group', () => {
         parsedNode = parseAndCheck(
             `
             book "MyBook"
-            
+
             edition "second"
             description "Cool book"
             author "me"
@@ -235,13 +236,13 @@ describe('Handle unordered group', () => {
             edition "second"
             description "Cool book"
             author "foo"
-            
+
             book "MyBook2"
 
             edition "second2"
             description "Cool book2"
             author "foo2"
-            
+
             `, parser) as { parserErrors?: string | string[], books?: string[] });
         expect(lib.parserErrors).toBeUndefined();
         expect(lib.books).not.toBeUndefined();
@@ -263,19 +264,19 @@ describe('One name for terminal and non-terminal rules', () => {
     grammar Test
 
     entry Main: A | B | C;
-    
+
     A: 'A' Bdata Cterm prop=B;
-    
+
     B: Bdata Cterm 'A' prop=C;
     Bdata returns string: 'B';
-    
+
     C: Cterm 'A' Bdata prop=A;
     terminal Cterm: /C/;
     hidden terminal WS: /\\s+/;
     `;
 
     test('Should work without Parser Definition Errors', async () => {
-        await parserFromGrammar(content).catch(e => fail(e));
+        await parserFromGrammar(content).catch(e => onTestFailed(e));
     });
 
 });

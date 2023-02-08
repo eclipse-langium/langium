@@ -28,20 +28,24 @@
     "clean": "shx rm -rf lib coverage",
     "build": "tsc",
     "watch": "tsc --watch",
-    "lint": "eslint src --ext .ts",
+    "lint": "eslint src test --ext .ts",
     "publish:next": "npm --no-git-tag-version version \"$(semver $npm_package_version -i minor)-next.$(git rev-parse --short HEAD)\" && npm publish --tag next",
     "publish:latest": "npm publish --tag latest"
   },
   "dependencies": {
-    "chalk": "^4.1.2",
-    "commander": "^8.0.0",
-    "fs-extra": "^9.1.0",
-    "jsonschema": "^1.4.0",
-    "langium": "~1.0.0",
-    "lodash": "^4.17.21"
+    "chalk": "~4.1.2",
+    "commander": "~10.0.0",
+    "fs-extra": "~11.1.0",
+    "jsonschema": "~1.4.1",
+    "langium": "~1.0.1",
+    "lodash": "~4.17.21"
   },
   "devDependencies": {
-    "@types/fs-extra": "^9.0.13"
+    "@types/fs-extra": "~11.0.1"
+  },
+  "volta": {
+    "node": "16.19.0",
+    "npm": "8.19.3"
   },
   "repository": {
     "type": "git",

@@ -25,7 +25,7 @@
     "clean": "shx rm -rf app",
     "build": "tsc",
     "watch": "tsc --watch",
-    "lint": "eslint src --ext .ts",
+    "lint": "eslint src test --ext .ts",
     "run": "yo langium",
     "test": "vitest run",
     "debug": "npx --node-arg=--inspect yo langium",
@@ -33,15 +33,19 @@
     "publish:latest": "npm publish --tag latest"
   },
   "dependencies": {
-    "chalk": "^4.1.2",
-    "lodash": "^4.17.21",
-    "yeoman-generator": "^5.5.2"
+    "chalk": "~4.1.2",
+    "lodash": "~4.17.21",
+    "yeoman-generator": "~5.7.0"
   },
   "devDependencies": {
-    "@types/lodash": "^4.14.170",
-    "@types/yeoman-generator": "^5.0.0",
-    "@types/yeoman-test": "^4.0.3",
-    "yeoman-test": "^7.0.0"
+    "@types/lodash": "~4.14.191",
+    "@types/yeoman-generator": "~5.2.11",
+    "@types/yeoman-test": "~4.0.3",
+    "yeoman-test": "~7.3.0"
+  },
+  "volta": {
+    "node": "16.19.0",
+    "npm": "8.19.3"
   },
   "repository": {
     "type": "git",

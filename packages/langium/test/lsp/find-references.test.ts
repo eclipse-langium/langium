@@ -4,6 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import { describe, test } from 'vitest';
 import { createLangiumGrammarServices, EmptyFileSystem } from '../../src';
 import { expectFindReferences } from '../../src/test';
 
@@ -19,7 +20,7 @@ describe('findReferences', () => {
         interface <|<|>A|> {
             name: string
         }
-        
+
         interface B extends <|<|>A|> {}
         `;
 
@@ -30,14 +31,14 @@ describe('findReferences', () => {
     });
 
     test('Must find references to parent interface in another interface declaration. Excluding parent interface declaration', async () => {
-        const grammar = `grammar test 
+        const grammar = `grammar test
         hidden terminal WS: /\\s+/;
         terminal ID: /\\w+/;
 
         interface <|>A {
             name: string
         }
-        
+
         interface B extends <|A|> {}
         `;
 
@@ -48,14 +49,14 @@ describe('findReferences', () => {
     });
 
     test('Must find references to interface in parser rules. Including interface declaration', async () => {
-        const grammar = `grammar test 
+        const grammar = `grammar test
         hidden terminal WS: /\\s+/;
         terminal ID: /\\w+/;
 
         interface <|<|>A|> {
             name: string
         }
-        
+
         ruleA returns <|<|>A|>: name=ID;
         `;
 
@@ -66,14 +67,14 @@ describe('findReferences', () => {
     });
 
     test('Must find references to interface in parser rules. Excluding interface declaration', async () => {
-        const grammar = `grammar test 
+        const grammar = `grammar test
         hidden terminal WS: /\\s+/;
         terminal ID: /\\w+/;
 
         interface <|>A {
             name: string
         }
-        
+
         ruleA returns <|A|>: name=ID;
         `;
 
@@ -84,14 +85,14 @@ describe('findReferences', () => {
     });
 
     test('Must find references to interface in actions. Including interface declaration', async () => {
-        const grammar = `grammar test 
+        const grammar = `grammar test
         hidden terminal WS: /\\s+/;
         terminal ID: /\\w+/;
 
         interface <|<|>A|> {
             name: string
         }
-        
+
         ActionRule: {<|<|>A|>} name=ID;
         `;
 
@@ -102,14 +103,14 @@ describe('findReferences', () => {
     });
 
     test('Must find references to interface in actions. Excluding interface declaration', async () => {
-        const grammar = `grammar test 
+        const grammar = `grammar test
         hidden terminal WS: /\\s+/;
         terminal ID: /\\w+/;
 
         interface <|>A {
             name: string
         }
-        
+
         ActionRule: {<|A|>} name=ID;
         `;
 
@@ -120,14 +121,14 @@ describe('findReferences', () => {
     });
 
     test('Must find references to interface in union types. Including interface declaration', async () => {
-        const grammar = `grammar test 
+        const grammar = `grammar test
         hidden terminal WS: /\\s+/;
         terminal ID: /\\w+/;
 
         interface <|<|>A|> {
             name: string
         }
-        
+
         interface B {
             foo:string
         }
@@ -142,14 +143,14 @@ describe('findReferences', () => {
     });
 
     test('Must find references to interface in union types. Excluding interface declaration', async () => {
-        const grammar = `grammar test 
+        const grammar = `grammar test
         hidden terminal WS: /\\s+/;
         terminal ID: /\\w+/;
 
         interface <|>A {
             name: string
         }
-        
+
         interface B {
             foo:string
         }
@@ -164,14 +165,14 @@ describe('findReferences', () => {
     });
 
     test('Must find references to interface in children interfaces, parser rules, actions, and union types. Including parent interface declaration', async () => {
-        const grammar = `grammar test 
+        const grammar = `grammar test
         hidden terminal WS: /\\s+/;
         terminal ID: /\\w+/;
 
         interface <|<|>A|> {
             name: string
         }
-        
+
         interface B extends <|<|>A|> {}
 
         type C = <|<|>A|> | B;
@@ -188,14 +189,14 @@ describe('findReferences', () => {
     });
 
     test('Must find references to interface in children interfaces, parser rules, actions, and union types. Excluding interface declaration', async () => {
-        const grammar = `grammar test 
+        const grammar = `grammar test
         hidden terminal WS: /\\s+/;
         terminal ID: /\\w+/;
 
         interface <|>A {
             name: string
         }
-        
+
         interface B extends <|<|>A|> {}
 
         type C = <|<|>A|> | B;
@@ -212,7 +213,7 @@ describe('findReferences', () => {
     });
 
     test('Must find references to a property assigned in parser rule', async () => {
-        const grammar = `grammar test 
+        const grammar = `grammar test
         hidden terminal WS: /\\s+/;
         terminal ID: /\\w+/;
 
@@ -230,14 +231,14 @@ describe('findReferences', () => {
     });
 
     test('Must find references to a property assigned in parser rule returning child type', async () => {
-        const grammar = `grammar test 
+        const grammar = `grammar test
         hidden terminal WS: /\\s+/;
         terminal ID: /\\w+/;
 
         interface A {
             <|na<|>me|>: string
         }
-        
+
         interface B extends A {}
 
         RuleB returns B: <|na<|>me|>=ID;
@@ -250,14 +251,14 @@ describe('findReferences', () => {
     });
 
     test('Must find references to a property assigned in parser rule returning union type', async () => {
-        const grammar = `grammar test 
+        const grammar = `grammar test
         hidden terminal WS: /\\s+/;
         terminal ID: /\\w+/;
 
         interface A {
             <|na<|>me|>: string
         }
-        
+
         interface B {
             foo: string
         }
@@ -274,14 +275,14 @@ describe('findReferences', () => {
     });
 
     test('Must find references to a property assigned in actions', async () => {
-        const grammar = `grammar test 
+        const grammar = `grammar test
         hidden terminal WS: /\\s+/;
         terminal ID: /\\w+/;
 
         interface A {
             <|na<|>me|>: string
         }
-        
+
         ActionRule: {A} <|na<|>me|>=ID;
         `;
 
@@ -292,14 +293,14 @@ describe('findReferences', () => {
     });
 
     test('Must find references to a property assigned in actions returning child type', async () => {
-        const grammar = `grammar test 
+        const grammar = `grammar test
         hidden terminal WS: /\\s+/;
         terminal ID: /\\w+/;
 
         interface A {
             <|na<|>me|>: string
         }
-        
+
         interface B extends A {}
 
         ActionRule: {B} <|na<|>me|>=ID;
@@ -312,7 +313,7 @@ describe('findReferences', () => {
     });
 
     test('Must find references to a property assigned in action returning union type', async () => {
-        const grammar = `grammar test 
+        const grammar = `grammar test
         hidden terminal WS: /\\s+/;
         terminal ID: /\\w+/;
 
@@ -323,7 +324,7 @@ describe('findReferences', () => {
         interface B {
             foo: string
         }
-        
+
         type C = A | B;
 
         ActionRule: {C} <|na<|>me|>=ID;
@@ -336,14 +337,14 @@ describe('findReferences', () => {
     });
 
     test('Must find references to property assigned in parser rule returning child of child', async () =>{
-        const grammar = `grammar test 
+        const grammar = `grammar test
         hidden terminal WS: /\\s+/;
         terminal ID: /\\w+/;
 
         interface A {
             <|na<|>me|>: string
         }
-        
+
         interface B extends A {}
 
         interface C extends B {}
@@ -358,7 +359,7 @@ describe('findReferences', () => {
     });
 
     test('Must find references to action assignment in parser rule returning interface', async () =>{
-        const grammar = `grammar test 
+        const grammar = `grammar test
         hidden terminal WS: /\\s+/;
         terminal ID: /\\w+/;
 

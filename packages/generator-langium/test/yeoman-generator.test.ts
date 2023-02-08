@@ -3,6 +3,8 @@
  * This program and the accompanying materials are made available under the
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
+
+import { describe, test } from 'vitest';
 import { normalizeEOL } from 'langium';
 import path from 'path';
 import { createHelpers } from 'yeoman-test';
@@ -37,7 +39,7 @@ normalizeEOL(`{
     "description": "Please enter a brief description here",
     "version": "0.0.1",
     "engines": {
-        "vscode": "^1.56.0"
+        "vscode": "~1.67.0"
     },
     "categories": [
         "Programming Languages"
@@ -76,21 +78,21 @@ normalizeEOL(`{
         "langium:watch": "langium generate --watch"
     },
     "dependencies": {
-        "chevrotain": "^10.4.1",
-        "chalk": "^4.1.2",
-        "commander": "^8.0.0",
-        "langium": "~1.0.0",
-        "vscode-languageclient": "^8.0.2",
-        "vscode-languageserver": "^8.0.2",
-        "vscode-uri": "^3.0.2"
+        "chevrotain": "~10.4.2",
+        "chalk": "~4.1.2",
+        "commander": "~10.0.0",
+        "langium": "~1.0.1",
+        "vscode-languageclient": "~8.0.2",
+        "vscode-languageserver": "~8.0.2",
+        "vscode-uri": "~3.0.7"
     },
     "devDependencies": {
-        "@types/node": "^14.17.3",
-        "@types/vscode": "^1.56.0",
-        "@typescript-eslint/eslint-plugin": "^5.28.0",
-        "@typescript-eslint/parser": "^5.28.0",
-        "eslint": "^8.17.0",
+        "@types/node": "~16.18.11",
+        "@types/vscode": "~1.67.0",
+        "@typescript-eslint/eslint-plugin": "~5.51.0",
+        "@typescript-eslint/parser": "~5.51.0",
+        "eslint": "~8.33.0",
         "langium-cli": "~1.0.0",
-        "typescript": "^4.9.4"
+        "typescript": "~4.9.5"
     }
 }`);

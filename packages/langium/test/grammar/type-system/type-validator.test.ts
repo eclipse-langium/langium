@@ -4,6 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import { describe, expect, test } from 'vitest';
 import { Diagnostic, DiagnosticSeverity } from 'vscode-languageserver';
 import { createLangiumGrammarServices, EmptyFileSystem, GrammarAST, streamAllContents, streamContents } from '../../../src';
 import { Assignment, isAssignment } from '../../../src/grammar/generated/ast';
@@ -212,7 +213,7 @@ describe('validate properties duplication in types hierarchy', () => {
         }
         X returns A : name=ID count=ID;
         Y returns A : name=ID count=ID;
-        terminal ID: /[_a-zA-Z][\\w_]*/;        
+        terminal ID: /[_a-zA-Z][\\w_]*/;
         `.trim();
 
         // verify we have 2 errors: extra assignment `count` for `X` and `Y` rules
@@ -302,11 +303,11 @@ describe('Property type is not a mix of cross-ref and non-cross-ref types.', () 
             Foo infers AbstractElement:
                 prop=[AbstractElement:ID]
             ;
-            
+
             Bar infers AbstractElement:
                 prop='Bar'
             ;
-            
+
             terminal ID: /[_a-zA-Z][\\w_]*/;
         `);
         const rule1Assignment = streamContents(validation.document.parseResult.value.rules[1])
@@ -339,15 +340,15 @@ describe('Property type is not a mix of cross-ref and non-cross-ref types.', () 
             interface Rule {
                 name: 'string'
             }
-            
+
             interface Rule1 {
                 prop: @Rule
             }
-            
+
             interface Rule2 {
                 prop: Rule
             }
-            
+
             interface Rule3 {
                 prop: 'string' | Rule
             }
@@ -394,14 +395,14 @@ describe('Property types validation takes in account types hierarchy', () => {
             QualifiedRef returns QualifiedRef: qualifier=NamedRef ref=[Named];
             QualifiedRefWithAction infers Expression: NamedRef {QualifiedRef.qualifier=current} '.' ref=[Named];
             terminal ID: /[_a-zA-Z][\\w_]*/;
-            
+
             interface NamedRef {
                 ref: @Named
             }
-            
+
             interface QualifiedRef extends NamedRef {
                 qualifier: Expression
-            }        
+            }
         `);
 
         expectNoIssues(validation);
@@ -429,10 +430,10 @@ describe('Property types validation takes in account types hierarchy', () => {
                 right: Expression
                 operator: string
             }
-            
+
             Expression:
                 PrimaryExpression ({BinaryExpression.left=current} operator=('+' | '-') right=PrimaryExpression)*;
-            
+
             PrimaryExpression infers Expression:
                 {infer NumberLiteral} value=NUMBER;
 
@@ -446,12 +447,12 @@ describe('Property types validation takes in account types hierarchy', () => {
         const validation = await validate(`
             X: name=ID;
             AliasX: X;
-            
+
             interface YType {
                 prop: AliasX
             }
             Y returns YType: prop=X;
-            
+
             interface ZType {
                 prop: X
             }
@@ -468,21 +469,21 @@ describe('Property types validation takes in account types hierarchy', () => {
             interface Y {
                 y: Z1
             }
-            
+
             interface Z {
                 name: string
             }
-            
+
             interface Z1 extends Z {
                 z: number
             }
-            
+
             interface Z2 extends Z {
                 a: string
             }
-            
+
             Y returns Y: y=Z2;
-            
+
             Z1 returns Z1: z=NUMBER name=ID;
             Z2 returns Z2: a=ID name=ID;
 

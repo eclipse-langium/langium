@@ -4,6 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import { afterEach, beforeAll, describe, expect, test } from 'vitest';
 import { DiagnosticSeverity } from 'vscode-languageserver';
 import { AstNode, createLangiumGrammarServices, EmptyFileSystem, GrammarAST, Properties, streamAllContents, streamContents } from '../../src';
 import { Assignment, isAssignment } from '../../src/grammar/generated/ast';
@@ -419,7 +420,7 @@ describe('Whitespace keywords', () => {
 
     const grammar = `
     ParserRule: name='x' ' ' '' 'x y';
-    terminal TerminalRule: ' ' | 'x'; 
+    terminal TerminalRule: ' ' | 'x';
     terminal STR: /[_a-zA-Z][\\w_]*/;
     `.trim();
 
@@ -473,7 +474,7 @@ describe('Clashing token names', () => {
     test('Local terminal clashing with local keyword', async () => {
         const text = `
         Rule: a='a';
-        terminal a: /a/; 
+        terminal a: /a/;
         `;
         const validation = await validate(text);
         const terminal = locator.getAstNode(validation.document.parseResult.value, '/rules@1')!;

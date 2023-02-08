@@ -4,6 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import { beforeAll, describe, expect, test } from 'vitest';
 import { Utils } from 'vscode-uri';
 import { createLangiumGrammarServices, EmptyFileSystem, Grammar } from '../../../src';
 import { CrossReference, InferredType, Interface } from '../../../src/grammar/generated/ast';
@@ -31,8 +32,8 @@ describe('Type Linking', () => {
         terminal ID: /[_a-zA-Z][\\w_]*/;
         `);
         await services.shared.workspace.DocumentBuilder.build([grammar]);
-        const reference = locator.getAstNode<CrossReference>(grammar, 'rules@2/definition/elements@1/terminal');
-        const inferredType = locator.getAstNode<InferredType>(grammar, 'rules@1/inferredType');
+        const reference = locator.getAstNode<CrossReference>(grammar.parseResult.value, 'rules@2/definition/elements@1/terminal');
+        const inferredType = locator.getAstNode<InferredType>(grammar.parseResult.value, 'rules@1/inferredType');
         expect(reference?.type.ref).toBe(inferredType);
     });
 
@@ -51,8 +52,8 @@ describe('Type Linking', () => {
             'B' b=[A:ID];
         `);
         await services.shared.workspace.DocumentBuilder.build([grammar2, grammar1]);
-        const reference = locator.getAstNode<CrossReference>(grammar2, 'rules@1/definition/elements@1/terminal');
-        const inferredType = locator.getAstNode<InferredType>(grammar1, 'rules@0/inferredType');
+        const reference = locator.getAstNode<CrossReference>(grammar2.parseResult.value, 'rules@1/definition/elements@1/terminal');
+        const inferredType = locator.getAstNode<InferredType>(grammar1.parseResult.value, 'rules@0/inferredType');
         expect(reference?.type.ref).toBe(inferredType);
     });
 
@@ -74,8 +75,8 @@ describe('Type Linking', () => {
         terminal ID: /[_a-zA-Z][\\w_]*/;
         `);
         await services.shared.workspace.DocumentBuilder.build([grammar]);
-        const reference = locator.getAstNode<CrossReference>(grammar, 'rules@2/definition/elements@1/terminal');
-        const declaredType = locator.getAstNode<Interface>(grammar, 'interfaces@0');
+        const reference = locator.getAstNode<CrossReference>(grammar.parseResult.value, 'rules@2/definition/elements@1/terminal');
+        const declaredType = locator.getAstNode<Interface>(grammar.parseResult.value, 'interfaces@0');
         expect(reference?.type.ref).toBe(declaredType);
     });
 
@@ -100,8 +101,8 @@ describe('Type Linking', () => {
             'B' b=[A:ID];
         `);
         await services.shared.workspace.DocumentBuilder.build([grammar2, grammar1]);
-        const reference = locator.getAstNode<CrossReference>(grammar2, 'rules@1/definition/elements@1/terminal');
-        const declaredType = locator.getAstNode<Interface>(grammar1, 'interfaces@0');
+        const reference = locator.getAstNode<CrossReference>(grammar2.parseResult.value, 'rules@1/definition/elements@1/terminal');
+        const declaredType = locator.getAstNode<Interface>(grammar1.parseResult.value, 'interfaces@0');
         expect(reference?.type.ref).toBe(declaredType);
     });
 
