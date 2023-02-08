@@ -70,7 +70,7 @@ export function expandToNode(staticParts: TemplateStringsArray, ...substitutions
 
 /**
  * Convenience function for creating a {@link CompositeGeneratorNode} being configured with the
- *  provided tracing information in form of `{astNode, property?, index?}` and appending content
+ *  provided tracing information in form of `{astNode, property?, index: undefined}` and appending content
  *  in form of a template.
  *
  * This function returns a tag function that takes the desired template and does the processing
@@ -82,18 +82,40 @@ export function expandToNode(staticParts: TemplateStringsArray, ...substitutions
  * @param property the value property name (string) corresponding to the appended content,
  *  if e.g. the content corresponds to some `string` or `number` property of `astNode`, is optional
  *
- * @param index the index of the value within a list property corresponding to the appended content,
- *  if the property contains a list of elements, is ignored otherwise, is optinal,
- *  should not be given if no `property` is given
- *
  * @returns a tag function behaving as described above, which in turn returns a {@link CompositeGeneratorNode}.
  *
  * @example
  *   expandTracedToNode(entity)`
- *       Hello ${ traceToNode(entity, name)(entity.name) }
+ *       Hello ${ traceToNode(entity, 'name')(entity.name) }
  *   `.appendNewLine()
  */
-export function expandTracedToNode<T extends AstNode>(astNode: T, property?: Properties<T>, index?: number): (staticParts: TemplateStringsArray, ...substitutions: unknown[]) => CompositeGeneratorNode;
+export function expandTracedToNode<T extends AstNode>(astNode: T, property?: Properties<T>): (staticParts: TemplateStringsArray, ...substitutions: unknown[]) => CompositeGeneratorNode;
+
+/**
+ * Convenience function for creating a {@link CompositeGeneratorNode} being configured with the
+ *  provided tracing information in form of `{astNode, property, index}` and appending content
+ *  in form of a template.
+ *
+ * This function returns a tag function that takes the desired template and does the processing
+ *  by delegating to {@link expandToNode} and {@link traceToNode} and finally returning the
+ *  resulting generator node.
+ *
+ * @param astNode the AstNode corresponding to the appended content
+ *
+ * @param property the value property name (string) corresponding to the appended content,
+ *  if e.g. the content corresponds to some `string` or `number` property of `astNode`
+ *
+ * @param index the index of the value within a list property corresponding to the appended content,
+ *  if the property contains a list of elements, is ignored otherwise
+ *
+ * @returns a tag function behaving as described above, which in turn returns a {@link CompositeGeneratorNode}.
+ *
+ * @example
+ *   expandTracedToNode(entity, 'definitions', 0)`
+ *       Hello ${ traceToNode(entity, 'name')(entity.name) }
+ *   `.appendNewLine()
+ */
+export function expandTracedToNode<T extends AstNode>(astNode: T, property: Properties<T>, index?: number | undefined): (staticParts: TemplateStringsArray, ...substitutions: unknown[]) => CompositeGeneratorNode;
 
 /**
  * Convenience function for creating a {@link CompositeGeneratorNode} being configured with the
@@ -111,8 +133,8 @@ export function expandTracedToNode<T extends AstNode>(astNode: T, property?: Pro
  * @returns a tag function behaving as described above, which in turn returns a {@link CompositeGeneratorNode}.
  *
  * @example
- *   expandTracedToNode(entify.$cstNode)`
- *       Hello ${ traceToNode(entity, name)(entity.name) }
+ *   expandTracedToNode(entity.$cstNode)`
+ *       Hello ${ traceToNode(entity, 'name')(entity.name) }
  *   `.appendNewLine()
  */
 export function expandTracedToNode(sourceRegion: SourceRegion | undefined): (staticParts: TemplateStringsArray, ...substitutions: unknown[]) => CompositeGeneratorNode;
@@ -140,7 +162,7 @@ export function expandTracedToNode(sourceRegion: SourceRegion | undefined): (sta
  *      findNodeForKeyword(entity.$cstNode, '{')!,
  *      findNodeForKeyword(entity.$cstNode, '}')!
  *   ])`
- *       Hello ${ traceToNode(entity, name)(entity.name) }
+ *       Hello ${ traceToNode(entity, 'name')(entity.name) }
  *   `.appendNewLine()
  */
 export function expandTracedToNode(sourceRegions: SourceRegion[]): (staticParts: TemplateStringsArray, ...substitutions: unknown[]) => CompositeGeneratorNode;
@@ -148,7 +170,7 @@ export function expandTracedToNode(sourceRegions: SourceRegion[]): (staticParts:
 // implementation:
 export function expandTracedToNode<T extends AstNode>(source: T | undefined | SourceRegion | SourceRegion[], property?: Properties<T>, index?: number): (staticParts: TemplateStringsArray, ...substitutions: unknown[]) => CompositeGeneratorNode {
     return (staticParts: TemplateStringsArray, ...substitutions: unknown[]) => {
-        return traceToNode(source as T, property, index)(
+        return traceToNode(source as T, property!, index)(
             expandToNode(staticParts, ...substitutions)
         );
     };
@@ -156,7 +178,7 @@ export function expandTracedToNode<T extends AstNode>(source: T | undefined | So
 
 /**
  * Convenience function for creating a {@link CompositeGeneratorNode} being configured with the
- *  provided tracing information in form of `{astNode, property?, index?}` and appending content
+ *  provided tracing information in form of `{astNode, property?, index: undefined}` and appending content
  *  in form of a template, if `condition` is equal to `true`.
  *
  * If `condition` is satisfied, this function returns a tag function that takes the desired template
@@ -170,18 +192,43 @@ export function expandTracedToNode<T extends AstNode>(source: T | undefined | So
  * @param property the value property name (string) corresponding to the appended content,
  *  if e.g. the content corresponds to some `string` or `number` property of `astNode`, is optional
  *
- * @param index the index of the value within a list property corresponding to the appended content,
- *  if the property contains a list of elements, is ignored otherwise, is optinal,
- *  should not be given if no `property` is given
- *
  * @returns a tag function behaving as described above, which in turn returns a {@link CompositeGeneratorNode}.
  *
  * @example
  *   expandTracedToNodeIf(entity !== undefined, entity)`
- *       Hello ${ traceToNode(entity, name)(entity.name) }
+ *       Hello ${ traceToNode(entity, 'name')(entity.name) }
  *   `.appendNewLine()
  */
-export function expandTracedToNodeIf<T extends AstNode>(condition: boolean, astNode: T, property?: Properties<T>, index?: number): // eslint-disable-next-line @typescript-eslint/indent
+export function expandTracedToNodeIf<T extends AstNode>(condition: boolean, astNode: T, property?: Properties<T>): // eslint-disable-next-line @typescript-eslint/indent
+        (staticParts: TemplateStringsArray, ...substitutions: unknown[]) => CompositeGeneratorNode | undefined;
+
+/**
+ * Convenience function for creating a {@link CompositeGeneratorNode} being configured with the
+ *  provided tracing information in form of `{astNode, property, index}` and appending content
+ *  in form of a template, if `condition` is equal to `true`.
+ *
+ * If `condition` is satisfied, this function returns a tag function that takes the desired template
+ *  and does the processing by delegating to {@link expandToNode} and {@link traceToNode} and
+ *  finally returning the resulting generator node. Otherwise, the returned function just returns `undefined`.
+ *
+ * @param condition a boolean value indicating whether to evaluate the provided template.
+ *
+ * @param astNode the AstNode corresponding to the appended content
+ *
+ * @param property the value property name (string) corresponding to the appended content,
+ *  if e.g. the content corresponds to some `string` or `number` property of `astNode`
+ *
+ * @param index the index of the value within a list property corresponding to the appended content,
+ *  if the property contains a list of elements, is ignored otherwise
+ *
+ * @returns a tag function behaving as described above, which in turn returns a {@link CompositeGeneratorNode}.
+ *
+ * @example
+ *   expandTracedToNodeIf(entity !== undefined, entity, 'definitions', 0)`
+ *       Hello ${ traceToNode(entity, 'name')(entity.name) }
+ *   `.appendNewLine()
+ */
+export function expandTracedToNodeIf<T extends AstNode>(condition: boolean, astNode: T, property: Properties<T>, index: number | undefined): // eslint-disable-next-line @typescript-eslint/indent
         (staticParts: TemplateStringsArray, ...substitutions: unknown[]) => CompositeGeneratorNode | undefined;
 
 /**
@@ -204,8 +251,8 @@ export function expandTracedToNodeIf<T extends AstNode>(condition: boolean, astN
  * @returns a tag function behaving as described above, which in turn returns a {@link CompositeGeneratorNode}.
  *
  * @example
- *   expandTracedToNodeIf(entity !== undefined, entify.$cstNode)`
- *       Hello ${ traceToNode(entity, name)(entity.name) }
+ *   expandTracedToNodeIf(entity !== undefined, entity.$cstNode)`
+ *       Hello ${ traceToNode(entity, 'name')(entity.name) }
  *   `.appendNewLine()
  */
 export function expandTracedToNodeIf(condition: boolean, sourceRegion: SourceRegion | undefined | (() => SourceRegion | undefined )): // eslint-disable-next-line @typescript-eslint/indent
@@ -237,7 +284,7 @@ export function expandTracedToNodeIf(condition: boolean, sourceRegion: SourceReg
  *      findNodeForKeyword(entity.$cstNode, '{')!,
  *      findNodeForKeyword(entity.$cstNode, '}')!
  *   ])`
- *       Hello ${ traceToNode(entity, name)(entity.name) }
+ *       Hello ${ traceToNode(entity, 'name')(entity.name) }
  *   `.appendNewLine()
  */
 export function expandTracedToNodeIf(condition: boolean, sourceRegions: SourceRegion[]): // eslint-disable-next-line @typescript-eslint/indent
@@ -246,7 +293,7 @@ export function expandTracedToNodeIf(condition: boolean, sourceRegions: SourceRe
 // implementation:
 export function expandTracedToNodeIf<T extends AstNode>(condition: boolean, source: T | undefined | SourceRegion | SourceRegion[] | (() => undefined | SourceRegion | SourceRegion[]), property?: Properties<T>, index?: number): // eslint-disable-next-line @typescript-eslint/indent
         (staticParts: TemplateStringsArray, ...substitutions: unknown[]) => CompositeGeneratorNode | undefined {
-    return condition ? expandTracedToNode((typeof source === 'function' ? source() : source) as T, property, index) : () => undefined;
+    return condition ? expandTracedToNode((typeof source === 'function' ? source() : source) as T, property!, index) : () => undefined;
 }
 
 type TemplateProps = {

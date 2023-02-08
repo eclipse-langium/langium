@@ -98,7 +98,7 @@ export class CompositeGeneratorNode {
     }
 
     /**
-     * Adds tracing information in form of `{astNode, property?, index?}` to `this` generator node.
+     * Adds tracing information in form of `{astNode, property?, index: undefined}` to `this` generator node.
      * Overwrites existing trace data, if set previously.
      *
      * The given data are kept as they are, the actual resolution of text positions within the DSL text
@@ -109,13 +109,28 @@ export class CompositeGeneratorNode {
      * @param property the value property name (string) corresponding to `this` node's content,
      *  e.g. if this node's content corresponds to some `string` or `number` property; is optional
      *
+     * @returns `this` {@link CompositeGeneratorNode} for convenience.
+     */
+    trace<T extends AstNode>(astNode: T, property?: Properties<T>): this;
+
+    /**
+     * Adds tracing information in form of `{astNode, property, index}` to `this` generator node.
+     * Overwrites existing trace data, if set previously.
+     *
+     * The given data are kept as they are, the actual resolution of text positions within the DSL text
+     * is done at the final processing of `this` node as part of {@link toStringAndTrace()}.
+     *
+     * @param astNode the AstNode corresponding to `this` node's content
+     *
+     * @param property the value property name (string) corresponding to `this` node's content,
+     *  e.g. if this node's content corresponds to some `string` or `number` property
+     *
      * @param index the index of the value within a list property corresponding to `this` node's content,
-     * if the property contains a list of elements, is ignored otherwise,
-     * must not be given if no `property` is given ; is optinal
+     * if the property contains a list of elements, is ignored otherwise
      *
      * @returns `this` {@link CompositeGeneratorNode} for convenience.
      */
-    trace<T extends AstNode>(astNode: T, property?: Properties<T>, index?: number): this;
+    trace<T extends AstNode>(astNode: T, property: Properties<T>, index: number | undefined): this;
 
     /**
      * Adds tracing information in form of concrete coordinates to `this` generator node. Complete coordinates
@@ -366,7 +381,7 @@ export class CompositeGeneratorNode {
 
     /**
      * Convenience method for appending content to `this` generator node including tracing information
-     * in form of `{astNode, property?, index?}`.
+     * in form of `{astNode, property?, index: undefined}`.
      *
      * This method returns a helper function that takes the desired `content` and does the processing.
      * The returned function delegates to {@link append}, with the provided `content` being
@@ -377,9 +392,31 @@ export class CompositeGeneratorNode {
      * @param property the value property name (string) corresponding to the appended content,
      *  if e.g. the content corresponds to some `string` or `number` property of `astNode`, is optional
      *
+     * @returns a function behaving as described above, which in turn returns `this` {@link CompositeGeneratorNode} for convenience.
+     *
+     * @example
+     *   new CompositeGeneratorNode().appendTemplate
+     *       `Hello World!`
+     *   .appendNewLine().append('Hello ').appendTraced(entity, 'name')(entity.name)
+     *   .appendNewLineIfNotEmpty()
+     */
+    appendTraced<T extends AstNode>(astNode: T, property?: Properties<T>): (...content: Array<Generated | ((node: CompositeGeneratorNode) => void)>) => this;
+
+    /**
+     * Convenience method for appending content to `this` generator node including tracing information
+     * in form of `{astNode, property, index}`.
+     *
+     * This method returns a helper function that takes the desired `content` and does the processing.
+     * The returned function delegates to {@link append}, with the provided `content` being
+     *  wrapped by an additional {@link CompositeGeneratorNode} configured with the tracing information.
+     *
+     * @param astNode the AstNode corresponding to the appended content
+     *
+     * @param property the value property name (string) corresponding to the appended content,
+     *  if e.g. the content corresponds to some `string` or `number` property of `astNode`
+     *
      * @param index the index of the value within a list property corresponding to the appended content,
-     *  if the property contains a list of elements, is ignored otherwise, is optinal,
-     *  should not be given if no `property` is given
+     *  if the property contains a list of elements, is ignored otherwise
      *
      * @returns a function behaving as described above, which in turn returns `this` {@link CompositeGeneratorNode} for convenience.
      *
@@ -389,7 +426,7 @@ export class CompositeGeneratorNode {
      *   .appendNewLine().append('Hello ').appendTraced(entity, 'name')(entity.name)
      *   .appendNewLineIfNotEmpty()
      */
-    appendTraced<T extends AstNode>(astNode: T, property?: Properties<T>, index?: number): (...content: Array<Generated | ((node: CompositeGeneratorNode) => void)>) => this;
+    appendTraced<T extends AstNode>(astNode: T, property: Properties<T>, index: number | undefined): (...content: Array<Generated | ((node: CompositeGeneratorNode) => void)>) => this;
 
     /**
      * Convenience method for appending content to `this` generator node including tracing information
@@ -440,14 +477,14 @@ export class CompositeGeneratorNode {
     appendTraced<T extends AstNode>(source: T | undefined | SourceRegion | SourceRegion[], property?: Properties<T>, index?: number): (...content: Array<Generated | ((node: CompositeGeneratorNode) => void)>) => this {
         return content => {
             return this.append(
-                new CompositeGeneratorNode().trace(source as T, property, index).append(content)
+                new CompositeGeneratorNode().trace(source as T, property!, index).append(content)
             );
         };
     }
 
     /**
      * Convenience method for appending content to `this` generator node including tracing information
-     *  in form of `{astNode, property?, index?}`, if `condition` is equal to `true`.
+     *  in form of `{astNode, property?, index: undefined}`, if `condition` is equal to `true`.
      *
      * This method returns a tag function that takes the desired template and does the processing.
      *
@@ -460,9 +497,33 @@ export class CompositeGeneratorNode {
      * @param property the value property name (string) corresponding to the appended content,
      *  if e.g. the content corresponds to some `string` or `number` property of `astNode`, is optional
      *
+     * @returns a function behaving as described above, which in turn returns `this` {@link CompositeGeneratorNode} for convenience.
+     *
+     * @example
+     *   new CompositeGeneratorNode().appendTemplate
+     *       `Hello World!`
+     *   .appendNewLine().appendIf(entity !== undefined, 'Hello ').appendTracedIf(entity !== undefined, entity, 'name')(entity?.name)
+     *   .appendNewLineIfNotEmpty()
+     */
+    appendTracedIf<T extends AstNode>(condition: boolean, astNode: T, property?: Properties<T>): (...content: Array<Generated | ((node: CompositeGeneratorNode) => void)>) => this;
+
+    /**
+     * Convenience method for appending content to `this` generator node including tracing information
+     *  in form of `{astNode, property, index}`, if `condition` is equal to `true`.
+     *
+     * This method returns a tag function that takes the desired template and does the processing.
+     *
+     * If `condition` is satisfied the returned function delegates to {@link appendTraced}, otherwise it returns just `this`.
+     *
+     * @param condition a boolean value indicating whether to append the template content to `this`.
+     *
+     * @param astNode the AstNode corresponding to the appended content
+     *
+     * @param property the value property name (string) corresponding to the appended content,
+     *  if e.g. the content corresponds to some `string` or `number` property of `astNode`
+     *
      * @param index the index of the value within a list property corresponding to the appended content,
-     *  if the property contains a list of elements, is ignored otherwise, is optinal,
-     *  should not be given if no `property` is given
+     *  if the property contains a list of elements, is ignored otherwise
      *
      * @returns a function behaving as described above, which in turn returns `this` {@link CompositeGeneratorNode} for convenience.
      *
@@ -472,7 +533,7 @@ export class CompositeGeneratorNode {
      *   .appendNewLine().appendIf(entity !== undefined, 'Hello ').appendTracedIf(entity !== undefined, entity, 'name')(entity?.name)
      *   .appendNewLineIfNotEmpty()
      */
-    appendTracedIf<T extends AstNode>(condition: boolean, astNode: T, property?: Properties<T>, index?: number): (...content: Array<Generated | ((node: CompositeGeneratorNode) => void)>) => this;
+    appendTracedIf<T extends AstNode>(condition: boolean, astNode: T, property: Properties<T>, index: number | undefined): (...content: Array<Generated | ((node: CompositeGeneratorNode) => void)>) => this;
 
     /**
      * Convenience method for appending content to `this` generator node including tracing information
@@ -528,12 +589,12 @@ export class CompositeGeneratorNode {
 
     // implementation:
     appendTracedIf<T extends AstNode>(condition: boolean, source: T | undefined | SourceRegion | SourceRegion[] | (() => undefined | SourceRegion | SourceRegion[]), property?: Properties<T>, index?: number): (...content: Array<Generated | ((node: CompositeGeneratorNode) => void)>) => this {
-        return condition ? this.appendTraced((typeof source === 'function' ? source() : source) as T, property, index) : () => this;
+        return condition ? this.appendTraced((typeof source === 'function' ? source() : source) as T, property!, index) : () => this;
     }
 
     /**
      * Convenience method for appending content in form of a template to `this` generator node including tracing
-     *  information in form of `{astNode, property?, index?}`.
+     *  information in form of `{astNode, property?, index: undefined}`.
      *
      * This method returns a tag function that takes the desired template and does the processing by delegating to
      * {@link expandTracedToNode}.
@@ -542,10 +603,6 @@ export class CompositeGeneratorNode {
      *
      * @param property the value property name (string) corresponding to the appended content,
      *  if e.g. the content corresponds to some `string` or `number` property of `astNode`, is optional
-     *
-     * @param index the index of the value within a list property corresponding to the appended content,
-     *  if the property contains a list of elements, is ignored otherwise, is optinal,
-     *  should not be given if no `property` is given
      *
      * @returns a tag function behaving as described above, which in turn returns `this` {@link CompositeGeneratorNode} for convenience.
      *
@@ -556,7 +613,33 @@ export class CompositeGeneratorNode {
      *       `Hello ${entity?.name}!`
      *   .appendNewLineIfNotEmpty()
      */
-    appendTracedTemplate<T extends AstNode>(astNode: T, property?: Properties<T>, index?: number): (staticParts: TemplateStringsArray, ...substitutions: unknown[]) => this;
+    appendTracedTemplate<T extends AstNode>(astNode: T, property?: Properties<T>): (staticParts: TemplateStringsArray, ...substitutions: unknown[]) => this;
+
+    /**
+     * Convenience method for appending content in form of a template to `this` generator node including tracing
+     *  information in form of `{astNode, property, index}`.
+     *
+     * This method returns a tag function that takes the desired template and does the processing by delegating to
+     * {@link expandTracedToNode}.
+     *
+     * @param astNode the AstNode corresponding to the appended content
+     *
+     * @param property the value property name (string) corresponding to the appended content,
+     *  if e.g. the content corresponds to some `string` or `number` property of `astNode`
+     *
+     * @param index the index of the value within a list property corresponding to the appended content,
+     *  if the property contains a list of elements, is ignored otherwise, is optinal
+     *
+     * @returns a tag function behaving as described above, which in turn returns `this` {@link CompositeGeneratorNode} for convenience.
+     *
+     * @example
+     *   new CompositeGeneratorNode().appendTemplate
+     *       `Hello World!`
+     *   .appendNewLine().appendTracedTemplate(entity, 'name')
+     *       `Hello ${entity?.name}!`
+     *   .appendNewLineIfNotEmpty()
+     */
+    appendTracedTemplate<T extends AstNode>(astNode: T, property: Properties<T>, index: number | undefined): (staticParts: TemplateStringsArray, ...substitutions: unknown[]) => this;
 
     /**
      * Convenience method for appending content in form of a template to `this` generator node including tracing
@@ -607,14 +690,14 @@ export class CompositeGeneratorNode {
     appendTracedTemplate<T extends AstNode>(source: T | undefined | SourceRegion | SourceRegion[], property?: Properties<T>, index?: number): (staticParts: TemplateStringsArray, ...substitutions: unknown[]) => this {
         return (staticParts: TemplateStringsArray, ...substitutions: unknown[]) => {
             return this.append(
-                expandTracedToNode(source as T, property, index )(staticParts, ...substitutions)
+                expandTracedToNode(source as T, property!, index )(staticParts, ...substitutions)
             );
         };
     }
 
     /**
      * Convenience method for appending content in form of a template to `this` generator node including tracing information
-     *  in form of `{astNode, property?, index?}`, if `condition` is equal to `true`.
+     *  in form of `{astNode, property?, index: undefined}`, if `condition` is equal to `true`.
      *
      * This method returns a tag function that takes the desired template and does the processing.
      *
@@ -628,9 +711,35 @@ export class CompositeGeneratorNode {
      * @param property the value property name (string) corresponding to the appended content,
      *  if e.g. the content corresponds to some `string` or `number` property of `astNode`, is optional
      *
+     * @returns a tag function behaving as described above, which in turn returns `this` {@link CompositeGeneratorNode} for convenience.
+     *
+     * @example
+     *   new CompositeGeneratorNode().appendTemplate
+     *       `Hello World!`
+     *   .appendNewLine().appendTracedTemplateIf(entity?.name !== undefined, entity)
+     *       `Hello ${entity?.name}!`
+     *   .appendNewLineIfNotEmpty()
+     */
+    appendTracedTemplateIf<T extends AstNode>(condition: boolean, astNode: T, property?: Properties<T>): (staticParts: TemplateStringsArray, ...substitutions: unknown[]) => this;
+
+    /**
+     * Convenience method for appending content in form of a template to `this` generator node including tracing information
+     *  in form of `{astNode, property, index}`, if `condition` is equal to `true`.
+     *
+     * This method returns a tag function that takes the desired template and does the processing.
+     *
+     * If `condition` is satisfied the tagged template delegates to {@link appendTracedTemplate}, otherwise it returns just `this`.
+     * See also {@link expandTracedToNode} for details.
+     *
+     * @param condition a boolean value indicating whether to append the template content to `this`.
+     *
+     * @param astNode the AstNode corresponding to the appended content
+     *
+     * @param property the value property name (string) corresponding to the appended content,
+     *  if e.g. the content corresponds to some `string` or `number` property of `astNode`
+     *
      * @param index the index of the value within a list property corresponding to the appended content,
-     *  if the property contains a list of elements, is ignored otherwise, is optinal,
-     *  should not be given if no `property` is given
+     *  if the property contains a list of elements, is ignored otherwise
      *
      * @returns a tag function behaving as described above, which in turn returns `this` {@link CompositeGeneratorNode} for convenience.
      *
@@ -641,7 +750,7 @@ export class CompositeGeneratorNode {
      *       `Hello ${entity?.name}!`
      *   .appendNewLineIfNotEmpty()
      */
-    appendTracedTemplateIf<T extends AstNode>(condition: boolean, astNode: T, property?: Properties<T>, index?: number): (staticParts: TemplateStringsArray, ...substitutions: unknown[]) => this;
+    appendTracedTemplateIf<T extends AstNode>(condition: boolean, astNode: T, property: Properties<T>, index: number | undefined): (staticParts: TemplateStringsArray, ...substitutions: unknown[]) => this;
 
     /**
      * Convenience method for appending content in form of a template to `this` generator node including tracing information
@@ -701,13 +810,13 @@ export class CompositeGeneratorNode {
 
     // implementation:
     appendTracedTemplateIf<T extends AstNode>(condition: boolean, source: T | undefined | SourceRegion | SourceRegion[] | (() => undefined | SourceRegion | SourceRegion[]), property?: Properties<T>, index?: number): (staticParts: TemplateStringsArray, ...substitutions: unknown[]) => this {
-        return condition ? this.appendTracedTemplate((typeof source === 'function' ? source() : source) as T, property, index) : () => this;
+        return condition ? this.appendTracedTemplate((typeof source === 'function' ? source() : source) as T, property!, index) : () => this;
     }
 }
 
 /**
  * Convenience function for attaching tracing information to content of type `Generated`,
- *  in form of `{astNode, property?, index?}`.
+ *  in form of `{astNode, property?, index: undefined}`.
  *
  * This method returns a helper function that takes the desired `content` and does the processing.
  * The returned function will create and return a new {@link CompositeGeneratorNode} being initialized
@@ -721,9 +830,35 @@ export class CompositeGeneratorNode {
  * @param property the value property name (string) corresponding to the appended content,
  *  if e.g. the content corresponds to some `string` or `number` property of `astNode`, is optional
  *
+ * @returns a function behaving as described above, which in turn returns a {@link CompositeGeneratorNode}.
+ *
+ * @example
+ *   new CompositeGeneratorNode().appendTemplate
+ *       `Hello World!`
+ *   .appendNewLine().appendTracedTemplate(entity)
+ *       `Hello ${ traceToNode(entity, 'name')(entity.name) }`
+ *   .appendNewLineIfNotEmpty()
+ */
+export function traceToNode<T extends AstNode>(astNode: T, property?: Properties<T>): (content?: Generated | ((node: CompositeGeneratorNode) => void)) => CompositeGeneratorNode;
+
+/**
+ * Convenience function for attaching tracing information to content of type `Generated`,
+ *  in form of `{astNode, property, index}`.
+ *
+ * This method returns a helper function that takes the desired `content` and does the processing.
+ * The returned function will create and return a new {@link CompositeGeneratorNode} being initialized
+ *  with the given tracing information and add some `content`, if provided.
+ *
+ * Exception: if `content` is already a {@link CompositeGeneratorNode} containing no tracing information,
+ *  that node is enriched with the given tracing information and returned, and no wrapping node is created.
+ *
+ * @param astNode the AstNode corresponding to the appended content
+ *
+ * @param property the value property name (string) corresponding to the appended content,
+ *  if e.g. the content corresponds to some `string` or `number` property of `astNode`
+ *
  * @param index the index of the value within a list property corresponding to the appended content,
- *  if the property contains a list of elements, is ignored otherwise, is optinal,
- *  should not be given if no `property` is given
+ *  if the property contains a list of elements, is ignored otherwise
  *
  * @returns a function behaving as described above, which in turn returns a {@link CompositeGeneratorNode}.
  *
@@ -734,7 +869,7 @@ export class CompositeGeneratorNode {
  *       `Hello ${ traceToNode(entity, 'name')(entity.name) }`
  *   .appendNewLineIfNotEmpty()
  */
-export function traceToNode<T extends AstNode>(astNode: T, property?: Properties<T>, index?: number): (content?: Generated | ((node: CompositeGeneratorNode) => void)) => CompositeGeneratorNode;
+export function traceToNode<T extends AstNode>(astNode: T, property: Properties<T>, index: number | undefined): (content?: Generated | ((node: CompositeGeneratorNode) => void)) => CompositeGeneratorNode;
 
 /**
  * Convenience function for attaching tracing information to content of type `Generated`,
@@ -793,18 +928,18 @@ export function traceToNode(sourceRegions: SourceRegion[]): (content?: Generated
 export function traceToNode<T extends AstNode>(astNode: T | undefined | SourceRegion | SourceRegion[], property?: Properties<T>, index?: number): (content?: Generated | ((node: CompositeGeneratorNode) => void)) => CompositeGeneratorNode {
     return content => {
         if (content instanceof CompositeGeneratorNode && content.tracedSource === undefined) {
-            return (content as CompositeGeneratorNode).trace(astNode as T, property, index);
+            return (content as CompositeGeneratorNode).trace(astNode as T, property!, index);
         } else {
             // a `content !== undefined` check is skipped here on purpose in order to let this method always return a result;
             // dropping empty generator nodes is considered a post processing optimization.
-            return new CompositeGeneratorNode().trace(astNode as T, property, index).append(content);
+            return new CompositeGeneratorNode().trace(astNode as T, property!, index).append(content);
         }
     };
 }
 
 /**
  * Convenience function for attaching tracing information to content of type `Generated`,
- *  in form of `{astNode, property?, index?}`, if `condition` is equal to `true`.
+ *  in form of `{astNode, property?, index: undefined}`, if `condition` is equal to `true`.
  *
  * If `condition` is satisfied, this method returns a helper function that takes the desired
  * `content` and does the processing. The returned function will create and return a new
@@ -821,9 +956,38 @@ export function traceToNode<T extends AstNode>(astNode: T | undefined | SourceRe
  * @param property the value property name (string) corresponding to the appended content,
  *  if e.g. the content corresponds to some `string` or `number` property of `astNode`, is optional
  *
+ * @returns a function behaving as described above, which in turn returns a {@link CompositeGeneratorNode}.
+ *
+ * @example
+ *   new CompositeGeneratorNode().appendTemplate
+ *       `Hello World!`
+ *   .appendNewLine().appendTracedTemplate(entity)
+ *       `Hello ${ traceToNodeIf(!!entity.name, entity, 'name')(entity.name) }`
+ *   .appendNewLineIfNotEmpty()
+ */
+export function traceToNodeIf<T extends AstNode>(condition: boolean, astNode: T, property?: Properties<T>): (content?: Generated | ((node: CompositeGeneratorNode) => void)) => CompositeGeneratorNode | undefined ;
+
+/**
+ * Convenience function for attaching tracing information to content of type `Generated`,
+ *  in form of `{astNode, property, index}`, if `condition` is equal to `true`.
+ *
+ * If `condition` is satisfied, this method returns a helper function that takes the desired
+ * `content` and does the processing. The returned function will create and return a new
+ * {@link CompositeGeneratorNode} being initialized with the given tracing information and
+ * add some `content`, if provided. Otherwise, the returned function just returns `undefined`.
+ *
+ * Exception: if `content` is already a {@link CompositeGeneratorNode} containing no tracing information,
+ *  that node is enriched with the given tracing information and returned, and no wrapping node is created.
+ *
+ * @param condition a boolean value indicating whether to apply the provided tracing information to the desired content.
+ *
+ * @param astNode the AstNode corresponding to the appended content
+ *
+ * @param property the value property name (string) corresponding to the appended content,
+ *  if e.g. the content corresponds to some `string` or `number` property of `astNode`
+ *
  * @param index the index of the value within a list property corresponding to the appended content,
- *  if the property contains a list of elements, is ignored otherwise, is optinal,
- *  should not be given if no `property` is given
+ *  if the property contains a list of elements, is ignored otherwise
  *
  * @returns a function behaving as described above, which in turn returns a {@link CompositeGeneratorNode}.
  *
@@ -834,7 +998,7 @@ export function traceToNode<T extends AstNode>(astNode: T | undefined | SourceRe
  *       `Hello ${ traceToNodeIf(!!entity.name, entity, 'name')(entity.name) }`
  *   .appendNewLineIfNotEmpty()
  */
-export function traceToNodeIf<T extends AstNode>(condition: boolean, astNode: T, property?: Properties<T>, index?: number): (content?: Generated | ((node: CompositeGeneratorNode) => void)) => CompositeGeneratorNode | undefined ;
+export function traceToNodeIf<T extends AstNode>(condition: boolean, astNode: T, property: Properties<T>, index: number | undefined): (content?: Generated | ((node: CompositeGeneratorNode) => void)) => CompositeGeneratorNode | undefined ;
 
 /**
  * Convenience function for attaching tracing information to content of type `Generated`,
@@ -901,7 +1065,7 @@ export function traceToNodeIf(condition: boolean, sourceRegions: SourceRegion[] 
 // implementation
 export function traceToNodeIf<T extends AstNode>(condition: boolean, source: T | undefined | SourceRegion | SourceRegion[] | (() => undefined | SourceRegion | SourceRegion[]), property?: Properties<T>, index?: number): // eslint-disable-next-line @typescript-eslint/indent
         (content?: Generated | ((node: CompositeGeneratorNode) => void)) => CompositeGeneratorNode | undefined {
-    return condition ? traceToNode((typeof source === 'function' ? source() : source) as T, property, index) : () => undefined;
+    return condition ? traceToNode((typeof source === 'function' ? source() : source) as T, property!, index) : () => undefined;
 }
 
 /**
