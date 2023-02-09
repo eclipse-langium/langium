@@ -12,7 +12,8 @@ import { createHelpers } from 'yeoman-test';
 const defaultAnswers = {
     extensionName: 'hello-world',
     rawLanguageName: 'Hello World',
-    fileExtension: '.hello'
+    fileExtension: '.hello',
+    openWith: false
 };
 
 describe('Check yeoman generator works', () => {

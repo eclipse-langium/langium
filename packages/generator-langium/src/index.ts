@@ -8,20 +8,19 @@ import Generator from 'yeoman-generator';
 import _ from 'lodash';
 import chalk from 'chalk';
 import path from 'path';
+import which from 'which';
 
 const TEMPLATE_DIR = '../langium-template';
 const USER_DIR = '.';
 
-const OPEN = '<%= ';
-const CLOSE = ' %>';
+const EXTENSION_NAME = /<%= extension-name %>/g;
+const RAW_LANGUAGE_NAME = /<%= RawLanguageName %>/g;
+const FILE_EXTENSION = /<%= file-extension %>/g;
+const FILE_EXTENSION_GLOB = /<%= file-glob-extension %>/g;
 
-const EXTENSION_NAME = 'extension-name';
-const RAW_LANGUAGE_NAME = 'RawLanguageName';
-const FILE_EXTENSION = 'file-extension';
-const FILE_EXTENSION_GLOB = 'file-glob-extension';
-
-const LANGUAGE_NAME = 'LanguageName';
-const LANGUAGE_ID = 'language-id';
+const LANGUAGE_NAME = /<%= LanguageName %>/g;
+const LANGUAGE_ID = /<%= language-id %>/g;
+const LANGUAGE_PATH_ID = /language-id/g;
 
 interface Answers {
     extensionName: string;
@@ -96,9 +95,13 @@ class LangiumGenerator extends Generator {
     }
 
     writing(): void {
-        const fileExtensions = [...new Set(this.answers.fileExtensions.split(',').map(ext => {
-            return ext.trim().replace('.', '');
-        }))];
+        const fileExtensions = Array.from(
+            new Set(
+                this.answers.fileExtensions
+                    .split(',')
+                    .map(ext => ext.replace(/\./g, '').trim())
+            )
+        );
         this.answers.fileExtensions = `[${fileExtensions.map(ext => `".${ext}"`).join(', ')}]`;
 
         const fileExtensionGlob = fileExtensions.length > 1 ? `{${fileExtensions.join(',')}}` : fileExtensions[0];
@@ -113,65 +116,71 @@ class LangiumGenerator extends Generator {
         const languageId = _.kebabCase(this.answers.rawLanguageName);
 
         this.sourceRoot(path.join(__dirname, TEMPLATE_DIR));
-        ['.', '.vscode', '.eslintrc.json', '.vscodeignore'].forEach(
-            (path: string) => {
-                const replaceTemplateWords = (
-                    answers: Answers,
-                    content: Buffer
-                ): string =>
-                    [
-                        [EXTENSION_NAME, this.answers.extensionName],
-                        [RAW_LANGUAGE_NAME, this.answers.rawLanguageName],
-                        [FILE_EXTENSION, this.answers.fileExtensions],
-                        [FILE_EXTENSION_GLOB, fileExtensionGlob],
-                        [LANGUAGE_NAME, languageName],
-                        [LANGUAGE_ID, languageId],
-                    ].reduce(
-                        (acc: string, [templateWord, userAnswer]) =>
-                            acc.replace(
-                                new RegExp(
-                                    `${OPEN}${templateWord}${CLOSE}`,
-                                    'g'
-                                ),
-                                userAnswer
-                            ),
-                        content.toString()
-                    );
 
-                const replaceTemplateNames = (
-                    answers: Answers,
-                    path: string
-                ): string =>
-                    path.replace(new RegExp(LANGUAGE_ID, 'g'), languageId);
-
-                this.fs.copy(
-                    this.templatePath(path),
-                    this.destinationPath(
-                        USER_DIR,
-                        this.answers.extensionName,
-                        path
-                    ),
-                    {
-                        process: (content: Buffer) =>
-                            replaceTemplateWords(this.answers, content),
-                        processDestinationPath: (path: string) =>
-                            replaceTemplateNames(this.answers, path),
-                    }
-                );
-            }
-        );
+        for (const path of ['.', '.vscode', '.eslintrc.json', '.vscodeignore']) {
+            this.fs.copy(
+                this.templatePath(path),
+                this._extensionPath(path),
+                {
+                    process: content =>
+                        this._replaceTemplateWords(fileExtensionGlob, languageName, languageId, content),
+                    processDestinationPath: path =>
+                        this._replaceTemplateNames(languageId, path),
+                }
+            );
+        }
     }
 
     install(): void {
-        const extensionPath = this.destinationPath(
-            USER_DIR,
-            this.answers.extensionName
-        );
+        const extensionPath = this._extensionPath();
 
         const opts = { cwd: extensionPath };
         this.spawnCommandSync('npm', ['install'], opts);
         this.spawnCommandSync('npm', ['run', 'langium:generate'], opts);
         this.spawnCommandSync('npm', ['run', 'build'], opts);
+    }
+
+    async end(): Promise<void> {
+        const code = await which('code');
+        if (code) {
+            const answer = await this.prompt({
+                type: 'list',
+                name: 'openWith',
+                message: 'Do you want to open the new folder with Visual Studio Code?',
+                choices: [
+                    {
+                        name: 'Open with `code`',
+                        value: code
+
+                    },
+                    {
+                        name: 'Skip',
+                        value: false
+                    }
+                ]
+            });
+            if (answer?.openWith) {
+                this.spawnCommand(answer.openWith, [this._extensionPath()]);
+            }
+        }
+    }
+
+    _extensionPath(...path: string[]): string {
+        return this.destinationPath(USER_DIR, this.answers.extensionName, ...path);
+    }
+
+    _replaceTemplateWords(fileExtensionGlob: string, languageName: string, languageId: string, content: Buffer): string {
+        return content.toString()
+            .replace(EXTENSION_NAME, this.answers.extensionName)
+            .replace(RAW_LANGUAGE_NAME, this.answers.rawLanguageName)
+            .replace(FILE_EXTENSION, this.answers.fileExtensions)
+            .replace(FILE_EXTENSION_GLOB, fileExtensionGlob)
+            .replace(LANGUAGE_NAME, languageName)
+            .replace(LANGUAGE_ID, languageId);
+    }
+
+    _replaceTemplateNames(languageId: string, path: string): string {
+        return path.replace(LANGUAGE_PATH_ID, languageId);
     }
 }
 
