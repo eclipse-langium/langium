@@ -20,7 +20,7 @@ require('esbuild').build({
     loader: { '.ts': 'ts' },
     external: ['vscode'], // the vscode-module is created on-the-fly and must be excluded.
     platform: 'node', // VSCode extensions run in a node process
-    sourcemap: true,
+    sourcemap: !minify,
     watch: watch ? {
         onRebuild(error) {
             if (error) console.error(`${getTime()}Watch build failed`)
