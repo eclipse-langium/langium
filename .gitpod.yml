@@ -2,7 +2,7 @@ tasks:
   - before: npm install -g npm
     init:
       npm install
-      npm run build:clean
+      npm run build
 
 ports:
   - port: 6000-6999
