@@ -141,7 +141,7 @@ class LangiumGenerator extends Generator {
     }
 
     async end(): Promise<void> {
-        const code = await which('code');
+        const code = await which('code').catch(() => undefined);
         if (code) {
             const answer = await this.prompt({
                 type: 'list',
