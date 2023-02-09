@@ -1,6 +1,6 @@
 tasks:
-  - init: npm install
-    command: npm run build
+  - init: npm install && npm run build
+    command: npm run watch
 
 ports:
   - port: 6000-6999
