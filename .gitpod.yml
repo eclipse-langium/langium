@@ -1,8 +1,6 @@
 tasks:
-  - before: npm install -g npm
-    init: >
-      npm install &
-      npm run build
+  - init: npm install
+    command: npm run build
 
 ports:
   - port: 6000-6999
