@@ -112,7 +112,7 @@ export function collectAllAstResources(grammars: Grammar | Grammar[], documents?
         grammar.types.forEach(e => astResources.types.push(e));
 
         if (documents) {
-            const importedGrammars = grammar.imports.map(e => resolveImport(documents, e)!);
+            const importedGrammars = grammar.imports.map(e => resolveImport(documents, e)).filter((e): e is Grammar => e !== undefined);
             collectAllAstResources(importedGrammars, documents, visited, astResources);
         }
     }

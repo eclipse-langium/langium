@@ -10,6 +10,7 @@ import path from 'path';
 import type { GenerateOptions } from './generate';
 import { log } from './generator/util';
 import chalk from 'chalk';
+import _ from 'lodash';
 
 export interface Package {
     name: string
@@ -82,13 +83,21 @@ export async function loadConfigs(options: GenerateOptions): Promise<LangiumConf
             config.forEach(c => {
                 c[RelativePath] = relativePath;
             });
-            return config;
+            return setProjectNames(config);
         } else {
             config[RelativePath] = relativePath;
         }
-        return [config];
+        return setProjectNames([config]);
     } catch (err) {
         log('error', options, chalk.red('Failed to read config file.'), err);
         process.exit(1);
     }
+}
+
+function setProjectNames(configs: LangiumConfig[]): LangiumConfig[] {
+    for (const config of configs) {
+        config.projectName = _.camelCase(config.projectName);
+        config.projectName = config.projectName.charAt(0).toUpperCase() + config.projectName.slice(1);
+    }
+    return configs;
 }
