@@ -35,10 +35,12 @@
   "dependencies": {
     "chalk": "~4.1.2",
     "lodash": "~4.17.21",
+    "which": "~2.0.2",
     "yeoman-generator": "~5.7.0"
   },
   "devDependencies": {
     "@types/lodash": "~4.14.191",
+    "@types/which": "~2.0.1",
     "@types/yeoman-generator": "~5.2.11",
     "@types/yeoman-test": "~4.0.3",
     "yeoman-test": "~7.3.0"
