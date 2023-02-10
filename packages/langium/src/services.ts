@@ -86,7 +86,7 @@ export type LangiumLspServices = {
     SemanticTokenProvider?: SemanticTokenProvider
     RenameProvider?: RenameProvider
     Formatter?: Formatter
-    SignatureHelpProvider?: SignatureHelpProvider
+    SignatureHelp?: SignatureHelpProvider
     CallHierarchyProvider?: CallHierarchyProvider
     DeclarationProvider?: DeclarationProvider
 }

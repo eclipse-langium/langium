@@ -72,7 +72,7 @@ export class DefaultLanguageServer implements LanguageServer {
         const hasSemanticTokensProvider = this.hasService(e => e.lsp.SemanticTokenProvider);
         const commandNames = this.services.lsp.ExecuteCommandHandler?.commands;
         const documentLinkProvider = this.services.lsp.DocumentLinkProvider;
-        const signatureHelpOptions = mergeSignatureHelpOptions(languages.map(e => e.lsp.SignatureHelpProvider?.signatureHelpOptions));
+        const signatureHelpOptions = mergeSignatureHelpOptions(languages.map(e => e.lsp.SignatureHelp?.signatureHelpOptions));
         const hasGoToTypeProvider = this.hasService(e => e.lsp.TypeProvider);
         const hasGoToImplementationProvider = this.hasService(e => e.lsp.ImplementationProvider);
         const hasCompletionProvider = this.hasService(e => e.lsp.CompletionProvider);
@@ -425,7 +425,7 @@ export function addDocumentLinkHandler(connection: Connection, services: Langium
 
 export function addSignatureHelpHandler(connection: Connection, services: LangiumSharedServices): void {
     connection.onSignatureHelp(createServerRequestHandler(
-        (services, document, params, cancelToken) => services.lsp.SignatureHelpProvider?.provideSignatureHelp(document, params, cancelToken),
+        (services, document, params, cancelToken) => services.lsp.SignatureHelp?.provideSignatureHelp(document, params, cancelToken),
         services
     ));
 }
