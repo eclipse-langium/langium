@@ -76,10 +76,10 @@ export function toDocumentSegment(node?: CstNode): DocumentSegment | undefined {
 
 export enum RangeComparison {
     Before = 0,
-    OverlapFront = 1,
-    Inside = 2,
-    OverlapBack = 3,
-    After = 4
+    After = 1,
+    OverlapFront = 2,
+    Inside = 3,
+    OverlapBack = 4,
 }
 
 export function compareRange(range: Range, to: Range): RangeComparison {
@@ -101,7 +101,7 @@ export function compareRange(range: Range, to: Range): RangeComparison {
 
 export function inRange(range: Range, to: Range): boolean {
     const comparison = compareRange(range, to);
-    return comparison === RangeComparison.Inside || comparison === RangeComparison.OverlapBack || comparison === RangeComparison.OverlapFront;
+    return comparison > RangeComparison.After;
 }
 
 // The \p{L} regex matches any unicode letter character, i.e. characters from non-english alphabets

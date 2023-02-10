@@ -8,7 +8,7 @@ import { Range } from 'vscode-languageserver';
 import { AstNode, CstNode, GenericAstNode, isAstNode, isReference, Reference, ReferenceInfo } from '../syntax-tree';
 import { DONE_RESULT, Stream, stream, StreamImpl, TreeStream, TreeStreamImpl } from '../utils/stream';
 import { LangiumDocument } from '../workspace/documents';
-import { compareRange, RangeComparison } from './cst-util';
+import { inRange } from './cst-util';
 
 export type Mutable<T> = {
     -readonly [P in keyof T]: T[P]
@@ -174,8 +174,7 @@ function isAstNodeInRange(astNode: AstNode, range?: Range): boolean {
     if (!nodeRange) {
         return false;
     }
-    const comparison = compareRange(nodeRange, range);
-    return comparison === RangeComparison.Inside || comparison === RangeComparison.OverlapBack || comparison === RangeComparison.OverlapFront;
+    return inRange(nodeRange, range);
 }
 
 /**
