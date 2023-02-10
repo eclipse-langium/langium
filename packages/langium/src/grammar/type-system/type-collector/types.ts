@@ -268,7 +268,7 @@ export function isTypeAssignable(from: PropertyType, to: PropertyType): boolean 
         if (isUnionType(to.value)) {
             return isTypeAssignable(from, to.value.type);
         } else {
-            return isInterfaceAssignable(from.value, to.value);
+            return isInterfaceAssignable(from.value, to.value, new Set());
         }
     } else if (isPrimitiveType(from)) {
         return isPrimitiveType(to) && from.primitive === to.primitive;
@@ -279,12 +279,16 @@ export function isTypeAssignable(from: PropertyType, to: PropertyType): boolean 
     return false;
 }
 
-function isInterfaceAssignable(from: InterfaceType, to: InterfaceType): boolean {
+function isInterfaceAssignable(from: InterfaceType, to: InterfaceType, visited: Set<string>): boolean {
+    if (visited.has(from.name)) {
+        return true;
+    }
+    visited.add(from.name);
     if (from.name === to.name) {
         return true;
     }
     for (const superType of from.superTypes) {
-        if (isInterfaceType(superType) && isInterfaceAssignable(superType, to)) {
+        if (isInterfaceType(superType) && isInterfaceAssignable(superType, to, visited)) {
             return true;
         }
     }
