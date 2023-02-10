@@ -472,6 +472,7 @@ export interface TerminalGroup extends AbstractElement {
     readonly $container: Alternatives | Assignment | CharacterRange | CrossReference | Grammar | Group | NegatedToken | ParserRule | TerminalAlternatives | TerminalGroup | TerminalRule | UnorderedGroup | UntilToken;
     readonly $type: 'TerminalGroup';
     elements: Array<AbstractElement>
+    lookahead?: '?!' | '?='
 }
 
 export const TerminalGroup = 'TerminalGroup';

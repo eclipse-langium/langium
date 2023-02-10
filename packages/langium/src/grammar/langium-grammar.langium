@@ -183,7 +183,7 @@ TerminalTokenElement infers AbstractElement:
     CharacterRange | TerminalRuleCall | ParenthesizedTerminalElement | NegatedToken | UntilToken | RegexToken | Wildcard;
 
 ParenthesizedTerminalElement infers AbstractElement:
-    '(' TerminalAlternatives ')';
+    {infer TerminalGroup} '(' (lookahead=('?='|'?!'))? elements+=TerminalAlternatives ')';
 
 TerminalRuleCall infers AbstractElement:
     {infer TerminalRuleCall} rule=[TerminalRule:ID];

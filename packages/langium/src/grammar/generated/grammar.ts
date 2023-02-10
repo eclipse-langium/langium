@@ -3230,15 +3230,46 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
         "$type": "Group",
         "elements": [
           {
+            "$type": "Action",
+            "inferredType": {
+              "$type": "InferredType",
+              "name": "TerminalGroup"
+            }
+          },
+          {
             "$type": "Keyword",
             "value": "("
           },
           {
-            "$type": "RuleCall",
-            "rule": {
-              "$ref": "#/rules@47"
+            "$type": "Assignment",
+            "feature": "lookahead",
+            "operator": "=",
+            "terminal": {
+              "$type": "Alternatives",
+              "elements": [
+                {
+                  "$type": "Keyword",
+                  "value": "?="
+                },
+                {
+                  "$type": "Keyword",
+                  "value": "?!"
+                }
+              ]
             },
-            "arguments": []
+            "cardinality": "?"
+          },
+          {
+            "$type": "Assignment",
+            "feature": "elements",
+            "operator": "+=",
+            "terminal": {
+              "$type": "RuleCall",
+              "rule": {
+                "$ref": "#/rules@44"
+              },
+              "arguments": []
+            }
           },
           {
             "$type": "Keyword",

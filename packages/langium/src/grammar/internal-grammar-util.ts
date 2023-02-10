@@ -163,53 +163,79 @@ function abstractElementToRegex(element: ast.AbstractElement): string {
         if (!rule) {
             throw new Error('Missing rule reference.');
         }
-        return withCardinality(terminalRegex(rule), element.cardinality);
+        return withCardinality(terminalRegex(rule), {
+            cardinality: element.cardinality
+        });
     } else if (ast.isNegatedToken(element)) {
         return negateTokenToRegex(element);
     } else if (ast.isUntilToken(element)) {
         return untilTokenToRegex(element);
     } else if (ast.isRegexToken(element)) {
-        return withCardinality(element.regex, element.cardinality, false);
+        return withCardinality(element.regex, {
+            cardinality: element.cardinality,
+            wrap: false
+        });
     } else if (ast.isWildcard(element)) {
-        return withCardinality(WILDCARD, element.cardinality);
+        return withCardinality(WILDCARD, {
+            cardinality: element.cardinality
+        });
     } else {
-        throw new Error('Invalid terminal element.');
+        throw new Error(`Invalid terminal element: ${element?.$type}`);
     }
 }
 
 function terminalAlternativesToRegex(alternatives: ast.TerminalAlternatives): string {
-    return withCardinality(alternatives.elements.map(abstractElementToRegex).join('|'), alternatives.cardinality);
+    return withCardinality(alternatives.elements.map(abstractElementToRegex).join('|'), {
+        cardinality: alternatives.cardinality
+    });
 }
 
 function terminalGroupToRegex(group: ast.TerminalGroup): string {
-    return withCardinality(group.elements.map(abstractElementToRegex).join(''), group.cardinality);
+    return withCardinality(group.elements.map(abstractElementToRegex).join(''), {
+        cardinality: group.cardinality,
+        lookahead: group.lookahead
+    });
 }
 
 function untilTokenToRegex(until: ast.UntilToken): string {
-    return withCardinality(`${WILDCARD}*?${abstractElementToRegex(until.terminal)}`, until.cardinality);
+    return withCardinality(`${WILDCARD}*?${abstractElementToRegex(until.terminal)}`, {
+        cardinality: until.cardinality
+    });
 }
 
 function negateTokenToRegex(negate: ast.NegatedToken): string {
-    return withCardinality(`(?!${abstractElementToRegex(negate.terminal)})${WILDCARD}*?`, negate.cardinality);
+    return withCardinality(`(?!${abstractElementToRegex(negate.terminal)})${WILDCARD}*?`, {
+        cardinality: negate.cardinality
+    });
 }
 
 function characterRangeToRegex(range: ast.CharacterRange): string {
     if (range.right) {
-        return withCardinality(`[${keywordToRegex(range.left)}-${keywordToRegex(range.right)}]`, range.cardinality, false);
+        return withCardinality(`[${keywordToRegex(range.left)}-${keywordToRegex(range.right)}]`, {
+            cardinality: range.cardinality,
+            wrap: false
+        });
     }
-    return withCardinality(keywordToRegex(range.left), range.cardinality, false);
+    return withCardinality(keywordToRegex(range.left), {
+        cardinality: range.cardinality,
+        wrap: false
+    });
 }
 
 function keywordToRegex(keyword: ast.Keyword): string {
     return escapeRegExp(keyword.value);
 }
 
-function withCardinality(regex: string, cardinality?: string, wrap = true): string {
-    if (wrap) {
-        regex = `(${regex})`;
+function withCardinality(regex: string, options: {
+    cardinality?: string
+    wrap?: boolean
+    lookahead?: string
+}): string {
+    if (options.wrap !== false || options.lookahead) {
+        regex = `(${options.lookahead ?? ''}${regex})`;
     }
-    if (cardinality) {
-        return `${regex}${cardinality}`;
+    if (options.cardinality) {
+        return `${regex}${options.cardinality}`;
     }
     return regex;
 }
