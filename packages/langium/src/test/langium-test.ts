@@ -10,7 +10,7 @@ import {
 } from 'vscode-languageserver';
 import { URI } from 'vscode-uri';
 import { LangiumServices } from '../services';
-import { AstNode, Properties } from '../syntax-tree';
+import { AstNode, CstNode, Properties } from '../syntax-tree';
 import { escapeRegExp } from '../utils/regex-util';
 import { LangiumDocument } from '../workspace/documents';
 import { findNodeForProperty } from '../utils/grammar-util';
@@ -329,7 +329,7 @@ export interface ExpectDiagnosticCode {
 
 export interface ExpectDiagnosticAstOptions<T extends AstNode> {
     node: T;
-    property?: { name: Properties<T>, index?: number };
+    property?: Properties<T> | { name: Properties<T>, index?: number };
 }
 
 export interface ExpectDiagnosticRangeOptions {
@@ -357,13 +357,16 @@ function rangeToString(range: Range): string {
 function filterByOptions<T extends AstNode = AstNode, N extends AstNode = AstNode>(validationResult: ValidationResult<T>, options: ExpectDiagnosticOptions<N>) {
     const filters: Array<Predicate<Diagnostic>> = [];
     if ('node' in options) {
-        const cstNode = options.property
-            ? findNodeForProperty(options.node?.$cstNode, options.property.name, options.property.index)
-            : options.node.$cstNode;
+        let cstNode: CstNode | undefined = options.node.$cstNode;
+        if (options.property) {
+            const name = typeof options.property === 'string' ? options.property : options.property.name;
+            const index = typeof options.property === 'string' ? undefined : options.property.index;
+            cstNode = findNodeForProperty(cstNode, name, index);
+        }
         if (!cstNode) {
             throw new Error('Cannot find the node!');
         }
-        filters.push(d => isRangeEqual(cstNode.range, d.range));
+        filters.push(d => isRangeEqual(cstNode!.range, d.range));
     }
     if ('offset' in options) {
         const outer = {

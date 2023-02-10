@@ -367,7 +367,7 @@ describe('Property type is not a mix of cross-ref and non-cross-ref types.', () 
 
         expectError(validation, /Mixing a cross-reference with other types is not supported. Consider splitting property /, {
             node: attribute!,
-            property: { name: 'typeAlternatives' }
+            property: 'typeAlternatives'
         });
     });
 });
@@ -494,9 +494,7 @@ describe('Property types validation takes in account types hierarchy', () => {
         const assignment = streamAllContents(validation.document.parseResult.value).filter(isAssignment).toArray()[0];
         expectError(validation, "The assigned type 'Z2' is not compatible with the declared property 'y' of type 'Z1':  'Z2' is not expected.", {
             node: assignment,
-            property: {
-                name: 'feature'
-            }
+            property: 'feature'
         });
     });
 
