@@ -295,21 +295,27 @@ export async function generateTypes(options: ExtractTypesOptions): Promise<void>
         }
     }
 
-    const grammarFileUri = URI.file(grammarPath);
-    const document = documents.getOrCreateDocument(grammarFileUri);
-    const allUris = eagerLoad(document);
+    const grammarDoc = await doLoadAndUpdate(documents.getOrCreateDocument(URI.file(grammarPath)));
+    const genTypes =  generateTypesFile(grammarServices, [grammarDoc.parseResult.value as Grammar]);
+    await writeWithFail(typesFilePath, genTypes, { watch: false });
+    log('log', { watch: false }, `Generated type definitions to: ${chalk.white.bold(typesFilePath)}`);
+    return;
+}
+
+/**
+ * Builds the given grammar document and all imported grammars.
+ */
+async function doLoadAndUpdate(grammarDoc: LangiumDocument): Promise<LangiumDocument> {
+    const allUris = eagerLoad(grammarDoc);
     await sharedServices.workspace.DocumentBuilder.update(allUris, []);
-    let grammarDoc;
     for (const doc of documents.all) {
         await sharedServices.workspace.DocumentBuilder.build([doc]);
-        grammarDoc = doc;
+        if(doc.uri === grammarDoc.uri) {
+            // update grammar doc after rebuild
+            grammarDoc = doc;
+        }
     }
-    if (grammarDoc) {
-        const genTypes = generateTypesFile(grammarServices, [grammarDoc.parseResult.value as Grammar]);
-        await writeWithFail(typesFilePath, genTypes, { watch: false });
-        log('log', { watch: false }, `Generated type definitions to: ${chalk.white.bold(typesFilePath)}`);
-    }
-    return;
+    return grammarDoc;
 }
 
 /**
