@@ -7,7 +7,7 @@
 import {
     GeneratorNode, Grammar, IndentNode, CompositeGeneratorNode, NL, toString, streamAllContents, MultiMap, LangiumServices, GrammarAST
 } from 'langium';
-import { AstTypes, collectAllProperties, collectAst, Property } from 'langium/lib/grammar/type-system';
+import { AstTypes, collectAst, collectTypeHierarchy, findReferenceTypes, hasArrayType, hasBooleanType, mergeTypesAndInterfaces, Property } from 'langium/lib/grammar/type-system';
 import { LangiumConfig } from '../package';
 import { generatedHeader } from './util';
 
@@ -24,8 +24,8 @@ export function generateAst(services: LangiumServices, grammars: Grammar[], conf
         `import { AstNode, AbstractAstReflection${crossRef ? ', Reference' : ''}, ReferenceInfo, TypeMetaData } from '${importFrom}';`, NL, NL
     );
 
-    astTypes.unions.forEach(union => fileNode.append(union.toAstTypesString(), NL));
-    astTypes.interfaces.forEach(iFace => fileNode.append(iFace.toAstTypesString(), NL));
+    astTypes.unions.forEach(union => fileNode.append(union.toAstTypesString(true), NL));
+    astTypes.interfaces.forEach(iFace => fileNode.append(iFace.toAstTypesString(true), NL));
 
     astTypes.unions = astTypes.unions.filter(e => e.reflection);
     fileNode.append(generateAstReflection(config, astTypes));
@@ -84,11 +84,10 @@ function buildTypeMetaDataMethod(astTypes: AstTypes): GeneratorNode {
     const typeSwitchNode = new IndentNode();
     typeSwitchNode.append('switch (type) {', NL);
     typeSwitchNode.indent(caseNode => {
-        const allProperties = collectAllProperties(astTypes.interfaces);
         for (const interfaceType of astTypes.interfaces) {
-            const props = allProperties.get(interfaceType.name)!;
-            const arrayProps = props.filter(e => e.typeAlternatives.some(e => e.array));
-            const booleanProps = props.filter(e => e.typeAlternatives.every(e => !e.array && e.types.includes('boolean')));
+            const props = interfaceType.properties;
+            const arrayProps = props.filter(e => hasArrayType(e.type));
+            const booleanProps = props.filter(e => hasBooleanType(e.type));
             if (arrayProps.length > 0 || booleanProps.length > 0) {
                 caseNode.append(`case '${interfaceType.name}': {`, NL);
                 caseNode.indent(caseContent => {
@@ -174,18 +173,19 @@ function buildCrossReferenceTypes(astTypes: AstTypes): CrossReferenceType[] {
     const crossReferences = new MultiMap<string, CrossReferenceType>();
     for (const typeInterface of astTypes.interfaces) {
         for (const property of typeInterface.properties.sort((a, b) => a.name.localeCompare(b.name))) {
-            property.typeAlternatives.filter(e => e.reference).flatMap(e => e.types).forEach(type =>
+            const refTypes = findReferenceTypes(property.type);
+            for (const refType of refTypes) {
                 crossReferences.add(typeInterface.name, {
                     type: typeInterface.name,
                     feature: property.name,
-                    referenceType: type
-                })
-            );
+                    referenceType: refType
+                });
+            }
         }
         // Since the types are topologically sorted we can assume
         // that all super type properties have already been processed
-        for (const superType of typeInterface.printingSuperTypes) {
-            const superTypeCrossReferences = crossReferences.get(superType).map(e => ({
+        for (const superType of typeInterface.interfaceSuperTypes) {
+            const superTypeCrossReferences = crossReferences.get(superType.name).map(e => ({
                 ...e,
                 type: typeInterface.name
             }));
@@ -210,7 +210,7 @@ function buildIsSubtypeMethod(astTypes: AstTypes): GeneratorNode {
             switchNode.contents.pop();
             switchNode.append(' {', NL);
             switchNode.indent(caseNode => {
-                caseNode.append(`return ${superTypes.split(':').map(e => `this.isSubtype(${e}, supertype)`).join(' || ')};`);
+                caseNode.append(`return ${superTypes.split(':').sort().map(e => `this.isSubtype(${e}, supertype)`).join(' || ')};`);
             });
             switchNode.append(NL, '}', NL);
         }
@@ -225,19 +225,11 @@ function buildIsSubtypeMethod(astTypes: AstTypes): GeneratorNode {
     return methodNode;
 }
 
-type ChildToSuper = {
-    name: string,
-    realSuperTypes: Set<string>
-}
-
 function groupBySupertypes(astTypes: AstTypes): MultiMap<string, string> {
-    const allTypes: ChildToSuper[] = (astTypes.interfaces as ChildToSuper[])
-        .concat(astTypes.unions)
-        .filter(e => e.realSuperTypes.size > 0);
-
+    const hierarchy = collectTypeHierarchy(mergeTypesAndInterfaces(astTypes));
     const superToChild = new MultiMap<string, string>();
-    for (const item of allTypes) {
-        superToChild.add([...item.realSuperTypes].join(':'), item.name);
+    for (const [name, superTypes] of hierarchy.superTypes.entriesGroupedByKey()) {
+        superToChild.add(superTypes.join(':'), name);
     }
 
     return superToChild;

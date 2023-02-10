@@ -15,20 +15,30 @@ entry Grammar:
 
 Interface:
     'interface' name=ID
-    ('extends' superTypes+=[AbstractType] (',' superTypes+=[AbstractType])*)?
+    ('extends' superTypes+=[AbstractType:ID] (',' superTypes+=[AbstractType:ID])*)?
     SchemaType;
 
 fragment SchemaType:
     '{' attributes+=TypeAttribute* '}' ';'?;
 
 TypeAttribute:
-    name=FeatureName (isOptional?='?')? ':' TypeAlternatives ';'?;
+    name=FeatureName (isOptional?='?')? ':' type=TypeDefinition ';'?;
 
-fragment TypeAlternatives:
-    typeAlternatives+=AtomType ('|' typeAlternatives+=AtomType)*;
+TypeDefinition: UnionType;
 
-AtomType:
-    (primitiveType=PrimitiveType | isRef?='@'? refType=[AbstractType]) isArray?='[]'? | keywordType=Keyword;
+UnionType infers TypeDefinition:
+    ArrayType ({infer UnionType.types+=current} ('|' types+=ArrayType)+)?;
+
+ArrayType infers TypeDefinition:
+    ReferenceType ({infer ArrayType.elementType=current} '[' ']')? ;
+
+ReferenceType infers TypeDefinition:
+    SimpleType |
+    {infer ReferenceType} '@' referenceType=SimpleType;
+
+SimpleType infers TypeDefinition:
+    '(' TypeDefinition ')' |
+    {infer SimpleType} (typeRef=[AbstractType:ID] | primitiveType=PrimitiveType | stringType=STRING);
 
 PrimitiveType returns string:
     'string' | 'number' | 'boolean' | 'Date' | 'bigint';
@@ -36,7 +46,7 @@ PrimitiveType returns string:
 type AbstractType = Interface | Type | Action | ParserRule;
 
 Type:
-    'type' name=ID '=' TypeAlternatives ';'?;
+    'type' name=ID '=' type=TypeDefinition ';'?;
 
 AbstractRule:
     ParserRule | TerminalRule;

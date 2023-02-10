@@ -7,7 +7,7 @@
 import { afterEach, beforeAll, describe, expect, test } from 'vitest';
 import { DiagnosticSeverity } from 'vscode-languageserver';
 import { AstNode, createLangiumGrammarServices, EmptyFileSystem, GrammarAST, Properties, streamAllContents, streamContents } from '../../src';
-import { Assignment, isAssignment } from '../../src/grammar/generated/ast';
+import { Assignment, isAssignment, UnionType } from '../../src/grammar/generated/ast';
 import { IssueCodes } from '../../src/grammar/validation/validator';
 import { clearDocuments, expectError, expectIssue, expectNoIssues, expectWarning, parseHelper, validationHelper, ValidationResult } from '../../src/test';
 
@@ -177,10 +177,10 @@ describe('checkReferenceToRuleButNotType', () => {
     });
 
     test('AtomType validation', () => {
-        const type = validationResult.document.parseResult.value.types[0];
+        const unionType = validationResult.document.parseResult.value.types[0].type as UnionType;
+        const missingType = unionType.types[0];
         expectError(validationResult, "Could not resolve reference to AbstractType named 'Reference'.", {
-            node: type,
-            property: 'typeAlternatives'
+            node: missingType
         });
     });
 

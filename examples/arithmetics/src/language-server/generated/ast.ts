@@ -149,7 +149,7 @@ export class ArithmeticsAstReflection extends AbstractAstReflection {
                 return this.isSubtype(AbstractDefinition, supertype);
             }
             case Definition: {
-                return this.isSubtype(Statement, supertype) || this.isSubtype(AbstractDefinition, supertype);
+                return this.isSubtype(AbstractDefinition, supertype) || this.isSubtype(Statement, supertype);
             }
             case Evaluation: {
                 return this.isSubtype(Statement, supertype);

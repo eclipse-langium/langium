@@ -265,7 +265,7 @@ describe('findReferences', () => {
 
         type C = A | B ;
 
-        ruleC returns C: <|na<|>me|>=ID;
+        ruleC returns C: {A} <|na<|>me|>=ID;
         `;
 
         await findReferences({
@@ -304,30 +304,6 @@ describe('findReferences', () => {
         interface B extends A {}
 
         ActionRule: {B} <|na<|>me|>=ID;
-        `;
-
-        await findReferences({
-            text: grammar,
-            includeDeclaration: true
-        });
-    });
-
-    test('Must find references to a property assigned in action returning union type', async () => {
-        const grammar = `grammar test
-        hidden terminal WS: /\\s+/;
-        terminal ID: /\\w+/;
-
-        interface A {
-            <|na<|>me|>: string
-        }
-
-        interface B {
-            foo: string
-        }
-
-        type C = A | B;
-
-        ActionRule: {C} <|na<|>me|>=ID;
         `;
 
         await findReferences({

@@ -4,9 +4,9 @@ export default {
         'datatype','entity','extends','many','package'
     ],
     operators: [
-        ':','.'
+        '.',':'
     ],
-    symbols:  /:|\.|\{|\}/,
+    symbols:  /\.|:|\{|\}/,
 
     tokenizer: {
         initial: [

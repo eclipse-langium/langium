@@ -7,7 +7,7 @@
 import { SemanticTokenTypes } from 'vscode-languageserver';
 import { AstNode } from '../../syntax-tree';
 import { AbstractSemanticTokenProvider, SemanticTokenAcceptor } from '../../lsp/semantic-token-provider';
-import { isAction, isAssignment, isAtomType, isParameter, isParameterReference, isReturnType, isRuleCall, isTypeAttribute } from '../generated/ast';
+import { isAction, isAssignment, isParameter, isParameterReference, isReturnType, isRuleCall, isSimpleType, isTypeAttribute } from '../generated/ast';
 
 export class LangiumGrammarSemanticTokenProvider extends AbstractSemanticTokenProvider {
 
@@ -32,11 +32,11 @@ export class LangiumGrammarSemanticTokenProvider extends AbstractSemanticTokenPr
                 property: 'name',
                 type: SemanticTokenTypes.type
             });
-        } else if (isAtomType(node)) {
-            if (node.primitiveType || node.refType) {
+        } else if (isSimpleType(node)) {
+            if (node.primitiveType || node.typeRef) {
                 acceptor({
                     node,
-                    property: node.primitiveType ? 'primitiveType' : 'refType',
+                    property: node.primitiveType ? 'primitiveType' : 'typeRef',
                     type: SemanticTokenTypes.type
                 });
             }

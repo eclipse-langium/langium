@@ -6,7 +6,7 @@
 
 import { LangiumDocument } from '../../workspace/documents';
 import { Action, Grammar, Interface, ParserRule, Type } from '../generated/ast';
-import { Property, TypeOption } from '../type-system/type-collector/types';
+import { Property, TypeOption } from '../type-system';
 
 /**
  * A Langium document holds the parse result (AST and CST) and any additional state that is derived
@@ -19,7 +19,6 @@ export interface LangiumGrammarDocument extends LangiumDocument<Grammar> {
 export type ValidationResources = {
     typeToValidationInfo: TypeToValidationInfo,
     typeToSuperProperties: Map<string, Property[]>,
-    typeToAliases: Map<string, Set<string>>,
 }
 
 export type TypeToValidationInfo = Map<string, InferredInfo | DeclaredInfo | InferredInfo & DeclaredInfo>;

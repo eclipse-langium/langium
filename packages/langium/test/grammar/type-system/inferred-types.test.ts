@@ -4,696 +4,362 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { beforeAll, describe, expect, test } from 'vitest';
+import { describe, expect, test } from 'vitest';
 import { createLangiumGrammarServices, Grammar, EmptyFileSystem, expandToString, EOL } from '../../../src';
-import { collectAst, specifyAstNodeProperties } from '../../../src/grammar/type-system/ast-collector';
-import { collectAllAstResources, collectTypeResources } from '../../../src/grammar/type-system/type-collector/all-types';
-import { collectDeclaredTypes } from '../../../src/grammar/type-system/type-collector/declared-types';
-import { collectInferredTypes } from '../../../src/grammar/type-system/type-collector/inferred-types';
-import { AstTypes, InterfaceType, Property, PropertyType, UnionType } from '../../../src/grammar/type-system/type-collector/types';
-import { sortInterfacesTopologically } from '../../../src/grammar/type-system/types-util';
-import { parseHelper } from '../../../src/test';
+import { mergeTypesAndInterfaces } from '../../../src/grammar/type-system';
+import { collectAst } from '../../../src/grammar/type-system/ast-collector';
+import { AstTypes } from '../../../src/grammar/type-system/type-collector/types';
+import { clearDocuments, parseHelper } from '../../../src/test';
 
-function describeTypes(name: string, grammar: string, description: (types: AstTypes) => void | Promise<void>): void {
-    describe(name, () => {
-        const types: AstTypes = {
-            interfaces: [],
-            unions: []
-        };
-        beforeAll(async () => {
-            const newTypes = await getTypes(grammar);
-            types.interfaces = newTypes.interfaces;
-            types.unions = newTypes.unions;
-        });
-        description.call(undefined, types);
-    });
-}
+describe('Inferred types', () => {
 
-describeTypes('inferred types of simple grammars', `
-    A: name=ID value=NUMBER?;
-    B: name=FQN values+=NUMBER;
-    C: 'c' ref=[A];
+    test('Should infer types of simple grammars', async () => {
+        await expectTypes(`
+            A: name=ID value=NUMBER?;
+            B: name=FQN values+=NUMBER;
+            C: 'c' ref=[A];
 
-    FQN: ID;
-    terminal ID returns string: /string/;
-    terminal NUMBER returns number: /number/;
-`, types => {
-    test('A is inferred with name:string and value?:number', () => {
-        const a = getType(types, 'A') as InterfaceType;
-        expect(a).toBeDefined();
-        expectProperty(a, {
-            name: 'name',
-            optional: false,
-            typeAlternatives: [{
-                array: false,
-                reference: false,
-                types: ['string']
-            }],
-            astNodes: new Set(),
-        });
-        expectProperty(a, {
-            name: 'value',
-            optional: true,
-            typeAlternatives: [{
-                array: false,
-                reference: false,
-                types: ['number']
-            }],
-            astNodes: new Set(),
-        });
-    });
-
-    test('B is inferred with name:FQN and values:number[]', () => {
-        const b = getType(types, 'B') as InterfaceType;
-        expect(b).toBeDefined();
-        expectProperty(b, {
-            name: 'name',
-            optional: false,
-            typeAlternatives: [{
-                array: false,
-                reference: false,
-                types: ['FQN'],
-            }],
-            astNodes: new Set(),
-        });
-        expectProperty(b, {
-            name: 'values',
-            optional: false,
-            typeAlternatives: [{
-                array: true,
-                reference: false,
-                types: ['number']
-            }],
-            astNodes: new Set(),
-        });
-    });
-
-    test('C is inferred with ref:@A', () => {
-        const c = getType(types, 'C') as InterfaceType;
-        expect(c).toBeDefined();
-        expectProperty(c, {
-            name: 'ref',
-            optional: false,
-            typeAlternatives: [{
-                array: false,
-                reference: true,
-                types: ['A']
-            }],
-            astNodes: new Set(),
-        });
-    });
-
-    test('FQN is created as an union type', () => {
-        const fqn = getType(types, 'FQN') as UnionType;
-        expectUnion(fqn, [
-            {
-                array: false,
-                reference: false,
-                types: ['string']
+            FQN: ID;
+            terminal ID returns string: /string/;
+            terminal NUMBER returns number: /number/;
+        `, expandToString`
+            export interface A extends AstNode {
+                readonly $type: 'A';
+                name: string
+                value?: number
             }
-        ]);
-    });
-});
-
-describeTypes('inferred types for alternatives', `
-    A: name=ID | name=NUMBER;
-    B: name=(ID | NUMBER);
-    C: A | B;
-    D: A | B | name=ID;
-    E: name=ID | value=NUMBER;
-
-
-    terminal ID returns string: /string/;
-    terminal NUMBER returns number: /number/;
-`, types => {
-    test('A is inferred with name:(string)|(number)', () => {
-        const a = getType(types, 'A') as InterfaceType;
-        expect(a).toBeDefined();
-        expect(a.printingSuperTypes).toEqual(['D']);
-        expect(a.properties).toHaveLength(1);
-        expectProperty(a, {
-            name: 'name',
-            optional: false,
-            typeAlternatives: [
-                {
-                    array: false,
-                    reference: false,
-                    types: ['string']
-                },
-                {
-                    array: false,
-                    reference: false,
-                    types: ['number']
-                }
-            ],
-            astNodes: new Set(),
-        });
-    });
-
-    test('B is inferred with name:(number|string)', () => {
-        const b = getType(types, 'B') as InterfaceType;
-        expect(b).toBeDefined();
-        expect(b.printingSuperTypes).toEqual(['D']);
-        expect(b.properties).toHaveLength(1);
-        expectProperty(b, {
-            name: 'name',
-            optional: false,
-            typeAlternatives: [
-                {
-                    array: false,
-                    reference: false,
-                    types: ['string']
-                },
-                {
-                    array: false,
-                    reference: false,
-                    types: ['number']
-                }
-            ],
-            astNodes: new Set(),
-        });
-    });
-
-    test('C is inferred as union type A | B', () => {
-        const c = getType(types, 'C') as UnionType;
-        expect(c).toBeDefined();
-        expectUnion(c, [
-            {
-                array: false,
-                reference: false,
-                types: ['A']
-            },
-            {
-                array: false,
-                reference: false,
-                types: ['B']
+            export interface B extends AstNode {
+                readonly $type: 'B';
+                name: FQN
+                values: Array<number>
             }
-        ]);
-    });
-
-    test('D is inferred as name:string', () => {
-        const d = getType(types, 'D') as InterfaceType;
-        expect(d).toBeDefined();
-        expect(d.printingSuperTypes).toHaveLength(0);
-        expect(d.properties).toHaveLength(1);
-        expectProperty(d, {
-            name: 'name',
-            optional: false,
-            typeAlternatives: [{
-                array: false,
-                reference: false,
-                types: ['string']
-            }],
-            astNodes: new Set(),
-        });
-    });
-
-    test('E is inferred with name?:string, value?: number', () => {
-        const e = getType(types, 'E') as InterfaceType;
-        expect(e).toBeDefined();
-        expectProperty(e, {
-            name: 'name',
-            optional: true,
-            typeAlternatives: [
-                {
-                    array: false,
-                    reference: false,
-                    types: ['string']
-                }
-            ],
-            astNodes: new Set(),
-        });
-        expectProperty(e, {
-            name: 'value',
-            optional: true,
-            typeAlternatives: [
-                {
-                    array: false,
-                    reference: false,
-                    types: ['number']
-                }
-            ],
-            astNodes: new Set(),
-        });
-    });
-
-});
-
-describeTypes('inferred types using chained actions', `
-    A: a=ID ({infer B} b=ID ({infer C} c=ID)?)? d=ID;
-	D: E ({infer D.e=current} d=ID)?;
-    E: e=ID;
-    F: value=ID ({infer F.item=current} value=ID)*;
-    G: ({infer X} x=ID | {infer Y} y=ID | {infer Z} z=ID) {infer G.front=current} back=ID;
-    H infers E: E {infer H} h=ID;
-
-    Entry:
-	    Expr;
-    Expr:
-        {infer Ref} ref=ID
-        ({infer Access.receiver=current} '.' member=ID)*;
-    Ref:
-        {infer Ref} ref=ID;
-    Access:
-        {infer Access} '.' member=ID;
-
-    IdRule:
-        'id' name=ID;
-    RuleName infers RuleType:
-        IdRule (
-            {infer FirstBranch.value=current} FirstBranchFragment
-        |   {infer SecondBranch.value=current} SecondBranchFragment
-        );
-    fragment FirstBranchFragment: 'First' first=ID;
-    fragment SecondBranchFragment: 'Second' second=ID;
-
-    terminal ID returns string: /string/;
-`, types => {
-
-    test('RuleType is inferred as a union type', () => {
-        const ruleType = getType(types, 'RuleType') as UnionType;
-        expect(ruleType).toBeDefined();
-        expectUnion(ruleType, [
-            {
-                array: false,
-                reference: false,
-                types: ['IdRule']
-            },
-            {
-                array: false,
-                reference: false,
-                types: ['FirstBranch']
-            },
-            {
-                array: false,
-                reference: false,
-                types: ['SecondBranch']
-            },
-        ]);
-    });
-
-    test('FirstBranch is inferred as first:string, value:IdRule', () => {
-        const firstBranch = getType(types, 'FirstBranch') as InterfaceType;
-        expect(firstBranch).toBeDefined();
-        expect(firstBranch.printingSuperTypes).toHaveLength(0);
-        expect(firstBranch.properties).toHaveLength(2);
-        expectProperty(firstBranch, {
-            name: 'first',
-            optional: false,
-            typeAlternatives: [{
-                array: false,
-                reference: false,
-                types: ['string']
-            }],
-            astNodes: new Set(),
-        });
-        expectProperty(firstBranch, {
-            name: 'value',
-            optional: false,
-            typeAlternatives: [{
-                array: false,
-                reference: false,
-                types: ['IdRule']
-            }],
-            astNodes: new Set(),
-        });
-
-    });
-
-    test('Entry is inferred as a union type', () => {
-        const entry = getType(types, 'Entry') as UnionType;
-        expect(entry).toBeDefined();
-        expectUnion(entry, [{
-            array: false,
-            reference: false,
-            types: ['Expr']
-        }]);
-    });
-
-    test('Expr is inferred as a union type', () => {
-        const expr = getType(types, 'Expr') as UnionType;
-        expect(expr).toBeDefined();
-        expectUnion(expr, [
-            {
-                array: false,
-                reference: false,
-                types: ['Ref']
-            },
-            {
-                array: false,
-                reference: false,
-                types: ['Access']
-            },
-        ]);
-    });
-
-    test('Ref is inferred as ref:string', () => {
-        const ref = getType(types, 'Ref') as InterfaceType;
-        expect(ref).toBeDefined();
-        expect(ref.printingSuperTypes).toHaveLength(0);
-        expect(ref.properties).toHaveLength(1);
-        expectProperty(ref, {
-            name: 'ref',
-            optional: false,
-            typeAlternatives: [{
-                array: false,
-                reference: false,
-                types: ['string']
-            }],
-            astNodes: new Set(),
-        });
-    });
-
-    test('Access is inferred as receiver:Ref, member:string', () => {
-        const access = getType(types, 'Access') as InterfaceType;
-        expect(access).toBeDefined();
-        expect(access.printingSuperTypes).toHaveLength(0);
-        expect(access.properties).toHaveLength(2);
-        expectProperty(access, {
-            name: 'receiver',
-            optional: true,
-            typeAlternatives: [{
-                array: false,
-                reference: false,
-                types: ['Ref']
-            }],
-            astNodes: new Set(),
-        });
-        expectProperty(access, {
-            name: 'member',
-            optional: false,
-            typeAlternatives: [{
-                array: false,
-                reference: false,
-                types: ['string']
-            }],
-            astNodes: new Set(),
-        });
-    });
-
-    test('A is inferred with a:string, d:string', () => {
-        const a = getType(types, 'A') as InterfaceType;
-        expect(a).toBeDefined();
-        expect(a.printingSuperTypes).toHaveLength(0);
-        expect(a.properties).toHaveLength(2);
-        expectProperty(a, 'a');
-        expectProperty(a, 'd');
-    });
-
-    test('B is inferred with super type A and a:string, b:string, d:string', () => {
-        const b = getType(types, 'B') as InterfaceType;
-        expect(b).toBeDefined();
-        expect(b.printingSuperTypes).toEqual(['A']);
-        expect(b.properties).toHaveLength(2);
-        expectProperty(b, 'b');
-        expectProperty(b, 'd');
-    });
-
-    test('C is inferred with super type B and a:string, b:string, c:string d:string', () => {
-        const c = getType(types, 'C') as InterfaceType;
-        expect(c).toBeDefined();
-        expect(c.printingSuperTypes).toEqual(['B']);
-        expect(c.properties).toHaveLength(2);
-        expectProperty(c, 'c');
-        expectProperty(c, 'd');
-    });
-
-    test('D is inferred with e:E, d:string', () => {
-        const d = getType(types, 'D') as InterfaceType;
-        expect(d).toBeDefined();
-        expect(d.printingSuperTypes).toHaveLength(0);
-        expect(d.properties).toHaveLength(2);
-        expectProperty(d, {
-            name: 'e',
-            optional: false,
-            typeAlternatives: [{
-                array: false,
-                reference: false,
-                types: ['E']
-            }],
-            astNodes: new Set(),
-        });
-        expectProperty(d, 'd');
-    });
-
-    test('E is inferred with super type D and property e', () => {
-        const e = getType(types, 'E') as InterfaceType;
-        expect(e).toBeDefined();
-        expect(e.printingSuperTypes).toEqual(['D']);
-        expect(e.properties).toHaveLength(1);
-        expectProperty(e, 'e');
-    });
-
-    test('F is inferred with value:string, item?:F', () => {
-        const f = getType(types, 'F') as InterfaceType;
-        expect(f).toBeDefined();
-        expect(f.printingSuperTypes).toHaveLength(0);
-        expect(f.properties).toHaveLength(2);
-        expectProperty(f, 'value');
-        expectProperty(f, {
-            name: 'item',
-            optional: true,
-            typeAlternatives: [{
-                array: false,
-                reference: false,
-                types: ['F']
-            }],
-            astNodes: new Set(),
-        });
-    });
-
-    test('G is inferred with front:(X|Y|Z), back:string', () => {
-        const G = getType(types, 'G') as InterfaceType;
-        expect(G).toBeDefined();
-        expect(G.printingSuperTypes).toHaveLength(0);
-        expect(G.properties).toHaveLength(2);
-        expectProperty(G, {
-            name: 'front',
-            optional: false,
-            typeAlternatives: [
-                {
-                    array: false,
-                    reference: false,
-                    types: ['X']
-                },
-                {
-                    array: false,
-                    reference: false,
-                    types: ['Y']
-                },
-                {
-                    array: false,
-                    reference: false,
-                    types: ['Z']
-                }
-            ],
-            astNodes: new Set(),
-        });
-    });
-
-    test('H is inferred as extending E and with h:string', () => {
-        const H = getType(types, 'H') as InterfaceType;
-        expect(H).toBeDefined();
-        expect(H.printingSuperTypes).toEqual(['E']);
-        expect(H.properties).toHaveLength(1);
-        expectProperty(H, {
-            name: 'h',
-            optional: false,
-            typeAlternatives: [
-                {
-                    array: false,
-                    reference: false,
-                    types: ['string']
-                }
-            ],
-            astNodes: new Set(),
-        });
-    });
-
-    test('X, Y, Z are inferred from G as simple types', () => {
-        const x = getType(types, 'X') as InterfaceType;
-        expect(x).toBeDefined();
-        expect(x.printingSuperTypes).toEqual(['G']);
-        expect(x.properties).toHaveLength(1);
-        expectProperty(x, 'x');
-        const y = getType(types, 'Y') as InterfaceType;
-        expect(y).toBeDefined();
-        expect(x.printingSuperTypes).toEqual(['G']);
-        expect(y.properties).toHaveLength(1);
-        expectProperty(y, 'y');
-        const z = getType(types, 'Z') as InterfaceType;
-        expect(z).toBeDefined();
-        expect(x.printingSuperTypes).toEqual(['G']);
-        expect(z.properties).toHaveLength(1);
-        expectProperty(z, 'z');
-    });
-
-});
-
-describeTypes('inferred types with common names', `
-    A infers X: a=ID;
-	B infers X: a=ID b=ID;
-    C infers X: a=ID c=ID?;
-
-    terminal ID returns string: /string/;
-`, types => {
-    test('X is inferred with a:string, b?:string, c?:string', () => {
-        const x = getType(types, 'X') as InterfaceType;
-        expect(x).toBeDefined();
-        expect(x.printingSuperTypes).toHaveLength(0);
-        expect(x.properties).toHaveLength(3);
-        expectProperty(x, 'a');
-        expectProperty(x, {
-            name: 'b',
-            optional: true,
-            typeAlternatives: [{
-                array: false,
-                reference: false,
-                types: ['string']
-            }],
-            astNodes: new Set(),
-        });
-        expectProperty(x, {
-            name: 'c',
-            optional: true,
-            typeAlternatives: [{
-                array: false,
-                reference: false,
-                types: ['string']
-            }],
-            astNodes: new Set(),
-        });
-    });
-
-    test('A, B, C are not inferred', () => {
-        const a = getType(types, 'A') as InterfaceType;
-        expect(a).toBeUndefined();
-        const b = getType(types, 'B') as InterfaceType;
-        expect(b).toBeUndefined();
-        const c = getType(types, 'C') as InterfaceType;
-        expect(c).toBeUndefined();
-    });
-
-});
-
-describeTypes('inferred types with common names and actions', `
-    A infers X: {infer A} a=ID;
-	B infers X: {infer B} b=ID;
-
-    C: D ({infer C.item=current} value=ID);
-    D infers Y: y=ID;
-
-    terminal ID returns string: /string/;
-`, types => {
-    test('A is inferred with a:string', () => {
-        const a = getType(types, 'A') as InterfaceType;
-        expect(a).toBeDefined();
-        // Since 'X' is not an actual type (but a union), it is removed as a super type.
-        expect(a.printingSuperTypes).toHaveLength(0);
-        expect(a.properties).toHaveLength(1);
-        expectProperty(a, 'a');
-    });
-
-    test('B is inferred with b:string', () => {
-        const b = getType(types, 'B') as InterfaceType;
-        expect(b).toBeDefined();
-        // Since 'X' is not an actual type (but a union), it is removed as a super type.
-        expect(b.printingSuperTypes).toHaveLength(0);
-        expect(b.properties).toHaveLength(1);
-        expectProperty(b, 'b');
-    });
-
-    test('X is inferred as A | B', () => {
-        const x = getType(types, 'X') as UnionType;
-        expect(x).toBeDefined();
-        expectUnion(x, [
-            {
-                array: false,
-                reference: false,
-                types: ['A']
-            },
-            {
-                array: false,
-                reference: false,
-                types: ['B']
+            export interface C extends AstNode {
+                readonly $type: 'C';
+                ref: Reference<A>
             }
-        ]);
+            export type FQN = string;
+        `);
     });
 
-    test('C is inferred with super type Y and properties item:Y, value:ID', () => {
-        const c = getType(types, 'C') as InterfaceType;
-        expect(c).toBeDefined();
-        expect(c.printingSuperTypes).toHaveLength(0);
-        expect(c.properties).toHaveLength(2);
-        expectProperty(c, 'value');
-        expectProperty(c, {
-            name: 'item',
-            optional: false,
-            typeAlternatives: [{
-                array: false,
-                reference: false,
-                types: ['Y']
-            }],
-            astNodes: new Set(),
-        });
+    test('Should infer types for alternatives', async () => {
+        await expectTypes(`
+            A: name=ID | name=NUMBER;
+            B: name=(ID | NUMBER);
+            C: A | B;
+            D: A | B | name=ID;
+            E: name=ID | value=NUMBER;
+
+            terminal ID returns string: /string/;
+            terminal NUMBER returns number: /number/;
+        `, expandToString`
+            export interface D extends AstNode {
+                readonly $type: 'A' | 'B' | 'D';
+                name: string
+            }
+            export interface E extends AstNode {
+                readonly $type: 'E';
+                name?: string
+                value?: number
+            }
+            export interface A extends D {
+                readonly $type: 'A';
+                name: number | string
+            }
+            export interface B extends D {
+                readonly $type: 'B';
+                name: number | string
+            }
+            export type C = A | B;
+        `);
     });
 
-    test('Y is inferred from D with y:ID', () => {
-        const y = getType(types, 'Y') as InterfaceType;
-        expect(y).toBeDefined();
-        expect(y.printingSuperTypes).toEqual(['C']);
-        expect(y.properties).toHaveLength(1);
-        expectProperty(y, 'y');
+    test('Should correctly infer types using chained actions', async () => {
+        await expectTypes(`
+            A: a=ID ({infer B} b=ID ({infer C} c=ID)?)? d=ID;
+            terminal ID returns string: /string/;
+        `, expandToString`
+            export interface A extends AstNode {
+                readonly $type: 'A' | 'B' | 'C';
+                a: string
+                d: string
+            }
+            export interface B extends A {
+                readonly $type: 'B' | 'C';
+                b: string
+                d: string
+            }
+            export interface C extends B {
+                readonly $type: 'C';
+                c: string
+                d: string
+            }
+        `);
     });
 
-    test('D is not inferred', () => {
-        const d = getType(types, 'D');
-        expect(d).toBeUndefined();
+    test('Should correctly infer types using chained actions with assignments', async () => {
+        await expectTypes(`
+            A: B ({infer B.b=current} c=ID)?;
+            B: a=ID;
+            terminal ID returns string: /string/;
+        `, expandToString`
+            export interface B extends AstNode {
+                readonly $container: B;
+                readonly $type: 'B';
+                a?: string
+                b?: B
+                c?: string
+            }
+            export type A = B;
+        `);
     });
 
+    test('Should correctly infer types using actions in repetitions', async () => {
+        await expectTypes(`
+            A: value=ID ({infer A.item=current} value=ID)*;
+            terminal ID returns string: /string/;
+        `, expandToString`
+            export interface A extends AstNode {
+                readonly $container: A;
+                readonly $type: 'A';
+                item?: A
+                value: string
+            }
+        `);
+    });
+
+    test('Should correctly infer types using unassinged and assigned actions', async () => {
+        await expectTypes(`
+            A: ({infer X} x=ID | {infer Y} y=ID | {infer Z} z=ID) {infer B.front=current} back=ID;
+            terminal ID returns string: /string/;
+        `, expandToString`
+            export interface B extends AstNode {
+                readonly $container: B;
+                readonly $type: 'B';
+                back: string
+                front: X | Y | Z
+            }
+            export interface X extends AstNode {
+                readonly $container: B;
+                readonly $type: 'X';
+                x: string
+            }
+            export interface Y extends AstNode {
+                readonly $container: B;
+                readonly $type: 'Y';
+                y: string
+            }
+            export interface Z extends AstNode {
+                readonly $container: B;
+                readonly $type: 'Z';
+                z: string
+            }
+            export type A = B | X | Y | Z;
+        `);
+    });
+
+    test('Should correctly infer types using actions and infer keyword', async () => {
+        await expectTypes(`
+            A: a=ID;
+            B infers A: A {infer B} b=ID;
+            terminal ID returns string: /string/;
+        `, expandToString`
+            export interface A extends AstNode {
+                readonly $type: 'A' | 'B';
+                a: string
+            }
+            export interface B extends A {
+                readonly $type: 'B';
+                b: string
+            }
+        `);
+    });
+
+    test('Should infer actions with alternatives and fragments correctly', async () => {
+        await expectTypes(`
+            Entry:
+                Expr;
+            Expr:
+                {infer Ref} ref=ID
+                ({infer Access.receiver=current} '.' member=ID)*;
+            Ref:
+                {infer Ref} ref=ID;
+            Access:
+                {infer Access} '.' member=ID;
+        
+            IdRule:
+                'id' name=ID;
+            RuleName infers RuleType:
+                IdRule (
+                    {infer FirstBranch.value=current} FirstBranchFragment
+                |   {infer SecondBranch.value=current} SecondBranchFragment
+                );
+            fragment FirstBranchFragment: 'First' first=ID;
+            fragment SecondBranchFragment: 'Second' second=ID;
+        
+            terminal ID returns string: /string/;
+        `, expandToString`
+            export interface Access extends AstNode {
+                readonly $container: Access;
+                readonly $type: 'Access';
+                member: string
+                receiver?: Ref
+            }
+            export interface FirstBranch extends AstNode {
+                readonly $container: FirstBranch | SecondBranch;
+                readonly $type: 'FirstBranch';
+                first: string
+                value: IdRule
+            }
+            export interface IdRule extends AstNode {
+                readonly $container: FirstBranch | SecondBranch;
+                readonly $type: 'IdRule';
+                name: string
+            }
+            export interface Ref extends AstNode {
+                readonly $container: Access;
+                readonly $type: 'Ref';
+                ref: string
+            }
+            export interface SecondBranch extends AstNode {
+                readonly $container: FirstBranch | SecondBranch;
+                readonly $type: 'SecondBranch';
+                second: string
+                value: IdRule
+            }
+            export type Entry = Expr;
+            export type Expr = Access | Ref;
+            export type RuleType = FirstBranch | IdRule | SecondBranch;
+        `);
+    });
+
+    test('Should correctly infer types with common names', async () => {
+        await expectTypes(`
+            A infers X: a=ID;
+            B infers X: a=ID b=ID;
+            C infers X: a=ID c=ID?;
+
+            terminal ID returns string: /string/;
+        `, expandToString`
+            export interface X extends AstNode {
+                readonly $type: 'X';
+                a: string
+                b?: string
+                c?: string
+            }
+        `);
+    });
+
+    test('Should infer types with common names and actions', async () => {
+        await expectTypes(`
+            A infers X: {infer A} a=ID;
+            B infers X: {infer B} b=ID;
+
+            C: D ({infer C.item=current} value=ID);
+            D infers Y: y=ID;
+
+            terminal ID returns string: /string/;
+        `, expandToString`
+            export interface A extends AstNode {
+                readonly $type: 'A';
+                a: string
+            }
+            export interface B extends AstNode {
+                readonly $type: 'B';
+                b: string
+            }
+            export interface C extends AstNode {
+                readonly $container: C;
+                readonly $type: 'C' | 'Y';
+                item: Y
+                value: string
+            }
+            export interface Y extends C {
+                readonly $container: C;
+                readonly $type: 'Y';
+                y: string
+            }
+            export type X = A | B;
+        `);
+    });
+
+    test('Should infer data type rules as unions', async () => {
+        expectTypes(`
+            Strings returns string: 'a' | 'b' | 'c';
+            MoreStrings returns string: Strings | 'd' | 'e';
+            Complex returns string: ID ('.' ID)*;
+            DateLike returns Date: 'x';
+            terminal ID: /[a-zA-Z_][a-zA-Z0-9_]*/;
+        `, expandToString`
+            export type Complex = string;
+            export type DateLike = Date;
+            export type MoreStrings = 'd' | 'e' | Strings;
+            export type Strings = 'a' | 'b' | 'c';
+        `);
+    });
+
+    test('Infers X as a super interface of Y and Z with property `id`', async () => {
+        expectTypes(`
+            entry X: id=ID ({infer Y} 'a' | {infer Z} 'b');
+            terminal ID: /[a-zA-Z_][a-zA-Z0-9_]*/;
+        `, expandToString`
+            export interface X extends AstNode {
+                readonly $type: 'X' | 'Y' | 'Z';
+                id: string
+            }
+            export interface Y extends X {
+                readonly $type: 'Y';
+            }
+            export interface Z extends X {
+                readonly $type: 'Z';
+            }
+        `);
+    });
 });
 
-describeTypes('inferred types that are used by the grammar', `
-    A infers B: 'a' name=ID (otherA=[B])?;
-    hidden terminal WS: /\\s+/;
-    terminal ID: /[a-zA-Z_][a-zA-Z0-9_]*/;
-    `, types => {
-
-    test('B is defined and A is not', () => {
-        const a = getType(types, 'A') as InterfaceType;
-        expect(a).toBeUndefined();
-        const b = getType(types, 'B') as InterfaceType;
-        expect(b).toBeDefined();
+describe('inferred types that are used by the grammar', () => {
+    test('B is defined and A is not', async () => {
+        expectTypes(`
+            A infers B: 'a' name=ID (otherA=[B])?;
+            hidden terminal WS: /\\s+/;
+            terminal ID: /[a-zA-Z_][a-zA-Z0-9_]*/;
+        `, expandToString`
+            export interface B extends AstNode {
+                readonly $type: 'B';
+                name: string
+                otherA?: Reference<B>
+            }
+        `);
     });
 });
 
-describeTypes('inferred and declared types', `
-    X returns X: Y | Z;
-    Y: y='y';
-    Z: z='z';
-
-    interface X { }
-`, types => {
-
-    test('X is preserved as an interface', () => {
-        const x = getType(types, 'X') as InterfaceType;
-        expect(x).toBeDefined();
-        expect(x.properties).toHaveLength(0);
-        const y = getType(types, 'Y') as InterfaceType;
-        expect(y).toBeDefined();
-        expect(y.realSuperTypes).toContain('X');
-        const z = getType(types, 'Z') as InterfaceType;
-        expect(z).toBeDefined();
-        expect(z.realSuperTypes).toContain('X');
+describe('inferred and declared types', () => {
+    test('Declared interfaces should be preserved as interfaces', async () => {
+        expectTypes(`
+            X returns X: Y | Z;
+            Y: y='y';
+            Z: z='z';
+        
+            interface X { }
+        `, expandToString`
+            export interface X extends AstNode {
+                readonly $type: 'X' | 'Y' | 'Z';
+            }
+            export interface Y extends X {
+                readonly $type: 'Y';
+                y: 'y'
+            }
+            export interface Z extends X {
+                readonly $type: 'Z';
+                z: 'z'
+            }
+        `);
     });
-
 });
 
 describe('expression rules with inferred and declared interfaces', () => {
 
     test('separate rules with assigned actions with inferred type and declared sub type of the former', async () => {
-        const grammarServices = createLangiumGrammarServices(EmptyFileSystem).grammar;
-        const document = await parseHelper<Grammar>(grammarServices)(`
+        await checkTypes(`
             interface Symbol {}
             interface SuperMemberAccess extends MemberAccess {}
 
@@ -721,16 +387,10 @@ describe('expression rules with inferred and declared interfaces', () => {
                 {infer BooleanLiteral} value?='true' | 'false'
             ;
         `);
-
-        expect(document.parseResult.lexerErrors).toHaveLength(0);
-        expect(document.parseResult.parserErrors).toHaveLength(0);
-
-        checkTypes(document.parseResult.value);
     });
 
     test('single rule with two assigned actions with inferred type and declared sub type of the former', async () => {
-        const grammarServices = createLangiumGrammarServices(EmptyFileSystem).grammar;
-        const document = await parseHelper<Grammar>(grammarServices)(`
+        await checkTypes(`
             interface Symbol {}
             interface SuperMemberAccess extends MemberAccess {}
 
@@ -753,72 +413,13 @@ describe('expression rules with inferred and declared interfaces', () => {
                 {infer BooleanLiteral} value?='true' | 'false'
             ;
         `);
-
-        expect(document.parseResult.lexerErrors).toHaveLength(0);
-        expect(document.parseResult.parserErrors).toHaveLength(0);
-
-        checkTypes(document.parseResult.value);
     });
 
     // todo make tests like in this PR: https://github.com/langium/langium/pull/670
     // the PR #670 fixes the demonstrated bug, but cancels type inferrence for declared actions
     // we should fix the issue another way
-    function checkTypes(grammar: Grammar) {
-        const { parserRules, datatypeRules, interfaces, types } = collectAllAstResources([grammar]);
-
-        // check only inferred types
-        const inferred = collectInferredTypes(parserRules, datatypeRules, {
-            interfaces: [],
-            unions: []
-        });
-        inferred.interfaces = sortInterfacesTopologically(inferred.interfaces);
-        specifyAstNodeProperties(inferred);
-
-        const inferredInterfacesString = inferred.interfaces.map(toSubstring).join(EOL).trim();
-        expect(inferredInterfacesString).toBe(expandToString`
-            export interface BooleanLiteral extends AstNode {
-                readonly $container: MemberAccess | SuperMemberAccess;
-                readonly $type: 'BooleanLiteral';
-                value: boolean
-            }
-            export interface MemberAccess extends AstNode {
-                readonly $container: MemberAccess | SuperMemberAccess;
-                readonly $type: 'MemberAccess';
-                member: Reference<Symbol>
-                receiver: PrimaryExpression
-            }
-            export interface SuperMemberAccess extends AstNode {
-                readonly $container: MemberAccess | SuperMemberAccess;
-                readonly $type: 'SuperMemberAccess';
-                member: Reference<Symbol>
-                receiver: PrimaryExpression
-            }
-        `);
-
-        // check only declared types
-        const declared = collectDeclaredTypes(interfaces, types);
-        inferred.interfaces = sortInterfacesTopologically(declared.interfaces);
-        specifyAstNodeProperties(declared);
-
-        expect(declared.interfaces.map(toSubstring).join(EOL).trim()).toBe(expandToString`
-            export interface SuperMemberAccess extends MemberAccess {
-                readonly $type: 'SuperMemberAccess';
-            }
-            export interface Symbol extends AstNode {
-                readonly $type: 'Symbol';
-            }
-        `);
-
-        // check ast.ts types
-        const allTypes = collectAst(grammar);
-
-        expect(allTypes.unions.map(toSubstring).join(EOL).trim()).toBe(expandToString`
-            export type Expression = MemberAccess | PrimaryExpression | SuperMemberAccess;
-            export type PrimaryExpression = BooleanLiteral;
-        `);
-
-        const allInterfacesString = allTypes.interfaces.map(toSubstring).join(EOL).trim();
-        expect(allInterfacesString).toBe(expandToString`
+    async function checkTypes(grammar: string): Promise<void> {
+        await expectTypes(grammar, expandToString`
             export interface BooleanLiteral extends AstNode {
                 readonly $container: MemberAccess;
                 readonly $type: 'BooleanLiteral';
@@ -837,12 +438,9 @@ describe('expression rules with inferred and declared interfaces', () => {
                 readonly $container: MemberAccess;
                 readonly $type: 'SuperMemberAccess';
             }
+            export type Expression = MemberAccess | PrimaryExpression | SuperMemberAccess;
+            export type PrimaryExpression = BooleanLiteral;
         `);
-
-        // the idea of the following is to double check that the declared definitions don't overwrite any
-        // inferred definition; because of the sorting before joining the 'startsWith' doesn't work in general,
-        // but it does work here due to the smart rule and interface name choice ;-)
-        expect(allInterfacesString.startsWith(inferredInterfacesString));
     }
 });
 
@@ -850,21 +448,13 @@ describe('types of `$container` and `$type` are correct', () => {
 
     // `$container`-types are appear only from inferred types
     test('types of `$container` and `$type` for declared types', async () => {
-        const grammarServices = createLangiumGrammarServices(EmptyFileSystem).grammar;
-        const document = await parseHelper<Grammar>(grammarServices)(`
+        await expectTypes(`
             interface A { strA: string }
             interface B { strB: string }
             interface C extends A, B { strC: string }
             interface D { a: A }
             interface E { b: B }
-        `);
-        const { unions, interfaces } = collectAst(document.parseResult.value);
-
-        const unionsString = unions.map(toSubstring).join(EOL).trim();
-        expect(unionsString).toBe(expandToString``);
-
-        const interfacesString = sortInterfacesTopologically(interfaces).map(toSubstring).join(EOL).trim();
-        expect(interfacesString).toBe(expandToString`
+        `, expandToString`
             export interface A extends AstNode {
                 readonly $container: D | E;
                 readonly $type: 'A' | 'C';
@@ -892,25 +482,14 @@ describe('types of `$container` and `$type` are correct', () => {
     });
 
     test('types of `$container` and `$type` for inferred types', async () => {
-        const grammarServices = createLangiumGrammarServices(EmptyFileSystem).grammar;
-        const document = await parseHelper<Grammar>(grammarServices)(`
+        await expectTypes(`
             terminal ID: /[_a-zA-Z][\\w_]*/;
             A: 'A' C;
             B: 'B' C;
             C: 'C' strC=ID;
             D: 'D' a=A;
             E: 'E' b=B;
-        `);
-        const { unions, interfaces } = collectAst(document.parseResult.value);
-
-        const unionsString = unions.map(toSubstring).join(EOL).trim();
-        expect(unionsString).toBe(expandToString`
-            export type A = C;
-            export type B = C;
-        `);
-
-        const interfacesString = sortInterfacesTopologically(interfaces).map(toSubstring).join(EOL).trim();
-        expect(interfacesString).toBe(expandToString`
+        `, expandToString`
             export interface C extends AstNode {
                 readonly $container: D | E;
                 readonly $type: 'C';
@@ -924,12 +503,13 @@ describe('types of `$container` and `$type` are correct', () => {
                 readonly $type: 'E';
                 b: B
             }
+            export type A = C;
+            export type B = C;
         `);
     });
 
     test('types of `$container` and `$type` for inferred and declared types', async () => {
-        const grammarServices = createLangiumGrammarServices(EmptyFileSystem).grammar;
-        const document = await parseHelper<Grammar>(grammarServices)(`
+        await expectTypes(`
             A: 'A' strA=ID;
             B: 'B' strB=ID;
             C returns C: 'C' strA=ID strB=ID strC=ID;
@@ -937,14 +517,7 @@ describe('types of `$container` and `$type` are correct', () => {
             D: 'D' a=A;
             E: 'E' b=B;
             terminal ID: /[a-zA-Z_][a-zA-Z0-9_]*/;
-        `);
-        const { unions, interfaces } = collectAst(document.parseResult.value);
-
-        const unionsString = unions.map(toSubstring).join(EOL).trim();
-        expect(unionsString).toBe(expandToString``);
-
-        const interfacesString = interfaces.map(toSubstring).join(EOL).trim();
-        expect(interfacesString).toBe(expandToString`
+        `, expandToString`
             export interface A extends AstNode {
                 readonly $container: D | E;
                 readonly $type: 'A' | 'C';
@@ -969,7 +542,6 @@ describe('types of `$container` and `$type` are correct', () => {
                 strC: string
             }
         `);
-
     });
 });
 
@@ -995,70 +567,77 @@ describe('generated types from declared types include all of them', () => {
         `);
         const typesWithDeclared = collectAst(documentWithDeclaredTypes.parseResult.value);
 
-        expect(typesWithDeclared.unions.map(toSubstring).join(EOL).trim())
-            .toBe(types.unions.map(toSubstring).join(EOL).trim());
+        expect(typesWithDeclared.unions.map(e => e.toAstTypesString(false)).join(EOL).trim())
+            .toBe(types.unions.map(e => e.toAstTypesString(false)).join(EOL).trim());
 
-        expect(typesWithDeclared.interfaces.map(toSubstring).join(EOL).trim())
-            .toBe(types.interfaces.map(toSubstring).join(EOL).trim());
+        expect(typesWithDeclared.interfaces.map(e => e.toAstTypesString(false)).join(EOL).trim())
+            .toBe(types.interfaces.map(e => e.toAstTypesString(false)).join(EOL).trim());
     });
 
 });
 
+// TODO @msujew: Test case for https://github.com/langium/langium/issues/775
+// describe('type merging runs in non-exponential time', () => {
+//
+//     test('grammar with many optional groups is processed correctly', async () => {
+//         const grammarServices = createLangiumGrammarServices(EmptyFileSystem).grammar;
+//         const document = await parseHelper<Grammar>(grammarServices)(`
+//         grammar Test
+//
+//         entry Model:
+//             (title1=INT ';')?
+//             (title2=INT ';')?
+//             (title3=INT ';')?
+//             (title4=INT ';')?
+//             (title5=INT ';')?
+//             (title6=INT ';')?
+//             (title7=INT ';')?
+//             (title8=INT ';')?
+//             (title9=INT ';')?
+//             (title10=INT ';')?
+//             (title11=INT ';')?
+//             (title12=INT ';')?
+//             (title13=INT ';')?
+//             (title14=INT ';')?
+//             (title15=INT ';')?
+//             (title16=INT ';')?
+//             (title17=INT ';')?
+//             (title18=INT ';')?
+//             (title19=INT ';')?
+//             (title20=INT ';')?
+//             (title21=INT ';')?
+//             (title22=INT ';')?
+//             (title23=INT ';')?
+//             (title24=INT ';')?
+//             (title25=INT ';')?
+//             (title26=INT ';')?
+//             (title27=INT ';')?
+//             (title28=INT ';')?
+//             (title29=INT ';')?
+//             (title30=INT ';')?
+//         ;
+//         terminal INT returns number: ('0'..'9')+;
+//         `);
+//         const { interfaces } = collectAst(document.parseResult.value);
+//         const model = interfaces[0];
+//         expect(model.properties).toHaveLength(30);
+//         expect(model.properties.every(e => e.optional)).toBeTruthy();
+//     });
+//
+// });
+
+const services = createLangiumGrammarServices(EmptyFileSystem).grammar;
+
 async function getTypes(grammar: string): Promise<AstTypes> {
-    const services = createLangiumGrammarServices(EmptyFileSystem).grammar;
+    await clearDocuments(services);
     const helper = parseHelper<Grammar>(services);
     const result = await helper(grammar);
     const gram = result.parseResult.value;
-    return collectTypeResources(gram).inferred;
+    return collectAst(gram);
 }
 
-function getType(types: AstTypes, name: string): InterfaceType | UnionType | undefined {
-    const interfaceType = types.interfaces.find(e => e.name === name);
-    const unionType = types.unions.find(e => e.name === name);
-    return interfaceType || unionType;
+async function expectTypes(grammar: string, types: string): Promise<void> {
+    const grammarTypes = await getTypes(grammar);
+    const allTypes = mergeTypesAndInterfaces(grammarTypes);
+    expect(allTypes.map(type => type.toAstTypesString(false)).join('').trim()).toBe(types);
 }
-
-// general purpose property getter for interfaces, does not verify the property exists
-function getProperty(interfaceType: InterfaceType, property: string): Property | undefined {
-    return interfaceType.properties.find(e => e.name === property);
-}
-
-function expectProperty(interfaceType: InterfaceType, property: Property | string): void {
-    if (typeof property === 'string') {
-        const prop = getProperty(interfaceType, property)!;
-        expect(prop).toBeDefined();
-        expect(prop.optional).toStrictEqual(false);
-    } else {
-        const prop = getProperty(interfaceType, property.name)!;
-        expect(prop).toBeDefined();
-        expect(prop.optional).toStrictEqual(property.optional);
-        expect(prop.typeAlternatives.length).toStrictEqual(property.typeAlternatives.length);
-        for (let i = 0; i < prop.typeAlternatives.length; i++) {
-            const actualType = prop.typeAlternatives[i];
-            const expectedType = property.typeAlternatives[i];
-            expect(actualType.types).toEqual(expectedType.types);
-            expect(actualType.array).toEqual(expectedType.array);
-            expect(actualType.reference).toEqual(expectedType.reference);
-        }
-    }
-}
-
-function expectUnion(unionType: UnionType, types: PropertyType[]): void {
-    expect(unionType.alternatives.length).toStrictEqual(types.length);
-    for (let i = 0; i < unionType.alternatives.length; i++) {
-        const actualType = unionType.alternatives[i];
-        const expectedType = types[i];
-        expect(actualType.types).toEqual(expectedType.types);
-        expect(actualType.array).toEqual(expectedType.array);
-        expect(actualType.reference).toEqual(expectedType.reference);
-    }
-}
-
-const toSubstring = (o: { toAstTypesString: () => string }) => {
-    // this specialized 'toString' function uses the default 'toString' that is  producing the
-    //  code generation output, and strips everything not belonging to the actual interface/type declaration
-    const sRep = o.toAstTypesString();
-    return sRep.substring(
-        0, 1 + (sRep.includes('interface') ? sRep.indexOf('}') : Math.min(sRep.indexOf(';') ))
-    );
-};

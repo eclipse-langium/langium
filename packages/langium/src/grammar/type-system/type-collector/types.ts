@@ -5,22 +5,84 @@
  ******************************************************************************/
 
 import { CompositeGeneratorNode, NL, toString } from '../../../generator/generator-node';
+import { processGeneratorNode } from '../../../generator/node-processor';
 import { CstNode } from '../../../syntax-tree';
-import { MultiMap } from '../../../utils/collections';
 import { Assignment, Action, TypeAttribute } from '../../generated/ast';
 import { distinctAndSorted } from '../types-util';
 
 export type Property = {
     name: string,
     optional: boolean,
-    typeAlternatives: PropertyType[],
+    type: PropertyType,
     astNodes: Set<Assignment | Action | TypeAttribute>,
 }
 
-export type PropertyType = {
-    types: string[],
-    reference: boolean,
-    array: boolean,
+export type PropertyType =
+    | ReferenceType
+    | ArrayType
+    | PropertyUnion
+    | ValueType
+    | PrimitiveType
+    | StringType;
+
+export interface ReferenceType {
+    referenceType: PropertyType
+}
+
+export function isReferenceType(propertyType: PropertyType): propertyType is ReferenceType {
+    return 'referenceType' in propertyType;
+}
+
+export interface ArrayType {
+    elementType: PropertyType
+}
+
+export function isArrayType(propertyType: PropertyType): propertyType is ArrayType {
+    return 'elementType' in propertyType;
+}
+
+export interface PropertyUnion {
+    types: PropertyType[]
+}
+
+export function isPropertyUnion(propertyType: PropertyType): propertyType is PropertyUnion {
+    return 'types' in propertyType;
+}
+
+export function flattenPropertyUnion(propertyType: PropertyType): PropertyType[] {
+    if (isPropertyUnion(propertyType)) {
+        const items: PropertyType[] = [];
+        for (const type of propertyType.types) {
+            items.push(...flattenPropertyUnion(type));
+        }
+        return items;
+    } else {
+        return [propertyType];
+    }
+}
+
+export interface ValueType {
+    value: TypeOption
+}
+
+export function isValueType(propertyType: PropertyType): propertyType is ValueType {
+    return 'value' in propertyType;
+}
+
+export interface PrimitiveType {
+    primitive: string
+}
+
+export function isPrimitiveType(propertyType: PropertyType): propertyType is PrimitiveType {
+    return 'primitive' in propertyType;
+}
+
+export interface StringType {
+    string: string
+}
+
+export function isStringType(propertyType: PropertyType): propertyType is StringType {
+    return 'string' in propertyType;
 }
 
 export type AstTypes = {
@@ -29,7 +91,7 @@ export type AstTypes = {
 }
 
 export function isUnionType(type: TypeOption): type is UnionType {
-    return type && 'alternatives' in type;
+    return type && 'type' in type;
 }
 
 export function isInterfaceType(type: TypeOption): type is InterfaceType {
@@ -40,25 +102,28 @@ export type TypeOption = InterfaceType | UnionType;
 
 export class UnionType {
     name: string;
-    realSuperTypes = new Set<string>();
-    subTypes = new Set<string>();
-    containerTypes = new Set<string>();
-    typeTypes = new Set<string>();
-
-    alternatives: PropertyType[];
+    type: PropertyType;
+    superTypes = new Set<TypeOption>();
+    subTypes = new Set<TypeOption>();
+    containerTypes = new Set<TypeOption>();
+    typeNames = new Set<string>();
     reflection: boolean;
+    declared: boolean;
 
-    constructor(name: string, alts: PropertyType[], options?: { reflection: boolean }) {
+    constructor(name: string, options?: {
+        reflection: boolean
+        declared: boolean
+    }) {
         this.name = name;
-        this.alternatives = alts;
         this.reflection = options?.reflection ?? false;
+        this.declared = options?.declared ?? false;
     }
 
-    toAstTypesString(): string {
+    toAstTypesString(reflectionInfo: boolean): string {
         const unionNode = new CompositeGeneratorNode();
-        unionNode.append(`export type ${this.name} = ${propertyTypesToString(this.alternatives, 'AstType')};`, NL);
+        unionNode.append(`export type ${this.name} = ${propertyTypeToString(this.type, 'AstType')};`, NL);
 
-        if (this.reflection) {
+        if (this.reflection && reflectionInfo) {
             unionNode.append(NL);
             pushReflectionInfo(unionNode, this.name);
         }
@@ -67,49 +132,92 @@ export class UnionType {
 
     toDeclaredTypesString(reservedWords: Set<string>): string {
         const unionNode = new CompositeGeneratorNode();
-        unionNode.append(`type ${escapeReservedWords(this.name, reservedWords)} = ${propertyTypesToString(this.alternatives, 'DeclaredType')};`, NL);
-        return toString(unionNode);
+        unionNode.append(`type ${escapeReservedWords(this.name, reservedWords)} = ${propertyTypeToString(this.type, 'DeclaredType')};`, NL);
+        return processGeneratorNode(unionNode);
     }
 }
 
 export class InterfaceType {
     name: string;
-    realSuperTypes = new Set<string>();
-    subTypes = new Set<string>();
-    containerTypes = new Set<string>();
-    typeTypes = new Set<string>();
+    superTypes = new Set<TypeOption>();
+    subTypes = new Set<TypeOption>();
+    containerTypes = new Set<TypeOption>();
+    typeNames = new Set<string>();
+    declared = false;
+    abstract = false;
 
-    printingSuperTypes: string[] = [];
-    properties: Property[];
-    superProperties: MultiMap<string, Property> = new MultiMap();
+    properties: Property[] = [];
 
-    constructor(name: string, superTypes: string[], properties: Property[]) {
-        this.name = name;
-        this.realSuperTypes = new Set(superTypes);
-        this.printingSuperTypes = [...superTypes];
-        this.properties = properties;
-        properties.forEach(prop => this.superProperties.add(prop.name, prop));
+    get superProperties(): Property[] {
+        const map = new Map<string, Property>();
+        for (const property of this.properties) {
+            map.set(property.name, property);
+        }
+        for (const superType of this.interfaceSuperTypes) {
+            const allSuperProperties = superType.superProperties;
+            for (const superProp of allSuperProperties) {
+                if (!map.has(superProp.name)) {
+                    map.set(superProp.name, superProp);
+                }
+            }
+        }
+        return Array.from(map.values());
     }
 
-    toAstTypesString(): string {
+    get allProperties(): Property[] {
+        const map = new Map(this.superProperties.map(e => [e.name, e]));
+        for (const subType of this.subTypes) {
+            this.getSubTypeProperties(subType, map);
+        }
+        const superProps = Array.from(map.values());
+        return superProps;
+    }
+
+    private getSubTypeProperties(type: TypeOption, map: Map<string, Property>): void {
+        const props = isInterfaceType(type) ? type.properties : [];
+        for (const prop of props) {
+            if (!map.has(prop.name)) {
+                map.set(prop.name, prop);
+            }
+        }
+        for (const subType of type.subTypes) {
+            this.getSubTypeProperties(subType, map);
+        }
+    }
+
+    get interfaceSuperTypes(): InterfaceType[] {
+        return Array.from(this.superTypes).filter((e): e is InterfaceType => e instanceof InterfaceType);
+    }
+
+    constructor(name: string, declared: boolean, abstract: boolean) {
+        this.name = name;
+        this.declared = declared;
+        this.abstract = abstract;
+    }
+
+    toAstTypesString(reflectionInfo: boolean): string {
         const interfaceNode = new CompositeGeneratorNode();
 
-        const superTypes = this.printingSuperTypes.length > 0 ? distinctAndSorted([...this.printingSuperTypes]) : ['AstNode'];
+        const interfaceSuperTypes = this.interfaceSuperTypes.map(e => e.name);
+        const superTypes = interfaceSuperTypes.length > 0 ? distinctAndSorted([...interfaceSuperTypes]) : ['AstNode'];
         interfaceNode.append(`export interface ${this.name} extends ${superTypes.join(', ')} {`, NL);
 
         interfaceNode.indent(body => {
             if (this.containerTypes.size > 0) {
-                body.append(`readonly $container: ${distinctAndSorted([...this.containerTypes]).join(' | ')};`, NL);
+                body.append(`readonly $container: ${distinctAndSorted([...this.containerTypes].map(e => e.name)).join(' | ')};`, NL);
             }
-            if (this.typeTypes.size > 0) {
-                body.append(`readonly $type: ${distinctAndSorted([...this.typeTypes]).map(e => `'${e}'`).join(' | ')};`, NL);
+            if (this.typeNames.size > 0) {
+                body.append(`readonly $type: ${distinctAndSorted([...this.typeNames]).map(e => `'${e}'`).join(' | ')};`, NL);
             }
             pushProperties(body, this.properties, 'AstType');
         });
         interfaceNode.append('}', NL);
 
-        interfaceNode.append(NL);
-        pushReflectionInfo(interfaceNode, this.name);
+        if (reflectionInfo) {
+            interfaceNode.append(NL);
+            pushReflectionInfo(interfaceNode, this.name);
+        }
+
         return toString(interfaceNode);
     }
 
@@ -117,7 +225,7 @@ export class InterfaceType {
         const interfaceNode = new CompositeGeneratorNode();
 
         const name = escapeReservedWords(this.name, reservedWords);
-        const superTypes = Array.from(this.printingSuperTypes).join(', ');
+        const superTypes = distinctAndSorted(this.interfaceSuperTypes.map(e => e.name)).join(', ');
         interfaceNode.append(`interface ${name}${superTypes.length > 0 ? ` extends ${superTypes}` : ''} {`, NL);
 
         interfaceNode.indent(body => pushProperties(body, this.properties, 'DeclaredType', reservedWords));
@@ -138,31 +246,114 @@ export class TypeResolutionError extends Error {
 
 }
 
-export function propertyTypesToString(alternatives: PropertyType[], mode: 'AstType' | 'DeclaredType'='AstType'): string {
-    function propertyTypeToString(propertyType: PropertyType): string {
-        let res = distinctAndSorted(propertyType.types).join(' | ');
-        res = propertyType.reference ? (mode === 'AstType' ? `Reference<${res}>` : `@${res}`) : res;
-        res = propertyType.array ? (mode === 'AstType' ? `Array<${res}>` : `${res}[]`) : res;
-        return res;
+export function isTypeAssignable(from: PropertyType, to: PropertyType): boolean {
+    if (isPropertyUnion(from)) {
+        return from.types.every(fromType => isTypeAssignable(fromType, to));
+    } else if (isPropertyUnion(to)) {
+        return to.types.some(toType => isTypeAssignable(from, toType));
+    } else if (isReferenceType(from)) {
+        return isReferenceType(to) && isTypeAssignable(from.referenceType, to.referenceType);
+    } else if (isArrayType(from)) {
+        return isArrayType(to) && isTypeAssignable(from.elementType, to.elementType);
+    } else if (isValueType(from)) {
+        if (isUnionType(from.value)) {
+            if (isValueType(to) && to.value.name === from.value.name) {
+                return true;
+            }
+            return isTypeAssignable(from.value.type, to);
+        }
+        if (!isValueType(to)) {
+            return false;
+        }
+        if (isUnionType(to.value)) {
+            return isTypeAssignable(from, to.value.type);
+        } else {
+            return isInterfaceAssignable(from.value, to.value, new Set());
+        }
+    } else if (isPrimitiveType(from)) {
+        return isPrimitiveType(to) && from.primitive === to.primitive;
     }
-
-    return distinctAndSorted(alternatives.map(propertyTypeToString)).join(' | ');
+    else if (isStringType(from)) {
+        return (isPrimitiveType(to) && to.primitive === 'string') || (isStringType(to) && to.string === from.string);
+    }
+    return false;
 }
 
-function pushProperties(node: CompositeGeneratorNode, properties: Property[],
-    mode: 'AstType' | 'DeclaredType', reserved = new Set<string>()) {
+function isInterfaceAssignable(from: InterfaceType, to: InterfaceType, visited: Set<string>): boolean {
+    if (visited.has(from.name)) {
+        return true;
+    }
+    visited.add(from.name);
+    if (from.name === to.name) {
+        return true;
+    }
+    for (const superType of from.superTypes) {
+        if (isInterfaceType(superType) && isInterfaceAssignable(superType, to, visited)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+export function propertyTypeToString(type: PropertyType, mode: 'AstType' | 'DeclaredType' = 'AstType'): string {
+    if (isReferenceType(type)) {
+        const refType = propertyTypeToString(type.referenceType, mode);
+        return mode === 'AstType' ? `Reference<${refType}>` : `@${typeParenthesis(type.referenceType, refType)}`;
+    } else if (isArrayType(type)) {
+        const arrayType = propertyTypeToString(type.elementType, mode);
+        return mode === 'AstType' ? `Array<${arrayType}>` : `${typeParenthesis(type.elementType, arrayType)}[]`;
+    } else if (isPropertyUnion(type)) {
+        const types = type.types.map(e => typeParenthesis(e, propertyTypeToString(e, mode)));
+        return distinctAndSorted(types).join(' | ');
+    } else if (isValueType(type)) {
+        return type.value.name;
+    } else if (isPrimitiveType(type)) {
+        return type.primitive;
+    } else if (isStringType(type)) {
+        return `'${type.string}'`;
+    }
+    throw new Error('Invalid type');
+}
+
+function typeParenthesis(type: PropertyType, name: string): string {
+    const needsParenthesis = isPropertyUnion(type);
+    if (needsParenthesis) {
+        name = `(${name})`;
+    }
+    return name;
+}
+
+function pushProperties(
+    node: CompositeGeneratorNode,
+    properties: Property[],
+    mode: 'AstType' | 'DeclaredType',
+    reserved = new Set<string>()
+) {
 
     function propertyToString(property: Property): string {
         const name = mode === 'AstType' ? property.name : escapeReservedWords(property.name, reserved);
-        const optional = property.optional &&
-            !property.typeAlternatives.some(e => e.array) &&
-            !property.typeAlternatives.every(e => e.types.length === 1 && e.types[0] === 'boolean');
-        const propType = propertyTypesToString(property.typeAlternatives, mode);
+        const optional = property.optional && !isMandatoryPropertyType(property.type);
+        const propType = propertyTypeToString(property.type, mode);
         return `${name}${optional ? '?' : ''}: ${propType}`;
     }
 
     distinctAndSorted(properties, (a, b) => a.name.localeCompare(b.name))
         .forEach(property => node.append(propertyToString(property), NL));
+}
+
+function isMandatoryPropertyType(propertyType: PropertyType): boolean {
+    if (isArrayType(propertyType)) {
+        return true;
+    } else if (isReferenceType(propertyType)) {
+        return false;
+    } else if (isPropertyUnion(propertyType)) {
+        return propertyType.types.every(e => isMandatoryPropertyType(e));
+    } else if (isPrimitiveType(propertyType)) {
+        const value = propertyType.primitive;
+        return value === 'boolean';
+    } else {
+        return false;
+    }
 }
 
 function pushReflectionInfo(node: CompositeGeneratorNode, name: string) {

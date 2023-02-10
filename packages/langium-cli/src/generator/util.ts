@@ -63,7 +63,7 @@ export function collectKeywords(grammar: Grammar): string[] {
         keywords.add(keyword.value);
     }
 
-    return Array.from(keywords).sort((a, b) => a.localeCompare(b));
+    return Array.from(keywords).sort();
 }
 
 export function getUserInput(text: string): Promise<string> {

@@ -270,8 +270,8 @@ function findNameAssignmentInternal(type: ast.AbstractType, cache: Map<ast.Abstr
             return node;
         } else if (ast.isRuleCall(node) && ast.isParserRule(node.rule.ref)) {
             return go(node, node.rule.ref);
-        } else if (ast.isAtomType(node) && node?.refType?.ref) {
-            return go(node, node.refType.ref);
+        } else if (ast.isSimpleType(node) && node.typeRef?.ref) {
+            return go(node, node.typeRef.ref);
         }
     }
     return undefined;
