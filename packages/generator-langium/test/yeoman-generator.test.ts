@@ -40,7 +40,7 @@ normalizeEOL(`{
     "description": "Please enter a brief description here",
     "version": "0.0.1",
     "engines": {
-        "vscode": "~1.67.0"
+        "vscode": "^1.67.0"
     },
     "categories": [
         "Programming Languages"

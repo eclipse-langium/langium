@@ -4,7 +4,7 @@
     "description": "A demo showing how to combine two DSLs",
     "version": "1.0.0",
     "engines": {
-        "vscode": "^1.56.0"
+        "vscode": "^1.67.0"
     },
     "categories": [
         "Programming Languages"
