@@ -154,13 +154,19 @@ describe('TerminalRule to regex', () => {
     test('Should create optional alternatives with keywords', async () => {
         const terminal = await getTerminal("terminal X: ('a' | 'b')?;");
         const regex = terminalRegex(terminal);
-        expect(regex).toBe('((a|b))?');
+        expect(regex).toBe('(a|b)?');
     });
 
-    test('Should create positive lookahead group', async () => {
+    test('Should create positive lookahead group with single element', async () => {
         const terminal = await getTerminal("terminal X: 'a' (?='b');");
         const regex = terminalRegex(terminal);
         expect(regex).toBe('(a(?=b))');
+    });
+
+    test('Should create positive lookahead group with multiple elements', async () => {
+        const terminal = await getTerminal("terminal X: 'a' (?='b' 'c' 'd');");
+        const regex = terminalRegex(terminal);
+        expect(regex).toBe('(a(?=bcd))');
     });
 
     test('Should create negative lookahead group', async () => {

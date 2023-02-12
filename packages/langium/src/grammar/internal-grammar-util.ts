@@ -164,7 +164,8 @@ function abstractElementToRegex(element: ast.AbstractElement): string {
             throw new Error('Missing rule reference.');
         }
         return withCardinality(terminalRegex(rule), {
-            cardinality: element.cardinality
+            cardinality: element.cardinality,
+            lookahead: element.lookahead
         });
     } else if (ast.isNegatedToken(element)) {
         return negateTokenToRegex(element);
@@ -173,11 +174,13 @@ function abstractElementToRegex(element: ast.AbstractElement): string {
     } else if (ast.isRegexToken(element)) {
         return withCardinality(element.regex, {
             cardinality: element.cardinality,
+            lookahead: element.lookahead,
             wrap: false
         });
     } else if (ast.isWildcard(element)) {
         return withCardinality(WILDCARD, {
-            cardinality: element.cardinality
+            cardinality: element.cardinality,
+            lookahead: element.lookahead
         });
     } else {
         throw new Error(`Invalid terminal element: ${element?.$type}`);
@@ -186,7 +189,8 @@ function abstractElementToRegex(element: ast.AbstractElement): string {
 
 function terminalAlternativesToRegex(alternatives: ast.TerminalAlternatives): string {
     return withCardinality(alternatives.elements.map(abstractElementToRegex).join('|'), {
-        cardinality: alternatives.cardinality
+        cardinality: alternatives.cardinality,
+        lookahead: alternatives.lookahead
     });
 }
 
@@ -199,13 +203,15 @@ function terminalGroupToRegex(group: ast.TerminalGroup): string {
 
 function untilTokenToRegex(until: ast.UntilToken): string {
     return withCardinality(`${WILDCARD}*?${abstractElementToRegex(until.terminal)}`, {
-        cardinality: until.cardinality
+        cardinality: until.cardinality,
+        lookahead: until.lookahead
     });
 }
 
 function negateTokenToRegex(negate: ast.NegatedToken): string {
     return withCardinality(`(?!${abstractElementToRegex(negate.terminal)})${WILDCARD}*?`, {
-        cardinality: negate.cardinality
+        cardinality: negate.cardinality,
+        lookahead: negate.lookahead
     });
 }
 
@@ -213,11 +219,13 @@ function characterRangeToRegex(range: ast.CharacterRange): string {
     if (range.right) {
         return withCardinality(`[${keywordToRegex(range.left)}-${keywordToRegex(range.right)}]`, {
             cardinality: range.cardinality,
+            lookahead: range.lookahead,
             wrap: false
         });
     }
     return withCardinality(keywordToRegex(range.left), {
         cardinality: range.cardinality,
+        lookahead: range.lookahead,
         wrap: false
     });
 }
