@@ -78,8 +78,8 @@ export enum RangeComparison {
     Before = 0,
     After = 1,
     OverlapFront = 2,
-    Inside = 3,
-    OverlapBack = 4,
+    OverlapBack = 3,
+    Inside = 4
 }
 
 export function compareRange(range: Range, to: Range): RangeComparison {
