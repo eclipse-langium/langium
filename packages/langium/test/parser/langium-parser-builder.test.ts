@@ -6,7 +6,7 @@
 
 import { beforeEach, describe, expect, onTestFailed, test } from 'vitest';
 import { TokenType, TokenVocabulary } from 'chevrotain';
-import { AstNode, createServicesForGrammar, DefaultTokenBuilder, Grammar, GrammarAST, LangiumParser, TokenBuilderOptions } from '../../src';
+import { AstNode, createServicesForGrammar, DefaultTokenBuilder, findNodeForProperty, Grammar, GrammarAST, LangiumParser, TokenBuilderOptions } from '../../src';
 
 describe('Predicated grammar rules with alternatives', () => {
 
@@ -483,11 +483,11 @@ describe('MultiMode Lexing', () => {
 
         protected override buildTerminalToken(terminal: GrammarAST.TerminalRule): TokenType {
             const tokenType = super.buildTerminalToken(terminal);
-            if(tokenType.name === 'Up') {
+            if (tokenType.name === 'Up') {
                 tokenType.PUSH_MODE = 'up';
-            } else if(tokenType.name === 'Low') {
+            } else if (tokenType.name === 'Low') {
                 tokenType.PUSH_MODE = 'down';
-            } else if(tokenType.name === 'Pop') {
+            } else if (tokenType.name === 'Pop') {
                 tokenType.POP_MODE = true;
             }
             return tokenType;
@@ -617,6 +617,31 @@ describe('Fragment rules', () => {
         expect(result.lexerErrors).toHaveLength(0);
         expect(result.parserErrors).toHaveLength(0);
         expect(result.value).toHaveProperty('values', ['ab', 'cd', 'ef']);
+    });
+
+});
+
+describe('Actions', () => {
+
+    test('Action CST contains valid AST elements', async () => {
+        const parser = await parserFromGrammar(`
+        grammar ActionsCST
+        entry Entry: X;
+        X: (A | B) Body;
+        fragment Body: '{' (children+=X)* '}';
+        A: 'A' name=STRING_VALUE;
+        B: 'B' name=STRING_VALUE;
+
+        terminal ID: /\\^?[_a-zA-Z][\\w_]*/;
+        terminal STRING_VALUE returns string: /"[^"]*"/;
+
+        hidden terminal WS: /\\s+/;
+        `);
+        const result = parser.parse('A "Name" { }');
+        expect(result.lexerErrors).toHaveLength(0);
+        expect(result.parserErrors).toHaveLength(0);
+        expect(result.value.$cstNode?.element).toBeDefined();
+        expect(result.value.$cstNode?.element).toEqual(findNodeForProperty(result.value.$cstNode, 'name')?.element);
     });
 
 });

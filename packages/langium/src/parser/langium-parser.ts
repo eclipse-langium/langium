@@ -166,7 +166,7 @@ export class LangiumParser extends AbstractLangiumParser {
             if (!this.isRecording()) {
                 const node: any = { $type };
                 this.stack.push(node);
-                if ($type === DatatypeSymbol)  {
+                if ($type === DatatypeSymbol) {
                     node.value = '';
                 }
             }
@@ -334,6 +334,11 @@ export class LangiumParser extends AbstractLangiumParser {
                 target[name] = existingValue;
             }
         }
+
+        if (source.$cstNode) {
+            source.$cstNode.element = target;
+        }
+
         return target;
     }
 
