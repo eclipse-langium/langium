@@ -10,8 +10,10 @@ import { CancellationToken, Range, SemanticTokenModifiers, SemanticTokens, Seman
 import { findNodesForKeyword, findNodeForProperty, findNodesForProperty, findNodeForKeyword } from '../utils/grammar-util';
 import { LangiumServices } from '../services';
 import { AstNode, CstNode, Properties } from '../syntax-tree';
-import { streamAllContents } from '../utils/ast-util';
+import { streamAst } from '../utils/ast-util';
 import { LangiumDocument } from '../workspace/documents';
+import { interruptAndCheck, MaybePromise } from '../utils/promise-util';
+import { inRange } from '../utils/cst-util';
 
 export const AllSemanticTokenTypes: Record<string, number> = {
     [SemanticTokenTypes.class]: 0,
@@ -63,9 +65,9 @@ export const DefaultSemanticTokenOptions: SemanticTokensOptions = {
 };
 
 export interface SemanticTokenProvider {
-    semanticHighlight(document: LangiumDocument, params: SemanticTokensParams, cancelToken?: CancellationToken): SemanticTokens
-    semanticHighlightRange(document: LangiumDocument, params: SemanticTokensRangeParams, cancelToken?: CancellationToken): SemanticTokens
-    semanticHighlightDelta(document: LangiumDocument, params: SemanticTokensDeltaParams, cancelToken?: CancellationToken): SemanticTokens | SemanticTokensDelta
+    semanticHighlight(document: LangiumDocument, params: SemanticTokensParams, cancelToken?: CancellationToken): MaybePromise<SemanticTokens>
+    semanticHighlightRange(document: LangiumDocument, params: SemanticTokensRangeParams, cancelToken?: CancellationToken): MaybePromise<SemanticTokens>
+    semanticHighlightDelta(document: LangiumDocument, params: SemanticTokensDeltaParams, cancelToken?: CancellationToken): MaybePromise<SemanticTokens | SemanticTokensDelta>
 }
 
 export interface SemanticToken {
@@ -196,28 +198,28 @@ export abstract class AbstractSemanticTokenProvider implements SemanticTokenProv
         this.clientCapabilities = clientCapabilities;
     }
 
-    semanticHighlight(document: LangiumDocument, _params: SemanticTokensParams, cancelToken = CancellationToken.None): SemanticTokens {
+    async semanticHighlight(document: LangiumDocument, _params: SemanticTokensParams, cancelToken = CancellationToken.None): Promise<SemanticTokens> {
         this.currentRange = undefined;
         this.currentDocument = document;
         this.currentTokensBuilder = this.getDocumentTokensBuilder(document);
-        this.computeHighlighting(document, this.createAcceptor(), cancelToken);
+        await this.computeHighlighting(document, this.createAcceptor(), cancelToken);
         return this.currentTokensBuilder.build();
     }
 
-    semanticHighlightRange(document: LangiumDocument, params: SemanticTokensRangeParams, cancelToken = CancellationToken.None): SemanticTokens {
+    async semanticHighlightRange(document: LangiumDocument, params: SemanticTokensRangeParams, cancelToken = CancellationToken.None): Promise<SemanticTokens> {
         this.currentRange = params.range;
         this.currentDocument = document;
         this.currentTokensBuilder = this.getDocumentTokensBuilder(document);
-        this.computeHighlighting(document, this.createAcceptor(), cancelToken);
+        await this.computeHighlighting(document, this.createAcceptor(), cancelToken);
         return this.currentTokensBuilder.build();
     }
 
-    semanticHighlightDelta(document: LangiumDocument, params: SemanticTokensDeltaParams, cancelToken = CancellationToken.None): SemanticTokens | SemanticTokensDelta {
+    async semanticHighlightDelta(document: LangiumDocument, params: SemanticTokensDeltaParams, cancelToken = CancellationToken.None): Promise<SemanticTokens | SemanticTokensDelta> {
         this.currentRange = undefined;
         this.currentDocument = document;
         this.currentTokensBuilder = this.getDocumentTokensBuilder(document);
         this.currentTokensBuilder.previousResult(params.previousResultId);
-        this.computeHighlighting(document, this.createAcceptor(), cancelToken);
+        await this.computeHighlighting(document, this.createAcceptor(), cancelToken);
         return this.currentTokensBuilder.buildEdits();
     }
 
@@ -265,52 +267,20 @@ export abstract class AbstractSemanticTokenProvider implements SemanticTokenProv
         return builder;
     }
 
-    protected computeHighlighting(document: LangiumDocument, acceptor: SemanticTokenAcceptor, cancelToken: CancellationToken): void {
+    protected async computeHighlighting(document: LangiumDocument, acceptor: SemanticTokenAcceptor, cancelToken: CancellationToken): Promise<void> {
         const root = document.parseResult.value;
-        if (this.highlightElement(root, acceptor) === 'prune') {
-            // If the root node is pruned, we can return here already
-            return;
-        }
-        const treeIterator = streamAllContents(root).iterator();
+        const treeIterator = streamAst(root, { range: this.currentRange }).iterator();
         let result: IteratorResult<AstNode>;
         do {
             result = treeIterator.next();
             if (!result.done) {
-                if (cancelToken.isCancellationRequested) {
-                    break;
-                }
+                await interruptAndCheck(cancelToken);
                 const node = result.value;
-
-                // CST nodes can be undefined, e.g. programmatically created AST
-                const nodeRange = node.$cstNode?.range;
-                if (!nodeRange) continue;
-
-                const comparedRange = this.compareRange(nodeRange);
-                if (comparedRange === 1) {
-                    break; // Every following element will not be in range, so end the loop
-                } else if (comparedRange === -1) {
-                    continue; // Current element is ending before range starts, skip to next element
-                }
                 if (this.highlightElement(node, acceptor) === 'prune') {
                     treeIterator.prune();
                 }
             }
         } while (!result.done);
-    }
-
-    protected compareRange(range: Range | number): number {
-        if (!this.currentRange) {
-            return 0;
-        }
-        const startLine = typeof range === 'number' ? range : range.start.line;
-        const endLine = typeof range === 'number' ? range : range.end.line;
-        if (endLine < this.currentRange.start.line) {
-            return -1;
-        } else if (startLine > this.currentRange.end.line) {
-            return 1;
-        } else {
-            return 0;
-        }
     }
 
     /**
@@ -321,7 +291,7 @@ export abstract class AbstractSemanticTokenProvider implements SemanticTokenProv
     protected highlightToken(options: SemanticTokenRangeOptions): void {
         const { range, type } = options;
         let modifiers = options.modifier;
-        if (this.compareRange(range) !== 0 || !this.currentDocument || !this.currentTokensBuilder) {
+        if ((this.currentRange && !inRange(range, this.currentRange)) || !this.currentDocument || !this.currentTokensBuilder) {
             return;
         }
         const intType = AllSemanticTokenTypes[type];
