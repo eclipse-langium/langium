@@ -46,6 +46,7 @@ export interface AbstractElement extends AstNode {
     readonly $container: Alternatives | Assignment | CharacterRange | CrossReference | Grammar | Group | NegatedToken | ParserRule | TerminalAlternatives | TerminalGroup | TerminalRule | UnorderedGroup | UntilToken;
     readonly $type: 'AbstractElement' | 'Action' | 'Alternatives' | 'Assignment' | 'CharacterRange' | 'CrossReference' | 'Group' | 'Keyword' | 'NegatedToken' | 'RegexToken' | 'RuleCall' | 'TerminalAlternatives' | 'TerminalGroup' | 'TerminalRuleCall' | 'UnorderedGroup' | 'UntilToken' | 'Wildcard';
     cardinality?: '*' | '+' | '?'
+    lookahead?: '?!' | '?='
 }
 
 export const AbstractElement = 'AbstractElement';

@@ -3234,6 +3234,25 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "value": "("
           },
           {
+            "$type": "Assignment",
+            "feature": "lookahead",
+            "operator": "=",
+            "terminal": {
+              "$type": "Alternatives",
+              "elements": [
+                {
+                  "$type": "Keyword",
+                  "value": "?="
+                },
+                {
+                  "$type": "Keyword",
+                  "value": "?!"
+                }
+              ]
+            },
+            "cardinality": "?"
+          },
+          {
             "$type": "RuleCall",
             "rule": {
               "$ref": "#/rules@47"
