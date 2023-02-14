@@ -621,27 +621,54 @@ describe('Fragment rules', () => {
 
 });
 
-describe('Actions', () => {
-
-    test('Action CST contains valid AST elements', async () => {
-        const parser = await parserFromGrammar(`
-        grammar ActionsCST
+describe('Subrules', () => {
+    const content = `
+        grammar SubrulesCST
         entry Entry: X;
-        X: (A | B) Body;
+        X: Visibility? (A | B) Body;
+        fragment Visibility: visibility=('public' | 'protected' | 'private');
         fragment Body: '{' (children+=X)* '}';
-        A: 'A' name=STRING_VALUE;
-        B: 'B' name=STRING_VALUE;
-
+        A: 'A' value1=INT (C | D)?;
+        B: 'B' value1=INT (C | D)?;
+        C: 'C' value2=INT;
+        D: 'D' value2=INT;
+        
         terminal ID: /\\^?[_a-zA-Z][\\w_]*/;
-        terminal STRING_VALUE returns string: /"[^"]*"/;
+        terminal INT returns number: /\\d+/;
 
         hidden terminal WS: /\\s+/;
-        `);
-        const result = parser.parse('A "Name" { }');
+    `;
+    let parser: LangiumParser;
+
+    beforeEach(async () => {
+        parser = await parserFromGrammar(content);
+    });
+
+    const testProps = (text: string, props: string[]): void => {
+        const result = parser.parse(text);
         expect(result.lexerErrors).toHaveLength(0);
         expect(result.parserErrors).toHaveLength(0);
-        expect(result.value.$cstNode?.element).toBeDefined();
-        expect(result.value.$cstNode?.element).toEqual(findNodeForProperty(result.value.$cstNode, 'name')?.element);
+
+        const cst = result.value.$cstNode;
+        const element = cst?.element;
+        expect(element).toBeDefined();
+        props.forEach(prop => {
+            const propCst = findNodeForProperty(cst, prop);
+            expect(propCst).toBeDefined();
+            expect(element).toEqual(propCst?.element);
+        });
+    };
+
+    test('CST prior to the subrule contains valid AST element', () => {
+        testProps('public A 100 {}', ['visibility']);
+    });
+
+    test('Subrule CST contains valid AST element', async () => {
+        testProps('public A 100 {}', ['value1']);
+    });
+
+    test('Nested subrule CST contains valid AST element', async () => {
+        testProps('public A 100 C 100 {}', ['value1', 'value2']);
     });
 
 });

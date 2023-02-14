@@ -7,7 +7,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { defaultParserErrorProvider, DSLMethodOpts, EmbeddedActionsParser, ILexingError, IOrAlt, IParserErrorMessageProvider, IRecognitionException, IToken, LLkLookaheadStrategy, TokenType, TokenVocabulary } from 'chevrotain';
 import { LLStarLookaheadStrategy } from 'chevrotain-allstar';
-import { AbstractElement, Action, Assignment, isAssignment, isCrossReference, isKeyword, ParserRule } from '../grammar/generated/ast';
+import { AbstractElement, Action, Assignment, isAssignment, isCrossReference, isKeyword, isRuleCall, ParserRule } from '../grammar/generated/ast';
 import { getTypeName, isDataTypeRule } from '../grammar/internal-grammar-util';
 import { Linker } from '../references/linker';
 import { LangiumServices } from '../services';
@@ -336,7 +336,21 @@ export class LangiumParser extends AbstractLangiumParser {
         }
 
         if (source.$cstNode) {
-            source.$cstNode.element = target;
+            const feature = source.$cstNode.feature;
+            if (isRuleCall(feature) && feature.rule.ref && !feature.rule.ref.fragment) {
+                // Merging `source` from a subrule into target, need to update the
+                // source CST node to point to the merged AST node instead.
+                Object.defineProperty(source.$cstNode, 'element', {
+                    get() {
+                        // lazy getter to handle cases where this subrule may be
+                        // nested multiple layers deep
+                        return target.$cstNode.element ?? target;
+                    },
+                    set(element: any) {
+                        Object.defineProperty(source.$cstNode, 'element', element);
+                    }, configurable: true
+                });
+            }
         }
 
         return target;
