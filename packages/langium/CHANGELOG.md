@@ -27,7 +27,7 @@ Usage of the tracing API can be seen [here](https://github.com/langium/langium/b
 
 * Improved default handling for escaped characters in strings ([#888](https://github.com/langium/langium/pull/888)).
 * Made the completion provider more resistant to errors in the input document ([#854](https://github.com/langium/langium/pull/854)).
-* Terminal definitions can now use positive and negative lookahead for better fine-grained behavior ([#917](https://github.com/langium/langium/pull/917)).
+* Terminal definitions can now use positive and negative lookahead for more fine-grained lexer behavior ([#917](https://github.com/langium/langium/pull/917)).
 
 ## v1.0.1 (Dec. 2022)
 
