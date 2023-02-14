@@ -1,5 +1,9 @@
 # Change Log of `langium-vscode`
 
+## v1.1.0 (Feb. 2023)
+
+* Various improvements to validation of type definitions ([#845](https://github.com/langium/langium/pull/845)).
+
 ## v1.0.0 (Dec. 2022) 🎉
 
  * Improved linking of types ([#763](https://github.com/langium/langium/pull/763)).

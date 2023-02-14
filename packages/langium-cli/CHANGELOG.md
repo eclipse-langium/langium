@@ -1,5 +1,10 @@
 # Change Log of `langium-cli`
 
+## v1.1.0 (Feb. 2023)
+
+* Various improvements to the generated AST types ([#845](https://github.com/langium/langium/pull/845)).
+* The `--watch` mode now also watches referenced grammars, not only those directly used in the langium config file ([#908](https://github.com/langium/langium/pull/908)).
+
 ## v1.0.0 (Dec. 2022) 🎉
 
  * New command `extract-types` generates type declarations to be used in your grammar file ([#754](https://github.com/langium/langium/pull/754)). This utility can be used to move from _inferred_ types to _declared_ types, which makes sense when your language project becomes more mature.

@@ -1,5 +1,9 @@
 # Change Log of `generator-langium`
 
+## v1.1.0 (Feb. 2023)
+
+* Users that have vscode installed in the environment will be asked whether they want to open the generated project in vscode ([#911](https://github.com/langium/langium/pull/911)).
+
 ## v1.0.0 (Dec. 2022) 🎉
 
  * Validation checks are registered in a plain function instead of a registry subclass ([#821](https://github.com/langium/langium/pull/821)).
