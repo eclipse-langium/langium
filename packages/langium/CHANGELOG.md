@@ -1,5 +1,34 @@
 # Change Log of `langium`
 
+## v1.1.0 (Feb. 2023)
+
+### JSDoc Support
+
+Langium now features built-in [JSDoc](https://www.typescriptlang.org/docs/handbook/jsdoc-supported-types.html) support.
+The feature parses comment nodes that belong to a given AST node and returns structured information that can be used for further computations or printed to markdown for language server functionalities.
+
+The recommended way to use the feature is to invoke the new [`DocumentationProviderService`](https://github.com/langium/langium/blob/9493cdb10de0c9a79195485d5bd0208d20b55ec6/packages/langium/src/documentation/documentation-provider.ts).
+For more complex use cases, you can call `parseJSDoc` directly.
+
+### Generator Tracing
+
+Extending upon the powerful code generator support added in the last release (see [here](#extended-code-generator-support)), we've added tracing capabilities.
+Tracing allows developers to connect the generated statements with the position of their source statements.
+
+This can be used to build [source maps](https://firefox-source-docs.mozilla.org/devtools-user/debugger/how_to/use_a_source_map/index.html) (known from the TypeScript compiler) or other source mappings formats.
+
+Usage of the tracing API can be seen [here](https://github.com/langium/langium/blob/9493cdb10de0c9a79195485d5bd0208d20b55ec6/packages/langium/test/generator/generation-tracing.test.ts).
+
+### Other New Features
+
+* Support for the language server inlay hint API ([#906](https://github.com/langium/langium/pull/906)).
+
+### General Improvements
+
+* Improved default handling for escaped characters in strings ([#888](https://github.com/langium/langium/pull/888)).
+* Made the completion provider more resistant to errors in the input document ([#854](https://github.com/langium/langium/pull/854)).
+* Terminal definitions can now use positive and negative lookahead for more fine-grained lexer behavior ([#917](https://github.com/langium/langium/pull/917)).
+
 ## v1.0.1 (Dec. 2022)
 
  * Add type validation with respect to the hierarchy ([#840](https://github.com/langium/langium/pull/840))
