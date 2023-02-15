@@ -27,6 +27,8 @@ describe('Check yeoman generator works', () => {
             .then((result) => {
                 result.assertFile(['hello-world/package.json']);
                 result.assertFileContent('hello-world/package.json', PACKAGE_JSON_EXPECTATION);
+                result.assertFile(['hello-world/.vscode/tasks.json']);
+                result.assertFileContent('hello-world/.vscode/tasks.json', TASKS_JSON_EXPECTATION);
             });
         context.cleanup(); // clean-up
     }, 120_000);
@@ -97,3 +99,27 @@ normalizeEOL(`{
         "typescript": "~4.9.5"
     }
 }`);
+
+const TASKS_JSON_EXPECTATION =
+normalizeEOL(`{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build hello-world",
+            "command": "npm run langium:generate && npm run build",
+            "type": "shell",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "detail": "Langium: Generate grammar and build the hello-world language",
+            "icon": {
+                "color": "terminal.ansiGreen",
+                "id": "server-process"
+            }
+        }
+    ]
+}
+`);
