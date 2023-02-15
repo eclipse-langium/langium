@@ -40,6 +40,37 @@ export interface CompletionContext {
     position: Position
 }
 
+export interface CompletionProviderOptions {
+    /**
+     * Most tools trigger completion request automatically without explicitly requesting
+     * it using a keyboard shortcut (e.g. Ctrl+Space). Typically they do so when the user
+     * starts to type an identifier. For example if the user types `c` in a JavaScript file
+     * code complete will automatically pop up present `console` besides others as a
+     * completion item. Characters that make up identifiers don't need to be listed here.
+     *
+     * If code complete should automatically be trigger on characters not being valid inside
+     * an identifier (for example `.` in JavaScript) list them in `triggerCharacters`.
+     */
+    triggerCharacters?: string[];
+    /**
+     * The list of all possible characters that commit a completion. This field can be used
+     * if clients don't support individual commit characters per completion item.
+     *
+     * If a server provides both `allCommitCharacters` and commit characters on an individual
+     * completion item the ones on the completion item win.
+     */
+    allCommitCharacters?: string[];
+}
+
+export function mergeCompletionProviderOptions(options: Array<CompletionProviderOptions | undefined>): CompletionProviderOptions {
+    const triggerCharacters = Array.from(new Set(options.flatMap(option => option?.triggerCharacters ?? [])));
+    const allCommitCharacters = Array.from(new Set(options.flatMap(option => option?.allCommitCharacters ?? [])));
+    return {
+        triggerCharacters: triggerCharacters.length > 0 ? triggerCharacters : undefined,
+        allCommitCharacters: allCommitCharacters.length > 0 ? allCommitCharacters : undefined
+    };
+}
+
 /**
  * Language-specific service for handling completion requests.
  */
@@ -51,6 +82,12 @@ export interface CompletionProvider {
      * @throws `ResponseError` if an error is detected that should be sent as response to the client
      */
     getCompletion(document: LangiumDocument, params: CompletionParams, cancelToken?: CancellationToken): MaybePromise<CompletionList | undefined>
+    /**
+     * Contains the completion options for this completion provider.
+     *
+     * If multiple languages return different options, they are merged before being sent to the language client.
+     */
+    readonly completionOptions?: CompletionProviderOptions;
 }
 
 export class DefaultCompletionProvider implements CompletionProvider {

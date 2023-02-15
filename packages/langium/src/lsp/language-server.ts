@@ -36,6 +36,7 @@ import { eagerLoad } from '../dependency-injection';
 import { LangiumServices, LangiumSharedServices } from '../services';
 import { isOperationCancelled } from '../utils/promise-util';
 import { DocumentState, LangiumDocument } from '../workspace/documents';
+import { mergeCompletionProviderOptions } from './completion/completion-provider';
 import { DefaultSemanticTokenOptions } from './semantic-token-provider';
 import { mergeSignatureHelpOptions } from './signature-help-provider';
 
@@ -97,6 +98,7 @@ export class DefaultLanguageServer implements LanguageServer {
         const hasGoToTypeProvider = this.hasService(e => e.lsp.TypeProvider);
         const hasGoToImplementationProvider = this.hasService(e => e.lsp.ImplementationProvider);
         const hasCompletionProvider = this.hasService(e => e.lsp.CompletionProvider);
+        const completionOptions = mergeCompletionProviderOptions(languages.map(e => e.lsp.CompletionProvider?.completionOptions));
         const hasReferencesProvider = this.hasService(e => e.lsp.ReferencesProvider);
         const hasDocumentSymbolProvider = this.hasService(e => e.lsp.DocumentSymbolProvider);
         const hasDefinitionProvider = this.hasService(e => e.lsp.DefinitionProvider);
@@ -120,7 +122,7 @@ export class DefaultLanguageServer implements LanguageServer {
                     commands: commandNames
                 },
                 textDocumentSync: TextDocumentSyncKind.Incremental,
-                completionProvider: hasCompletionProvider ? {} : undefined,
+                completionProvider: hasCompletionProvider ? completionOptions : undefined,
                 referencesProvider: hasReferencesProvider,
                 documentSymbolProvider: hasDocumentSymbolProvider,
                 definitionProvider: hasDefinitionProvider,
