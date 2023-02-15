@@ -64,7 +64,7 @@ npm link -D langium-cli
 The first command above will change the dependency entry for `langium` in `package.json` from:
 
 ```json
-"langium": "0.1.0"
+"langium": "X.Y.Z"
 ```
 
 to
@@ -137,9 +137,9 @@ Currently the process of releasing a new version of Langium is done manually one
     * Update version in `package.json`
     * Update dependency to `langium`
     * `npm install -g vsce`
-    * `vsce publish -p <token> --yarn` (the last argument is due to an npm bug)
+    * `vsce publish -p <token>`
     * `npm i -g ovsx`
-    * `ovsx publish -p <token> --yarn`
+    * `ovsx publish -p <token>`
  7. `examples/*`
     * Update dependency to `langium` and dev-dependency to `langium-cli`
  8. `npm install` again in the repository root to update `package-lock.json`

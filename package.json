@@ -9,7 +9,7 @@
     "clean": "shx rm -rf packages/**/lib packages/**/out packages/**/*.tsbuildinfo",
     "build": "tsc -b tsconfig.build.json && npm run build --workspace=langium-vscode",
     "watch": "concurrently -n tsc,esbuild -c blue,yellow \"tsc -b tsconfig.build.json -w\" \"npm run watch --workspace=langium-vscode\"",
-    "build:clean": "npm run clean && npm run build && npm run build --workspace=langium-vscode",
+    "build:clean": "npm run clean && npm run build",
     "lint": "npm run lint --workspaces",
     "test": "vitest",
     "test-ui": "vitest --ui",
