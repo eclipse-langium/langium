@@ -122,10 +122,7 @@ export class DefaultLanguageServer implements LanguageServer {
                     commands: commandNames
                 },
                 textDocumentSync: TextDocumentSyncKind.Incremental,
-                completionProvider: hasCompletionProvider ? {
-                    triggerCharacters: completionOptions.triggerCharacters,
-                    allCommitCharacters: completionOptions.allCommitCharacters
-                } : undefined,
+                completionProvider: hasCompletionProvider ? completionOptions : undefined,
                 referencesProvider: hasReferencesProvider,
                 documentSymbolProvider: hasDocumentSymbolProvider,
                 definitionProvider: hasDefinitionProvider,
