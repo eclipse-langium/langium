@@ -139,9 +139,11 @@ Currently the process of releasing a new version of Langium is done manually one
     * `npm install -g vsce`
     * `vsce publish -p <token>`
     * `npm i -g ovsx`
-    * `ovsx publish -p <token>`
+    * `vsce package`
+    * `ovsx publish langium-vscode-<version>.vsix -p <token>`
  7. `examples/*`
     * Update dependency to `langium` and dev-dependency to `langium-cli`
+    * `npm run publish:latest`
  8. `npm install` again in the repository root to update `package-lock.json`
  9. Commit, tag and push your changes
  10. Create a GitHub release from the new tag
