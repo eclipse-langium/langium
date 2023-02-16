@@ -84,7 +84,7 @@ normalizeEOL(`{
         "chevrotain": "~10.4.2",
         "chalk": "~4.1.2",
         "commander": "~10.0.0",
-        "langium": "~1.0.1",
+        "langium": "~1.1.0",
         "vscode-languageclient": "~8.0.2",
         "vscode-languageserver": "~8.0.2",
         "vscode-uri": "~3.0.7"
@@ -95,7 +95,7 @@ normalizeEOL(`{
         "@typescript-eslint/eslint-plugin": "~5.51.0",
         "@typescript-eslint/parser": "~5.51.0",
         "eslint": "~8.33.0",
-        "langium-cli": "~1.0.0",
+        "langium-cli": "~1.1.0",
         "typescript": "~4.9.5"
     }
 }`);
