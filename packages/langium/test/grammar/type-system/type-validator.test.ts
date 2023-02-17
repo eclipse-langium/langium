@@ -26,15 +26,20 @@ describe('validate params in types', () => {
         terminal ID: /[a-zA-Z_][\\w_]*/;
         `.trim();
         // verify we only have 1 error, associated with a missing 'name' prop
-        const document = await parseDocument(grammarServices, prog);
-        let diagnostics: Diagnostic[] = await grammarServices.validation.DocumentValidator.validateDocument(document);
-        diagnostics = diagnostics.filter(d => d.severity === DiagnosticSeverity.Error);
-        expect(diagnostics).toHaveLength(1);
+        const validation = await validate(prog);
 
-        // verify location of diagnostic
-        const d = diagnostics[0];
-        expect(d.range.start).toEqual({ character: 8, line: 4 });
-        expect(d.range.end).toEqual({ character: 10, line: 4 });
+        expectError(validation, "A property 'name' is expected. in a rule that returns type 'B'.", {
+            range: {
+                start: {
+                    line: 4,
+                    character: 8
+                },
+                end: {
+                    line: 4,
+                    character: 10
+                }
+            }
+        });
     });
 
     // verifies that missing required params use the right msg & position
@@ -51,15 +56,20 @@ describe('validate params in types', () => {
         `.trim();
 
         // expect exactly 1 error, associated with a missing 'name' prop for type 'A'
-        const document = await parseDocument(grammarServices, prog);
-        let diagnostics: Diagnostic[] = await grammarServices.validation.DocumentValidator.validateDocument(document);
-        diagnostics = diagnostics.filter(d => d.severity === DiagnosticSeverity.Error);
-        expect(diagnostics).toHaveLength(1);
+        const validation = await validate(prog);
 
-        // verify the location of the single diagnostic error, should be only for the 2nd rule
-        const d = diagnostics[0];
-        expect(d.range.start).toEqual({ character: 8, line: 5 });
-        expect(d.range.end).toEqual({ character: 34, line: 5 });
+        expectError(validation, "Property 'name' is missing in a rule 'Y', but is required in type 'A'.", {
+            range: {
+                start: {
+                    line: 5,
+                    character: 8
+                },
+                end: {
+                    line: 5,
+                    character: 34
+                }
+            }
+        });
     });
 
     // tests that an optional param in a declared type can be optionally present in a rule
@@ -76,9 +86,10 @@ describe('validate params in types', () => {
         `.trim();
 
         // verify we have no errors
-        const document = await parseDocument(grammarServices, prog);
-        const diagnostics: Diagnostic[] = await grammarServices.validation.DocumentValidator.validateDocument(document);
-        expect(diagnostics.filter(d => d.severity === DiagnosticSeverity.Error)).toHaveLength(0);
+        const validation = await validate(prog);
+        expectNoIssues(validation, {
+            severity: DiagnosticSeverity.Error
+        });
     });
 
 });
@@ -92,10 +103,10 @@ describe('validate inferred types', () => {
         terminal ID: /[a-zA-Z_][a-zA-Z0-9_]*/;
         `.trim();
 
-        const document = await parseDocument(grammarServices, prog);
-        const diagnostics: Diagnostic[] = await grammarServices.validation.DocumentValidator.validateDocument(document);
-        expect(diagnostics.filter(d => d.severity === DiagnosticSeverity.Error)).toHaveLength(0);
-
+        const validation = await validate(prog);
+        expectNoIssues(validation, {
+            severity: DiagnosticSeverity.Error
+        });
     });
 });
 
@@ -114,10 +125,10 @@ describe('Work with imported declared types', () => {
 
         terminal ID: /\\^?[_a-zA-Z][\\w_]*/;
         `.trim();
-        const document = await parseDocument(grammarServices, prog);
-        const diagnostics: Diagnostic[] = await grammarServices.validation.DocumentValidator.validateDocument(document);
-        expect(diagnostics.filter(d => d.severity === DiagnosticSeverity.Error)).toHaveLength(0);
-
+        const validation = await validate(prog);
+        expectNoIssues(validation, {
+            severity: DiagnosticSeverity.Error
+        });
     });
 });
 
@@ -157,11 +168,10 @@ describe('validate declared types', () => {
         hidden terminal WS: /\\s+/;
         terminal ID: /[a-zA-Z_][a-zA-Z0-9_]*/;
         `.trim();
-
-        const document = await parseDocument(grammarServices, prog);
-        const diagnostics: Diagnostic[] = await grammarServices.validation.DocumentValidator.validateDocument(document);
-        expect(diagnostics.filter(d => d.severity === DiagnosticSeverity.Error)).toHaveLength(0);
-
+        const validation = await validate(prog);
+        expectNoIssues(validation, {
+            severity: DiagnosticSeverity.Error
+        });
     });
 
     test('Can return an interface from a rule that would return a union type', async () => {
@@ -174,7 +184,47 @@ describe('validate declared types', () => {
         interface X { }
         `;
         const validation = await validate(grammar);
-        expectNoIssues(validation);
+        expectNoIssues(validation, {
+            severity: DiagnosticSeverity.Error
+        });
+    });
+
+    test('Can reuse a type declaration consisting of primitive types as property type', async () => {
+        const validationResult = await validate(`
+            interface State {
+                type: StateType;
+            }
+            
+            type StateType = 'normal' | 'final';
+            
+            State returns State: type=('normal' | 'final');
+        `);
+        expectNoIssues(validationResult);
+    });
+
+    test('Shows error on unassignable type union used as property type', async () => {
+        const validationResult = await validate(`
+            interface State {
+                type: StateType;
+            }
+            
+            type StateType = 'normal' | 'final';
+            
+            State returns State: type='default';
+        `);
+
+        expectError(validationResult, "The assigned type '\"default\"' is not compatible with the declared property 'type' of type 'StateType'.", {
+            range: {
+                start: {
+                    line: 7,
+                    character: 33
+                },
+                end: {
+                    line: 7,
+                    character: 37
+                }
+            }
+        });
     });
 });
 
