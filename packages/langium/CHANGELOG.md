@@ -30,6 +30,11 @@ Usage of the tracing API can be seen [here](https://github.com/langium/langium/b
 * Made the completion provider more resilient to errors in the input document ([#854](https://github.com/langium/langium/pull/854)).
 * Completion providers can now return server capability options (#[935](https://github.com/langium/langium/pull/935)).
 
+### Breaking Changes
+
+* An internal grammar restructuring requires developers using Langium to regenerate their language if they're using explicit type declarations.
+  We recommend to use `~` for Langium packages to prevent downstream users of your package to experience errors.
+
 ## v1.0.1 (Dec. 2022)
 
  * Add type validation with respect to the hierarchy ([#840](https://github.com/langium/langium/pull/840))
