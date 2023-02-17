@@ -37,6 +37,11 @@ export type ValidationAcceptor = <N extends AstNode>(severity: 'error' | 'warnin
 
 export type ValidationCheck<T extends AstNode = AstNode> = (node: T, accept: ValidationAcceptor, cancelToken: CancellationToken) => MaybePromise<void>;
 
+/**
+ * A utility type to transform a collection of AST types to an object that accepts validation checks for these types.
+ *
+ * If the value type of a property is not an AstNode, the corresponding property will be untyped using the `never` type.
+ */
 export type ValidationChecks<T> = {
     [K in keyof T]?: T[K] extends AstNode
         ? ValidationCheck<T[K]> | Array<ValidationCheck<T[K]>>
