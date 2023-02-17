@@ -18,7 +18,7 @@ describe('Types generator', () => {
         // on Windows system the line ending of result is "\r\n"
         // Therefore typesFileContent is normalized to prevent false negatives
         const typesFileContent = generateTypesFile(grammar, [result.value]);
-        expect(typesFileContent).toMatch(EXPECTED_TYPES);
+        expect(typesFileContent).toBe(EXPECTED_TYPES);
     });
 
 });
@@ -32,7 +32,7 @@ type Statement = Definition | Evaluation;
 
 interface BinaryExpression {
     left: Expression
-    operator: '*' | '+' | '-' | '/'
+    operator: "*" | "+" | "-" | "/"
     right: Expression
 }
 
