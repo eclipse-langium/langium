@@ -17,7 +17,7 @@ import { ValidationAcceptor, ValidationChecks } from '../../validation/validatio
 import { LangiumDocuments } from '../../workspace/documents';
 import * as ast from '../generated/ast';
 import { isParserRule, isRuleCall } from '../generated/ast';
-import { getTypeNameWithoutError, isDataTypeRule, isOptionalCardinality, isPrimitiveType, resolveImport, resolveTransitiveImports, terminalRegex } from '../internal-grammar-util';
+import { getTypeNameWithoutError, hasDataTypeReturn, isDataTypeRule, isOptionalCardinality, isPrimitiveType, resolveImport, resolveTransitiveImports, terminalRegex } from '../internal-grammar-util';
 import type { LangiumGrammarServices } from '../langium-grammar-module';
 import { typeDefinitionToPropertyType } from '../type-system/type-collector/declared-types';
 import { flattenPlainType, isPlainReferenceType } from '../type-system/type-collector/plain-types';
@@ -624,12 +624,12 @@ export class LangiumGrammarValidator {
         if (isEmptyRule(rule)) {
             return;
         }
-        const hasDatatypeReturnType = rule.dataType;
-        const isDataType = isDataTypeRule(rule);
-        if (!hasDatatypeReturnType && isDataType) {
+        const hasDatatypeReturnType = hasDataTypeReturn(rule);
+        const dataTypeRule = isDataTypeRule(rule);
+        if (!hasDatatypeReturnType && dataTypeRule) {
             accept('error', 'This parser rule does not create an object. Add a primitive return type or an action to the start of the rule to force object instantiation.', { node: rule, property: 'name' });
-        } else if (hasDatatypeReturnType && !isDataType) {
-            accept('error', 'Normal parser rules are not allowed to return a primitive value. Use a datatype rule for that.', { node: rule, property: 'dataType' });
+        } else if (hasDatatypeReturnType && !dataTypeRule) {
+            accept('error', 'Normal parser rules are not allowed to return a primitive value. Use a datatype rule for that.', { node: rule, property: rule.dataType ? 'dataType' : 'returnType' });
         }
     }
 
