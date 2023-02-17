@@ -9,7 +9,7 @@ import { CstNode } from '../../../syntax-tree';
 import { Assignment, Action, TypeAttribute } from '../../generated/ast';
 import { distinctAndSorted } from '../types-util';
 
-export type Property = {
+export interface Property {
     name: string,
     optional: boolean,
     type: PropertyType,
@@ -148,12 +148,21 @@ export class InterfaceType {
     properties: Property[] = [];
 
     get superProperties(): Property[] {
+        return this.getSuperProperties(new Set());
+    }
+
+    private getSuperProperties(visited: Set<string>): Property[] {
+        if (visited.has(this.name)) {
+            return [];
+        } else {
+            visited.add(this.name);
+        }
         const map = new Map<string, Property>();
         for (const property of this.properties) {
             map.set(property.name, property);
         }
         for (const superType of this.interfaceSuperTypes) {
-            const allSuperProperties = superType.superProperties;
+            const allSuperProperties = superType.getSuperProperties(visited);
             for (const superProp of allSuperProperties) {
                 if (!map.has(superProp.name)) {
                     map.set(superProp.name, superProp);
@@ -166,13 +175,18 @@ export class InterfaceType {
     get allProperties(): Property[] {
         const map = new Map(this.superProperties.map(e => [e.name, e]));
         for (const subType of this.subTypes) {
-            this.getSubTypeProperties(subType, map);
+            this.getSubTypeProperties(subType, map, new Set());
         }
         const superProps = Array.from(map.values());
         return superProps;
     }
 
-    private getSubTypeProperties(type: TypeOption, map: Map<string, Property>): void {
+    private getSubTypeProperties(type: TypeOption, map: Map<string, Property>, visited: Set<string>): void {
+        if (visited.has(this.name)) {
+            return;
+        } else {
+            visited.add(this.name);
+        }
         const props = isInterfaceType(type) ? type.properties : [];
         for (const prop of props) {
             if (!map.has(prop.name)) {
@@ -180,7 +194,7 @@ export class InterfaceType {
             }
         }
         for (const subType of type.subTypes) {
-            this.getSubTypeProperties(subType, map);
+            this.getSubTypeProperties(subType, map, visited);
         }
     }
 
@@ -281,8 +295,9 @@ export function isTypeAssignable(from: PropertyType, to: PropertyType): boolean 
 function isInterfaceAssignable(from: InterfaceType, to: InterfaceType, visited: Set<string>): boolean {
     if (visited.has(from.name)) {
         return true;
+    } else {
+        visited.add(from.name);
     }
-    visited.add(from.name);
     if (from.name === to.name) {
         return true;
     }
