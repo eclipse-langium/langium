@@ -609,3 +609,48 @@ describe('Property type is not a mix of cross-ref and non-cross-ref types.', () 
     });
 
 });
+
+describe('Missing required properties are not arrays or booleans', () => {
+
+    test('No missing properties', async () => {
+        const validation = await validate(`
+        interface A {
+            name: string;
+        }
+        A returns A:
+            name = 'string'
+        ;
+        `);
+        expectNoIssues(validation);
+    });
+
+    test.each(['number[]', 'boolean'])('Missing mandatory %s properties', async (type) => {
+        const validation = await validate(`
+        interface A {
+            name: string;
+            values: ${type};
+        }
+        A returns A:
+            name = 'string'
+        ;
+        `);
+        expectNoIssues(validation);
+    });
+
+    test.each(['string', 'number', 'bigint'])('Missing non-mandatory %s properties', async (type) => {
+        const validation = await validate(`
+        interface A {
+            name: string;
+            value: ${type};
+        }
+        A returns A:
+            name = 'string'
+        ;
+        `);
+        const diagnostic = validation.diagnostics[0];
+        expectError(validation, /A property 'value' is expected. /, {
+            range: diagnostic.range
+        });
+    });
+
+});
