@@ -59,7 +59,32 @@ describe('validate params in types', () => {
         // verify the location of the single diagnostic error, should be only for the 2nd rule
         const d = diagnostics[0];
         expect(d.range.start).toEqual({ character: 8, line: 5 });
-        expect(d.range.end).toEqual({ character: 34, line: 5 });
+        expect(d.range.end).toEqual({ character: 9, line: 5 });
+    });
+
+    test('Boolean and array properties are not mandatory in inferred type', async () => {
+        const prog = `
+        interface A {
+            // mandatory property, but it's automatically added to the object as 'false'
+            bool: boolean
+            // mandatory property, but it's automatically added to the object as '[]'
+            arr: string[]
+            name: string
+            count: number
+        }
+        X returns A: name=ID;
+        terminal ID: /[a-zA-Z_][\\w_]*/;
+        terminal NUMBER returns number: /[0-9]+(\\.[0-9]+)?/;
+        `.trim();
+
+        const validation = await validate(prog);
+        const rule = validation.document.parseResult.value.rules[0];
+        // Assert that only the 'count' property is missing
+        // The other properties (bool/arr) are automatically added to each object that produces 'A'
+        expectError(validation, "A property 'count' is expected in a rule that returns type 'A'.", {
+            node: rule,
+            property: 'name'
+        });
     });
 
     // tests that an optional param in a declared type can be optionally present in a rule

@@ -11,6 +11,7 @@ import { extractAssignments } from '../internal-grammar-util';
 import { LangiumGrammarServices } from '../langium-grammar-module';
 import { flattenPropertyUnion, InterfaceType, isInterfaceType, isReferenceType, isTypeAssignable, isUnionType, Property, PropertyType, propertyTypeToString } from '../type-system/type-collector/types';
 import { DeclaredInfo, InferredInfo, isDeclared, isInferred, isInferredAndDeclared, LangiumGrammarDocument } from '../workspace/documents';
+import { hasArrayType, hasBooleanType } from '../type-system';
 
 export function registerTypeValidationChecks(services: LangiumGrammarServices): void {
     const registry = services.validation.ValidationRegistry;
@@ -188,17 +189,25 @@ function validateDeclaredAndInferredConsistency(typeInfo: InferredInfo & Declare
 
     // todo add actions
     // currently we don't track which assignments belong to which actions and can't apply this error
-    const applyMissingPropErrorToRules = (missingProp: string) => {
+    const applyMissingPropErrorToRules = (missingProps: Set<string>) => {
         inferredNodes.forEach(node => {
             if (ast.isParserRule(node)) {
+                const foundMissingProps = new Set<string>();
                 const assignments = extractAssignments(node.definition);
-                if (assignments.find(e => e.feature === missingProp) === undefined) {
+                for (const missingProp of missingProps) {
+                    if (assignments.find(e => e.feature === missingProp) === undefined) {
+                        foundMissingProps.add(missingProp);
+                    }
+                }
+                if (foundMissingProps.size > 0) {
+                    const prefix = missingProps.size > 1 ? 'Properties' : 'A property';
+                    const postfix = missingProps.size > 1 ? 'are' : 'is';
                     accept(
                         'error',
-                        `Property '${missingProp}' is missing in a rule '${node.name}', but is required in type '${typeName}'.`,
+                        `${prefix} '${Array.from(foundMissingProps).sort().join("', '")}' ${postfix} missing in rule '${node.name}', but ${postfix} required in type '${typeName}'.`,
                         {
                             node,
-                            property: 'parameters'
+                            property: 'name'
                         }
                     );
                 }
@@ -238,13 +247,15 @@ function validatePropertiesConsistency(
     declared: InterfaceType,
     applyErrorToType: (errorMessage: string) => void,
     applyErrorToProperties: (nodes: Set<ast.Assignment | ast.Action | ast.TypeAttribute>, errorMessage: string) => void,
-    applyMissingPropErrorToRules: (missingProp: string) => void
+    applyMissingPropErrorToRules: (missingProps: Set<string>) => void
 ) {
     const ownInferredProps = new Set(inferred.properties.map(e => e.name));
     // This field also contains properties of sub types
     const allInferredProps = new Map(inferred.allProperties.map(e => [e.name, e]));
     // This field only contains properties of itself or super types
     const declaredProps = new Map(declared.superProperties.map(e => [e.name, e]));
+
+    const errorOptionalProps = new Set<string>();
 
     // detects extra properties & validates matched ones on consistency by the 'optional' property
     for (const [name, foundProp] of allInferredProps.entries()) {
@@ -259,7 +270,10 @@ function validatePropertiesConsistency(
             }
 
             if (!expectedProp.optional && foundProp.optional) {
-                applyMissingPropErrorToRules(name);
+                const automaticProperty = hasArrayType(expectedProp.type) || hasBooleanType(expectedProp.type);
+                if (!automaticProperty) {
+                    errorOptionalProps.add(name);
+                }
             }
         } else if (ownInferredProps.has(name)) {
             // Only apply the superfluous property error on properties which are actually declared on the current type
@@ -269,17 +283,26 @@ function validatePropertiesConsistency(
 
     // Detect any missing properties
     const missingProps = new Set<string>();
-    for (const [name, expectedProperties] of declaredProps.entries()) {
+    for (const [name, expectedProperty] of declaredProps.entries()) {
         const foundProperty = allInferredProps.get(name);
-        if (!foundProperty && !expectedProperties.optional) {
-            missingProps.add(name);
+        if (!foundProperty && !expectedProperty.optional) {
+            // Array or boolean properties are automatically added to the object
+            // They don't necessarily need to be declared on the inferred type or on the rule itself
+            const automaticProperty = hasArrayType(expectedProperty.type) || hasBooleanType(expectedProperty.type);
+            if (!automaticProperty) {
+                missingProps.add(name);
+            }
         }
+    }
+
+    if (errorOptionalProps.size > 0) {
+        applyMissingPropErrorToRules(errorOptionalProps);
     }
 
     if (missingProps.size > 0) {
         const prefix = missingProps.size > 1 ? 'Properties' : 'A property';
         const postfix = missingProps.size > 1 ? 'are expected' : 'is expected';
         const props = Array.from(missingProps).map(e => `'${e}'`).sort().join(', ');
-        applyErrorToType(`${prefix} ${props} ${postfix}.`);
+        applyErrorToType(`${prefix} ${props} ${postfix}`);
     }
 }
