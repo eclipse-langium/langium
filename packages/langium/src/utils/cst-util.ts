@@ -151,15 +151,14 @@ export function getPreviousNode(node: CstNode, hidden = true): CstNode | undefin
     while (node.parent) {
         const parent = node.parent;
         let index = parent.children.indexOf(node);
-        if (index === 0) {
-            node = parent;
-        } else {
+        while (index > 0) {
             index--;
             const previous = parent.children[index];
             if (hidden || !previous.hidden) {
                 return previous;
             }
         }
+        node = parent;
     }
     return undefined;
 }
@@ -168,15 +167,14 @@ export function getNextNode(node: CstNode, hidden = true): CstNode | undefined {
     while (node.parent) {
         const parent = node.parent;
         let index = parent.children.indexOf(node);
-        if (parent.children.length - 1 === index) {
-            node = parent;
-        } else {
+        while (index < parent.children.length) {
             index++;
             const next = parent.children[index];
             if (hidden || !next.hidden) {
                 return next;
             }
         }
+        node = parent;
     }
     return undefined;
 }
