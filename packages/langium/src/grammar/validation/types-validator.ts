@@ -9,7 +9,7 @@ import { MultiMap } from '../../utils/collections';
 import { DiagnosticInfo, ValidationAcceptor, ValidationChecks } from '../../validation/validation-registry';
 import { extractAssignments } from '../internal-grammar-util';
 import { LangiumGrammarServices } from '../langium-grammar-module';
-import { flattenPropertyUnion, InterfaceType, isInterfaceType, isReferenceType, isTypeAssignable, isUnionType, Property, PropertyType, propertyTypeToString } from '../type-system/type-collector/types';
+import { flattenPropertyUnion, InterfaceType, isInterfaceType, isMandatoryPropertyType, isReferenceType, isTypeAssignable, isUnionType, Property, PropertyType, propertyTypeToString } from '../type-system/type-collector/types';
 import { DeclaredInfo, InferredInfo, isDeclared, isInferred, isInferredAndDeclared, LangiumGrammarDocument } from '../workspace/documents';
 
 export function registerTypeValidationChecks(services: LangiumGrammarServices): void {
@@ -46,7 +46,7 @@ export class LangiumGrammarTypesValidator {
         const validationResources = (grammar.$document as LangiumGrammarDocument)?.validationResources;
         if (validationResources) {
             for (const typeInfo of validationResources.typeToValidationInfo.values()) {
-                if(isInferred(typeInfo) && typeInfo.inferred instanceof InterfaceType) {
+                if (isInferred(typeInfo) && typeInfo.inferred instanceof InterfaceType) {
                     validateInferredInterface(typeInfo.inferred as InterfaceType, accept);
                 }
                 if (isInferredAndDeclared(typeInfo)) {
@@ -73,11 +73,11 @@ function validateInferredInterface(inferredInterface: InterfaceType, accept: Val
             const firstKind = typeKind(flattened[0]);
             if (flattened.slice(1).some(type => typeKind(type) !== firstKind)) {
                 const targetNode = prop.astNodes.values().next()?.value;
-                if(targetNode) {
+                if (targetNode) {
                     accept(
                         'error',
                         `Mixing a cross-reference with other types is not supported. Consider splitting property "${prop.name}" into two or more different properties.`,
-                        { node:  targetNode}
+                        { node: targetNode }
                     );
                 }
             }
@@ -233,6 +233,11 @@ function validateAlternativesConsistency(
     }
 }
 
+function isOptionalProperty(prop: Property): boolean {
+    // mandatory properties will always be created so there are no issues if they are missing
+    return prop.optional || isMandatoryPropertyType(prop.type);
+}
+
 function validatePropertiesConsistency(
     inferred: InterfaceType,
     declared: InterfaceType,
@@ -258,7 +263,7 @@ function validatePropertiesConsistency(
                 applyErrorToProperties(foundProp.astNodes, errorMsgPrefix);
             }
 
-            if (!expectedProp.optional && foundProp.optional) {
+            if (foundProp.optional && !isOptionalProperty(expectedProp)) {
                 applyMissingPropErrorToRules(name);
             }
         } else if (ownInferredProps.has(name)) {
@@ -271,7 +276,7 @@ function validatePropertiesConsistency(
     const missingProps = new Set<string>();
     for (const [name, expectedProperties] of declaredProps.entries()) {
         const foundProperty = allInferredProps.get(name);
-        if (!foundProperty && !expectedProperties.optional) {
+        if (!foundProperty && !isOptionalProperty(expectedProperties)) {
             missingProps.add(name);
         }
     }

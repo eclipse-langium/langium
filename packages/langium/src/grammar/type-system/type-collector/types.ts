@@ -340,7 +340,7 @@ function pushProperties(
         .forEach(property => node.append(propertyToString(property), NL));
 }
 
-function isMandatoryPropertyType(propertyType: PropertyType): boolean {
+export function isMandatoryPropertyType(propertyType: PropertyType): boolean {
     if (isArrayType(propertyType)) {
         return true;
     } else if (isReferenceType(propertyType)) {
