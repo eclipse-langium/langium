@@ -167,7 +167,8 @@ export function getNextNode(node: CstNode, hidden = true): CstNode | undefined {
     while (node.parent) {
         const parent = node.parent;
         let index = parent.children.indexOf(node);
-        while (index < parent.children.length) {
+        const last = parent.children.length - 1;
+        while (index < last) {
             index++;
             const next = parent.children[index];
             if (hidden || !next.hidden) {
