@@ -647,9 +647,10 @@ describe('Missing required properties are not arrays or booleans', () => {
             name = 'string'
         ;
         `);
-        const diagnostic = validation.diagnostics[0];
+        const rule = validation.document.parseResult.value.rules[0];
         expectError(validation, /A property 'value' is expected. /, {
-            range: diagnostic.range
+            node: rule,
+            property: 'name'
         });
     });
 
