@@ -13,6 +13,15 @@ const defaultAnswers = {
     extensionName: 'hello-world',
     rawLanguageName: 'Hello World',
     fileExtension: '.hello',
+    targetEnvironment: 'vscode',
+    openWith: false
+};
+
+const answersForWeb = {
+    extensionName: 'hello-world',
+    rawLanguageName: 'Hello World',
+    fileExtension: '.hello',
+    targetEnvironment: 'web',
     openWith: false
 };
 
@@ -32,13 +41,29 @@ describe('Check yeoman generator works', () => {
             .withAnswers(defaultAnswers)
             .withArguments('skip-install')
             .then((result) => {
-                const generatedRoot = targetRoot + '/hello-world/';
-                result.assertFile(generatedRoot + 'package.json');
-                result.assertFileContent(generatedRoot + 'package.json', PACKAGE_JSON_EXPECTATION);
-                result.assertFile(generatedRoot + '.vscode/tasks.json');
-                result.assertFileContent(generatedRoot + '.vscode/tasks.json', TASKS_JSON_EXPECTATION);
-                result.assertFile(generatedRoot + '.gitignore');
-            }).finally(() => context.cleanup() /*clean-up*/ );
+                result.assertFile(['hello-world/package.json']);
+                result.assertFileContent('hello-world/package.json', PACKAGE_JSON_EXPECTATION);
+                result.assertFile(['hello-world/.vscode/tasks.json']);
+                result.assertFileContent('hello-world/.vscode/tasks.json', TASKS_JSON_EXPECTATION);
+                result.assertFile(['hello-world/.gitignore']);
+            });
+        context.cleanup(); // clean-up
+    }, 120_000);
+
+    test('Should produce files for web environment', async () => {
+        const context = createHelpers({}).run(path.join(__dirname, '../app'));
+        context.targetDirectory = path.join(__dirname, '../test-temp');
+        context.cleanTestDirectory(true);
+        await context.onGenerator(generator => generator.destinationRoot(context.targetDirectory, false))
+            .withAnswers(answersForWeb)
+            .then(result => {
+                result.assertFile(['hello-world/src/language-server/main-browser.ts']);
+                result.assertFile(['hello-world/src/static/index.html']);
+                result.assertFile(['hello-world/src/static/setup.js']);
+                result.assertFile(['hello-world/src/static/styles.css']);
+                result.assertFile(['hello-world/src/web/app.ts']);
+            });
+        context.cleanup();
     }, 120_000);
 
 });
