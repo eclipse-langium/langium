@@ -1,0 +1,29 @@
+html,body {
+    background: rgb(33,33,33);
+    font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+    color: white;
+    /* for monaco */
+    margin: 8px auto;
+    width: 80%;
+    height: 80%;
+}
+h1 {
+    text-align: center;
+}
+footer {
+    text-align: center;
+    color: #444;
+    font-size: 1.2rem;
+    margin-bottom: 16px;
+}
+
+/* for monaco */
+.wrapper {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+}
+#monaco-editor-root {
+    flex-grow: 1;
+}

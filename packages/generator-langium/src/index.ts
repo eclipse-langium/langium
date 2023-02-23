@@ -11,6 +11,7 @@ import path from 'path';
 import which from 'which';
 
 const TEMPLATE_DIR = '../langium-template';
+const WEB_TEMPLATE_DIR = '../langium-template-web';
 const USER_DIR = '.';
 
 const EXTENSION_NAME = /<%= extension-name %>/g;
@@ -26,6 +27,7 @@ interface Answers {
     extensionName: string;
     rawLanguageName: string;
     fileExtensions: string;
+    targetEnvironment: string;
 }
 
 function printLogo(log: (message: string) => void): void {
@@ -91,6 +93,16 @@ class LangiumGenerator extends Generator {
                         ? true
                         : 'A file extension can start with . and must contain only letters and digits. Extensions must be separated by commas.',
             },
+            {
+                type: 'list',
+                name: 'targetEnvironment',
+                prefix: description(
+                    'Your language can be run as a VSCode extension or in a web browser.'
+                ),
+                message: 'Target environment:',
+                choices: ['vscode', 'web'],
+                default: 'vscode'
+            }
         ]);
     }
 
@@ -129,9 +141,25 @@ class LangiumGenerator extends Generator {
                 }
             );
         }
+
+        if (this.answers.targetEnvironment === 'web') {
+            this.sourceRoot(path.join(__dirname, WEB_TEMPLATE_DIR));
+            for (const path of ['.']) {
+                this.fs.copy(
+                    this.templatePath(path),
+                    this._extensionPath(path),
+                    {
+                        process: content =>
+                            this._replaceTemplateWords(fileExtensionGlob, languageName, languageId, content),
+                        processDestinationPath: path =>
+                            this._replaceTemplateNames(languageId, path),
+                    }
+                );
+            }
+        }
     }
 
-    install(): void {
+    async install(): Promise<void> {
         const extensionPath = this._extensionPath();
 
         const opts = { cwd: extensionPath };
@@ -140,6 +168,10 @@ class LangiumGenerator extends Generator {
         }
         this.spawnCommandSync('npm', ['run', 'langium:generate'], opts);
         this.spawnCommandSync('npm', ['run', 'build'], opts);
+
+        if (this.answers.targetEnvironment === 'web') {
+            this.spawnCommandSync('npm', ['run', 'build:web'], opts);
+        }
     }
 
     async end(): Promise<void> {
