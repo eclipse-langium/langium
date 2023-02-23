@@ -29,6 +29,7 @@ describe('Check yeoman generator works', () => {
                 result.assertFileContent('hello-world/package.json', PACKAGE_JSON_EXPECTATION);
                 result.assertFile(['hello-world/.vscode/tasks.json']);
                 result.assertFileContent('hello-world/.vscode/tasks.json', TASKS_JSON_EXPECTATION);
+                result.assertFile(['hello-world/.gitignore']);
             });
         context.cleanup(); // clean-up
     }, 120_000);
