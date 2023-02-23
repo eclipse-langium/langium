@@ -117,7 +117,7 @@ class LangiumGenerator extends Generator {
 
         this.sourceRoot(path.join(__dirname, TEMPLATE_DIR));
 
-        for (const path of ['.', '.vscode', '.eslintrc.json', '.vscodeignore']) {
+        for (const path of ['.', '.vscode', '.eslintrc.json', '.vscodeignore', '.gitignore']) {
             this.fs.copy(
                 this.templatePath(path),
                 this._extensionPath(path),
