@@ -45,12 +45,76 @@ terminal ID: /[a-zA-Z_]\\w*/;`
         await formatting({
             before: `grammar Code
 Param: name=ID
-hidden terminal WS: /\s+/;
-terminal ID: /[_a-zA-Z][\w_]*/;`,
+hidden terminal WS: /\\s+/;
+terminal ID: /[_a-zA-Z][\\w_]*/;`,
             after: `grammar Code
 Param: name=ID
-hidden terminal WS: /\s+/;
-terminal ID: /[_a-zA-Z][\w_]*/;`
+hidden terminal WS: /\\s+/;
+terminal ID: /[_a-zA-Z][\\w_]*/;`
+        });
+    });
+
+    test('Should allow formatting range before a parser/lexer error', async () => {
+        await formatting({
+            before: `grammar Code
+P1: 'p1' a=ID;
+P2: 'p2' b=ID
+hidden terminal WS: /\\s+/;
+terminal ID: /[_a-zA-Z][\\w_]*/;
+P3: 'p3' c=ID;`,
+            after: `grammar Code
+P1:
+    'p1' a=ID;
+P2: 'p2' b=ID
+hidden terminal WS: /\\s+/;
+terminal ID: /[_a-zA-Z][\\w_]*/;
+P3: 'p3' c=ID;`,
+
+            range: {
+                start: { line: 0, character: 0},
+                end: { line: 1, character: 14}
+            }
+        });
+    });
+
+    test('Disallow formatting range on or after a parser/lexer error', async () => {
+        const before = `grammar Code
+P1: 'p1' a=ID;
+P2: 'p2' b=ID
+hidden terminal WS: /\\s+/;
+terminal ID: /[_a-zA-Z][\\w_]*/;
+P3: 'p3' c=ID;`;
+
+        // expect that formatting doesn't occur after the error line
+        await formatting({
+            before,
+            after: `grammar Code
+P1: 'p1' a=ID;
+P2: 'p2' b=ID
+hidden terminal WS: /\\s+/;
+terminal ID: /[_a-zA-Z][\\w_]*/;
+P3: 'p3' c=ID;`,
+
+            range: {
+                start: { line: 5, character: 0},
+                end: { line: 6, character: 0}
+            }
+        });
+
+        // expect that formatting doesn't occur on the error line
+        await formatting({
+            before,
+            after: `grammar Code
+P1: 'p1' a=ID;
+P2: 'p2' b=ID
+hidden terminal WS: /\\s+/;
+terminal ID: /[_a-zA-Z][\\w_]*/;
+P3: 'p3' c=ID;`,
+
+            range: {
+                start: { line: 0, character: 0},
+                end: { line: 4, character: 0}
+            }
         });
     });
 

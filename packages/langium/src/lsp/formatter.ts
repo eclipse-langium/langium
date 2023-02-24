@@ -75,6 +75,25 @@ export abstract class AbstractFormatter implements Formatter {
     }
 
     formatDocumentRange(document: LangiumDocument, params: DocumentRangeFormattingParams): MaybePromise<TextEdit[]> {
+        const pr = document.parseResult;
+
+        if (pr.lexerErrors.length || pr.parserErrors.length) {
+            let earliestErrLine = Number.MAX_VALUE;
+
+            // collect the earliest error line from either
+            for (const lexerError of pr.lexerErrors) {
+                earliestErrLine = Math.min(lexerError.line ?? Number.MAX_VALUE, earliestErrLine);
+            }
+            for (const parserError of pr.parserErrors) {
+                earliestErrLine = Math.min(parserError.token.startLine ?? Number.MAX_VALUE, earliestErrLine);
+            }
+
+            // if the earliest error line occurs before or at the end line of the range, then don't format
+            if (Math.min(earliestErrLine, params.range.end.line) === earliestErrLine) {
+                return [];
+            }
+        }
+
         return this.doDocumentFormat(document, params.options, params.range);
     }
 
