@@ -10,7 +10,7 @@ import { LangiumDocuments } from '../workspace/documents';
 import { Grammar, isGrammar } from './generated/ast';
 import { collectAst } from './type-system/ast-collector';
 import { AstTypes, Property } from './type-system/type-collector/types';
-import { collectTypeHierarchy, findReferenceTypes, hasArrayType, hasBooleanType, mergeTypesAndInterfaces } from './type-system/types-util';
+import { collectTypeHierarchy, findReferenceTypes, hasArrayType, hasAstType, hasBooleanType, mergeTypesAndInterfaces } from './type-system/types-util';
 
 export function interpretAstReflection(astTypes: AstTypes): AstReflection;
 export function interpretAstReflection(grammar: Grammar, documents?: LangiumDocuments): AstReflection;
@@ -21,7 +21,7 @@ export function interpretAstReflection(grammarOrTypes: Grammar | AstTypes, docum
     } else {
         collectedTypes = grammarOrTypes;
     }
-    const allTypes = collectedTypes.interfaces.map(e => e.name).concat(collectedTypes.unions.map(e => e.name));
+    const allTypes = collectedTypes.interfaces.map(e => e.name).concat(collectedTypes.unions.filter(e => hasAstType(e.type)).map(e => e.name));
     const references = buildReferenceTypes(collectedTypes);
     const metaData = buildTypeMetaData(collectedTypes);
     const superTypes = collectTypeHierarchy(mergeTypesAndInterfaces(collectedTypes)).superTypes;

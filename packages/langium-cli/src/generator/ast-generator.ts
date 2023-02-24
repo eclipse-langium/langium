@@ -7,7 +7,7 @@
 import {
     GeneratorNode, Grammar, IndentNode, CompositeGeneratorNode, NL, toString, streamAllContents, MultiMap, LangiumServices, GrammarAST
 } from 'langium';
-import { AstTypes, collectAst, collectTypeHierarchy, findReferenceTypes, hasArrayType, hasBooleanType, mergeTypesAndInterfaces, Property } from 'langium/lib/grammar/type-system';
+import { AstTypes, collectAst, collectTypeHierarchy, findReferenceTypes, hasArrayType, hasAstType, hasBooleanType, mergeTypesAndInterfaces, Property } from 'langium/lib/grammar/type-system';
 import { LangiumConfig } from '../package';
 import { generatedHeader } from './util';
 
@@ -24,10 +24,10 @@ export function generateAst(services: LangiumServices, grammars: Grammar[], conf
         `import { AstNode, AbstractAstReflection${crossRef ? ', Reference' : ''}, ReferenceInfo, TypeMetaData } from '${importFrom}';`, NL, NL
     );
 
-    astTypes.unions.forEach(union => fileNode.append(union.toAstTypesString(true), NL));
+    astTypes.unions.forEach(union => fileNode.append(union.toAstTypesString(hasAstType(union.type)), NL));
     astTypes.interfaces.forEach(iFace => fileNode.append(iFace.toAstTypesString(true), NL));
 
-    astTypes.unions = astTypes.unions.filter(e => e.reflection);
+    astTypes.unions = astTypes.unions.filter(e => e.reflection && hasAstType(e.type));
     fileNode.append(generateAstReflection(config, astTypes));
 
     return toString(fileNode);

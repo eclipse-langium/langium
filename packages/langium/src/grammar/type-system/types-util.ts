@@ -194,3 +194,18 @@ export function findReferenceTypes(type: PropertyType): string[] {
     }
     return [];
 }
+
+export function hasAstType(type: PropertyType): boolean {
+    if (isPropertyUnion(type)) {
+        return type.types.some(hasAstType);
+    } else if (isValueType(type)) {
+        const value = type.value;
+        if ('type' in value) {
+            return hasAstType(value.type);
+        } else {
+            // Is definitely an interface type
+            return true;
+        }
+    }
+    return false;
+}
