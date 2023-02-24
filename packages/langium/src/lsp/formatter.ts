@@ -64,7 +64,14 @@ export abstract class AbstractFormatter implements Formatter {
     }
 
     formatDocument(document: LangiumDocument, params: DocumentFormattingParams): MaybePromise<TextEdit[]> {
-        return this.doDocumentFormat(document, params.options);
+        const pr = document.parseResult;
+        if (pr.lexerErrors.length === 0 && pr.parserErrors.length === 0) {
+            // safe to format
+            return this.doDocumentFormat(document, params.options);
+        } else {
+            // don't format a potentially broken document, return no edits
+            return [];
+        }
     }
 
     formatDocumentRange(document: LangiumDocument, params: DocumentRangeFormattingParams): MaybePromise<TextEdit[]> {
