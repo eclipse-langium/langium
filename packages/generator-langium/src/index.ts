@@ -119,8 +119,11 @@ class LangiumGenerator extends Generator {
             {
                 type: 'confirm',
                 name: 'includeWeb',
-                message: 'Include Web?',
-                default: 'no'
+                prefix: description(
+                    'You can run the language server in your web browser.'
+                ),
+                message: 'Include Web worker?',
+                default: 'yes'
             }
         ]);
     }
