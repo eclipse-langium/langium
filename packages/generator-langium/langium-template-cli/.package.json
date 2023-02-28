@@ -9,22 +9,6 @@
     "categories": [
         "Programming Languages"
     ],
-    "contributes": {
-        "languages": [{
-            "id": "<%= language-id %>",
-            "aliases": ["<%= RawLanguageName %>", "<%= language-id %>"],
-            "extensions": <%= file-extension %>,
-            "configuration": "./language-configuration.json"
-        }],
-        "grammars": [{
-            "language": "<%= language-id %>",
-            "scopeName": "source.<%= language-id %>",
-            "path": "./syntaxes/<%= language-id %>.tmLanguage.json"
-        }]
-    },
-    "activationEvents": [
-        "onLanguage:<%= language-id %>"
-    ],
     "files": [
         "bin",
         "out",
@@ -33,9 +17,7 @@
     "bin": {
         "<%= language-id %>-cli": "./bin/cli"
     },
-    "main": "./out/extension.js",
     "scripts": {
-        "vscode:prepublish": "npm run build && npm run lint",
         "build": "tsc -b tsconfig.json",
         "watch": "tsc -b tsconfig.json --watch",
         "lint": "eslint src --ext ts",
@@ -43,13 +25,9 @@
         "langium:watch": "langium generate --watch"
     },
     "dependencies": {
-        "chevrotain": "~10.4.2",
         "chalk": "~4.1.2",
         "commander": "~10.0.0",
-        "langium": "~1.1.0",
-        "vscode-languageclient": "~8.0.2",
-        "vscode-languageserver": "~8.0.2",
-        "vscode-uri": "~3.0.7"
+        "langium": "~1.1.0"
     },
     "devDependencies": {
         "@types/node": "~16.18.11",

@@ -10,13 +10,15 @@ import chalk from 'chalk';
 import path from 'path';
 import which from 'which';
 
-const TEMPLATE_DIR = '../langium-template';
-const WEB_TEMPLATE_DIR = '../langium-template-web';
+const TEMPLATE_CORE_DIR = '../langium-template-core';
+const TEMPLATE_VSCODE_DIR = '../langium-template-vscode';
+const TEMPLATE_CLI_DIR = '../langium-template-cli';
+const TEMPLATE_WEB_DIR = '../langium-template-web';
 const USER_DIR = '.';
 
 const EXTENSION_NAME = /<%= extension-name %>/g;
 const RAW_LANGUAGE_NAME = /<%= RawLanguageName %>/g;
-const FILE_EXTENSION = /<%= file-extension %>/g;
+const FILE_EXTENSION = /"?<%= file-extension %>"?/g;
 const FILE_EXTENSION_GLOB = /<%= file-glob-extension %>/g;
 
 const LANGUAGE_NAME = /<%= LanguageName %>/g;
@@ -27,7 +29,9 @@ interface Answers {
     extensionName: string;
     rawLanguageName: string;
     fileExtensions: string;
-    targetEnvironment: string;
+    includeVSCode: boolean;
+    includeCLI: boolean;
+    includeWeb: boolean;
 }
 
 function printLogo(log: (message: string) => void): void {
@@ -94,14 +98,29 @@ class LangiumGenerator extends Generator {
                         : 'A file extension can start with . and must contain only letters and digits. Extensions must be separated by commas.',
             },
             {
-                type: 'list',
-                name: 'targetEnvironment',
+                type: 'confirm',
+                name: 'includeVSCode',
                 prefix: description(
-                    'Your language can be run as a VSCode extension or in a web browser.'
+                    'Your language can be run inside of a VSCode extension.'
                 ),
-                message: 'Target environment:',
-                choices: ['vscode', 'web'],
-                default: 'vscode'
+                message: 'Include VSCode extension?',
+                default: 'yes',
+                choices: ['yes', 'no']
+            },
+            {
+                type: 'confirm',
+                name: 'includeCLI',
+                prefix: description(
+                    'You can add CLI to your language.'
+                ),
+                message: 'Include CLI?',
+                default: 'yes'
+            },
+            {
+                type: 'confirm',
+                name: 'includeWeb',
+                message: 'Include Web?',
+                default: 'no'
             }
         ]);
     }
@@ -111,7 +130,7 @@ class LangiumGenerator extends Generator {
             new Set(
                 this.answers.fileExtensions
                     .split(',')
-                    .map(ext => ext.replace(/\./g, '').trim())
+                    .map(ext => ext.replace(/\./g, '').trim()),
             )
         );
         this.answers.fileExtensions = `[${fileExtensions.map(ext => `".${ext}"`).join(', ')}]`;
@@ -127,9 +146,11 @@ class LangiumGenerator extends Generator {
         );
         const languageId = _.kebabCase(this.answers.rawLanguageName);
 
-        this.sourceRoot(path.join(__dirname, TEMPLATE_DIR));
+        this.sourceRoot(path.join(__dirname, TEMPLATE_CORE_DIR));
+        const pkgJson = this.fs.readJSON(path.join(this.sourceRoot(), '.package.json'));
+        this.fs.extendJSON(this._extensionPath('package-template.json'), pkgJson);
 
-        for (const path of ['.', '.vscode', '.eslintrc.json', '.vscodeignore', '.gitignore']) {
+        for (const path of ['.', '.vscode', '.eslintrc.json', '.gitignore']) {
             this.fs.copy(
                 this.templatePath(path),
                 this._extensionPath(path),
@@ -142,8 +163,44 @@ class LangiumGenerator extends Generator {
             );
         }
 
-        if (this.answers.targetEnvironment === 'web') {
-            this.sourceRoot(path.join(__dirname, WEB_TEMPLATE_DIR));
+        if (this.answers.includeVSCode) {
+            this.sourceRoot(path.join(__dirname, TEMPLATE_VSCODE_DIR));
+            const pkgJson = this.fs.readJSON(path.join(this.sourceRoot(), '.package.json'));
+            this.fs.extendJSON(this._extensionPath('package-template.json'), pkgJson);
+            this.sourceRoot(path.join(__dirname, TEMPLATE_VSCODE_DIR));
+            for (const path of ['.', '.vscode', '.vscodeignore']) {
+                this.fs.copy(
+                    this.templatePath(path),
+                    this._extensionPath(path),
+                    {
+                        process: content => this._replaceTemplateWords(fileExtensionGlob, languageName, languageId, content),
+                        processDestinationPath: path => this._replaceTemplateNames(languageId, path)
+                    }
+                );
+            }
+        }
+
+        if (this.answers.includeCLI) {
+            this.sourceRoot(path.join(__dirname, TEMPLATE_CLI_DIR));
+            const pkgJson = this.fs.readJSON(path.join(this.sourceRoot(), '.package.json'));
+            this.fs.extendJSON(this._extensionPath('package-template.json'),pkgJson);
+            for (const path of ['.']) {
+                this.fs.copy(
+                    this.templatePath(path),
+                    this._extensionPath(path),
+                    {
+                        process: content => this._replaceTemplateWords(fileExtensionGlob, languageName, languageId, content),
+                        processDestinationPath: path => this._replaceTemplateNames(languageId, path)
+                    }
+                );
+            }
+        }
+
+        if (this.answers.includeWeb) {
+            this.sourceRoot(path.join(__dirname, TEMPLATE_WEB_DIR));
+            const pkgJson = this.fs.readJSON(path.join(this.sourceRoot(), '.package.json'));
+            this.fs.extendJSON(this._extensionPath('package-template.json'), pkgJson);
+            this.sourceRoot(path.join(__dirname, TEMPLATE_WEB_DIR));
             for (const path of ['.']) {
                 this.fs.copy(
                     this.templatePath(path),
@@ -157,6 +214,18 @@ class LangiumGenerator extends Generator {
                 );
             }
         }
+
+        this.fs.copy(
+            this._extensionPath('package-template.json'),
+            this._extensionPath('package.json'),
+            {
+                process: content =>
+                    this._replaceTemplateWords(fileExtensionGlob, languageName, languageId, content),
+                processDestinationPath: path =>
+                    this._replaceTemplateNames(languageId, path),
+            }
+        );
+        this.fs.delete(this._extensionPath('package-template.json'));
     }
 
     async install(): Promise<void> {
@@ -167,9 +236,12 @@ class LangiumGenerator extends Generator {
             this.spawnCommandSync('npm', ['install'], opts);
         }
         this.spawnCommandSync('npm', ['run', 'langium:generate'], opts);
-        this.spawnCommandSync('npm', ['run', 'build'], opts);
 
-        if (this.answers.targetEnvironment === 'web') {
+        if (this.answers.includeVSCode || this.answers.includeCLI) {
+            this.spawnCommandSync('npm', ['run', 'build'], opts);
+        }
+
+        if (this.answers.includeWeb) {
             this.spawnCommandSync('npm', ['run', 'build:web'], opts);
         }
     }
@@ -216,6 +288,44 @@ class LangiumGenerator extends Generator {
     _replaceTemplateNames(languageId: string, path: string): string {
         return path.replace(LANGUAGE_PATH_ID, languageId);
     }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // replacerPackageJson = (key: string, value: any) => {
+    //     const languageId = _.kebabCase(this.answers.rawLanguageName);
+    //     const fileExtensions = Array.from(
+    //         new Set(
+    //             this.answers.fileExtensions
+    //                 .split(',')
+    //                 .map(ext => ext.replace(/\./g, '').trim()),
+    //         )
+    //     );
+    //     switch(key) {
+    //         case 'name':
+    //             return this.answers.extensionName;
+    //         case 'displayName':
+    //             return this.answers.extensionName;
+    //         case 'id':
+    //             return languageId;
+    //         case 'aliases':
+    //             return [this.answers.rawLanguageName, languageId];
+    //         case 'extensions':
+    //             return fileExtensions;
+    //         case 'language':
+    //             return languageId;
+    //         case 'scopeName':
+    //             return `source.${languageId}`;
+    //         case 'path':
+    //             return `./syntaxes/${languageId}.tmLanguage.json`;
+    //         case 'activationEvents':
+    //             return `onLanguage:${languageId}`;
+    //         case 'bin':
+    //             return {key: `${languageId}-cli`, value: './bin/cli'};
+    //         case 'build:worker':
+    //             return `esbuild --minify ./out/language-server/main-browser.js --bundle --format=iife --outfile=./public/${languageId}-server-worker.js`;
+    //         default:
+    //             return value;
+    //     }
+    // };
 }
 
 export = LangiumGenerator;
