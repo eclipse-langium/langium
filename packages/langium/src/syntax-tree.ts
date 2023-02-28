@@ -240,3 +240,23 @@ export interface RootCstNode extends CompositeCstNode {
 export function isRootCstNode(node: unknown): node is RootCstNode {
     return isCompositeCstNode(node) && 'fullText' in node;
 }
+
+//Manipulates a type to show only properties of a certain type.
+type ExtractKeysOfValueType<T, K> = { [I in keyof T]: T[I] extends K ? I : never }[keyof T];
+
+/**
+ * Returns the property names of an AstNode that are cross-references.
+ * Meant to be used during cross-reference resolution in combination with `assertUnreachable(context.property)`.
+ */
+export type CrossReferencesOfAstNodeType<N extends AstNode> = (
+    ExtractKeysOfValueType<N, Reference|undefined>
+    | ExtractKeysOfValueType<N, Array<Reference|undefined>|undefined>
+) & Record<string, never>;
+
+/**
+ * Returns all types that contain cross-references.
+ * Meant to be used during cross-reference resolution in combination with `assertUnreachable(context.container)`.
+ */
+export type AstNodeTypesWithCrossReferences<A extends Record<string, AstNode>> = {
+    [T in keyof A]: CrossReferencesOfAstNodeType<A[T]> extends never ? never : A[T]
+}[keyof A];
