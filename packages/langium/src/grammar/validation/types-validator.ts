@@ -253,7 +253,7 @@ function validatePropertiesConsistency(
     const declaredProps = new Map(declared.superProperties.map(e => [e.name, e]));
 
     // The inferred props may not have full hierarchy information so try finding
-    // the a corresponding declared type
+    // a corresponding declared type
     const matchingProp = (type: PropertyType): PropertyType => {
         if (isPropertyUnion(type)) return { types: type.types.map(t => matchingProp(t)) };
         if (isReferenceType(type)) return { referenceType: matchingProp(type.referenceType) };
