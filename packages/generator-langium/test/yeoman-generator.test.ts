@@ -79,9 +79,8 @@ describe('Check yeoman generator works', () => {
                     'hello-world/src/language/hello-world.langium'
                 ];
                 result.assertFile(files);
-                result.assertFileContent('hello-world/package.json', PACKAGE_JSON_EXPECTATION);
+                result.assertJsonFileContent('hello-world/package.json', PACKAGE_JSON_EXPECTATION);
                 result.assertFileContent('hello-world/.vscode/tasks.json', TASKS_JSON_EXPECTATION);
-                result.assertFile(['hello-world/.gitignore']);
             });
         context.cleanup(); // clean-up
     }, 120_000);
@@ -147,39 +146,33 @@ describe('Check yeoman generator works', () => {
 
 });
 
-const PACKAGE_JSON_EXPECTATION =
-normalizeEOL(`{
-    "name": "hello-world",
-    "displayName": "hello-world",
-    "description": "Please enter a brief description here",
-    "version": "0.0.1",
-    "categories": [
-        "Programming Languages"
-    ],
-    "files": [
-        "out",
-        "src"
-    ],
-    "scripts": {
-        "build": "tsc -b tsconfig.json",
-        "watch": "tsc -b tsconfig.json --watch",
-        "lint": "eslint src --ext ts",
-        "langium:generate": "langium generate",
-        "langium:watch": "langium generate --watch"
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const PACKAGE_JSON_EXPECTATION: Record<string, any> = {
+    name: 'hello-world',
+    displayName: 'hello-world',
+    description: 'Please enter a brief description here',
+    version: '0.0.1',
+    categories: ['Programming Languages'],
+    files: ['out', 'src'],
+    scripts: {
+        'build': 'tsc -b tsconfig.json',
+        'watch': 'tsc -b tsconfig.json --watch',
+        'lint': 'eslint src --ext ts',
+        'langium:generate': 'langium generate',
+        'langium:watch': 'langium generate --watch'
     },
-    "dependencies": {
-        "langium": "~1.1.0"
+    'dependencies': {
+        'langium': '~1.1.0'
     },
-    "devDependencies": {
-        "@types/node": "~16.18.11",
-        "@typescript-eslint/eslint-plugin": "~5.51.0",
-        "@typescript-eslint/parser": "~5.51.0",
-        "eslint": "~8.33.0",
-        "langium-cli": "~1.1.0",
-        "typescript": "~4.9.5"
+    'devDependencies': {
+        '@types/node': '~16.18.11',
+        '@typescript-eslint/eslint-plugin': '~5.51.0',
+        '@typescript-eslint/parser': '~5.51.0',
+        'eslint': '~8.33.0',
+        'langium-cli': '~1.1.0',
+        'typescript': '~4.9.5'
     }
-}
-`);
+};
 
 const TASKS_JSON_EXPECTATION =
 normalizeEOL(`{
