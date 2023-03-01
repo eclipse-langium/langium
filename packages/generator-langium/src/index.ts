@@ -151,7 +151,7 @@ class LangiumGenerator extends Generator {
 
         this.sourceRoot(path.join(__dirname, TEMPLATE_CORE_DIR));
         const pkgJson = this.fs.readJSON(path.join(this.sourceRoot(), '.package.json'));
-        this.fs.extendJSON(this._extensionPath('package-template.json'), pkgJson);
+        this.fs.extendJSON(this._extensionPath('package-template.json'), pkgJson, undefined, 4);
 
         for (const path of ['.', '.vscode', '.eslintrc.json', '.gitignore']) {
             this.fs.copy(
@@ -169,7 +169,7 @@ class LangiumGenerator extends Generator {
         if (this.answers.includeVSCode) {
             this.sourceRoot(path.join(__dirname, TEMPLATE_VSCODE_DIR));
             const pkgJson = this.fs.readJSON(path.join(this.sourceRoot(), '.package.json'));
-            this.fs.extendJSON(this._extensionPath('package-template.json'), pkgJson);
+            this.fs.extendJSON(this._extensionPath('package-template.json'), pkgJson, undefined, 4);
             this.sourceRoot(path.join(__dirname, TEMPLATE_VSCODE_DIR));
             for (const path of ['.', '.vscode', '.vscodeignore']) {
                 this.fs.copy(
@@ -186,7 +186,7 @@ class LangiumGenerator extends Generator {
         if (this.answers.includeCLI) {
             this.sourceRoot(path.join(__dirname, TEMPLATE_CLI_DIR));
             const pkgJson = this.fs.readJSON(path.join(this.sourceRoot(), '.package.json'));
-            this.fs.extendJSON(this._extensionPath('package-template.json'),pkgJson);
+            this.fs.extendJSON(this._extensionPath('package-template.json'),pkgJson, undefined, 4);
             for (const path of ['.']) {
                 this.fs.copy(
                     this.templatePath(path),
@@ -202,7 +202,7 @@ class LangiumGenerator extends Generator {
         if (this.answers.includeWeb) {
             this.sourceRoot(path.join(__dirname, TEMPLATE_WEB_DIR));
             const pkgJson = this.fs.readJSON(path.join(this.sourceRoot(), '.package.json'));
-            this.fs.extendJSON(this._extensionPath('package-template.json'), pkgJson);
+            this.fs.extendJSON(this._extensionPath('package-template.json'), pkgJson, undefined, 4);
             this.sourceRoot(path.join(__dirname, TEMPLATE_WEB_DIR));
             for (const path of ['.']) {
                 this.fs.copy(
