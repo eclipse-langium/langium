@@ -1,22 +1,6 @@
 {
-    "name": "<%= extension-name %>",
-    "displayName": "<%= extension-name %>",
-    "description": "Please enter a brief description here",
-    "version": "0.0.1",
-    "categories": [
-        "Programming Languages"
-    ],
-    "files": [
-        "out",
-        "src"
-    ],
     "scripts": {
-        "build": "tsc -b tsconfig.json",
-        "watch": "tsc -b tsconfig.json --watch",
-        "lint": "eslint src --ext ts",
-        "langium:generate": "langium generate",
-        "langium:watch": "langium generate --watch",
-        "build:worker": "esbuild --minify ./out/language-server/main-browser.js --bundle --format=iife --outfile=./public/<%= language-id %>-server-worker.js",
+        "build:worker": "esbuild --minify ./out/language/main-browser.js --bundle --format=iife --outfile=./public/<%= language-id %>-server-worker.js",
         "prepare:public": "npx shx mkdir -p ./public && npx shx cp -fr ./src/static/* ./public/",
         "copy:monaco-editor-wrapper": "npx shx cp -fr ./node_modules/monaco-editor-wrapper/bundle ./public/monaco-editor-wrapper",
         "copy:monaco-workers": "npx shx cp -fr ./node_modules/monaco-editor-workers/dist/ ./public/monaco-editor-workers",
@@ -26,22 +10,12 @@
         "serve": "node ./out/web/app.js"
     },
     "dependencies": {
-        "chalk": "~4.1.2",
-        "commander": "~10.0.0",
         "express": "~4.18.2",
-        "langium": "~1.1.0",
         "monaco-editor-workers": "~0.34.2",
         "monaco-editor-wrapper": "~1.6.0",
         "vscode-languageclient": "~8.0.2"
     },
     "devDependencies": {
-        "@types/express": "^4.17.17",
-        "@types/node": "~16.18.11",
-        "@types/vscode": "~1.67.0",
-        "@typescript-eslint/eslint-plugin": "~5.51.0",
-        "@typescript-eslint/parser": "~5.51.0",
-        "eslint": "~8.33.0",
-        "langium-cli": "~1.1.0",
-        "typescript": "~4.9.5"
+        "@types/express": "^4.17.17"
     }
 }

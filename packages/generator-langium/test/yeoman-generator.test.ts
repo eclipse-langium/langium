@@ -9,11 +9,33 @@ import { normalizeEOL } from 'langium';
 import path from 'path';
 import { createHelpers } from 'yeoman-test';
 
-const defaultAnswers = {
+const answersForCore = {
     extensionName: 'hello-world',
     rawLanguageName: 'Hello World',
     fileExtension: '.hello',
-    targetEnvironment: 'vscode',
+    includeVSCode: false,
+    includeCLI: false,
+    includeWeb: false,
+    openWith: false
+};
+
+const answersForVSCode = {
+    extensionName: 'hello-world',
+    rawLanguageName: 'Hello World',
+    fileExtension: '.hello',
+    includeVSCode: true,
+    includeCLI: false,
+    includeWeb: false,
+    openWith: false
+};
+
+const answersForCLI = {
+    extensionName: 'hello-world',
+    rawLanguageName: 'Hello World',
+    fileExtension: '.hello',
+    includeVSCode: false,
+    includeCLI: true,
+    includeWeb: false,
     openWith: false
 };
 
@@ -21,7 +43,9 @@ const answersForWeb = {
     extensionName: 'hello-world',
     rawLanguageName: 'Hello World',
     fileExtension: '.hello',
-    targetEnvironment: 'web',
+    includeVSCode: false,
+    includeCLI: false,
+    includeWeb: true,
     openWith: false
 };
 
@@ -41,11 +65,60 @@ describe('Check yeoman generator works', () => {
             .withAnswers(defaultAnswers)
             .withArguments('skip-install')
             .then((result) => {
-                result.assertFile(['hello-world/package.json']);
+                const files = [
+                    'hello-world/.eslintrc.json',
+                    'hello-world/.gitignore',
+                    'hello-world/langium-config.json',
+                    'hello-world/langium-quickstart.md',
+                    'hello-world/tsconfig.json',
+                    'hello-world/package.json',
+                    'hello-world/.vscode/extensions.json',
+                    'hello-world/.vscode/tasks.json',
+                    'hello-world/src/language/hello-world-module.ts',
+                    'hello-world/src/language/hello-world-validator.ts',
+                    'hello-world/src/language/hello-world.langium'
+                ];
+                result.assertFile(files);
                 result.assertFileContent('hello-world/package.json', PACKAGE_JSON_EXPECTATION);
-                result.assertFile(['hello-world/.vscode/tasks.json']);
                 result.assertFileContent('hello-world/.vscode/tasks.json', TASKS_JSON_EXPECTATION);
                 result.assertFile(['hello-world/.gitignore']);
+            });
+        context.cleanup(); // clean-up
+    }, 120_000);
+
+    test ('Should produce files for VSCode', async () => {
+        const context = createHelpers({}).run(path.join(__dirname, '../app'));
+        context.targetDirectory = path.join(__dirname, '../test-temp'); // generate in test-temp
+        context.cleanTestDirectory(true); // clean-up test-temp
+        await context.onGenerator(generator => generator.destinationRoot(context.targetDirectory, false))
+            .withAnswers(answersForVSCode)
+            .then((result) => {
+                const files = [
+                    'hello-world/.vscodeignore',
+                    'hello-world/language-configuration.json',
+                    'hello-world/.vscode/launch.json',
+                    'hello-world/src/language/main.ts',
+                    'hello-world/src/extension/main.ts'
+                ];
+                result.assertFile(files);
+            });
+        context.cleanup(); // clean-up
+    }, 120_000);
+
+    test('Should produce files for CLI', async () => {
+        const context = createHelpers({}).run(path.join(__dirname, '../app'));
+        context.targetDirectory = path.join(__dirname, '../test-temp'); // generate in test-temp
+        context.cleanTestDirectory(true); // clean-up test-temp
+        await context.onGenerator(generator => generator.destinationRoot(context.targetDirectory, false))
+            .withAnswers(answersForCLI)
+            .then((result) => {
+                const files = [
+                    'hello-world/bin/cli',
+                    'hello-world/src/cli/cli-util.ts',
+                    'hello-world/src/cli/generator.ts',
+                    'hello-world/src/cli/main.ts'
+                ];
+                result.assertFile(files);
             });
         context.cleanup(); // clean-up
     }, 120_000);
@@ -57,11 +130,17 @@ describe('Check yeoman generator works', () => {
         await context.onGenerator(generator => generator.destinationRoot(context.targetDirectory, false))
             .withAnswers(answersForWeb)
             .then(result => {
-                result.assertFile(['hello-world/src/language-server/main-browser.ts']);
-                result.assertFile(['hello-world/src/static/index.html']);
-                result.assertFile(['hello-world/src/static/setup.js']);
-                result.assertFile(['hello-world/src/static/styles.css']);
-                result.assertFile(['hello-world/src/web/app.ts']);
+                const files = [
+                    'hello-world/langium-config.json',
+                    'hello-world/tsconfig.json',
+                    'hello-world/tsconfig.monarch.json',
+                    'hello-world/src/language/main-browser.ts',
+                    'hello-world/src/static/index.html',
+                    'hello-world/src/static/setup.js',
+                    'hello-world/src/static/styles.css',
+                    'hello-world/src/web/app.ts',
+                ];
+                result.assertFile(files);
             });
         context.cleanup();
     }, 120_000);
@@ -70,67 +149,35 @@ describe('Check yeoman generator works', () => {
 
 const PACKAGE_JSON_EXPECTATION =
 normalizeEOL(`{
-    "name": "hello-world",
-    "displayName": "hello-world",
-    "description": "Please enter a brief description here",
-    "version": "0.0.1",
-    "engines": {
-        "vscode": "^1.67.0"
-    },
-    "categories": [
-        "Programming Languages"
-    ],
-    "contributes": {
-        "languages": [{
-            "id": "hello-world",
-            "aliases": ["Hello World", "hello-world"],
-            "extensions": [".hello"],
-            "configuration": "./language-configuration.json"
-        }],
-        "grammars": [{
-            "language": "hello-world",
-            "scopeName": "source.hello-world",
-            "path": "./syntaxes/hello-world.tmLanguage.json"
-        }]
-    },
-    "activationEvents": [
-        "onLanguage:hello-world"
-    ],
-    "files": [
-        "bin",
-        "out",
-        "src"
-    ],
-    "bin": {
-        "hello-world-cli": "./bin/cli"
-    },
-    "main": "./out/extension.js",
-    "scripts": {
-        "vscode:prepublish": "npm run build && npm run lint",
-        "build": "tsc -b tsconfig.json",
-        "watch": "tsc -b tsconfig.json --watch",
-        "lint": "eslint src --ext ts",
-        "langium:generate": "langium generate",
-        "langium:watch": "langium generate --watch"
-    },
-    "dependencies": {
-        "chevrotain": "~10.4.2",
-        "chalk": "~4.1.2",
-        "commander": "~10.0.0",
-        "langium": "~1.1.0",
-        "vscode-languageclient": "~8.0.2",
-        "vscode-languageserver": "~8.0.2",
-        "vscode-uri": "~3.0.7"
-    },
-    "devDependencies": {
-        "@types/node": "~16.18.11",
-        "@types/vscode": "~1.67.0",
-        "@typescript-eslint/eslint-plugin": "~5.51.0",
-        "@typescript-eslint/parser": "~5.51.0",
-        "eslint": "~8.33.0",
-        "langium-cli": "~1.1.0",
-        "typescript": "~4.9.5"
-    }
+  "name": "hello-world",
+  "displayName": "hello-world",
+  "description": "Please enter a brief description here",
+  "version": "0.0.1",
+  "categories": [
+    "Programming Languages"
+  ],
+  "files": [
+    "out",
+    "src"
+  ],
+  "scripts": {
+    "build": "tsc -b tsconfig.json",
+    "watch": "tsc -b tsconfig.json --watch",
+    "lint": "eslint src --ext ts",
+    "langium:generate": "langium generate",
+    "langium:watch": "langium generate --watch"
+  },
+  "dependencies": {
+    "langium": "~1.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "~16.18.11",
+    "@typescript-eslint/eslint-plugin": "~5.51.0",
+    "@typescript-eslint/parser": "~5.51.0",
+    "eslint": "~8.33.0",
+    "langium-cli": "~1.1.0",
+    "typescript": "~4.9.5"
+  }
 }`);
 
 const TASKS_JSON_EXPECTATION =

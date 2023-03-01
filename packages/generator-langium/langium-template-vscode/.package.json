@@ -1,14 +1,7 @@
 {
-    "name": "<%= extension-name %>",
-    "displayName": "<%= extension-name %>",
-    "description": "Please enter a brief description here",
-    "version": "0.0.1",
     "engines": {
         "vscode": "^1.67.0"
     },
-    "categories": [
-        "Programming Languages"
-    ],
     "contributes": {
         "languages": [{
             "id": "<%= language-id %>",
@@ -25,33 +18,14 @@
     "activationEvents": [
         "onLanguage:<%= language-id %>"
     ],
-    "files": [
-        "out",
-        "src"
-    ],
-    "main": "./out/extension.js",
+    "main": "./out/extension/main.js",
     "scripts": {
-        "vscode:prepublish": "npm run build && npm run lint",
-        "build": "tsc -b tsconfig.json",
-        "watch": "tsc -b tsconfig.json --watch",
-        "lint": "eslint src --ext ts",
-        "langium:generate": "langium generate",
-        "langium:watch": "langium generate --watch"
+        "vscode:prepublish": "npm run build && npm run lint"
     },
     "dependencies": {
-        "chevrotain": "~10.4.2",
-        "chalk": "~4.1.2",
-        "commander": "~10.0.0",
-        "langium": "~1.1.0",
         "vscode-languageclient": "~8.0.2"
     },
     "devDependencies": {
-        "@types/node": "~16.18.11",
-        "@types/vscode": "~1.67.0",
-        "@typescript-eslint/eslint-plugin": "~5.51.0",
-        "@typescript-eslint/parser": "~5.51.0",
-        "eslint": "~8.33.0",
-        "langium-cli": "~1.1.0",
-        "typescript": "~4.9.5"
+        "@types/vscode": "~1.67.0"
     }
 }

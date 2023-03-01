@@ -291,44 +291,6 @@ class LangiumGenerator extends Generator {
     _replaceTemplateNames(languageId: string, path: string): string {
         return path.replace(LANGUAGE_PATH_ID, languageId);
     }
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    // replacerPackageJson = (key: string, value: any) => {
-    //     const languageId = _.kebabCase(this.answers.rawLanguageName);
-    //     const fileExtensions = Array.from(
-    //         new Set(
-    //             this.answers.fileExtensions
-    //                 .split(',')
-    //                 .map(ext => ext.replace(/\./g, '').trim()),
-    //         )
-    //     );
-    //     switch(key) {
-    //         case 'name':
-    //             return this.answers.extensionName;
-    //         case 'displayName':
-    //             return this.answers.extensionName;
-    //         case 'id':
-    //             return languageId;
-    //         case 'aliases':
-    //             return [this.answers.rawLanguageName, languageId];
-    //         case 'extensions':
-    //             return fileExtensions;
-    //         case 'language':
-    //             return languageId;
-    //         case 'scopeName':
-    //             return `source.${languageId}`;
-    //         case 'path':
-    //             return `./syntaxes/${languageId}.tmLanguage.json`;
-    //         case 'activationEvents':
-    //             return `onLanguage:${languageId}`;
-    //         case 'bin':
-    //             return {key: `${languageId}-cli`, value: './bin/cli'};
-    //         case 'build:worker':
-    //             return `esbuild --minify ./out/language-server/main-browser.js --bundle --format=iife --outfile=./public/${languageId}-server-worker.js`;
-    //         default:
-    //             return value;
-    //     }
-    // };
 }
 
 export = LangiumGenerator;
