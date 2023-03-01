@@ -257,6 +257,6 @@ export type CrossReferencesOfAstNodeType<N extends AstNode> = (
  * Returns all types that contain cross-references, A is meant to be the interface `XXXAstType` fromm your generated `ast.ts` file.
  * Meant to be used during cross-reference resolution in combination with `assertUnreachable(context.container)`.
  */
-export type AstNodeTypesWithCrossReferences<A> = {
-    [T in keyof A]: A[T] extends AstNode ? (CrossReferencesOfAstNodeType<A[T]> extends never ? never : A[T]) : never
+export type AstNodeTypesWithCrossReferences<A extends Record<string, AstNode>> = {
+    [T in keyof A]: CrossReferencesOfAstNodeType<A[T]> extends never ? never : A[T]
 }[keyof A];

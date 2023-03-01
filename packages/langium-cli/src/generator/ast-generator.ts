@@ -44,7 +44,7 @@ function generateAstReflection(config: LangiumConfig, astTypes: AstTypes): Gener
     const crossReferenceTypes = buildCrossReferenceTypes(astTypes);
     const reflectionNode = new CompositeGeneratorNode();
 
-    reflectionNode.append(`export interface ${config.projectName}AstType {`, NL);
+    reflectionNode.append(`export type ${config.projectName}AstType {`, NL);
     reflectionNode.indent(astTypeBody => {
         for (const type of typeNames) {
             astTypeBody.append(type, ': ', type, NL);
