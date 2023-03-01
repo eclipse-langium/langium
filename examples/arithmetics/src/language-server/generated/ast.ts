@@ -119,7 +119,7 @@ export function isNumberLiteral(item: unknown): item is NumberLiteral {
     return reflection.isInstance(item, NumberLiteral);
 }
 
-export interface ArithmeticsAstType {
+export type ArithmeticsAstType = {
     AbstractDefinition: AbstractDefinition
     BinaryExpression: BinaryExpression
     DeclaredParameter: DeclaredParameter
