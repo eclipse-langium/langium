@@ -35,8 +35,6 @@ export interface GenericAstNode extends AstNode {
     [key: string]: unknown
 }
 
-export type AstTypeList<T> = Record<keyof T, AstNode>;
-
 type SpecificNodeProperties<N extends AstNode> = keyof Omit<N, keyof AstNode | number | symbol>;
 
 /**
@@ -241,7 +239,9 @@ export function isRootCstNode(node: unknown): node is RootCstNode {
     return isCompositeCstNode(node) && 'fullText' in node;
 }
 
-//Manipulates a type to have only properties whose value is of a certain type.
+/**
+ * Returns a type to have only properties names (!) of a type T whose property value is of a certain type K.
+ */
 type ExtractKeysOfValueType<T, K> = { [I in keyof T]: T[I] extends K ? I : never }[keyof T];
 
 /**
@@ -251,12 +251,18 @@ type ExtractKeysOfValueType<T, K> = { [I in keyof T]: T[I] extends K ? I : never
 export type CrossReferencesOfAstNodeType<N extends AstNode> = (
     ExtractKeysOfValueType<N, Reference|undefined>
     | ExtractKeysOfValueType<N, Array<Reference|undefined>|undefined>
-) & Record<string, never>;
+// eslint-disable-next-line @typescript-eslint/ban-types
+) & {};
+
+/**
+ * Represents the enumeration-like type, that lists all AstNode types of your grammar.
+ */
+export type AstTypeList<T> = Record<keyof T, AstNode>;
 
 /**
  * Returns all types that contain cross-references, A is meant to be the interface `XXXAstType` fromm your generated `ast.ts` file.
  * Meant to be used during cross-reference resolution in combination with `assertUnreachable(context.container)`.
  */
-export type AstNodeTypesWithCrossReferences<A extends Record<string, AstNode>> = {
+export type AstNodeTypesWithCrossReferences<E, A extends AstTypeList<E>> = {
     [T in keyof A]: CrossReferencesOfAstNodeType<A[T]> extends never ? never : A[T]
 }[keyof A];
