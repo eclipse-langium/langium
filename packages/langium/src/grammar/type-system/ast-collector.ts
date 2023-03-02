@@ -64,7 +64,7 @@ function mergeAndRemoveDuplicates<T extends { name: string }>(...elements: T[]):
 export function specifyAstNodeProperties(astTypes: AstTypes) {
     const nameToType = filterInterfaceLikeTypes(astTypes);
     const array = Array.from(nameToType.values());
-    flattenHierarchy(array);
+    addSubTypes(array);
     buildContainerTypes(array);
     buildTypeNames(nameToType);
 }
@@ -125,23 +125,11 @@ function isDataType(property: PropertyType, visited: Set<PropertyType>): boolean
     }
 }
 
-function flattenHierarchy(types: TypeOption[]) {
-    // Recursively collect all supertypes
-    const visited = new Set<TypeOption>();
-    const collect = (type: TypeOption): void => {
-        if (visited.has(type)) return;
-        visited.add(type);
-        for (const superType of type.superTypes) {
-            collect(superType);
-            superType.superTypes.forEach(t => type.superTypes.add(t));
-            type.superTypes.add(superType);
+function addSubTypes(types: TypeOption[]) {
+    for (const interfaceType of types) {
+        for (const superTypeName of interfaceType.superTypes) {
+            superTypeName.subTypes.add(interfaceType);
         }
-    };
-    types.forEach(collect);
-
-    // Invert all supertypes
-    for (const type of types) {
-        type.superTypes.forEach(t => t.subTypes.add(type));
     }
 }
 
