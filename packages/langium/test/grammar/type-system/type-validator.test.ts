@@ -497,4 +497,28 @@ describe('Property types validation takes in account types hierarchy', () => {
         });
     });
 
+    test('No false positive on declared type assignment', async () => {
+        const validation = await validate(`
+        interface A {}
+        interface B extends A {}
+        interface C extends B {}
+        interface D extends C {}
+        interface E extends C {}
+        interface F extends D {}
+        interface G extends D {}
+        interface H extends A {}
+
+        interface Test {
+            value: A;
+        }
+
+        F returns F: {F};
+
+        Test returns Test:
+            value=F
+        ;`);
+
+        console.log(validation.diagnostics);
+        expectNoIssues(validation);
+    });
 });
