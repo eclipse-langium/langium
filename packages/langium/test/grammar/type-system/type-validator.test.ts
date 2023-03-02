@@ -518,7 +518,6 @@ describe('Property types validation takes in account types hierarchy', () => {
             value=F
         ;`);
 
-        console.log(validation.diagnostics);
         expectNoIssues(validation);
     });
 });
