@@ -611,7 +611,7 @@ describe('types of `$container` and `$type` are correct', () => {
             interface Y extends X, B, A {}
         `, expandToString`
             export interface A extends AstNode {
-                readonly $type: 'A' | 'C' | 'X' | 'Y';
+                readonly $type: 'A' | 'C' | 'Y';
             }
             export interface B extends AstNode {
                 readonly $type: 'B' | 'C' | 'Y';
