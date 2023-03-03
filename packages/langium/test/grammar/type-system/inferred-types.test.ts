@@ -605,25 +605,37 @@ describe('types of `$container` and `$type` are correct', () => {
     test('types of `$type` for declared complex hierarchies', async () => {
         await expectTypes(`
             interface A {}
-            interface B {}
-            interface C extends B, A {}
-            interface X {}
-            interface Y extends X, B, A {}
+            interface B extends A {}
+            interface C extends B {}
+            interface D extends C {}
+            interface E extends C {}
+            interface F extends D {}
+            interface G extends D {}
+            interface H extends A {}
         `, expandToString`
             export interface A extends AstNode {
-                readonly $type: 'A' | 'C' | 'Y';
+                readonly $type: 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G' | 'H';
             }
-            export interface B extends AstNode {
-                readonly $type: 'B' | 'C' | 'Y';
+            export interface B extends A {
+                readonly $type: 'B' | 'C' | 'D' | 'E' | 'F' | 'G';
             }
-            export interface X extends AstNode {
-                readonly $type: 'X' | 'Y';
+            export interface H extends A {
+                readonly $type: 'H';
             }
-            export interface C extends A, B {
-                readonly $type: 'C';
+            export interface C extends B {
+                readonly $type: 'C' | 'D' | 'E' | 'F' | 'G';
             }
-            export interface Y extends A, B, X {
-                readonly $type: 'Y';
+            export interface D extends C {
+                readonly $type: 'D' | 'F' | 'G';
+            }
+            export interface E extends C {
+                readonly $type: 'E';
+            }
+            export interface F extends D {
+                readonly $type: 'F';
+            }
+            export interface G extends D {
+                readonly $type: 'G';
             }
         `);
     });
