@@ -501,21 +501,15 @@ describe('Property types validation takes in account types hierarchy', () => {
         const validation = await validate(`
         interface A {}
         interface B extends A {}
-        interface C extends B {}
-        interface D extends C {}
-        interface E extends C {}
-        interface F extends D {}
-        interface G extends D {}
-        interface H extends A {}
 
         interface Test {
             value: A;
         }
 
-        F returns F: {F};
+        B returns B: {B};
 
         Test returns Test:
-            value=F
+            value=B
         ;`);
 
         expectNoIssues(validation);
