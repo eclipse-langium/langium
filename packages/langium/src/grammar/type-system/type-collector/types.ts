@@ -106,15 +106,12 @@ export class UnionType {
     subTypes = new Set<TypeOption>();
     containerTypes = new Set<TypeOption>();
     typeNames = new Set<string>();
-    reflection: boolean;
     declared: boolean;
 
     constructor(name: string, options?: {
-        reflection: boolean
         declared: boolean
     }) {
         this.name = name;
-        this.reflection = options?.reflection ?? false;
         this.declared = options?.declared ?? false;
     }
 
@@ -122,7 +119,7 @@ export class UnionType {
         const unionNode = new CompositeGeneratorNode();
         unionNode.append(`export type ${this.name} = ${propertyTypeToString(this.type, 'AstType')};`, NL);
 
-        if (this.reflection && reflectionInfo) {
+        if (reflectionInfo) {
             unionNode.append(NL);
             pushReflectionInfo(unionNode, this.name);
         }

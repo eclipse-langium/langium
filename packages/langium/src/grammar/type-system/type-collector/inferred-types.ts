@@ -228,7 +228,6 @@ export function collectInferredTypes(parserRules: ParserRule[], datatypeRules: P
         const type = getDataRuleType(rule);
         astTypes.unions.push({
             name: rule.name,
-            reflection: false,
             declared: false,
             type,
             subTypes: new Set(),
@@ -569,7 +568,6 @@ function buildSuperUnions(interfaces: PlainInterface[]): PlainUnion[] {
             const union: PlainUnion = {
                 declared: false,
                 name: superType,
-                reflection: true,
                 subTypes: new Set(),
                 superTypes: new Set(),
                 type: toPropertyType(false, false, types)
@@ -618,7 +616,6 @@ function extractUnions(interfaces: PlainInterface[], unions: PlainUnion[], decla
                     const unionType: PlainUnion = {
                         name: interfaceType.name,
                         declared: false,
-                        reflection: true,
                         subTypes: interfaceSubTypes,
                         superTypes: interfaceType.superTypes,
                         type: interfaceTypeValue

@@ -32,7 +32,6 @@ export interface PlainUnion {
     superTypes: Set<string>;
     subTypes: Set<string>;
     type: PlainPropertyType;
-    reflection: boolean;
     declared: boolean;
 }
 
@@ -112,7 +111,6 @@ export function plainToTypes(plain: PlainAstTypes): AstTypes {
     }
     for (const unionValue of plain.unions) {
         const type = new UnionType(unionValue.name, {
-            reflection: unionValue.reflection,
             declared: unionValue.declared
         });
         unionTypes.set(unionValue.name, type);

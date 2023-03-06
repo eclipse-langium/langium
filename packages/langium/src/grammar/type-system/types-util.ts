@@ -195,13 +195,13 @@ export function findReferenceTypes(type: PropertyType): string[] {
     return [];
 }
 
-export function hasAstType(type: PropertyType): boolean {
+export function isAstType(type: PropertyType): boolean {
     if (isPropertyUnion(type)) {
-        return type.types.some(hasAstType);
+        return type.types.every(isAstType);
     } else if (isValueType(type)) {
         const value = type.value;
         if ('type' in value) {
-            return hasAstType(value.type);
+            return isAstType(value.type);
         } else {
             // Is definitely an interface type
             return true;
