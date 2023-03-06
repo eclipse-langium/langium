@@ -66,23 +66,22 @@ export function specifyAstNodeProperties(astTypes: AstTypes) {
     const array = Array.from(nameToType.values());
     addSubTypes(array);
     buildContainerTypes(array);
-    buildTypeNames(nameToType);
+    buildTypeNames(array);
 }
 
-function buildTypeNames(nameToType: Map<string, TypeOption>) {
-    const queue = Array.from(nameToType.values()).filter(e => e.subTypes.size === 0);
+function buildTypeNames(types: TypeOption[]) {
+    // Recursively collect all subtype names
     const visited = new Set<TypeOption>();
-    for (const type of queue) {
+    const collect = (type: TypeOption): void => {
+        if (visited.has(type)) return;
         visited.add(type);
         type.typeNames.add(type.name);
-        const superTypes = Array.from(type.superTypes)
-            .map(superType => nameToType.get(superType.name))
-            .filter(e => e !== undefined) as TypeOption[];
-        for (const superType of superTypes) {
-            type.typeNames.forEach(e => superType.typeNames.add(e));
+        for (const subtype of type.subTypes) {
+            collect(subtype);
+            subtype.typeNames.forEach(n => type.typeNames.add(n));
         }
-        queue.push(...superTypes.filter(e => !visited.has(e)));
-    }
+    };
+    types.forEach(collect);
 }
 
 /**

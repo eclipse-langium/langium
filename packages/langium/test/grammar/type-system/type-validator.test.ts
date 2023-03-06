@@ -497,4 +497,21 @@ describe('Property types validation takes in account types hierarchy', () => {
         });
     });
 
+    test('No false positive on declared type assignment', async () => {
+        const validation = await validate(`
+        interface A {}
+        interface B extends A {}
+
+        interface Test {
+            value: A;
+        }
+
+        B returns B: {B};
+
+        Test returns Test:
+            value=B
+        ;`);
+
+        expectNoIssues(validation);
+    });
 });

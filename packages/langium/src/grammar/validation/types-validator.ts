@@ -9,8 +9,8 @@ import { MultiMap } from '../../utils/collections';
 import { DiagnosticInfo, ValidationAcceptor, ValidationChecks } from '../../validation/validation-registry';
 import { extractAssignments } from '../internal-grammar-util';
 import { LangiumGrammarServices } from '../langium-grammar-module';
-import { flattenPropertyUnion, InterfaceType, isInterfaceType, isMandatoryPropertyType, isReferenceType, isTypeAssignable, isUnionType, Property, PropertyType, propertyTypeToString } from '../type-system/type-collector/types';
-import { DeclaredInfo, InferredInfo, isDeclared, isInferred, isInferredAndDeclared, LangiumGrammarDocument } from '../workspace/documents';
+import { flattenPropertyUnion, InterfaceType, isArrayType, isInterfaceType, isMandatoryPropertyType, isPropertyUnion, isReferenceType, isTypeAssignable, isUnionType, isValueType, Property, PropertyType, propertyTypeToString } from '../type-system/type-collector/types';
+import { DeclaredInfo, InferredInfo, isDeclared, isInferred, isInferredAndDeclared, LangiumGrammarDocument, ValidationResources } from '../workspace/documents';
 
 export function registerTypeValidationChecks(services: LangiumGrammarServices): void {
     const registry = services.validation.ValidationRegistry;
@@ -50,7 +50,7 @@ export class LangiumGrammarTypesValidator {
                     validateInferredInterface(typeInfo.inferred as InterfaceType, accept);
                 }
                 if (isInferredAndDeclared(typeInfo)) {
-                    validateDeclaredAndInferredConsistency(typeInfo, accept);
+                    validateDeclaredAndInferredConsistency(typeInfo, validationResources, accept);
                 }
             }
         }
@@ -170,7 +170,7 @@ function arePropTypesIdentical(a: Property, b: Property): boolean {
 
 ///////////////////////////////////////////////////////////////////////////////
 
-function validateDeclaredAndInferredConsistency(typeInfo: InferredInfo & DeclaredInfo, accept: ValidationAcceptor) {
+function validateDeclaredAndInferredConsistency(typeInfo: InferredInfo & DeclaredInfo, resources: ValidationResources, accept: ValidationAcceptor) {
     const { inferred, declared, declaredNode, inferredNodes } = typeInfo;
     const typeName = declared.name;
 
@@ -211,7 +211,7 @@ function validateDeclaredAndInferredConsistency(typeInfo: InferredInfo & Declare
             applyErrorToRulesAndActions(`in a rule that returns type '${typeName}'`),
         );
     } else if (isInterfaceType(inferred) && isInterfaceType(declared)) {
-        validatePropertiesConsistency(inferred, declared,
+        validatePropertiesConsistency(inferred, declared, resources,
             applyErrorToRulesAndActions(`in a rule that returns type '${typeName}'`),
             applyErrorToProperties,
             applyMissingPropErrorToRules
@@ -241,6 +241,7 @@ function isOptionalProperty(prop: Property): boolean {
 function validatePropertiesConsistency(
     inferred: InterfaceType,
     declared: InterfaceType,
+    resources: ValidationResources,
     applyErrorToType: (errorMessage: string) => void,
     applyErrorToProperties: (nodes: Set<ast.Assignment | ast.Action | ast.TypeAttribute>, errorMessage: string) => void,
     applyMissingPropErrorToRules: (missingProp: string) => void
@@ -251,13 +252,27 @@ function validatePropertiesConsistency(
     // This field only contains properties of itself or super types
     const declaredProps = new Map(declared.superProperties.map(e => [e.name, e]));
 
+    // The inferred props may not have full hierarchy information so try finding
+    // a corresponding declared type
+    const matchingProp = (type: PropertyType): PropertyType => {
+        if (isPropertyUnion(type)) return { types: type.types.map(t => matchingProp(t)) };
+        if (isReferenceType(type)) return { referenceType: matchingProp(type.referenceType) };
+        if (isArrayType(type)) return { elementType: matchingProp(type.elementType) };
+        if (isValueType(type)) {
+            const resource = resources.typeToValidationInfo.get(type.value.name);
+            if (!resource) return type;
+            return { value: 'declared' in resource ? resource.declared : resource.inferred };
+        }
+        return type;
+    };
+
     // detects extra properties & validates matched ones on consistency by the 'optional' property
     for (const [name, foundProp] of allInferredProps.entries()) {
         const expectedProp = declaredProps.get(name);
         if (expectedProp) {
             const foundTypeAsStr = propertyTypeToString(foundProp.type, 'DeclaredType');
             const expectedTypeAsStr = propertyTypeToString(expectedProp.type, 'DeclaredType');
-            const typeAlternativesErrors = isTypeAssignable(foundProp.type, expectedProp.type);
+            const typeAlternativesErrors = isTypeAssignable(matchingProp(foundProp.type), expectedProp.type);
             if (!typeAlternativesErrors) {
                 const errorMsgPrefix = `The assigned type '${foundTypeAsStr}' is not compatible with the declared property '${name}' of type '${expectedTypeAsStr}'.`;
                 applyErrorToProperties(foundProp.astNodes, errorMsgPrefix);
