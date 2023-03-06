@@ -132,6 +132,7 @@ export function isLinkingError(obj: unknown): obj is LinkingError {
  */
 export interface AstReflection {
     getAllTypes(): string[]
+    getAllSubTypes(type: string): string[]
     getReferenceType(refInfo: ReferenceInfo): string
     getTypeMetaData(type: string): TypeMetaData
     isInstance(node: unknown, type: string): boolean
@@ -145,6 +146,7 @@ export interface AstReflection {
 export abstract class AbstractAstReflection implements AstReflection {
 
     protected subtypes: Record<string, Record<string, boolean | undefined>> = {};
+    protected allSubtypes: Record<string, string[] | undefined> = {};
 
     abstract getAllTypes(): string[];
     abstract getReferenceType(refInfo: ReferenceInfo): string;
@@ -170,6 +172,23 @@ export abstract class AbstractAstReflection implements AstReflection {
             const result = this.computeIsSubtype(subtype, supertype);
             nested[supertype] = result;
             return result;
+        }
+    }
+
+    getAllSubTypes(type: string): string[] {
+        const existing = this.allSubtypes[type];
+        if (existing) {
+            return existing;
+        } else {
+            const allTypes = this.getAllTypes();
+            const types: string[] = [];
+            for (const possibleSubType of allTypes) {
+                if (this.isSubtype(possibleSubType, type)) {
+                    types.push(possibleSubType);
+                }
+            }
+            this.allSubtypes[type] = types;
+            return types;
         }
     }
 }
