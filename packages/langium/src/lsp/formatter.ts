@@ -74,9 +74,15 @@ export abstract class AbstractFormatter implements Formatter {
         }
     }
 
-    formatDocumentRange(document: LangiumDocument, params: DocumentRangeFormattingParams): MaybePromise<TextEdit[]> {
+    /**
+     * Returns whether a range for a given document is error free, i.e. safe to format
+     *
+     * @param document Document to inspect for lexer & parser errors that may produce an unsafe range
+     * @param range Formatting range to check for safety
+     * @returns Whether the given formatting range does not overlap with or follow any regions with an error
+     */
+    private isFormatRangeErrorFree(document: LangiumDocument, range: Range): boolean {
         const pr = document.parseResult;
-
         if (pr.lexerErrors.length || pr.parserErrors.length) {
             // collect the earliest error line from either
             const earliestErrLine = Math.min(
@@ -84,23 +90,36 @@ export abstract class AbstractFormatter implements Formatter {
                 ...pr.parserErrors.map(e => e.token.startLine ?? Number.MAX_VALUE)
             );
             // if the earliest error line occurs before or at the end line of the range, then don't format
-            if (earliestErrLine <= params.range.end.line) {
-                return [];
-            }
+            return earliestErrLine > range.end.line;
+        } else {
+            // no errors, ok to format
+            return true;
         }
+    }
 
-        return this.doDocumentFormat(document, params.options, params.range);
+    formatDocumentRange(document: LangiumDocument, params: DocumentRangeFormattingParams): MaybePromise<TextEdit[]> {
+        if (this.isFormatRangeErrorFree(document, params.range)) {
+            return this.doDocumentFormat(document, params.options, params.range);
+        } else {
+            return [];
+        }
     }
 
     formatDocumentOnType(document: LangiumDocument, params: DocumentOnTypeFormattingParams): MaybePromise<TextEdit[]> {
         // Format the current line after typing something
-        return this.doDocumentFormat(document, params.options, {
+        const range = {
             start: {
                 character: 0,
                 line: params.position.line
             },
             end: params.position
-        });
+        };
+
+        if (this.isFormatRangeErrorFree(document, range)) {
+            return this.doDocumentFormat(document, params.options, range);
+        } else {
+            return [];
+        }
     }
 
     get formatOnTypeOptions(): DocumentOnTypeFormattingOptions | undefined {
