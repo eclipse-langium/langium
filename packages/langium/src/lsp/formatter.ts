@@ -81,7 +81,7 @@ export abstract class AbstractFormatter implements Formatter {
      * @param range Formatting range to check for safety
      * @returns Whether the given formatting range does not overlap with or follow any regions with an error
      */
-    private isFormatRangeErrorFree(document: LangiumDocument, range: Range): boolean {
+    protected isFormatRangeErrorFree(document: LangiumDocument, range: Range): boolean {
         const pr = document.parseResult;
         if (pr.lexerErrors.length || pr.parserErrors.length) {
             // collect the earliest error line from either
