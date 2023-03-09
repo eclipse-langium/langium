@@ -78,18 +78,13 @@ export abstract class AbstractFormatter implements Formatter {
         const pr = document.parseResult;
 
         if (pr.lexerErrors.length || pr.parserErrors.length) {
-            let earliestErrLine = Number.MAX_VALUE;
-
             // collect the earliest error line from either
-            for (const lexerError of pr.lexerErrors) {
-                earliestErrLine = Math.min(lexerError.line ?? Number.MAX_VALUE, earliestErrLine);
-            }
-            for (const parserError of pr.parserErrors) {
-                earliestErrLine = Math.min(parserError.token.startLine ?? Number.MAX_VALUE, earliestErrLine);
-            }
-
+            const earliestErrLine = Math.min(
+                ...pr.lexerErrors.map(e => e.line ?? Number.MAX_VALUE),
+                ...pr.parserErrors.map(e => e.token.startLine ?? Number.MAX_VALUE)
+            );
             // if the earliest error line occurs before or at the end line of the range, then don't format
-            if (Math.min(earliestErrLine, params.range.end.line) === earliestErrLine) {
+            if (earliestErrLine <= params.range.end.line) {
                 return [];
             }
         }
