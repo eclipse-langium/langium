@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { beforeAll, describe, test, expect } from 'vitest';
+import { describe, test } from 'vitest';
 import { createLangiumGrammarServices, EmptyFileSystem } from '../../src';
 import { expectFormatting } from '../../src/test';
 
@@ -12,13 +12,6 @@ const services = createLangiumGrammarServices({ ...EmptyFileSystem }).grammar;
 const formatting = expectFormatting(services);
 
 describe('Langium grammar formatting tests', () => {
-
-    beforeAll(() => {
-        // override expect function to use the one from Vitest
-        expectFunction((a,e) => {
-            expect(a).toBe(e);
-        });
-    });
 
     test('Should format simple grammar correctly', async () => {
         await formatting({
