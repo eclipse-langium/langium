@@ -64,22 +64,62 @@ export abstract class AbstractFormatter implements Formatter {
     }
 
     formatDocument(document: LangiumDocument, params: DocumentFormattingParams): MaybePromise<TextEdit[]> {
-        return this.doDocumentFormat(document, params.options);
+        const pr = document.parseResult;
+        if (pr.lexerErrors.length === 0 && pr.parserErrors.length === 0) {
+            // safe to format
+            return this.doDocumentFormat(document, params.options);
+        } else {
+            // don't format a potentially broken document, return no edits
+            return [];
+        }
+    }
+
+    /**
+     * Returns whether a range for a given document is error free, i.e. safe to format
+     *
+     * @param document Document to inspect for lexer & parser errors that may produce an unsafe range
+     * @param range Formatting range to check for safety
+     * @returns Whether the given formatting range does not overlap with or follow any regions with an error
+     */
+    protected isFormatRangeErrorFree(document: LangiumDocument, range: Range): boolean {
+        const pr = document.parseResult;
+        if (pr.lexerErrors.length || pr.parserErrors.length) {
+            // collect the earliest error line from either
+            const earliestErrLine = Math.min(
+                ...pr.lexerErrors.map(e => e.line ?? Number.MAX_VALUE),
+                ...pr.parserErrors.map(e => e.token.startLine ?? Number.MAX_VALUE)
+            );
+            // if the earliest error line occurs before or at the end line of the range, then don't format
+            return earliestErrLine > range.end.line;
+        } else {
+            // no errors, ok to format
+            return true;
+        }
     }
 
     formatDocumentRange(document: LangiumDocument, params: DocumentRangeFormattingParams): MaybePromise<TextEdit[]> {
-        return this.doDocumentFormat(document, params.options, params.range);
+        if (this.isFormatRangeErrorFree(document, params.range)) {
+            return this.doDocumentFormat(document, params.options, params.range);
+        } else {
+            return [];
+        }
     }
 
     formatDocumentOnType(document: LangiumDocument, params: DocumentOnTypeFormattingParams): MaybePromise<TextEdit[]> {
         // Format the current line after typing something
-        return this.doDocumentFormat(document, params.options, {
+        const range = {
             start: {
                 character: 0,
                 line: params.position.line
             },
             end: params.position
-        });
+        };
+
+        if (this.isFormatRangeErrorFree(document, range)) {
+            return this.doDocumentFormat(document, params.options, range);
+        } else {
+            return [];
+        }
     }
 
     get formatOnTypeOptions(): DocumentOnTypeFormattingOptions | undefined {
