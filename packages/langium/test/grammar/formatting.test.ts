@@ -5,8 +5,8 @@
  ******************************************************************************/
 
 import { beforeAll, describe, test, expect } from 'vitest';
-import { createLangiumGrammarServices, EmptyFileSystem } from 'langium';
-import { expectFormatting, expectFunction } from 'langium/test';
+import { createLangiumGrammarServices, EmptyFileSystem } from '../../src';
+import { expectFormatting } from '../../src/test';
 
 const services = createLangiumGrammarServices({ ...EmptyFileSystem }).grammar;
 const formatting = expectFormatting(services);
