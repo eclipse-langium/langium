@@ -17,16 +17,17 @@ import { findNodeForProperty } from '../utils/grammar-util';
 import { SemanticTokensDecoder } from '../lsp/semantic-token-provider';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { expect } from 'vitest';
+import { BuildOptions } from '../workspace/document-builder';
 
-export function parseHelper<T extends AstNode = AstNode>(services: LangiumServices): (input: string) => Promise<LangiumDocument<T>> {
+export function parseHelper<T extends AstNode = AstNode>(services: LangiumServices): (input: string, buildOptions?: BuildOptions) => Promise<LangiumDocument<T>> {
     const metaData = services.LanguageMetaData;
     const documentBuilder = services.shared.workspace.DocumentBuilder;
-    return async input => {
+    return async (input, buildOptions) => {
         const randomNumber = Math.floor(Math.random() * 10000000) + 1000000;
         const uri = URI.parse(`file:///${randomNumber}${metaData.fileExtensions[0]}`);
         const document = services.shared.workspace.LangiumDocumentFactory.fromString<T>(input, uri);
         services.shared.workspace.LangiumDocuments.addDocument(document);
-        await documentBuilder.build([document]);
+        await documentBuilder.build([document], buildOptions);
         return document;
     };
 }
@@ -310,8 +311,8 @@ export interface ValidationResult<T extends AstNode = AstNode> {
 export function validationHelper<T extends AstNode = AstNode>(services: LangiumServices): (input: string) => Promise<ValidationResult<T>> {
     const parse = parseHelper<T>(services);
     return async (input) => {
-        const document = await parse(input);
-        return { document, diagnostics: await services.validation.DocumentValidator.validateDocument(document) };
+        const document = await parse(input, { validationChecks: 'all' });
+        return { document, diagnostics: document.diagnostics ?? [] };
     };
 }
 

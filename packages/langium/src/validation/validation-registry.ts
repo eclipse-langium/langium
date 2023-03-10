@@ -54,6 +54,8 @@ export type ValidationChecks<T> = {
     [K in keyof T]?: T[K] extends AstNode
         ? ValidationCheck<T[K]> | Array<ValidationCheck<T[K]>>
         : never
+} & {
+    AstNode?: ValidationCheck<AstNode>;
 }
 
 /**
@@ -99,15 +101,17 @@ export class ValidationRegistry {
     }
 
     protected doRegister(type: string, check: ValidationCheck): void {
-        for (const subtype of this.reflection.getAllTypes()) {
-            if (this.reflection.isSubtype(subtype, type)) {
-                this.validationChecks.add(subtype, check);
-            }
+        if (type === 'AstNode') {
+            this.validationChecks.add('AstNode', check);
+            return;
+        }
+        for (const subtype of this.reflection.getAllSubTypes(type)) {
+            this.validationChecks.add(subtype, check);
         }
     }
 
     getChecks(type: string): readonly ValidationCheck[] {
-        return this.validationChecks.get(type);
+        return this.validationChecks.get(type).concat(this.validationChecks.get('AstNode'));
     }
 
 }
