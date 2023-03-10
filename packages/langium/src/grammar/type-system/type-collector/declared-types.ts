@@ -44,7 +44,6 @@ export function collectDeclaredTypes(interfaces: Interface[], unions: Type[]): P
         const unionType: PlainUnion = {
             name: union.name,
             declared: true,
-            reflection: true,
             type: typeDefinitionToPropertyType(union.type),
             superTypes: new Set(),
             subTypes: new Set()

@@ -6,7 +6,7 @@
 
 import { CancellationToken, CodeDescription, DiagnosticRelatedInformation, DiagnosticTag, integer, Range } from 'vscode-languageserver';
 import { LangiumServices } from '../services';
-import { AstNode, AstReflection, AstTypeList, Properties } from '../syntax-tree';
+import { AstNode, AstReflection, Properties } from '../syntax-tree';
 import { MultiMap } from '../utils/collections';
 import { isOperationCancelled, MaybePromise } from '../utils/promise-util';
 
@@ -37,8 +37,23 @@ export type ValidationAcceptor = <N extends AstNode>(severity: 'error' | 'warnin
 
 export type ValidationCheck<T extends AstNode = AstNode> = (node: T, accept: ValidationAcceptor, cancelToken: CancellationToken) => MaybePromise<void>;
 
-export type ValidationChecks<T extends AstTypeList<T>> = {
-    [K in keyof T]?: ValidationCheck<T[K]> | Array<ValidationCheck<T[K]>>
+/**
+ * A utility type for associating non-primitive AST types to corresponding validation checks. For example:
+ *
+ * ```ts
+ *   const checks: ValidationChecks<StatemachineAstType> = {
+ *       State: validator.checkStateNameStartsWithCapital
+ *    };
+ * ```
+ *
+ * If an AST type does not extend AstNode, e.g. if it describes a union of string literals, that type's name must not occur as a key in objects of type `ValidationCheck<...>`.
+ *
+ * @param T a type definition mapping language specific type names (keys) to the corresponding types (values)
+ */
+export type ValidationChecks<T> = {
+    [K in keyof T]?: T[K] extends AstNode
+        ? ValidationCheck<T[K]> | Array<ValidationCheck<T[K]>>
+        : never
 }
 
 /**
@@ -52,7 +67,7 @@ export class ValidationRegistry {
         this.reflection = services.shared.AstReflection;
     }
 
-    register<T extends AstTypeList<T>>(checksRecord: ValidationChecks<T>, thisObj: ThisParameterType<unknown> = this): void {
+    register<T>(checksRecord: ValidationChecks<T>, thisObj: ThisParameterType<unknown> = this): void {
         for (const [type, ch] of Object.entries(checksRecord)) {
             const callbacks = ch as ValidationCheck | ValidationCheck[];
             if (Array.isArray(callbacks)) {

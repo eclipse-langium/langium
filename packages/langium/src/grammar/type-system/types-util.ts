@@ -58,16 +58,21 @@ export function collectTypeHierarchy(types: TypeOption[]): {
     superTypes: MultiMap<string, string>
     subTypes: MultiMap<string, string>
 } {
+    const allTypes = new Set(types);
     const duplicateSuperTypes = new MultiMap<string, string>();
     const duplicateSubTypes = new MultiMap<string, string>();
-    for (const type of types) {
+    for (const type of allTypes) {
         for (const superType of type.superTypes) {
-            duplicateSuperTypes.add(type.name, superType.name);
-            duplicateSubTypes.add(superType.name, type.name);
+            if (allTypes.has(superType)) {
+                duplicateSuperTypes.add(type.name, superType.name);
+                duplicateSubTypes.add(superType.name, type.name);
+            }
         }
         for (const subType of type.subTypes) {
-            duplicateSuperTypes.add(subType.name, type.name);
-            duplicateSubTypes.add(type.name, subType.name);
+            if (allTypes.has(subType)) {
+                duplicateSuperTypes.add(subType.name, type.name);
+                duplicateSubTypes.add(type.name, subType.name);
+            }
         }
     }
     const superTypes = new MultiMap<string, string>();
@@ -193,4 +198,19 @@ export function findReferenceTypes(type: PropertyType): string[] {
         return findReferenceTypes(type.elementType);
     }
     return [];
+}
+
+export function isAstType(type: PropertyType): boolean {
+    if (isPropertyUnion(type)) {
+        return type.types.every(isAstType);
+    } else if (isValueType(type)) {
+        const value = type.value;
+        if ('type' in value) {
+            return isAstType(value.type);
+        } else {
+            // Is definitely an interface type
+            return true;
+        }
+    }
+    return false;
 }
