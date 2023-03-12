@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import { ValidationAcceptor, ValidationChecks } from 'langium';
-import { State, Statemachine, StatemachineAstType } from './generated/ast';
+import { State, Statemachine, StatemachineAstType, Event } from './generated/ast';
 import type { StatemachineServices } from './statemachine-module';
 
 export function registerValidationChecks(services: StatemachineServices) {
@@ -38,23 +38,29 @@ export class StatemachineValidator {
      * @param accept the acceptor to report errors
      */
     checkUniqueStatesAndEvents(statemachine: Statemachine, accept: ValidationAcceptor): void {
-        const variables: string[] = [];
-
-        // let's check for duplicate state names
-        statemachine.states.forEach(state => {
-            if (variables.find(name => name === state.name)) {
-                accept('error',  `Name '${state.name}' does already exist.`, {node: state, property: 'name'});
+        // check for duplicate state and event names and add them to the map
+        const names = new Map<string, State | Event | undefined>();
+        for (const state of statemachine.states) {
+            if (names.has(state.name)) {
+                const duplicate = names.get(state.name);
+                if (duplicate) {
+                    accept('error', `Duplicate state name: ${state.name}`, { node: duplicate as State, property: 'name' });
+                }
+                accept('error', `Duplicate state name: ${state.name}`, { node: state, property: 'name' });
+            } else {
+                names.set(state.name, state);
             }
-            variables.push(state.name);
-        });
-
-        // let's check for duplicate event names
-        statemachine.events.forEach(event => {
-            if (variables.find(name => name === event.name)) {
-                accept('error',  `Name '${event.name}' does already exist.`, {node: event, property: 'name'});
+        }
+        for (const event of statemachine.events) {
+            if (names.has(event.name)) {
+                const duplicate = names.get(event.name);
+                if (duplicate) {
+                    accept('error', `Duplicate event name: ${event.name}`, { node: duplicate as Event, property: 'name' });
+                }
+                accept('error', `Duplicate event name: ${event.name}`, { node: event, property: 'name' });
+            } else {
+                names.set(event.name, event);
             }
-            variables.push(event.name);
-        });
+        }
     }
-
 }
