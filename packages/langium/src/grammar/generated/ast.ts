@@ -528,7 +528,7 @@ export function isWildcard(item: unknown): item is Wildcard {
     return reflection.isInstance(item, Wildcard);
 }
 
-export interface LangiumGrammarAstType {
+export type LangiumGrammarAstType = {
     AbstractElement: AbstractElement
     AbstractRule: AbstractRule
     AbstractType: AbstractType

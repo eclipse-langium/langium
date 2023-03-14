@@ -72,7 +72,7 @@ export function isTransition(item: unknown): item is Transition {
     return reflection.isInstance(item, Transition);
 }
 
-export interface StatemachineAstType {
+export type StatemachineAstType = {
     Command: Command
     Event: Event
     State: State

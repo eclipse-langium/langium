@@ -85,7 +85,7 @@ export function isTestModel(item: unknown): item is TestModel {
     return reflection.isInstance(item, TestModel);
 }
 
-export interface RequirementsAndTestsAstType {
+export type RequirementsAndTestsAstType = {
     Contact: Contact
     Environment: Environment
     Requirement: Requirement
