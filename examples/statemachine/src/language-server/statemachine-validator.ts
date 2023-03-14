@@ -32,6 +32,7 @@ export class StatemachineValidator {
             }
         }
     }
+
     /**
      * Checks if there are duplicate state and event names.
      * @param statemachine the statemachine to check
@@ -39,27 +40,19 @@ export class StatemachineValidator {
      */
     checkUniqueStatesAndEvents(statemachine: Statemachine, accept: ValidationAcceptor): void {
         // check for duplicate state and event names and add them to the map
-        const names = new Map<string, State | Event | undefined>();
-        for (const state of statemachine.states) {
-            if (names.has(state.name)) {
-                const duplicate = names.get(state.name);
-                if (duplicate) {
-                    accept('error', `Duplicate state name: ${state.name}`, { node: duplicate as State, property: 'name' });
+        const names = new Map<string, State | Event>();
+        const allSymbols = [...statemachine.states, ...statemachine.events];
+        const duplicates: string[] = [];
+        for (const symbol of allSymbols) {
+            if (names.has(symbol.name)) {
+                const duplicate = names.get(symbol.name);
+                if (duplicate && !duplicates.includes(symbol.name)) {
+                    duplicates.push(symbol.name);
+                    accept('error', `Duplicate identifier name: ${symbol.name}`, { node: duplicate, property: 'name' });
                 }
-                accept('error', `Duplicate state name: ${state.name}`, { node: state, property: 'name' });
+                accept('error', `Duplicate identifier name: ${symbol.name}`, { node: symbol, property: 'name' });
             } else {
-                names.set(state.name, state);
-            }
-        }
-        for (const event of statemachine.events) {
-            if (names.has(event.name)) {
-                const duplicate = names.get(event.name);
-                if (duplicate) {
-                    accept('error', `Duplicate event name: ${event.name}`, { node: duplicate as Event, property: 'name' });
-                }
-                accept('error', `Duplicate event name: ${event.name}`, { node: event, property: 'name' });
-            } else {
-                names.set(event.name, event);
+                names.set(symbol.name, symbol);
             }
         }
     }
