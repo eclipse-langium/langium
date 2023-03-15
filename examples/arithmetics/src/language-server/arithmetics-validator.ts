@@ -4,8 +4,8 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { ValidationAcceptor, ValidationChecks } from 'langium';
-import { ArithmeticsAstType, isNumberLiteral, Definition, isFunctionCall, Expression, BinaryExpression, isBinaryExpression } from './generated/ast';
+import { MultiMap, ValidationAcceptor, ValidationChecks } from 'langium';
+import { ArithmeticsAstType, isNumberLiteral, Definition, isFunctionCall, Expression, BinaryExpression, isBinaryExpression, Module } from './generated/ast';
 import type { ArithmeticsServices } from './arithmetics-module';
 import { applyOp } from '../cli/cli-util';
 
@@ -14,7 +14,8 @@ export function registerValidationChecks(services: ArithmeticsServices): void {
     const validator = services.validation.ArithmeticsValidator;
     const checks: ValidationChecks<ArithmeticsAstType> = {
         BinaryExpression: validator.checkDivByZero,
-        Definition: validator.checkNormalisable
+        Definition: validator.checkNormalisable,
+        Module: validator.checkUniqueDefinitions
     };
     registry.register(checks, validator);
 }
@@ -48,6 +49,20 @@ export class ArithmeticsValidator {
         for (const [expr, result] of context) {
             if (result) {
                 accept('warning', 'Expression could be normalized to constant ' + result, { node: expr });
+            }
+        }
+    }
+
+    checkUniqueDefinitions(module: Module, accept: ValidationAcceptor): void {
+        const names = new MultiMap<string, Definition>();
+        for(const def of module.statements as Definition[]) {
+            if(def.name) names.add(def.name, def);
+        }
+        for (const [name, symbols] of names.entriesGroupedByKey()) {
+            if (symbols.length > 1) {
+                for (const symbol of symbols) {
+                    accept('error', `Duplicate definition name: ${name}`, { node: symbol, property: 'name' });
+                }
             }
         }
     }

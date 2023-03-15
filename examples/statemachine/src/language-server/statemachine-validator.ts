@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { ValidationAcceptor, ValidationChecks } from 'langium';
+import { MultiMap, ValidationAcceptor, ValidationChecks } from 'langium';
 import { State, Statemachine, StatemachineAstType, Event } from './generated/ast';
 import type { StatemachineServices } from './statemachine-module';
 
@@ -40,19 +40,16 @@ export class StatemachineValidator {
      */
     checkUniqueStatesAndEvents(statemachine: Statemachine, accept: ValidationAcceptor): void {
         // check for duplicate state and event names and add them to the map
-        const names = new Map<string, State | Event>();
+        const names = new MultiMap<string, State | Event>();
         const allSymbols = [...statemachine.states, ...statemachine.events];
-        const duplicates: string[] = [];
         for (const symbol of allSymbols) {
-            if (names.has(symbol.name)) {
-                const duplicate = names.get(symbol.name);
-                if (duplicate && !duplicates.includes(symbol.name)) {
-                    duplicates.push(symbol.name);
-                    accept('error', `Duplicate identifier name: ${symbol.name}`, { node: duplicate, property: 'name' });
+            names.add(symbol.name, symbol);
+        }
+        for (const [name, symbols] of names.entriesGroupedByKey()) {
+            if (symbols.length > 1) {
+                for (const symbol of symbols) {
+                    accept('error', `Duplicate identifier name: ${name}`, { node: symbol, property: 'name' });
                 }
-                accept('error', `Duplicate identifier name: ${symbol.name}`, { node: symbol, property: 'name' });
-            } else {
-                names.set(symbol.name, symbol);
             }
         }
     }
