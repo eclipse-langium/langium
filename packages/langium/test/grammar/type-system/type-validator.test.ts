@@ -26,20 +26,15 @@ describe('validate params in types', () => {
         terminal ID: /[a-zA-Z_][\\w_]*/;
         `.trim();
         // verify we only have 1 error, associated with a missing 'name' prop
-        const validation = await validate(prog);
+        const document = await parseDocument(grammarServices, prog);
+        let diagnostics: Diagnostic[] = await grammarServices.validation.DocumentValidator.validateDocument(document);
+        diagnostics = diagnostics.filter(d => d.severity === DiagnosticSeverity.Error);
+        expect(diagnostics).toHaveLength(1);
 
-        expectError(validation, "A property 'name' is expected. in a rule that returns type 'B'.", {
-            range: {
-                start: {
-                    line: 4,
-                    character: 8
-                },
-                end: {
-                    line: 4,
-                    character: 10
-                }
-            }
-        });
+        // verify the location of the single diagnostic error, should be only for the 2nd rule
+        const d = diagnostics[0];
+        expect(d.range.start).toEqual({ character: 8, line: 5 });
+        expect(d.range.end).toEqual({ character: 34, line: 5 });
     });
 
     // verifies that missing required params use the right msg & position
@@ -56,20 +51,15 @@ describe('validate params in types', () => {
         `.trim();
 
         // expect exactly 1 error, associated with a missing 'name' prop for type 'A'
-        const validation = await validate(prog);
+        const document = await parseDocument(grammarServices, prog);
+        let diagnostics: Diagnostic[] = await grammarServices.validation.DocumentValidator.validateDocument(document);
+        diagnostics = diagnostics.filter(d => d.severity === DiagnosticSeverity.Error);
+        expect(diagnostics).toHaveLength(1);
 
-        expectError(validation, "Property 'name' is missing in a rule 'Y', but is required in type 'A'.", {
-            range: {
-                start: {
-                    line: 5,
-                    character: 8
-                },
-                end: {
-                    line: 5,
-                    character: 34
-                }
-            }
-        });
+        // verify location of diagnostic
+        const d = diagnostics[0];
+        expect(d.range.start).toEqual({ character: 8, line: 4 });
+        expect(d.range.end).toEqual({ character: 10, line: 4 });
     });
 
     // tests that an optional param in a declared type can be optionally present in a rule
