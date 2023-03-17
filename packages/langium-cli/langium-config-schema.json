@@ -86,6 +86,32 @@
                                 "out"
                             ]
                         },
+                        "monarch": {
+                            "description": "An object to describe the monarch grammar properties",
+                            "type": "object",
+                            "properties": {
+                                "out": {
+                                    "description": "The output file path to the generated monarch grammar",
+                                    "type": "string"
+                                }
+                            },
+                            "required": [
+                                "out"
+                            ]
+                        },
+                        "prism": {
+                            "description": "An object to describe the prism grammar properties",
+                            "type": "object",
+                            "properties": {
+                                "out": {
+                                    "description": "The output file path to the generated prism grammar",
+                                    "type": "string"
+                                }
+                            },
+                            "required": [
+                                "out"
+                            ]
+                        },
                         "chevrotainParserConfig": {
                             "$ref": "#/$defs/chevrotainParserConfig"
                         }

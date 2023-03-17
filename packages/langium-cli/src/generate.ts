@@ -26,6 +26,7 @@ import { serializeGrammar } from './generator/grammar-serializer';
 import { generateModule } from './generator/module-generator';
 import { generateTextMate } from './generator/highlighting/textmate-generator';
 import { generateMonarch } from './generator/highlighting/monarch-generator';
+import { generatePrismHighlighting } from './generator/highlighting/prism-generator';
 import {
     getUserChoice,
     log
@@ -284,6 +285,13 @@ export async function generate(config: LangiumConfig, options: GenerateOptions):
             const monarchPath = path.resolve(relPath, languageConfig.monarch.out);
             log('log', options, `Writing monarch grammar to ${chalk.white.bold(monarchPath)}`);
             await writeHighlightGrammar(genMonarchGrammar, monarchPath, options);
+        }
+
+        if (languageConfig?.prism) {
+            const genPrismGrammar = generatePrismHighlighting(grammar, languageConfig);
+            const prismPath = path.resolve(relPath, languageConfig.prism.out);
+            log('log', options, `Writing prism grammar to ${chalk.white.bold(prismPath)}`);
+            await writeHighlightGrammar(genPrismGrammar, prismPath, options);
         }
     }
 
