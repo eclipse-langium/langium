@@ -2,10 +2,7 @@ html,body {
     background: rgb(33,33,33);
     font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
     color: white;
-    /* for monaco */
-    margin: 8px auto;
-    width: 80%;
-    height: 80%;
+    margin: 0;
 }
 h1 {
     text-align: center;
@@ -14,16 +11,13 @@ footer {
     text-align: center;
     color: #444;
     font-size: 1.2rem;
-    margin-bottom: 16px;
+    margin-bottom: 0.5rem;
 }
 
 /* for monaco */
 .wrapper {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    width: 100%;
+    padding: 0 5%;
 }
 #monaco-editor-root {
-    flex-grow: 1;
+    height: calc(100vh - 7.5rem - 70px);
 }
