@@ -1,4 +1,7 @@
 {
+    "name": "<%= extension-name %>",
+    "displayName": "<%= extension-name %>",
+    "description": "Please enter a brief description here",
     "engines": {
         "vscode": "^1.67.0"
     },

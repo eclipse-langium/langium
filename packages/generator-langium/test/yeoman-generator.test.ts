@@ -148,9 +148,6 @@ describe('Check yeoman generator works', () => {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const PACKAGE_JSON_EXPECTATION: Record<string, any> = {
-    name: 'hello-world',
-    displayName: 'hello-world',
-    description: 'Please enter a brief description here',
     version: '0.0.1',
     categories: ['Programming Languages'],
     files: ['out', 'src'],
