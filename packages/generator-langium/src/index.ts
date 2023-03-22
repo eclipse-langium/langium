@@ -135,7 +135,9 @@ class LangiumGenerator extends Generator {
         const extensionPath = this._extensionPath();
 
         const opts = { cwd: extensionPath };
-        this.spawnCommandSync('npm', ['install'], opts);
+        if(!this.args.includes('skip-install')) {
+            this.spawnCommandSync('npm', ['install'], opts);
+        }
         this.spawnCommandSync('npm', ['run', 'langium:generate'], opts);
         this.spawnCommandSync('npm', ['run', 'build'], opts);
     }
