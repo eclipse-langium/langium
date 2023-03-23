@@ -51,7 +51,7 @@ const answersForWeb = {
 
 describe('Check yeoman generator works', () => {
 
-    test('Should produce files', async () => {
+    test('Should produce files for Core', async () => {
 
         const context = createHelpers({}).run(path.join(__dirname, '../app'));
         context.targetDirectory = path.join(__dirname, '../../../examples/hello-world'); // generate in examples
@@ -62,86 +62,91 @@ describe('Check yeoman generator works', () => {
                 // will generate into examples/hello-world instead of examples/hello-world/hello-world
                 generator.destinationRoot(targetRoot, false);
             })
-            .withAnswers(defaultAnswers)
+            .withAnswers(answersForCore)
             .withArguments('skip-install')
             .then((result) => {
                 const files = [
-                    'hello-world/.eslintrc.json',
-                    'hello-world/.gitignore',
-                    'hello-world/langium-config.json',
-                    'hello-world/langium-quickstart.md',
-                    'hello-world/tsconfig.json',
-                    'hello-world/package.json',
-                    'hello-world/.vscode/extensions.json',
-                    'hello-world/.vscode/tasks.json',
-                    'hello-world/src/language/hello-world-module.ts',
-                    'hello-world/src/language/hello-world-validator.ts',
-                    'hello-world/src/language/hello-world.langium'
+                    targetRoot + '/hello-world/.eslintrc.json',
+                    targetRoot + '/hello-world/.gitignore',
+                    targetRoot + '/hello-world/langium-config.json',
+                    targetRoot + '/hello-world/langium-quickstart.md',
+                    targetRoot + '/hello-world/tsconfig.json',
+                    targetRoot + '/hello-world/package.json',
+                    targetRoot + '/hello-world/.vscode/extensions.json',
+                    targetRoot + '/hello-world/.vscode/tasks.json',
+                    targetRoot + '/hello-world/src/language/hello-world-module.ts',
+                    targetRoot + '/hello-world/src/language/hello-world-validator.ts',
+                    targetRoot + '/hello-world/src/language/hello-world.langium'
                 ];
                 result.assertFile(files);
-                result.assertJsonFileContent('hello-world/package.json', PACKAGE_JSON_EXPECTATION);
-                result.assertFileContent('hello-world/.vscode/tasks.json', TASKS_JSON_EXPECTATION);
-            });
-        context.cleanup(); // clean-up
+                result.assertJsonFileContent(targetRoot + '/hello-world/package.json', PACKAGE_JSON_EXPECTATION);
+                result.assertFileContent(targetRoot + '/hello-world/.vscode/tasks.json', TASKS_JSON_EXPECTATION);
+            })
+            .finally(() => context.cleanup() /*clean-up*/);
     }, 120_000);
 
     test ('Should produce files for VSCode', async () => {
         const context = createHelpers({}).run(path.join(__dirname, '../app'));
-        context.targetDirectory = path.join(__dirname, '../test-temp'); // generate in test-temp
+        context.targetDirectory = path.join(__dirname, '../../../examples/hello-world'); // generate in examples
+        const targetRoot = path.join(__dirname, '../../../examples');
         context.cleanTestDirectory(true); // clean-up test-temp
-        await context.onGenerator(generator => generator.destinationRoot(context.targetDirectory, false))
+        await context.onGenerator(generator => generator.destinationRoot(targetRoot, false))
             .withAnswers(answersForVSCode)
+            .withArguments('skip-install')
             .then((result) => {
                 const files = [
-                    'hello-world/.vscodeignore',
-                    'hello-world/language-configuration.json',
-                    'hello-world/.vscode/launch.json',
-                    'hello-world/src/language/main.ts',
-                    'hello-world/src/extension/main.ts'
+                    targetRoot + '/hello-world/.vscodeignore',
+                    targetRoot + '/hello-world/language-configuration.json',
+                    targetRoot + '/hello-world/.vscode/launch.json',
+                    targetRoot + '/hello-world/src/language/main.ts',
+                    targetRoot + '/hello-world/src/extension/main.ts'
                 ];
                 result.assertFile(files);
-            });
-        context.cleanup(); // clean-up
+            })
+            .finally(() => context.cleanup() /*clean-up*/);
     }, 120_000);
 
     test('Should produce files for CLI', async () => {
         const context = createHelpers({}).run(path.join(__dirname, '../app'));
-        context.targetDirectory = path.join(__dirname, '../test-temp'); // generate in test-temp
-        context.cleanTestDirectory(true); // clean-up test-temp
-        await context.onGenerator(generator => generator.destinationRoot(context.targetDirectory, false))
+        context.targetDirectory = path.join(__dirname, '../../../examples/hello-world'); // generate in examples
+        const targetRoot = path.join(__dirname, '../../../examples');
+        await context.onGenerator(generator => generator.destinationRoot(targetRoot, false))
             .withAnswers(answersForCLI)
+            .withArguments('skip-install')
             .then((result) => {
                 const files = [
-                    'hello-world/bin/cli',
-                    'hello-world/src/cli/cli-util.ts',
-                    'hello-world/src/cli/generator.ts',
-                    'hello-world/src/cli/main.ts'
+                    targetRoot + '/hello-world/bin/cli',
+                    targetRoot + '/hello-world/src/cli/cli-util.ts',
+                    targetRoot + '/hello-world/src/cli/generator.ts',
+                    targetRoot + '/hello-world/src/cli/main.ts'
                 ];
                 result.assertFile(files);
-            });
-        context.cleanup(); // clean-up
+            })
+            .finally(() => context.cleanup() /*clean-up*/);
     }, 120_000);
 
     test('Should produce files for web environment', async () => {
         const context = createHelpers({}).run(path.join(__dirname, '../app'));
-        context.targetDirectory = path.join(__dirname, '../test-temp');
+        context.targetDirectory = path.join(__dirname, '../../../examples/hello-world'); // generate in examples
+        const targetRoot = path.join(__dirname, '../../../examples');
         context.cleanTestDirectory(true);
-        await context.onGenerator(generator => generator.destinationRoot(context.targetDirectory, false))
+        await context.onGenerator(generator => generator.destinationRoot(targetRoot, false))
             .withAnswers(answersForWeb)
+            // .withArguments('skip-install')
             .then(result => {
                 const files = [
-                    'hello-world/langium-config.json',
-                    'hello-world/tsconfig.json',
-                    'hello-world/tsconfig.monarch.json',
-                    'hello-world/src/language/main-browser.ts',
-                    'hello-world/src/static/index.html',
-                    'hello-world/src/static/setup.js',
-                    'hello-world/src/static/styles.css',
-                    'hello-world/src/web/app.ts',
+                    targetRoot + '/hello-world/langium-config.json',
+                    targetRoot + '/hello-world/tsconfig.json',
+                    targetRoot + '/hello-world/tsconfig.monarch.json',
+                    targetRoot + '/hello-world/src/language/main-browser.ts',
+                    targetRoot + '/hello-world/src/static/index.html',
+                    targetRoot + '/hello-world/src/static/setup.js',
+                    targetRoot + '/hello-world/src/static/styles.css',
+                    targetRoot + '/hello-world/src/web/app.ts',
                 ];
                 result.assertFile(files);
-            });
-        context.cleanup();
+            })
+            .finally(() => context.cleanup() /*clean-up*/);
     }, 120_000);
 
 });
