@@ -1,8 +1,7 @@
 {
+    "name": "<%= extension-name %>",
+    "description": "Please enter a brief description here",
     "version": "0.0.1",
-    "categories": [
-        "Programming Languages"
-    ],
     "files": [
         "out",
         "src"
