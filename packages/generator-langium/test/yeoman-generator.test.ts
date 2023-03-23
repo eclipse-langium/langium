@@ -19,36 +19,6 @@ const answersForCore = {
     openWith: false
 };
 
-const answersForVSCode = {
-    extensionName: 'hello-world',
-    rawLanguageName: 'Hello World',
-    fileExtension: '.hello',
-    includeVSCode: true,
-    includeCLI: false,
-    includeWeb: false,
-    openWith: false
-};
-
-const answersForCLI = {
-    extensionName: 'hello-world',
-    rawLanguageName: 'Hello World',
-    fileExtension: '.hello',
-    includeVSCode: false,
-    includeCLI: true,
-    includeWeb: false,
-    openWith: false
-};
-
-const answersForWeb = {
-    extensionName: 'hello-world',
-    rawLanguageName: 'Hello World',
-    fileExtension: '.hello',
-    includeVSCode: false,
-    includeCLI: false,
-    includeWeb: true,
-    openWith: false
-};
-
 describe('Check yeoman generator works', () => {
 
     test('Should produce files for Core', async () => {
