@@ -5,4 +5,4 @@
 node_modules/
 out/
 syntaxes/
-src/language-server/generated/
+src/language/generated/
