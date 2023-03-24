@@ -54,6 +54,11 @@ export interface LangiumLanguageConfig {
         /** Output path to syntax highlighting file */
         out: string
     }
+    /** Enable generating a Prism syntax highlighting file */
+    prism?: {
+        /** Output path to syntax highlighting file */
+        out: string
+    }
     /** Configure the chevrotain parser for a single language */
     chevrotainParserConfig?: IParserConfig
 }
