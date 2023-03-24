@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "target": "ES2017",
+    "module": "commonjs",
+    "lib": ["ESNext", "DOM", "WebWorker"],
+    "sourceMap": true,
+    "outDir": "out",
+    "strict": true,
+    "noUnusedLocals": true,
+    "noImplicitReturns": true,
+    "noImplicitOverride": true,
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true
+  },
+  "include": [
+     "src/**/*.ts"
+  ],
+  "exclude": [
+     "out",
+     "node_modules"
+  ]
+}

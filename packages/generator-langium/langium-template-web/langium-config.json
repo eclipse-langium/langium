@@ -2,11 +2,14 @@
     "projectName": "<%= LanguageName %>",
     "languages": [{
         "id": "<%= language-id %>",
-        "grammar": "src/language-server/<%= language-id %>.langium",
+        "grammar": "src/language/<%= language-id %>.langium",
         "fileExtensions": <%= file-extension %>,
         "textMate": {
             "out": "syntaxes/<%= language-id %>.tmLanguage.json"
+        },
+        "monarch": {
+            "out": "syntaxes/<%= language-id %>.monarch.ts"
         }
     }],
-    "out": "src/language-server/generated"
+    "out": "src/language/generated"
 }

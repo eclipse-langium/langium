@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset='utf-8'>
+        <!-- Page & Monaco styling -->
+        <link href="styles.css" rel="stylesheet"/>
+        <title><%= RawLanguageName %> in Langium</title>
+    </head>
+    <body>
+        <h1><%= RawLanguageName %> in Langium</h1>
+        <div class="wrapper">
+            <!-- Monaco Root -->
+            <div id="monaco-editor-root"></div>
+        </div>
+        <footer>
+            <p style="font-style:italic">Powered by</p>
+            <img width="125" src="https://langium.org/assets/langium_logo_w_nib.svg" alt="Langium">
+        </footer>
+        <!-- Monaco Configuration -->
+        <script type="module" src="setup.js"></script>
+    </body>
+</html>

@@ -1,0 +1,12 @@
+{
+    "projectName": "<%= LanguageName %>",
+    "languages": [{
+        "id": "<%= language-id %>",
+        "grammar": "src/language/<%= language-id %>.langium",
+        "fileExtensions": <%= file-extension %>,
+        "textMate": {
+            "out": "syntaxes/<%= language-id %>.tmLanguage.json"
+        }
+    }],
+    "out": "src/language/generated"
+}

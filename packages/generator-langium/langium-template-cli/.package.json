@@ -1,0 +1,15 @@
+{
+    "engines": {
+        "node": ">=14.0.0"
+    },
+    "files": [
+        "bin"
+    ],
+    "bin": {
+        "<%= language-id %>-cli": "./bin/cli"
+    },
+    "dependencies": {
+        "chalk": "~4.1.2",
+        "commander": "~10.0.0"
+    }
+}

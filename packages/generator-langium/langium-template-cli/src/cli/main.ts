@@ -1,8 +1,8 @@
 import chalk from 'chalk';
 import { Command } from 'commander';
-import { Model } from '../language-server/generated/ast';
-import { <%= LanguageName %>LanguageMetaData } from '../language-server/generated/module';
-import { create<%= LanguageName %>Services } from '../language-server/<%= language-id %>-module';
+import { Model } from '../language/generated/ast';
+import { <%= LanguageName %>LanguageMetaData } from '../language/generated/module';
+import { create<%= LanguageName %>Services } from '../language/<%= language-id %>-module';
 import { extractAstNode } from './cli-util';
 import { generateJavaScript } from './generator';
 import { NodeFileSystem } from 'langium/node';

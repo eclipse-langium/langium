@@ -1,0 +1,35 @@
+{
+    "displayName": "<%= extension-name %>",
+    "engines": {
+        "vscode": "^1.67.0"
+    },
+    "categories": [
+        "Programming Languages"
+    ],
+    "contributes": {
+        "languages": [{
+            "id": "<%= language-id %>",
+            "aliases": ["<%= RawLanguageName %>", "<%= language-id %>"],
+            "extensions": "<%= file-extension %>",
+            "configuration": "./language-configuration.json"
+        }],
+        "grammars": [{
+            "language": "<%= language-id %>",
+            "scopeName": "source.<%= language-id %>",
+            "path": "./syntaxes/<%= language-id %>.tmLanguage.json"
+        }]
+    },
+    "activationEvents": [
+        "onLanguage:<%= language-id %>"
+    ],
+    "main": "./out/extension/main.js",
+    "scripts": {
+        "vscode:prepublish": "npm run build && npm run lint"
+    },
+    "dependencies": {
+        "vscode-languageclient": "~8.0.2"
+    },
+    "devDependencies": {
+        "@types/vscode": "~1.67.0"
+    }
+}
