@@ -7,7 +7,7 @@
 import { CancellationToken, DocumentHighlight, DocumentHighlightParams } from 'vscode-languageserver';
 import { GrammarConfig } from '../grammar/grammar-config';
 import { NameProvider } from '../references/name-provider';
-import { References } from '../references/references';
+import { FindReferencesOptions, References } from '../references/references';
 import { LangiumServices } from '../services';
 import { getDocument } from '../utils/ast-util';
 import { findDeclarationNodeAtOffset } from '../utils/cst-util';
@@ -51,13 +51,10 @@ export class DefaultDocumentHighlightProvider implements DocumentHighlightProvid
         }
         const targetAstNode = this.references.findDeclaration(selectedNode);
         if (targetAstNode) {
-            const refs: DocumentHighlight[] = [];
             const includeDeclaration = equalURI(getDocument(targetAstNode).uri, document.uri);
-            const options = { onlyLocal: true, includeDeclaration };
-            this.references.findReferences(targetAstNode, options).forEach(ref => {
-                refs.push(this.createDocumentHighlight(ref));
-            });
-            return refs;
+            const options: FindReferencesOptions = { documentUri: document.uri, includeDeclaration };
+            const references = this.references.findReferences(targetAstNode, options);
+            return references.map(ref => this.createDocumentHighlight(ref)).toArray();
         }
         return undefined;
     }

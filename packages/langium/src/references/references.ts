@@ -7,7 +7,7 @@
 import { findAssignment } from '../utils/grammar-util';
 import { LangiumServices } from '../services';
 import { AstNode, CstNode, GenericAstNode, isReference } from '../syntax-tree';
-import { getDocument, streamAst, streamReferences } from '../utils/ast-util';
+import { getDocument } from '../utils/ast-util';
 import { isCstChildNode, toDocumentSegment } from '../utils/cst-util';
 import { stream, Stream } from '../utils/stream';
 import { equalURI } from '../utils/uri-util';
@@ -15,6 +15,7 @@ import { ReferenceDescription } from '../workspace/ast-descriptions';
 import { AstNodeLocator } from '../workspace/ast-node-locator';
 import { IndexManager } from '../workspace/index-manager';
 import { NameProvider } from './name-provider';
+import { URI } from 'vscode-uri';
 
 /**
  * Language-specific service for finding references and declaration of a given `CstNode`.
@@ -46,7 +47,13 @@ export interface References {
 }
 
 export interface FindReferencesOptions {
-    onlyLocal?: boolean;
+    /**
+     * When set, the `findReferences` method will only return references/declarations from the specified document.
+     */
+    documentUri?: URI;
+    /**
+     * Whether the returned list of references should include the declaration.
+     */
     includeDeclaration?: boolean;
 }
 
@@ -101,50 +108,18 @@ export class DefaultReferences implements References {
     }
 
     findReferences(targetNode: AstNode, options: FindReferencesOptions): Stream<ReferenceDescription> {
-        if (options.onlyLocal) {
-            return this.findLocalReferences(targetNode, options.includeDeclaration);
-        } else {
-            return this.findGlobalReferences(targetNode, options.includeDeclaration);
-        }
-    }
-
-    protected findGlobalReferences(targetNode: AstNode, includeDeclaration = false): Stream<ReferenceDescription> {
         const refs: ReferenceDescription[] = [];
-        if (includeDeclaration) {
+        if (options.includeDeclaration) {
             const ref = this.getReferenceToSelf(targetNode);
             if (ref) {
                 refs.push(ref);
             }
         }
-        refs.push(...this.index.findAllReferences(targetNode, this.nodeLocator.getAstNodePath(targetNode)));
-        return stream(refs);
-    }
-
-    protected findLocalReferences(targetNode: AstNode, includeDeclaration = false): Stream<ReferenceDescription> {
-        const doc = getDocument(targetNode);
-        const rootNode = doc.parseResult.value;
-        const refs: ReferenceDescription[] = [];
-        if (includeDeclaration) {
-            const ref = this.getReferenceToSelf(targetNode);
-            if (ref) {
-                refs.push(ref);
-            }
+        let indexReferences = this.index.findAllReferences(targetNode, this.nodeLocator.getAstNodePath(targetNode));
+        if (options.documentUri) {
+            indexReferences = indexReferences.filter(ref => equalURI(ref.sourceUri, options.documentUri));
         }
-        streamAst(rootNode).forEach(node => {
-            streamReferences(node).forEach(({ reference }) => {
-                if (reference.ref === targetNode && reference.$refNode) {
-                    const cstNode = reference.$refNode;
-                    refs.push({
-                        sourceUri: getDocument(cstNode.element).uri,
-                        sourcePath: this.nodeLocator.getAstNodePath(cstNode.element),
-                        targetUri: getDocument(targetNode).uri,
-                        targetPath: this.nodeLocator.getAstNodePath(targetNode),
-                        segment: toDocumentSegment(cstNode),
-                        local: equalURI(getDocument(cstNode.element).uri, getDocument(targetNode).uri)
-                    });
-                }
-            });
-        });
+        refs.push(...indexReferences);
         return stream(refs);
     }
 
