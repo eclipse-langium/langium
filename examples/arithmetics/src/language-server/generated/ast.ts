@@ -34,7 +34,7 @@ export interface BinaryExpression extends AstNode {
     readonly $container: BinaryExpression | Definition | Evaluation | FunctionCall;
     readonly $type: 'BinaryExpression';
     left: Expression
-    operator: '*' | '+' | '-' | '/'
+    operator: '%' | '*' | '+' | '-' | '/' | '^'
     right: Expression
 }
 

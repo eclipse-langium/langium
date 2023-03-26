@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import { MultiMap, ValidationAcceptor, ValidationChecks } from 'langium';
-import { ArithmeticsAstType, isNumberLiteral, Definition, isFunctionCall, Expression, BinaryExpression, isBinaryExpression, Module } from './generated/ast';
+import { ArithmeticsAstType, isNumberLiteral, Definition, isFunctionCall, Expression, BinaryExpression, isBinaryExpression, Module, DeclaredParameter, FunctionCall } from './generated/ast';
 import type { ArithmeticsServices } from './arithmetics-module';
 import { applyOp } from './arithmetics-util';
 
@@ -15,7 +15,8 @@ export function registerValidationChecks(services: ArithmeticsServices): void {
     const checks: ValidationChecks<ArithmeticsAstType> = {
         BinaryExpression: validator.checkDivByZero,
         Definition: validator.checkNormalisable,
-        Module: validator.checkUniqueDefinitions
+        Module: validator.checkUniqueDefinitions,
+        FunctionCall: validator.checkMatchingParameters,
     };
     registry.register(checks, validator);
 }
@@ -51,12 +52,14 @@ export class ArithmeticsValidator {
                 accept('warning', 'Expression could be normalized to constant ' + result, { node: expr });
             }
         }
+
+        this.checkUniqueParmeters(def, accept);
     }
 
     checkUniqueDefinitions(module: Module, accept: ValidationAcceptor): void {
-        const names = new MultiMap<string, Definition>();
-        for(const def of module.statements as Definition[]) {
-            if(def.name) names.add(def.name, def);
+        const names = new MultiMap<string, Expression>();
+        for (const def of module.statements as Definition[]) {
+            if (def.name) names.add(def.name, def.expr);
         }
         for (const [name, symbols] of names.entriesGroupedByKey()) {
             if (symbols.length > 1) {
@@ -64,6 +67,27 @@ export class ArithmeticsValidator {
                     accept('error', `Duplicate definition name: ${name}`, { node: symbol, property: 'name' });
                 }
             }
+        }
+    }
+
+    checkUniqueParmeters(abstractDefinition: Definition, accept: ValidationAcceptor): void {
+        const names = new MultiMap<string, DeclaredParameter>();
+        for (const def of abstractDefinition.args) {
+            if (def.name) names.add(def.name, def);
+        }
+        for (const [name, symbols] of names.entriesGroupedByKey()) {
+            if (symbols.length > 1) {
+                for (const symbol of symbols) {
+                    accept('error', `Duplicate definition name: ${name}`, { node: symbol, property: 'name' });
+                }
+            }
+        }
+    }
+
+    checkMatchingParameters(functionCall: FunctionCall, accept: ValidationAcceptor): void {
+        if(!(functionCall.func.ref as Definition).args) return;
+        if (functionCall.args.length !== (functionCall.func.ref as Definition).args.length) {
+            accept('error', `Function ${functionCall.func.ref?.name} expects ${functionCall.args.length} parameters, but ${(functionCall.func.ref as Definition).args.length} were given.`, { node: functionCall, property: 'args' });
         }
     }
 }
