@@ -26,7 +26,16 @@ Addition infers Expression:
     Multiplication ({infer BinaryExpression.left=current} operator=('+' | '-') right=Multiplication)*;
 
 Multiplication infers Expression:
-    PrimaryExpression ({infer BinaryExpression.left=current} operator=('*' | '/') right=PrimaryExpression)*;
+    Potentiation ({infer BinaryExpression.left=current} operator=('*' | '/') right=Potentiation)*;
+
+Potentiation infers Expression:
+    Modulo ({infer BinaryExpression.left=current} operator='^' right=Modulo)*;
+
+// write every other essential operator here
+
+Modulo infers Expression:
+    PrimaryExpression ({infer BinaryExpression.left=current} operator='%' right=PrimaryExpression)*;
+
 
 PrimaryExpression infers Expression:
     '(' Expression ')' |
