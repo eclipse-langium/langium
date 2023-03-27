@@ -4,7 +4,6 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { describe, expect, test } from 'vitest';
 import { EOL } from 'os';
 import { CompositeGeneratorNode, IndentNode, NewLineNode, NL, NLEmpty, toString as process } from '../../src';
 

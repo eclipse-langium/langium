@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { describe, expect, onTestFailed, TaskResult, test } from 'vitest';
+import { onTestFailed } from 'vitest';
 import * as s from '../../src/utils/stream';
 
 describe('stream', () => {
@@ -253,7 +253,7 @@ describe('Stream.every', () => {
             // uncasted access to property `b`.
             expect(stream.filter(v => v.b > 5).toArray()).toHaveLength(0);
         } else {
-            onTestFailed((result: TaskResult) => {
+            onTestFailed(result => {
                 return Promise.reject(new Error(`Expected every to return true: ${result}`));
             });
         }

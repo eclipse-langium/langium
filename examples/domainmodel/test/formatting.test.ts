@@ -4,7 +4,6 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { describe, test } from 'vitest';
 import { EmptyFileSystem } from 'langium';
 import { expectFormatting } from 'langium/test';
 import { createDomainModelServices } from '../src/language-server/domain-model-module';

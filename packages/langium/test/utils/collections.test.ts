@@ -4,7 +4,6 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { describe, expect, test } from 'vitest';
 import { MultiMap } from '../../src/utils/collections';
 
 describe('MultiMap', () => {

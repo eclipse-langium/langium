@@ -4,7 +4,6 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { beforeAll, describe, expect, test } from 'vitest';
 import { Position, Range } from 'vscode-languageserver';
 import { AstNode, createServicesForGrammar, ValidationChecks } from '../../src';
 import { validationHelper, ValidationResult } from '../../src/test';

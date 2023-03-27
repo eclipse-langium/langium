@@ -4,7 +4,6 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { describe, expect, test } from 'vitest';
 import { createLangiumGrammarServices, Grammar, EmptyFileSystem, expandToString, EOL } from '../../../src';
 import { mergeTypesAndInterfaces } from '../../../src/grammar/type-system';
 import { collectAst } from '../../../src/grammar/type-system/ast-collector';

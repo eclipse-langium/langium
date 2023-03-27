@@ -4,7 +4,6 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { describe, expect, test } from 'vitest';
 import { extractRequirementModelWithTestModels } from '../src/cli/cli-util';
 import { generateSummaryFileHTMLContent } from '../src/cli/generator';
 import { createRequirementsAndTestsLangServices } from '../src/language-server/requirements-and-tests-lang-module';

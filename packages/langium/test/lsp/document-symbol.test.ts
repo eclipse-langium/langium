@@ -4,7 +4,6 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { describe, test } from 'vitest';
 import { Position, Range, SymbolKind } from 'vscode-languageserver';
 import { createLangiumGrammarServices, EmptyFileSystem } from '../../src';
 import { expectSymbols } from '../../src/test';

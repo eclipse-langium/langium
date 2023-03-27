@@ -6,7 +6,6 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { beforeEach, describe, expect, test } from 'vitest';
 import { createLangiumGrammarServices, EmptyFileSystem } from '../../src';
 
 describe('ConfigurationProvider', () => {

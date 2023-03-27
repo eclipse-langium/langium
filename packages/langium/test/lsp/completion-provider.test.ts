@@ -4,7 +4,6 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { describe, it, test } from 'vitest';
 import { createLangiumGrammarServices, createServicesForGrammar, EmptyFileSystem } from '../../src';
 import { expectCompletion } from '../../src/test';
 

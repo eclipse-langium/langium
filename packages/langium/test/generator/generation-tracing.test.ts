@@ -4,7 +4,6 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { beforeAll, describe, expect, test } from 'vitest';
 import { toStringAndTrace, traceToNode } from '../../src/generator/generator-node';
 import type { SourceRegion, TraceRegion } from '../../src/generator/generator-tracing';
 import { joinTracedToNode, joinTracedToNodeIf } from '../../src/generator/node-joiner';

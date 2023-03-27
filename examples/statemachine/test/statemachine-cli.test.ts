@@ -4,7 +4,6 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { afterAll, describe, expect, test } from 'vitest';
 import path from 'path';
 import fs from 'fs';
 import { exec, ExecException } from 'child_process';

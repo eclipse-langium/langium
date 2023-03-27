@@ -4,7 +4,6 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { beforeAll, describe, expect, test } from 'vitest';
 import { createLangiumGrammarServices, EmptyFileSystem, findNameAssignment, getEntryRule, Grammar, stream } from '../../src';
 import { InferredType, isParserRule, isTerminalRule, ParserRule, TerminalRule } from '../../src/grammar/generated/ast';
 import { LangiumGrammarGrammar } from '../../src/grammar/generated/grammar';
