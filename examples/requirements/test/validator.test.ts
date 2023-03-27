@@ -4,7 +4,6 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { describe, expect, test } from 'vitest';
 import { extractDocuments } from '../src/cli/cli-util';
 import { createRequirementsAndTestsLangServices } from '../src/language-server/requirements-and-tests-lang-module';
 import * as path from 'path';

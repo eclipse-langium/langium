@@ -4,7 +4,6 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { describe, expect, test } from 'vitest';
 import { createLangiumGrammarServices, EmptyFileSystem, Grammar, normalizeEOL } from 'langium';
 import { parseHelper } from 'langium/test';
 import { generateTypesFile } from '../../src/generator/types-generator';

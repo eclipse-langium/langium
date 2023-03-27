@@ -4,7 +4,6 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { describe, test } from 'vitest';
 import { highlightHelper, expectSemanticToken } from '../../../src/test';
 import { createLangiumGrammarServices, EmptyFileSystem } from '../../../src';
 import { SemanticTokenTypes } from 'vscode-languageserver';

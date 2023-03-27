@@ -4,7 +4,6 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { beforeAll, describe, expect, test } from 'vitest';
 import { TokenPattern, TokenType } from '@chevrotain/types';
 import { createLangiumGrammarServices, Grammar, EmptyFileSystem } from '../../src';
 import { parseHelper } from '../../src/test';

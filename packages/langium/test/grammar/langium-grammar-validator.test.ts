@@ -4,7 +4,6 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { afterEach, beforeAll, describe, expect, test } from 'vitest';
 import { DiagnosticSeverity } from 'vscode-languageserver';
 import { AstNode, createLangiumGrammarServices, EmptyFileSystem, GrammarAST, Properties, streamAllContents, streamContents } from '../../src';
 import { Assignment, isAssignment, UnionType } from '../../src/grammar/generated/ast';

@@ -4,7 +4,6 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { beforeAll, describe, expect, test } from 'vitest';
 import { Utils } from 'vscode-uri';
 import { createLangiumGrammarServices, EmptyFileSystem, Grammar } from '../../../src';
 import { CrossReference, InferredType, Interface } from '../../../src/grammar/generated/ast';

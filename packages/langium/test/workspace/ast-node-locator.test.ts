@@ -4,7 +4,6 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { describe, expect, test } from 'vitest';
 import { Alternatives, Grammar, ParserRule } from '../../src/grammar/generated/ast';
 import { createLangiumGrammarServices, EmptyFileSystem } from '../../src';
 import { parseHelper } from '../../src/test';

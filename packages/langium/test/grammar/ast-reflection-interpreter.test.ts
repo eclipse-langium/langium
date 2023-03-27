@@ -4,7 +4,6 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { describe, expect, test } from 'vitest';
 import { interpretAstReflection } from '../../src';
 import { InterfaceType } from '../../src/grammar/type-system/type-collector/types';
 

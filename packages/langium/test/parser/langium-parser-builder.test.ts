@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { beforeEach, describe, expect, onTestFailed, test } from 'vitest';
+import { onTestFailed } from 'vitest';
 import { TokenType, TokenVocabulary } from 'chevrotain';
 import { AstNode, createServicesForGrammar, DefaultTokenBuilder, Grammar, GrammarAST, LangiumParser, TokenBuilderOptions } from '../../src';
 

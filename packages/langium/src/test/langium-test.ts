@@ -16,7 +16,6 @@ import { LangiumDocument } from '../workspace/documents';
 import { findNodeForProperty } from '../utils/grammar-util';
 import { SemanticTokensDecoder } from '../lsp/semantic-token-provider';
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { expect } from 'vitest';
 import { BuildOptions } from '../workspace/document-builder';
 
 export function parseHelper<T extends AstNode = AstNode>(services: LangiumServices): (input: string, buildOptions?: BuildOptions) => Promise<LangiumDocument<T>> {
@@ -43,7 +42,7 @@ let expectedFunction: ExpectFunction = (actual, expected, message) => {
             expect(actual).toEqual(expected);
         }
     } else {
-        throw new Error('No expect function provided');
+        throw new Error('No expect function provided. Use the `expectFunction` function to supply a custom expect function or install `vitest` or `jest`.');
     }
 };
 
