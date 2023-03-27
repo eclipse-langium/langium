@@ -123,7 +123,7 @@ export function expectFoldings(services: LangiumServices): (input: ExpectedFoldi
     };
 }
 
-function textDocumentParams(document: LangiumDocument): { textDocument: TextDocumentIdentifier } {
+export function textDocumentParams(document: LangiumDocument): { textDocument: TextDocumentIdentifier } {
     return { textDocument: { uri: document.textDocument.uri } };
 }
 
@@ -233,7 +233,7 @@ export function expectFindReferences(services: LangiumServices): (expectedFindRe
     };
 }
 
-function referenceParams(document: LangiumDocument, offset: number, includeDeclaration: boolean): ReferenceParams {
+export function referenceParams(document: LangiumDocument, offset: number, includeDeclaration: boolean): ReferenceParams {
     return {
         textDocument: { uri: document.textDocument.uri },
         position: document.textDocument.positionAt(offset),
@@ -293,7 +293,7 @@ export function expectFormatting(services: LangiumServices): (expectedFormatting
     };
 }
 
-function textDocumentPositionParams(document: LangiumDocument, offset: number): TextDocumentPositionParams {
+export function textDocumentPositionParams(document: LangiumDocument, offset: number): TextDocumentPositionParams {
     return { textDocument: { uri: document.textDocument.uri }, position: document.textDocument.positionAt(offset) };
 }
 
@@ -305,7 +305,7 @@ export async function parseDocument<T extends AstNode = AstNode>(services: Langi
     return document;
 }
 
-function replaceIndices(base: ExpectedBase): { output: string, indices: number[], ranges: Array<[number, number]> } {
+export function replaceIndices(base: ExpectedBase): { output: string, indices: number[], ranges: Array<[number, number]> } {
     const indices: number[] = [];
     const ranges: Array<[number, number]> = [];
     const rangeStack: number[] = [];
@@ -384,18 +384,18 @@ export interface ExpectDiagnosticOffsetOptions {
 
 export type Predicate<T> = (arg: T) => boolean;
 
-function isRangeEqual(lhs: Range, rhs: Range): boolean {
+export function isRangeEqual(lhs: Range, rhs: Range): boolean {
     return lhs.start.character === rhs.start.character
         && lhs.start.line === rhs.start.line
         && lhs.end.character === rhs.end.character
         && lhs.end.line === rhs.end.line;
 }
 
-function rangeToString(range: Range): string {
+export function rangeToString(range: Range): string {
     return `${range.start.line}:${range.start.character}--${range.end.line}:${range.end.character}`;
 }
 
-function filterByOptions<T extends AstNode = AstNode, N extends AstNode = AstNode>(validationResult: ValidationResult<T>, options: ExpectDiagnosticOptions<N>) {
+export function filterByOptions<T extends AstNode = AstNode, N extends AstNode = AstNode>(validationResult: ValidationResult<T>, options: ExpectDiagnosticOptions<N>) {
     const filters: Array<Predicate<Diagnostic>> = [];
     if ('node' in options && options.node) {
         let cstNode: CstNode | undefined = options.node.$cstNode;
