@@ -6,7 +6,7 @@
 
 import {
     CancellationTokenSource,
-    CompletionItem, Diagnostic, DiagnosticSeverity, DocumentSymbol, FormattingOptions, MarkupContent, Range, ReferenceParams, SemanticTokensParams, SemanticTokenTypes, TextDocumentIdentifier, TextDocumentPositionParams
+    CompletionItem, CompletionList, Diagnostic, DiagnosticSeverity, DocumentSymbol, FoldingRange, FormattingOptions, MarkupContent, Range, ReferenceParams, SemanticTokensParams, SemanticTokenTypes, TextDocumentIdentifier, TextDocumentPositionParams
 } from 'vscode-languageserver';
 import { URI } from 'vscode-uri';
 import { LangiumServices } from '../services';
@@ -54,43 +54,71 @@ export interface ExpectedBase {
     rangeEndMarker?: string
 }
 
-export interface ExpectedSymbols extends ExpectedBase {
-    expectedSymbols: DocumentSymbol[]
+export interface ExpectedSymbolsList extends ExpectedBase {
+    expectedSymbols: Array<string | DocumentSymbol>
+    symbolToString?: (item: DocumentSymbol) => string
 }
+export interface ExpectedSymbolsCallback extends ExpectedBase {
+    assert: (symbols: DocumentSymbol[]) => void;
+}
+export type ExpectedSymbols = ExpectedSymbolsList | ExpectedSymbolsCallback;
 
 export function expectSymbols(services: LangiumServices): (input: ExpectedSymbols) => Promise<void> {
     return async input => {
         const document = await parseDocument(services, input.text);
         const symbolProvider = services.lsp.DocumentSymbolProvider;
         const symbols = await symbolProvider?.getSymbols(document, textDocumentParams(document)) ?? [];
-        expectedFunction(symbols.length, input.expectedSymbols.length, `Expected ${input.expectedSymbols.length} but found ${symbols.length} symbols in document.`);
-        for (let i = 0; i < input.expectedSymbols.length; i++) {
-            const expected = input.expectedSymbols[i];
-            const item = symbols[i];
-            if (typeof expected === 'string') {
-                expectedFunction(item.name, expected);
+
+        if ('assert' in input && typeof input.assert === 'function') {
+            input.assert(symbols);
+
+        } else if ('expectedSymbols' in input) {
+            const symbolToString = input.symbolToString ?? (symbol => symbol.name);
+            const expectedSymbols = input.expectedSymbols;
+
+            if (symbols.length === expectedSymbols.length) {
+                for (let i = 0; i < expectedSymbols.length; i++) {
+                    const expected = expectedSymbols[i];
+                    const item = symbols[i];
+                    if (typeof expected === 'string') {
+                        expectedFunction(symbolToString(item), expected);
+                    } else {
+                        expectedFunction(item, expected);
+                    }
+                }
+
             } else {
-                expectedFunction(item, expected);
+                const symbolsMapped = symbols.map((s, i) => expectedSymbols[i] === undefined || typeof expectedSymbols[i] === 'string' ? symbolToString(s) : s);
+                expectedFunction(symbolsMapped, expectedSymbols, `Expected ${expectedSymbols.length} but found ${symbols.length} symbols in document`);
             }
         }
     };
 }
 
-export function expectFoldings(services: LangiumServices): (input: ExpectedBase) => Promise<void> {
+export interface ExpectedFoldings extends ExpectedBase {
+    assert?: (foldings: FoldingRange[], expected: Array<[number, number]>) => void;
+}
+
+export function expectFoldings(services: LangiumServices): (input: ExpectedFoldings) => Promise<void> {
     return async input => {
         const { output, ranges } = replaceIndices(input);
         const document = await parseDocument(services, output);
         const foldingRangeProvider = services.lsp.FoldingRangeProvider;
         const foldings = await foldingRangeProvider?.getFoldingRanges(document, textDocumentParams(document)) ?? [];
         foldings.sort((a, b) => a.startLine - b.startLine);
-        expectedFunction(foldings.length, ranges.length, `Expected ${ranges.length} but received ${foldings.length} foldings`);
-        for (let i = 0; i < ranges.length; i++) {
-            const expected = ranges[i];
-            const item = foldings[i];
-            const expectedStart = document.textDocument.positionAt(expected[0]);
-            const expectedEnd = document.textDocument.positionAt(expected[1]);
-            expectedFunction(item.startLine, expectedStart.line, `Expected folding start at line ${expectedStart.line} but received folding start at line ${item.startLine} instead.`);
-            expectedFunction(item.endLine, expectedEnd.line, `Expected folding end at line ${expectedEnd.line} but received folding end at line ${item.endLine} instead.`);
+        if ('assert' in input && typeof input.assert === 'function') {
+            input.assert(foldings, ranges);
+
+        } else {
+            expectedFunction(foldings.length, ranges.length, `Expected ${ranges.length} but received ${foldings.length} foldings`);
+            for (let i = 0; i < ranges.length; i++) {
+                const expected = ranges[i];
+                const item = foldings[i];
+                const expectedStart = document.textDocument.positionAt(expected[0]);
+                const expectedEnd = document.textDocument.positionAt(expected[1]);
+                expectedFunction(item.startLine, expectedStart.line, `Expected folding start at line ${expectedStart.line} but received folding start at line ${item.startLine} instead.`);
+                expectedFunction(item.endLine, expectedEnd.line, `Expected folding end at line ${expectedEnd.line} but received folding end at line ${item.endLine} instead.`);
+            }
         }
     };
 }
@@ -99,28 +127,47 @@ function textDocumentParams(document: LangiumDocument): { textDocument: TextDocu
     return { textDocument: { uri: document.textDocument.uri } };
 }
 
-export interface ExpectedCompletion extends ExpectedBase {
+export interface ExpectedCompletionItems extends ExpectedBase {
     index: number
     expectedItems: Array<string | CompletionItem>
+    itemToString?: (item: CompletionItem) => string
 }
+export interface ExpectedCompletionCallback extends ExpectedBase {
+    index: number;
+    assert: (completions: CompletionList) => void;
+}
+export type ExpectedCompletion = ExpectedCompletionItems | ExpectedCompletionCallback;
 
-export function expectCompletion(services: LangiumServices): (completion: ExpectedCompletion) => Promise<void> {
+export function expectCompletion(services: LangiumServices): (expectedCompletion: ExpectedCompletion) => Promise<void> {
     return async expectedCompletion => {
         const { output, indices } = replaceIndices(expectedCompletion);
         const document = await parseDocument(services, output);
         const completionProvider = services.lsp.CompletionProvider;
         const offset = indices[expectedCompletion.index];
-        const completions = await completionProvider?.getCompletion(document, textDocumentPositionParams(document, offset)) ?? { items: [] };
-        const expectedItems = expectedCompletion.expectedItems;
-        const items = completions.items.sort((a, b) => a.sortText?.localeCompare(b.sortText || '0') || 0);
-        expectedFunction(items.length, expectedItems.length, `Expected ${expectedItems.length} but received ${items.length} completion items`);
-        for (let i = 0; i < expectedItems.length; i++) {
-            const expected = expectedItems[i];
-            const completion = items[i];
-            if (typeof expected === 'string') {
-                expectedFunction(completion.label, expected);
+        const completions = await completionProvider?.getCompletion(document, textDocumentPositionParams(document, offset)) ?? { isIncomplete: false, items: [] };
+
+        if ('assert' in expectedCompletion && typeof expectedCompletion.assert === 'function') {
+            expectedCompletion.assert(completions);
+
+        } else if ('expectedItems' in expectedCompletion) {
+            const itemToString = expectedCompletion.itemToString ?? (completion => completion.label);
+            const expectedItems = expectedCompletion.expectedItems;
+            const items = completions.items.sort((a, b) => a.sortText?.localeCompare(b.sortText || '0') || 0);
+
+            if (items.length === expectedItems.length) {
+                for (let i = 0; i < expectedItems.length; i++) {
+                    const expected = expectedItems[i];
+                    const completion = items[i];
+                    if (typeof expected === 'string') {
+                        expectedFunction(itemToString(completion), expected);
+                    } else {
+                        expectedFunction(completion, expected);
+                    }
+                }
+
             } else {
-                expectedFunction(completion, expected);
+                const itemsMapped = items.map((s, i) => expectedItems[i] === undefined || typeof expectedItems[i] === 'string' ? itemToString(s) : s);
+                expectedFunction(itemsMapped, expectedItems, `Expected ${expectedItems.length} but received ${items.length} completion items`);
             }
         }
     };
