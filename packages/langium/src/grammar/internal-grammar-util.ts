@@ -37,8 +37,9 @@ export function isDataTypeRule(rule: ast.ParserRule): boolean {
 function isDataTypeRuleInternal(rule: ast.ParserRule, visited: Set<ast.ParserRule>): boolean {
     if (visited.has(rule)) {
         return true;
+    } else {
+        visited.add(rule);
     }
-    visited.add(rule);
     for (const node of streamAllContents(rule)) {
         if (ast.isRuleCall(node)) {
             if (!node.rule.ref) {
@@ -55,6 +56,47 @@ function isDataTypeRuleInternal(rule: ast.ParserRule, visited: Set<ast.ParserRul
         }
     }
     return Boolean(rule.definition);
+}
+
+export function hasDataTypeReturn(rule: ast.ParserRule): boolean {
+    const returnType = rule.returnType?.ref;
+    return rule.dataType !== undefined || (ast.isType(returnType) && isDataType(returnType));
+}
+
+export function isDataType(type: ast.Type): boolean {
+    return isDataTypeInternal(type.type, new Set());
+}
+
+function isDataTypeInternal(type: ast.TypeDefinition, visited: Set<ast.TypeDefinition>): boolean {
+    if (visited.has(type)) {
+        return true;
+    } else {
+        visited.add(type);
+    }
+    if (ast.isArrayType(type)) {
+        return false;
+    } else if (ast.isReferenceType(type)) {
+        return false;
+    } else if (ast.isUnionType(type)) {
+        return type.types.every(e => isDataTypeInternal(e, visited));
+    } else if (ast.isSimpleType(type)) {
+        if (type.primitiveType !== undefined) {
+            return true;
+        } else if (type.stringType !== undefined) {
+            return true;
+        } else if (type.typeRef !== undefined) {
+            const ref = type.typeRef.ref;
+            if (ast.isType(ref)) {
+                return isDataTypeInternal(ref.type, visited);
+            } else {
+                return false;
+            }
+        } else {
+            return false;
+        }
+    } else {
+        return false;
+    }
 }
 
 export function getActionAtElement(element: ast.AbstractElement): ast.Action | undefined {

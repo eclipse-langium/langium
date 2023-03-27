@@ -6,7 +6,7 @@
 
 import { DiagnosticSeverity } from 'vscode-languageserver';
 import { AstNode, createLangiumGrammarServices, EmptyFileSystem, GrammarAST, Properties, streamAllContents, streamContents } from '../../src';
-import { Assignment, isAssignment, UnionType } from '../../src/grammar/generated/ast';
+import { Assignment, isAssignment, ParserRule, UnionType } from '../../src/grammar/generated/ast';
 import { IssueCodes } from '../../src/grammar/validation/validator';
 import { clearDocuments, expectError, expectIssue, expectNoIssues, expectWarning, parseHelper, validationHelper, ValidationResult } from '../../src/test';
 
@@ -138,6 +138,46 @@ describe('Langium grammar validation', () => {
         expect(validationResult.diagnostics).toHaveLength(1);
         expect(validationResult.diagnostics[0].code).toBe(IssueCodes.InvalidInfers);
     });
+});
+
+describe('Data type rule return type', () => {
+
+    test('normal rule + data type return type = error', async () => {
+        const validationResult = await validate(`
+            ParserRule returns string: name='ParserRule';
+        `);
+        expectError(validationResult, 'Normal parser rules are not allowed to return a primitive value. Use a datatype rule for that.', {
+            node: validationResult.document.parseResult.value.rules[0] as ParserRule,
+            property: 'dataType'
+        });
+    });
+
+    test('data type rule + primitive data type = valid', async () => {
+        const validationResult = await validate(`
+            ParserRule returns string: 'ParserRule';
+        `);
+        expectNoIssues(validationResult);
+    });
+
+    test('data type rule + complex data type = valid', async () => {
+        const validationResult = await validate(`
+            ParserRule returns ParserRuleType: 'ParserRule';
+            type ParserRuleType = 'ParserRule';
+        `);
+        expectNoIssues(validationResult);
+    });
+
+    test('normal rule + complex data type = error', async () => {
+        const validationResult = await validate(`
+            ParserRule returns ParserRuleType: name='ParserRule';
+            type ParserRuleType = 'ParserRule';
+        `);
+        expectError(validationResult, 'Normal parser rules are not allowed to return a primitive value. Use a datatype rule for that.', {
+            node: validationResult.document.parseResult.value.rules[0] as ParserRule,
+            property: 'returnType'
+        });
+    });
+
 });
 
 describe('checkReferenceToRuleButNotType', () => {

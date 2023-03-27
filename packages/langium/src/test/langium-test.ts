@@ -328,7 +328,7 @@ export interface ExpectDiagnosticCode {
 }
 
 export interface ExpectDiagnosticAstOptions<T extends AstNode> {
-    node: T;
+    node?: T;
     property?: Properties<T> | { name: Properties<T>, index?: number };
 }
 
@@ -356,7 +356,7 @@ function rangeToString(range: Range): string {
 
 function filterByOptions<T extends AstNode = AstNode, N extends AstNode = AstNode>(validationResult: ValidationResult<T>, options: ExpectDiagnosticOptions<N>) {
     const filters: Array<Predicate<Diagnostic>> = [];
-    if ('node' in options) {
+    if ('node' in options && options.node) {
         let cstNode: CstNode | undefined = options.node.$cstNode;
         if (options.property) {
             const name = typeof options.property === 'string' ? options.property : options.property.name;

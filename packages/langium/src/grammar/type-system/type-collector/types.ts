@@ -261,15 +261,17 @@ export function isTypeAssignable(from: PropertyType, to: PropertyType): boolean 
         return from.types.every(fromType => isTypeAssignable(fromType, to));
     } else if (isPropertyUnion(to)) {
         return to.types.some(toType => isTypeAssignable(from, toType));
+    } else if (isValueType(to) && isUnionType(to.value)) {
+        if (isValueType(from) && isUnionType(from.value) && to.value.name === from.value.name) {
+            return true;
+        }
+        return isTypeAssignable(from, to.value.type);
     } else if (isReferenceType(from)) {
         return isReferenceType(to) && isTypeAssignable(from.referenceType, to.referenceType);
     } else if (isArrayType(from)) {
         return isArrayType(to) && isTypeAssignable(from.elementType, to.elementType);
     } else if (isValueType(from)) {
         if (isUnionType(from.value)) {
-            if (isValueType(to) && to.value.name === from.value.name) {
-                return true;
-            }
             return isTypeAssignable(from.value.type, to);
         }
         if (!isValueType(to)) {
@@ -321,7 +323,8 @@ export function propertyTypeToString(type: PropertyType, mode: 'AstType' | 'Decl
     } else if (isPrimitiveType(type)) {
         return type.primitive;
     } else if (isStringType(type)) {
-        return `'${type.string}'`;
+        const delimiter = mode === 'AstType' ? "'" : '"';
+        return `${delimiter}${type.string}${delimiter}`;
     }
     throw new Error('Invalid type');
 }

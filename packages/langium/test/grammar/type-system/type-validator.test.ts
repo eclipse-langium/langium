@@ -75,9 +75,10 @@ describe('validate params in types', () => {
         `.trim();
 
         // verify we have no errors
-        const document = await parseDocument(grammarServices, prog);
-        const diagnostics: Diagnostic[] = await grammarServices.validation.DocumentValidator.validateDocument(document);
-        expect(diagnostics.filter(d => d.severity === DiagnosticSeverity.Error)).toHaveLength(0);
+        const validation = await validate(prog);
+        expectNoIssues(validation, {
+            severity: DiagnosticSeverity.Error
+        });
     });
 
 });
@@ -91,10 +92,10 @@ describe('validate inferred types', () => {
         terminal ID: /[a-zA-Z_][a-zA-Z0-9_]*/;
         `.trim();
 
-        const document = await parseDocument(grammarServices, prog);
-        const diagnostics: Diagnostic[] = await grammarServices.validation.DocumentValidator.validateDocument(document);
-        expect(diagnostics.filter(d => d.severity === DiagnosticSeverity.Error)).toHaveLength(0);
-
+        const validation = await validate(prog);
+        expectNoIssues(validation, {
+            severity: DiagnosticSeverity.Error
+        });
     });
 });
 
@@ -113,10 +114,10 @@ describe('Work with imported declared types', () => {
 
         terminal ID: /\\^?[_a-zA-Z][\\w_]*/;
         `.trim();
-        const document = await parseDocument(grammarServices, prog);
-        const diagnostics: Diagnostic[] = await grammarServices.validation.DocumentValidator.validateDocument(document);
-        expect(diagnostics.filter(d => d.severity === DiagnosticSeverity.Error)).toHaveLength(0);
-
+        const validation = await validate(prog);
+        expectNoIssues(validation, {
+            severity: DiagnosticSeverity.Error
+        });
     });
 });
 
@@ -156,11 +157,10 @@ describe('validate declared types', () => {
         hidden terminal WS: /\\s+/;
         terminal ID: /[a-zA-Z_][a-zA-Z0-9_]*/;
         `.trim();
-
-        const document = await parseDocument(grammarServices, prog);
-        const diagnostics: Diagnostic[] = await grammarServices.validation.DocumentValidator.validateDocument(document);
-        expect(diagnostics.filter(d => d.severity === DiagnosticSeverity.Error)).toHaveLength(0);
-
+        const validation = await validate(prog);
+        expectNoIssues(validation, {
+            severity: DiagnosticSeverity.Error
+        });
     });
 
     test('Can return an interface from a rule that would return a union type', async () => {
@@ -173,7 +173,47 @@ describe('validate declared types', () => {
         interface X { }
         `;
         const validation = await validate(grammar);
-        expectNoIssues(validation);
+        expectNoIssues(validation, {
+            severity: DiagnosticSeverity.Error
+        });
+    });
+
+    test('Can reuse a type declaration consisting of primitive types as property type', async () => {
+        const validationResult = await validate(`
+            interface State {
+                type: StateType;
+            }
+            
+            type StateType = 'normal' | 'final';
+            
+            State returns State: type=('normal' | 'final');
+        `);
+        expectNoIssues(validationResult);
+    });
+
+    test('Shows error on unassignable type union used as property type', async () => {
+        const validationResult = await validate(`
+            interface State {
+                type: StateType;
+            }
+            
+            type StateType = 'normal' | 'final';
+            
+            State returns State: type='default';
+        `);
+
+        expectError(validationResult, "The assigned type '\"default\"' is not compatible with the declared property 'type' of type 'StateType'.", {
+            range: {
+                start: {
+                    line: 7,
+                    character: 33
+                },
+                end: {
+                    line: 7,
+                    character: 37
+                }
+            }
+        });
     });
 });
 
