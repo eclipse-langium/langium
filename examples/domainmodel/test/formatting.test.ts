@@ -4,22 +4,15 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { describe, test, beforeAll, expect } from 'vitest';
+import { describe, test } from 'vitest';
 import { EmptyFileSystem } from 'langium';
-import { expectFormatting, expectFunction } from 'langium/test';
+import { expectFormatting } from 'langium/test';
 import { createDomainModelServices } from '../src/language-server/domain-model-module';
 
 const services = createDomainModelServices({ ...EmptyFileSystem }).domainmodel;
 const formatting = expectFormatting(services);
 
 describe('Domain model formatting', () => {
-
-    beforeAll(() => {
-        // override expect function to use the one from Vitest
-        expectFunction((a,e) => {
-            expect(a).toBe(e);
-        });
-    });
 
     test('Should create newline formatting', async () => {
         await formatting({
