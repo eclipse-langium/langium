@@ -70,6 +70,7 @@ export function isValueType(propertyType: PropertyType): propertyType is ValueTy
 
 export interface PrimitiveType {
     primitive: string
+    regex?: string
 }
 
 export function isPrimitiveType(propertyType: PropertyType): propertyType is PrimitiveType {
@@ -123,6 +124,17 @@ export class UnionType {
             unionNode.append(NL);
             pushReflectionInfo(unionNode, this.name);
         }
+
+        if (isStringType(this.type)) {
+            pushDataTypeReflectionInfo(unionNode, this);
+        }
+
+        if (isPropertyUnion(this.type)) {
+            if (containsOnlyStringTypes(this)) {
+                pushDataTypeReflectionInfo(unionNode, this);
+            }
+        }
+
         return toString(unionNode);
     }
 
@@ -376,6 +388,114 @@ function pushReflectionInfo(node: CompositeGeneratorNode, name: string) {
     node.append('}', NL);
 }
 
+function pushDataTypeReflectionInfo(node: CompositeGeneratorNode, union: UnionType) {
+    const subTypes = Array.from(union.subTypes).map(e => e.name);
+    const strings = collectStringValuesFromDataType(union);
+    const regexes = collectRegexesFromDataType(union);
+    const returnString = createDataTypeCheckerFunctionReturnString(subTypes, strings, regexes);
+    node.append(`export function is${union.name}(item: string): item is ${union.name} {`, NL);
+    node.indent(body => {
+        body.append(returnString + ';', NL);
+    });
+    node.append('}', NL);
+}
+
+function createDataTypeCheckerFunctionReturnString(subTypes: string[], strings: string[], regexes: string[]): string {
+    let returnString = 'return ';
+    if (subTypes.length > 0) {
+        for (let i = 0; i < subTypes.length; i++) {
+            returnString += `is${subTypes[i]}(item)`;
+            if (i < subTypes.length - 1) {
+                returnString += ' || ';
+            }
+        }
+    }
+    if (subTypes.length > 0 && strings.length > 0) {
+        returnString += ' || ';
+    }
+    if (strings.length > 0) {
+        for (let i = 0; i < strings.length; i++) {
+            returnString += `item === '${strings[i]}'`;
+            if (i < strings.length - 1) {
+                returnString += ' || ';
+            }
+        }
+    }
+    if ((subTypes.length > 0 || strings.length >0 ) && regexes.length > 0) {
+        returnString += ' || ';
+    }
+    if (regexes.length > 0) {
+        for (let i = 0; i < regexes.length; i++) {
+            returnString += `/${regexes[i]}/.test(item)`;
+            if (i < regexes.length - 1) {
+                returnString +=' || ';
+            }
+        }
+    }
+    return returnString;
+}
+
 function escapeReservedWords(name: string, reserved: Set<string>): string {
     return reserved.has(name) ? `^${name}` : name;
+}
+
+function containsOnlyStringTypes(union: UnionType): boolean {
+    let result = true;
+    if(isPrimitiveType(union.type)) {
+        if (union.type.primitive === 'string' && union.type.regex) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+    if (isStringType(union.type)) {
+        return true;
+    }
+    if (!isPropertyUnion(union.type)) {
+        return false;
+    } else {
+        for(const type of union.type.types) {
+            if (isValueType(type) && isUnionType(type.value)) {
+                result = containsOnlyStringTypes(type.value);
+                if (!result) break;
+            } else if (isStringType(type) ){
+                return true;
+            } else if (isPrimitiveType(type)) {
+                if (type.primitive === 'string' && type.regex) {
+                    return true;
+                } else {
+                    return false;
+                }
+            } else {
+                return false;
+            }
+        }
+    }
+    return result;
+}
+
+function collectStringValuesFromDataType(union: UnionType): string[] {
+    const values: string[] = [];
+    if (isStringType(union.type)) {
+        return [union.type.string];
+    }
+    if (isPropertyUnion(union.type)) {
+        const strings = union.type.types.filter(e => isStringType(e)).map(e => (e as StringType).string);
+        values.push(...strings);
+    }
+    return values;
+}
+
+function collectRegexesFromDataType(union: UnionType): string[] {
+    const regexes: string[] = [];
+    if (isPrimitiveType(union.type) && union.type.primitive === 'string' && union.type.regex) {
+        regexes.push(union.type.regex);
+    }
+    if (isPropertyUnion(union.type)) {
+        const regexesArray = union.type.types.filter(e => isPrimitiveType(e) && e.primitive === 'string' && e.regex);
+        if (regexesArray.length > 0) {
+            regexes.push(...regexesArray.map(e => (e as PrimitiveType).regex!));
+        }
+    }
+    return regexes;
 }

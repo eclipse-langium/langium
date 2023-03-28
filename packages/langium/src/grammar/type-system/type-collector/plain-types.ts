@@ -88,6 +88,7 @@ export function isPlainValueType(propertyType: PlainPropertyType): propertyType 
 
 export interface PlainPrimitiveType {
     primitive: string;
+    regex?: string;
 }
 
 export function isPlainPrimitiveType(propertyType: PlainPropertyType): propertyType is PlainPrimitiveType {
@@ -172,7 +173,8 @@ function plainToPropertyType(type: PlainPropertyType, union: UnionType | undefin
         };
     } else if (isPlainPrimitiveType(type)) {
         return {
-            primitive: type.primitive
+            primitive: type.primitive,
+            regex: type.regex
         };
     } else if (isPlainValueType(type)) {
         const value = interfaces.get(type.value) || unions.get(type.value);

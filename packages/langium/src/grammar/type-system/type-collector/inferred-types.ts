@@ -6,7 +6,7 @@
 
 import { isNamed } from '../../../references/name-provider';
 import { MultiMap } from '../../../utils/collections';
-import { ParserRule, isAlternatives, isKeyword, Action, isParserRule, isAction, AbstractElement, isGroup, isUnorderedGroup, isAssignment, isRuleCall, Assignment, isCrossReference, RuleCall, isTerminalRule } from '../../generated/ast';
+import { ParserRule, isAlternatives, isKeyword, Action, isParserRule, isAction, AbstractElement, isGroup, isUnorderedGroup, isAssignment, isRuleCall, Assignment, isCrossReference, RuleCall, isTerminalRule, isRegexToken } from '../../generated/ast';
 import { getTypeNameWithoutError, isOptionalCardinality, getRuleType, isPrimitiveType } from '../../internal-grammar-util';
 import { mergePropertyTypes, PlainAstTypes, PlainInterface, PlainProperty, PlainPropertyType, PlainUnion } from './plain-types';
 
@@ -279,8 +279,13 @@ function buildDataRuleType(element: AbstractElement, cancel: () => PlainProperty
         const ref = element.rule?.ref;
         if (ref) {
             if (isTerminalRule(ref)) {
+                let regex;
+                if (isRegexToken(ref.definition)) {
+                    regex = ref.definition.regex;
+                }
                 return {
-                    primitive: ref.type?.name ?? 'string'
+                    primitive: ref.type?.name ?? 'string',
+                    regex: regex
                 };
             } else {
                 return {
