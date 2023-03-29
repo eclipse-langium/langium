@@ -123,20 +123,41 @@ export class DefaultCompletionProvider implements CompletionProvider {
             }
         };
 
-        const node = findLeafNodeAtOffset(cst, this.backtrackToAnyToken(text, offset));
+        const lastTokenOffset = this.backtrackToAnyToken(text, offset);
+
+        const astNode = findLeafNodeAtOffset(cst, lastTokenOffset)?.element;
 
         const context: CompletionContext = {
             document,
             textDocument,
-            node: node?.element,
+            node: astNode,
             offset,
             position: params.position
         };
 
-        if (!node) {
+        if (!astNode) {
             const parserRule = getEntryRule(this.grammar)!;
             await this.completionForRule(context, parserRule, acceptor);
             return CompletionList.create(items, true);
+        }
+
+        const contexts: CompletionContext[] = [context];
+
+        // In some cases, the completion depends on the concrete AST node at the current position
+        // Often times, it is not clear whether the completion is related to the ast node at the current cursor position
+        // (i.e. associated with the character right after the cursor), or the one before the cursor.
+        // If these are different AST nodes, then we perform the completion twice
+        if (lastTokenOffset === offset && lastTokenOffset > 0) {
+            const previousAstNode = findLeafNodeAtOffset(cst, lastTokenOffset - 1)?.element;
+            if (previousAstNode !== astNode) {
+                contexts.push({
+                    document,
+                    textDocument,
+                    node: previousAstNode,
+                    offset,
+                    position: params.position
+                });
+            }
         }
 
         const parserStart = this.backtrackToTokenStart(text, offset);
@@ -158,7 +179,7 @@ export class DefaultCompletionProvider implements CompletionProvider {
         await Promise.all(
             stream(beforeFeatures)
                 .distinct(distinctionFunction)
-                .map(e => this.completionFor(context, e, acceptor))
+                .map(e => this.completionForContexts(contexts, e, acceptor))
         );
 
         if (reparse) {
@@ -166,11 +187,21 @@ export class DefaultCompletionProvider implements CompletionProvider {
                 stream(afterFeatures)
                     .exclude(beforeFeatures, distinctionFunction)
                     .distinct(distinctionFunction)
-                    .map(e => this.completionFor(context, e, acceptor))
+                    .map(e => this.completionForContexts(contexts, e, acceptor))
             );
         }
 
-        return CompletionList.create(items, true);
+        return CompletionList.create(this.deduplicateItems(items), true);
+    }
+
+    /**
+     * The completion algorithm could yield the same reference/keyword multiple times.
+     *
+     * This methods deduplicates these items afterwards before returning to the client.
+     * Unique items are identified as a combination of `kind`, `label` and `detail`
+     */
+    protected deduplicateItems(items: CompletionItem[]): CompletionItem[] {
+        return stream(items).distinct(item => `${item.kind}_${item.label}_${item.detail}`).toArray();
     }
 
     /**
@@ -239,6 +270,12 @@ export class DefaultCompletionProvider implements CompletionProvider {
         if (ast.isParserRule(rule)) {
             const firstFeatures = findFirstFeatures(rule.definition);
             await Promise.all(firstFeatures.map(next => this.completionFor(context, next, acceptor)));
+        }
+    }
+
+    protected async completionForContexts(contexts: CompletionContext[], next: NextFeature, acceptor: CompletionAcceptor): Promise<void> {
+        for (const context of contexts) {
+            await this.completionFor(context, next, acceptor);
         }
     }
 
