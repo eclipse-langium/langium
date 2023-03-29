@@ -4,6 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import { describe, test } from 'vitest';
 import { createLangiumGrammarServices, createServicesForGrammar, EmptyFileSystem } from '../../src';
 import { expectCompletion } from '../../src/test';
 
@@ -77,7 +78,7 @@ describe('Langium completion provider', () => {
 
 describe('Completion within alternatives', () => {
 
-    it('Should show correct keywords in completion of entry rule', async () => {
+    test('Should show correct keywords in completion of entry rule', async () => {
 
         const grammar = `
         grammar g
@@ -106,7 +107,7 @@ describe('Completion within alternatives', () => {
         });
     });
 
-    it('Should show correct cross reference and keyword in completion', async () => {
+    test('Should show correct cross reference and keyword in completion', async () => {
 
         const grammar = `
         grammar g

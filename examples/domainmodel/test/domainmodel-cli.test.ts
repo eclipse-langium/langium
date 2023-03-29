@@ -6,6 +6,7 @@
 
 import path from 'path';
 import fs from 'fs';
+import { afterEach, describe, expect, test } from 'vitest';
 import { exec, ExecException } from 'child_process';
 import { generateAction } from '../src/cli/generator';
 

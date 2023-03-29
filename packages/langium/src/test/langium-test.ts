@@ -36,7 +36,7 @@ export type ExpectFunction = (actual: unknown, expected: unknown, message?: stri
 let expectedFunction: ExpectFunction = (actual, expected, message) => {
     if (typeof expect === 'function') {
         if (message && expect.length === 2) {
-            // With `jest-expect-message`
+            // With `jest-expect-message` or `vitest`
             expect(actual, message).toEqual(expected);
         } else {
             expect(actual).toEqual(expected);

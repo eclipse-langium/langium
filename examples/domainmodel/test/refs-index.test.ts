@@ -4,6 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import { describe, expect, test } from 'vitest';
 import { AstNode, EmptyFileSystem, getDocument, LangiumDocument, ReferenceDescription } from 'langium';
 import { parseDocument } from 'langium/lib/test';
 import { TextDocument } from 'vscode-languageserver-textdocument';
