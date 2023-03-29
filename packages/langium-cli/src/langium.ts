@@ -41,7 +41,7 @@ program.parse(process.argv);
 
 async function runGenerator(options: GenerateOptions): Promise<void> {
     const configs = await loadConfigs(options);
-    const validation = validate(configs, schema, {
+    const validation = validate(configs, await schema, {
         nestedErrors: true
     });
     if (!validation.valid) {
