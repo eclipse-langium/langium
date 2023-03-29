@@ -68,7 +68,7 @@ export function getFilePath(absPath: string, config: LangiumConfig): string {
     return path.relative(base, absPath);
 }
 
-export async function loadConfigs(options: GenerateOptions): Promise<LangiumConfig[]> {
+export async function loadConfig(options: GenerateOptions): Promise<LangiumConfig> {
     let filePath: string;
     if (options.file) {
         filePath = path.normalize(options.file);
@@ -83,26 +83,13 @@ export async function loadConfigs(options: GenerateOptions): Promise<LangiumConf
     log('log', options, `Reading config from ${chalk.white.bold(filePath)}`);
     try {
         const obj = await fs.readJson(filePath, { encoding: 'utf-8' });
-        const config: LangiumConfig | LangiumConfig[] = path.basename(filePath) === 'package.json' ? obj.langium : obj;
-        if (Array.isArray(config)) {
-            config.forEach(c => {
-                c[RelativePath] = relativePath;
-            });
-            return setProjectNames(config);
-        } else {
-            config[RelativePath] = relativePath;
-        }
-        return setProjectNames([config]);
+        const config: LangiumConfig = path.basename(filePath) === 'package.json' ? obj.langium : obj;
+        config.projectName = _.camelCase(config.projectName);
+        config.projectName = config.projectName.charAt(0).toUpperCase() + config.projectName.slice(1);
+        config[RelativePath] = relativePath;
+        return config;
     } catch (err) {
         log('error', options, chalk.red('Failed to read config file.'), err);
         process.exit(1);
     }
-}
-
-function setProjectNames(configs: LangiumConfig[]): LangiumConfig[] {
-    for (const config of configs) {
-        config.projectName = _.camelCase(config.projectName);
-        config.projectName = config.projectName.charAt(0).toUpperCase() + config.projectName.slice(1);
-    }
-    return configs;
 }
