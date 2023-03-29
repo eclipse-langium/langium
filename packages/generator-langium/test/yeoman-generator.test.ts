@@ -4,6 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import { describe, test } from 'vitest';
 import { normalizeEOL } from 'langium';
 import path from 'path';
 import { createHelpers } from 'yeoman-test';
