@@ -1,5 +1,5 @@
 {
-    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$schema": "https://json-schema.org/draft-07/schema#",
     "$defs": {
         "chevrotainParserConfig": {
             "description": "An object to describe the Chevrotain parser configuration",
@@ -33,6 +33,81 @@
                     "type": "boolean"
                 }
             }
+        },
+        "languageItem": {
+            "type": "object",
+            "description": "A single language configuration",
+            "additionalProperties": false,
+            "properties": {
+                "id": {
+                    "description": "The Id used to refer to the DSL",
+                    "type": "string"
+                },
+                "grammar": {
+                    "description": "The relative file path to the .langium grammar file",
+                    "type": "string"
+                },
+                "fileExtensions": {
+                    "description": "The file extensions used by the DSL",
+                    "type": "array",
+                    "items": [
+                        {
+                            "type": "string"
+                        }
+                    ]
+                },
+                "caseInsensitive": {
+                    "description": "Enable case-insensitive keywords parsing",
+                    "type": "boolean"
+                },
+                "textMate": {
+                    "description": "An object to describe the textMate grammar properties",
+                    "type": "object",
+                    "properties": {
+                        "out": {
+                            "description": "The output file path to the generated textMate grammar",
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "out"
+                    ]
+                },
+                "monarch": {
+                    "description": "An object to describe the monarch grammar properties",
+                    "type": "object",
+                    "properties": {
+                        "out": {
+                            "description": "The output file path to the generated monarch grammar",
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "out"
+                    ]
+                },
+                "prism": {
+                    "description": "An object to describe the prism grammar properties",
+                    "type": "object",
+                    "properties": {
+                        "out": {
+                            "description": "The output file path to the generated prism grammar",
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "out"
+                    ]
+                },
+                "chevrotainParserConfig": {
+                    "$ref": "#/$defs/chevrotainParserConfig"
+                }
+            },
+            "required": [
+                "id",
+                "grammar",
+                "fileExtensions"
+            ]
         }
     },
     "type": "object",
@@ -46,83 +121,10 @@
         "languages": {
             "description": "Your language configurations",
             "type": "array",
-            "items": [
-                {
-                    "type": "object",
-                    "description": "A single language configuration",
-                    "additionalProperties": false,
-                    "properties": {
-                        "id": {
-                            "description": "The Id used to refer to the DSL",
-                            "type": "string"
-                        },
-                        "grammar": {
-                            "description": "The relative file path to the .langium grammar file",
-                            "type": "string"
-                        },
-                        "fileExtensions": {
-                            "description": "The file extensions used by the DSL",
-                            "type": "array",
-                            "items": [
-                                {
-                                    "type": "string"
-                                }
-                            ]
-                        },
-                        "caseInsensitive": {
-                            "description": "Enable case-insensitive keywords parsing",
-                            "type": "boolean"
-                        },
-                        "textMate": {
-                            "description": "An object to describe the textMate grammar properties",
-                            "type": "object",
-                            "properties": {
-                                "out": {
-                                    "description": "The output file path to the generated textMate grammar",
-                                    "type": "string"
-                                }
-                            },
-                            "required": [
-                                "out"
-                            ]
-                        },
-                        "monarch": {
-                            "description": "An object to describe the monarch grammar properties",
-                            "type": "object",
-                            "properties": {
-                                "out": {
-                                    "description": "The output file path to the generated monarch grammar",
-                                    "type": "string"
-                                }
-                            },
-                            "required": [
-                                "out"
-                            ]
-                        },
-                        "prism": {
-                            "description": "An object to describe the prism grammar properties",
-                            "type": "object",
-                            "properties": {
-                                "out": {
-                                    "description": "The output file path to the generated prism grammar",
-                                    "type": "string"
-                                }
-                            },
-                            "required": [
-                                "out"
-                            ]
-                        },
-                        "chevrotainParserConfig": {
-                            "$ref": "#/$defs/chevrotainParserConfig"
-                        }
-                    },
-                    "required": [
-                        "id",
-                        "grammar",
-                        "fileExtensions"
-                    ]
-                }
-            ]
+            "additionalItems": false,
+            "items": {
+                "$ref": "#/$defs/languageItem"
+            }
         },
         "out": {
             "description": "The relative directory to the code generated by the langium-cli",
