@@ -17,6 +17,7 @@ import { findNodeForProperty } from '../utils/grammar-util';
 import { SemanticTokensDecoder } from '../lsp/semantic-token-provider';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { BuildOptions } from '../workspace/document-builder';
+import assert from 'assert';
 
 export function parseHelper<T extends AstNode = AstNode>(services: LangiumServices): (input: string, buildOptions?: BuildOptions) => Promise<LangiumDocument<T>> {
     const metaData = services.LanguageMetaData;
@@ -34,20 +35,13 @@ export function parseHelper<T extends AstNode = AstNode>(services: LangiumServic
 export type ExpectFunction = (actual: unknown, expected: unknown, message?: string) => void;
 
 let expectedFunction: ExpectFunction = (actual, expected, message) => {
-    if (typeof expect === 'function') {
-        if (message && expect.length === 2) {
-            // With `jest-expect-message` or `vitest`
-            expect(actual, message).toEqual(expected);
-        } else {
-            expect(actual).toEqual(expected);
-        }
-    } else {
-        throw new Error('No expect function provided. Use the `expectFunction` function to supply a custom expect function or install `vitest` or `jest`.');
-    }
+    assert.deepStrictEqual(actual, expected, message);
 };
 
 /**
- * Overrides the assertion function used by tests. Tries to use Jest by default.
+ * Overrides the assertion function used by tests. Uses `assert.deepStrictEqual` by default
+ *
+ * @deprecated Since 1.2.0. Do not override the assertion functionality.
  */
 export function expectFunction(functions: ExpectFunction): void {
     expectedFunction = functions;
