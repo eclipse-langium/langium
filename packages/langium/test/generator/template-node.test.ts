@@ -4,6 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import { describe, expect, test } from 'vitest';
 import { EOL, toString } from '../../src/generator/generator-node';
 import { joinToNode } from '../../src/generator/node-joiner';
 import { expandToNode as n } from '../../src/generator/template-node';

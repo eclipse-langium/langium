@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { onTestFailed } from 'vitest';
+import { describe, expect, onTestFailed, test } from 'vitest';
 import * as s from '../../src/utils/stream';
 
 describe('stream', () => {

@@ -5,6 +5,7 @@
  ******************************************************************************/
 
 import { Utils } from 'vscode-uri';
+import { beforeAll, describe, expect, test } from 'vitest';
 import { createLangiumGrammarServices, EmptyFileSystem, Grammar } from '../../../src';
 import { CrossReference, InferredType, Interface } from '../../../src/grammar/generated/ast';
 import { clearDocuments, parseHelper } from '../../../src/test';

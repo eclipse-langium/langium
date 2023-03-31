@@ -16,7 +16,6 @@ export default defineConfig({
         },
         deps: {
             interopDefault: true
-        },
-        globals: true
+        }
     }
 });

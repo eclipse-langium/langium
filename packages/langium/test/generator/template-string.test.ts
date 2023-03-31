@@ -4,6 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import { expect, test } from 'vitest';
 import { expandToString as s, normalizeEOL } from '../../src/generator/template-string';
 
 test('Should not throw when substituting null', () => {

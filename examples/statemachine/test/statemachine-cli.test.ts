@@ -6,6 +6,7 @@
 
 import path from 'path';
 import fs from 'fs';
+import { afterAll, describe, expect, test } from 'vitest';
 import { exec, ExecException } from 'child_process';
 
 describe('Test the statemachine CLI', () => {

@@ -4,6 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import { describe, expect, test } from 'vitest';
 import { createLangiumGrammarServices, EmptyFileSystem, Grammar } from '../../src';
 import { parseHelper } from '../../src/test';
 import * as cstUtil from '../../src/utils/cst-util';

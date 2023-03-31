@@ -4,6 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import { describe, expect, test } from 'vitest';
 import { Deferred, delayNextTick, MutexLock } from '../../src';
 
 describe('Mutex locking', () => {
