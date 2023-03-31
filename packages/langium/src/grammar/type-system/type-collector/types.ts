@@ -5,9 +5,7 @@
  ******************************************************************************/
 
 import { CompositeGeneratorNode, NL, toString } from '../../../generator/generator-node';
-import { CstNode } from '../../../syntax-tree';
 import { Assignment, Action, TypeAttribute } from '../../generated/ast';
-import { distinctAndSorted } from '../types-util';
 
 export interface Property {
     name: string,
@@ -245,17 +243,6 @@ export class InterfaceType {
     }
 }
 
-export class TypeResolutionError extends Error {
-    readonly target: CstNode | undefined;
-
-    constructor(message: string, target: CstNode | undefined) {
-        super(message);
-        this.name = 'TypeResolutionError';
-        this.target = target;
-    }
-
-}
-
 export function isTypeAssignable(from: PropertyType, to: PropertyType): boolean {
     if (isPropertyUnion(from)) {
         return from.types.every(fromType => isTypeAssignable(fromType, to));
@@ -381,4 +368,8 @@ function pushReflectionInfo(node: CompositeGeneratorNode, name: string) {
 
 function escapeReservedWords(name: string, reserved: Set<string>): string {
     return reserved.has(name) ? `^${name}` : name;
+}
+
+function distinctAndSorted<T>(list: T[], compareFn?: (a: T, b: T) => number): T[] {
+    return Array.from(new Set(list)).sort(compareFn);
 }

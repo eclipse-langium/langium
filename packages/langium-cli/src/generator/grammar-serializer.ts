@@ -14,8 +14,8 @@ export function serializeGrammar(services: LangiumServices, grammars: Grammar[],
 
     if (config.langiumInternal) {
         node.append(
-            "import { loadGrammarFromJson } from '../../utils/grammar-util';", NL,
-            "import { Grammar } from './ast';");
+            "import { loadGrammarFromJson } from '../../utils/grammar-load-util';", NL,
+            "import type { Grammar } from './ast';");
     } else {
         node.append("import { loadGrammarFromJson, Grammar } from 'langium';");
     }

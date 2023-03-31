@@ -8,7 +8,6 @@ import * as ast from '../grammar/generated/ast';
 import { URI, Utils } from 'vscode-uri';
 import { getDocument, streamAllContents } from '../utils/ast-util';
 import { LangiumDocuments } from '../workspace/documents';
-import { TypeResolutionError } from './type-system/type-collector/types';
 import { escapeRegExp } from '../utils/regex-util';
 
 export type Cardinality = '?' | '*' | '+' | undefined;
@@ -136,7 +135,7 @@ export function getTypeName(type: ast.AbstractType | ast.InferredType): string {
     } else if (ast.isInferredType(type)) {
         return type.name;
     }
-    throw new TypeResolutionError('Cannot get name of Unknown Type', type.$cstNode);
+    throw new Error('Cannot get name of Unknown Type');
 }
 
 export function getTypeNameWithoutError(type?: ast.AbstractType | ast.InferredType): string | undefined {

@@ -32,10 +32,6 @@ export function collectAllPlainProperties(interfaces: PlainInterface[]): MultiMa
     return map;
 }
 
-export function distinctAndSorted<T>(list: T[], compareFn?: (a: T, b: T) => number): T[] {
-    return Array.from(new Set(list)).sort(compareFn);
-}
-
 export function collectChildrenTypes(interfaceNode: Interface, references: References, langiumDocuments: LangiumDocuments, nodeLocator: AstNodeLocator): Set<Interface | Type> {
     const childrenTypes = new Set<Interface | Type>();
     childrenTypes.add(interfaceNode);

@@ -4,12 +4,12 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { NameProvider } from '../references/name-provider';
+import { DefaultNameProvider, NameProvider } from '../references/name-provider';
 import { LangiumServices } from '../services';
 import { AstNode, CstNode, GenericAstNode, isAstNode, isReference, Reference } from '../syntax-tree';
 import { getDocument, Mutable } from '../utils/ast-util';
 import { findNodesForProperty } from '../utils/grammar-util';
-import { AstNodeLocator } from '../workspace/ast-node-locator';
+import { AstNodeLocator, DefaultAstNodeLocator } from '../workspace/ast-node-locator';
 import type { DocumentSegment } from '../workspace/documents';
 
 export interface JsonSerializeOptions {
@@ -78,9 +78,9 @@ export class DefaultJsonSerializer implements JsonSerializer {
     protected readonly astNodeLocator: AstNodeLocator;
     protected readonly nameProvider: NameProvider;
 
-    constructor(services: LangiumServices) {
-        this.astNodeLocator = services.workspace.AstNodeLocator;
-        this.nameProvider = services.references.NameProvider;
+    constructor(services?: LangiumServices) {
+        this.astNodeLocator = services?.workspace.AstNodeLocator ?? new DefaultAstNodeLocator();
+        this.nameProvider = services?.references.NameProvider ?? new DefaultNameProvider();
     }
 
     serialize(node: AstNode, options?: JsonSerializeOptions): string {
