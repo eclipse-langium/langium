@@ -291,12 +291,22 @@ describe('Inferred types', () => {
             terminal ID: /[a-zA-Z_][a-zA-Z0-9_]*/;
         `, expandToString`
             export type Complex = string;
+
+            export function isComplex(item: unknown): item is Complex {
+                return typeof item === 'string';
+            }
             export type DateLike = Date;
+
+            export function isDateLike(item: unknown): item is DateLike {
+                return item instanceof Date;
+            }
             export type MoreStrings = 'd' | 'e' | Strings;
+
             export function isMoreStrings(item: string): item is MoreStrings {
                 return isStrings(item) || item === 'd' || item === 'e';
             }
             export type Strings = 'a' | 'b' | 'c';
+
             export function isStrings(item: string): item is Strings {
                 return item === 'a' || item === 'b' || item === 'c';
             }

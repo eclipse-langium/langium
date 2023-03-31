@@ -33,6 +33,7 @@ export interface PlainUnion {
     subTypes: Set<string>;
     type: PlainPropertyType;
     declared: boolean;
+    dataType?: string;
 }
 
 export function isPlainUnion(type: PlainType): type is PlainUnion {
@@ -112,7 +113,8 @@ export function plainToTypes(plain: PlainAstTypes): AstTypes {
     }
     for (const unionValue of plain.unions) {
         const type = new UnionType(unionValue.name, {
-            declared: unionValue.declared
+            declared: unionValue.declared,
+            dataType: unionValue.dataType
         });
         unionTypes.set(unionValue.name, type);
     }

@@ -6,8 +6,8 @@
 
 import { isNamed } from '../../../references/name-provider';
 import { MultiMap } from '../../../utils/collections';
-import { ParserRule, isAlternatives, isKeyword, Action, isParserRule, isAction, AbstractElement, isGroup, isUnorderedGroup, isAssignment, isRuleCall, Assignment, isCrossReference, RuleCall, isTerminalRule, isRegexToken } from '../../generated/ast';
-import { getTypeNameWithoutError, isOptionalCardinality, getRuleType, isPrimitiveType } from '../../internal-grammar-util';
+import { ParserRule, isAlternatives, isKeyword, Action, isParserRule, isAction, AbstractElement, isGroup, isUnorderedGroup, isAssignment, isRuleCall, Assignment, isCrossReference, RuleCall, isTerminalRule } from '../../generated/ast';
+import { getTypeNameWithoutError, isOptionalCardinality, getRuleType, isPrimitiveType, terminalRegex } from '../../internal-grammar-util';
 import { mergePropertyTypes, PlainAstTypes, PlainInterface, PlainProperty, PlainPropertyType, PlainUnion } from './plain-types';
 
 interface TypePart {
@@ -231,7 +231,8 @@ export function collectInferredTypes(parserRules: ParserRule[], datatypeRules: P
             declared: false,
             type,
             subTypes: new Set(),
-            superTypes: new Set()
+            superTypes: new Set(),
+            dataType: rule.dataType,
         });
     }
     return astTypes;
@@ -279,13 +280,9 @@ function buildDataRuleType(element: AbstractElement, cancel: () => PlainProperty
         const ref = element.rule?.ref;
         if (ref) {
             if (isTerminalRule(ref)) {
-                let regex;
-                if (isRegexToken(ref.definition)) {
-                    regex = ref.definition.regex;
-                }
                 return {
                     primitive: ref.type?.name ?? 'string',
-                    regex: regex
+                    regex: terminalRegex(ref)
                 };
             } else {
                 return {
