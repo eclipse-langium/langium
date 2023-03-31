@@ -48,6 +48,10 @@ export interface References {
 
 export interface FindReferencesOptions {
     /**
+     * @deprecated Since v1.2.0. Please use `documentUri` instead.
+     */
+    onlyLocal?: boolean;
+    /**
      * When set, the `findReferences` method will only return references/declarations from the specified document.
      */
     documentUri?: URI;
