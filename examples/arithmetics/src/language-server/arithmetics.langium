@@ -31,8 +31,6 @@ Multiplication infers Expression:
 Potentiation infers Expression:
     Modulo ({infer BinaryExpression.left=current} operator='^' right=Modulo)*;
 
-// write every other essential operator here
-
 Modulo infers Expression:
     PrimaryExpression ({infer BinaryExpression.left=current} operator='%' right=PrimaryExpression)*;
 

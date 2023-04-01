@@ -27,6 +27,9 @@ const documentChangeNotification = new NotificationType<DocumentChange>('browser
 const jsonSerializer = arithmetics.serializer.JsonSerializer;
 shared.workspace.DocumentBuilder.onBuildPhase(DocumentState.Validated, documents => {
     for (const document of documents) {
+        // 1. deserialize the AST
+        // 2. calculate all the expressions using interpreter.ts
+        // 3. send all the results
         const json = jsonSerializer.serialize(document.parseResult.value, {
             sourceText: true,
             textRegions: true,
