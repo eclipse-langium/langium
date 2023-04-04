@@ -28,7 +28,7 @@ describe('Ast generator', () => {
         const expectedASTFile = normalizeEOL(expandToString`
        export type A = 'a';
        
-       export function isA(item: string): item is A {
+       export function isA(item: unknown): item is A {
            return item === 'a';
        }
        `).trim();
@@ -58,7 +58,7 @@ describe('Ast generator', () => {
         const expectedASTFile = normalizeEOL(expandToString`
        export type A = 'a' | 'b' | 'c';
        
-       export function isA(item: string): item is A {
+       export function isA(item: unknown): item is A {
            return item === 'a' || item === 'b' || item === 'c';
        }
        `).trim();
@@ -91,13 +91,13 @@ describe('Ast generator', () => {
         const expectedASTFile = normalizeEOL(expandToString`
        export type A = 'a';
        
-       export function isA(item: string): item is A {
+       export function isA(item: unknown): item is A {
            return item === 'a';
        }
        
        export type AB = 'b' | A;
 
-       export function isAB(item: string): item is AB {
+       export function isAB(item: unknown): item is AB {
            return isA(item) || item === 'b';
        }
        `).trim();
@@ -166,25 +166,25 @@ describe('Ast generator', () => {
         const expectedASTFile = normalizeEOL(expandToString`
        export type A = 'a';
        
-       export function isA(item: string): item is A {
+       export function isA(item: unknown): item is A {
            return item === 'a';
        }
       
        export type ABC = (B | C) | A;
        
-       export function isABC(item: string): item is ABC {
+       export function isABC(item: unknown): item is ABC {
            return isA(item) || isB(item) || isC(item);
        }
 
        export type B = 'b';
        
-       export function isB(item: string): item is B {
+       export function isB(item: unknown): item is B {
            return item === 'b';
        }
 
        export type C = 'c';
 
-       export function isC(item: string): item is C {
+       export function isC(item: unknown): item is C {
            return item === 'c';
        }
        `).trim();

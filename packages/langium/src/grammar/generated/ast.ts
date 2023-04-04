@@ -38,7 +38,7 @@ export function isFeatureName(item: string): item is FeatureName {
 
 export type PrimitiveType = 'Date' | 'bigint' | 'boolean' | 'number' | 'string';
 
-export function isPrimitiveType(item: string): item is PrimitiveType {
+export function isPrimitiveType(item: unknown): item is PrimitiveType {
     return item === 'string' || item === 'number' || item === 'boolean' || item === 'Date' || item === 'bigint';
 }
 

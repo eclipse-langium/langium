@@ -302,12 +302,12 @@ describe('Inferred types', () => {
             }
             export type MoreStrings = 'd' | 'e' | Strings;
 
-            export function isMoreStrings(item: string): item is MoreStrings {
+            export function isMoreStrings(item: unknown): item is MoreStrings {
                 return isStrings(item) || item === 'd' || item === 'e';
             }
             export type Strings = 'a' | 'b' | 'c';
 
-            export function isStrings(item: string): item is Strings {
+            export function isStrings(item: unknown): item is Strings {
                 return item === 'a' || item === 'b' || item === 'c';
             }
         `);
