@@ -3,30 +3,8 @@
  * This program and the accompanying materials are made available under the
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
-
-import type { AbstractDefinition, Definition, Evaluation, Expression, Module, Statement } from '../language-server/generated/ast';
-import { NodeFileSystem } from 'langium/node';
-import { createArithmeticsServices } from '../language-server/arithmetics-module';
-import { isBinaryExpression, isDefinition, isEvaluation, isFunctionCall, isNumberLiteral } from '../language-server/generated/ast';
+import { AbstractDefinition, Definition, Evaluation, Expression, isBinaryExpression, isDefinition, isEvaluation, isFunctionCall, isNumberLiteral, Module, Statement } from '../language-server/generated/ast';
 import { applyOp } from '../language-server/arithmetics-util';
-import { ArithmeticsLanguageMetaData } from '../language-server/generated/module';
-import { extractDocument } from './cli-util';
-import chalk from 'chalk';
-import { interpretEvaluations } from './evaluator';
-import { Module } from '../language-server/generated/ast';
-
-export const evalAction = async (fileName: string): Promise<void> => {
-    const services = createArithmeticsServices(NodeFileSystem).arithmetics;
-    const document = await extractDocument<Module>(fileName, ArithmeticsLanguageMetaData.fileExtensions, services);
-    const module = document.parseResult.value;
-    for (const [evaluation, value] of interpretEvaluations(module)) {
-        const cstNode = evaluation.expression.$cstNode;
-        if (cstNode) {
-            const line = cstNode.range.start.line + 1;
-            console.log(`line ${line}:`, chalk.green(cstNode.text), '===>', value);
-        }
-    }
-};
 
 export function interpretEvaluations(module: Module): Map<Evaluation, number> {
     const ctx = <InterpreterContext>{
@@ -37,7 +15,7 @@ export function interpretEvaluations(module: Module): Map<Evaluation, number> {
     return evaluate(ctx);
 }
 
-interface InterpreterContext {
+export interface InterpreterContext {
     module: Module,
     // variable name --> value
     context: Map<string, number | Definition>,
