@@ -452,9 +452,13 @@ function containsOnlyStringTypes(propertyType: PropertyType): boolean {
 function createDataTypeCheckerFunctionReturnString(subTypes: string[], strings: string[], regexes: string[]): string {
     const allArray = [
         ...subTypes.map(e => `is${e}(item)`),
-        ...strings.map(e => `item === '${e}'`),
-        ...regexes.map(e => `/${e}/.test(item)`),
+        ...strings.map(e => `item === '${e}'`)
     ];
+
+    if (regexes.length > 0) {
+        const joinedRegexes = regexes.map(e => `/${e}/.test(item)`).join(' || ');
+        allArray.push(`(typeof item === 'string' && (${joinedRegexes}))`);
+    }
 
     return allArray.join(' || ');
 }
@@ -499,7 +503,7 @@ function collectRegexesFromDataType(propertyType: PropertyType): string[] {
 }
 
 function generateIsDataTypeFunction(node: CompositeGeneratorNode, unionName: string, returnString: string) {
-    node.append(NL, `export function is${unionName}(item: ${returnString.includes('/.test(item)') ? 'string' : 'unknown'}): item is ${unionName} {`, NL);
+    node.append(NL, `export function is${unionName}(item: unknown): item is ${unionName} {`, NL);
     node.indent(body => body.append(`return ${returnString};`, NL));
     node.append('}', NL);
 }
