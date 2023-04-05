@@ -7,6 +7,8 @@
 import { startLanguageServer, EmptyFileSystem, DocumentState } from 'langium';
 import { BrowserMessageReader, BrowserMessageWriter, createConnection, Diagnostic, NotificationType } from 'vscode-languageserver/browser';
 import { createArithmeticsServices } from './arithmetics-module';
+import { interpretEvaluations } from '../cli/evaluator';
+import { Module } from './generated/ast';
 
 /* browser specific setup code */
 const messageReader = new BrowserMessageReader(self);
@@ -26,16 +28,19 @@ const documentChangeNotification = new NotificationType<DocumentChange>('browser
 const jsonSerializer = arithmetics.serializer.JsonSerializer;
 shared.workspace.DocumentBuilder.onBuildPhase(DocumentState.Validated, documents => {
     for (const document of documents) {
-        // 1. deserialize the AST
-        // 2. calculate all the expressions using interpreter.ts
-        // 3. send all the results
-        const json = jsonSerializer.serialize(document.parseResult.value, {
-            sourceText: true,
-            textRegions: true,
-        });
+        const json = [];
+        const module = document.parseResult.value as Module;
+        if(document.diagnostics === null || document.diagnostics!.filter((i) => i.severity === 1).length === 0) {
+            for (const [evaluation, value] of interpretEvaluations(module)) {
+                const cstNode = evaluation.expression.$cstNode;
+                if (cstNode) {
+                    json.push({range: evaluation.expression.$cstNode?.range, text: evaluation.expression.$cstNode?.text, value: value});
+                }
+            }
+        }
         connection.sendNotification(documentChangeNotification, {
             uri: document.uri.toString(),
-            content: json,
+            content: JSON.stringify({ ast: jsonSerializer.serialize(module), evaluations: json }),
             diagnostics: document.diagnostics ?? []
         });
     }
