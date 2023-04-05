@@ -7,7 +7,7 @@
 import { isNamed } from '../../../references/name-provider';
 import { MultiMap } from '../../../utils/collections';
 import { ParserRule, isAlternatives, isKeyword, Action, isParserRule, isAction, AbstractElement, isGroup, isUnorderedGroup, isAssignment, isRuleCall, Assignment, isCrossReference, RuleCall, isTerminalRule } from '../../generated/ast';
-import { getTypeNameWithoutError, isOptionalCardinality, getRuleType, isPrimitiveType } from '../../internal-grammar-util';
+import { getTypeNameWithoutError, isOptionalCardinality, getRuleType, isPrimitiveType, terminalRegex } from '../../internal-grammar-util';
 import { mergePropertyTypes, PlainAstTypes, PlainInterface, PlainProperty, PlainPropertyType, PlainUnion } from './plain-types';
 
 interface TypePart {
@@ -231,7 +231,8 @@ export function collectInferredTypes(parserRules: ParserRule[], datatypeRules: P
             declared: false,
             type,
             subTypes: new Set(),
-            superTypes: new Set()
+            superTypes: new Set(),
+            dataType: rule.dataType,
         });
     }
     return astTypes;
@@ -280,7 +281,8 @@ function buildDataRuleType(element: AbstractElement, cancel: () => PlainProperty
         if (ref) {
             if (isTerminalRule(ref)) {
                 return {
-                    primitive: ref.type?.name ?? 'string'
+                    primitive: ref.type?.name ?? 'string',
+                    regex: terminalRegex(ref)
                 };
             } else {
                 return {

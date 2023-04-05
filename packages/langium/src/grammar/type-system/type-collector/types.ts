@@ -70,6 +70,7 @@ export function isValueType(propertyType: PropertyType): propertyType is ValueTy
 
 export interface PrimitiveType {
     primitive: string
+    regex?: string
 }
 
 export function isPrimitiveType(propertyType: PropertyType): propertyType is PrimitiveType {
@@ -107,12 +108,15 @@ export class UnionType {
     containerTypes = new Set<TypeOption>();
     typeNames = new Set<string>();
     declared: boolean;
+    dataType?: string;
 
     constructor(name: string, options?: {
-        declared: boolean
+        declared: boolean,
+        dataType?: string
     }) {
         this.name = name;
         this.declared = options?.declared ?? false;
+        this.dataType = options?.dataType;
     }
 
     toAstTypesString(reflectionInfo: boolean): string {
@@ -123,6 +127,11 @@ export class UnionType {
             unionNode.append(NL);
             pushReflectionInfo(unionNode, this.name);
         }
+
+        if (this.dataType) {
+            pushDataTypeReflectionInfo(unionNode, this);
+        }
+
         return toString(unionNode);
     }
 
@@ -379,6 +388,125 @@ function pushReflectionInfo(node: CompositeGeneratorNode, name: string) {
     node.append('}', NL);
 }
 
+function pushDataTypeReflectionInfo(node: CompositeGeneratorNode, union: UnionType) {
+    switch (union.dataType) {
+        case 'string':
+            if (containsOnlyStringTypes(union.type)) {
+                const subTypes = Array.from(union.subTypes).map(e => e.name);
+                const strings = collectStringValuesFromDataType(union.type);
+                const regexes = collectRegexesFromDataType(union.type);
+                if (subTypes.length === 0 && strings.length === 0 && regexes.length === 0) {
+                    generateIsDataTypeFunction(node, union.name, `typeof item === '${union.dataType}'`);
+                } else {
+                    const returnString = createDataTypeCheckerFunctionReturnString(subTypes, strings, regexes);
+                    generateIsDataTypeFunction(node, union.name, returnString);
+                }
+            }
+            break;
+        case 'number':
+        case 'boolean':
+        case 'bigint':
+            generateIsDataTypeFunction(node, union.name, `typeof item === '${union.dataType}'`);
+            break;
+        case 'Date':
+            generateIsDataTypeFunction(node, union.name, 'item instanceof Date');
+            break;
+        default:
+            return;
+    }
+}
+
+function containsOnlyStringTypes(propertyType: PropertyType): boolean {
+    let result = true;
+    if (isPrimitiveType(propertyType)) {
+        if (propertyType.primitive === 'string') {
+            return true;
+        } else {
+            return false;
+        }
+    } else if (isStringType(propertyType)) {
+        return true;
+    } else if (!isPropertyUnion(propertyType)) {
+        return false;
+    } else {
+        for (const type of propertyType.types) {
+            if (isValueType(type)) {
+                if (isUnionType(type.value)) {
+                    if (!containsOnlyStringTypes(type.value.type)) {
+                        return false;
+                    }
+                } else {
+                    return false;
+                }
+            } else if (isPrimitiveType(type)) {
+                if (type.primitive !== 'string' || !type.regex) {
+                    return false;
+                }
+            } else if (isPropertyUnion(type)) {
+                result = containsOnlyStringTypes(type);
+            } else if (!isStringType(type)) {
+                return false;
+            }
+        }
+    }
+    return result;
+}
+
+function createDataTypeCheckerFunctionReturnString(subTypes: string[], strings: string[], regexes: string[]): string {
+    const allArray = [
+        ...subTypes.map(e => `is${e}(item)`),
+        ...strings.map(e => `item === '${e}'`)
+    ];
+
+    if (regexes.length > 0) {
+        const joinedRegexes = regexes.map(e => `/${e}/.test(item)`).join(' || ');
+        allArray.push(`(typeof item === 'string' && (${joinedRegexes}))`);
+    }
+
+    return allArray.join(' || ');
+}
+
 function escapeReservedWords(name: string, reserved: Set<string>): string {
     return reserved.has(name) ? `^${name}` : name;
+}
+
+function collectStringValuesFromDataType(propertyType: PropertyType): string[] {
+    const values: string[] = [];
+    if (isStringType(propertyType)) {
+        return [propertyType.string];
+    }
+    if (isPropertyUnion(propertyType)) {
+        for (const type of propertyType.types) {
+            if (isStringType(type)) {
+                values.push(type.string);
+            } else if (isPropertyUnion(type)) {
+                values.push(...collectStringValuesFromDataType(type));
+            }
+        }
+    }
+
+    return values;
+}
+
+function collectRegexesFromDataType(propertyType: PropertyType): string[] {
+    const regexes: string[] = [];
+    if (isPrimitiveType(propertyType) && propertyType.primitive === 'string' && propertyType.regex) {
+        regexes.push(propertyType.regex);
+    }
+    if (isPropertyUnion(propertyType)) {
+        for (const type of propertyType.types) {
+            if (isPrimitiveType(type) && type.primitive === 'string' && type.regex) {
+                regexes.push(type.regex);
+            } else if (isPropertyUnion(type)) {
+                regexes.push(...collectRegexesFromDataType(type));
+            }
+        }
+    }
+    return regexes;
+}
+
+function generateIsDataTypeFunction(node: CompositeGeneratorNode, unionName: string, returnString: string) {
+    node.append(NL, `export function is${unionName}(item: unknown): item is ${unionName} {`, NL);
+    node.indent(body => body.append(`return ${returnString};`, NL));
+    node.append('}', NL);
 }

@@ -32,7 +32,15 @@ export function isCondition(item: unknown): item is Condition {
 
 export type FeatureName = 'current' | 'entry' | 'extends' | 'false' | 'fragment' | 'grammar' | 'hidden' | 'import' | 'infer' | 'infers' | 'interface' | 'returns' | 'terminal' | 'true' | 'type' | 'with' | PrimitiveType | string;
 
+export function isFeatureName(item: unknown): item is FeatureName {
+    return isPrimitiveType(item) || item === 'current' || item === 'entry' || item === 'extends' || item === 'false' || item === 'fragment' || item === 'grammar' || item === 'hidden' || item === 'import' || item === 'interface' || item === 'returns' || item === 'terminal' || item === 'true' || item === 'type' || item === 'infer' || item === 'infers' || item === 'with' || (typeof item === 'string' && (/\^?[_a-zA-Z][\w_]*/.test(item)));
+}
+
 export type PrimitiveType = 'Date' | 'bigint' | 'boolean' | 'number' | 'string';
+
+export function isPrimitiveType(item: unknown): item is PrimitiveType {
+    return item === 'string' || item === 'number' || item === 'boolean' || item === 'Date' || item === 'bigint';
+}
 
 export type TypeDefinition = ArrayType | ReferenceType | SimpleType | UnionType;
 

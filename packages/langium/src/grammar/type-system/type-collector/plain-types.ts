@@ -33,6 +33,7 @@ export interface PlainUnion {
     subTypes: Set<string>;
     type: PlainPropertyType;
     declared: boolean;
+    dataType?: string;
 }
 
 export function isPlainUnion(type: PlainType): type is PlainUnion {
@@ -88,6 +89,7 @@ export function isPlainValueType(propertyType: PlainPropertyType): propertyType 
 
 export interface PlainPrimitiveType {
     primitive: string;
+    regex?: string;
 }
 
 export function isPlainPrimitiveType(propertyType: PlainPropertyType): propertyType is PlainPrimitiveType {
@@ -111,7 +113,8 @@ export function plainToTypes(plain: PlainAstTypes): AstTypes {
     }
     for (const unionValue of plain.unions) {
         const type = new UnionType(unionValue.name, {
-            declared: unionValue.declared
+            declared: unionValue.declared,
+            dataType: unionValue.dataType
         });
         unionTypes.set(unionValue.name, type);
     }
@@ -172,7 +175,8 @@ function plainToPropertyType(type: PlainPropertyType, union: UnionType | undefin
         };
     } else if (isPlainPrimitiveType(type)) {
         return {
-            primitive: type.primitive
+            primitive: type.primitive,
+            regex: type.regex
         };
     } else if (isPlainValueType(type)) {
         const value = interfaces.get(type.value) || unions.get(type.value);

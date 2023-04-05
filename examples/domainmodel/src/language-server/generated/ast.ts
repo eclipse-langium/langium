@@ -16,6 +16,10 @@ export function isAbstractElement(item: unknown): item is AbstractElement {
 
 export type QualifiedName = string;
 
+export function isQualifiedName(item: unknown): item is QualifiedName {
+    return typeof item === 'string';
+}
+
 export type Type = DataType | Entity;
 
 export const Type = 'Type';

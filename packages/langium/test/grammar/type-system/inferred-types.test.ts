@@ -291,9 +291,25 @@ describe('Inferred types', () => {
             terminal ID: /[a-zA-Z_][a-zA-Z0-9_]*/;
         `, expandToString`
             export type Complex = string;
+
+            export function isComplex(item: unknown): item is Complex {
+                return typeof item === 'string';
+            }
             export type DateLike = Date;
+
+            export function isDateLike(item: unknown): item is DateLike {
+                return item instanceof Date;
+            }
             export type MoreStrings = 'd' | 'e' | Strings;
+
+            export function isMoreStrings(item: unknown): item is MoreStrings {
+                return isStrings(item) || item === 'd' || item === 'e';
+            }
             export type Strings = 'a' | 'b' | 'c';
+
+            export function isStrings(item: unknown): item is Strings {
+                return item === 'a' || item === 'b' || item === 'c';
+            }
         `);
     });
 
@@ -735,5 +751,5 @@ async function getTypes(grammar: string): Promise<AstTypes> {
 async function expectTypes(grammar: string, types: string): Promise<void> {
     const grammarTypes = await getTypes(grammar);
     const allTypes = mergeTypesAndInterfaces(grammarTypes);
-    expect(allTypes.map(type => type.toAstTypesString(false)).join('').trim()).toBe(types);
+    expect(allTypes.map(e => e.toAstTypesString(false)).join('').trim()).toBe(types);
 }
