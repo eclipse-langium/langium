@@ -81,7 +81,8 @@ export function registerValidationChecks(services: LangiumGrammarServices): void
             validator.checkCrossReferenceSyntax,
             validator.checkCrossRefNameAssignment,
             validator.checkCrossRefTerminalType,
-            validator.checkCrossRefType
+            validator.checkCrossRefType,
+            validator.checkCrossReferenceToTypeUnion
         ],
         SimpleType: validator.checkFragmentsInTypes,
         ReferenceType: validator.checkReferenceTypeUnion
@@ -738,6 +739,17 @@ export class LangiumGrammarValidator {
         }
     }
 
+    checkCrossReferenceToTypeUnion(reference: ast.CrossReference, accept: ValidationAcceptor): void {
+        if (ast.isType(reference.type.ref) && ast.isUnionType(reference.type.ref.type)) {
+            const errors = checkTypeUnionContainsOnlyParseRules(reference.type.ref.type);
+            if (errors.length > 0) {
+                errors.forEach(e => {
+                    accept('error', `Cross-reference on type union is only valid if all alternatives are AST nodes. \`${e}\` is not an AST node.`, {node: reference, property: 'type'});
+                });
+            }
+        }
+    }
+
     checkFragmentsInTypes(type: ast.SimpleType, accept: ValidationAcceptor): void {
         if (ast.isParserRule(type.typeRef?.ref) && type.typeRef?.ref.fragment) {
             accept('error', 'Cannot use rule fragments in types.', { node: type, property: 'typeRef' });
@@ -845,3 +857,26 @@ const reservedNames = new Set([
     'eval',
     'undefined'
 ]);
+
+function checkTypeUnionContainsOnlyParseRules(type: ast.UnionType): string[] {
+    const errors: string[] = [];
+    type.types.forEach(type => {
+        if (ast.isSimpleType(type)) {
+            if (type.typeRef?.ref) {
+                if(ast.isType(type.typeRef.ref)) {
+                    if (ast.isUnionType(type.typeRef.ref.type)) {
+                        errors.push(...checkTypeUnionContainsOnlyParseRules(type.typeRef.ref.type));
+                    } else {
+                        errors.push(type.typeRef.ref.name);
+                    }
+                }
+            } else if (type.stringType) {
+                errors.push(type.stringType);
+            } else if (type.primitiveType) {
+                errors.push(type.primitiveType);
+            }
+        }
+    });
+    return errors;
+}
+
