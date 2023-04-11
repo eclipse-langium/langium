@@ -26,10 +26,10 @@ Addition infers Expression:
     Multiplication ({infer BinaryExpression.left=current} operator=('+' | '-') right=Multiplication)*;
 
 Multiplication infers Expression:
-    Potentiation ({infer BinaryExpression.left=current} operator=('*' | '/') right=Potentiation)*;
+    Exponentiation ({infer BinaryExpression.left=current} operator=('*' | '/') right=Exponentiation)*;
 
-Potentiation infers Expression:
-    Modulo ({infer BinaryExpression.left=current} operator='^' right=Modulo)*;
+Exponentiation infers Expression:
+    PrimaryExpression ({infer BinaryExpression.left=current} operator='^' right=Modulo)*;
 
 Modulo infers Expression:
     PrimaryExpression ({infer BinaryExpression.left=current} operator='%' right=PrimaryExpression)*;

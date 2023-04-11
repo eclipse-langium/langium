@@ -10,6 +10,7 @@ import type { ValidationChecks, ValidationAcceptor} from 'langium';
 import { isNumberLiteral, isFunctionCall, isBinaryExpression } from './generated/ast';
 import { applyOp } from './arithmetics-util';
 import { MultiMap } from 'langium';
+import { evalExpression } from './arithmetics-evaluator';
 
 export function registerValidationChecks(services: ArithmeticsServices): void {
     const registry = services.validation.ValidationRegistry;
@@ -25,7 +26,7 @@ export function registerValidationChecks(services: ArithmeticsServices): void {
 
 export class ArithmeticsValidator {
     checkDivByZero(binExpr: BinaryExpression, accept: ValidationAcceptor): void {
-        if (binExpr.operator === '/' && isNumberLiteral(binExpr.right) && binExpr.right.value === 0) {
+        if ((binExpr.operator === '/' || binExpr.operator === '%') && evalExpression(binExpr.right) === 0) {
             accept('error', 'Division by zero is detected.', { node: binExpr, property: 'right' });
         }
     }

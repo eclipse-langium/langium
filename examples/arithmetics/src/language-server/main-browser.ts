@@ -8,7 +8,7 @@ import type { Diagnostic } from 'vscode-languageserver/browser';
 import { startLanguageServer, EmptyFileSystem, DocumentState } from 'langium';
 import { BrowserMessageReader, BrowserMessageWriter, createConnection, NotificationType } from 'vscode-languageserver/browser';
 import { createArithmeticsServices } from './arithmetics-module';
-import { interpretEvaluations } from '../cli/evaluator';
+import { interpretEvaluations } from './arithmetics-evaluator';
 import { Module } from './generated/ast';
 
 /* browser specific setup code */

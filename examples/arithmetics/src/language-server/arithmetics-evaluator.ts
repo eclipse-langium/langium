@@ -3,8 +3,8 @@
  * This program and the accompanying materials are made available under the
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
-import { AbstractDefinition, Definition, Evaluation, Expression, isBinaryExpression, isDefinition, isEvaluation, isFunctionCall, isNumberLiteral, Module, Statement } from '../language-server/generated/ast';
-import { applyOp } from '../language-server/arithmetics-util';
+import { AbstractDefinition, Definition, Evaluation, Expression, isBinaryExpression, isDefinition, isEvaluation, isFunctionCall, isNumberLiteral, Module, Statement } from './generated/ast';
+import { applyOp } from './arithmetics-util';
 
 export function interpretEvaluations(module: Module): Map<Evaluation, number> {
     const ctx = <InterpreterContext>{
@@ -39,17 +39,24 @@ function evalStatement(ctx: InterpreterContext, stmt: Statement): void {
 }
 
 function evalDefinition(ctx: InterpreterContext, def: Definition): void {
-    ctx.context.set(def.name, def.args.length > 0 ? def : evalExpression(ctx, def.expr));
+    ctx.context.set(def.name, def.args.length > 0 ? def : evalExpression(def.expr, ctx));
 }
 
 function evalEvaluation(ctx: InterpreterContext, evaluation: Evaluation): void {
-    ctx.result.set(evaluation, evalExpression(ctx, evaluation.expression));
+    ctx.result.set(evaluation, evalExpression(evaluation.expression, ctx));
 }
 
-function evalExpression(ctx: InterpreterContext, expr: Expression): number {
+export function evalExpression(expr: Expression, ctx?: InterpreterContext): number {
+    if(ctx === undefined) {
+        ctx = <InterpreterContext>{
+            module: expr.$document?.parseResult.value,
+            context: new Map<string, number | Definition>(),
+            result: new Map<Evaluation, number>()
+        };
+    }
     if (isBinaryExpression(expr)) {
-        const left = evalExpression(ctx, expr.left);
-        const right = evalExpression(ctx, expr.right);
+        const left = evalExpression(expr.left, ctx);
+        const right = evalExpression(expr.right, ctx);
         if (right === undefined) return left;
         return applyOp(expr.operator)(left, right);
     }
@@ -62,17 +69,15 @@ function evalExpression(ctx: InterpreterContext, expr: Expression): number {
             return valueOrDef;
         }
         if (valueOrDef.args.length !== expr.args.length) {
-            console.error('Function definition and its call have different number of arguments: ' + valueOrDef.name);
-            process.exit(1);
+            throw new Error('Function definition and its call have different number of arguments: ' + valueOrDef.name);
         }
 
         const localContext = new Map<string, number | Definition>(ctx.context);
         for (let i = 0; i < valueOrDef.args.length; i += 1) {
-            localContext.set(valueOrDef.args[i].name, evalExpression(ctx, expr.args[i]));
+            localContext.set(valueOrDef.args[i].name, evalExpression(expr.args[i], ctx));
         }
-        return evalExpression({module: ctx.module, context: localContext, result: ctx.result}, valueOrDef.expr);
+        return evalExpression(valueOrDef.expr, {module: ctx.module, context: localContext, result: ctx.result});
     }
 
-    console.error('Impossible type of Expression.');
-    process.exit(1);
+    throw new Error('Impossible type of Expression.');
 }
