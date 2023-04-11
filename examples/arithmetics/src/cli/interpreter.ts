@@ -9,7 +9,7 @@ import { createArithmeticsServices } from '../language-server/arithmetics-module
 import { ArithmeticsLanguageMetaData } from '../language-server/generated/module';
 import { extractDocument } from './cli-util';
 import chalk from 'chalk';
-import { interpretEvaluations } from './evaluator';
+import { interpretEvaluations } from '../language-server/arithmetics-evaluator';
 import { Module } from '../language-server/generated/ast';
 
 export const evalAction = async (fileName: string): Promise<void> => {
