@@ -4,13 +4,15 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import type { DiagnosticInfo, ValidationAcceptor, ValidationChecks } from '../../validation/validation-registry';
+import type { LangiumGrammarServices } from '../langium-grammar-module';
+import type { Property, PropertyType } from '../type-system/type-collector/types';
+import type { DeclaredInfo, InferredInfo, LangiumGrammarDocument, ValidationResources } from '../workspace/documents';
 import * as ast from '../generated/ast';
 import { MultiMap } from '../../utils/collections';
-import { DiagnosticInfo, ValidationAcceptor, ValidationChecks } from '../../validation/validation-registry';
 import { extractAssignments } from '../internal-grammar-util';
-import { LangiumGrammarServices } from '../langium-grammar-module';
-import { flattenPropertyUnion, InterfaceType, isArrayType, isInterfaceType, isMandatoryPropertyType, isPropertyUnion, isReferenceType, isTypeAssignable, isUnionType, isValueType, Property, PropertyType, propertyTypeToString } from '../type-system/type-collector/types';
-import { DeclaredInfo, InferredInfo, isDeclared, isInferred, isInferredAndDeclared, LangiumGrammarDocument, ValidationResources } from '../workspace/documents';
+import { flattenPropertyUnion, InterfaceType, isArrayType, isInterfaceType, isMandatoryPropertyType, isPropertyUnion, isReferenceType, isTypeAssignable, isUnionType, isValueType, propertyTypeToString } from '../type-system/type-collector/types';
+import { isDeclared, isInferred, isInferredAndDeclared } from '../workspace/documents';
 
 export function registerTypeValidationChecks(services: LangiumGrammarServices): void {
     const registry = services.validation.ValidationRegistry;

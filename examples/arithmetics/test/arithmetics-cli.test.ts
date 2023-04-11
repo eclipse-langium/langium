@@ -4,16 +4,17 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import type { ExecException } from 'child_process';
 import { describe, expect, test } from 'vitest';
 import path from 'path';
-import { exec, ExecException } from 'child_process';
+import { exec } from 'child_process';
 
 describe('Test the arithmetics CLI', () => {
     const fileName = path.join(__dirname, '../example/example.calc');
 
     test('Generator command returns code 0', async () => {
         const result = await cli(['eval', fileName]);
-        if(result.code !== 0) {
+        if (result.code !== 0) {
             console.log('Error code:', result.code);
             console.log('Error message:', result.error);
         }

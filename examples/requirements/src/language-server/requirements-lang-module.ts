@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { LangiumServices, Module, PartialLangiumServices } from 'langium';
+import type { LangiumServices, Module, PartialLangiumServices } from 'langium';
 import { RequirementsLangValidator } from './requirements-lang-validator';
 
 /**

@@ -4,9 +4,11 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { MultiMap, ValidationAcceptor, ValidationChecks } from 'langium';
-import { ArithmeticsAstType, isNumberLiteral, Definition, isFunctionCall, Expression, BinaryExpression, isBinaryExpression, Module } from './generated/ast';
+import type { ValidationAcceptor, ValidationChecks } from 'langium';
+import type { ArithmeticsAstType, Definition, Expression, BinaryExpression, Module } from './generated/ast';
 import type { ArithmeticsServices } from './arithmetics-module';
+import { MultiMap } from 'langium';
+import { isNumberLiteral, isFunctionCall, isBinaryExpression } from './generated/ast';
 import { applyOp } from './arithmetics-util';
 
 export function registerValidationChecks(services: ArithmeticsServices): void {
@@ -55,8 +57,8 @@ export class ArithmeticsValidator {
 
     checkUniqueDefinitions(module: Module, accept: ValidationAcceptor): void {
         const names = new MultiMap<string, Definition>();
-        for(const def of module.statements as Definition[]) {
-            if(def.name) names.add(def.name, def);
+        for (const def of module.statements as Definition[]) {
+            if (def.name) names.add(def.name, def);
         }
         for (const [name, symbols] of names.entriesGroupedByKey()) {
             if (symbols.length > 1) {

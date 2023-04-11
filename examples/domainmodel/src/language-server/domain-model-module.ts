@@ -4,7 +4,8 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { LangiumServices, Module, PartialLangiumServices, LangiumSharedServices, DefaultSharedModuleContext, inject, createDefaultSharedModule, createDefaultModule } from 'langium';
+import type { LangiumServices, Module, PartialLangiumServices, LangiumSharedServices, DefaultSharedModuleContext } from 'langium';
+import { inject, createDefaultSharedModule, createDefaultModule } from 'langium';
 import { DomainModelGeneratedModule, DomainModelGeneratedSharedModule } from './generated/module';
 import { DomainModelValidator, registerValidationChecks } from './domain-model-validator';
 import { DomainModelScopeComputation } from './domain-model-scope';

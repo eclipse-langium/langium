@@ -4,12 +4,10 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import * as langium from 'langium';
-import {
-    getTerminalParts, isCommentTerminal, CompositeGeneratorNode, NL, toString, escapeRegExp, GrammarAST, isWhitespaceRegExp
-} from 'langium';
+import type { Grammar } from 'langium';
+import type { LangiumLanguageConfig } from '../../package';
+import { getTerminalParts, isCommentTerminal, CompositeGeneratorNode, NL, toString, escapeRegExp, GrammarAST, isWhitespaceRegExp } from 'langium';
 import { terminalRegex } from 'langium/lib/grammar/internal-grammar-util';
-import { LangiumLanguageConfig } from '../../package';
 import { collectKeywords } from '../util';
 
 /**
@@ -109,7 +107,7 @@ interface MonarchGrammar {
  * @param config Langium Config to also use during generation
  * @returns Generated Monarch syntax highlighting file content
  */
-export function generateMonarch(grammar: langium.Grammar, config: LangiumLanguageConfig): string {
+export function generateMonarch(grammar: Grammar, config: LangiumLanguageConfig): string {
 
     const symbols = getSymbols(grammar);
     const regex = /[{}[\]()]/;
@@ -118,8 +116,8 @@ export function generateMonarch(grammar: langium.Grammar, config: LangiumLanguag
     // build absract monarch grammar representation
     const monarchGrammar: MonarchGrammar = {
         languageDefinition: {
-            name:       config.id,  // identifier for generating the grammar export
-            keywords:   getKeywords(grammar),
+            name: config.id,  // identifier for generating the grammar export
+            keywords: getKeywords(grammar),
             operators,
             symbols,
             tokenPostfix: '.' + config.id, // category appended to all tokens
@@ -138,7 +136,7 @@ export function generateMonarch(grammar: langium.Grammar, config: LangiumLanguag
  * @param grammar Langium grammar to source tokenizer states from
  * @returns Array of tokenizer states
  */
-function getTokenizerStates(grammar: langium.Grammar): State[] {
+function getTokenizerStates(grammar: Grammar): State[] {
 
     // initial state, name is arbitrary, just needs to come first
     const initialState: State = {
@@ -237,7 +235,7 @@ function prettyPrintLangDef(languageDef: LanguageDefinition, node: CompositeGene
         genLanguageDefEntry('keywords', languageDef.keywords), NL,
         genLanguageDefEntry('operators', languageDef.operators), NL,
         // special case, identify symbols via singular regex
-        'symbols:  /' +  languageDef.symbols.map(escapeRegExp).join('|') + '/,'
+        'symbols:  /' + languageDef.symbols.map(escapeRegExp).join('|') + '/,'
     );
 }
 
@@ -265,7 +263,7 @@ function prettyPrintTokenizer(tokenizer: Tokenizer, node: CompositeGeneratorNode
 function prettyPrintState(state: State, node: CompositeGeneratorNode): void {
     node.append(state.name + ': [', NL);
     node.indent(inode => {
-        for(const rule of state.rules) {
+        for (const rule of state.rules) {
             inode.append(prettyPrintRule(rule), NL);
         }
     });
@@ -328,7 +326,7 @@ function getMonarchTokenName(rule: GrammarAST.TerminalRule): string {
  * @param grammar Langium grammar to extract whitespace rules from
  * @returns Array of Monarch whitespace rules
  */
-function getWhitespaceRules(grammar: langium.Grammar): Rule[] {
+function getWhitespaceRules(grammar: Grammar): Rule[] {
     const rules: Rule[] = [];
     for (const rule of grammar.rules) {
         if (GrammarAST.isTerminalRule(rule) && GrammarAST.isRegexToken(rule.definition)) {
@@ -356,7 +354,7 @@ function getWhitespaceRules(grammar: langium.Grammar): Rule[] {
                 // single regex rule, generally for whitespace
                 rules.push({
                     regex: rule.definition.regex,
-                    action: {token: tokenName }
+                    action: { token: tokenName }
                 });
             }
         }
@@ -370,9 +368,9 @@ function getWhitespaceRules(grammar: langium.Grammar): Rule[] {
  * @param grammar Langium grammar to extract comment rules from
  * @returns Array of Monarch comment rules
  */
-function getCommentRules(grammar: langium.Grammar): Rule[] {
+function getCommentRules(grammar: Grammar): Rule[] {
     const rules: Rule[] = [];
-    for(const rule of grammar.rules) {
+    for (const rule of grammar.rules) {
         if (GrammarAST.isTerminalRule(rule) && isCommentTerminal(rule) && GrammarAST.isRegexToken(rule.definition)) {
             const tokenName = 'comment';
             const part = getTerminalParts(terminalRegex(rule))[0];
@@ -381,7 +379,7 @@ function getCommentRules(grammar: langium.Grammar): Rule[] {
                 // rule order matters
 
                 const start = part.start.replace('/', '\\/');
-                const end   = part.end.replace('/', '\\/');
+                const end = part.end.replace('/', '\\/');
 
                 // 1st, add anything that's not in the start sequence
                 rules.push({
@@ -412,7 +410,7 @@ function getCommentRules(grammar: langium.Grammar): Rule[] {
  * @param grammar Grammar to get non-comment terminals from
  * @returns Array of Rules to add to a Monarch tokenizer state
  */
-function getTerminalRules(grammar: langium.Grammar): Rule[] {
+function getTerminalRules(grammar: Grammar): Rule[] {
     const rules: Rule[] = [];
     for (const rule of grammar.rules) {
         if (GrammarAST.isTerminalRule(rule) && !isCommentTerminal(rule) && GrammarAST.isRegexToken(rule.definition)) {
@@ -433,7 +431,8 @@ function getTerminalRules(grammar: langium.Grammar): Rule[] {
                 action = [{
                     guard: '@keywords',
                     action: { token: 'keyword' }
-                },{
+                },
+                {
                     guard: '@default',
                     action // include default action from above
                 }];
@@ -458,7 +457,7 @@ const KeywordRegex = /[A-Za-z]/;
  * @param grammar Grammar to get keywords from
  * @returns Array of keywords
  */
-function getKeywords(grammar: langium.Grammar): string[] {
+function getKeywords(grammar: Grammar): string[] {
     return collectKeywords(grammar).filter(kw => KeywordRegex.test(kw));
 }
 
@@ -467,6 +466,6 @@ function getKeywords(grammar: langium.Grammar): string[] {
  * @param grammar Grammar to get symbols from
  * @returns Array of symbols, effective inverse of getKeywords
  */
-function getSymbols(grammar: langium.Grammar): string[] {
+function getSymbols(grammar: Grammar): string[] {
     return collectKeywords(grammar).filter(kw => !KeywordRegex.test(kw));
 }

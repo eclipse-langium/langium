@@ -4,9 +4,9 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { LangiumDocument } from '../../workspace/documents';
-import { Action, Grammar, Interface, ParserRule, Type } from '../generated/ast';
-import { Property, TypeOption } from '../type-system';
+import type { LangiumDocument } from '../../workspace/documents';
+import type { Action, Grammar, Interface, ParserRule, Type } from '../generated/ast';
+import type { Property, TypeOption } from '../type-system';
 
 /**
  * A Langium document holds the parse result (AST and CST) and any additional state that is derived

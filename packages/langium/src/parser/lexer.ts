@@ -4,8 +4,9 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { ILexingError, IMultiModeLexerDefinition, IToken, Lexer as ChevrotainLexer, TokenType, TokenTypeDictionary, TokenVocabulary } from 'chevrotain';
-import { LangiumServices } from '../services';
+import type { ILexingError, IMultiModeLexerDefinition, IToken, TokenType, TokenTypeDictionary, TokenVocabulary } from 'chevrotain';
+import type { LangiumServices } from '../services';
+import { Lexer as ChevrotainLexer } from 'chevrotain';
 
 export interface LexerResult {
     /**

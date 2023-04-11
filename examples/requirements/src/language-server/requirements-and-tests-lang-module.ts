@@ -4,16 +4,14 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import {
-    createDefaultModule, createDefaultSharedModule, DefaultSharedModuleContext, inject,
-    LangiumSharedServices
-} from 'langium';
-import {
-    RequirementsAndTestsGeneratedSharedModule, RequirementsGeneratedModule, TestsGeneratedModule
-} from './generated/module';
-import { RequirementsLangModule, RequirementsLangServices } from './requirements-lang-module';
+import type { DefaultSharedModuleContext, LangiumSharedServices } from 'langium';
+import type { RequirementsLangServices } from './requirements-lang-module';
+import type { TestsLangServices } from './tests-lang-module';
+import { createDefaultModule, createDefaultSharedModule, inject } from 'langium';
+import { RequirementsAndTestsGeneratedSharedModule, RequirementsGeneratedModule, TestsGeneratedModule } from './generated/module';
+import { RequirementsLangModule } from './requirements-lang-module';
 import { registerRequirementsValidationChecks } from './requirements-lang-validator';
-import { TestsLangModule, TestsLangServices } from './tests-lang-module';
+import { TestsLangModule } from './tests-lang-module';
 import { registerTestsValidationChecks } from './tests-lang-validator';
 
 /**

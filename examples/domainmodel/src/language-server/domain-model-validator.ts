@@ -4,8 +4,8 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { ValidationAcceptor, ValidationChecks } from 'langium';
-import { DomainModelAstType, Type } from './generated/ast';
+import type { ValidationAcceptor, ValidationChecks } from 'langium';
+import type { DomainModelAstType, Type } from './generated/ast';
 import type { DomainModelServices } from './domain-model-module';
 
 export function registerValidationChecks(services: DomainModelServices) {

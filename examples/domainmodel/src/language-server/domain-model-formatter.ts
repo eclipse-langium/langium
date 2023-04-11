@@ -4,7 +4,8 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { AbstractFormatter, AstNode, Formatting } from 'langium';
+import type { AstNode } from 'langium';
+import { AbstractFormatter, Formatting } from 'langium';
 import * as ast from './generated/ast';
 
 export class DomainModelFormatter extends AbstractFormatter {

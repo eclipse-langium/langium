@@ -5,9 +5,8 @@
  ******************************************************************************/
 
 import * as vscode from 'vscode';
-import {
-    LanguageClient, LanguageClientOptions, ServerOptions, TransportKind
-} from 'vscode-languageclient/node';
+import type { LanguageClientOptions, ServerOptions } from 'vscode-languageclient/node';
+import { LanguageClient, TransportKind } from 'vscode-languageclient/node';
 
 let client: LanguageClient;
 

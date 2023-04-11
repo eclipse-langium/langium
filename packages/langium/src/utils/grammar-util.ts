@@ -4,18 +4,22 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import type { Module } from '../dependency-injection';
+import type { LangiumGrammarServices } from '../grammar/langium-grammar-module';
+import type { LanguageMetaData } from '../grammar/language-meta-data';
+import type { IParserConfig } from '../parser/parser-config';
+import type { LangiumGeneratedServices, LangiumGeneratedSharedServices, LangiumServices, LangiumSharedServices, PartialLangiumServices, PartialLangiumSharedServices } from '../services';
+import type { AstNode, CstNode } from '../syntax-tree';
+import type { Mutable } from '../utils/ast-util';
 import { URI } from 'vscode-uri';
 import { createDefaultModule, createDefaultSharedModule } from '../default-module';
-import { inject, Module } from '../dependency-injection';
+import { inject } from '../dependency-injection';
 import { interpretAstReflection } from '../grammar/ast-reflection-interpreter';
 import * as ast from '../grammar/generated/ast';
 import { terminalRegex } from '../grammar/internal-grammar-util';
-import { createLangiumGrammarServices, LangiumGrammarServices } from '../grammar/langium-grammar-module';
-import { LanguageMetaData } from '../grammar/language-meta-data';
-import { IParserConfig } from '../parser/parser-config';
-import { LangiumGeneratedServices, LangiumGeneratedSharedServices, LangiumServices, LangiumSharedServices, PartialLangiumServices, PartialLangiumSharedServices } from '../services';
-import { AstNode, CstNode, isCompositeCstNode } from '../syntax-tree';
-import { getContainerOfType, getDocument, Mutable, streamAllContents } from '../utils/ast-util';
+import { createLangiumGrammarServices } from '../grammar/langium-grammar-module';
+import { isCompositeCstNode } from '../syntax-tree';
+import { getContainerOfType, getDocument, streamAllContents } from '../utils/ast-util';
 import { streamCst } from '../utils/cst-util';
 import { EmptyFileSystem } from '../workspace/file-system-provider';
 

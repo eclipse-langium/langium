@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { URI } from 'vscode-uri';
+import type { URI } from 'vscode-uri';
 
 export function equalURI(a?: URI | string, b?: URI | string): boolean {
     return a?.toString() === b?.toString();

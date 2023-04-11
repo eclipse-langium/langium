@@ -4,12 +4,11 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import {
-    Connection, NotificationType
-} from 'vscode-languageserver';
-import { ActionMessage } from 'sprotty-protocol';
+import type { Connection } from 'vscode-languageserver';
+import type { ActionMessage } from 'sprotty-protocol';
+import type { LangiumSprottySharedServices } from './sprotty-services';
+import { NotificationType } from 'vscode-languageserver';
 import { isOperationCancelled } from 'langium';
-import { LangiumSprottySharedServices } from './sprotty-services';
 
 export namespace DiagramActionNotification {
     export const type = new NotificationType<ActionMessage>('diagram/accept');

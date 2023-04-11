@@ -4,10 +4,11 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { Connection, DidChangeConfigurationParams } from 'vscode-languageserver';
-import { ConfigurationItem, DidChangeConfigurationNotification } from 'vscode-languageserver-protocol';
-import { ServiceRegistry } from '../service-registry';
-import { LangiumSharedServices } from '../services';
+import type { Connection, DidChangeConfigurationParams } from 'vscode-languageserver';
+import type { ConfigurationItem } from 'vscode-languageserver-protocol';
+import type { ServiceRegistry } from '../service-registry';
+import type { LangiumSharedServices } from '../services';
+import { DidChangeConfigurationNotification } from 'vscode-languageserver-protocol';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -66,7 +67,7 @@ export class DefaultConfigurationProvider implements ConfigurationProvider {
     }
 
     updateConfiguration(change: DidChangeConfigurationParams): void {
-        if(!change.settings) {
+        if (!change.settings) {
             return;
         }
         Object.keys(change.settings).forEach(section => {

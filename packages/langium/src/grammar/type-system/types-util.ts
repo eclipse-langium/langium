@@ -4,13 +4,15 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { References } from '../../references/references';
+import type { References } from '../../references/references';
+import type { AstNodeLocator } from '../../workspace/ast-node-locator';
+import type { LangiumDocuments } from '../../workspace/documents';
+import type { Interface, Type, AbstractType, TypeDefinition } from '../generated/ast';
+import type { PlainInterface, PlainProperty } from './type-collector/plain-types';
+import type { AstTypes, InterfaceType, PropertyType, TypeOption } from './type-collector/types';
 import { MultiMap } from '../../utils/collections';
-import { AstNodeLocator } from '../../workspace/ast-node-locator';
-import { LangiumDocuments } from '../../workspace/documents';
-import { Interface, Type, AbstractType, isInterface, isType, TypeDefinition, isUnionType, isSimpleType } from '../generated/ast';
-import { PlainInterface, PlainProperty } from './type-collector/plain-types';
-import { AstTypes, InterfaceType, isArrayType, isPrimitiveType, isPropertyUnion, isReferenceType, isValueType, PropertyType, TypeOption } from './type-collector/types';
+import { isInterface, isType, isUnionType, isSimpleType } from '../generated/ast';
+import { isArrayType, isPrimitiveType, isPropertyUnion, isReferenceType, isValueType } from './type-collector/types';
 
 /**
  * Collects all properties of all interface types. Includes super type properties.

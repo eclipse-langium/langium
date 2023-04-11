@@ -4,17 +4,18 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { MismatchedTokenException } from 'chevrotain';
-import { CancellationToken, Diagnostic, DiagnosticSeverity, Position, Range } from 'vscode-languageserver';
+import type { MismatchedTokenException } from 'chevrotain';
+import type { Diagnostic } from 'vscode-languageserver';
+import type { LanguageMetaData } from '../grammar/language-meta-data';
+import type { LangiumServices } from '../services';
+import type { AstNode, CstNode } from '../syntax-tree';
+import type { LangiumDocument } from '../workspace/documents';
+import type { DiagnosticInfo, ValidationAcceptor, ValidationRegistry } from './validation-registry';
+import { CancellationToken, DiagnosticSeverity, Position, Range } from 'vscode-languageserver';
 import { findNodeForKeyword, findNodeForProperty } from '../utils/grammar-util';
-import { LanguageMetaData } from '../grammar/language-meta-data';
-import { LangiumServices } from '../services';
-import { AstNode, CstNode } from '../syntax-tree';
 import { streamAst } from '../utils/ast-util';
 import { tokenToRange } from '../utils/cst-util';
 import { interruptAndCheck, isOperationCancelled } from '../utils/promise-util';
-import { LangiumDocument } from '../workspace/documents';
-import { DiagnosticInfo, ValidationAcceptor, ValidationRegistry } from './validation-registry';
 
 /**
  * Language-specific service for validating `LangiumDocument`s.
@@ -76,7 +77,7 @@ export class DefaultDocumentValidator implements DocumentValidator {
                 // We can simply append our diagnostic to that token
                 if ('previousToken' in parserError) {
                     const token = (parserError as MismatchedTokenException).previousToken;
-                    if(!isNaN(token.startOffset)) {
+                    if (!isNaN(token.startOffset)) {
                         const position = Position.create(token.endLine! - 1, token.endColumn!);
                         range = Range.create(position, position);
                     } else {

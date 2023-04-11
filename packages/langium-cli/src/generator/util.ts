@@ -3,8 +3,8 @@
  * This program and the accompanying materials are made available under the
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
-
-import { CompositeGeneratorNode, GeneratorNode, getAllReachableRules, Grammar, GrammarAST, NL, stream, streamAllContents } from 'langium';
+import type { GeneratorNode, Grammar } from 'langium';
+import { CompositeGeneratorNode, getAllReachableRules, GrammarAST, NL, stream, streamAllContents } from 'langium';
 import fs from 'fs-extra';
 import path from 'path';
 import * as readline from 'readline';

@@ -1,7 +1,7 @@
+import type { Model } from '../language/generated/ast';
 import fs from 'fs';
 import { CompositeGeneratorNode, NL, toString } from 'langium';
 import path from 'path';
-import { Model } from '../language/generated/ast';
 import { extractDestinationAndName } from './cli-util';
 
 export function generateJavaScript(model: Model, filePath: string, destination: string | undefined): string {

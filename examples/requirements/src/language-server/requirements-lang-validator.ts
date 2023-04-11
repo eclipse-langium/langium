@@ -4,9 +4,10 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { ValidationAcceptor, ValidationChecks } from 'langium';
-import { RequirementsAndTestsAstType, Requirement, isTestModel } from './generated/ast';
+import type { ValidationAcceptor, ValidationChecks } from 'langium';
+import type { RequirementsAndTestsAstType, Requirement } from './generated/ast';
 import type { RequirementsLangServices } from './requirements-lang-module';
+import { isTestModel } from './generated/ast';
 
 export function registerRequirementsValidationChecks(services: RequirementsLangServices) {
     const registry = services.validation.ValidationRegistry;
@@ -37,9 +38,9 @@ export class RequirementsLangValidator {
 
     checkRequirementIsCoveredByATest(requirement: Requirement, accept: ValidationAcceptor): void {
         let ok = false;
-        this.services.shared.workspace.LangiumDocuments.all.map(doc=>doc.parseResult?.value).filter(isTestModel).forEach(testModel=>{
-            testModel.tests.forEach(test=>{
-                if (test.requirements.map(r=>r.ref).includes(requirement)) {
+        this.services.shared.workspace.LangiumDocuments.all.map(doc => doc.parseResult?.value).filter(isTestModel).forEach(testModel => {
+            testModel.tests.forEach(test => {
+                if (test.requirements.map(r => r.ref).includes(requirement)) {
                     ok = true;
                 }
             });

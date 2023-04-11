@@ -4,13 +4,16 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { EMPTY_ALT, IOrAlt, TokenType, TokenTypeDictionary } from 'chevrotain';
-import { AbstractElement, Action, Alternatives, Condition, CrossReference, Grammar, Group, isAction, isAlternatives, isAssignment, isConjunction, isCrossReference, isDisjunction, isGroup, isKeyword, isLiteralCondition, isNegation, isParameterReference, isParserRule, isRuleCall, isTerminalRule, isUnorderedGroup, Keyword, NamedArgument, ParserRule, RuleCall, UnorderedGroup } from '../grammar/generated/ast';
-import { BaseParser } from './langium-parser';
-import { AstNode } from '../syntax-tree';
+import type { IOrAlt, TokenType, TokenTypeDictionary } from 'chevrotain';
+import type { AbstractElement, Action, Alternatives, Condition, CrossReference, Grammar, Group, Keyword, NamedArgument, ParserRule, RuleCall, UnorderedGroup } from '../grammar/generated/ast';
+import type { BaseParser } from './langium-parser';
+import type { AstNode } from '../syntax-tree';
+import type { Cardinality } from '../grammar/internal-grammar-util';
+import { EMPTY_ALT } from 'chevrotain';
+import { isAction, isAlternatives, isAssignment, isConjunction, isCrossReference, isDisjunction, isGroup, isKeyword, isLiteralCondition, isNegation, isParameterReference, isParserRule, isRuleCall, isTerminalRule, isUnorderedGroup } from '../grammar/generated/ast';
 import { assertUnreachable, ErrorWithLocation } from '../utils/errors';
 import { stream } from '../utils/stream';
-import { Cardinality, getTypeName } from '../grammar/internal-grammar-util';
+import { getTypeName } from '../grammar/internal-grammar-util';
 import { findNameAssignment, getAllReachableRules } from '../utils/grammar-util';
 
 type RuleContext = {

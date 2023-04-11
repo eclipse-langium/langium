@@ -4,17 +4,19 @@
 * terms of the MIT License, which is available in the project root.
 ******************************************************************************/
 
-import { DefaultReferences, FindReferencesOptions } from '../../references/references';
-import { LangiumServices } from '../../services';
-import { AstNode, CstNode } from '../../syntax-tree';
-import { getContainerOfType, getDocument } from '../../utils/ast-util';
+import type { LangiumServices } from '../../services';
+import type { AstNode, CstNode } from '../../syntax-tree';
+import type { Stream } from '../../utils/stream';
+import type { ReferenceDescription } from '../../workspace/ast-descriptions';
+import type { LangiumDocuments } from '../../workspace/documents';
+import type { Action, Assignment, Interface, ParserRule, Type, TypeAttribute } from '../generated/ast';
+import { DefaultReferences } from '../../references/references';
+import { getContainerOfType, getDocument, streamAst } from '../../utils/ast-util';
 import { toDocumentSegment } from '../../utils/cst-util';
 import { findAssignment, findNodeForProperty } from '../../utils/grammar-util';
-import { stream, Stream } from '../../utils/stream';
+import { stream } from '../../utils/stream';
 import { equalURI } from '../../utils/uri-util';
-import { ReferenceDescription } from '../../workspace/ast-descriptions';
-import { LangiumDocuments } from '../../workspace/documents';
-import { Action, Assignment, Interface, isAction, isAssignment, isInterface, isParserRule, isType, isTypeAttribute, ParserRule, Type, TypeAttribute } from '../generated/ast';
+import { isAction, isAssignment, isInterface, isParserRule, isType, isTypeAttribute } from '../generated/ast';
 import { extractAssignments, getActionAtElement } from '../internal-grammar-util';
 import { collectChildrenTypes, collectSuperTypes } from '../type-system/types-util';
 

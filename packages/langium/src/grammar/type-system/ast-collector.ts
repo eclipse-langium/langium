@@ -4,12 +4,15 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { Grammar } from '../generated/ast';
-import { LangiumDocuments } from '../../workspace/documents';
+import type { Grammar } from '../generated/ast';
+import type { LangiumDocuments } from '../../workspace/documents';
+import type { AstTypes, PropertyType, TypeOption, UnionType } from './type-collector/types';
+import type { ValidationAstTypes } from './type-collector/all-types';
+import type { PlainAstTypes, PlainInterface, PlainUnion } from './type-collector/plain-types';
 import { collectTypeHierarchy, sortInterfacesTopologically } from './types-util';
-import { AstTypes, isArrayType, isInterfaceType, isPrimitiveType, isPropertyUnion, isStringType, isUnionType, isValueType, PropertyType, TypeOption, UnionType } from './type-collector/types';
-import { collectTypeResources, ValidationAstTypes } from './type-collector/all-types';
-import { PlainAstTypes, PlainInterface, plainToTypes, PlainUnion } from './type-collector/plain-types';
+import { isArrayType, isInterfaceType, isPrimitiveType, isPropertyUnion, isStringType, isUnionType, isValueType } from './type-collector/types';
+import { collectTypeResources } from './type-collector/all-types';
+import { plainToTypes } from './type-collector/plain-types';
 
 /**
  * Collects all types for the generated AST. The types collector entry point.

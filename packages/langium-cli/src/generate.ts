@@ -3,22 +3,10 @@
  * This program and the accompanying materials are made available under the
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
-
-import {
-    AstNode,
-    copyAstNode,
-    createLangiumGrammarServices,
-    getDocument,
-    Grammar,
-    GrammarAST,
-    LangiumDocument,
-    linkContentToContainer,
-    Mutable
-} from 'langium';
-import {
-    resolveImport,
-    resolveTransitiveImports
-} from 'langium/lib/grammar/internal-grammar-util';
+import type { AstNode, Grammar, LangiumDocument, Mutable } from 'langium';
+import type { LangiumConfig, LangiumLanguageConfig } from './package';
+import { copyAstNode, createLangiumGrammarServices, getDocument, GrammarAST, linkContentToContainer } from 'langium';
+import { resolveImport, resolveTransitiveImports } from 'langium/lib/grammar/internal-grammar-util';
 import { NodeFileSystem } from 'langium/node';
 import { URI } from 'vscode-uri';
 import { generateAst } from './generator/ast-generator';
@@ -27,16 +15,8 @@ import { generateModule } from './generator/module-generator';
 import { generateTextMate } from './generator/highlighting/textmate-generator';
 import { generateMonarch } from './generator/highlighting/monarch-generator';
 import { generatePrismHighlighting } from './generator/highlighting/prism-generator';
-import {
-    getUserChoice,
-    log
-} from './generator/util';
-import {
-    getFilePath,
-    LangiumConfig,
-    LangiumLanguageConfig,
-    RelativePath
-} from './package';
+import { getUserChoice, log } from './generator/util';
+import { getFilePath, RelativePath } from './package';
 import { validateParser } from './parser-validation';
 import { generateTypesFile } from './generator/types-generator';
 import chalk from 'chalk';
@@ -316,7 +296,7 @@ export async function generateTypes(options: ExtractTypesOptions): Promise<void>
     }
 
     const grammarDoc = await doLoadAndUpdate(documents.getOrCreateDocument(URI.file(grammarPath)));
-    const genTypes =  generateTypesFile(grammarServices, [grammarDoc.parseResult.value as Grammar]);
+    const genTypes = generateTypesFile(grammarServices, [grammarDoc.parseResult.value as Grammar]);
     await writeWithFail(typesFilePath, genTypes, { watch: false });
     log('log', { watch: false }, `Generated type definitions to: ${chalk.white.bold(typesFilePath)}`);
     return;
@@ -330,7 +310,7 @@ async function doLoadAndUpdate(grammarDoc: LangiumDocument): Promise<LangiumDocu
     await sharedServices.workspace.DocumentBuilder.update(allUris, []);
     for (const doc of documents.all) {
         await sharedServices.workspace.DocumentBuilder.build([doc]);
-        if(doc.uri === grammarDoc.uri) {
+        if (doc.uri === grammarDoc.uri) {
             // update grammar doc after rebuild
             grammarDoc = doc;
         }

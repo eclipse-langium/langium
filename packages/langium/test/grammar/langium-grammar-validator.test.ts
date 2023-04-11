@@ -4,12 +4,15 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import type { AstNode, Properties } from '../../src';
+import type { Assignment, ParserRule, UnionType } from '../../src/grammar/generated/ast';
+import type { ValidationResult } from '../../src/test';
 import { afterEach, beforeAll, describe, expect, test } from 'vitest';
 import { DiagnosticSeverity } from 'vscode-languageserver';
-import { AstNode, createLangiumGrammarServices, EmptyFileSystem, GrammarAST, Properties, streamAllContents, streamContents } from '../../src';
-import { Assignment, CrossReference, isAssignment, ParserRule, UnionType } from '../../src/grammar/generated/ast';
+import { createLangiumGrammarServices, EmptyFileSystem, GrammarAST, streamAllContents, streamContents } from '../../src';
+import { isAssignment } from '../../src/grammar/generated/ast';
 import { IssueCodes } from '../../src/grammar/validation/validator';
-import { clearDocuments, expectError, expectIssue, expectNoIssues, expectWarning, parseHelper, validationHelper, ValidationResult } from '../../src/test';
+import { clearDocuments, expectError, expectIssue, expectNoIssues, expectWarning, parseHelper, validationHelper } from '../../src/test';
 
 const services = createLangiumGrammarServices(EmptyFileSystem);
 const parse = parseHelper(services.grammar);

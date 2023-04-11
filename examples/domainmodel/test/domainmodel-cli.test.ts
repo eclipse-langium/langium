@@ -4,10 +4,11 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import type { ExecException } from 'child_process';
 import path from 'path';
 import fs from 'fs';
 import { afterEach, describe, expect, test } from 'vitest';
-import { exec, ExecException } from 'child_process';
+import { exec } from 'child_process';
 import { generateAction } from '../src/cli/generator';
 
 describe('Test the domainmodel CLI', () => {
@@ -42,7 +43,7 @@ describe('Test the domainmodel CLI', () => {
 
     test('Via CLI: Generator command returns code 0 and creates expected files', async () => {
         const result = await cli(['generate', rawfileName, '-d', destination, '-q']);
-        if(result.code !== 0) {
+        if (result.code !== 0) {
             console.log('Error code:', result.code);
             console.log('Error message:', result.error);
         }

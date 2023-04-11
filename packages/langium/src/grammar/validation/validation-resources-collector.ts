@@ -4,17 +4,18 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import type { LangiumDocuments } from '../../workspace/documents';
+import type { AbstractElement, Action, Grammar, Interface, ParserRule, Type } from '../generated/ast';
+import type { AstResources, ValidationAstTypes } from '../type-system/type-collector/all-types';
+import type { TypeToValidationInfo, ValidationResources } from '../workspace/documents';
+import type { LangiumGrammarServices } from '../langium-grammar-module';
+import type { InterfaceType, Property } from '../type-system';
 import { MultiMap } from '../../utils/collections';
 import { stream } from '../../utils/stream';
-import { LangiumDocuments } from '../../workspace/documents';
-import { AbstractElement, Action, Grammar, Interface, isAction, isAlternatives, isGroup, isUnorderedGroup, ParserRule, Type } from '../generated/ast';
+import { isAction, isAlternatives, isGroup, isUnorderedGroup } from '../generated/ast';
 import { getActionType, getRuleType } from '../internal-grammar-util';
-import { AstResources, ValidationAstTypes } from '../type-system/type-collector/all-types';
 import { mergeInterfaces, mergeTypesAndInterfaces } from '../type-system/types-util';
-import { TypeToValidationInfo, ValidationResources } from '../workspace/documents';
-import { LangiumGrammarServices } from '../langium-grammar-module';
 import { collectValidationAst } from '../type-system/ast-collector';
-import { InterfaceType, Property } from '../type-system';
 
 export class LangiumGrammarValidationResourcesCollector {
     private readonly documents: LangiumDocuments;

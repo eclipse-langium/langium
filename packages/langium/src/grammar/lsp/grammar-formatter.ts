@@ -4,8 +4,8 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import type { AstNode } from '../../syntax-tree';
 import { AbstractFormatter, Formatting } from '../../lsp/formatter';
-import { AstNode } from '../../syntax-tree';
 import * as ast from '../generated/ast';
 
 export class LangiumGrammarFormatter extends AbstractFormatter {

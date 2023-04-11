@@ -4,14 +4,15 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { CancellationToken, ImplementationParams, LocationLink } from 'vscode-languageserver';
-import { GrammarConfig } from '../grammar/grammar-config';
-import { References } from '../references/references';
-import { LangiumServices } from '../services';
-import { AstNode } from '../syntax-tree';
+import type { ImplementationParams, LocationLink } from 'vscode-languageserver';
+import type { GrammarConfig } from '../grammar/grammar-config';
+import type { References } from '../references/references';
+import type { LangiumServices } from '../services';
+import type { AstNode } from '../syntax-tree';
+import type { MaybePromise } from '../utils/promise-util';
+import type { LangiumDocument } from '../workspace/documents';
+import { CancellationToken } from 'vscode-languageserver';
 import { findDeclarationNodeAtOffset } from '../utils/cst-util';
-import { MaybePromise } from '../utils/promise-util';
-import { LangiumDocument } from '../workspace/documents';
 
 /**
  * Language-specific service for handling go to implementation requests.

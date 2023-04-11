@@ -4,8 +4,9 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import type { ExecuteCommandAcceptor } from '../../src';
 import { describe, expect, test } from 'vitest';
-import { createServicesForGrammar, AbstractExecuteCommandHandler, ExecuteCommandAcceptor } from '../../src';
+import { createServicesForGrammar, AbstractExecuteCommandHandler } from '../../src';
 
 describe('AbstractExecuteCommandHandler', () => {
 

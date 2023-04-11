@@ -4,16 +4,15 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import {
-    AstNode, DefaultRenameProvider, findDeclarationNodeAtOffset, getDocument, isNamed, LangiumDocument,
-    LangiumDocuments, ReferenceDescription, streamAst, toDocumentSegment
-} from 'langium';
-import { Location, Range, WorkspaceEdit } from 'vscode-languageserver';
-import { RenameParams } from 'vscode-languageserver-protocol';
-import { TextEdit } from 'vscode-languageserver-types';
-import { URI } from 'vscode-uri';
+import type { AstNode, LangiumDocument, LangiumDocuments, ReferenceDescription } from 'langium';
+import type { Range, WorkspaceEdit } from 'vscode-languageserver';
+import type { RenameParams } from 'vscode-languageserver-protocol';
+import type { URI } from 'vscode-uri';
 import type { DomainModelServices } from './domain-model-module';
-import { QualifiedNameProvider } from './domain-model-naming';
+import type { QualifiedNameProvider } from './domain-model-naming';
+import { DefaultRenameProvider, findDeclarationNodeAtOffset, getDocument, isNamed, streamAst, toDocumentSegment } from 'langium';
+import { Location } from 'vscode-languageserver';
+import { TextEdit } from 'vscode-languageserver-types';
 import { isPackageDeclaration } from './generated/ast';
 
 export class DomainModelRenameProvider extends DefaultRenameProvider {

@@ -4,13 +4,14 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { CallHierarchyIncomingCall, CallHierarchyOutgoingCall, Range, SymbolKind } from 'vscode-languageserver';
+import type { CallHierarchyIncomingCall, CallHierarchyOutgoingCall, Range } from 'vscode-languageserver';
+import type { AstNode, CstNode } from '../../syntax-tree';
+import type { Stream } from '../../utils/stream';
+import type { ReferenceDescription } from '../../workspace/ast-descriptions';
+import { SymbolKind } from 'vscode-languageserver';
 import { AbstractCallHierarchyProvider } from '../../lsp/call-hierarchy-provider';
-import { AstNode, CstNode } from '../../syntax-tree';
 import { getContainerOfType, getDocument, streamAllContents } from '../../utils/ast-util';
 import { findLeafNodeAtOffset } from '../../utils/cst-util';
-import { Stream } from '../../utils/stream';
-import { ReferenceDescription } from '../../workspace/ast-descriptions';
 import { isParserRule, isRuleCall } from '../generated/ast';
 
 export class LangiumGrammarCallHierarchyProvider extends AbstractCallHierarchyProvider {

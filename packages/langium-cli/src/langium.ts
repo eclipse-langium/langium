@@ -3,14 +3,15 @@
  * This program and the accompanying materials are made available under the
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
-
+import type { ExtractTypesOptions, GenerateOptions, GeneratorResult } from './generate';
+import type { LangiumConfig } from './package';
 import chalk from 'chalk';
 import fs from 'fs-extra';
 import { Command } from 'commander';
 import { validate } from 'jsonschema';
-import { ExtractTypesOptions, generate, GenerateOptions, generateTypes, GeneratorResult } from './generate';
+import { generate, generateTypes } from './generate';
 import { cliVersion, elapsedTime, getTime, log, schema } from './generator/util';
-import { LangiumConfig, loadConfig } from './package';
+import { loadConfig } from './package';
 
 const program = new Command();
 program

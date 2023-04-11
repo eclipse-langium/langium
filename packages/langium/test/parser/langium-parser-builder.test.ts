@@ -4,9 +4,10 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import type { TokenType, TokenVocabulary } from 'chevrotain';
+import type { AstNode, Grammar, GrammarAST, LangiumParser, TokenBuilderOptions } from '../../src';
 import { describe, expect, test, onTestFailed, beforeEach } from 'vitest';
-import { TokenType, TokenVocabulary } from 'chevrotain';
-import { AstNode, createServicesForGrammar, DefaultTokenBuilder, Grammar, GrammarAST, LangiumParser, TokenBuilderOptions } from '../../src';
+import { createServicesForGrammar, DefaultTokenBuilder } from '../../src';
 
 describe('Predicated grammar rules with alternatives', () => {
 
@@ -483,11 +484,11 @@ describe('MultiMode Lexing', () => {
 
         protected override buildTerminalToken(terminal: GrammarAST.TerminalRule): TokenType {
             const tokenType = super.buildTerminalToken(terminal);
-            if(tokenType.name === 'Up') {
+            if (tokenType.name === 'Up') {
                 tokenType.PUSH_MODE = 'up';
-            } else if(tokenType.name === 'Low') {
+            } else if (tokenType.name === 'Low') {
                 tokenType.PUSH_MODE = 'down';
-            } else if(tokenType.name === 'Pop') {
+            } else if (tokenType.name === 'Pop') {
                 tokenType.POP_MODE = true;
             }
             return tokenType;

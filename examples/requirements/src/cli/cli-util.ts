@@ -4,13 +4,14 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import type { LangiumDocument, LangiumServices } from 'langium';
+import type { RequirementModel, TestModel } from '../language-server/generated/ast';
+import type { WorkspaceFolder } from 'vscode-languageclient';
 import chalk from 'chalk';
 import path from 'path';
 import fs from 'fs';
-import { LangiumDocument, LangiumServices } from 'langium';
 import { URI } from 'vscode-uri';
-import { isTestModel, RequirementModel, TestModel } from '../language-server/generated/ast';
-import { WorkspaceFolder } from 'vscode-languageclient';
+import { isTestModel } from '../language-server/generated/ast';
 
 /**
  * Read a requirement document with the complete workspace (with requirements and
@@ -41,7 +42,7 @@ export async function extractDocuments(fileName: string, services: LangiumServic
     const documents = services.shared.workspace.LangiumDocuments.all.toArray();
     await services.shared.workspace.DocumentBuilder.build(documents, { validationChecks: 'all' });
 
-    documents.forEach(document=>{
+    documents.forEach(document => {
         const validationErrors = (document.diagnostics ?? []).filter(e => e.severity === 1);
         if (validationErrors.length > 0) {
             console.error(chalk.red('There are validation errors:'));
@@ -70,8 +71,8 @@ export async function extractRequirementModelWithTestModels(fileName: string, se
     return [
         mainDocument.parseResult?.value as RequirementModel,
         allDocuments
-            .filter(d=>isTestModel(d.parseResult?.value))
-            .map(d=>d.parseResult?.value as TestModel)
+            .filter(d => isTestModel(d.parseResult?.value))
+            .map(d => d.parseResult?.value as TestModel)
     ];
 }
 

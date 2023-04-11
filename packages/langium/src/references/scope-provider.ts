@@ -4,13 +4,14 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { LangiumServices } from '../services';
-import { AstNode, AstNodeDescription, AstReflection, ReferenceInfo } from '../syntax-tree';
+import type { LangiumServices } from '../services';
+import type { AstNode, AstNodeDescription, AstReflection, ReferenceInfo } from '../syntax-tree';
+import type { Stream } from '../utils/stream';
+import type { AstNodeDescriptionProvider } from '../workspace/ast-descriptions';
+import type { IndexManager } from '../workspace/index-manager';
+import type { NameProvider } from './name-provider';
 import { getDocument } from '../utils/ast-util';
-import { EMPTY_STREAM, Stream, stream } from '../utils/stream';
-import { AstNodeDescriptionProvider } from '../workspace/ast-descriptions';
-import { IndexManager } from '../workspace/index-manager';
-import { NameProvider } from './name-provider';
+import { EMPTY_STREAM, stream } from '../utils/stream';
 
 /**
  * A scope describes what target elements are visible from a specific cross-reference context.

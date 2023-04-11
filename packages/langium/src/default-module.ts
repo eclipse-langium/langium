@@ -2,11 +2,14 @@
  * Copyright 2021 TypeFox GmbH
  * This program and the accompanying materials are made available under the
  * terms of the MIT License, which is available in the project root.
- ******************************************************************************/
+******************************************************************************/
 
-import { Connection, TextDocuments } from 'vscode-languageserver';
+import type { Connection } from 'vscode-languageserver';
+import type { Module } from './dependency-injection';
+import type { LangiumDefaultServices, LangiumDefaultSharedServices, LangiumServices, LangiumSharedServices } from './services';
+import type { FileSystemProvider } from './workspace/file-system-provider';
+import { TextDocuments } from 'vscode-languageserver';
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { Module } from './dependency-injection';
 import { createGrammarConfig } from './grammar/grammar-config';
 import { createCompletionParser } from './parser/completion-parser-builder';
 import { DefaultCompletionProvider } from './lsp/completion/completion-provider';
@@ -28,7 +31,6 @@ import { DefaultScopeComputation } from './references/scope-computation';
 import { DefaultScopeProvider } from './references/scope-provider';
 import { DefaultJsonSerializer } from './serializer/json-serializer';
 import { DefaultServiceRegistry } from './service-registry';
-import { LangiumDefaultServices, LangiumDefaultSharedServices, LangiumServices, LangiumSharedServices } from './services';
 import { MutexLock } from './utils/promise-util';
 import { DefaultDocumentValidator } from './validation/document-validator';
 import { ValidationRegistry } from './validation/validation-registry';
@@ -37,7 +39,6 @@ import { DefaultAstNodeLocator } from './workspace/ast-node-locator';
 import { DefaultConfigurationProvider } from './workspace/configuration';
 import { DefaultDocumentBuilder } from './workspace/document-builder';
 import { DefaultLangiumDocumentFactory, DefaultLangiumDocuments } from './workspace/documents';
-import { FileSystemProvider } from './workspace/file-system-provider';
 import { DefaultIndexManager } from './workspace/index-manager';
 import { DefaultWorkspaceManager } from './workspace/workspace-manager';
 import { DefaultLexer } from './parser/lexer';

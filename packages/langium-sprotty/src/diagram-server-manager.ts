@@ -4,12 +4,14 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { CancellationToken, Connection } from 'vscode-languageserver';
-import { URI } from 'vscode-uri';
-import { ActionMessage, DiagramOptions, DiagramServer, isRequestAction, RejectAction, RequestModelAction } from 'sprotty-protocol';
-import { DocumentState, equalURI, interruptAndCheck, LangiumDocument, ServiceRegistry, stream } from 'langium';
-import { LangiumSprottyServices, LangiumSprottySharedServices } from './sprotty-services';
-import { LangiumDiagramGeneratorArguments } from './diagram-generator';
+import type { CancellationToken, Connection } from 'vscode-languageserver';
+import type { URI } from 'vscode-uri';
+import type { ActionMessage, DiagramOptions, DiagramServer, RequestModelAction } from 'sprotty-protocol';
+import type { LangiumDocument, ServiceRegistry } from 'langium';
+import type { LangiumSprottyServices, LangiumSprottySharedServices } from './sprotty-services';
+import type { LangiumDiagramGeneratorArguments } from './diagram-generator';
+import { isRequestAction, RejectAction } from 'sprotty-protocol';
+import { DocumentState, equalURI, interruptAndCheck, stream } from 'langium';
 import { DiagramActionNotification } from './lsp';
 
 /**

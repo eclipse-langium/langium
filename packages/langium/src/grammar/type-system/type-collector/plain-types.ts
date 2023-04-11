@@ -4,8 +4,9 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { Action, Assignment, TypeAttribute } from '../../generated/ast';
-import { AstTypes, InterfaceType, Property, PropertyType, UnionType } from './types';
+import type { Action, Assignment, TypeAttribute } from '../../generated/ast';
+import type { AstTypes, Property, PropertyType } from './types';
+import { InterfaceType, UnionType } from './types';
 
 export interface PlainAstTypes {
     interfaces: PlainInterface[];

@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { LangiumServices } from '../services';
+import type { LangiumServices } from '../services';
 import { LangiumParser } from './langium-parser';
 import { createParser } from './parser-builder-base';
 

@@ -4,9 +4,13 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { createDefaultModule, createDefaultSharedModule, DefaultSharedModuleContext } from '../default-module';
-import { inject, Module } from '../dependency-injection';
-import { LangiumServices, LangiumSharedServices, PartialLangiumServices, PartialLangiumSharedServices } from '../services';
+import type { DefaultSharedModuleContext } from '../default-module';
+import type { Module } from '../dependency-injection';
+import type { LangiumServices, LangiumSharedServices, PartialLangiumServices, PartialLangiumSharedServices } from '../services';
+import type { LangiumGrammarDocument } from './workspace/documents';
+import type { Grammar } from './generated/ast';
+import { createDefaultModule, createDefaultSharedModule } from '../default-module';
+import { inject } from '../dependency-injection';
 import { LangiumGrammarGeneratedModule, LangiumGrammarGeneratedSharedModule } from './generated/module';
 import { LangiumGrammarScopeComputation, LangiumGrammarScopeProvider } from './references/grammar-scope';
 import { LangiumGrammarValidator, registerValidationChecks } from './validation/validator';
@@ -20,8 +24,6 @@ import { LangiumGrammarDefinitionProvider } from './lsp/grammar-definition';
 import { LangiumGrammarCallHierarchyProvider } from './lsp/grammar-call-hierarchy';
 import { LangiumGrammarValidationResourcesCollector } from './validation/validation-resources-collector';
 import { LangiumGrammarTypesValidator, registerTypeValidationChecks } from './validation/types-validator';
-import { LangiumGrammarDocument } from './workspace/documents';
-import { Grammar } from './generated/ast';
 import { interruptAndCheck } from '../utils/promise-util';
 import { DocumentState } from '../workspace/documents';
 

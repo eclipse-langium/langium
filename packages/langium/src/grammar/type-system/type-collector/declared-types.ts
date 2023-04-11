@@ -4,9 +4,10 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { Interface, Type, TypeDefinition, isArrayType, isReferenceType, isUnionType, isSimpleType } from '../../generated/ast';
+import type { Interface, Type, TypeDefinition } from '../../generated/ast';
+import type { PlainAstTypes, PlainInterface, PlainProperty, PlainPropertyType, PlainUnion } from './plain-types';
+import { isArrayType, isReferenceType, isUnionType, isSimpleType } from '../../generated/ast';
 import { getTypeName, getTypeNameWithoutError, isPrimitiveType } from '../../internal-grammar-util';
-import { PlainAstTypes, PlainInterface, PlainProperty, PlainPropertyType, PlainUnion } from './plain-types';
 
 export function collectDeclaredTypes(interfaces: Interface[], unions: Type[]): PlainAstTypes {
     const declaredTypes: PlainAstTypes = { unions: [], interfaces: [] };

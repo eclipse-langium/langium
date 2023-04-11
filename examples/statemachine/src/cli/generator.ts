@@ -5,9 +5,10 @@
  ******************************************************************************/
 
 import fs from 'fs';
-import { expandToNode as toNode, joinToNode as join, Generated, toString } from 'langium';
+import { expandToNode as toNode, joinToNode as join, toString } from 'langium';
+import type { Generated } from 'langium';
 import path from 'path';
-import { State, Statemachine } from '../language-server/generated/ast';
+import type { State, Statemachine } from '../language-server/generated/ast';
 import { extractDestinationAndName } from './cli-util';
 
 // For precise white space handling in generation template

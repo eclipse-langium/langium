@@ -4,7 +4,8 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { AstNodeDescription, DefaultScopeProvider, Scope, ScopeOptions, stream, StreamScope } from 'langium';
+import type { AstNodeDescription, Scope, ScopeOptions } from 'langium';
+import { DefaultScopeProvider, stream, StreamScope } from 'langium';
 
 /**
  * Special scope provider that matches symbol names regardless of lowercase or uppercase.

@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { CstNode } from '../syntax-tree';
+import type { CstNode } from '../syntax-tree';
 
 export class ErrorWithLocation extends Error {
     constructor(node: CstNode | undefined, message: string) {

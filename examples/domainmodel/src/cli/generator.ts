@@ -4,12 +4,14 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import type { IndentNode } from 'langium';
+import type { AbstractElement, Domainmodel, Entity, Feature, Type } from '../language-server/generated/ast';
 import fs from 'fs';
 import path from 'path';
 import chalk from 'chalk';
 import _ from 'lodash';
-import { CompositeGeneratorNode, IndentNode, NL, toString } from 'langium';
-import { AbstractElement, Domainmodel, Entity, Feature, isEntity, isPackageDeclaration, Type } from '../language-server/generated/ast';
+import { CompositeGeneratorNode, NL, toString } from 'langium';
+import { isEntity, isPackageDeclaration } from '../language-server/generated/ast';
 import { extractAstNode, extractDestinationAndName, setRootFolder } from './cli-util';
 import { createDomainModelServices } from '../language-server/domain-model-module';
 import { DomainModelLanguageMetaData } from '../language-server/generated/module';

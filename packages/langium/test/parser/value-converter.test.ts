@@ -4,9 +4,11 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import type { Grammar } from '../../src';
+import type { TerminalRule } from '../../src/grammar/generated/ast';
 import { describe, expect, test } from 'vitest';
-import { createLangiumGrammarServices, Grammar, EmptyFileSystem } from '../../src';
-import { CharacterRange, TerminalRule } from '../../src/grammar/generated/ast';
+import { createLangiumGrammarServices, EmptyFileSystem } from '../../src';
+import { CharacterRange } from '../../src/grammar/generated/ast';
 import { parseHelper } from '../../src/test';
 
 const grammarServices = createLangiumGrammarServices(EmptyFileSystem).grammar;

@@ -4,8 +4,8 @@
 * terms of the MIT License, which is available in the project root.
 ******************************************************************************/
 
+import type { AstNode, CstNode } from '../../syntax-tree';
 import { DefaultNameProvider } from '../../references/name-provider';
-import { AstNode, CstNode } from '../../syntax-tree';
 import { findNodeForProperty } from '../../utils/grammar-util';
 import { isAssignment } from '../generated/ast';
 

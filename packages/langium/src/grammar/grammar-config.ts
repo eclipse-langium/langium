@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { LangiumServices } from '../services';
+import type { LangiumServices } from '../services';
 import { DefaultNameRegexp } from '../utils/cst-util';
 import { isCommentTerminal } from '../utils/grammar-util';
 import { isMultilineComment } from '../utils/regex-util';

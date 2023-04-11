@@ -4,11 +4,12 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { CancellationToken, CodeDescription, DiagnosticRelatedInformation, DiagnosticTag, integer, Range } from 'vscode-languageserver';
-import { LangiumServices } from '../services';
-import { AstNode, AstReflection, Properties } from '../syntax-tree';
+import type { CancellationToken, CodeDescription, DiagnosticRelatedInformation, DiagnosticTag, integer, Range } from 'vscode-languageserver';
+import type { LangiumServices } from '../services';
+import type { AstNode, AstReflection, Properties } from '../syntax-tree';
+import type { MaybePromise } from '../utils/promise-util';
 import { MultiMap } from '../utils/collections';
-import { isOperationCancelled, MaybePromise } from '../utils/promise-util';
+import { isOperationCancelled } from '../utils/promise-util';
 
 export type DiagnosticInfo<N extends AstNode, P = Properties<N>> = {
     /** The AST node to which the diagnostic is attached. */
@@ -51,9 +52,7 @@ export type ValidationCheck<T extends AstNode = AstNode> = (node: T, accept: Val
  * @param T a type definition mapping language specific type names (keys) to the corresponding types (values)
  */
 export type ValidationChecks<T> = {
-    [K in keyof T]?: T[K] extends AstNode
-        ? ValidationCheck<T[K]> | Array<ValidationCheck<T[K]>>
-        : never
+    [K in keyof T]?: T[K] extends AstNode ? ValidationCheck<T[K]> | Array<ValidationCheck<T[K]>> : never
 } & {
     AstNode?: ValidationCheck<AstNode>;
 }
@@ -92,7 +91,7 @@ export class ValidationRegistry {
                 }
                 console.error('An error occurred during validation:', err);
                 const message = err instanceof Error ? err.message : String(err);
-                if(err instanceof Error && err.stack) {
+                if (err instanceof Error && err.stack) {
                     console.error(err.stack);
                 }
                 accept('error', 'An error occurred during validation: ' + message, { node });

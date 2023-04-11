@@ -4,9 +4,10 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { AbstractElement, AbstractRule, isCrossReference, isRuleCall } from '../grammar/generated/ast';
+import type { AbstractElement, AbstractRule } from '../grammar/generated/ast';
+import type { CstNode } from '../syntax-tree';
+import { isCrossReference, isRuleCall } from '../grammar/generated/ast';
 import { getRuleType } from '../grammar/internal-grammar-util';
-import { CstNode } from '../syntax-tree';
 import { getCrossReferenceTerminal } from '../utils/grammar-util';
 
 /**

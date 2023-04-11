@@ -4,14 +4,16 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { CancellationToken, WorkspaceFolder } from 'vscode-languageserver';
+import { CancellationToken } from 'vscode-languageserver';
 import { URI, Utils } from 'vscode-uri';
-import { ServiceRegistry } from '../service-registry';
-import { LangiumSharedServices } from '../services';
-import { interruptAndCheck, MutexLock } from '../utils/promise-util';
-import { DocumentBuilder } from './document-builder';
-import { LangiumDocument, LangiumDocuments } from './documents';
-import { FileSystemNode, FileSystemProvider } from './file-system-provider';
+import { interruptAndCheck } from '../utils/promise-util';
+import type { WorkspaceFolder } from 'vscode-languageserver';
+import type { ServiceRegistry } from '../service-registry';
+import type { LangiumSharedServices } from '../services';
+import type { MutexLock } from '../utils/promise-util';
+import type { DocumentBuilder } from './document-builder';
+import type { LangiumDocument, LangiumDocuments } from './documents';
+import type { FileSystemNode, FileSystemProvider } from './file-system-provider';
 
 /**
  * The workspace manager is responsible for finding source files in the workspace.

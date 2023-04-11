@@ -4,12 +4,13 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { GrammarConfig } from '../grammar/grammar-config';
-import { LangiumServices } from '../services';
-import { AstNode, AstNodeDescription, isLeafCstNode } from '../syntax-tree';
+import type { GrammarConfig } from '../grammar/grammar-config';
+import type { LangiumServices } from '../services';
+import type { AstNode, AstNodeDescription } from '../syntax-tree';
+import type { IndexManager } from '../workspace/index-manager';
+import { isLeafCstNode } from '../syntax-tree';
 import { getDocument } from '../utils/ast-util';
 import { findCommentNode } from '../utils/cst-util';
-import { IndexManager } from '../workspace/index-manager';
 import { isJSDoc, parseJSDoc } from './jsdoc';
 
 /**

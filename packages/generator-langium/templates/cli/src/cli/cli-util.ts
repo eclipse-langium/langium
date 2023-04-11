@@ -1,7 +1,7 @@
+import type { AstNode, LangiumDocument, LangiumServices } from 'langium';
 import chalk from 'chalk';
 import path from 'path';
 import fs from 'fs';
-import { AstNode, LangiumDocument, LangiumServices } from 'langium';
 import { URI } from 'vscode-uri';
 
 export async function extractDocument(fileName: string, services: LangiumServices): Promise<LangiumDocument> {

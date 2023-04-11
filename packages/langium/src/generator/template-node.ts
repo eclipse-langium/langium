@@ -5,8 +5,9 @@
  ******************************************************************************/
 
 import type { AstNode, Properties } from '../syntax-tree';
-import { CompositeGeneratorNode, Generated, GeneratorNode, IndentNode, isGeneratorNode, traceToNode } from './generator-node';
-import { SourceRegion } from './generator-tracing';
+import type { Generated, GeneratorNode, IndentNode } from './generator-node';
+import type { SourceRegion } from './generator-tracing';
+import { CompositeGeneratorNode, isGeneratorNode, traceToNode } from './generator-node';
 import { findIndentation, NEWLINE_REGEXP } from './template-string';
 
 /**
@@ -255,7 +256,7 @@ export function expandTracedToNodeIf<T extends AstNode>(condition: boolean, astN
  *       Hello ${ traceToNode(entity, 'name')(entity.name) }
  *   `.appendNewLine()
  */
-export function expandTracedToNodeIf(condition: boolean, sourceRegion: SourceRegion | undefined | (() => SourceRegion | undefined )): // eslint-disable-next-line @typescript-eslint/indent
+export function expandTracedToNodeIf(condition: boolean, sourceRegion: SourceRegion | undefined | (() => SourceRegion | undefined)): // eslint-disable-next-line @typescript-eslint/indent
         (staticParts: TemplateStringsArray, ...substitutions: unknown[]) => CompositeGeneratorNode | undefined;
 
 /**
@@ -423,13 +424,13 @@ function splitTemplateLinesAndMergeWithSubstitions(
     // TODO add more documentation here
 
     const splitAndMergedLength = splitAndMerged.length;
-    const lastItem = splitAndMergedLength !== 0 ? splitAndMerged[splitAndMergedLength-1] : undefined;
+    const lastItem = splitAndMergedLength !== 0 ? splitAndMerged[splitAndMergedLength - 1] : undefined;
 
     if ((omitLastLine || trimLastLine) && typeof lastItem === 'string' && lastItem.trim().length === 0) {
-        if (omitFirstLine && splitAndMergedLength !== 1 && splitAndMerged[splitAndMergedLength-2] === NEWLINE) {
-            return splitAndMerged.slice(0, splitAndMergedLength-2);
+        if (omitFirstLine && splitAndMergedLength !== 1 && splitAndMerged[splitAndMergedLength - 2] === NEWLINE) {
+            return splitAndMerged.slice(0, splitAndMergedLength - 2);
         } else {
-            return splitAndMerged.slice(0, splitAndMergedLength-1);
+            return splitAndMerged.slice(0, splitAndMergedLength - 1);
         }
     } else {
         return splitAndMerged;
@@ -472,7 +473,7 @@ function composeFinalGeneratorNode(splitAndMerged: GeneratedOrMarker[]): Composi
             ? res
             : isNewLineMarker(segment)
                 ? {
-                    node: (i === 0 || isNewLineMarker(splitAndMerged[i-1]) || typeof splitAndMerged[i - 1] === 'string')
+                    node: (i === 0 || isNewLineMarker(splitAndMerged[i - 1]) || typeof splitAndMerged[i - 1] === 'string')
                         ? res.node.appendNewLine() : res.node.appendNewLineIfNotEmpty()
                 } : (() => {
                     // the indentation handling is supposed to handle use cases like
@@ -485,7 +486,7 @@ function composeFinalGeneratorNode(splitAndMerged: GeneratedOrMarker[]): Composi
                     //   }
                     // assuming that ${foo(bar)} yields a multiline result;
                     // the whitespace between 'return' and '${foo(bar)}' shall not add to the indentation of '${foo(bar)}'s result!
-                    const indent: string = (i === 0 || isNewLineMarker(splitAndMerged[ i-1 ])) && typeof segment === 'string' && segment.length !== 0 ? ''.padStart(segment.length - segment.trimLeft().length) : '';
+                    const indent: string = (i === 0 || isNewLineMarker(splitAndMerged[i - 1])) && typeof segment === 'string' && segment.length !== 0 ? ''.padStart(segment.length - segment.trimLeft().length) : '';
                     let indented: IndentNode | undefined;
                     return {
                         node: res.indented

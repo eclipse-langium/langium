@@ -4,15 +4,17 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { DefinitionParams, LocationLink, Range } from 'vscode-languageserver';
+import type { DefinitionParams } from 'vscode-languageserver';
+import type { LangiumServices } from '../../services';
+import type { AstNode, LeafCstNode, Properties } from '../../syntax-tree';
+import type { MaybePromise } from '../../utils/promise-util';
+import type { LangiumDocuments } from '../../workspace/documents';
+import type { Grammar, GrammarImport } from '../generated/ast';
+import { LocationLink, Range } from 'vscode-languageserver';
 import { DefaultDefinitionProvider } from '../../lsp';
-import { LangiumServices } from '../../services';
-import { AstNode, LeafCstNode, Properties } from '../../syntax-tree';
 import { streamContents } from '../../utils/ast-util';
 import { findAssignment } from '../../utils/grammar-util';
-import { MaybePromise } from '../../utils/promise-util';
-import { LangiumDocuments } from '../../workspace/documents';
-import { Grammar, GrammarImport, isGrammarImport } from '../generated/ast';
+import { isGrammarImport } from '../generated/ast';
 import { resolveImport } from '../internal-grammar-util';
 
 export class LangiumGrammarDefinitionProvider extends DefaultDefinitionProvider {
