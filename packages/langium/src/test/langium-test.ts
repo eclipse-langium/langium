@@ -63,6 +63,11 @@ export interface ExpectedHighlight extends ExpectedBase {
     rangeIndex?: number | number[]
 }
 
+/**
+ * Testing utility function for the `textDocument/documentHighlight` LSP request
+ *
+ * @returns A function that performs the assertion
+ */
 export function expectHighlight(services: LangiumServices): (input: ExpectedHighlight) => Promise<void> {
     return async input => {
         const { output, indices, ranges } = replaceIndices(input);
