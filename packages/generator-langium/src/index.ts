@@ -9,6 +9,7 @@ import _ from 'lodash';
 import chalk from 'chalk';
 import path from 'path';
 import which from 'which';
+import { EOL } from 'os';
 
 const TEMPLATE_CORE_DIR = '../langium-template-core';
 const TEMPLATE_VSCODE_DIR = '../langium-template-vscode';
@@ -24,6 +25,8 @@ const FILE_EXTENSION_GLOB = /<%= file-glob-extension %>/g;
 const LANGUAGE_NAME = /<%= LanguageName %>/g;
 const LANGUAGE_ID = /<%= language-id %>/g;
 const LANGUAGE_PATH_ID = /language-id/g;
+
+const NEWLINES = /\r?\n/g;
 
 interface Answers {
     extensionName: string;
@@ -285,7 +288,8 @@ class LangiumGenerator extends Generator {
             .replace(FILE_EXTENSION, this.answers.fileExtensions)
             .replace(FILE_EXTENSION_GLOB, fileExtensionGlob)
             .replace(LANGUAGE_NAME, languageName)
-            .replace(LANGUAGE_ID, languageId);
+            .replace(LANGUAGE_ID, languageId)
+            .replace(NEWLINES, EOL);
     }
 
     _replaceTemplateNames(languageId: string, path: string): string {
