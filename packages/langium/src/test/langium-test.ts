@@ -19,15 +19,19 @@ import { TextDocument } from 'vscode-languageserver-textdocument';
 import { BuildOptions } from '../workspace/document-builder';
 import assert from 'assert';
 
-export function parseHelper<T extends AstNode = AstNode>(services: LangiumServices): (input: string, buildOptions?: BuildOptions) => Promise<LangiumDocument<T>> {
+export interface ParseHelperOptions extends BuildOptions {
+    documentUri?: string;
+}
+
+export function parseHelper<T extends AstNode = AstNode>(services: LangiumServices): (input: string, options?: ParseHelperOptions) => Promise<LangiumDocument<T>> {
     const metaData = services.LanguageMetaData;
     const documentBuilder = services.shared.workspace.DocumentBuilder;
-    return async (input, buildOptions) => {
+    return async (input, options) => {
         const randomNumber = Math.floor(Math.random() * 10000000) + 1000000;
-        const uri = URI.parse(`file:///${randomNumber}${metaData.fileExtensions[0]}`);
+        const uri = URI.parse(options?.documentUri ?? `file:///${randomNumber}${metaData.fileExtensions[0]}`);
         const document = services.shared.workspace.LangiumDocumentFactory.fromString<T>(input, uri);
         services.shared.workspace.LangiumDocuments.addDocument(document);
-        await documentBuilder.build([document], buildOptions);
+        await documentBuilder.build([document], options);
         return document;
     };
 }
@@ -52,6 +56,57 @@ export interface ExpectedBase {
     indexMarker?: string
     rangeStartMarker?: string
     rangeEndMarker?: string
+}
+
+export interface ExpectedHighlight extends ExpectedBase {
+    index?: number
+    rangeIndex?: number | number[]
+}
+
+/**
+ * Testing utility function for the `textDocument/documentHighlight` LSP request
+ *
+ * @returns A function that performs the assertion
+ */
+export function expectHighlight(services: LangiumServices): (input: ExpectedHighlight) => Promise<void> {
+    return async input => {
+        const { output, indices, ranges } = replaceIndices(input);
+        const document = await parseDocument(services, output);
+        const highlightProvider = services.lsp.DocumentHighlightProvider;
+        const highlights = await highlightProvider?.getDocumentHighlight(document, textDocumentPositionParams(document, indices[input.index ?? 0])) ?? [];
+        const rangeIndex = input.rangeIndex;
+        if (Array.isArray(rangeIndex)) {
+            expectedFunction(highlights.length, rangeIndex.length, `Expected ${rangeIndex.length} highlights but received ${highlights.length}`);
+            for (let i = 0; i < rangeIndex.length; i++) {
+                const index = rangeIndex[i];
+                const expectedRange: Range = {
+                    start: document.textDocument.positionAt(ranges[index][0]),
+                    end: document.textDocument.positionAt(ranges[index][1])
+                };
+                const range = highlights[i].range;
+                expectedFunction(range, expectedRange, `Expected range ${rangeToString(expectedRange)} does not match actual range ${rangeToString(range)}`);
+            }
+        } else if (typeof rangeIndex === 'number') {
+            const expectedRange: Range = {
+                start: document.textDocument.positionAt(ranges[rangeIndex][0]),
+                end: document.textDocument.positionAt(ranges[rangeIndex][1])
+            };
+            expectedFunction(highlights.length, 1, `Expected a single highlight but received ${highlights.length}`);
+            const range = highlights[0].range;
+            expectedFunction(range, expectedRange, `Expected range ${rangeToString(expectedRange)} does not match actual range ${rangeToString(range)}`);
+        } else {
+            expectedFunction(highlights.length, ranges.length, `Expected ${ranges.length} highlights but received ${highlights.length}`);
+            for (let i = 0; i < ranges.length; i++) {
+                const range = ranges[i];
+                const expectedRange: Range = {
+                    start: document.textDocument.positionAt(range[0]),
+                    end: document.textDocument.positionAt(range[1])
+                };
+                const targetRange = highlights[i].range;
+                expectedFunction(targetRange, expectedRange, `Expected range ${rangeToString(expectedRange)} does not match actual range ${rangeToString(targetRange)}`);
+            }
+        }
+    };
 }
 
 export interface ExpectedSymbolsList extends ExpectedBase {
