@@ -726,7 +726,7 @@ describe('Cross-reference to type union is only valid if all alternatives are AS
         const reference = ((rule.definition as Assignment).terminal as Assignment).terminal as CrossReference;
         expectError(
             validationResult,
-            /Cross-reference on type union is only valid if all alternatives are AST nodes. `B` is not an AST node./,
+            /Cross-reference on type union is only valid if all alternatives are AST nodes. B is not an AST node./,
             {
                 node: reference,
                 property: 'type'
@@ -749,7 +749,27 @@ describe('Cross-reference to type union is only valid if all alternatives are AS
         const reference = ((rule.definition as Assignment).terminal as Assignment).terminal as CrossReference;
         expectError(
             validationResult,
-            /Cross-reference on type union is only valid if all alternatives are AST nodes. `C` is not an AST node./,
+            /Cross-reference on type union is only valid if all alternatives are AST nodes. C is not an AST node./,
+            {
+                node: reference,
+                property: 'type'
+            }
+        );
+    });
+
+    test('Should return validation error on union type containing several non-AST nodes', async () => {
+        const validationResult = await validate(`
+        type A = 'A';
+        type T = A | "foo"";
+        R: a=[T];
+
+        terminal ID returns string: /[a-z]+/;
+        `);
+        const rule = validationResult.document.parseResult.value.rules[0] as ParserRule;
+        const reference = ((rule.definition as Assignment).terminal as Assignment).terminal as CrossReference;
+        expectError(
+            validationResult,
+            /Cross-reference on type union is only valid if all alternatives are AST nodes. A, "foo" are not AST nodes./,
             {
                 node: reference,
                 property: 'type'

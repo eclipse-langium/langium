@@ -743,9 +743,7 @@ export class LangiumGrammarValidator {
         if (ast.isType(reference.type.ref) && ast.isUnionType(reference.type.ref.type)) {
             const errors = checkTypeUnionContainsOnlyParseRules(reference.type.ref.type);
             if (errors.length > 0) {
-                errors.forEach(e => {
-                    accept('error', `Cross-reference on type union is only valid if all alternatives are AST nodes. \`${e}\` is not an AST node.`, {node: reference, property: 'type'});
-                });
+                accept('error', `Cross-reference on type union is only valid if all alternatives are AST nodes. ${errors.join(', ')} ${errors.length > 1 ? 'are' : 'is'} not ${errors.length > 1 ? '' : 'an '}AST node${errors.length > 1 ? 's':''}.`, { node: reference, property: 'type' });
             }
         }
     }
