@@ -4,7 +4,8 @@
  ******************************************************************************/
 
 /* eslint-disable */
-import { AstNode, AbstractAstReflection, Reference, ReferenceInfo, TypeMetaData } from 'langium';
+import type { AstNode, Reference, ReferenceInfo, TypeMetaData } from 'langium';
+import { AbstractAstReflection } from 'langium';
 
 export interface Contact extends AstNode {
     readonly $container: RequirementModel | TestModel;

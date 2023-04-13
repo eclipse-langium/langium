@@ -20,7 +20,8 @@ export function generateAst(services: LangiumServices, grammars: Grammar[], conf
     const crossRef = grammars.some(grammar => hasCrossReferences(grammar));
     const importFrom = config.langiumInternal ? '../../syntax-tree' : 'langium';
     fileNode.append(
-        `import { AstNode, AbstractAstReflection${crossRef ? ', Reference' : ''}, ReferenceInfo, TypeMetaData } from '${importFrom}';`, NL, NL
+        `import type { AstNode${crossRef ? ', Reference' : ''}, ReferenceInfo, TypeMetaData } from '${importFrom}';`, NL,
+        `import { AbstractAstReflection } from '${importFrom}';`, NL, NL
     );
 
     astTypes.unions.forEach(union => fileNode.append(union.toAstTypesString(isAstType(union.type)), NL));
