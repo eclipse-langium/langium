@@ -877,6 +877,6 @@ function checkTypeUnionContainsOnlyParseRules(type: ast.UnionType): string[] {
             }
         }
     });
-    return errors;
+    return Array.from(new Set(errors));
 }
 
