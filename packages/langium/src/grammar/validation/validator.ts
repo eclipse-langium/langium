@@ -871,7 +871,7 @@ function checkTypeUnionContainsOnlyParseRules(type: ast.UnionType): string[] {
                     }
                 }
             } else if (type.stringType) {
-                errors.push(type.stringType);
+                errors.push(`"${type.stringType}"`);
             } else if (type.primitiveType) {
                 errors.push(type.primitiveType);
             }
