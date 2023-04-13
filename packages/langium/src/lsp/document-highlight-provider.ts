@@ -7,7 +7,7 @@
 import type { CancellationToken, DocumentHighlightParams } from 'vscode-languageserver';
 import type { GrammarConfig } from '../grammar/grammar-config';
 import type { NameProvider } from '../references/name-provider';
-import type { References } from '../references/references';
+import type { FindReferencesOptions, References } from '../references/references';
 import type { LangiumServices } from '../services';
 import type { MaybePromise } from '../utils/promise-util';
 import type { ReferenceDescription } from '../workspace/ast-descriptions';

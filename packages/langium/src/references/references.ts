@@ -11,17 +11,13 @@ import type { ReferenceDescription } from '../workspace/ast-descriptions';
 import type { AstNodeLocator } from '../workspace/ast-node-locator';
 import type { IndexManager } from '../workspace/index-manager';
 import type { NameProvider } from './name-provider';
+import type { URI } from 'vscode-uri';
 import { findAssignment } from '../utils/grammar-util';
 import { isReference } from '../syntax-tree';
-import { getDocument, streamAst, streamReferences } from '../utils/ast-util';
+import { getDocument } from '../utils/ast-util';
 import { isCstChildNode, toDocumentSegment } from '../utils/cst-util';
 import { stream } from '../utils/stream';
 import { equalURI } from '../utils/uri-util';
-import { ReferenceDescription } from '../workspace/ast-descriptions';
-import { AstNodeLocator } from '../workspace/ast-node-locator';
-import { IndexManager } from '../workspace/index-manager';
-import { NameProvider } from './name-provider';
-import { URI } from 'vscode-uri';
 
 /**
  * Language-specific service for finding references and declaration of a given `CstNode`.
