@@ -354,8 +354,10 @@ function resolveTransitiveImportsInternal(documents: LangiumDocuments, grammar: 
 export function extractAssignments(element: ast.AbstractElement): ast.Assignment[] {
     if (ast.isAssignment(element)) {
         return [element];
-    } if (ast.isAlternatives(element) || ast.isGroup(element) || ast.isUnorderedGroup(element)) {
+    } else if (ast.isAlternatives(element) || ast.isGroup(element) || ast.isUnorderedGroup(element)) {
         return element.elements.flatMap(e => extractAssignments(e));
+    } else if (ast.isRuleCall(element) && element.rule.ref) {
+        return extractAssignments(element.rule.ref.definition);
     }
     return [];
 }
