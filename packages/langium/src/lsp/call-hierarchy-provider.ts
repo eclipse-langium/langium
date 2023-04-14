@@ -95,8 +95,7 @@ export abstract class AbstractCallHierarchyProvider implements CallHierarchyProv
         const references = this.references.findReferences(
             targetNode.element,
             {
-                includeDeclaration: false,
-                onlyLocal: false
+                includeDeclaration: false
             }
         );
         return this.getIncomingCalls(targetNode.element, references);

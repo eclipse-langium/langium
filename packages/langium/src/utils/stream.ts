@@ -383,6 +383,19 @@ export class StreamImpl<S, T> implements Stream<T> {
         return -1;
     }
 
+    // In the following definition the '& this' part in the return type is important
+    // _and_ the order within 'Stream<U> & this' is crucial!
+    // Otherwise Typescript would infer the type of 'this' as 'StreamImpl<S, T> & Stream<U>'
+    // (or '<subClass of StreamImpl<S, T> & Stream<U>') and usages like
+    // ```
+    //  const stream = new StreamImpl(...);
+    //  ... stream.every(<typeGuard>) & stream....
+    // ```
+    // cannot benefit from '<typeGuard>', as Typescript would priorize the signatures
+    // of 'StreamImpl<S, T>' (i.e. those of 'Stream<T>') over those of 'Stream<U>'.
+    // With the order of 'Stream<U> & this' the signatures of 'Stream<U>' get precedence.
+    every<U extends T>(predicate: (value: T) => value is U): this is Stream<U> & this;
+    every(predicate: (value: T) => unknown): boolean;
     every(predicate: (value: T) => unknown): boolean {
         const iterator = this.iterator();
         let next = iterator.next();
@@ -432,6 +445,9 @@ export class StreamImpl<S, T> implements Stream<T> {
         );
     }
 
+    // for remarks on the return type definition refer to 'every<U extends T>(...)'
+    filter<U extends T>(predicate: (value: T) => value is U): Stream<U> & this;
+    filter(predicate: (value: T) => unknown): Stream<T> & this;
     filter(predicate: (value: T) => unknown): Stream<T> {
         return new StreamImpl<S, T>(
             this.startFn,
@@ -452,6 +468,8 @@ export class StreamImpl<S, T> implements Stream<T> {
         return this.filter(e => e !== undefined && e !== null) as Stream<NonNullable<T>>;
     }
 
+    reduce(callbackfn: (previousValue: T, currentValue: T) => T): T | undefined;
+    reduce<U = T>(callbackfn: (previousValue: U, currentValue: T) => U, initialValue: U): U;
     reduce<U>(callbackfn: (previousValue: U | T, currentValue: T) => U, initialValue?: U): U | T | undefined {
         const iterator = this.iterator();
         let previousValue: U | T | undefined = initialValue;
@@ -467,6 +485,8 @@ export class StreamImpl<S, T> implements Stream<T> {
         return previousValue;
     }
 
+    reduceRight(callbackfn: (previousValue: T, currentValue: T) => T): T | undefined;
+    reduceRight<U = T>(callbackfn: (previousValue: U, currentValue: T) => U, initialValue: U): U;
     reduceRight<U>(callbackfn: (previousValue: U | T, currentValue: T) => U, initialValue?: U): U | T | undefined {
         return this.recursiveReduce(this.iterator(), callbackfn, initialValue);
     }
@@ -483,6 +503,8 @@ export class StreamImpl<S, T> implements Stream<T> {
         return callbackfn(previousValue, next.value);
     }
 
+    find<S extends T>(predicate: (value: T) => value is S): S | undefined;
+    find(predicate: (value: T) => unknown): T | undefined;
     find(predicate: (value: T) => unknown): T | undefined {
         const iterator = this.iterator();
         let next = iterator.next();

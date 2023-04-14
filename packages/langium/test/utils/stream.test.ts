@@ -604,3 +604,58 @@ describe('Stream.exclude', () => {
     });
 
 });
+
+describe('Signature overloads of instances of StreamImpl/TreeStreamImpl', () => {
+
+    type Tree<T> = T | NonLeaf<T>;
+    type NonLeaf<T> = T & { children: Array<Tree<T>> };
+
+    const isNonLeaf = (value: object): value is NonLeaf<object> => 'children' in value;
+    const getStream = () => new s.TreeStreamImpl<Tree<object>>(
+        { children: []},
+        p => isNonLeaf(p) && p.children || [],
+        { includeRoot: true }
+    );
+
+    test('StreamImpl.every', () => {
+        // This test is about the type inference, so we actually expect the compiler to accept the uncasted access to property `children`.
+        const stream = getStream();
+        expect(
+            stream.every(isNonLeaf) && stream.flatMap(e => e.children).isEmpty()
+        ).toBe(true);
+    });
+
+    test('StreamImpl.filter', () => {
+        // This test is about the type inference, so we actually expect the compiler to accept the uncasted access to property `children`.
+        expect(
+            getStream().filter(isNonLeaf).head()?.children
+        ).toBeDefined();
+    });
+
+    test('StreamImpl.find', () => {
+        // This test is about the type inference, so we actually expect the compiler to accept the uncasted access to property `children`.
+        expect(
+            getStream().find(isNonLeaf)?.children
+        ).toBeDefined();
+    });
+
+    test('StreamImpl.reduce', () => {
+        // This test is about the type inference, so we actually expect the compiler to accept the uncasted access to property `children`.
+        expect(
+            getStream().reduce(
+                (prev, curr) => prev || isNonLeaf(curr) && curr || prev,
+                undefined as NonLeaf<object> | undefined
+            )?.children
+        ).toBeDefined();
+    });
+
+    test('StreamImpl.reduceRight', () => {
+        // This test is about the type inference, so we actually expect the compiler to accept the uncasted access to property `children`.
+        expect(
+            getStream().reduceRight(
+                (prev, curr) => prev || isNonLeaf(curr) && curr || prev,
+                undefined as NonLeaf<object> | undefined
+            )?.children
+        ).toBeDefined();
+    });
+});

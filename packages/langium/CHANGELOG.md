@@ -1,5 +1,11 @@
 # Change Log of `langium`
 
+## v1.2.0 (Apr. 2023)
+
+### Breaking Changes
+
+* The `DefaultReferences` service has had a few protected methods removed. They are no longer necessary. ([#1000](https://github.com/langium/langium/pull/1000))
+
 ## v1.1.0 (Feb. 2023)
 
 ### JSDoc Support

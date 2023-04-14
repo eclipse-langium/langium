@@ -775,5 +775,18 @@ describe('Cross-reference to type union is only valid if all alternatives are AS
                 property: 'type'
             }
         );
+
+describe('Missing required properties', () => {
+    test('No missing properties', async () => {
+        const validation = await validate(`
+        interface A {
+            a: string;
+        }
+        interface C extends A {}
+        A returns A: B | C;
+        B returns A: a='foo';
+        C returns A: {C} a='bar';
+        `);
+        expectNoIssues(validation);
     });
 });
