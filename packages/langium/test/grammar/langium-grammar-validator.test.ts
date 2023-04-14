@@ -775,6 +775,8 @@ describe('Cross-reference to type union is only valid if all alternatives are AS
                 property: 'type'
             }
         );
+    });
+});
 
 describe('Missing required properties', () => {
     test('No missing properties', async () => {
