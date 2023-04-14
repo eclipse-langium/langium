@@ -26,7 +26,10 @@ const documentChangeNotification = new NotificationType<DocumentChange>('browser
 const jsonSerializer = domainmodel.serializer.JsonSerializer;
 shared.workspace.DocumentBuilder.onBuildPhase(DocumentState.Validated, documents => {
     for (const document of documents) {
-        const json = jsonSerializer.serialize(document.parseResult.value);
+        const json = jsonSerializer.serialize(document.parseResult.value, {
+            sourceText: true,
+            textRegions: true,
+        });
         connection.sendNotification(documentChangeNotification, {
             uri: document.uri.toString(),
             content: json,
