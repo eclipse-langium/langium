@@ -5,10 +5,12 @@
  ******************************************************************************/
 
 export function applyOp(op: '+' | '-' | '*' | '/' | '^' | '%'): (x: number, y: number) => number {
-    if (op === '+') return (x, y) => x + y;
-    if (op === '-') return (x, y) => x - y;
-    if (op === '*') return (x, y) => x * y;
-    if (op === '^') return (x, y) => Math.pow(x, y);
-    if (op === '%') return (x, y) => x % y;
-    return (x, y) => y === 0 ? x : x / y;
+    switch (op) {
+        case '+': return (x, y) => x + y;
+        case '-': return (x, y) => x - y;
+        case '*': return (x, y) => x * y;
+        case '^': return (x, y) => Math.pow(x, y);
+        case '%': return (x, y) => x % y;
+        default: return (x, y) => y === 0 ? x : x / y;
+    }
 }
