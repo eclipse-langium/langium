@@ -7,7 +7,7 @@
 import { afterEach, beforeAll, describe, expect, test } from 'vitest';
 import { DiagnosticSeverity } from 'vscode-languageserver';
 import { AstNode, createLangiumGrammarServices, EmptyFileSystem, GrammarAST, Properties, streamAllContents, streamContents } from '../../src';
-import { Assignment, isAssignment, ParserRule, UnionType } from '../../src/grammar/generated/ast';
+import { Assignment, CrossReference, isAssignment, ParserRule, UnionType } from '../../src/grammar/generated/ast';
 import { IssueCodes } from '../../src/grammar/validation/validator';
 import { clearDocuments, expectError, expectIssue, expectNoIssues, expectWarning, parseHelper, validationHelper, ValidationResult } from '../../src/test';
 
@@ -695,6 +695,86 @@ describe('Missing required properties are not arrays or booleans', () => {
     });
 
 });
+
+describe('Cross-reference to type union is only valid if all alternatives are AST nodes.', () => {
+    afterEach(() => {
+        clearDocuments(services.grammar);
+    });
+
+    test('Should not return error on union type composed only of AST nodes', async () => {
+        const validationResult = await validate(`
+        A: 'A' name=ID;
+        B: 'B' name=ID;
+        type T = A | B;
+        R: a=[T];
+
+        terminal ID returns string: /[a-z]+/;
+        `);
+        expectNoIssues(validationResult);
+    });
+
+    test('Should return validation error on union type containing a primitive', async () => {
+        const validationResult = await validate(`
+        A: 'A' name=ID;
+        type B = 'B';
+        type T = A | B;
+        R: a=[T];
+
+        terminal ID returns string: /[a-z]+/;
+        `);
+        const rule = validationResult.document.parseResult.value.rules[1] as ParserRule;
+        const reference = ((rule.definition as Assignment).terminal as Assignment).terminal as CrossReference;
+        expectError(
+            validationResult,
+            /Cross-reference on type union is only valid if all alternatives are AST nodes. B is not an AST node./,
+            {
+                node: reference,
+                property: 'type'
+            }
+        );
+    });
+
+    test('Should return validation error on union type containing nested primitives', async () => {
+        const validationResult = await validate(`
+        A: 'A' name=ID;
+        B: 'B' name=ID;
+        type C = 'C';
+        type D = B | C;
+        type T = A | D;
+        R: a=[T];
+
+        terminal ID returns string: /[a-z]+/;
+        `);
+        const rule = validationResult.document.parseResult.value.rules[2] as ParserRule;
+        const reference = ((rule.definition as Assignment).terminal as Assignment).terminal as CrossReference;
+        expectError(
+            validationResult,
+            /Cross-reference on type union is only valid if all alternatives are AST nodes. C is not an AST node./,
+            {
+                node: reference,
+                property: 'type'
+            }
+        );
+    });
+
+    test('Should return validation error on union type containing several non-AST nodes', async () => {
+        const validationResult = await validate(`
+        type A = 'A';
+        type T = A | "foo"";
+        R: a=[T];
+
+        terminal ID returns string: /[a-z]+/;
+        `);
+        const rule = validationResult.document.parseResult.value.rules[0] as ParserRule;
+        const reference = ((rule.definition as Assignment).terminal as Assignment).terminal as CrossReference;
+        expectError(
+            validationResult,
+            /Cross-reference on type union is only valid if all alternatives are AST nodes. A, "foo" are not AST nodes./,
+            {
+                node: reference,
+                property: 'type'
+            }
+        );
 
 describe('Missing required properties', () => {
     test('No missing properties', async () => {
