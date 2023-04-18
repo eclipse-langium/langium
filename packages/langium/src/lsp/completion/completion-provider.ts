@@ -138,7 +138,7 @@ export class DefaultCompletionProvider implements CompletionProvider {
         if (!astNode) {
             const parserRule = getEntryRule(this.grammar)!;
             await this.completionForRule(context, parserRule, acceptor);
-            return CompletionList.create(items, true);
+            return CompletionList.create(this.deduplicateItems(items), true);
         }
 
         const contexts: CompletionContext[] = [context];
