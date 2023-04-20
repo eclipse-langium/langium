@@ -77,7 +77,7 @@ describe('Langium completion provider', () => {
 
 describe('Completion within alternatives', () => {
 
-    it('Should show correct keywords in completion of entry rule', async () => {
+    test('Should show correct keywords in completion of entry rule', async () => {
 
         const grammar = `
         grammar g
@@ -106,7 +106,7 @@ describe('Completion within alternatives', () => {
         });
     });
 
-    it('Should show correct cross reference and keyword in completion', async () => {
+    test('Should show correct cross reference and keyword in completion', async () => {
 
         const grammar = `
         grammar g
@@ -125,6 +125,32 @@ describe('Completion within alternatives', () => {
             text,
             index: 0,
             expectedItems: ['A', 'self']
+        });
+    });
+
+    test('Should remove duplicated entries', async () => {
+        const grammar = `
+        grammar g
+        entry Model: (elements+=(Person | Greeting))*;
+        Person: 'person' name=ID;
+        // The following double 'person' assignment could lead to duplicated completion items
+        Greeting: 'hello' (person1=[Person:ID] 'x' | person2=[Person:ID] 'y');
+
+        terminal ID: /\\^?[_a-zA-Z][\\w_]*/;
+        hidden terminal WS: /\\s+/;
+        `;
+
+        const services = await createServicesForGrammar({ grammar });
+        const completion = expectCompletion(services);
+        const text = `
+        person A
+        hello <|>
+        `;
+
+        await completion({
+            text,
+            index: 0,
+            expectedItems: ['A']
         });
     });
 });
