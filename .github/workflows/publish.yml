@@ -1,0 +1,54 @@
+name: Publish
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  publish:
+    name: Langium Publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+    - name: Use Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '16'
+        registry-url: 'https://registry.npmjs.org'
+    - name: Build
+      shell: bash
+      run: |
+        npm ci
+        npm run build:clean
+    - name: Test
+      if: success() || failure()
+      shell: bash
+      run: |
+        npm run test
+    - name: Publish NPM Packages
+      shell: bash
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      # Update the following list when a new package is added
+      run: |
+        npm run publish:latest --workspace=langium
+        npm run publish:latest --workspace=langium-cli
+        npm run publish:latest --workspace=langium-sprotty
+        npm run publish:latest --workspace=generator-langium
+        npm run publish:latest --workspace=langium-arithmetics-dsl
+        npm run publish:latest --workspace=langium-domainmodel-dsl
+        npm run publish:latest --workspace=langium-statemachine-dsl
+    - name: Publish VSCode Extension
+      shell: bash
+      env:
+        VSCE_TOKEN: ${{ secrets.VSCE_TOKEN }}
+        OVSX_TOKEN: ${{ secrets.OVSX_TOKEN }}
+      run: |
+        npm install -g @vscode/vsce ovsx
+        cd packages/langium-vscode
+        PACKAGE_VERSION=`npm pkg get version --workspaces=false | tr -d \"`
+        vsce package
+        vsce publish -i langium-vscode-$PACKAGE_VERSION.vsix -p ${{ secrets.VSCE_TOKEN }}
+        ovsx publish langium-vscode-$PACKAGE_VERSION.vsix -p ${{ secrets.OVSX_TOKEN }}

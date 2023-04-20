@@ -110,43 +110,19 @@ const debugOptions = { execArgv: ['--nolazy', '--inspect-brk=6009'] };
 
 ## Release Process
 
-Currently the process of releasing a new version of Langium is done manually one package after another. It requires to carefully update versions and dependencies. Proposals for automation of parts of this process are welcome.
+The release process is mostly automated and requires running only a few commands.
+After commiting, pushing, tagging and releasing the changes, a GitHub Action will publish all artifacts (npm packages and vscode extensions).
 
- 1. Prepare the workspace
-    * Pull the latest changes
-    * `npm ci`
-    * `npm run build:clean`
-    * `npm run lint`
-    * `npm test`
- 2. `packages/langium`
-    * Update version in `package.json`
-    * `npm run publish:latest`
- 3. `packages/langium-cli`
-    * Update version in `package.json`
-    * Update dependency to `langium` with `~` as version prefix (include bugfix versions)
-    * `npm run publish:latest`
- 4. `packages/langium-sprotty`
-    * Update version in `package.json`
-    * Update dependency to `langium` with `~` as version prefix
-    * `npm run publish:latest`
- 5. `packages/generator-langium`
-    * Update version in `package.json`
-    * Update dependency to `langium` and dev-dependency to `langium-cli` in `langium-template/package.json` with `^` as version prefix (include minor and bugfix versions)
-    * `npm run publish:latest`
- 6. `packages/langium-vscode`
-    * Update version in `package.json`
-    * Update dependency to `langium`
-    * `npm install -g @vscode/vsce ovsx`
-    * `vsce package`
-    * `vsce publish -i langium-vscode-<version>.vsix -p <token>`
-    * `ovsx publish langium-vscode-<version>.vsix -p <token>`
- 7. `examples/*`
-    * Update dependency to `langium` and dev-dependency to `langium-cli`
-    * `npm run publish:latest`
- 8. `npm install` again in the repository root to update `package-lock.json`
- 9. Commit, tag and push your changes
- 10. Create a GitHub release from the new tag
- 11. Close the corresponding GitHub milestone
+1. Pull the latest changes
+2. Uplift the package versions
+    * Run `npm version major|minor|patch --no-git-tag-version --workspaces`
+3. Update the dependency versions
+    * Run `npm run version:dependencies`
+4. Update the generated files
+    * Run `npm run langium:generate`
+4. Commit, tag and push your changes
+5. Create a GitHub release from the new tag (this will automatically publish all artifacts)
+6. Close the corresponding GitHub milestone
 
 In order to publish `next` versions from the current state of the `main` branch, use `npm run publish:next`, and don't update the `version` numbers manually as this is done by the npm script.
 The changes must not be committed to the repository after publishing a `next` version.
