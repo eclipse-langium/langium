@@ -15,7 +15,7 @@ jobs:
     - name: Use Node.js
       uses: actions/setup-node@v3
       with:
-        node-version: '16'
+        node-version: '18.x'
         registry-url: 'https://registry.npmjs.org'
     - name: Build
       shell: bash
@@ -33,18 +33,15 @@ jobs:
         NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       # Update the following list when a new package is added
       run: |
-        npm run publish:latest --workspace=langium
-        npm run publish:latest --workspace=langium-cli
-        npm run publish:latest --workspace=langium-sprotty
-        npm run publish:latest --workspace=generator-langium
-        npm run publish:latest --workspace=langium-arithmetics-dsl
-        npm run publish:latest --workspace=langium-domainmodel-dsl
-        npm run publish:latest --workspace=langium-statemachine-dsl
+        npm run publish:latest --provenance --workspace=langium
+        npm run publish:latest --provenance --workspace=langium-cli
+        npm run publish:latest --provenance --workspace=langium-sprotty
+        npm run publish:latest --provenance --workspace=generator-langium
+        npm run publish:latest --provenance --workspace=langium-arithmetics-dsl
+        npm run publish:latest --provenance --workspace=langium-domainmodel-dsl
+        npm run publish:latest --provenance --workspace=langium-statemachine-dsl
     - name: Publish VSCode Extension
       shell: bash
-      env:
-        VSCE_TOKEN: ${{ secrets.VSCE_TOKEN }}
-        OVSX_TOKEN: ${{ secrets.OVSX_TOKEN }}
       run: |
         npm install -g @vscode/vsce ovsx
         cd packages/langium-vscode
