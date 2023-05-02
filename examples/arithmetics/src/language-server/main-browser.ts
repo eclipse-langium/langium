@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import { startLanguageServer, EmptyFileSystem, DocumentState } from 'langium';
-import { BrowserMessageReader, BrowserMessageWriter, createConnection, Diagnostic, NotificationType } from 'vscode-languageserver/browser';
+import { BrowserMessageReader, BrowserMessageWriter, createConnection, Diagnostic, NotificationType, Range } from 'vscode-languageserver/browser';
 import { createArithmeticsServices } from './arithmetics-module';
 import { interpretEvaluations } from './arithmetics-evaluator';
 import { Module } from './generated/ast';
@@ -38,9 +38,14 @@ shared.workspace.DocumentBuilder.onBuildPhase(DocumentState.Validated, documents
                 }
             }
         }
+        (module as unknown as { evaluations: Array<{
+            range: Range | undefined;
+            text: string | undefined;
+            value: number;
+        }> }).evaluations = json;
         connection.sendNotification(documentChangeNotification, {
             uri: document.uri.toString(),
-            content: JSON.stringify({ ast: jsonSerializer.serialize(module), evaluations: json }),
+            content: jsonSerializer.serialize(module, { sourceText: true, textRegions: true }),
             diagnostics: document.diagnostics ?? []
         });
     }
