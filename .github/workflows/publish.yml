@@ -1,5 +1,9 @@
 name: Publish
 
+permissions:
+  contents: read
+  id-token: write
+
 on:
   release:
     types: [published]
