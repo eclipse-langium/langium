@@ -2,9 +2,16 @@
 
 ## v1.2.0 (Apr. 2023)
 
+### General Improvements
+
+* Improvements to the language testing process ([#1002](https://github.com/langium/langium/pull/1002), [#1008](https://github.com/langium/langium/pull/1008))
+* Fixed an issue related to cross references in the completion provider. ([#1004](https://github.com/langium/langium/pull/1004))
+* Fixed an issue related to document highlighting LSP requests for elements in other files. ([#1000](https://github.com/langium/langium/pull/1000))
+
 ### Breaking Changes
 
 * The `DefaultReferences` service has had a few protected methods removed. They are no longer necessary. ([#1000](https://github.com/langium/langium/pull/1000))
+* The `expectFunction` exported from `langium/test` is now deprecated and will be removed in a future version. It is no longer necessary to use, as Langium will simply use the `node:assert` package for testing. ([#1008](https://github.com/langium/langium/pull/1008))
 
 ## v1.1.0 (Feb. 2023)
 

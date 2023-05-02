@@ -1,5 +1,31 @@
 # Change Log of `langium-cli`
 
+## v1.2.0 (May. 2023)
+
+### Prism Generator
+
+The Langium CLI now features a generator for the [prism syntax highlighter](https://prismjs.com/).
+The syntax highlighting for the [Langium documentation](https://langium.org/docs/grammar-language/) is already making use of a generated prism.js file.
+
+Enable the generator by adding it to your `langium-config.json` file:
+
+```json
+{
+    ...
+    "languages": [{
+        ...
+        "prism": {
+            "out": "syntax/prism.js"
+        }
+    }],
+    ...
+}
+```
+
+### General Improvements
+
+* Various improvements to the type generator/validator. ([#942](https://github.com/langium/langium/pull/942), [#946](https://github.com/langium/langium/pull/946), [#947](https://github.com/langium/langium/pull/947), [#950](https://github.com/langium/langium/pull/950), [#973](https://github.com/langium/langium/pull/973), [#1003](https://github.com/langium/langium/pull/1003))
+
 ## v1.1.0 (Feb. 2023)
 
 * Various improvements to the generated AST types ([#845](https://github.com/langium/langium/pull/845)).

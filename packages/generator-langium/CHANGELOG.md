@@ -1,5 +1,12 @@
 # Change Log of `generator-langium`
 
+## v1.2.0 (May. 2023)
+
+* Refactored the generator to enable multiple "environments". Devs will be asked whether they want a given environment in their project setup:
+    * VSCode extension
+    * Monaco web setup
+    * CLI application setup
+
 ## v1.1.0 (Feb. 2023)
 
 * Users that have vscode installed in the environment will be asked whether they want to open the generated project in vscode ([#911](https://github.com/langium/langium/pull/911)).
