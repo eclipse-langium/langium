@@ -57,7 +57,8 @@ describe('Check yeoman generator works', () => {
 
 });
 
-import { version } from '../package.json';
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const version = require('../package.json').version;
 const langiumVersion = `~${version}`;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
