@@ -6,7 +6,7 @@
 
 import { describe, expect, test, onTestFailed, beforeEach } from 'vitest';
 import { TokenType, TokenVocabulary } from 'chevrotain';
-import { AstNode, createServicesForGrammar, DefaultTokenBuilder, Grammar, GrammarAST, LangiumParser, TokenBuilderOptions } from '../../src';
+import { AstNode, createServicesForGrammar, DefaultTokenBuilder, findNodeForProperty, Grammar, GrammarAST, LangiumParser, TokenBuilderOptions } from '../../src';
 
 describe('Predicated grammar rules with alternatives', () => {
 
@@ -483,11 +483,11 @@ describe('MultiMode Lexing', () => {
 
         protected override buildTerminalToken(terminal: GrammarAST.TerminalRule): TokenType {
             const tokenType = super.buildTerminalToken(terminal);
-            if(tokenType.name === 'Up') {
+            if (tokenType.name === 'Up') {
                 tokenType.PUSH_MODE = 'up';
-            } else if(tokenType.name === 'Low') {
+            } else if (tokenType.name === 'Low') {
                 tokenType.PUSH_MODE = 'down';
-            } else if(tokenType.name === 'Pop') {
+            } else if (tokenType.name === 'Pop') {
                 tokenType.POP_MODE = true;
             }
             return tokenType;
@@ -617,6 +617,58 @@ describe('Fragment rules', () => {
         expect(result.lexerErrors).toHaveLength(0);
         expect(result.parserErrors).toHaveLength(0);
         expect(result.value).toHaveProperty('values', ['ab', 'cd', 'ef']);
+    });
+
+});
+
+describe('Subrules', () => {
+    const content = `
+        grammar SubrulesCST
+        entry Entry: X;
+        X: Visibility? (A | B) Body;
+        fragment Visibility: visibility=('public' | 'protected' | 'private');
+        fragment Body: '{' (children+=X)* '}';
+        A: 'A' value1=INT (C | D)?;
+        B: 'B' value1=INT (C | D)?;
+        C: 'C' value2=INT;
+        D: 'D' value2=INT;
+        
+        terminal ID: /\\^?[_a-zA-Z][\\w_]*/;
+        terminal INT returns number: /\\d+/;
+
+        hidden terminal WS: /\\s+/;
+    `;
+    let parser: LangiumParser;
+
+    beforeEach(async () => {
+        parser = await parserFromGrammar(content);
+    });
+
+    const testProps = (text: string, props: string[]): void => {
+        const result = parser.parse(text);
+        expect(result.lexerErrors).toHaveLength(0);
+        expect(result.parserErrors).toHaveLength(0);
+
+        const cst = result.value.$cstNode;
+        const element = cst?.element;
+        expect(element).toBeDefined();
+        props.forEach(prop => {
+            const propCst = findNodeForProperty(cst, prop);
+            expect(propCst).toBeDefined();
+            expect(element).toEqual(propCst?.element);
+        });
+    };
+
+    test('CST prior to the subrule contains valid AST element', () => {
+        testProps('public A 100 {}', ['visibility']);
+    });
+
+    test('Subrule CST contains valid AST element', async () => {
+        testProps('public A 100 {}', ['value1']);
+    });
+
+    test('Nested subrule CST contains valid AST element', async () => {
+        testProps('public A 100 C 100 {}', ['value1', 'value2']);
     });
 
 });
