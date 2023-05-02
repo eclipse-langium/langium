@@ -58,8 +58,9 @@ describe('Check yeoman generator works', () => {
 });
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const version = require('../package.json').version;
-const langiumVersion = `~${version}`;
+const langiumVersion = `~${require('../../langium/package.json').version}`;
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const langiumCliVersion = `~${require('../../langium-cli/package.json').version}`;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const PACKAGE_JSON_EXPECTATION: Record<string, any> = {
@@ -82,7 +83,7 @@ const PACKAGE_JSON_EXPECTATION: Record<string, any> = {
         '@typescript-eslint/eslint-plugin': '~5.51.0',
         '@typescript-eslint/parser': '~5.51.0',
         'eslint': '~8.33.0',
-        'langium-cli': langiumVersion,
+        'langium-cli': langiumCliVersion,
         'typescript': '~4.9.5'
     }
 };

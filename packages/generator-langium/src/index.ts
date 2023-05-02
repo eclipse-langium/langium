@@ -11,10 +11,10 @@ import path from 'path';
 import which from 'which';
 import { EOL } from 'os';
 
-const TEMPLATE_CORE_DIR = '../langium-template-core';
-const TEMPLATE_VSCODE_DIR = '../langium-template-vscode';
-const TEMPLATE_CLI_DIR = '../langium-template-cli';
-const TEMPLATE_WEB_DIR = '../langium-template-web';
+const TEMPLATE_CORE_DIR = '../templates/core';
+const TEMPLATE_VSCODE_DIR = '../templates/vscode';
+const TEMPLATE_CLI_DIR = '../templates/cli';
+const TEMPLATE_WEB_DIR = '../templates/web';
 const USER_DIR = '.';
 
 const EXTENSION_NAME = /<%= extension-name %>/g;
