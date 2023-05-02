@@ -120,9 +120,10 @@ After commiting, pushing, tagging and releasing the changes, a GitHub Action wil
     * Run `npm run version:dependencies`
 4. Update the generated files
     * Run `npm run langium:generate`
-4. Commit, tag and push your changes
-5. Create a GitHub release from the new tag (this will automatically publish all artifacts)
-6. Close the corresponding GitHub milestone
+5. Create a PR with your updated changes, get a review and merge it
+6. Create a version tag on the latest commit on `main` and push it
+7. Create a GitHub release from the new tag (this will automatically publish all artifacts)
+8. Close the corresponding GitHub milestone
 
 In order to publish `next` versions from the current state of the `main` branch, use `npm run publish:next`, and don't update the `version` numbers manually as this is done by the npm script.
 The changes must not be committed to the repository after publishing a `next` version.
