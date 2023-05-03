@@ -170,7 +170,7 @@ class LangiumGenerator extends Generator {
         }
 
         // .gitignore files don't get published to npm, so we need to copy it under a different name
-        this.fs.copy(this.templatePath('gitignore.txt'), this._extensionPath('.gitignore'));
+        this.fs.copy(this.templatePath('../gitignore.txt'), this._extensionPath('.gitignore'));
 
         if (this.answers.includeVSCode) {
             this.sourceRoot(path.join(__dirname, TEMPLATE_VSCODE_DIR));
