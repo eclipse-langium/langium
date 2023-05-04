@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import type { AstNode, Properties } from '../../src';
-import type { Assignment, ParserRule, UnionType } from '../../src/grammar/generated/ast';
+import type { Assignment, CrossReference, ParserRule, UnionType } from '../../src/grammar/generated/ast';
 import type { ValidationResult } from '../../src/test';
 import { afterEach, beforeAll, describe, expect, test } from 'vitest';
 import { DiagnosticSeverity } from 'vscode-languageserver';
