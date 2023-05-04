@@ -30,7 +30,7 @@ shared.workspace.DocumentBuilder.onBuildPhase(DocumentState.Validated, documents
     for (const document of documents) {
         const json = [];
         const module = document.parseResult.value as Module;
-        if(document.diagnostics === null || document.diagnostics!.filter((i) => i.severity === 1).length === 0) {
+        if(document.diagnostics === undefined  || document.diagnostics.filter((i) => i.severity === 1).length === 0) {
             for (const [evaluation, value] of interpretEvaluations(module)) {
                 const cstNode = evaluation.expression.$cstNode;
                 if (cstNode) {
