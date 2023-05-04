@@ -11,7 +11,7 @@ export function applyOp(op: '+' | '-' | '*' | '/' | '^' | '%'): (x: number, y: n
         case '*': return (x, y) => x * y;
         case '^': return (x, y) => Math.pow(x, y);
         case '%': return (x, y) => x % y;
-        default: return (x, y) => {
+        case '/': return (x, y) => {
             if (y === 0) {
                 throw new Error('Division by zero');
             }
