@@ -5,18 +5,20 @@
  ******************************************************************************/
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { defaultParserErrorProvider, DSLMethodOpts, EmbeddedActionsParser, ILexingError, IOrAlt, IParserErrorMessageProvider, IRecognitionException, IToken, LLkLookaheadStrategy, TokenType, TokenVocabulary } from 'chevrotain';
+import type { DSLMethodOpts, ILexingError, IOrAlt, IParserErrorMessageProvider, IRecognitionException, IToken, TokenType, TokenVocabulary } from 'chevrotain';
+import type { AbstractElement, Action, Assignment, ParserRule } from '../grammar/generated/ast';
+import type { Linker } from '../references/linker';
+import type { LangiumServices } from '../services';
+import type { AstNode, AstReflection, CompositeCstNode, CstNode } from '../syntax-tree';
+import type { Lexer } from './lexer';
+import type { IParserConfig } from './parser-config';
+import type { ValueConverter } from './value-converter';
+import { defaultParserErrorProvider, EmbeddedActionsParser, LLkLookaheadStrategy } from 'chevrotain';
 import { LLStarLookaheadStrategy } from 'chevrotain-allstar';
-import { AbstractElement, Action, Assignment, isAssignment, isCrossReference, isKeyword, ParserRule } from '../grammar/generated/ast';
+import { isAssignment, isCrossReference, isKeyword } from '../grammar/generated/ast';
 import { getTypeName, isDataTypeRule } from '../grammar/internal-grammar-util';
-import { Linker } from '../references/linker';
-import { LangiumServices } from '../services';
-import { AstNode, AstReflection, CompositeCstNode, CstNode } from '../syntax-tree';
 import { getContainerOfType, linkContentToContainer } from '../utils/ast-util';
 import { CstNodeBuilder } from './cst-node-builder';
-import { Lexer } from './lexer';
-import { IParserConfig } from './parser-config';
-import { ValueConverter } from './value-converter';
 
 export type ParseResult<T = AstNode> = {
     value: T,
@@ -166,7 +168,7 @@ export class LangiumParser extends AbstractLangiumParser {
             if (!this.isRecording()) {
                 const node: any = { $type };
                 this.stack.push(node);
-                if ($type === DatatypeSymbol)  {
+                if ($type === DatatypeSymbol) {
                     node.value = '';
                 }
             }

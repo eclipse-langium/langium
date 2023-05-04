@@ -1,5 +1,5 @@
-import { ValidationAcceptor, ValidationChecks } from 'langium';
-import { <%= LanguageName %>AstType, Person } from './generated/ast';
+import type { ValidationAcceptor, ValidationChecks } from 'langium';
+import type { <%= LanguageName %>AstType, Person } from './generated/ast';
 import type { <%= LanguageName %>Services } from './<%= language-id %>-module';
 
 /**

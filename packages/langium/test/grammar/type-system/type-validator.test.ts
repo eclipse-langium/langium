@@ -4,10 +4,13 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import type { Diagnostic } from 'vscode-languageserver';
+import type { GrammarAST } from '../../../src';
+import type { Assignment } from '../../../src/grammar/generated/ast';
 import { describe, expect, test } from 'vitest';
-import { Diagnostic, DiagnosticSeverity } from 'vscode-languageserver';
-import { createLangiumGrammarServices, EmptyFileSystem, GrammarAST, streamAllContents, streamContents } from '../../../src';
-import { Assignment, isAssignment } from '../../../src/grammar/generated/ast';
+import { DiagnosticSeverity } from 'vscode-languageserver';
+import { createLangiumGrammarServices, EmptyFileSystem, streamAllContents, streamContents } from '../../../src';
+import { isAssignment } from '../../../src/grammar/generated/ast';
 import { expectError, expectNoIssues, parseDocument, validationHelper } from '../../../src/test';
 
 const grammarServices = createLangiumGrammarServices(EmptyFileSystem).grammar;

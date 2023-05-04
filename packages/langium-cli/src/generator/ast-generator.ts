@@ -3,12 +3,11 @@
  * This program and the accompanying materials are made available under the
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
-
-import {
-    GeneratorNode, Grammar, IndentNode, CompositeGeneratorNode, NL, toString, streamAllContents, MultiMap, LangiumServices, GrammarAST
-} from 'langium';
-import { AstTypes, collectAst, collectTypeHierarchy, findReferenceTypes, hasArrayType, isAstType, hasBooleanType, mergeTypesAndInterfaces, Property } from 'langium/lib/grammar/type-system';
-import { LangiumConfig } from '../package';
+import type { GeneratorNode, Grammar, LangiumServices } from 'langium';
+import type { AstTypes, Property } from 'langium/lib/grammar/type-system';
+import type { LangiumConfig } from '../package';
+import { IndentNode, CompositeGeneratorNode, NL, toString, streamAllContents, MultiMap, GrammarAST } from 'langium';
+import { collectAst, collectTypeHierarchy, findReferenceTypes, hasArrayType, isAstType, hasBooleanType, mergeTypesAndInterfaces } from 'langium/lib/grammar/type-system';
 import { generatedHeader } from './util';
 
 export function generateAst(services: LangiumServices, grammars: Grammar[], config: LangiumConfig): string {
@@ -21,7 +20,8 @@ export function generateAst(services: LangiumServices, grammars: Grammar[], conf
     const crossRef = grammars.some(grammar => hasCrossReferences(grammar));
     const importFrom = config.langiumInternal ? '../../syntax-tree' : 'langium';
     fileNode.append(
-        `import { AstNode, AbstractAstReflection${crossRef ? ', Reference' : ''}, ReferenceInfo, TypeMetaData } from '${importFrom}';`, NL, NL
+        `import type { AstNode${crossRef ? ', Reference' : ''}, ReferenceInfo, TypeMetaData } from '${importFrom}';`, NL,
+        `import { AbstractAstReflection } from '${importFrom}';`, NL, NL
     );
 
     astTypes.unions.forEach(union => fileNode.append(union.toAstTypesString(isAstType(union.type)), NL));

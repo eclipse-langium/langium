@@ -4,15 +4,16 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import type { ParserRule, Interface, Type, Grammar } from '../../generated/ast';
+import type { URI } from 'vscode-uri';
+import type { LangiumDocuments } from '../../../workspace/documents';
+import type { PlainAstTypes } from './plain-types';
+import type { AstTypes } from './types';
 import { collectInferredTypes } from './inferred-types';
 import { collectDeclaredTypes } from './declared-types';
 import { getDocument } from '../../../utils/ast-util';
-import { ParserRule, Interface, Type, isParserRule, Grammar } from '../../generated/ast';
+import { isParserRule } from '../../generated/ast';
 import { isDataTypeRule, resolveImport } from '../../internal-grammar-util';
-import { URI } from 'vscode-uri';
-import { LangiumDocuments } from '../../../workspace/documents';
-import { PlainAstTypes } from './plain-types';
-import { AstTypes } from './types';
 
 export type AstResources = {
     parserRules: ParserRule[],

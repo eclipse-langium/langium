@@ -4,8 +4,9 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import type { Lexer } from '../../src';
 import { describe, expect, test } from 'vitest';
-import { createServicesForGrammar, Lexer } from '../../src';
+import { createServicesForGrammar } from '../../src';
 
 describe('DefaultLexer', () => {
 

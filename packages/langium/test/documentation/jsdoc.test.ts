@@ -4,9 +4,10 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { Range } from 'vscode-languageserver';
+import type { Range } from 'vscode-languageserver';
+import type { JSDocLine, JSDocParagraph, JSDocTag } from '../../src';
 import { describe, expect, test } from 'vitest';
-import { JSDocLine, JSDocParagraph, JSDocTag, parseJSDoc } from '../../src';
+import { parseJSDoc } from '../../src';
 
 describe('JSDoc parsing', () => {
 

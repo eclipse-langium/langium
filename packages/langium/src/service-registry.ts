@@ -4,8 +4,9 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { URI, Utils } from 'vscode-uri';
-import { LangiumServices } from './services';
+import type { URI } from 'vscode-uri';
+import type { LangiumServices } from './services';
+import { Utils } from 'vscode-uri';
 
 /**
  * The service registry provides access to the language-specific services. These are resolved

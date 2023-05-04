@@ -4,12 +4,14 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { AbstractAstReflection, AstReflection, ReferenceInfo, TypeMandatoryProperty, TypeMetaData } from '../syntax-tree';
+import type { AstReflection, ReferenceInfo, TypeMandatoryProperty, TypeMetaData } from '../syntax-tree';
+import type { LangiumDocuments } from '../workspace/documents';
+import type { Grammar } from './generated/ast';
+import type { AstTypes, Property } from './type-system/type-collector/types';
+import { AbstractAstReflection } from '../syntax-tree';
 import { MultiMap } from '../utils/collections';
-import { LangiumDocuments } from '../workspace/documents';
-import { Grammar, isGrammar } from './generated/ast';
+import { isGrammar } from './generated/ast';
 import { collectAst } from './type-system/ast-collector';
-import { AstTypes, Property } from './type-system/type-collector/types';
 import { collectTypeHierarchy, findReferenceTypes, hasArrayType, isAstType, hasBooleanType, mergeTypesAndInterfaces } from './type-system/types-util';
 
 export function interpretAstReflection(astTypes: AstTypes): AstReflection;

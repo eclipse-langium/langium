@@ -4,13 +4,15 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { NameProvider } from '../references/name-provider';
-import { LangiumServices } from '../services';
-import { AstNode, CstNode, GenericAstNode, isAstNode, isReference, Reference } from '../syntax-tree';
-import { getDocument, Mutable } from '../utils/ast-util';
-import { findNodesForProperty } from '../utils/grammar-util';
-import { AstNodeLocator } from '../workspace/ast-node-locator';
+import type { NameProvider } from '../references/name-provider';
+import type { LangiumServices } from '../services';
+import type { AstNode, CstNode, GenericAstNode, Reference } from '../syntax-tree';
+import type { Mutable } from '../utils/ast-util';
+import type { AstNodeLocator } from '../workspace/ast-node-locator';
 import type { DocumentSegment } from '../workspace/documents';
+import { isAstNode, isReference } from '../syntax-tree';
+import { getDocument } from '../utils/ast-util';
+import { findNodesForProperty } from '../utils/grammar-util';
 
 export interface JsonSerializeOptions {
     space?: string | number;
@@ -135,17 +137,17 @@ export class DefaultJsonSerializer implements JsonSerializer {
     protected addAstNodeRegionWithAssignmentsTo(node: AstNodeWithTextRegion) {
         const createDocumentSegment: (cstNode: CstNode) => AstNodeRegionWithAssignments = cstNode => <DocumentSegment>{
             offset: cstNode.offset,
-            end:    cstNode.end,
+            end: cstNode.end,
             length: cstNode.length,
-            range:  cstNode.range,
+            range: cstNode.range,
         };
 
         if (node.$cstNode) {
             const textRegion = node.$textRegion = createDocumentSegment(node.$cstNode);
             const assignments: Record<string, DocumentSegment[]> = textRegion.assignments = {};
 
-            Object.keys(node).filter(key => !key.startsWith('$')).forEach( key => {
-                const propertyAssignments = findNodesForProperty(node.$cstNode, key).map( createDocumentSegment );
+            Object.keys(node).filter(key => !key.startsWith('$')).forEach(key => {
+                const propertyAssignments = findNodesForProperty(node.$cstNode, key).map(createDocumentSegment);
                 if (propertyAssignments.length !== 0) {
                     assignments[key] = propertyAssignments;
                 }

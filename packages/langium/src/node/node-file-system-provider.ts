@@ -4,9 +4,10 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import type { URI } from 'vscode-uri';
+import type { FileSystemNode, FileSystemProvider } from '../workspace/file-system-provider';
 import fs from 'fs';
-import { URI, Utils } from 'vscode-uri';
-import { FileSystemNode, FileSystemProvider } from '../workspace/file-system-provider';
+import { Utils } from 'vscode-uri';
 
 export type NodeTextEncoding = 'ascii' | 'utf8' | 'utf-8' | 'utf16le' | 'ucs2' | 'ucs-2' | 'latin1';
 

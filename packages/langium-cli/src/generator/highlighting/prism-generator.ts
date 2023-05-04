@@ -3,15 +3,15 @@
  * This program and the accompanying materials are made available under the
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
-
-import { CompositeGeneratorNode, escapeRegExp, Grammar, GrammarAST, isCommentTerminal, NL, toString } from 'langium';
+import type { Grammar } from 'langium';
+import type { LangiumLanguageConfig } from '../../package';
+import { CompositeGeneratorNode, escapeRegExp, GrammarAST, isCommentTerminal, NL, toString } from 'langium';
 import { terminalRegex } from 'langium/lib/grammar/internal-grammar-util';
 import _ from 'lodash';
-import { LangiumLanguageConfig } from '../../package';
 import { collectKeywords } from '../util';
 
 interface HighlightElement {
-    pattern: string
+    pattern: string;
     greedy?: boolean;
 }
 

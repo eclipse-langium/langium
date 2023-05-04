@@ -4,10 +4,12 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { IToken, TokenType } from 'chevrotain';
-import { Position, Range } from 'vscode-languageserver-types';
-import { AbstractElement } from '../grammar/generated/ast';
-import { AstNode, CompositeCstNode, CstNode, isCompositeCstNode, LeafCstNode, RootCstNode } from '../syntax-tree';
+import type { IToken, TokenType } from 'chevrotain';
+import type { Range } from 'vscode-languageserver-types';
+import type { AbstractElement } from '../grammar/generated/ast';
+import type { AstNode, CompositeCstNode, CstNode, LeafCstNode, RootCstNode } from '../syntax-tree';
+import { Position } from 'vscode-languageserver-types';
+import { isCompositeCstNode } from '../syntax-tree';
 import { tokenToRange } from '../utils/cst-util';
 
 export class CstNodeBuilder {

@@ -3,9 +3,9 @@
  * This program and the accompanying materials are made available under the
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
-
-import { CompositeGeneratorNode, Grammar, LangiumServices, NL, normalizeEOL, toString } from 'langium';
-import { LangiumConfig } from '../package';
+import type { Grammar, LangiumServices } from 'langium';
+import type { LangiumConfig } from '../package';
+import { CompositeGeneratorNode, NL, normalizeEOL, toString } from 'langium';
 import { generatedHeader } from './util';
 
 export function serializeGrammar(services: LangiumServices, grammars: Grammar[], config: LangiumConfig): string {
@@ -14,10 +14,12 @@ export function serializeGrammar(services: LangiumServices, grammars: Grammar[],
 
     if (config.langiumInternal) {
         node.append(
-            "import { loadGrammarFromJson } from '../../utils/grammar-util';", NL,
-            "import { Grammar } from './ast';");
+            "import type { Grammar } from './ast';", NL,
+            "import { loadGrammarFromJson } from '../../utils/grammar-util';");
     } else {
-        node.append("import { loadGrammarFromJson, Grammar } from 'langium';");
+        node.append(
+            "import type { Grammar } from 'langium';", NL,
+            "import { loadGrammarFromJson } from 'langium';");
     }
     node.append(NL, NL);
 

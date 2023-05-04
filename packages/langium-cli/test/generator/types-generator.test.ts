@@ -4,8 +4,9 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import type { Grammar } from 'langium';
 import { describe, expect, test } from 'vitest';
-import { createLangiumGrammarServices, EmptyFileSystem, Grammar, normalizeEOL } from 'langium';
+import { createLangiumGrammarServices, EmptyFileSystem, normalizeEOL } from 'langium';
 import { parseHelper } from 'langium/test';
 import { generateTypesFile } from '../../src/generator/types-generator';
 
@@ -24,7 +25,7 @@ describe('Types generator', () => {
 });
 
 const EXPECTED_TYPES =
-normalizeEOL(`type AbstractDefinition = DeclaredParameter | Definition;
+    normalizeEOL(`type AbstractDefinition = DeclaredParameter | Definition;
 
 type Expression = BinaryExpression | FunctionCall | NumberLiteral;
 

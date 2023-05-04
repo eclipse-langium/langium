@@ -5,8 +5,10 @@
  ******************************************************************************/
 
 import type { Position, Range } from 'vscode-languageserver-textdocument';
-import { CompositeGeneratorNode, GeneratorNode, IndentNode, NewLineNode } from './generator-node';
-import { getSourceRegion, SourceRegion, TextRegion, TraceRegion } from './generator-tracing';
+import type { GeneratorNode } from './generator-node';
+import type { SourceRegion, TextRegion, TraceRegion } from './generator-tracing';
+import { CompositeGeneratorNode, IndentNode, NewLineNode } from './generator-node';
+import { getSourceRegion } from './generator-tracing';
 
 type OffsetAndPosition = { offset: number } & Position
 
@@ -96,7 +98,7 @@ class Context {
         const region = createTraceRegion(
             sourceRegion,
             this.currentPosition,
-            it => this.traceData[ this.traceData.length - 1 ]?.children?.push(it));
+            it => this.traceData[this.traceData.length - 1]?.children?.push(it));
         this.traceData.push(region);
         return region;
     }
@@ -130,7 +132,7 @@ interface InternalTraceRegion extends TraceRegion {
     complete?: (targetEnd: OffsetAndPosition) => TraceRegion;
 }
 
-function createTraceRegion(sourceRegion: SourceRegion | undefined, targetStart: OffsetAndPosition, accept: (it: TraceRegion) => void ): TraceRegion {
+function createTraceRegion(sourceRegion: SourceRegion | undefined, targetStart: OffsetAndPosition, accept: (it: TraceRegion) => void): TraceRegion {
     const result = <InternalTraceRegion>{
         sourceRegion,
         targetRegion: undefined!,
@@ -139,7 +141,7 @@ function createTraceRegion(sourceRegion: SourceRegion | undefined, targetStart: 
         complete: (targetEnd: OffsetAndPosition) => {
             result.targetRegion = <TextRegion>{
                 offset: result.targetStart!.offset,
-                end:    targetEnd.offset,
+                end: targetEnd.offset,
                 length: targetEnd.offset - result.targetStart!.offset,
                 range: <Range>{
                     start: {

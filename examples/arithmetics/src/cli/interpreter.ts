@@ -4,9 +4,10 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import type { AbstractDefinition, Definition, Evaluation, Expression, Module, Statement } from '../language-server/generated/ast';
 import { NodeFileSystem } from 'langium/node';
 import { createArithmeticsServices } from '../language-server/arithmetics-module';
-import { AbstractDefinition, Definition, Evaluation, Expression, isBinaryExpression, isDefinition, isEvaluation, isFunctionCall, isNumberLiteral, Module, Statement } from '../language-server/generated/ast';
+import { isBinaryExpression, isDefinition, isEvaluation, isFunctionCall, isNumberLiteral } from '../language-server/generated/ast';
 import { applyOp } from '../language-server/arithmetics-util';
 import { ArithmeticsLanguageMetaData } from '../language-server/generated/module';
 import { extractDocument } from './cli-util';

@@ -4,22 +4,18 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import {
+import type {
     CallHierarchyIncomingCallsParams,
     CallHierarchyOutgoingCallsParams,
     CancellationToken,
     Connection,
     Disposable,
-    Emitter,
     Event,
-    FileChangeType,
     HandlerResult,
     InitializedParams,
     InitializeParams,
     InitializeResult,
-    LSPErrorCodes,
     RequestHandler,
-    ResponseError,
     SemanticTokens,
     SemanticTokensDelta,
     SemanticTokensDeltaParams,
@@ -28,14 +24,15 @@ import {
     SemanticTokensPartialResult,
     SemanticTokensRangeParams,
     ServerRequestHandler,
-    TextDocumentIdentifier,
-    TextDocumentSyncKind
+    TextDocumentIdentifier
 } from 'vscode-languageserver';
+import type { LangiumServices, LangiumSharedServices } from '../services';
+import type { LangiumDocument } from '../workspace/documents';
+import { Emitter, FileChangeType, LSPErrorCodes, ResponseError, TextDocumentSyncKind } from 'vscode-languageserver';
 import { URI } from 'vscode-uri';
 import { eagerLoad } from '../dependency-injection';
-import { LangiumServices, LangiumSharedServices } from '../services';
 import { isOperationCancelled } from '../utils/promise-util';
-import { DocumentState, LangiumDocument } from '../workspace/documents';
+import { DocumentState } from '../workspace/documents';
 import { mergeCompletionProviderOptions } from './completion/completion-provider';
 import { DefaultSemanticTokenOptions } from './semantic-token-provider';
 import { mergeSignatureHelpOptions } from './signature-help-provider';

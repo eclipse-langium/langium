@@ -4,7 +4,8 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { Reduction, Stream, stream } from './stream';
+import type { Stream } from './stream';
+import { Reduction, stream } from './stream';
 
 /**
  * A multimap is a variation of a Map that has potentially multiple values for every key.

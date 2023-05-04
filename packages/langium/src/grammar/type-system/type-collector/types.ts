@@ -4,9 +4,9 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import type { CstNode } from '../../../syntax-tree';
+import type { Assignment, Action, TypeAttribute } from '../../generated/ast';
 import { CompositeGeneratorNode, NL, toString } from '../../../generator/generator-node';
-import { CstNode } from '../../../syntax-tree';
-import { Assignment, Action, TypeAttribute } from '../../generated/ast';
 import { distinctAndSorted } from '../types-util';
 
 export interface Property {

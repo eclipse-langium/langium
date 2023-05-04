@@ -4,9 +4,10 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { IToken } from 'chevrotain';
+import type { IToken } from 'chevrotain';
+import type { Cardinality } from '../../grammar/internal-grammar-util';
 import * as ast from '../../grammar/generated/ast';
-import { Cardinality, getExplicitRuleType, getTypeName, isArrayCardinality, isOptionalCardinality, terminalRegex } from '../../grammar/internal-grammar-util';
+import { getExplicitRuleType, getTypeName, isArrayCardinality, isOptionalCardinality, terminalRegex } from '../../grammar/internal-grammar-util';
 import { isAstNode } from '../../syntax-tree';
 import { getContainerOfType } from '../../utils/ast-util';
 import { getCrossReferenceTerminal } from '../../utils/grammar-util';

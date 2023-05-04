@@ -4,11 +4,13 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { IToken } from '@chevrotain/types';
-import { Range } from 'vscode-languageserver';
-import { CstNode, CompositeCstNode, isCompositeCstNode, isLeafCstNode, LeafCstNode, isRootCstNode } from '../syntax-tree';
-import { DocumentSegment } from '../workspace/documents';
-import { Stream, TreeStream, TreeStreamImpl } from './stream';
+import type { IToken } from '@chevrotain/types';
+import type { Range } from 'vscode-languageserver';
+import type { CstNode, CompositeCstNode, LeafCstNode } from '../syntax-tree';
+import type { DocumentSegment } from '../workspace/documents';
+import type { Stream, TreeStream } from './stream';
+import { isCompositeCstNode, isLeafCstNode, isRootCstNode } from '../syntax-tree';
+import { TreeStreamImpl } from './stream';
 
 /**
  * Create a stream of all CST nodes that are directly and indirectly contained in the given root node,

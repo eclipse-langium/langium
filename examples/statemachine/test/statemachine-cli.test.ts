@@ -4,10 +4,11 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import type { ExecException } from 'child_process';
 import path from 'path';
 import fs from 'fs';
 import { afterAll, describe, expect, test } from 'vitest';
-import { exec, ExecException } from 'child_process';
+import { exec } from 'child_process';
 
 describe('Test the statemachine CLI', () => {
     let fullPath: string;

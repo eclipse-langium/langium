@@ -4,11 +4,12 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { CancellationToken, SignatureHelp, SignatureHelpOptions, SignatureHelpParams } from 'vscode-languageserver';
-import { AstNode } from '../syntax-tree';
+import type { SignatureHelp, SignatureHelpOptions, SignatureHelpParams } from 'vscode-languageserver';
+import { CancellationToken } from 'vscode-languageserver';
+import type { AstNode } from '../syntax-tree';
 import { findLeafNodeAtOffset } from '../utils/cst-util';
-import { MaybePromise } from '../utils/promise-util';
-import { LangiumDocument } from '../workspace/documents';
+import type { MaybePromise } from '../utils/promise-util';
+import type { LangiumDocument } from '../workspace/documents';
 
 /**
  * Language-specific service for handling signature help requests.

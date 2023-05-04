@@ -4,18 +4,20 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import type { LangiumServices } from '../services';
+import type { AstNode, CstNode, GenericAstNode } from '../syntax-tree';
+import type { Stream } from '../utils/stream';
+import type { ReferenceDescription } from '../workspace/ast-descriptions';
+import type { AstNodeLocator } from '../workspace/ast-node-locator';
+import type { IndexManager } from '../workspace/index-manager';
+import type { NameProvider } from './name-provider';
+import type { URI } from 'vscode-uri';
 import { findAssignment } from '../utils/grammar-util';
-import { LangiumServices } from '../services';
-import { AstNode, CstNode, GenericAstNode, isReference } from '../syntax-tree';
+import { isReference } from '../syntax-tree';
 import { getDocument } from '../utils/ast-util';
 import { isCstChildNode, toDocumentSegment } from '../utils/cst-util';
-import { stream, Stream } from '../utils/stream';
+import { stream } from '../utils/stream';
 import { equalURI } from '../utils/uri-util';
-import { ReferenceDescription } from '../workspace/ast-descriptions';
-import { AstNodeLocator } from '../workspace/ast-node-locator';
-import { IndexManager } from '../workspace/index-manager';
-import { NameProvider } from './name-provider';
-import { URI } from 'vscode-uri';
 
 /**
  * Language-specific service for finding references and declaration of a given `CstNode`.

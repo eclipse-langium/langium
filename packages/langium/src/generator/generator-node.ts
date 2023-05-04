@@ -4,7 +4,8 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { AstNode, isAstNode, Properties } from '../syntax-tree';
+import type { AstNode, Properties } from '../syntax-tree';
+import { isAstNode } from '../syntax-tree';
 import type { SourceRegion, TraceRegion, TraceSourceSpec } from './generator-tracing';
 import { processGeneratorNode } from './node-processor';
 import { expandToNode, expandTracedToNode } from './template-node';
@@ -22,7 +23,7 @@ export type GeneratorNode = CompositeGeneratorNode | IndentNode | NewLineNode;
 
 export interface IndentConfig {
     indentedChildren?: Generated[] | ((indented: IndentNode) => void);
-    indentation?: string|number;
+    indentation?: string | number;
     indentEmptyLines?: boolean;
     indentImmediately?: boolean;
 }
@@ -690,7 +691,7 @@ export class CompositeGeneratorNode {
     appendTracedTemplate<T extends AstNode>(source: T | undefined | SourceRegion | SourceRegion[], property?: Properties<T>, index?: number): (staticParts: TemplateStringsArray, ...substitutions: unknown[]) => this {
         return (staticParts: TemplateStringsArray, ...substitutions: unknown[]) => {
             return this.append(
-                expandTracedToNode(source as T, property!, index )(staticParts, ...substitutions)
+                expandTracedToNode(source as T, property!, index)(staticParts, ...substitutions)
             );
         };
     }
@@ -965,7 +966,7 @@ export function traceToNode<T extends AstNode>(astNode: T | undefined | SourceRe
  *       `Hello ${ traceToNodeIf(!!entity.name, entity, 'name')(entity.name) }`
  *   .appendNewLineIfNotEmpty()
  */
-export function traceToNodeIf<T extends AstNode>(condition: boolean, astNode: T, property?: Properties<T>): (content?: Generated | ((node: CompositeGeneratorNode) => void)) => CompositeGeneratorNode | undefined ;
+export function traceToNodeIf<T extends AstNode>(condition: boolean, astNode: T, property?: Properties<T>): (content?: Generated | ((node: CompositeGeneratorNode) => void)) => CompositeGeneratorNode | undefined;
 
 /**
  * Convenience function for attaching tracing information to content of type `Generated`,
@@ -998,7 +999,7 @@ export function traceToNodeIf<T extends AstNode>(condition: boolean, astNode: T,
  *       `Hello ${ traceToNodeIf(!!entity.name, entity, 'name')(entity.name) }`
  *   .appendNewLineIfNotEmpty()
  */
-export function traceToNodeIf<T extends AstNode>(condition: boolean, astNode: T, property: Properties<T>, index: number | undefined): (content?: Generated | ((node: CompositeGeneratorNode) => void)) => CompositeGeneratorNode | undefined ;
+export function traceToNodeIf<T extends AstNode>(condition: boolean, astNode: T, property: Properties<T>, index: number | undefined): (content?: Generated | ((node: CompositeGeneratorNode) => void)) => CompositeGeneratorNode | undefined;
 
 /**
  * Convenience function for attaching tracing information to content of type `Generated`,
@@ -1028,7 +1029,7 @@ export function traceToNodeIf<T extends AstNode>(condition: boolean, astNode: T,
  *       `Hello ${ traceToNodeIf(!!entity.name, () => findNodeForProperty(entity.$cstNode, 'name'))(entity.name) }`
  *   .appendNewLineIfNotEmpty()
  */
-export function traceToNodeIf(condition: boolean, sourceRegion: SourceRegion | undefined | (() => SourceRegion | undefined)): (content?: Generated | ((node: CompositeGeneratorNode) => void)) => CompositeGeneratorNode | undefined ;
+export function traceToNodeIf(condition: boolean, sourceRegion: SourceRegion | undefined | (() => SourceRegion | undefined)): (content?: Generated | ((node: CompositeGeneratorNode) => void)) => CompositeGeneratorNode | undefined;
 
 /**
  * Convenience function for attaching tracing information to content of type `Generated`,
@@ -1060,7 +1061,7 @@ export function traceToNodeIf(condition: boolean, sourceRegion: SourceRegion | u
  *       `Hello ${ traceToNodeIf(!!entity.name, () => findNodesForProperty(entity.$cstNode, 'name'))(entity.name) }`
  *   .appendNewLineIfNotEmpty()
  */
-export function traceToNodeIf(condition: boolean, sourceRegions: SourceRegion[] | (() => SourceRegion[])): (content?: Generated | ((node: CompositeGeneratorNode) => void)) => CompositeGeneratorNode | undefined ;
+export function traceToNodeIf(condition: boolean, sourceRegions: SourceRegion[] | (() => SourceRegion[])): (content?: Generated | ((node: CompositeGeneratorNode) => void)) => CompositeGeneratorNode | undefined;
 
 // implementation
 export function traceToNodeIf<T extends AstNode>(condition: boolean, source: T | undefined | SourceRegion | SourceRegion[] | (() => undefined | SourceRegion | SourceRegion[]), property?: Properties<T>, index?: number): // eslint-disable-next-line @typescript-eslint/indent

@@ -4,15 +4,16 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { CancellationToken, Location,  ReferenceParams } from 'vscode-languageserver';
-import { NameProvider } from '../references/name-provider';
-import { References } from '../references/references';
-import { LeafCstNode } from '../syntax-tree';
-import { LangiumServices } from '../services';
+import type { CancellationToken, ReferenceParams } from 'vscode-languageserver';
+import type { NameProvider } from '../references/name-provider';
+import type { References } from '../references/references';
+import type { LeafCstNode } from '../syntax-tree';
+import type { LangiumServices } from '../services';
+import type { MaybePromise } from '../utils/promise-util';
+import type { LangiumDocument } from '../workspace/documents';
+import type { GrammarConfig } from '../grammar/grammar-config';
+import { Location } from 'vscode-languageserver';
 import { findDeclarationNodeAtOffset } from '../utils/cst-util';
-import { MaybePromise } from '../utils/promise-util';
-import { LangiumDocument } from '../workspace/documents';
-import { GrammarConfig } from '../grammar/grammar-config';
 
 /**
  * Language-specific service for handling find references requests.

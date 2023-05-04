@@ -4,22 +4,25 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { CodeActionKind, Diagnostic } from 'vscode-languageserver';
-import { CodeActionParams } from 'vscode-languageserver-protocol';
-import { CodeAction, Command, Position, TextEdit } from 'vscode-languageserver-types';
-import { URI, Utils } from 'vscode-uri';
-import { CodeActionProvider } from '../../lsp/code-action';
-import { LangiumServices } from '../../services';
-import { AstReflection, Reference, ReferenceInfo } from '../../syntax-tree';
+import type { Diagnostic } from 'vscode-languageserver';
+import type { CodeActionParams } from 'vscode-languageserver-protocol';
+import type { CodeAction, Command, Position, TextEdit } from 'vscode-languageserver-types';
+import type { URI } from 'vscode-uri';
+import type { CodeActionProvider } from '../../lsp/code-action';
+import type { LangiumServices } from '../../services';
+import type { AstReflection, Reference, ReferenceInfo } from '../../syntax-tree';
+import type { MaybePromise } from '../../utils/promise-util';
+import type { LinkingErrorData } from '../../validation/document-validator';
+import type { DocumentSegment, LangiumDocument } from '../../workspace/documents';
+import type { IndexManager } from '../../workspace/index-manager';
+import { CodeActionKind } from 'vscode-languageserver';
+import { Utils } from 'vscode-uri';
 import { getContainerOfType } from '../../utils/ast-util';
 import { findLeafNodeAtOffset } from '../../utils/cst-util';
 import { findNodeForProperty } from '../../utils/grammar-util';
-import { MaybePromise } from '../../utils/promise-util';
 import { escapeRegExp } from '../../utils/regex-util';
 import { equalURI, relativeURI } from '../../utils/uri-util';
-import { DocumentValidator, LinkingErrorData } from '../../validation/document-validator';
-import { DocumentSegment, LangiumDocument } from '../../workspace/documents';
-import { IndexManager } from '../../workspace/index-manager';
+import { DocumentValidator } from '../../validation/document-validator';
 import * as ast from '../generated/ast';
 import { IssueCodes } from '../validation/validator';
 

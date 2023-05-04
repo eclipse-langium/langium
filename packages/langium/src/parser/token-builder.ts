@@ -4,13 +4,16 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { Lexer, TokenPattern, TokenType, TokenVocabulary } from 'chevrotain';
-import { AbstractRule, Grammar, isKeyword, isParserRule, isTerminalRule, Keyword, TerminalRule } from '../grammar/generated/ast';
+import type { TokenPattern, TokenType, TokenVocabulary } from 'chevrotain';
+import type { AbstractRule, Grammar, Keyword, TerminalRule } from '../grammar/generated/ast';
+import type { Stream } from '../utils/stream';
+import { Lexer } from 'chevrotain';
+import { isKeyword, isParserRule, isTerminalRule } from '../grammar/generated/ast';
 import { terminalRegex } from '../grammar/internal-grammar-util';
 import { streamAllContents } from '../utils/ast-util';
 import { getAllReachableRules } from '../utils/grammar-util';
 import { getCaseInsensitivePattern, isWhitespaceRegExp, partialMatches } from '../utils/regex-util';
-import { Stream, stream } from '../utils/stream';
+import { stream } from '../utils/stream';
 
 export interface TokenBuilderOptions {
     caseInsensitive?: boolean

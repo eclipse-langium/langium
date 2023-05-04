@@ -4,8 +4,8 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import type { AstNode } from '../../syntax-tree';
 import { DefaultFoldingRangeProvider } from '../../lsp/folding-range-provider';
-import { AstNode } from '../../syntax-tree';
 import { isParserRule } from '../generated/ast';
 
 /**

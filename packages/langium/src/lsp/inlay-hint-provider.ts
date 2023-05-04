@@ -4,11 +4,13 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { CancellationToken, InlayHint, InlayHintParams } from 'vscode-languageserver';
-import { AstNode } from '../syntax-tree';
+import type { InlayHint, InlayHintParams } from 'vscode-languageserver';
+import type { AstNode } from '../syntax-tree';
+import { CancellationToken } from 'vscode-languageserver';
+import type { MaybePromise } from '../utils/promise-util';
+import type { LangiumDocument } from '../workspace/documents';
 import { streamAst } from '../utils/ast-util';
-import { interruptAndCheck, MaybePromise } from '../utils/promise-util';
-import { LangiumDocument } from '../workspace/documents';
+import { interruptAndCheck } from '../utils/promise-util';
 
 export type InlayHintAcceptor = (inlayHint: InlayHint) => void;
 

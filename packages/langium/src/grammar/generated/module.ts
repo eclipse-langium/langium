@@ -3,10 +3,10 @@
  * DO NOT EDIT MANUALLY!
  ******************************************************************************/
 
-import { LanguageMetaData } from '../language-meta-data';
-import { Module } from '../../dependency-injection';
-import { LangiumGeneratedServices, LangiumGeneratedSharedServices, LangiumSharedServices, LangiumServices } from '../../services';
-import { IParserConfig } from '../../parser/parser-config';
+import type { LanguageMetaData } from '../language-meta-data';
+import type { Module } from '../../dependency-injection';
+import type { LangiumGeneratedServices, LangiumGeneratedSharedServices, LangiumSharedServices, LangiumServices } from '../../services';
+import type { IParserConfig } from '../../parser/parser-config';
 import { LangiumGrammarAstReflection } from './ast';
 import { LangiumGrammarGrammar } from './grammar';
 

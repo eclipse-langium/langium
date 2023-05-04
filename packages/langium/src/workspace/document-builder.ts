@@ -4,15 +4,17 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import type { URI } from 'vscode-uri';
+import type { ServiceRegistry } from '../service-registry';
+import type { LangiumSharedServices } from '../services';
+import type { AstNode } from '../syntax-tree';
+import type { MaybePromise } from '../utils/promise-util';
+import type { IndexManager } from '../workspace/index-manager';
+import type { LangiumDocument, LangiumDocuments, LangiumDocumentFactory } from './documents';
 import { CancellationToken, Disposable } from 'vscode-languageserver';
-import { URI } from 'vscode-uri';
-import { ServiceRegistry } from '../service-registry';
-import { LangiumSharedServices } from '../services';
-import { AstNode } from '../syntax-tree';
 import { MultiMap } from '../utils/collections';
-import { interruptAndCheck, MaybePromise } from '../utils/promise-util';
-import { IndexManager } from '../workspace/index-manager';
-import { DocumentState, LangiumDocument, LangiumDocuments, LangiumDocumentFactory } from './documents';
+import { interruptAndCheck } from '../utils/promise-util';
+import { DocumentState } from './documents';
 
 export interface BuildOptions {
     validationChecks?: 'none' | 'all'

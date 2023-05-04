@@ -4,7 +4,8 @@
  ******************************************************************************/
 
 /* eslint-disable */
-import { AstNode, AbstractAstReflection, Reference, ReferenceInfo, TypeMetaData } from '../../syntax-tree';
+import type { AstNode, Reference, ReferenceInfo, TypeMetaData } from '../../syntax-tree';
+import { AbstractAstReflection } from '../../syntax-tree';
 
 export type AbstractRule = ParserRule | TerminalRule;
 

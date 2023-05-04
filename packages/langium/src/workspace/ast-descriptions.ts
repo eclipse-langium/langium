@@ -4,17 +4,18 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import type { URI } from 'vscode-uri';
+import type { NameProvider } from '../references/name-provider';
+import type { LangiumServices } from '../services';
+import type { AstNode, AstNodeDescription, ReferenceInfo } from '../syntax-tree';
+import type { AstNodeLocator } from './ast-node-locator';
+import type { DocumentSegment, LangiumDocument } from './documents';
 import { CancellationToken } from 'vscode-languageserver';
-import { URI } from 'vscode-uri';
-import { NameProvider } from '../references/name-provider';
-import { LangiumServices } from '../services';
-import { AstNode, AstNodeDescription, isLinkingError, ReferenceInfo } from '../syntax-tree';
+import { isLinkingError } from '../syntax-tree';
 import { getDocument, streamAst, streamReferences } from '../utils/ast-util';
 import { toDocumentSegment } from '../utils/cst-util';
 import { interruptAndCheck } from '../utils/promise-util';
 import { equalURI } from '../utils/uri-util';
-import { AstNodeLocator } from './ast-node-locator';
-import { DocumentSegment, LangiumDocument } from './documents';
 
 /**
  * Language-specific service for creating descriptions of AST nodes to be used for cross-reference resolutions.

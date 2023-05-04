@@ -4,10 +4,10 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import type { RequirementModel, TestModel } from '../language-server/generated/ast';
 import fs from 'fs';
 import { CompositeGeneratorNode, NL, toString } from 'langium';
 import path from 'path';
-import { RequirementModel, TestModel } from '../language-server/generated/ast';
 import { extractDestinationAndName } from './cli-util';
 
 /**
@@ -26,8 +26,8 @@ export function generateSummaryFileHTMLContent(model: RequirementModel, testMode
     fileNode.append('<TR><TH>Requirement ID</TH><TH>Testcase ID</TH></TR>', NL);
     model.requirements.forEach(requirement => {
         fileNode.append(`<TR><TD>${requirement.name}</TD><TD>`, NL);
-        testModels.forEach(testModel=>testModel.tests.forEach(test=>{
-            if (test.requirements.map(r=>r.ref).includes(requirement)) {
+        testModels.forEach(testModel => testModel.tests.forEach(test => {
+            if (test.requirements.map(r => r.ref).includes(requirement)) {
                 fileNode.append(`<div>${test.name} (from ${testModel.$document?.uri.fsPath})<div>`, NL);
             }
         }));

@@ -4,13 +4,14 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { CancellationToken, DocumentSymbol, DocumentSymbolParams, SymbolKind } from 'vscode-languageserver';
-import { NameProvider } from '../references/name-provider';
-import { LangiumServices } from '../services';
-import { AstNode } from '../syntax-tree';
+import type { CancellationToken, DocumentSymbol, DocumentSymbolParams } from 'vscode-languageserver';
+import { SymbolKind } from 'vscode-languageserver';
+import type { NameProvider } from '../references/name-provider';
+import type { LangiumServices } from '../services';
+import type { AstNode } from '../syntax-tree';
 import { streamContents } from '../utils/ast-util';
-import { MaybePromise } from '../utils/promise-util';
-import { LangiumDocument } from '../workspace/documents';
+import type { MaybePromise } from '../utils/promise-util';
+import type { LangiumDocument } from '../workspace/documents';
 
 /**
  * Language-specific service for handling document symbols requests.

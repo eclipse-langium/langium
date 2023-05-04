@@ -3,12 +3,10 @@
  * This program and the accompanying materials are made available under the
  * terms of the MIT License, which is available in the project root.
 ******************************************************************************/
-
-import {
-    EOL, escapeRegExp, getCaseInsensitivePattern, getTerminalParts, Grammar, GrammarAST, isCommentTerminal, stream
-} from 'langium';
+import type { Grammar } from 'langium';
+import type { LangiumLanguageConfig } from '../../package';
+import { EOL, escapeRegExp, getCaseInsensitivePattern, getTerminalParts, GrammarAST, isCommentTerminal, stream } from 'langium';
 import { terminalRegex } from 'langium/lib/grammar/internal-grammar-util';
-import { LangiumLanguageConfig } from '../../package';
 import { collectKeywords } from '../util';
 
 /* eslint-disable dot-notation */
@@ -143,8 +141,8 @@ function groupKeywords(keywords: string[], caseInsensitive: boolean | undefined)
         letter: string[],
         leftSpecial: string[],
         rightSpecial: string[],
-        special: string[]
-    } = {letter: [], leftSpecial: [], rightSpecial: [], special: []};
+        special: string[];
+    } = { letter: [], leftSpecial: [], rightSpecial: [], special: [] };
 
     keywords.forEach(keyword => {
         const keywordPattern = caseInsensitive ? getCaseInsensitivePattern(keyword) : escapeRegExp(keyword);

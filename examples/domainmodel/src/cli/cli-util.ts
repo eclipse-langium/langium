@@ -4,12 +4,12 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import type { AstNode, LangiumDocument, LangiumServices } from 'langium';
+import type { WorkspaceFolder } from 'vscode-languageserver';
 import fs from 'fs';
 import path from 'path';
 import chalk from 'chalk';
-import { AstNode, LangiumDocument, LangiumServices } from 'langium';
 import { URI } from 'vscode-uri';
-import { WorkspaceFolder } from 'vscode-languageserver';
 
 export async function extractDocument<T extends AstNode>(fileName: string, extensions: string[], services: LangiumServices): Promise<LangiumDocument<T>> {
     if (!extensions.includes(path.extname(fileName))) {

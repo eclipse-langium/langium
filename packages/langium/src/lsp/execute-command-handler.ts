@@ -6,8 +6,8 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import type { MaybePromise } from '../utils/promise-util';
 import { CancellationToken } from 'vscode-languageserver';
-import { MaybePromise } from '../utils/promise-util';
 
 export interface ExecuteCommandHandler {
     get commands(): string[]

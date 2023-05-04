@@ -4,14 +4,16 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import ignore, { Ignore } from 'ignore';
+import type { Ignore } from 'ignore';
+import type { LangiumSharedServices } from 'langium/lib/services';
+import type { ConfigurationProvider } from 'langium/lib/workspace/configuration';
+import type { FileSystemNode } from 'langium/lib/workspace/file-system-provider';
+import type { WorkspaceFolder } from 'vscode-languageserver-protocol';
+import ignore from 'ignore';
 import { LangiumGrammarLanguageMetaData } from 'langium/lib/grammar/generated/module';
-import { LangiumSharedServices } from 'langium/lib/services';
-import { ConfigurationProvider } from 'langium/lib/workspace/configuration';
-import { FileSystemNode } from 'langium/lib/workspace/file-system-provider';
 import { DefaultWorkspaceManager } from 'langium/lib/workspace/workspace-manager';
 import * as path from 'path';
-import { CancellationToken, WorkspaceFolder } from 'vscode-languageserver-protocol';
+import { CancellationToken } from 'vscode-languageserver-protocol';
 import { URI, Utils } from 'vscode-uri';
 
 const CONFIG_KEY = 'build';

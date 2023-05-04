@@ -4,17 +4,18 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { CancellationToken, DocumentHighlight, DocumentHighlightParams } from 'vscode-languageserver';
-import { GrammarConfig } from '../grammar/grammar-config';
-import { NameProvider } from '../references/name-provider';
-import { FindReferencesOptions, References } from '../references/references';
-import { LangiumServices } from '../services';
+import type { CancellationToken, DocumentHighlightParams } from 'vscode-languageserver';
+import type { GrammarConfig } from '../grammar/grammar-config';
+import type { NameProvider } from '../references/name-provider';
+import type { FindReferencesOptions, References } from '../references/references';
+import type { LangiumServices } from '../services';
+import type { MaybePromise } from '../utils/promise-util';
+import type { ReferenceDescription } from '../workspace/ast-descriptions';
+import type { LangiumDocument } from '../workspace/documents';
+import { DocumentHighlight } from 'vscode-languageserver';
 import { getDocument } from '../utils/ast-util';
 import { findDeclarationNodeAtOffset } from '../utils/cst-util';
-import { MaybePromise } from '../utils/promise-util';
 import { equalURI } from '../utils/uri-util';
-import { ReferenceDescription } from '../workspace/ast-descriptions';
-import { LangiumDocument } from '../workspace/documents';
 
 /**
  * Language-specific service for handling document highlight requests.

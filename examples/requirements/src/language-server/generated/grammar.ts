@@ -3,7 +3,8 @@
  * DO NOT EDIT MANUALLY!
  ******************************************************************************/
 
-import { loadGrammarFromJson, Grammar } from 'langium';
+import type { Grammar } from 'langium';
+import { loadGrammarFromJson } from 'langium';
 
 let loadedRequirementsGrammar: Grammar | undefined;
 export const RequirementsGrammar = (): Grammar => loadedRequirementsGrammar ?? (loadedRequirementsGrammar = loadGrammarFromJson(`{

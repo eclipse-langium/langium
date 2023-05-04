@@ -4,16 +4,18 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import type { Scope } from '../../references/scope-provider';
+import type { LangiumServices } from '../../services';
+import type { AstNode, AstNodeDescription, ReferenceInfo } from '../../syntax-tree';
+import type { Stream } from '../../utils/stream';
+import type { AstNodeLocator } from '../../workspace/ast-node-locator';
+import type { LangiumDocument, PrecomputedScopes } from '../../workspace/documents';
 import { DefaultScopeComputation } from '../../references/scope-computation';
-import { DefaultScopeProvider, EMPTY_SCOPE, Scope, StreamScope } from '../../references/scope-provider';
-import { LangiumServices } from '../../services';
-import { AstNode, AstNodeDescription, ReferenceInfo } from '../../syntax-tree';
+import { DefaultScopeProvider, EMPTY_SCOPE, StreamScope } from '../../references/scope-provider';
 import { findRootNode, getContainerOfType, getDocument, streamAllContents } from '../../utils/ast-util';
 import { toDocumentSegment } from '../../utils/cst-util';
-import { stream, Stream } from '../../utils/stream';
+import { stream } from '../../utils/stream';
 import { equalURI } from '../../utils/uri-util';
-import { AstNodeLocator } from '../../workspace/ast-node-locator';
-import { LangiumDocument, PrecomputedScopes } from '../../workspace/documents';
 import { AbstractType, Interface, isAction, isGrammar, isParserRule, isReturnType, Type } from '../generated/ast';
 import { getActionType, resolveImportUri } from '../internal-grammar-util';
 

@@ -4,15 +4,17 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { CancellationToken, Position, Range, RenameParams, TextDocumentPositionParams, TextEdit, WorkspaceEdit } from 'vscode-languageserver';
-import { GrammarConfig } from '../grammar/grammar-config';
-import { isNamed, NameProvider } from '../references/name-provider';
-import { References } from '../references/references';
-import { LangiumServices } from '../services';
-import { CstNode } from '../syntax-tree';
+import type { CancellationToken, Position, Range, RenameParams, TextDocumentPositionParams, WorkspaceEdit } from 'vscode-languageserver';
+import type { GrammarConfig } from '../grammar/grammar-config';
+import type { NameProvider } from '../references/name-provider';
+import type { References } from '../references/references';
+import type { LangiumServices } from '../services';
+import type { CstNode } from '../syntax-tree';
+import type { MaybePromise } from '../utils/promise-util';
+import type { LangiumDocument } from '../workspace/documents';
+import { TextEdit } from 'vscode-languageserver';
+import { isNamed } from '../references/name-provider';
 import { findDeclarationNodeAtOffset } from '../utils/cst-util';
-import { MaybePromise } from '../utils/promise-util';
-import { LangiumDocument } from '../workspace/documents';
 
 /**
  * Language-specific service for handling rename requests and prepare rename requests.

@@ -4,10 +4,12 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { Range } from 'vscode-languageserver';
-import { AstNode, CstNode, GenericAstNode, isAstNode, isReference, Reference, ReferenceInfo } from '../syntax-tree';
-import { DONE_RESULT, Stream, stream, StreamImpl, TreeStream, TreeStreamImpl } from '../utils/stream';
-import { LangiumDocument } from '../workspace/documents';
+import type { Range } from 'vscode-languageserver';
+import type { AstNode, CstNode, GenericAstNode, Reference, ReferenceInfo } from '../syntax-tree';
+import type { Stream, TreeStream } from '../utils/stream';
+import type { LangiumDocument } from '../workspace/documents';
+import { isAstNode, isReference } from '../syntax-tree';
+import { DONE_RESULT, stream, StreamImpl, TreeStreamImpl } from '../utils/stream';
 import { inRange } from './cst-util';
 
 export type Mutable<T> = {
@@ -105,7 +107,7 @@ export interface AstStreamOptions {
  * single-valued as well as multi-valued (array) properties.
  */
 export function streamContents(node: AstNode, options?: AstStreamOptions): Stream<AstNode> {
-    if(!node) {
+    if (!node) {
         throw new Error('Node must be an AstNode.');
     }
     const range = options?.range;

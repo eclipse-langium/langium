@@ -4,11 +4,13 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import type { ParserRule, Action, AbstractElement, Assignment, RuleCall } from '../../generated/ast';
+import type { PlainAstTypes, PlainInterface, PlainProperty, PlainPropertyType, PlainUnion } from './plain-types';
 import { isNamed } from '../../../references/name-provider';
 import { MultiMap } from '../../../utils/collections';
-import { ParserRule, isAlternatives, isKeyword, Action, isParserRule, isAction, AbstractElement, isGroup, isUnorderedGroup, isAssignment, isRuleCall, Assignment, isCrossReference, RuleCall, isTerminalRule } from '../../generated/ast';
+import { isAlternatives, isKeyword, isParserRule, isAction, isGroup, isUnorderedGroup, isAssignment, isRuleCall, isCrossReference, isTerminalRule } from '../../generated/ast';
 import { getTypeNameWithoutError, isOptionalCardinality, getRuleType, isPrimitiveType, terminalRegex } from '../../internal-grammar-util';
-import { mergePropertyTypes, PlainAstTypes, PlainInterface, PlainProperty, PlainPropertyType, PlainUnion } from './plain-types';
+import { mergePropertyTypes } from './plain-types';
 
 interface TypePart {
     name?: string

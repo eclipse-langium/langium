@@ -4,8 +4,8 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { ValidationAcceptor, ValidationChecks } from 'langium';
-import { RequirementsAndTestsAstType, Test } from './generated/ast';
+import type { ValidationAcceptor, ValidationChecks } from 'langium';
+import type { RequirementsAndTestsAstType, Test } from './generated/ast';
 import type { TestsLangServices } from './tests-lang-module';
 
 export function registerTestsValidationChecks(services: TestsLangServices) {
@@ -31,10 +31,10 @@ export class TestsLangValidator {
     }
 
     checkTestReferencesOnlyEnvironmentsAlsoReferencedInSomeRequirement(test: Test, accept: ValidationAcceptor): void {
-        test.environments.forEach((environmentReference, index)=>{
+        test.environments.forEach((environmentReference, index) => {
             if (environmentReference.ref) {
-                if (!test.requirements.some(requirementReference=>{
-                    return requirementReference.ref && requirementReference.ref.environments.map(v=>v.ref).includes(environmentReference.ref);
+                if (!test.requirements.some(requirementReference => {
+                    return requirementReference.ref && requirementReference.ref.environments.map(v => v.ref).includes(environmentReference.ref);
                 })) {
                     accept('warning', `Test ${test.name} references environment ${environmentReference.ref.name} which is used in any referenced requirement.`, { node: test, property: 'environments', index: index });
                 }

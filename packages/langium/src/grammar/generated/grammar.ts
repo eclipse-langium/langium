@@ -3,8 +3,8 @@
  * DO NOT EDIT MANUALLY!
  ******************************************************************************/
 
+import type { Grammar } from './ast';
 import { loadGrammarFromJson } from '../../utils/grammar-util';
-import { Grammar } from './ast';
 
 let loadedLangiumGrammarGrammar: Grammar | undefined;
 export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar ?? (loadedLangiumGrammarGrammar = loadGrammarFromJson(`{

@@ -4,10 +4,11 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import type { URI} from 'vscode-uri';
+import type { LangiumDocuments } from '../workspace/documents';
 import * as ast from '../grammar/generated/ast';
-import { URI, Utils } from 'vscode-uri';
+import { Utils } from 'vscode-uri';
 import { getDocument, streamAllContents } from '../utils/ast-util';
-import { LangiumDocuments } from '../workspace/documents';
 import { TypeResolutionError } from './type-system/type-collector/types';
 import { escapeRegExp } from '../utils/regex-util';
 

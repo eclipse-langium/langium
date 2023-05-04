@@ -4,9 +4,10 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import type { TokenPattern, TokenType } from '@chevrotain/types';
+import type { Grammar } from '../../src';
 import { beforeAll, describe, expect, test } from 'vitest';
-import { TokenPattern, TokenType } from '@chevrotain/types';
-import { createLangiumGrammarServices, Grammar, EmptyFileSystem } from '../../src';
+import { createLangiumGrammarServices, EmptyFileSystem } from '../../src';
 import { parseHelper } from '../../src/test';
 
 const grammarServices = createLangiumGrammarServices(EmptyFileSystem).grammar;

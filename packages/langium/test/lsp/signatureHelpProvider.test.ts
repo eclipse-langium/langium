@@ -4,8 +4,8 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import type { SignatureHelpOptions } from 'vscode-languageserver';
 import { describe, expect, test } from 'vitest';
-import { SignatureHelpOptions } from 'vscode-languageserver';
 import { mergeSignatureHelpOptions } from '../../src/lsp/signature-help-provider';
 
 describe('MergeSignatureHelpOptions', () => {

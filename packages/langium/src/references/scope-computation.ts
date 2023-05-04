@@ -4,15 +4,15 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import type { LangiumServices } from '../services';
+import type { AstNode, AstNodeDescription } from '../syntax-tree';
+import type { AstNodeDescriptionProvider } from '../workspace/ast-descriptions';
+import type { LangiumDocument, PrecomputedScopes } from '../workspace/documents';
+import type { NameProvider } from './name-provider';
 import { CancellationToken } from 'vscode-jsonrpc';
-import { LangiumServices } from '../services';
-import { AstNode, AstNodeDescription } from '../syntax-tree';
 import { streamAllContents, streamContents } from '../utils/ast-util';
 import { MultiMap } from '../utils/collections';
 import { interruptAndCheck } from '../utils/promise-util';
-import { AstNodeDescriptionProvider } from '../workspace/ast-descriptions';
-import { LangiumDocument, PrecomputedScopes } from '../workspace/documents';
-import { NameProvider } from './name-provider';
 
 /**
  * Language-specific service for precomputing global and local scopes. The service methods are executed
@@ -89,7 +89,7 @@ export class DefaultScopeComputation implements ScopeComputation {
      * @throws `OperationCanceled` if a user action occurs during execution.
      * @returns A list of {@link AstNodeDescription AstNodeDescriptions} to be published to index.
      */
-    async computeExportsForNode(parentNode: AstNode, document: LangiumDocument<AstNode>, children: (root: AstNode) => Iterable<AstNode> = streamContents, cancelToken: CancellationToken = CancellationToken.None ): Promise<AstNodeDescription[]> {
+    async computeExportsForNode(parentNode: AstNode, document: LangiumDocument<AstNode>, children: (root: AstNode) => Iterable<AstNode> = streamContents, cancelToken: CancellationToken = CancellationToken.None): Promise<AstNodeDescription[]> {
         const exports: AstNodeDescription[] = [];
 
         this.exportNode(parentNode, exports, document);

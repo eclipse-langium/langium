@@ -7,7 +7,7 @@
 import chalk from 'chalk';
 import { Command } from 'commander';
 import { NodeFileSystem } from 'langium/node';
-import { Statemachine } from '../language-server/generated/ast';
+import type { Statemachine } from '../language-server/generated/ast';
 import { StatemachineLanguageMetaData } from '../language-server/generated/module';
 import { createStatemachineServices } from '../language-server/statemachine-module';
 import { extractAstNode } from './cli-util';

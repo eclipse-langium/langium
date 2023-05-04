@@ -4,11 +4,12 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import type { Grammar } from '../../../src';
+import type { AstTypes } from '../../../src/grammar/type-system/type-collector/types';
 import { describe, expect, test } from 'vitest';
-import { createLangiumGrammarServices, Grammar, EmptyFileSystem, expandToString, EOL } from '../../../src';
+import { createLangiumGrammarServices, EmptyFileSystem, expandToString, EOL } from '../../../src';
 import { mergeTypesAndInterfaces } from '../../../src/grammar/type-system';
 import { collectAst } from '../../../src/grammar/type-system/ast-collector';
-import { AstTypes } from '../../../src/grammar/type-system/type-collector/types';
 import { clearDocuments, parseHelper } from '../../../src/test';
 
 describe('Inferred types', () => {

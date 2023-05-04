@@ -4,11 +4,12 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { Module } from 'langium';
-import { DiagramOptions, DiagramServer } from 'sprotty-protocol';
+import type { Module } from 'langium';
+import type { DiagramOptions } from 'sprotty-protocol';
+import type { LangiumSprottyServices, LangiumSprottySharedServices, SprottySharedServices } from './sprotty-services';
+import { DiagramServer } from 'sprotty-protocol';
 import { DefaultDiagramServerManager } from './diagram-server-manager';
 import { DiagramActionNotification } from './lsp';
-import { LangiumSprottyServices, LangiumSprottySharedServices, SprottySharedServices } from './sprotty-services';
 import { URI } from 'vscode-uri';
 
 export const defaultDiagramServerFactory =

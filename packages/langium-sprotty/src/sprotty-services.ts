@@ -4,9 +4,9 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { LangiumServices, LangiumSharedServices } from 'langium';
-import { DiagramOptions, DiagramServer, DiagramServices } from 'sprotty-protocol';
-import { DiagramServerManager } from './diagram-server-manager';
+import type { LangiumServices, LangiumSharedServices } from 'langium';
+import type { DiagramOptions, DiagramServer, DiagramServices } from 'sprotty-protocol';
+import type { DiagramServerManager } from './diagram-server-manager';
 
 /**
  * Services required by the Sprotty diagram server to generate diagram models from a Langium AST.

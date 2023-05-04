@@ -4,21 +4,22 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import type { NamedAstNode } from '../../references/name-provider';
+import type { References } from '../../references/references';
+import type { AstNode, Properties, Reference } from '../../syntax-tree';
+import type { Stream } from '../../utils/stream';
+import type { ValidationAcceptor, ValidationChecks } from '../../validation/validation-registry';
+import type { LangiumDocuments } from '../../workspace/documents';
+import type { LangiumGrammarServices } from '../langium-grammar-module';
 import { DiagnosticTag } from 'vscode-languageserver-types';
-import { NamedAstNode } from '../../references/name-provider';
-import { References } from '../../references/references';
-import { AstNode, Properties, Reference } from '../../syntax-tree';
 import { getContainerOfType, streamAllContents } from '../../utils/ast-util';
 import { MultiMap } from '../../utils/collections';
 import { toDocumentSegment } from '../../utils/cst-util';
 import { findNameAssignment, findNodeForKeyword, findNodeForProperty, getAllReachableRules } from '../../utils/grammar-util';
-import { Stream, stream } from '../../utils/stream';
-import { ValidationAcceptor, ValidationChecks } from '../../validation/validation-registry';
-import { LangiumDocuments } from '../../workspace/documents';
+import { stream } from '../../utils/stream';
 import * as ast from '../generated/ast';
 import { isParserRule, isRuleCall } from '../generated/ast';
 import { getTypeNameWithoutError, hasDataTypeReturn, isDataTypeRule, isOptionalCardinality, isPrimitiveType, resolveImport, resolveTransitiveImports, terminalRegex } from '../internal-grammar-util';
-import type { LangiumGrammarServices } from '../langium-grammar-module';
 import { typeDefinitionToPropertyType } from '../type-system/type-collector/declared-types';
 import { flattenPlainType, isPlainReferenceType } from '../type-system/type-collector/plain-types';
 
@@ -635,7 +636,7 @@ export class LangiumGrammarValidator {
     }
 
     checkAssignmentToFragmentRule(assignment: ast.Assignment, accept: ValidationAcceptor): void {
-        if(!assignment.terminal) {
+        if (!assignment.terminal) {
             return;
         }
         if (isRuleCall(assignment.terminal) && isParserRule(assignment.terminal.rule.ref) && assignment.terminal.rule.ref.fragment) {
@@ -644,7 +645,7 @@ export class LangiumGrammarValidator {
     }
 
     checkAssignmentTypes(assignment: ast.Assignment, accept: ValidationAcceptor): void {
-        if(!assignment.terminal) {
+        if (!assignment.terminal) {
             return;
         }
         let firstType: 'ref' | 'other';

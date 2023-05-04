@@ -4,19 +4,17 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import {
-    CancellationTokenSource,
-    CompletionItem, CompletionList, Diagnostic, DiagnosticSeverity, DocumentSymbol, FoldingRange, FormattingOptions, MarkupContent, Range, ReferenceParams, SemanticTokensParams, SemanticTokenTypes, TextDocumentIdentifier, TextDocumentPositionParams
-} from 'vscode-languageserver';
+import type { CompletionItem, CompletionList, Diagnostic, DocumentSymbol, FoldingRange, FormattingOptions, Range, ReferenceParams, SemanticTokensParams, SemanticTokenTypes, TextDocumentIdentifier, TextDocumentPositionParams } from 'vscode-languageserver';
+import type { LangiumServices } from '../services';
+import type { AstNode, CstNode, Properties } from '../syntax-tree';
+import type { LangiumDocument } from '../workspace/documents';
+import type { BuildOptions } from '../workspace/document-builder';
+import { CancellationTokenSource, DiagnosticSeverity, MarkupContent } from 'vscode-languageserver';
 import { URI } from 'vscode-uri';
-import { LangiumServices } from '../services';
-import { AstNode, CstNode, Properties } from '../syntax-tree';
 import { escapeRegExp } from '../utils/regex-util';
-import { LangiumDocument } from '../workspace/documents';
 import { findNodeForProperty } from '../utils/grammar-util';
 import { SemanticTokensDecoder } from '../lsp/semantic-token-provider';
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { BuildOptions } from '../workspace/document-builder';
 import assert from 'assert';
 
 export interface ParseHelperOptions extends BuildOptions {

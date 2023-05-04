@@ -1,6 +1,6 @@
+import type { Model } from '../language/generated/ast';
 import chalk from 'chalk';
 import { Command } from 'commander';
-import { Model } from '../language/generated/ast';
 import { <%= LanguageName %>LanguageMetaData } from '../language/generated/module';
 import { create<%= LanguageName %>Services } from '../language/<%= language-id %>-module';
 import { extractAstNode } from './cli-util';

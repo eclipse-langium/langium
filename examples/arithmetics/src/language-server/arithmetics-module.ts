@@ -4,7 +4,8 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { createDefaultModule, createDefaultSharedModule, DefaultSharedModuleContext, inject, LangiumServices, LangiumSharedServices, Module, PartialLangiumServices } from 'langium';
+import type { DefaultSharedModuleContext, LangiumServices, LangiumSharedServices, Module, PartialLangiumServices } from 'langium';
+import { createDefaultModule, createDefaultSharedModule, inject } from 'langium';
 import { ArithmeticsGeneratedModule, ArithmeticsGeneratedSharedModule } from './generated/module';
 import { ArithmeticsValidator, registerValidationChecks } from './arithmetics-validator';
 import { ArithmeticsScopeProvider } from './arithmetics-scope-provider';

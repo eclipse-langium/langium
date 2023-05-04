@@ -3,8 +3,8 @@
  * This program and the accompanying materials are made available under the
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
-
-import { CompositeGeneratorNode, Grammar, LangiumServices, NL, toString } from 'langium';
+import type { Grammar, LangiumServices } from 'langium';
+import { CompositeGeneratorNode, NL, toString } from 'langium';
 import { collectAst } from 'langium/lib/grammar/type-system';
 import { LangiumGrammarGrammar } from 'langium/lib/grammar/generated/grammar';
 import { collectKeywords } from './util';

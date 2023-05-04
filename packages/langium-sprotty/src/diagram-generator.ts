@@ -4,10 +4,10 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import type { AstNode, LangiumDocument, LangiumDocuments, LangiumServices } from 'langium';
+import type { GeneratorArguments, IDiagramGenerator, SModelRoot } from 'sprotty-protocol';
 import { URI } from 'vscode-uri';
 import { CancellationToken } from 'vscode-languageserver';
-import { AstNode, LangiumDocument, LangiumDocuments, LangiumServices } from 'langium';
-import { GeneratorArguments, IDiagramGenerator, SModelRoot } from 'sprotty-protocol';
 
 /**
  * Additional arguments that can be passed to `LangiumDiagramGenerator` implementations.

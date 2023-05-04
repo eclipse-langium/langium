@@ -4,16 +4,18 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import type { URI } from 'vscode-uri';
+import type { ServiceRegistry } from '../service-registry';
+import type { LangiumSharedServices } from '../services';
+import type { AstNode, AstNodeDescription, AstReflection } from '../syntax-tree';
+import type { Stream } from '../utils/stream';
+import type { ReferenceDescription } from './ast-descriptions';
+import type { LangiumDocument, LangiumDocuments } from './documents';
 import { CancellationToken } from 'vscode-languageserver';
-import { URI } from 'vscode-uri';
-import { ServiceRegistry } from '../service-registry';
-import { LangiumSharedServices } from '../services';
-import { AstNode, AstNodeDescription, AstReflection } from '../syntax-tree';
 import { getDocument } from '../utils/ast-util';
-import { stream, Stream } from '../utils/stream';
+import { stream } from '../utils/stream';
 import { equalURI } from '../utils/uri-util';
-import { ReferenceDescription } from './ast-descriptions';
-import { DocumentState, LangiumDocument, LangiumDocuments } from './documents';
+import { DocumentState } from './documents';
 
 /**
  * The index manager is responsible for keeping metadata about symbols and cross-references

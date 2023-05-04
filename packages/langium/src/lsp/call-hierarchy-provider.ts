@@ -4,17 +4,18 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { CallHierarchyIncomingCall, CallHierarchyIncomingCallsParams, CallHierarchyItem, CallHierarchyOutgoingCall, CallHierarchyOutgoingCallsParams, CallHierarchyPrepareParams, CancellationToken, SymbolKind} from 'vscode-languageserver';
+import type { CallHierarchyIncomingCall, CallHierarchyIncomingCallsParams, CallHierarchyItem, CallHierarchyOutgoingCall, CallHierarchyOutgoingCallsParams, CallHierarchyPrepareParams, CancellationToken } from 'vscode-languageserver';
+import type { GrammarConfig } from '../grammar/grammar-config';
+import type { NameProvider } from '../references/name-provider';
+import type { References } from '../references/references';
+import type { LangiumServices } from '../services';
+import type { AstNode } from '../syntax-tree';
+import type { Stream } from '../utils/stream';
+import type { ReferenceDescription } from '../workspace/ast-descriptions';
+import type { LangiumDocument, LangiumDocuments } from '../workspace/documents';
+import { SymbolKind } from 'vscode-languageserver';
 import { URI } from 'vscode-uri';
-import { GrammarConfig } from '../grammar/grammar-config';
-import { NameProvider } from '../references/name-provider';
-import { References } from '../references/references';
-import { LangiumServices } from '../services';
-import { AstNode } from '../syntax-tree';
 import { findDeclarationNodeAtOffset } from '../utils/cst-util';
-import { Stream } from '../utils/stream';
-import { ReferenceDescription } from '../workspace/ast-descriptions';
-import { LangiumDocument, LangiumDocuments } from '../workspace/documents';
 
 /**
  * Language-specific service for handling call hierarchy requests.
@@ -22,7 +23,7 @@ import { LangiumDocument, LangiumDocuments } from '../workspace/documents';
 export interface CallHierarchyProvider {
     prepareCallHierarchy(document: LangiumDocument, params: CallHierarchyPrepareParams, cancelToken?: CancellationToken): CallHierarchyItem[] | undefined;
 
-    incomingCalls(params: CallHierarchyIncomingCallsParams,  cancelToken?: CancellationToken): CallHierarchyIncomingCall[] | undefined;
+    incomingCalls(params: CallHierarchyIncomingCallsParams, cancelToken?: CancellationToken): CallHierarchyIncomingCall[] | undefined;
 
     outgoingCalls(params: CallHierarchyOutgoingCallsParams, cancelToken?: CancellationToken): CallHierarchyOutgoingCall[] | undefined;
 }

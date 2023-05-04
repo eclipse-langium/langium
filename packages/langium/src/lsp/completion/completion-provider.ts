@@ -4,23 +4,25 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { CancellationToken, CompletionItem, CompletionItemKind, CompletionList, CompletionParams, Position } from 'vscode-languageserver';
-import { TextDocument, TextEdit } from 'vscode-languageserver-textdocument';
+import type { CancellationToken, CompletionItem, CompletionParams } from 'vscode-languageserver';
+import type { TextDocument, TextEdit } from 'vscode-languageserver-textdocument';
+import type { GrammarConfig } from '../../grammar/grammar-config';
+import type { LangiumCompletionParser } from '../../parser/langium-parser';
+import type { NameProvider } from '../../references/name-provider';
+import type { ScopeProvider } from '../../references/scope-provider';
+import type { LangiumServices } from '../../services';
+import type { AstNode, AstNodeDescription, Reference, ReferenceInfo } from '../../syntax-tree';
+import type { MaybePromise } from '../../utils/promise-util';
+import type { LangiumDocument } from '../../workspace/documents';
+import type { NextFeature } from './follow-element-computation';
+import { CompletionItemKind, CompletionList, Position } from 'vscode-languageserver';
 import * as ast from '../../grammar/generated/ast';
-import { GrammarConfig } from '../../grammar/grammar-config';
 import { getExplicitRuleType } from '../../grammar/internal-grammar-util';
-import { LangiumCompletionParser } from '../../parser/langium-parser';
-import { NameProvider } from '../../references/name-provider';
-import { ScopeProvider } from '../../references/scope-provider';
-import { LangiumServices } from '../../services';
-import { AstNode, AstNodeDescription, Reference, ReferenceInfo } from '../../syntax-tree';
 import { getContainerOfType } from '../../utils/ast-util';
 import { findLeafNodeAtOffset } from '../../utils/cst-util';
 import { getEntryRule } from '../../utils/grammar-util';
-import { MaybePromise } from '../../utils/promise-util';
 import { stream } from '../../utils/stream';
-import { LangiumDocument } from '../../workspace/documents';
-import { findFirstFeatures, findNextFeatures, NextFeature } from './follow-element-computation';
+import { findFirstFeatures, findNextFeatures } from './follow-element-computation';
 
 export type CompletionAcceptor = (value: CompletionValueItem) => void
 

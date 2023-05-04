@@ -3,11 +3,11 @@
  * This program and the accompanying materials are made available under the
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
-
+import type { LangiumConfig, LangiumLanguageConfig } from '../../src/package';
+import type { Grammar } from 'langium';
 import { describe, expect, test } from 'vitest';
 import { generateModule } from '../../src/generator/module-generator';
-import { LangiumConfig, LangiumLanguageConfig, RelativePath } from '../../src/package';
-import { Grammar } from 'langium';
+import { RelativePath } from '../../src/package';
 
 describe('Module generator', () => {
     describe('IParserConfig inclusion', () => {

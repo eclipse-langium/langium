@@ -4,9 +4,10 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { MultiMap, ValidationAcceptor, ValidationChecks } from 'langium';
-import { State, Statemachine, StatemachineAstType, Event } from './generated/ast';
+import type { ValidationAcceptor, ValidationChecks } from 'langium';
+import type { State, Statemachine, StatemachineAstType, Event } from './generated/ast';
 import type { StatemachineServices } from './statemachine-module';
+import { MultiMap } from 'langium';
 
 export function registerValidationChecks(services: StatemachineServices) {
     const registry = services.validation.ValidationRegistry;

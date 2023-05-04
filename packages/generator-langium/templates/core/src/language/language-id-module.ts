@@ -1,7 +1,5 @@
-import {
-    createDefaultModule, createDefaultSharedModule, DefaultSharedModuleContext, inject,
-    LangiumServices, LangiumSharedServices, Module, PartialLangiumServices
-} from 'langium';
+import type { DefaultSharedModuleContext, LangiumServices, LangiumSharedServices, Module, PartialLangiumServices } from 'langium';
+import { createDefaultModule, createDefaultSharedModule, inject } from 'langium';
 import { <%= LanguageName %>GeneratedModule, <%= LanguageName %>GeneratedSharedModule } from './generated/module';
 import { <%= LanguageName %>Validator, registerValidationChecks } from './<%= language-id %>-validator';
 

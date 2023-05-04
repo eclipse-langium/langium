@@ -70,6 +70,7 @@
         "@typescript-eslint/prefer-for-of": "error",                // prefer for-of loop over arrays
         "@typescript-eslint/prefer-namespace-keyword": "error",     // prefer namespace over module in TypeScript
         "@typescript-eslint/triple-slash-reference": "error",       // ban /// <reference />, prefer imports
-        "@typescript-eslint/type-annotation-spacing": "error"       // consistent space around colon ':'
+        "@typescript-eslint/type-annotation-spacing": "error",      // consistent space around colon ':'
+        "@typescript-eslint/consistent-type-imports": "error"       // use import type whenever import is only used for type checking
     }
 }

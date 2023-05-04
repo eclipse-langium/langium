@@ -4,14 +4,16 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import type { LangiumServices } from '../services';
+import type { AstNode, AstNodeDescription, AstReflection, CstNode, LinkingError, Reference, ReferenceInfo } from '../syntax-tree';
+import type { AstNodeLocator } from '../workspace/ast-node-locator';
+import type { LangiumDocument, LangiumDocuments } from '../workspace/documents';
+import type { ScopeProvider } from './scope-provider';
 import { CancellationToken } from 'vscode-languageserver';
-import { LangiumServices } from '../services';
-import { AstNode, AstNodeDescription, AstReflection, CstNode, isAstNode, isAstNodeDescription, isLinkingError, LinkingError, Reference, ReferenceInfo } from '../syntax-tree';
+import { isAstNode, isAstNodeDescription, isLinkingError } from '../syntax-tree';
 import { getDocument, streamAst, streamReferences } from '../utils/ast-util';
 import { interruptAndCheck } from '../utils/promise-util';
-import { AstNodeLocator } from '../workspace/ast-node-locator';
-import { DocumentState, LangiumDocument, LangiumDocuments } from '../workspace/documents';
-import { ScopeProvider } from './scope-provider';
+import { DocumentState } from '../workspace/documents';
 
 /**
  * Language-specific service for resolving cross-references in the AST.
@@ -149,7 +151,7 @@ export class DefaultLinker implements Linker {
                 } else if (this._ref === undefined) {
                     // The reference has not been linked yet, so do that now.
                     const refData = linker.getLinkedNode({ reference, container: node, property });
-                    if(refData.error && getDocument(node).state < DocumentState.ComputedScopes) {
+                    if (refData.error && getDocument(node).state < DocumentState.ComputedScopes) {
                         // Document scope is not ready, don't set `this._ref` so linker can retry later.
                         return undefined;
                     }
