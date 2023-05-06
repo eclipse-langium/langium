@@ -17,5 +17,6 @@ export function applyOp(op: '+' | '-' | '*' | '/' | '^' | '%'): (x: number, y: n
             }
             return x / y;
         };
+        default: throw new Error('Unknown operator: ' + op);
     }
 }
