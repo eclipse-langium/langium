@@ -17,16 +17,16 @@ import { findIndentation, NEWLINE_REGEXP } from './template-string';
  * are added individually to the returned {@link CompositeGeneratorNode}.
  * At that common leading indentation of all the template's static parts is trimmed,
  * whereas additional indentations of particular lines within that static parts as well as
- * any linebreaks and indentation within the substititions are kept.
+ * any line breaks and indentation within the substitutions are kept.
  *
- * For the sake of good readability and good compositionality of results of this function like
+ * For the sake of good readability and good composability of results of this function like
  * in the following example, the subsequent rule is applied.
  *
  * ```ts
  *  expandToNode`
  *   This is the beginning of something
  *
- *   ${foo.bar ? epandToNode`
+ *   ${foo.bar ? expandToNode`
  *     bla bla bla ${foo.bar}
  *
  *   `: undefined
@@ -37,8 +37,8 @@ import { findIndentation, NEWLINE_REGEXP } from './template-string';
  *
  * Rule:
  * In case of a multiline template the content of the first line including its terminating
- * linebreak is ignored, if and only if it is empty of contains white space only. Futhermore,
- * in case of a multiline template the content of the last line including its preceding linebreak
+ * line break is ignored, if and only if it is empty of contains white space only. Futhermore,
+ * in case of a multiline template the content of the last line including its preceding line break
  * (last one within the template) is ignored, if and only if it is empty of contains white space only.
  * Thus, the result of all of the following invocations is identical and equal to `generatedContent`.
  * ```ts
@@ -58,12 +58,12 @@ import { findIndentation, NEWLINE_REGEXP } from './template-string';
  *             after resolving and inserting the substitutions into the given parts
  */
 export function expandToNode(staticParts: TemplateStringsArray, ...substitutions: unknown[]): CompositeGeneratorNode {
-    // first part: determine the common indentation of all the template lines whith the substitutions being ignored
+    // first part: determine the common indentation of all the template lines with the substitutions being ignored
     const templateProps = findIndentationAndTemplateStructure(staticParts);
 
-    // 2nd part: for all the static template parts: split them and inject a NEW_LINE marker where linebreaks shall be a present in the final result,
-    //  and create a flatten list of strings, NEW_LINE marker occurrences, and subsitutions
-    const splitAndMerged: GeneratedOrMarker[] = splitTemplateLinesAndMergeWithSubstitions(staticParts, substitutions, templateProps);
+    // 2nd part: for all the static template parts: split them and inject a NEW_LINE marker where line breaks shall be a present in the final result,
+    //  and create a flatten list of strings, NEW_LINE marker occurrences, and substitutions
+    const splitAndMerged: GeneratedOrMarker[] = splitTemplateLinesAndMergeWithSubstitutions(staticParts, substitutions, templateProps);
 
     // eventually, inject indentation nodes and append the segments to final desired composite generator node
     return composeFinalGeneratorNode(splitAndMerged);
@@ -360,7 +360,7 @@ function findIndentationAndTemplateStructure(staticParts: TemplateStringsArray):
     }
 }
 
-function splitTemplateLinesAndMergeWithSubstitions(
+function splitTemplateLinesAndMergeWithSubstitutions(
     staticParts: TemplateStringsArray, substitutions: unknown[], { indentation, omitFirstLine, omitLastLine, trimLastLine }: TemplateProps
 ): GeneratedOrMarker[] {
     const splitAndMerged: GeneratedOrMarker[] = [];
@@ -403,12 +403,12 @@ function splitTemplateLinesAndMergeWithSubstitions(
                     // if the substitution is a generator node, take it as it is
                     ? substitutions[i] as GeneratorNode
                     : substitutions[i] !== undefined
-                        // if the substitution is something else, convert it to a string and wrap it in a node;
-                        //  allows us below to distinghuish template strings from substitution (esp. empty) ones
-                        ? new CompositeGeneratorNode(String(substitutions[i]))
+                        // if the substitution is something else, convert it to a string and wrap it;
+                        //  allows us below to distinguish template strings from substitution (esp. empty) ones
+                        ? { content: String(substitutions[i]) }
                         : i < substitutions.length
                             // if 'substitutions[i]' is undefined and we are treating a substitution "in the middle"
-                            //   we found a substition that is assumed to not contribute anything on purpose!
+                            //   we found a substitution that is assumed to not contribute anything on purpose!
                             ? UNDEFINED_SEGMENT  // add a corresponding marker, see below for details on the rational
                             : []                 /* don't concat anything as we passed behind the last substitution, since 'i' enumerates the indices of 'staticParts',
                                                      but 'substitutions' has one entry less and 'substitutions[staticParts.length -1 ]' will always be undefined */
@@ -439,14 +439,16 @@ function splitTemplateLinesAndMergeWithSubstitions(
 
 type NewLineMarker = { isNewLine: true };
 type UndefinedSegmentMarker = { isUndefinedSegment: true };
+type SubstitutionWrapper = { content: string };
 
 const NEWLINE = <NewLineMarker>{ isNewLine: true };
 const UNDEFINED_SEGMENT = <UndefinedSegmentMarker>{ isUndefinedSegment: true };
 
 const isNewLineMarker = (nl: unknown): nl is NewLineMarker => nl === NEWLINE;
 const isUndefinedSegmentMarker = (us: unknown): us is UndefinedSegmentMarker => us === UNDEFINED_SEGMENT;
+const isSubstitutionWrapper = (s: unknown): s is SubstitutionWrapper => (s as SubstitutionWrapper).content !== undefined;
 
-type GeneratedOrMarker = Generated | NewLineMarker | UndefinedSegmentMarker;
+type GeneratedOrMarker = Generated | NewLineMarker | UndefinedSegmentMarker | SubstitutionWrapper;
 
 function composeFinalGeneratorNode(splitAndMerged: GeneratedOrMarker[]): CompositeGeneratorNode {
     // in order to properly handle the indentation of nested multi-line substitutions,
@@ -460,7 +462,7 @@ function composeFinalGeneratorNode(splitAndMerged: GeneratedOrMarker[]): Composi
         indented?: IndentNode
     }>(
         (res, segment, i) => isUndefinedSegmentMarker(segment)
-            // ignore all occurences of UNDEFINED_SEGMENT, they are just in there for the below test
+            // ignore all occurrences of UNDEFINED_SEGMENT, they are just in there for the below test
             //  of 'isNewLineMarker(splitAndMerged[i-1])' not to evaluate to 'truthy' in case of consecutive lines
             //  with no actual content in templates like
             //   expandToNode`
@@ -473,8 +475,35 @@ function composeFinalGeneratorNode(splitAndMerged: GeneratedOrMarker[]): Composi
             ? res
             : isNewLineMarker(segment)
                 ? {
-                    node: (i === 0 || isNewLineMarker(splitAndMerged[i - 1]) || typeof splitAndMerged[i - 1] === 'string')
-                        ? res.node.appendNewLine() : res.node.appendNewLineIfNotEmpty()
+                    // in case of a newLine marker append an 'ifNotEmpty' newLine by default, but
+                    //  append an unconditional newLine if and only if:
+                    //   * the template starts with the current line break, i.e. the first line is empty
+                    //   * the current newLine marker directly follows another one, i.e. the current line is empty
+                    //   * the current newline marker directly follows a substitution contributing a string (or some non-GeneratorNode being converted to a string)
+                    //   * the current newline marker directly follows a (template static) string that
+                    //      * is the initial token of the template
+                    //      * is the initial token of the line, maybe just indentation
+                    //      * follows a a substitution contributing a string (or some non-GeneratorNode being converted to a string), maybe is just irrelevant trailing whitespace
+                    // in particular do _not_ append an unconditional newLine if the last substitution of a line contributes 'undefined' or an instance of 'GeneratorNode'
+                    //  which may be a newline itself or be empty or (transitively) contain a trailing newline itself
+                    // node: i === 0
+                    //     || isNewLineMarker(splitAndMerged[i - 1]) || isSubstitutionWrapper(splitAndMerged[i - 1]) /* implies: typeof content === 'string', esp. !undefined */
+                    //     || typeof splitAndMerged[i - 1] === 'string' && (
+                    //         i === 1 || isNewLineMarker(splitAndMerged[i - 2]) || isSubstitutionWrapper(splitAndMerged[i - 2]) /* implies: typeof content === 'string', esp. !undefined */
+                    //     )
+                    //     ? res.node.appendNewLine() : res.node.appendNewLineIfNotEmpty()
+                    //
+
+                    // UPDATE cs: inverting the logic leads to the following, I hope I didn't miss anything:
+                    // in case of a newLine marker append an unconditional newLine by default, but
+                    //  append an 'ifNotEmpty' newLine if and only if:
+                    //   * the template doesn't start with a newLine marker and
+                    //      * the current newline marker directly follows a substitution contributing an `undefined` or an instance of 'GeneratorNode', or
+                    //      * the current newline marker directly follows a (template static) string (containing potentially unintended trailing whitespace)
+                    //          that in turn directly follows a substitution contributing an `undefined` or an instance of 'GeneratorNode'
+                    node: i !== 0 && (isUndefinedSegmentMarker(splitAndMerged[i - 1]) || isGeneratorNode(splitAndMerged[i - 1]))
+                        || i > 1 && typeof splitAndMerged[i - 1] === 'string' && (isUndefinedSegmentMarker(splitAndMerged[i - 2]) || isGeneratorNode(splitAndMerged[i - 2]))
+                        ? res.node.appendNewLineIfNotEmpty() : res.node.appendNewLine()
                 } : (() => {
                     // the indentation handling is supposed to handle use cases like
                     //   bla bla bla {
@@ -486,7 +515,8 @@ function composeFinalGeneratorNode(splitAndMerged: GeneratedOrMarker[]): Composi
                     //   }
                     // assuming that ${foo(bar)} yields a multiline result;
                     // the whitespace between 'return' and '${foo(bar)}' shall not add to the indentation of '${foo(bar)}'s result!
-                    const indent: string = (i === 0 || isNewLineMarker(splitAndMerged[i - 1])) && typeof segment === 'string' && segment.length !== 0 ? ''.padStart(segment.length - segment.trimLeft().length) : '';
+                    const indent: string = (i === 0 || isNewLineMarker(splitAndMerged[i - 1])) && typeof segment === 'string' && segment.length !== 0 ? ''.padStart(segment.length - segment.trimStart().length) : '';
+                    const content = isSubstitutionWrapper(segment)? segment.content : segment;
                     let indented: IndentNode | undefined;
                     return {
                         node: res.indented
@@ -496,16 +526,16 @@ function composeFinalGeneratorNode(splitAndMerged: GeneratedOrMarker[]): Composi
                             // otherwise (no indentNode is registered by now)...
                             : indent.length !== 0
                                 // in case an indentation has been identified add a non-immediate indentNode to 'node' and
-                                //  add the currrent segment (containing its the indentation) to that indentNode,
+                                //  add the current segment (containing its the indentation) to that indentNode,
                                 //  and keep the indentNode in a local variable 'indented' for registering below,
                                 //  and return 'node'
-                                ? res.node.indent({ indentation: indent, indentImmediately: false, indentedChildren: ind => indented = ind.append(segment) })
+                                ? res.node.indent({ indentation: indent, indentImmediately: false, indentedChildren: ind => indented = ind.append(content) })
                                 // otherwise just add the content to 'node' and return it
-                                : res.node.append(segment),
+                                : res.node.append(content),
                         indented:
                             // if an indentNode has been created in this cycle, just register it,
                             //  otherwise check for a earlier registered indentNode and add the current segment to that one
-                            indented ?? res.indented?.append(segment),
+                            indented ?? res.indented?.append(content),
                     };
                 })(),
         { node: new CompositeGeneratorNode() }
