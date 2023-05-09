@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import { describe, expect, test } from 'vitest';
-import { EOL, toString } from '../../src/generator/generator-node';
+import { CompositeGeneratorNode, EOL, toString } from '../../src/generator/generator-node';
 import { joinToNode } from '../../src/generator/node-joiner';
 import { expandToNode as n } from '../../src/generator/template-node';
 import { expandToString as s } from '../../src/generator/template-string';
@@ -456,6 +456,175 @@ describe('Single substitution templates', () => {
         `;
         const text = toString(node);
         expect(text).toBe('  ' + TEXT_TEMPLATE + EOL);
+    });
+});
+
+describe('Empty string & white space vs. undefined in substitution', () => {
+    test('2 empty lines', () => {
+        const node = n`
+            
+            
+        `;
+        const text = toString(node);
+        expect(text).toBe(EOL);
+    });
+    test('2 empty lines, first indented', () => {
+        const node = n`
+              
+            
+        `;
+        const text = toString(node);
+        expect(text).toBe('  ' + EOL);
+    });
+    test('2 empty lines, first indented with substitution to empty string (last one)', () => {
+        const node = n`
+              ${''}
+            
+        `;
+        const text = toString(node);
+        expect(text).toBe('  ' + EOL);
+    });
+    test('2 empty lines, first indented with substitution to empty string (last one) and trailing ws', () => {
+        const node = n`
+              ${''}  
+            
+        `;
+        const text = toString(node);
+        expect(text).toBe('  ' + '  ' + EOL);
+    });
+    test('2 empty lines, first indented with substitution to ws (last one)', () => {
+        const node = n`
+              ${'  '}
+            
+        `;
+        const text = toString(node);
+        expect(text).toBe('  ' + '  ' + EOL);
+    });
+    test('2 empty lines, first indented with substitution to ws (last one) and trailing ws', () => {
+        const node = n`
+              ${'  '}  
+            
+        `;
+        const text = toString(node);
+        expect(text).toBe('  ' + '  ' + '  ' + EOL);
+    });
+    test('2 empty lines, first indented with substitution to generator node (last one) => to be dropped', () => {
+        const node = n`
+              ${new CompositeGeneratorNode()}
+            
+        `;
+        const text = toString(node);
+        expect(text).toBe('');
+    });
+    test('2 empty lines, first indented with substitution to generator node (last one) and trailing ws => to be dropped', () => {
+        const node = n`
+              ${new CompositeGeneratorNode()}  
+            
+        `;
+        const text = toString(node);
+        expect(text).toBe('');
+    });
+    test('2 empty lines, first indented with substitution to undefined (last one) => to be dropped', () => {
+        const node = n`
+              ${undefined}
+            
+        `;
+        const text = toString(node);
+        expect(text).toBe('');
+    });
+    test('2 empty lines, first indented with substitution to undefined (last one) and trailing ws => to be dropped', () => {
+        // expected the same result as for the case without trailing ws (previous test case)
+        const node = n`
+              ${undefined}  
+            
+        `;
+        const text = toString(node);
+        expect(text).toBe('');
+    });
+    test('2 lines, first indented with substitution to undefined (last one) and trailing non-ws => to be kept', () => {
+        // expected the same result as for the case without trailing ws (previous test case)
+        const node = n`
+              ${undefined} a
+            
+        `;
+        const text = toString(node);
+        expect(text).toBe('  ' + ' a' + EOL);
+    });
+    test('2 empty lines, first indented with 2 substitutions to empty string and undefined (last one) => to be dropped', () => {
+        const node = n`
+              ${''}${undefined}
+            
+        `;
+        const text = toString(node);
+        expect(text).toBe('');
+    });
+    test('2 empty lines, first indented with 2 substitutions to empty string and undefined (last one) and trailing ws => to be dropped', () => {
+        // expected the same result as for the case without trailing ws (previous test case)
+        const node = n`
+              ${''}${undefined}  
+            
+        `;
+        const text = toString(node);
+        expect(text).toBe('');
+    });
+    test('2 empty lines, first indented with 2 substitutions to ws and undefined (last one) => to be dropped', () => {
+        const node = n`
+              ${'  '}${undefined}
+            
+        `;
+        const text = toString(node);
+        expect(text).toBe('');
+    });
+    test('2 empty lines, first indented with 2 substitutions to ws and undefined (last one) and trailing ws => to be dropped', () => {
+        // expected the same result as for the case without trailing ws (previous test case)
+        const node = n`
+              ${'  '}${undefined}  
+            
+        `;
+        const text = toString(node);
+        expect(text).toBe('');
+    });
+    test('2 lines, first indented with 2 substitutions to non-ws and undefined (last one) => to be kept', () => {
+        const node = n`
+              ${'a'}${undefined}
+            
+        `;
+        const text = toString(node);
+        expect(text).toBe('  ' + 'a' + EOL);
+    });
+    test('2 empty lines, first indented with 2 substitutions to undefined and empty string (last one) => to be kept', () => {
+        const node = n`
+              ${undefined}${''}
+            
+        `;
+        const text = toString(node);
+        expect(text).toBe('  ' + EOL);
+    });
+    test('2 empty lines, first indented with 2 substitutions to undefined and empty string (last one) and trailing ws => to be kept', () => {
+        // expected the same result as for the case without trailing ws (previous test case)
+        const node = n`
+              ${undefined}${''}  
+            
+        `;
+        const text = toString(node);
+        expect(text).toBe('  ' + '  ' + EOL);
+    });
+    test('2 empty lines, first indented with 2 substitutions to undefined and ws (last one) => to be kept', () => {
+        const node = n`
+              ${undefined}${'  '}
+            
+        `;
+        const text = toString(node);
+        expect(text).toBe('  ' + '  ' + EOL);
+    });
+    test('2 empty lines, first indented with 2 substitutions to undefined and ws (last one) and trailing ws => to be kept', () => {
+        // expected the same result as for the case without trailing ws (previous test case)
+        const node = n`
+              ${undefined}${'  '}  
+            
+        `;
+        const text = toString(node);
+        expect(text).toBe('  ' + '  ' + '  ' + EOL);
     });
 });
 
