@@ -4,7 +4,9 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-export function applyOp(op: '+' | '-' | '*' | '/' | '^' | '%'): (x: number, y: number) => number {
+import { BinaryExpression } from './generated/ast';
+
+export function applyOp(op: BinaryExpression['operator']): (x: number, y: number) => number {
     switch (op) {
         case '+': return (x, y) => x + y;
         case '-': return (x, y) => x - y;

@@ -31,6 +31,7 @@ shared.workspace.DocumentBuilder.onBuildPhase(DocumentState.Validated, documents
     for (const document of documents) {
         const json = [];
         const module = document.parseResult.value as Module;
+        // create a json object with the all evaluations
         if(document.diagnostics === undefined  || document.diagnostics.filter((i) => i.severity === 1).length === 0) {
             for (const [evaluation, value] of interpretEvaluations(module)) {
                 const cstNode = evaluation.expression.$cstNode;
@@ -39,6 +40,8 @@ shared.workspace.DocumentBuilder.onBuildPhase(DocumentState.Validated, documents
                 }
             }
         }
+
+        // add the evaluations to the ast object
         (module as unknown as { evaluations: Array<{
             range: Range | undefined;
             text: string | undefined;
