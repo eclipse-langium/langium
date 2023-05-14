@@ -20,12 +20,15 @@ export function registerValidationChecks(services: ArithmeticsServices): void {
         Definition: validator.checkNormalisable,
         Module: validator.checkUniqueDefinitions,
         FunctionCall: validator.checkMatchingParameters,
+        Module: validator.checkUniqueDefinitions,
+        FunctionCall: validator.checkMatchingParameters,
     };
     registry.register(checks, validator);
 }
 
 export class ArithmeticsValidator {
     checkDivByZero(binExpr: BinaryExpression, accept: ValidationAcceptor): void {
+        if ((binExpr.operator === '/' || binExpr.operator === '%') && evalExpression(binExpr.right) === 0) {
         if ((binExpr.operator === '/' || binExpr.operator === '%') && evalExpression(binExpr.right) === 0) {
             accept('error', 'Division by zero is detected.', { node: binExpr, property: 'right' });
         }
@@ -57,6 +60,8 @@ export class ArithmeticsValidator {
         }
 
         this.checkUniqueParmeters(def, accept);
+
+        this.checkUniqueParmeters(def, accept);
     }
 
     checkUniqueDefinitions(module: Module, accept: ValidationAcceptor): void {
@@ -84,6 +89,13 @@ export class ArithmeticsValidator {
                     accept('error', `Duplicate definition name: ${name}`, { node: symbol, property: 'name' });
                 }
             }
+        }
+    }
+
+    checkMatchingParameters(functionCall: FunctionCall, accept: ValidationAcceptor): void {
+        if(!functionCall.func.ref ||!(functionCall.func.ref as Definition).args) return;
+        if (functionCall.args.length !== (functionCall.func.ref as Definition).args.length) {
+            accept('error', `Function ${functionCall.func.ref?.name} expects ${functionCall.args.length} parameters, but ${(functionCall.func.ref as Definition).args.length} were given.`, { node: functionCall, property: 'args' });
         }
     }
 

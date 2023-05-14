@@ -14,6 +14,8 @@ import { extractDocument } from './cli-util';
 import chalk from 'chalk';
 import { interpretEvaluations } from '../language-server/arithmetics-evaluator';
 import { Module } from '../language-server/generated/ast';
+import { interpretEvaluations } from '../language-server/arithmetics-evaluator';
+import { Module } from '../language-server/generated/ast';
 
 export const evalAction = async (fileName: string): Promise<void> => {
     const services = createArithmeticsServices(NodeFileSystem).arithmetics;
