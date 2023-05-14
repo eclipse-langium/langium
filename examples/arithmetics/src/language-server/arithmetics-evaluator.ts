@@ -3,7 +3,8 @@
  * This program and the accompanying materials are made available under the
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
-import { AbstractDefinition, Definition, Evaluation, Expression, isBinaryExpression, isDefinition, isEvaluation, isFunctionCall, isNumberLiteral, Module, Statement } from './generated/ast';
+import type { AbstractDefinition, Definition, Evaluation, Expression, Module, Statement } from './generated/ast';
+import { isBinaryExpression, isDefinition, isEvaluation, isFunctionCall, isNumberLiteral } from './generated/ast';
 import { applyOp } from './arithmetics-util';
 
 export function interpretEvaluations(module: Module): Map<Evaluation, number> {
