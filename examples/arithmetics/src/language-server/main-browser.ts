@@ -42,11 +42,11 @@ shared.workspace.DocumentBuilder.onBuildPhase(DocumentState.Validated, documents
         }
 
         // add the evaluations to the ast object
-        (module as unknown as { evaluations: Array<{
+        (module as unknown as { $evaluations: Array<{
             range: Range | undefined;
             text: string | undefined;
             value: number;
-        }> }).evaluations = json;
+        }> }).$evaluations = json;
         connection.sendNotification(documentChangeNotification, {
             uri: document.uri.toString(),
             content: jsonSerializer.serialize(module, { sourceText: true, textRegions: true }),
