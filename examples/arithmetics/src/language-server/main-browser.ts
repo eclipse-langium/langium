@@ -4,10 +4,12 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { Diagnostic } from 'vscode-languageserver/browser';
+import type { Diagnostic, Range } from 'vscode-languageserver/browser';
 import { startLanguageServer, EmptyFileSystem, DocumentState } from 'langium';
 import { BrowserMessageReader, BrowserMessageWriter, createConnection, NotificationType } from 'vscode-languageserver/browser';
 import { createArithmeticsServices } from './arithmetics-module';
+import { interpretEvaluations } from './arithmetics-evaluator';
+import type { Module } from './generated/ast';
 
 /* browser specific setup code */
 const messageReader = new BrowserMessageReader(self);
@@ -27,13 +29,27 @@ const documentChangeNotification = new NotificationType<DocumentChange>('browser
 const jsonSerializer = arithmetics.serializer.JsonSerializer;
 shared.workspace.DocumentBuilder.onBuildPhase(DocumentState.Validated, documents => {
     for (const document of documents) {
-        const json = jsonSerializer.serialize(document.parseResult.value, {
-            sourceText: true,
-            textRegions: true,
-        });
+        const json = [];
+        const module = document.parseResult.value as Module;
+        // create a json object with the all evaluations
+        if(document.diagnostics === undefined  || document.diagnostics.filter((i) => i.severity === 1).length === 0) {
+            for (const [evaluation, value] of interpretEvaluations(module)) {
+                const cstNode = evaluation.expression.$cstNode;
+                if (cstNode) {
+                    json.push({range: evaluation.expression.$cstNode?.range, text: evaluation.expression.$cstNode?.text, value: value});
+                }
+            }
+        }
+
+        // add the evaluations to the ast object
+        (module as unknown as { $evaluations: Array<{
+            range: Range | undefined;
+            text: string | undefined;
+            value: number;
+        }> }).$evaluations = json;
         connection.sendNotification(documentChangeNotification, {
             uri: document.uri.toString(),
-            content: json,
+            content: jsonSerializer.serialize(module, { sourceText: true, textRegions: true }),
             diagnostics: document.diagnostics ?? []
         });
     }

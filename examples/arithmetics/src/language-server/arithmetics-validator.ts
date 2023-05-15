@@ -4,12 +4,13 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { ValidationAcceptor, ValidationChecks } from 'langium';
-import type { ArithmeticsAstType, Definition, Expression, BinaryExpression, Module } from './generated/ast';
+import type { ArithmeticsAstType, Definition, Expression, BinaryExpression, Module, DeclaredParameter, FunctionCall } from './generated/ast';
 import type { ArithmeticsServices } from './arithmetics-module';
-import { MultiMap } from 'langium';
+import type { ValidationChecks, ValidationAcceptor } from 'langium';
 import { isNumberLiteral, isFunctionCall, isBinaryExpression } from './generated/ast';
 import { applyOp } from './arithmetics-util';
+import { MultiMap } from 'langium';
+import { evalExpression } from './arithmetics-evaluator';
 
 export function registerValidationChecks(services: ArithmeticsServices): void {
     const registry = services.validation.ValidationRegistry;
@@ -17,14 +18,15 @@ export function registerValidationChecks(services: ArithmeticsServices): void {
     const checks: ValidationChecks<ArithmeticsAstType> = {
         BinaryExpression: validator.checkDivByZero,
         Definition: validator.checkNormalisable,
-        Module: validator.checkUniqueDefinitions
+        Module: validator.checkUniqueDefinitions,
+        FunctionCall: validator.checkMatchingParameters,
     };
     registry.register(checks, validator);
 }
 
 export class ArithmeticsValidator {
     checkDivByZero(binExpr: BinaryExpression, accept: ValidationAcceptor): void {
-        if (binExpr.operator === '/' && isNumberLiteral(binExpr.right) && binExpr.right.value === 0) {
+        if ((binExpr.operator === '/' || binExpr.operator === '%') && evalExpression(binExpr.right) === 0) {
             accept('error', 'Division by zero is detected.', { node: binExpr, property: 'right' });
         }
     }
@@ -53,6 +55,8 @@ export class ArithmeticsValidator {
                 accept('warning', 'Expression could be normalized to constant ' + result, { node: expr });
             }
         }
+
+        this.checkUniqueParmeters(def, accept);
     }
 
     checkUniqueDefinitions(module: Module, accept: ValidationAcceptor): void {
@@ -66,6 +70,27 @@ export class ArithmeticsValidator {
                     accept('error', `Duplicate definition name: ${name}`, { node: symbol, property: 'name' });
                 }
             }
+        }
+    }
+
+    checkUniqueParmeters(abstractDefinition: Definition, accept: ValidationAcceptor): void {
+        const names = new MultiMap<string, DeclaredParameter>();
+        for (const def of abstractDefinition.args) {
+            if (def.name) names.add(def.name, def);
+        }
+        for (const [name, symbols] of names.entriesGroupedByKey()) {
+            if (symbols.length > 1) {
+                for (const symbol of symbols) {
+                    accept('error', `Duplicate definition name: ${name}`, { node: symbol, property: 'name' });
+                }
+            }
+        }
+    }
+
+    checkMatchingParameters(functionCall: FunctionCall, accept: ValidationAcceptor): void {
+        if (!functionCall.func.ref || !(functionCall.func.ref as Definition).args) return;
+        if (functionCall.args.length !== (functionCall.func.ref as Definition).args.length) {
+            accept('error', `Function ${functionCall.func.ref?.name} expects ${functionCall.args.length} parameters, but ${(functionCall.func.ref as Definition).args.length} were given.`, { node: functionCall, property: 'args' });
         }
     }
 }

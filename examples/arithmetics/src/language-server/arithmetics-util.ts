@@ -4,9 +4,21 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-export function applyOp(op: '+' | '-' | '*' | '/'): (x: number, y: number) => number {
-    if (op === '+') return (x, y) => x + y;
-    if (op === '-') return (x, y) => x - y;
-    if (op === '*') return (x, y) => x * y;
-    return (x, y) => y === 0 ? x : x / y;
+import type { BinaryExpression } from './generated/ast';
+
+export function applyOp(op: BinaryExpression['operator']): (x: number, y: number) => number {
+    switch (op) {
+        case '+': return (x, y) => x + y;
+        case '-': return (x, y) => x - y;
+        case '*': return (x, y) => x * y;
+        case '^': return (x, y) => Math.pow(x, y);
+        case '%': return (x, y) => x % y;
+        case '/': return (x, y) => {
+            if (y === 0) {
+                throw new Error('Division by zero');
+            }
+            return x / y;
+        };
+        default: throw new Error('Unknown operator: ' + op);
+    }
 }
