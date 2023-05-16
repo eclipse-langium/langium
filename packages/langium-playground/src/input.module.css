@@ -1,0 +1,90 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.grid {
+  position: relative;
+  height: 100%;
+}
+
+.header {
+  border-color: rgba(38, 136, 140, 1);
+  background-color: rgba(38, 60, 61, 1);
+  color: white;
+}
+
+.body {
+  border-color: rgba(38, 136, 140, 1);
+  min-height: 50vh;
+  background-color: rgba(30, 30, 30, 1);
+}
+
+
+
+
+
+
+
+#ast-body {
+  position: absolute;
+  right: 0;
+  height: 100%;
+  width: 100%;
+  padding: 0.5rem;
+  background-color: #1e1e1e;
+  z-index: 1000000;
+  overflow-y: scroll;
+}
+
+#ast-body > ul {
+  cursor: default;
+  box-sizing: border-box;
+  font-family: monospace;
+  flex: 1;
+  margin: 0;
+  padding-left: 0px;
+  overflow: auto;
+}
+
+.entry {
+  margin: 0;
+  list-style: none;
+  padding: 0px;
+  position: relative;
+}
+
+.object-body > .entry {
+  padding-left: 0px;
+}
+.entry > .value {
+  list-style: none;
+}
+
+.opening-brace,
+.closing-brace {
+  color: #d4d4d4;
+}
+
+.literal {
+  color: #ce9178;
+}
+
+.undefined {
+  color: #ce9178;
+}
+
+.object-body {
+  width: -webkit-fit-content;
+  width: -moz-fit-content;
+  width: fit-content;
+  margin: 0;
+  overflow: auto;
+}
+
+.link {
+  color: white;
+}
+
+.object-body {
+  padding-left: 20px;
+}
