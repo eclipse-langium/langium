@@ -1,7 +1,7 @@
 {
     "name": "langium-arithmetics-dsl",
     "displayName": "Arithmetics DSL",
-    "version": "1.2.0",
+    "version": "1.2.1",
     "description": "Example language built with Langium",
     "homepage": "https://langium.org",
     "engines": {
