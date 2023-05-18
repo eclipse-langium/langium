@@ -70,11 +70,14 @@ export function getAllReachableRules(grammar: ast.Grammar, allTerminals: boolean
 function ruleDfs(rule: ast.AbstractRule, visitedSet: Set<string>, allTerminals: boolean): void {
     visitedSet.add(rule.name);
     streamAllContents(rule).forEach(node => {
+        let refRule: ast.AbstractRule | undefined;
         if (ast.isRuleCall(node) || (allTerminals && ast.isTerminalRuleCall(node))) {
-            const refRule = node.rule.ref;
-            if (refRule && !visitedSet.has(refRule.name)) {
-                ruleDfs(refRule, visitedSet, allTerminals);
-            }
+            refRule = node.rule.ref;
+        } else if (ast.isCrossReference(node) && ast.isParserRule(node.type.ref)) {
+            refRule = node.type.ref;
+        }
+        if (refRule && !visitedSet.has(refRule.name)) {
+            ruleDfs(refRule, visitedSet, allTerminals);
         }
     });
 }

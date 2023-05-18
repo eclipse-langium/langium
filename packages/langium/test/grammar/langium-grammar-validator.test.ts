@@ -369,8 +369,11 @@ describe('Unused rules validation', () => {
         const text = `
         grammar TestUnusedParserRule
 
-        entry Used: name=ID;
+        entry Entry: rule=Used ref=[Referenced:ID];
+        Used: name=ID;
         Unused: name=ID;
+        Referenced: name=ID;
+
         hidden terminal WS: /\\s+/;
         terminal ID: /[_a-zA-Z][\\w_]*/;
         `;

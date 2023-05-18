@@ -36,4 +36,26 @@ describe('Grammar Utils', () => {
         expect(reachableRules).toContain('Ws');
     });
 
+    test('Parser rule should be reachable when only used in cross reference', async () => {
+        // the actual bug was that the 'Hello' rule marked as unused - so
+        // a 'Hint: This rule is declared but never referenced.' was thrown
+        // arrange
+        const input = `
+            grammar HelloWorld
+
+            entry Model: foreignHello=[Hello:NAME];
+
+            Hello: greeting='Hello' name=NAME '!';
+
+            terminal NAME: /[A-Z][a-z]*/;
+        `;
+        const output = await parse(input);
+
+        // act
+        const reachableRules = [...getAllReachableRules(output.parseResult.value, false)].map(r => r.name);
+
+        // assert
+        expect(reachableRules).toContain('Hello');
+    });
+
 });
