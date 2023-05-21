@@ -202,6 +202,22 @@ export function findReferenceTypes(type: PropertyType): string[] {
     return [];
 }
 
+export function findAstTypes(type: PropertyType): string[] {
+    if (isPropertyUnion(type)) {
+        return type.types.flatMap(e => findAstTypes(e));
+    } else if (isValueType(type)) {
+        const value = type.value;
+        if ('type' in value) {
+            return findAstTypes(value.type);
+        } else {
+            return [value.name];
+        }
+    } else if (isArrayType(type)) {
+        return findAstTypes(type.elementType);
+    }
+    return [];
+}
+
 export function isAstType(type: PropertyType): boolean {
     if (isPropertyUnion(type)) {
         return type.types.every(isAstType);

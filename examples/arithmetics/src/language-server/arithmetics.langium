@@ -34,7 +34,6 @@ Exponentiation infers Expression:
 Modulo infers Expression:
     PrimaryExpression ({infer BinaryExpression.left=current} operator='%' right=PrimaryExpression)*;
 
-
 PrimaryExpression infers Expression:
     '(' Expression ')' |
     {infer NumberLiteral} value=NUMBER |

@@ -105,7 +105,6 @@ export class UnionType {
     type: PropertyType;
     superTypes = new Set<TypeOption>();
     subTypes = new Set<TypeOption>();
-    containerTypes = new Set<TypeOption>();
     typeNames = new Set<string>();
     declared: boolean;
     dataType?: string;
