@@ -92,7 +92,7 @@ function _resolve<I, T>(obj: any, prop: string | symbol | number, module: Module
             throw new Error('Construction failure. Please make sure that your dependencies are constructable.', {cause: obj[prop]});
         }
         if (obj[prop] === __requested__) {
-            throw new Error('Cycle detected. Please make "' + String(prop) + '" lazy. See https://langium.org/docs/di/cyclic-dependencies');
+            throw new Error('Cycle detected. Please make "' + String(prop) + '" lazy. See https://langium.org/docs/configuration-services/#resolving-cyclic-dependencies');
         }
         return obj[prop];
     } else if (prop in module) {
