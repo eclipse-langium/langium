@@ -52,7 +52,6 @@ export function isTypeDefinition(item: unknown): item is TypeDefinition {
 }
 
 export interface AbstractElement extends AstNode {
-    readonly $container: Alternatives | Assignment | CharacterRange | CrossReference | Grammar | Group | NegatedToken | ParserRule | TerminalAlternatives | TerminalGroup | TerminalRule | UnorderedGroup | UntilToken;
     readonly $type: 'AbstractElement' | 'Action' | 'Alternatives' | 'Assignment' | 'CharacterRange' | 'CrossReference' | 'Group' | 'Keyword' | 'NegatedToken' | 'RegexToken' | 'RuleCall' | 'TerminalAlternatives' | 'TerminalGroup' | 'TerminalRuleCall' | 'UnorderedGroup' | 'UntilToken' | 'Wildcard';
     cardinality?: '*' | '+' | '?'
     lookahead?: '?!' | '?='
@@ -146,7 +145,7 @@ export function isInferredType(item: unknown): item is InferredType {
 }
 
 export interface Interface extends AstNode {
-    readonly $container: Alternatives | Assignment | CharacterRange | CrossReference | Grammar | Group | NegatedToken | ParserRule | TerminalAlternatives | TerminalGroup | TerminalRule | UnorderedGroup | UntilToken;
+    readonly $container: Grammar;
     readonly $type: 'Interface';
     attributes: Array<TypeAttribute>
     name: string
@@ -222,7 +221,7 @@ export function isParameterReference(item: unknown): item is ParameterReference 
 }
 
 export interface ParserRule extends AstNode {
-    readonly $container: Alternatives | Assignment | CharacterRange | CrossReference | Grammar | Group | NegatedToken | ParserRule | TerminalAlternatives | TerminalGroup | TerminalRule | UnorderedGroup | UntilToken;
+    readonly $container: Grammar;
     readonly $type: 'ParserRule';
     dataType?: PrimitiveType
     definesHiddenTokens: boolean
@@ -282,7 +281,7 @@ export function isSimpleType(item: unknown): item is SimpleType {
 }
 
 export interface TerminalRule extends AstNode {
-    readonly $container: Alternatives | Assignment | CharacterRange | CrossReference | Grammar | Group | NegatedToken | ParserRule | TerminalAlternatives | TerminalGroup | TerminalRule | UnorderedGroup | UntilToken;
+    readonly $container: Grammar;
     readonly $type: 'TerminalRule';
     definition: AbstractElement
     fragment: boolean
@@ -298,7 +297,7 @@ export function isTerminalRule(item: unknown): item is TerminalRule {
 }
 
 export interface Type extends AstNode {
-    readonly $container: Alternatives | Assignment | CharacterRange | CrossReference | Grammar | Group | NegatedToken | ParserRule | TerminalAlternatives | TerminalGroup | TerminalRule | UnorderedGroup | UntilToken;
+    readonly $container: Grammar;
     readonly $type: 'Type';
     name: string
     type: TypeDefinition
@@ -337,7 +336,6 @@ export function isUnionType(item: unknown): item is UnionType {
 }
 
 export interface Action extends AbstractElement {
-    readonly $container: Alternatives | Assignment | CharacterRange | CrossReference | Grammar | Group | NegatedToken | ParserRule | TerminalAlternatives | TerminalGroup | TerminalRule | UnorderedGroup | UntilToken;
     readonly $type: 'Action';
     feature?: FeatureName
     inferredType?: InferredType
@@ -352,7 +350,6 @@ export function isAction(item: unknown): item is Action {
 }
 
 export interface Alternatives extends AbstractElement {
-    readonly $container: Alternatives | Assignment | CharacterRange | CrossReference | Grammar | Group | NegatedToken | ParserRule | TerminalAlternatives | TerminalGroup | TerminalRule | UnorderedGroup | UntilToken;
     readonly $type: 'Alternatives';
     elements: Array<AbstractElement>
 }
@@ -364,7 +361,6 @@ export function isAlternatives(item: unknown): item is Alternatives {
 }
 
 export interface Assignment extends AbstractElement {
-    readonly $container: Alternatives | Assignment | CharacterRange | CrossReference | Grammar | Group | NegatedToken | ParserRule | TerminalAlternatives | TerminalGroup | TerminalRule | UnorderedGroup | UntilToken;
     readonly $type: 'Assignment';
     feature: FeatureName
     operator: '+=' | '=' | '?='
@@ -378,7 +374,6 @@ export function isAssignment(item: unknown): item is Assignment {
 }
 
 export interface CharacterRange extends AbstractElement {
-    readonly $container: Alternatives | Assignment | CharacterRange | CrossReference | Grammar | Group | NegatedToken | ParserRule | TerminalAlternatives | TerminalGroup | TerminalRule | UnorderedGroup | UntilToken;
     readonly $type: 'CharacterRange';
     left: Keyword
     right?: Keyword
@@ -391,7 +386,6 @@ export function isCharacterRange(item: unknown): item is CharacterRange {
 }
 
 export interface CrossReference extends AbstractElement {
-    readonly $container: Alternatives | Assignment | CharacterRange | CrossReference | Grammar | Group | NegatedToken | ParserRule | TerminalAlternatives | TerminalGroup | TerminalRule | UnorderedGroup | UntilToken;
     readonly $type: 'CrossReference';
     deprecatedSyntax: boolean
     terminal?: AbstractElement
@@ -405,7 +399,6 @@ export function isCrossReference(item: unknown): item is CrossReference {
 }
 
 export interface Group extends AbstractElement {
-    readonly $container: Alternatives | Assignment | CharacterRange | CrossReference | Grammar | Group | NegatedToken | ParserRule | TerminalAlternatives | TerminalGroup | TerminalRule | UnorderedGroup | UntilToken;
     readonly $type: 'Group';
     elements: Array<AbstractElement>
     guardCondition?: Condition
@@ -418,7 +411,7 @@ export function isGroup(item: unknown): item is Group {
 }
 
 export interface Keyword extends AbstractElement {
-    readonly $container: Alternatives | Assignment | CharacterRange | CrossReference | Grammar | Group | NegatedToken | ParserRule | TerminalAlternatives | TerminalGroup | TerminalRule | UnorderedGroup | UntilToken;
+    readonly $container: CharacterRange;
     readonly $type: 'Keyword';
     value: string
 }
@@ -430,7 +423,6 @@ export function isKeyword(item: unknown): item is Keyword {
 }
 
 export interface NegatedToken extends AbstractElement {
-    readonly $container: Alternatives | Assignment | CharacterRange | CrossReference | Grammar | Group | NegatedToken | ParserRule | TerminalAlternatives | TerminalGroup | TerminalRule | UnorderedGroup | UntilToken;
     readonly $type: 'NegatedToken';
     terminal: AbstractElement
 }
@@ -442,7 +434,6 @@ export function isNegatedToken(item: unknown): item is NegatedToken {
 }
 
 export interface RegexToken extends AbstractElement {
-    readonly $container: Alternatives | Assignment | CharacterRange | CrossReference | Grammar | Group | NegatedToken | ParserRule | TerminalAlternatives | TerminalGroup | TerminalRule | UnorderedGroup | UntilToken;
     readonly $type: 'RegexToken';
     regex: string
 }
@@ -454,7 +445,6 @@ export function isRegexToken(item: unknown): item is RegexToken {
 }
 
 export interface RuleCall extends AbstractElement {
-    readonly $container: Alternatives | Assignment | CharacterRange | CrossReference | Grammar | Group | NegatedToken | ParserRule | TerminalAlternatives | TerminalGroup | TerminalRule | UnorderedGroup | UntilToken;
     readonly $type: 'RuleCall';
     arguments: Array<NamedArgument>
     rule: Reference<AbstractRule>
@@ -467,7 +457,6 @@ export function isRuleCall(item: unknown): item is RuleCall {
 }
 
 export interface TerminalAlternatives extends AbstractElement {
-    readonly $container: Alternatives | Assignment | CharacterRange | CrossReference | Grammar | Group | NegatedToken | ParserRule | TerminalAlternatives | TerminalGroup | TerminalRule | UnorderedGroup | UntilToken;
     readonly $type: 'TerminalAlternatives';
     elements: Array<AbstractElement>
 }
@@ -479,7 +468,6 @@ export function isTerminalAlternatives(item: unknown): item is TerminalAlternati
 }
 
 export interface TerminalGroup extends AbstractElement {
-    readonly $container: Alternatives | Assignment | CharacterRange | CrossReference | Grammar | Group | NegatedToken | ParserRule | TerminalAlternatives | TerminalGroup | TerminalRule | UnorderedGroup | UntilToken;
     readonly $type: 'TerminalGroup';
     elements: Array<AbstractElement>
 }
@@ -491,7 +479,6 @@ export function isTerminalGroup(item: unknown): item is TerminalGroup {
 }
 
 export interface TerminalRuleCall extends AbstractElement {
-    readonly $container: Alternatives | Assignment | CharacterRange | CrossReference | Grammar | Group | NegatedToken | ParserRule | TerminalAlternatives | TerminalGroup | TerminalRule | UnorderedGroup | UntilToken;
     readonly $type: 'TerminalRuleCall';
     rule: Reference<TerminalRule>
 }
@@ -503,7 +490,6 @@ export function isTerminalRuleCall(item: unknown): item is TerminalRuleCall {
 }
 
 export interface UnorderedGroup extends AbstractElement {
-    readonly $container: Alternatives | Assignment | CharacterRange | CrossReference | Grammar | Group | NegatedToken | ParserRule | TerminalAlternatives | TerminalGroup | TerminalRule | UnorderedGroup | UntilToken;
     readonly $type: 'UnorderedGroup';
     elements: Array<AbstractElement>
 }
@@ -515,7 +501,6 @@ export function isUnorderedGroup(item: unknown): item is UnorderedGroup {
 }
 
 export interface UntilToken extends AbstractElement {
-    readonly $container: Alternatives | Assignment | CharacterRange | CrossReference | Grammar | Group | NegatedToken | ParserRule | TerminalAlternatives | TerminalGroup | TerminalRule | UnorderedGroup | UntilToken;
     readonly $type: 'UntilToken';
     terminal: AbstractElement
 }
@@ -527,7 +512,6 @@ export function isUntilToken(item: unknown): item is UntilToken {
 }
 
 export interface Wildcard extends AbstractElement {
-    readonly $container: Alternatives | Assignment | CharacterRange | CrossReference | Grammar | Group | NegatedToken | ParserRule | TerminalAlternatives | TerminalGroup | TerminalRule | UnorderedGroup | UntilToken;
     readonly $type: 'Wildcard';
 }
 

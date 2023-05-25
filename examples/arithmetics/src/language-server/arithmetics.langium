@@ -29,11 +29,10 @@ Multiplication infers Expression:
     Exponentiation ({infer BinaryExpression.left=current} operator=('*' | '/') right=Exponentiation)*;
 
 Exponentiation infers Expression:
-    PrimaryExpression ({infer BinaryExpression.left=current} operator='^' right=Modulo)*;
+    Modulo ({infer BinaryExpression.left=current} operator='^' right=Modulo)*;
 
 Modulo infers Expression:
     PrimaryExpression ({infer BinaryExpression.left=current} operator='%' right=PrimaryExpression)*;
-
 
 PrimaryExpression infers Expression:
     '(' Expression ')' |

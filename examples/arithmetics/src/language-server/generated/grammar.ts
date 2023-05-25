@@ -398,7 +398,7 @@ export const ArithmeticsGrammar = (): Grammar => loadedArithmeticsGrammar ?? (lo
     },
     {
       "$type": "ParserRule",
-      "name": "Potentiation",
+      "name": "Exponentiation",
       "inferredType": {
         "$type": "InferredType",
         "name": "Expression"

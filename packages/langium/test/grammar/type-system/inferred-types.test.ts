@@ -134,7 +134,6 @@ describe('Inferred types', () => {
             terminal ID returns string: /string/;
         `, expandToString`
             export interface B extends AstNode {
-                readonly $container: B;
                 readonly $type: 'B';
                 back: string
                 front: X | Y | Z
@@ -200,13 +199,11 @@ describe('Inferred types', () => {
             terminal ID returns string: /string/;
         `, expandToString`
             export interface Access extends AstNode {
-                readonly $container: Access;
                 readonly $type: 'Access';
                 member: string
                 receiver?: Ref
             }
             export interface FirstBranch extends AstNode {
-                readonly $container: FirstBranch | SecondBranch;
                 readonly $type: 'FirstBranch';
                 first: string
                 value: IdRule
@@ -222,7 +219,6 @@ describe('Inferred types', () => {
                 ref: string
             }
             export interface SecondBranch extends AstNode {
-                readonly $container: FirstBranch | SecondBranch;
                 readonly $type: 'SecondBranch';
                 second: string
                 value: IdRule
@@ -443,7 +439,6 @@ describe('expression rules with inferred and declared interfaces', () => {
                 value: boolean
             }
             export interface MemberAccess extends AstNode {
-                readonly $container: MemberAccess;
                 readonly $type: 'MemberAccess' | 'SuperMemberAccess';
                 member: Reference<Symbol>
                 receiver: PrimaryExpression
@@ -452,7 +447,6 @@ describe('expression rules with inferred and declared interfaces', () => {
                 readonly $type: 'Symbol';
             }
             export interface SuperMemberAccess extends MemberAccess {
-                readonly $container: MemberAccess;
                 readonly $type: 'SuperMemberAccess';
             }
             export type Expression = MemberAccess | PrimaryExpression | SuperMemberAccess;
@@ -463,8 +457,9 @@ describe('expression rules with inferred and declared interfaces', () => {
 
 describe('types of `$container` and `$type` are correct', () => {
 
-    // `$container`-types are appear only from inferred types
     test('types of `$container` and `$type` for declared types', async () => {
+        // `C` is a child of `A` and `B` that has no container types =>
+        // `A` and `B` lose their container types
         await expectTypes(`
             interface A { strA: string }
             interface B { strB: string }
@@ -473,12 +468,10 @@ describe('types of `$container` and `$type` are correct', () => {
             interface E { b: B }
         `, expandToString`
             export interface A extends AstNode {
-                readonly $container: D | E;
                 readonly $type: 'A' | 'C';
                 strA: string
             }
             export interface B extends AstNode {
-                readonly $container: D | E;
                 readonly $type: 'B' | 'C';
                 strB: string
             }
@@ -491,7 +484,39 @@ describe('types of `$container` and `$type` are correct', () => {
                 b: B
             }
             export interface C extends A, B {
-                readonly $container: D | E;
+                readonly $type: 'C';
+                strC: string
+            }
+        `);
+    });
+
+    test('types of `$container` and `$type` for inferred types', async () => {
+        // `C` is a child of `A` and `B` that has no container types =>
+        // `A` and `B` lose their container types
+        await expectTypes(`
+            terminal ID: /[_a-zA-Z][\\w_]*/;
+            A: strA=ID | {infer C} strC=ID;
+            B: strB=ID | {infer C} strC=ID;
+            D: a=A;
+            E: b=B;
+        `, expandToString`
+            export interface A extends AstNode {
+                readonly $type: 'A' | 'C';
+                strA: string
+            }
+            export interface B extends AstNode {
+                readonly $type: 'B' | 'C';
+                strB: string
+            }
+            export interface D extends AstNode {
+                readonly $type: 'D';
+                a: A
+            }
+            export interface E extends AstNode {
+                readonly $type: 'E';
+                b: B
+            }
+            export interface C extends A, B {
                 readonly $type: 'C';
                 strC: string
             }
@@ -525,7 +550,114 @@ describe('types of `$container` and `$type` are correct', () => {
         `);
     });
 
+    test('types of `$container` and `$type` for declared types', async () => {
+        await expectTypes(`
+            interface A { strA: string }
+            interface B { strB: string }
+            interface C extends A, B { strC: string }
+            interface D extends A, B { strC: string }
+            interface E { c: C }
+            interface F { d: D }
+            interface G { a: A }
+            interface H { b: B }
+        `, expandToString`
+            export interface A extends AstNode {
+                readonly $container: E | F | G;
+                readonly $type: 'A' | 'C' | 'D';
+                strA: string
+            }
+            export interface B extends AstNode {
+                readonly $container: E | F | H;
+                readonly $type: 'B' | 'C' | 'D';
+                strB: string
+            }
+            export interface E extends AstNode {
+                readonly $type: 'E';
+                c: C
+            }
+            export interface F extends AstNode {
+                readonly $type: 'F';
+                d: D
+            }
+            export interface G extends AstNode {
+                readonly $type: 'G';
+                a: A
+            }
+            export interface H extends AstNode {
+                readonly $type: 'H';
+                b: B
+            }
+            export interface C extends A, B {
+                readonly $container: E;
+                readonly $type: 'C';
+                strC: string
+            }
+            export interface D extends A, B {
+                readonly $container: F;
+                readonly $type: 'D';
+                strC: string
+            }
+        `);
+    });
+
+    test('types of `$container` and `$type` for declared types', async () => {
+        // `X` is a child of `A` and `B` that has no container types =>
+        // `A` and `B` lose their container types
+        await expectTypes(`
+            interface A { strA: string }
+            interface B { strB: string }
+            interface C extends A, B { strC: string }
+            interface D extends A, B { strC: string }
+            interface X extends A, B { strC: string }
+            interface E { c: C }
+            interface F { d: D }
+            interface G { a: A }
+            interface H { b: B }
+        `, expandToString`
+            export interface A extends AstNode {
+                readonly $type: 'A' | 'C' | 'D' | 'X';
+                strA: string
+            }
+            export interface B extends AstNode {
+                readonly $type: 'B' | 'C' | 'D' | 'X';
+                strB: string
+            }
+            export interface E extends AstNode {
+                readonly $type: 'E';
+                c: C
+            }
+            export interface F extends AstNode {
+                readonly $type: 'F';
+                d: D
+            }
+            export interface G extends AstNode {
+                readonly $type: 'G';
+                a: A
+            }
+            export interface H extends AstNode {
+                readonly $type: 'H';
+                b: B
+            }
+            export interface C extends A, B {
+                readonly $container: E;
+                readonly $type: 'C';
+                strC: string
+            }
+            export interface D extends A, B {
+                readonly $container: F;
+                readonly $type: 'D';
+                strC: string
+            }
+            export interface X extends A, B {
+                readonly $type: 'X';
+                strC: string
+            }
+        `);
+    });
+
     test('types of `$container` and `$type` for inferred and declared types', async () => {
+        // `C` is a child of `A` and `B` that has no container types =>
+        // `A` and `B` lose their container types
         await expectTypes(`
             A: 'A' strA=ID;
             B: 'B' strB=ID;
@@ -536,12 +668,10 @@ describe('types of `$container` and `$type` are correct', () => {
             terminal ID: /[a-zA-Z_][a-zA-Z0-9_]*/;
         `, expandToString`
             export interface A extends AstNode {
-                readonly $container: D | E;
                 readonly $type: 'A' | 'C';
                 strA: string
             }
             export interface B extends AstNode {
-                readonly $container: D | E;
                 readonly $type: 'B' | 'C';
                 strB: string
             }
@@ -554,7 +684,6 @@ describe('types of `$container` and `$type` are correct', () => {
                 b: B
             }
             export interface C extends A, B {
-                readonly $container: D | E;
                 readonly $type: 'C';
                 strC: string
             }
