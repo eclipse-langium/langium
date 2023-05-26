@@ -16,5 +16,5 @@
     "include": [
         "syntaxes/<%= language-id %>.monarch.ts"
     ],
-    "exclude": ["out", "node-modules"]
+    "exclude": ["out", "node_modules"]
 }
