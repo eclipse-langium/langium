@@ -192,7 +192,7 @@ export class LangiumParser extends AbstractLangiumParser {
             const { assignment, isCrossRef } = this.getAssignment(feature);
             const current = this.current;
             if (assignment) {
-                let text = token.payload ? token.payload : token.image;
+                const text = token.payload ? token.payload : token.image;
                 const convertedValue = isKeyword(feature) ? text : this.converter.convert(text, leafNode);
                 this.assign(assignment.operator, assignment.feature, convertedValue, leafNode, isCrossRef);
             } else if (isDataTypeNode(current)) {
