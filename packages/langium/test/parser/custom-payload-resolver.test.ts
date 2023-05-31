@@ -23,7 +23,8 @@ describe('CustomPayloadResolver', () => {
                             const result: [string] = ['value'];
                             Object.assign(result, { payload: 'test' });
                             return result;
-                        }
+                        },
+                        LINE_BREAKS: false
                     };
                 } else {
                     return super.buildTerminalToken(terminal);
