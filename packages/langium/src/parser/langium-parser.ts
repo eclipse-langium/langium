@@ -13,6 +13,7 @@ import type { AstNode, AstReflection, CompositeCstNode, CstNode } from '../synta
 import type { Lexer } from './lexer';
 import type { IParserConfig } from './parser-config';
 import type { ValueConverter } from './value-converter';
+import type { CustomPayloadResolver } from './custom-payload-resolver';
 import { defaultParserErrorProvider, EmbeddedActionsParser, LLkLookaheadStrategy } from 'chevrotain';
 import { LLStarLookaheadStrategy } from 'chevrotain-allstar';
 import { isAssignment, isCrossReference, isKeyword } from '../grammar/generated/ast';
@@ -123,6 +124,7 @@ export abstract class AbstractLangiumParser implements BaseParser {
 export class LangiumParser extends AbstractLangiumParser {
     private readonly linker: Linker;
     private readonly converter: ValueConverter;
+    private readonly customPayloadResolver?: CustomPayloadResolver;
     private readonly astReflection: AstReflection;
     private readonly nodeBuilder = new CstNodeBuilder();
     private stack: any[] = [];
@@ -137,6 +139,7 @@ export class LangiumParser extends AbstractLangiumParser {
         super(services);
         this.linker = services.references.Linker;
         this.converter = services.parser.ValueConverter;
+        this.customPayloadResolver = services.parser.CustomPayloadResolver;
         this.astReflection = services.shared.AstReflection;
     }
 
@@ -192,17 +195,24 @@ export class LangiumParser extends AbstractLangiumParser {
             const { assignment, isCrossRef } = this.getAssignment(feature);
             const current = this.current;
             if (assignment) {
-                const text = token.payload ? token.payload : token.image;
+                const text = this.getTokenText(token);
                 const convertedValue = isKeyword(feature) ? text : this.converter.convert(text, leafNode);
                 this.assign(assignment.operator, assignment.feature, convertedValue, leafNode, isCrossRef);
             } else if (isDataTypeNode(current)) {
-                let text = token.payload ? token.payload : token.image;
+                let text = this.getTokenText(token);
                 if (!isKeyword(feature)) {
                     text = this.converter.convert(text, leafNode).toString();
                 }
                 current.value += text;
             }
         }
+    }
+
+    private getTokenText(token: IToken): string {
+        if (this.customPayloadResolver && 'payload' in token) {
+            return this.customPayloadResolver.resolveTokenPayload(token);
+        }
+        return token.image;
     }
 
     subrule(idx: number, rule: RuleResult, feature: AbstractElement, args: Args): void {
