@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { TokenPattern, TokenType, TokenVocabulary } from 'chevrotain';
+import type { CustomPatternMatcherFunc, TokenPattern, TokenType, TokenVocabulary } from 'chevrotain';
 import type { AbstractRule, Grammar, Keyword, TerminalRule } from '../grammar/generated/ast';
 import type { Stream } from '../utils/stream';
 import { Lexer } from 'chevrotain';
@@ -48,12 +48,26 @@ export class DefaultTokenBuilder implements TokenBuilder {
 
     protected buildTerminalToken(terminal: TerminalRule): TokenType {
         const regex = terminalRegex(terminal);
-        const token: TokenType = { name: terminal.name, PATTERN: new RegExp(regex) };
+        const pattern = regex.flags.includes('u') ? this.regexPatternFunction(regex) : regex;
+        const token: TokenType = {
+            name: terminal.name,
+            PATTERN: pattern,
+            LINE_BREAKS: true
+        };
         if (terminal.hidden) {
             // Only skip tokens that are able to accept whitespace
             token.GROUP = isWhitespaceRegExp(regex) ? Lexer.SKIPPED : 'hidden';
         }
         return token;
+    }
+
+    protected regexPatternFunction(regex: RegExp): CustomPatternMatcherFunc {
+        const stickyRegex = new RegExp(regex, regex.flags + 'y');
+        return (text, offset) => {
+            stickyRegex.lastIndex = offset;
+            const execResult = stickyRegex.exec(text);
+            return execResult;
+        };
     }
 
     protected buildKeywordTokens(rules: Stream<AbstractRule>, terminalTokens: TokenType[], options?: TokenBuilderOptions): TokenType[] {

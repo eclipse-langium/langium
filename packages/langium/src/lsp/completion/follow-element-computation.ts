@@ -294,7 +294,7 @@ function ruleMatches(rule: ast.AbstractRule | undefined, token: IToken): boolean
         // We have to take keywords into account
         // e.g. most keywords are valid IDs as well
         // Only return 'true' if this terminal does not match a keyword. TODO
-        return new RegExp(terminalRegex(rule)).test(token.image);
+        return terminalRegex(rule).test(token.image);
     } else {
         return false;
     }

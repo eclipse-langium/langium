@@ -284,7 +284,7 @@ function buildDataRuleType(element: AbstractElement, cancel: () => PlainProperty
             if (isTerminalRule(ref)) {
                 return {
                     primitive: ref.type?.name ?? 'string',
-                    regex: terminalRegex(ref)
+                    regex: terminalRegex(ref).toString()
                 };
             } else {
                 return {

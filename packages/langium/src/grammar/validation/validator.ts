@@ -11,6 +11,7 @@ import type { Stream } from '../../utils/stream';
 import type { ValidationAcceptor, ValidationChecks } from '../../validation/validation-registry';
 import type { LangiumDocuments } from '../../workspace/documents';
 import type { LangiumGrammarServices } from '../langium-grammar-module';
+import type { Range } from 'vscode-languageserver-types';
 import { DiagnosticTag } from 'vscode-languageserver-types';
 import { getContainerOfType, streamAllContents } from '../../utils/ast-util';
 import { MultiMap } from '../../utils/collections';
@@ -86,7 +87,11 @@ export function registerValidationChecks(services: LangiumGrammarServices): void
             validator.checkCrossReferenceToTypeUnion
         ],
         SimpleType: validator.checkFragmentsInTypes,
-        ReferenceType: validator.checkReferenceTypeUnion
+        ReferenceType: validator.checkReferenceTypeUnion,
+        RegexToken: [
+            validator.checkInvalidRegexFlags,
+            validator.checkDirectlyUsedRegexFlags
+        ]
     };
     registry.register(checks, validator);
 }
@@ -382,6 +387,72 @@ export class LangiumGrammarValidator {
             // In case the terminal can't be transformed into a regex, we throw an error
             // As this indicates unresolved cross references or parser errors, we can ignore this here
         }
+    }
+
+    checkInvalidRegexFlags(token: ast.RegexToken, accept: ValidationAcceptor): void {
+        const regex = token.regex;
+        if (regex) {
+            const slashIndex = regex.lastIndexOf('/');
+            const flags = regex.substring(slashIndex + 1);
+            // global/multiline/sticky are valid, but not supported
+            const unsupportedFlags = 'gmy';
+            // only case-insensitive/dotall/unicode are really supported
+            const supportedFlags = 'isu';
+            const allFlags = unsupportedFlags + supportedFlags;
+            const errorFlags = new Set<string>();
+            const warningFlags = new Set<string>();
+            for (let i = 0; i < flags.length; i++) {
+                const flag = flags.charAt(i);
+                if (!allFlags.includes(flag)) {
+                    errorFlags.add(flag);
+                } else if (unsupportedFlags.includes(flag)) {
+                    warningFlags.add(flag);
+                }
+            }
+            const range = this.getFlagRange(token);
+            if (range) {
+                if (errorFlags.size > 0) {
+                    accept('error', `'${Array.from(errorFlags).join('')}' ${errorFlags.size > 1 ? 'are' : 'is'} not valid regular expression flag${errorFlags.size > 1 ? 's' : ''}.`, {
+                        node: token,
+                        range
+                    });
+                } else if (warningFlags.size > 0) {
+                    accept('warning', `'${Array.from(warningFlags).join('')}' regular expression flag${warningFlags.size > 1 ? 's' : ''} will be ignored by Langium.`, {
+                        node: token,
+                        range
+                    });
+                }
+            }
+        }
+    }
+
+    checkDirectlyUsedRegexFlags(token: ast.RegexToken, accept: ValidationAcceptor): void {
+        if (!ast.isTerminalRule(token.$container)) {
+            const range = this.getFlagRange(token);
+            if (range) {
+                accept('warning', 'Regular expression flags are only applied if the terminal is not a composition', {
+                    node: token,
+                    range
+                });
+            }
+        }
+    }
+
+    private getFlagRange(token: ast.RegexToken): Range | undefined {
+        const regexCstNode = findNodeForProperty(token.$cstNode, 'regex');
+        if (!regexCstNode || !token.regex) {
+            return undefined;
+        }
+        const regex = token.regex;
+        const slashIndex = regex.lastIndexOf('/') + 1;
+        const range: Range = {
+            start: {
+                line: regexCstNode.range.end.line,
+                character: regexCstNode.range.end.character - regex.length + slashIndex
+            },
+            end: regexCstNode.range.end
+        };
+        return range;
     }
 
     checkUsedHiddenTerminalRule(ruleCall: ast.RuleCall | ast.TerminalRuleCall, accept: ValidationAcceptor): void {

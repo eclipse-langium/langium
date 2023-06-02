@@ -458,7 +458,7 @@ function createDataTypeCheckerFunctionReturnString(subTypes: string[], strings: 
     ];
 
     if (regexes.length > 0) {
-        const joinedRegexes = regexes.map(e => `/${e}/.test(item)`).join(' || ');
+        const joinedRegexes = regexes.map(e => `${e}.test(item)`).join(' || ');
         allArray.push(`(typeof item === 'string' && (${joinedRegexes}))`);
     }
 

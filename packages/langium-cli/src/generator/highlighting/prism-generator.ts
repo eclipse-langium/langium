@@ -27,19 +27,19 @@ export function generatePrismHighlighting(grammar: Grammar, config: LangiumLangu
     const commentTerminals = terminals.filter(isCommentTerminal);
     if (commentTerminals.length === 1) {
         highlighter.comment = {
-            pattern: `/${terminalRegex(commentTerminals[0])}/`,
+            pattern: terminalRegex(commentTerminals[0]).toString(),
             greedy: true
         };
     } else if (commentTerminals.length > 0) {
         highlighter.comment = commentTerminals.map(e => ({
-            pattern: `/${terminalRegex(e)}/`,
+            pattern: terminalRegex(e).toString(),
             greedy: true
         }));
     }
     const stringTerminal = terminals.find(e => e.name.toLowerCase() === 'string');
     if (stringTerminal) {
         highlighter.string = {
-            pattern: `/${terminalRegex(stringTerminal)}/`,
+            pattern: terminalRegex(stringTerminal).toString(),
             greedy: true
         };
     }
