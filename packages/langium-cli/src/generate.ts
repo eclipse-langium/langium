@@ -19,6 +19,7 @@ import { getUserChoice, log } from './generator/util';
 import { getFilePath, RelativePath } from './package';
 import { validateParser } from './parser-validation';
 import { generateTypesFile } from './generator/types-generator';
+import { createGrammarDiagramHtml } from 'langium-railroad';
 import chalk from 'chalk';
 import path from 'path';
 import fs from 'fs-extra';
@@ -257,6 +258,12 @@ export async function generate(config: LangiumConfig, options: GenerateOptions):
 
     for (const grammar of grammars) {
         const languageConfig = configMap.get(grammar);
+        const diagram = createGrammarDiagramHtml(grammar);
+        const diagramPath = path.resolve(relPath, 'diagram.html');
+        const cssPath = path.join(require.resolve('railroad-diagrams'), '..', 'railroad-diagrams.css');
+        const css = await fs.readFile(cssPath);
+        const fullHtml = '<style>' + css + '</style>' + diagram;
+        await writeWithFail(diagramPath, fullHtml, options);
         if (languageConfig?.textMate) {
             const genTmGrammar = generateTextMate(grammar, languageConfig);
             const textMatePath = path.resolve(relPath, languageConfig.textMate.out);

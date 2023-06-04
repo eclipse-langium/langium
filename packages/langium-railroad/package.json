@@ -1,48 +1,40 @@
 {
-  "name": "langium-cli",
-  "version": "1.2.1",
-  "description": "CLI for Langium - the language engineering tool",
+  "name": "langium-railroad",
+  "version": "1.2.0",
+  "description": "Use Langium as source railroad diagrams",
   "homepage": "https://langium.org",
-  "engines": {
-    "node": ">=14.0.0"
-  },
   "keywords": [
-    "cli",
+    "language",
     "dsl",
+    "diagram",
     "lsp",
+    "language-server",
     "vscode",
-    "typescript"
+    "visualization",
+    "modeling"
   ],
   "license": "MIT",
   "files": [
-    "bin",
     "lib",
-    "src",
-    "langium-config-schema.json"
+    "src"
   ],
-  "bin": {
-    "langium": "./bin/langium.js"
-  },
-  "main": "./lib/langium.js",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
   "scripts": {
     "clean": "shx rm -rf lib coverage",
     "build": "tsc",
     "watch": "tsc --watch",
-    "lint": "eslint src test --ext .ts",
+    "lint": "eslint src --ext .ts",
     "publish:next": "npm --no-git-tag-version version \"$(semver $npm_package_version -i minor)-next.$(git rev-parse --short HEAD)\" && npm publish --tag next",
     "publish:latest": "npm publish --tag latest"
   },
   "dependencies": {
-    "chalk": "~4.1.2",
-    "commander": "~10.0.0",
-    "fs-extra": "~11.1.0",
-    "jsonschema": "~1.4.1",
+    "jsdom": "^22.1.0",
     "langium": "~1.2.0",
-    "langium-railroad": "~1.2.0",
-    "lodash": "~4.17.21"
+    "railroad-diagrams": "^1.0.0"
   },
   "devDependencies": {
-    "@types/fs-extra": "~11.0.1"
+    "@types/jsdom": "^21.1.1"
   },
   "volta": {
     "node": "16.19.0",
@@ -51,7 +43,7 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/langium/langium",
-    "directory": "packages/langium-cli"
+    "directory": "packages/langium-sprotty"
   },
   "bugs": "https://github.com/langium/langium/issues",
   "author": {
