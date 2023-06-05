@@ -7,7 +7,7 @@
 import type { AstNode, Properties } from '../../src';
 import type { Assignment, CrossReference, ParserRule, UnionType } from '../../src/grammar/generated/ast';
 import type { ValidationResult } from '../../src/test';
-import { afterEach, beforeAll, describe, expect, test } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, test } from 'vitest';
 import { DiagnosticSeverity } from 'vscode-languageserver';
 import { createLangiumGrammarServices, EmptyFileSystem, GrammarAST, streamAllContents, streamContents } from '../../src';
 import { isAssignment } from '../../src/grammar/generated/ast';
@@ -793,5 +793,87 @@ describe('Missing required properties', () => {
         C returns A: {C} a='bar';
         `);
         expectNoIssues(validation);
+    });
+});
+
+describe('Cross-references to not imported rules or types', () => {
+
+    let anotherGrammarPath: string;
+
+    beforeEach(async () => {
+        const anotherGrammar = await parse(`
+        Rule: a='a';
+        interface IRoot {
+            name: string
+        }
+        `);
+        anotherGrammarPath = anotherGrammar.uri.path.replace('.langium', '');
+    });
+
+    afterEach(() => {
+        clearDocuments(services.grammar);
+    });
+
+    test('Cross-reference to imported global rule generates NO error', async () => {
+        const grammar = `
+        grammar G
+        import ".${anotherGrammarPath}"
+        entry E:
+          ref=[Rule:'a']
+        ;
+        `;
+
+        const validation = await validate(grammar);
+
+        expectNoIssues(validation);
+    });
+
+    test('Cross-reference to NOT imported global rule generates an error', async () => {
+        const grammar = `
+        grammar G
+        //import ".${anotherGrammarPath}" <-- no actual import
+        entry E:
+          ref=[Rule:'a']
+        ;
+        `;
+
+        const validation = await validate(grammar);
+        const crossRef = streamAllContents(validation.document.parseResult.value).find(GrammarAST.isCrossReference)!;
+
+        expectError(validation, "Could not resolve reference to AbstractType named 'Rule'.", {
+            node: crossRef,
+            property: 'type'
+        });
+    });
+
+    test('Cross-reference to imported global interface generate NO error', async () => {
+        const grammar = `
+        grammar G
+        import ".${anotherGrammarPath}"
+        entry Root returns IRoot:
+            name='b'
+        ;
+        `;
+
+        const validation = await validate(grammar);
+
+        expectNoIssues(validation);
+    });
+
+    test('Cross-reference to NOT imported global interface generate an error', async () => {
+        const grammar = `
+        grammar G
+        //import ".${anotherGrammarPath}" <-- no actual import
+        entry Root returns IRoot: // IRoot can still be used. Should be marked as error
+            name='b'
+        ;
+        `;
+        const validation = await validate(grammar);
+        const returnType = streamAllContents(validation.document.parseResult.value).find(GrammarAST.isReturnType)!;
+
+        expectError(validation, "Could not resolve reference to AbstractType named 'IRoot'.", {
+            node: returnType,
+            property: 'name'
+        });
     });
 });
