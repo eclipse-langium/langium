@@ -49,4 +49,45 @@ describe('Module generator', () => {
             expect(moduleString).toMatch(/^import .* IParserConfig/gm);
         });
     });
+
+    describe('File extension inclusion', () => {
+        test('should not include .js extension in imports', () => {
+            // arrange
+            const config = {
+                projectName: 'Magic',
+                languages: [],
+                [RelativePath]: '/path/to/magic',
+            };
+
+            // act
+            const moduleString = generateModule([], config, new Map());
+
+            // assert
+            expect(moduleString.includes("from './grammar';")).toBeTruthy();
+            expect(moduleString.includes("from './ast';")).toBeTruthy();
+
+            expect(moduleString.includes("from './grammar.js';")).toBeFalsy();
+            expect(moduleString.includes("from './ast.js';")).toBeFalsy();
+        });
+
+        test('should include .js extension in imports', () => {
+            // arrange
+            const config: LangiumConfig = {
+                projectName: 'Magic',
+                languages: [],
+                [RelativePath]: '/path/to/magic',
+                jsExtension: true
+            };
+
+            // act
+            const moduleString = generateModule([], config, new Map());
+
+            // assert
+            expect(moduleString.includes("from './grammar.js';")).toBeTruthy();
+            expect(moduleString.includes("from './ast.js';")).toBeTruthy();
+
+            expect(moduleString.includes("from './grammar';")).toBeFalsy();
+            expect(moduleString.includes("from './ast';")).toBeFalsy();
+        });
+    });
 });
