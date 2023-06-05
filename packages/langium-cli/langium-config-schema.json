@@ -99,6 +99,19 @@
                         "out"
                     ]
                 },
+                "railroad": {
+                    "description": "An object to describe railroad syntax diagram properties",
+                    "type": "object",
+                    "properties": {
+                        "out": {
+                            "description": "The output file path to the generated railroad html file",
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "out"
+                    ]
+                },
                 "chevrotainParserConfig": {
                     "$ref": "#/$defs/chevrotainParserConfig"
                 }

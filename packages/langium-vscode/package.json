@@ -19,6 +19,23 @@
     "vscode": "^1.67.0"
   },
   "contributes": {
+    "commands": [
+      {
+        "command": "langium.showRailroadDiagram",
+        "title": "Show railroad syntax diagram",
+        "category": "Langium",
+        "icon": "$(list-tree)"
+      }
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "command": "langium.showRailroadDiagram",
+          "when": "editorLangId == langium",
+          "group": "navigation"
+        }
+      ]
+    },
     "languages": [
       {
         "id": "langium",
@@ -73,6 +90,7 @@
   },
   "dependencies": {
     "langium": "1.2.0",
+    "langium-railroad": "1.2.0",
     "vscode-languageserver": "~8.0.2",
     "ignore": "~5.2.4"
   },

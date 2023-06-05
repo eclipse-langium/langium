@@ -4,8 +4,6 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-/* eslint-disable @typescript-eslint/no-unused-vars */
-
 declare module 'railroad-diagrams' {
 
     export type Direction = 'cw' | 'ccw';
@@ -182,27 +180,5 @@ declare module 'railroad-diagrams' {
     export class Block extends FakeSVG {
         constructor(options?: BlockOptions);
     }
-
-    export default {
-        Diagram: (args: DiagramItem[]) => new Diagram(),
-        ComplexDiagram: (args: DiagramItem[]) => new ComplexDiagram(),
-        Sequence: (args: DiagramItem[]) => new Sequence(),
-        Stack: (args: DiagramItem[]) => new Stack(),
-        OptionalSequence: (args: DiagramItem[]) => new OptionalSequence(),
-        AlternatingSequence: (args: DiagramItem[]) => new AlternatingSequence(),
-        Choice: (normal: number, args: DiagramItem[]) => new Choice(),
-        HorizontalChoice: (args: DiagramItem[]) => new HorizontalChoice(),
-        MultipleChoice: (args: DiagramItem[]) => new MultipleChoice(),
-        Optional: (item: DiagramItem, skip?: 'skip') => new Choice(),
-        OneOrMore: (item: DiagramItem, rep?: DiagramItem) => new OneOrMore(),
-        ZeroOrMore: (item: DiagramItem, rep?: DiagramItem, skip?: 'skip') => new ZeroOrMore(),
-        Start: (options?: StartOptions) => new Start(),
-        End: (options?: EndOptions) => new End(),
-        Terminal: (text: string, options?: TerminalOptions) => new Terminal(),
-        NonTerminal: (text: string, options?: NonTerminalOptions) => new NonTerminal(),
-        Comment: (text: string, options?: CommentOptions) => new Comment(),
-        Skip: () => new Skip(),
-        Block: (options?: BlockOptions) => new Block()
-    };
 
 }

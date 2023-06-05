@@ -258,12 +258,7 @@ export async function generate(config: LangiumConfig, options: GenerateOptions):
 
     for (const grammar of grammars) {
         const languageConfig = configMap.get(grammar);
-        const diagram = createGrammarDiagramHtml(grammar);
-        const diagramPath = path.resolve(relPath, 'diagram.html');
-        const cssPath = path.join(require.resolve('railroad-diagrams'), '..', 'railroad-diagrams.css');
-        const css = await fs.readFile(cssPath);
-        const fullHtml = '<style>' + css + '</style>' + diagram;
-        await writeWithFail(diagramPath, fullHtml, options);
+
         if (languageConfig?.textMate) {
             const genTmGrammar = generateTextMate(grammar, languageConfig);
             const textMatePath = path.resolve(relPath, languageConfig.textMate.out);
@@ -283,6 +278,13 @@ export async function generate(config: LangiumConfig, options: GenerateOptions):
             const prismPath = path.resolve(relPath, languageConfig.prism.out);
             log('log', options, `Writing prism grammar to ${chalk.white.bold(prismPath)}`);
             await writeHighlightGrammar(genPrismGrammar, prismPath, options);
+        }
+
+        if (languageConfig?.railroad) {
+            const diagram = createGrammarDiagramHtml(grammar);
+            const diagramPath = path.resolve(relPath, languageConfig.railroad.out);
+            log('log', options, `Writing railroad syntax diagram to ${chalk.white.bold(diagramPath)}`);
+            await writeWithFail(diagramPath, diagram, options);
         }
     }
 
