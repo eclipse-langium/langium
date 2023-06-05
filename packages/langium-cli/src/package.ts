@@ -29,6 +29,8 @@ export interface LangiumConfig {
     languages: LangiumLanguageConfig[]
     /** Main output directory for TypeScript code */
     out?: string
+    /** Should add `.js` extension in import statements of generated files */
+    jsExtension?: boolean
     /** Configure the chevrotain parser for all languages */
     chevrotainParserConfig?: IParserConfig,
     /** The following option is meant to be used only by Langium itself */

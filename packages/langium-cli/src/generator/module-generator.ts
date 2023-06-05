@@ -13,6 +13,7 @@ export function generateModule(grammars: Grammar[], config: LangiumConfig, gramm
     const parserConfig = config.chevrotainParserConfig;
     const hasIParserConfigImport = Boolean(parserConfig) || grammars.some(grammar => grammarConfigMap.get(grammar)?.chevrotainParserConfig !== undefined);
     const node = new CompositeGeneratorNode();
+    const importExtension = config.jsExtension ? '.js' : '';
 
     node.append(generatedHeader);
     if (config.langiumInternal) {
@@ -25,9 +26,11 @@ export function generateModule(grammars: Grammar[], config: LangiumConfig, gramm
     } else {
         node.append(`import type { LangiumGeneratedServices, LangiumGeneratedSharedServices, LangiumSharedServices, LangiumServices, LanguageMetaData, Module${hasIParserConfigImport ? ', IParserConfig' : ''} } from 'langium';`, NL);
     }
-
     node.append(
-        'import { ', config.projectName, "AstReflection } from './ast';", NL,
+        'import { ',
+        config.projectName,
+        `AstReflection } from './ast${importExtension}';`,
+        NL,
         'import { '
     );
     for (let i = 0; i < grammars.length; i++) {
@@ -39,7 +42,7 @@ export function generateModule(grammars: Grammar[], config: LangiumConfig, gramm
             }
         }
     }
-    node.append(" } from './grammar';", NL, NL);
+    node.append(` } from './grammar${importExtension}';`, NL, NL);
 
     for (const grammar of grammars) {
         if (grammar.name) {
