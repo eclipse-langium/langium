@@ -1,5 +1,10 @@
 # Change Log of `langium-cli`
 
+## v1.2.1 (June. 2023)
+
+* The generated code now performs split imports for runtime and compile time dependencies ([#1018](https://github.com/langium/langium/pull/1018)).
+* The new configuration field `importExtension` can be used to specify the file extension for generated imports ([#1072](https://github.com/langium/langium/pull/1072)).
+
 ## v1.2.0 (May. 2023)
 
 ### Prism Generator
@@ -26,10 +31,14 @@ Enable the generator by adding it to your `langium-config.json` file:
 
 * Various improvements to the type generator/validator. ([#942](https://github.com/langium/langium/pull/942), [#946](https://github.com/langium/langium/pull/946), [#947](https://github.com/langium/langium/pull/947), [#950](https://github.com/langium/langium/pull/950), [#973](https://github.com/langium/langium/pull/973), [#1003](https://github.com/langium/langium/pull/1003))
 
+---
+
 ## v1.1.0 (Feb. 2023)
 
 * Various improvements to the generated AST types ([#845](https://github.com/langium/langium/pull/845)).
 * The `--watch` mode now also watches referenced grammars, not only those directly used in the langium config file ([#908](https://github.com/langium/langium/pull/908)).
+
+---
 
 ## v1.0.0 (Dec. 2022) 🎉
 
