@@ -47,11 +47,23 @@ Schema:
             // Output path to syntax highlighting file
             out: string
         }
+        // Enable generating a monarch syntax highlighting file
+        monarch: {
+            // Output path to syntax highlighting file
+            out: string
+        }
+        // Enable generating a prism syntax highlighting file
+        prism: {
+            // Output path to syntax highlighting file
+            out: string
+        }
         // Configure the chevrotain parser for a single language
         chevrotainParserConfig: IParserConfig
     }[]
     // Main output directory for TypeScript code
     out: string
+    // Set the file extension for generated local imports (e.g. ".js")
+    importExtension: string
     // Configure the chevrotain parser for all languages
     chevrotainParserConfig: IParserConfig
 }
