@@ -13,7 +13,7 @@ export function generateModule(grammars: Grammar[], config: LangiumConfig, gramm
     const parserConfig = config.chevrotainParserConfig;
     const hasIParserConfigImport = Boolean(parserConfig) || grammars.some(grammar => grammarConfigMap.get(grammar)?.chevrotainParserConfig !== undefined);
     const node = new CompositeGeneratorNode();
-    const importExtension = config.jsExtension ? '.js' : '';
+    const importExtension = config.importExtension;
 
     node.append(generatedHeader);
     if (config.langiumInternal) {

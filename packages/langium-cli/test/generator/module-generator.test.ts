@@ -76,7 +76,7 @@ describe('Module generator', () => {
                 projectName: 'Magic',
                 languages: [],
                 [RelativePath]: '/path/to/magic',
-                jsExtension: true
+                importExtension: '.js'
             };
 
             // act
