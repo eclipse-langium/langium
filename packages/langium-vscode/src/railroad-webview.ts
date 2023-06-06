@@ -17,19 +17,40 @@ export function registerRailroadWebview(client: LanguageClient): void {
             RailroadDiagramPanel.current.update();
         }
     });
+    vscode.window.registerWebviewPanelSerializer(
+        RailroadDiagramPanel.viewType,
+        new RailroadDiagramSerializer(client)
+    );
+}
+
+class RailroadDiagramSerializer implements vscode.WebviewPanelSerializer {
+
+    private readonly client: LanguageClient;
+
+    constructor(client: LanguageClient) {
+        this.client = client;
+    }
+
+    deserializeWebviewPanel(webviewPanel: vscode.WebviewPanel, state: unknown): Thenable<void> {
+        if (typeof state === 'string') {
+            const uri = vscode.Uri.parse(state);
+            RailroadDiagramPanel.revive(webviewPanel, this.client, uri);
+        }
+        return Promise.resolve();
+    }
+
 }
 
 export class RailroadDiagramPanel implements vscode.Disposable {
 
     uri: string;
-    client: LanguageClient;
-    panel: vscode.WebviewPanel;
 
+    private panel: vscode.WebviewPanel;
+    private client: LanguageClient;
     private disposables: vscode.Disposable[] = [];
 
     static current?: RailroadDiagramPanel;
-
-    static viewType = 'railroadDiagram';
+    static readonly viewType = 'railroadDiagram';
 
     static createOrShow(client: LanguageClient, fileUri: vscode.Uri): void {
         if (this.current) {
@@ -38,9 +59,14 @@ export class RailroadDiagramPanel implements vscode.Disposable {
         }
         const panel = vscode.window.createWebviewPanel(
             RailroadDiagramPanel.viewType,
-            'Railroad Diagram ' + getFileName(fileUri.path),
+            getPanelTitle(fileUri.path),
             vscode.ViewColumn.Beside,
         );
+        this.current = new RailroadDiagramPanel(client, panel, fileUri);
+        this.current.update();
+    }
+
+    static revive(panel: vscode.WebviewPanel, client: LanguageClient, fileUri: vscode.Uri): void {
         this.current = new RailroadDiagramPanel(client, panel, fileUri);
         this.current.update();
     }
@@ -69,7 +95,7 @@ export class RailroadDiagramPanel implements vscode.Disposable {
             this.uri = uri;
         }
         try {
-            this.panel.title = 'Railroad Diagram ' + getFileName(this.uri);
+            this.panel.title = getPanelTitle(this.uri);
             const railroad: string | undefined = await this.client.sendRequest(RAILROAD_DIAGRAM_REQUEST, this.uri);
             if (railroad) {
                 this.panel.webview.html = railroad;
@@ -79,9 +105,8 @@ export class RailroadDiagramPanel implements vscode.Disposable {
             // It might already be disposed
         }
     }
-
 }
 
-function getFileName(uri: string): string {
-    return uri.substring(uri.lastIndexOf('/') + 1);
+function getPanelTitle(uri: string) {
+    return `Railroad Diagram ${uri.substring(uri.lastIndexOf('/') + 1)}`;
 }

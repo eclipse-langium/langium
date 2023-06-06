@@ -34,13 +34,25 @@ svg.railroad-diagram rect {
 }
 `.trim();
 
-export function createGrammarDiagramHtml(grammar: GrammarAST.Grammar): string {
+export interface GrammarDiagramOptions {
+    css?: string;
+    javascript?: string;
+}
+
+export function createGrammarDiagramHtml(grammar: GrammarAST.Grammar, options?: GrammarDiagramOptions): string {
     let text = `<!DOCTYPE HTML>
 <html>
 <head>
 <style>
 ${defaultCss}
-</style>
+</style>${options?.css ? `
+<style>
+${options.css}
+</style>` : ''}
+${options?.javascript ? `
+<script>
+${options.javascript}
+</script>` : ''}
 </head>
 <body>
 `;

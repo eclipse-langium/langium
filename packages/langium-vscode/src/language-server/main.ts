@@ -9,7 +9,7 @@ import { createLangiumGrammarServices, startLanguageServer } from 'langium';
 import { NodeFileSystem } from 'langium/node';
 import { createConnection, ProposedFeatures } from 'vscode-languageserver/node';
 import { LangiumGrammarWorkspaceManager } from './grammar-workspace-manager';
-import { registerRailroadHandler } from './railroad-handler';
+import { registerRailroadConnectionHandler } from './railroad-handler';
 
 const connection = createConnection(ProposedFeatures.all);
 
@@ -20,5 +20,5 @@ export const LangiumGrammarSharedModule: Module<LangiumSharedServices, PartialLa
 };
 
 const { shared, grammar } = createLangiumGrammarServices({ connection, ...NodeFileSystem }, LangiumGrammarSharedModule);
-registerRailroadHandler(connection, grammar);
+registerRailroadConnectionHandler(connection, grammar);
 startLanguageServer(shared);
