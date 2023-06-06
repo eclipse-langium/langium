@@ -34,9 +34,10 @@ jobs:
       shell: bash
       env:
         NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-      # Update the following list when a new package is added
+      # Update the following list when a new npm package is added
       run: |
         npm run publish:latest --provenance --workspace=langium
+        npm run publish:latest --provenance --workspace=langium-railroad
         npm run publish:latest --provenance --workspace=langium-cli
         npm run publish:latest --provenance --workspace=langium-sprotty
         npm run publish:latest --provenance --workspace=generator-langium
