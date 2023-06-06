@@ -35,6 +35,9 @@ class RailroadDiagramSerializer implements vscode.WebviewPanelSerializer {
         if (typeof state === 'string') {
             const uri = vscode.Uri.parse(state);
             RailroadDiagramPanel.revive(webviewPanel, this.client, uri);
+        } else {
+            // Invalid state, just close the webview
+            webviewPanel.dispose();
         }
         return Promise.resolve();
     }
@@ -75,6 +78,9 @@ export class RailroadDiagramPanel implements vscode.Disposable {
         this.uri = uri.toString();
         this.client = client;
         this.panel = panel;
+        this.panel.webview.options = {
+            enableScripts: true
+        };
         vscode.window.onDidChangeActiveTextEditor(e => {
             if (e?.document.uri.path.endsWith('.langium')) {
                 this.update(e.document.uri.toString());

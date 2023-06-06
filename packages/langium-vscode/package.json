@@ -73,7 +73,8 @@
     }
   },
   "activationEvents": [
-    "onLanguage:langium"
+    "onLanguage:langium",
+    "onWebviewPanel:railroadDiagram"
   ],
   "vsce": {
     "dependencies": false

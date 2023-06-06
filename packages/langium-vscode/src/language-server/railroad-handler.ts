@@ -29,7 +29,11 @@ export function registerRailroadConnectionHandler(connection: Connection, servic
                 return undefined;
             }
             const generatedRailroadHtml = createGrammarDiagramHtml(document.parseResult.value as Grammar, {
-                javascript: `const vscode = acquireVsCodeApi(); vscode.setState(${JSON.stringify(uri)});`
+                // Setting the state to the current uri allows us to open the webview on vscode restart
+                javascript: `
+                    const vscode = acquireVsCodeApi();
+                    vscode.setState(${JSON.stringify(uri)});
+                `
             });
             return generatedRailroadHtml;
         } catch {
