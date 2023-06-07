@@ -20,6 +20,7 @@ program
     .description('Generate code for a Langium grammar')
     .option('-f, --file <file>', 'the configuration file or package.json setting up the generator')
     .option('-w, --watch', 'enables watch mode', false)
+    .option('-m, --mode <mode>', 'use `development` or `production` for optimized builds for your current environment')
     .action((options: GenerateOptions) => {
         runGenerator(options).catch(err => {
             console.error(err);

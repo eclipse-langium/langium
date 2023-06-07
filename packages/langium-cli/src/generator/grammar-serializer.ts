@@ -7,8 +7,9 @@ import type { Grammar, LangiumServices } from 'langium';
 import type { LangiumConfig } from '../package';
 import { CompositeGeneratorNode, NL, normalizeEOL, toString } from 'langium';
 import { generatedHeader } from './util';
+import type { GenerateOptions } from '../generate';
 
-export function serializeGrammar(services: LangiumServices, grammars: Grammar[], config: LangiumConfig): string {
+export function serializeGrammar(services: LangiumServices, grammars: Grammar[], config: LangiumConfig, options: GenerateOptions): string {
     const node = new CompositeGeneratorNode();
     node.append(generatedHeader);
 
@@ -26,12 +27,14 @@ export function serializeGrammar(services: LangiumServices, grammars: Grammar[],
     for (let i = 0; i < grammars.length; i++) {
         const grammar = grammars[i];
         if (grammar.name) {
+            const production = (options.mode ?? config.mode) === 'production';
+            const delimiter = production ? "'" : '`';
             // The json serializer returns strings with \n line delimiter by default
             // We need to translate these line endings to the OS specific line ending
-            const json = normalizeEOL(services.serializer.JsonSerializer.serialize(grammar, { space: 2 }).replace(/\\/g, '\\\\').replace(/`/g, '\\`'));
+            const json = normalizeEOL(services.serializer.JsonSerializer.serialize(grammar, production ? undefined : { space: 2 }).replace(/\\/g, '\\\\').replace(/`/g, '\\`'));
             node.append(
                 'let loaded', grammar.name, 'Grammar: Grammar | undefined;', NL,
-                'export const ', grammar.name, 'Grammar = (): Grammar => loaded', grammar.name, 'Grammar ?? (loaded', grammar.name, 'Grammar = loadGrammarFromJson(`', json, '`));', NL
+                'export const ', grammar.name, 'Grammar = (): Grammar => loaded', grammar.name, 'Grammar ?? (loaded', grammar.name, 'Grammar = loadGrammarFromJson(', delimiter, json, delimiter, '));', NL
             );
             if (i < grammars.length - 1) {
                 node.append(NL);

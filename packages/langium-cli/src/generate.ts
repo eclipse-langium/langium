@@ -25,7 +25,8 @@ import fs from 'fs-extra';
 
 export type GenerateOptions = {
     file?: string;
-    watch: boolean
+    mode?: string;
+    watch: boolean;
 }
 
 export type ExtractTypesOptions = {
@@ -245,7 +246,7 @@ export async function generate(config: LangiumConfig, options: GenerateOptions):
     const genAst = generateAst(grammarServices, grammars, config);
     await writeWithFail(path.resolve(output, 'ast.ts'), genAst, options);
 
-    const serializedGrammar = serializeGrammar(grammarServices, grammars, config);
+    const serializedGrammar = serializeGrammar(grammarServices, grammars, config, options);
     await writeWithFail(path.resolve(output, 'grammar.ts'), serializedGrammar, options);
 
     const genModule = generateModule(grammars, config, configMap);
