@@ -8,9 +8,8 @@ import type { Grammar, LangiumServices } from 'langium';
 import type { LangiumConfig } from '../package';
 import { CompositeGeneratorNode, NL, normalizeEOL, toString } from 'langium';
 import { generatedHeader } from './util';
-import type { GenerateOptions } from '../generate';
 
-export function serializeGrammar(services: LangiumServices, grammars: Grammar[], config: LangiumConfig, options: GenerateOptions): string {
+export function serializeGrammar(services: LangiumServices, grammars: Grammar[], config: LangiumConfig): string {
     const node = new CompositeGeneratorNode();
     node.append(generatedHeader);
 
@@ -28,7 +27,7 @@ export function serializeGrammar(services: LangiumServices, grammars: Grammar[],
     for (let i = 0; i < grammars.length; i++) {
         const grammar = grammars[i];
         if (grammar.name) {
-            const production = (options.mode ?? config.mode) === 'production';
+            const production = config.mode === 'production';
             const delimiter = production ? "'" : '`';
             // The json serializer returns strings with \n line delimiter by default
             // We need to translate these line endings to the OS specific line ending

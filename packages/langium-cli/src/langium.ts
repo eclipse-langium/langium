@@ -7,7 +7,7 @@ import type { ExtractTypesOptions, GenerateOptions, GeneratorResult } from './ge
 import type { LangiumConfig } from './package';
 import chalk from 'chalk';
 import fs from 'fs-extra';
-import { Command } from 'commander';
+import { Command, Option } from 'commander';
 import { validate } from 'jsonschema';
 import { generate, generateTypes } from './generate';
 import { cliVersion, elapsedTime, getTime, log, schema } from './generator/util';
@@ -20,7 +20,7 @@ program
     .description('Generate code for a Langium grammar')
     .option('-f, --file <file>', 'the configuration file or package.json setting up the generator')
     .option('-w, --watch', 'enables watch mode', false)
-    .option('-m, --mode <mode>', 'use `development` or `production` for optimized builds for your current environment')
+    .addOption(new Option('-m, --mode <mode>', 'used mode for optimized builds for your current environment').choices(['development', 'production']))
     .action((options: GenerateOptions) => {
         runGenerator(options).catch(err => {
             console.error(err);
