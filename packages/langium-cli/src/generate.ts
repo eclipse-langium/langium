@@ -25,7 +25,8 @@ import fs from 'fs-extra';
 
 export type GenerateOptions = {
     file?: string;
-    watch: boolean
+    mode?: 'development' | 'production';
+    watch: boolean;
 }
 
 export type ExtractTypesOptions = {
@@ -165,6 +166,9 @@ export async function generate(config: LangiumConfig, options: GenerateOptions):
             success: false,
             files: []
         };
+    }
+    if (options.mode) {
+        config.mode = options.mode;
     }
     const all = await buildAll(config);
     const buildResult: (success: boolean) => GeneratorResult = (success: boolean) => ({

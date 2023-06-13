@@ -31,6 +31,8 @@ export interface LangiumConfig {
     out?: string
     /** File extension for import statements of generated files */
     importExtension?: string
+    /** Mode used to generate optimized files for development or production environments */
+    mode?: 'development' | 'production';
     /** Configure the chevrotain parser for all languages */
     chevrotainParserConfig?: IParserConfig,
     /** The following option is meant to be used only by Langium itself */
