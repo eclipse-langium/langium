@@ -53,7 +53,7 @@ export class RailroadDiagramPanel implements vscode.Disposable {
     private disposables: vscode.Disposable[] = [];
 
     static current?: RailroadDiagramPanel;
-    static readonly viewType = 'railroadDiagram';
+    static readonly viewType = 'LangiumRailroadDiagram';
 
     static createOrShow(client: LanguageClient, fileUri: vscode.Uri): void {
         if (this.current) {

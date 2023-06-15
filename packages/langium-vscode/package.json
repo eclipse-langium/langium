@@ -22,7 +22,7 @@
     "commands": [
       {
         "command": "langium.showRailroadDiagram",
-        "title": "Show railroad syntax diagram",
+        "title": "Show Railroad Syntax Diagram",
         "category": "Langium",
         "icon": "$(list-tree)"
       }
