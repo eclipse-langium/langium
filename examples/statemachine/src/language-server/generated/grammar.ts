@@ -290,7 +290,7 @@ export const StatemachineGrammar = (): Grammar => loadedStatemachineGrammar ?? (
       "name": "WS",
       "definition": {
         "$type": "RegexToken",
-        "regex": "\\\\s+"
+        "regex": "/\\\\s+/"
       },
       "fragment": false
     },
@@ -299,7 +299,7 @@ export const StatemachineGrammar = (): Grammar => loadedStatemachineGrammar ?? (
       "name": "ID",
       "definition": {
         "$type": "RegexToken",
-        "regex": "[_a-zA-Z][\\\\w_]*"
+        "regex": "/[_a-zA-Z][\\\\w_]*/"
       },
       "fragment": false,
       "hidden": false
@@ -310,7 +310,7 @@ export const StatemachineGrammar = (): Grammar => loadedStatemachineGrammar ?? (
       "name": "ML_COMMENT",
       "definition": {
         "$type": "RegexToken",
-        "regex": "\\\\/\\\\*[\\\\s\\\\S]*?\\\\*\\\\/"
+        "regex": "/\\\\/\\\\*[\\\\s\\\\S]*?\\\\*\\\\//"
       },
       "fragment": false
     },
@@ -320,7 +320,7 @@ export const StatemachineGrammar = (): Grammar => loadedStatemachineGrammar ?? (
       "name": "SL_COMMENT",
       "definition": {
         "$type": "RegexToken",
-        "regex": "\\\\/\\\\/[^\\\\n\\\\r]*"
+        "regex": "/\\\\/\\\\/[^\\\\n\\\\r]*/"
       },
       "fragment": false
     }

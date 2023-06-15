@@ -279,7 +279,7 @@ function prettyPrintState(state: State, node: CompositeGeneratorNode): void {
 function prettyPrintRule(ruleOrState: Rule | State): CompositeGeneratorNode {
     if (isRule(ruleOrState)) {
         // extract rule pattern, either just a string or a regex w/ parts
-        const rulePatt = ruleOrState.regex instanceof RegExp ? getTerminalParts(ruleOrState.regex).join('') : `/${ruleOrState.regex}/`;
+        const rulePatt = ruleOrState.regex instanceof RegExp ? ruleOrState.regex.toString() : `/${ruleOrState.regex}/`;
         return new CompositeGeneratorNode('{ regex: ' + rulePatt + ', action: ' + prettyPrintAction(ruleOrState.action) + ' },');
     } else {
         // include another state by name, implicitly includes all of its contents
@@ -329,8 +329,8 @@ function getMonarchTokenName(rule: GrammarAST.TerminalRule): string {
 function getWhitespaceRules(grammar: Grammar): Rule[] {
     const rules: Rule[] = [];
     for (const rule of grammar.rules) {
-        if (GrammarAST.isTerminalRule(rule) && GrammarAST.isRegexToken(rule.definition)) {
-            const regex = new RegExp(terminalRegex(rule));
+        if (GrammarAST.isTerminalRule(rule)) {
+            const regex = terminalRegex(rule);
 
             if (!isCommentTerminal(rule) && !isWhitespaceRegExp(regex)) {
                 // skip rules that are not comments or whitespace
@@ -340,20 +340,20 @@ function getWhitespaceRules(grammar: Grammar): Rule[] {
             // token name is either comment or whitespace
             const tokenName = isCommentTerminal(rule) ? 'comment' : 'white';
 
-            const part = getTerminalParts(terminalRegex(rule))[0];
+            const part = getTerminalParts(regex)[0];
 
             // check if this is a comment terminal w/ a start & end sequence (multi-line)
             if (part.start !== '' && part.end !== '' && isCommentTerminal(rule)) {
                 // state-based comment rule, only add push to jump into it
                 rules.push({
-                    regex: part.start.replace('/', '\\/'),
+                    regex: part.start,
                     action: { token: tokenName, next: '@' + tokenName }
                 });
 
             } else {
                 // single regex rule, generally for whitespace
                 rules.push({
-                    regex: rule.definition.regex,
+                    regex: regex,
                     action: { token: tokenName }
                 });
             }
@@ -371,15 +371,15 @@ function getWhitespaceRules(grammar: Grammar): Rule[] {
 function getCommentRules(grammar: Grammar): Rule[] {
     const rules: Rule[] = [];
     for (const rule of grammar.rules) {
-        if (GrammarAST.isTerminalRule(rule) && isCommentTerminal(rule) && GrammarAST.isRegexToken(rule.definition)) {
+        if (GrammarAST.isTerminalRule(rule) && isCommentTerminal(rule)) {
             const tokenName = 'comment';
             const part = getTerminalParts(terminalRegex(rule))[0];
             if (part.start !== '' && part.end !== '') {
                 // rules to manage comment start/end
                 // rule order matters
 
-                const start = part.start.replace('/', '\\/');
-                const end = part.end.replace('/', '\\/');
+                const start = part.start;
+                const end = part.end;
 
                 // 1st, add anything that's not in the start sequence
                 rules.push({
@@ -413,8 +413,8 @@ function getCommentRules(grammar: Grammar): Rule[] {
 function getTerminalRules(grammar: Grammar): Rule[] {
     const rules: Rule[] = [];
     for (const rule of grammar.rules) {
-        if (GrammarAST.isTerminalRule(rule) && !isCommentTerminal(rule) && GrammarAST.isRegexToken(rule.definition)) {
-            const regex = new RegExp(terminalRegex(rule));
+        if (GrammarAST.isTerminalRule(rule) && !isCommentTerminal(rule)) {
+            const regex = terminalRegex(rule);
 
             if (isWhitespaceRegExp(regex)) {
                 // disallow terminal rules that match whitespace
@@ -439,7 +439,7 @@ function getTerminalRules(grammar: Grammar): Rule[] {
             }
 
             rules.push({
-                regex: rule.definition.regex,
+                regex,
                 action
             });
         }

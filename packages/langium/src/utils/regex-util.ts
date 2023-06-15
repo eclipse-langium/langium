@@ -142,7 +142,7 @@ export function isWhitespaceRegExp(value: RegExp | string): boolean {
 }
 
 export function escapeRegExp(value: string): string {
-    return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return value.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&');
 }
 
 export function getCaseInsensitivePattern(keyword: string): string {

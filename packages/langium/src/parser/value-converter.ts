@@ -45,7 +45,6 @@ export class DefaultValueConverter implements ValueConverter {
             case 'INT': return convertInt(input);
             case 'STRING': return convertString(input);
             case 'ID': return convertID(input);
-            case 'REGEXLITERAL': return convertRegexLiteral(input);
         }
         switch (getRuleType(rule)?.toLowerCase()) {
             case 'number': return convertNumber(input);
@@ -82,10 +81,6 @@ function convertEscapeCharacter(char: string): string {
         case '0': return '\0';
         default: return char;
     }
-}
-
-export function convertRegexLiteral(input: string): string {
-    return input.substring(1, input.length - 1);
 }
 
 export function convertID(input: string): string {
