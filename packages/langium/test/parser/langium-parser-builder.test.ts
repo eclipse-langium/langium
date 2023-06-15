@@ -622,6 +622,29 @@ describe('Fragment rules', () => {
 
 });
 
+describe('Unicode terminal rules', () => {
+
+    const grammar = `
+    grammar test
+    entry Model: value=UnicodeID;
+    terminal UnicodeID returns string: /\\p{L}(\\p{L}|\\p{N})*/u;
+    hidden terminal WS: /\\s+/;
+    `;
+    const parser = parserFromGrammar(grammar);
+
+    for (const value of ['John', 'Jörg', 'José', '佐藤', '李']) {
+        test(`Parses ${value} using unicode terminal`, () => {
+            return expectParse(value);
+        });
+    }
+
+    async function expectParse(value: string): Promise<void> {
+        const result = (await parser).parse(value);
+        expect(result.value).toHaveProperty('value', value);
+    }
+
+});
+
 describe('ALL(*) parser', () => {
 
     const grammar = `

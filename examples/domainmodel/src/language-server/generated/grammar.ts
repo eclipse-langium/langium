@@ -363,7 +363,7 @@ export const DomainModelGrammar = (): Grammar => loadedDomainModelGrammar ?? (lo
       "name": "WS",
       "definition": {
         "$type": "RegexToken",
-        "regex": "\\\\s+"
+        "regex": "/\\\\s+/"
       },
       "fragment": false
     },
@@ -372,7 +372,7 @@ export const DomainModelGrammar = (): Grammar => loadedDomainModelGrammar ?? (lo
       "name": "ID",
       "definition": {
         "$type": "RegexToken",
-        "regex": "[_a-zA-Z][\\\\w_]*"
+        "regex": "/[_a-zA-Z][\\\\w_]*/"
       },
       "fragment": false,
       "hidden": false
@@ -383,7 +383,7 @@ export const DomainModelGrammar = (): Grammar => loadedDomainModelGrammar ?? (lo
       "name": "ML_COMMENT",
       "definition": {
         "$type": "RegexToken",
-        "regex": "\\\\/\\\\*[\\\\s\\\\S]*?\\\\*\\\\/"
+        "regex": "/\\\\/\\\\*[\\\\s\\\\S]*?\\\\*\\\\//"
       },
       "fragment": false
     },
@@ -393,7 +393,7 @@ export const DomainModelGrammar = (): Grammar => loadedDomainModelGrammar ?? (lo
       "name": "SL_COMMENT",
       "definition": {
         "$type": "RegexToken",
-        "regex": "\\\\/\\\\/[^\\\\n\\\\r]*"
+        "regex": "/\\\\/\\\\/[^\\\\n\\\\r]*/"
       },
       "fragment": false
     }

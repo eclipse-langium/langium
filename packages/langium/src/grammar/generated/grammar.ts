@@ -3628,7 +3628,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "name": "ID",
       "definition": {
         "$type": "RegexToken",
-        "regex": "\\\\^?[_a-zA-Z][\\\\w_]*"
+        "regex": "/\\\\^?[_a-zA-Z][\\\\w_]*/"
       },
       "fragment": false,
       "hidden": false
@@ -3638,7 +3638,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "name": "STRING",
       "definition": {
         "$type": "RegexToken",
-        "regex": "\\"(\\\\\\\\.|[^\\"\\\\\\\\])*\\"|'(\\\\\\\\.|[^'\\\\\\\\])*'"
+        "regex": "/\\"(\\\\\\\\.|[^\\"\\\\\\\\])*\\"|'(\\\\\\\\.|[^'\\\\\\\\])*'/"
       },
       "fragment": false,
       "hidden": false
@@ -3652,7 +3652,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       },
       "definition": {
         "$type": "RegexToken",
-        "regex": "\\\\/(?![*+?])(?:[^\\\\r\\\\n\\\\[/\\\\\\\\]|\\\\\\\\.|\\\\[(?:[^\\\\r\\\\n\\\\]\\\\\\\\]|\\\\\\\\.)*\\\\])+\\\\/"
+        "regex": "/\\\\/(?![*+?])(?:[^\\\\r\\\\n\\\\[/\\\\\\\\]|\\\\\\\\.|\\\\[(?:[^\\\\r\\\\n\\\\]\\\\\\\\]|\\\\\\\\.)*\\\\])+\\\\/[a-z]*/"
       },
       "fragment": false,
       "hidden": false
@@ -3663,7 +3663,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "name": "WS",
       "definition": {
         "$type": "RegexToken",
-        "regex": "\\\\s+"
+        "regex": "/\\\\s+/"
       },
       "fragment": false
     },
@@ -3673,7 +3673,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "name": "ML_COMMENT",
       "definition": {
         "$type": "RegexToken",
-        "regex": "\\\\/\\\\*[\\\\s\\\\S]*?\\\\*\\\\/"
+        "regex": "/\\\\/\\\\*[\\\\s\\\\S]*?\\\\*\\\\//"
       },
       "fragment": false
     },
@@ -3683,7 +3683,7 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
       "name": "SL_COMMENT",
       "definition": {
         "$type": "RegexToken",
-        "regex": "\\\\/\\\\/[^\\\\n\\\\r]*"
+        "regex": "/\\\\/\\\\/[^\\\\n\\\\r]*/"
       },
       "fragment": false
     }

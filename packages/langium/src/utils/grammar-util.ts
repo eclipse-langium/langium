@@ -103,7 +103,7 @@ export function getCrossReferenceTerminal(crossRef: ast.CrossReference): ast.Abs
  * that contains visible characters is considered a comment.
  */
 export function isCommentTerminal(terminalRule: ast.TerminalRule): boolean {
-    return terminalRule.hidden && !' '.match(terminalRegex(terminalRule));
+    return terminalRule.hidden && !terminalRegex(terminalRule).test(' ');
 }
 
 /**

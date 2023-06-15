@@ -39,7 +39,9 @@ export class DefaultLexer implements Lexer {
         });
         this.tokenTypes = this.toTokenTypeDictionary(tokens);
         const lexerTokens = isTokenTypeDictionary(tokens) ? Object.values(tokens) : tokens;
-        this.chevrotainLexer = new ChevrotainLexer(lexerTokens);
+        this.chevrotainLexer = new ChevrotainLexer(lexerTokens, {
+            positionTracking: 'full'
+        });
     }
 
     get definition(): TokenTypeDictionary {

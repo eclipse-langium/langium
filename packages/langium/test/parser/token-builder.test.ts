@@ -14,6 +14,11 @@ const grammarServices = createLangiumGrammarServices(EmptyFileSystem).grammar;
 const helper = parseHelper<Grammar>(grammarServices);
 const tokenBuilder = grammarServices.parser.TokenBuilder;
 
+async function getTokens(grammarString: string): Promise<TokenType[]> {
+    const grammar = (await helper(grammarString)).parseResult.value;
+    return tokenBuilder.buildTokens(grammar) as TokenType[];
+}
+
 describe('tokenBuilder', () => {
 
     test('should only create non-fragment terminals', async () => {
@@ -58,11 +63,6 @@ describe('tokenBuilder', () => {
         expect(tokens[2].name).toBe('C');
     });
 
-    async function getTokens(grammarString: string): Promise<TokenType[]> {
-        const grammar = (await helper(grammarString)).parseResult.value;
-        return tokenBuilder.buildTokens(grammar) as TokenType[];
-    }
-
 });
 
 describe('tokenBuilder#longerAlts', () => {
@@ -78,8 +78,7 @@ describe('tokenBuilder#longerAlts', () => {
         Main: {infer Main} 'A' 'AB' 'ABC';
         terminal AB: /ABD?/;
         `;
-        const grammar = (await helper(text)).parseResult.value;
-        const tokens = tokenBuilder.buildTokens(grammar) as TokenType[];
+        const tokens = await getTokens(text);
         aToken = tokens[2];
         abToken = tokens[1];
         abcToken = tokens[0];
@@ -140,31 +139,56 @@ describe('tokenBuilder#caseInsensitivePattern', () => {
     });
 
     test('should create from keyword with special symbols', () => {
-        expect(implementPattern).toEqual(new RegExp(/@[iI][mM][pP][lL][eE][mM][eE][nN][tT]/));
+        expect(implementPattern).toEqual(/@[iI][mM][pP][lL][eE][mM][eE][nN][tT]/);
     });
 
     test('should create from keyword with special escape symbols', () => {
-        expect(strangePattern).toEqual(new RegExp(/\\[sS][tT][rR][aA][nN][gG][eE]\\/));
+        expect(strangePattern).toEqual(/\\[sS][tT][rR][aA][nN][gG][eE]\\/);
     });
 
     test('should create from mixed-case word', () => {
-        expect(abcPattern).toEqual(new RegExp(/[aA][bB][cC]/));
+        expect(abcPattern).toEqual(/[aA][bB][cC]/);
     });
 
     test('should create from lower-case word', () => {
-        expect(abPattern).toEqual(new RegExp(/[aA][bB]/));
+        expect(abPattern).toEqual(/[aA][bB]/);
     });
 
     test('should create from upper-case word', () => {
-        expect(aPattern).toEqual(new RegExp(/[aA]/));
+        expect(aPattern).toEqual(/[aA]/);
     });
 
     test('should ignore terminals', () => {
-        expect(booleanTerminalPattern).toEqual(new RegExp(/true|false/));
+        expect(booleanTerminalPattern).toEqual(/true|false/);
     });
 
     test('should ignore terminals with ?', () => {
-        expect(abTerminalPattern).toEqual(new RegExp(/ABD?/));
+        expect(abTerminalPattern).toEqual(/ABD?/);
+    });
+
+});
+
+describe('tokenBuilder#flagsForRegex', () => {
+
+    test('Preserves all flags', async () => {
+        const tokens = await getTokens(`
+        grammar test
+        entry Main: a=A;
+        terminal A: /A/is;
+        `);
+        const tokenA = tokens[0];
+        expect(tokenA.PATTERN).toEqual(/A/is);
+    });
+
+    test('Ignores invalid flags', async () => {
+        const tokens = await getTokens(`
+        grammar test
+        entry Main: a=A;
+        terminal A: /A/abc;
+        `);
+        const tokenA = tokens[0];
+        expect(tokenA.PATTERN).toEqual(/A/);
+        expect((tokenA.PATTERN as RegExp).flags).toEqual('');
     });
 
 });

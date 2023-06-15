@@ -187,14 +187,27 @@ export function getRuleType(rule: ast.AbstractRule): string {
     }
 }
 
-export function terminalRegex(terminalRule: ast.TerminalRule): string {
-    return abstractElementToRegex(terminalRule.definition);
+export function terminalRegex(terminalRule: ast.TerminalRule): RegExp {
+    const flags: Flags = {
+        s: false,
+        i: false,
+        u: false
+    };
+    const source = abstractElementToRegex(terminalRule.definition, flags);
+    const flagText = Object.entries(flags).filter(([, value]) => value).map(([name]) => name).join('');
+    return new RegExp(source, flagText);
 }
 
 // Using [\s\S]* allows to match everything, compared to . which doesn't match line terminators
 const WILDCARD = /[\s\S]/.source;
 
-function abstractElementToRegex(element: ast.AbstractElement): string {
+type Flags = {
+    s: boolean;
+    i: boolean;
+    u: boolean;
+}
+
+function abstractElementToRegex(element: ast.AbstractElement, flags?: Flags): string {
     if (ast.isTerminalAlternatives(element)) {
         return terminalAlternativesToRegex(element);
     } else if (ast.isTerminalGroup(element)) {
@@ -206,7 +219,7 @@ function abstractElementToRegex(element: ast.AbstractElement): string {
         if (!rule) {
             throw new Error('Missing rule reference.');
         }
-        return withCardinality(terminalRegex(rule), {
+        return withCardinality(abstractElementToRegex(rule.definition), {
             cardinality: element.cardinality,
             lookahead: element.lookahead
         });
@@ -215,7 +228,15 @@ function abstractElementToRegex(element: ast.AbstractElement): string {
     } else if (ast.isUntilToken(element)) {
         return untilTokenToRegex(element);
     } else if (ast.isRegexToken(element)) {
-        return withCardinality(element.regex, {
+        const lastSlash = element.regex.lastIndexOf('/');
+        const source = element.regex.substring(1, lastSlash);
+        const regexFlags = element.regex.substring(lastSlash + 1);
+        if (flags) {
+            flags.i = regexFlags.includes('i');
+            flags.s = regexFlags.includes('s');
+            flags.u = regexFlags.includes('u');
+        }
+        return withCardinality(source, {
             cardinality: element.cardinality,
             lookahead: element.lookahead,
             wrap: false
@@ -231,14 +252,14 @@ function abstractElementToRegex(element: ast.AbstractElement): string {
 }
 
 function terminalAlternativesToRegex(alternatives: ast.TerminalAlternatives): string {
-    return withCardinality(alternatives.elements.map(abstractElementToRegex).join('|'), {
+    return withCardinality(alternatives.elements.map(e => abstractElementToRegex(e)).join('|'), {
         cardinality: alternatives.cardinality,
         lookahead: alternatives.lookahead
     });
 }
 
 function terminalGroupToRegex(group: ast.TerminalGroup): string {
-    return withCardinality(group.elements.map(abstractElementToRegex).join(''), {
+    return withCardinality(group.elements.map(e => abstractElementToRegex(e)).join(''), {
         cardinality: group.cardinality,
         lookahead: group.lookahead
     });
