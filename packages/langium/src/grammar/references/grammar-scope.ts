@@ -9,7 +9,7 @@ import type { LangiumServices } from '../../services';
 import type { AstNode, AstNodeDescription, ReferenceInfo } from '../../syntax-tree';
 import type { Stream } from '../../utils/stream';
 import type { AstNodeLocator } from '../../workspace/ast-node-locator';
-import type { LangiumDocument, PrecomputedScopes } from '../../workspace/documents';
+import type { DocumentSegment, LangiumDocument, PrecomputedScopes } from '../../workspace/documents';
 import { DefaultScopeComputation } from '../../references/scope-computation';
 import { DefaultScopeProvider, EMPTY_SCOPE, StreamScope } from '../../references/scope-provider';
 import { findRootNode, getContainerOfType, getDocument, streamAllContents } from '../../utils/ast-util';
@@ -132,11 +132,14 @@ export class LangiumGrammarScopeComputation extends DefaultScopeComputation {
     }
 
     protected createInterfaceDescription(node: AstNode, name: string, document: LangiumDocument = getDocument(node)): AstNodeDescription {
-        const nameNode = this.nameProvider.getNameNode(node) ?? node.$cstNode;
+        let nameNodeSegment: DocumentSegment | undefined;
+        const nameSegmentGetter = () => nameNodeSegment ??= toDocumentSegment(this.nameProvider.getNameNode(node) ?? node.$cstNode);
         return {
             node,
             name,
-            nameSegment: toDocumentSegment(nameNode),
+            get nameSegment() {
+                return nameSegmentGetter();
+            },
             selectionSegment: toDocumentSegment(node.$cstNode),
             type: 'Interface',
             documentUri: document.uri,

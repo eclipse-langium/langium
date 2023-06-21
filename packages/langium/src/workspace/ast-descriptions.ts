@@ -52,11 +52,14 @@ export class DefaultAstNodeDescriptionProvider implements AstNodeDescriptionProv
         if (!name) {
             throw new Error(`Node at path ${path} has no name.`);
         }
-        const nameNode = this.nameProvider.getNameNode(node) ?? node.$cstNode;
+        let nameNodeSegment: DocumentSegment | undefined;
+        const nameSegmentGetter = () => nameNodeSegment ??= toDocumentSegment(this.nameProvider.getNameNode(node) ?? node.$cstNode);
         return {
             node,
             name,
-            nameSegment: toDocumentSegment(nameNode),
+            get nameSegment() {
+                return nameSegmentGetter();
+            },
             selectionSegment: toDocumentSegment(node.$cstNode),
             type: node.$type,
             documentUri: document.uri,
