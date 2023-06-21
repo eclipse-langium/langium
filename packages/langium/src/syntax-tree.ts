@@ -219,7 +219,7 @@ export interface CstNode extends DocumentSegment {
     /** The actual text */
     readonly text: string;
     /** The root CST node */
-    readonly root: CompositeCstNode;
+    readonly root: RootCstNode;
     /** The grammar element from which this node was parsed */
     readonly feature: AbstractElement;
     /** The AST node created from this CST node */
