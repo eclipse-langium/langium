@@ -65,16 +65,19 @@
   "scripts": {
     "prepare": "npm run copy:schema",
     "copy:schema": "shx cp ../langium-cli/langium-config-schema.json ./data",
-    "vscode:prepublish": "npm run clean && tsc --noEmit && npm run lint && node esbuild.js --minify && npm run copy:schema",
+    "vscode:prepublish": "npm run clean && tsc --noEmit && npm run lint && node esbuild.mjs --minify && npm run copy:schema",
     "clean": "shx rm -rf out",
-    "build": "node esbuild.js && tsc --noEmit",
-    "watch": "node esbuild.js --watch",
+    "build": "node esbuild.mjs && tsc --noEmit",
+    "watch": "node esbuild.mjs --watch",
     "lint": "eslint src --ext ts"
   },
   "dependencies": {
     "langium": "1.2.0",
     "vscode-languageserver": "~8.0.2",
     "ignore": "~5.2.4"
+  },
+  "devDependencies": {
+    "esbuild": "^0.18.6"
   },
   "volta": {
     "node": "16.19.0",
