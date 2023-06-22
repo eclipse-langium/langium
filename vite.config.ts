@@ -16,6 +16,7 @@ export default defineConfig({
         },
         deps: {
             interopDefault: true
-        }
+        },
+        include: ['**/*.test.ts']
     }
 });
