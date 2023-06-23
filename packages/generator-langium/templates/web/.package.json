@@ -4,7 +4,7 @@
         "prepare:public": "shx mkdir -p ./public && shx cp -fr ./src/static/* ./public/",
         "copy:monaco-editor-wrapper": "shx cp -fr ./node_modules/monaco-editor-wrapper/bundle ./public/monaco-editor-wrapper",
         "copy:monaco-workers": "shx cp -fr ./node_modules/monaco-editor-workers/dist/ ./public/monaco-editor-workers",
-        "copy:monarch-syntax": "shx cp -fr ./out/syntaxes/ ./public/syntaxes",
+        "copy:monarch-syntax": "shx cp -fr ./out/syntaxes ./public/syntaxes",
         "build:web": "npm run build && npm run build:monarch && npm run prepare:public && npm run build:worker && npm run copy:monaco-editor-wrapper && npm run copy:monaco-workers && npm run copy:monarch-syntax",
         "build:monarch": "tsc -b tsconfig.monarch.json",
         "serve": "node ./out/web/app.js"
