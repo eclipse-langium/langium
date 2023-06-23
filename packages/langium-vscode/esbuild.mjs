@@ -18,13 +18,13 @@ function padZeroes(i) {
 const plugins = [{
     name: 'watch-plugin',
     setup(build) {
-      build.onEnd(result => {
-        if (result.errors.length === 0) {
-            console.log(getTime() + success);
-        }
-      });
+        build.onEnd(result => {
+            if (result.errors.length === 0) {
+                console.log(getTime() + success);
+            }
+        });
     },
-  }];
+}];
 
 const ctx = await esbuild.context({
     entryPoints: ['src/extension.ts', 'src/language-server/main.ts'],
@@ -32,7 +32,7 @@ const ctx = await esbuild.context({
     bundle: true,
     target: "es6",
     loader: { '.ts': 'ts' },
-    external: ['vscode'], 
+    external: ['vscode'],
     platform: 'node',
     sourcemap: !minify,
     minify,
