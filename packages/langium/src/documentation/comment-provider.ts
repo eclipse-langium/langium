@@ -15,12 +15,12 @@ export interface CommentProvider {
 }
 
 export class DefaultCommentProvider implements CommentProvider {
-    protected readonly grammarConfig: GrammarConfig;
+    protected readonly grammarConfig: () => GrammarConfig;
     constructor(services: LangiumServices) {
-        this.grammarConfig = services.parser.GrammarConfig;
+        this.grammarConfig = () => services.parser.GrammarConfig;
     }
     getCommentTokenTypes(): string[] {
-        return this.grammarConfig.multilineCommentRules;
+        return this.grammarConfig().multilineCommentRules;
     }
     getComment(node: AstNode): string | undefined {
         return findCommentNode(node.$cstNode, this.getCommentTokenTypes())?.text;
