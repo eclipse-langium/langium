@@ -9,6 +9,7 @@ import fs from 'fs-extra';
 import path from 'path';
 import * as readline from 'readline';
 import chalk from 'chalk';
+import { terminalRegex } from 'langium/src/grammar/internal-grammar-util';
 
 //eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function log(level: 'log' | 'warn' | 'error', options: { watch: boolean }, message: string, ...args: any[]): void {
@@ -94,3 +95,14 @@ export async function getUserChoice<R extends string>(text: string, values: R[],
 export const cliVersion = getLangiumCliVersion();
 export const generatedHeader = getGeneratedHeader();
 export const schema = fs.readJson(path.resolve(__dirname, '../../langium-config-schema.json'), { encoding: 'utf-8' });
+
+export function collectTerminalRegexps(grammar: Grammar): Record<string, RegExp> {
+    const result: Record<string, RegExp> = {};
+    const reachableRules = getAllReachableRules(grammar, false);
+    for (const terminalRule of stream(reachableRules).filter(GrammarAST.isTerminalRule)) {
+        const name = terminalRule.name;
+        const regexp = terminalRegex(terminalRule);
+        result[name] = regexp;
+    }
+    return result;
+}

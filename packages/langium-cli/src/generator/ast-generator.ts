@@ -8,7 +8,7 @@ import type { AstTypes, Property } from 'langium/lib/grammar/type-system';
 import type { LangiumConfig } from '../package';
 import { IndentNode, CompositeGeneratorNode, NL, toString, streamAllContents, MultiMap, GrammarAST } from 'langium';
 import { collectAst, collectTypeHierarchy, findReferenceTypes, hasArrayType, isAstType, hasBooleanType, mergeTypesAndInterfaces } from 'langium/lib/grammar/type-system';
-import { generatedHeader } from './util';
+import { collectTerminalRegexps, generatedHeader } from './util';
 
 export function generateAst(services: LangiumServices, grammars: Grammar[], config: LangiumConfig): string {
     const astTypes = collectAst(grammars, services.shared.workspace.LangiumDocuments);
@@ -29,6 +29,8 @@ export function generateAst(services: LangiumServices, grammars: Grammar[], conf
 
     astTypes.unions = astTypes.unions.filter(e => isAstType(e.type));
     fileNode.append(generateAstReflection(config, astTypes));
+
+    generateTerminalConstants(fileNode, grammars);
 
     return toString(fileNode);
 }
@@ -234,3 +236,22 @@ function groupBySupertypes(astTypes: AstTypes): MultiMap<string, string> {
 
     return superToChild;
 }
+
+function generateTerminalConstants(fileNode: CompositeGeneratorNode, grammars: Grammar[]) {
+    let collection: Record<string, RegExp> = {};
+    grammars.forEach(grammar => {
+        const terminalConstants = collectTerminalRegexps(grammar);
+        collection = {...collection, ...terminalConstants};
+    });
+
+    fileNode.append(`export const TerminalNames = ${Object.keys(collection).map(name => `'${name}'`).join(' | ')};`, NL, NL);
+
+    fileNode.append('export const TerminalRegExps: Record<TerminalNames, RegExp> = {');
+    fileNode.indent(node => {
+        for (const [name, regexp] of Object.entries(collection)) {
+            node.append(`${name} : /${regexp.source}/${regexp.flags},`, NL);
+        }
+    });
+    fileNode.append('};', NL, NL);
+}
+
