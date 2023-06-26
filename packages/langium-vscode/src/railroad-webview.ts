@@ -10,6 +10,7 @@ import { DOCUMENTS_VALIDATED_NOTIFICATION, RAILROAD_DIAGRAM_REQUEST } from './la
 
 export function registerRailroadWebview(client: LanguageClient): void {
     vscode.commands.registerCommand('langium.showRailroadDiagram', (uri?: vscode.Uri) => {
+        uri ??= vscode.window.activeTextEditor?.document.uri;
         if (uri instanceof vscode.Uri) {
             RailroadDiagramPanel.createOrShow(client, uri);
         }
