@@ -46,6 +46,7 @@ import { DefaultIndexManager } from './workspace/index-manager';
 import { DefaultWorkspaceManager } from './workspace/workspace-manager';
 import { DefaultLexer } from './parser/lexer';
 import { JSDocDocumentationProvider } from './documentation';
+import { DefaultCommentProvider } from './documentation/comment-provider';
 import { LangiumParserErrorMessageProvider } from './parser/langium-parser';
 
 /**
@@ -62,6 +63,7 @@ export interface DefaultModuleContext {
 export function createDefaultModule(context: DefaultModuleContext): Module<LangiumServices, LangiumDefaultServices> {
     return {
         documentation: {
+            CommentProvider: (services) => new DefaultCommentProvider(services),
             DocumentationProvider: (services) => new JSDocDocumentationProvider(services)
         },
         parser: {

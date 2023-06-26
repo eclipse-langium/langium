@@ -4,6 +4,8 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import type { GrammarConfig } from '../grammar';
+import type { LangiumServices } from '../services';
 import type { AstNode } from '../syntax-tree';
 import { findCommentNode } from '../utils/cst-util';
 
@@ -13,8 +15,12 @@ export interface CommentProvider {
 }
 
 export class DefaultCommentProvider implements CommentProvider {
+    protected readonly grammarConfig: GrammarConfig;
+    constructor(services: LangiumServices) {
+        this.grammarConfig = services.parser.GrammarConfig;
+    }
     getCommentTokenTypes(): string[] {
-        return ['SL_COMMENT', 'ML_COMMENT'];
+        return this.grammarConfig.multilineCommentRules;
     }
     getComment(node: AstNode): string | undefined {
         return findCommentNode(node.$cstNode, this.getCommentTokenTypes())?.text;
