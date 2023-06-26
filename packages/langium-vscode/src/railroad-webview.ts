@@ -9,8 +9,10 @@ import type { LanguageClient } from 'vscode-languageclient/node';
 import { DOCUMENTS_VALIDATED_NOTIFICATION, RAILROAD_DIAGRAM_REQUEST } from './language-server/messages';
 
 export function registerRailroadWebview(client: LanguageClient): void {
-    vscode.commands.registerCommand('langium.showRailroadDiagram', (uri: vscode.Uri) => {
-        RailroadDiagramPanel.createOrShow(client, uri);
+    vscode.commands.registerCommand('langium.showRailroadDiagram', (uri?: vscode.Uri) => {
+        if (uri instanceof vscode.Uri) {
+            RailroadDiagramPanel.createOrShow(client, uri);
+        }
     });
     client.onNotification(DOCUMENTS_VALIDATED_NOTIFICATION, (uris: string[]) => {
         if (RailroadDiagramPanel.current && uris.includes(RailroadDiagramPanel.current.uri)) {
