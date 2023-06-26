@@ -14,6 +14,7 @@ import type { LangiumDocument, LangiumDocuments, LangiumDocumentFactory } from '
 import { CancellationToken, Disposable } from 'vscode-languageserver';
 import { MultiMap } from '../utils/collections';
 import { interruptAndCheck } from '../utils/promise-util';
+import { stream } from '../utils/stream';
 import { DocumentState } from './documents';
 
 export interface BuildOptions {
@@ -82,26 +83,61 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
     }
 
     async update(changed: URI[], deleted: URI[], cancelToken = CancellationToken.None): Promise<void> {
+        // Remove all documents that are reported as deleted
         for (const deletedDocument of deleted) {
             this.langiumDocuments.deleteDocument(deletedDocument);
         }
         this.indexManager.remove(deleted);
+        // Set the state of all changed documents to `Changed` so they are completely rebuilt
         for (const changedUri of changed) {
-            this.langiumDocuments.invalidateDocument(changedUri);
+            const invalidated = this.langiumDocuments.invalidateDocument(changedUri);
+            if (!invalidated) {
+                this.langiumDocuments.getOrCreateDocument(changedUri);
+            }
         }
+        // Set the state of all documents that should be relinked to `ComputedScopes` (if not already lower)
+        const allChangedUris = stream(changed).concat(deleted).map(uri => uri.toString()).toSet();
+        this.langiumDocuments.all
+            .filter(doc => !allChangedUris.has(doc.uri.toString()) && this.shouldRelink(doc, allChangedUris))
+            .forEach(doc => {
+                const linker = this.serviceRegistry.getServices(doc.uri).references.Linker;
+                linker.unlink(doc);
+                doc.state = Math.min(doc.state, DocumentState.ComputedScopes);
+            });
+        // Notify listeners of the update
         for (const listener of this.updateListeners) {
             listener(changed, deleted);
         }
-        // Only interrupt execution after everything has been invalidated and update listeners have been notified
+        // Only allow interrupting the execution after all state changes are done
         await interruptAndCheck(cancelToken);
-        const changedDocuments = changed.map(e => this.langiumDocuments.getOrCreateDocument(e));
-        const rebuildDocuments = this.collectDocuments(changedDocuments, deleted);
+
+        // Collect all documents that we should rebuild
+        const rebuildDocuments = this.langiumDocuments.all
+            .filter(doc =>
+                // This includes those that were reported as changed and those that we selected for relinking
+                doc.state < DocumentState.Linked
+                // This includes those for which a previous build has been cancelled
+                || doc.build !== undefined
+            )
+            .toArray();
         const buildOptions: BuildOptions = {
             // This method is meant to be called after receiving a change notification from the client,
             // so we assume that we want diagnostics to be reported in the editor.
             validationChecks: 'all'
         };
         await this.buildDocuments(rebuildDocuments, buildOptions, cancelToken);
+    }
+
+    /**
+     * Check whether the given document should be relinked after changes were found in the given URIs.
+     */
+    protected shouldRelink(document: LangiumDocument, changedUris: Set<string>): boolean {
+        // Relink documents with linking errors -- maybe those references can be resolved now
+        if (document.references.some(ref => ref.error !== undefined)) {
+            return true;
+        }
+        // Check whether the document is affected by any of the changed URIs
+        return this.indexManager.isAffected(document, changedUris);
     }
 
     onUpdate(callback: DocumentUpdateListener): Disposable {
@@ -114,27 +150,16 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
         });
     }
 
-    protected collectDocuments(changed: LangiumDocument[], deleted: URI[]): LangiumDocument[] {
-        const allUris = changed.map(e => e.uri).concat(deleted);
-        const affected = this.indexManager.getAffectedDocuments(allUris).toArray();
-        affected.forEach(e => {
-            const linker = this.serviceRegistry.getServices(e.uri).references.Linker;
-            linker.unlink(e);
-            e.state = Math.min(e.state, DocumentState.ComputedScopes); // need to re-index potentially linked references
-        });
-        const docSet = new Set([
-            ...changed,
-            ...affected,
-            // Also include all documents haven't completed the document lifecycle yet
-            ...this.langiumDocuments.all.filter(e => e.state < DocumentState.Validated)
-        ]);
-        return Array.from(docSet);
-    }
-
+    /**
+     * Build the given documents by stepping through all build phases. If a document's state indicates
+     * that a certain build phase is already done, the phase is skipped for that document.
+     */
     protected async buildDocuments(documents: LangiumDocument[], options: BuildOptions, cancelToken: CancellationToken): Promise<void> {
+        for (const doc of documents) {
+            doc.build ??= { options };
+        }
+
         // 0. Parse content
-        //  parsing is done initially for each document, but
-        //  re-parsing after changes reported by the client might have been canceled by subsequent changes, so re-parse now
         await this.runCancelable(documents, DocumentState.Parsed, cancelToken, doc =>
             this.langiumDocumentFactory.update(doc)
         );
@@ -155,10 +180,16 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
             this.indexManager.updateReferences(doc, cancelToken)
         );
         // 5. Validation
-        const validateDocs = documents.filter(doc => this.shouldValidate(doc, options));
+        const validateDocs = documents.filter(doc => this.shouldValidate(doc));
         await this.runCancelable(validateDocs, DocumentState.Validated, cancelToken, doc =>
             this.validate(doc, cancelToken)
         );
+
+        // If we've made it to this point without being cancelled, we can mark the build status
+        // as finished by deleting the `build` property.
+        for (const doc of documents) {
+            delete doc.build;
+        }
     }
 
     protected async runCancelable(documents: LangiumDocument[], targetState: DocumentState, cancelToken: CancellationToken, callback: (document: LangiumDocument) => MaybePromise<unknown>): Promise<void> {
@@ -207,8 +238,8 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
      * Determine whether the given document should be validated during a build. The default
      * implementation checks the `validationChecks` property of the build options.
      */
-    protected shouldValidate(_document: LangiumDocument, options: BuildOptions): boolean {
-        return options.validationChecks === 'all';
+    protected shouldValidate(document: LangiumDocument): boolean {
+        return document.build?.options.validationChecks === 'all';
     }
 
     /**

@@ -52,7 +52,7 @@ export class DomainModelScopeComputation extends DefaultScopeComputation {
         const localDescriptions: AstNodeDescription[] = [];
         for (const element of container.elements) {
             await interruptAndCheck(cancelToken);
-            if (isType(element)) {
+            if (isType(element) && element.name) {
                 const description = this.descriptions.createDescription(element, element.name, document);
                 localDescriptions.push(description);
             } else if (isPackageDeclaration(element)) {
