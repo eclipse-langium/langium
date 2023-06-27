@@ -76,7 +76,7 @@ function generateAstReflection(config: LangiumConfig, astTypes: AstTypes): Gener
 
     reflectionNode.append(
         '}', NL, NL,
-        `export const reflection = new ${config.projectName}AstReflection();`, NL
+        `export const reflection = new ${config.projectName}AstReflection();`, NL, NL
     );
 
     return reflectionNode;
@@ -244,7 +244,7 @@ function generateTerminalConstants(fileNode: CompositeGeneratorNode, grammars: G
         collection = {...collection, ...terminalConstants};
     });
 
-    fileNode.append(`export const TerminalNames = ${Object.keys(collection).map(name => `'${name}'`).join(' | ')};`, NL, NL);
+    fileNode.append(`export type TerminalNames = ${Object.keys(collection).map(name => `'${name}'`).join(' | ')};`, NL, NL);
 
     fileNode.append('export const TerminalRegExps: Record<TerminalNames, RegExp> = {', NL);
     fileNode.indent(node => {
