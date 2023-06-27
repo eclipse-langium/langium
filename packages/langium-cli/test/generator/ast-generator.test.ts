@@ -235,7 +235,7 @@ describe('Ast generator', () => {
         
         terminal ID: /[_a-zA-Z][\\w_]*/;
     `, expandToString`
-        export const TerminalNames = 'WS' | 'ID';
+        export type TerminalNames = 'WS' | 'ID';
 
         export const TerminalRegExps: Record<TerminalNames, RegExp> = {
             WS: /\\s+/,
@@ -253,7 +253,7 @@ describe('Ast generator', () => {
         
         terminal NUMBER: '0'..'9'+;
     `, expandToString`
-        export const TerminalNames = 'WS' | 'NUMBER';
+        export type TerminalNames = 'WS' | 'NUMBER';
 
         export const TerminalRegExps: Record<TerminalNames, RegExp> = {
             WS: /\\s+/,
@@ -272,7 +272,7 @@ describe('Ast generator', () => {
         terminal NUMBER: DIGIT+;
         terminal fragment DIGIT: '0'..'9';
     `, expandToString`
-        export const TerminalNames = 'WS' | 'NUMBER';
+        export type TerminalNames = 'WS' | 'NUMBER';
 
         export const TerminalRegExps: Record<TerminalNames, RegExp> = {
             WS: /\\s+/,
@@ -291,7 +291,7 @@ async function testTerminalConstants(grammar: string, expected: string) {
     const expectedPart = normalizeEOL(expected).trim();
     const typesFileContent = generateAst(services.grammar, [result.value], config);
 
-    const start = typesFileContent.indexOf('export const TerminalNames');
+    const start = typesFileContent.indexOf('export type TerminalNames');
     const hashPosition = typesFileContent.indexOf('export const TerminalRegExps');
     const end = typesFileContent.indexOf('};', hashPosition)+2;
     const relevantPart = typesFileContent.substring(start, end).trim();
