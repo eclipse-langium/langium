@@ -235,9 +235,7 @@ describe('Ast generator', () => {
         
         terminal ID: /[_a-zA-Z][\\w_]*/;
     `, expandToString`
-        export type TerminalNames = 'WS' | 'ID';
-
-        export const TerminalRegExps: Record<TerminalNames, RegExp> = {
+        export const TestTerminals = {
             WS: /\\s+/,
             ID: /[_a-zA-Z][\\w_]*/,
         };
@@ -253,9 +251,7 @@ describe('Ast generator', () => {
         
         terminal NUMBER: '0'..'9'+;
     `, expandToString`
-        export type TerminalNames = 'WS' | 'NUMBER';
-
-        export const TerminalRegExps: Record<TerminalNames, RegExp> = {
+        export const TestTerminals = {
             WS: /\\s+/,
             NUMBER: /[0-9]+/,
         };
@@ -272,9 +268,7 @@ describe('Ast generator', () => {
         terminal NUMBER: DIGIT+;
         terminal fragment DIGIT: '0'..'9';
     `, expandToString`
-        export type TerminalNames = 'WS' | 'NUMBER';
-
-        export const TerminalRegExps: Record<TerminalNames, RegExp> = {
+        export const TestTerminals = {
             WS: /\\s+/,
             NUMBER: /([0-9])+/,
         };
@@ -285,15 +279,14 @@ async function testTerminalConstants(grammar: string, expected: string) {
     const result = (await parse(grammar)).parseResult;
     const config: LangiumConfig = {
         [RelativePath]: './',
-        projectName: 'test',
+        projectName: 'Test',
         languages: []
     };
     const expectedPart = normalizeEOL(expected).trim();
     const typesFileContent = generateAst(services.grammar, [result.value], config);
 
-    const start = typesFileContent.indexOf('export type TerminalNames');
-    const hashPosition = typesFileContent.indexOf('export const TerminalRegExps');
-    const end = typesFileContent.indexOf('};', hashPosition)+2;
+    const start = typesFileContent.indexOf(`export const ${config.projectName}Terminals`);
+    const end = typesFileContent.indexOf('};', start) + 2;
     const relevantPart = typesFileContent.substring(start, end).trim();
     expect(relevantPart).toEqual(expectedPart);
 }
@@ -308,7 +301,7 @@ function testGeneratedAst(name: string, grammar: string, expected: string): void
         };
         const expectedPart = normalizeEOL(expected).trim();
         const typesFileContent = generateAst(services.grammar, [result.value], config);
-        const relevantPart = typesFileContent.substring(typesFileContent.indexOf('export'), typesFileContent.indexOf('export type testAstType')).trim();
+        const relevantPart = typesFileContent.substring(typesFileContent.indexOf('export type'), typesFileContent.indexOf('export type testAstType')).trim();
         expect(relevantPart).toEqual(expectedPart);
     });
 }

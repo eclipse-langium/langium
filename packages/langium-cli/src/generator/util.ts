@@ -92,10 +92,6 @@ export async function getUserChoice<R extends string>(text: string, values: R[],
     return defaultValue;
 }
 
-export const cliVersion = getLangiumCliVersion();
-export const generatedHeader = getGeneratedHeader();
-export const schema = fs.readJson(path.resolve(__dirname, '../../langium-config-schema.json'), { encoding: 'utf-8' });
-
 export function collectTerminalRegexps(grammar: Grammar): Record<string, RegExp> {
     const result: Record<string, RegExp> = {};
     const reachableRules = getAllReachableRules(grammar, false);
@@ -106,3 +102,7 @@ export function collectTerminalRegexps(grammar: Grammar): Record<string, RegExp>
     }
     return result;
 }
+
+export const cliVersion = getLangiumCliVersion();
+export const generatedHeader = getGeneratedHeader();
+export const schema = fs.readJson(path.resolve(__dirname, '../../langium-config-schema.json'), { encoding: 'utf-8' });

@@ -24,13 +24,12 @@ export function generateAst(services: LangiumServices, grammars: Grammar[], conf
         `import { AbstractAstReflection } from '${importFrom}';`, NL, NL
     );
 
+    generateTerminalConstants(fileNode, grammars, config);
+
     astTypes.unions.forEach(union => fileNode.append(union.toAstTypesString(isAstType(union.type)), NL));
     astTypes.interfaces.forEach(iFace => fileNode.append(iFace.toAstTypesString(true), NL));
-
     astTypes.unions = astTypes.unions.filter(e => isAstType(e.type));
     fileNode.append(generateAstReflection(config, astTypes));
-
-    generateTerminalConstants(fileNode, grammars);
 
     return toString(fileNode);
 }
@@ -76,7 +75,7 @@ function generateAstReflection(config: LangiumConfig, astTypes: AstTypes): Gener
 
     reflectionNode.append(
         '}', NL, NL,
-        `export const reflection = new ${config.projectName}AstReflection();`, NL, NL
+        `export const reflection = new ${config.projectName}AstReflection();`, NL
     );
 
     return reflectionNode;
@@ -237,16 +236,14 @@ function groupBySupertypes(astTypes: AstTypes): MultiMap<string, string> {
     return superToChild;
 }
 
-function generateTerminalConstants(fileNode: CompositeGeneratorNode, grammars: Grammar[]) {
+function generateTerminalConstants(fileNode: CompositeGeneratorNode, grammars: Grammar[], config: LangiumConfig) {
     let collection: Record<string, RegExp> = {};
     grammars.forEach(grammar => {
         const terminalConstants = collectTerminalRegexps(grammar);
         collection = {...collection, ...terminalConstants};
     });
 
-    fileNode.append(`export type TerminalNames = ${Object.keys(collection).map(name => `'${name}'`).join(' | ')};`, NL, NL);
-
-    fileNode.append('export const TerminalRegExps: Record<TerminalNames, RegExp> = {', NL);
+    fileNode.append(`export const ${config.projectName}Terminals = {`, NL);
     fileNode.indent(node => {
         for (const [name, regexp] of Object.entries(collection)) {
             node.append(`${name}: /${regexp.source}/${regexp.flags},`, NL);
