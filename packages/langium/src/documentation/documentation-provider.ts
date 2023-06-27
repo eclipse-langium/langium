@@ -8,7 +8,6 @@ import type { LangiumServices } from '../services';
 import type { AstNode, AstNodeDescription } from '../syntax-tree';
 import type { IndexManager } from '../workspace/index-manager';
 import type { CommentProvider } from './comment-provider';
-import { isLeafCstNode } from '../syntax-tree';
 import { getDocument } from '../utils/ast-util';
 import { isJSDoc, parseJSDoc } from './jsdoc';
 
