@@ -249,7 +249,7 @@ function generateTerminalConstants(fileNode: CompositeGeneratorNode, grammars: G
     fileNode.append('export const TerminalRegExps: Record<TerminalNames, RegExp> = {', NL);
     fileNode.indent(node => {
         for (const [name, regexp] of Object.entries(collection)) {
-            node.append(`${name} : /${regexp.source}/${regexp.flags},`, NL);
+            node.append(`${name}: /${regexp.source}/${regexp.flags},`, NL);
         }
     });
     fileNode.append('};', NL, NL);

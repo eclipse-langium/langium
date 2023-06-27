@@ -225,42 +225,78 @@ describe('Ast generator', () => {
         }
     `);
 
-    test('should generate terminal names and regular expressions', async () => {
-        const grammar = `
-            grammar TestGrammar
-                
-            entry Hello:
-                'Hello, ' name=ID '!';
-
-            hidden terminal WS: /\\s+/;
+    test('should generate terminal names and regular expressions', () => testTerminalConstants(`
+        grammar TestGrammar
             
-            terminal ID: /[_a-zA-Z][\\w_]*/;
-        `;
-        const expected = expandToString`
-            export const TerminalNames = 'WS' | 'ID';
+        entry Hello:
+            'Hello, ' name=ID '!';
 
-            export const TerminalRegExps: Record<TerminalNames, RegExp> = {
-                WS : /\\s+/,
-                ID : /[_a-zA-Z][\\w_]*/,
-            };
-        `;
-        const result = (await parse(grammar)).parseResult;
-        const config: LangiumConfig = {
-            [RelativePath]: './',
-            projectName: 'test',
-            languages: []
+        hidden terminal WS: /\\s+/;
+        
+        terminal ID: /[_a-zA-Z][\\w_]*/;
+    `, expandToString`
+        export const TerminalNames = 'WS' | 'ID';
+
+        export const TerminalRegExps: Record<TerminalNames, RegExp> = {
+            WS: /\\s+/,
+            ID: /[_a-zA-Z][\\w_]*/,
         };
-        const expectedPart = normalizeEOL(expected).trim();
-        const typesFileContent = generateAst(services.grammar, [result.value], config);
+    `));
 
-        const start = typesFileContent.indexOf('export const TerminalNames');
-        const hashPosition = typesFileContent.indexOf('export const TerminalRegExps');
-        const end = typesFileContent.indexOf('};', hashPosition)+2;
-        const relevantPart = typesFileContent.substring(start, end).trim();
-        expect(relevantPart).toEqual(expectedPart);
-    });
+    test('should generate terminal constants with range operator', () => testTerminalConstants(`
+        grammar TestGrammar
+            
+        entry Amount:
+            value=NUMBER;
 
+        hidden terminal WS: /\\s+/;
+        
+        terminal NUMBER: '0'..'9'+;
+    `, expandToString`
+        export const TerminalNames = 'WS' | 'NUMBER';
+
+        export const TerminalRegExps: Record<TerminalNames, RegExp> = {
+            WS: /\\s+/,
+            NUMBER: /[0-9]+/,
+        };
+    `));
+
+    test('should generate terminal constants with fragments', () => testTerminalConstants(`
+        grammar TestGrammar
+            
+        entry Amount:
+            value=NUMBER;
+
+        hidden terminal WS: /\\s+/;
+        
+        terminal NUMBER: DIGIT+;
+        terminal fragment DIGIT: '0'..'9';
+    `, expandToString`
+        export const TerminalNames = 'WS' | 'NUMBER';
+
+        export const TerminalRegExps: Record<TerminalNames, RegExp> = {
+            WS: /\\s+/,
+            NUMBER: /([0-9])+/,
+        };
+    `));
 });
+
+async function testTerminalConstants(grammar: string, expected: string) {
+    const result = (await parse(grammar)).parseResult;
+    const config: LangiumConfig = {
+        [RelativePath]: './',
+        projectName: 'test',
+        languages: []
+    };
+    const expectedPart = normalizeEOL(expected).trim();
+    const typesFileContent = generateAst(services.grammar, [result.value], config);
+
+    const start = typesFileContent.indexOf('export const TerminalNames');
+    const hashPosition = typesFileContent.indexOf('export const TerminalRegExps');
+    const end = typesFileContent.indexOf('};', hashPosition)+2;
+    const relevantPart = typesFileContent.substring(start, end).trim();
+    expect(relevantPart).toEqual(expectedPart);
+}
 
 function testGeneratedAst(name: string, grammar: string, expected: string): void {
     test(name, async () => {
