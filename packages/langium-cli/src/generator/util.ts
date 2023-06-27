@@ -9,7 +9,7 @@ import fs from 'fs-extra';
 import path from 'path';
 import * as readline from 'readline';
 import chalk from 'chalk';
-import { terminalRegex } from 'langium/src/grammar/internal-grammar-util';
+import { terminalRegex } from 'langium/lib/grammar/internal-grammar-util';
 
 //eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function log(level: 'log' | 'warn' | 'error', options: { watch: boolean }, message: string, ...args: any[]): void {
