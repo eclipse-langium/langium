@@ -4,13 +4,12 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { GrammarConfig } from '../grammar/grammar-config';
 import type { LangiumServices } from '../services';
 import type { AstNode, AstNodeDescription } from '../syntax-tree';
 import type { IndexManager } from '../workspace/index-manager';
+import type { CommentProvider } from './comment-provider';
 import { isLeafCstNode } from '../syntax-tree';
 import { getDocument } from '../utils/ast-util';
-import { findCommentNode } from '../utils/cst-util';
 import { isJSDoc, parseJSDoc } from './jsdoc';
 
 /**
@@ -28,15 +27,15 @@ export interface DocumentationProvider {
 export class JSDocDocumentationProvider implements DocumentationProvider {
 
     protected readonly indexManager: IndexManager;
-    protected readonly grammarConfig: GrammarConfig;
+    protected readonly commentProvider: CommentProvider;
 
     constructor(services: LangiumServices) {
         this.indexManager = services.shared.workspace.IndexManager;
-        this.grammarConfig = services.parser.GrammarConfig;
+        this.commentProvider = services.documentation.CommentProvider;
     }
 
     getDocumentation(node: AstNode): string | undefined {
-        const lastNode = findCommentNode(node.$cstNode, this.grammarConfig.multilineCommentRules);
+        const lastNode = this.commentProvider.getComment(node);
         if (isLeafCstNode(lastNode) && isJSDoc(lastNode)) {
             const parsedJSDoc = parseJSDoc(lastNode);
             return parsedJSDoc.toMarkdown({
