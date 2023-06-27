@@ -22,12 +22,12 @@ describe('Comment provider', () => {
             terminal INT: /\\d+/;
         `)).parseResult.value;
 
+        expect(ast).toBeDefined();
         const grammarComment = services.documentation.CommentProvider.getComment(ast);
         expect(grammarComment).toBeUndefined();
         streamAst(ast).filter(isAbstractRule).forEach(rule => {
             const comment = services.documentation.CommentProvider.getComment(rule);
             expect(comment).toBe(`/** ${rule.name} */`);
         });
-        expect(ast).toBeDefined();
     });
 });

@@ -33,7 +33,7 @@ export interface AstNodeWithTextRegion extends AstNode {
 }
 
 /**
- * {@link AstNode}s that may carry a comment CST node in front of itself.
+ * {@link AstNode}s that may carry a semantically relevant comment.
  */
 export interface AstNodeWithComment extends AstNode {
     $comment?: string;
