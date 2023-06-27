@@ -35,9 +35,9 @@ export class JSDocDocumentationProvider implements DocumentationProvider {
     }
 
     getDocumentation(node: AstNode): string | undefined {
-        const lastNode = this.commentProvider.getComment(node);
-        if (isLeafCstNode(lastNode) && isJSDoc(lastNode)) {
-            const parsedJSDoc = parseJSDoc(lastNode);
+        const comment = this.commentProvider.getComment(node);
+        if (comment && isJSDoc(comment)) {
+            const parsedJSDoc = parseJSDoc(comment);
             return parsedJSDoc.toMarkdown({
                 renderLink: (link, display) => {
                     return this.documentationLinkRenderer(node, link, display);
