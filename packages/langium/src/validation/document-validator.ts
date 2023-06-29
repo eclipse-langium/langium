@@ -7,15 +7,27 @@
 import type { MismatchedTokenException } from 'chevrotain';
 import type { Diagnostic } from 'vscode-languageserver';
 import type { LanguageMetaData } from '../grammar/language-meta-data';
+import type { ParseResult } from '../parser/langium-parser';
 import type { LangiumServices } from '../services';
 import type { AstNode, CstNode } from '../syntax-tree';
 import type { LangiumDocument } from '../workspace/documents';
-import type { DiagnosticInfo, ValidationAcceptor, ValidationRegistry } from './validation-registry';
+import type { DiagnosticInfo, ValidationAcceptor, ValidationCategory, ValidationRegistry } from './validation-registry';
 import { CancellationToken, DiagnosticSeverity, Position, Range } from 'vscode-languageserver';
 import { findNodeForKeyword, findNodeForProperty } from '../utils/grammar-util';
 import { streamAst } from '../utils/ast-util';
 import { tokenToRange } from '../utils/cst-util';
 import { interruptAndCheck, isOperationCancelled } from '../utils/promise-util';
+
+export interface ValidationOptions {
+    /** If this is set, only the checks associated with this category are executed; otherwise all checks are executed. */
+    category?: ValidationCategory
+    /** If true, no further diagnostics are reported if there are lexing errors. */
+    stopAfterLexingErrors?: boolean
+    /** If true, no further diagnostics are reported if there are lexing or parsing errors. */
+    stopAfterParsingErrors?: boolean
+    /** If true, no further diagnostics are reported if there are lexing, parsing or linking errors. */
+    stopAfterLinkingErrors?: boolean
+}
 
 /**
  * Language-specific service for validating `LangiumDocument`s.
@@ -23,14 +35,17 @@ import { interruptAndCheck, isOperationCancelled } from '../utils/promise-util';
 export interface DocumentValidator {
     /**
      * Validates the whole specified document.
+     *
      * @param document specified document to validate
+     * @param options options to control the validation process
      * @param cancelToken allows to cancel the current operation
      * @throws `OperationCanceled` if a user action occurs during execution
      */
-    validateDocument(document: LangiumDocument, cancelToken?: CancellationToken): Promise<Diagnostic[]>;
+    validateDocument(document: LangiumDocument, options?: ValidationOptions, cancelToken?: CancellationToken): Promise<Diagnostic[]>;
 }
 
 export class DefaultDocumentValidator implements DocumentValidator {
+
     protected readonly validationRegistry: ValidationRegistry;
     protected readonly metadata: LanguageMetaData;
 
@@ -39,13 +54,43 @@ export class DefaultDocumentValidator implements DocumentValidator {
         this.metadata = services.LanguageMetaData;
     }
 
-    async validateDocument(document: LangiumDocument, cancelToken = CancellationToken.None): Promise<Diagnostic[]> {
+    async validateDocument(document: LangiumDocument, options: ValidationOptions = {}, cancelToken = CancellationToken.None): Promise<Diagnostic[]> {
         const parseResult = document.parseResult;
         const diagnostics: Diagnostic[] = [];
 
         await interruptAndCheck(cancelToken);
 
-        // Process lexing errors
+        this.processLexingErrors(parseResult, diagnostics, options);
+        if (options.stopAfterLexingErrors && diagnostics.length > 0) {
+            return diagnostics;
+        }
+
+        this.processParsingErrors(parseResult, diagnostics, options);
+        if (options.stopAfterParsingErrors && diagnostics.length > 0) {
+            return diagnostics;
+        }
+
+        this.processLinkingErrors(document, diagnostics, options);
+        if (options.stopAfterLinkingErrors && diagnostics.length > 0) {
+            return diagnostics;
+        }
+
+        // Process custom validations
+        try {
+            diagnostics.push(...await this.validateAst(parseResult.value, options, cancelToken));
+        } catch (err) {
+            if (isOperationCancelled(err)) {
+                throw err;
+            }
+            console.error('An error occurred during validation:', err);
+        }
+
+        await interruptAndCheck(cancelToken);
+
+        return diagnostics;
+    }
+
+    protected processLexingErrors(parseResult: ParseResult, diagnostics: Diagnostic[], _options: ValidationOptions): void {
         for (const lexerError of parseResult.lexerErrors) {
             const diagnostic: Diagnostic = {
                 severity: DiagnosticSeverity.Error,
@@ -65,8 +110,9 @@ export class DefaultDocumentValidator implements DocumentValidator {
             };
             diagnostics.push(diagnostic);
         }
+    }
 
-        // Process parsing errors
+    protected processParsingErrors(parseResult: ParseResult, diagnostics: Diagnostic[], _options: ValidationOptions): void {
         for (const parserError of parseResult.parserErrors) {
             let range: Range | undefined = undefined;
             // We can run into the chevrotain error recovery here
@@ -100,8 +146,9 @@ export class DefaultDocumentValidator implements DocumentValidator {
                 diagnostics.push(diagnostic);
             }
         }
+    }
 
-        // Process unresolved references
+    protected processLinkingErrors(document: LangiumDocument, diagnostics: Diagnostic[], _options: ValidationOptions): void {
         for (const reference of document.references) {
             const linkingError = reference.error;
             if (linkingError) {
@@ -120,23 +167,9 @@ export class DefaultDocumentValidator implements DocumentValidator {
                 diagnostics.push(this.toDiagnostic('error', linkingError.message, info));
             }
         }
-
-        // Process custom validations
-        try {
-            diagnostics.push(...await this.validateAst(parseResult.value, document, cancelToken));
-        } catch (err) {
-            if (isOperationCancelled(err)) {
-                throw err;
-            }
-            console.error('An error occurred during validation:', err);
-        }
-
-        await interruptAndCheck(cancelToken);
-
-        return diagnostics;
     }
 
-    protected async validateAst(rootNode: AstNode, document: LangiumDocument, cancelToken = CancellationToken.None): Promise<Diagnostic[]> {
+    protected async validateAst(rootNode: AstNode, options: ValidationOptions, cancelToken = CancellationToken.None): Promise<Diagnostic[]> {
         const validationItems: Diagnostic[] = [];
         const acceptor: ValidationAcceptor = <N extends AstNode>(severity: 'error' | 'warning' | 'info' | 'hint', message: string, info: DiagnosticInfo<N>) => {
             validationItems.push(this.toDiagnostic(severity, message, info));
@@ -144,7 +177,7 @@ export class DefaultDocumentValidator implements DocumentValidator {
 
         await Promise.all(streamAst(rootNode).map(async node => {
             await interruptAndCheck(cancelToken);
-            const checks = this.validationRegistry.getChecks(node.$type);
+            const checks = this.validationRegistry.getChecks(node.$type, options.category);
             for (const check of checks) {
                 await check(node, acceptor, cancelToken);
             }

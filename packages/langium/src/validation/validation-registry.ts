@@ -8,8 +8,10 @@ import type { CancellationToken, CodeDescription, DiagnosticRelatedInformation, 
 import type { LangiumServices } from '../services';
 import type { AstNode, AstReflection, Properties } from '../syntax-tree';
 import type { MaybePromise } from '../utils/promise-util';
+import type { Stream } from '../utils/stream';
 import { MultiMap } from '../utils/collections';
 import { isOperationCancelled } from '../utils/promise-util';
+import { stream } from '../utils/stream';
 
 export type DiagnosticInfo<N extends AstNode, P = Properties<N>> = {
     /** The AST node to which the diagnostic is attached. */
@@ -57,26 +59,49 @@ export type ValidationChecks<T> = {
     AstNode?: ValidationCheck<AstNode>;
 }
 
+export type ValidationCategory = 'fast' | 'slow'
+
+type ValidationCheckEntry = {
+    check: ValidationCheck
+    category: ValidationCategory
+}
+
 /**
  * Manages a set of `ValidationCheck`s to be applied when documents are validated.
  */
 export class ValidationRegistry {
-    private readonly validationChecks = new MultiMap<string, ValidationCheck>();
+    private readonly entries = new MultiMap<string, ValidationCheckEntry>();
     private readonly reflection: AstReflection;
 
     constructor(services: LangiumServices) {
         this.reflection = services.shared.AstReflection;
     }
 
-    register<T>(checksRecord: ValidationChecks<T>, thisObj: ThisParameterType<unknown> = this): void {
+    /**
+     * Register a set of validation checks. Each value in the record can be either a single validation check (i.e. a function)
+     * or an array of validation checks.
+     *
+     * @param checksRecord Set of validation checks to register.
+     * @param category Optional category for the validation checks (defaults to `'fast'`).
+     * @param thisObj Optional object to be used as `this` when calling the validation check functions.
+     */
+    register<T>(checksRecord: ValidationChecks<T>, thisObj: ThisParameterType<unknown> = this, category: ValidationCategory = 'fast'): void {
         for (const [type, ch] of Object.entries(checksRecord)) {
             const callbacks = ch as ValidationCheck | ValidationCheck[];
             if (Array.isArray(callbacks)) {
                 for (const check of callbacks) {
-                    this.doRegister(type, this.wrapValidationException(check, thisObj));
+                    const entry: ValidationCheckEntry = {
+                        check: this.wrapValidationException(check, thisObj),
+                        category
+                    };
+                    this.addEntry(type, entry);
                 }
             } else if (typeof callbacks === 'function') {
-                this.doRegister(type, this.wrapValidationException(callbacks, thisObj));
+                const entry: ValidationCheckEntry = {
+                    check: this.wrapValidationException(callbacks, thisObj),
+                    category
+                };
+                this.addEntry(type, entry);
             }
         }
     }
@@ -99,18 +124,23 @@ export class ValidationRegistry {
         };
     }
 
-    protected doRegister(type: string, check: ValidationCheck): void {
+    protected addEntry(type: string, entry: ValidationCheckEntry): void {
         if (type === 'AstNode') {
-            this.validationChecks.add('AstNode', check);
+            this.entries.add('AstNode', entry);
             return;
         }
         for (const subtype of this.reflection.getAllSubTypes(type)) {
-            this.validationChecks.add(subtype, check);
+            this.entries.add(subtype, entry);
         }
     }
 
-    getChecks(type: string): readonly ValidationCheck[] {
-        return this.validationChecks.get(type).concat(this.validationChecks.get('AstNode'));
+    getChecks(type: string, category?: ValidationCategory): Stream<ValidationCheck> {
+        let checks = stream(this.entries.get(type))
+            .concat(this.entries.get('AstNode'));
+        if (category) {
+            checks = checks.filter(entry => entry.category === category);
+        }
+        return checks.map(entry => entry.check);
     }
 
 }

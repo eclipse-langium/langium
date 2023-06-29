@@ -9,6 +9,8 @@ import type { ServiceRegistry } from '../service-registry';
 import type { LangiumSharedServices } from '../services';
 import type { AstNode } from '../syntax-tree';
 import type { MaybePromise } from '../utils/promise-util';
+import type { ValidationOptions } from '../validation/document-validator';
+import type { ValidationCategory } from '../validation/validation-registry';
 import type { IndexManager } from '../workspace/index-manager';
 import type { LangiumDocument, LangiumDocuments, LangiumDocumentFactory } from './documents';
 import { CancellationToken, Disposable } from 'vscode-languageserver';
@@ -18,13 +20,22 @@ import { stream } from '../utils/stream';
 import { DocumentState } from './documents';
 
 export interface BuildOptions {
-    validationChecks?: 'none' | 'all'
+    validationChecks?: 'none' | 'all' | ValidationCategory
+}
+
+export interface DocumentBuildState {
+    completed: boolean
+    options: BuildOptions
 }
 
 /**
  * Shared-service for building and updating `LangiumDocument`s.
  */
 export interface DocumentBuilder {
+
+    /** The options used for rebuilding documents after an update. */
+    updateBuildOptions: BuildOptions;
+
     /**
      * Execute all necessary build steps for the given documents.
      *
@@ -36,15 +47,12 @@ export interface DocumentBuilder {
     build<T extends AstNode>(documents: Array<LangiumDocument<T>>, options?: BuildOptions, cancelToken?: CancellationToken): Promise<void>;
 
     /**
-     * This method is called when a document change is detected.
-     * Implementation should update the state of associated `LangiumDocument` instances and make sure
-     * that the index information of the affected documents are also updated.
+     * This method is called when a document change is detected. It updates the state of all
+     * affected documents, including those with references to the changed ones, so they are rebuilt.
      *
-     * @param changed URIs of changed/created documents
+     * @param changed URIs of changed or created documents
      * @param deleted URIs of deleted documents
      * @param cancelToken allows to cancel the current operation
-     * @see IndexManager.update()
-     * @see LangiumDocuments.invalidateDocument()
      * @throws `OperationCancelled` if cancellation is detected during execution
      */
     update(changed: URI[], deleted: URI[], cancelToken?: CancellationToken): Promise<void>;
@@ -64,12 +72,19 @@ export interface DocumentBuilder {
 export type DocumentUpdateListener = (changed: URI[], deleted: URI[]) => void
 export type DocumentBuildListener = (built: LangiumDocument[], cancelToken: CancellationToken) => void | Promise<void>
 export class DefaultDocumentBuilder implements DocumentBuilder {
+
+    updateBuildOptions: BuildOptions = {
+        // Default: run only the validation checks in the _fast_ category (includes those without category)
+        validationChecks: 'fast'
+    };
+
     protected readonly langiumDocuments: LangiumDocuments;
     protected readonly langiumDocumentFactory: LangiumDocumentFactory;
     protected readonly indexManager: IndexManager;
     protected readonly serviceRegistry: ServiceRegistry;
     protected readonly updateListeners: DocumentUpdateListener[] = [];
     protected readonly buildPhaseListeners: MultiMap<DocumentState, DocumentBuildListener> = new MultiMap();
+    protected readonly buildState: Map<string, DocumentBuildState> = new Map();
 
     constructor(services: LangiumSharedServices) {
         this.langiumDocuments = services.workspace.LangiumDocuments;
@@ -83,9 +98,10 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
     }
 
     async update(changed: URI[], deleted: URI[], cancelToken = CancellationToken.None): Promise<void> {
-        // Remove all documents that are reported as deleted
-        for (const deletedDocument of deleted) {
-            this.langiumDocuments.deleteDocument(deletedDocument);
+        // Remove all metadata of documents that are reported as deleted
+        for (const deletedUri of deleted) {
+            this.langiumDocuments.deleteDocument(deletedUri);
+            this.buildState.delete(deletedUri.toString());
         }
         this.indexManager.remove(deleted);
         // Set the state of all changed documents to `Changed` so they are completely rebuilt
@@ -117,15 +133,10 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
                 // This includes those that were reported as changed and those that we selected for relinking
                 doc.state < DocumentState.Linked
                 // This includes those for which a previous build has been cancelled
-                || doc.build !== undefined
+                || !this.buildState.get(doc.uri.toString())?.completed
             )
             .toArray();
-        const buildOptions: BuildOptions = {
-            // This method is meant to be called after receiving a change notification from the client,
-            // so we assume that we want diagnostics to be reported in the editor.
-            validationChecks: 'all'
-        };
-        await this.buildDocuments(rebuildDocuments, buildOptions, cancelToken);
+        await this.buildDocuments(rebuildDocuments, this.updateBuildOptions, cancelToken);
     }
 
     /**
@@ -156,7 +167,17 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
      */
     protected async buildDocuments(documents: LangiumDocument[], options: BuildOptions, cancelToken: CancellationToken): Promise<void> {
         for (const doc of documents) {
-            doc.build ??= { options };
+            const key = doc.uri.toString();
+            const state = this.buildState.get(key);
+            // If the document has no previous build state, we set it. If it has one, but it's already marked
+            // as completed, we overwrite it. If the previous build was not completed, we keep its state
+            // and continue where it was cancelled.
+            if (!state || state.completed) {
+                this.buildState.set(key, {
+                    completed: false,
+                    options
+                });
+            }
         }
 
         // 0. Parse content
@@ -185,10 +206,12 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
             this.validate(doc, cancelToken)
         );
 
-        // If we've made it to this point without being cancelled, we can mark the build status
-        // as finished by deleting the `build` property.
+        // If we've made it to this point without being cancelled, we can mark the build state as completed.
         for (const doc of documents) {
-            delete doc.build;
+            const state = this.buildState.get(doc.uri.toString());
+            if (state) {
+                state!.completed = true;
+            }
         }
     }
 
@@ -239,7 +262,8 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
      * implementation checks the `validationChecks` property of the build options.
      */
     protected shouldValidate(document: LangiumDocument): boolean {
-        return document.build?.options.validationChecks === 'all';
+        const options = this.getBuildOptions(document);
+        return options.validationChecks !== undefined && options.validationChecks !== 'none';
     }
 
     /**
@@ -247,9 +271,17 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
      */
     protected async validate(document: LangiumDocument, cancelToken: CancellationToken): Promise<void> {
         const validator = this.serviceRegistry.getServices(document.uri).validation.DocumentValidator;
-        const diagnostics = await validator.validateDocument(document, cancelToken);
+        const buildOptions = this.getBuildOptions(document);
+        const validationOptions: ValidationOptions = {
+            category: buildOptions.validationChecks === 'all' ? undefined : buildOptions.validationChecks as ValidationCategory
+        };
+        const diagnostics = await validator.validateDocument(document, validationOptions, cancelToken);
         document.diagnostics = diagnostics;
         document.state = DocumentState.Validated;
+    }
+
+    protected getBuildOptions(document: LangiumDocument): BuildOptions {
+        return this.buildState.get(document.uri.toString())?.options ?? {};
     }
 
 }

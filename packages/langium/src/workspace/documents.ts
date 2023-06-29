@@ -13,7 +13,6 @@ import type { AstNode, AstNodeDescription, Reference } from '../syntax-tree';
 import type { Mutable } from '../utils/ast-util';
 import type { MultiMap } from '../utils/collections';
 import type { Stream } from '../utils/stream';
-import type { BuildOptions } from './document-builder';
 import type { FileSystemProvider } from './file-system-provider';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { URI } from 'vscode-uri';
@@ -32,10 +31,6 @@ export interface LangiumDocument<T extends AstNode = AstNode> {
     state: DocumentState;
     /** The parse result holds the Abstract Syntax Tree (AST) and potentially also parser / lexer errors */
     parseResult: ParseResult<T>;
-    /** The presence of this property indicates that a build was started without finishing (yet) */
-    build?: {
-        options: BuildOptions
-    }
     /** Result of the scope precomputation phase */
     precomputedScopes?: PrecomputedScopes;
     /** An array of all cross-references found in the AST while linking */
@@ -360,7 +355,6 @@ export class DefaultLangiumDocuments implements LangiumDocuments {
         const langiumDoc = this.documentMap.get(uriString);
         if (langiumDoc) {
             langiumDoc.state = DocumentState.Changed;
-            langiumDoc.build = undefined;
             langiumDoc.precomputedScopes = undefined;
             langiumDoc.references = [];
             langiumDoc.diagnostics = [];
