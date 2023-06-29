@@ -26,3 +26,4 @@ export * from './rename-provider';
 export * from './semantic-token-provider';
 export * from './signature-help-provider';
 export * from './type-provider';
+export * from './workspace-symbol-provider';

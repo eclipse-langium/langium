@@ -41,6 +41,6 @@ export function isInferred(type: InferredInfo | DeclaredInfo | InferredInfo & De
     return type && 'inferred' in type;
 }
 
-export function isInferredAndDeclared(type: InferredInfo | DeclaredInfo | InferredInfo & DeclaredInfo): type is InferredInfo & DeclaredInfo {
+export function isInferredAnddeclared(type: InferredInfo | DeclaredInfo | InferredInfo & DeclaredInfo): type is InferredInfo & DeclaredInfo {
     return type && 'inferred' in type && 'declared' in type;
 }
