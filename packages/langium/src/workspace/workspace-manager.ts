@@ -37,7 +37,7 @@ export interface WorkspaceManager {
 
 export class DefaultWorkspaceManager implements WorkspaceManager {
 
-    initialBuildOptions: BuildOptions | undefined = undefined;
+    initialBuildOptions: BuildOptions = {};
 
     protected readonly serviceRegistry: ServiceRegistry;
     protected readonly langiumDocuments: LangiumDocuments;

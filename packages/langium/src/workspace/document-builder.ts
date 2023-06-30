@@ -10,7 +10,6 @@ import type { LangiumSharedServices } from '../services';
 import type { AstNode } from '../syntax-tree';
 import type { MaybePromise } from '../utils/promise-util';
 import type { ValidationOptions } from '../validation/document-validator';
-import type { ValidationCategory } from '../validation/validation-registry';
 import type { IndexManager } from '../workspace/index-manager';
 import type { LangiumDocument, LangiumDocuments, LangiumDocumentFactory } from './documents';
 import { CancellationToken, Disposable } from 'vscode-languageserver';
@@ -20,7 +19,7 @@ import { stream } from '../utils/stream';
 import { DocumentState } from './documents';
 
 export interface BuildOptions {
-    validationChecks?: 'none' | 'all' | ValidationCategory
+    validation?: boolean | ValidationOptions
 }
 
 export interface DocumentBuildState {
@@ -75,7 +74,9 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
 
     updateBuildOptions: BuildOptions = {
         // Default: run only the validation checks in the _fast_ category (includes those without category)
-        validationChecks: 'fast'
+        validation: {
+            category: 'fast'
+        }
     };
 
     protected readonly langiumDocuments: LangiumDocuments;
@@ -110,6 +111,7 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
             if (!invalidated) {
                 this.langiumDocuments.getOrCreateDocument(changedUri);
             }
+            this.buildState.delete(changedUri.toString());
         }
         // Set the state of all documents that should be relinked to `ComputedScopes` (if not already lower)
         const allChangedUris = stream(changed).concat(deleted).map(uri => uri.toString()).toSet();
@@ -259,11 +261,10 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
 
     /**
      * Determine whether the given document should be validated during a build. The default
-     * implementation checks the `validationChecks` property of the build options.
+     * implementation checks the `validation` property of the build options.
      */
     protected shouldValidate(document: LangiumDocument): boolean {
-        const options = this.getBuildOptions(document);
-        return options.validationChecks !== undefined && options.validationChecks !== 'none';
+        return Boolean(this.getBuildOptions(document).validation);
     }
 
     /**
@@ -271,11 +272,9 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
      */
     protected async validate(document: LangiumDocument, cancelToken: CancellationToken): Promise<void> {
         const validator = this.serviceRegistry.getServices(document.uri).validation.DocumentValidator;
-        const buildOptions = this.getBuildOptions(document);
-        const validationOptions: ValidationOptions = {
-            category: buildOptions.validationChecks === 'all' ? undefined : buildOptions.validationChecks as ValidationCategory
-        };
-        const diagnostics = await validator.validateDocument(document, validationOptions, cancelToken);
+        const validationSetting = this.getBuildOptions(document).validation;
+        const options = typeof validationSetting === 'object' ? validationSetting : undefined;
+        const diagnostics = await validator.validateDocument(document, options, cancelToken);
         document.diagnostics = diagnostics;
         document.state = DocumentState.Validated;
     }

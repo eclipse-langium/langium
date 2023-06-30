@@ -449,7 +449,7 @@ export interface ValidationResult<T extends AstNode = AstNode> {
 export function validationHelper<T extends AstNode = AstNode>(services: LangiumServices): (input: string) => Promise<ValidationResult<T>> {
     const parse = parseHelper<T>(services);
     return async (input) => {
-        const document = await parse(input, { validationChecks: 'all' });
+        const document = await parse(input, { validation: true });
         return { document, diagnostics: document.diagnostics ?? [] };
     };
 }

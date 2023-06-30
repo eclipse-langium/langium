@@ -136,7 +136,7 @@ async function relinkGrammars(grammars: Grammar[]): Promise<void> {
         return newDoc;
     });
     newDocuments.forEach(e => langiumDocuments.addDocument(e));
-    await documentBuilder.build(newDocuments, { validationChecks: 'none' });
+    await documentBuilder.build(newDocuments, { validation: false });
 }
 
 async function buildAll(config: LangiumConfig): Promise<Map<string, LangiumDocument>> {
@@ -155,7 +155,7 @@ async function buildAll(config: LangiumConfig): Promise<Map<string, LangiumDocum
         map.set(doc.uri.fsPath, doc);
     }
     await sharedServices.workspace.DocumentBuilder.build(documents.all.toArray(), {
-        validationChecks: 'all'
+        validation: true
     });
     return map;
 }
