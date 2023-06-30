@@ -19,6 +19,7 @@ import { getUserChoice, log } from './generator/util';
 import { getFilePath, RelativePath } from './package';
 import { validateParser } from './parser-validation';
 import { generateTypesFile } from './generator/types-generator';
+import { createGrammarDiagramHtml } from 'langium-railroad';
 import chalk from 'chalk';
 import path from 'path';
 import fs from 'fs-extra';
@@ -257,6 +258,7 @@ export async function generate(config: LangiumConfig, options: GenerateOptions):
 
     for (const grammar of grammars) {
         const languageConfig = configMap.get(grammar);
+
         if (languageConfig?.textMate) {
             const genTmGrammar = generateTextMate(grammar, languageConfig);
             const textMatePath = path.resolve(relPath, languageConfig.textMate.out);
@@ -276,6 +278,13 @@ export async function generate(config: LangiumConfig, options: GenerateOptions):
             const prismPath = path.resolve(relPath, languageConfig.prism.out);
             log('log', options, `Writing prism grammar to ${chalk.white.bold(prismPath)}`);
             await writeHighlightGrammar(genPrismGrammar, prismPath, options);
+        }
+
+        if (languageConfig?.railroad) {
+            const diagram = createGrammarDiagramHtml(grammar);
+            const diagramPath = path.resolve(relPath, languageConfig.railroad.out);
+            log('log', options, `Writing railroad syntax diagram to ${chalk.white.bold(diagramPath)}`);
+            await writeWithFail(diagramPath, diagram, options);
         }
     }
 
