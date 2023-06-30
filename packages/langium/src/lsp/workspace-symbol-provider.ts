@@ -43,6 +43,7 @@ export class DefaultWorkspaceSymbolProvider implements WorkspaceSymbolProvider {
     constructor(services: LangiumSharedServices) {
         this.indexManager = services.workspace.IndexManager;
         this.nodeKindProvider = services.lsp.NodeKindProvider;
+        this.fuzzyMatcher = services.lsp.FuzzyMatcher;
     }
 
     async getSymbols(params: WorkspaceSymbolParams, cancelToken = CancellationToken.None): Promise<WorkspaceSymbol[]> {

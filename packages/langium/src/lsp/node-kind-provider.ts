@@ -23,7 +23,7 @@ export interface NodeKindProvider {
 
 export class DefaultNodeKindProvider implements NodeKindProvider {
     getSymbolKind(): SymbolKind {
-        return SymbolKind.Variable;
+        return SymbolKind.Field;
     }
     getCompletionItemKind(): CompletionItemKind {
         return CompletionItemKind.Reference;
