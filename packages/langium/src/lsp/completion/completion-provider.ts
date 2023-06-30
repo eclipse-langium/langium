@@ -15,6 +15,7 @@ import type { AstNode, AstNodeDescription, Reference, ReferenceInfo } from '../.
 import type { MaybePromise } from '../../utils/promise-util';
 import type { LangiumDocument } from '../../workspace/documents';
 import type { NextFeature } from './follow-element-computation';
+import type { NodeKindProvider } from '../node-kind-provider';
 import { CompletionItemKind, CompletionList, Position } from 'vscode-languageserver';
 import * as ast from '../../grammar/generated/ast';
 import { getExplicitRuleType } from '../../grammar/internal-grammar-util';
@@ -99,6 +100,7 @@ export class DefaultCompletionProvider implements CompletionProvider {
     protected readonly grammar: ast.Grammar;
     protected readonly nameProvider: NameProvider;
     protected readonly grammarConfig: GrammarConfig;
+    protected readonly nodeKindProvider: NodeKindProvider;
 
     constructor(services: LangiumServices) {
         this.scopeProvider = services.references.ScopeProvider;
@@ -106,6 +108,7 @@ export class DefaultCompletionProvider implements CompletionProvider {
         this.completionParser = services.parser.CompletionParser;
         this.nameProvider = services.references.NameProvider;
         this.grammarConfig = services.parser.GrammarConfig;
+        this.nodeKindProvider = services.shared.lsp.NodeKindProvider;
     }
 
     async getCompletion(document: LangiumDocument, params: CompletionParams): Promise<CompletionList | undefined> {
@@ -333,7 +336,7 @@ export class DefaultCompletionProvider implements CompletionProvider {
     protected createReferenceCompletionItem(nodeDescription: AstNodeDescription): CompletionValueItem {
         return {
             nodeDescription,
-            kind: CompletionItemKind.Reference,
+            kind: this.nodeKindProvider.getCompletionKind(nodeDescription),
             detail: nodeDescription.type,
             sortText: '0'
         };

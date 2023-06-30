@@ -21,6 +21,7 @@ export * from './hover-provider';
 export * from './implementation-provider';
 export * from './inlay-hint-provider';
 export * from './language-server';
+export * from './node-kind-provider';
 export * from './references-provider';
 export * from './rename-provider';
 export * from './semantic-token-provider';
