@@ -63,6 +63,11 @@ export interface LangiumLanguageConfig {
         /** Output path to syntax highlighting file */
         out: string
     }
+    /** Enable generating a railroad syntax diagram */
+    railroad?: {
+        /** Output path to the railroad diagram file */
+        out: string
+    }
     /** Configure the chevrotain parser for a single language */
     chevrotainParserConfig?: IParserConfig
 }

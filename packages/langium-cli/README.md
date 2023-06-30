@@ -44,17 +44,22 @@ Schema:
         caseInsensitive: boolean
         // Enable generating a TextMate syntax highlighting file
         textMate: {
-            // Output path to syntax highlighting file
+            // Output path to syntax highlighting file (json)
             out: string
         }
         // Enable generating a monarch syntax highlighting file
         monarch: {
-            // Output path to syntax highlighting file
+            // Output path to syntax highlighting file (js)
             out: string
         }
         // Enable generating a prism syntax highlighting file
         prism: {
-            // Output path to syntax highlighting file
+            // Output path to syntax highlighting file (js)
+            out: string
+        }
+        // Enable generating railroad syntax diagram
+        railroad: {
+            // Output path to syntax diagram file (html)
             out: string
         }
         // Configure the chevrotain parser for a single language
@@ -79,6 +84,9 @@ Example:
         "fileExtensions": [".dmodel"],
         "textMate": {
             "out": "syntaxes/domain-model.tmLanguage.json"
+        },
+        "railroad": {
+            "out": "docs/syntax-diagram.html"
         }
     }],
     "out": "src/language-server/generated",

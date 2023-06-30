@@ -7,13 +7,14 @@
 import * as vscode from 'vscode';
 import type { LanguageClientOptions, ServerOptions } from 'vscode-languageclient/node';
 import { LanguageClient, TransportKind } from 'vscode-languageclient/node';
+import { registerRailroadWebview } from './railroad-webview';
 
 let client: LanguageClient;
 
 // Called by vscode on activation event, see package.json "activationEvents"
-export function activate(context: vscode.ExtensionContext): void {
-    client = startLanguageClient(context);
-
+export async function activate(context: vscode.ExtensionContext): Promise<void> {
+    client = await startLanguageClient(context);
+    registerRailroadWebview(client);
     // cs: TODO rework and update the template decoration feature, if feasible
     //  see also https://github.com/langium/langium/issues/841
     // configureTemplateDecoration(context);
@@ -26,7 +27,7 @@ export function deactivate(): Thenable<void> | undefined {
     return undefined;
 }
 
-function startLanguageClient(context: vscode.ExtensionContext): LanguageClient {
+async function startLanguageClient(context: vscode.ExtensionContext): Promise<LanguageClient> {
     const serverModule = context.asAbsolutePath('./out/language-server/main');
     // The debug options for the server
     // --inspect=6009: runs the server in Node's Inspector mode so VS Code can attach to the server for debugging.
@@ -66,7 +67,7 @@ function startLanguageClient(context: vscode.ExtensionContext): LanguageClient {
     );
 
     // Start the client. This will also launch the server
-    client.start();
+    await client.start();
     return client;
 }
 

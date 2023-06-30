@@ -4,6 +4,7 @@
     "references": [
         { "path": "packages/langium" },
         { "path": "packages/langium/tsconfig.test.json" },
+        { "path": "packages/langium-railroad" },
         { "path": "packages/langium-cli" },
         { "path": "packages/langium-cli/tsconfig.test.json" },
         { "path": "packages/langium-sprotty" },
