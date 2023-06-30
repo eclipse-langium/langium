@@ -8,24 +8,24 @@ import type { AstNode, AstNodeDescription } from '../syntax-tree';
 import { CompletionItemKind, SymbolKind } from 'vscode-languageserver';
 
 /**
- * This interface consolidates the logic for gathering LSP kind information based on AST nodes or their descriptions.
+ * This service consolidates the logic for gathering LSP kind information based on AST nodes or their descriptions.
  */
 export interface NodeKindProvider {
     /**
-     * Returns a `SymbolKind` as used by `WorkspaceSymbolProvider` or `DocumentLinkSymbolProvider`.
+     * Returns a `SymbolKind` as used by `WorkspaceSymbolProvider` or `DocumentSymbolProvider`.
      */
     getSymbolKind(node: AstNode | AstNodeDescription): SymbolKind;
     /**
      * Returns a `CompletionItemKind` as used by the `CompletionProvider`.
      */
-    getCompletionKind(node: AstNode | AstNodeDescription): CompletionItemKind;
+    getCompletionItemKind(node: AstNode | AstNodeDescription): CompletionItemKind;
 }
 
 export class DefaultNodeKindProvider implements NodeKindProvider {
     getSymbolKind(): SymbolKind {
         return SymbolKind.Variable;
     }
-    getCompletionKind(): CompletionItemKind {
+    getCompletionItemKind(): CompletionItemKind {
         return CompletionItemKind.Reference;
     }
 }

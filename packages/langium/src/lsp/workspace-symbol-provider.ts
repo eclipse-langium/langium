@@ -10,11 +10,27 @@ import type { IndexManager } from '../workspace';
 import type { MaybePromise} from '../utils/promise-util';
 import type { AstNodeDescription } from '../syntax-tree';
 import type { NodeKindProvider } from './node-kind-provider';
+import type { FuzzyMatcher } from './fuzzy-matcher';
 import { CancellationToken } from 'vscode-languageserver';
 import { interruptAndCheck } from '../utils/promise-util';
 
+/**
+ * Shared service for handling workspace symbols requests.
+ */
 export interface WorkspaceSymbolProvider {
+    /**
+     * Handle a workspace symbols request.
+     *
+     * @throws `OperationCancelled` if cancellation is detected during execution
+     * @throws `ResponseError` if an error is detected that should be sent as response to the client
+     */
     getSymbols(params: WorkspaceSymbolParams, cancelToken?: CancellationToken): MaybePromise<WorkspaceSymbol[]>;
+    /**
+     * Handle a resolve request for a workspace symbol.
+     *
+     * @throws `OperationCancelled` if cancellation is detected during execution
+     * @throws `ResponseError` if an error is detected that should be sent as response to the client
+     */
     resolveSymbol?(symbol: WorkspaceSymbol, cancelToken?: CancellationToken): MaybePromise<WorkspaceSymbol>;
 }
 
@@ -22,6 +38,7 @@ export class DefaultWorkspaceSymbolProvider implements WorkspaceSymbolProvider {
 
     protected readonly indexManager: IndexManager;
     protected readonly nodeKindProvider: NodeKindProvider;
+    protected readonly fuzzyMatcher: FuzzyMatcher;
 
     constructor(services: LangiumSharedServices) {
         this.indexManager = services.workspace.IndexManager;
@@ -33,7 +50,7 @@ export class DefaultWorkspaceSymbolProvider implements WorkspaceSymbolProvider {
         const query = params.query.toLowerCase();
         for (const description of this.indexManager.allElements()) {
             await interruptAndCheck(cancelToken);
-            if (description.name.toLowerCase().includes(query)) {
+            if (this.fuzzyMatcher.match(query, description.name)) {
                 const symbol = this.getWorkspaceSymbol(description);
                 if (symbol) {
                     workspaceSymbols.push(symbol);

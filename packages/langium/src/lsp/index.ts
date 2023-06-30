@@ -17,6 +17,7 @@ export * from './document-symbol-provider';
 export * from './execute-command-handler';
 export * from './folding-range-provider';
 export * from './formatter';
+export * from './fuzzy-matcher';
 export * from './hover-provider';
 export * from './implementation-provider';
 export * from './inlay-hint-provider';

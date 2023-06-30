@@ -5,7 +5,6 @@
  ******************************************************************************/
 
 import type { CancellationToken, DocumentSymbol, DocumentSymbolParams} from 'vscode-languageserver';
-import { SymbolKind } from 'vscode-languageserver';
 import type { NameProvider } from '../references/name-provider';
 import type { LangiumServices } from '../services';
 import type { AstNode } from '../syntax-tree';
@@ -69,12 +68,5 @@ export class DefaultDocumentSymbolProvider implements DocumentSymbolProvider {
             return children;
         }
         return undefined;
-    }
-
-    /**
-     * @deprecated Use the `NodeKindProvider` service instead.
-     */
-    protected getSymbolKind(_type: string): SymbolKind {
-        return SymbolKind.Field;
     }
 }

@@ -16,6 +16,7 @@ import { DefaultCompletionProvider } from './lsp/completion/completion-provider'
 import { DefaultDocumentHighlightProvider } from './lsp/document-highlight-provider';
 import { DefaultDocumentSymbolProvider } from './lsp/document-symbol-provider';
 import { DefaultFoldingRangeProvider } from './lsp/folding-range-provider';
+import { DefaultFuzzyMatcher } from './lsp/fuzzy-matcher';
 import { DefaultDefinitionProvider } from './lsp/definition-provider';
 import { MultilineCommentHoverProvider } from './lsp/hover-provider';
 import { DefaultLanguageServer } from './lsp/language-server';
@@ -132,7 +133,8 @@ export function createDefaultSharedModule(context: DefaultSharedModuleContext): 
             Connection: () => context.connection,
             LanguageServer: (services) => new DefaultLanguageServer(services),
             WorkspaceSymbolProvider: (services) => new DefaultWorkspaceSymbolProvider(services),
-            NodeKindProvider: () => new DefaultNodeKindProvider()
+            NodeKindProvider: () => new DefaultNodeKindProvider(),
+            FuzzyMatcher: () => new DefaultFuzzyMatcher()
         },
         workspace: {
             LangiumDocuments: (services) => new DefaultLangiumDocuments(services),
