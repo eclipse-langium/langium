@@ -374,7 +374,7 @@ export class LangiumGrammarCodeActionProvider implements CodeActionProvider {
             } as Reference
         };
         const referenceType = this.reflection.getReferenceType(refInfo);
-        const candidates = this.indexManager.allElements(referenceType).filter(e => e.name === data.refText);
+        const candidates = this.indexManager.globalScope(referenceType).getAllElements().filter(e => e.name === data.refText);
 
         const result: CodeAction[] = [];
         let shortestPathIndex = -1;

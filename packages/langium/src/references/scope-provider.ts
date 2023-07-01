@@ -10,81 +10,10 @@ import type { Stream } from '../utils/stream';
 import type { AstNodeDescriptionProvider } from '../workspace/ast-descriptions';
 import type { IndexManager } from '../workspace/index-manager';
 import type { NameProvider } from './name-provider';
+import type { Scope, ScopeOptions} from './scope';
 import { getDocument } from '../utils/ast-util';
-import { EMPTY_STREAM, stream } from '../utils/stream';
-
-/**
- * A scope describes what target elements are visible from a specific cross-reference context.
- */
-export interface Scope {
-
-    /**
-     * Find a target element matching the given name. If no element is found, `undefined` is returned.
-     * If multiple matching elements are present, the selection of the returned element should be done
-     * according to the semantics of your language. Usually it is the element that is most closely defined.
-     *
-     * @param name Name of the cross-reference target as it appears in the source text.
-     */
-    getElement(name: string): AstNodeDescription | undefined;
-
-    /**
-     * Create a stream of all elements in the scope. This is used to compute completion proposals to be
-     * shown in the editor.
-     */
-    getAllElements(): Stream<AstNodeDescription>;
-
-}
-
-export interface ScopeOptions {
-    caseInsensitive?: boolean;
-}
-
-/**
- * The default scope implementation is based on a `Stream`. It has an optional _outer scope_ describing
- * the next level of elements, which are queried when a target element is not found in the stream provided
- * to this scope.
- */
-export class StreamScope implements Scope {
-    readonly elements: Stream<AstNodeDescription>;
-    readonly outerScope?: Scope;
-    readonly caseInsensitive?: boolean;
-
-    constructor(elements: Stream<AstNodeDescription>, outerScope?: Scope, options?: ScopeOptions) {
-        this.elements = elements;
-        this.outerScope = outerScope;
-        this.caseInsensitive = options?.caseInsensitive;
-    }
-
-    getAllElements(): Stream<AstNodeDescription> {
-        if (this.outerScope) {
-            return this.elements.concat(this.outerScope.getAllElements());
-        } else {
-            return this.elements;
-        }
-    }
-
-    getElement(name: string): AstNodeDescription | undefined {
-        const local = this.caseInsensitive
-            ? this.elements.find(e => e.name.toLowerCase() === name.toLowerCase())
-            : this.elements.find(e => e.name === name);
-        if (local) {
-            return local;
-        }
-        if (this.outerScope) {
-            return this.outerScope.getElement(name);
-        }
-        return undefined;
-    }
-}
-
-export const EMPTY_SCOPE: Scope = {
-    getElement(): undefined {
-        return undefined;
-    },
-    getAllElements(): Stream<AstNodeDescription> {
-        return EMPTY_STREAM;
-    }
-};
+import { stream } from '../utils/stream';
+import { StreamScope } from './scope';
 
 /**
  * Language-specific service for determining the scope of target elements visible in a specific cross-reference context.
@@ -165,7 +94,7 @@ export class DefaultScopeProvider implements ScopeProvider {
      * Create a global scope filtered for the given reference type.
      */
     protected getGlobalScope(referenceType: string, _context: ReferenceInfo): Scope {
-        return new StreamScope(this.indexManager.allElements(referenceType));
+        return this.indexManager.globalScope(referenceType);
     }
 
 }

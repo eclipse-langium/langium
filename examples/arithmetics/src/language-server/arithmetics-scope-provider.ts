@@ -17,7 +17,7 @@ export class ArithmeticsScopeProvider extends DefaultScopeProvider {
     }
 
     protected override getGlobalScope(referenceType: string): Scope {
-        return new StreamScope(this.indexManager.allElements(referenceType), undefined, { caseInsensitive: true });
+        return this.indexManager.globalScope(referenceType, { caseInsensitive: true });
     }
 
 }

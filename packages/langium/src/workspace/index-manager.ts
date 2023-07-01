@@ -15,6 +15,9 @@ import { CancellationToken } from 'vscode-languageserver';
 import { getDocument } from '../utils/ast-util';
 import { stream } from '../utils/stream';
 import { equalURI } from '../utils/uri-util';
+import { DocumentState } from './documents';
+import type { ScopeOptions, Scope } from '../references/scope';
+import { MapScope } from '../references/scope';
 
 /**
  * The index manager is responsible for keeping metadata about symbols and cross-references
@@ -63,9 +66,9 @@ export interface IndexManager {
      * Compute a global scope, optionally filtered using a type identifier.
      *
      * @param nodeType The type to filter with, or `undefined` to return descriptions of all types.
-     * @returns a `Stream` of existing `AstNodeDescription`s filtered by their type
+     * @returns a `Scope` targetting all globally visible nodes (of a given type).
      */
-    allElements(nodeType?: string): Stream<AstNodeDescription>;
+    globalScope(nodeType?: string, scopeOptions?: ScopeOptions): Scope;
 
     /**
      * Returns all known references that are pointing to the given `targetNode`.
@@ -86,7 +89,8 @@ export class DefaultIndexManager implements IndexManager {
 
     protected readonly simpleIndex: Map<string, AstNodeDescription[]> = new Map<string, AstNodeDescription[]>();
     protected readonly referenceIndex: Map<string, ReferenceDescription[]> = new Map<string, ReferenceDescription[]>();
-    protected readonly globalScopeCache = new Map<string, AstNodeDescription[]>();
+    protected readonly globalScopeCache = new Map<string, Scope>();
+    protected allElementsCache: AstNodeDescription[] = [];
 
     constructor(services: LangiumSharedServices) {
         this.serviceRegistry = services.ServiceRegistry;
@@ -106,18 +110,19 @@ export class DefaultIndexManager implements IndexManager {
         return stream(result);
     }
 
-    allElements(nodeType = ''): Stream<AstNodeDescription> {
-        if (!this.globalScopeCache.has('')) {
-            this.globalScopeCache.set('', Array.from(this.simpleIndex.values()).flat());
+    globalScope(nodeType = '', scopeOptions?: ScopeOptions): Scope {
+        if (this.allElementsCache.length === 0) {
+            this.allElementsCache = Array.from(this.simpleIndex.values()).flat();
         }
 
         const cached = this.globalScopeCache.get(nodeType);
         if (cached) {
-            return stream(cached);
+            return cached;
         } else {
-            const elements = this.globalScopeCache.get('')!.filter(e => this.astReflection.isSubtype(e.type, nodeType));
-            this.globalScopeCache.set(nodeType, elements);
-            return stream(elements);
+            const elements = this.allElementsCache.filter(e => this.astReflection.isSubtype(e.type, nodeType));
+            const scope = new MapScope(elements, undefined, scopeOptions);
+            this.globalScopeCache.set(nodeType, scope);
+            return scope;
         }
     }
 
@@ -127,11 +132,13 @@ export class DefaultIndexManager implements IndexManager {
             this.simpleIndex.delete(uriString);
             this.referenceIndex.delete(uriString);
             this.globalScopeCache.clear();
+            this.allElementsCache = [];
         }
     }
 
     async updateContent(document: LangiumDocument, cancelToken = CancellationToken.None): Promise<void> {
         this.globalScopeCache.clear();
+        this.allElementsCache = [];
         const services = this.serviceRegistry.getServices(document.uri);
         const exports: AstNodeDescription[] = await services.references.ScopeComputation.computeExports(document, cancelToken);
         for (const data of exports) {

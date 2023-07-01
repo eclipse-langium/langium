@@ -78,7 +78,7 @@ export class JSDocDocumentationProvider implements DocumentationProvider {
     }
 
     protected findNameInGlobalScope(node: AstNode, name: string): AstNodeDescription | undefined {
-        const description = this.indexManager.allElements().find(e => e.name === name);
+        const description = this.indexManager.globalScope().getElement(name);
         return description;
     }
 }
