@@ -6,7 +6,6 @@
 
 import type { CancellationToken, CompletionItem, CompletionParams } from 'vscode-languageserver';
 import type { TextDocument, TextEdit } from 'vscode-languageserver-textdocument';
-import type { GrammarConfig } from '../../grammar/grammar-config';
 import type { LangiumCompletionParser } from '../../parser/langium-parser';
 import type { NameProvider } from '../../references/name-provider';
 import type { ScopeProvider } from '../../references/scope-provider';
@@ -17,6 +16,7 @@ import type { LangiumDocument } from '../../workspace/documents';
 import type { NextFeature } from './follow-element-computation';
 import type { NodeKindProvider } from '../node-kind-provider';
 import type { FuzzyMatcher } from '../fuzzy-matcher';
+import type { Lexer } from '../../parser/lexer';
 import { CompletionItemKind, CompletionList, Position } from 'vscode-languageserver';
 import * as ast from '../../grammar/generated/ast';
 import { getExplicitRuleType } from '../../grammar/internal-grammar-util';
@@ -40,6 +40,8 @@ export interface CompletionContext {
     node?: AstNode
     document: LangiumDocument
     textDocument: TextDocument
+    tokenOffset: number
+    tokenEndOffset: number
     offset: number
     position: Position
 }
@@ -100,7 +102,7 @@ export class DefaultCompletionProvider implements CompletionProvider {
     protected readonly scopeProvider: ScopeProvider;
     protected readonly grammar: ast.Grammar;
     protected readonly nameProvider: NameProvider;
-    protected readonly grammarConfig: GrammarConfig;
+    protected readonly lexer: Lexer;
     protected readonly nodeKindProvider: NodeKindProvider;
     protected readonly fuzzyMatcher: FuzzyMatcher;
 
@@ -109,7 +111,7 @@ export class DefaultCompletionProvider implements CompletionProvider {
         this.grammar = services.Grammar;
         this.completionParser = services.parser.CompletionParser;
         this.nameProvider = services.references.NameProvider;
-        this.grammarConfig = services.parser.GrammarConfig;
+        this.lexer = services.parser.Lexer;
         this.nodeKindProvider = services.shared.lsp.NodeKindProvider;
         this.fuzzyMatcher = services.shared.lsp.FuzzyMatcher;
     }
@@ -124,23 +126,24 @@ export class DefaultCompletionProvider implements CompletionProvider {
         const textDocument = document.textDocument;
         const text = textDocument.getText();
         const offset = textDocument.offsetAt(params.position);
-        const acceptor: CompletionAcceptor = value => {
-            const completionItem = this.fillCompletionItem(textDocument, offset, value);
-            if (completionItem) {
-                items.push(completionItem);
-            }
-        };
-
-        const lastTokenOffset = this.backtrackToAnyToken(text, offset);
-
+        const [lastTokenOffset, tokenOffset, tokenEndOffset] = this.backtrackToAnyToken(text, offset);
         const astNode = findLeafNodeAtOffset(cst, lastTokenOffset)?.element;
 
         const context: CompletionContext = {
             document,
             textDocument,
             node: astNode,
+            tokenOffset,
+            tokenEndOffset,
             offset,
             position: params.position
+        };
+
+        const acceptor: CompletionAcceptor = value => {
+            const completionItem = this.fillCompletionItem(context, value);
+            if (completionItem) {
+                items.push(completionItem);
+            }
         };
 
         if (!astNode) {
@@ -155,23 +158,24 @@ export class DefaultCompletionProvider implements CompletionProvider {
         // Often times, it is not clear whether the completion is related to the ast node at the current cursor position
         // (i.e. associated with the character right after the cursor), or the one before the cursor.
         // If these are different AST nodes, then we perform the completion twice
-        if (lastTokenOffset === offset && lastTokenOffset > 0) {
+        if (tokenOffset === offset && tokenOffset > 0) {
             const previousAstNode = findLeafNodeAtOffset(cst, lastTokenOffset - 1)?.element;
             if (previousAstNode !== astNode) {
                 contexts.push({
                     document,
                     textDocument,
                     node: previousAstNode,
+                    tokenOffset,
+                    tokenEndOffset,
                     offset,
                     position: params.position
                 });
             }
         }
 
-        const parserStart = this.backtrackToTokenStart(text, offset);
-        const beforeFeatures = this.findFeaturesAt(textDocument, parserStart);
+        const beforeFeatures = this.findFeaturesAt(textDocument, tokenOffset);
         let afterFeatures: NextFeature[] = [];
-        const reparse = this.canReparse() && offset !== parserStart;
+        const reparse = this.canReparse() && offset !== tokenOffset;
         if (reparse) {
             afterFeatures = this.findFeaturesAt(textDocument, offset);
         }
@@ -251,27 +255,40 @@ export class DefaultCompletionProvider implements CompletionProvider {
         return features;
     }
 
-    protected backtrackToAnyToken(text: string, offset: number): number {
-        if (offset >= text.length) {
-            offset = text.length - 1;
+    /**
+     * This methods return three integers that indicate token offsets.
+     *
+     * The first offset represents the start position of the last token before the cursor.
+     *
+     * The second offset represents the end of the last token before the cursor. This is either:
+     * 1. The end of the token represented by the first offset, in case the cursor is after this token.
+     * 2. The start of the token represented by the first offset, in case the cursor is within this token.
+     *
+     * The third offset represents the end of the last token, even if it is behind the cursor position
+     */
+    protected backtrackToAnyToken(text: string, offset: number): [number, number, number] {
+        const tokens = this.lexer.tokenize(text).tokens;
+        let lastToken = tokens[0];
+        const lastIndex = tokens.length - 1;
+        for (let i = 0; i < lastIndex; i++) {
+            const token = tokens[i + 1];
+            if (token.startOffset > offset) {
+                // If the offset of the cursor has already arrived at the end of the current token, use the token end
+                // Otherwise, use the token start as the current cursor position.
+                const endOffset = lastToken.endOffset!;
+                return [
+                    lastToken.startOffset,
+                    endOffset > offset ? lastToken.startOffset : endOffset,
+                    endOffset
+                ];
+            }
+            lastToken = token;
         }
-        while (offset > 0 && /\s/.test(text.charAt(offset))) {
-            offset--;
-        }
-        return offset;
-    }
-
-    protected backtrackToTokenStart(text: string, offset: number): number {
-        if (offset < 1) {
-            return offset;
-        }
-        const wordRegex = this.grammarConfig.nameRegexp;
-        let lastCharacter = text.charAt(offset - 1);
-        while (offset > 0 && wordRegex.test(lastCharacter)) {
-            offset--;
-            lastCharacter = text.charAt(offset - 1);
-        }
-        return offset;
+        return [
+            lastToken?.startOffset ?? offset,
+            offset,
+            lastToken?.endOffset ?? offset
+        ];
     }
 
     protected async completionForRule(context: CompletionContext, rule: ast.AbstractRule, acceptor: CompletionAcceptor): Promise<void> {
@@ -362,7 +379,7 @@ export class DefaultCompletionProvider implements CompletionProvider {
         });
     }
 
-    protected fillCompletionItem(document: TextDocument, offset: number, item: CompletionValueItem): CompletionItem | undefined {
+    protected fillCompletionItem(context: CompletionContext, item: CompletionValueItem): CompletionItem | undefined {
         let label: string;
         if (typeof item.label === 'string') {
             label = item.label;
@@ -385,7 +402,7 @@ export class DefaultCompletionProvider implements CompletionProvider {
         } else {
             insertText = label;
         }
-        const textEdit = item.textEdit ?? this.buildCompletionTextEdit(document, offset, label, insertText);
+        const textEdit = item.textEdit ?? this.buildCompletionTextEdit(context, label, insertText);
         if (!textEdit) {
             return undefined;
         }
@@ -413,13 +430,12 @@ export class DefaultCompletionProvider implements CompletionProvider {
         return completionItem;
     }
 
-    protected buildCompletionTextEdit(document: TextDocument, offset: number, label: string, newText: string): TextEdit | undefined {
-        const content = document.getText();
-        const tokenStart = this.backtrackToTokenStart(content, offset);
-        const identifier = content.substring(tokenStart, offset);
+    protected buildCompletionTextEdit(context: CompletionContext, label: string, newText: string): TextEdit | undefined {
+        const content = context.textDocument.getText();
+        const identifier = content.substring(context.tokenOffset, context.offset);
         if (this.fuzzyMatcher.match(identifier, label)) {
-            const start = document.positionAt(tokenStart);
-            const end = document.positionAt(offset);
+            const start = context.textDocument.positionAt(context.tokenOffset);
+            const end = context.position;
             return {
                 newText,
                 range: {
@@ -430,9 +446,5 @@ export class DefaultCompletionProvider implements CompletionProvider {
         } else {
             return undefined;
         }
-    }
-
-    protected isWordCharacterAt(content: string, index: number): boolean {
-        return this.grammarConfig.nameRegexp.test(content.charAt(index));
     }
 }

@@ -26,6 +26,7 @@ import { LangiumGrammarValidationResourcesCollector } from './validation/validat
 import { LangiumGrammarTypesValidator, registerTypeValidationChecks } from './validation/types-validator';
 import { interruptAndCheck } from '../utils/promise-util';
 import { DocumentState } from '../workspace/documents';
+import { LangiumGrammarCompletionProvider } from './lsp/grammar-completion-provider';
 
 export type LangiumGrammarAddedServices = {
     validation: {
@@ -49,7 +50,8 @@ export const LangiumGrammarModule: Module<LangiumGrammarServices, PartialLangium
         SemanticTokenProvider: (services) => new LangiumGrammarSemanticTokenProvider(services),
         Formatter: () => new LangiumGrammarFormatter(),
         DefinitionProvider: (services) => new LangiumGrammarDefinitionProvider(services),
-        CallHierarchyProvider: (services) => new LangiumGrammarCallHierarchyProvider(services)
+        CallHierarchyProvider: (services) => new LangiumGrammarCallHierarchyProvider(services),
+        CompletionProvider: (services) => new LangiumGrammarCompletionProvider(services)
     },
     references: {
         ScopeComputation: (services) => new LangiumGrammarScopeComputation(services),
