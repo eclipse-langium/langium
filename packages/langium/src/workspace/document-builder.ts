@@ -95,6 +95,9 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
     }
 
     async build<T extends AstNode>(documents: Array<LangiumDocument<T>>, options: BuildOptions = {}, cancelToken = CancellationToken.None): Promise<void> {
+        for (const document of documents) {
+            this.buildState.delete(document.uri.toString());
+        }
         await this.buildDocuments(documents, options, cancelToken);
     }
 

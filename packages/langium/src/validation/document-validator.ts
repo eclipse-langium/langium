@@ -23,9 +23,9 @@ export interface ValidationOptions {
     category?: ValidationCategory
     /** If true, no further diagnostics are reported if there are lexing errors. */
     stopAfterLexingErrors?: boolean
-    /** If true, no further diagnostics are reported if there are lexing or parsing errors. */
+    /** If true, no further diagnostics are reported if there are parsing errors. */
     stopAfterParsingErrors?: boolean
-    /** If true, no further diagnostics are reported if there are lexing, parsing or linking errors. */
+    /** If true, no further diagnostics are reported if there are linking errors. */
     stopAfterLinkingErrors?: boolean
 }
 
@@ -61,17 +61,17 @@ export class DefaultDocumentValidator implements DocumentValidator {
         await interruptAndCheck(cancelToken);
 
         this.processLexingErrors(parseResult, diagnostics, options);
-        if (options.stopAfterLexingErrors && diagnostics.length > 0) {
+        if (options.stopAfterLexingErrors && diagnostics.some(d => d.code === DocumentValidator.LexingError)) {
             return diagnostics;
         }
 
         this.processParsingErrors(parseResult, diagnostics, options);
-        if (options.stopAfterParsingErrors && diagnostics.length > 0) {
+        if (options.stopAfterParsingErrors && diagnostics.some(d => d.code === DocumentValidator.ParsingError)) {
             return diagnostics;
         }
 
         this.processLinkingErrors(document, diagnostics, options);
-        if (options.stopAfterLinkingErrors && diagnostics.length > 0) {
+        if (options.stopAfterLinkingErrors && diagnostics.some(d => d.code === DocumentValidator.LinkingError)) {
             return diagnostics;
         }
 
