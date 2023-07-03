@@ -19,7 +19,10 @@ import { tokenToRange } from '../utils/cst-util';
 import { interruptAndCheck, isOperationCancelled } from '../utils/promise-util';
 
 export interface ValidationOptions {
-    /** If this is set, only the checks associated with this category are executed; otherwise all checks are executed. */
+    /**
+     * If this is set, only the checks associated with this category are executed; otherwise
+     * all checks are executed. The default category if not specified is `'fast'`.
+     */
     category?: ValidationCategory
     /** If true, no further diagnostics are reported if there are lexing errors. */
     stopAfterLexingErrors?: boolean

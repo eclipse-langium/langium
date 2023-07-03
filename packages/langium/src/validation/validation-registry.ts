@@ -59,6 +59,13 @@ export type ValidationChecks<T> = {
     AstNode?: ValidationCheck<AstNode>;
 }
 
+/**
+ * `fast` checks can be executed after every document change (i.e. as the user is typing). If a check
+ * is too slow it can delay the response to document changes, yielding bad user experience. By marking
+ * it as `slow`, it will be skipped for normal as-you-type validation. Then it's up to you when to
+ * schedule these long-running checks: after the fast checks are done, or after saving a document,
+ * or with an explicit command, etc.
+ */
 export type ValidationCategory = 'fast' | 'slow'
 
 type ValidationCheckEntry = {

@@ -19,11 +19,19 @@ import { stream } from '../utils/stream';
 import { DocumentState } from './documents';
 
 export interface BuildOptions {
+    /**
+     * Control the validation phase with this option:
+     *  - `true` enables all validation checks
+     *  - An object with the `category` property enables a subset of validation checks
+     *  - `false` or `undefined` disables all validation checks
+     */
     validation?: boolean | ValidationOptions
 }
 
 export interface DocumentBuildState {
+    /** Whether a document has completed its last build process. */
     completed: boolean
+    /** The options used for the last build process. */
     options: BuildOptions
 }
 
@@ -206,8 +214,8 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
             this.indexManager.updateReferences(doc, cancelToken)
         );
         // 5. Validation
-        const validateDocs = documents.filter(doc => this.shouldValidate(doc));
-        await this.runCancelable(validateDocs, DocumentState.Validated, cancelToken, doc =>
+        const toBeValidated = documents.filter(doc => this.shouldValidate(doc));
+        await this.runCancelable(toBeValidated, DocumentState.Validated, cancelToken, doc =>
             this.validate(doc, cancelToken)
         );
 
@@ -264,7 +272,8 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
 
     /**
      * Determine whether the given document should be validated during a build. The default
-     * implementation checks the `validation` property of the build options.
+     * implementation checks the `validation` property of the build options. If it's set to `true`
+     * or a `ValidationOptions` object, the document is included in the validation phase.
      */
     protected shouldValidate(document: LangiumDocument): boolean {
         return Boolean(this.getBuildOptions(document).validation);
