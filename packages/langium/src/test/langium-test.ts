@@ -4,8 +4,8 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { CompletionItem, CompletionList, Diagnostic, DocumentSymbol, FoldingRange, FormattingOptions, Range, ReferenceParams, SemanticTokensParams, SemanticTokenTypes, TextDocumentIdentifier, TextDocumentPositionParams } from 'vscode-languageserver';
-import type { LangiumServices } from '../services';
+import type { CompletionItem, CompletionList, Diagnostic, DocumentSymbol, FoldingRange, FormattingOptions, Range, ReferenceParams, SemanticTokensParams, SemanticTokenTypes, TextDocumentIdentifier, TextDocumentPositionParams, WorkspaceSymbol } from 'vscode-languageserver';
+import type { LangiumServices, LangiumSharedServices } from '../services';
 import type { AstNode, CstNode, Properties } from '../syntax-tree';
 import type { LangiumDocument } from '../workspace/documents';
 import type { BuildOptions } from '../workspace/document-builder';
@@ -124,7 +124,52 @@ export function expectSymbols(services: LangiumServices): (input: ExpectedSymbol
 
         if ('assert' in input && typeof input.assert === 'function') {
             input.assert(symbols);
+        } else if ('expectedSymbols' in input) {
+            const symbolToString = input.symbolToString ?? (symbol => symbol.name);
+            const expectedSymbols = input.expectedSymbols;
 
+            if (symbols.length === expectedSymbols.length) {
+                for (let i = 0; i < expectedSymbols.length; i++) {
+                    const expected = expectedSymbols[i];
+                    const item = symbols[i];
+                    if (typeof expected === 'string') {
+                        expectedFunction(symbolToString(item), expected);
+                    } else {
+                        expectedFunction(item, expected);
+                    }
+                }
+            } else {
+                const symbolsMapped = symbols.map((s, i) => expectedSymbols[i] === undefined || typeof expectedSymbols[i] === 'string' ? symbolToString(s) : s);
+                expectedFunction(symbolsMapped, expectedSymbols, `Expected ${expectedSymbols.length} but found ${symbols.length} symbols in document`);
+            }
+        }
+    };
+}
+
+export interface ExpectedWorkspaceSymbolsBase {
+    query?: string
+}
+
+export interface ExpectedWorkspaceSymbolsList extends ExpectedWorkspaceSymbolsBase {
+    expectedSymbols: Array<string | WorkspaceSymbol>;
+    symbolToString?: (item: WorkspaceSymbol) => string;
+}
+
+export interface ExpectedWorkspaceSymbolsCallback extends ExpectedWorkspaceSymbolsBase {
+    assert: (symbols: WorkspaceSymbol[]) => void;
+}
+
+export type ExpectedWorkspaceSymbols = ExpectedWorkspaceSymbolsList | ExpectedWorkspaceSymbolsCallback;
+
+export function expectWorkspaceSymbols(services: LangiumSharedServices): (input: ExpectedWorkspaceSymbols) => Promise<void> {
+    return async input => {
+        const symbolProvider = services.lsp.WorkspaceSymbolProvider;
+        const symbols = await symbolProvider?.getSymbols({
+            query: input.query ?? ''
+        }) ?? [];
+
+        if ('assert' in input && typeof input.assert === 'function') {
+            input.assert(symbols);
         } else if ('expectedSymbols' in input) {
             const symbolToString = input.symbolToString ?? (symbol => symbol.name);
             const expectedSymbols = input.expectedSymbols;
@@ -142,7 +187,7 @@ export function expectSymbols(services: LangiumServices): (input: ExpectedSymbol
 
             } else {
                 const symbolsMapped = symbols.map((s, i) => expectedSymbols[i] === undefined || typeof expectedSymbols[i] === 'string' ? symbolToString(s) : s);
-                expectedFunction(symbolsMapped, expectedSymbols, `Expected ${expectedSymbols.length} but found ${symbols.length} symbols in document`);
+                expectedFunction(symbolsMapped, expectedSymbols, `Expected ${expectedSymbols.length} but found ${symbols.length} symbols in workspace`);
             }
         }
     };

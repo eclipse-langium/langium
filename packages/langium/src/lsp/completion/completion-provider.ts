@@ -15,6 +15,8 @@ import type { AstNode, AstNodeDescription, Reference, ReferenceInfo } from '../.
 import type { MaybePromise } from '../../utils/promise-util';
 import type { LangiumDocument } from '../../workspace/documents';
 import type { NextFeature } from './follow-element-computation';
+import type { NodeKindProvider } from '../node-kind-provider';
+import type { FuzzyMatcher } from '../fuzzy-matcher';
 import { CompletionItemKind, CompletionList, Position } from 'vscode-languageserver';
 import * as ast from '../../grammar/generated/ast';
 import { getExplicitRuleType } from '../../grammar/internal-grammar-util';
@@ -99,6 +101,8 @@ export class DefaultCompletionProvider implements CompletionProvider {
     protected readonly grammar: ast.Grammar;
     protected readonly nameProvider: NameProvider;
     protected readonly grammarConfig: GrammarConfig;
+    protected readonly nodeKindProvider: NodeKindProvider;
+    protected readonly fuzzyMatcher: FuzzyMatcher;
 
     constructor(services: LangiumServices) {
         this.scopeProvider = services.references.ScopeProvider;
@@ -106,6 +110,8 @@ export class DefaultCompletionProvider implements CompletionProvider {
         this.completionParser = services.parser.CompletionParser;
         this.nameProvider = services.references.NameProvider;
         this.grammarConfig = services.parser.GrammarConfig;
+        this.nodeKindProvider = services.shared.lsp.NodeKindProvider;
+        this.fuzzyMatcher = services.shared.lsp.FuzzyMatcher;
     }
 
     async getCompletion(document: LangiumDocument, params: CompletionParams): Promise<CompletionList | undefined> {
@@ -333,7 +339,7 @@ export class DefaultCompletionProvider implements CompletionProvider {
     protected createReferenceCompletionItem(nodeDescription: AstNodeDescription): CompletionValueItem {
         return {
             nodeDescription,
-            kind: CompletionItemKind.Reference,
+            kind: this.nodeKindProvider.getCompletionItemKind(nodeDescription),
             detail: nodeDescription.type,
             sortText: '0'
         };
@@ -411,7 +417,7 @@ export class DefaultCompletionProvider implements CompletionProvider {
         const content = document.getText();
         const tokenStart = this.backtrackToTokenStart(content, offset);
         const identifier = content.substring(tokenStart, offset);
-        if (this.charactersFuzzyMatch(identifier, label)) {
+        if (this.fuzzyMatcher.match(identifier, label)) {
             const start = document.positionAt(tokenStart);
             const end = document.positionAt(offset);
             return {
@@ -429,51 +435,4 @@ export class DefaultCompletionProvider implements CompletionProvider {
     protected isWordCharacterAt(content: string, index: number): boolean {
         return this.grammarConfig.nameRegexp.test(content.charAt(index));
     }
-
-    protected charactersFuzzyMatch(existingValue: string, completionValue: string): boolean {
-        if (existingValue.length === 0) {
-            return true;
-        }
-
-        completionValue = completionValue.toLowerCase();
-        let matchedFirstCharacter = false;
-        let previous: number | undefined;
-        let character = 0;
-        const len = completionValue.length;
-        for (let i = 0; i < len; i++) {
-            const strChar = completionValue.charCodeAt(i);
-            const testChar = existingValue.charCodeAt(character);
-            if (strChar === testChar || this.toUpperCharCode(strChar) === this.toUpperCharCode(testChar)) {
-                matchedFirstCharacter ||=
-                    previous === undefined || // Beginning of word
-                    this.isWordTransition(previous, strChar);
-                if (matchedFirstCharacter) {
-                    character++;
-                }
-                if (character === existingValue.length) {
-                    return true;
-                }
-            }
-            previous = strChar;
-        }
-        return false;
-    }
-
-    protected isWordTransition(previous: number, current: number): boolean {
-        return a <= previous && previous <= z && A <= current && current <= Z || // camelCase transition
-            previous === _ && current !== _; // snake_case transition
-    }
-
-    protected toUpperCharCode(charCode: number) {
-        if (a <= charCode && charCode <= z) {
-            return charCode - 32;
-        }
-        return charCode;
-    }
 }
-
-const a = 'a'.charCodeAt(0);
-const z = 'z'.charCodeAt(0);
-const A = 'A'.charCodeAt(0);
-const Z = 'Z'.charCodeAt(0);
-const _ = '_'.charCodeAt(0);

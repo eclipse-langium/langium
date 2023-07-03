@@ -107,6 +107,7 @@ export class DefaultLanguageServer implements LanguageServer {
         const codeLensProvider = this.services.lsp.CodeLensProvider;
         const hasDeclarationProvider = this.hasService(e => e.lsp.DeclarationProvider);
         const inlayHintProvider = this.services.lsp.InlayHintProvider;
+        const workspaceSymbolProvider = this.services.lsp.WorkspaceSymbolProvider;
 
         const result: InitializeResult = {
             capabilities: {
@@ -151,6 +152,9 @@ export class DefaultLanguageServer implements LanguageServer {
                 declarationProvider: hasDeclarationProvider,
                 inlayHintProvider: inlayHintProvider
                     ? { resolveProvider: Boolean(inlayHintProvider.resolveInlayHint) }
+                    : undefined,
+                workspaceSymbolProvider: workspaceSymbolProvider
+                    ? { resolveProvider: Boolean(workspaceSymbolProvider.resolveSymbol) }
                     : undefined
             }
         };
@@ -193,6 +197,7 @@ export function startLanguageServer(services: LangiumSharedServices): void {
     addDocumentLinkHandler(connection, services);
     addConfigurationChangeHandler(connection, services);
     addGoToDeclarationHandler(connection, services);
+    addWorkspaceSymbolHandler(connection, services);
 
     connection.onInitialize(params => {
         return services.lsp.LanguageServer.initialize(params);
@@ -471,6 +476,29 @@ export function addCodeLensHandler(connection: Connection, services: LangiumShar
             connection.onCodeLensResolve(async (codeLens, token) => {
                 try {
                     return await resolveCodeLens(codeLens, token);
+                } catch (err) {
+                    return responseError(err);
+                }
+            });
+        }
+    }
+}
+
+export function addWorkspaceSymbolHandler(connection: Connection, services: LangiumSharedServices): void {
+    const workspaceSymbolProvider = services.lsp.WorkspaceSymbolProvider;
+    if (workspaceSymbolProvider) {
+        connection.onWorkspaceSymbol(async (params, token) => {
+            try {
+                return await workspaceSymbolProvider.getSymbols(params, token);
+            } catch (err) {
+                return responseError(err);
+            }
+        });
+        const resolveWorkspaceSymbol = workspaceSymbolProvider.resolveSymbol?.bind(workspaceSymbolProvider);
+        if (resolveWorkspaceSymbol) {
+            connection.onWorkspaceSymbolResolve(async (workspaceSymbol, token) => {
+                try {
+                    return await resolveWorkspaceSymbol(workspaceSymbol, token);
                 } catch (err) {
                     return responseError(err);
                 }
