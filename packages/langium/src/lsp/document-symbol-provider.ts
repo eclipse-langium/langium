@@ -4,14 +4,14 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { CancellationToken, DocumentSymbol, DocumentSymbolParams } from 'vscode-languageserver';
-import { SymbolKind } from 'vscode-languageserver';
+import type { CancellationToken, DocumentSymbol, DocumentSymbolParams} from 'vscode-languageserver';
 import type { NameProvider } from '../references/name-provider';
 import type { LangiumServices } from '../services';
 import type { AstNode } from '../syntax-tree';
 import { streamContents } from '../utils/ast-util';
 import type { MaybePromise } from '../utils/promise-util';
 import type { LangiumDocument } from '../workspace/documents';
+import type { NodeKindProvider } from './node-kind-provider';
 
 /**
  * Language-specific service for handling document symbols requests.
@@ -29,9 +29,11 @@ export interface DocumentSymbolProvider {
 export class DefaultDocumentSymbolProvider implements DocumentSymbolProvider {
 
     protected readonly nameProvider: NameProvider;
+    protected readonly nodeKindProvider: NodeKindProvider;
 
     constructor(services: LangiumServices) {
         this.nameProvider = services.references.NameProvider;
+        this.nodeKindProvider = services.shared.lsp.NodeKindProvider;
     }
 
     getSymbols(document: LangiumDocument): MaybePromise<DocumentSymbol[]> {
@@ -44,7 +46,7 @@ export class DefaultDocumentSymbolProvider implements DocumentSymbolProvider {
         if (nameNode && node) {
             const name = this.nameProvider.getName(astNode);
             return [{
-                kind: this.getSymbolKind(astNode.$type),
+                kind: this.nodeKindProvider.getSymbolKind(astNode),
                 name: name ?? nameNode.text,
                 range: node.range,
                 selectionRange: nameNode.range,
@@ -66,10 +68,5 @@ export class DefaultDocumentSymbolProvider implements DocumentSymbolProvider {
             return children;
         }
         return undefined;
-    }
-
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    protected getSymbolKind(type: string): SymbolKind {
-        return SymbolKind.Field;
     }
 }

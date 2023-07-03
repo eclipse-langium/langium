@@ -16,11 +16,14 @@ import { DefaultCompletionProvider } from './lsp/completion/completion-provider'
 import { DefaultDocumentHighlightProvider } from './lsp/document-highlight-provider';
 import { DefaultDocumentSymbolProvider } from './lsp/document-symbol-provider';
 import { DefaultFoldingRangeProvider } from './lsp/folding-range-provider';
+import { DefaultFuzzyMatcher } from './lsp/fuzzy-matcher';
 import { DefaultDefinitionProvider } from './lsp/definition-provider';
 import { MultilineCommentHoverProvider } from './lsp/hover-provider';
 import { DefaultLanguageServer } from './lsp/language-server';
+import { DefaultNodeKindProvider } from './lsp/node-kind-provider';
 import { DefaultReferencesProvider } from './lsp/references-provider';
 import { DefaultRenameProvider } from './lsp/rename-provider';
+import { DefaultWorkspaceSymbolProvider } from './lsp/workspace-symbol-provider';
 import { createLangiumParser } from './parser/langium-parser-builder';
 import { DefaultTokenBuilder } from './parser/token-builder';
 import { DefaultValueConverter } from './parser/value-converter';
@@ -128,7 +131,10 @@ export function createDefaultSharedModule(context: DefaultSharedModuleContext): 
         ServiceRegistry: () => new DefaultServiceRegistry(),
         lsp: {
             Connection: () => context.connection,
-            LanguageServer: (services) => new DefaultLanguageServer(services)
+            LanguageServer: (services) => new DefaultLanguageServer(services),
+            WorkspaceSymbolProvider: (services) => new DefaultWorkspaceSymbolProvider(services),
+            NodeKindProvider: () => new DefaultNodeKindProvider(),
+            FuzzyMatcher: () => new DefaultFuzzyMatcher()
         },
         workspace: {
             LangiumDocuments: (services) => new DefaultLangiumDocuments(services),
