@@ -263,21 +263,21 @@ export async function generate(config: LangiumConfig, options: GenerateOptions):
             const genTmGrammar = generateTextMate(grammar, languageConfig);
             const textMatePath = path.resolve(relPath, languageConfig.textMate.out);
             log('log', options, `Writing textmate grammar to ${chalk.white.bold(textMatePath)}`);
-            await writeHighlightGrammar(genTmGrammar, textMatePath, options);
+            await writeWithFail(genTmGrammar, textMatePath, options);
         }
 
         if (languageConfig?.monarch) {
             const genMonarchGrammar = generateMonarch(grammar, languageConfig);
             const monarchPath = path.resolve(relPath, languageConfig.monarch.out);
             log('log', options, `Writing monarch grammar to ${chalk.white.bold(monarchPath)}`);
-            await writeHighlightGrammar(genMonarchGrammar, monarchPath, options);
+            await writeWithFail(genMonarchGrammar, monarchPath, options);
         }
 
         if (languageConfig?.prism) {
             const genPrismGrammar = generatePrismHighlighting(grammar, languageConfig);
             const prismPath = path.resolve(relPath, languageConfig.prism.out);
             log('log', options, `Writing prism grammar to ${chalk.white.bold(prismPath)}`);
-            await writeHighlightGrammar(genPrismGrammar, prismPath, options);
+            await writeWithFail(genPrismGrammar, prismPath, options);
         }
 
         if (languageConfig?.railroad) {
@@ -331,18 +331,6 @@ async function doLoadAndUpdate(grammarDoc: LangiumDocument): Promise<LangiumDocu
     return grammarDoc;
 }
 
-/**
- * Writes contents of a grammar for syntax highlighting to a file, logging any errors and continuing without throwing
- * @param grammar Grammar contents to write
- * @param grammarPath Path to write, verifying the parent dir exists first
- * @param options Generation options
- */
-async function writeHighlightGrammar(grammar: string, grammarPath: string, options: GenerateOptions): Promise<void> {
-    const parentDir = path.dirname(grammarPath).split(path.sep).pop();
-    parentDir && await mkdirWithFail(parentDir, options);
-    await writeWithFail(grammarPath, grammar, options);
-}
-
 async function rmdirWithFail(dirPath: string, expectedFiles: string[], options: GenerateOptions): Promise<boolean> {
     try {
         let deleteDir = true;
@@ -375,10 +363,12 @@ async function mkdirWithFail(path: string, options: GenerateOptions): Promise<bo
     }
 }
 
-async function writeWithFail(path: string, content: string, options: { watch: boolean }): Promise<void> {
+async function writeWithFail(filePath: string, content: string, options: { watch: boolean }): Promise<void> {
     try {
-        await fs.writeFile(path, content);
+        const parentDir = path.dirname(filePath);
+        await mkdirWithFail(parentDir, options);
+        await fs.writeFile(filePath, content);
     } catch (e) {
-        log('error', options, `Failed to write file to ${chalk.red.bold(path)}`, e);
+        log('error', options, `Failed to write file to ${chalk.red.bold(filePath)}`, e);
     }
 }
