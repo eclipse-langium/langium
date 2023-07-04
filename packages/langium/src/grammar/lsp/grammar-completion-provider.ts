@@ -6,13 +6,13 @@
 
 import type { Range } from 'vscode-languageserver-types';
 import { CompletionItemKind } from 'vscode-languageserver-types';
-import type { NextFeature } from '../../lsp';
+import type { NextFeature } from '../../lsp/completion/follow-element-computation';
 import type { CompletionAcceptor, CompletionContext } from '../../lsp/completion/completion-provider';
 import { DefaultCompletionProvider } from '../../lsp/completion/completion-provider';
 import type { LangiumServices } from '../../services';
-import type { MaybePromise} from '../../utils';
-import { getContainerOfType} from '../../utils';
-import { equalURI } from '../../utils';
+import type { MaybePromise } from '../../utils/promise-util';
+import { getContainerOfType } from '../../utils/ast-util';
+import { equalURI } from '../../utils/uri-util';
 import type { LangiumDocument, LangiumDocuments } from '../../workspace';
 import type { AbstractElement } from '../generated/ast';
 import { isAssignment } from '../generated/ast';
@@ -20,11 +20,11 @@ import { Utils } from 'vscode-uri';
 
 export class LangiumGrammarCompletionProvider extends DefaultCompletionProvider {
 
-    private readonly documents: LangiumDocuments;
+    private readonly documents: () => LangiumDocuments;
 
     constructor(services: LangiumServices) {
         super(services);
-        this.documents = services.shared.workspace.LangiumDocuments;
+        this.documents = () => services.shared.workspace.LangiumDocuments;
     }
 
     protected override completionFor(context: CompletionContext, next: NextFeature<AbstractElement>, acceptor: CompletionAcceptor): MaybePromise<void> {
@@ -72,7 +72,7 @@ export class LangiumGrammarCompletionProvider extends DefaultCompletionProvider 
     }
 
     private getAllFiles(document: LangiumDocument): string[] {
-        const documents = this.documents.all;
+        const documents = this.documents().all;
         const uri = document.uri.toString();
         const dirname = Utils.dirname(document.uri).toString();
         const paths: string[] = [];
