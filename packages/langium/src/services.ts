@@ -92,6 +92,9 @@ export type LangiumLspServices = {
     SignatureHelp?: SignatureHelpProvider
     CallHierarchyProvider?: CallHierarchyProvider
     DeclarationProvider?: DeclarationProvider
+    InlayHintProvider?: InlayHintProvider
+    CodeLensProvider?: CodeLensProvider
+    DocumentLinkProvider?: DocumentLinkProvider
 }
 
 /**
@@ -153,10 +156,7 @@ export type LangiumDefaultSharedServices = {
     ServiceRegistry: ServiceRegistry
     lsp: {
         Connection?: Connection
-        CodeLensProvider?: CodeLensProvider
-        DocumentLinkProvider?: DocumentLinkProvider
         ExecuteCommandHandler?: ExecuteCommandHandler
-        InlayHintProvider?: InlayHintProvider
         WorkspaceSymbolProvider?: WorkspaceSymbolProvider
         NodeKindProvider: NodeKindProvider
         FuzzyMatcher: FuzzyMatcher
