@@ -65,7 +65,7 @@ describe('ValidationRegistry', () => {
             ParserRule: () => { appliedChecks.push('b'); }
         };
         registry.register(checks2, undefined, 'fast');
-        registry.getChecks('ParserRule', 'fast').forEach(check => (check as () => void)());
+        registry.getChecks('ParserRule', ['fast']).forEach(check => (check as () => void)());
         expect(appliedChecks).toEqual(['a', 'b']);
     });
 
@@ -80,7 +80,7 @@ describe('ValidationRegistry', () => {
             ParserRule: () => { appliedChecks.push('b'); }
         };
         registry.register(checks2, undefined, 'slow');
-        registry.getChecks('ParserRule', 'slow').forEach(check => (check as () => void)());
+        registry.getChecks('ParserRule', ['slow']).forEach(check => (check as () => void)());
         expect(appliedChecks).toEqual(['b']);
     });
 

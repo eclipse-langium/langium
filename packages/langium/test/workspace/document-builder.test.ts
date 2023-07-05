@@ -34,14 +34,22 @@ describe('DefaultDocumentBuilder', () => {
             hidden terminal WS: /\\s+/;
         `;
         const services = await createServicesForGrammar({ grammar, grammarServices });
-        const checks: ValidationChecks<TestAstType> = {
+        const fastChecks: ValidationChecks<TestAstType> = {
             Foo: (node, accept) => {
                 if (node.value > 10) {
                     accept('warning', 'Value is too large: ' + node.value, { node });
                 }
             }
         };
-        services.validation.ValidationRegistry.register(checks);
+        services.validation.ValidationRegistry.register(fastChecks);
+        const slowChecks: ValidationChecks<TestAstType> = {
+            Foo: (node, accept) => {
+                if (node.bar.ref && node.bar.ref.name.length > 10) {
+                    accept('warning', 'Bar is too long: ' + node.bar.ref.name, { node });
+                }
+            }
+        };
+        services.validation.ValidationRegistry.register(slowChecks, null, 'slow');
         return services;
     }
 
@@ -135,6 +143,60 @@ describe('DefaultDocumentBuilder', () => {
         expect(document2.state).toBe(DocumentState.Validated);
         expect(document2.diagnostics?.map(d => d.message)).toEqual([
             'Value is too large: 11'
+        ]);
+    });
+
+    test('runs missing validation checks if requested', async () => {
+        const services = await createServices();
+        const documentFactory = services.shared.workspace.LangiumDocumentFactory;
+        const documents = services.shared.workspace.LangiumDocuments;
+        const document1 = documentFactory.fromString(`
+            foo 1 AnotherStrangeBar
+            foo 11 B
+            bar AnotherStrangeBar
+            bar B
+        `, URI.parse('file:///test1.txt'));
+        documents.addDocument(document1);
+
+        const builder = services.shared.workspace.DocumentBuilder;
+        await builder.build([document1], { validation: { categories: ['built-in', 'fast'] } });
+        expect(document1.state).toBe(DocumentState.Validated);
+        expect(document1.diagnostics?.map(d => d.message)).toEqual([
+            'Value is too large: 11'
+        ]);
+
+        await builder.build([document1], { validation: { categories: ['fast', 'slow'] } });
+        expect(document1.state).toBe(DocumentState.Validated);
+        expect(document1.diagnostics?.map(d => d.message)).toEqual([
+            'Value is too large: 11',
+            'Bar is too long: AnotherStrangeBar'
+        ]);
+    });
+
+    test('reruns all validation checks if requested', async () => {
+        const services = await createServices();
+        const documentFactory = services.shared.workspace.LangiumDocumentFactory;
+        const documents = services.shared.workspace.LangiumDocuments;
+        const document1 = documentFactory.fromString(`
+            foo 1 AnotherStrangeBar
+            foo 11 B
+            bar AnotherStrangeBar
+            bar B
+        `, URI.parse('file:///test1.txt'));
+        documents.addDocument(document1);
+
+        const builder = services.shared.workspace.DocumentBuilder;
+        await builder.build([document1], { validation: { categories: ['built-in', 'fast'] } });
+        expect(document1.state).toBe(DocumentState.Validated);
+        expect(document1.diagnostics?.map(d => d.message)).toEqual([
+            'Value is too large: 11'
+        ]);
+
+        await builder.build([document1], { validation: true });
+        expect(document1.state).toBe(DocumentState.Validated);
+        expect(document1.diagnostics?.map(d => d.message)).toEqual([
+            'Value is too large: 11',
+            'Bar is too long: AnotherStrangeBar'
         ]);
     });
 

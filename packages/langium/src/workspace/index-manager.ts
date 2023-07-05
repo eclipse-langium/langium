@@ -15,7 +15,6 @@ import { CancellationToken } from 'vscode-languageserver';
 import { getDocument } from '../utils/ast-util';
 import { stream } from '../utils/stream';
 import { equalURI } from '../utils/uri-util';
-import { DocumentState } from './documents';
 
 /**
  * The index manager is responsible for keeping metadata about symbols and cross-references
@@ -139,14 +138,12 @@ export class DefaultIndexManager implements IndexManager {
             data.node = undefined; // clear reference to the AST Node
         }
         this.simpleIndex.set(document.uri.toString(), exports);
-        document.state = DocumentState.IndexedContent;
     }
 
     async updateReferences(document: LangiumDocument, cancelToken = CancellationToken.None): Promise<void> {
         const services = this.serviceRegistry.getServices(document.uri);
         const indexData: ReferenceDescription[] = await services.workspace.ReferenceDescriptionProvider.createDescriptions(document, cancelToken);
         this.referenceIndex.set(document.uri.toString(), indexData);
-        document.state = DocumentState.IndexedReferences;
     }
 
     isAffected(document: LangiumDocument, changedUris: Set<string>): boolean {

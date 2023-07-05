@@ -20,10 +20,10 @@ import { interruptAndCheck, isOperationCancelled } from '../utils/promise-util';
 
 export interface ValidationOptions {
     /**
-     * If this is set, only the checks associated with this category are executed; otherwise
-     * all checks are executed. The default category if not specified is `'fast'`.
+     * If this is set, only the checks associated with these categories are executed; otherwise
+     * all checks are executed. The default category if not specified to the registry is `'fast'`.
      */
-    category?: ValidationCategory
+    categories?: ValidationCategory[];
     /** If true, no further diagnostics are reported if there are lexing errors. */
     stopAfterLexingErrors?: boolean
     /** If true, no further diagnostics are reported if there are parsing errors. */
@@ -63,19 +63,21 @@ export class DefaultDocumentValidator implements DocumentValidator {
 
         await interruptAndCheck(cancelToken);
 
-        this.processLexingErrors(parseResult, diagnostics, options);
-        if (options.stopAfterLexingErrors && diagnostics.some(d => d.code === DocumentValidator.LexingError)) {
-            return diagnostics;
-        }
+        if (!options.categories || options.categories.includes('built-in')) {
+            this.processLexingErrors(parseResult, diagnostics, options);
+            if (options.stopAfterLexingErrors && diagnostics.some(d => d.code === DocumentValidator.LexingError)) {
+                return diagnostics;
+            }
 
-        this.processParsingErrors(parseResult, diagnostics, options);
-        if (options.stopAfterParsingErrors && diagnostics.some(d => d.code === DocumentValidator.ParsingError)) {
-            return diagnostics;
-        }
+            this.processParsingErrors(parseResult, diagnostics, options);
+            if (options.stopAfterParsingErrors && diagnostics.some(d => d.code === DocumentValidator.ParsingError)) {
+                return diagnostics;
+            }
 
-        this.processLinkingErrors(document, diagnostics, options);
-        if (options.stopAfterLinkingErrors && diagnostics.some(d => d.code === DocumentValidator.LinkingError)) {
-            return diagnostics;
+            this.processLinkingErrors(document, diagnostics, options);
+            if (options.stopAfterLinkingErrors && diagnostics.some(d => d.code === DocumentValidator.LinkingError)) {
+                return diagnostics;
+            }
         }
 
         // Process custom validations
@@ -180,7 +182,7 @@ export class DefaultDocumentValidator implements DocumentValidator {
 
         await Promise.all(streamAst(rootNode).map(async node => {
             await interruptAndCheck(cancelToken);
-            const checks = this.validationRegistry.getChecks(node.$type, options.category);
+            const checks = this.validationRegistry.getChecks(node.$type, options.categories);
             for (const check of checks) {
                 await check(node, acceptor, cancelToken);
             }

@@ -16,14 +16,15 @@ import { CancellationToken, Disposable } from 'vscode-languageserver';
 import { MultiMap } from '../utils/collections';
 import { interruptAndCheck } from '../utils/promise-util';
 import { stream } from '../utils/stream';
+import { ValidationCategory } from '../validation/validation-registry';
 import { DocumentState } from './documents';
 
 export interface BuildOptions {
     /**
      * Control the validation phase with this option:
-     *  - `true` enables all validation checks
-     *  - An object with the `category` property enables a subset of validation checks
+     *  - `true` enables all validation checks and forces revalidating the documents
      *  - `false` or `undefined` disables all validation checks
+     *  - An object runs only the necessary validation checks; the `categories` property restricts this to a specific subset
      */
     validation?: boolean | ValidationOptions
 }
@@ -81,9 +82,9 @@ export type DocumentBuildListener = (built: LangiumDocument[], cancelToken: Canc
 export class DefaultDocumentBuilder implements DocumentBuilder {
 
     updateBuildOptions: BuildOptions = {
-        // Default: run only the validation checks in the _fast_ category (includes those without category)
+        // Default: run only the built-in validation checks and those in the _fast_ category (includes those without category)
         validation: {
-            category: 'fast'
+            categories: ['built-in', 'fast']
         }
     };
 
@@ -104,7 +105,38 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
 
     async build<T extends AstNode>(documents: Array<LangiumDocument<T>>, options: BuildOptions = {}, cancelToken = CancellationToken.None): Promise<void> {
         for (const document of documents) {
-            this.buildState.delete(document.uri.toString());
+            const key = document.uri.toString();
+            if (document.state === DocumentState.Validated) {
+                if (typeof options.validation === 'boolean' && options.validation) {
+                    // Force re-running all validation checks
+                    document.state = DocumentState.IndexedReferences;
+                    document.diagnostics = undefined;
+                    this.buildState.delete(key);
+                } else if (typeof options.validation === 'object') {
+                    const state = this.buildState.get(key);
+                    const previousValidationOptions = state?.options?.validation;
+                    if (typeof previousValidationOptions === 'object' && previousValidationOptions.categories) {
+                        // Validation with explicit options was requested for a document that has already been partly validated.
+                        // In this case, we need to merge the previous validation categories with the new ones.
+                        const newCategories = options.validation.categories ?? ValidationCategory.all;
+                        const previousCategories = previousValidationOptions.categories;
+                        const categories = newCategories.filter(c => !previousCategories.includes(c));
+                        this.buildState.set(key, {
+                            completed: false,
+                            options: {
+                                validation: {
+                                    ...options.validation,
+                                    categories
+                                }
+                            }
+                        });
+                        document.state = DocumentState.IndexedReferences;
+                    } // In the other case, all validation checks are already done and we can skip this document.
+                }
+            } else {
+                // Default: forget any previous build options
+                this.buildState.delete(key);
+            }
         }
         await this.buildDocuments(documents, options, cancelToken);
     }
@@ -132,6 +164,7 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
                 const linker = this.serviceRegistry.getServices(doc.uri).references.Linker;
                 linker.unlink(doc);
                 doc.state = Math.min(doc.state, DocumentState.ComputedScopes);
+                doc.diagnostics = undefined;
             });
         // Notify listeners of the update
         for (const listener of this.updateListeners) {
@@ -179,36 +212,25 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
      * that a certain build phase is already done, the phase is skipped for that document.
      */
     protected async buildDocuments(documents: LangiumDocument[], options: BuildOptions, cancelToken: CancellationToken): Promise<void> {
-        for (const doc of documents) {
-            const key = doc.uri.toString();
-            const state = this.buildState.get(key);
-            // If the document has no previous build state, we set it. If it has one, but it's already marked
-            // as completed, we overwrite it. If the previous build was not completed, we keep its state
-            // and continue where it was cancelled.
-            if (!state || state.completed) {
-                this.buildState.set(key, {
-                    completed: false,
-                    options
-                });
-            }
-        }
-
+        this.prepareBuild(documents, options);
         // 0. Parse content
-        await this.runCancelable(documents, DocumentState.Parsed, cancelToken, doc =>
-            this.langiumDocumentFactory.update(doc)
-        );
+        await this.runCancelable(documents, DocumentState.Parsed, cancelToken, doc => {
+            this.langiumDocumentFactory.update(doc);
+        });
         // 1. Index content
         await this.runCancelable(documents, DocumentState.IndexedContent, cancelToken, doc =>
             this.indexManager.updateContent(doc, cancelToken)
         );
         // 2. Compute scopes
-        await this.runCancelable(documents, DocumentState.ComputedScopes, cancelToken, doc =>
-            this.computeScopes(doc, cancelToken)
-        );
+        await this.runCancelable(documents, DocumentState.ComputedScopes, cancelToken, async doc => {
+            const scopeComputation = this.serviceRegistry.getServices(doc.uri).references.ScopeComputation;
+            doc.precomputedScopes = await scopeComputation.computeLocalScopes(doc, cancelToken);
+        });
         // 3. Linking
-        await this.runCancelable(documents, DocumentState.Linked, cancelToken, doc =>
-            this.serviceRegistry.getServices(doc.uri).references.Linker.link(doc, cancelToken)
-        );
+        await this.runCancelable(documents, DocumentState.Linked, cancelToken, doc => {
+            const linker = this.serviceRegistry.getServices(doc.uri).references.Linker;
+            return linker.link(doc, cancelToken);
+        });
         // 4. Index references
         await this.runCancelable(documents, DocumentState.IndexedReferences, cancelToken, doc =>
             this.indexManager.updateReferences(doc, cancelToken)
@@ -223,16 +245,34 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
         for (const doc of documents) {
             const state = this.buildState.get(doc.uri.toString());
             if (state) {
-                state!.completed = true;
+                state.completed = true;
             }
         }
     }
 
-    protected async runCancelable(documents: LangiumDocument[], targetState: DocumentState, cancelToken: CancellationToken, callback: (document: LangiumDocument) => MaybePromise<unknown>): Promise<void> {
+    protected prepareBuild(documents: LangiumDocument[], options: BuildOptions): void {
+        for (const doc of documents) {
+            const key = doc.uri.toString();
+            const state = this.buildState.get(key);
+            // If the document has no previous build state, we set it. If it has one, but it's already marked
+            // as completed, we overwrite it. If the previous build was not completed, we keep its state
+            // and continue where it was cancelled.
+            if (!state || state.completed) {
+                this.buildState.set(key, {
+                    completed: false,
+                    options
+                });
+            }
+        }
+    }
+
+    protected async runCancelable(documents: LangiumDocument[], targetState: DocumentState, cancelToken: CancellationToken,
+        callback: (document: LangiumDocument) => MaybePromise<void>): Promise<void> {
         const filtered = documents.filter(e => e.state < targetState);
         for (const document of filtered) {
             await interruptAndCheck(cancelToken);
             await callback(document);
+            document.state = targetState;
         }
         await this.notifyBuildPhase(filtered, targetState, cancelToken);
     }
@@ -257,20 +297,6 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
     }
 
     /**
-     * Precompute the local scopes of the given document. The resulting data structure is used by
-     * the `ScopeProvider` service to determine the visible scope of any cross-reference.
-     *
-     * _Note:_ You should not resolve any cross-references during this phase. Once the phase is completed,
-     * you may follow the `ref` property of a reference, which triggers lazy resolution. The result is
-     * either the respective target AST node or `undefined` in case the target is not in scope.
-     */
-    protected async computeScopes(document: LangiumDocument, cancelToken: CancellationToken): Promise<void> {
-        const scopeComputation = this.serviceRegistry.getServices(document.uri).references.ScopeComputation;
-        document.precomputedScopes = await scopeComputation.computeLocalScopes(document, cancelToken);
-        document.state = DocumentState.ComputedScopes;
-    }
-
-    /**
      * Determine whether the given document should be validated during a build. The default
      * implementation checks the `validation` property of the build options. If it's set to `true`
      * or a `ValidationOptions` object, the document is included in the validation phase.
@@ -281,14 +307,18 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
 
     /**
      * Run validation checks on the given document and store the resulting diagnostics in the document.
+     * If the document already contains diagnostics, the new ones are added to the list.
      */
     protected async validate(document: LangiumDocument, cancelToken: CancellationToken): Promise<void> {
         const validator = this.serviceRegistry.getServices(document.uri).validation.DocumentValidator;
         const validationSetting = this.getBuildOptions(document).validation;
         const options = typeof validationSetting === 'object' ? validationSetting : undefined;
         const diagnostics = await validator.validateDocument(document, options, cancelToken);
-        document.diagnostics = diagnostics;
-        document.state = DocumentState.Validated;
+        if (document.diagnostics) {
+            document.diagnostics.push(...diagnostics);
+        } else {
+            document.diagnostics = diagnostics;
+        }
     }
 
     protected getBuildOptions(document: LangiumDocument): BuildOptions {

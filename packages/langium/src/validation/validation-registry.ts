@@ -65,8 +65,15 @@ export type ValidationChecks<T> = {
  * it as `slow`, it will be skipped for normal as-you-type validation. Then it's up to you when to
  * schedule these long-running checks: after the fast checks are done, or after saving a document,
  * or with an explicit command, etc.
+ *
+ * `built-in` checks are errors produced by the lexer, the parser, or the linker. They cannot be used
+ * for custom validation checks.
  */
-export type ValidationCategory = 'fast' | 'slow'
+export type ValidationCategory = 'fast' | 'slow' | 'built-in'
+
+export namespace ValidationCategory {
+    export const all: ValidationCategory[] = ['fast', 'slow', 'built-in'];
+}
 
 type ValidationCheckEntry = {
     check: ValidationCheck
@@ -93,6 +100,9 @@ export class ValidationRegistry {
      * @param thisObj Optional object to be used as `this` when calling the validation check functions.
      */
     register<T>(checksRecord: ValidationChecks<T>, thisObj: ThisParameterType<unknown> = this, category: ValidationCategory = 'fast'): void {
+        if (category === 'built-in') {
+            throw new Error("The 'built-in' category is reserved for lexer, parser, and linker errors.");
+        }
         for (const [type, ch] of Object.entries(checksRecord)) {
             const callbacks = ch as ValidationCheck | ValidationCheck[];
             if (Array.isArray(callbacks)) {
@@ -141,11 +151,11 @@ export class ValidationRegistry {
         }
     }
 
-    getChecks(type: string, category?: ValidationCategory): Stream<ValidationCheck> {
+    getChecks(type: string, categories?: ValidationCategory[]): Stream<ValidationCheck> {
         let checks = stream(this.entries.get(type))
             .concat(this.entries.get('AstNode'));
-        if (category) {
-            checks = checks.filter(entry => entry.category === category);
+        if (categories) {
+            checks = checks.filter(entry => categories.includes(entry.category));
         }
         return checks.map(entry => entry.check);
     }
