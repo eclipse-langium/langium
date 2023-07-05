@@ -18,13 +18,13 @@
       "patterns": [
         {
           "name": "comment.block.arithmetics",
-          "begin": "\\/\\*",
+          "begin": "/\\*",
           "beginCaptures": {
             "0": {
               "name": "punctuation.definition.comment.arithmetics"
             }
           },
-          "end": "\\*\\/",
+          "end": "\\*/",
           "endCaptures": {
             "0": {
               "name": "punctuation.definition.comment.arithmetics"
@@ -32,7 +32,7 @@
           }
         },
         {
-          "begin": "\\/\\/",
+          "begin": "//",
           "beginCaptures": {
             "1": {
               "name": "punctuation.whitespace.comment.leading.arithmetics"

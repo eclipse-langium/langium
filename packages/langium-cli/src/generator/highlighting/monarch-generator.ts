@@ -235,7 +235,7 @@ function prettyPrintLangDef(languageDef: LanguageDefinition, node: CompositeGene
         genLanguageDefEntry('keywords', languageDef.keywords), NL,
         genLanguageDefEntry('operators', languageDef.operators), NL,
         // special case, identify symbols via singular regex
-        'symbols:  /' + languageDef.symbols.map(escapeRegExp).join('|') + '/,'
+        `symbols: ${new RegExp(languageDef.symbols.map(escapeRegExp).join('|')).toString()},`
     );
 }
 
@@ -279,8 +279,8 @@ function prettyPrintState(state: State, node: CompositeGeneratorNode): void {
 function prettyPrintRule(ruleOrState: Rule | State): CompositeGeneratorNode {
     if (isRule(ruleOrState)) {
         // extract rule pattern, either just a string or a regex w/ parts
-        const rulePatt = ruleOrState.regex instanceof RegExp ? ruleOrState.regex.toString() : `/${ruleOrState.regex}/`;
-        return new CompositeGeneratorNode('{ regex: ' + rulePatt + ', action: ' + prettyPrintAction(ruleOrState.action) + ' },');
+        const rulePatt = ruleOrState.regex instanceof RegExp ? ruleOrState.regex : new RegExp(ruleOrState.regex);
+        return new CompositeGeneratorNode('{ regex: ' + rulePatt.toString() + ', action: ' + prettyPrintAction(ruleOrState.action) + ' },');
     } else {
         // include another state by name, implicitly includes all of its contents
         return new CompositeGeneratorNode(`{ include: '@${ruleOrState.name}' },`);

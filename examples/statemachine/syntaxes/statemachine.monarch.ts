@@ -6,7 +6,7 @@ export default {
     operators: [
         '=>'
     ],
-    symbols:  /=>|\{|\}/,
+    symbols: /=>|\{|\}/,
 
     tokenizer: {
         initial: [
@@ -20,9 +20,9 @@ export default {
             { regex: /\/\/[^\n\r]*/, action: {"token":"comment"} },
         ],
         comment: [
-            { regex: /[^\/\*]+/, action: {"token":"comment"} },
+            { regex: /[^/\*]+/, action: {"token":"comment"} },
             { regex: /\*\//, action: {"token":"comment","next":"@pop"} },
-            { regex: /[\/\*]/, action: {"token":"comment"} },
+            { regex: /[/\*]/, action: {"token":"comment"} },
         ],
     }
 };
