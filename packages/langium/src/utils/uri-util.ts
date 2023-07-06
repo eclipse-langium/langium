@@ -10,9 +10,9 @@ export function equalURI(a?: URI | string, b?: URI | string): boolean {
     return a?.toString() === b?.toString();
 }
 
-export function relativeURI(from: URI, to: URI): string {
-    const fromPath = from.path;
-    const toPath = to.path;
+export function relativeURI(from: URI | string, to: URI | string): string {
+    const fromPath = typeof from === 'string' ? from : from.path;
+    const toPath = typeof to === 'string' ? to : to.path;
     const fromParts = fromPath.split('/').filter(e => e.length > 0);
     const toParts = toPath.split('/').filter(e => e.length > 0);
     let i = 0;

@@ -12,7 +12,7 @@ import { DefaultCompletionProvider } from '../../lsp/completion/completion-provi
 import type { LangiumServices } from '../../services';
 import type { MaybePromise } from '../../utils/promise-util';
 import { getContainerOfType } from '../../utils/ast-util';
-import { equalURI } from '../../utils/uri-util';
+import { equalURI, relativeURI } from '../../utils/uri-util';
 import type { LangiumDocument, LangiumDocuments } from '../../workspace';
 import type { AbstractElement } from '../generated/ast';
 import { isAssignment } from '../generated/ast';
@@ -80,39 +80,14 @@ export class LangiumGrammarCompletionProvider extends DefaultCompletionProvider 
             if (!equalURI(doc.uri, uri)) {
                 const docUri = doc.uri.toString();
                 const uriWithoutExt = docUri.substring(0, docUri.length - Utils.extname(doc.uri).length);
-                const relativePath = this.createRelativePath(dirname, uriWithoutExt);
+                let relativePath = relativeURI(dirname, uriWithoutExt);
+                if (!relativePath.startsWith('.')) {
+                    relativePath = `./${relativePath}`;
+                }
                 paths.push(relativePath);
             }
         }
         return paths;
-    }
-
-    private createRelativePath(fromPath: string, toPath: string): string {
-        const fromParts = fromPath.split('/');
-        const toParts = toPath.split('/');
-
-        // Remove common parts from the beginning of the paths
-        while (fromParts.length > 0 && toParts.length > 0 && fromParts[0] === toParts[0]) {
-            fromParts.shift();
-            toParts.shift();
-        }
-
-        // Calculate the number of directories to navigate up from the 'fromPath'
-        const navigateUpCount = fromParts.length;
-
-        // Create the relative path by navigating up and then appending the remaining path from 'toPath'
-        let relativePath = '';
-        for (let i = 0; i < navigateUpCount; i++) {
-            relativePath += '../';
-        }
-        relativePath += toParts.join('/');
-
-        // Prepend ./ for files that are located in the current directory
-        if (!relativePath.startsWith('..')) {
-            relativePath = `./${relativePath}`;
-        }
-
-        return relativePath;
     }
 
 }
