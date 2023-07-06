@@ -72,7 +72,7 @@ export type ValidationChecks<T> = {
 export type ValidationCategory = 'fast' | 'slow' | 'built-in'
 
 export namespace ValidationCategory {
-    export const all: ValidationCategory[] = ['fast', 'slow', 'built-in'];
+    export const all: readonly ValidationCategory[] = ['fast', 'slow', 'built-in'];
 }
 
 type ValidationCheckEntry = {

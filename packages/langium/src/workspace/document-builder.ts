@@ -34,6 +34,10 @@ export interface DocumentBuildState {
     completed: boolean
     /** The options used for the last build process. */
     options: BuildOptions
+    /** Additional information about the last build result. */
+    result?: {
+        validationChecks?: ValidationCategory[]
+    }
 }
 
 /**
@@ -113,25 +117,27 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
                     document.diagnostics = undefined;
                     this.buildState.delete(key);
                 } else if (typeof options.validation === 'object') {
-                    const state = this.buildState.get(key);
-                    const previousValidationOptions = state?.options?.validation;
-                    if (typeof previousValidationOptions === 'object' && previousValidationOptions.categories) {
+                    const buildState = this.buildState.get(key);
+                    const previousCategories = buildState?.result?.validationChecks;
+                    if (previousCategories) {
                         // Validation with explicit options was requested for a document that has already been partly validated.
                         // In this case, we need to merge the previous validation categories with the new ones.
                         const newCategories = options.validation.categories ?? ValidationCategory.all;
-                        const previousCategories = previousValidationOptions.categories;
                         const categories = newCategories.filter(c => !previousCategories.includes(c));
-                        this.buildState.set(key, {
-                            completed: false,
-                            options: {
-                                validation: {
-                                    ...options.validation,
-                                    categories
-                                }
-                            }
-                        });
-                        document.state = DocumentState.IndexedReferences;
-                    } // In the other case, all validation checks are already done and we can skip this document.
+                        if (categories.length > 0) {
+                            this.buildState.set(key, {
+                                completed: false,
+                                options: {
+                                    validation: {
+                                        ...options.validation,
+                                        categories
+                                    }
+                                },
+                                result: buildState.result
+                            });
+                            document.state = DocumentState.IndexedReferences;
+                        }
+                    }
                 }
             } else {
                 // Default: forget any previous build options
@@ -260,7 +266,8 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
             if (!state || state.completed) {
                 this.buildState.set(key, {
                     completed: false,
-                    options
+                    options,
+                    result: state?.result
                 });
             }
         }
@@ -318,6 +325,18 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
             document.diagnostics.push(...diagnostics);
         } else {
             document.diagnostics = diagnostics;
+        }
+
+        // Store information about the executed validation in the build state
+        const state = this.buildState.get(document.uri.toString());
+        if (state) {
+            state.result ??= {};
+            const newCategories = options?.categories ?? ValidationCategory.all;
+            if (state.result.validationChecks) {
+                state.result.validationChecks.push(...newCategories);
+            } else {
+                state.result.validationChecks = [...newCategories];
+            }
         }
     }
 

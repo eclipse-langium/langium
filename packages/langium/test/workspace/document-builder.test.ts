@@ -171,6 +171,14 @@ describe('DefaultDocumentBuilder', () => {
             'Value is too large: 11',
             'Bar is too long: AnotherStrangeBar'
         ]);
+
+        // Re-running the fast checks should not lead to duplicate diagnostics
+        await builder.build([document1], { validation: { categories: ['fast'] } });
+        expect(document1.state).toBe(DocumentState.Validated);
+        expect(document1.diagnostics?.map(d => d.message)).toEqual([
+            'Value is too large: 11',
+            'Bar is too long: AnotherStrangeBar'
+        ]);
     });
 
     test('reruns all validation checks if requested', async () => {
