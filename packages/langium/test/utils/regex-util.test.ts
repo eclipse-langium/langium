@@ -99,24 +99,24 @@ describe('comment start/end parts', () => {
 
     test('JS style singleline comment should start with //', () => {
         expect(getTerminalParts(/\/\/[^\n\r]*/)).toEqual([{
-            start: '\\/\\/',
+            start: '//',
             end: ''
         }]);
     });
 
     test('JS style multiline comment should start with /* and end with */', () => {
         expect(getTerminalParts(/\/\*[\s\S]*?\*\//)).toEqual([{
-            start: '\\/\\*',
-            end: '\\*\\/'
+            start: '/\\*',
+            end: '\\*/'
         }]);
     });
 
     test('JS style combined comment should contain both /* */ and // parts', () => {
         expect(getTerminalParts(/\/\*[\s\S]*?\*\/|\/\/[^\n\r]*/)).toEqual([{
-            start: '\\/\\*',
-            end: '\\*\\/'
+            start: '/\\*',
+            end: '\\*/'
         }, {
-            start: '\\/\\/',
+            start: '//',
             end: ''
         }]);
     });
