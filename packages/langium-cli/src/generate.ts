@@ -263,21 +263,21 @@ export async function generate(config: LangiumConfig, options: GenerateOptions):
             const genTmGrammar = generateTextMate(grammar, languageConfig);
             const textMatePath = path.resolve(relPath, languageConfig.textMate.out);
             log('log', options, `Writing textmate grammar to ${chalk.white.bold(textMatePath)}`);
-            await writeWithFail(genTmGrammar, textMatePath, options);
+            await writeWithFail(textMatePath, genTmGrammar, options);
         }
 
         if (languageConfig?.monarch) {
             const genMonarchGrammar = generateMonarch(grammar, languageConfig);
             const monarchPath = path.resolve(relPath, languageConfig.monarch.out);
             log('log', options, `Writing monarch grammar to ${chalk.white.bold(monarchPath)}`);
-            await writeWithFail(genMonarchGrammar, monarchPath, options);
+            await writeWithFail(monarchPath, genMonarchGrammar, options);
         }
 
         if (languageConfig?.prism) {
             const genPrismGrammar = generatePrismHighlighting(grammar, languageConfig);
             const prismPath = path.resolve(relPath, languageConfig.prism.out);
             log('log', options, `Writing prism grammar to ${chalk.white.bold(prismPath)}`);
-            await writeWithFail(genPrismGrammar, prismPath, options);
+            await writeWithFail(prismPath, genPrismGrammar, options);
         }
 
         if (languageConfig?.railroad) {
