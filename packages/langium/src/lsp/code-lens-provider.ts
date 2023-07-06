@@ -10,5 +10,4 @@ import type { LangiumDocument } from '../workspace/documents';
 
 export interface CodeLensProvider {
     provideCodeLens(document: LangiumDocument, params: CodeLensParams, cancelToken?: CancellationToken): MaybePromise<CodeLens[] | undefined>
-    resolveCodeLens?(params: CodeLens, cancelToken?: CancellationToken): MaybePromise<CodeLens>
 }

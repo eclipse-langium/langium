@@ -90,7 +90,7 @@ export class DefaultLanguageServer implements LanguageServer {
         const hasCodeActionProvider = this.hasService(e => e.lsp.CodeActionProvider);
         const hasSemanticTokensProvider = this.hasService(e => e.lsp.SemanticTokenProvider);
         const commandNames = this.services.lsp.ExecuteCommandHandler?.commands;
-        const documentLinkProvider = this.services.lsp.DocumentLinkProvider;
+        const hasDocumentLinkProvider = this.hasService(e => e.lsp.DocumentLinkProvider);
         const signatureHelpOptions = mergeSignatureHelpOptions(languages.map(e => e.lsp.SignatureHelp?.signatureHelpOptions));
         const hasGoToTypeProvider = this.hasService(e => e.lsp.TypeProvider);
         const hasGoToImplementationProvider = this.hasService(e => e.lsp.ImplementationProvider);
@@ -104,9 +104,9 @@ export class DefaultLanguageServer implements LanguageServer {
         const hasHoverProvider = this.hasService(e => e.lsp.HoverProvider);
         const hasRenameProvider = this.hasService(e => e.lsp.RenameProvider);
         const hasCallHierarchyProvider = this.hasService(e => e.lsp.CallHierarchyProvider);
-        const codeLensProvider = this.services.lsp.CodeLensProvider;
+        const hasCodeLensProvider = this.hasService(e => e.lsp.CodeLensProvider);
         const hasDeclarationProvider = this.hasService(e => e.lsp.DeclarationProvider);
-        const inlayHintProvider = this.services.lsp.InlayHintProvider;
+        const hasInlayHintProvider = this.hasService(e => e.lsp.InlayHintProvider);
         const workspaceSymbolProvider = this.services.lsp.WorkspaceSymbolProvider;
 
         const result: InitializeResult = {
@@ -143,15 +143,15 @@ export class DefaultLanguageServer implements LanguageServer {
                 callHierarchyProvider: hasCallHierarchyProvider
                     ? {}
                     : undefined,
-                documentLinkProvider: documentLinkProvider
-                    ? { resolveProvider: Boolean(documentLinkProvider.resolveDocumentLink) }
+                documentLinkProvider: hasDocumentLinkProvider
+                    ? { resolveProvider: false }
                     : undefined,
-                codeLensProvider: codeLensProvider
-                    ? { resolveProvider: Boolean(codeLensProvider.resolveCodeLens) }
+                codeLensProvider: hasCodeLensProvider
+                    ? { resolveProvider: false }
                     : undefined,
                 declarationProvider: hasDeclarationProvider,
-                inlayHintProvider: inlayHintProvider
-                    ? { resolveProvider: Boolean(inlayHintProvider.resolveInlayHint) }
+                inlayHintProvider: hasInlayHintProvider
+                    ? { resolveProvider: false }
                     : undefined,
                 workspaceSymbolProvider: workspaceSymbolProvider
                     ? { resolveProvider: Boolean(workspaceSymbolProvider.resolveSymbol) }
@@ -364,24 +364,10 @@ export function addRenameHandler(connection: Connection, services: LangiumShared
 }
 
 export function addInlayHintHandler(connection: Connection, services: LangiumSharedServices): void {
-    const inlayHintProvider = services.lsp.InlayHintProvider;
-    if (inlayHintProvider) {
-        connection.languages.inlayHint.on(createServerRequestHandler(
-            (_, document, params, cancelToken) => inlayHintProvider.getInlayHints(document, params, cancelToken),
-            services
-        ));
-        // Make sure the function doesn't become undefined before actually executing it
-        const resolveInlayHint = inlayHintProvider.resolveInlayHint?.bind(inlayHintProvider);
-        if (resolveInlayHint) {
-            connection.languages.inlayHint.resolve(async (inlayHint, token) => {
-                try {
-                    return await resolveInlayHint(inlayHint, token);
-                } catch (err) {
-                    return responseError(err);
-                }
-            });
-        }
-    }
+    connection.languages.inlayHint.on(createServerRequestHandler(
+        (services, document, params, cancelToken) => services.lsp.InlayHintProvider?.getInlayHints(document, params, cancelToken),
+        services
+    ));
 }
 
 export function addSemanticTokenHandler(connection: Connection, services: LangiumSharedServices): void {
@@ -437,24 +423,10 @@ export function addExecuteCommandHandler(connection: Connection, services: Langi
 }
 
 export function addDocumentLinkHandler(connection: Connection, services: LangiumSharedServices): void {
-    const documentLinkProvider = services.lsp.DocumentLinkProvider;
-    if (documentLinkProvider) {
-        connection.onDocumentLinks(createServerRequestHandler(
-            (_, document, params, cancelToken) => documentLinkProvider.getDocumentLinks(document, params, cancelToken),
-            services
-        ));
-        // Make sure the function doesn't become undefined before actually executing it
-        const resolveDocumentLink = documentLinkProvider.resolveDocumentLink?.bind(documentLinkProvider);
-        if (resolveDocumentLink) {
-            connection.onDocumentLinkResolve(async (documentLink, token) => {
-                try {
-                    return await resolveDocumentLink(documentLink, token);
-                } catch (err) {
-                    return responseError(err);
-                }
-            });
-        }
-    }
+    connection.onDocumentLinks(createServerRequestHandler(
+        (services, document, params, cancelToken) => services.lsp.DocumentLinkProvider?.getDocumentLinks(document, params, cancelToken),
+        services
+    ));
 }
 
 export function addSignatureHelpHandler(connection: Connection, services: LangiumSharedServices): void {
@@ -465,23 +437,10 @@ export function addSignatureHelpHandler(connection: Connection, services: Langiu
 }
 
 export function addCodeLensHandler(connection: Connection, services: LangiumSharedServices): void {
-    const codeLensProvider = services.lsp.CodeLensProvider;
-    if (codeLensProvider) {
-        connection.onCodeLens(createServerRequestHandler(
-            (_, document, params, cancelToken) => codeLensProvider.provideCodeLens(document, params, cancelToken),
-            services
-        ));
-        const resolveCodeLens = codeLensProvider.resolveCodeLens?.bind(codeLensProvider);
-        if (resolveCodeLens) {
-            connection.onCodeLensResolve(async (codeLens, token) => {
-                try {
-                    return await resolveCodeLens(codeLens, token);
-                } catch (err) {
-                    return responseError(err);
-                }
-            });
-        }
-    }
+    connection.onCodeLens(createServerRequestHandler(
+        (services, document, params, cancelToken) => services.lsp.CodeLensProvider?.provideCodeLens(document, params, cancelToken),
+        services
+    ));
 }
 
 export function addWorkspaceSymbolHandler(connection: Connection, services: LangiumSharedServices): void {

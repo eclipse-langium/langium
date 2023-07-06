@@ -21,17 +21,10 @@ export interface InlayHintProvider {
     /**
      * Handle the `textDocument.inlayHint` language server request.
      *
-     * The inlay hints returned in this method don't need to contain all information about the hint.
-     * Instead, the {@link resolveInlayHint} method can be used to provide further information about the hint.
+     * @throws `OperationCancelled` if cancellation is detected during execution
+     * @throws `ResponseError` if an error is detected that should be sent as response to the client
      */
     getInlayHints(document: LangiumDocument, params: InlayHintParams, cancelToken?: CancellationToken): MaybePromise<InlayHint[] | undefined>;
-    /**
-     * Handle a resolve inlay request. Allows to provide additional information for an inlay hint.
-     *
-     * This request is performed when a user clicks on a hint provided by the {@link getInlayHints} method.
-     * Only needs to be implemented if full inlay link creation is expensive.
-     */
-    resolveInlayHint?(inlayHint: InlayHint, cancelToken?: CancellationToken): MaybePromise<InlayHint>;
 }
 
 export abstract class AbstractInlayHintProvider implements InlayHintProvider {
