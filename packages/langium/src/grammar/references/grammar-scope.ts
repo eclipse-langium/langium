@@ -9,20 +9,23 @@ import type { LangiumServices } from '../../services';
 import type { AstNode, AstNodeDescription, ReferenceInfo } from '../../syntax-tree';
 import type { Stream } from '../../utils/stream';
 import type { AstNodeLocator } from '../../workspace/ast-node-locator';
-import type { DocumentSegment, LangiumDocument, PrecomputedScopes } from '../../workspace/documents';
+import type { DocumentSegment, LangiumDocument, LangiumDocuments, PrecomputedScopes } from '../../workspace/documents';
+import type { Grammar } from '../generated/ast';
 import { DefaultScopeComputation } from '../../references/scope-computation';
 import { DefaultScopeProvider, EMPTY_SCOPE, StreamScope } from '../../references/scope-provider';
 import { findRootNode, getContainerOfType, getDocument, streamAllContents } from '../../utils/ast-util';
 import { toDocumentSegment } from '../../utils/cst-util';
 import { stream } from '../../utils/stream';
-import { equalURI } from '../../utils/uri-util';
 import { AbstractType, Interface, isAction, isGrammar, isParserRule, isReturnType, Type } from '../generated/ast';
 import { getActionType, resolveImportUri } from '../internal-grammar-util';
 
 export class LangiumGrammarScopeProvider extends DefaultScopeProvider {
 
+    protected readonly langiumDocuments: LangiumDocuments;
+
     constructor(services: LangiumServices) {
         super(services);
+        this.langiumDocuments = services.shared.workspace.LangiumDocuments;
     }
 
     override getScope(context: ReferenceInfo): Scope {
@@ -58,13 +61,30 @@ export class LangiumGrammarScopeProvider extends DefaultScopeProvider {
         if (!grammar) {
             return EMPTY_SCOPE;
         }
-        const importedUris = stream(grammar.imports).map(resolveImportUri).nonNullable();
+        const importedUris = new Set<string>();
+        this.gatherImports(grammar, importedUris);
         let importedElements = this.indexManager.allElements(referenceType)
-            .filter(des => importedUris.some(importedUri => equalURI(des.documentUri, importedUri)));
+            .filter(des => importedUris.has(des.documentUri.toString()));
         if (referenceType === AbstractType) {
             importedElements = importedElements.filter(des => des.type === Interface || des.type === Type);
         }
         return new StreamScope(importedElements);
+    }
+
+    private gatherImports(grammar: Grammar, importedUris: Set<string>): void {
+        for (const imp0rt of grammar.imports) {
+            const uri = resolveImportUri(imp0rt);
+            if (uri && !importedUris.has(uri.toString())) {
+                importedUris.add(uri.toString());
+                if (this.langiumDocuments.hasDocument(uri)) {
+                    const importedDocument = this.langiumDocuments.getOrCreateDocument(uri);
+                    const rootNode = importedDocument.parseResult.value;
+                    if (isGrammar(rootNode)) {
+                        this.gatherImports(rootNode, importedUris);
+                    }
+                }
+            }
+        }
     }
 
 }
