@@ -353,7 +353,7 @@ export interface IParserDefinitionError {
     ruleName?: string
 }
 
-export class AbstractParserErrorMessageProvider implements IParserErrorMessageProvider {
+export abstract class AbstractParserErrorMessageProvider implements IParserErrorMessageProvider {
 
     buildMismatchTokenMessage(options: {
         expected: TokenType
