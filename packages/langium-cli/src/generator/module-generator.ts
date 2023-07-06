@@ -47,13 +47,13 @@ export function generateModule(grammars: Grammar[], config: LangiumConfig, gramm
     for (const grammar of grammars) {
         if (grammar.name) {
             const config = grammarConfigMap.get(grammar)!;
-            node.append('export const ', grammar.name, 'LanguageMetaData: LanguageMetaData = {', NL);
+            node.append('export const ', grammar.name, 'LanguageMetaData = {', NL);
             node.indent(metaData => {
                 metaData.append(`languageId: '${config.id}',`, NL);
                 metaData.append(`fileExtensions: [${config.fileExtensions && config.fileExtensions.map(e => appendQuotesAndDot(e)).join(', ')}],`, NL);
                 metaData.append(`caseInsensitive: ${Boolean(config.caseInsensitive)}`, NL);
             });
-            node.append('};', NL, NL);
+            node.append('} as const satisfies LanguageMetaData;', NL, NL);
         }
     }
 
