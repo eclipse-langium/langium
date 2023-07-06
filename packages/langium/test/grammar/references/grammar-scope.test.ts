@@ -107,4 +107,33 @@ describe('Type Linking', () => {
         expect(reference?.type.ref).toBe(declaredType);
     });
 
+    test('Linking declared in transitively imported file', async () => {
+        const grammar1 = await parse(`
+        interface A {
+            a: string
+        }
+        `);
+        const grammar2 = await parse(`
+        import './${Utils.basename(grammar1.uri)}'
+        A returns A:
+            'A' a=ID;
+        terminal ID: /[_a-zA-Z][\\w_]*/;
+        `);
+        const grammar3 = await parse(`
+        grammar Debug
+        import './${Utils.basename(grammar2.uri)}'
+        interface B {
+            b: @A
+        }
+        entry Model:
+            (b+=B | a+=A)*;
+        B returns B:
+            'B' b=[A:ID];
+        `);
+        await services.shared.workspace.DocumentBuilder.build([grammar3, grammar2, grammar1]);
+        const reference = locator.getAstNode<CrossReference>(grammar3.parseResult.value, 'rules@1/definition/elements@1/terminal');
+        const declaredType = locator.getAstNode<Interface>(grammar1.parseResult.value, 'interfaces@0');
+        expect(reference?.type.ref).toBe(declaredType);
+    });
+
 });
