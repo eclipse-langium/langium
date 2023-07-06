@@ -7,11 +7,11 @@ import type { LangiumGeneratedServices, LangiumGeneratedSharedServices, LangiumS
 import { DomainModelAstReflection } from './ast';
 import { DomainModelGrammar } from './grammar';
 
-export const DomainModelLanguageMetaData: LanguageMetaData = {
+export const DomainModelLanguageMetaData = {
     languageId: 'domain-model',
     fileExtensions: ['.dmodel'],
     caseInsensitive: false
-};
+} as const satisfies LanguageMetaData;
 
 export const parserConfig: IParserConfig = {
     recoveryEnabled: true,
