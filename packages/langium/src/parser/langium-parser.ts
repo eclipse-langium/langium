@@ -78,7 +78,10 @@ export abstract class AbstractLangiumParser implements BaseParser {
     constructor(services: LangiumServices) {
         this.lexer = services.parser.Lexer;
         const tokens = this.lexer.definition;
-        this.wrapper = new ChevrotainWrapper(tokens, services.parser.ParserConfig);
+        this.wrapper = new ChevrotainWrapper(tokens, {
+            ...services.parser.ParserConfig,
+            errorMessageProvider: services.parser.ParserErrorMessageProvider
+        });
     }
 
     alternatives(idx: number, choices: Array<IOrAlt<any>>): void {
@@ -350,27 +353,22 @@ export interface IParserDefinitionError {
     ruleName?: string
 }
 
-export class LangiumParserErrorMessageProvider implements IParserErrorMessageProvider {
+export abstract class AbstractParserErrorMessageProvider implements IParserErrorMessageProvider {
 
-    buildMismatchTokenMessage({ expected, actual }: {
+    buildMismatchTokenMessage(options: {
         expected: TokenType
         actual: IToken
         previous: IToken
         ruleName: string
     }): string {
-        const expectedMsg = expected.LABEL
-            ? '`' + expected.LABEL + '`'
-            : expected.name.endsWith(':KW')
-                ? `keyword '${expected.name.substring(0, expected.name.length - 3)}'`
-                : `token of type '${expected.name}'`;
-        return `Expecting ${expectedMsg} but found \`${actual.image}\`.`;
+        return defaultParserErrorProvider.buildMismatchTokenMessage(options);
     }
 
-    buildNotAllInputParsedMessage({ firstRedundant }: {
+    buildNotAllInputParsedMessage(options: {
         firstRedundant: IToken
         ruleName: string
     }): string {
-        return `Expecting end of file but found \`${firstRedundant.image}\`.`;
+        return defaultParserErrorProvider.buildNotAllInputParsedMessage(options);
     }
 
     buildNoViableAltMessage(options: {
@@ -393,6 +391,30 @@ export class LangiumParserErrorMessageProvider implements IParserErrorMessagePro
         return defaultParserErrorProvider.buildEarlyExitMessage(options);
     }
 
+}
+
+export class LangiumParserErrorMessageProvider extends AbstractParserErrorMessageProvider {
+
+    override buildMismatchTokenMessage({ expected, actual }: {
+        expected: TokenType
+        actual: IToken
+        previous: IToken
+        ruleName: string
+    }): string {
+        const expectedMsg = expected.LABEL
+            ? '`' + expected.LABEL + '`'
+            : expected.name.endsWith(':KW')
+                ? `keyword '${expected.name.substring(0, expected.name.length - 3)}'`
+                : `token of type '${expected.name}'`;
+        return `Expecting ${expectedMsg} but found \`${actual.image}\`.`;
+    }
+
+    override buildNotAllInputParsedMessage({ firstRedundant }: {
+        firstRedundant: IToken
+        ruleName: string
+    }): string {
+        return `Expecting end of file but found \`${firstRedundant.image}\`.`;
+    }
 }
 
 export interface CompletionParserResult {
