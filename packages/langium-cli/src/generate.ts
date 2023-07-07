@@ -88,7 +88,7 @@ function mapGrammarElements(grammars: Grammar[], visited: Set<string> = new Set(
     return map;
 }
 
-function embedReferencedGrammar(grammar: Grammar, map: Map<Grammar, GrammarElement[]>): void {
+function embedReferencedGrammar(grammar: Grammar, map: Map<Grammar, GrammarElement[]>): Grammar {
     const allGrammars = resolveTransitiveImports(documents, grammar);
     const linker = grammarServices.references.Linker;
     const buildReference = linker.buildReference.bind(linker);
@@ -112,9 +112,13 @@ function embedReferencedGrammar(grammar: Grammar, map: Map<Grammar, GrammarEleme
         }
     }
     // Remove all imports, as their contents are now available in the grammar
-    grammar.imports = [];
+    const grammarCopy: Grammar = {
+        ...grammar,
+        imports: []
+    };
     // Link newly added elements to grammar
-    linkContentToContainer(grammar);
+    linkContentToContainer(grammarCopy);
+    return grammarCopy;
 }
 
 async function relinkGrammars(grammars: Grammar[]): Promise<void> {
@@ -220,14 +224,17 @@ export async function generate(config: LangiumConfig, options: GenerateOptions):
 
     const grammarElements = mapGrammarElements(grammars);
 
+    const embeddedGrammars: Grammar[] = [];
     for (const grammar of grammars) {
-        embedReferencedGrammar(grammar, grammarElements);
+        const embeddedGrammar = embedReferencedGrammar(grammar, grammarElements);
+        embeddedGrammars.push(embeddedGrammar);
+        configMap.set(embeddedGrammar, configMap.get(grammar)!);
     }
     // We need to rescope the grammars again
     // They need to pick up on the embedded references
-    await relinkGrammars(grammars);
+    await relinkGrammars(embeddedGrammars);
 
-    for (const grammar of grammars) {
+    for (const grammar of embeddedGrammars) {
         // Create and validate the in-memory parser
         const parserAnalysis = await validateParser(grammar, config, configMap, grammarServices);
         if (parserAnalysis instanceof Error) {
@@ -247,16 +254,16 @@ export async function generate(config: LangiumConfig, options: GenerateOptions):
         return buildResult(false);
     }
 
-    const genAst = generateAst(grammarServices, grammars, config);
+    const genAst = generateAst(grammarServices, embeddedGrammars, config);
     await writeWithFail(path.resolve(output, 'ast.ts'), genAst, options);
 
-    const serializedGrammar = serializeGrammar(grammarServices, grammars, config);
+    const serializedGrammar = serializeGrammar(grammarServices, embeddedGrammars, config);
     await writeWithFail(path.resolve(output, 'grammar.ts'), serializedGrammar, options);
 
-    const genModule = generateModule(grammars, config, configMap);
+    const genModule = generateModule(embeddedGrammars, config, configMap);
     await writeWithFail(path.resolve(output, 'module.ts'), genModule, options);
 
-    for (const grammar of grammars) {
+    for (const grammar of embeddedGrammars) {
         const languageConfig = configMap.get(grammar);
 
         if (languageConfig?.textMate) {

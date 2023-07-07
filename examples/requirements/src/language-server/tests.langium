@@ -1,5 +1,4 @@
 grammar Tests
-import "./common"
 import "./requirements"
 
 entry TestModel:
