@@ -11,6 +11,10 @@
             "request": "launch",
             "args": [
                 "--extensionDevelopmentPath=${workspaceFolder}"
+            ],
+            "sourceMaps": true,
+            "outFiles": [
+                "${workspaceFolder}/out/**/*.js"
             ]
         },
         {
