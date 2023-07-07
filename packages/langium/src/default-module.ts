@@ -46,6 +46,7 @@ import { DefaultIndexManager } from './workspace/index-manager';
 import { DefaultWorkspaceManager } from './workspace/workspace-manager';
 import { DefaultLexer } from './parser/lexer';
 import { JSDocDocumentationProvider } from './documentation';
+import { LangiumParserErrorMessageProvider } from './parser/langium-parser';
 
 /**
  * Context required for creating the default language-specific dependency injection module.
@@ -69,7 +70,8 @@ export function createDefaultModule(context: DefaultModuleContext): Module<Langi
             CompletionParser: (services) => createCompletionParser(services),
             ValueConverter: () => new DefaultValueConverter(),
             TokenBuilder: () => new DefaultTokenBuilder(),
-            Lexer: (services) => new DefaultLexer(services)
+            Lexer: (services) => new DefaultLexer(services),
+            ParserErrorMessageProvider: () => new LangiumParserErrorMessageProvider()
         },
         lsp: {
             CompletionProvider: (services) => new DefaultCompletionProvider(services),
