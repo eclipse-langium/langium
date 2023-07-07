@@ -49,7 +49,7 @@ export class LangiumGrammarCompletionProvider extends DefaultCompletionProvider 
             allPaths = allPaths.filter(path => path.startsWith(existingPath));
             // Completely replace the current token
             const start = context.textDocument.positionAt(context.tokenOffset + 1);
-            const end = context.textDocument.positionAt(context.tokenEndOffset);
+            const end = context.textDocument.positionAt(context.tokenEndOffset - 1);
             range = {
                 start,
                 end
@@ -59,7 +59,7 @@ export class LangiumGrammarCompletionProvider extends DefaultCompletionProvider 
             // Only insert quotes if there is no `path` token yet.
             const delimiter = existingText.length > 0 ? '' : '"';
             const completionValue = `${delimiter}${path}${delimiter}`;
-            acceptor({
+            acceptor(context, {
                 label: path,
                 textEdit: {
                     newText: completionValue,

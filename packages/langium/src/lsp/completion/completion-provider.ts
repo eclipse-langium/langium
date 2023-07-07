@@ -17,6 +17,7 @@ import type { NextFeature } from './follow-element-computation';
 import type { NodeKindProvider } from '../node-kind-provider';
 import type { FuzzyMatcher } from '../fuzzy-matcher';
 import type { Lexer } from '../../parser/lexer';
+import type { IToken } from 'chevrotain';
 import { CompletionItemKind, CompletionList, Position } from 'vscode-languageserver';
 import * as ast from '../../grammar/generated/ast';
 import { getExplicitRuleType } from '../../grammar/internal-grammar-util';
@@ -26,7 +27,7 @@ import { getEntryRule } from '../../utils/grammar-util';
 import { stream } from '../../utils/stream';
 import { findFirstFeatures, findNextFeatures } from './follow-element-computation';
 
-export type CompletionAcceptor = (value: CompletionValueItem) => void
+export type CompletionAcceptor = (context: CompletionContext, value: CompletionValueItem) => void
 
 export type CompletionValueItem = ({
     label?: string
@@ -40,8 +41,21 @@ export interface CompletionContext {
     node?: AstNode
     document: LangiumDocument
     textDocument: TextDocument
+    features: NextFeature[]
+    /**
+     * Index at the start of the token related to this context.
+     * If the context performs completion for a token that doesn't exist yet, it is equal to the `offset`.
+     */
     tokenOffset: number
+    /**
+     * Index at the end of the token related to this context, even if it is behind the cursor position.
+     * Points at the first character after the last token.
+     * If the context performs completion for a token that doesn't exist yet, it is equal to the `offset`.
+     */
     tokenEndOffset: number
+    /**
+     * Index of the requested completed position.
+     */
     offset: number
     position: Position
 }
@@ -66,6 +80,13 @@ export interface CompletionProviderOptions {
      * completion item the ones on the completion item win.
      */
     allCommitCharacters?: string[];
+}
+
+export interface CompletionBacktrackingInformation {
+    previousTokenStart?: number;
+    previousTokenEnd?: number;
+    nextTokenStart: number;
+    nextTokenEnd: number;
 }
 
 export function mergeCompletionProviderOptions(options: Array<CompletionProviderOptions | undefined>): CompletionProviderOptions {
@@ -117,68 +138,15 @@ export class DefaultCompletionProvider implements CompletionProvider {
     }
 
     async getCompletion(document: LangiumDocument, params: CompletionParams): Promise<CompletionList | undefined> {
-        const root = document.parseResult.value;
-        const cst = root.$cstNode;
-        if (!cst) {
-            return undefined;
-        }
         const items: CompletionItem[] = [];
-        const textDocument = document.textDocument;
-        const text = textDocument.getText();
-        const offset = textDocument.offsetAt(params.position);
-        const [lastTokenOffset, tokenOffset, tokenEndOffset] = this.backtrackToAnyToken(text, offset);
-        const astNode = findLeafNodeAtOffset(cst, lastTokenOffset)?.element;
+        const contexts = this.buildContexts(document, params.position);
 
-        const context: CompletionContext = {
-            document,
-            textDocument,
-            node: astNode,
-            tokenOffset,
-            tokenEndOffset,
-            offset,
-            position: params.position
-        };
-
-        const acceptor: CompletionAcceptor = value => {
+        const acceptor: CompletionAcceptor = (context, value) => {
             const completionItem = this.fillCompletionItem(context, value);
             if (completionItem) {
                 items.push(completionItem);
             }
         };
-
-        if (!astNode) {
-            const parserRule = getEntryRule(this.grammar)!;
-            await this.completionForRule(context, parserRule, acceptor);
-            return CompletionList.create(this.deduplicateItems(items), true);
-        }
-
-        const contexts: CompletionContext[] = [context];
-
-        // In some cases, the completion depends on the concrete AST node at the current position
-        // Often times, it is not clear whether the completion is related to the ast node at the current cursor position
-        // (i.e. associated with the character right after the cursor), or the one before the cursor.
-        // If these are different AST nodes, then we perform the completion twice
-        if (tokenOffset === offset && tokenOffset > 0) {
-            const previousAstNode = findLeafNodeAtOffset(cst, lastTokenOffset - 1)?.element;
-            if (previousAstNode !== astNode) {
-                contexts.push({
-                    document,
-                    textDocument,
-                    node: previousAstNode,
-                    tokenOffset,
-                    tokenEndOffset,
-                    offset,
-                    position: params.position
-                });
-            }
-        }
-
-        const beforeFeatures = this.findFeaturesAt(textDocument, tokenOffset);
-        let afterFeatures: NextFeature[] = [];
-        const reparse = this.canReparse() && offset !== tokenOffset;
-        if (reparse) {
-            afterFeatures = this.findFeaturesAt(textDocument, offset);
-        }
 
         const distinctionFunction = (element: NextFeature) => {
             if (ast.isKeyword(element.feature)) {
@@ -188,19 +156,20 @@ export class DefaultCompletionProvider implements CompletionProvider {
             }
         };
 
-        await Promise.all(
-            stream(beforeFeatures)
-                .distinct(distinctionFunction)
-                .map(e => this.completionForContexts(contexts, e, acceptor))
-        );
-
-        if (reparse) {
+        const completedFeatures: NextFeature[] = [];
+        for (const context of contexts) {
             await Promise.all(
-                stream(afterFeatures)
-                    .exclude(beforeFeatures, distinctionFunction)
+                stream(context.features)
                     .distinct(distinctionFunction)
-                    .map(e => this.completionForContexts(contexts, e, acceptor))
+                    .exclude(completedFeatures)
+                    .map(e => this.completionFor(context, e, acceptor))
             );
+            // Do not try to complete the same feature multiple times
+            completedFeatures.push(...context.features);
+            // If we have already received completions, just end the computation
+            if (items.length > 0) {
+                break;
+            }
         }
 
         return CompletionList.create(this.deduplicateItems(items), true);
@@ -214,16 +183,6 @@ export class DefaultCompletionProvider implements CompletionProvider {
      */
     protected deduplicateItems(items: CompletionItem[]): CompletionItem[] {
         return stream(items).distinct(item => `${item.kind}_${item.label}_${item.detail}`).toArray();
-    }
-
-    /**
-     * Determines whether the completion parser will reparse the input at the point of completion.
-     * By default, this returns `false`, indicating that the completion will only look for completion results starting from the token at the cursor position.
-     * Override this and return `true` to indicate that the completion should parse the input a second time.
-     * This might add some missing completions at the cost at parsing the input twice.
-     */
-    protected canReparse(): boolean {
-        return false;
     }
 
     protected findFeaturesAt(document: TextDocument, offset: number): NextFeature[] {
@@ -255,52 +214,115 @@ export class DefaultCompletionProvider implements CompletionProvider {
         return features;
     }
 
-    /**
-     * This methods return three integers that indicate token offsets.
-     *
-     * The first offset represents the start position of the last token before the cursor.
-     *
-     * The second offset represents the end of the last token before the cursor. This is either:
-     * 1. The end of the token represented by the first offset, in case the cursor is after this token.
-     * 2. The start of the token represented by the first offset, in case the cursor is within this token.
-     *
-     * The third offset represents the end of the last token, even if it is behind the cursor position
-     */
-    protected backtrackToAnyToken(text: string, offset: number): [number, number, number] {
-        const tokens = this.lexer.tokenize(text).tokens;
-        let lastToken = tokens[0];
-        const lastIndex = tokens.length - 1;
-        for (let i = 0; i < lastIndex; i++) {
-            const token = tokens[i + 1];
-            if (token.startOffset > offset) {
-                // If the offset of the cursor has already arrived at the end of the current token, use the token end
-                // Otherwise, use the token start as the current cursor position.
-                const endOffset = lastToken.endOffset!;
-                return [
-                    lastToken.startOffset,
-                    endOffset > offset ? lastToken.startOffset : endOffset,
-                    endOffset
-                ];
-            }
-            lastToken = token;
+    protected buildContexts(document: LangiumDocument, position: Position): CompletionContext[] {
+        const cst = document.parseResult.value.$cstNode;
+        if (!cst) {
+            return [];
         }
-        return [
-            lastToken?.startOffset ?? offset,
+        const textDocument = document.textDocument;
+        const text = textDocument.getText();
+        const offset = textDocument.offsetAt(position);
+        const { nextTokenStart, nextTokenEnd, previousTokenStart, previousTokenEnd } = this.backtrackToAnyToken(text, offset);
+        const contexts: CompletionContext[] = [];
+        const partialContext = {
+            document,
+            textDocument,
             offset,
-            lastToken?.endOffset ?? offset
-        ];
+            position
+        };
+        let astNode: AstNode | undefined;
+        if (previousTokenStart !== undefined && previousTokenEnd !== undefined && previousTokenEnd === offset) {
+            astNode = findLeafNodeAtOffset(cst, previousTokenStart)?.element;
+            const previousTokenFeatures = this.findFeaturesAt(textDocument, previousTokenStart);
+            contexts.push({
+                ...partialContext,
+                node: astNode,
+                tokenOffset: previousTokenStart,
+                tokenEndOffset: previousTokenEnd,
+                features: previousTokenFeatures,
+            });
+        }
+        astNode = findLeafNodeAtOffset(cst, nextTokenStart)?.element
+            ?? (previousTokenStart === undefined ? undefined : findLeafNodeAtOffset(cst, previousTokenStart)?.element);
+
+        if (!astNode) {
+            const parserRule = getEntryRule(this.grammar)!;
+            const firstFeatures = findFirstFeatures(parserRule.definition);
+            contexts.push({
+                ...partialContext,
+                tokenOffset: nextTokenStart,
+                tokenEndOffset: nextTokenEnd,
+                features: firstFeatures
+            });
+        } else {
+            const nextTokenFeatures = this.findFeaturesAt(textDocument, nextTokenStart);
+            contexts.push({
+                ...partialContext,
+                node: astNode,
+                tokenOffset: nextTokenStart,
+                tokenEndOffset: nextTokenEnd,
+                features: nextTokenFeatures,
+            });
+        }
+        return contexts;
+    }
+
+    /**
+     * This method returns two sets of token offset information.
+     *
+     * The `nextToken*` offsets are related to the token at the cursor position.
+     * If there is none, both offsets are simply set to `offset`.
+     *
+     * The `previousToken*` offsets are related to the last token before the current token at the cursor position.
+     * They are `undefined`, if there is no token before the cursor position.
+     */
+    protected backtrackToAnyToken(text: string, offset: number): CompletionBacktrackingInformation {
+        const tokens = this.lexer.tokenize(text).tokens;
+        if (tokens.length === 0) {
+            // If we don't have any tokens in our document, just return the offset position
+            return {
+                nextTokenStart: offset,
+                nextTokenEnd: offset
+            };
+        }
+        let previousToken: IToken | undefined;
+        for (const token of tokens) {
+            if (token.startOffset >= offset) {
+                // We are between two tokens
+                // Return the current offset as the next token index
+                return {
+                    nextTokenStart: offset,
+                    nextTokenEnd: offset,
+                    previousTokenStart: previousToken ? previousToken.startOffset : undefined,
+                    previousTokenEnd: previousToken ? previousToken.endOffset! + 1 : undefined
+                };
+            }
+            if (token.endOffset! >= offset) {
+                // We are within a token
+                // Return the current and previous token offsets as normal
+                return {
+                    nextTokenStart: token.startOffset,
+                    nextTokenEnd: token.endOffset! + 1,
+                    previousTokenStart: previousToken ? previousToken.startOffset : undefined,
+                    previousTokenEnd: previousToken ? previousToken.endOffset! + 1 : undefined
+                };
+            }
+            previousToken = token;
+        }
+        // We have run into the end of the file
+        // Return the current offset as the next token index
+        return {
+            nextTokenStart: offset,
+            nextTokenEnd: offset,
+            previousTokenStart: previousToken ? previousToken.startOffset : undefined,
+            previousTokenEnd: previousToken ? previousToken.endOffset! + 1 : undefined
+        };
     }
 
     protected async completionForRule(context: CompletionContext, rule: ast.AbstractRule, acceptor: CompletionAcceptor): Promise<void> {
         if (ast.isParserRule(rule)) {
             const firstFeatures = findFirstFeatures(rule.definition);
             await Promise.all(firstFeatures.map(next => this.completionFor(context, next, acceptor)));
-        }
-    }
-
-    protected async completionForContexts(contexts: CompletionContext[], next: NextFeature, acceptor: CompletionAcceptor): Promise<void> {
-        for (const context of contexts) {
-            await this.completionFor(context, next, acceptor);
         }
     }
 
@@ -336,7 +358,7 @@ export class DefaultCompletionProvider implements CompletionProvider {
                 const duplicateStore = new Set<string>();
                 scope.getAllElements().forEach(e => {
                     if (!duplicateStore.has(e.name) && this.filterCrossReference(e)) {
-                        acceptor(this.createReferenceCompletionItem(e));
+                        acceptor(context, this.createReferenceCompletionItem(e));
                         duplicateStore.add(e.name);
                     }
                 });
@@ -371,7 +393,7 @@ export class DefaultCompletionProvider implements CompletionProvider {
         if (!keyword.value.match(/[\w]/)) {
             return;
         }
-        acceptor({
+        acceptor(context, {
             label: keyword.value,
             kind: CompletionItemKind.Keyword,
             detail: 'Keyword',
