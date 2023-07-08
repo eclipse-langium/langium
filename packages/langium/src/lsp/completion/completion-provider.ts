@@ -214,16 +214,15 @@ export class DefaultCompletionProvider implements CompletionProvider {
         return features;
     }
 
-    protected buildContexts(document: LangiumDocument, position: Position): CompletionContext[] {
+    protected *buildContexts(document: LangiumDocument, position: Position): IterableIterator<CompletionContext> {
         const cst = document.parseResult.value.$cstNode;
         if (!cst) {
-            return [];
+            return;
         }
         const textDocument = document.textDocument;
         const text = textDocument.getText();
         const offset = textDocument.offsetAt(position);
         const { nextTokenStart, nextTokenEnd, previousTokenStart, previousTokenEnd } = this.backtrackToAnyToken(text, offset);
-        const contexts: CompletionContext[] = [];
         const partialContext = {
             document,
             textDocument,
@@ -234,13 +233,13 @@ export class DefaultCompletionProvider implements CompletionProvider {
         if (previousTokenStart !== undefined && previousTokenEnd !== undefined && previousTokenEnd === offset) {
             astNode = findLeafNodeAtOffset(cst, previousTokenStart)?.element;
             const previousTokenFeatures = this.findFeaturesAt(textDocument, previousTokenStart);
-            contexts.push({
+            yield {
                 ...partialContext,
                 node: astNode,
                 tokenOffset: previousTokenStart,
                 tokenEndOffset: previousTokenEnd,
                 features: previousTokenFeatures,
-            });
+            };
         }
         astNode = findLeafNodeAtOffset(cst, nextTokenStart)?.element
             ?? (previousTokenStart === undefined ? undefined : findLeafNodeAtOffset(cst, previousTokenStart)?.element);
@@ -248,23 +247,22 @@ export class DefaultCompletionProvider implements CompletionProvider {
         if (!astNode) {
             const parserRule = getEntryRule(this.grammar)!;
             const firstFeatures = findFirstFeatures(parserRule.definition);
-            contexts.push({
+            yield {
                 ...partialContext,
                 tokenOffset: nextTokenStart,
                 tokenEndOffset: nextTokenEnd,
                 features: firstFeatures
-            });
+            };
         } else {
             const nextTokenFeatures = this.findFeaturesAt(textDocument, nextTokenStart);
-            contexts.push({
+            yield {
                 ...partialContext,
                 node: astNode,
                 tokenOffset: nextTokenStart,
                 tokenEndOffset: nextTokenEnd,
                 features: nextTokenFeatures,
-            });
+            };
         }
-        return contexts;
     }
 
     /**
