@@ -28,8 +28,8 @@ export class LangiumGrammarCompletionProvider extends DefaultCompletionProvider 
     }
 
     protected override completionFor(context: CompletionContext, next: NextFeature<AbstractElement>, acceptor: CompletionAcceptor): MaybePromise<void> {
-        const feature = getContainerOfType(next.feature, isAssignment);
-        if (feature?.feature === 'path') {
+        const assignment = getContainerOfType(next.feature, isAssignment);
+        if (assignment?.feature === 'path') {
             this.completeImportPath(context, acceptor);
         } else {
             return super.completionFor(context, next, acceptor);
