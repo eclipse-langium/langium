@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import type { GrammarConfig } from '../grammar';
-import type { AstNodeWithComment } from '../serializer';
+import { isAstNodeWithComment } from '../serializer';
 import type { LangiumServices } from '../services';
 import type { AstNode } from '../syntax-tree';
 import { findCommentNode } from '../utils/cst-util';
@@ -28,8 +28,8 @@ export class DefaultCommentProvider implements CommentProvider {
         this.grammarConfig = () => services.parser.GrammarConfig;
     }
     getComment(node: AstNode): string | undefined {
-        if('$comment' in node) {
-            return (node as AstNodeWithComment).$comment;
+        if(isAstNodeWithComment(node)) {
+            return node.$comment;
         }
         return findCommentNode(node.$cstNode, this.grammarConfig().multilineCommentRules)?.text;
     }

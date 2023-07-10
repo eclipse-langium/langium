@@ -39,6 +39,10 @@ export interface AstNodeWithComment extends AstNode {
     $comment?: string;
 }
 
+export function isAstNodeWithComment(node: AstNode): node is AstNodeWithComment {
+    return typeof (node as AstNodeWithComment).$comment === 'string';
+}
+
 /**
  * A {@DocumentSegment} representing the definition area of an AstNode within the DSL text.
  * Usually contains text region information on all assigned property values of the AstNode,
