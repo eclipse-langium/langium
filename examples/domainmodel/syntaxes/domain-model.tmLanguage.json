@@ -18,13 +18,13 @@
       "patterns": [
         {
           "name": "comment.block.domain-model",
-          "begin": "\\/\\*",
+          "begin": "/\\*",
           "beginCaptures": {
             "0": {
               "name": "punctuation.definition.comment.domain-model"
             }
           },
-          "end": "\\*\\/",
+          "end": "\\*/",
           "endCaptures": {
             "0": {
               "name": "punctuation.definition.comment.domain-model"
@@ -32,7 +32,7 @@
           }
         },
         {
-          "begin": "\\/\\/",
+          "begin": "//",
           "beginCaptures": {
             "1": {
               "name": "punctuation.whitespace.comment.leading.domain-model"

@@ -123,10 +123,10 @@ export function getTerminalParts(regex: RegExp | string): Array<{ start: string,
 
 export function isMultilineComment(regex: RegExp | string): boolean {
     try {
-        if (typeof regex !== 'string') {
-            regex = regex.source;
+        if (typeof regex === 'string') {
+            regex = new RegExp(regex);
         }
-        regex = `/${regex}/`;
+        regex = regex.toString();
         visitor.reset(regex);
         // Parsing the pattern might fail (since it's user code)
         visitor.visit(regexParser.pattern(regex));
@@ -142,7 +142,7 @@ export function isWhitespaceRegExp(value: RegExp | string): boolean {
 }
 
 export function escapeRegExp(value: string): string {
-    return value.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&');
+    return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 export function getCaseInsensitivePattern(keyword: string): string {
