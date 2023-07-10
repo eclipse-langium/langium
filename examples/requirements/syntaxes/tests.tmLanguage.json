@@ -38,13 +38,13 @@
       "patterns": [
         {
           "name": "comment.block.tests-lang",
-          "begin": "\\/\\*",
+          "begin": "/\\*",
           "beginCaptures": {
             "0": {
               "name": "punctuation.definition.comment.tests-lang"
             }
           },
-          "end": "\\*\\/",
+          "end": "\\*/",
           "endCaptures": {
             "0": {
               "name": "punctuation.definition.comment.tests-lang"
@@ -52,7 +52,7 @@
           }
         },
         {
-          "begin": "\\/\\/",
+          "begin": "//",
           "beginCaptures": {
             "1": {
               "name": "punctuation.whitespace.comment.leading.tests-lang"
