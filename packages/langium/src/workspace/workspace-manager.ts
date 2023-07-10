@@ -11,7 +11,7 @@ import type { WorkspaceFolder } from 'vscode-languageserver';
 import type { ServiceRegistry } from '../service-registry';
 import type { LangiumSharedServices } from '../services';
 import type { MutexLock } from '../utils/promise-util';
-import type { DocumentBuilder } from './document-builder';
+import type { BuildOptions, DocumentBuilder } from './document-builder';
 import type { LangiumDocument, LangiumDocuments } from './documents';
 import type { FileSystemNode, FileSystemProvider } from './file-system-provider';
 
@@ -20,6 +20,9 @@ import type { FileSystemNode, FileSystemProvider } from './file-system-provider'
  * This service is shared between all languages of a language server.
  */
 export interface WorkspaceManager {
+
+    /** The options used for the initial workspace build. */
+    initialBuildOptions: BuildOptions | undefined;
 
     /**
      * Does the initial indexing of workspace folders.
@@ -33,6 +36,8 @@ export interface WorkspaceManager {
 }
 
 export class DefaultWorkspaceManager implements WorkspaceManager {
+
+    initialBuildOptions: BuildOptions = {};
 
     protected readonly serviceRegistry: ServiceRegistry;
     protected readonly langiumDocuments: LangiumDocuments;
@@ -79,7 +84,7 @@ export class DefaultWorkspaceManager implements WorkspaceManager {
         // Only after creating all documents do we check whether we need to cancel the initialization
         // The document builder will later pick up on all unprocessed documents
         await interruptAndCheck(cancelToken);
-        await this.documentBuilder.build(documents, undefined, cancelToken);
+        await this.documentBuilder.build(documents, this.initialBuildOptions, cancelToken);
     }
 
     /**

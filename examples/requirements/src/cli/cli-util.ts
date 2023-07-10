@@ -40,7 +40,7 @@ export async function extractDocuments(fileName: string, services: LangiumServic
     await services.shared.workspace.WorkspaceManager.initializeWorkspace(folders);
 
     const documents = services.shared.workspace.LangiumDocuments.all.toArray();
-    await services.shared.workspace.DocumentBuilder.build(documents, { validationChecks: 'all' });
+    await services.shared.workspace.DocumentBuilder.build(documents, { validation: true });
 
     documents.forEach(document => {
         const validationErrors = (document.diagnostics ?? []).filter(e => e.severity === 1);

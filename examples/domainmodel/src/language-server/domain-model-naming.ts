@@ -25,7 +25,7 @@ export class QualifiedNameProvider {
             prefix = (isPackageDeclaration(prefix.$container)
                 ? this.getQualifiedName(prefix.$container, prefix.name) : prefix.name);
         }
-        return (prefix ? prefix + '.' : '') + name;
+        return prefix ? prefix + '.' + name : name;
     }
 
 }

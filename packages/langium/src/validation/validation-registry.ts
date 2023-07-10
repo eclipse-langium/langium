@@ -8,8 +8,10 @@ import type { CancellationToken, CodeDescription, DiagnosticRelatedInformation, 
 import type { LangiumServices } from '../services';
 import type { AstNode, AstReflection, Properties } from '../syntax-tree';
 import type { MaybePromise } from '../utils/promise-util';
+import type { Stream } from '../utils/stream';
 import { MultiMap } from '../utils/collections';
 import { isOperationCancelled } from '../utils/promise-util';
+import { stream } from '../utils/stream';
 
 export type DiagnosticInfo<N extends AstNode, P = Properties<N>> = {
     /** The AST node to which the diagnostic is attached. */
@@ -58,25 +60,65 @@ export type ValidationChecks<T> = {
 }
 
 /**
+ * `fast` checks can be executed after every document change (i.e. as the user is typing). If a check
+ * is too slow it can delay the response to document changes, yielding bad user experience. By marking
+ * it as `slow`, it will be skipped for normal as-you-type validation. Then it's up to you when to
+ * schedule these long-running checks: after the fast checks are done, or after saving a document,
+ * or with an explicit command, etc.
+ *
+ * `built-in` checks are errors produced by the lexer, the parser, or the linker. They cannot be used
+ * for custom validation checks.
+ */
+export type ValidationCategory = 'fast' | 'slow' | 'built-in'
+
+export namespace ValidationCategory {
+    export const all: readonly ValidationCategory[] = ['fast', 'slow', 'built-in'];
+}
+
+type ValidationCheckEntry = {
+    check: ValidationCheck
+    category: ValidationCategory
+}
+
+/**
  * Manages a set of `ValidationCheck`s to be applied when documents are validated.
  */
 export class ValidationRegistry {
-    private readonly validationChecks = new MultiMap<string, ValidationCheck>();
+    private readonly entries = new MultiMap<string, ValidationCheckEntry>();
     private readonly reflection: AstReflection;
 
     constructor(services: LangiumServices) {
         this.reflection = services.shared.AstReflection;
     }
 
-    register<T>(checksRecord: ValidationChecks<T>, thisObj: ThisParameterType<unknown> = this): void {
+    /**
+     * Register a set of validation checks. Each value in the record can be either a single validation check (i.e. a function)
+     * or an array of validation checks.
+     *
+     * @param checksRecord Set of validation checks to register.
+     * @param category Optional category for the validation checks (defaults to `'fast'`).
+     * @param thisObj Optional object to be used as `this` when calling the validation check functions.
+     */
+    register<T>(checksRecord: ValidationChecks<T>, thisObj: ThisParameterType<unknown> = this, category: ValidationCategory = 'fast'): void {
+        if (category === 'built-in') {
+            throw new Error("The 'built-in' category is reserved for lexer, parser, and linker errors.");
+        }
         for (const [type, ch] of Object.entries(checksRecord)) {
             const callbacks = ch as ValidationCheck | ValidationCheck[];
             if (Array.isArray(callbacks)) {
                 for (const check of callbacks) {
-                    this.doRegister(type, this.wrapValidationException(check, thisObj));
+                    const entry: ValidationCheckEntry = {
+                        check: this.wrapValidationException(check, thisObj),
+                        category
+                    };
+                    this.addEntry(type, entry);
                 }
             } else if (typeof callbacks === 'function') {
-                this.doRegister(type, this.wrapValidationException(callbacks, thisObj));
+                const entry: ValidationCheckEntry = {
+                    check: this.wrapValidationException(callbacks, thisObj),
+                    category
+                };
+                this.addEntry(type, entry);
             }
         }
     }
@@ -99,18 +141,23 @@ export class ValidationRegistry {
         };
     }
 
-    protected doRegister(type: string, check: ValidationCheck): void {
+    protected addEntry(type: string, entry: ValidationCheckEntry): void {
         if (type === 'AstNode') {
-            this.validationChecks.add('AstNode', check);
+            this.entries.add('AstNode', entry);
             return;
         }
         for (const subtype of this.reflection.getAllSubTypes(type)) {
-            this.validationChecks.add(subtype, check);
+            this.entries.add(subtype, entry);
         }
     }
 
-    getChecks(type: string): readonly ValidationCheck[] {
-        return this.validationChecks.get(type).concat(this.validationChecks.get('AstNode'));
+    getChecks(type: string, categories?: ValidationCategory[]): Stream<ValidationCheck> {
+        let checks = stream(this.entries.get(type))
+            .concat(this.entries.get('AstNode'));
+        if (categories) {
+            checks = checks.filter(entry => categories.includes(entry.category));
+        }
+        return checks.map(entry => entry.check);
     }
 
 }

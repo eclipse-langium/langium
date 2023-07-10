@@ -6,7 +6,8 @@
 
 import type { Alternatives, Grammar, ParserRule } from '../../src/grammar/generated/ast';
 import { describe, expect, test } from 'vitest';
-import { createLangiumGrammarServices, EmptyFileSystem } from '../../src';
+import { createLangiumGrammarServices } from '../../src/grammar/langium-grammar-module';
+import { EmptyFileSystem } from '../../src/workspace/file-system-provider';
 import { parseHelper } from '../../src/test';
 
 describe('DefaultAstNodeLocator', () => {

@@ -10,12 +10,11 @@ import type { LangiumSharedServices } from '../services';
 import type { AstNode, AstNodeDescription, AstReflection } from '../syntax-tree';
 import type { Stream } from '../utils/stream';
 import type { ReferenceDescription } from './ast-descriptions';
-import type { LangiumDocument, LangiumDocuments } from './documents';
+import type { LangiumDocument } from './documents';
 import { CancellationToken } from 'vscode-languageserver';
 import { getDocument } from '../utils/ast-util';
 import { stream } from '../utils/stream';
 import { equalURI } from '../utils/uri-util';
-import { DocumentState } from './documents';
 
 /**
  * The index manager is responsible for keeping metadata about symbols and cross-references
@@ -51,12 +50,14 @@ export interface IndexManager {
     updateReferences(document: LangiumDocument, cancelToken?: CancellationToken): Promise<void>;
 
     /**
-     * Returns all documents that could be affected by changes in the documents
-     * identified by the given URIs.
+     * Determine whether the given document could be affected by changes of the documents
+     * identified by the given URIs (second parameter). The document is typically regarded as
+     * affected if it contains a reference to any of the changed files.
      *
-     * @param uris The document URIs which may affect other documents.
+     * @param document Document to check whether it's affected
+     * @param changedUris URIs of the changed documents
      */
-    getAffectedDocuments(uris: URI[]): Stream<LangiumDocument>;
+    isAffected(document: LangiumDocument, changedUris: Set<string>): boolean;
 
     /**
      * Compute a global scope, optionally filtered using a type identifier.
@@ -81,7 +82,6 @@ export interface IndexManager {
 export class DefaultIndexManager implements IndexManager {
 
     protected readonly serviceRegistry: ServiceRegistry;
-    protected readonly langiumDocuments: () => LangiumDocuments;
     protected readonly astReflection: AstReflection;
 
     protected readonly simpleIndex: Map<string, AstNodeDescription[]> = new Map<string, AstNodeDescription[]>();
@@ -91,7 +91,6 @@ export class DefaultIndexManager implements IndexManager {
     constructor(services: LangiumSharedServices) {
         this.serviceRegistry = services.ServiceRegistry;
         this.astReflection = services.AstReflection;
-        this.langiumDocuments = () => services.workspace.LangiumDocuments;
     }
 
     findAllReferences(targetNode: AstNode, astNodePath: string): Stream<ReferenceDescription> {
@@ -139,48 +138,20 @@ export class DefaultIndexManager implements IndexManager {
             data.node = undefined; // clear reference to the AST Node
         }
         this.simpleIndex.set(document.uri.toString(), exports);
-        document.state = DocumentState.IndexedContent;
     }
 
     async updateReferences(document: LangiumDocument, cancelToken = CancellationToken.None): Promise<void> {
         const services = this.serviceRegistry.getServices(document.uri);
         const indexData: ReferenceDescription[] = await services.workspace.ReferenceDescriptionProvider.createDescriptions(document, cancelToken);
         this.referenceIndex.set(document.uri.toString(), indexData);
-        document.state = DocumentState.IndexedReferences;
     }
 
-    getAffectedDocuments(uris: URI[]): Stream<LangiumDocument> {
-        return this.langiumDocuments().all.filter(e => {
-            if (uris.some(uri => equalURI(e.uri, uri))) {
-                return false;
-            }
-            for (const uri of uris) {
-                if (this.isAffected(e, uri)) {
-                    return true;
-                }
-            }
+    isAffected(document: LangiumDocument, changedUris: Set<string>): boolean {
+        const references = this.referenceIndex.get(document.uri.toString());
+        if (!references) {
             return false;
-        });
-    }
-
-    /**
-     * Determine whether the given document could be affected by a change of the document
-     * identified by the given URI (second parameter).
-     */
-    protected isAffected(document: LangiumDocument, changed: URI): boolean {
-        // Cache the uri string
-        const changedUriString = changed.toString();
-        const documentUri = document.uri.toString();
-        // The document is affected if it contains linking errors
-        if (document.references.some(e => e.error !== undefined)) {
-            return true;
         }
-        const references = this.referenceIndex.get(documentUri);
-        // ...or if it contains a reference to the changed file
-        if (references) {
-            return references.filter(e => !e.local).some(e => equalURI(e.targetUri, changedUriString));
-        }
-        return false;
+        return references.some(ref => !ref.local && changedUris.has(ref.targetUri.toString()));
     }
 
 }

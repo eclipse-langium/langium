@@ -242,7 +242,6 @@ export class DefaultLangiumDocumentFactory implements LangiumDocumentFactory {
 
         document.parseResult = this.parse(document.uri, text);
         (document.parseResult.value as Mutable<AstNode>).$document = document;
-        document.state = DocumentState.Parsed;
         return document;
     }
 
@@ -355,9 +354,9 @@ export class DefaultLangiumDocuments implements LangiumDocuments {
         const langiumDoc = this.documentMap.get(uriString);
         if (langiumDoc) {
             langiumDoc.state = DocumentState.Changed;
-            langiumDoc.references = [];
             langiumDoc.precomputedScopes = undefined;
-            langiumDoc.diagnostics = [];
+            langiumDoc.references = [];
+            langiumDoc.diagnostics = undefined;
         }
         return langiumDoc;
     }

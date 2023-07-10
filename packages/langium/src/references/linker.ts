@@ -19,9 +19,11 @@ import { DocumentState } from '../workspace/documents';
  * Language-specific service for resolving cross-references in the AST.
  */
 export interface Linker {
+
     /**
      * Links all cross-references within the specified document. The default implementation loads only target
-     * elements from documents that are present in the `LangiumDocuments` service.
+     * elements from documents that are present in the `LangiumDocuments` service. The linked references are
+     * stored in the document's `references` property.
      *
      * @param document A LangiumDocument that shall be linked.
      * @param cancelToken A token for cancelling the operation.
@@ -62,6 +64,7 @@ export interface Linker {
      * @returns the desired Reference node, whose behavior wrt. resolving the cross reference is implementation specific.
      */
     buildReference(node: AstNode, property: string, refNode: CstNode | undefined, refText: string): Reference;
+
 }
 
 interface DefaultReference extends Reference {
@@ -87,7 +90,6 @@ export class DefaultLinker implements Linker {
             await interruptAndCheck(cancelToken);
             streamReferences(node).forEach(ref => this.doLink(ref, document));
         }
-        document.state = DocumentState.Linked;
     }
 
     protected doLink(refInfo: ReferenceInfo, document: LangiumDocument): void {

@@ -312,7 +312,7 @@ export async function createServicesForGrammar(config: {
         : getDocument(config.grammar);
     const grammarNode = grammarDocument.parseResult.value as ast.Grammar;
     const documentBuilder = grammarServices.shared.workspace.DocumentBuilder;
-    await documentBuilder.build([grammarDocument], { validationChecks: 'none' });
+    await documentBuilder.build([grammarDocument], { validation: false });
 
     const parserConfig = config.parserConfig ?? {
         skipValidations: false
