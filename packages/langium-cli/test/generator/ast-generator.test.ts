@@ -273,6 +273,19 @@ describe('Ast generator', () => {
             NUMBER: /([0-9])+/,
         };
     `));
+
+    test('should generate terminal constants with slashes', () => testTerminalConstants(`
+        grammar TestGrammar
+            
+        entry Model:
+            value=COMMENT;
+
+        terminal COMMENT: '//';
+    `, expandToString`
+        export const TestTerminals = {
+            COMMENT: /\\/\\//,
+        };
+    `));
 });
 
 async function testTerminalConstants(grammar: string, expected: string) {
