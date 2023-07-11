@@ -147,7 +147,7 @@ export class DefaultJsonSerializer implements JsonSerializer {
             }
             if (comments && isAstNode(value)) {
                 astNode ??= { ...value };
-                (astNode as AstNodeWithComment).$comment =  this.commentProvider.getComment(value);
+                (astNode as AstNodeWithComment).$comment = this.commentProvider.getComment(value);
             }
             return astNode ?? value;
         }
