@@ -166,8 +166,8 @@ export class DefaultCompletionProvider implements CompletionProvider {
             );
             // Do not try to complete the same feature multiple times
             completedFeatures.push(...context.features);
-            // If we have already received completions, just end the computation
-            if (items.length > 0) {
+            // We might want to stop computing completion results
+            if (!this.continueCompletion(items)) {
                 break;
             }
         }
@@ -179,7 +179,7 @@ export class DefaultCompletionProvider implements CompletionProvider {
      * The completion algorithm could yield the same reference/keyword multiple times.
      *
      * This methods deduplicates these items afterwards before returning to the client.
-     * Unique items are identified as a combination of `kind`, `label` and `detail`
+     * Unique items are identified as a combination of `kind`, `label` and `detail`.
      */
     protected deduplicateItems(items: CompletionItem[]): CompletionItem[] {
         return stream(items).distinct(item => `${item.kind}_${item.label}_${item.detail}`).toArray();
@@ -263,6 +263,15 @@ export class DefaultCompletionProvider implements CompletionProvider {
                 features: nextTokenFeatures,
             };
         }
+    }
+
+    /**
+     * Indicates whether the completion should continue to process the next completion context.
+     *
+     * The default implementation continues the completion only if there are currently no proposed completion items.
+     */
+    protected continueCompletion(items: CompletionItem[]): boolean {
+        return items.length === 0;
     }
 
     /**
@@ -368,7 +377,7 @@ export class DefaultCompletionProvider implements CompletionProvider {
 
     /**
      * Override this method to change how reference completion items are created.
-     * Most notably useful to change the `kind` property which indicates which icon to display on the client.
+     * To change the `kind` of a completion item, override the `NodeKindProvider` service instead.
      *
      * @param nodeDescription The description of a reference candidate
      * @returns A partial completion item
