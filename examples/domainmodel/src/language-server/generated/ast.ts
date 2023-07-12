@@ -7,6 +7,13 @@
 import type { AstNode, Reference, ReferenceInfo, TypeMetaData } from 'langium';
 import { AbstractAstReflection } from 'langium';
 
+export const DomainModelTerminals = {
+    WS: /\s+/,
+    ID: /[_a-zA-Z][\w_]*/,
+    ML_COMMENT: /\/\*[\s\S]*?\*\//,
+    SL_COMMENT: /\/\/[^\n\r]*/,
+};
+
 export type AbstractElement = PackageDeclaration | Type;
 
 export const AbstractElement = 'AbstractElement';
