@@ -6,6 +6,6 @@
 
 export interface LanguageMetaData {
     languageId: string;
-    fileExtensions: string[];
+    fileExtensions: readonly string[];
     caseInsensitive: boolean;
 }

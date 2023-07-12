@@ -7,11 +7,11 @@ import type { LangiumGeneratedServices, LangiumGeneratedSharedServices, LangiumS
 import { StatemachineAstReflection } from './ast';
 import { StatemachineGrammar } from './grammar';
 
-export const StatemachineLanguageMetaData: LanguageMetaData = {
+export const StatemachineLanguageMetaData = {
     languageId: 'statemachine',
     fileExtensions: ['.statemachine'],
     caseInsensitive: false
-};
+} as const satisfies LanguageMetaData;
 
 export const StatemachineGeneratedSharedModule: Module<LangiumSharedServices, LangiumGeneratedSharedServices> = {
     AstReflection: () => new StatemachineAstReflection()

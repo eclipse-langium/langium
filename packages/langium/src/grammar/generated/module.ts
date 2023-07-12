@@ -10,11 +10,11 @@ import type { IParserConfig } from '../../parser/parser-config';
 import { LangiumGrammarAstReflection } from './ast';
 import { LangiumGrammarGrammar } from './grammar';
 
-export const LangiumGrammarLanguageMetaData: LanguageMetaData = {
+export const LangiumGrammarLanguageMetaData = {
     languageId: 'langium',
     fileExtensions: ['.langium'],
     caseInsensitive: false
-};
+} as const satisfies LanguageMetaData;
 
 export const LangiumGrammarParserConfig: IParserConfig = {
     maxLookahead: 3,

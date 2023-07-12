@@ -7,17 +7,17 @@ import type { LangiumGeneratedServices, LangiumGeneratedSharedServices, LangiumS
 import { RequirementsAndTestsAstReflection } from './ast';
 import { RequirementsGrammar, TestsGrammar } from './grammar';
 
-export const RequirementsLanguageMetaData: LanguageMetaData = {
+export const RequirementsLanguageMetaData = {
     languageId: 'requirements-lang',
     fileExtensions: ['.req'],
     caseInsensitive: false
-};
+} as const satisfies LanguageMetaData;
 
-export const TestsLanguageMetaData: LanguageMetaData = {
+export const TestsLanguageMetaData = {
     languageId: 'tests-lang',
     fileExtensions: ['.tst'],
     caseInsensitive: false
-};
+} as const satisfies LanguageMetaData;
 
 export const RequirementsAndTestsGeneratedSharedModule: Module<LangiumSharedServices, LangiumGeneratedSharedServices> = {
     AstReflection: () => new RequirementsAndTestsAstReflection()
