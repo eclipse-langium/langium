@@ -224,7 +224,85 @@ describe('Ast generator', () => {
             return item instanceof Date;
         }
     `);
+
+    test('should generate terminal names and regular expressions', () => testTerminalConstants(`
+        grammar TestGrammar
+            
+        entry Hello:
+            'Hello, ' name=ID '!';
+
+        hidden terminal WS: /\\s+/;
+        
+        terminal ID: /[_a-zA-Z][\\w_]*/;
+    `, expandToString`
+        export const TestTerminals = {
+            WS: /\\s+/,
+            ID: /[_a-zA-Z][\\w_]*/,
+        };
+    `));
+
+    test('should generate terminal constants with range operator', () => testTerminalConstants(`
+        grammar TestGrammar
+            
+        entry Amount:
+            value=NUMBER;
+
+        hidden terminal WS: /\\s+/;
+        
+        terminal NUMBER: '0'..'9'+;
+    `, expandToString`
+        export const TestTerminals = {
+            WS: /\\s+/,
+            NUMBER: /[0-9]+/,
+        };
+    `));
+
+    test('should generate terminal constants with fragments', () => testTerminalConstants(`
+        grammar TestGrammar
+            
+        entry Amount:
+            value=NUMBER;
+
+        hidden terminal WS: /\\s+/;
+        
+        terminal NUMBER: DIGIT+;
+        terminal fragment DIGIT: '0'..'9';
+    `, expandToString`
+        export const TestTerminals = {
+            WS: /\\s+/,
+            NUMBER: /([0-9])+/,
+        };
+    `));
+
+    test('should generate terminal constants with slashes', () => testTerminalConstants(`
+        grammar TestGrammar
+            
+        entry Model:
+            value=COMMENT;
+
+        terminal COMMENT: '//';
+    `, expandToString`
+        export const TestTerminals = {
+            COMMENT: /\\/\\//,
+        };
+    `));
 });
+
+async function testTerminalConstants(grammar: string, expected: string) {
+    const result = (await parse(grammar)).parseResult;
+    const config: LangiumConfig = {
+        [RelativePath]: './',
+        projectName: 'Test',
+        languages: []
+    };
+    const expectedPart = normalizeEOL(expected).trim();
+    const typesFileContent = generateAst(services.grammar, [result.value], config);
+
+    const start = typesFileContent.indexOf(`export const ${config.projectName}Terminals`);
+    const end = typesFileContent.indexOf('};', start) + 2;
+    const relevantPart = typesFileContent.substring(start, end).trim();
+    expect(relevantPart).toEqual(expectedPart);
+}
 
 function testGeneratedAst(name: string, grammar: string, expected: string): void {
     test(name, async () => {
@@ -236,7 +314,7 @@ function testGeneratedAst(name: string, grammar: string, expected: string): void
         };
         const expectedPart = normalizeEOL(expected).trim();
         const typesFileContent = generateAst(services.grammar, [result.value], config);
-        const relevantPart = typesFileContent.substring(typesFileContent.indexOf('export'), typesFileContent.indexOf('export type testAstType')).trim();
+        const relevantPart = typesFileContent.substring(typesFileContent.indexOf('export type'), typesFileContent.indexOf('export type testAstType')).trim();
         expect(relevantPart).toEqual(expectedPart);
     });
 }

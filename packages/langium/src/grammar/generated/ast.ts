@@ -7,6 +7,15 @@
 import type { AstNode, Reference, ReferenceInfo, TypeMetaData } from '../../syntax-tree';
 import { AbstractAstReflection } from '../../syntax-tree';
 
+export const LangiumGrammarTerminals = {
+    ID: /\^?[_a-zA-Z][\w_]*/,
+    STRING: /"(\\.|[^"\\])*"|'(\\.|[^'\\])*'/,
+    RegexLiteral: /\/(?![*+?])(?:[^\r\n\[/\\]|\\.|\[(?:[^\r\n\]\\]|\\.)*\])+\/[a-z]*/,
+    WS: /\s+/,
+    ML_COMMENT: /\/\*[\s\S]*?\*\//,
+    SL_COMMENT: /\/\/[^\n\r]*/,
+};
+
 export type AbstractRule = ParserRule | TerminalRule;
 
 export const AbstractRule = 'AbstractRule';

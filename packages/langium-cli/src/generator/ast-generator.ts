@@ -8,7 +8,7 @@ import type { AstTypes, Property } from 'langium/lib/grammar/type-system';
 import type { LangiumConfig } from '../package';
 import { IndentNode, CompositeGeneratorNode, NL, toString, streamAllContents, MultiMap, GrammarAST } from 'langium';
 import { collectAst, collectTypeHierarchy, findReferenceTypes, hasArrayType, isAstType, hasBooleanType, mergeTypesAndInterfaces } from 'langium/lib/grammar/type-system';
-import { generatedHeader } from './util';
+import { collectTerminalRegexps, generatedHeader } from './util';
 
 export function generateAst(services: LangiumServices, grammars: Grammar[], config: LangiumConfig): string {
     const astTypes = collectAst(grammars, services.shared.workspace.LangiumDocuments);
@@ -24,9 +24,10 @@ export function generateAst(services: LangiumServices, grammars: Grammar[], conf
         `import { AbstractAstReflection } from '${importFrom}';`, NL, NL
     );
 
+    generateTerminalConstants(fileNode, grammars, config);
+
     astTypes.unions.forEach(union => fileNode.append(union.toAstTypesString(isAstType(union.type)), NL));
     astTypes.interfaces.forEach(iFace => fileNode.append(iFace.toAstTypesString(true), NL));
-
     astTypes.unions = astTypes.unions.filter(e => isAstType(e.type));
     fileNode.append(generateAstReflection(config, astTypes));
 
@@ -234,3 +235,20 @@ function groupBySupertypes(astTypes: AstTypes): MultiMap<string, string> {
 
     return superToChild;
 }
+
+function generateTerminalConstants(fileNode: CompositeGeneratorNode, grammars: Grammar[], config: LangiumConfig) {
+    let collection: Record<string, RegExp> = {};
+    grammars.forEach(grammar => {
+        const terminalConstants = collectTerminalRegexps(grammar);
+        collection = {...collection, ...terminalConstants};
+    });
+
+    fileNode.append(`export const ${config.projectName}Terminals = {`, NL);
+    fileNode.indent(node => {
+        for (const [name, regexp] of Object.entries(collection)) {
+            node.append(`${name}: ${regexp.toString()},`, NL);
+        }
+    });
+    fileNode.append('};', NL, NL);
+}
+

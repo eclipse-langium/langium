@@ -7,6 +7,14 @@
 import type { AstNode, Reference, ReferenceInfo, TypeMetaData } from 'langium';
 import { AbstractAstReflection } from 'langium';
 
+export const RequirementsAndTestsTerminals = {
+    WS: /\s+/,
+    ID: /[_a-zA-Z][\w_]*/,
+    STRING: /"(\\.|[^"\\])*"|'(\\.|[^'\\])*'/,
+    ML_COMMENT: /\/\*[\s\S]*?\*\//,
+    SL_COMMENT: /\/\/[^\n\r]*/,
+};
+
 export interface Contact extends AstNode {
     readonly $container: RequirementModel | TestModel;
     readonly $type: 'Contact';
