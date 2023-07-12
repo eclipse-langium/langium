@@ -7,11 +7,11 @@ import type { LangiumGeneratedServices, LangiumGeneratedSharedServices, LangiumS
 import { ArithmeticsAstReflection } from './ast';
 import { ArithmeticsGrammar } from './grammar';
 
-export const ArithmeticsLanguageMetaData: LanguageMetaData = {
+export const ArithmeticsLanguageMetaData = {
     languageId: 'arithmetics',
     fileExtensions: ['.calc'],
     caseInsensitive: true
-};
+} as const satisfies LanguageMetaData;
 
 export const ArithmeticsGeneratedSharedModule: Module<LangiumSharedServices, LangiumGeneratedSharedServices> = {
     AstReflection: () => new ArithmeticsAstReflection()
