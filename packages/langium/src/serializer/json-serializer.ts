@@ -13,12 +13,14 @@ import type { DocumentSegment } from '../workspace/documents';
 import { isAstNode, isReference } from '../syntax-tree';
 import { getDocument } from '../utils/ast-util';
 import { findNodesForProperty } from '../utils/grammar-util';
+import type { CommentProvider } from '../documentation/comment-provider';
 
 export interface JsonSerializeOptions {
     space?: string | number;
     refText?: boolean;
     sourceText?: boolean;
     textRegions?: boolean;
+    comments?: boolean;
     replacer?: (key: string, value: unknown, defaultReplacer: (key: string, value: unknown) => unknown) => unknown
 }
 
@@ -28,6 +30,17 @@ export interface JsonSerializeOptions {
 export interface AstNodeWithTextRegion extends AstNode {
     $sourceText?: string;
     $textRegion?: AstNodeRegionWithAssignments;
+}
+
+/**
+ * {@link AstNode}s that may carry a semantically relevant comment.
+ */
+export interface AstNodeWithComment extends AstNode {
+    $comment?: string;
+}
+
+export function isAstNodeWithComment(node: AstNode): node is AstNodeWithComment {
+    return typeof (node as AstNodeWithComment).$comment === 'string';
 }
 
 /**
@@ -79,10 +92,12 @@ export class DefaultJsonSerializer implements JsonSerializer {
     protected ignoreProperties = new Set(['$container', '$containerProperty', '$containerIndex', '$document', '$cstNode']);
     protected readonly astNodeLocator: AstNodeLocator;
     protected readonly nameProvider: NameProvider;
+    protected readonly commentProvider: CommentProvider;
 
     constructor(services: LangiumServices) {
         this.astNodeLocator = services.workspace.AstNodeLocator;
         this.nameProvider = services.references.NameProvider;
+        this.commentProvider = services.documentation.CommentProvider;
     }
 
     serialize(node: AstNode, options?: JsonSerializeOptions): string {
@@ -99,7 +114,7 @@ export class DefaultJsonSerializer implements JsonSerializer {
         return root;
     }
 
-    protected replacer(key: string, value: unknown, { refText, sourceText, textRegions }: JsonSerializeOptions = {}): unknown {
+    protected replacer(key: string, value: unknown, { refText, sourceText, textRegions, comments }: JsonSerializeOptions = {}): unknown {
         if (this.ignoreProperties.has(key)) {
             return undefined;
         } else if (isReference(value)) {
@@ -129,6 +144,10 @@ export class DefaultJsonSerializer implements JsonSerializer {
             if (sourceText && !key && isAstNode(value)) {
                 astNode ??= { ...value };
                 astNode.$sourceText = value.$cstNode?.text;
+            }
+            if (comments && isAstNode(value)) {
+                astNode ??= { ...value };
+                (astNode as AstNodeWithComment).$comment = this.commentProvider.getComment(value);
             }
             return astNode ?? value;
         }
