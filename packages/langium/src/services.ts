@@ -56,6 +56,7 @@ import type { CodeLensProvider } from './lsp/code-lens-provider';
 import type { DeclarationProvider } from './lsp/declaration-provider';
 import type { DocumentationProvider } from './documentation/documentation-provider';
 import type { InlayHintProvider } from './lsp/inlay-hint-provider';
+import type { CommentProvider } from './documentation/comment-provider';
 import type { WorkspaceSymbolProvider } from './lsp/workspace-symbol-provider';
 import type { NodeKindProvider } from './lsp/node-kind-provider';
 import type { FuzzyMatcher } from './lsp/fuzzy-matcher';
@@ -110,6 +111,7 @@ export type LangiumDefaultServices = {
         Lexer: Lexer
     }
     documentation: {
+        CommentProvider: CommentProvider
         DocumentationProvider: DocumentationProvider
     }
     references: {
