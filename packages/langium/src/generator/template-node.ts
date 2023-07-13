@@ -37,9 +37,9 @@ import { findIndentation, NEWLINE_REGEXP } from './template-string';
  *
  * Rule:
  * In case of a multiline template the content of the first line including its terminating
- * line break is ignored, if and only if it is empty of contains white space only. Futhermore,
+ * line break is ignored, if and only if it is empty of contains whitespace only. Futhermore,
  * in case of a multiline template the content of the last line including its preceding line break
- * (last one within the template) is ignored, if and only if it is empty of contains white space only.
+ * (last one within the template) is ignored, if and only if it is empty of contains whitespace only.
  * Thus, the result of all of the following invocations is identical and equal to `generatedContent`.
  * ```ts
  *  expandToNode`generatedContent`
@@ -51,6 +51,16 @@ import { findIndentation, NEWLINE_REGEXP } from './template-string';
  *    generatedContent
  *  `
  * ```
+ *
+ * In addition, a second rule is applied in the handling of line breaks:
+ * If a line's last substitution contributes `undefined` or an object of type {@link GeneratorNode},
+ * the subsequent line break will be appended via {@link CompositeGeneratorNode.appendNewLineIfNotEmpty}.
+ * Hence, if all other segments of that line contribute whitespace characters only,
+ * the entire line will be omitted while rendering the desired output.
+ * Otherwise, linebreaks will be added via {@link CompositeGeneratorNode.appendNewLine}.
+ * That holds in particular, if the last substitution contributes an empty string. In consequence,
+ * adding `${''}` to the end of a line consisting of whitespace and substitions only
+ * enforces the line break to be rendered, no matter what the substitions actually contribute.
  *
  * @param staticParts the static parts of a tagged template literal
  * @param substitutions the variable parts of a tagged template literal
@@ -315,7 +325,7 @@ function findIndentationAndTemplateStructure(staticParts: TemplateStringsArray):
         //   const n2 = expandToNode` something `;
         //   const n3 = expandToNode` something
         //   `;
-        // ... consider the indentation to be empty, and all the leading white space to be relevant, except for the last (empty) line of n3!
+        // ... consider the indentation to be empty, and all the leading whitespace to be relevant, except for the last (empty) line of n3!
         return {
             indentation: 0, //''
             omitFirstLine,
@@ -334,7 +344,7 @@ function findIndentationAndTemplateStructure(staticParts: TemplateStringsArray):
         //      abc
         //     def
         //   `;
-        // ... the indentation shall be determined by the non-empty lines, excluding the last line if it contains white space only
+        // ... the indentation shall be determined by the non-empty lines, excluding the last line if it contains whitespace only
 
         // if we have a multi-line template and the first line is empty, see n5, n6
         //  ignore the first line;
@@ -351,7 +361,7 @@ function findIndentationAndTemplateStructure(staticParts: TemplateStringsArray):
         return {
             indentation,
             omitFirstLine,
-            // in the subsequent steps omit the last line only if it is empty or if it only contains white space of which the common indentation is not a valid prefix;
+            // in the subsequent steps omit the last line only if it is empty or if it only contains whitespace of which the common indentation is not a valid prefix;
             //  in other words: keep the last line if it matches the common indentation (and maybe contains non-whitespace), a non-match may be due to mistaken usage of tabs and spaces
             omitLastLine: omitLastLine && (
                 lines[lines.length - 1].length < indentation || !lines[lines.length - 1].startsWith(sliced[0].substring(0, indentation))

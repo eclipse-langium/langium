@@ -161,6 +161,17 @@ describe('indentation', () => {
         expect(process(comp, ' ')).toBe(`No indent${EOL} Indent${EOL} Indent`);
     });
 
+    test('should indent after indented ws-only-line and new line with \'ifNotEmpty\'', () => {
+        const comp = new CompositeGeneratorNode();
+        comp.append('No indent', NL);
+        comp.indent(node => {
+            node.append('Indent {', NL);
+            node.append('  ', NLEmpty);  // appending some whitespace before 'NLEmpty' is crucial for this test!
+            node.append('}', NL);
+        });
+        expect(process(comp, '\t')).toBe(`No indent${EOL}\tIndent {${EOL}\t}${EOL}`);
+    });
+
 });
 
 describe('composite', () => {

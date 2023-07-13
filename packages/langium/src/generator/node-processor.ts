@@ -86,6 +86,7 @@ class Context {
 
     resetCurrentLine() {
         this.lines[this.currentLineNumber] = [];
+        this.pendingIndent = true;
     }
 
     addNewLine() {

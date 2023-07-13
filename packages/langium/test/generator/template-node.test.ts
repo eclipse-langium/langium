@@ -689,6 +689,25 @@ describe('Nested substitution templates', () => {
         const text = toString(node);
         expect(text).toBe(TEXT_TEMPLATE + EOL);
     });
+
+    test('With indented line ws-only line with \'undefined\' substitution', () => {
+        const node = n`
+                {
+                    ${undefined}
+                }
+        `;
+        const text = toString(n`
+            non-indented
+                ${node}
+            non-indented
+        `);
+        expect(text).toBe(s`
+            non-indented
+                {
+                }
+            non-indented
+        `);
+    });
 });
 
 const ML_TEXT_TEMPLATE = 'More' + EOL + 'generated text!';
