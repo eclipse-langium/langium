@@ -48,6 +48,7 @@ import { DefaultLexer } from './parser/lexer';
 import { JSDocDocumentationProvider } from './documentation';
 import { DefaultCommentProvider } from './documentation/comment-provider';
 import { LangiumParserErrorMessageProvider } from './parser/langium-parser';
+import { DefaultCachingService } from './utils';
 
 /**
  * Context required for creating the default language-specific dependency injection module.
@@ -132,6 +133,7 @@ export interface DefaultSharedModuleContext {
  */
 export function createDefaultSharedModule(context: DefaultSharedModuleContext): Module<LangiumSharedServices, LangiumDefaultSharedServices> {
     return {
+        Caching: (services) => new DefaultCachingService(services),
         ServiceRegistry: () => new DefaultServiceRegistry(),
         lsp: {
             Connection: () => context.connection,
