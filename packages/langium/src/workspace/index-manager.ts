@@ -141,8 +141,8 @@ export class DefaultIndexManager implements IndexManager {
         for (const uri of uris) {
             const uriString = uri.toString();
             this.simpleIndex.delete(uriString);
-            this.referenceIndex.delete(uriString);
             this.simpleTypeIndex.delete(uriString);
+            this.referenceIndex.delete(uriString);
         }
     }
 
@@ -152,7 +152,9 @@ export class DefaultIndexManager implements IndexManager {
         for (const data of exports) {
             data.node = undefined; // clear reference to the AST Node
         }
-        this.simpleIndex.set(document.uri.toString(), exports);
+        const uri = document.uri.toString();
+        this.simpleIndex.set(uri, exports);
+        this.simpleTypeIndex.delete(uri);
     }
 
     async updateReferences(document: LangiumDocument, cancelToken = CancellationToken.None): Promise<void> {
