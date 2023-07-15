@@ -11,6 +11,7 @@ import type { AstNodeDescriptionProvider } from '../workspace/ast-descriptions';
 import type { IndexManager } from '../workspace/index-manager';
 import type { NameProvider } from './name-provider';
 import type { Scope, ScopeOptions} from './scope';
+import { MapScope} from './scope';
 import { getDocument } from '../utils/ast-util';
 import { stream } from '../utils/stream';
 import { StreamScope } from './scope';
@@ -94,7 +95,7 @@ export class DefaultScopeProvider implements ScopeProvider {
      * Create a global scope filtered for the given reference type.
      */
     protected getGlobalScope(referenceType: string, _context: ReferenceInfo): Scope {
-        return this.indexManager.globalScope(referenceType);
+        return new MapScope(this.indexManager.allElements(referenceType));
     }
 
 }

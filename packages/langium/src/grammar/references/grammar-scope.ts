@@ -64,11 +64,7 @@ export class LangiumGrammarScopeProvider extends DefaultScopeProvider {
         }
         const importedUris = new Set<string>();
         this.gatherImports(grammar, importedUris);
-        let importedElements = this.indexManager.globalScope(referenceType).getAllElements()
-            .filter(des => importedUris.has(des.documentUri.toString()));
-        if (referenceType === AbstractType) {
-            importedElements = importedElements.filter(des => des.type === Interface || des.type === Type);
-        }
+        const importedElements = this.indexManager.allElements(referenceType, importedUris);
         return new MapScope(importedElements);
     }
 

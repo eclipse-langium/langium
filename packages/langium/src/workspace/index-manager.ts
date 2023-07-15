@@ -10,14 +10,11 @@ import type { LangiumSharedServices } from '../services';
 import type { AstNode, AstNodeDescription, AstReflection } from '../syntax-tree';
 import type { Stream } from '../utils/stream';
 import type { ReferenceDescription } from './ast-descriptions';
-import type { LangiumDocument } from './documents';
+import type { LangiumDocument, LangiumDocuments } from './documents';
 import { CancellationToken } from 'vscode-languageserver';
 import { getDocument } from '../utils/ast-util';
 import { stream } from '../utils/stream';
 import { equalURI } from '../utils/uri-util';
-import { DocumentState } from './documents';
-import type { ScopeOptions, Scope } from '../references/scope';
-import { MapScope } from '../references/scope';
 
 /**
  * The index manager is responsible for keeping metadata about symbols and cross-references
@@ -63,12 +60,12 @@ export interface IndexManager {
     isAffected(document: LangiumDocument, changedUris: Set<string>): boolean;
 
     /**
-     * Compute a global scope, optionally filtered using a type identifier.
+     * Compute a list of all exported elements, optionally filtered using a type identifier.
      *
      * @param nodeType The type to filter with, or `undefined` to return descriptions of all types.
-     * @returns a `Scope` targetting all globally visible nodes (of a given type).
+     * @returns a `Stream` containing all globally visible nodes (of a given type).
      */
-    globalScope(nodeType?: string, scopeOptions?: ScopeOptions): Scope;
+    allElements(nodeType?: string, uris?: Set<string>): Stream<AstNodeDescription>;
 
     /**
      * Returns all known references that are pointing to the given `targetNode`.
@@ -85,14 +82,15 @@ export interface IndexManager {
 export class DefaultIndexManager implements IndexManager {
 
     protected readonly serviceRegistry: ServiceRegistry;
+    protected readonly documents: LangiumDocuments;
     protected readonly astReflection: AstReflection;
 
-    protected readonly simpleIndex: Map<string, AstNodeDescription[]> = new Map<string, AstNodeDescription[]>();
-    protected readonly referenceIndex: Map<string, ReferenceDescription[]> = new Map<string, ReferenceDescription[]>();
-    protected readonly globalScopeCache = new Map<string, Scope>();
-    protected allElementsCache: AstNodeDescription[] = [];
+    protected readonly simpleIndex = new Map<string, AstNodeDescription[]>();
+    protected readonly simpleTypeIndex = new Map<string, Map<string, AstNodeDescription[]>>();
+    protected readonly referenceIndex = new Map<string, ReferenceDescription[]>();
 
     constructor(services: LangiumSharedServices) {
+        this.documents = services.workspace.LangiumDocuments;
         this.serviceRegistry = services.ServiceRegistry;
         this.astReflection = services.AstReflection;
     }
@@ -100,8 +98,8 @@ export class DefaultIndexManager implements IndexManager {
     findAllReferences(targetNode: AstNode, astNodePath: string): Stream<ReferenceDescription> {
         const targetDocUri = getDocument(targetNode).uri;
         const result: ReferenceDescription[] = [];
-        this.referenceIndex.forEach((docRefs: ReferenceDescription[]) => {
-            docRefs.forEach((refDescr) => {
+        this.referenceIndex.forEach(docRefs => {
+            docRefs.forEach(refDescr => {
                 if (equalURI(refDescr.targetUri, targetDocUri) && refDescr.targetPath === astNodePath) {
                     result.push(refDescr);
                 }
@@ -110,20 +108,33 @@ export class DefaultIndexManager implements IndexManager {
         return stream(result);
     }
 
-    globalScope(nodeType = '', scopeOptions?: ScopeOptions): Scope {
-        if (this.allElementsCache.length === 0) {
-            this.allElementsCache = Array.from(this.simpleIndex.values()).flat();
+    allElements(nodeType?: string, uris?: Set<string>): Stream<AstNodeDescription> {
+        const allUris = this.documents.all.map(doc => doc.uri.toString());
+        const arrays: AstNodeDescription[][] = [];
+        for (const uri of allUris) {
+            if (!uris || uris.has(uri)) {
+                arrays.push(this.getFileDescriptions(uri, nodeType));
+            }
         }
+        return stream(arrays).flat();
+    }
 
-        const cached = this.globalScopeCache.get(nodeType);
-        if (cached) {
-            return cached;
-        } else {
-            const elements = this.allElementsCache.filter(e => this.astReflection.isSubtype(e.type, nodeType));
-            const scope = new MapScope(elements, undefined, scopeOptions);
-            this.globalScopeCache.set(nodeType, scope);
-            return scope;
+    protected getFileDescriptions(uri: string, nodeType?: string): AstNodeDescription[] {
+        if (!nodeType) {
+            return this.simpleIndex.get(uri) ?? [];
         }
+        let map = this.simpleTypeIndex.get(uri);
+        if (!map) {
+            map = new Map();
+            this.simpleTypeIndex.set(uri, map);
+        }
+        let descriptions = map.get(nodeType);
+        if (!descriptions) {
+            const allFileDescriptions = this.simpleIndex.get(uri) ?? [];
+            descriptions = allFileDescriptions.filter(e => this.astReflection.isSubtype(e.type, nodeType));
+            map.set(nodeType, descriptions);
+        }
+        return descriptions;
     }
 
     remove(uris: URI[]): void {
@@ -131,14 +142,11 @@ export class DefaultIndexManager implements IndexManager {
             const uriString = uri.toString();
             this.simpleIndex.delete(uriString);
             this.referenceIndex.delete(uriString);
-            this.globalScopeCache.clear();
-            this.allElementsCache = [];
+            this.simpleTypeIndex.delete(uriString);
         }
     }
 
     async updateContent(document: LangiumDocument, cancelToken = CancellationToken.None): Promise<void> {
-        this.globalScopeCache.clear();
-        this.allElementsCache = [];
         const services = this.serviceRegistry.getServices(document.uri);
         const exports: AstNodeDescription[] = await services.references.ScopeComputation.computeExports(document, cancelToken);
         for (const data of exports) {
