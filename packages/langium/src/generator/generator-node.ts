@@ -4,11 +4,11 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { AstNode, Properties } from '../syntax-tree';
-import { isAstNode } from '../syntax-tree';
-import type { SourceRegion, TraceRegion, TraceSourceSpec } from './generator-tracing';
-import { processGeneratorNode } from './node-processor';
-import { expandToNode, expandTracedToNode } from './template-node';
+import type { AstNode, Properties } from '../syntax-tree.js';
+import { isAstNode } from '../syntax-tree.js';
+import type { SourceRegion, TraceRegion, TraceSourceSpec } from './generator-tracing.js';
+import { processGeneratorNode } from './node-processor.js';
+import { expandToNode, expandTracedToNode } from './template-node.js';
 
 export const EOL = (typeof process === 'undefined') ? '\n' : (process.platform === 'win32') ? '\r\n' : '\n';
 

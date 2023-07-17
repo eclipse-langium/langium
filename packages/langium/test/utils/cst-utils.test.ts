@@ -4,11 +4,11 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { Grammar } from '../../src';
+import type { Grammar } from '../../src/index.js';
 import { describe, expect, test } from 'vitest';
-import { createLangiumGrammarServices, EmptyFileSystem } from '../../src';
-import { parseHelper } from '../../src/test';
-import * as cstUtil from '../../src/utils/cst-util';
+import { createLangiumGrammarServices, EmptyFileSystem } from '../../src/index.js';
+import { parseHelper } from '../../src/test/index.js';
+import * as cstUtil from '../../src/utils/cst-util.js';
 
 const services = createLangiumGrammarServices(EmptyFileSystem);
 const parser = parseHelper<Grammar>(services.grammar);

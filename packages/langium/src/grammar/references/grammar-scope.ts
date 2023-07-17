@@ -4,21 +4,21 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { Scope } from '../../references/scope';
-import type { LangiumServices } from '../../services';
-import type { AstNode, AstNodeDescription, ReferenceInfo } from '../../syntax-tree';
-import type { Stream } from '../../utils/stream';
-import type { AstNodeLocator } from '../../workspace/ast-node-locator';
-import type { DocumentSegment, LangiumDocument, LangiumDocuments, PrecomputedScopes } from '../../workspace/documents';
-import type { Grammar } from '../generated/ast';
-import { EMPTY_SCOPE, MapScope } from '../../references/scope';
-import { DefaultScopeComputation } from '../../references/scope-computation';
-import { DefaultScopeProvider } from '../../references/scope-provider';
-import { findRootNode, getContainerOfType, getDocument, streamAllContents } from '../../utils/ast-util';
-import { toDocumentSegment } from '../../utils/cst-util';
-import { stream } from '../../utils/stream';
-import { AbstractType, Interface, isAction, isGrammar, isParserRule, isReturnType, Type } from '../generated/ast';
-import { getActionType, resolveImportUri } from '../internal-grammar-util';
+import type { Scope } from '../../references/scope.js';
+import type { LangiumServices } from '../../services.js';
+import type { AstNode, AstNodeDescription, ReferenceInfo } from '../../syntax-tree.js';
+import type { Stream } from '../../utils/stream.js';
+import type { AstNodeLocator } from '../../workspace/ast-node-locator.js';
+import type { DocumentSegment, LangiumDocument, LangiumDocuments, PrecomputedScopes } from '../../workspace/documents.js';
+import type { Grammar } from '../generated/ast.js';
+import { EMPTY_SCOPE, MapScope } from '../../references/scope.js';
+import { DefaultScopeComputation } from '../../references/scope-computation.js';
+import { DefaultScopeProvider } from '../../references/scope-provider.js';
+import { findRootNode, getContainerOfType, getDocument, streamAllContents } from '../../utils/ast-util.js';
+import { toDocumentSegment } from '../../utils/cst-util.js';
+import { stream } from '../../utils/stream.js';
+import { AbstractType, Interface, isAction, isGrammar, isParserRule, isReturnType, Type } from '../generated/ast.js';
+import { getActionType, resolveImportUri } from '../internal-grammar-util.js';
 
 export class LangiumGrammarScopeProvider extends DefaultScopeProvider {
 

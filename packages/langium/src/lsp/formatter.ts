@@ -6,15 +6,15 @@
 
 import type { CancellationToken, DocumentFormattingParams, DocumentOnTypeFormattingOptions, DocumentOnTypeFormattingParams, DocumentRangeFormattingParams, FormattingOptions, Range, TextEdit } from 'vscode-languageserver';
 import type { TextDocument } from 'vscode-languageserver-textdocument';
-import type { AstNode, CstNode, Properties } from '../syntax-tree';
-import type { MaybePromise } from '../utils/promise-util';
-import type { Stream } from '../utils/stream';
-import type { LangiumDocument } from '../workspace/documents';
-import { findNodeForKeyword, findNodesForKeyword, findNodeForProperty, findNodesForProperty } from '../utils/grammar-util';
-import { isCompositeCstNode, isLeafCstNode } from '../syntax-tree';
-import { streamAllContents } from '../utils/ast-util';
-import { getInteriorNodes, getNextNode } from '../utils/cst-util';
-import { DONE_RESULT, EMPTY_STREAM, StreamImpl, TreeStreamImpl } from '../utils/stream';
+import type { AstNode, CstNode, Properties } from '../syntax-tree.js';
+import type { MaybePromise } from '../utils/promise-util.js';
+import type { Stream } from '../utils/stream.js';
+import type { LangiumDocument } from '../workspace/documents.js';
+import { findNodeForKeyword, findNodesForKeyword, findNodeForProperty, findNodesForProperty } from '../utils/grammar-util.js';
+import { isCompositeCstNode, isLeafCstNode } from '../syntax-tree.js';
+import { streamAllContents } from '../utils/ast-util.js';
+import { getInteriorNodes, getNextNode } from '../utils/cst-util.js';
+import { DONE_RESULT, EMPTY_STREAM, StreamImpl, TreeStreamImpl } from '../utils/stream.js';
 
 /**
  * Language specific service for handling formatting related LSP requests.

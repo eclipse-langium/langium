@@ -3,12 +3,12 @@
  * DO NOT EDIT MANUALLY!
  ******************************************************************************/
 
-import type { LanguageMetaData } from '../language-meta-data';
-import type { Module } from '../../dependency-injection';
-import type { LangiumGeneratedServices, LangiumGeneratedSharedServices, LangiumSharedServices, LangiumServices } from '../../services';
-import type { IParserConfig } from '../../parser/parser-config';
-import { LangiumGrammarAstReflection } from './ast';
-import { LangiumGrammarGrammar } from './grammar';
+import type { LanguageMetaData } from '../language-meta-data.js';
+import type { Module } from '../../dependency-injection.js';
+import type { LangiumGeneratedServices, LangiumGeneratedSharedServices, LangiumSharedServices, LangiumServices } from '../../services.js';
+import type { IParserConfig } from '../../parser/parser-config.js';
+import { LangiumGrammarAstReflection } from './ast.js';
+import { LangiumGrammarGrammar } from './grammar.js';
 
 export const LangiumGrammarLanguageMetaData = {
     languageId: 'langium',

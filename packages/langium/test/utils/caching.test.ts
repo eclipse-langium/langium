@@ -7,8 +7,8 @@
 /* eslint-disable dot-notation */
 
 import { beforeEach, describe, expect, test } from 'vitest';
-import type { DefaultDocumentBuilder} from '../../src';
-import { DocumentCache, EmptyFileSystem, WorkspaceCache, createLangiumGrammarServices } from '../../src';
+import type { DefaultDocumentBuilder} from '../../src/index.js';
+import { DocumentCache, EmptyFileSystem, WorkspaceCache, createLangiumGrammarServices } from '../../src/index.js';
 import { URI } from 'vscode-uri';
 
 const services = createLangiumGrammarServices(EmptyFileSystem);

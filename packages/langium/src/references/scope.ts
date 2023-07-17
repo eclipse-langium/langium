@@ -4,9 +4,9 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { AstNodeDescription } from '../syntax-tree';
-import type { Stream} from '../utils/stream';
-import { EMPTY_STREAM, stream } from '../utils/stream';
+import type { AstNodeDescription } from '../syntax-tree.js';
+import type { Stream } from '../utils/stream.js';
+import { EMPTY_STREAM, stream } from '../utils/stream.js';
 
 /**
  * A scope describes what target elements are visible from a specific cross-reference context.

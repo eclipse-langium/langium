@@ -6,10 +6,10 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import type { LangiumServices } from '../src/services';
+import type { LangiumServices } from '../src/services.js';
 import { describe, expect, test } from 'vitest';
-import { URI } from 'vscode-uri';
-import { DefaultServiceRegistry } from '../src/service-registry';
+import vscodeUri from 'vscode-uri';
+import { DefaultServiceRegistry } from '../src/service-registry.js';
 
 describe('DefaultServiceRegistry', () => {
 
@@ -17,7 +17,7 @@ describe('DefaultServiceRegistry', () => {
         const language: LangiumServices = { foo: 'bar' } as any;
         const registry = new DefaultServiceRegistry();
         registry.register(language);
-        expect(registry.getServices(URI.parse('file:/foo.bar'))).toBe(language);
+        expect(registry.getServices(vscodeUri.URI.parse('file:/foo.bar'))).toBe(language);
         expect(registry.all).toHaveLength(1);
     });
 
@@ -27,8 +27,8 @@ describe('DefaultServiceRegistry', () => {
         const registry = new DefaultServiceRegistry();
         registry.register(language1);
         registry.register(language2);
-        expect(registry.getServices(URI.parse('file:/test.foo'))).toBe(language1);
-        expect(registry.getServices(URI.parse('file:/test.bar'))).toBe(language2);
+        expect(registry.getServices(vscodeUri.URI.parse('file:/test.foo'))).toBe(language1);
+        expect(registry.getServices(vscodeUri.URI.parse('file:/test.bar'))).toBe(language2);
         expect(registry.all).toHaveLength(2);
     });
 

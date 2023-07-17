@@ -6,18 +6,18 @@
 
 import type { MismatchedTokenException } from 'chevrotain';
 import type { Diagnostic } from 'vscode-languageserver';
-import type { LanguageMetaData } from '../grammar/language-meta-data';
-import type { ParseResult } from '../parser/langium-parser';
-import type { LangiumServices } from '../services';
-import type { AstNode, CstNode } from '../syntax-tree';
-import type { LangiumDocument } from '../workspace/documents';
-import type { DiagnosticData, DiagnosticInfo, ValidationAcceptor, ValidationCategory, ValidationRegistry } from './validation-registry';
+import type { LanguageMetaData } from '../grammar/language-meta-data.js';
+import type { ParseResult } from '../parser/langium-parser.js';
+import type { LangiumServices } from '../services.js';
+import type { AstNode, CstNode } from '../syntax-tree.js';
+import type { LangiumDocument } from '../workspace/documents.js';
+import type { DiagnosticData, DiagnosticInfo, ValidationAcceptor, ValidationCategory, ValidationRegistry } from './validation-registry.js';
 import { CancellationToken, DiagnosticSeverity, Position, Range } from 'vscode-languageserver';
-import { findNodeForKeyword, findNodeForProperty } from '../utils/grammar-util';
-import { streamAst } from '../utils/ast-util';
-import { tokenToRange } from '../utils/cst-util';
-import { interruptAndCheck, isOperationCancelled } from '../utils/promise-util';
-import { diagnosticData } from './validation-registry';
+import { findNodeForKeyword, findNodeForProperty } from '../utils/grammar-util.js';
+import { streamAst } from '../utils/ast-util.js';
+import { tokenToRange } from '../utils/cst-util.js';
+import { interruptAndCheck, isOperationCancelled } from '../utils/promise-util.js';
+import { diagnosticData } from './validation-registry.js';
 
 export interface ValidationOptions {
     /**

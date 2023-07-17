@@ -5,14 +5,14 @@
  ******************************************************************************/
 
 import type { DefaultSharedModuleContext, LangiumSharedServices } from 'langium';
-import type { RequirementsLangServices } from './requirements-lang-module';
-import type { TestsLangServices } from './tests-lang-module';
+import type { RequirementsLangServices } from './requirements-lang-module.js';
+import type { TestsLangServices } from './tests-lang-module.js';
 import { createDefaultModule, createDefaultSharedModule, inject } from 'langium';
-import { RequirementsAndTestsGeneratedSharedModule, RequirementsGeneratedModule, TestsGeneratedModule } from './generated/module';
-import { RequirementsLangModule } from './requirements-lang-module';
-import { registerRequirementsValidationChecks } from './requirements-lang-validator';
-import { TestsLangModule } from './tests-lang-module';
-import { registerTestsValidationChecks } from './tests-lang-validator';
+import { RequirementsAndTestsGeneratedSharedModule, RequirementsGeneratedModule, TestsGeneratedModule } from './generated/module.js';
+import { RequirementsLangModule } from './requirements-lang-module.js';
+import { registerRequirementsValidationChecks } from './requirements-lang-validator.js';
+import { TestsLangModule } from './tests-lang-module.js';
+import { registerTestsValidationChecks } from './tests-lang-validator.js';
 
 /**
  * Create the full set of services required by Langium.

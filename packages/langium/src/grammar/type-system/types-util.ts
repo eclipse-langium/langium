@@ -4,15 +4,15 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { References } from '../../references/references';
-import type { AstNodeLocator } from '../../workspace/ast-node-locator';
-import type { LangiumDocuments } from '../../workspace/documents';
-import type { Interface, Type, AbstractType, TypeDefinition } from '../generated/ast';
-import type { PlainInterface, PlainProperty } from './type-collector/plain-types';
-import type { AstTypes, InterfaceType, PropertyType, TypeOption } from './type-collector/types';
-import { MultiMap } from '../../utils/collections';
-import { isInterface, isType, isUnionType, isSimpleType } from '../generated/ast';
-import { isArrayType, isPrimitiveType, isPropertyUnion, isReferenceType, isValueType } from './type-collector/types';
+import type { References } from '../../references/references.js';
+import type { AstNodeLocator } from '../../workspace/ast-node-locator.js';
+import type { LangiumDocuments } from '../../workspace/documents.js';
+import type { Interface, Type, AbstractType, TypeDefinition } from '../generated/ast.js';
+import type { PlainInterface, PlainProperty } from './type-collector/plain-types.js';
+import type { AstTypes, InterfaceType, PropertyType, TypeOption } from './type-collector/types.js';
+import { MultiMap } from '../../utils/collections.js';
+import { isInterface, isType, isUnionType, isSimpleType } from '../generated/ast.js';
+import { isArrayType, isPrimitiveType, isPropertyUnion, isReferenceType, isValueType } from './type-collector/types.js';
 
 /**
  * Collects all properties of all interface types. Includes super type properties.

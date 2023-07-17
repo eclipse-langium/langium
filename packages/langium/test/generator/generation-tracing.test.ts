@@ -5,16 +5,16 @@
  ******************************************************************************/
 
 import { beforeAll, describe, expect, test } from 'vitest';
-import { toStringAndTrace, traceToNode } from '../../src/generator/generator-node';
-import type { SourceRegion, TraceRegion } from '../../src/generator/generator-tracing';
-import { joinTracedToNode, joinTracedToNodeIf } from '../../src/generator/node-joiner';
-import { expandToNode, expandTracedToNode } from '../../src/generator/template-node';
-import { expandToString } from '../../src/generator/template-string';
-import type { AstNodeWithTextRegion } from '../../src/serializer/json-serializer';
-import type { AstNode } from '../../src/syntax-tree';
-import { parseHelper } from '../../src/test/langium-test';
-import { createServicesForGrammar, findNodeForKeyword, findNodesForProperty } from '../../src/utils/grammar-util';
-import { TreeStreamImpl } from '../../src/utils/stream';
+import { toStringAndTrace, traceToNode } from '../../src/generator/generator-node.js';
+import type { SourceRegion, TraceRegion } from '../../src/generator/generator-tracing.js';
+import { joinTracedToNode, joinTracedToNodeIf } from '../../src/generator/node-joiner.js';
+import { expandToNode, expandTracedToNode } from '../../src/generator/template-node.js';
+import { expandToString } from '../../src/generator/template-string.js';
+import type { AstNodeWithTextRegion } from '../../src/serializer/json-serializer.js';
+import type { AstNode } from '../../src/syntax-tree.js';
+import { parseHelper } from '../../src/test/langium-test.js';
+import { createServicesForGrammar, findNodeForKeyword, findNodesForProperty } from '../../src/utils/grammar-util.js';
+import { TreeStreamImpl } from '../../src/utils/stream.js';
 
 // don't bather because of unexpected indentations, e.g. within template substitutions
 /* eslint-disable @typescript-eslint/indent */

@@ -4,13 +4,13 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { Generated } from 'langium';
-import type { Statemachine } from '../src/language-server/generated/ast';
+import type { Generated } from '../../../packages/langium/lib/index.js';
+import type { Statemachine } from '../src/language-server/generated/ast.js';
 import { describe, expect, test } from 'vitest';
-import { EmptyFileSystem, normalizeEOL, toString } from 'langium';
-import { parseHelper } from 'langium/test';
-import { generateCppContent } from '../src/cli/generator';
-import { createStatemachineServices } from '../src/language-server/statemachine-module';
+import { EmptyFileSystem, normalizeEOL, toString } from '../../../packages/langium/lib/index.js';
+import { parseHelper } from '../../../packages/langium/lib/test/index.js';
+import { generateCppContent } from '../src/cli/generator.js';
+import { createStatemachineServices } from '../src/language-server/statemachine-module.js';
 
 describe('Tests the code generator', () => {
     const services = createStatemachineServices(EmptyFileSystem).statemachine;

@@ -5,12 +5,12 @@
  ******************************************************************************/
 
 import type { AstNode, AstNodeDescription, LangiumDocument, PrecomputedScopes } from 'langium';
-import type { DomainModelServices } from './domain-model-module';
-import type { QualifiedNameProvider } from './domain-model-naming';
-import type { Domainmodel, PackageDeclaration } from './generated/ast';
+import type { DomainModelServices } from './domain-model-module.js';
+import type { QualifiedNameProvider } from './domain-model-naming.js';
+import type { Domainmodel, PackageDeclaration } from './generated/ast.js';
 import { DefaultScopeComputation, interruptAndCheck, MultiMap, streamAllContents } from 'langium';
 import { CancellationToken } from 'vscode-jsonrpc';
-import { isType, isPackageDeclaration } from './generated/ast';
+import { isType, isPackageDeclaration } from './generated/ast.js';
 
 export class DomainModelScopeComputation extends DefaultScopeComputation {
 

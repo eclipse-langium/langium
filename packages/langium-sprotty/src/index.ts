@@ -4,8 +4,8 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-export * from './default-module';
-export * from './diagram-generator';
-export * from './diagram-server-manager';
-export * from './lsp';
-export * from './sprotty-services';
+export * from './default-module.js';
+export * from './diagram-generator.js';
+export * from './diagram-server-manager.js';
+export * from './lsp.js';
+export * from './sprotty-services.js';

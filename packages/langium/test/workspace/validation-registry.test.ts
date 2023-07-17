@@ -4,12 +4,12 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { LangiumGrammarAstType } from '../../src/grammar/generated/ast';
-import type { ValidationChecks } from '../../src/validation/validation-registry';
-import type { LangiumServices } from '../../src/services';
+import type { LangiumGrammarAstType } from '../../src/grammar/generated/ast.js';
+import type { ValidationChecks } from '../../src/validation/validation-registry.js';
+import type { LangiumServices } from '../../src/services.js';
 import { describe, expect, test } from 'vitest';
-import { LangiumGrammarAstReflection } from '../../src/grammar/generated/ast';
-import { ValidationRegistry } from '../../src/validation/validation-registry';
+import { LangiumGrammarAstReflection } from '../../src/grammar/generated/ast.js';
+import { ValidationRegistry } from '../../src/validation/validation-registry.js';
 
 describe('ValidationRegistry', () => {
     function createRegistry(): ValidationRegistry {

@@ -5,9 +5,9 @@
  ******************************************************************************/
 
 import { describe, test } from 'vitest';
-import { EmptyFileSystem } from 'langium';
-import { expectFormatting } from 'langium/test';
-import { createDomainModelServices } from '../src/language-server/domain-model-module';
+import { EmptyFileSystem } from '../../../packages/langium/lib/index.js';
+import { expectFormatting } from '../../../packages/langium/lib/test/index.js';
+import { createDomainModelServices } from '../src/language-server/domain-model-module.js';
 
 const services = createDomainModelServices({ ...EmptyFileSystem }).domainmodel;
 const formatting = expectFormatting(services);

@@ -4,9 +4,9 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-export * from './linker';
-export * from './name-provider';
-export * from './references';
-export * from './scope';
-export * from './scope-computation';
-export * from './scope-provider';
+export * from './linker.js';
+export * from './name-provider.js';
+export * from './references.js';
+export * from './scope.js';
+export * from './scope-computation.js';
+export * from './scope-provider.js';

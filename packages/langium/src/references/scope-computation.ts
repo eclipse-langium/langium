@@ -4,15 +4,15 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { LangiumServices } from '../services';
-import type { AstNode, AstNodeDescription } from '../syntax-tree';
-import type { AstNodeDescriptionProvider } from '../workspace/ast-descriptions';
-import type { LangiumDocument, PrecomputedScopes } from '../workspace/documents';
-import type { NameProvider } from './name-provider';
+import type { LangiumServices } from '../services.js';
+import type { AstNode, AstNodeDescription } from '../syntax-tree.js';
+import type { AstNodeDescriptionProvider } from '../workspace/ast-descriptions.js';
+import type { LangiumDocument, PrecomputedScopes } from '../workspace/documents.js';
+import type { NameProvider } from './name-provider.js';
 import { CancellationToken } from 'vscode-jsonrpc';
-import { streamAllContents, streamContents } from '../utils/ast-util';
-import { MultiMap } from '../utils/collections';
-import { interruptAndCheck } from '../utils/promise-util';
+import { streamAllContents, streamContents } from '../utils/ast-util.js';
+import { MultiMap } from '../utils/collections.js';
+import { interruptAndCheck } from '../utils/promise-util.js';
 
 /**
  * Language-specific service for precomputing global and local scopes. The service methods are executed

@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import { describe, expect, test } from 'vitest';
-import { getTerminalParts, isMultilineComment, partialMatches } from '../../src';
+import { getTerminalParts, isMultilineComment, partialMatches } from '../../src/index.js';
 
 describe('partial regex', () => {
 

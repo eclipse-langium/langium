@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import type { ILexingError, IMultiModeLexerDefinition, IToken, TokenType, TokenTypeDictionary, TokenVocabulary } from 'chevrotain';
-import type { LangiumServices } from '../services';
+import type { LangiumServices } from '../services.js';
 import { Lexer as ChevrotainLexer } from 'chevrotain';
 
 export interface LexerResult {

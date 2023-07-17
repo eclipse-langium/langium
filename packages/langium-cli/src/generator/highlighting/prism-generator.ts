@@ -4,11 +4,11 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 import type { Grammar } from 'langium';
-import type { LangiumLanguageConfig } from '../../package';
+import type { LangiumLanguageConfig } from '../../package.js';
 import { CompositeGeneratorNode, escapeRegExp, GrammarAST, isCommentTerminal, NL, toString } from 'langium';
-import { terminalRegex } from 'langium/lib/grammar/internal-grammar-util';
+import { terminalRegex } from 'langium/internal';
 import _ from 'lodash';
-import { collectKeywords } from '../util';
+import { collectKeywords } from '../util.js';
 
 interface HighlightElement {
     pattern: string;

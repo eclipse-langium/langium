@@ -4,9 +4,9 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 import type { Grammar, IParserConfig, LangiumDocuments, LangiumGrammarServices, LangiumParser, LanguageMetaData, } from 'langium';
-import type { LangiumConfig, LangiumLanguageConfig } from './package';
+import type { LangiumConfig, LangiumLanguageConfig } from './package.js';
 import { createServicesForGrammar, getDocument, GrammarAST, prepareLangiumParser } from 'langium';
-import { getFilePath } from './package';
+import { getFilePath } from './package.js';
 
 export async function validateParser(grammar: Grammar, config: LangiumConfig, grammarConfigMap: Map<Grammar, LangiumLanguageConfig>,
     grammarServices: LangiumGrammarServices): Promise<Error | undefined> {

@@ -4,11 +4,11 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { RequirementModel, TestModel } from '../language-server/generated/ast';
-import fs from 'fs';
+import type { RequirementModel, TestModel } from '../language-server/generated/ast.js';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 import { CompositeGeneratorNode, NL, toString } from 'langium';
-import path from 'path';
-import { extractDestinationAndName } from './cli-util';
+import { extractDestinationAndName } from './cli-util.js';
 
 /**
  * main generator function: generate a summary in HTML.

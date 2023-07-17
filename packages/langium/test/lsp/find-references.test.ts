@@ -5,8 +5,8 @@
  ******************************************************************************/
 
 import { describe, test } from 'vitest';
-import { createLangiumGrammarServices, EmptyFileSystem } from '../../src';
-import { expectFindReferences } from '../../src/test';
+import { createLangiumGrammarServices, EmptyFileSystem } from '../../src/index.js';
+import { expectFindReferences } from '../../src/test/index.js';
 
 const grammarServices = createLangiumGrammarServices(EmptyFileSystem).grammar;
 const findReferences = expectFindReferences(grammarServices);

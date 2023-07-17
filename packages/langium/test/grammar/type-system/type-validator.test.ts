@@ -5,13 +5,10 @@
  ******************************************************************************/
 
 import type { Diagnostic } from 'vscode-languageserver';
-import type { GrammarAST } from '../../../src';
-import type { Assignment } from '../../../src/grammar/generated/ast';
 import { describe, expect, test } from 'vitest';
 import { DiagnosticSeverity } from 'vscode-languageserver';
-import { createLangiumGrammarServices, EmptyFileSystem, streamAllContents, streamContents } from '../../../src';
-import { isAssignment } from '../../../src/grammar/generated/ast';
-import { expectError, expectNoIssues, parseDocument, validationHelper } from '../../../src/test';
+import { createLangiumGrammarServices, EmptyFileSystem, streamAllContents, streamContents, GrammarAST } from '../../../src/index.js';
+import { expectError, expectNoIssues, parseDocument, validationHelper } from '../../../src/test/index.js';
 
 const grammarServices = createLangiumGrammarServices(EmptyFileSystem).grammar;
 const validate = validationHelper<GrammarAST.Grammar>(grammarServices);
@@ -397,7 +394,7 @@ describe('Property type is not a mix of cross-ref and non-cross-ref types.', () 
             terminal ID: /[_a-zA-Z][\\w_]*/;
         `);
         const rule1Assignment = streamContents(validation.document.parseResult.value.rules[1])
-            .filter(node => isAssignment(node)).head() as Assignment;
+            .filter(node => GrammarAST.isAssignment(node)).head() as GrammarAST.Assignment;
         expect(rule1Assignment).not.toBe(undefined);
 
         expectError(validation, /Mixing a cross-reference with other types is not supported. Consider splitting property /, {
@@ -413,7 +410,7 @@ describe('Property type is not a mix of cross-ref and non-cross-ref types.', () 
             terminal ID: /[_a-zA-Z][\\w_]*/;
         `);
         const propAssignments = streamAllContents(validation.document.parseResult.value.rules[0])
-            .filter(node => isAssignment(node)).toArray();
+            .filter(node => GrammarAST.isAssignment(node)).toArray();
         expect(propAssignments.length).toBe(2);
 
         expectError(validation, /Mixing a cross-reference with other types is not supported. Consider splitting property /, {
@@ -576,7 +573,7 @@ describe('Property types validation takes in account types hierarchy', () => {
             terminal NUMBER returns number: /[0-9]+(\\.[0-9]*)?/;
         `);
 
-        const assignment = streamAllContents(validation.document.parseResult.value).filter(isAssignment).toArray()[0];
+        const assignment = streamAllContents(validation.document.parseResult.value).filter(GrammarAST.isAssignment).toArray()[0];
         expectError(validation, "The assigned type 'Z2' is not compatible with the declared property 'y' of type 'Z1'.", {
             node: assignment,
             property: 'feature'

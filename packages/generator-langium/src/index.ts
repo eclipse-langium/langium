@@ -7,9 +7,12 @@
 import Generator from 'yeoman-generator';
 import _ from 'lodash';
 import chalk from 'chalk';
-import path from 'path';
+import * as path from 'node:path';
 import which from 'which';
-import { EOL } from 'os';
+import { EOL } from 'node:os';
+import * as url from 'node:url';
+
+const __dirname = url.fileURLToPath(new URL('.', import.meta.url));
 
 const TEMPLATE_CORE_DIR = '../templates/core';
 const TEMPLATE_VSCODE_DIR = '../templates/vscode';
@@ -300,4 +303,4 @@ class LangiumGenerator extends Generator {
     }
 }
 
-export = LangiumGenerator;
+export default LangiumGenerator;

@@ -4,18 +4,17 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { LangiumServices } from '../services';
-import type { AstNode, AstNodeDescription, AstReflection, ReferenceInfo } from '../syntax-tree';
-import type { Stream } from '../utils/stream';
-import type { AstNodeDescriptionProvider } from '../workspace/ast-descriptions';
-import type { IndexManager } from '../workspace/index-manager';
-import type { NameProvider } from './name-provider';
-import type { Scope, ScopeOptions} from './scope';
-import { MapScope} from './scope';
-import { getDocument } from '../utils/ast-util';
-import { stream } from '../utils/stream';
-import { StreamScope } from './scope';
-import { WorkspaceCache } from '../utils/caching';
+import type { LangiumServices } from '../services.js';
+import type { AstNode, AstNodeDescription, AstReflection, ReferenceInfo } from '../syntax-tree.js';
+import type { Stream } from '../utils/stream.js';
+import type { AstNodeDescriptionProvider } from '../workspace/ast-descriptions.js';
+import type { IndexManager } from '../workspace/index-manager.js';
+import type { NameProvider } from './name-provider.js';
+import type { Scope, ScopeOptions} from './scope.js';
+import { MapScope, StreamScope } from './scope.js';
+import { getDocument } from '../utils/ast-util.js';
+import { stream } from '../utils/stream.js';
+import { WorkspaceCache } from '../utils/caching.js';
 
 /**
  * Language-specific service for determining the scope of target elements visible in a specific cross-reference context.

@@ -4,8 +4,8 @@
  ******************************************************************************/
 
 import type { LangiumGeneratedServices, LangiumGeneratedSharedServices, LangiumSharedServices, LangiumServices, LanguageMetaData, Module } from 'langium';
-import { RequirementsAndTestsAstReflection } from './ast';
-import { RequirementsGrammar, TestsGrammar } from './grammar';
+import { RequirementsAndTestsAstReflection } from './ast.js';
+import { RequirementsGrammar, TestsGrammar } from './grammar.js';
 
 export const RequirementsLanguageMetaData = {
     languageId: 'requirements-lang',

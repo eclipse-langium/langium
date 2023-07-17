@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import { describe, expect, test } from 'vitest';
-import { Deferred, delayNextTick, MutexLock } from '../../src';
+import { Deferred, delayNextTick, MutexLock } from '../../src/index.js';
 
 describe('Mutex locking', () => {
 

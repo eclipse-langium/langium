@@ -5,8 +5,8 @@
  ******************************************************************************/
 
 import type { ExecException } from 'child_process';
-import path from 'path';
-import fs from 'fs';
+import * as path from 'node:path';
+import * as fs from 'node:fs';
 import { afterAll, describe, expect, test } from 'vitest';
 import { exec } from 'child_process';
 

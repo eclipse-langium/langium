@@ -4,12 +4,12 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { Grammar } from '../../../src';
-import type { CrossReference, InferredType, Interface } from '../../../src/grammar/generated/ast';
+import type { Grammar } from '../../../src/index.js';
+import type { CrossReference, InferredType, Interface } from '../../../src/grammar/generated/ast.js';
 import { Utils } from 'vscode-uri';
 import { beforeEach, describe, expect, test } from 'vitest';
-import { createLangiumGrammarServices, EmptyFileSystem } from '../../../src';
-import { clearDocuments, parseHelper } from '../../../src/test';
+import { createLangiumGrammarServices, EmptyFileSystem } from '../../../src/index.js';
+import { clearDocuments, parseHelper } from '../../../src/test/index.js';
 
 describe('Type Linking', () => {
 

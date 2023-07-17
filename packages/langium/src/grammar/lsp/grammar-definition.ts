@@ -5,17 +5,17 @@
  ******************************************************************************/
 
 import type { DefinitionParams } from 'vscode-languageserver';
-import type { LangiumServices } from '../../services';
-import type { AstNode, LeafCstNode, Properties } from '../../syntax-tree';
-import type { MaybePromise } from '../../utils/promise-util';
-import type { LangiumDocuments } from '../../workspace/documents';
-import type { Grammar, GrammarImport } from '../generated/ast';
+import type { LangiumServices } from '../../services.js';
+import type { AstNode, LeafCstNode, Properties } from '../../syntax-tree.js';
+import type { MaybePromise } from '../../utils/promise-util.js';
+import type { LangiumDocuments } from '../../workspace/documents.js';
+import type { Grammar, GrammarImport } from '../generated/ast.js';
 import { LocationLink, Range } from 'vscode-languageserver';
-import { DefaultDefinitionProvider } from '../../lsp';
-import { streamContents } from '../../utils/ast-util';
-import { findAssignment } from '../../utils/grammar-util';
-import { isGrammarImport } from '../generated/ast';
-import { resolveImport } from '../internal-grammar-util';
+import { DefaultDefinitionProvider } from '../../lsp/index.js';
+import { streamContents } from '../../utils/ast-util.js';
+import { findAssignment } from '../../utils/grammar-util.js';
+import { isGrammarImport } from '../generated/ast.js';
+import { resolveImport } from '../internal-grammar-util.js';
 
 export class LangiumGrammarDefinitionProvider extends DefaultDefinitionProvider {
 

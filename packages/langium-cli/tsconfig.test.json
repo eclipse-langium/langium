@@ -4,9 +4,10 @@
     "noEmit": true,
     "rootDir": "test"
   },
-  "references": [{
-    "path": "tsconfig.json"
-  }],
+  "references": [
+    { "path": "tsconfig.json" },
+    { "path": "../langium" }
+  ],
   "include": [
     "test/**/*",
   ]

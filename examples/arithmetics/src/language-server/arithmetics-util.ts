@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { BinaryExpression } from './generated/ast';
+import type { BinaryExpression } from './generated/ast.js';
 
 export function applyOp(op: BinaryExpression['operator']): (x: number, y: number) => number {
     switch (op) {

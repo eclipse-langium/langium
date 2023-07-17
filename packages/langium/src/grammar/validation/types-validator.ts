@@ -4,16 +4,16 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { AstNode } from '../../syntax-tree';
-import type { DiagnosticInfo, ValidationAcceptor, ValidationChecks } from '../../validation/validation-registry';
-import type { LangiumGrammarServices } from '../langium-grammar-module';
-import type { Property, PropertyType } from '../type-system/type-collector/types';
-import type { DeclaredInfo, InferredInfo, LangiumGrammarDocument, ValidationResources } from '../workspace/documents';
-import * as ast from '../generated/ast';
-import { MultiMap } from '../../utils/collections';
-import { extractAssignments } from '../internal-grammar-util';
-import { flattenPropertyUnion, InterfaceType, isArrayType, isInterfaceType, isMandatoryPropertyType, isPropertyUnion, isReferenceType, isTypeAssignable, isUnionType, isValueType, propertyTypeToString } from '../type-system/type-collector/types';
-import { isDeclared, isInferred, isInferredAndDeclared } from '../workspace/documents';
+import type { AstNode } from '../../syntax-tree.js';
+import type { DiagnosticInfo, ValidationAcceptor, ValidationChecks } from '../../validation/validation-registry.js';
+import type { LangiumGrammarServices } from '../langium-grammar-module.js';
+import type { Property, PropertyType } from '../type-system/type-collector/types.js';
+import type { DeclaredInfo, InferredInfo, LangiumGrammarDocument, ValidationResources } from '../workspace/documents.js';
+import * as ast from '../generated/ast.js';
+import { MultiMap } from '../../utils/collections.js';
+import { extractAssignments } from '../internal-grammar-util.js';
+import { flattenPropertyUnion, InterfaceType, isArrayType, isInterfaceType, isMandatoryPropertyType, isPropertyUnion, isReferenceType, isTypeAssignable, isUnionType, isValueType, propertyTypeToString } from '../type-system/type-collector/types.js';
+import { isDeclared, isInferred, isInferredAndDeclared } from '../workspace/documents.js';
 
 export function registerTypeValidationChecks(services: LangiumGrammarServices): void {
     const registry = services.validation.ValidationRegistry;

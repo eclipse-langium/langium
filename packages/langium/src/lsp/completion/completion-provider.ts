@@ -6,27 +6,27 @@
 
 import type { CancellationToken, CompletionItem, CompletionParams } from 'vscode-languageserver';
 import type { TextDocument, TextEdit } from 'vscode-languageserver-textdocument';
-import type { LangiumCompletionParser } from '../../parser/langium-parser';
-import type { NameProvider } from '../../references/name-provider';
-import type { ScopeProvider } from '../../references/scope-provider';
-import type { LangiumServices } from '../../services';
-import type { AstNode, AstNodeDescription, CstNode, Reference, ReferenceInfo } from '../../syntax-tree';
-import type { MaybePromise } from '../../utils/promise-util';
-import type { LangiumDocument } from '../../workspace/documents';
-import type { NextFeature } from './follow-element-computation';
-import type { NodeKindProvider } from '../node-kind-provider';
-import type { FuzzyMatcher } from '../fuzzy-matcher';
-import type { GrammarConfig } from '../../grammar/grammar-config';
-import type { Lexer } from '../../parser/lexer';
+import type { LangiumCompletionParser } from '../../parser/langium-parser.js';
+import type { NameProvider } from '../../references/name-provider.js';
+import type { ScopeProvider } from '../../references/scope-provider.js';
+import type { LangiumServices } from '../../services.js';
+import type { AstNode, AstNodeDescription, Reference, ReferenceInfo } from '../../syntax-tree.js';
+import type { MaybePromise } from '../../utils/promise-util.js';
+import type { LangiumDocument } from '../../workspace/documents.js';
+import type { NextFeature } from './follow-element-computation.js';
+import type { NodeKindProvider } from '../node-kind-provider.js';
+import type { FuzzyMatcher } from '../fuzzy-matcher.js';
+import type { GrammarConfig } from '../../grammar/grammar-config.js';
+import type { Lexer } from '../../parser/lexer.js';
 import type { IToken } from 'chevrotain';
 import { CompletionItemKind, CompletionList, Position } from 'vscode-languageserver';
-import * as ast from '../../grammar/generated/ast';
-import { getExplicitRuleType } from '../../grammar/internal-grammar-util';
-import { getContainerOfType } from '../../utils/ast-util';
-import { findDeclarationNodeAtOffset, findLeafNodeAtOffset } from '../../utils/cst-util';
-import { getEntryRule } from '../../utils/grammar-util';
-import { stream } from '../../utils/stream';
-import { findFirstFeatures, findNextFeatures } from './follow-element-computation';
+import * as ast from '../../grammar/generated/ast.js';
+import { getExplicitRuleType } from '../../grammar/internal-grammar-util.js';
+import { getContainerOfType } from '../../utils/ast-util.js';
+import { findLeafNodeAtOffset } from '../../utils/cst-util.js';
+import { getEntryRule } from '../../utils/grammar-util.js';
+import { stream } from '../../utils/stream.js';
+import { findFirstFeatures, findNextFeatures } from './follow-element-computation.js';
 
 export type CompletionAcceptor = (context: CompletionContext, value: CompletionValueItem) => void
 

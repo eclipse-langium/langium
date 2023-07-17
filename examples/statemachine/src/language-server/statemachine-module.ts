@@ -6,8 +6,8 @@
 
 import type { DefaultSharedModuleContext, LangiumServices, LangiumSharedServices, Module, PartialLangiumServices } from 'langium';
 import { createDefaultModule, createDefaultSharedModule, inject } from 'langium';
-import { StatemachineGeneratedModule, StatemachineGeneratedSharedModule } from './generated/module';
-import { registerValidationChecks, StatemachineValidator } from './statemachine-validator';
+import { StatemachineGeneratedModule, StatemachineGeneratedSharedModule } from './generated/module.js';
+import { registerValidationChecks, StatemachineValidator } from './statemachine-validator.js';
 
 /**
  * Declaration of custom services - add your own service classes here.

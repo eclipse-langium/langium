@@ -1,8 +1,8 @@
-import type { Model } from '../language/generated/ast';
-import fs from 'fs';
+import type { Model } from '../language/generated/ast.js';
+import * as fs from 'node:fs';
 import { CompositeGeneratorNode, NL, toString } from 'langium';
-import path from 'path';
-import { extractDestinationAndName } from './cli-util';
+import * as path from 'node:path';
+import { extractDestinationAndName } from './cli-util.js';
 
 export function generateJavaScript(model: Model, filePath: string, destination: string | undefined): string {
     const data = extractDestinationAndName(filePath, destination);

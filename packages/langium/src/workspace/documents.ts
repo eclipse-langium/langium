@@ -6,17 +6,18 @@
 
 import type { Range } from 'vscode-languageserver-textdocument';
 import type { Diagnostic, TextDocuments } from 'vscode-languageserver';
-import type { ParseResult } from '../parser/langium-parser';
-import type { ServiceRegistry } from '../service-registry';
-import type { LangiumSharedServices } from '../services';
-import type { AstNode, AstNodeDescription, Reference } from '../syntax-tree';
-import type { Mutable } from '../utils/ast-util';
-import type { MultiMap } from '../utils/collections';
-import type { Stream } from '../utils/stream';
-import type { FileSystemProvider } from './file-system-provider';
+import type { ParseResult } from '../parser/langium-parser.js';
+import type { ServiceRegistry } from '../service-registry.js';
+import type { LangiumSharedServices } from '../services.js';
+import type { AstNode, AstNodeDescription, Reference } from '../syntax-tree.js';
+import type { Mutable } from '../utils/ast-util.js';
+import type { MultiMap } from '../utils/collections.js';
+import type { Stream } from '../utils/stream.js';
+import type { FileSystemProvider } from './file-system-provider.js';
+import type { URI } from 'vscode-uri';
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { URI } from 'vscode-uri';
-import { stream } from '../utils/stream';
+import vscodeUri from 'vscode-uri';
+import { stream } from '../utils/stream.js';
 
 /**
  * A Langium document holds the parse result (AST and CST) and any additional state that is derived
@@ -151,7 +152,7 @@ export class DefaultLangiumDocumentFactory implements LangiumDocumentFactory {
     }
 
     fromTextDocument<T extends AstNode = AstNode>(textDocument: TextDocument, uri?: URI): LangiumDocument<T> {
-        return this.create<T>(uri ?? URI.parse(textDocument.uri), textDocument);
+        return this.create<T>(uri ?? vscodeUri.URI.parse(textDocument.uri), textDocument);
     }
 
     fromString<T extends AstNode = AstNode>(text: string, uri: URI): LangiumDocument<T> {

@@ -5,8 +5,8 @@
  ******************************************************************************/
 
 import type { URI } from 'vscode-uri';
-import type { LangiumServices } from './services';
-import { Utils } from 'vscode-uri';
+import type { LangiumServices } from './services.js';
+import vscodeUri from 'vscode-uri';
 
 /**
  * The service registry provides access to the language-specific services. These are resolved
@@ -68,7 +68,7 @@ export class DefaultServiceRegistry implements ServiceRegistry {
         if (this.map === undefined) {
             throw new Error('The service registry is empty. Use `register` to register the services of a language.');
         }
-        const ext = Utils.extname(uri);
+        const ext = vscodeUri.Utils.extname(uri);
         const services = this.map[ext];
         if (!services) {
             throw new Error(`The service registry contains no services for the extension '${ext}'.`);

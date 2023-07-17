@@ -8,9 +8,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
-import type { Module } from '../src/dependency-injection';
+import type { Module } from '../src/dependency-injection.js';
 import { describe, expect, test } from 'vitest';
-import { inject } from '../src/dependency-injection';
+import { inject } from '../src/dependency-injection.js';
 
 describe('A dependency type', () => {
 

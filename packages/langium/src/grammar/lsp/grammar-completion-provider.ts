@@ -6,17 +6,17 @@
 
 import type { Range } from 'vscode-languageserver-types';
 import { CompletionItemKind } from 'vscode-languageserver-types';
-import type { NextFeature } from '../../lsp/completion/follow-element-computation';
-import type { CompletionAcceptor, CompletionContext } from '../../lsp/completion/completion-provider';
-import { DefaultCompletionProvider } from '../../lsp/completion/completion-provider';
-import type { LangiumServices } from '../../services';
-import type { MaybePromise } from '../../utils/promise-util';
-import { getContainerOfType } from '../../utils/ast-util';
-import { equalURI, relativeURI } from '../../utils/uri-util';
-import type { LangiumDocument, LangiumDocuments } from '../../workspace';
-import type { AbstractElement } from '../generated/ast';
-import { isAssignment } from '../generated/ast';
-import { Utils } from 'vscode-uri';
+import type { NextFeature } from '../../lsp/completion/follow-element-computation.js';
+import type { CompletionAcceptor, CompletionContext } from '../../lsp/completion/completion-provider.js';
+import { DefaultCompletionProvider } from '../../lsp/completion/completion-provider.js';
+import type { LangiumServices } from '../../services.js';
+import type { MaybePromise } from '../../utils/promise-util.js';
+import { getContainerOfType } from '../../utils/ast-util.js';
+import { equalURI, relativeURI } from '../../utils/uri-util.js';
+import type { LangiumDocument, LangiumDocuments } from '../../workspace/documents.js';
+import type { AbstractElement } from '../generated/ast.js';
+import { isAssignment } from '../generated/ast.js';
+import vscodeUri from 'vscode-uri';
 
 export class LangiumGrammarCompletionProvider extends DefaultCompletionProvider {
 
@@ -74,12 +74,12 @@ export class LangiumGrammarCompletionProvider extends DefaultCompletionProvider 
     private getAllFiles(document: LangiumDocument): string[] {
         const documents = this.documents().all;
         const uri = document.uri.toString();
-        const dirname = Utils.dirname(document.uri).toString();
+        const dirname = vscodeUri.Utils.dirname(document.uri).toString();
         const paths: string[] = [];
         for (const doc of documents) {
             if (!equalURI(doc.uri, uri)) {
                 const docUri = doc.uri.toString();
-                const uriWithoutExt = docUri.substring(0, docUri.length - Utils.extname(doc.uri).length);
+                const uriWithoutExt = docUri.substring(0, docUri.length - vscodeUri.Utils.extname(doc.uri).length);
                 let relativePath = relativeURI(dirname, uriWithoutExt);
                 if (!relativePath.startsWith('.')) {
                     relativePath = `./${relativePath}`;

@@ -5,14 +5,14 @@
  ******************************************************************************/
 
 import type { WorkspaceSymbol, WorkspaceSymbolParams } from 'vscode-languageserver';
-import type { LangiumSharedServices } from '../services';
-import type { IndexManager } from '../workspace';
-import type { MaybePromise} from '../utils/promise-util';
-import type { AstNodeDescription } from '../syntax-tree';
-import type { NodeKindProvider } from './node-kind-provider';
-import type { FuzzyMatcher } from './fuzzy-matcher';
+import type { LangiumSharedServices } from '../services.js';
+import type { IndexManager } from '../workspace/index-manager.js';
+import type { MaybePromise} from '../utils/promise-util.js';
+import type { AstNodeDescription } from '../syntax-tree.js';
+import type { NodeKindProvider } from './node-kind-provider.js';
+import type { FuzzyMatcher } from './fuzzy-matcher.js';
 import { CancellationToken } from 'vscode-languageserver';
-import { interruptAndCheck } from '../utils/promise-util';
+import { interruptAndCheck } from '../utils/promise-util.js';
 
 /**
  * Shared service for handling workspace symbols requests.

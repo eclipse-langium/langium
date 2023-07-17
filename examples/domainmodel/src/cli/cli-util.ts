@@ -6,10 +6,10 @@
 
 import type { AstNode, LangiumDocument, LangiumServices } from 'langium';
 import type { WorkspaceFolder } from 'vscode-languageserver';
-import fs from 'fs';
-import path from 'path';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 import chalk from 'chalk';
-import { URI } from 'vscode-uri';
+import vscodeUri from 'vscode-uri';
 
 export async function extractDocument<T extends AstNode>(fileName: string, extensions: readonly string[], services: LangiumServices): Promise<LangiumDocument<T>> {
     if (!extensions.includes(path.extname(fileName))) {
@@ -22,7 +22,7 @@ export async function extractDocument<T extends AstNode>(fileName: string, exten
         process.exit(1);
     }
 
-    const document = services.shared.workspace.LangiumDocuments.getOrCreateDocument(URI.file(path.resolve(fileName)));
+    const document = services.shared.workspace.LangiumDocuments.getOrCreateDocument(vscodeUri.URI.file(path.resolve(fileName)));
     await services.shared.workspace.DocumentBuilder.build([document], { validation: true });
 
     const validationErrors = (document.diagnostics ?? []).filter(e => e.severity === 1);
@@ -52,7 +52,7 @@ export async function setRootFolder(fileName: string, services: LangiumServices,
     }
     const folders: WorkspaceFolder[] = [{
         name: path.basename(root),
-        uri: URI.file(root).toString()
+        uri: vscodeUri.URI.file(root).toString()
     }];
     await services.shared.workspace.WorkspaceManager.initializeWorkspace(folders);
 }

@@ -5,8 +5,8 @@
  ******************************************************************************/
 
 import { EmptyFileSystem } from 'langium';
-import { createDomainModelServices } from '../language-server/domain-model-module';
-import { generateWorkspace } from './generate';
+import { createDomainModelServices } from '../language-server/domain-model-module.js';
+import { generateWorkspace } from './generate.js';
 import { performance, PerformanceObserver } from 'node:perf_hooks';
 
 const perfObserver = new PerformanceObserver((items) => {

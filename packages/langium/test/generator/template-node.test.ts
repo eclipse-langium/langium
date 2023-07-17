@@ -5,11 +5,11 @@
  ******************************************************************************/
 
 import { describe, expect, test } from 'vitest';
-import { CompositeGeneratorNode, EOL, toString } from '../../src/generator/generator-node';
-import { joinToNode } from '../../src/generator/node-joiner';
-import { expandToNode as n } from '../../src/generator/template-node';
-import { expandToString as s } from '../../src/generator/template-string';
-import { stream } from '../../src/utils/stream';
+import { CompositeGeneratorNode, EOL, toString } from '../../src/generator/generator-node.js';
+import { joinToNode } from '../../src/generator/node-joiner.js';
+import { expandToNode as n } from '../../src/generator/template-node.js';
+import { expandToString as s } from '../../src/generator/template-string.js';
+import { stream } from '../../src/utils/stream.js';
 
 // deactivate the eslint check 'no-unexpected-multiline' with the message
 //  'Unexpected newline between template tag and template literal', as that's done on purposes in tests below!

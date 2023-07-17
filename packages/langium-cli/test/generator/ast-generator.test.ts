@@ -3,13 +3,14 @@
  * This program and the accompanying materials are made available under the
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
-import type { Grammar } from 'langium';
-import type { LangiumConfig } from '../../src/package';
+
+import type { Grammar } from '../../../langium/lib/index.js';
+import type { LangiumConfig } from '../../src/package.js';
 import { describe, expect, test } from 'vitest';
-import { createLangiumGrammarServices, EmptyFileSystem, expandToString, normalizeEOL } from 'langium';
-import { parseHelper } from 'langium/test';
-import { RelativePath } from '../../src/package';
-import { generateAst } from '../../src/generator/ast-generator';
+import { createLangiumGrammarServices, EmptyFileSystem, expandToString, normalizeEOL } from '../../../langium/lib/index.js';
+import { parseHelper } from '../../../langium/lib/test/index.js';
+import { RelativePath } from '../../src/package.js';
+import { generateAst } from '../../src/generator/ast-generator.js';
 
 const services = createLangiumGrammarServices(EmptyFileSystem);
 const parse = parseHelper<Grammar>(services.grammar);

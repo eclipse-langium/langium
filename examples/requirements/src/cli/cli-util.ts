@@ -5,13 +5,13 @@
  ******************************************************************************/
 
 import type { LangiumDocument, LangiumServices } from 'langium';
-import type { RequirementModel, TestModel } from '../language-server/generated/ast';
+import type { RequirementModel, TestModel } from '../language-server/generated/ast.js';
 import type { WorkspaceFolder } from 'vscode-languageclient';
 import chalk from 'chalk';
-import path from 'path';
-import fs from 'fs';
-import { URI } from 'vscode-uri';
-import { isTestModel } from '../language-server/generated/ast';
+import * as path from 'node:path';
+import * as fs from 'node:fs';
+import vscodeUri from 'vscode-uri';
+import { isTestModel } from '../language-server/generated/ast.js';
 
 /**
  * Read a requirement document with the complete workspace (with requirements and
@@ -34,7 +34,7 @@ export async function extractDocuments(fileName: string, services: LangiumServic
     }
 
     const folders: WorkspaceFolder[] = [{
-        uri: URI.file(path.resolve(path.dirname(fileName))).toString(),
+        uri: vscodeUri.URI.file(path.resolve(path.dirname(fileName))).toString(),
         name: 'main'
     }];
     await services.shared.workspace.WorkspaceManager.initializeWorkspace(folders);
@@ -54,7 +54,7 @@ export async function extractDocuments(fileName: string, services: LangiumServic
             process.exit(1);
         }
     });
-    const mainDocument = services.shared.workspace.LangiumDocuments.getOrCreateDocument(URI.file(path.resolve(fileName)));
+    const mainDocument = services.shared.workspace.LangiumDocuments.getOrCreateDocument(vscodeUri.URI.file(path.resolve(fileName)));
 
     return [mainDocument, documents];
 }

@@ -4,12 +4,12 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { Diagnostic, Range } from 'vscode-languageserver/browser';
+import type { Diagnostic, Range } from 'vscode-languageserver/browser.js';
 import { startLanguageServer, EmptyFileSystem, DocumentState } from 'langium';
-import { BrowserMessageReader, BrowserMessageWriter, createConnection, NotificationType } from 'vscode-languageserver/browser';
-import { createArithmeticsServices } from './arithmetics-module';
-import { interpretEvaluations } from './arithmetics-evaluator';
-import type { Module } from './generated/ast';
+import { BrowserMessageReader, BrowserMessageWriter, createConnection, NotificationType } from 'vscode-languageserver/browser.js';
+import { createArithmeticsServices } from './arithmetics-module.js';
+import { interpretEvaluations } from './arithmetics-evaluator.js';
+import type { Module } from './generated/ast.js';
 
 /* browser specific setup code */
 const messageReader = new BrowserMessageReader(self);

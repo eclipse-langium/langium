@@ -1,7 +1,7 @@
 import type { DefaultSharedModuleContext, LangiumServices, LangiumSharedServices, Module, PartialLangiumServices } from 'langium';
 import { createDefaultModule, createDefaultSharedModule, inject } from 'langium';
-import { <%= LanguageName %>GeneratedModule, <%= LanguageName %>GeneratedSharedModule } from './generated/module';
-import { <%= LanguageName %>Validator, registerValidationChecks } from './<%= language-id %>-validator';
+import { <%= LanguageName %>GeneratedModule, <%= LanguageName %>GeneratedSharedModule } from './generated/module.js';
+import { <%= LanguageName %>Validator, registerValidationChecks } from './<%= language-id %>-validator.js';
 
 /**
  * Declaration of custom services - add your own service classes here.

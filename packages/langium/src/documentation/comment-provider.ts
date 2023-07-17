@@ -4,11 +4,11 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { GrammarConfig } from '../grammar';
-import { isAstNodeWithComment } from '../serializer';
-import type { LangiumServices } from '../services';
-import type { AstNode } from '../syntax-tree';
-import { findCommentNode } from '../utils/cst-util';
+import type { GrammarConfig } from '../grammar/grammar-config.js';
+import { isAstNodeWithComment } from '../serializer/json-serializer.js';
+import type { LangiumServices } from '../services.js';
+import type { AstNode } from '../syntax-tree.js';
+import { findCommentNode } from '../utils/cst-util.js';
 
 /**
  * Provides comments for AST nodes.

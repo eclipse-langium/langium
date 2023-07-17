@@ -4,15 +4,15 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { AstNode, Properties } from '../../src';
-import type { Assignment, CrossReference, Group, ParserRule, RuleCall, UnionType } from '../../src/grammar/generated/ast';
-import type { ValidationResult } from '../../src/test';
+import type { AstNode, Properties } from '../../src/index.js';
+import type { Assignment, CrossReference, Group, ParserRule, RuleCall, UnionType } from '../../src/grammar/generated/ast.js';
+import type { ValidationResult } from '../../src/test/index.js';
 import { afterEach, beforeAll, describe, expect, test } from 'vitest';
 import { DiagnosticSeverity } from 'vscode-languageserver';
-import { createLangiumGrammarServices, EmptyFileSystem, GrammarAST, streamAllContents, streamContents } from '../../src';
-import { isAssignment } from '../../src/grammar/generated/ast';
-import { IssueCodes } from '../../src/grammar/validation/validator';
-import { clearDocuments, expectError, expectIssue, expectNoIssues, expectWarning, parseHelper, validationHelper } from '../../src/test';
+import { createLangiumGrammarServices, EmptyFileSystem, GrammarAST, streamAllContents, streamContents } from '../../src/index.js';
+import { isAssignment } from '../../src/grammar/generated/ast.js';
+import { IssueCodes } from '../../src/grammar/validation/validator.js';
+import { clearDocuments, expectError, expectIssue, expectNoIssues, expectWarning, parseHelper, validationHelper } from '../../src/test/index.js';
 
 const services = createLangiumGrammarServices(EmptyFileSystem);
 const parse = parseHelper(services.grammar);

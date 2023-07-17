@@ -5,12 +5,12 @@
  ******************************************************************************/
 
 import type { IToken } from 'chevrotain';
-import type { Cardinality } from '../../grammar/internal-grammar-util';
-import * as ast from '../../grammar/generated/ast';
-import { getExplicitRuleType, getTypeName, isArrayCardinality, isOptionalCardinality, terminalRegex } from '../../grammar/internal-grammar-util';
-import { isAstNode } from '../../syntax-tree';
-import { getContainerOfType } from '../../utils/ast-util';
-import { getCrossReferenceTerminal } from '../../utils/grammar-util';
+import type { Cardinality } from '../../grammar/internal-grammar-util.js';
+import * as ast from '../../grammar/generated/ast.js';
+import { getExplicitRuleType, getTypeName, isArrayCardinality, isOptionalCardinality, terminalRegex } from '../../grammar/internal-grammar-util.js';
+import { isAstNode } from '../../syntax-tree.js';
+import { getContainerOfType } from '../../utils/ast-util.js';
+import { getCrossReferenceTerminal } from '../../utils/grammar-util.js';
 
 export interface NextFeature<T extends ast.AbstractElement = ast.AbstractElement> {
     /**

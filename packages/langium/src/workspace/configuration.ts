@@ -6,8 +6,8 @@
 
 import type { Connection, DidChangeConfigurationParams } from 'vscode-languageserver';
 import type { ConfigurationItem } from 'vscode-languageserver-protocol';
-import type { ServiceRegistry } from '../service-registry';
-import type { LangiumSharedServices } from '../services';
+import type { ServiceRegistry } from '../service-registry.js';
+import type { LangiumSharedServices } from '../services.js';
 import { DidChangeConfigurationNotification } from 'vscode-languageserver-protocol';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */

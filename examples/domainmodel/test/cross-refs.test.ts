@@ -4,12 +4,12 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { AstNode, LangiumDocument, ReferenceDescription } from 'langium';
-import type { Domainmodel } from '../src/language-server/generated/ast';
+import type { AstNode, LangiumDocument, ReferenceDescription } from '../../../packages/langium/lib/index.js';
+import type { Domainmodel } from '../src/language-server/generated/ast.js';
 import { describe, expect, test } from 'vitest';
-import { EmptyFileSystem } from 'langium';
-import { parseDocument } from 'langium/test';
-import { createDomainModelServices } from '../src/language-server/domain-model-module';
+import { EmptyFileSystem } from '../../../packages/langium/lib/index.js';
+import { parseDocument } from '../../../packages/langium/lib/test/index.js';
+import { createDomainModelServices } from '../src/language-server/domain-model-module.js';
 
 const services = createDomainModelServices(EmptyFileSystem).domainmodel;
 

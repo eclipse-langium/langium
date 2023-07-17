@@ -4,11 +4,11 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import fs from 'fs';
-import path from 'path';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 import chalk from 'chalk';
 import type { AstNode, LangiumDocument, LangiumServices } from 'langium';
-import { URI } from 'vscode-uri';
+import vscodeUri from 'vscode-uri';
 
 export async function extractDocument(fileName: string, extensions: readonly string[], services: LangiumServices): Promise<LangiumDocument> {
     if (!extensions.includes(path.extname(fileName))) {
@@ -21,7 +21,7 @@ export async function extractDocument(fileName: string, extensions: readonly str
         process.exit(1);
     }
 
-    const document = services.shared.workspace.LangiumDocuments.getOrCreateDocument(URI.file(path.resolve(fileName)));
+    const document = services.shared.workspace.LangiumDocuments.getOrCreateDocument(vscodeUri.URI.file(path.resolve(fileName)));
     await services.shared.workspace.DocumentBuilder.build([document], { validation: true });
 
     const validationErrors = (document.diagnostics ?? []).filter(e => e.severity === 1);

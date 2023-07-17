@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-export * from './ast-reflection-interpreter';
-export * from './grammar-config';
-export * from './langium-grammar-module';
-export * from './language-meta-data';
+export * from './ast-reflection-interpreter.js';
+export * from './grammar-config.js';
+export * from './langium-grammar-module.js';
+export * from './language-meta-data.js';

@@ -4,8 +4,8 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { AstNode, CstNode } from '../syntax-tree';
-import { findNodeForProperty } from '../utils/grammar-util';
+import type { AstNode, CstNode } from '../syntax-tree.js';
+import { findNodeForProperty } from '../utils/grammar-util.js';
 
 export interface NamedAstNode extends AstNode {
     name: string;

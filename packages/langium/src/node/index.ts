@@ -4,4 +4,4 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-export * from './node-file-system-provider';
+export * from './node-file-system-provider.js';

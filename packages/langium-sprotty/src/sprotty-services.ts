@@ -6,7 +6,7 @@
 
 import type { LangiumServices, LangiumSharedServices } from 'langium';
 import type { DiagramOptions, DiagramServer, DiagramServices } from 'sprotty-protocol';
-import type { DiagramServerManager } from './diagram-server-manager';
+import type { DiagramServerManager } from './diagram-server-manager.js';
 
 /**
  * Services required by the Sprotty diagram server to generate diagram models from a Langium AST.

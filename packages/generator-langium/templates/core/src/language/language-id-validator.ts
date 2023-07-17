@@ -1,6 +1,6 @@
 import type { ValidationAcceptor, ValidationChecks } from 'langium';
-import type { <%= LanguageName %>AstType, Person } from './generated/ast';
-import type { <%= LanguageName %>Services } from './<%= language-id %>-module';
+import type { <%= LanguageName %>AstType, Person } from './generated/ast.js';
+import type { <%= LanguageName %>Services } from './<%= language-id %>-module.js';
 
 /**
  * Register custom validation checks.

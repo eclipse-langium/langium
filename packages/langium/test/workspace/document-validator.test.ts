@@ -4,13 +4,13 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { ValidationChecks } from '../../src/validation/validation-registry';
-import type { AstNode } from '../../src/syntax-tree';
+import type { ValidationChecks } from '../../src/validation/validation-registry.js';
+import type { AstNode } from '../../src/syntax-tree.js';
 import { describe, expect, test } from 'vitest';
-import { createLangiumGrammarServices } from '../../src/grammar/langium-grammar-module';
-import { createServicesForGrammar } from '../../src/utils/grammar-util';
-import { EmptyFileSystem } from '../../src/workspace/file-system-provider';
-import { URI } from 'vscode-uri';
+import { createLangiumGrammarServices } from '../../src/grammar/langium-grammar-module.js';
+import { createServicesForGrammar } from '../../src/utils/grammar-util.js';
+import { EmptyFileSystem } from '../../src/workspace/file-system-provider.js';
+import vscodeUri from 'vscode-uri';
 
 describe('DefaultDocumentValidator', () => {
     const grammarServices = createLangiumGrammarServices(EmptyFileSystem).grammar;
@@ -42,7 +42,7 @@ describe('DefaultDocumentValidator', () => {
             foo 1
             foo 11
             foo bar 2
-        `, URI.parse('file:///test.txt'));
+        `, vscodeUri.URI.parse('file:///test.txt'));
         const diagnostics = await services.validation.DocumentValidator.validateDocument(document);
         expect(diagnostics.map(d => d.message)).toEqual([
             'unexpected character: ->b<- at offset: 54, skipped 3 characters.',
@@ -56,7 +56,7 @@ describe('DefaultDocumentValidator', () => {
             foo 1
             foo 11
             foo foo 2
-        `, URI.parse('file:///test.txt'));
+        `, vscodeUri.URI.parse('file:///test.txt'));
         const diagnostics = await services.validation.DocumentValidator.validateDocument(document);
         expect(diagnostics.map(d => d.message)).toEqual([
             'Expecting token of type \'INT\' but found `foo`.',
@@ -70,7 +70,7 @@ describe('DefaultDocumentValidator', () => {
             foo 1
             foo 11
             foo bar 2
-        `, URI.parse('file:///test.txt'));
+        `, vscodeUri.URI.parse('file:///test.txt'));
         const diagnostics = await services.validation.DocumentValidator.validateDocument(document, {
             stopAfterLexingErrors: true
         });
@@ -85,7 +85,7 @@ describe('DefaultDocumentValidator', () => {
             foo 1
             foo 11
             foo foo 2
-        `, URI.parse('file:///test.txt'));
+        `, vscodeUri.URI.parse('file:///test.txt'));
         const diagnostics = await services.validation.DocumentValidator.validateDocument(document, {
             stopAfterParsingErrors: true
         });

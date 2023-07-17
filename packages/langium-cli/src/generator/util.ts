@@ -6,10 +6,13 @@
 import type { GeneratorNode, Grammar } from 'langium';
 import { CompositeGeneratorNode, getAllReachableRules, GrammarAST, NL, stream, streamAllContents } from 'langium';
 import fs from 'fs-extra';
-import path from 'path';
-import * as readline from 'readline';
+import * as path from 'node:path';
+import * as url from 'node:url';
+import * as readline from 'node:readline';
 import chalk from 'chalk';
-import { terminalRegex } from 'langium/lib/grammar/internal-grammar-util';
+import { terminalRegex } from 'langium/internal';
+
+const __dirname = url.fileURLToPath(new URL('.', import.meta.url));
 
 //eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function log(level: 'log' | 'warn' | 'error', options: { watch: boolean }, message: string, ...args: any[]): void {

@@ -4,8 +4,8 @@
  ******************************************************************************/
 
 import type { LangiumGeneratedServices, LangiumGeneratedSharedServices, LangiumSharedServices, LangiumServices, LanguageMetaData, Module } from 'langium';
-import { StatemachineAstReflection } from './ast';
-import { StatemachineGrammar } from './grammar';
+import { StatemachineAstReflection } from './ast.js';
+import { StatemachineGrammar } from './grammar.js';
 
 export const StatemachineLanguageMetaData = {
     languageId: 'statemachine',

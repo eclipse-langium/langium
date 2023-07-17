@@ -4,12 +4,12 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { LangiumServices } from '../services';
-import type { AstNode, AstNodeDescription } from '../syntax-tree';
-import type { IndexManager } from '../workspace/index-manager';
-import type { CommentProvider } from './comment-provider';
-import { getDocument } from '../utils/ast-util';
-import { isJSDoc, parseJSDoc } from './jsdoc';
+import type { LangiumServices } from '../services.js';
+import type { AstNode, AstNodeDescription } from '../syntax-tree.js';
+import type { IndexManager } from '../workspace/index-manager.js';
+import type { CommentProvider } from './comment-provider.js';
+import { getDocument } from '../utils/ast-util.js';
+import { isJSDoc, parseJSDoc } from './jsdoc.js';
 
 /**
  * Provides documentation for AST nodes.

@@ -4,12 +4,12 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { AstNode, ValidationChecks } from '../../src';
-import type { ValidationResult } from '../../src/test';
+import type { AstNode, ValidationChecks } from '../../src/index.js';
+import type { ValidationResult } from '../../src/test/index.js';
 import { beforeAll, describe, expect, test } from 'vitest';
 import { Position, Range } from 'vscode-languageserver';
-import { createServicesForGrammar } from '../../src';
-import { validationHelper } from '../../src/test';
+import { createServicesForGrammar } from '../../src/index.js';
+import { validationHelper } from '../../src/test/index.js';
 
 // Related to https://github.com/langium/langium/issues/571
 describe('Parser error is thrown on resynced token with NaN position', () => {

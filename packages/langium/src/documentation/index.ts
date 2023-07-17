@@ -4,5 +4,6 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-export * from './documentation-provider';
-export * from './jsdoc';
+export * from './comment-provider.js';
+export * from './documentation-provider.js';
+export * from './jsdoc.js';

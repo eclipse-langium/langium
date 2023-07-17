@@ -8,8 +8,8 @@ import type { Grammar, LangiumServices } from 'langium';
 import { DocumentState } from 'langium';
 import type { Connection} from 'vscode-languageserver';
 import { DiagnosticSeverity } from 'vscode-languageserver';
-import { URI } from 'vscode-uri';
-import { DOCUMENTS_VALIDATED_NOTIFICATION, RAILROAD_DIAGRAM_REQUEST } from './messages';
+import vscodeUri from 'vscode-uri';
+import { DOCUMENTS_VALIDATED_NOTIFICATION, RAILROAD_DIAGRAM_REQUEST } from './messages.js';
 import { createGrammarDiagramHtml } from 'langium-railroad';
 
 export function registerRailroadConnectionHandler(connection: Connection, services: LangiumServices): void {
@@ -23,7 +23,7 @@ export function registerRailroadConnectionHandler(connection: Connection, servic
     // the vscode extension will perform the following request
     connection.onRequest(RAILROAD_DIAGRAM_REQUEST, (uri: string) => {
         try {
-            const parsedUri = URI.parse(uri);
+            const parsedUri = vscodeUri.URI.parse(uri);
             const document = documents.getOrCreateDocument(parsedUri);
             if (document.diagnostics?.some(e => e.severity === DiagnosticSeverity.Error)) {
                 return undefined;

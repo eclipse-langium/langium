@@ -5,8 +5,7 @@
  ******************************************************************************/
 
 import { describe, expect, test } from 'vitest';
-import { createLangiumGrammarServices, EmptyFileSystem, streamAst } from '../../src';
-import { isParserRule } from '../../src/grammar/generated/ast';
+import { createLangiumGrammarServices, EmptyFileSystem, streamAst, GrammarAST } from '../../src/index.js';
 
 describe('AST Utils', () => {
 
@@ -34,7 +33,7 @@ describe('AST Utils', () => {
         };
         const names: string[] = [];
         for (const node of streamAst(parseResult.value, options)) {
-            if (isParserRule(node)) {
+            if (GrammarAST.isParserRule(node)) {
                 names.push(node.name);
             }
         }

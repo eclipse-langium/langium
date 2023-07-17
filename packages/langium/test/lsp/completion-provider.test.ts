@@ -4,9 +4,9 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { beforeEach, describe, test } from 'vitest';
-import { createLangiumGrammarServices, createServicesForGrammar, EmptyFileSystem } from '../../src';
-import { clearDocuments, expectCompletion, parseHelper } from '../../src/test';
+import { describe, test, beforeEach } from 'vitest';
+import { createLangiumGrammarServices, createServicesForGrammar, EmptyFileSystem } from '../../src/index.js';
+import { clearDocuments, expectCompletion, parseHelper } from '../../src/test/index.js';
 
 describe('Langium completion provider', () => {
 

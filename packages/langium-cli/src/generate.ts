@@ -4,24 +4,24 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 import type { AstNode, Grammar, LangiumDocument, Mutable } from 'langium';
-import type { LangiumConfig, LangiumLanguageConfig } from './package';
+import type { LangiumConfig, LangiumLanguageConfig } from './package.js';
 import { copyAstNode, createLangiumGrammarServices, getDocument, GrammarAST, linkContentToContainer } from 'langium';
-import { resolveImport, resolveTransitiveImports } from 'langium/lib/grammar/internal-grammar-util';
+import { resolveImport, resolveTransitiveImports } from 'langium/internal';
 import { NodeFileSystem } from 'langium/node';
-import { URI } from 'vscode-uri';
-import { generateAst } from './generator/ast-generator';
-import { serializeGrammar } from './generator/grammar-serializer';
-import { generateModule } from './generator/module-generator';
-import { generateTextMate } from './generator/highlighting/textmate-generator';
-import { generateMonarch } from './generator/highlighting/monarch-generator';
-import { generatePrismHighlighting } from './generator/highlighting/prism-generator';
-import { getUserChoice, log } from './generator/util';
-import { getFilePath, RelativePath } from './package';
-import { validateParser } from './parser-validation';
-import { generateTypesFile } from './generator/types-generator';
+import vscodeUri from 'vscode-uri';
+import { generateAst } from './generator/ast-generator.js';
+import { serializeGrammar } from './generator/grammar-serializer.js';
+import { generateModule } from './generator/module-generator.js';
+import { generateTextMate } from './generator/highlighting/textmate-generator.js';
+import { generateMonarch } from './generator/highlighting/monarch-generator.js';
+import { generatePrismHighlighting } from './generator/highlighting/prism-generator.js';
+import { getUserChoice, log } from './generator/util.js';
+import { getFilePath, RelativePath } from './package.js';
+import { validateParser } from './parser-validation.js';
+import { generateTypesFile } from './generator/types-generator.js';
 import { createGrammarDiagramHtml } from 'langium-railroad';
 import chalk from 'chalk';
-import path from 'path';
+import * as path from 'path';
 import fs from 'fs-extra';
 
 export type GenerateOptions = {
@@ -46,7 +46,7 @@ type GrammarElement = GrammarAST.AbstractRule | GrammarAST.Type | GrammarAST.Int
 const { shared: sharedServices, grammar: grammarServices } = createLangiumGrammarServices(NodeFileSystem);
 const documents = sharedServices.workspace.LangiumDocuments;
 
-function eagerLoad(document: LangiumDocument, uris: Set<string> = new Set()): URI[] {
+function eagerLoad(document: LangiumDocument, uris: Set<string> = new Set()): vscodeUri.URI[] {
     const uriString = document.uri.toString();
     if (!uris.has(uriString)) {
         uris.add(uriString);
@@ -62,7 +62,7 @@ function eagerLoad(document: LangiumDocument, uris: Set<string> = new Set()): UR
         }
     }
 
-    return Array.from(uris).map(e => URI.parse(e));
+    return Array.from(uris).map(e => vscodeUri.URI.parse(e));
 }
 
 /**
@@ -151,7 +151,7 @@ async function buildAll(config: LangiumConfig): Promise<Map<string, LangiumDocum
     const relPath = config[RelativePath];
     const uris = new Set<string>();
     for (const languageConfig of config.languages) {
-        const absGrammarPath = URI.file(path.resolve(relPath, languageConfig.grammar));
+        const absGrammarPath = vscodeUri.URI.file(path.resolve(relPath, languageConfig.grammar));
         const document = documents.getOrCreateDocument(absGrammarPath);
         eagerLoad(document, uris);
     }
@@ -209,7 +209,7 @@ export async function generate(config: LangiumConfig, options: GenerateOptions):
     const configMap: Map<Grammar, LangiumLanguageConfig> = new Map();
     const relPath = config[RelativePath];
     for (const languageConfig of config.languages) {
-        const absGrammarPath = URI.file(path.resolve(relPath, languageConfig.grammar)).fsPath;
+        const absGrammarPath = vscodeUri.URI.file(path.resolve(relPath, languageConfig.grammar)).fsPath;
         const document = all.get(absGrammarPath);
         if (document) {
             const grammar = document.parseResult.value as Grammar;
@@ -315,7 +315,7 @@ export async function generateTypes(options: ExtractTypesOptions): Promise<void>
         }
     }
 
-    const grammarDoc = await doLoadAndUpdate(documents.getOrCreateDocument(URI.file(grammarPath)));
+    const grammarDoc = await doLoadAndUpdate(documents.getOrCreateDocument(vscodeUri.URI.file(grammarPath)));
     const genTypes = generateTypesFile(grammarServices, [grammarDoc.parseResult.value as Grammar]);
     await writeWithFail(typesFilePath, genTypes, { watch: false });
     log('log', { watch: false }, `Generated type definitions to: ${chalk.white.bold(typesFilePath)}`);

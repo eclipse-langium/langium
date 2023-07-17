@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import type { LangiumServices, Module, PartialLangiumServices } from 'langium';
-import { TestsLangValidator } from './tests-lang-validator';
+import { TestsLangValidator } from './tests-lang-validator.js';
 
 /**
  * Declaration of custom services - add your own service classes here.

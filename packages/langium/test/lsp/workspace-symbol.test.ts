@@ -5,8 +5,8 @@
  ******************************************************************************/
 
 import { describe, test } from 'vitest';
-import { createServicesForGrammar } from '../../src';
-import { expectWorkspaceSymbols, parseHelper } from '../../src/test';
+import { createServicesForGrammar } from '../../src/index.js';
+import { expectWorkspaceSymbols, parseHelper } from '../../src/test/index.js';
 
 const grammar = `
  grammar HelloWorld

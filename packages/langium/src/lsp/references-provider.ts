@@ -5,15 +5,15 @@
  ******************************************************************************/
 
 import type { CancellationToken, ReferenceParams } from 'vscode-languageserver';
-import type { NameProvider } from '../references/name-provider';
-import type { References } from '../references/references';
-import type { LeafCstNode } from '../syntax-tree';
-import type { LangiumServices } from '../services';
-import type { MaybePromise } from '../utils/promise-util';
-import type { LangiumDocument } from '../workspace/documents';
-import type { GrammarConfig } from '../grammar/grammar-config';
+import type { NameProvider } from '../references/name-provider.js';
+import type { References } from '../references/references.js';
+import type { LeafCstNode } from '../syntax-tree.js';
+import type { LangiumServices } from '../services.js';
+import type { MaybePromise } from '../utils/promise-util.js';
+import type { LangiumDocument } from '../workspace/documents.js';
+import type { GrammarConfig } from '../grammar/grammar-config.js';
 import { Location } from 'vscode-languageserver';
-import { findDeclarationNodeAtOffset } from '../utils/cst-util';
+import { findDeclarationNodeAtOffset } from '../utils/cst-util.js';
 
 /**
  * Language-specific service for handling find references requests.

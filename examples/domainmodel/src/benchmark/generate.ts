@@ -6,7 +6,7 @@
 
 import { expandToString } from 'langium';
 import { URI } from 'vscode-uri';
-import type { DomainModelServices } from '../language-server/domain-model-module';
+import type { DomainModelServices } from '../language-server/domain-model-module.js';
 
 export function generateWorkspace(services: DomainModelServices, width: number, size: number): void {
     for (let i = 0; i < width; i++) {

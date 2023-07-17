@@ -5,9 +5,9 @@
  ******************************************************************************/
 
 import type { Grammar, LangiumServices } from 'langium';
-import type { LangiumConfig } from '../package';
+import type { LangiumConfig } from '../package.js';
 import { CompositeGeneratorNode, NL, normalizeEOL, toString } from 'langium';
-import { generatedHeader } from './util';
+import { generatedHeader } from './util.js';
 
 export function serializeGrammar(services: LangiumServices, grammars: Grammar[], config: LangiumConfig): string {
     const node = new CompositeGeneratorNode();
@@ -15,8 +15,8 @@ export function serializeGrammar(services: LangiumServices, grammars: Grammar[],
 
     if (config.langiumInternal) {
         node.append(
-            "import type { Grammar } from './ast';", NL,
-            "import { loadGrammarFromJson } from '../../utils/grammar-util';");
+            `import type { Grammar } from './ast${config.importExtension}';`, NL,
+            `import { loadGrammarFromJson } from '../../utils/grammar-util${config.importExtension}';`);
     } else {
         node.append(
             "import type { Grammar } from 'langium';", NL,

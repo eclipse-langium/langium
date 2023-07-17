@@ -4,14 +4,14 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { Grammar } from '../../src';
-import type { InferredType, ParserRule, TerminalRule } from '../../src/grammar/generated/ast';
+import type { Grammar } from '../../src/index.js';
+import type { InferredType, ParserRule, TerminalRule } from '../../src/grammar/generated/ast.js';
 import { beforeAll, describe, expect, test } from 'vitest';
-import { createLangiumGrammarServices, EmptyFileSystem, findNameAssignment, getEntryRule, stream } from '../../src';
-import { isParserRule, isTerminalRule } from '../../src/grammar/generated/ast';
-import { LangiumGrammarGrammar } from '../../src/grammar/generated/grammar';
-import { getTypeName, isDataTypeRule, terminalRegex } from '../../src/grammar/internal-grammar-util';
-import { parseHelper } from '../../src/test';
+import { createLangiumGrammarServices, EmptyFileSystem, findNameAssignment, getEntryRule, stream } from '../../src/index.js';
+import { isParserRule, isTerminalRule } from '../../src/grammar/generated/ast.js';
+import { LangiumGrammarGrammar } from '../../src/grammar/generated/grammar.js';
+import { getTypeName, isDataTypeRule, terminalRegex } from '../../src/grammar/internal-grammar-util.js';
+import { parseHelper } from '../../src/test/index.js';
 
 describe('Data type rules', () => {
 

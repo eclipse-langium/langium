@@ -4,11 +4,11 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 import type { GeneratorNode, Grammar, LangiumServices } from 'langium';
-import type { AstTypes, Property } from 'langium/lib/grammar/type-system';
-import type { LangiumConfig } from '../package';
+import type { AstTypes, Property } from 'langium/types';
+import type { LangiumConfig } from '../package.js';
 import { IndentNode, CompositeGeneratorNode, NL, toString, streamAllContents, MultiMap, GrammarAST } from 'langium';
-import { collectAst, collectTypeHierarchy, findReferenceTypes, hasArrayType, isAstType, hasBooleanType, mergeTypesAndInterfaces } from 'langium/lib/grammar/type-system';
-import { collectTerminalRegexps, generatedHeader } from './util';
+import { collectAst, collectTypeHierarchy, findReferenceTypes, hasArrayType, isAstType, hasBooleanType, mergeTypesAndInterfaces } from 'langium/types';
+import { collectTerminalRegexps, generatedHeader } from './util.js';
 
 export function generateAst(services: LangiumServices, grammars: Grammar[], config: LangiumConfig): string {
     const astTypes = collectAst(grammars, services.shared.workspace.LangiumDocuments);
@@ -18,7 +18,7 @@ export function generateAst(services: LangiumServices, grammars: Grammar[], conf
         '/* eslint-disable */', NL,
     );
     const crossRef = grammars.some(grammar => hasCrossReferences(grammar));
-    const importFrom = config.langiumInternal ? '../../syntax-tree' : 'langium';
+    const importFrom = config.langiumInternal ? `../../syntax-tree${config.importExtension}` : 'langium';
     fileNode.append(
         `import type { AstNode${crossRef ? ', Reference' : ''}, ReferenceInfo, TypeMetaData } from '${importFrom}';`, NL,
         `import { AbstractAstReflection } from '${importFrom}';`, NL, NL

@@ -4,19 +4,19 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { LangiumServices } from '../../src/services';
-import type { AstNode, Reference } from '../../src/syntax-tree';
-import type { ValidationChecks } from '../../src/validation/validation-registry';
-import type { LangiumDocument } from '../../src/workspace/documents';
+import type { LangiumServices } from '../../src/services.js';
+import type { AstNode, Reference } from '../../src/syntax-tree.js';
+import type { ValidationChecks } from '../../src/validation/validation-registry.js';
+import type { LangiumDocument } from '../../src/workspace/documents.js';
 import { describe, expect, test } from 'vitest';
 import { CancellationTokenSource } from 'vscode-languageserver';
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { URI } from 'vscode-uri';
-import { createLangiumGrammarServices } from '../../src/grammar/langium-grammar-module';
-import { createServicesForGrammar } from '../../src/utils/grammar-util';
-import { isOperationCancelled } from '../../src/utils/promise-util';
-import { DocumentState } from '../../src/workspace/documents';
-import { EmptyFileSystem } from '../../src/workspace/file-system-provider';
+import vscodeUri from 'vscode-uri';
+import { createLangiumGrammarServices } from '../../src/grammar/langium-grammar-module.js';
+import { createServicesForGrammar } from '../../src/utils/grammar-util.js';
+import { isOperationCancelled } from '../../src/utils/promise-util.js';
+import { DocumentState } from '../../src/workspace/documents.js';
+import { EmptyFileSystem } from '../../src/workspace/file-system-provider.js';
 
 describe('DefaultDocumentBuilder', () => {
     const grammarServices = createLangiumGrammarServices(EmptyFileSystem).grammar;
@@ -62,14 +62,14 @@ describe('DefaultDocumentBuilder', () => {
             foo 11 B
             bar A
             bar B
-        `, URI.parse('file:///test1.txt'));
+        `, vscodeUri.URI.parse('file:///test1.txt'));
         documents.addDocument(document1);
         const document2 = documentFactory.fromString(`
             foo 1 C
             foo 11 D
             bar C
             bar D
-        `, URI.parse('file:///test2.txt'));
+        `, vscodeUri.URI.parse('file:///test2.txt'));
         documents.addDocument(document2);
 
         const builder = services.shared.workspace.DocumentBuilder;
@@ -106,13 +106,13 @@ describe('DefaultDocumentBuilder', () => {
             foo 11 B
             bar A
             bar B
-        `, URI.parse('file:///test1.txt'));
+        `, vscodeUri.URI.parse('file:///test1.txt'));
         documents.addDocument(document1);
         const document2 = documentFactory.fromString(`
             foo 1 C
             foo 11 A
             bar C
-        `, URI.parse('file:///test2.txt'));
+        `, vscodeUri.URI.parse('file:///test2.txt'));
         documents.addDocument(document2);
 
         const builder = services.shared.workspace.DocumentBuilder;
@@ -155,7 +155,7 @@ describe('DefaultDocumentBuilder', () => {
             foo 11 B
             bar AnotherStrangeBar
             bar B
-        `, URI.parse('file:///test1.txt'));
+        `, vscodeUri.URI.parse('file:///test1.txt'));
         documents.addDocument(document1);
 
         const builder = services.shared.workspace.DocumentBuilder;
@@ -190,7 +190,7 @@ describe('DefaultDocumentBuilder', () => {
             foo 11 B
             bar AnotherStrangeBar
             bar B
-        `, URI.parse('file:///test1.txt'));
+        `, vscodeUri.URI.parse('file:///test1.txt'));
         documents.addDocument(document1);
 
         const builder = services.shared.workspace.DocumentBuilder;

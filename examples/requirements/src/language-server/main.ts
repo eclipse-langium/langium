@@ -5,8 +5,8 @@
  ******************************************************************************/
 
 import { startLanguageServer } from 'langium';
-import { createConnection, ProposedFeatures } from 'vscode-languageserver/node';
-import { createRequirementsAndTestsLangServices } from './requirements-and-tests-lang-module';
+import { createConnection, ProposedFeatures } from 'vscode-languageserver/node.js';
+import { createRequirementsAndTestsLangServices } from './requirements-and-tests-lang-module.js';
 import { NodeFileSystem } from 'langium/node';
 
 // Create a connection to the client

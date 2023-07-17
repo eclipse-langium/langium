@@ -4,14 +4,16 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { URI} from 'vscode-uri';
-import type { LangiumDocuments } from '../workspace/documents';
-import type { AstNode } from '../syntax-tree';
-import * as ast from '../grammar/generated/ast';
-import { Utils } from 'vscode-uri';
-import { getDocument, streamAllContents } from '../utils/ast-util';
-import { TypeResolutionError } from './type-system/type-collector/types';
-import { escapeRegExp } from '../utils/regex-util';
+import type { URI } from 'vscode-uri';
+import type { LangiumDocuments } from '../workspace/documents.js';
+import type { AstNode } from '../syntax-tree.js';
+import * as ast from '../grammar/generated/ast.js';
+import vscodeUri from 'vscode-uri';
+import { getDocument, streamAllContents } from '../utils/ast-util.js';
+import { TypeResolutionError } from './type-system/type-collector/types.js';
+import { escapeRegExp } from '../utils/regex-util.js';
+
+export * from './generated/grammar.js';
 
 export type Cardinality = '?' | '*' | '+' | undefined;
 export type Operator = '=' | '+=' | '?=' | undefined;
@@ -354,12 +356,12 @@ export function resolveImportUri(imp: ast.GrammarImport): URI | undefined {
     if (imp.path === undefined || imp.path.length === 0) {
         return undefined;
     }
-    const dirUri = Utils.dirname(getDocument(imp).uri);
+    const dirUri = vscodeUri.Utils.dirname(getDocument(imp).uri);
     let grammarPath = imp.path;
     if (!grammarPath.endsWith('.langium')) {
         grammarPath += '.langium';
     }
-    return Utils.resolvePath(dirUri, grammarPath);
+    return vscodeUri.Utils.resolvePath(dirUri, grammarPath);
 }
 
 export function resolveImport(documents: LangiumDocuments, imp: ast.GrammarImport): ast.Grammar | undefined {

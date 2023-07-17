@@ -5,13 +5,13 @@
  ******************************************************************************/
 
 import type { CancellationToken, DocumentSymbol, DocumentSymbolParams} from 'vscode-languageserver';
-import type { NameProvider } from '../references/name-provider';
-import type { LangiumServices } from '../services';
-import type { AstNode } from '../syntax-tree';
-import { streamContents } from '../utils/ast-util';
-import type { MaybePromise } from '../utils/promise-util';
-import type { LangiumDocument } from '../workspace/documents';
-import type { NodeKindProvider } from './node-kind-provider';
+import type { NameProvider } from '../references/name-provider.js';
+import type { LangiumServices } from '../services.js';
+import type { AstNode } from '../syntax-tree.js';
+import { streamContents } from '../utils/ast-util.js';
+import type { MaybePromise } from '../utils/promise-util.js';
+import type { LangiumDocument } from '../workspace/documents.js';
+import type { NodeKindProvider } from './node-kind-provider.js';
 
 /**
  * Language-specific service for handling document symbols requests.

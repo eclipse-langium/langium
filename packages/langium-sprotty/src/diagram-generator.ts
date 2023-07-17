@@ -6,7 +6,7 @@
 
 import type { AstNode, LangiumDocument, LangiumDocuments, LangiumServices } from 'langium';
 import type { GeneratorArguments, IDiagramGenerator, SModelRoot } from 'sprotty-protocol';
-import { URI } from 'vscode-uri';
+import vscodeUri from 'vscode-uri';
 import { CancellationToken } from 'vscode-languageserver';
 
 /**
@@ -48,7 +48,7 @@ export abstract class LangiumDiagramGenerator implements IDiagramGenerator {
             if (!sourceUri) {
                 return Promise.reject("Missing 'sourceUri' option in request.");
             }
-            args.document = this.langiumDocuments.getOrCreateDocument(URI.parse(sourceUri));
+            args.document = this.langiumDocuments.getOrCreateDocument(vscodeUri.URI.parse(sourceUri));
         }
         if (!args.cancelToken) {
             args.cancelToken = CancellationToken.None;

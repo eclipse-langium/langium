@@ -4,12 +4,11 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { Grammar } from '../../src';
-import type { TerminalRule } from '../../src/grammar/generated/ast';
+import type { Grammar } from '../../src/index.js';
+import type { TerminalRule } from '../../src/grammar/generated/ast.js';
 import { describe, expect, test } from 'vitest';
-import { createLangiumGrammarServices, EmptyFileSystem } from '../../src';
-import { CharacterRange } from '../../src/grammar/generated/ast';
-import { parseHelper } from '../../src/test';
+import { createLangiumGrammarServices, EmptyFileSystem, GrammarAST } from '../../src/index.js';
+import { parseHelper } from '../../src/test/index.js';
 
 const grammarServices = createLangiumGrammarServices(EmptyFileSystem).grammar;
 const parse = parseHelper<Grammar>(grammarServices);
@@ -22,8 +21,8 @@ describe('DefaultValueConverter', () => {
         `);
         const terminalA = doc.parseResult.value.rules[0] as TerminalRule;
         expect(terminalA).toBeDefined();
-        expect(terminalA.definition.$type).toBe(CharacterRange);
-        expect((terminalA.definition as CharacterRange).left.value).toBe('a\'\n\t\\');
+        expect(terminalA.definition.$type).toBe(GrammarAST.CharacterRange);
+        expect((terminalA.definition as GrammarAST.CharacterRange).left.value).toBe('a\'\n\t\\');
     });
 
 });

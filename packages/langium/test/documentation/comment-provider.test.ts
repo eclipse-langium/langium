@@ -5,9 +5,9 @@
  ******************************************************************************/
 
 import { describe, expect, test } from 'vitest';
-import { parseHelper } from '../../src/test';
-import { EmptyFileSystem, createLangiumGrammarServices, streamAst } from '../../src';
-import { isAbstractRule } from '../../src/grammar/generated/ast';
+import { parseHelper } from '../../src/test/index.js';
+import { EmptyFileSystem, createLangiumGrammarServices, streamAst } from '../../src/index.js';
+import { isAbstractRule } from '../../src/grammar/generated/ast.js';
 
 const services = createLangiumGrammarServices(EmptyFileSystem).grammar;
 const parse = parseHelper(services);

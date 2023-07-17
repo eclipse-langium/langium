@@ -6,8 +6,8 @@
 
 import { startLanguageServer } from 'langium';
 import { NodeFileSystem } from 'langium/node';
-import { createConnection, ProposedFeatures } from 'vscode-languageserver/node';
-import { createDomainModelServices } from './domain-model-module';
+import { createConnection, ProposedFeatures } from 'vscode-languageserver/node.js';
+import { createDomainModelServices } from './domain-model-module.js';
 
 const connection = createConnection(ProposedFeatures.all);
 const { shared } = createDomainModelServices({ connection, ...NodeFileSystem });

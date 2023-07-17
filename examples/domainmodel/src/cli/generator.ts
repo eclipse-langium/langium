@@ -5,16 +5,16 @@
  ******************************************************************************/
 
 import type { IndentNode } from 'langium';
-import type { AbstractElement, Domainmodel, Entity, Feature, Type } from '../language-server/generated/ast';
-import fs from 'fs';
-import path from 'path';
+import type { AbstractElement, Domainmodel, Entity, Feature, Type } from '../language-server/generated/ast.js';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 import chalk from 'chalk';
 import _ from 'lodash';
 import { CompositeGeneratorNode, NL, toString } from 'langium';
-import { isEntity, isPackageDeclaration } from '../language-server/generated/ast';
-import { extractAstNode, extractDestinationAndName, setRootFolder } from './cli-util';
-import { createDomainModelServices } from '../language-server/domain-model-module';
-import { DomainModelLanguageMetaData } from '../language-server/generated/module';
+import { isEntity, isPackageDeclaration } from '../language-server/generated/ast.js';
+import { extractAstNode, extractDestinationAndName, setRootFolder } from './cli-util.js';
+import { createDomainModelServices } from '../language-server/domain-model-module.js';
+import { DomainModelLanguageMetaData } from '../language-server/generated/module.js';
 import { NodeFileSystem } from 'langium/node';
 
 export const generateAction = async (fileName: string, opts: GenerateOptions): Promise<void> => {

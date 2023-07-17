@@ -4,8 +4,8 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-export * from './generator-node';
-export { SourceRegion, TextRegion, TraceRegion, TraceSourceSpec } from './generator-tracing';
-export * from './node-joiner';
-export * from './template-node';
-export { expandToString, expandToStringWithNL, normalizeEOL } from './template-string';
+export * from './generator-node.js';
+export { SourceRegion, TextRegion, TraceRegion, TraceSourceSpec } from './generator-tracing.js';
+export * from './node-joiner.js';
+export * from './template-node.js';
+export { expandToString, expandToStringWithNL, normalizeEOL } from './template-string.js';

@@ -8,12 +8,12 @@ import type { AstNode, LangiumDocument, LangiumDocuments, ReferenceDescription }
 import type { Range, WorkspaceEdit } from 'vscode-languageserver';
 import type { RenameParams } from 'vscode-languageserver-protocol';
 import type { URI } from 'vscode-uri';
-import type { DomainModelServices } from './domain-model-module';
-import type { QualifiedNameProvider } from './domain-model-naming';
+import type { DomainModelServices } from './domain-model-module.js';
+import type { QualifiedNameProvider } from './domain-model-naming.js';
 import { DefaultRenameProvider, findDeclarationNodeAtOffset, getDocument, isNamed, streamAst, toDocumentSegment } from 'langium';
 import { Location } from 'vscode-languageserver';
 import { TextEdit } from 'vscode-languageserver-types';
-import { isPackageDeclaration } from './generated/ast';
+import { isPackageDeclaration } from './generated/ast.js';
 
 export class DomainModelRenameProvider extends DefaultRenameProvider {
 

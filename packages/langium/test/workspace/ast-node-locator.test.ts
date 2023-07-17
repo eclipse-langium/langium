@@ -4,11 +4,11 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { Alternatives, Grammar, ParserRule } from '../../src/grammar/generated/ast';
+import type { Alternatives, Grammar, ParserRule } from '../../src/grammar/generated/ast.js';
 import { describe, expect, test } from 'vitest';
-import { createLangiumGrammarServices } from '../../src/grammar/langium-grammar-module';
-import { EmptyFileSystem } from '../../src/workspace/file-system-provider';
-import { parseHelper } from '../../src/test';
+import { createLangiumGrammarServices } from '../../src/grammar/langium-grammar-module.js';
+import { EmptyFileSystem } from '../../src/workspace/file-system-provider.js';
+import { parseHelper } from '../../src/test/index.js';
 
 describe('DefaultAstNodeLocator', () => {
     const grammarServices = createLangiumGrammarServices(EmptyFileSystem).grammar;

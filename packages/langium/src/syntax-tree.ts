@@ -6,8 +6,8 @@
 
 import type { TokenType } from 'chevrotain';
 import type { URI } from 'vscode-uri';
-import type { AbstractElement } from './grammar/generated/ast';
-import type { DocumentSegment, LangiumDocument } from './workspace/documents';
+import type { AbstractElement } from './grammar/generated/ast.js';
+import type { DocumentSegment, LangiumDocument } from './workspace/documents.js';
 
 /**
  * A node in the Abstract Syntax Tree (AST).

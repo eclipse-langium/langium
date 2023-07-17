@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import { describe, expect, test } from 'vitest';
-import { isNamed } from '../../src';
+import { isNamed } from '../../src/index.js';
 
 describe('Naming Tests', () => {
 

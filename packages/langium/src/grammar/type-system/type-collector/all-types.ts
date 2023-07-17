@@ -4,16 +4,16 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { ParserRule, Interface, Type, Grammar } from '../../generated/ast';
+import type { ParserRule, Interface, Type, Grammar } from '../../generated/ast.js';
 import type { URI } from 'vscode-uri';
-import type { LangiumDocuments } from '../../../workspace/documents';
-import type { PlainAstTypes } from './plain-types';
-import type { AstTypes } from './types';
-import { collectInferredTypes } from './inferred-types';
-import { collectDeclaredTypes } from './declared-types';
-import { getDocument } from '../../../utils/ast-util';
-import { isParserRule } from '../../generated/ast';
-import { isDataTypeRule, resolveImport } from '../../internal-grammar-util';
+import type { LangiumDocuments } from '../../../workspace/documents.js';
+import type { PlainAstTypes } from './plain-types.js';
+import type { AstTypes } from './types.js';
+import { collectInferredTypes } from './inferred-types.js';
+import { collectDeclaredTypes } from './declared-types.js';
+import { getDocument } from '../../../utils/ast-util.js';
+import { isParserRule } from '../../generated/ast.js';
+import { isDataTypeRule, resolveImport } from '../../internal-grammar-util.js';
 
 export type AstResources = {
     parserRules: ParserRule[],

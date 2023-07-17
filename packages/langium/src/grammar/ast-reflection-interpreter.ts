@@ -4,15 +4,15 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { AstReflection, ReferenceInfo, TypeMandatoryProperty, TypeMetaData } from '../syntax-tree';
-import type { LangiumDocuments } from '../workspace/documents';
-import type { Grammar } from './generated/ast';
-import type { AstTypes, Property } from './type-system/type-collector/types';
-import { AbstractAstReflection } from '../syntax-tree';
-import { MultiMap } from '../utils/collections';
-import { isGrammar } from './generated/ast';
-import { collectAst } from './type-system/ast-collector';
-import { collectTypeHierarchy, findReferenceTypes, hasArrayType, isAstType, hasBooleanType, mergeTypesAndInterfaces } from './type-system/types-util';
+import type { AstReflection, ReferenceInfo, TypeMandatoryProperty, TypeMetaData } from '../syntax-tree.js';
+import type { LangiumDocuments } from '../workspace/documents.js';
+import type { Grammar } from './generated/ast.js';
+import type { AstTypes, Property } from './type-system/type-collector/types.js';
+import { AbstractAstReflection } from '../syntax-tree.js';
+import { MultiMap } from '../utils/collections.js';
+import { isGrammar } from './generated/ast.js';
+import { collectAst } from './type-system/ast-collector.js';
+import { collectTypeHierarchy, findReferenceTypes, hasArrayType, isAstType, hasBooleanType, mergeTypesAndInterfaces } from './type-system/types-util.js';
 
 export function interpretAstReflection(astTypes: AstTypes): AstReflection;
 export function interpretAstReflection(grammar: Grammar, documents?: LangiumDocuments): AstReflection;

@@ -5,10 +5,10 @@
  ******************************************************************************/
 
 import type { Position, Range } from 'vscode-languageserver-textdocument';
-import type { GeneratorNode } from './generator-node';
-import type { SourceRegion, TextRegion, TraceRegion } from './generator-tracing';
-import { CompositeGeneratorNode, IndentNode, NewLineNode } from './generator-node';
-import { getSourceRegion } from './generator-tracing';
+import type { GeneratorNode } from './generator-node.js';
+import type { SourceRegion, TextRegion, TraceRegion } from './generator-tracing.js';
+import { CompositeGeneratorNode, IndentNode, NewLineNode } from './generator-node.js';
+import { getSourceRegion } from './generator-tracing.js';
 
 type OffsetAndPosition = { offset: number } & Position
 

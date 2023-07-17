@@ -5,16 +5,16 @@
  ******************************************************************************/
 
 import type { CancellationToken, DefinitionParams } from 'vscode-languageserver';
-import type { GrammarConfig } from '../grammar/grammar-config';
-import type { NameProvider } from '../references/name-provider';
-import type { References } from '../references/references';
-import type { LangiumServices } from '../services';
-import type { CstNode } from '../syntax-tree';
-import type { MaybePromise } from '../utils/promise-util';
-import type { LangiumDocument } from '../workspace/documents';
+import type { GrammarConfig } from '../grammar/grammar-config.js';
+import type { NameProvider } from '../references/name-provider.js';
+import type { References } from '../references/references.js';
+import type { LangiumServices } from '../services.js';
+import type { CstNode } from '../syntax-tree.js';
+import type { MaybePromise } from '../utils/promise-util.js';
+import type { LangiumDocument } from '../workspace/documents.js';
 import { LocationLink } from 'vscode-languageserver';
-import { getDocument } from '../utils/ast-util';
-import { findDeclarationNodeAtOffset } from '../utils/cst-util';
+import { getDocument } from '../utils/ast-util.js';
+import { findDeclarationNodeAtOffset } from '../utils/cst-util.js';
 
 /**
  * Language-specific service for handling go to definition requests.

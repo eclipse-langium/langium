@@ -5,16 +5,13 @@
  ******************************************************************************/
 
 import type { Ignore } from 'ignore';
-import type { LangiumSharedServices } from 'langium/lib/services';
-import type { ConfigurationProvider } from 'langium/lib/workspace/configuration';
-import type { FileSystemNode } from 'langium/lib/workspace/file-system-provider';
+import type { LangiumSharedServices, ConfigurationProvider, FileSystemNode } from 'langium';
 import type { WorkspaceFolder } from 'vscode-languageserver-protocol';
 import ignore from 'ignore';
-import { LangiumGrammarLanguageMetaData } from 'langium/lib/grammar/generated/module';
-import { DefaultWorkspaceManager } from 'langium/lib/workspace/workspace-manager';
+import { DefaultWorkspaceManager } from 'langium';
 import * as path from 'path';
 import { CancellationToken } from 'vscode-languageserver-protocol';
-import { URI, Utils } from 'vscode-uri';
+import vscodeUri from 'vscode-uri';
 
 const CONFIG_KEY = 'build';
 
@@ -36,18 +33,18 @@ export class LangiumGrammarWorkspaceManager extends DefaultWorkspaceManager {
     }
 
     override async initializeWorkspace(folders: WorkspaceFolder[], cancelToken = CancellationToken.None): Promise<void> {
-        const buildConf: WorkspaceManagerConf = await this.configurationProvider.getConfiguration(LangiumGrammarLanguageMetaData.languageId, CONFIG_KEY);
+        const buildConf: WorkspaceManagerConf = await this.configurationProvider.getConfiguration('langium', CONFIG_KEY);
         const ignorePatterns = buildConf.ignorePatterns?.split(',')?.map(pattern => pattern.trim())?.filter(pattern => pattern.length > 0);
-        this.matcher = ignorePatterns ? ignore().add(ignorePatterns) : undefined;
+        this.matcher = ignorePatterns ? ignore.default().add(ignorePatterns) : undefined;
         return super.initializeWorkspace(folders, cancelToken);
     }
 
     protected override includeEntry(workspaceFolder: WorkspaceFolder, entry: FileSystemNode, fileExtensions: string[]): boolean {
         if (this.matcher) {
             // create path relative to workspace folder root: /user/foo/workspace/entry.txt -> entry.txt
-            const relPath = path.relative(URI.parse(workspaceFolder.uri).path, entry.uri.path);
+            const relPath = path.relative(vscodeUri.URI.parse(workspaceFolder.uri).path, entry.uri.path);
             const ignored = this.matcher.ignores(relPath);
-            return !ignored && (entry.isDirectory || (entry.isFile && fileExtensions.includes(Utils.extname(entry.uri))));
+            return !ignored && (entry.isDirectory || (entry.isFile && fileExtensions.includes(vscodeUri.Utils.extname(entry.uri))));
         }
         return super.includeEntry(workspaceFolder, entry, fileExtensions);
     }

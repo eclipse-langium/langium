@@ -4,4 +4,4 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-export * from './json-serializer';
+export * from './json-serializer.js';

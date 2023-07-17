@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import { describe, expect, test } from 'vitest';
-import { MultiMap } from '../../src/utils/collections';
+import { MultiMap } from '../../src/utils/collections.js';
 
 describe('MultiMap', () => {
 

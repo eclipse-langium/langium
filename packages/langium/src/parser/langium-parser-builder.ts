@@ -4,9 +4,9 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { LangiumServices } from '../services';
-import { LangiumParser } from './langium-parser';
-import { createParser } from './parser-builder-base';
+import type { LangiumServices } from '../services.js';
+import { LangiumParser } from './langium-parser.js';
+import { createParser } from './parser-builder-base.js';
 
 /**
  * Create and finalize a Langium parser. The parser rules are derived from the grammar, which is

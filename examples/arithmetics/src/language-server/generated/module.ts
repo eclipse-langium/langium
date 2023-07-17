@@ -4,8 +4,8 @@
  ******************************************************************************/
 
 import type { LangiumGeneratedServices, LangiumGeneratedSharedServices, LangiumSharedServices, LangiumServices, LanguageMetaData, Module } from 'langium';
-import { ArithmeticsAstReflection } from './ast';
-import { ArithmeticsGrammar } from './grammar';
+import { ArithmeticsAstReflection } from './ast.js';
+import { ArithmeticsGrammar } from './grammar.js';
 
 export const ArithmeticsLanguageMetaData = {
     languageId: 'arithmetics',

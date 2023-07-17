@@ -5,11 +5,11 @@
  ******************************************************************************/
 
 import type { ExecException } from 'child_process';
-import path from 'path';
-import fs from 'fs';
+import * as path from 'node:path';
+import * as fs from 'node:fs';
 import { afterEach, describe, expect, test } from 'vitest';
 import { exec } from 'child_process';
-import { generateAction } from '../src/cli/generator';
+import { generateAction } from '../src/cli/generator.js';
 
 describe('Test the domainmodel CLI', () => {
     let fullPath: string;

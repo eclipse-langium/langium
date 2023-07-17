@@ -5,8 +5,8 @@
  ******************************************************************************/
 
 import { describe, test } from 'vitest';
-import { highlightHelper, expectSemanticToken } from '../../../src/test';
-import { createLangiumGrammarServices, EmptyFileSystem } from '../../../src';
+import { highlightHelper, expectSemanticToken } from '../../../src/test/index.js';
+import { createLangiumGrammarServices, EmptyFileSystem } from '../../../src/index.js';
 import { SemanticTokenTypes } from 'vscode-languageserver';
 
 const services = createLangiumGrammarServices(EmptyFileSystem);

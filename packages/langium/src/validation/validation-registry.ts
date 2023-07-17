@@ -5,14 +5,14 @@
  ******************************************************************************/
 
 import type { CancellationToken, CodeDescription, DiagnosticRelatedInformation, DiagnosticTag, integer, Range } from 'vscode-languageserver';
-import type { LangiumServices } from '../services';
-import type { AstNode, AstReflection, Properties } from '../syntax-tree';
-import type { MaybePromise } from '../utils/promise-util';
-import type { Stream } from '../utils/stream';
-import type { DocumentSegment } from '../workspace/documents';
-import { MultiMap } from '../utils/collections';
-import { isOperationCancelled } from '../utils/promise-util';
-import { stream } from '../utils/stream';
+import type { LangiumServices } from '../services.js';
+import type { AstNode, AstReflection, Properties } from '../syntax-tree.js';
+import type { MaybePromise } from '../utils/promise-util.js';
+import type { Stream } from '../utils/stream.js';
+import type { DocumentSegment } from '../workspace/documents.js';
+import { MultiMap } from '../utils/collections.js';
+import { isOperationCancelled } from '../utils/promise-util.js';
+import { stream } from '../utils/stream.js';
 
 export type DiagnosticInfo<N extends AstNode, P extends string = Properties<N>> = {
     /** The AST node to which the diagnostic is attached. */
