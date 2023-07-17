@@ -4,9 +4,9 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { describe, test } from 'vitest';
+import { beforeEach, describe, test } from 'vitest';
 import { createLangiumGrammarServices, createServicesForGrammar, EmptyFileSystem } from '../../src';
-import { expectCompletion } from '../../src/test';
+import { clearDocuments, expectCompletion, parseHelper } from '../../src/test';
 
 describe('Langium completion provider', () => {
 
@@ -152,6 +152,53 @@ describe('Completion within alternatives', () => {
             text,
             index: 0,
             expectedItems: ['A']
+        });
+    });
+});
+
+describe('Path import completion', () => {
+
+    const grammarServices = createLangiumGrammarServices(EmptyFileSystem).grammar;
+    const completion = expectCompletion(grammarServices);
+    const parse = parseHelper(grammarServices);
+    let path = '';
+    let text = '';
+
+    beforeEach(async () => {
+        await clearDocuments(grammarServices);
+        const importedGrammar = "terminal ID: 'ID';";
+        const document = await parse(importedGrammar);
+        path = document.uri.path.substring(1);
+        path = './' + path.substring(0, path.length - '.langium'.length);
+        text = `
+        grammar g
+        import<|> <|>"<|>./<|>"
+        entry Main: value=ID;
+        `;
+    });
+
+    const testNames = [
+        'Completes import before string start',
+        'Completes import inside of string',
+        'Completes import at the end of string'
+    ];
+
+    for (let i = 0; i < 3; i++) {
+        const index = i + 1;
+        test(testNames[i], async () => {
+            await completion({
+                text,
+                index,
+                expectedItems: [path]
+            });
+        });
+    }
+
+    test('Completes import keyword as expected', async () => {
+        await completion({
+            text,
+            index: 0,
+            expectedItems: ['import']
         });
     });
 });
