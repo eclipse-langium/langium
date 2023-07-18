@@ -9,11 +9,12 @@ import type { LangiumServices } from '../services';
 import type { AstNode, AstReflection, Properties } from '../syntax-tree';
 import type { MaybePromise } from '../utils/promise-util';
 import type { Stream } from '../utils/stream';
+import type { DocumentSegment } from '../workspace/documents';
 import { MultiMap } from '../utils/collections';
 import { isOperationCancelled } from '../utils/promise-util';
 import { stream } from '../utils/stream';
 
-export type DiagnosticInfo<N extends AstNode, P = Properties<N>> = {
+export type DiagnosticInfo<N extends AstNode, P extends string = Properties<N>> = {
     /** The AST node to which the diagnostic is attached. */
     node: N;
     /** If a property name is given, the diagnostic is restricted to the corresponding text region. */
@@ -34,6 +35,22 @@ export type DiagnosticInfo<N extends AstNode, P = Properties<N>> = {
     relatedInformation?: DiagnosticRelatedInformation[];
     /** A data entry field that is preserved between a `textDocument/publishDiagnostics` notification and `textDocument/codeAction` request. */
     data?: unknown;
+}
+
+/**
+ * Shape of information commonly used in the `data` field of diagnostics.
+ */
+export interface DiagnosticData {
+    /** Diagnostic code for identifying which code action to apply. This code is _not_ shown in the user interface. */
+    code: string
+    /** Specifies where to apply the code action in the form of a `DocumentSegment`. */
+    actionSegment?: DocumentSegment
+    /** Specifies where to apply the code action in the form of a `Range`. */
+    actionRange?: Range
+}
+
+export function diagnosticData(code: string): DiagnosticData {
+    return { code };
 }
 
 export type ValidationAcceptor = <N extends AstNode>(severity: 'error' | 'warning' | 'info' | 'hint', message: string, info: DiagnosticInfo<N>) => void
