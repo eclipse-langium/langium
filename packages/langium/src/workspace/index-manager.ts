@@ -60,9 +60,10 @@ export interface IndexManager {
     isAffected(document: LangiumDocument, changedUris: Set<string>): boolean;
 
     /**
-     * Compute a list of all exported elements, optionally filtered using a type identifier.
+     * Compute a list of all exported elements, optionally filtered using a type identifier and document URIs.
      *
      * @param nodeType The type to filter with, or `undefined` to return descriptions of all types.
+     * @param uris If specified, only returns elements from the given URIs.
      * @returns a `Stream` containing all globally visible nodes (of a given type).
      */
     allElements(nodeType?: string, uris?: Set<string>): Stream<AstNodeDescription>;
@@ -85,8 +86,21 @@ export class DefaultIndexManager implements IndexManager {
     protected readonly documents: LangiumDocuments;
     protected readonly astReflection: AstReflection;
 
+    /**
+     * The `simpleIndex` stores all `AstNodeDescription` items exported by a document.
+     * The key used in this map is the string representation of the specific document URI.
+     */
     protected readonly simpleIndex = new Map<string, AstNodeDescription[]>();
+    /**
+     * This is a cache for the `allElements()` method.
+     * It caches the descriptions from `simpleIndex` grouped by types.
+     */
     protected readonly simpleTypeIndex = new Map<string, Map<string, AstNodeDescription[]>>();
+    /**
+     * This index keeps track of all `ReferenceDescription` items exported by a document.
+     * This is used to compute which elements are affected by a document change
+     * and for finding references to an AST node.
+     */
     protected readonly referenceIndex = new Map<string, ReferenceDescription[]>();
 
     constructor(services: LangiumSharedServices) {
@@ -109,14 +123,11 @@ export class DefaultIndexManager implements IndexManager {
     }
 
     allElements(nodeType?: string, uris?: Set<string>): Stream<AstNodeDescription> {
-        const allUris = this.documents.all.map(doc => doc.uri.toString());
-        const arrays: AstNodeDescription[][] = [];
-        for (const uri of allUris) {
-            if (!uris || uris.has(uri)) {
-                arrays.push(this.getFileDescriptions(uri, nodeType));
-            }
-        }
-        return stream(arrays).flat();
+        const allUris = this.simpleIndex.keys();
+        return stream(allUris)
+            .filter(uri => !uris || uris.has(uri))
+            .map(uri => this.getFileDescriptions(uri, nodeType))
+            .flat();
     }
 
     protected getFileDescriptions(uri: string, nodeType?: string): AstNodeDescription[] {

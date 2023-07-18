@@ -90,8 +90,15 @@ export class MapScope implements Scope {
     }
 
     getElement(name: string): AstNodeDescription | undefined {
-        name = this.caseInsensitive ? name.toLowerCase() : name;
-        return this.elements.get(name);
+        const localName = this.caseInsensitive ? name.toLowerCase() : name;
+        const local = this.elements.get(localName);
+        if (local) {
+            return local;
+        }
+        if (this.outerScope) {
+            return this.outerScope.getElement(name);
+        }
+        return undefined;
     }
     getAllElements(): Stream<AstNodeDescription> {
         let elementStream = stream(this.elements.values());
