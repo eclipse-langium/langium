@@ -100,6 +100,7 @@ export class MapScope implements Scope {
         }
         return undefined;
     }
+
     getAllElements(): Stream<AstNodeDescription> {
         let elementStream = stream(this.elements.values());
         if (this.outerScope) {
