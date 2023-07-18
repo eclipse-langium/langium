@@ -454,25 +454,29 @@ export function validationHelper<T extends AstNode = AstNode>(services: LangiumS
     };
 }
 
-export type ExpectDiagnosticOptionsWithoutContent<T extends AstNode = AstNode> = ExpectDiagnosticCode & (ExpectDiagnosticAstOptions<T> | ExpectDiagnosticRangeOptions | ExpectDiagnosticOffsetOptions);
+export type ExpectDiagnosticOptionsWithoutContent<T extends AstNode = AstNode> = ExpectDiagnosticCode & ExpectDiagnosticData & (ExpectDiagnosticAstOptions<T> | ExpectDiagnosticRangeOptions | ExpectDiagnosticOffsetOptions);
 export type ExpectDiagnosticOptions<T extends AstNode = AstNode> = ExpectDiagnosticContent & ExpectDiagnosticOptionsWithoutContent<T>;
 
 export interface ExpectDiagnosticContent {
     message?: string | RegExp
-    severity?: DiagnosticSeverity;
+    severity?: DiagnosticSeverity
 }
 
 export interface ExpectDiagnosticCode {
-    code?: string;
+    code?: string
+}
+
+export interface ExpectDiagnosticData {
+    data?: unknown
 }
 
 export interface ExpectDiagnosticAstOptions<T extends AstNode> {
-    node?: T;
-    property?: Properties<T> | { name: Properties<T>, index?: number };
+    node?: T
+    property?: Properties<T> | { name: Properties<T>, index?: number }
 }
 
 export interface ExpectDiagnosticRangeOptions {
-    range: Range;
+    range: Range
 }
 
 export interface ExpectDiagnosticOffsetOptions {
@@ -481,6 +485,22 @@ export interface ExpectDiagnosticOffsetOptions {
 }
 
 export type Predicate<T> = (arg: T) => boolean;
+
+export function isDiagnosticDataEqual(lhs: unknown, rhs: unknown): boolean {
+    if (lhs === rhs) {
+        return true;
+    }
+    if (typeof lhs === 'object' && lhs !== null && typeof rhs === 'object' && rhs !== null) {
+        for (const key of Object.keys(rhs)) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            if (!isDiagnosticDataEqual((lhs as any)[key], (rhs as any)[key])) {
+                return false;
+            }
+        }
+        return true;
+    }
+    return false;
+}
 
 export function isRangeEqual(lhs: Range, rhs: Range): boolean {
     return lhs.start.character === rhs.start.character
@@ -519,6 +539,9 @@ export function filterByOptions<T extends AstNode = AstNode, N extends AstNode =
     }
     if (options.code) {
         filters.push(d => d.code === options.code);
+    }
+    if (options.data) {
+        filters.push(d => isDiagnosticDataEqual(d.data, options.data));
     }
     if (options.message) {
         if (typeof options.message === 'string') {
