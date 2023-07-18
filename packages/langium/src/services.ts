@@ -159,7 +159,7 @@ export type LangiumGeneratedSharedServices = {
  */
 export type LangiumDefaultSharedServices = {
     ServiceRegistry: ServiceRegistry
-    Caching: CachingService
+    CachingService: CachingService
     lsp: {
         Connection?: Connection
         ExecuteCommandHandler?: ExecuteCommandHandler

@@ -133,7 +133,7 @@ export interface DefaultSharedModuleContext {
  */
 export function createDefaultSharedModule(context: DefaultSharedModuleContext): Module<LangiumSharedServices, LangiumDefaultSharedServices> {
     return {
-        Caching: (services) => new DefaultCachingService(services),
+        CachingService: (services) => new DefaultCachingService(services),
         ServiceRegistry: () => new DefaultServiceRegistry(),
         lsp: {
             Connection: () => context.connection,
