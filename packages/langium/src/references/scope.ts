@@ -42,12 +42,12 @@ export interface ScopeOptions {
 export class StreamScope implements Scope {
     readonly elements: Stream<AstNodeDescription>;
     readonly outerScope?: Scope;
-    readonly caseInsensitive?: boolean;
+    readonly caseInsensitive: boolean;
 
     constructor(elements: Stream<AstNodeDescription>, outerScope?: Scope, options?: ScopeOptions) {
         this.elements = elements;
         this.outerScope = outerScope;
-        this.caseInsensitive = options?.caseInsensitive;
+        this.caseInsensitive = options?.caseInsensitive ?? false;
     }
 
     getAllElements(): Stream<AstNodeDescription> {
@@ -75,11 +75,11 @@ export class StreamScope implements Scope {
 export class MapScope implements Scope {
     readonly elements: Map<string, AstNodeDescription>;
     readonly outerScope?: Scope;
-    readonly caseInsensitive?: boolean;
+    readonly caseInsensitive: boolean;
 
     constructor(elements: Iterable<AstNodeDescription>, outerScope?: Scope, options?: ScopeOptions) {
         this.elements = new Map();
-        this.caseInsensitive = options?.caseInsensitive;
+        this.caseInsensitive = options?.caseInsensitive ?? false;
         for (const element of elements) {
             const name = this.caseInsensitive
                 ? element.name.toLowerCase()
