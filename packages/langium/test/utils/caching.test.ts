@@ -8,11 +8,10 @@
 
 import { beforeEach, describe, expect, test } from 'vitest';
 import type { DefaultDocumentBuilder} from '../../src';
-import { EmptyFileSystem, createLangiumGrammarServices } from '../../src';
+import { DocumentCache, EmptyFileSystem, WorkspaceCache, createLangiumGrammarServices } from '../../src';
 import { URI } from 'vscode-uri';
 
 const services = createLangiumGrammarServices(EmptyFileSystem);
-const caching = services.shared.CachingService;
 const workspace = services.shared.workspace;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const textDocuments = services.shared.workspace.TextDocuments as any;
@@ -31,7 +30,7 @@ describe('Document Cache', () => {
     });
 
     test('Should get, set, has and delete on separate documents', () => {
-        const cache = caching.createDocumentCache<string, string>();
+        const cache = new DocumentCache<string, string>(services.shared);
         expect(cache.has(document1.uri, 'key')).toBe(false);
         cache.set(document1.uri, 'key', 'document1');
         expect(cache.has(document1.uri, 'key')).toBe(true);
@@ -49,7 +48,7 @@ describe('Document Cache', () => {
     });
 
     test('Should get with provider', () => {
-        const cache = caching.createDocumentCache<string, string>();
+        const cache = new DocumentCache<string, string>(services.shared);
         expect(cache.has(document1.uri, 'key')).toBe(false);
         expect(cache.get(document1.uri, 'key', () => 'document1')).toBe('document1');
         expect(cache.has(document1.uri, 'key')).toBe(true);
@@ -57,7 +56,7 @@ describe('Document Cache', () => {
     });
 
     test('Set value should be reset on document update', async () => {
-        const cache = caching.createDocumentCache<string, string>();
+        const cache = new DocumentCache<string, string>(services.shared);
         cache.set(document1.uri, 'key', 'document1');
         cache.set(document2.uri, 'key', 'document2');
         await workspace.DocumentBuilder.update([document1.uri], []);
@@ -72,7 +71,7 @@ describe('Document Cache', () => {
     test('Document cache can be property disposed', async () => {
         const documentBuilder = workspace.DocumentBuilder as DefaultDocumentBuilder;
         const listenerCount = documentBuilder['updateListeners'].length;
-        const cache = caching.createDocumentCache<string, string>();
+        const cache = new DocumentCache<string, string>(services.shared);
         // Listener count should have increased by one
         expect(documentBuilder['updateListeners'].length).toBe(listenerCount + 1);
         cache.dispose();
@@ -96,7 +95,7 @@ describe('Workspace Cache', () => {
     });
 
     test('Should get and set on the whole workspace', () => {
-        const cache = caching.createWorkspaceCache<string, string>();
+        const cache = new WorkspaceCache<string, string>(services.shared);
         expect(cache.has('key')).toBe(false);
         cache.set('key', 'workspace');
         expect(cache.has('key')).toBe(true);
@@ -109,7 +108,7 @@ describe('Workspace Cache', () => {
     });
 
     test('Whole cache should be reset on document update', async () => {
-        const cache = caching.createWorkspaceCache<string, string>();
+        const cache = new WorkspaceCache<string, string>(services.shared);
         cache.set('key', 'workspace');
         await workspace.DocumentBuilder.update([document1.uri], []);
         expect(cache.has('key')).toBe(false);
@@ -120,7 +119,7 @@ describe('Workspace Cache', () => {
     test('Workspace cache can be property disposed', async () => {
         const documentBuilder = workspace.DocumentBuilder as DefaultDocumentBuilder;
         const listenerCount = documentBuilder['updateListeners'].length;
-        const cache = caching.createWorkspaceCache<string, string>();
+        const cache = new WorkspaceCache<string, string>(services.shared);
         // Listener count should have increased by one
         expect(documentBuilder['updateListeners'].length).toBe(listenerCount + 1);
         cache.dispose();
