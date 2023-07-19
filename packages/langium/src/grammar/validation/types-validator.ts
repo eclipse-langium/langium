@@ -26,6 +26,9 @@ export function registerTypeValidationChecks(services: LangiumGrammarServices): 
             typesValidator.checkDeclaredTypesConsistency,
             typesValidator.checkDeclaredAndInferredTypesConsistency,
         ],
+        Interface: [
+            typesValidator.checkCyclicInterface
+        ],
         Type: [
             typesValidator.checkCyclicType
         ]
@@ -38,6 +41,12 @@ export class LangiumGrammarTypesValidator {
     checkCyclicType(type: ast.Type, accept: ValidationAcceptor): void {
         if (isCyclicType(type, new Set())) {
             accept('error', `Type alias '${type.name}' circularly references itself.`, { node: type, property: 'name' });
+        }
+    }
+
+    checkCyclicInterface(type: ast.Interface, accept: ValidationAcceptor): void {
+        if (isCyclicType(type, new Set())) {
+            accept('error', `Type '${type.name}' recursively references itself as a base type.`, { node: type, property: 'name' });
         }
     }
 
@@ -82,7 +91,11 @@ function isCyclicType(type: ast.TypeDefinition | ast.AbstractType, visited: Set<
         return true;
     }
     visited.add(type);
-    if (ast.isSimpleType(type)) {
+    if (ast.isType(type)) {
+        return isCyclicType(type.type, visited);
+    } else if (ast.isInterface(type)) {
+        return type.superTypes.some(t => t.ref && isCyclicType(t.ref, visited));
+    } else if (ast.isSimpleType(type)) {
         if (type.typeRef?.ref) {
             return isCyclicType(type.typeRef!.ref, visited);
         }
@@ -91,13 +104,7 @@ function isCyclicType(type: ast.TypeDefinition | ast.AbstractType, visited: Set<
     } else if (ast.isArrayType(type)) {
         return isCyclicType(type.elementType, visited);
     } else if (ast.isUnionType(type)) {
-        for (const t of type.types) {
-            if (isCyclicType(t, visited)) {
-                return true;
-            }
-        }
-    } else if (ast.isType(type)) {
-        return isCyclicType(type.type, visited);
+        return type.types.some(t => isCyclicType(t, visited));
     }
     return false;
 }
@@ -310,7 +317,7 @@ function validatePropertiesConsistency(
             const foundTypeAsStr = propertyTypeToString(foundProp.type, 'DeclaredType');
             const expectedTypeAsStr = propertyTypeToString(expectedProp.type, 'DeclaredType');
             const typeAlternativesErrors = isTypeAssignable(matchingProp(foundProp.type), expectedProp.type);
-            if (!typeAlternativesErrors) {
+            if (!typeAlternativesErrors && expectedTypeAsStr !== 'unknown') {
                 const errorMsgPrefix = `The assigned type '${foundTypeAsStr}' is not compatible with the declared property '${name}' of type '${expectedTypeAsStr}'.`;
                 applyErrorToProperties(foundProp.astNodes, errorMsgPrefix);
             }

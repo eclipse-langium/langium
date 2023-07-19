@@ -240,6 +240,28 @@ describe('validate declared types', () => {
             property: 'name'
         });
     });
+
+    test('Does not crash with cyclic interface definition', async () => {
+        const validationResult = await validate(`
+            interface Basetype extends Mytype {}
+            interface Mytype extends Basetype {}
+            interface A {
+                propA: Mytype;
+            }
+            interface B {
+                propB: Basetype;
+            }
+            RuleA returns A: propA=RuleC;
+            RuleB returns B: propB=RuleC;
+            RuleC returns Mytype: {Mytype} 'c';
+        `);
+        expect(validationResult.diagnostics).toHaveLength(2);
+        const grammar = validationResult.document.parseResult.value;
+        expectError(validationResult, /Type 'Mytype' recursively references itself as a base type./, {
+            node: grammar.interfaces[1],
+            property: 'name'
+        });
+    });
 });
 
 describe('validate actions that use declared types', () => {
