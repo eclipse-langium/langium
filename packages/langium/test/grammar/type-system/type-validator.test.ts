@@ -219,6 +219,27 @@ describe('validate declared types', () => {
             }
         });
     });
+
+    test('Does not crash with cyclic type definition', async () => {
+        const validationResult = await validate(`
+            type Mytype = Mytype | string;
+            interface A {
+                propA: Mytype;
+            }
+            interface B {
+                propB: string;
+            }
+            RuleA returns A: propA='a';
+            RuleB returns B: propB=DTB;
+            DTB returns Mytype: 'b';
+        `);
+        expect(validationResult.diagnostics).toHaveLength(1);
+        const grammar = validationResult.document.parseResult.value;
+        expectError(validationResult, /Type alias 'Mytype' circularly references itself./, {
+            node: grammar.types[0],
+            property: 'name'
+        });
+    });
 });
 
 describe('validate actions that use declared types', () => {

@@ -265,45 +265,58 @@ export class TypeResolutionError extends Error {
 }
 
 export function isTypeAssignable(from: PropertyType, to: PropertyType): boolean {
+    return isTypeAssignableInternal(from, to, new Map());
+}
+
+function isTypeAssignableInternal(from: PropertyType, to: PropertyType, visited: Map<string, boolean>): boolean {
+    const key = `${propertyTypeToKeyString(from)}»${propertyTypeToKeyString(to)}`;
+    let result = visited.get(key);
+    if (result !== undefined) {
+        return result;
+    }
+    visited.set(key, false);
+    result = false;
     if (isPropertyUnion(from)) {
-        return from.types.every(fromType => isTypeAssignable(fromType, to));
+        result = from.types.every(fromType => isTypeAssignableInternal(fromType, to, visited));
     } else if (isPropertyUnion(to)) {
-        return to.types.some(toType => isTypeAssignable(from, toType));
+        result = to.types.some(toType => isTypeAssignableInternal(from, toType, visited));
     } else if (isValueType(to) && isUnionType(to.value)) {
         if (isValueType(from) && isUnionType(from.value) && to.value.name === from.value.name) {
-            return true;
+            result = true;
+        } else {
+            result = isTypeAssignableInternal(from, to.value.type, visited);
         }
-        return isTypeAssignable(from, to.value.type);
     } else if (isReferenceType(from)) {
-        return isReferenceType(to) && isTypeAssignable(from.referenceType, to.referenceType);
+        result = isReferenceType(to) && isTypeAssignableInternal(from.referenceType, to.referenceType, visited);
     } else if (isArrayType(from)) {
-        return isArrayType(to) && isTypeAssignable(from.elementType, to.elementType);
+        result = isArrayType(to) && isTypeAssignableInternal(from.elementType, to.elementType, visited);
     } else if (isValueType(from)) {
         if (isUnionType(from.value)) {
-            return isTypeAssignable(from.value.type, to);
-        }
-        if (!isValueType(to)) {
-            return false;
-        }
-        if (isUnionType(to.value)) {
-            return isTypeAssignable(from, to.value.type);
+            result = isTypeAssignableInternal(from.value.type, to, visited);
+        } else if (!isValueType(to)) {
+            result = false;
+        } else if (isUnionType(to.value)) {
+            result = isTypeAssignableInternal(from, to.value.type, visited);
         } else {
-            return isInterfaceAssignable(from.value, to.value, new Set());
+            result = isInterfaceAssignable(from.value, to.value, new Set());
         }
     } else if (isPrimitiveType(from)) {
-        return isPrimitiveType(to) && from.primitive === to.primitive;
+        result = isPrimitiveType(to) && from.primitive === to.primitive;
+    } else if (isStringType(from)) {
+        result = (isPrimitiveType(to) && to.primitive === 'string') || (isStringType(to) && to.string === from.string);
     }
-    else if (isStringType(from)) {
-        return (isPrimitiveType(to) && to.primitive === 'string') || (isStringType(to) && to.string === from.string);
+    if (result) {
+        visited.set(key, result);
     }
-    return false;
+    return result;
 }
 
 function isInterfaceAssignable(from: InterfaceType, to: InterfaceType, visited: Set<string>): boolean {
-    if (visited.has(from.name)) {
-        return true;
+    const key = from.name;
+    if (visited.has(key)) {
+        return false;
     } else {
-        visited.add(from.name);
+        visited.add(key);
     }
     if (from.name === to.name) {
         return true;
@@ -314,6 +327,27 @@ function isInterfaceAssignable(from: InterfaceType, to: InterfaceType, visited: 
         }
     }
     return false;
+}
+
+function propertyTypeToKeyString(type: PropertyType): string {
+    if (isReferenceType(type)) {
+        return `@(${propertyTypeToKeyString(type.referenceType)})}`;
+    } else if (isArrayType(type)) {
+        return `(${propertyTypeToKeyString(type.elementType)})[]`;
+    } else if (isPropertyUnion(type)) {
+        const union = type.types.map(e => propertyTypeToKeyString(e)).join(' | ');
+        if (type.types.length <= 1) {
+            return `Union<${union}>`;
+        }
+        return union;
+    } else if (isValueType(type)) {
+        return `Value<${type.value.name}>`;
+    } else if (isPrimitiveType(type)) {
+        return type.primitive;
+    } else if (isStringType(type)) {
+        return `'${type.string}'`;
+    }
+    throw new Error('Invalid type');
 }
 
 export function propertyTypeToString(type: PropertyType, mode: 'AstType' | 'DeclaredType' = 'AstType'): string {

@@ -4,6 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import type { AstNode } from '../../syntax-tree';
 import type { DiagnosticInfo, ValidationAcceptor, ValidationChecks } from '../../validation/validation-registry';
 import type { LangiumGrammarServices } from '../langium-grammar-module';
 import type { Property, PropertyType } from '../type-system/type-collector/types';
@@ -25,11 +26,20 @@ export function registerTypeValidationChecks(services: LangiumGrammarServices): 
             typesValidator.checkDeclaredTypesConsistency,
             typesValidator.checkDeclaredAndInferredTypesConsistency,
         ],
+        Type: [
+            typesValidator.checkCyclicType
+        ]
     };
     registry.register(checks, typesValidator);
 }
 
 export class LangiumGrammarTypesValidator {
+
+    checkCyclicType(type: ast.Type, accept: ValidationAcceptor): void {
+        if (isCyclicType(type, new Set())) {
+            accept('error', `Type alias '${type.name}' circularly references itself.`, { node: type, property: 'name' });
+        }
+    }
 
     checkDeclaredTypesConsistency(grammar: ast.Grammar, accept: ValidationAcceptor): void {
         const validationResources = (grammar.$document as LangiumGrammarDocument)?.validationResources;
@@ -66,6 +76,31 @@ export class LangiumGrammarTypesValidator {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+
+function isCyclicType(type: ast.TypeDefinition | ast.AbstractType, visited: Set<AstNode>): boolean {
+    if (visited.has(type)) {
+        return true;
+    }
+    visited.add(type);
+    if (ast.isSimpleType(type)) {
+        if (type.typeRef?.ref) {
+            return isCyclicType(type.typeRef!.ref, visited);
+        }
+    } else if (ast.isReferenceType(type)) {
+        return isCyclicType(type.referenceType, visited);
+    } else if (ast.isArrayType(type)) {
+        return isCyclicType(type.elementType, visited);
+    } else if (ast.isUnionType(type)) {
+        for (const t of type.types) {
+            if (isCyclicType(t, visited)) {
+                return true;
+            }
+        }
+    } else if (ast.isType(type)) {
+        return isCyclicType(type.type, visited);
+    }
+    return false;
+}
 
 function validateInferredInterface(inferredInterface: InterfaceType, accept: ValidationAcceptor): void {
     inferredInterface.properties.forEach(prop => {
