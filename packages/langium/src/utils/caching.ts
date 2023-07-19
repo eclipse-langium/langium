@@ -34,7 +34,7 @@ export abstract class DisposableCache implements Disposable {
 }
 
 export class SimpleCache<K, V> extends DisposableCache {
-    protected cache = new Map<K, V>();
+    protected readonly cache = new Map<K, V>();
 
     has(key: K): boolean {
         this.throwIfDisposed();
@@ -74,8 +74,8 @@ export class SimpleCache<K, V> extends DisposableCache {
 
 export class ContextCache<Context, Key, Value, ContextKey = Context> extends DisposableCache {
 
-    private cache = new Map<ContextKey | Context, Map<Key, Value>>();
-    private converter: (input: Context) => ContextKey | Context;
+    private readonly cache = new Map<ContextKey | Context, Map<Key, Value>>();
+    private readonly converter: (input: Context) => ContextKey | Context;
 
     constructor(converter?: (input: Context) => ContextKey) {
         super();
@@ -96,12 +96,12 @@ export class ContextCache<Context, Key, Value, ContextKey = Context> extends Dis
     get(contextKey: Context, key: Key, provider: () => Value): Value;
     get(contextKey: Context, key: Key, provider?: () => Value): Value | undefined {
         this.throwIfDisposed();
-        const documentCache = this.cacheForContext(contextKey);
-        if (documentCache.has(key)) {
-            return documentCache.get(key);
+        const contextCache = this.cacheForContext(contextKey);
+        if (contextCache.has(key)) {
+            return contextCache.get(key);
         } else if (provider) {
             const value = provider();
-            documentCache.set(key, value);
+            contextCache.set(key, value);
             return value;
         } else {
             return undefined;
@@ -118,7 +118,8 @@ export class ContextCache<Context, Key, Value, ContextKey = Context> extends Dis
     clear(contextKey?: Context): void {
         this.throwIfDisposed();
         if (contextKey) {
-            this.cacheForContext(contextKey).clear();
+            const mapKey = this.converter(contextKey);
+            this.cache.delete(mapKey);
         } else {
             this.cache.clear();
         }
