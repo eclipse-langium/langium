@@ -5,6 +5,7 @@
  ******************************************************************************/
 
 export * from './ast-util';
+export * from './caching';
 export * from './collections';
 export * from './cst-util';
 export * from './errors';
