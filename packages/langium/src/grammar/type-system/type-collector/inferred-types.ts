@@ -329,7 +329,7 @@ function newTypePart(element?: ParserRule | Action | string): TypePart {
  * @param element The given AST element, from which it's necessary to extract the type.
  */
 function collectElement(graph: TypeGraph, current: TypePart, element: AbstractElement): TypePart {
-    const optional = isOptionalCardinality(element.cardinality);
+    const optional = isOptionalCardinality(element.cardinality, element);
     if (isAlternatives(element)) {
         const children: TypePart[] = [];
         if (optional) {
