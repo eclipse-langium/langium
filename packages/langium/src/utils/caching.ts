@@ -10,21 +10,21 @@ import type { LangiumSharedServices } from '../services';
 
 export abstract class DisposableCache implements Disposable {
 
-    protected toDispose: Disposable;
+    protected toDispose: Disposable[] = [];
     protected isDisposed = false;
 
-    constructor(disposable: Disposable) {
-        this.toDispose = disposable;
+    onDispose(disposable: Disposable): void {
+        this.toDispose.push(disposable);
     }
 
     dispose(): void {
         this.throwIfDisposed();
         this.clear();
         this.isDisposed = true;
-        this.toDispose.dispose();
+        this.toDispose.forEach(disposable => disposable.dispose());
     }
 
-    throwIfDisposed(): void {
+    protected throwIfDisposed(): void {
         if (this.isDisposed) {
             throw new Error('This cache has already been disposed');
         }
@@ -72,31 +72,31 @@ export class SimpleCache<K, V> extends DisposableCache {
     }
 }
 
-export class ContextCache<I, C, K, V> extends DisposableCache {
+export class ContextCache<Context, Key, Value, ContextKey = Context> extends DisposableCache {
 
-    private cache = new Map<C, Map<K, V>>();
-    private converter: (input: I) => C;
+    private cache = new Map<ContextKey | Context, Map<Key, Value>>();
+    private converter: (input: Context) => ContextKey | Context;
 
-    constructor(disposable: Disposable, converter: (input: I) => C) {
-        super(disposable);
-        this.converter = converter;
+    constructor(converter?: (input: Context) => ContextKey) {
+        super();
+        this.converter = converter ?? (value => value);
     }
 
-    has(contextKey: I, key: K): boolean {
+    has(contextKey: Context, key: Key): boolean {
         this.throwIfDisposed();
-        return this.getDocumentCache(contextKey).has(key);
+        return this.cacheForContext(contextKey).has(key);
     }
 
-    set(contextKey: I, key: K, value: V): void {
+    set(contextKey: Context, key: Key, value: Value): void {
         this.throwIfDisposed();
-        this.getDocumentCache(contextKey).set(key, value);
+        this.cacheForContext(contextKey).set(key, value);
     }
 
-    get(contextKey: I, key: K): V | undefined;
-    get(contextKey: I, key: K, provider: () => V): V;
-    get(contextKey: I, key: K, provider?: () => V): V | undefined {
+    get(contextKey: Context, key: Key): Value | undefined;
+    get(contextKey: Context, key: Key, provider: () => Value): Value;
+    get(contextKey: Context, key: Key, provider?: () => Value): Value | undefined {
         this.throwIfDisposed();
-        const documentCache = this.getDocumentCache(contextKey);
+        const documentCache = this.cacheForContext(contextKey);
         if (documentCache.has(key)) {
             return documentCache.get(key);
         } else if (provider) {
@@ -108,23 +108,23 @@ export class ContextCache<I, C, K, V> extends DisposableCache {
         }
     }
 
-    delete(contextKey: I, key: K): boolean {
+    delete(contextKey: Context, key: Key): boolean {
         this.throwIfDisposed();
-        return this.getDocumentCache(contextKey).delete(key);
+        return this.cacheForContext(contextKey).delete(key);
     }
 
     clear(): void;
-    clear(contextKey: I): void;
-    clear(contextKey?: I): void {
+    clear(contextKey: Context): void;
+    clear(contextKey?: Context): void {
         this.throwIfDisposed();
         if (contextKey) {
-            this.getDocumentCache(contextKey).clear();
+            this.cacheForContext(contextKey).clear();
         } else {
             this.cache.clear();
         }
     }
 
-    protected getDocumentCache(contextKey: I): Map<K, V> {
+    protected cacheForContext(contextKey: Context): Map<Key, Value> {
         const mapKey = this.converter(contextKey);
         let documentCache = this.cache.get(mapKey);
         if (!documentCache) {
@@ -139,14 +139,15 @@ export class ContextCache<I, C, K, V> extends DisposableCache {
  * Every key/value pair in this cache is scoped to a document.
  * If this document is changed or deleted, all associated key/value pairs are deleted.
  */
-export class DocumentCache<K, V> extends ContextCache<URI | string, string, K, V> {
+export class DocumentCache<K, V> extends ContextCache<URI | string, K, V, string> {
     constructor(sharedServices: LangiumSharedServices) {
-        super(sharedServices.workspace.DocumentBuilder.onUpdate((changed, deleted) => {
+        super(uri => uri.toString());
+        this.onDispose(sharedServices.workspace.DocumentBuilder.onUpdate((changed, deleted) => {
             const allUris = changed.concat(deleted);
             for (const uri of allUris) {
                 this.clear(uri);
             }
-        }), uri => uri.toString());
+        }));
     }
 }
 
@@ -156,7 +157,8 @@ export class DocumentCache<K, V> extends ContextCache<URI | string, string, K, V
  */
 export class WorkspaceCache<K, V> extends SimpleCache<K, V> {
     constructor(sharedServices: LangiumSharedServices) {
-        super(sharedServices.workspace.DocumentBuilder.onUpdate(() => {
+        super();
+        this.onDispose(sharedServices.workspace.DocumentBuilder.onUpdate(() => {
             this.clear();
         }));
     }
