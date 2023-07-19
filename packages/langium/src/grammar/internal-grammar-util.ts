@@ -15,8 +15,8 @@ import { escapeRegExp } from '../utils/regex-util';
 export type Cardinality = '?' | '*' | '+' | undefined;
 export type Operator = '=' | '+=' | '?=' | undefined;
 
-export function isOptionalCardinality(cardinality?: Cardinality): boolean {
-    return cardinality === '?' || cardinality === '*';
+export function isOptionalCardinality(cardinality?: Cardinality, element?: ast.AbstractElement): boolean {
+    return cardinality === '?' || cardinality === '*' || (ast.isGroup(element) && Boolean(element.guardCondition));
 }
 
 export function isArrayCardinality(cardinality?: Cardinality): boolean {

@@ -74,6 +74,19 @@ describe('Inferred types', () => {
         `);
     });
 
+    test('Should infer optional property for guarded group', async () => {
+        await expectTypes(`
+            A<G>: a=ID (<G> b=ID);
+            terminal ID returns string: /string/;
+        `, expandToString`
+            export interface A extends AstNode {
+                readonly $type: 'A';
+                a: string
+                b?: string
+            }
+        `);
+    });
+
     test('Should correctly infer types using chained actions', async () => {
         await expectTypes(`
             A: a=ID ({infer B} b=ID ({infer C} c=ID)?)? d=ID;

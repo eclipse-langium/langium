@@ -101,7 +101,7 @@ function findNextFeaturesInternal(options: { next: NextFeature, cardinalities: M
         }
         // Try to find the next elements of the parent
         // Only do this if every following element is either optional or has been parsed as +
-        if (features.every(e => isOptionalCardinality(e.feature.cardinality) || isOptionalCardinality(cardinalities.get(e.feature)) || plus.has(e.feature))) {
+        if (features.every(e => isOptionalCardinality(e.feature.cardinality, e.feature) || isOptionalCardinality(cardinalities.get(e.feature)) || plus.has(e.feature))) {
             features.push(...findNextFeaturesInternal({
                 next: {
                     feature: parent,
@@ -211,7 +211,7 @@ function findNextFeaturesInGroup(next: NextFeature<ast.Group>, index: number, ca
             visited,
             plus
         }));
-        if (!isOptionalCardinality(firstFeature.feature.cardinality ?? cardinalities.get(firstFeature.feature))) {
+        if (!isOptionalCardinality(firstFeature.feature.cardinality ?? cardinalities.get(firstFeature.feature), firstFeature.feature)) {
             break;
         }
     }
@@ -253,7 +253,7 @@ function interpretStackToken(stack: NextFeature[], token?: IToken): NextFeature[
         for (const nextFeature of allNextFeatures) {
             newStacks.push([...stack, nextFeature]);
         }
-        if (!allNextFeatures.every(e => isOptionalCardinality(e.feature.cardinality) || isOptionalCardinality(cardinalities.get(e.feature)))) {
+        if (!allNextFeatures.every(e => isOptionalCardinality(e.feature.cardinality, e.feature) || isOptionalCardinality(cardinalities.get(e.feature)))) {
             break;
         }
     }
