@@ -249,7 +249,7 @@ export class LangiumGrammarCodeActionProvider implements CodeActionProvider {
         const rootCst = document.parseResult.value.$cstNode;
         if (rootCst) {
             const cstNode = findLeafNodeAtOffset(rootCst, offset);
-            const container = getContainerOfType(cstNode?.element, ast.isCharacterRange);
+            const container = getContainerOfType(cstNode?.astNode, ast.isCharacterRange);
             if (container && container.right && container.$cstNode) {
                 const left = container.left.value;
                 const right = container.right.value;
@@ -337,7 +337,7 @@ export class LangiumGrammarCodeActionProvider implements CodeActionProvider {
         const rootCst = document.parseResult.value.$cstNode;
         if (rootCst) {
             const cstNode = findLeafNodeAtOffset(rootCst, offset);
-            const container = getContainerOfType(cstNode?.element, ast.isParserRule);
+            const container = getContainerOfType(cstNode?.astNode, ast.isParserRule);
             if (container && container.$cstNode) {
                 return {
                     title: `Add new rule '${data.refText}'`,

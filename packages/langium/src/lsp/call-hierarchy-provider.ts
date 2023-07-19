@@ -57,7 +57,7 @@ export abstract class AbstractCallHierarchyProvider implements CallHierarchyProv
             return undefined;
         }
 
-        return this.getCallHierarchyItems(declarationNode.element, document);
+        return this.getCallHierarchyItems(declarationNode.astNode, document);
     }
 
     protected getCallHierarchyItems(targetNode: AstNode, document: LangiumDocument<AstNode>): CallHierarchyItem[] | undefined {
@@ -94,12 +94,12 @@ export abstract class AbstractCallHierarchyProvider implements CallHierarchyProv
         }
 
         const references = this.references.findReferences(
-            targetNode.element,
+            targetNode.astNode,
             {
                 includeDeclaration: false
             }
         );
-        return this.getIncomingCalls(targetNode.element, references);
+        return this.getIncomingCalls(targetNode.astNode, references);
     }
 
     /**
@@ -118,7 +118,7 @@ export abstract class AbstractCallHierarchyProvider implements CallHierarchyProv
         if (!targetNode) {
             return undefined;
         }
-        return this.getOutgoingCalls(targetNode.element);
+        return this.getOutgoingCalls(targetNode.astNode);
     }
 
     /**

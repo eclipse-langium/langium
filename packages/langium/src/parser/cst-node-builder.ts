@@ -29,27 +29,27 @@ export class CstNodeBuilder {
 
     buildCompositeNode(feature: AbstractElement): CompositeCstNode {
         const compositeNode = new CompositeCstNodeImpl();
-        compositeNode.feature = feature;
+        compositeNode.grammarSource = feature;
         compositeNode.root = this.rootNode;
-        this.current.children.push(compositeNode);
+        this.current.content.push(compositeNode);
         this.nodeStack.push(compositeNode);
         return compositeNode;
     }
 
     buildLeafNode(token: IToken, feature: AbstractElement): LeafCstNode {
         const leafNode = new LeafCstNodeImpl(token.startOffset, token.image.length, tokenToRange(token), token.tokenType, false);
-        leafNode.feature = feature;
+        leafNode.grammarSource = feature;
         leafNode.root = this.rootNode;
-        this.current.children.push(leafNode);
+        this.current.content.push(leafNode);
         return leafNode;
     }
 
     removeNode(node: CstNode): void {
-        const parent = node.parent;
+        const parent = node.container;
         if (parent) {
-            const index = parent.children.indexOf(node);
+            const index = parent.content.indexOf(node);
             if (index >= 0) {
-                parent.children.splice(index, 1);
+                parent.content.splice(index, 1);
             }
         }
     }
@@ -59,13 +59,13 @@ export class CstNodeBuilder {
         // The specified item could be a datatype ($type is symbol) or a fragment ($type is undefined)
         // Only if the $type is a string, we actually assign the element
         if (typeof item.$type === 'string') {
-            this.current.element = <AstNode>item;
+            this.current.astNode = <AstNode>item;
         }
         item.$cstNode = current;
         const node = this.nodeStack.pop();
         // Empty composite nodes are not valid
         // Simply remove the node from the tree
-        if (node?.children.length === 0) {
+        if (node?.content.length === 0) {
             this.removeNode(node);
         }
     }
@@ -81,21 +81,21 @@ export class CstNodeBuilder {
     private addHiddenToken(node: CompositeCstNode, token: LeafCstNode): void {
         const { offset: tokenStart, end: tokenEnd } = token;
 
-        for (let i = 0; i < node.children.length; i++) {
-            const child = node.children[i];
+        for (let i = 0; i < node.content.length; i++) {
+            const child = node.content[i];
             const { offset: childStart, end: childEnd } = child;
             if (isCompositeCstNode(child) && tokenStart > childStart && tokenEnd < childEnd) {
                 this.addHiddenToken(child, token);
                 return;
             } else if (tokenEnd <= childStart) {
-                node.children.splice(i, 0, token);
+                node.content.splice(i, 0, token);
                 return;
             }
         }
 
         // We know that we haven't found a suited position for the token
         // So we simply add it to the end of the current node
-        node.children.push(token);
+        node.content.push(token);
     }
 }
 
@@ -104,25 +104,41 @@ export abstract class AbstractCstNode implements CstNode {
     abstract get length(): number;
     abstract get end(): number;
     abstract get range(): Range;
-    parent?: CompositeCstNode;
-    feature!: AbstractElement;
-    root!: RootCstNode;
-    private _element?: AstNode;
+
+    container?: CompositeCstNode;
+    grammarSource: AbstractElement;
+    root: RootCstNode;
+    private _astNode?: AstNode;
+
+    /** @deprecated use `container` instead. */
+    get parent(): CompositeCstNode | undefined {
+        return this.container;
+    }
+
+    /** @deprecated use `grammarSource` instead. */
+    get feature(): AbstractElement {
+        return this.grammarSource;
+    }
 
     get hidden(): boolean {
         return false;
     }
 
-    get element(): AstNode {
-        const node = typeof this._element?.$type === 'string' ? this._element : this.parent?.element;
+    get astNode(): AstNode {
+        const node = typeof this._astNode?.$type === 'string' ? this._astNode : this.container?.astNode;
         if (!node) {
             throw new Error('This node has no associated AST element');
         }
         return node;
     }
 
-    set element(value: AstNode) {
-        this._element = value;
+    set astNode(value: AstNode) {
+        this._astNode = value;
+    }
+
+    /** @deprecated use `astNode` instead. */
+    get element(): AstNode {
+        return this.astNode;
     }
 
     get text(): string {
@@ -172,6 +188,14 @@ export class LeafCstNodeImpl extends AbstractCstNode implements LeafCstNode {
 }
 
 export class CompositeCstNodeImpl extends AbstractCstNode implements CompositeCstNode {
+    readonly content: CstNode[] = new CstNodeContainer(this);
+    private _rangeCache?: Range;
+
+    /** @deprecated use `content` instead. */
+    get children(): CstNode[] {
+        return this.content;
+    }
+
     get offset(): number {
         return this.firstNonHiddenNode?.offset ?? 0;
     }
@@ -200,26 +224,23 @@ export class CompositeCstNodeImpl extends AbstractCstNode implements CompositeCs
     }
 
     private get firstNonHiddenNode(): CstNode | undefined {
-        for (const child of this.children) {
+        for (const child of this.content) {
             if (!child.hidden) {
                 return child;
             }
         }
-        return this.children[0];
+        return this.content[0];
     }
 
     private get lastNonHiddenNode(): CstNode | undefined {
-        for (let i = this.children.length - 1; i >= 0; i--) {
-            const child = this.children[i];
+        for (let i = this.content.length - 1; i >= 0; i--) {
+            const child = this.content[i];
             if (!child.hidden) {
                 return child;
             }
         }
-        return this.children[this.children.length - 1];
+        return this.content[this.content.length - 1];
     }
-
-    readonly children: CstNode[] = new CstNodeContainer(this);
-    private _rangeCache?: Range;
 }
 
 class CstNodeContainer extends Array<CstNode> {
@@ -248,7 +269,7 @@ class CstNodeContainer extends Array<CstNode> {
 
     private addParents(items: CstNode[]): void {
         for (const item of items) {
-            (<AbstractCstNode>item).parent = this.parent;
+            (<AbstractCstNode>item).container = this.parent;
         }
     }
 }

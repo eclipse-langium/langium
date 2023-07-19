@@ -116,7 +116,7 @@ export function findNodesForProperty(node: CstNode | undefined, property: string
     if (!node || !property) {
         return [];
     }
-    return findNodesForPropertyInternal(node, property, node.element, true);
+    return findNodesForPropertyInternal(node, property, node.astNode, true);
 }
 
 /**
@@ -132,7 +132,7 @@ export function findNodeForProperty(node: CstNode | undefined, property: string 
     if (!node || !property) {
         return undefined;
     }
-    const nodes = findNodesForPropertyInternal(node, property, node.element, true);
+    const nodes = findNodesForPropertyInternal(node, property, node.astNode, true);
     if (nodes.length === 0) {
         return undefined;
     }
@@ -146,13 +146,13 @@ export function findNodeForProperty(node: CstNode | undefined, property: string 
 
 function findNodesForPropertyInternal(node: CstNode, property: string, element: AstNode | undefined, first: boolean): CstNode[] {
     if (!first) {
-        const nodeFeature = getContainerOfType(node.feature, ast.isAssignment);
+        const nodeFeature = getContainerOfType(node.grammarSource, ast.isAssignment);
         if (nodeFeature && nodeFeature.feature === property) {
             return [node];
         }
     }
-    if (isCompositeCstNode(node) && node.element === element) {
-        return node.children.flatMap(e => findNodesForPropertyInternal(e, property, element, false));
+    if (isCompositeCstNode(node) && node.astNode === element) {
+        return node.content.flatMap(e => findNodesForPropertyInternal(e, property, element, false));
     }
     return [];
 }
@@ -167,7 +167,7 @@ export function findNodesForKeyword(node: CstNode | undefined, keyword: string):
     if (!node) {
         return [];
     }
-    return findNodesForKeywordInternal(node, keyword, node?.element);
+    return findNodesForKeywordInternal(node, keyword, node?.astNode);
 }
 
 /**
@@ -183,7 +183,7 @@ export function findNodeForKeyword(node: CstNode | undefined, keyword: string, i
     if (!node) {
         return undefined;
     }
-    const nodes = findNodesForKeywordInternal(node, keyword, node?.element);
+    const nodes = findNodesForKeywordInternal(node, keyword, node?.astNode);
     if (nodes.length === 0) {
         return undefined;
     }
@@ -196,10 +196,10 @@ export function findNodeForKeyword(node: CstNode | undefined, keyword: string, i
 }
 
 export function findNodesForKeywordInternal(node: CstNode, keyword: string, element: AstNode | undefined): CstNode[] {
-    if (node.element !== element) {
+    if (node.astNode !== element) {
         return [];
     }
-    if (ast.isKeyword(node.feature) && node.feature.value === keyword) {
+    if (ast.isKeyword(node.grammarSource) && node.grammarSource.value === keyword) {
         return [node];
     }
     const treeIterator = streamCst(node).iterator();
@@ -209,8 +209,8 @@ export function findNodesForKeywordInternal(node: CstNode, keyword: string, elem
         result = treeIterator.next();
         if (!result.done) {
             const childNode = result.value;
-            if (childNode.element === element) {
-                if (ast.isKeyword(childNode.feature) && childNode.feature.value === keyword) {
+            if (childNode.astNode === element) {
+                if (ast.isKeyword(childNode.grammarSource) && childNode.grammarSource.value === keyword) {
                     keywordNodes.push(childNode);
                 }
             } else {
@@ -228,15 +228,15 @@ export function findNodesForKeywordInternal(node: CstNode, keyword: string, elem
  * @param cstNode A CST node for which to find a property assignment.
  */
 export function findAssignment(cstNode: CstNode): ast.Assignment | undefined {
-    const astNode = cstNode.element;
+    const astNode = cstNode.astNode;
     // Only search until the ast node of the parent cst node is no longer the original ast node
     // This would make us jump to a preceding rule call, which contains only unrelated assignments
-    while (astNode === cstNode.parent?.element) {
-        const assignment = getContainerOfType(cstNode.feature, ast.isAssignment);
+    while (astNode === cstNode.container?.astNode) {
+        const assignment = getContainerOfType(cstNode.grammarSource, ast.isAssignment);
         if (assignment) {
             return assignment;
         }
-        cstNode = cstNode.parent;
+        cstNode = cstNode.container;
     }
     return undefined;
 }
