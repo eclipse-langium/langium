@@ -12,6 +12,10 @@
             "args": [
                 "${workspaceFolder}/examples",
                 "--extensionDevelopmentPath=${workspaceFolder}/packages/langium-vscode"
+            ],
+            "sourceMaps": true,
+            "outFiles": [
+                "${workspaceFolder}/{packages,examples}/*/{lib,out}/**/*.js"
             ]
         },
         {
@@ -22,6 +26,10 @@
             "args": [
                 "${workspaceFolder}/examples/arithmetics/example",
                 "--extensionDevelopmentPath=${workspaceFolder}/examples/arithmetics"
+            ],
+            "sourceMaps": true,
+            "outFiles": [
+                "${workspaceFolder}/{packages,examples}/*/{lib,out}/**/*.js"
             ]
         },
         {
@@ -32,6 +40,10 @@
             "args": [
                 "${workspaceFolder}/examples/domainmodel/example",
                 "--extensionDevelopmentPath=${workspaceFolder}/examples/domainmodel"
+            ],
+            "sourceMaps": true,
+            "outFiles": [
+                "${workspaceFolder}/{packages,examples}/*/{lib,out}/**/*.js"
             ]
         },
         {
@@ -42,6 +54,10 @@
             "args": [
                 "${workspaceFolder}/examples/requirements/example",
                 "--extensionDevelopmentPath=${workspaceFolder}/examples/requirements"
+            ],
+            "sourceMaps": true,
+            "outFiles": [
+                "${workspaceFolder}/{packages,examples}/*/{lib,out}/**/*.js"
             ]
         },
         {
@@ -52,6 +68,10 @@
             "args": [
                 "${workspaceFolder}/examples/statemachine/example",
                 "--extensionDevelopmentPath=${workspaceFolder}/examples/statemachine"
+            ],
+            "sourceMaps": true,
+            "outFiles": [
+                "${workspaceFolder}/{packages,examples}/*/{lib,out}/**/*.js"
             ]
         },
         {
@@ -64,11 +84,7 @@
             ],
             "sourceMaps": true,
             "outFiles": [
-                "${workspaceFolder}/packages/langium/lib/**/*.js",
-                "${workspaceFolder}/examples/arithmetics/out/**/*.js",
-                "${workspaceFolder}/examples/domainmodel/out/**/*.js",
-                "${workspaceFolder}/examples/statemachine/out/**/*.js",
-                "${workspaceFolder}/packages/langium-vscode/out/**/*.js"
+                "${workspaceFolder}/{packages,examples}/*/{lib,out}/**/*.js"
             ]
         },
         {
