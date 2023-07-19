@@ -72,7 +72,7 @@ export function getSourceRegion(sourceSpec: TraceSourceSpec | undefined | Source
         const sourceRegion: SourceRegionPartial = sourceSpec;
 
         const sourceFileURIviaCstNode = isCstNode(sourceRegion)
-            ? getDocumentURIOrUndefined(sourceRegion?.root?.element ?? sourceRegion?.element) : undefined;
+            ? getDocumentURIOrUndefined(sourceRegion?.root?.astNode ?? sourceRegion?.astNode) : undefined;
 
         return copyDocumentSegment(sourceRegion, sourceFileURIviaCstNode);
     }

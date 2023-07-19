@@ -215,28 +215,36 @@ export interface TypeMandatoryProperty {
  */
 export interface CstNode extends DocumentSegment {
     /** The container node in the CST */
+    readonly container?: CompositeCstNode;
+    /** @deprecated use `container` instead. */
     readonly parent?: CompositeCstNode;
     /** The actual text */
     readonly text: string;
     /** The root CST node */
     readonly root: RootCstNode;
     /** The grammar element from which this node was parsed */
+    readonly grammarSource: AbstractElement;
+    /** @deprecated use `grammarSource` instead. */
     readonly feature: AbstractElement;
     /** The AST node created from this CST node */
+    readonly astNode: AstNode;
+    /** @deprecated use `astNode` instead. */
     readonly element: AstNode;
     /** Whether the token is hidden, i.e. not explicitly part of the containing grammar rule */
     readonly hidden: boolean;
 }
 
 /**
- * A composite CST node has children, but no directly associated token.
+ * A composite CST node contains other nodes, but no directly associated token.
  */
 export interface CompositeCstNode extends CstNode {
+    readonly content: CstNode[];
+    /** @deprecated use `content` instead. */
     readonly children: CstNode[];
 }
 
 export function isCompositeCstNode(node: unknown): node is CompositeCstNode {
-    return typeof node === 'object' && node !== null && 'children' in node;
+    return typeof node === 'object' && node !== null && Array.isArray((node as CompositeCstNode).content);
 }
 
 /**
@@ -247,7 +255,7 @@ export interface LeafCstNode extends CstNode {
 }
 
 export function isLeafCstNode(node: unknown): node is LeafCstNode {
-    return typeof node === 'object' && node !== null && 'tokenType' in node;
+    return typeof node === 'object' && node !== null && typeof (node as LeafCstNode).tokenType === 'object';
 }
 
 export interface RootCstNode extends CompositeCstNode {
@@ -255,7 +263,7 @@ export interface RootCstNode extends CompositeCstNode {
 }
 
 export function isRootCstNode(node: unknown): node is RootCstNode {
-    return isCompositeCstNode(node) && 'fullText' in node;
+    return isCompositeCstNode(node) && typeof (node as RootCstNode).fullText === 'string';
 }
 
 /**

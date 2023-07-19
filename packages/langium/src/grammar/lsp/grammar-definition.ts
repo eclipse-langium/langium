@@ -28,8 +28,8 @@ export class LangiumGrammarDefinitionProvider extends DefaultDefinitionProvider 
 
     protected override collectLocationLinks(sourceCstNode: LeafCstNode, _params: DefinitionParams): MaybePromise<LocationLink[] | undefined> {
         const pathFeature: Properties<GrammarImport> = 'path';
-        if (isGrammarImport(sourceCstNode.element) && findAssignment(sourceCstNode)?.feature === pathFeature) {
-            const importedGrammar = resolveImport(this.documents, sourceCstNode.element);
+        if (isGrammarImport(sourceCstNode.astNode) && findAssignment(sourceCstNode)?.feature === pathFeature) {
+            const importedGrammar = resolveImport(this.documents, sourceCstNode.astNode);
             if (importedGrammar?.$document) {
                 const targetObject = this.findTargetObject(importedGrammar) ?? importedGrammar;
                 const selectionRange = this.nameProvider.getNameNode(targetObject)?.range ?? Range.create(0, 0, 0, 0);

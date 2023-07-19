@@ -30,7 +30,7 @@ export class LangiumGrammarReferences extends DefaultReferences {
     }
 
     override findDeclaration(sourceCstNode: CstNode): AstNode | undefined {
-        const nodeElem = sourceCstNode.element;
+        const nodeElem = sourceCstNode.astNode;
         const assignment = findAssignment(sourceCstNode);
         if (assignment && assignment.feature === 'feature') {
             // Only search for a special declaration if the cst node is the feature property of the action/assignment

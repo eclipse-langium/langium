@@ -231,7 +231,7 @@ export class DefaultCompletionProvider implements CompletionProvider {
         };
         let astNode: AstNode | undefined;
         if (previousTokenStart !== undefined && previousTokenEnd !== undefined && previousTokenEnd === offset) {
-            astNode = findLeafNodeAtOffset(cst, previousTokenStart)?.element;
+            astNode = findLeafNodeAtOffset(cst, previousTokenStart)?.astNode;
             const previousTokenFeatures = this.findFeaturesAt(textDocument, previousTokenStart);
             yield {
                 ...partialContext,
@@ -241,8 +241,8 @@ export class DefaultCompletionProvider implements CompletionProvider {
                 features: previousTokenFeatures,
             };
         }
-        astNode = findLeafNodeAtOffset(cst, nextTokenStart)?.element
-            ?? (previousTokenStart === undefined ? undefined : findLeafNodeAtOffset(cst, previousTokenStart)?.element);
+        astNode = findLeafNodeAtOffset(cst, nextTokenStart)?.astNode
+            ?? (previousTokenStart === undefined ? undefined : findLeafNodeAtOffset(cst, previousTokenStart)?.astNode);
 
         if (!astNode) {
             const parserRule = getEntryRule(this.grammar)!;

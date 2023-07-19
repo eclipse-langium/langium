@@ -77,7 +77,7 @@ export class DefaultReferences implements References {
     findDeclaration(sourceCstNode: CstNode): AstNode | undefined {
         if (sourceCstNode) {
             const assignment = findAssignment(sourceCstNode);
-            const nodeElem = sourceCstNode.element;
+            const nodeElem = sourceCstNode.astNode;
             if (assignment && nodeElem) {
                 const reference = (nodeElem as GenericAstNode)[assignment.feature];
 

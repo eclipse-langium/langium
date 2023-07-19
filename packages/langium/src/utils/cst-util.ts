@@ -19,7 +19,7 @@ import { TreeStreamImpl } from './stream';
 export function streamCst(node: CstNode): TreeStream<CstNode> {
     return new TreeStreamImpl(node, element => {
         if (isCompositeCstNode(element)) {
-            return element.children;
+            return element.content;
         } else {
             return [];
         }
@@ -37,8 +37,8 @@ export function flattenCst(node: CstNode): Stream<LeafCstNode> {
  * Determines whether the specified cst node is a child of the specified parent node.
  */
 export function isCstChildNode(child: CstNode, parent: CstNode): boolean {
-    while (child.parent) {
-        child = child.parent;
+    while (child.container) {
+        child = child.container;
         if (child === parent) {
             return true;
         }
@@ -139,9 +139,9 @@ export function findCommentNode(cstNode: CstNode | undefined, commentNames: stri
         if (isRootCstNode(cstNode)) {
             // Go from the first non-hidden node through all nodes in reverse order
             // We do this to find the comment node which directly precedes the root node
-            const endIndex = cstNode.children.findIndex(e => !e.hidden);
+            const endIndex = cstNode.content.findIndex(e => !e.hidden);
             for (let i = endIndex - 1; i >= 0; i--) {
-                const child = cstNode.children[i];
+                const child = cstNode.content[i];
                 if (isCommentNode(child, commentNames)) {
                     return child;
                 }
@@ -160,10 +160,10 @@ export function findLeafNodeAtOffset(node: CstNode, offset: number): LeafCstNode
         return node;
     } else if (isCompositeCstNode(node)) {
         let firstChild = 0;
-        let lastChild = node.children.length - 1;
+        let lastChild = node.content.length - 1;
         while (firstChild < lastChild) {
             const middleChild = Math.floor((firstChild + lastChild) / 2);
-            const n = node.children[middleChild];
+            const n = node.content[middleChild];
             if (n.offset > offset) {
                 lastChild = middleChild - 1;
             } else if (n.end <= offset) {
@@ -173,19 +173,19 @@ export function findLeafNodeAtOffset(node: CstNode, offset: number): LeafCstNode
             }
         }
         if (firstChild === lastChild) {
-            return findLeafNodeAtOffset(node.children[firstChild], offset);
+            return findLeafNodeAtOffset(node.content[firstChild], offset);
         }
     }
     return undefined;
 }
 
 export function getPreviousNode(node: CstNode, hidden = true): CstNode | undefined {
-    while (node.parent) {
-        const parent = node.parent;
-        let index = parent.children.indexOf(node);
+    while (node.container) {
+        const parent = node.container;
+        let index = parent.content.indexOf(node);
         while (index > 0) {
             index--;
-            const previous = parent.children[index];
+            const previous = parent.content[index];
             if (hidden || !previous.hidden) {
                 return previous;
             }
@@ -196,13 +196,13 @@ export function getPreviousNode(node: CstNode, hidden = true): CstNode | undefin
 }
 
 export function getNextNode(node: CstNode, hidden = true): CstNode | undefined {
-    while (node.parent) {
-        const parent = node.parent;
-        let index = parent.children.indexOf(node);
-        const last = parent.children.length - 1;
+    while (node.container) {
+        const parent = node.container;
+        let index = parent.content.indexOf(node);
+        const last = parent.content.length - 1;
         while (index < last) {
             index++;
-            const next = parent.children[index];
+            const next = parent.content[index];
             if (hidden || !next.hidden) {
                 return next;
             }
@@ -219,15 +219,15 @@ export function getStartlineNode(node: CstNode): CstNode {
     const line = node.range.start.line;
     let last = node;
     let index: number | undefined;
-    while (node.parent) {
-        const parent = node.parent;
-        const selfIndex = index ?? parent.children.indexOf(node);
+    while (node.container) {
+        const parent = node.container;
+        const selfIndex = index ?? parent.content.indexOf(node);
         if (selfIndex === 0) {
             node = parent;
             index = undefined;
         } else {
             index = selfIndex - 1;
-            node = parent.children[index];
+            node = parent.content[index];
         }
         if (node.range.start.line !== line) {
             break;
@@ -242,7 +242,7 @@ export function getInteriorNodes(start: CstNode, end: CstNode): CstNode[] {
     if (!commonParent) {
         return [];
     }
-    return commonParent.parent.children.slice(commonParent.a + 1, commonParent.b);
+    return commonParent.parent.content.slice(commonParent.a + 1, commonParent.b);
 }
 
 function getCommonParent(a: CstNode, b: CstNode): CommonParent | undefined {
@@ -273,9 +273,9 @@ interface CommonParent {
 
 function getParentChain(node: CstNode): ParentLink[] {
     const chain: ParentLink[] = [];
-    while (node.parent) {
-        const parent = node.parent;
-        const index = parent.children.indexOf(node);
+    while (node.container) {
+        const parent = node.container;
+        const index = parent.content.indexOf(node);
         chain.push({
             parent,
             index
