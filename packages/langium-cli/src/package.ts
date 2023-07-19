@@ -10,7 +10,6 @@ import path from 'path';
 import type { GenerateOptions } from './generate';
 import { log } from './generator/util';
 import chalk from 'chalk';
-import _ from 'lodash';
 
 export interface Package {
     name: string
@@ -93,8 +92,6 @@ export async function loadConfig(options: GenerateOptions): Promise<LangiumConfi
     try {
         const obj = await fs.readJson(filePath, { encoding: 'utf-8' });
         const config: LangiumConfig = path.basename(filePath) === 'package.json' ? obj.langium : obj;
-        config.projectName = _.camelCase(config.projectName);
-        config.projectName = config.projectName.charAt(0).toUpperCase() + config.projectName.slice(1);
         config[RelativePath] = relativePath;
         return config;
     } catch (err) {
