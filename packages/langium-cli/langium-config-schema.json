@@ -129,7 +129,8 @@
     "properties": {
         "projectName": {
             "description": "The name of your Langium project",
-            "type": "string"
+            "type": "string",
+            "pattern": "^[a-zA-Z_$][0-9a-zA-Z_$]*$"
         },
         "languages": {
             "description": "Your language configurations",
