@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import type { AstNode, Properties } from '../../src';
-import type { Assignment, CrossReference, ParserRule, UnionType } from '../../src/grammar/generated/ast';
+import type { Assignment, CrossReference, Group, ParserRule, RuleCall, UnionType } from '../../src/grammar/generated/ast';
 import type { ValidationResult } from '../../src/test';
 import { afterEach, beforeAll, describe, expect, test } from 'vitest';
 import { DiagnosticSeverity } from 'vscode-languageserver';
@@ -779,9 +779,7 @@ describe('Cross-reference to type union is only valid if all alternatives are AS
             }
         );
     });
-});
 
-describe('Missing required properties', () => {
     test('No missing properties', async () => {
         const validation = await validate(`
         interface A {
@@ -793,5 +791,26 @@ describe('Missing required properties', () => {
         C returns A: {C} a='bar';
         `);
         expectNoIssues(validation);
+    });
+
+    test('Cross-reference terminals must be of type string', async () => {
+        const validationResult = await validate(`
+        interface A {}
+        RuleA:
+            a1=[A:DTA]
+            a2=[A:INT];
+        DTA returns number: '1';
+        terminal INT returns number: /[0-9]+/;
+        `);
+
+        const grammar = validationResult.document.parseResult.value;
+        expectError(validationResult, /Data type rules for cross-references must be of type string./, {
+            node: (((grammar.rules[0].definition as Group).elements[0] as Assignment).terminal as CrossReference).terminal as RuleCall,
+            property: 'rule'
+        });
+        expectError(validationResult, /Terminal rules for cross-references must be of type string./, {
+            node: (((grammar.rules[0].definition as Group).elements[1] as Assignment).terminal as CrossReference).terminal as RuleCall,
+            property: 'rule'
+        });
     });
 });

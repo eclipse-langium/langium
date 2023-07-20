@@ -6,6 +6,7 @@
 
 import type { URI} from 'vscode-uri';
 import type { LangiumDocuments } from '../workspace/documents';
+import type { AstNode } from '../syntax-tree';
 import * as ast from '../grammar/generated/ast';
 import { Utils } from 'vscode-uri';
 import { getDocument, streamAllContents } from '../utils/ast-util';
@@ -98,6 +99,43 @@ function isDataTypeInternal(type: ast.TypeDefinition, visited: Set<ast.TypeDefin
     } else {
         return false;
     }
+}
+
+export function isStringType(type: ast.AbstractType | ast.TypeDefinition): boolean {
+    return isStringTypeInternal(type, new Set());
+}
+
+function isStringTypeInternal(type: ast.AbstractType | ast.TypeDefinition, visited: Set<AstNode>): boolean {
+    if (visited.has(type)) {
+        return true;
+    } else {
+        visited.add(type);
+    }
+    if (ast.isParserRule(type)) {
+        if (type.dataType) {
+            return type.dataType === 'string';
+        }
+        if (type.returnType?.ref) {
+            return isStringTypeInternal(type.returnType.ref, visited);
+        }
+    } else if (ast.isType(type)) {
+        return isStringTypeInternal(type.type, visited);
+    } else if (ast.isArrayType(type)) {
+        return false;
+    } else if (ast.isReferenceType(type)) {
+        return false;
+    } else if (ast.isUnionType(type)) {
+        return type.types.every(e => isStringTypeInternal(e, visited));
+    } else if (ast.isSimpleType(type)) {
+        if (type.primitiveType === 'string') {
+            return true;
+        } else if (type.stringType) {
+            return true;
+        } else if (type.typeRef?.ref) {
+            return isStringTypeInternal(type.typeRef.ref, visited);
+        }
+    }
+    return false;
 }
 
 export function getActionAtElement(element: ast.AbstractElement): ast.Action | undefined {

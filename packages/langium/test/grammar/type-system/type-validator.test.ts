@@ -219,6 +219,49 @@ describe('validate declared types', () => {
             }
         });
     });
+
+    test('Does not crash with cyclic type definition', async () => {
+        const validationResult = await validate(`
+            type Mytype = Mytype | string;
+            interface A {
+                propA: Mytype;
+            }
+            interface B {
+                propB: string;
+            }
+            RuleA returns A: propA='a';
+            RuleB returns B: propB=DTB;
+            DTB returns Mytype: 'b';
+        `);
+        expect(validationResult.diagnostics).toHaveLength(1);
+        const grammar = validationResult.document.parseResult.value;
+        expectError(validationResult, /Type alias 'Mytype' circularly references itself./, {
+            node: grammar.types[0],
+            property: 'name'
+        });
+    });
+
+    test('Does not crash with cyclic interface definition', async () => {
+        const validationResult = await validate(`
+            interface Basetype extends Mytype {}
+            interface Mytype extends Basetype {}
+            interface A {
+                propA: Mytype;
+            }
+            interface B {
+                propB: Basetype;
+            }
+            RuleA returns A: propA=RuleC;
+            RuleB returns B: propB=RuleC;
+            RuleC returns Mytype: {Mytype} 'c';
+        `);
+        expect(validationResult.diagnostics).toHaveLength(2);
+        const grammar = validationResult.document.parseResult.value;
+        expectError(validationResult, /Type 'Mytype' recursively references itself as a base type./, {
+            node: grammar.interfaces[1],
+            property: 'name'
+        });
+    });
 });
 
 describe('validate actions that use declared types', () => {
