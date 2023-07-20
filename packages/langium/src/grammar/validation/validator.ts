@@ -21,7 +21,7 @@ import { stream } from '../../utils/stream';
 import { diagnosticData } from '../../validation/validation-registry';
 import * as ast from '../generated/ast';
 import { isParserRule, isRuleCall } from '../generated/ast';
-import { getTypeNameWithoutError, hasDataTypeReturn, isDataTypeRule, isOptionalCardinality, isPrimitiveType, resolveImport, resolveTransitiveImports, terminalRegex } from '../internal-grammar-util';
+import { getTypeNameWithoutError, hasDataTypeReturn, isDataTypeRule, isOptionalCardinality, isPrimitiveType, isStringType, resolveImport, resolveTransitiveImports, terminalRegex } from '../internal-grammar-util';
 import { typeDefinitionToPropertyType } from '../type-system/type-collector/declared-types';
 import { flattenPlainType, isPlainReferenceType } from '../type-system/type-collector/plain-types';
 
@@ -829,13 +829,21 @@ export class LangiumGrammarValidator {
 
     checkCrossRefNameAssignment(reference: ast.CrossReference, accept: ValidationAcceptor): void {
         if (!reference.terminal && reference.type.ref && !findNameAssignment(reference.type.ref)) {
-            accept('error', 'Cannot infer terminal or data type rule for cross reference.', { node: reference, property: 'type' });
+            accept('error', 'Cannot infer terminal or data type rule for cross-reference.', { node: reference, property: 'type' });
         }
     }
 
     checkCrossRefTerminalType(reference: ast.CrossReference, accept: ValidationAcceptor): void {
-        if (ast.isRuleCall(reference.terminal) && ast.isParserRule(reference.terminal.rule.ref) && !isDataTypeRule(reference.terminal.rule.ref)) {
-            accept('error', 'Parser rules cannot be used for cross references.', { node: reference.terminal, property: 'rule' });
+        const refTerminal = reference.terminal;
+        if (ast.isRuleCall(refTerminal)) {
+            const rule = refTerminal.rule.ref;
+            if (ast.isParserRule(rule) && !isDataTypeRule(rule)) {
+                accept('error', 'Parser rules cannot be used for cross-references.', { node: refTerminal, property: 'rule' });
+            } else if (ast.isParserRule(rule) && !isStringType(rule)) {
+                accept('error', 'Data type rules for cross-references must be of type string.', { node: refTerminal, property: 'rule' });
+            } else if (ast.isTerminalRule(rule) && rule.type?.name && rule.type.name !== 'string') {
+                accept('error', 'Terminal rules for cross-references must be of type string.', { node: refTerminal, property: 'rule' });
+            }
         }
     }
 
@@ -871,7 +879,7 @@ export class LangiumGrammarValidator {
         if (type && ast.isParserRule(type.ref) && !isDataTypeRule(type.ref) && (type.ref.returnType || type.ref.inferredType)) {
             const typeName = getTypeNameWithoutError(type.ref);
             if (typeName) {
-                return `Use the rule type '${typeName}' instead of the typed rule name '${type.ref.name}' for cross references.`;
+                return `Use the rule type '${typeName}' instead of the typed rule name '${type.ref.name}' for cross-references.`;
             }
         }
         return undefined;

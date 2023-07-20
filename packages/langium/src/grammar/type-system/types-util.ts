@@ -203,17 +203,26 @@ export function findReferenceTypes(type: PropertyType): string[] {
 }
 
 export function findAstTypes(type: PropertyType): string[] {
+    return findAstTypesInternal(type, new Set());
+}
+
+export function findAstTypesInternal(type: PropertyType, visited: Set<PropertyType>): string[] {
+    if (visited.has(type)) {
+        return [];
+    } else {
+        visited.add(type);
+    }
     if (isPropertyUnion(type)) {
-        return type.types.flatMap(e => findAstTypes(e));
+        return type.types.flatMap(e => findAstTypesInternal(e, visited));
     } else if (isValueType(type)) {
         const value = type.value;
         if ('type' in value) {
-            return findAstTypes(value.type);
+            return findAstTypesInternal(value.type, visited);
         } else {
             return [value.name];
         }
     } else if (isArrayType(type)) {
-        return findAstTypes(type.elementType);
+        return findAstTypesInternal(type.elementType, visited);
     }
     return [];
 }
