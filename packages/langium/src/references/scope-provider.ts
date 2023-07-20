@@ -15,6 +15,7 @@ import { MapScope} from './scope';
 import { getDocument } from '../utils/ast-util';
 import { stream } from '../utils/stream';
 import { StreamScope } from './scope';
+import { WorkspaceCache } from '../utils';
 
 /**
  * Language-specific service for determining the scope of target elements visible in a specific cross-reference context.
@@ -38,14 +39,14 @@ export class DefaultScopeProvider implements ScopeProvider {
     protected readonly descriptions: AstNodeDescriptionProvider;
     protected readonly indexManager: IndexManager;
 
-    protected readonly globalScopeCache = new Map<string, Scope>();
+    protected readonly globalScopeCache: WorkspaceCache<string, Scope>;
 
     constructor(services: LangiumServices) {
         this.reflection = services.shared.AstReflection;
         this.nameProvider = services.references.NameProvider;
         this.descriptions = services.workspace.AstNodeDescriptionProvider;
         this.indexManager = services.shared.workspace.IndexManager;
-        services.shared.workspace.DocumentBuilder.onUpdate(() => this.globalScopeCache.clear());
+        this.globalScopeCache = new WorkspaceCache<string, Scope>(services.shared);
     }
 
     getScope(context: ReferenceInfo): Scope {
@@ -98,12 +99,7 @@ export class DefaultScopeProvider implements ScopeProvider {
      * Create a global scope filtered for the given reference type.
      */
     protected getGlobalScope(referenceType: string, _context: ReferenceInfo): Scope {
-        let scope = this.globalScopeCache.get(referenceType);
-        if (!scope) {
-            scope = new MapScope(this.indexManager.allElements(referenceType));
-            this.globalScopeCache.set(referenceType, scope);
-        }
-        return scope;
+        return this.globalScopeCache.get(referenceType, () => new MapScope(this.indexManager.allElements(referenceType)));
     }
 
 }

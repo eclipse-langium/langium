@@ -18,12 +18,7 @@ export class ArithmeticsScopeProvider extends DefaultScopeProvider {
     }
 
     protected override getGlobalScope(referenceType: string): Scope {
-        let scope = this.globalScopeCache.get(referenceType);
-        if (!scope) {
-            scope = new MapScope(this.indexManager.allElements(referenceType), undefined, { caseInsensitive: true });
-            this.globalScopeCache.set(referenceType, scope);
-        }
-        return scope;
+        return this.globalScopeCache.get(referenceType, () => new MapScope(this.indexManager.allElements(referenceType), undefined, { caseInsensitive: true }));
     }
 
 }
