@@ -15,7 +15,7 @@ import { MapScope} from './scope';
 import { getDocument } from '../utils/ast-util';
 import { stream } from '../utils/stream';
 import { StreamScope } from './scope';
-import { WorkspaceCache } from '../utils';
+import { WorkspaceCache } from '../utils/caching';
 
 /**
  * Language-specific service for determining the scope of target elements visible in a specific cross-reference context.
