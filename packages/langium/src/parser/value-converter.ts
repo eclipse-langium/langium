@@ -25,7 +25,7 @@ export type ValueType = string | number | boolean | bigint | Date;
 export class DefaultValueConverter implements ValueConverter {
 
     convert(input: string, cstNode: CstNode): ValueType {
-        let feature: AbstractElement | undefined = cstNode.feature;
+        let feature: AbstractElement | undefined = cstNode.grammarSource;
         if (isCrossReference(feature)) {
             feature = getCrossReferenceTerminal(feature);
         }

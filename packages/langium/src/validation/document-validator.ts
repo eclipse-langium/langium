@@ -11,12 +11,13 @@ import type { ParseResult } from '../parser/langium-parser';
 import type { LangiumServices } from '../services';
 import type { AstNode, CstNode } from '../syntax-tree';
 import type { LangiumDocument } from '../workspace/documents';
-import type { DiagnosticInfo, ValidationAcceptor, ValidationCategory, ValidationRegistry } from './validation-registry';
+import type { DiagnosticData, DiagnosticInfo, ValidationAcceptor, ValidationCategory, ValidationRegistry } from './validation-registry';
 import { CancellationToken, DiagnosticSeverity, Position, Range } from 'vscode-languageserver';
 import { findNodeForKeyword, findNodeForProperty } from '../utils/grammar-util';
 import { streamAst } from '../utils/ast-util';
 import { tokenToRange } from '../utils/cst-util';
 import { interruptAndCheck, isOperationCancelled } from '../utils/promise-util';
+import { diagnosticData } from './validation-registry';
 
 export interface ValidationOptions {
     /**
@@ -65,17 +66,17 @@ export class DefaultDocumentValidator implements DocumentValidator {
 
         if (!options.categories || options.categories.includes('built-in')) {
             this.processLexingErrors(parseResult, diagnostics, options);
-            if (options.stopAfterLexingErrors && diagnostics.some(d => d.code === DocumentValidator.LexingError)) {
+            if (options.stopAfterLexingErrors && diagnostics.some(d => d.data?.code === DocumentValidator.LexingError)) {
                 return diagnostics;
             }
 
             this.processParsingErrors(parseResult, diagnostics, options);
-            if (options.stopAfterParsingErrors && diagnostics.some(d => d.code === DocumentValidator.ParsingError)) {
+            if (options.stopAfterParsingErrors && diagnostics.some(d => d.data?.code === DocumentValidator.ParsingError)) {
                 return diagnostics;
             }
 
             this.processLinkingErrors(document, diagnostics, options);
-            if (options.stopAfterLinkingErrors && diagnostics.some(d => d.code === DocumentValidator.LinkingError)) {
+            if (options.stopAfterLinkingErrors && diagnostics.some(d => d.data?.code === DocumentValidator.LinkingError)) {
                 return diagnostics;
             }
         }
@@ -110,7 +111,7 @@ export class DefaultDocumentValidator implements DocumentValidator {
                     }
                 },
                 message: lexerError.message,
-                code: DocumentValidator.LexingError,
+                data: diagnosticData(DocumentValidator.LexingError),
                 source: this.getSource()
             };
             diagnostics.push(diagnostic);
@@ -145,7 +146,7 @@ export class DefaultDocumentValidator implements DocumentValidator {
                     severity: DiagnosticSeverity.Error,
                     range,
                     message: parserError.message,
-                    code: DocumentValidator.ParsingError,
+                    data: diagnosticData(DocumentValidator.ParsingError),
                     source: this.getSource()
                 };
                 diagnostics.push(diagnostic);
@@ -157,17 +158,16 @@ export class DefaultDocumentValidator implements DocumentValidator {
         for (const reference of document.references) {
             const linkingError = reference.error;
             if (linkingError) {
-                const data: LinkingErrorData = {
-                    containerType: linkingError.container.$type,
-                    property: linkingError.property,
-                    refText: linkingError.reference.$refText
-                };
                 const info: DiagnosticInfo<AstNode, string> = {
                     node: linkingError.container,
                     property: linkingError.property,
                     index: linkingError.index,
-                    code: DocumentValidator.LinkingError,
-                    data
+                    data: {
+                        code: DocumentValidator.LinkingError,
+                        containerType: linkingError.container.$type,
+                        property: linkingError.property,
+                        refText: linkingError.reference.$refText
+                    } satisfies LinkingErrorData
                 };
                 diagnostics.push(this.toDiagnostic('error', linkingError.message, info));
             }
@@ -250,7 +250,7 @@ export namespace DocumentValidator {
     export const LinkingError = 'linking-error';
 }
 
-export interface LinkingErrorData {
+export interface LinkingErrorData extends DiagnosticData {
     containerType: string
     property: string
     refText: string

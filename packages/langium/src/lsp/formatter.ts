@@ -470,8 +470,8 @@ export abstract class AbstractFormatter implements Formatter {
         return new StreamImpl<{ index: number }, CstNode>(
             () => ({ index: 0 }),
             (state) => {
-                if (state.index < node.children.length) {
-                    return { done: false, value: node.children[state.index++] };
+                if (state.index < node.content.length) {
+                    return { done: false, value: node.content[state.index++] };
                 } else {
                     // Reset the indentation to the level when we entered the node
                     context.indentation = initial;

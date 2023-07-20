@@ -13,7 +13,8 @@ import type { LangiumServices } from '../../services';
 import type { AstReflection, Reference, ReferenceInfo } from '../../syntax-tree';
 import type { MaybePromise } from '../../utils/promise-util';
 import type { LinkingErrorData } from '../../validation/document-validator';
-import type { DocumentSegment, LangiumDocument } from '../../workspace/documents';
+import type { DiagnosticData } from '../../validation/validation-registry';
+import type { LangiumDocument } from '../../workspace/documents';
 import type { IndexManager } from '../../workspace/index-manager';
 import { CodeActionKind } from 'vscode-languageserver';
 import { Utils } from 'vscode-uri';
@@ -46,7 +47,7 @@ export class LangiumGrammarCodeActionProvider implements CodeActionProvider {
     }
 
     private createCodeActions(diagnostic: Diagnostic, document: LangiumDocument, accept: (ca: CodeAction | undefined) => void): void {
-        switch (diagnostic.code) {
+        switch ((diagnostic.data as DiagnosticData)?.code) {
             case IssueCodes.GrammarNameUppercase:
             case IssueCodes.RuleNameUppercase:
                 accept(this.makeUpperCase(diagnostic, document));
@@ -117,9 +118,9 @@ export class LangiumGrammarCodeActionProvider implements CodeActionProvider {
     }
 
     private fixInvalidReturnsInfers(diagnostic: Diagnostic, document: LangiumDocument): CodeAction | undefined {
-        const data = diagnostic.data as DocumentSegment;
-        if (data) {
-            const text = document.textDocument.getText(data.range);
+        const data = diagnostic.data as DiagnosticData;
+        if (data && data.actionSegment) {
+            const text = document.textDocument.getText(data.actionSegment.range);
             return {
                 title: `Correct ${text} usage`,
                 kind: CodeActionKind.QuickFix,
@@ -127,7 +128,7 @@ export class LangiumGrammarCodeActionProvider implements CodeActionProvider {
                 edit: {
                     changes: {
                         [document.textDocument.uri]: [{
-                            range: data.range,
+                            range: data.actionSegment.range,
                             newText: text === 'infers' ? 'returns' : 'infers'
                         }]
                     }
@@ -138,8 +139,8 @@ export class LangiumGrammarCodeActionProvider implements CodeActionProvider {
     }
 
     private fixMissingInfer(diagnostic: Diagnostic, document: LangiumDocument): CodeAction | undefined {
-        const data = diagnostic.data as DocumentSegment;
-        if (data) {
+        const data = diagnostic.data as DiagnosticData;
+        if (data && data.actionSegment) {
             return {
                 title: "Correct 'infer' usage",
                 kind: CodeActionKind.QuickFix,
@@ -148,8 +149,8 @@ export class LangiumGrammarCodeActionProvider implements CodeActionProvider {
                     changes: {
                         [document.textDocument.uri]: [{
                             range: {
-                                start: data.range.end,
-                                end: data.range.end
+                                start: data.actionSegment.range.end,
+                                end: data.actionSegment.range.end
                             },
                             newText: 'infer '
                         }]
@@ -161,7 +162,8 @@ export class LangiumGrammarCodeActionProvider implements CodeActionProvider {
     }
 
     private fixSuperfluousInfer(diagnostic: Diagnostic, document: LangiumDocument): CodeAction | undefined {
-        if (diagnostic.data) {
+        const data = diagnostic.data as DiagnosticData;
+        if (data && data.actionRange) {
             return {
                 title: "Remove the 'infer' keyword",
                 kind: CodeActionKind.QuickFix,
@@ -169,7 +171,7 @@ export class LangiumGrammarCodeActionProvider implements CodeActionProvider {
                 edit: {
                     changes: {
                         [document.textDocument.uri]: [{
-                            range: diagnostic.data,
+                            range: data.actionRange,
                             newText: ''
                         }]
                     }
@@ -249,7 +251,7 @@ export class LangiumGrammarCodeActionProvider implements CodeActionProvider {
         const rootCst = document.parseResult.value.$cstNode;
         if (rootCst) {
             const cstNode = findLeafNodeAtOffset(rootCst, offset);
-            const container = getContainerOfType(cstNode?.element, ast.isCharacterRange);
+            const container = getContainerOfType(cstNode?.astNode, ast.isCharacterRange);
             if (container && container.right && container.$cstNode) {
                 const left = container.left.value;
                 const right = container.right.value;
@@ -337,7 +339,7 @@ export class LangiumGrammarCodeActionProvider implements CodeActionProvider {
         const rootCst = document.parseResult.value.$cstNode;
         if (rootCst) {
             const cstNode = findLeafNodeAtOffset(rootCst, offset);
-            const container = getContainerOfType(cstNode?.element, ast.isParserRule);
+            const container = getContainerOfType(cstNode?.astNode, ast.isParserRule);
             if (container && container.$cstNode) {
                 return {
                     title: `Add new rule '${data.refText}'`,

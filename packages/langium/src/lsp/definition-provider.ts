@@ -64,7 +64,7 @@ export class DefaultDefinitionProvider implements DefinitionProvider {
         if (goToLink) {
             return [LocationLink.create(
                 goToLink.targetDocument.textDocument.uri,
-                (goToLink.target.element.$cstNode ?? goToLink.target).range,
+                (goToLink.target.astNode.$cstNode ?? goToLink.target).range,
                 goToLink.target.range,
                 goToLink.source.range
             )];
@@ -74,8 +74,8 @@ export class DefaultDefinitionProvider implements DefinitionProvider {
 
     protected findLink(source: CstNode): GoToLink | undefined {
         const target = this.references.findDeclarationNode(source);
-        if (target?.element) {
-            const targetDocument = getDocument(target.element);
+        if (target?.astNode) {
+            const targetDocument = getDocument(target.astNode);
             if (target && targetDocument) {
                 return { source, target, targetDocument };
             }

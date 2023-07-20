@@ -94,6 +94,6 @@ export class DefaultRenameProvider implements RenameProvider {
     }
 
     protected isNameNode(leafNode: CstNode | undefined): boolean | undefined {
-        return leafNode?.element && isNamed(leafNode.element) && leafNode === this.nameProvider.getNameNode(leafNode.element);
+        return leafNode?.astNode && isNamed(leafNode.astNode) && leafNode === this.nameProvider.getNameNode(leafNode.astNode);
     }
 }

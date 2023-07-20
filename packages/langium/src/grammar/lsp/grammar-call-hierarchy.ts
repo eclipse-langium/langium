@@ -31,7 +31,7 @@ export class LangiumGrammarCallHierarchyProvider extends AbstractCallHierarchyPr
             if (!targetNode) {
                 return;
             }
-            const parserRule = getContainerOfType(targetNode.element, isParserRule);
+            const parserRule = getContainerOfType(targetNode.astNode, isParserRule);
             if (!parserRule || !parserRule.$cstNode) {
                 return;
             }
@@ -77,11 +77,11 @@ export class LangiumGrammarCallHierarchyProvider extends AbstractCallHierarchyPr
             if (!refCstNode) {
                 return;
             }
-            const refNameNode = this.nameProvider.getNameNode(refCstNode.element);
+            const refNameNode = this.nameProvider.getNameNode(refCstNode.astNode);
             if (!refNameNode) {
                 return;
             }
-            const refDocUri = getDocument(refCstNode.element).uri.toString();
+            const refDocUri = getDocument(refCstNode.astNode).uri.toString();
             const ruleId = refDocUri + '@' + refNameNode.text;
 
             uniqueRules.has(ruleId) ?

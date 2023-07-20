@@ -8,7 +8,7 @@ import type { NamedAstNode } from '../../references/name-provider';
 import type { References } from '../../references/references';
 import type { AstNode, Properties, Reference } from '../../syntax-tree';
 import type { Stream } from '../../utils/stream';
-import type { ValidationAcceptor, ValidationChecks } from '../../validation/validation-registry';
+import type { DiagnosticData, ValidationAcceptor, ValidationChecks } from '../../validation/validation-registry';
 import type { LangiumDocuments } from '../../workspace/documents';
 import type { LangiumGrammarServices } from '../langium-grammar-module';
 import type { Range } from 'vscode-languageserver-types';
@@ -18,6 +18,7 @@ import { MultiMap } from '../../utils/collections';
 import { toDocumentSegment } from '../../utils/cst-util';
 import { findNameAssignment, findNodeForKeyword, findNodeForProperty, getAllReachableRules } from '../../utils/grammar-util';
 import { stream } from '../../utils/stream';
+import { diagnosticData } from '../../validation/validation-registry';
 import * as ast from '../generated/ast';
 import { isParserRule, isRuleCall } from '../generated/ast';
 import { getTypeNameWithoutError, hasDataTypeReturn, isDataTypeRule, isOptionalCardinality, isPrimitiveType, resolveImport, resolveTransitiveImports, terminalRegex } from '../internal-grammar-util';
@@ -126,7 +127,11 @@ export class LangiumGrammarValidator {
         if (grammar.name) {
             const firstChar = grammar.name.substring(0, 1);
             if (firstChar.toUpperCase() !== firstChar) {
-                accept('warning', 'Grammar name should start with an upper case letter.', { node: grammar, property: 'name', code: IssueCodes.GrammarNameUppercase });
+                accept('warning', 'Grammar name should start with an upper case letter.', {
+                    node: grammar,
+                    property: 'name',
+                    data: diagnosticData(IssueCodes.GrammarNameUppercase)
+                });
             }
         }
     }
@@ -140,7 +145,11 @@ export class LangiumGrammarValidator {
         if (grammar.isDeclared && entryRules.length === 0) {
             const possibleEntryRule = grammar.rules.find(e => ast.isParserRule(e) && !isDataTypeRule(e));
             if (possibleEntryRule) {
-                accept('error', 'The grammar is missing an entry parser rule. This rule can be an entry one.', { node: possibleEntryRule, property: 'name', code: IssueCodes.EntryRuleTokenSyntax });
+                accept('error', 'The grammar is missing an entry parser rule. This rule can be an entry one.', {
+                    node: possibleEntryRule,
+                    property: 'name',
+                    data: diagnosticData(IssueCodes.EntryRuleTokenSyntax)
+                });
             } else {
                 accept('error', 'This grammar is missing an entry parser rule.', { node: grammar, property: 'name' });
             }
@@ -290,7 +299,7 @@ export class LangiumGrammarValidator {
                     accept('error', getMessage(ruleTypeName, isInfers), {
                         node: rule,
                         property: 'name',
-                        code: IssueCodes.MissingReturns
+                        data: diagnosticData(IssueCodes.MissingReturns)
                     });
                 } else if (isInfers || rule.returnType?.ref !== undefined) {
                     // report bad infers (should be corrected to 'returns' to match existing type)
@@ -298,8 +307,10 @@ export class LangiumGrammarValidator {
                     accept('error', getMessage(ruleTypeName, isInfers), {
                         node: rule.inferredType!,
                         property: 'name',
-                        code: IssueCodes.InvalidInfers,
-                        data: toDocumentSegment(infersNode)
+                        data: {
+                            code: IssueCodes.InvalidInfers,
+                            actionSegment: toDocumentSegment(infersNode)
+                        } satisfies DiagnosticData
                     });
                 }
             } else if (isDataType && isInfers) {
@@ -307,8 +318,10 @@ export class LangiumGrammarValidator {
                 accept('error', 'Data type rules cannot infer a type.', {
                     node: rule,
                     property: 'inferredType',
-                    code: IssueCodes.InvalidInfers,
-                    data: toDocumentSegment(inferNode)
+                    data: {
+                        code: IssueCodes.InvalidInfers,
+                        actionSegment: toDocumentSegment(inferNode)
+                    } satisfies DiagnosticData
                 });
             }
         }
@@ -322,8 +335,10 @@ export class LangiumGrammarValidator {
                     accept('error', getMessage(typeName, isInfers), {
                         node: action,
                         property: 'type',
-                        code: isInfers ? IssueCodes.SuperfluousInfer : IssueCodes.MissingInfer,
-                        data: toDocumentSegment(keywordNode)
+                        data: {
+                            code: isInfers ? IssueCodes.SuperfluousInfer : IssueCodes.MissingInfer,
+                            actionSegment: toDocumentSegment(keywordNode)
+                        } satisfies DiagnosticData
                     });
                 } else if (actionType && typeName && types.has(typeName) && isInfers) {
                     // error: action infers type that is already defined
@@ -336,11 +351,13 @@ export class LangiumGrammarValidator {
                             accept('error', `${typeName} is a declared type and cannot be redefined.`, {
                                 node: action,
                                 property: 'type',
-                                code: IssueCodes.SuperfluousInfer,
                                 data: {
-                                    start: keywordNode.range.end,
-                                    end: inferredTypeNode.range.start
-                                }
+                                    code: IssueCodes.SuperfluousInfer,
+                                    actionRange: {
+                                        start: keywordNode.range.end,
+                                        end: inferredTypeNode.range.start
+                                    }
+                                } satisfies DiagnosticData
                             });
                         }
                     }
@@ -367,7 +384,11 @@ export class LangiumGrammarValidator {
 
     checkGrammarHiddenTokens(grammar: ast.Grammar, accept: ValidationAcceptor): void {
         if (grammar.definesHiddenTokens) {
-            accept('error', 'Hidden terminals are declared at the terminal definition.', { node: grammar, property: 'definesHiddenTokens', code: IssueCodes.HiddenGrammarTokens });
+            accept('error', 'Hidden terminals are declared at the terminal definition.', {
+                node: grammar,
+                property: 'definesHiddenTokens',
+                data: diagnosticData(IssueCodes.HiddenGrammarTokens)
+            });
         }
     }
 
@@ -480,7 +501,11 @@ export class LangiumGrammarValidator {
 
     checkCrossReferenceSyntax(crossRef: ast.CrossReference, accept: ValidationAcceptor): void {
         if (crossRef.deprecatedSyntax) {
-            accept('error', "'|' is deprecated. Please, use ':' instead.", { node: crossRef, property: 'deprecatedSyntax', code: IssueCodes.CrossRefTokenSyntax });
+            accept('error', "'|' is deprecated. Please, use ':' instead.", {
+                node: crossRef,
+                property: 'deprecatedSyntax',
+                data: diagnosticData(IssueCodes.CrossRefTokenSyntax)
+            });
         }
     }
 
@@ -489,7 +514,11 @@ export class LangiumGrammarValidator {
         if (resolvedGrammar === undefined) {
             accept('error', 'Import cannot be resolved.', { node: imp, property: 'path' });
         } else if (imp.path.endsWith('.langium')) {
-            accept('warning', 'Imports do not need file extensions.', { node: imp, property: 'path', code: IssueCodes.UnnecessaryFileExtension });
+            accept('warning', 'Imports do not need file extensions.', {
+                node: imp,
+                property: 'path',
+                data: diagnosticData(IssueCodes.UnnecessaryFileExtension)
+            });
         }
     }
 
@@ -506,7 +535,10 @@ export class LangiumGrammarValidator {
                 accept('error', message, { node: range.right, property: 'value' });
             }
             if (!invalid) {
-                accept('hint', 'Consider using regex instead of character ranges', { node: range, code: IssueCodes.UseRegexTokens });
+                accept('hint', 'Consider using regex instead of character ranges', {
+                    node: range,
+                    data: diagnosticData(IssueCodes.UseRegexTokens)
+                });
             }
         }
     }
@@ -628,7 +660,7 @@ export class LangiumGrammarValidator {
                 accept('warning', 'Rule name should start with an upper case letter.', {
                     node: rule,
                     property: 'name',
-                    code: IssueCodes.RuleNameUppercase
+                    data: diagnosticData(IssueCodes.RuleNameUppercase)
                 });
             }
         }
@@ -673,7 +705,10 @@ export class LangiumGrammarValidator {
     checkUnorderedGroup(unorderedGroup: ast.UnorderedGroup, accept: ValidationAcceptor): void {
         unorderedGroup.elements.forEach((ele) => {
             if (isOptionalCardinality(ele.cardinality)) {
-                accept('error', 'Optional elements in Unordered groups are currently not supported', { node: ele, code: IssueCodes.OptionalUnorderedGroup });
+                accept('error', 'Optional elements in Unordered groups are currently not supported', {
+                    node: ele,
+                    data: diagnosticData(IssueCodes.OptionalUnorderedGroup)
+                });
             }
         });
     }

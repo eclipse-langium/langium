@@ -32,7 +32,7 @@ export abstract class AbstractSignatureHelpProvider implements SignatureHelpProv
         if (cst) {
             const sourceCstNode = findLeafNodeAtOffset(cst, document.textDocument.offsetAt(params.position));
             if (sourceCstNode) {
-                return this.getSignatureFromElement(sourceCstNode.element, cancelToken);
+                return this.getSignatureFromElement(sourceCstNode.astNode, cancelToken);
             }
         }
         return undefined;

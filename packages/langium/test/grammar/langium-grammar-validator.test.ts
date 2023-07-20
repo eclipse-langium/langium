@@ -114,7 +114,9 @@ describe('Langium grammar validation', () => {
                 start: { character: 15, line: 6 },
                 end: { character: 24, line: 6 }
             },
-            code: IssueCodes.SuperfluousInfer
+            data: {
+                code: IssueCodes.SuperfluousInfer
+            }
         });
     });
 
@@ -128,7 +130,9 @@ describe('Langium grammar validation', () => {
         expectError(validationResult, /The type 'T' is already explicitly declared and cannot be inferred./, {
             node: validationResult.document.parseResult.value.rules[0],
             property: 'name',
-            code: IssueCodes.MissingReturns
+            data: {
+                code: IssueCodes.MissingReturns
+            }
         });
     });
 
@@ -140,7 +144,7 @@ describe('Langium grammar validation', () => {
         terminal ID returns string: /[a-z]+/;
         `);
         expect(validationResult.diagnostics).toHaveLength(1);
-        expect(validationResult.diagnostics[0].code).toBe(IssueCodes.InvalidInfers);
+        expect(validationResult.diagnostics[0].data?.code).toBe(IssueCodes.InvalidInfers);
     });
 });
 
@@ -327,7 +331,13 @@ describe('Unordered group validations', () => {
         expect(validation.diagnostics).toHaveLength(1);
         const errorText = '("edition" version=STRING)?';
         const offset = validation.document.textDocument.getText().indexOf(errorText);
-        expectError(validation, 'Optional elements in Unordered groups are currently not supported', { offset: offset, length: errorText.length, code: IssueCodes.OptionalUnorderedGroup });
+        expectError(validation, 'Optional elements in Unordered groups are currently not supported', {
+            offset: offset,
+            length: errorText.length,
+            data: {
+                code: IssueCodes.OptionalUnorderedGroup
+            }
+        });
     });
 });
 
