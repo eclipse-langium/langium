@@ -1,5 +1,5 @@
 {
-    "projectName": "Requirements and Tests",
+    "projectName": "RequirementsAndTests",
     "languages": [{
         "id": "requirements-lang",
         "grammar": "src/language-server/requirements.langium",
