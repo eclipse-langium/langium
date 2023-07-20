@@ -1,8 +1,13 @@
 # Change Log of `langium-vscode`
 
+## v2.0.0 (Jul. 2023)
+
+* Improvements to validation regarding cyclic type usage ([#1130](https://github.com/langium/langium/pull/1130)).
+* Includes a command to open a railroad syntax diagram for the currently selected langium grammar. Use the `Show Railroad Syntax Diagram` command or the corresponding button in the editor title bar to open the diagram ([#1075](https://github.com/langium/langium/pull/1075)).
+
 ## v1.2.0 (May. 2023)
 
-* Various improvements to the type generator/validator. ([#942](https://github.com/langium/langium/pull/942), [#946](https://github.com/langium/langium/pull/946), [#947](https://github.com/langium/langium/pull/947), [#950](https://github.com/langium/langium/pull/950), [#973](https://github.com/langium/langium/pull/973), [#1003](https://github.com/langium/langium/pull/1003))
+* Various improvements to the type generator/validator ([#942](https://github.com/langium/langium/pull/942), [#946](https://github.com/langium/langium/pull/946), [#947](https://github.com/langium/langium/pull/947), [#950](https://github.com/langium/langium/pull/950), [#973](https://github.com/langium/langium/pull/973), [#1003](https://github.com/langium/langium/pull/1003)).
 
 ## v1.1.0 (Feb. 2023)
 
