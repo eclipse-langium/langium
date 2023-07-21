@@ -23,8 +23,8 @@ We also have [a guide available on our website](https://langium.org/guides/code-
 
 The Langium grammar language now supports regular expression flags as part of terminal definitions:
 
-1. `u` Enables unicode support for the specified terminal
-2. `i` Makes the terminal case-insensitive
+1. `u` Enables unicode support for the specified terminal.
+2. `i` Makes the terminal case-insensitive.
 3. `s` Makes the wild character "`.`" match newlines as well.
 
 ### Cache Support
