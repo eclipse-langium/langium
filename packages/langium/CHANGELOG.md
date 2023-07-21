@@ -14,9 +14,10 @@ This leaves us with a problem, as all vscode extensions need to run as CJS code.
 Luckily, JavaScript bundlers such as `esbuild` are capable of transforming ESM code into CJS code.
 Using a bundler for vscode extensions and language servers is heavily recommended anyway,
 so we hope that adopters don't have much trouble upgrading to Langium 2.0.
+You can find a small instruction manual on how to migrate TypeScript projects to ESM [here](https://gist.github.com/sindresorhus/a39789f98801d908bbc7ff3ecc99d99c#how-can-i-make-my-typescript-project-output-esm).
 
 Note that the newest version of the yeoman generator contains a ready-to-use bundler configuration.
-We also have [a guide available on our website](https://langium.org/guides/code-bundling/) that goes into more detail on this topic.
+We also have [a guide available on our website](https://langium.org/guides/code-bundling/) that goes into more detail on this topic. If you have any questions on this topic, feel free to ask us on the [GitHub Discussions Board](https://github.com/langium/langium/discussions).
 
 ### Regular Expression Flags
 
@@ -45,6 +46,12 @@ Langium provides 2 new classes:
 ### Breaking Changes
 
 * Langium is now compiling to ESM. See [here](#ecmascript-modules-esm) for more information ([#1125](https://github.com/langium/langium/pull/1125)).
+* The `CodeLensProvider`, `DocumentLinkProvider` and `InlayHintProvider` services were moved from the shared LSP services container to the language specific services container. Additionally, their `resolve` methods have been removed ([#1107](https://github.com/langium/langium/pull/1107)). 
+* Deprecated a few properties available on CST nodes. They have been renamed and their old property names will be deleted in a future version ([#1131](https://github.com/langium/langium/pull/1131)):
+    * `CstNode#parent` -> `container`
+    * `CstNode#feature` -> `grammarSource`
+    * `CstNode#element` -> `astNode`
+    * `CompositeCstNode#children` -> `content`
 * The `IndexManager#getAffectedDocuments` has been changed to `isAffected`. Instead of returning a stream of all affected documents of a change, it now only returns whether a specified document is affected by the change of a set of documents ([#1094](https://github.com/langium/langium/pull/1094)).
 * The `BuildOptions#validationChecks` property has been replaced with `validation?: boolean | ValidationOptions` ([#1094](https://github.com/langium/langium/pull/1094)).
 
