@@ -5,6 +5,7 @@
  ******************************************************************************/
 
 import type { AstNodeDescription, Scope, ScopeOptions } from 'langium';
+import { MapScope } from 'langium';
 import { DefaultScopeProvider, stream, StreamScope } from 'langium';
 
 /**
@@ -17,7 +18,7 @@ export class ArithmeticsScopeProvider extends DefaultScopeProvider {
     }
 
     protected override getGlobalScope(referenceType: string): Scope {
-        return new StreamScope(this.indexManager.allElements(referenceType), undefined, { caseInsensitive: true });
+        return this.globalScopeCache.get(referenceType, () => new MapScope(this.indexManager.allElements(referenceType), undefined, { caseInsensitive: true }));
     }
 
 }
