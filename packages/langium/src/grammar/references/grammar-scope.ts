@@ -4,15 +4,16 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { Scope } from '../../references/scope-provider';
+import type { Scope } from '../../references/scope';
 import type { LangiumServices } from '../../services';
 import type { AstNode, AstNodeDescription, ReferenceInfo } from '../../syntax-tree';
 import type { Stream } from '../../utils/stream';
 import type { AstNodeLocator } from '../../workspace/ast-node-locator';
 import type { DocumentSegment, LangiumDocument, LangiumDocuments, PrecomputedScopes } from '../../workspace/documents';
 import type { Grammar } from '../generated/ast';
+import { EMPTY_SCOPE, MapScope } from '../../references/scope';
 import { DefaultScopeComputation } from '../../references/scope-computation';
-import { DefaultScopeProvider, EMPTY_SCOPE, StreamScope } from '../../references/scope-provider';
+import { DefaultScopeProvider } from '../../references/scope-provider';
 import { findRootNode, getContainerOfType, getDocument, streamAllContents } from '../../utils/ast-util';
 import { toDocumentSegment } from '../../utils/cst-util';
 import { stream } from '../../utils/stream';
@@ -63,12 +64,11 @@ export class LangiumGrammarScopeProvider extends DefaultScopeProvider {
         }
         const importedUris = new Set<string>();
         this.gatherImports(grammar, importedUris);
-        let importedElements = this.indexManager.allElements(referenceType)
-            .filter(des => importedUris.has(des.documentUri.toString()));
+        let importedElements = this.indexManager.allElements(referenceType, importedUris);
         if (referenceType === AbstractType) {
             importedElements = importedElements.filter(des => des.type === Interface || des.type === Type);
         }
-        return new StreamScope(importedElements);
+        return new MapScope(importedElements);
     }
 
     private gatherImports(grammar: Grammar, importedUris: Set<string>): void {

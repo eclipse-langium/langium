@@ -7,7 +7,7 @@
 import type { Grammar } from '../../../src';
 import type { CrossReference, InferredType, Interface } from '../../../src/grammar/generated/ast';
 import { Utils } from 'vscode-uri';
-import { beforeAll, describe, expect, test } from 'vitest';
+import { beforeEach, describe, expect, test } from 'vitest';
 import { createLangiumGrammarServices, EmptyFileSystem } from '../../../src';
 import { clearDocuments, parseHelper } from '../../../src/test';
 
@@ -17,7 +17,7 @@ describe('Type Linking', () => {
     const locator = services.grammar.workspace.AstNodeLocator;
     const parse = parseHelper<Grammar>(services.grammar);
 
-    beforeAll(() => {
+    beforeEach(() => {
         clearDocuments(services.grammar);
     });
 

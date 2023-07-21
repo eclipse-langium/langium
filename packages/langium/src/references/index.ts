@@ -7,5 +7,6 @@
 export * from './linker';
 export * from './name-provider';
 export * from './references';
+export * from './scope';
 export * from './scope-computation';
 export * from './scope-provider';

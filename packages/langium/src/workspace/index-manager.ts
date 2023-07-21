@@ -16,6 +16,7 @@ import { getDocument } from '../utils/ast-util';
 import { stream } from '../utils/stream';
 import { equalURI } from '../utils/uri-util';
 import { DocumentState } from './documents';
+import { ContextCache } from '../utils/caching';
 
 /**
  * The index manager is responsible for keeping metadata about symbols and cross-references
@@ -59,12 +60,13 @@ export interface IndexManager {
     getAffectedDocuments(uris: URI[]): Stream<LangiumDocument>;
 
     /**
-     * Compute a global scope, optionally filtered using a type identifier.
+     * Compute a list of all exported elements, optionally filtered using a type identifier and document URIs.
      *
      * @param nodeType The type to filter with, or `undefined` to return descriptions of all types.
-     * @returns a `Stream` of existing `AstNodeDescription`s filtered by their type
+     * @param uris If specified, only returns elements from the given URIs.
+     * @returns a `Stream` containing all globally visible nodes (of a given type).
      */
-    allElements(nodeType?: string): Stream<AstNodeDescription>;
+    allElements(nodeType?: string, uris?: Set<string>): Stream<AstNodeDescription>;
 
     /**
      * Returns all known references that are pointing to the given `targetNode`.
@@ -81,24 +83,37 @@ export interface IndexManager {
 export class DefaultIndexManager implements IndexManager {
 
     protected readonly serviceRegistry: ServiceRegistry;
-    protected readonly langiumDocuments: () => LangiumDocuments;
+    protected readonly documents: LangiumDocuments;
     protected readonly astReflection: AstReflection;
 
-    protected readonly simpleIndex: Map<string, AstNodeDescription[]> = new Map<string, AstNodeDescription[]>();
-    protected readonly referenceIndex: Map<string, ReferenceDescription[]> = new Map<string, ReferenceDescription[]>();
-    protected readonly globalScopeCache = new Map<string, AstNodeDescription[]>();
+    /**
+     * The `simpleIndex` stores all `AstNodeDescription` items exported by a document.
+     * The key used in this map is the string representation of the specific document URI.
+     */
+    protected readonly simpleIndex = new Map<string, AstNodeDescription[]>();
+    /**
+     * This is a cache for the `allElements()` method.
+     * It caches the descriptions from `simpleIndex` grouped by types.
+     */
+    protected readonly simpleTypeIndex = new ContextCache<string, string, AstNodeDescription[]>();
+    /**
+     * This index keeps track of all `ReferenceDescription` items exported by a document.
+     * This is used to compute which elements are affected by a document change
+     * and for finding references to an AST node.
+     */
+    protected readonly referenceIndex = new Map<string, ReferenceDescription[]>();
 
     constructor(services: LangiumSharedServices) {
+        this.documents = services.workspace.LangiumDocuments;
         this.serviceRegistry = services.ServiceRegistry;
         this.astReflection = services.AstReflection;
-        this.langiumDocuments = () => services.workspace.LangiumDocuments;
     }
 
     findAllReferences(targetNode: AstNode, astNodePath: string): Stream<ReferenceDescription> {
         const targetDocUri = getDocument(targetNode).uri;
         const result: ReferenceDescription[] = [];
-        this.referenceIndex.forEach((docRefs: ReferenceDescription[]) => {
-            docRefs.forEach((refDescr) => {
+        this.referenceIndex.forEach(docRefs => {
+            docRefs.forEach(refDescr => {
                 if (equalURI(refDescr.targetUri, targetDocUri) && refDescr.targetPath === astNodePath) {
                     result.push(refDescr);
                 }
@@ -107,38 +122,45 @@ export class DefaultIndexManager implements IndexManager {
         return stream(result);
     }
 
-    allElements(nodeType = ''): Stream<AstNodeDescription> {
-        if (!this.globalScopeCache.has('')) {
-            this.globalScopeCache.set('', Array.from(this.simpleIndex.values()).flat());
+    allElements(nodeType?: string, uris?: Set<string>): Stream<AstNodeDescription> {
+        let documentUris = stream(this.simpleIndex.keys());
+        if (uris) {
+            documentUris = documentUris.filter(uri => !uris || uris.has(uri));
         }
+        return documentUris
+            .map(uri => this.getFileDescriptions(uri, nodeType))
+            .flat();
+    }
 
-        const cached = this.globalScopeCache.get(nodeType);
-        if (cached) {
-            return stream(cached);
-        } else {
-            const elements = this.globalScopeCache.get('')!.filter(e => this.astReflection.isSubtype(e.type, nodeType));
-            this.globalScopeCache.set(nodeType, elements);
-            return stream(elements);
+    protected getFileDescriptions(uri: string, nodeType?: string): AstNodeDescription[] {
+        if (!nodeType) {
+            return this.simpleIndex.get(uri) ?? [];
         }
+        const descriptions = this.simpleTypeIndex.get(uri, nodeType, () => {
+            const allFileDescriptions = this.simpleIndex.get(uri) ?? [];
+            return allFileDescriptions.filter(e => this.astReflection.isSubtype(e.type, nodeType));
+        });
+        return descriptions;
     }
 
     remove(uris: URI[]): void {
         for (const uri of uris) {
             const uriString = uri.toString();
             this.simpleIndex.delete(uriString);
+            this.simpleTypeIndex.clear(uriString);
             this.referenceIndex.delete(uriString);
-            this.globalScopeCache.clear();
         }
     }
 
     async updateContent(document: LangiumDocument, cancelToken = CancellationToken.None): Promise<void> {
-        this.globalScopeCache.clear();
         const services = this.serviceRegistry.getServices(document.uri);
         const exports: AstNodeDescription[] = await services.references.ScopeComputation.computeExports(document, cancelToken);
         for (const data of exports) {
             data.node = undefined; // clear reference to the AST Node
         }
-        this.simpleIndex.set(document.uri.toString(), exports);
+        const uri = document.uri.toString();
+        this.simpleIndex.set(uri, exports);
+        this.simpleTypeIndex.clear(uri);
         document.state = DocumentState.IndexedContent;
     }
 
@@ -150,7 +172,7 @@ export class DefaultIndexManager implements IndexManager {
     }
 
     getAffectedDocuments(uris: URI[]): Stream<LangiumDocument> {
-        return this.langiumDocuments().all.filter(e => {
+        return this.documents.all.filter(e => {
             if (uris.some(uri => equalURI(e.uri, uri))) {
                 return false;
             }
