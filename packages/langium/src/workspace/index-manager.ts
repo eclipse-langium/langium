@@ -15,6 +15,7 @@ import { CancellationToken } from 'vscode-languageserver';
 import { getDocument } from '../utils/ast-util';
 import { stream } from '../utils/stream';
 import { equalURI } from '../utils/uri-util';
+import { ContextCache } from '../utils/caching';
 
 /**
  * The index manager is responsible for keeping metadata about symbols and cross-references
@@ -95,7 +96,7 @@ export class DefaultIndexManager implements IndexManager {
      * This is a cache for the `allElements()` method.
      * It caches the descriptions from `simpleIndex` grouped by types.
      */
-    protected readonly simpleTypeIndex = new Map<string, Map<string, AstNodeDescription[]>>();
+    protected readonly simpleTypeIndex = new ContextCache<string, string, AstNodeDescription[]>();
     /**
      * This index keeps track of all `ReferenceDescription` items exported by a document.
      * This is used to compute which elements are affected by a document change
@@ -123,9 +124,11 @@ export class DefaultIndexManager implements IndexManager {
     }
 
     allElements(nodeType?: string, uris?: Set<string>): Stream<AstNodeDescription> {
-        const allUris = this.simpleIndex.keys();
-        return stream(allUris)
-            .filter(uri => !uris || uris.has(uri))
+        let documentUris = stream(this.simpleIndex.keys());
+        if (uris) {
+            documentUris = documentUris.filter(uri => !uris || uris.has(uri));
+        }
+        return documentUris
             .map(uri => this.getFileDescriptions(uri, nodeType))
             .flat();
     }
@@ -134,17 +137,10 @@ export class DefaultIndexManager implements IndexManager {
         if (!nodeType) {
             return this.simpleIndex.get(uri) ?? [];
         }
-        let map = this.simpleTypeIndex.get(uri);
-        if (!map) {
-            map = new Map();
-            this.simpleTypeIndex.set(uri, map);
-        }
-        let descriptions = map.get(nodeType);
-        if (!descriptions) {
+        const descriptions = this.simpleTypeIndex.get(uri, nodeType, () => {
             const allFileDescriptions = this.simpleIndex.get(uri) ?? [];
-            descriptions = allFileDescriptions.filter(e => this.astReflection.isSubtype(e.type, nodeType));
-            map.set(nodeType, descriptions);
-        }
+            return allFileDescriptions.filter(e => this.astReflection.isSubtype(e.type, nodeType));
+        });
         return descriptions;
     }
 
@@ -152,7 +148,7 @@ export class DefaultIndexManager implements IndexManager {
         for (const uri of uris) {
             const uriString = uri.toString();
             this.simpleIndex.delete(uriString);
-            this.simpleTypeIndex.delete(uriString);
+            this.simpleTypeIndex.clear(uriString);
             this.referenceIndex.delete(uriString);
         }
     }
@@ -165,7 +161,7 @@ export class DefaultIndexManager implements IndexManager {
         }
         const uri = document.uri.toString();
         this.simpleIndex.set(uri, exports);
-        this.simpleTypeIndex.delete(uri);
+        this.simpleTypeIndex.clear(uri);
     }
 
     async updateReferences(document: LangiumDocument, cancelToken = CancellationToken.None): Promise<void> {
