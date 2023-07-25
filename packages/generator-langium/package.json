@@ -46,7 +46,7 @@
     "yeoman-test": "~7.3.0"
   },
   "volta": {
-    "node": "16.19.0",
+    "node": "18.17.0",
     "npm": "9.5.1"
   },
   "repository": {

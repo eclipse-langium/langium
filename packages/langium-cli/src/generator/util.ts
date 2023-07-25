@@ -12,7 +12,10 @@ import * as readline from 'node:readline';
 import chalk from 'chalk';
 import { terminalRegex } from 'langium/internal';
 
-const __dirname = url.fileURLToPath(new URL('.', import.meta.url));
+// This is a replacement for `__dirname`
+function getDirname(): string {
+    return url.fileURLToPath(new URL('.', import.meta.url));
+}
 
 //eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function log(level: 'log' | 'warn' | 'error', options: { watch: boolean }, message: string, ...args: any[]): void {
@@ -41,7 +44,7 @@ function padZeroes(i: number): string {
 }
 
 function getLangiumCliVersion(): string {
-    const ownPackagePath = path.resolve(__dirname, '..', '..', 'package.json');
+    const ownPackagePath = path.resolve(getDirname(), '..', '..', 'package.json');
     const pack = fs.readJsonSync(ownPackagePath, { encoding: 'utf-8' });
     return pack.version;
 }
@@ -108,4 +111,4 @@ export function collectTerminalRegexps(grammar: Grammar): Record<string, RegExp>
 
 export const cliVersion = getLangiumCliVersion();
 export const generatedHeader = getGeneratedHeader();
-export const schema = fs.readJson(path.resolve(__dirname, '../../langium-config-schema.json'), { encoding: 'utf-8' });
+export const schema = fs.readJson(path.resolve(getDirname(), '../../langium-config-schema.json'), { encoding: 'utf-8' });
