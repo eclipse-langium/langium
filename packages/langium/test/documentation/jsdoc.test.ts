@@ -5,9 +5,9 @@
  ******************************************************************************/
 
 import type { Range } from 'vscode-languageserver';
-import type { JSDocLine, JSDocParagraph, JSDocTag } from '../../src/index.js';
+import type { JSDocLine, JSDocParagraph, JSDocTag } from 'langium';
 import { describe, expect, test } from 'vitest';
-import { parseJSDoc } from '../../src/index.js';
+import { parseJSDoc } from 'langium';
 
 describe('JSDoc parsing', () => {
 

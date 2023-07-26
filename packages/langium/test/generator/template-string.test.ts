@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import { expect, test } from 'vitest';
-import { expandToString as s, normalizeEOL } from '../../src/generator/template-string.js';
+import { expandToString as s, normalizeEOL } from 'langium';
 
 test('Should not throw when substituting null', () => {
     expect(s`${null}`).toBe('null');

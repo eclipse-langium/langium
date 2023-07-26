@@ -7,8 +7,8 @@
 import type { Diagnostic } from 'vscode-languageserver';
 import { describe, expect, test } from 'vitest';
 import { DiagnosticSeverity } from 'vscode-languageserver';
-import { createLangiumGrammarServices, EmptyFileSystem, streamAllContents, streamContents, GrammarAST } from '../../../src/index.js';
-import { expectError, expectNoIssues, parseDocument, validationHelper } from '../../../src/test/index.js';
+import { createLangiumGrammarServices, EmptyFileSystem, streamAllContents, streamContents, GrammarAST } from 'langium';
+import { expectError, expectNoIssues, parseDocument, validationHelper } from 'langium/test';
 
 const grammarServices = createLangiumGrammarServices(EmptyFileSystem).grammar;
 const validate = validationHelper<GrammarAST.Grammar>(grammarServices);

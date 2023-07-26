@@ -4,9 +4,9 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { ExecuteCommandAcceptor } from '../../src/index.js';
+import type { ExecuteCommandAcceptor } from 'langium';
 import { describe, expect, test } from 'vitest';
-import { createServicesForGrammar, AbstractExecuteCommandHandler } from '../../src/index.js';
+import { createServicesForGrammar, AbstractExecuteCommandHandler } from 'langium';
 
 describe('AbstractExecuteCommandHandler', () => {
 

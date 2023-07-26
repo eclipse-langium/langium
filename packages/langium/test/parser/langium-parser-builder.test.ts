@@ -5,9 +5,9 @@
  ******************************************************************************/
 
 import type { TokenType, TokenVocabulary } from 'chevrotain';
-import type { AstNode, Grammar, GrammarAST, LangiumParser, TokenBuilderOptions } from '../../src/index.js';
+import type { AstNode, Grammar, GrammarAST, LangiumParser, TokenBuilderOptions } from 'langium';
 import { describe, expect, test, onTestFailed, beforeEach } from 'vitest';
-import { createServicesForGrammar, DefaultTokenBuilder } from '../../src/index.js';
+import { createServicesForGrammar, DefaultTokenBuilder } from 'langium';
 
 describe('Predicated grammar rules with alternatives', () => {
 

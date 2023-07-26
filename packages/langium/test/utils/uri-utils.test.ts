@@ -6,7 +6,7 @@
 
 import { describe, expect, test } from 'vitest';
 import vscodeUri from 'vscode-uri';
-import { relativeURI, equalURI } from '../../src/utils/uri-util.js';
+import { relativeURI, equalURI } from 'langium';
 
 describe('URI Utils', () => {
     test('relative path in same directory', () => {

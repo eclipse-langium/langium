@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import { describe, expect, test } from 'vitest';
-import { getTerminalParts, isMultilineComment, partialMatches } from '../../src/index.js';
+import { getTerminalParts, isMultilineComment, partialMatches } from 'langium';
 
 describe('partial regex', () => {
 

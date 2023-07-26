@@ -4,19 +4,16 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { LangiumGrammarAstType } from '../../src/grammar/generated/ast.js';
-import type { ValidationChecks } from '../../src/validation/validation-registry.js';
-import type { LangiumServices } from '../../src/services.js';
+import type { GrammarAST as GrammarTypes, LangiumServices, ValidationChecks } from 'langium';
 import { describe, expect, test } from 'vitest';
-import { LangiumGrammarAstReflection } from '../../src/grammar/generated/ast.js';
-import { ValidationRegistry } from '../../src/validation/validation-registry.js';
+import { GrammarAST, ValidationRegistry } from 'langium';
 
 describe('ValidationRegistry', () => {
     function createRegistry(): ValidationRegistry {
         // Create a minimal set of services so we can start with an empty registry
         const services = {
             shared: {
-                AstReflection: new LangiumGrammarAstReflection()
+                AstReflection: new GrammarAST.LangiumGrammarAstReflection()
             }
         } as unknown as LangiumServices;
         return new ValidationRegistry(services);
@@ -25,7 +22,7 @@ describe('ValidationRegistry', () => {
     test('registers array of checks', () => {
         const appliedChecks: string[] = [];
         const registry = createRegistry();
-        const checks: ValidationChecks<LangiumGrammarAstType> = {
+        const checks: ValidationChecks<GrammarTypes.LangiumGrammarAstType> = {
             ParserRule: [
                 () => { appliedChecks.push('a'); },
                 () => { appliedChecks.push('b'); }
@@ -46,7 +43,7 @@ describe('ValidationRegistry', () => {
             }
         }
         const validations = new Validations();
-        const checks: ValidationChecks<LangiumGrammarAstType> = {
+        const checks: ValidationChecks<GrammarAST.LangiumGrammarAstType> = {
             ParserRule: validations.check
         };
         registry.register(checks, validations);
@@ -57,11 +54,11 @@ describe('ValidationRegistry', () => {
     test("uses 'fast' as default category", () => {
         const appliedChecks: string[] = [];
         const registry = createRegistry();
-        const checks1: ValidationChecks<LangiumGrammarAstType> = {
+        const checks1: ValidationChecks<GrammarAST.LangiumGrammarAstType> = {
             ParserRule: () => { appliedChecks.push('a'); }
         };
         registry.register(checks1);
-        const checks2: ValidationChecks<LangiumGrammarAstType> = {
+        const checks2: ValidationChecks<GrammarAST.LangiumGrammarAstType> = {
             ParserRule: () => { appliedChecks.push('b'); }
         };
         registry.register(checks2, undefined, 'fast');
@@ -72,11 +69,11 @@ describe('ValidationRegistry', () => {
     test("gives only 'slow' checks when requested", () => {
         const appliedChecks: string[] = [];
         const registry = createRegistry();
-        const checks1: ValidationChecks<LangiumGrammarAstType> = {
+        const checks1: ValidationChecks<GrammarAST.LangiumGrammarAstType> = {
             ParserRule: () => { appliedChecks.push('a'); }
         };
         registry.register(checks1, undefined, 'fast');
-        const checks2: ValidationChecks<LangiumGrammarAstType> = {
+        const checks2: ValidationChecks<GrammarAST.LangiumGrammarAstType> = {
             ParserRule: () => { appliedChecks.push('b'); }
         };
         registry.register(checks2, undefined, 'slow');

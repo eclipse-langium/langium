@@ -14,6 +14,7 @@ import { TypeResolutionError } from './type-system/type-collector/types.js';
 import { escapeRegExp } from '../utils/regex-util.js';
 
 export * from './generated/grammar.js';
+export * from './validation/validator.js';
 
 export type Cardinality = '?' | '*' | '+' | undefined;
 export type Operator = '=' | '+=' | '?=' | undefined;

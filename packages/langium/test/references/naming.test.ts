@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import { describe, expect, test } from 'vitest';
-import { isNamed } from '../../src/index.js';
+import { isNamed } from 'langium';
 
 describe('Naming Tests', () => {
 

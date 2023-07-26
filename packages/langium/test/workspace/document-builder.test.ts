@@ -4,19 +4,12 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { LangiumServices } from '../../src/services.js';
-import type { AstNode, Reference } from '../../src/syntax-tree.js';
-import type { ValidationChecks } from '../../src/validation/validation-registry.js';
-import type { LangiumDocument } from '../../src/workspace/documents.js';
+import type { AstNode, LangiumDocument, LangiumServices, Reference, ValidationChecks } from 'langium';
 import { describe, expect, test } from 'vitest';
 import { CancellationTokenSource } from 'vscode-languageserver';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import vscodeUri from 'vscode-uri';
-import { createLangiumGrammarServices } from '../../src/grammar/langium-grammar-module.js';
-import { createServicesForGrammar } from '../../src/utils/grammar-util.js';
-import { isOperationCancelled } from '../../src/utils/promise-util.js';
-import { DocumentState } from '../../src/workspace/documents.js';
-import { EmptyFileSystem } from '../../src/workspace/file-system-provider.js';
+import { createLangiumGrammarServices, createServicesForGrammar, isOperationCancelled, DocumentState, EmptyFileSystem } from 'langium';
 
 describe('DefaultDocumentBuilder', () => {
     const grammarServices = createLangiumGrammarServices(EmptyFileSystem).grammar;

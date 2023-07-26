@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import { describe, expect, onTestFailed, test } from 'vitest';
-import * as s from '../../src/utils/stream.js';
+import * as s from 'langium';
 
 describe('stream', () => {
 

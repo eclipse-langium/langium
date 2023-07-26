@@ -4,11 +4,11 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { Grammar } from '../../../langium/lib/index.js';
+import type { Grammar } from 'langium';
 import type { LangiumConfig } from '../../src/package.js';
 import { describe, expect, test } from 'vitest';
-import { createLangiumGrammarServices, EmptyFileSystem, expandToString, normalizeEOL } from '../../../langium/lib/index.js';
-import { parseHelper } from '../../../langium/lib/test/index.js';
+import { createLangiumGrammarServices, EmptyFileSystem, expandToString, normalizeEOL } from 'langium';
+import { parseHelper } from 'langium/test';
 import { RelativePath } from '../../src/package.js';
 import { generateAst } from '../../src/generator/ast-generator.js';
 

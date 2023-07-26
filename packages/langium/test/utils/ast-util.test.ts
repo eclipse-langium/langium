@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import { describe, expect, test } from 'vitest';
-import { createLangiumGrammarServices, EmptyFileSystem, streamAst, GrammarAST } from '../../src/index.js';
+import { createLangiumGrammarServices, EmptyFileSystem, streamAst, GrammarAST } from 'langium';
 
 describe('AST Utils', () => {
 

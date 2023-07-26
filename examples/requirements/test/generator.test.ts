@@ -9,7 +9,7 @@ import { extractRequirementModelWithTestModels } from '../src/cli/cli-util.js';
 import { generateSummaryFileHTMLContent } from '../src/cli/generator.js';
 import { createRequirementsAndTestsLangServices } from '../src/language-server/requirements-and-tests-lang-module.js';
 import * as path from 'node:path';
-import { NodeFileSystem } from '../../../packages/langium/lib/node/index.js';
+import { NodeFileSystem } from 'langium/node';
 
 describe('The generator should allow to extract all test cases referencing a specific requirement.', () => {
     test('T005_generator', async () => {

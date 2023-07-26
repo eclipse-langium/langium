@@ -8,9 +8,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
-import type { Module } from '../src/dependency-injection.js';
+import type { Module } from 'langium';
 import { describe, expect, test } from 'vitest';
-import { inject } from '../src/dependency-injection.js';
+import { inject } from 'langium';
 
 describe('A dependency type', () => {
 

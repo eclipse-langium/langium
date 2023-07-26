@@ -5,8 +5,8 @@
  ******************************************************************************/
 
 import { describe, test } from 'vitest';
-import { createLangiumGrammarServices, EmptyFileSystem } from '../../src/index.js';
-import { expectHover } from '../../src/test/index.js';
+import { createLangiumGrammarServices, EmptyFileSystem } from 'langium';
+import { expectHover } from 'langium/test';
 
 const text = `
   /**

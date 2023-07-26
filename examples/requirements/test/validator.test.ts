@@ -8,7 +8,7 @@ import { describe, expect, test } from 'vitest';
 import { extractDocuments } from '../src/cli/cli-util.js';
 import { createRequirementsAndTestsLangServices } from '../src/language-server/requirements-and-tests-lang-module.js';
 import * as path from 'node:path';
-import { NodeFileSystem } from '../../../packages/langium/lib/node/index.js';
+import { NodeFileSystem } from 'langium/node';
 
 describe('A requirement identifier and a test identifier shall contain a number.', () => {
     test('T001_good_case', async () => {

@@ -4,14 +4,11 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { Grammar } from '../../src/index.js';
-import type { InferredType, ParserRule, TerminalRule } from '../../src/grammar/generated/ast.js';
+import type { Grammar, GrammarAST as GrammarTypes } from 'langium';
 import { beforeAll, describe, expect, test } from 'vitest';
-import { createLangiumGrammarServices, EmptyFileSystem, findNameAssignment, getEntryRule, stream } from '../../src/index.js';
-import { isParserRule, isTerminalRule } from '../../src/grammar/generated/ast.js';
-import { LangiumGrammarGrammar } from '../../src/grammar/generated/grammar.js';
-import { getTypeName, isDataTypeRule, terminalRegex } from '../../src/grammar/internal-grammar-util.js';
-import { parseHelper } from '../../src/test/index.js';
+import { createLangiumGrammarServices, EmptyFileSystem, findNameAssignment, getEntryRule, stream, GrammarAST } from 'langium';
+import { LangiumGrammarGrammar, getTypeName, isDataTypeRule, terminalRegex } from 'langium/internal';
+import { parseHelper } from 'langium/test';
 
 describe('Data type rules', () => {
 
@@ -26,12 +23,12 @@ describe('Data type rules', () => {
     RecursiveDataTypeRule2: RecursiveDataTypeRule1? A;
     `;
 
-    let rules: ParserRule[] = [];
+    let rules: GrammarAST.ParserRule[] = [];
 
     beforeAll(async () => {
         rules = (await parser(grammar)).parseResult.value.rules
-            .filter(e => isParserRule(e))
-            .map(e => e as ParserRule);
+            .filter(e => GrammarAST.isParserRule(e))
+            .map(e => e as GrammarAST.ParserRule);
     });
 
     test('Entry rule is not a data type rule', () => {
@@ -66,12 +63,12 @@ describe('Find name assignment in parser rules', () => {
     A infers B: 'a' name=ID (otherA=[B])?;
     `;
 
-    let rules: ParserRule[] = [];
+    let rules: GrammarAST.ParserRule[] = [];
 
     beforeAll(async () => {
         rules = (await parser(grammar)).parseResult.value.rules
-            .filter(e => isParserRule(e))
-            .map(e => e as ParserRule);
+            .filter(e => GrammarAST.isParserRule(e))
+            .map(e => e as GrammarTypes.ParserRule);
     });
 
     test('Should find direct name', () => {
@@ -113,7 +110,7 @@ describe('Get Name from Type', () => {
         expect(getTypeName({
             name: typeName,
             $type: 'Type',
-        } as unknown as InferredType)).toBe(typeName);
+        } as unknown as GrammarTypes.InferredType)).toBe(typeName);
     });
 
     test('Should get name for InferredType', () => {
@@ -121,7 +118,7 @@ describe('Get Name from Type', () => {
         expect(getTypeName({
             name: typeName,
             $type: 'InferredType'
-        } as InferredType)).toBe(typeName);
+        } as GrammarTypes.InferredType)).toBe(typeName);
     });
 
     test('Should throw error for Unknown Type', () => {
@@ -129,7 +126,7 @@ describe('Get Name from Type', () => {
         expect(() => getTypeName({
             name: typeName,
             $type: 'BadType'
-        } as unknown as InferredType)).toThrow('Cannot get name of Unknown Type');
+        } as unknown as GrammarTypes.InferredType)).toThrow('Cannot get name of Unknown Type');
     });
 });
 
@@ -214,13 +211,13 @@ describe('TerminalRule to regex', () => {
     const services = createLangiumGrammarServices(EmptyFileSystem).grammar;
     const parse = parseHelper<Grammar>(services);
 
-    async function getTerminal(input: string, name?: string): Promise<TerminalRule> {
+    async function getTerminal(input: string, name?: string): Promise<GrammarAST.TerminalRule> {
         const text = `
         grammar Test
         ${input}
         `;
         const grammar = (await parse(text)).parseResult.value;
-        const terminals = stream(grammar.rules).filter(isTerminalRule);
+        const terminals = stream(grammar.rules).filter(GrammarAST.isTerminalRule);
         const terminal = name ? terminals.find(e => e.name === name) : terminals.head();
         if (!terminal) {
             throw new Error('Could not find terminal');

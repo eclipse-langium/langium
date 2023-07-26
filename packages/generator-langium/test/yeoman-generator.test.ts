@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import { describe, test } from 'vitest';
-import { normalizeEOL } from '../../langium/lib/index.js';
+import { normalizeEOL } from 'langium';
 import * as path from 'node:path';
 import { createHelpers } from 'yeoman-test';
 

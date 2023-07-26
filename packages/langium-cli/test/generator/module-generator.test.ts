@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import type { LangiumConfig, LangiumLanguageConfig } from '../../src/package.js';
-import type { Grammar } from '../../../langium/lib/index.js';
+import type { Grammar } from 'langium';
 import { describe, expect, test } from 'vitest';
 import { generateModule } from '../../src/generator/module-generator.js';
 import { RelativePath } from '../../src/package.js';

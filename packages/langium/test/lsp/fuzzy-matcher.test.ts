@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import { describe, expect, test } from 'vitest';
-import { DefaultFuzzyMatcher } from '../../src/index.js';
+import { DefaultFuzzyMatcher } from 'langium';
 
 const matcher = new DefaultFuzzyMatcher();
 

@@ -5,8 +5,8 @@
  ******************************************************************************/
 
 import { describe, test, beforeEach } from 'vitest';
-import { createLangiumGrammarServices, createServicesForGrammar, EmptyFileSystem } from '../../src/index.js';
-import { clearDocuments, expectCompletion, parseHelper } from '../../src/test/index.js';
+import { createLangiumGrammarServices, createServicesForGrammar, EmptyFileSystem } from 'langium';
+import { clearDocuments, expectCompletion, parseHelper } from 'langium/test';
 
 describe('Langium completion provider', () => {
 

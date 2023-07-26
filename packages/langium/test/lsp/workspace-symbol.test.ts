@@ -5,8 +5,8 @@
  ******************************************************************************/
 
 import { describe, test } from 'vitest';
-import { createServicesForGrammar } from '../../src/index.js';
-import { expectWorkspaceSymbols, parseHelper } from '../../src/test/index.js';
+import { createServicesForGrammar } from 'langium';
+import { expectWorkspaceSymbols, parseHelper } from 'langium/test';
 
 const grammar = `
  grammar HelloWorld
