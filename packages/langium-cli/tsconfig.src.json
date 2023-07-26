@@ -2,9 +2,11 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "rootDir": "src",
-    "outDir": "out"
+    "outDir": "lib"
   },
-  "references": [{ "path": "../langium/tsconfig.src.json" }],
+  "references": [{
+    "path": "../langium/tsconfig.src.json"
+  }],
   "include": [
     "src/**/*"
   ]

@@ -1,12 +1,12 @@
 {
-  "extends": "./tsconfig.json",
+  "extends": "./tsconfig.src.json",
   "compilerOptions": {
     "noEmit": true,
     "rootDir": "test"
   },
   "references": [
-    { "path": "tsconfig.json" },
-    { "path": "../langium" }
+    { "path": "./tsconfig.src.json" },
+    { "path": "../langium/tsconfig.src.json" }
   ],
   "include": [
     "test/**/*",

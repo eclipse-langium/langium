@@ -1,15 +1,12 @@
+// this file is required for VSCode to work properly
 {
-  "extends": "../../tsconfig.json",
+  "extends": "./tsconfig.src.json",
   "compilerOptions": {
-    "rootDir": "src",
-    "outDir": "out"
+    "noEmit": true,
+    "rootDir": "."
   },
-  "references": [{ "path": "../../packages/langium" }],
   "include": [
-    "src/**/*"
-  ],
-  "exclude": [
-    "out",
-    "/node_modules"
+    "src/**/*",
+    "test/**/*"
   ]
 }
