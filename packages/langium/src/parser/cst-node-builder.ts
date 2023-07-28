@@ -225,7 +225,7 @@ export class CompositeCstNodeImpl extends AbstractCstNode implements CompositeCs
 
     private get firstNonHiddenNode(): CstNode | undefined {
         for (const child of this.content) {
-            if (!child.hidden) {
+            if (!child.hidden && !isNaN(child.offset)) {
                 return child;
             }
         }
@@ -235,7 +235,7 @@ export class CompositeCstNodeImpl extends AbstractCstNode implements CompositeCs
     private get lastNonHiddenNode(): CstNode | undefined {
         for (let i = this.content.length - 1; i >= 0; i--) {
             const child = this.content[i];
-            if (!child.hidden) {
+            if (!child.hidden && !isNaN(child.end)) {
                 return child;
             }
         }
