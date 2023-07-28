@@ -213,7 +213,7 @@ export class LangiumParser extends AbstractLangiumParser {
             cstNode = this.nodeBuilder.buildCompositeNode(feature);
         }
         const subruleResult = this.wrapper.wrapSubrule(idx, rule, args) as any;
-        if (!this.isRecording() && cstNode && cstNode.length > 0) {
+        if (!this.isRecording() && cstNode && cstNode.content.length > 0) {
             this.performSubruleAssignment(subruleResult, feature, cstNode);
         }
     }
