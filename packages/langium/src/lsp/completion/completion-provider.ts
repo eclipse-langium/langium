@@ -16,13 +16,14 @@ import type { LangiumDocument } from '../../workspace/documents';
 import type { NextFeature } from './follow-element-computation';
 import type { NodeKindProvider } from '../node-kind-provider';
 import type { FuzzyMatcher } from '../fuzzy-matcher';
+import type { GrammarConfig } from '../../grammar/grammar-config';
 import type { Lexer } from '../../parser/lexer';
 import type { IToken } from 'chevrotain';
 import { CompletionItemKind, CompletionList, Position } from 'vscode-languageserver';
 import * as ast from '../../grammar/generated/ast';
 import { getExplicitRuleType } from '../../grammar/internal-grammar-util';
 import { getContainerOfType } from '../../utils/ast-util';
-import { findLeafNodeAtOffset } from '../../utils/cst-util';
+import { findDeclarationNodeAtOffset, findLeafNodeAtOffset } from '../../utils/cst-util';
 import { getEntryRule } from '../../utils/grammar-util';
 import { stream } from '../../utils/stream';
 import { findFirstFeatures, findNextFeatures } from './follow-element-computation';
@@ -126,6 +127,7 @@ export class DefaultCompletionProvider implements CompletionProvider {
     protected readonly lexer: Lexer;
     protected readonly nodeKindProvider: NodeKindProvider;
     protected readonly fuzzyMatcher: FuzzyMatcher;
+    protected readonly grammarConfig: GrammarConfig;
 
     constructor(services: LangiumServices) {
         this.scopeProvider = services.references.ScopeProvider;
@@ -135,6 +137,7 @@ export class DefaultCompletionProvider implements CompletionProvider {
         this.lexer = services.parser.Lexer;
         this.nodeKindProvider = services.shared.lsp.NodeKindProvider;
         this.fuzzyMatcher = services.shared.lsp.FuzzyMatcher;
+        this.grammarConfig = services.parser.GrammarConfig;
     }
 
     async getCompletion(document: LangiumDocument, params: CompletionParams): Promise<CompletionList | undefined> {
@@ -282,7 +285,7 @@ export class DefaultCompletionProvider implements CompletionProvider {
     }
 
     protected findDataTypeRuleStart(cst: CstNode, offset: number): [number, number] | undefined {
-        let containerNode: CstNode | undefined = findLeafNodeAtOffset(cst, offset);
+        let containerNode: CstNode | undefined = findDeclarationNodeAtOffset(cst, offset, this.grammarConfig.nameRegexp);
         // Identify whether we the element was parsed as part of a data type rule
         while (getContainerOfType(containerNode?.grammarSource, ast.isParserRule)?.dataType) {
             // Use the container to find the correct parent element

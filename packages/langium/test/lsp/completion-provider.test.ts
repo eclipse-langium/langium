@@ -202,3 +202,68 @@ describe('Path import completion', () => {
         });
     });
 });
+
+describe('Completion in data type rules', () => {
+
+    test('Can perform completion for fully qualified names', async () => {
+        const grammar = `
+        grammar FQNCompletionTest
+
+        entry Model:
+            (persons+=Person | greetings+=Greeting)*;
+
+        Person:
+            'person' name=FQN;
+
+        Greeting:
+            'Hello' person=[Person:FQN] '!';
+
+        FQN returns string: ID ('.' ID)*;
+
+        hidden terminal WS: /\\s+/;
+        terminal ID: /[_a-zA-Z][\\w_]*/;
+        `;
+
+        const services = await createServicesForGrammar({ grammar });
+        const completion = expectCompletion(services);
+
+        const text = `
+            person John.Smith.Junior
+            person John.Smith.Senior
+
+            Hello <|>John<|>.Smi<|>th.Jun<|>ior
+        `;
+
+        const names = [
+            'John.Smith.Junior',
+            'John.Smith.Senior'
+        ];
+
+        await completion({
+            text: text,
+            index: 0,
+            expectedItems: names
+        });
+
+        await completion({
+            text: text,
+            index: 1,
+            expectedItems: names
+        });
+
+        await completion({
+            text: text,
+            index: 2,
+            expectedItems: names
+        });
+
+        await completion({
+            text: text,
+            index: 3,
+            expectedItems: [
+                'John.Smith.Junior'
+            ]
+        });
+    });
+
+});
