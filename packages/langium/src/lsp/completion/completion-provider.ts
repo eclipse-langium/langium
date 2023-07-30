@@ -286,13 +286,17 @@ export class DefaultCompletionProvider implements CompletionProvider {
 
     protected findDataTypeRuleStart(cst: CstNode, offset: number): [number, number] | undefined {
         let containerNode: CstNode | undefined = findDeclarationNodeAtOffset(cst, offset, this.grammarConfig.nameRegexp);
-        // Identify whether we the element was parsed as part of a data type rule
-        while (getContainerOfType(containerNode?.grammarSource, ast.isParserRule)?.dataType) {
-            // Use the container to find the correct parent element
-            containerNode = containerNode?.container;
-        }
-        if (containerNode) {
-            return [containerNode.offset, containerNode.end];
+        // Identify whether the element was parsed as part of a data type rule
+        let isDataTypeNode = Boolean(getContainerOfType(containerNode?.grammarSource, ast.isParserRule)?.dataType);
+        if (isDataTypeNode) {
+            while (isDataTypeNode) {
+                // Use the container to find the correct parent element
+                containerNode = containerNode?.container;
+                isDataTypeNode = Boolean(getContainerOfType(containerNode?.grammarSource, ast.isParserRule)?.dataType);
+            }
+            if (containerNode) {
+                return [containerNode.offset, containerNode.end];
+            }
         }
         return undefined;
     }
