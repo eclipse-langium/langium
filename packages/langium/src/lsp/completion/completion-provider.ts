@@ -10,7 +10,7 @@ import type { LangiumCompletionParser } from '../../parser/langium-parser';
 import type { NameProvider } from '../../references/name-provider';
 import type { ScopeProvider } from '../../references/scope-provider';
 import type { LangiumServices } from '../../services';
-import type { AstNode, AstNodeDescription, Reference, ReferenceInfo } from '../../syntax-tree';
+import type { AstNode, AstNodeDescription, CstNode, Reference, ReferenceInfo } from '../../syntax-tree';
 import type { MaybePromise } from '../../utils/promise-util';
 import type { LangiumDocument } from '../../workspace/documents';
 import type { NextFeature } from './follow-element-computation';
@@ -222,13 +222,29 @@ export class DefaultCompletionProvider implements CompletionProvider {
         const textDocument = document.textDocument;
         const text = textDocument.getText();
         const offset = textDocument.offsetAt(position);
-        const { nextTokenStart, nextTokenEnd, previousTokenStart, previousTokenEnd } = this.backtrackToAnyToken(text, offset);
         const partialContext = {
             document,
             textDocument,
             offset,
             position
         };
+        // Data type rules need special handling, as their tokens are irrelevant for completion purposes.
+        // If we encounter a data type rule at the current offset, we jump to the start of the data type rule.
+        const dataTypeRuleOffsets = this.findDataTypeRuleStart(cst, offset);
+        if (dataTypeRuleOffsets) {
+            const [ruleStart, ruleEnd] = dataTypeRuleOffsets;
+            const parentNode = findLeafNodeAtOffset(cst, ruleStart)?.astNode;
+            const previousTokenFeatures = this.findFeaturesAt(textDocument, ruleStart);
+            yield {
+                ...partialContext,
+                node: parentNode,
+                tokenOffset: ruleStart,
+                tokenEndOffset: ruleEnd,
+                features: previousTokenFeatures,
+            };
+        }
+        // For all other purposes, it's enough to jump to the start of the current/previous token
+        const { nextTokenStart, nextTokenEnd, previousTokenStart, previousTokenEnd } = this.backtrackToAnyToken(text, offset);
         let astNode: AstNode | undefined;
         if (previousTokenStart !== undefined && previousTokenEnd !== undefined && previousTokenEnd === offset) {
             astNode = findLeafNodeAtOffset(cst, previousTokenStart)?.astNode;
@@ -263,6 +279,19 @@ export class DefaultCompletionProvider implements CompletionProvider {
                 features: nextTokenFeatures,
             };
         }
+    }
+
+    protected findDataTypeRuleStart(cst: CstNode, offset: number): [number, number] | undefined {
+        let containerNode: CstNode | undefined = findLeafNodeAtOffset(cst, offset);
+        // Identify whether we the element was parsed as part of a data type rule
+        while (getContainerOfType(containerNode?.grammarSource, ast.isParserRule)?.dataType) {
+            // Use the container to find the correct parent element
+            containerNode = containerNode?.container;
+        }
+        if (containerNode) {
+            return [containerNode.offset, containerNode.end];
+        }
+        return undefined;
     }
 
     /**
