@@ -228,33 +228,40 @@ describe('Completion in data type rules', () => {
         const completion = expectCompletion(services);
 
         const text = `
+            person John.Miller
             person John.Smith.Junior
             person John.Smith.Senior
 
             Hello <|>John<|>.Smi<|>th.Jun<|>ior
         `;
 
-        const names = [
-            'John.Smith.Junior',
-            'John.Smith.Senior'
-        ];
-
         await completion({
             text: text,
             index: 0,
-            expectedItems: names
+            expectedItems: [
+                'John.Miller',
+                'John.Smith.Junior',
+                'John.Smith.Senior'
+            ]
         });
 
         await completion({
             text: text,
             index: 1,
-            expectedItems: names
+            expectedItems: [
+                'John.Miller',
+                'John.Smith.Junior',
+                'John.Smith.Senior'
+            ]
         });
 
         await completion({
             text: text,
             index: 2,
-            expectedItems: names
+            expectedItems: [
+                'John.Smith.Junior',
+                'John.Smith.Senior'
+            ]
         });
 
         await completion({
