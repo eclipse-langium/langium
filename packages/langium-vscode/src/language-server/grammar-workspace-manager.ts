@@ -8,10 +8,9 @@ import type { Ignore } from 'ignore';
 import type { LangiumSharedServices, ConfigurationProvider, FileSystemNode } from 'langium';
 import type { WorkspaceFolder } from 'vscode-languageserver-protocol';
 import ignore from 'ignore';
-import { DefaultWorkspaceManager } from 'langium';
+import { DefaultWorkspaceManager, URI, UriUtils } from 'langium';
 import * as path from 'path';
 import { CancellationToken } from 'vscode-languageserver-protocol';
-import vscodeUri from 'vscode-uri';
 
 const CONFIG_KEY = 'build';
 
@@ -42,9 +41,9 @@ export class LangiumGrammarWorkspaceManager extends DefaultWorkspaceManager {
     protected override includeEntry(workspaceFolder: WorkspaceFolder, entry: FileSystemNode, fileExtensions: string[]): boolean {
         if (this.matcher) {
             // create path relative to workspace folder root: /user/foo/workspace/entry.txt -> entry.txt
-            const relPath = path.relative(vscodeUri.URI.parse(workspaceFolder.uri).path, entry.uri.path);
+            const relPath = path.relative(URI.parse(workspaceFolder.uri).path, entry.uri.path);
             const ignored = this.matcher.ignores(relPath);
-            return !ignored && (entry.isDirectory || (entry.isFile && fileExtensions.includes(vscodeUri.Utils.extname(entry.uri))));
+            return !ignored && (entry.isDirectory || (entry.isFile && fileExtensions.includes(UriUtils.extname(entry.uri))));
         }
         return super.includeEntry(workspaceFolder, entry, fileExtensions);
     }

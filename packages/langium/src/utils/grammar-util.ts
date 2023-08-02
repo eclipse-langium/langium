@@ -11,7 +11,6 @@ import type { IParserConfig } from '../parser/parser-config.js';
 import type { LangiumGeneratedServices, LangiumGeneratedSharedServices, LangiumServices, LangiumSharedServices, PartialLangiumServices, PartialLangiumSharedServices } from '../services.js';
 import type { AstNode, CstNode } from '../syntax-tree.js';
 import type { Mutable } from '../utils/ast-util.js';
-import vscodeUri from 'vscode-uri';
 import { createDefaultModule, createDefaultSharedModule } from '../default-module.js';
 import { inject } from '../dependency-injection.js';
 import { interpretAstReflection } from '../grammar/ast-reflection-interpreter.js';
@@ -22,6 +21,7 @@ import { isCompositeCstNode } from '../syntax-tree.js';
 import { getContainerOfType, getDocument, streamAllContents } from '../utils/ast-util.js';
 import { streamCst } from '../utils/cst-util.js';
 import { EmptyFileSystem } from '../workspace/file-system-provider.js';
+import { URI } from './uri-util.js';
 
 /**
  * Returns the entry rule of the given grammar, if any. If the grammar file does not contain an entry rule,
@@ -288,7 +288,7 @@ function findNameAssignmentInternal(type: ast.AbstractType, cache: Map<ast.Abstr
 export function loadGrammarFromJson(json: string): ast.Grammar {
     const services = createLangiumGrammarServices(EmptyFileSystem).grammar;
     const astNode = services.serializer.JsonSerializer.deserialize(json) as Mutable<ast.Grammar>;
-    services.shared.workspace.LangiumDocumentFactory.fromModel(astNode, vscodeUri.URI.parse(`memory://${astNode.name ?? 'grammar'}.langium`));
+    services.shared.workspace.LangiumDocumentFactory.fromModel(astNode, URI.parse(`memory://${astNode.name ?? 'grammar'}.langium`));
     return astNode;
 }
 
@@ -305,7 +305,7 @@ export async function createServicesForGrammar(config: {
     sharedModule?: Module<LangiumSharedServices, PartialLangiumSharedServices>
 }): Promise<LangiumServices> {
     const grammarServices = config.grammarServices ?? createLangiumGrammarServices(EmptyFileSystem).grammar;
-    const uri = vscodeUri.URI.parse('memory:///grammar.langium');
+    const uri = URI.parse('memory:///grammar.langium');
     const factory = grammarServices.shared.workspace.LangiumDocumentFactory;
     const grammarDocument = typeof config.grammar === 'string'
         ? factory.fromString(config.grammar, uri)

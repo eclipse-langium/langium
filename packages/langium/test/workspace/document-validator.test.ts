@@ -6,8 +6,7 @@
 
 import type { AstNode, ValidationChecks } from 'langium';
 import { describe, expect, test } from 'vitest';
-import { createLangiumGrammarServices, createServicesForGrammar, EmptyFileSystem } from 'langium';
-import vscodeUri from 'vscode-uri';
+import { createLangiumGrammarServices, createServicesForGrammar, EmptyFileSystem, URI } from 'langium';
 
 describe('DefaultDocumentValidator', () => {
     const grammarServices = createLangiumGrammarServices(EmptyFileSystem).grammar;
@@ -39,7 +38,7 @@ describe('DefaultDocumentValidator', () => {
             foo 1
             foo 11
             foo bar 2
-        `, vscodeUri.URI.parse('file:///test.txt'));
+        `, URI.parse('file:///test.txt'));
         const diagnostics = await services.validation.DocumentValidator.validateDocument(document);
         expect(diagnostics.map(d => d.message)).toEqual([
             'unexpected character: ->b<- at offset: 54, skipped 3 characters.',
@@ -53,7 +52,7 @@ describe('DefaultDocumentValidator', () => {
             foo 1
             foo 11
             foo foo 2
-        `, vscodeUri.URI.parse('file:///test.txt'));
+        `, URI.parse('file:///test.txt'));
         const diagnostics = await services.validation.DocumentValidator.validateDocument(document);
         expect(diagnostics.map(d => d.message)).toEqual([
             'Expecting token of type \'INT\' but found `foo`.',
@@ -67,7 +66,7 @@ describe('DefaultDocumentValidator', () => {
             foo 1
             foo 11
             foo bar 2
-        `, vscodeUri.URI.parse('file:///test.txt'));
+        `, URI.parse('file:///test.txt'));
         const diagnostics = await services.validation.DocumentValidator.validateDocument(document, {
             stopAfterLexingErrors: true
         });
@@ -82,7 +81,7 @@ describe('DefaultDocumentValidator', () => {
             foo 1
             foo 11
             foo foo 2
-        `, vscodeUri.URI.parse('file:///test.txt'));
+        `, URI.parse('file:///test.txt'));
         const diagnostics = await services.validation.DocumentValidator.validateDocument(document, {
             stopAfterParsingErrors: true
         });

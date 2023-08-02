@@ -8,8 +8,7 @@ import type { AstNode, LangiumDocument, LangiumServices, Reference, ValidationCh
 import { describe, expect, test } from 'vitest';
 import { CancellationTokenSource } from 'vscode-languageserver';
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import vscodeUri from 'vscode-uri';
-import { createLangiumGrammarServices, createServicesForGrammar, isOperationCancelled, DocumentState, EmptyFileSystem } from 'langium';
+import { createLangiumGrammarServices, createServicesForGrammar, isOperationCancelled, DocumentState, EmptyFileSystem, URI } from 'langium';
 
 describe('DefaultDocumentBuilder', () => {
     const grammarServices = createLangiumGrammarServices(EmptyFileSystem).grammar;
@@ -55,14 +54,14 @@ describe('DefaultDocumentBuilder', () => {
             foo 11 B
             bar A
             bar B
-        `, vscodeUri.URI.parse('file:///test1.txt'));
+        `, URI.parse('file:///test1.txt'));
         documents.addDocument(document1);
         const document2 = documentFactory.fromString(`
             foo 1 C
             foo 11 D
             bar C
             bar D
-        `, vscodeUri.URI.parse('file:///test2.txt'));
+        `, URI.parse('file:///test2.txt'));
         documents.addDocument(document2);
 
         const builder = services.shared.workspace.DocumentBuilder;
@@ -99,13 +98,13 @@ describe('DefaultDocumentBuilder', () => {
             foo 11 B
             bar A
             bar B
-        `, vscodeUri.URI.parse('file:///test1.txt'));
+        `, URI.parse('file:///test1.txt'));
         documents.addDocument(document1);
         const document2 = documentFactory.fromString(`
             foo 1 C
             foo 11 A
             bar C
-        `, vscodeUri.URI.parse('file:///test2.txt'));
+        `, URI.parse('file:///test2.txt'));
         documents.addDocument(document2);
 
         const builder = services.shared.workspace.DocumentBuilder;
@@ -148,7 +147,7 @@ describe('DefaultDocumentBuilder', () => {
             foo 11 B
             bar AnotherStrangeBar
             bar B
-        `, vscodeUri.URI.parse('file:///test1.txt'));
+        `, URI.parse('file:///test1.txt'));
         documents.addDocument(document1);
 
         const builder = services.shared.workspace.DocumentBuilder;
@@ -183,7 +182,7 @@ describe('DefaultDocumentBuilder', () => {
             foo 11 B
             bar AnotherStrangeBar
             bar B
-        `, vscodeUri.URI.parse('file:///test1.txt'));
+        `, URI.parse('file:///test1.txt'));
         documents.addDocument(document1);
 
         const builder = services.shared.workspace.DocumentBuilder;

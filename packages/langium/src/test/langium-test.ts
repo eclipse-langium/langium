@@ -10,8 +10,8 @@ import type { AstNode, CstNode, Properties } from '../syntax-tree.js';
 import type { LangiumDocument } from '../workspace/documents.js';
 import type { BuildOptions } from '../workspace/document-builder.js';
 import { CancellationTokenSource, DiagnosticSeverity, MarkupContent } from 'vscode-languageserver';
-import vscodeUri from 'vscode-uri';
 import { escapeRegExp } from '../utils/regex-util.js';
+import { URI } from '../utils/uri-util.js';
 import { findNodeForProperty } from '../utils/grammar-util.js';
 import { SemanticTokensDecoder } from '../lsp/semantic-token-provider.js';
 import { TextDocument } from 'vscode-languageserver-textdocument';
@@ -26,7 +26,7 @@ export function parseHelper<T extends AstNode = AstNode>(services: LangiumServic
     const documentBuilder = services.shared.workspace.DocumentBuilder;
     return async (input, options) => {
         const randomNumber = Math.floor(Math.random() * 10000000) + 1000000;
-        const uri = vscodeUri.URI.parse(options?.documentUri ?? `file:///${randomNumber}${metaData.fileExtensions[0]}`);
+        const uri = URI.parse(options?.documentUri ?? `file:///${randomNumber}${metaData.fileExtensions[0]}`);
         const document = services.shared.workspace.LangiumDocumentFactory.fromString<T>(input, uri);
         services.shared.workspace.LangiumDocuments.addDocument(document);
         await documentBuilder.build([document], options);

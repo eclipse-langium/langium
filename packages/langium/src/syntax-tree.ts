@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import type { TokenType } from 'chevrotain';
-import type { URI } from 'vscode-uri';
+import type { URI } from './utils/uri-util.js';
 import type { AbstractElement } from './grammar/generated/ast.js';
 import type { DocumentSegment, LangiumDocument } from './workspace/documents.js';
 

@@ -15,7 +15,7 @@ import type { LangiumDocument } from '../workspace/documents.js';
 import { DocumentHighlight } from 'vscode-languageserver';
 import { getDocument } from '../utils/ast-util.js';
 import { findDeclarationNodeAtOffset } from '../utils/cst-util.js';
-import { equalURI } from '../utils/uri-util.js';
+import { UriUtils } from '../utils/uri-util.js';
 
 /**
  * Language-specific service for handling document highlight requests.
@@ -52,7 +52,7 @@ export class DefaultDocumentHighlightProvider implements DocumentHighlightProvid
         }
         const targetAstNode = this.references.findDeclaration(selectedNode);
         if (targetAstNode) {
-            const includeDeclaration = equalURI(getDocument(targetAstNode).uri, document.uri);
+            const includeDeclaration = UriUtils.equals(getDocument(targetAstNode).uri, document.uri);
             const options: FindReferencesOptions = { documentUri: document.uri, includeDeclaration };
             const references = this.references.findReferences(targetAstNode, options);
             return references.map(ref => this.createDocumentHighlight(ref)).toArray();

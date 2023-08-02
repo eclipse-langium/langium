@@ -14,8 +14,8 @@ import type { Stream } from '../utils/stream.js';
 import type { ReferenceDescription } from '../workspace/ast-descriptions.js';
 import type { LangiumDocument, LangiumDocuments } from '../workspace/documents.js';
 import { SymbolKind } from 'vscode-languageserver';
-import vscodeUri from 'vscode-uri';
 import { findDeclarationNodeAtOffset } from '../utils/cst-util.js';
+import { URI } from '../utils/uri-util.js';
 
 /**
  * Language-specific service for handling call hierarchy requests.
@@ -82,7 +82,7 @@ export abstract class AbstractCallHierarchyProvider implements CallHierarchyProv
     }
 
     incomingCalls(params: CallHierarchyIncomingCallsParams): CallHierarchyIncomingCall[] | undefined {
-        const document = this.documents.getOrCreateDocument(vscodeUri.URI.parse(params.item.uri));
+        const document = this.documents.getOrCreateDocument(URI.parse(params.item.uri));
         const rootNode = document.parseResult.value;
         const targetNode = findDeclarationNodeAtOffset(
             rootNode.$cstNode,
@@ -108,7 +108,7 @@ export abstract class AbstractCallHierarchyProvider implements CallHierarchyProv
     protected abstract getIncomingCalls(node: AstNode, references: Stream<ReferenceDescription>): CallHierarchyIncomingCall[] | undefined;
 
     outgoingCalls(params: CallHierarchyOutgoingCallsParams): CallHierarchyOutgoingCall[] | undefined {
-        const document = this.documents.getOrCreateDocument(vscodeUri.URI.parse(params.item.uri));
+        const document = this.documents.getOrCreateDocument(URI.parse(params.item.uri));
         const rootNode = document.parseResult.value;
         const targetNode = findDeclarationNodeAtOffset(
             rootNode.$cstNode,

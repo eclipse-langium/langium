@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import type { Disposable } from 'vscode-languageserver';
-import type { URI } from 'vscode-uri';
+import type { URI } from './uri-util.js';
 import type { LangiumSharedServices } from '../services.js';
 
 export abstract class DisposableCache implements Disposable {

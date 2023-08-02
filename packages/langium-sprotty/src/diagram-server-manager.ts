@@ -5,13 +5,12 @@
  ******************************************************************************/
 
 import type { CancellationToken, Connection } from 'vscode-languageserver';
-import type { URI } from 'vscode-uri';
 import type { ActionMessage, DiagramOptions, DiagramServer, RequestModelAction } from 'sprotty-protocol';
-import type { LangiumDocument, ServiceRegistry } from 'langium';
+import type { LangiumDocument, ServiceRegistry, URI } from 'langium';
 import type { LangiumSprottyServices, LangiumSprottySharedServices } from './sprotty-services.js';
 import type { LangiumDiagramGeneratorArguments } from './diagram-generator.js';
 import { isRequestAction, RejectAction } from 'sprotty-protocol';
-import { DocumentState, equalURI, interruptAndCheck, stream } from 'langium';
+import { DocumentState, UriUtils, interruptAndCheck, stream } from 'langium';
 import { DiagramActionNotification } from './lsp.js';
 
 /**
@@ -56,7 +55,7 @@ export class DefaultDiagramServerManager implements DiagramServerManager {
     protected documentsUpdated(changed: URI[], deleted: URI[]): void {
         this.changedUris.push(...changed);
         deleted.forEach(uri1 => {
-            const index = this.changedUris.findIndex(uri2 => equalURI(uri1, uri2));
+            const index = this.changedUris.findIndex(uri2 => UriUtils.equals(uri1, uri2));
             if (index >= 0) {
                 this.changedUris.splice(index, 1);
             }
@@ -69,11 +68,11 @@ export class DefaultDiagramServerManager implements DiagramServerManager {
     protected documentsBuilt(built: LangiumDocument[], cancelToken: CancellationToken): Promise<void> {
         stream(built)
             // Only consider documents that were previously marked as changed
-            .filter(doc => this.changedUris.some(uri => equalURI(uri, doc.uri)))
+            .filter(doc => this.changedUris.some(uri => UriUtils.equals(uri, doc.uri)))
             // Track the document URIs to diagram servers via the `sourceUri` option sent with the `RequestModelAction`
             .map(doc => <[LangiumDocument, DiagramServer]>[
                 doc,
-                stream(this.diagramServerMap.values()).find(server => equalURI(doc.uri, server.state.options?.sourceUri as string))
+                stream(this.diagramServerMap.values()).find(server => UriUtils.equals(doc.uri, server.state.options?.sourceUri as string))
             ])
             .forEach(entry => {
                 if (entry[1]) {

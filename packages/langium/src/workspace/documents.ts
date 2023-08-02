@@ -14,9 +14,8 @@ import type { Mutable } from '../utils/ast-util.js';
 import type { MultiMap } from '../utils/collections.js';
 import type { Stream } from '../utils/stream.js';
 import type { FileSystemProvider } from './file-system-provider.js';
-import type { URI } from 'vscode-uri';
+import { URI } from '../utils/uri-util.js';
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import vscodeUri from 'vscode-uri';
 import { stream } from '../utils/stream.js';
 
 /**
@@ -152,7 +151,7 @@ export class DefaultLangiumDocumentFactory implements LangiumDocumentFactory {
     }
 
     fromTextDocument<T extends AstNode = AstNode>(textDocument: TextDocument, uri?: URI): LangiumDocument<T> {
-        return this.create<T>(uri ?? vscodeUri.URI.parse(textDocument.uri), textDocument);
+        return this.create<T>(uri ?? URI.parse(textDocument.uri), textDocument);
     }
 
     fromString<T extends AstNode = AstNode>(text: string, uri: URI): LangiumDocument<T> {

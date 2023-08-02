@@ -4,13 +4,12 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { Module } from 'langium';
+import { URI, type Module } from 'langium';
 import type { DiagramOptions } from 'sprotty-protocol';
 import type { LangiumSprottyServices, LangiumSprottySharedServices, SprottySharedServices } from './sprotty-services.js';
 import { DiagramServer } from 'sprotty-protocol';
 import { DefaultDiagramServerManager } from './diagram-server-manager.js';
 import { DiagramActionNotification } from './lsp.js';
-import vscodeUri from 'vscode-uri';
 
 export const defaultDiagramServerFactory =
 (services: LangiumSprottySharedServices): ((clientId: string, options?: DiagramOptions) => DiagramServer) => {
@@ -21,7 +20,7 @@ export const defaultDiagramServerFactory =
         if (!sourceUri) {
             throw new Error("Missing 'sourceUri' option in request.");
         }
-        const language = serviceRegistry.getServices(vscodeUri.URI.parse(sourceUri as string)) as LangiumSprottyServices;
+        const language = serviceRegistry.getServices(URI.parse(sourceUri as string)) as LangiumSprottyServices;
         if (!language.diagram) {
             throw new Error(`The '${language.LanguageMetaData.languageId}' language does not support diagrams.`);
         }

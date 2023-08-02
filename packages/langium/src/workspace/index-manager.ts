@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { URI } from 'vscode-uri';
+import type { URI } from '../utils/uri-util.js';
 import type { ServiceRegistry } from '../service-registry.js';
 import type { LangiumSharedServices } from '../services.js';
 import type { AstNode, AstNodeDescription, AstReflection } from '../syntax-tree.js';
@@ -14,7 +14,7 @@ import type { LangiumDocument, LangiumDocuments } from './documents.js';
 import { CancellationToken } from 'vscode-languageserver';
 import { getDocument } from '../utils/ast-util.js';
 import { stream } from '../utils/stream.js';
-import { equalURI } from '../utils/uri-util.js';
+import { UriUtils } from '../utils/uri-util.js';
 import { ContextCache } from '../utils/caching.js';
 
 /**
@@ -115,7 +115,7 @@ export class DefaultIndexManager implements IndexManager {
         const result: ReferenceDescription[] = [];
         this.referenceIndex.forEach(docRefs => {
             docRefs.forEach(refDescr => {
-                if (equalURI(refDescr.targetUri, targetDocUri) && refDescr.targetPath === astNodePath) {
+                if (UriUtils.equals(refDescr.targetUri, targetDocUri) && refDescr.targetPath === astNodePath) {
                     result.push(refDescr);
                 }
             });

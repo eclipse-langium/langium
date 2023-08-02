@@ -12,11 +12,10 @@ import { DefaultCompletionProvider } from '../../lsp/completion/completion-provi
 import type { LangiumServices } from '../../services.js';
 import type { MaybePromise } from '../../utils/promise-util.js';
 import { getContainerOfType } from '../../utils/ast-util.js';
-import { equalURI, relativeURI } from '../../utils/uri-util.js';
 import type { LangiumDocument, LangiumDocuments } from '../../workspace/documents.js';
 import type { AbstractElement } from '../generated/ast.js';
 import { isAssignment } from '../generated/ast.js';
-import vscodeUri from 'vscode-uri';
+import { UriUtils } from '../../utils/uri-util.js';
 
 export class LangiumGrammarCompletionProvider extends DefaultCompletionProvider {
 
@@ -74,13 +73,13 @@ export class LangiumGrammarCompletionProvider extends DefaultCompletionProvider 
     private getAllFiles(document: LangiumDocument): string[] {
         const documents = this.documents().all;
         const uri = document.uri.toString();
-        const dirname = vscodeUri.Utils.dirname(document.uri).toString();
+        const dirname = UriUtils.dirname(document.uri).toString();
         const paths: string[] = [];
         for (const doc of documents) {
-            if (!equalURI(doc.uri, uri)) {
+            if (!UriUtils.equals(doc.uri, uri)) {
                 const docUri = doc.uri.toString();
-                const uriWithoutExt = docUri.substring(0, docUri.length - vscodeUri.Utils.extname(doc.uri).length);
-                let relativePath = relativeURI(dirname, uriWithoutExt);
+                const uriWithoutExt = docUri.substring(0, docUri.length - UriUtils.extname(doc.uri).length);
+                let relativePath = UriUtils.relative(dirname, uriWithoutExt);
                 if (!relativePath.startsWith('.')) {
                     relativePath = `./${relativePath}`;
                 }

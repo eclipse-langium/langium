@@ -5,8 +5,8 @@
  ******************************************************************************/
 
 import { CancellationToken } from 'vscode-languageserver';
-import vscodeUri from 'vscode-uri';
 import { interruptAndCheck } from '../utils/promise-util.js';
+import { URI, UriUtils } from '../utils/uri-util.js';
 import type { WorkspaceFolder } from 'vscode-languageserver';
 import type { ServiceRegistry } from '../service-registry.js';
 import type { LangiumSharedServices } from '../services.js';
@@ -78,7 +78,7 @@ export class DefaultWorkspaceManager implements WorkspaceManager {
         // The mutex prevents anything from performing a workspace build until we check the cancellation token
         await this.loadAdditionalDocuments(folders, collector);
         await Promise.all(
-            folders.map(wf => [wf, this.getRootFolder(wf)] as [WorkspaceFolder, vscodeUri.URI])
+            folders.map(wf => [wf, this.getRootFolder(wf)] as [WorkspaceFolder, URI])
                 .map(async entry => this.traverseFolder(...entry, fileExtensions, collector))
         );
         // Only after creating all documents do we check whether we need to cancel the initialization
@@ -101,15 +101,15 @@ export class DefaultWorkspaceManager implements WorkspaceManager {
      * The default implementation returns the URI of the workspace folder, but you can override
      * this to return a subfolder like `src` instead.
      */
-    protected getRootFolder(workspaceFolder: WorkspaceFolder): vscodeUri.URI {
-        return vscodeUri.URI.parse(workspaceFolder.uri);
+    protected getRootFolder(workspaceFolder: WorkspaceFolder): URI {
+        return URI.parse(workspaceFolder.uri);
     }
 
     /**
      * Traverse the file system folder identified by the given URI and its subfolders. All
      * contained files that match the file extensions are added to the collector.
      */
-    protected async traverseFolder(workspaceFolder: WorkspaceFolder, folderPath: vscodeUri.URI, fileExtensions: string[], collector: (document: LangiumDocument) => void): Promise<void> {
+    protected async traverseFolder(workspaceFolder: WorkspaceFolder, folderPath: URI, fileExtensions: string[], collector: (document: LangiumDocument) => void): Promise<void> {
         const content = await this.fileSystemProvider.readDirectory(folderPath);
         await Promise.all(content.map(async entry => {
             if (this.includeEntry(workspaceFolder, entry, fileExtensions)) {
@@ -127,14 +127,14 @@ export class DefaultWorkspaceManager implements WorkspaceManager {
      * Determine whether the given folder entry shall be included while indexing the workspace.
      */
     protected includeEntry(workspaceFolder: WorkspaceFolder, entry: FileSystemNode, fileExtensions: string[]): boolean {
-        const name = vscodeUri.Utils.basename(entry.uri);
+        const name = UriUtils.basename(entry.uri);
         if (name.startsWith('.')) {
             return false;
         }
         if (entry.isDirectory) {
             return name !== 'node_modules' && name !== 'out';
         } else if (entry.isFile) {
-            const extname = vscodeUri.Utils.extname(entry.uri);
+            const extname = UriUtils.extname(entry.uri);
             return fileExtensions.includes(extname);
         }
         return false;

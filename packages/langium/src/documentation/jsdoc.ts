@@ -6,9 +6,9 @@
 
 import type { CstNode } from '../syntax-tree.js';
 import { Position, Range } from 'vscode-languageserver';
-import vscodeUri from 'vscode-uri';
 import { NEWLINE_REGEXP } from '../generator/template-string.js';
 import { escapeRegExp } from '../utils/regex-util.js';
+import { URI } from '../utils/uri-util.js';
 
 export interface JSDocComment extends JSDocValue {
     readonly elements: JSDocElement[]
@@ -613,7 +613,7 @@ function renderInlineTag(tag: string, content: string, options: JSDocRenderOptio
 
 function renderLinkDefault(content: string, display: string): string {
     try {
-        vscodeUri.URI.parse(content, true);
+        URI.parse(content, true);
         return `[${display}](${content})`;
     } catch {
         return content;

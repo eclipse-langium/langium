@@ -8,8 +8,7 @@
 
 import { beforeEach, describe, expect, test } from 'vitest';
 import type { DefaultDocumentBuilder} from 'langium';
-import { DocumentCache, EmptyFileSystem, WorkspaceCache, createLangiumGrammarServices } from 'langium';
-import { URI } from 'vscode-uri';
+import { DocumentCache, EmptyFileSystem, URI, WorkspaceCache, createLangiumGrammarServices } from 'langium';
 
 const services = createLangiumGrammarServices(EmptyFileSystem);
 const workspace = services.shared.workspace;

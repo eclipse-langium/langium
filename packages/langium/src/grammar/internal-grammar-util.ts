@@ -4,14 +4,14 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { URI } from 'vscode-uri';
+import type { URI } from '../utils/uri-util.js';
 import type { LangiumDocuments } from '../workspace/documents.js';
 import type { AstNode } from '../syntax-tree.js';
 import * as ast from '../grammar/generated/ast.js';
-import vscodeUri from 'vscode-uri';
 import { getDocument, streamAllContents } from '../utils/ast-util.js';
 import { TypeResolutionError } from './type-system/type-collector/types.js';
 import { escapeRegExp } from '../utils/regex-util.js';
+import { UriUtils } from '../utils/uri-util.js';
 
 export * from './generated/grammar.js';
 export * from './validation/validator.js';
@@ -357,12 +357,12 @@ export function resolveImportUri(imp: ast.GrammarImport): URI | undefined {
     if (imp.path === undefined || imp.path.length === 0) {
         return undefined;
     }
-    const dirUri = vscodeUri.Utils.dirname(getDocument(imp).uri);
+    const dirUri = UriUtils.dirname(getDocument(imp).uri);
     let grammarPath = imp.path;
     if (!grammarPath.endsWith('.langium')) {
         grammarPath += '.langium';
     }
-    return vscodeUri.Utils.resolvePath(dirUri, grammarPath);
+    return UriUtils.resolvePath(dirUri, grammarPath);
 }
 
 export function resolveImport(documents: LangiumDocuments, imp: ast.GrammarImport): ast.Grammar | undefined {

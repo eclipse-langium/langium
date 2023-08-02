@@ -29,13 +29,13 @@ import type {
 import type { LangiumServices, LangiumSharedServices } from '../services.js';
 import type { LangiumDocument } from '../workspace/documents.js';
 import { Emitter, FileChangeType, LSPErrorCodes, ResponseError, TextDocumentSyncKind } from 'vscode-languageserver';
-import vscodeUri from 'vscode-uri';
 import { eagerLoad } from '../dependency-injection.js';
 import { isOperationCancelled } from '../utils/promise-util.js';
 import { DocumentState } from '../workspace/documents.js';
 import { mergeCompletionProviderOptions } from './completion/completion-provider.js';
 import { DefaultSemanticTokenOptions } from './semantic-token-provider.js';
 import { mergeSignatureHelpOptions } from './signature-help-provider.js';
+import { URI } from '../utils/uri-util.js';
 
 export interface LanguageServer {
     initialize(params: InitializeParams): Promise<InitializeResult>
@@ -218,19 +218,19 @@ export function addDocumentsHandler(connection: Connection, services: LangiumSha
     const documentBuilder = services.workspace.DocumentBuilder;
     const mutex = services.workspace.MutexLock;
 
-    function onDidChange(changed: vscodeUri.URI[], deleted: vscodeUri.URI[]): void {
+    function onDidChange(changed: URI[], deleted: URI[]): void {
         mutex.lock(token => documentBuilder.update(changed, deleted, token));
     }
 
     const documents = services.workspace.TextDocuments;
     documents.onDidChangeContent(change => {
-        onDidChange([vscodeUri.URI.parse(change.document.uri)], []);
+        onDidChange([URI.parse(change.document.uri)], []);
     });
     connection.onDidChangeWatchedFiles(params => {
-        const changedUris: vscodeUri.URI[] = [];
-        const deletedUris: vscodeUri.URI[] = [];
+        const changedUris: URI[] = [];
+        const deletedUris: URI[] = [];
         for (const change of params.changes) {
-            const uri = vscodeUri.URI.parse(change.uri);
+            const uri = URI.parse(change.uri);
             if (change.type === FileChangeType.Deleted) {
                 deletedUris.push(uri);
             } else {
@@ -504,7 +504,7 @@ export function createCallHierarchyRequestHandler<P extends CallHierarchyIncomin
 ): ServerRequestHandler<P, R, PR, E> {
     const serviceRegistry = sharedServices.ServiceRegistry;
     return async (params: P, cancelToken: CancellationToken) => {
-        const uri = vscodeUri.URI.parse(params.item.uri);
+        const uri = URI.parse(params.item.uri);
         const language = serviceRegistry.getServices(uri);
         if (!language) {
             const message = `Could not find service instance for uri: '${uri.toString()}'`;
@@ -526,7 +526,7 @@ export function createServerRequestHandler<P extends { textDocument: TextDocumen
     const documents = sharedServices.workspace.LangiumDocuments;
     const serviceRegistry = sharedServices.ServiceRegistry;
     return async (params: P, cancelToken: CancellationToken) => {
-        const uri = vscodeUri.URI.parse(params.textDocument.uri);
+        const uri = URI.parse(params.textDocument.uri);
         const language = serviceRegistry.getServices(uri);
         if (!language) {
             console.error(`Could not find service instance for uri: '${uri.toString()}'`);
@@ -551,7 +551,7 @@ export function createRequestHandler<P extends { textDocument: TextDocumentIdent
     const documents = sharedServices.workspace.LangiumDocuments;
     const serviceRegistry = sharedServices.ServiceRegistry;
     return async (params: P, cancelToken: CancellationToken) => {
-        const uri = vscodeUri.URI.parse(params.textDocument.uri);
+        const uri = URI.parse(params.textDocument.uri);
         const language = serviceRegistry.getServices(uri);
         if (!language) {
             console.error(`Could not find service instance for uri: '${uri.toString()}'`);

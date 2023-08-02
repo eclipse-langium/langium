@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import type { ParserRule, Interface, Type, Grammar } from '../../generated/ast.js';
-import type { URI } from 'vscode-uri';
+import type { URI } from '../../../utils/uri-util.js';
 import type { LangiumDocuments } from '../../../workspace/documents.js';
 import type { PlainAstTypes } from './plain-types.js';
 import type { AstTypes } from './types.js';

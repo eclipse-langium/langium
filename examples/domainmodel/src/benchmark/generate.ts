@@ -4,8 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { expandToString } from 'langium';
-import { URI } from 'vscode-uri';
+import { expandToString, URI } from 'langium';
 import type { DomainModelServices } from '../language-server/domain-model-module.js';
 
 export function generateWorkspace(services: DomainModelServices, width: number, size: number): void {

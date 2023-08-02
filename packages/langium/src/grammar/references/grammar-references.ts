@@ -16,7 +16,7 @@ import { getContainerOfType, getDocument } from '../../utils/ast-util.js';
 import { toDocumentSegment } from '../../utils/cst-util.js';
 import { findAssignment, findNodeForProperty } from '../../utils/grammar-util.js';
 import { stream } from '../../utils/stream.js';
-import { equalURI } from '../../utils/uri-util.js';
+import { UriUtils } from '../../utils/uri-util.js';
 import { isAction, isAssignment, isInterface, isParserRule, isType, isTypeAttribute } from '../generated/ast.js';
 import { extractAssignments, getActionAtElement } from '../internal-grammar-util.js';
 import { collectChildrenTypes, collectSuperTypes } from '../type-system/types-util.js';
@@ -88,7 +88,7 @@ export class LangiumGrammarReferences extends DefaultReferences {
                         targetUri: getDocument(attribute).uri,
                         targetPath: this.nodeLocator.getAstNodePath(attribute),
                         segment: toDocumentSegment(leaf),
-                        local: equalURI(getDocument(assignment).uri, getDocument(attribute).uri)
+                        local: UriUtils.equals(getDocument(assignment).uri, getDocument(attribute).uri)
                     });
                 }
             }
@@ -103,7 +103,7 @@ export class LangiumGrammarReferences extends DefaultReferences {
                         targetUri: getDocument(attribute).uri,
                         targetPath: this.nodeLocator.getAstNodePath(attribute),
                         segment: toDocumentSegment(leaf),
-                        local: equalURI(getDocument(ruleOrAction).uri, getDocument(attribute).uri)
+                        local: UriUtils.equals(getDocument(ruleOrAction).uri, getDocument(attribute).uri)
                     });
                 }
             }

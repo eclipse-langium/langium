@@ -11,13 +11,13 @@ import type { ReferenceDescription } from '../workspace/ast-descriptions.js';
 import type { AstNodeLocator } from '../workspace/ast-node-locator.js';
 import type { IndexManager } from '../workspace/index-manager.js';
 import type { NameProvider } from './name-provider.js';
-import type { URI } from 'vscode-uri';
+import type { URI } from '../utils/uri-util.js';
 import { findAssignment } from '../utils/grammar-util.js';
 import { isReference } from '../syntax-tree.js';
 import { getDocument } from '../utils/ast-util.js';
 import { isCstChildNode, toDocumentSegment } from '../utils/cst-util.js';
 import { stream } from '../utils/stream.js';
-import { equalURI } from '../utils/uri-util.js';
+import { UriUtils } from '../utils/uri-util.js';
 
 /**
  * Language-specific service for finding references and declaration of a given `CstNode`.
@@ -123,7 +123,7 @@ export class DefaultReferences implements References {
         }
         let indexReferences = this.index.findAllReferences(targetNode, this.nodeLocator.getAstNodePath(targetNode));
         if (options.documentUri) {
-            indexReferences = indexReferences.filter(ref => equalURI(ref.sourceUri, options.documentUri));
+            indexReferences = indexReferences.filter(ref => UriUtils.equals(ref.sourceUri, options.documentUri));
         }
         refs.push(...indexReferences);
         return stream(refs);
