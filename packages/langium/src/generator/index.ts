@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 export * from './generator-node.js';
-export { SourceRegion, TextRegion, TraceRegion, TraceSourceSpec } from './generator-tracing.js';
+export type { SourceRegion, TextRegion, TraceRegion, TraceSourceSpec } from './generator-tracing.js';
 export * from './node-joiner.js';
 export * from './template-node.js';
 export { expandToString, expandToStringWithNL, normalizeEOL } from './template-string.js';
