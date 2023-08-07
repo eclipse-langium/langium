@@ -222,6 +222,7 @@ describe('Completion in data type rules', () => {
 
         hidden terminal WS: /\\s+/;
         terminal ID: /[_a-zA-Z][\\w_]*/;
+        hidden terminal ML_COMMENT: /\\/\\*[\\s\\S]*?\\*\\//;
         `;
 
         const services = await createServicesForGrammar({ grammar });
@@ -233,6 +234,7 @@ describe('Completion in data type rules', () => {
             person John.Smith.Senior
 
             Hello <|>John<|>.Smi<|>th.Jun<|>ior
+            Hello <|>John./* Hello */ <|>Miller
         `;
 
         await completion({
@@ -270,6 +272,23 @@ describe('Completion in data type rules', () => {
             expectedItems: [
                 'John.Smith.Junior'
             ]
+        });
+
+        await completion({
+            text: text,
+            index: 4,
+            expectedItems: [
+                'John.Miller',
+                'John.Smith.Junior',
+                'John.Smith.Senior'
+            ]
+        });
+
+        // A comment within the FQN should prevent any completion from appearing
+        await completion({
+            text: text,
+            index: 5,
+            expectedItems: []
         });
     });
 
