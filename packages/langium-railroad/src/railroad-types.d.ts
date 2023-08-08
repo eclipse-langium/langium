@@ -85,14 +85,6 @@ declare module 'railroad-diagrams' {
         constructor(items: DiagramItem[]);
     }
 
-    export class HorizontalChoice extends DiagramMultiContainer {
-        constructor(items: DiagramItem[]);
-    }
-
-    export class HorizontalChoice extends DiagramMultiContainer {
-        constructor(items: DiagramItem[]);
-    }
-
     export class Optional extends FakeSVG {
         constructor(item: DiagramItem, skip?: 'skip'): Choice;
     }
@@ -181,4 +173,32 @@ declare module 'railroad-diagrams' {
         constructor(options?: BlockOptions);
     }
 
+    export default {
+        FakeSVG,
+        Path,
+        DiagramMultiContainer,
+        Diagram,
+        ComplexDiagram,
+        Sequence,
+        Stack,
+        OptionalSequence,
+        AlternatingSequence,
+        Choice,
+        MultipleChoice,
+        HorizontalChoice,
+        Optional,
+        OneOrMore,
+        ZeroOrMore,
+        Group,
+        Start,
+        End,
+        Terminal,
+        NonTerminal,
+        Comment,
+        Block,
+        Skip,
+        Direction,
+        CardinalDirection,
+        DiagramItem
+    };
 }

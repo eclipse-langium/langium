@@ -6,7 +6,7 @@
 
 import { GrammarAST, findNameAssignment } from 'langium';
 import type { FakeSVG } from 'railroad-diagrams';
-import * as rr from 'railroad-diagrams';
+import { default as rr } from 'railroad-diagrams';
 
 export const defaultCss = `
 svg.railroad-diagram {
