@@ -1,6 +1,12 @@
 # Change Log of `langium-cli`
 
-## v2.0.0 (Jul. 2023)
+## v2.0.0 (Aug. 2023)
+
+### EcmaScript Modules (ESM)
+
+This package is now compiling to ESM only, refer to [this changelog entry](https://github.com/langium/langium/blob/main/packages/langium/CHANGELOG.md#ecmascript-modules-esm)
+
+## v1.3.0 (Aug. 2023)
 
 ### Railroad Syntax Diagrams
 

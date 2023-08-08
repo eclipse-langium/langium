@@ -1,6 +1,6 @@
 # Change Log of `langium-vscode`
 
-## v2.0.0 (Jul. 2023)
+## v2.0.0 (Aug. 2023)
 
 * Includes a command to open a railroad syntax diagram for the currently selected langium grammar. Use the `Show Railroad Syntax Diagram` command or the corresponding button in the editor title bar to open the diagram ([#1075](https://github.com/langium/langium/pull/1075)).
 * Improvements to validation regarding cyclic type usage ([#1130](https://github.com/langium/langium/pull/1130)).
