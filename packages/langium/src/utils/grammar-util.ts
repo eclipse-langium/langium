@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright 2021-2022 TypeFox GmbH
+ * Copyright 2021-2023 TypeFox GmbH
  * This program and the accompanying materials are made available under the
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
@@ -47,33 +47,49 @@ export function getHiddenRules(grammar: ast.Grammar) {
  *      this function returns all rules of the specified grammar.
  */
 export function getAllReachableRules(grammar: ast.Grammar, allTerminals: boolean): Set<ast.AbstractRule> {
-    const ruleNames = new Set<string>();
     const entryRule = getEntryRule(grammar);
     if (!entryRule) {
         return new Set(grammar.rules);
     }
 
     const topMostRules = [entryRule as ast.AbstractRule].concat(getHiddenRules(grammar));
+    const collectedRules = new Set<ast.AbstractRule>();
     for (const rule of topMostRules) {
-        ruleDfs(rule, ruleNames, allTerminals);
+        ruleDfs(rule, collectedRules, allTerminals);
     }
 
     const rules = new Set<ast.AbstractRule>();
     for (const rule of grammar.rules) {
-        if (ruleNames.has(rule.name) || (ast.isTerminalRule(rule) && rule.hidden)) {
+        if (collectedRules.has(rule) || ((ast.isTerminalRule(rule) && rule.hidden))) {
             rules.add(rule);
         }
     }
+    for (const rule of collectedRules) {
+        if (!rules.has(rule)) {
+            rules.add(rule);
+        }
+    }
+
     return rules;
 }
 
-function ruleDfs(rule: ast.AbstractRule, visitedSet: Set<string>, allTerminals: boolean): void {
-    visitedSet.add(rule.name);
+function ruleDfs(rule: ast.AbstractRule, visitedRules: Set<ast.AbstractRule> , allTerminals: boolean): void {
+    visitedRules.add(rule);
     streamAllContents(rule).forEach(node => {
         if (ast.isRuleCall(node) || (allTerminals && ast.isTerminalRuleCall(node))) {
             const refRule = node.rule.ref;
-            if (refRule && !visitedSet.has(refRule.name)) {
-                ruleDfs(refRule, visitedSet, allTerminals);
+            if (refRule && !visitedRules.has(refRule)) {
+                ruleDfs(refRule, visitedRules, allTerminals);
+            }
+        } else if (ast.isCrossReference(node)) {
+            const term = getCrossReferenceTerminal(node);
+            if (term !== undefined) {
+                if (ast.isRuleCall(term) || (allTerminals && ast.isTerminalRuleCall(term))) {
+                    const refRule = term.rule.ref;
+                    if (refRule && !visitedRules.has(refRule)) {
+                        ruleDfs(refRule,  visitedRules, allTerminals);
+                    }
+                }
             }
         }
     });
