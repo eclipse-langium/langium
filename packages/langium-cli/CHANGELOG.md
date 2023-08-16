@@ -6,6 +6,11 @@
 
 This package is now compiling to ESM only, refer to [this changelog entry](https://github.com/langium/langium/blob/main/packages/langium/CHANGELOG.md#ecmascript-modules-esm)
 
+### Breaking Changes
+
+* The CLI now always uses the original `projectName` of the `langium-config.json` property for the generated type/object names. It no longer performs kebab-case transformation ([#1122](https://github.com/langium/langium/pull/1122)).
+* We've decided to remove generated `$container` type declarations for types where it isn't clear what the container types can be ([#1055](https://github.com/langium/langium/pull/1055)).
+
 ## v1.3.0 (Aug. 2023)
 
 ### Railroad Syntax Diagrams
@@ -39,11 +44,6 @@ This allows to more easily reuse those regular expressions in your code.
 * The CLI can now resolve grammar imports transitively ([#1113](https://github.com/langium/langium/pull/1113)).
 * A new `mode` configuration/argument can be used to improve bundle size of Langium projects ([#1077](https://github.com/langium/langium/pull/1077)).
 * Fixed an error in the way the CLI creates directories ([#1105](https://github.com/langium/langium/pull/1105)).
-
-### Breaking Changes
-
-* The CLI now always uses the original `projectName` of the `langium-config.json` property for the generated type/object names. It no longer performs kebab-case transformation ([#1122](https://github.com/langium/langium/pull/1122)).
-* We've decided to remove generated `$container` type declarations for types where it isn't clear what the container types can be ([#1055](https://github.com/langium/langium/pull/1055)).
 
 ## v1.2.1 (Jun. 2023)
 
