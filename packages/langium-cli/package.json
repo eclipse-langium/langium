@@ -23,6 +23,12 @@
   "bin": {
     "langium": "./bin/langium.js"
   },
+  "exports": {
+    ".": {
+      "import": "./lib/index.js",
+      "types": "./lib/index.d.ts"
+    }
+  },
   "type": "module",
   "scripts": {
     "clean": "shx rm -rf lib coverage",

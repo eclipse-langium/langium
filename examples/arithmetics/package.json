@@ -49,14 +49,14 @@
     "type": "module",
     "main": "./out/extension.cjs",
     "exports": {
-        ".": {
-            "types": "./out/extension.d.ts",
-            "default": "./out/extension.js"
-        },
-        "./api": {
-            "types": "./out/language-server/generated/ast.d.ts",
-            "default": "./out/language-server/generated/ast.js"
-        }
+      ".": {
+        "types": "./out/extension.d.ts",
+        "default": "./out/extension.js"
+      },
+      "./api": {
+        "types": "./out/language-server/generated/ast.d.ts",
+        "default": "./out/language-server/generated/ast.js"
+      }
     },
     "scripts": {
         "build": "node esbuild.mjs",

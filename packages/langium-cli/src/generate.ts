@@ -25,19 +25,19 @@ import chalk from 'chalk';
 import * as path from 'path';
 import fs from 'fs-extra';
 
-export type GenerateOptions = {
+export interface GenerateOptions {
     file?: string;
     mode?: 'development' | 'production';
-    watch: boolean;
+    watch?: boolean;
 }
 
-export type ExtractTypesOptions = {
+export interface ExtractTypesOptions {
     grammar: string;
     output?: string;
     force: boolean;
 }
 
-export type GeneratorResult = {
+export interface GeneratorResult {
     success: boolean
     files: string[]
 }
@@ -165,7 +165,7 @@ async function buildAll(config: LangiumConfig): Promise<Map<string, LangiumDocum
     return map;
 }
 
-export async function generate(config: LangiumConfig, options: GenerateOptions): Promise<GeneratorResult> {
+export async function runGenerator(config: LangiumConfig, options: GenerateOptions): Promise<GeneratorResult> {
     if (!config.languages || config.languages.length === 0) {
         log('error', options, 'No languages specified in config.');
         return {
@@ -371,7 +371,7 @@ async function mkdirWithFail(path: string, options: GenerateOptions): Promise<bo
     }
 }
 
-async function writeWithFail(filePath: string, content: string, options: { watch: boolean }): Promise<void> {
+async function writeWithFail(filePath: string, content: string, options: { watch?: boolean }): Promise<void> {
     try {
         const parentDir = path.dirname(filePath);
         await mkdirWithFail(parentDir, options);
