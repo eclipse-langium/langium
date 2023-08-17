@@ -5,7 +5,8 @@
  ******************************************************************************/
 
 import type { TokenPattern, TokenType } from '@chevrotain/types';
-import type { Grammar } from 'langium';
+import type { Grammar } from '../../src';
+import { createServicesForGrammar } from '../../src';
 import { beforeAll, describe, expect, test } from 'vitest';
 import { createLangiumGrammarServices, EmptyFileSystem } from '../../src';
 import { parseHelper } from '../../src/test';
@@ -215,6 +216,28 @@ describe('tokenBuilder#flagsForRegex', () => {
         const grammar = await parseHelper<Grammar>(grammarServices)(text, {validation: true});
         expect(grammar.diagnostics?.length ?? 0).toBe(1);
         expect(grammar.diagnostics![0].data.code).toBe(IssueCodes.InvalidEOFDefinition);
+    });
+
+    test('Using EOF in an input text for grammar containing an EOF rule', async () => {
+        const grammar = `
+        grammar Test
+        entry Main: comment=COMMENT;
+        terminal COMMENT: '/*' .*? ('*/' | EOF);
+        terminal fragment EOF: /\\z/;
+        `;
+        const services = await createServicesForGrammar({ grammar });
+        const test = async (input: string) => {
+            const document = await parseHelper(services)(input, {validation: true});
+            expect(document.parseResult.lexerErrors.length).toBe(0);
+            expect(document.parseResult.parserErrors.length).toBe(0);
+            expect(document.diagnostics?.length ?? 0).toBe(0);
+            return document.parseResult.value;
+        };
+        await test('/**/');
+        await test('/* comment */');
+        await test('/* broken comment');
+        const document = await test('/* half broken comment *');
+        expect(document.$cstNode?.text).toBe('/* half broken comment *');
     });
 
 });
