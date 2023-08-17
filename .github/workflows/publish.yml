@@ -25,6 +25,8 @@ jobs:
       run: |
         npm ci
         npm run build:clean
+        npm run langium:generate:production --workspace=langium
+        npm run build
     - name: Test
       if: success() || failure()
       shell: bash
