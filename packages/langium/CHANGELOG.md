@@ -1,5 +1,79 @@
 # Change Log of `langium`
 
+## v2.0.0 (Aug. 2023)
+
+### EcmaScript Modules (ESM)
+
+Langium is now compiling to ESM instead of CommonJS (CJS).
+CommonJS is the JavaScript convention introduced by Node.js and has historically been used in all Node.js based application.
+With the introduction of ESM to modern versions of the Node.js runtime, more and more projects and libraries are making the move to ESM. Since a lot of our dependencies have moved on, we decided to do so as well.
+
+While ESM based projects in Node.js can continue to import CJS code, CJS projects cannot (easily) import ESM code.
+This is a **very important change** for adopters, as it prevents using Langium as-is in CJS projects.
+This leaves us with a problem, as all vscode extensions need to run as CJS code.
+Luckily, JavaScript bundlers such as `esbuild` are capable of transforming ESM code into CJS code.
+Using a bundler for vscode extensions and language servers is heavily recommended anyway,
+so we hope that adopters don't have much trouble upgrading to Langium 2.0.
+You can find a small instruction manual on how to migrate TypeScript projects to ESM [here](https://gist.github.com/sindresorhus/a39789f98801d908bbc7ff3ecc99d99c#how-can-i-make-my-typescript-project-output-esm).
+
+Note that the newest version of the yeoman generator contains a ready-to-use bundler configuration.
+Adopters can use the generated project as a basis for upgrading to 2.0.
+We also have [a guide available on our website](https://langium.org/guides/code-bundling/) that goes into more detail on this topic. If you have any questions on this topic, feel free to ask us on the [GitHub Discussions Board](https://github.com/langium/langium/discussions).
+
+### General Improvements
+
+* The `DefaultDocumentBuilder` has been refactored to allow for more flexible and fine-grained validation behavior. ([#1094](https://github.com/langium/langium/pull/1094)).
+
+### Breaking Changes
+
+* The `CodeLensProvider`, `DocumentLinkProvider` and `InlayHintProvider` services were moved from the shared LSP services container to the language specific services container. Additionally, their `resolve` methods have been removed ([#1107](https://github.com/langium/langium/pull/1107)). 
+* Deprecated a few properties available on CST nodes. They have been renamed and their old property names will be deleted in a future version ([#1131](https://github.com/langium/langium/pull/1131)):
+    * `CstNode#parent` -> `container`
+    * `CstNode#feature` -> `grammarSource`
+    * `CstNode#element` -> `astNode`
+    * `CompositeCstNode#children` -> `content`
+* The `IndexManager#getAffectedDocuments` has been changed to `isAffected`. Instead of returning a stream of all affected documents of a change, it now only returns whether a specified document is affected by the change of a set of documents ([#1094](https://github.com/langium/langium/pull/1094)).
+* The `BuildOptions#validationChecks` property has been replaced with `validation?: boolean | ValidationOptions` ([#1094](https://github.com/langium/langium/pull/1094)).
+
+---
+
+## v1.3.0 (Aug. 2023)
+
+### Regular Expression Flags
+
+With [#1070](https://github.com/eclipse-langium/langium/pull/1070), the Langium grammar language now supports regular expression flags as part of terminal definitions:
+
+1. `u` Enables unicode support for the specified terminal.
+2. `i` Makes the terminal case-insensitive.
+3. `s` Makes the wild character "`.`" match newlines as well.
+
+### Cache Support
+
+In order to build caches that are instantly invalidated on workspace or document changes,
+Langium provides 2 new classes with [#1123](https://github.com/eclipse-langium/langium/pull/1123):
+
+1. The `WorkspaceCache` is a cache that gets cleared whenever a file in the workspace is changed, removed or created.
+2. The `DocumentCache` is a cache that stores information for specific documents. Whenever that document is modified in any way, the cache for that document is invalidated.
+
+### General Improvements
+
+* The `DefaultCompletionProvider` has received some improvements and should be even more accurate now ([#1106](https://github.com/langium/langium/pull/1106), [#1138](https://github.com/langium/langium/pull/1138)).
+* Various performance improvements related to scoping and linking ([#1091](https://github.com/langium/langium/pull/1091), [#1121](https://github.com/langium/langium/pull/1121)).
+* The new `CommentProvider` serves as a way to override how the comment of an AST node is computed ([#1095](https://github.com/langium/langium/pull/1095)).
+* The LSP `workspace/symbol` request is now resolved by the `WorkspaceSymbolProvider` ([#1100](https://github.com/langium/langium/pull/1100)).
+* Properties in guarded groups are now properly typed as optional ([#1116](https://github.com/eclipse-langium/langium/pull/1116)).
+* Some generated regular expressions are now more accurate ([#1109](https://github.com/eclipse-langium/langium/pull/1109)).
+* Generated language metadata is now being typed as `const` ([#1111](https://github.com/eclipse-langium/langium/pull/1111)).
+* Fixed typing of the `root` property on CST nodes ([#1090](https://github.com/eclipse-langium/langium/pull/1090)).
+* Parser error messages are now overridable in a service ([#1108](https://github.com/eclipse-langium/langium/pull/1108)).
+* Prevent file name collisions during testing ([#1153](https://github.com/eclipse-langium/langium/pull/1153)).
+
+---
+
+## v1.2.1 (Jun. 2023)
+
+Fixed a minor generator issue ([#1043](https://github.com/langium/langium/pull/1043)).
+
 ## v1.2.0 (Apr. 2023)
 
 ### General Improvements

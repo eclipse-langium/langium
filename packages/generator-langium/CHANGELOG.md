@@ -1,5 +1,14 @@
 # Change Log of `generator-langium`
 
+## v2.0.0 (Aug. 2023)
+
+* Added a bundle configuration using `esbuild` ([#1125](https://github.com/langium/langium/pull/1125)).
+* Configured the project as an ESM project to adapt to the changes in Langium ([#1125](https://github.com/langium/langium/pull/1125)).
+
+## v1.3.0 (Aug. 2023)
+
+* Fixed a few syntax highlighting related issues ([#1064](https://github.com/langium/langium/pull/1064), [#1079](https://github.com/langium/langium/pull/1079)).
+
 ## v1.2.0 (May. 2023)
 
 * Refactored the generator to enable multiple "environments". Devs will be asked whether they want a given environment in their project setup:

@@ -1,6 +1,51 @@
 # Change Log of `langium-cli`
 
-## v1.2.1 (June. 2023)
+## v2.0.0 (Aug. 2023)
+
+### EcmaScript Modules (ESM)
+
+This package is now compiling to ESM only, refer to [this changelog entry](https://github.com/langium/langium/blob/main/packages/langium/CHANGELOG.md#ecmascript-modules-esm)
+
+### Breaking Changes
+
+* The CLI now always uses the original `projectName` of the `langium-config.json` property for the generated type/object names. It no longer performs kebab-case transformation ([#1122](https://github.com/langium/langium/pull/1122)).
+* We've decided to remove generated `$container` type declarations for types where it isn't clear what the container types can be ([#1055](https://github.com/langium/langium/pull/1055)).
+
+## v1.3.0 (Aug. 2023)
+
+### Railroad Syntax Diagrams
+
+With the introduction of [`langium-railroad`](https://github.com/langium/langium/tree/main/packages/langium-railroad), the CLI is now capable of generating railroad syntax diagrams for your language ([#1075](https://github.com/langium/langium/pull/1075)).
+To generate them to a file, use the following example config:
+
+```json
+{
+    ...
+    "languages": [{
+        ...
+        "railroad": {
+            "out": "docs/syntax-diagram.html"
+        }
+    }],
+    ...
+}
+```
+
+> **Note**
+> The vscode extension for Langium contributes the `Show Railroad Syntax Diagram` command to show this HTML in a webview.
+
+### Generated Terminal Definitions
+
+The generated `ast.ts` file will now also contain an object containing all regular expressions used by your grammar's terminal rules ([#1097](https://github.com/langium/langium/pull/1097)).
+This allows to more easily reuse those regular expressions in your code.
+
+### General Improvements
+
+* The CLI can now resolve grammar imports transitively ([#1113](https://github.com/langium/langium/pull/1113)).
+* A new `mode` configuration/argument can be used to improve bundle size of Langium projects ([#1077](https://github.com/langium/langium/pull/1077)).
+* Fixed an error in the way the CLI creates directories ([#1105](https://github.com/langium/langium/pull/1105)).
+
+## v1.2.1 (Jun. 2023)
 
 * The generated code now performs split imports for runtime and compile time dependencies ([#1018](https://github.com/langium/langium/pull/1018)).
 * The new configuration field `importExtension` can be used to specify the file extension for generated imports ([#1072](https://github.com/langium/langium/pull/1072)).
