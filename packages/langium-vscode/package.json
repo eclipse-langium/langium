@@ -1,7 +1,7 @@
 {
   "name": "langium-vscode",
   "publisher": "langium",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "displayName": "Langium",
   "description": "Support for the Langium Grammar Language",
   "homepage": "https://langium.org",
@@ -90,8 +90,8 @@
     "lint": "eslint src --ext ts"
   },
   "dependencies": {
-    "langium": "1.2.0",
-    "langium-railroad": "1.2.0",
+    "langium": "1.3.0",
+    "langium-railroad": "1.3.0",
     "vscode-languageserver": "~8.0.2",
     "ignore": "~5.2.4"
   },
@@ -101,10 +101,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/langium/langium",
+    "url": "https://github.com/eclipse-langium/langium",
     "directory": "packages/langium-vscode"
   },
-  "bugs": "https://github.com/langium/langium/issues",
+  "bugs": "https://github.com/eclipse-langium/langium/issues",
   "author": {
     "name": "TypeFox",
     "url": "https://www.typefox.io"
