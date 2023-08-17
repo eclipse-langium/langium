@@ -1,6 +1,6 @@
 {
   "name": "langium-railroad",
-  "version": "1.2.0",
+  "version": "2.0.0",
   "description": "Use Langium as source for railroad syntax diagrams",
   "homepage": "https://langium.org",
   "keywords": [
@@ -34,7 +34,7 @@
     "publish:latest": "npm publish --tag latest --access public"
   },
   "dependencies": {
-    "langium": "~1.2.0",
+    "langium": "~2.0.0",
     "railroad-diagrams": "^1.0.0"
   },
   "volta": {
@@ -43,10 +43,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/langium/langium",
+    "url": "https://github.com/eclipse-langium/langium",
     "directory": "packages/langium-railroad"
   },
-  "bugs": "https://github.com/langium/langium/issues",
+  "bugs": "https://github.com/eclipse-langium/langium/issues",
   "author": {
     "name": "TypeFox",
     "url": "https://www.typefox.io"
