@@ -15,14 +15,14 @@
         "langium:watch": "langium generate --watch"
     },
     "dependencies": {
-        "langium": "~1.2.0"
+        "langium": "~2.0.0"
     },
     "devDependencies": {
         "@types/node": "~16.18.11",
         "@typescript-eslint/parser": "~5.58.0",
         "@typescript-eslint/eslint-plugin": "~5.58.0",
         "eslint": "~8.33.0",
-        "langium-cli": "~1.2.1",
+        "langium-cli": "~2.0.0",
         "typescript": "~5.0.4"
     }
 }
