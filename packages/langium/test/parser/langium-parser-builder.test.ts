@@ -6,8 +6,11 @@
 
 import type { TokenType, TokenVocabulary } from 'chevrotain';
 import type { AstNode, Grammar, GrammarAST, LangiumParser, TokenBuilderOptions } from '../../src';
+import { createLangiumGrammarServices, EmptyFileSystem} from '../../src';
+import { EOF } from 'chevrotain';
 import { describe, expect, test, onTestFailed, beforeEach } from 'vitest';
 import { createServicesForGrammar, DefaultTokenBuilder } from '../../src';
+import { parseHelper } from '../../src/test';
 
 describe('Predicated grammar rules with alternatives', () => {
 
@@ -672,6 +675,52 @@ describe('ALL(*) parser', () => {
         expect(result.lexerErrors).toHaveLength(0);
         expect(result.parserErrors).toHaveLength(0);
         expect(result.value.$type).toBe('B');
+    });
+});
+
+const grammarServices = createLangiumGrammarServices(EmptyFileSystem).grammar;
+const helper = parseHelper<Grammar>(grammarServices);
+const tokenBuilder = grammarServices.parser.TokenBuilder;
+
+async function getTokens(grammarString: string): Promise<TokenType[]> {
+    const grammar = (await helper(grammarString)).parseResult.value;
+    return tokenBuilder.buildTokens(grammar) as TokenType[];
+}
+
+describe('EOF', () => {
+    test('Handle EOF', async () => {
+        const text = `
+        grammar Test
+        entry Main: greet='Hello!' EOF;
+        `;
+        const tokens = await getTokens(text);
+        const tokenA = tokens[1];
+        expect(tokenA).toEqual(EOF);
+        const parse = await parseHelper<Grammar>(grammarServices);
+        const grammar = await parse(text, {validation: true});
+        expect(grammar.diagnostics?.length ?? 0).toBe(0);
+    });
+
+    test('Using EOF in an input text for grammar containing an EOF rule', async () => {
+        const grammar = `
+        grammar Test
+        entry Main: comment+=COMMENT+;
+        terminal COMMENT: '/*' .*? ('*/' | EOF);
+        `;
+        const services = await createServicesForGrammar({ grammar });
+        const shouldSucceed = async (input: string) => {
+            const document = await parseHelper(services)(input, {validation: true});
+            expect(document.parseResult.lexerErrors.length).toBe(0);
+            expect(document.parseResult.parserErrors.length).toBe(0);
+            expect(document.diagnostics?.length ?? 0).toBe(0);
+            return document.parseResult.value;
+        };
+        await shouldSucceed('/**/');
+        await shouldSucceed('/* comment */');
+        await shouldSucceed('/* broken comment');
+        await shouldSucceed('/* non-broken comment*//*broken comment');
+        const document = await shouldSucceed('/* half broken comment *');
+        expect(document.$cstNode?.text).toBe('/* half broken comment *');
     });
 });
 
