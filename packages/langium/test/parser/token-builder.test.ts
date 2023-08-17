@@ -9,6 +9,7 @@ import type { Grammar } from '../../src';
 import { beforeAll, describe, expect, test } from 'vitest';
 import { createLangiumGrammarServices, EmptyFileSystem } from '../../src';
 import { parseHelper } from '../../src/test';
+import { EOF } from 'chevrotain';
 
 const grammarServices = createLangiumGrammarServices(EmptyFileSystem).grammar;
 const helper = parseHelper<Grammar>(grammarServices);
@@ -189,6 +190,29 @@ describe('tokenBuilder#flagsForRegex', () => {
         const tokenA = tokens[0];
         expect(tokenA.PATTERN).toEqual(/A/);
         expect((tokenA.PATTERN as RegExp).flags).toEqual('');
+    });
+
+    test('Handle EOF', async () => {
+        const text = `
+        grammar Test
+        entry Main: greet='Hello!' EOF;
+        terminal EOF: /\\z/;
+        `;
+        const tokens = await getTokens(text);
+        const tokenA = tokens[1];
+        expect(tokenA).toEqual(EOF);
+        const grammar = await parseHelper<Grammar>(grammarServices)(text, {validation: true});
+        expect(grammar.diagnostics?.length ?? 0).toBe(0);
+    });
+
+    test('Having invalid EOF', async () => {
+        const text = `
+        grammar Test
+        entry Main: greet='Hello!' EOF;
+        terminal EOF: /abcdefg/;
+        `;
+        const grammar = await parseHelper<Grammar>(grammarServices)(text, {validation: true});
+        expect(grammar.diagnostics?.length ?? 0).toBe(1);
     });
 
 });
