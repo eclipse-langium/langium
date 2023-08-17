@@ -10,7 +10,7 @@ import type { LangiumCompletionParser } from '../../parser/langium-parser.js';
 import type { NameProvider } from '../../references/name-provider.js';
 import type { ScopeProvider } from '../../references/scope-provider.js';
 import type { LangiumServices } from '../../services.js';
-import type { AstNode, AstNodeDescription, Reference, ReferenceInfo } from '../../syntax-tree.js';
+import type { AstNode, AstNodeDescription, CstNode, Reference, ReferenceInfo } from '../../syntax-tree.js';
 import type { MaybePromise } from '../../utils/promise-util.js';
 import type { LangiumDocument } from '../../workspace/documents.js';
 import type { NextFeature } from './follow-element-computation.js';
@@ -23,7 +23,7 @@ import { CompletionItemKind, CompletionList, Position } from 'vscode-languageser
 import * as ast from '../../grammar/generated/ast.js';
 import { getExplicitRuleType } from '../../grammar/internal-grammar-util.js';
 import { getContainerOfType } from '../../utils/ast-util.js';
-import { findLeafNodeAtOffset } from '../../utils/cst-util.js';
+import { findDeclarationNodeAtOffset, findLeafNodeAtOffset } from '../../utils/cst-util.js';
 import { getEntryRule } from '../../utils/grammar-util.js';
 import { stream } from '../../utils/stream.js';
 import { findFirstFeatures, findNextFeatures } from './follow-element-computation.js';
