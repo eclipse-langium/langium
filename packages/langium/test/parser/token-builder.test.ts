@@ -221,22 +221,23 @@ describe('tokenBuilder#flagsForRegex', () => {
     test('Using EOF in an input text for grammar containing an EOF rule', async () => {
         const grammar = `
         grammar Test
-        entry Main: comment=COMMENT;
+        entry Main: comment+=COMMENT+;
         terminal COMMENT: '/*' .*? ('*/' | EOF);
         terminal fragment EOF: /\\z/;
         `;
         const services = await createServicesForGrammar({ grammar });
-        const test = async (input: string) => {
+        const shouldSucceed = async (input: string) => {
             const document = await parseHelper(services)(input, {validation: true});
             expect(document.parseResult.lexerErrors.length).toBe(0);
             expect(document.parseResult.parserErrors.length).toBe(0);
             expect(document.diagnostics?.length ?? 0).toBe(0);
             return document.parseResult.value;
         };
-        await test('/**/');
-        await test('/* comment */');
-        await test('/* broken comment');
-        const document = await test('/* half broken comment *');
+        await shouldSucceed('/**/');
+        await shouldSucceed('/* comment */');
+        await shouldSucceed('/* broken comment');
+        await shouldSucceed('/* non-broken comment*//*broken comment');
+        const document = await shouldSucceed('/* half broken comment *');
         expect(document.$cstNode?.text).toBe('/* half broken comment *');
     });
 
