@@ -10,6 +10,7 @@ import { beforeAll, describe, expect, test } from 'vitest';
 import { createLangiumGrammarServices, EmptyFileSystem } from '../../src';
 import { parseHelper } from '../../src/test';
 import { EOF } from 'chevrotain';
+import { IssueCodes } from '../../src/grammar/validation/validator';
 
 const grammarServices = createLangiumGrammarServices(EmptyFileSystem).grammar;
 const helper = parseHelper<Grammar>(grammarServices);
@@ -213,6 +214,7 @@ describe('tokenBuilder#flagsForRegex', () => {
         `;
         const grammar = await parseHelper<Grammar>(grammarServices)(text, {validation: true});
         expect(grammar.diagnostics?.length ?? 0).toBe(1);
+        expect(grammar.diagnostics![0].data.code).toBe(IssueCodes.InvalidEOFDefinition);
     });
 
 });
