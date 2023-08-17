@@ -49,16 +49,19 @@ export class DefaultTokenBuilder implements TokenBuilder {
     protected buildTerminalToken(terminal: TerminalRule): TokenType {
         const regex = terminalRegex(terminal);
         const pattern = regex.flags.includes('u') ? this.regexPatternFunction(regex) : regex;
-        const token: TokenType = {
+        let tokenType: TokenType = {
             name: terminal.name,
             PATTERN: pattern,
             LINE_BREAKS: true
         };
         if (terminal.hidden) {
             // Only skip tokens that are able to accept whitespace
-            token.GROUP = isWhitespaceRegExp(regex) ? Lexer.SKIPPED : 'hidden';
+            tokenType.GROUP = isWhitespaceRegExp(regex) ? Lexer.SKIPPED : 'hidden';
         }
-        return token;
+        if (tokenType.name === 'EOF') {
+            tokenType = EOF;
+        }
+        return tokenType;
     }
 
     protected regexPatternFunction(regex: RegExp): CustomPatternMatcherFunc {
