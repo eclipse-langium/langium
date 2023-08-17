@@ -29,6 +29,7 @@ export class DefaultTokenBuilder implements TokenBuilder {
         const reachableRules = stream(getAllReachableRules(grammar, false));
         const terminalTokens: TokenType[] = this.buildTerminalTokens(reachableRules);
         const tokens: TokenType[] = this.buildKeywordTokens(reachableRules, terminalTokens, options);
+        tokens.push(EOF);
 
         terminalTokens.forEach(terminalToken => {
             const pattern = terminalToken.PATTERN;
@@ -49,7 +50,7 @@ export class DefaultTokenBuilder implements TokenBuilder {
     protected buildTerminalToken(terminal: TerminalRule): TokenType {
         const regex = terminalRegex(terminal);
         const pattern = regex.flags.includes('u') ? this.regexPatternFunction(regex) : regex;
-        let tokenType: TokenType = {
+        const tokenType: TokenType = {
             name: terminal.name,
             PATTERN: pattern,
             LINE_BREAKS: true
@@ -57,9 +58,6 @@ export class DefaultTokenBuilder implements TokenBuilder {
         if (terminal.hidden) {
             // Only skip tokens that are able to accept whitespace
             tokenType.GROUP = isWhitespaceRegExp(regex) ? Lexer.SKIPPED : 'hidden';
-        }
-        if (tokenType.name === 'EOF') {
-            tokenType = EOF;
         }
         return tokenType;
     }

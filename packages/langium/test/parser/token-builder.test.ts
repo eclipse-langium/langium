@@ -6,12 +6,9 @@
 
 import type { TokenPattern, TokenType } from '@chevrotain/types';
 import type { Grammar } from '../../src';
-import { createServicesForGrammar } from '../../src';
 import { beforeAll, describe, expect, test } from 'vitest';
 import { createLangiumGrammarServices, EmptyFileSystem } from '../../src';
 import { parseHelper } from '../../src/test';
-import { EOF } from 'chevrotain';
-import { IssueCodes } from '../../src/grammar/validation/validator';
 
 const grammarServices = createLangiumGrammarServices(EmptyFileSystem).grammar;
 const helper = parseHelper<Grammar>(grammarServices);
@@ -192,53 +189,6 @@ describe('tokenBuilder#flagsForRegex', () => {
         const tokenA = tokens[0];
         expect(tokenA.PATTERN).toEqual(/A/);
         expect((tokenA.PATTERN as RegExp).flags).toEqual('');
-    });
-
-    test('Handle EOF', async () => {
-        const text = `
-        grammar Test
-        entry Main: greet='Hello!' EOF;
-        terminal EOF: /\\z/;
-        `;
-        const tokens = await getTokens(text);
-        const tokenA = tokens[1];
-        expect(tokenA).toEqual(EOF);
-        const grammar = await parseHelper<Grammar>(grammarServices)(text, {validation: true});
-        expect(grammar.diagnostics?.length ?? 0).toBe(0);
-    });
-
-    test('Having invalid EOF', async () => {
-        const text = `
-        grammar Test
-        entry Main: greet='Hello!' EOF;
-        terminal EOF: /abcdefg/;
-        `;
-        const grammar = await parseHelper<Grammar>(grammarServices)(text, {validation: true});
-        expect(grammar.diagnostics?.length ?? 0).toBe(1);
-        expect(grammar.diagnostics![0].data.code).toBe(IssueCodes.InvalidEOFDefinition);
-    });
-
-    test('Using EOF in an input text for grammar containing an EOF rule', async () => {
-        const grammar = `
-        grammar Test
-        entry Main: comment+=COMMENT+;
-        terminal COMMENT: '/*' .*? ('*/' | EOF);
-        terminal fragment EOF: /\\z/;
-        `;
-        const services = await createServicesForGrammar({ grammar });
-        const shouldSucceed = async (input: string) => {
-            const document = await parseHelper(services)(input, {validation: true});
-            expect(document.parseResult.lexerErrors.length).toBe(0);
-            expect(document.parseResult.parserErrors.length).toBe(0);
-            expect(document.diagnostics?.length ?? 0).toBe(0);
-            return document.parseResult.value;
-        };
-        await shouldSucceed('/**/');
-        await shouldSucceed('/* comment */');
-        await shouldSucceed('/* broken comment');
-        await shouldSucceed('/* non-broken comment*//*broken comment');
-        const document = await shouldSucceed('/* half broken comment *');
-        expect(document.$cstNode?.text).toBe('/* half broken comment *');
     });
 
 });

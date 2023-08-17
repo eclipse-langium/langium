@@ -61,7 +61,7 @@ export function isTypeDefinition(item: unknown): item is TypeDefinition {
 }
 
 export interface AbstractElement extends AstNode {
-    readonly $type: 'AbstractElement' | 'Action' | 'Alternatives' | 'Assignment' | 'CharacterRange' | 'CrossReference' | 'Group' | 'Keyword' | 'NegatedToken' | 'RegexToken' | 'RuleCall' | 'TerminalAlternatives' | 'TerminalGroup' | 'TerminalRuleCall' | 'UnorderedGroup' | 'UntilToken' | 'Wildcard';
+    readonly $type: 'AbstractElement' | 'Action' | 'Alternatives' | 'Assignment' | 'CharacterRange' | 'CrossReference' | 'EndOfFile' | 'Group' | 'Keyword' | 'NegatedToken' | 'RegexToken' | 'RuleCall' | 'TerminalAlternatives' | 'TerminalGroup' | 'TerminalRuleCall' | 'UnorderedGroup' | 'UntilToken' | 'Wildcard';
     cardinality?: '*' | '+' | '?'
     lookahead?: '?!' | '?='
 }
@@ -407,6 +407,16 @@ export function isCrossReference(item: unknown): item is CrossReference {
     return reflection.isInstance(item, CrossReference);
 }
 
+export interface EndOfFile extends AbstractElement {
+    readonly $type: 'EndOfFile';
+}
+
+export const EndOfFile = 'EndOfFile';
+
+export function isEndOfFile(item: unknown): item is EndOfFile {
+    return reflection.isInstance(item, EndOfFile);
+}
+
 export interface Group extends AbstractElement {
     readonly $type: 'Group';
     elements: Array<AbstractElement>
@@ -543,6 +553,7 @@ export type LangiumGrammarAstType = {
     Conjunction: Conjunction
     CrossReference: CrossReference
     Disjunction: Disjunction
+    EndOfFile: EndOfFile
     Grammar: Grammar
     GrammarImport: GrammarImport
     Group: Group
@@ -577,7 +588,7 @@ export type LangiumGrammarAstType = {
 export class LangiumGrammarAstReflection extends AbstractAstReflection {
 
     getAllTypes(): string[] {
-        return ['AbstractElement', 'AbstractRule', 'AbstractType', 'Action', 'Alternatives', 'ArrayType', 'Assignment', 'CharacterRange', 'Condition', 'Conjunction', 'CrossReference', 'Disjunction', 'Grammar', 'GrammarImport', 'Group', 'InferredType', 'Interface', 'Keyword', 'LiteralCondition', 'NamedArgument', 'NegatedToken', 'Negation', 'Parameter', 'ParameterReference', 'ParserRule', 'ReferenceType', 'RegexToken', 'ReturnType', 'RuleCall', 'SimpleType', 'TerminalAlternatives', 'TerminalGroup', 'TerminalRule', 'TerminalRuleCall', 'Type', 'TypeAttribute', 'TypeDefinition', 'UnionType', 'UnorderedGroup', 'UntilToken', 'Wildcard'];
+        return ['AbstractElement', 'AbstractRule', 'AbstractType', 'Action', 'Alternatives', 'ArrayType', 'Assignment', 'CharacterRange', 'Condition', 'Conjunction', 'CrossReference', 'Disjunction', 'EndOfFile', 'Grammar', 'GrammarImport', 'Group', 'InferredType', 'Interface', 'Keyword', 'LiteralCondition', 'NamedArgument', 'NegatedToken', 'Negation', 'Parameter', 'ParameterReference', 'ParserRule', 'ReferenceType', 'RegexToken', 'ReturnType', 'RuleCall', 'SimpleType', 'TerminalAlternatives', 'TerminalGroup', 'TerminalRule', 'TerminalRuleCall', 'Type', 'TypeAttribute', 'TypeDefinition', 'UnionType', 'UnorderedGroup', 'UntilToken', 'Wildcard'];
     }
 
     protected override computeIsSubtype(subtype: string, supertype: string): boolean {
@@ -589,6 +600,7 @@ export class LangiumGrammarAstReflection extends AbstractAstReflection {
             case Assignment:
             case CharacterRange:
             case CrossReference:
+            case EndOfFile:
             case Group:
             case Keyword:
             case NegatedToken:
