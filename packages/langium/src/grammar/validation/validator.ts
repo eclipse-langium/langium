@@ -45,9 +45,10 @@ export function registerValidationChecks(services: LangiumGrammarServices): void
             validator.checkParserRuleReservedName,
         ],
         TerminalRule: [
+            validator.checkEOFToken,
             validator.checkTerminalRuleReturnType,
             validator.checkHiddenTerminalRule,
-            validator.checkEmptyTerminalRule
+            validator.checkEmptyTerminalRule,
         ],
         InferredType: validator.checkTypeReservedName,
         Keyword: validator.checkKeyword,
@@ -111,6 +112,7 @@ export namespace IssueCodes {
     export const MissingReturns = 'missing-returns';
     export const SuperfluousInfer = 'superfluous-infer';
     export const OptionalUnorderedGroup = 'optional-unordered-group';
+    export const InvalidEOFDefinition = 'invalid-eof-definition';
 }
 
 export class LangiumGrammarValidator {
@@ -389,6 +391,19 @@ export class LangiumGrammarValidator {
                 property: 'definesHiddenTokens',
                 data: diagnosticData(IssueCodes.HiddenGrammarTokens)
             });
+        }
+    }
+
+    checkEOFToken(terminalRule: ast.TerminalRule, accept: ValidationAcceptor): void {
+        if (terminalRule.name === 'EOF') {
+            const definition = terminalRule.definition;
+            if(definition.$type !== 'RegexToken' || (<ast.RegexToken>definition).regex !== '/\\z/') {
+                accept('error', 'Please use /\\z/ as definition for EOF.', {
+                    node: terminalRule,
+                    property: 'definition',
+                    data: diagnosticData(IssueCodes.InvalidEOFDefinition)
+                });
+            }
         }
     }
 
