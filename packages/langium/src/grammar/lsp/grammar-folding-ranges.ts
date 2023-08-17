@@ -4,9 +4,9 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { AstNode } from '../../syntax-tree';
-import { DefaultFoldingRangeProvider } from '../../lsp/folding-range-provider';
-import { isParserRule } from '../generated/ast';
+import type { AstNode } from '../../syntax-tree.js';
+import { DefaultFoldingRangeProvider } from '../../lsp/folding-range-provider.js';
+import { isParserRule } from '../generated/ast.js';
 
 /**
  * A specialized folding range provider for the grammar language

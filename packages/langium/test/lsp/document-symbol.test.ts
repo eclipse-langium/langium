@@ -6,8 +6,8 @@
 
 import { describe, test } from 'vitest';
 import { Position, Range, SymbolKind } from 'vscode-languageserver';
-import { createLangiumGrammarServices, EmptyFileSystem } from '../../src';
-import { expectSymbols } from '../../src/test';
+import { createLangiumGrammarServices, EmptyFileSystem } from 'langium';
+import { expectSymbols } from 'langium/test';
 
 const text = `
  grammar g hidden(hiddenTerminal)

@@ -6,12 +6,12 @@
 
 import type { LangiumServices, Module, PartialLangiumServices, LangiumSharedServices, DefaultSharedModuleContext } from 'langium';
 import { inject, createDefaultSharedModule, createDefaultModule } from 'langium';
-import { DomainModelGeneratedModule, DomainModelGeneratedSharedModule } from './generated/module';
-import { DomainModelValidator, registerValidationChecks } from './domain-model-validator';
-import { DomainModelScopeComputation } from './domain-model-scope';
-import { QualifiedNameProvider } from './domain-model-naming';
-import { DomainModelFormatter } from './domain-model-formatter';
-import { DomainModelRenameProvider } from './domain-model-rename-refactoring';
+import { DomainModelGeneratedModule, DomainModelGeneratedSharedModule } from './generated/module.js';
+import { DomainModelValidator, registerValidationChecks } from './domain-model-validator.js';
+import { DomainModelScopeComputation } from './domain-model-scope.js';
+import { QualifiedNameProvider } from './domain-model-naming.js';
+import { DomainModelFormatter } from './domain-model-formatter.js';
+import { DomainModelRenameProvider } from './domain-model-rename-refactoring.js';
 
 export type DomainModelAddedServices = {
     references: {

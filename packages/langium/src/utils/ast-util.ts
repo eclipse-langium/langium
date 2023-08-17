@@ -5,12 +5,12 @@
  ******************************************************************************/
 
 import type { Range } from 'vscode-languageserver';
-import type { AstNode, CstNode, GenericAstNode, Reference, ReferenceInfo } from '../syntax-tree';
-import type { Stream, TreeStream } from '../utils/stream';
-import type { LangiumDocument } from '../workspace/documents';
-import { isAstNode, isReference } from '../syntax-tree';
-import { DONE_RESULT, stream, StreamImpl, TreeStreamImpl } from '../utils/stream';
-import { inRange } from './cst-util';
+import type { AstNode, CstNode, GenericAstNode, Reference, ReferenceInfo } from '../syntax-tree.js';
+import type { Stream, TreeStream } from '../utils/stream.js';
+import type { LangiumDocument } from '../workspace/documents.js';
+import { isAstNode, isReference } from '../syntax-tree.js';
+import { DONE_RESULT, stream, StreamImpl, TreeStreamImpl } from '../utils/stream.js';
+import { inRange } from './cst-util.js';
 
 export type Mutable<T> = {
     -readonly [P in keyof T]: T[P]

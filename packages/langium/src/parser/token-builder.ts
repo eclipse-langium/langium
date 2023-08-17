@@ -5,15 +5,15 @@
  ******************************************************************************/
 
 import type { CustomPatternMatcherFunc, TokenPattern, TokenType, TokenVocabulary } from 'chevrotain';
-import type { AbstractRule, Grammar, Keyword, TerminalRule } from '../grammar/generated/ast';
-import type { Stream } from '../utils/stream';
+import type { AbstractRule, Grammar, Keyword, TerminalRule } from '../grammar/generated/ast.js';
+import type { Stream } from '../utils/stream.js';
 import { Lexer } from 'chevrotain';
-import { isKeyword, isParserRule, isTerminalRule } from '../grammar/generated/ast';
-import { terminalRegex } from '../grammar/internal-grammar-util';
-import { streamAllContents } from '../utils/ast-util';
-import { getAllReachableRules } from '../utils/grammar-util';
-import { getCaseInsensitivePattern, isWhitespaceRegExp, partialMatches } from '../utils/regex-util';
-import { stream } from '../utils/stream';
+import { isKeyword, isParserRule, isTerminalRule } from '../grammar/generated/ast.js';
+import { terminalRegex } from '../grammar/internal-grammar-util.js';
+import { streamAllContents } from '../utils/ast-util.js';
+import { getAllReachableRules } from '../utils/grammar-util.js';
+import { getCaseInsensitivePattern, isWhitespaceRegExp, partialMatches } from '../utils/regex-util.js';
+import { stream } from '../utils/stream.js';
 
 export interface TokenBuilderOptions {
     caseInsensitive?: boolean

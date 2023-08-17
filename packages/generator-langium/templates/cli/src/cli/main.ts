@@ -1,10 +1,10 @@
-import type { Model } from '../language/generated/ast';
+import type { Model } from '../language/generated/ast.js';
 import chalk from 'chalk';
 import { Command } from 'commander';
-import { <%= LanguageName %>LanguageMetaData } from '../language/generated/module';
-import { create<%= LanguageName %>Services } from '../language/<%= language-id %>-module';
-import { extractAstNode } from './cli-util';
-import { generateJavaScript } from './generator';
+import { <%= LanguageName %>LanguageMetaData } from '../language/generated/module.js';
+import { create<%= LanguageName %>Services } from '../language/<%= language-id %>-module.js';
+import { extractAstNode } from './cli-util.js';
+import { generateJavaScript } from './generator.js';
 import { NodeFileSystem } from 'langium/node';
 
 export const generateAction = async (fileName: string, opts: GenerateOptions): Promise<void> => {

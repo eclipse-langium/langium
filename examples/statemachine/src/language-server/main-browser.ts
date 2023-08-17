@@ -4,10 +4,10 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { Diagnostic } from 'vscode-languageserver/browser';
+import type { Diagnostic } from 'vscode-languageserver/browser.js';
 import { startLanguageServer, EmptyFileSystem, DocumentState } from 'langium';
-import { BrowserMessageReader, BrowserMessageWriter, createConnection, NotificationType } from 'vscode-languageserver/browser';
-import { createStatemachineServices } from './statemachine-module';
+import { BrowserMessageReader, BrowserMessageWriter, createConnection, NotificationType } from 'vscode-languageserver/browser.js';
+import { createStatemachineServices } from './statemachine-module.js';
 
 /* browser specific setup code */
 const messageReader = new BrowserMessageReader(self);

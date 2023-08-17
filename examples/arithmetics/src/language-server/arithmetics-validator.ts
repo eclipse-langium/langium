@@ -4,13 +4,13 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { ArithmeticsAstType, Definition, Expression, BinaryExpression, Module, DeclaredParameter, FunctionCall } from './generated/ast';
-import type { ArithmeticsServices } from './arithmetics-module';
+import type { ArithmeticsAstType, Definition, Expression, BinaryExpression, Module, DeclaredParameter, FunctionCall } from './generated/ast.js';
+import type { ArithmeticsServices } from './arithmetics-module.js';
 import type { ValidationChecks, ValidationAcceptor } from 'langium';
-import { isNumberLiteral, isFunctionCall, isBinaryExpression } from './generated/ast';
-import { applyOp } from './arithmetics-util';
+import { isNumberLiteral, isFunctionCall, isBinaryExpression } from './generated/ast.js';
+import { applyOp } from './arithmetics-util.js';
 import { MultiMap } from 'langium';
-import { evalExpression } from './arithmetics-evaluator';
+import { evalExpression } from './arithmetics-evaluator.js';
 
 export function registerValidationChecks(services: ArithmeticsServices): void {
     const registry = services.validation.ValidationRegistry;

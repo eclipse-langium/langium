@@ -4,18 +4,18 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { URI } from 'vscode-uri';
-import type { NameProvider } from '../references/name-provider';
-import type { LangiumServices } from '../services';
-import type { AstNode, AstNodeDescription, ReferenceInfo } from '../syntax-tree';
-import type { AstNodeLocator } from './ast-node-locator';
-import type { DocumentSegment, LangiumDocument } from './documents';
+import type { URI } from '../utils/uri-util.js';
+import type { NameProvider } from '../references/name-provider.js';
+import type { LangiumServices } from '../services.js';
+import type { AstNode, AstNodeDescription, ReferenceInfo } from '../syntax-tree.js';
+import type { AstNodeLocator } from './ast-node-locator.js';
+import type { DocumentSegment, LangiumDocument } from './documents.js';
 import { CancellationToken } from 'vscode-languageserver';
-import { isLinkingError } from '../syntax-tree';
-import { getDocument, streamAst, streamReferences } from '../utils/ast-util';
-import { toDocumentSegment } from '../utils/cst-util';
-import { interruptAndCheck } from '../utils/promise-util';
-import { equalURI } from '../utils/uri-util';
+import { isLinkingError } from '../syntax-tree.js';
+import { getDocument, streamAst, streamReferences } from '../utils/ast-util.js';
+import { toDocumentSegment } from '../utils/cst-util.js';
+import { interruptAndCheck } from '../utils/promise-util.js';
+import { UriUtils } from '../utils/uri-util.js';
 
 /**
  * Language-specific service for creating descriptions of AST nodes to be used for cross-reference resolutions.
@@ -141,7 +141,7 @@ export class DefaultReferenceDescriptionProvider implements ReferenceDescription
             targetUri: targetNodeDescr.documentUri,
             targetPath: targetNodeDescr.path,
             segment: toDocumentSegment(refCstNode),
-            local: equalURI(targetNodeDescr.documentUri, docUri)
+            local: UriUtils.equals(targetNodeDescr.documentUri, docUri)
         };
     }
 

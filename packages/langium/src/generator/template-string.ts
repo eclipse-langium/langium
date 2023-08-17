@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { EOL, toString } from './generator-node';
+import { EOL, toString } from './generator-node.js';
 
 export function expandToStringWithNL(staticParts: TemplateStringsArray, ...substitutions: unknown[]): string {
     return expandToString(staticParts, ...substitutions) + EOL;

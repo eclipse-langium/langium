@@ -4,10 +4,10 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { URI } from 'vscode-uri';
-import type { FileSystemNode, FileSystemProvider } from '../workspace/file-system-provider';
-import fs from 'fs';
-import { Utils } from 'vscode-uri';
+import type { URI } from '../utils/uri-util.js';
+import { UriUtils } from '../utils/uri-util.js';
+import type { FileSystemNode, FileSystemProvider } from '../workspace/file-system-provider.js';
+import * as fs from 'node:fs';
 
 export type NodeTextEncoding = 'ascii' | 'utf8' | 'utf-8' | 'utf16le' | 'ucs2' | 'ucs-2' | 'latin1';
 
@@ -29,7 +29,7 @@ export class NodeFileSystemProvider implements FileSystemProvider {
             dirent, // Include the raw entry, it may be useful...
             isFile: dirent.isFile(),
             isDirectory: dirent.isDirectory(),
-            uri: Utils.joinPath(folderPath, dirent.name)
+            uri: UriUtils.joinPath(folderPath, dirent.name)
         }));
     }
 }

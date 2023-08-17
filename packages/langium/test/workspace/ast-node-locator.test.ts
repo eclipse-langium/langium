@@ -4,11 +4,10 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { Alternatives, Grammar, ParserRule } from '../../src/grammar/generated/ast';
+import type { Grammar, GrammarAST as GrammarTypes } from 'langium';
 import { describe, expect, test } from 'vitest';
-import { createLangiumGrammarServices } from '../../src/grammar/langium-grammar-module';
-import { EmptyFileSystem } from '../../src/workspace/file-system-provider';
-import { parseHelper } from '../../src/test';
+import { createLangiumGrammarServices, EmptyFileSystem} from 'langium';
+import { parseHelper } from 'langium/test';
 
 describe('DefaultAstNodeLocator', () => {
     const grammarServices = createLangiumGrammarServices(EmptyFileSystem).grammar;
@@ -24,8 +23,8 @@ describe('DefaultAstNodeLocator', () => {
         const model = document.parseResult.value;
         const nodeLocator = grammarServices.workspace.AstNodeLocator;
         expect(nodeLocator.getAstNodePath(model.rules[0])).toBe('/rules@0');
-        expect(nodeLocator.getAstNodePath((model.rules[0] as ParserRule).definition)).toBe('/rules@0/definition');
-        expect(nodeLocator.getAstNodePath(((model.rules[0] as ParserRule).definition as Alternatives).elements[1])).toBe('/rules@0/definition/elements@1');
+        expect(nodeLocator.getAstNodePath((model.rules[0] as GrammarTypes.ParserRule).definition)).toBe('/rules@0/definition');
+        expect(nodeLocator.getAstNodePath(((model.rules[0] as GrammarTypes.ParserRule).definition as GrammarTypes.Alternatives).elements[1])).toBe('/rules@0/definition/elements@1');
     });
 
     test('resolves paths correctly', async () => {
@@ -38,8 +37,8 @@ describe('DefaultAstNodeLocator', () => {
         const model = document.parseResult.value;
         const nodeLocator = grammarServices.workspace.AstNodeLocator;
         expect(nodeLocator.getAstNode(model, '/rules@0')).toBe(model.rules[0]);
-        expect(nodeLocator.getAstNode(model, '/rules@0/definition')).toBe((model.rules[0] as ParserRule).definition);
-        expect(nodeLocator.getAstNode(model, '/rules@0/definition/elements@1')).toBe(((model.rules[0] as ParserRule).definition as Alternatives).elements[1]);
+        expect(nodeLocator.getAstNode(model, '/rules@0/definition')).toBe((model.rules[0] as GrammarTypes.ParserRule).definition);
+        expect(nodeLocator.getAstNode(model, '/rules@0/definition/elements@1')).toBe(((model.rules[0] as GrammarTypes.ParserRule).definition as GrammarTypes.Alternatives).elements[1]);
     });
 
 });

@@ -5,8 +5,8 @@
  ******************************************************************************/
 
 import * as vscode from 'vscode';
-import type { LanguageClient } from 'vscode-languageclient/node';
-import { DOCUMENTS_VALIDATED_NOTIFICATION, RAILROAD_DIAGRAM_REQUEST } from './language-server/messages';
+import type { LanguageClient } from 'vscode-languageclient/node.js';
+import { DOCUMENTS_VALIDATED_NOTIFICATION, RAILROAD_DIAGRAM_REQUEST } from './language-server/messages.js';
 
 export function registerRailroadWebview(client: LanguageClient): void {
     vscode.commands.registerCommand('langium.showRailroadDiagram', (uri?: vscode.Uri) => {

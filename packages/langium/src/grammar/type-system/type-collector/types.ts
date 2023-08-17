@@ -4,10 +4,10 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { CstNode } from '../../../syntax-tree';
-import type { Assignment, Action, TypeAttribute } from '../../generated/ast';
-import { CompositeGeneratorNode, NL, toString } from '../../../generator/generator-node';
-import { distinctAndSorted } from '../types-util';
+import type { CstNode } from '../../../syntax-tree.js';
+import type { Assignment, Action, TypeAttribute } from '../../generated/ast.js';
+import { CompositeGeneratorNode, NL, toString } from '../../../generator/generator-node.js';
+import { distinctAndSorted } from '../types-util.js';
 
 export interface Property {
     name: string,

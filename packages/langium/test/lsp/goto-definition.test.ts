@@ -5,8 +5,8 @@
  ******************************************************************************/
 
 import { describe, test } from 'vitest';
-import { createLangiumGrammarServices, EmptyFileSystem } from '../../src';
-import { expectGoToDefinition } from '../../src/test';
+import { createLangiumGrammarServices, EmptyFileSystem } from 'langium';
+import { expectGoToDefinition } from 'langium/test';
 
 /**
  * Represents a grammar file

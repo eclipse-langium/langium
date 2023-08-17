@@ -5,16 +5,16 @@
  ******************************************************************************/
 
 import type { CancellationToken, Position, Range, RenameParams, TextDocumentPositionParams, WorkspaceEdit } from 'vscode-languageserver';
-import type { GrammarConfig } from '../grammar/grammar-config';
-import type { NameProvider } from '../references/name-provider';
-import type { References } from '../references/references';
-import type { LangiumServices } from '../services';
-import type { CstNode } from '../syntax-tree';
-import type { MaybePromise } from '../utils/promise-util';
-import type { LangiumDocument } from '../workspace/documents';
+import type { GrammarConfig } from '../grammar/grammar-config.js';
+import type { NameProvider } from '../references/name-provider.js';
+import type { References } from '../references/references.js';
+import type { LangiumServices } from '../services.js';
+import type { CstNode } from '../syntax-tree.js';
+import type { MaybePromise } from '../utils/promise-util.js';
+import type { LangiumDocument } from '../workspace/documents.js';
 import { TextEdit } from 'vscode-languageserver';
-import { isNamed } from '../references/name-provider';
-import { findDeclarationNodeAtOffset } from '../utils/cst-util';
+import { isNamed } from '../references/name-provider.js';
+import { findDeclarationNodeAtOffset } from '../utils/cst-util.js';
 
 /**
  * Language-specific service for handling rename requests and prepare rename requests.

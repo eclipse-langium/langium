@@ -6,10 +6,10 @@
 
 import type { AstNode, LangiumDocument, LangiumServices } from 'langium';
 import type { WorkspaceFolder } from 'vscode-languageserver';
-import fs from 'fs';
-import path from 'path';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 import chalk from 'chalk';
-import { URI } from 'vscode-uri';
+import { URI } from 'langium';
 
 export async function extractDocument<T extends AstNode>(fileName: string, extensions: readonly string[], services: LangiumServices): Promise<LangiumDocument<T>> {
     if (!extensions.includes(path.extname(fileName))) {

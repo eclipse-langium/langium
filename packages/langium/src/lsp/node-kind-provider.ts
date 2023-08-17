@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { AstNode, AstNodeDescription } from '../syntax-tree';
+import type { AstNode, AstNodeDescription } from '../syntax-tree.js';
 import { CompletionItemKind, SymbolKind } from 'vscode-languageserver';
 
 /**

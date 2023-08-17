@@ -1,6 +1,6 @@
 import { EmptyFileSystem, startLanguageServer } from 'langium';
-import { BrowserMessageReader, BrowserMessageWriter, createConnection } from 'vscode-languageserver/browser';
-import { create<%= LanguageName %>Services } from './<%= language-id %>-module';
+import { BrowserMessageReader, BrowserMessageWriter, createConnection } from 'vscode-languageserver/browser.js';
+import { create<%= LanguageName %>Services } from './<%= language-id %>-module.js';
 
 declare const self: DedicatedWorkerGlobalScope;
 

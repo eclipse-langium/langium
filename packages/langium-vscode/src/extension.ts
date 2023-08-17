@@ -5,9 +5,9 @@
  ******************************************************************************/
 
 import * as vscode from 'vscode';
-import type { LanguageClientOptions, ServerOptions } from 'vscode-languageclient/node';
-import { LanguageClient, TransportKind } from 'vscode-languageclient/node';
-import { registerRailroadWebview } from './railroad-webview';
+import type { LanguageClientOptions, ServerOptions } from 'vscode-languageclient/node.js';
+import { LanguageClient, TransportKind } from 'vscode-languageclient/node.js';
+import { registerRailroadWebview } from './railroad-webview.js';
 
 let client: LanguageClient;
 
@@ -28,7 +28,7 @@ export function deactivate(): Thenable<void> | undefined {
 }
 
 async function startLanguageClient(context: vscode.ExtensionContext): Promise<LanguageClient> {
-    const serverModule = context.asAbsolutePath('./out/language-server/main');
+    const serverModule = context.asAbsolutePath('./out/language-server/main.cjs');
     // The debug options for the server
     // --inspect=6009: runs the server in Node's Inspector mode so VS Code can attach to the server for debugging.
     // By setting `process.env.DEBUG_BREAK` to a truthy value, the language server will wait until a debugger is attached.

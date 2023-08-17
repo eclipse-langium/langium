@@ -5,8 +5,8 @@
  ******************************************************************************/
 
 import type { ValidationAcceptor, ValidationChecks } from 'langium';
-import type { DomainModelAstType, Type } from './generated/ast';
-import type { DomainModelServices } from './domain-model-module';
+import type { DomainModelAstType, Type } from './generated/ast.js';
+import type { DomainModelServices } from './domain-model-module.js';
 
 export function registerValidationChecks(services: DomainModelServices) {
     const registry = services.validation.ValidationRegistry;

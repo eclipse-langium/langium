@@ -6,13 +6,19 @@
 import type { GeneratorNode, Grammar } from 'langium';
 import { CompositeGeneratorNode, getAllReachableRules, GrammarAST, NL, stream, streamAllContents } from 'langium';
 import fs from 'fs-extra';
-import path from 'path';
-import * as readline from 'readline';
+import * as path from 'node:path';
+import * as url from 'node:url';
+import * as readline from 'node:readline';
 import chalk from 'chalk';
-import { terminalRegex } from 'langium/lib/grammar/internal-grammar-util';
+import { terminalRegex } from 'langium/internal';
+
+// This is a replacement for `__dirname`
+function getDirname(): string {
+    return url.fileURLToPath(new URL('.', import.meta.url));
+}
 
 //eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function log(level: 'log' | 'warn' | 'error', options: { watch: boolean }, message: string, ...args: any[]): void {
+export function log(level: 'log' | 'warn' | 'error', options: { watch?: boolean }, message: string, ...args: any[]): void {
     if (options.watch) {
         console[level](getTime() + message, ...args);
     } else {
@@ -38,7 +44,7 @@ function padZeroes(i: number): string {
 }
 
 function getLangiumCliVersion(): string {
-    const ownPackagePath = path.resolve(__dirname, '..', '..', 'package.json');
+    const ownPackagePath = path.resolve(getDirname(), '..', '..', 'package.json');
     const pack = fs.readJsonSync(ownPackagePath, { encoding: 'utf-8' });
     return pack.version;
 }
@@ -105,4 +111,4 @@ export function collectTerminalRegexps(grammar: Grammar): Record<string, RegExp>
 
 export const cliVersion = getLangiumCliVersion();
 export const generatedHeader = getGeneratedHeader();
-export const schema = fs.readJson(path.resolve(__dirname, '../../langium-config-schema.json'), { encoding: 'utf-8' });
+export const schema = fs.readJson(path.resolve(getDirname(), '../../langium-config-schema.json'), { encoding: 'utf-8' });

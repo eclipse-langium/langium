@@ -5,14 +5,14 @@
  ******************************************************************************/
 
 import type { CallHierarchyIncomingCall, CallHierarchyOutgoingCall, Range } from 'vscode-languageserver';
-import type { AstNode, CstNode } from '../../syntax-tree';
-import type { Stream } from '../../utils/stream';
-import type { ReferenceDescription } from '../../workspace/ast-descriptions';
+import type { AstNode, CstNode } from '../../syntax-tree.js';
+import type { Stream } from '../../utils/stream.js';
+import type { ReferenceDescription } from '../../workspace/ast-descriptions.js';
 import { SymbolKind } from 'vscode-languageserver';
-import { AbstractCallHierarchyProvider } from '../../lsp/call-hierarchy-provider';
-import { getContainerOfType, getDocument, streamAllContents } from '../../utils/ast-util';
-import { findLeafNodeAtOffset } from '../../utils/cst-util';
-import { isParserRule, isRuleCall } from '../generated/ast';
+import { AbstractCallHierarchyProvider } from '../../lsp/call-hierarchy-provider.js';
+import { getContainerOfType, getDocument, streamAllContents } from '../../utils/ast-util.js';
+import { findLeafNodeAtOffset } from '../../utils/cst-util.js';
+import { isParserRule, isRuleCall } from '../generated/ast.js';
 
 export class LangiumGrammarCallHierarchyProvider extends AbstractCallHierarchyProvider {
     protected getIncomingCalls(node: AstNode, references: Stream<ReferenceDescription>): CallHierarchyIncomingCall[] | undefined {

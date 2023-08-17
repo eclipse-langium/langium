@@ -5,12 +5,12 @@
  ******************************************************************************/
 
 import type { Range } from 'vscode-languageserver-textdocument';
-import type { AstNodeRegionWithAssignments, AstNodeWithTextRegion } from '../serializer/json-serializer';
-import type { AstNode, CstNode, GenericAstNode } from '../syntax-tree';
-import { getDocument } from '../utils/ast-util';
-import { findNodesForProperty } from '../utils/grammar-util';
-import { TreeStreamImpl } from '../utils/stream';
-import type { DocumentSegment } from '../workspace/documents';
+import type { AstNodeRegionWithAssignments, AstNodeWithTextRegion } from '../serializer/json-serializer.js';
+import type { AstNode, CstNode, GenericAstNode } from '../syntax-tree.js';
+import { getDocument } from '../utils/ast-util.js';
+import { findNodesForProperty } from '../utils/grammar-util.js';
+import { TreeStreamImpl } from '../utils/stream.js';
+import type { DocumentSegment } from '../workspace/documents.js';
 
 export interface TraceSourceSpec {
     astNode: AstNode;
@@ -106,7 +106,7 @@ function getSourceRegionOfAstNode(sourceSpec: TraceSourceSpec): DocumentSegmentW
                 return index < regions.length ? regions[index] : undefined;
 
             } else {
-                return regions.reduce( mergeDocumentSegment, undefined );
+                return regions.reduce(mergeDocumentSegment, undefined);
             }
         };
 

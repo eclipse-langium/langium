@@ -6,10 +6,9 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import type { LangiumServices } from '../src/services';
+import type { LangiumServices } from 'langium';
 import { describe, expect, test } from 'vitest';
-import { URI } from 'vscode-uri';
-import { DefaultServiceRegistry } from '../src/service-registry';
+import { DefaultServiceRegistry, URI } from 'langium';
 
 describe('DefaultServiceRegistry', () => {
 

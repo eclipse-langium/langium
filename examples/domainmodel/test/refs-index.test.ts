@@ -4,14 +4,13 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { AstNode, LangiumDocument, ReferenceDescription } from 'langium';
-import type { URI } from 'vscode-uri';
-import type { Domainmodel } from '../src/language-server/generated/ast';
+import type { AstNode, LangiumDocument, ReferenceDescription, URI } from 'langium';
+import type { Domainmodel } from '../src/language-server/generated/ast.js';
 import { describe, expect, test } from 'vitest';
 import { EmptyFileSystem, getDocument } from 'langium';
-import { parseDocument } from 'langium/lib/test';
+import { parseDocument } from 'langium/test';
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { createDomainModelServices } from '../src/language-server/domain-model-module';
+import { createDomainModelServices } from '../src/language-server/domain-model-module.js';
 
 const services = createDomainModelServices(EmptyFileSystem).domainmodel;
 

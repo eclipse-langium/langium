@@ -4,8 +4,8 @@
  ******************************************************************************/
 
 /* eslint-disable */
-import type { AstNode, Reference, ReferenceInfo, TypeMetaData } from '../../syntax-tree';
-import { AbstractAstReflection } from '../../syntax-tree';
+import type { AstNode, Reference, ReferenceInfo, TypeMetaData } from '../../syntax-tree.js';
+import { AbstractAstReflection } from '../../syntax-tree.js';
 
 export const LangiumGrammarTerminals = {
     ID: /\^?[_a-zA-Z][\w_]*/,

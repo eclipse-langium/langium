@@ -6,9 +6,9 @@
 
 import fs from 'fs-extra';
 import type { IParserConfig } from 'langium';
-import path from 'path';
-import type { GenerateOptions } from './generate';
-import { log } from './generator/util';
+import * as path from 'path';
+import type { GenerateOptions } from './generate.js';
+import { log } from './generator/util.js';
 import chalk from 'chalk';
 
 export interface Package {
@@ -93,6 +93,7 @@ export async function loadConfig(options: GenerateOptions): Promise<LangiumConfi
         const obj = await fs.readJson(filePath, { encoding: 'utf-8' });
         const config: LangiumConfig = path.basename(filePath) === 'package.json' ? obj.langium : obj;
         config[RelativePath] = relativePath;
+        config.importExtension ??= '.js';
         return config;
     } catch (err) {
         log('error', options, chalk.red('Failed to read config file.'), err);

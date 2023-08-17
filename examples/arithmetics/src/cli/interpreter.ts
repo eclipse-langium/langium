@@ -4,13 +4,13 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { Module } from '../language-server/generated/ast';
+import type { Module } from '../language-server/generated/ast.js';
 import { NodeFileSystem } from 'langium/node';
-import { createArithmeticsServices } from '../language-server/arithmetics-module';
-import { ArithmeticsLanguageMetaData } from '../language-server/generated/module';
-import { extractDocument } from './cli-util';
+import { createArithmeticsServices } from '../language-server/arithmetics-module.js';
+import { ArithmeticsLanguageMetaData } from '../language-server/generated/module.js';
+import { extractDocument } from './cli-util.js';
 import chalk from 'chalk';
-import { interpretEvaluations } from '../language-server/arithmetics-evaluator';
+import { interpretEvaluations } from '../language-server/arithmetics-evaluator.js';
 
 export const evalAction = async (fileName: string): Promise<void> => {
     const services = createArithmeticsServices(NodeFileSystem).arithmetics;

@@ -3,40 +3,41 @@
  * This program and the accompanying materials are made available under the
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
-import type { AstNode, Grammar, LangiumDocument, Mutable } from 'langium';
-import type { LangiumConfig, LangiumLanguageConfig } from './package';
+
+import type { AstNode, Grammar, LangiumDocument, Mutable} from 'langium';
+import { URI } from 'langium';
+import type { LangiumConfig, LangiumLanguageConfig } from './package.js';
 import { copyAstNode, createLangiumGrammarServices, getDocument, GrammarAST, linkContentToContainer } from 'langium';
-import { resolveImport, resolveTransitiveImports } from 'langium/lib/grammar/internal-grammar-util';
+import { resolveImport, resolveTransitiveImports } from 'langium/internal';
 import { NodeFileSystem } from 'langium/node';
-import { URI } from 'vscode-uri';
-import { generateAst } from './generator/ast-generator';
-import { serializeGrammar } from './generator/grammar-serializer';
-import { generateModule } from './generator/module-generator';
-import { generateTextMate } from './generator/highlighting/textmate-generator';
-import { generateMonarch } from './generator/highlighting/monarch-generator';
-import { generatePrismHighlighting } from './generator/highlighting/prism-generator';
-import { getUserChoice, log } from './generator/util';
-import { getFilePath, RelativePath } from './package';
-import { validateParser } from './parser-validation';
-import { generateTypesFile } from './generator/types-generator';
+import { generateAst } from './generator/ast-generator.js';
+import { serializeGrammar } from './generator/grammar-serializer.js';
+import { generateModule } from './generator/module-generator.js';
+import { generateTextMate } from './generator/highlighting/textmate-generator.js';
+import { generateMonarch } from './generator/highlighting/monarch-generator.js';
+import { generatePrismHighlighting } from './generator/highlighting/prism-generator.js';
+import { getUserChoice, log } from './generator/util.js';
+import { getFilePath, RelativePath } from './package.js';
+import { validateParser } from './parser-validation.js';
+import { generateTypesFile } from './generator/types-generator.js';
 import { createGrammarDiagramHtml } from 'langium-railroad';
 import chalk from 'chalk';
-import path from 'path';
+import * as path from 'path';
 import fs from 'fs-extra';
 
-export type GenerateOptions = {
+export interface GenerateOptions {
     file?: string;
     mode?: 'development' | 'production';
-    watch: boolean;
+    watch?: boolean;
 }
 
-export type ExtractTypesOptions = {
+export interface ExtractTypesOptions {
     grammar: string;
     output?: string;
     force: boolean;
 }
 
-export type GeneratorResult = {
+export interface GeneratorResult {
     success: boolean
     files: string[]
 }
@@ -164,7 +165,7 @@ async function buildAll(config: LangiumConfig): Promise<Map<string, LangiumDocum
     return map;
 }
 
-export async function generate(config: LangiumConfig, options: GenerateOptions): Promise<GeneratorResult> {
+export async function runGenerator(config: LangiumConfig, options: GenerateOptions): Promise<GeneratorResult> {
     if (!config.languages || config.languages.length === 0) {
         log('error', options, 'No languages specified in config.');
         return {
@@ -370,7 +371,7 @@ async function mkdirWithFail(path: string, options: GenerateOptions): Promise<bo
     }
 }
 
-async function writeWithFail(filePath: string, content: string, options: { watch: boolean }): Promise<void> {
+async function writeWithFail(filePath: string, content: string, options: { watch?: boolean }): Promise<void> {
     try {
         const parentDir = path.dirname(filePath);
         await mkdirWithFail(parentDir, options);

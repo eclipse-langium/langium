@@ -5,9 +5,9 @@
  ******************************************************************************/
 
 import { describe, expect, test } from 'vitest';
-import { extractDocuments } from '../src/cli/cli-util';
-import { createRequirementsAndTestsLangServices } from '../src/language-server/requirements-and-tests-lang-module';
-import * as path from 'path';
+import { extractDocuments } from '../src/cli/cli-util.js';
+import { createRequirementsAndTestsLangServices } from '../src/language-server/requirements-and-tests-lang-module.js';
+import * as path from 'node:path';
 import { NodeFileSystem } from 'langium/node';
 
 describe('A requirement identifier and a test identifier shall contain a number.', () => {

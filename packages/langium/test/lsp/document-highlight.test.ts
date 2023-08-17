@@ -5,8 +5,8 @@
  ******************************************************************************/
 
 import { describe, test } from 'vitest';
-import { createLangiumGrammarServices, EmptyFileSystem } from '../../src';
-import { expectHighlight, parseHelper } from '../../src/test';
+import { createLangiumGrammarServices, EmptyFileSystem } from 'langium';
+import { expectHighlight, parseHelper } from 'langium/test';
 
 const grammarServices = createLangiumGrammarServices(EmptyFileSystem).grammar;
 const helper = parseHelper(grammarServices);

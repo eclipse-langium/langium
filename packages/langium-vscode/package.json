@@ -9,6 +9,7 @@
     "Programming Languages",
     "Other"
   ],
+  "type": "module",
   "license": "MIT",
   "icon": "data/langium-logo.png",
   "galleryBanner": {
@@ -79,13 +80,13 @@
   "vsce": {
     "dependencies": false
   },
-  "main": "out/extension.js",
+  "main": "out/extension.cjs",
   "scripts": {
     "prepare": "npm run copy:schema",
     "copy:schema": "shx cp ../langium-cli/langium-config-schema.json ./data",
     "vscode:prepublish": "npm run clean && tsc --noEmit && npm run lint && node esbuild.mjs --minify && npm run copy:schema",
     "clean": "shx rm -rf out",
-    "build": "node esbuild.mjs && tsc --noEmit",
+    "build": "tsc --noEmit && node esbuild.mjs",
     "watch": "node esbuild.mjs --watch",
     "lint": "eslint src --ext ts"
   },
@@ -96,8 +97,8 @@
     "ignore": "~5.2.4"
   },
   "volta": {
-    "node": "16.19.0",
-    "npm": "8.19.3"
+    "node": "18.17.0",
+    "npm": "9.5.1"
   },
   "repository": {
     "type": "git",

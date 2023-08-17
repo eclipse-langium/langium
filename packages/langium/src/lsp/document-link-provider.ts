@@ -5,8 +5,8 @@
  ******************************************************************************/
 
 import type { CancellationToken, DocumentLink, DocumentLinkParams } from 'vscode-languageserver';
-import type { MaybePromise } from '../utils/promise-util';
-import type { LangiumDocument } from '../workspace/documents';
+import type { MaybePromise } from '../utils/promise-util.js';
+import type { LangiumDocument } from '../workspace/documents.js';
 
 /**
  * Language-specific service for handling document link requests.

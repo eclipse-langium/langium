@@ -18,8 +18,13 @@
     "lib",
     "src"
   ],
-  "main": "lib/index.js",
-  "types": "lib/index.d.ts",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./lib/index.d.ts",
+      "import": "./lib/index.js"
+    }
+  },
   "scripts": {
     "clean": "shx rm -rf lib coverage",
     "build": "tsc",
@@ -33,8 +38,8 @@
     "sprotty-protocol": "~0.13.0"
   },
   "volta": {
-    "node": "16.19.0",
-    "npm": "8.19.3"
+    "node": "18.17.0",
+    "npm": "9.5.1"
   },
   "repository": {
     "type": "git",

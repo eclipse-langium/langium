@@ -5,17 +5,17 @@
  ******************************************************************************/
 
 import type { CompletionItem, CompletionList, Diagnostic, DocumentSymbol, FoldingRange, FormattingOptions, Range, ReferenceParams, SemanticTokensParams, SemanticTokenTypes, TextDocumentIdentifier, TextDocumentPositionParams, WorkspaceSymbol } from 'vscode-languageserver';
-import type { LangiumServices, LangiumSharedServices } from '../services';
-import type { AstNode, CstNode, Properties } from '../syntax-tree';
-import type { LangiumDocument } from '../workspace/documents';
-import type { BuildOptions } from '../workspace/document-builder';
+import type { LangiumServices, LangiumSharedServices } from '../services.js';
+import type { AstNode, CstNode, Properties } from '../syntax-tree.js';
+import type { LangiumDocument } from '../workspace/documents.js';
+import type { BuildOptions } from '../workspace/document-builder.js';
 import { CancellationTokenSource, DiagnosticSeverity, MarkupContent } from 'vscode-languageserver';
-import { URI } from 'vscode-uri';
-import { escapeRegExp } from '../utils/regex-util';
-import { findNodeForProperty } from '../utils/grammar-util';
-import { SemanticTokensDecoder } from '../lsp/semantic-token-provider';
+import { escapeRegExp } from '../utils/regex-util.js';
+import { URI } from '../utils/uri-util.js';
+import { findNodeForProperty } from '../utils/grammar-util.js';
+import { SemanticTokensDecoder } from '../lsp/semantic-token-provider.js';
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import assert from 'assert';
+import * as assert from 'node:assert';
 
 export interface ParseHelperOptions extends BuildOptions {
     documentUri?: string;

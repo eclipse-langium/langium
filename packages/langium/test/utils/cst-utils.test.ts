@@ -4,11 +4,10 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { Grammar } from '../../src';
+import type { Grammar } from 'langium';
 import { describe, expect, test } from 'vitest';
-import { createLangiumGrammarServices, EmptyFileSystem } from '../../src';
-import { parseHelper } from '../../src/test';
-import * as cstUtil from '../../src/utils/cst-util';
+import { createLangiumGrammarServices, findLeafNodeAtOffset, EmptyFileSystem } from 'langium';
+import { parseHelper } from 'langium/test';
 
 const services = createLangiumGrammarServices(EmptyFileSystem);
 const parser = parseHelper<Grammar>(services.grammar);
@@ -25,7 +24,7 @@ describe('CST Utils', () => {
 
         const grammar = await parser(text);
         const offset = grammar.textDocument.getText().indexOf('AB');
-        const leafnode = cstUtil.findLeafNodeAtOffset(grammar.parseResult.value.$cstNode!, offset!);
+        const leafnode = findLeafNodeAtOffset(grammar.parseResult.value.$cstNode!, offset!);
         expect(leafnode!.text).toBe('AB');
     });
 
@@ -39,7 +38,7 @@ describe('CST Utils', () => {
 
         const grammar = await parser(text);
         const offset = grammar.textDocument.getText().indexOf('AB') + 1;
-        const leafnode = cstUtil.findLeafNodeAtOffset(grammar.parseResult.value.$cstNode!, offset!);
+        const leafnode = findLeafNodeAtOffset(grammar.parseResult.value.$cstNode!, offset!);
         expect(leafnode!.text).toBe('AB');
     });
 
@@ -53,7 +52,7 @@ describe('CST Utils', () => {
 
         const grammar = await parser(text);
         const offset = grammar.textDocument.getText().indexOf('AB') + 2;
-        const leafnode = cstUtil.findLeafNodeAtOffset(grammar.parseResult.value.$cstNode!, offset!);
+        const leafnode = findLeafNodeAtOffset(grammar.parseResult.value.$cstNode!, offset!);
         expect(leafnode!.text).toBe(';');
     });
 });

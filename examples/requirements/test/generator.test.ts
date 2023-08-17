@@ -5,10 +5,10 @@
  ******************************************************************************/
 
 import { describe, expect, test } from 'vitest';
-import { extractRequirementModelWithTestModels } from '../src/cli/cli-util';
-import { generateSummaryFileHTMLContent } from '../src/cli/generator';
-import { createRequirementsAndTestsLangServices } from '../src/language-server/requirements-and-tests-lang-module';
-import * as path from 'path';
+import { extractRequirementModelWithTestModels } from '../src/cli/cli-util.js';
+import { generateSummaryFileHTMLContent } from '../src/cli/generator.js';
+import { createRequirementsAndTestsLangServices } from '../src/language-server/requirements-and-tests-lang-module.js';
+import * as path from 'node:path';
 import { NodeFileSystem } from 'langium/node';
 
 describe('The generator should allow to extract all test cases referencing a specific requirement.', () => {

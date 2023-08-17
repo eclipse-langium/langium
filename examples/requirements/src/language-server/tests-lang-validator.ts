@@ -5,8 +5,8 @@
  ******************************************************************************/
 
 import type { ValidationAcceptor, ValidationChecks } from 'langium';
-import type { RequirementsAndTestsAstType, Test } from './generated/ast';
-import type { TestsLangServices } from './tests-lang-module';
+import type { RequirementsAndTestsAstType, Test } from './generated/ast.js';
+import type { TestsLangServices } from './tests-lang-module.js';
 
 export function registerTestsValidationChecks(services: TestsLangServices) {
     const registry = services.validation.ValidationRegistry;

@@ -4,11 +4,11 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { AbstractElement, AbstractRule } from '../grammar/generated/ast';
-import type { CstNode } from '../syntax-tree';
-import { isCrossReference, isRuleCall } from '../grammar/generated/ast';
-import { getRuleType } from '../grammar/internal-grammar-util';
-import { getCrossReferenceTerminal } from '../utils/grammar-util';
+import type { AbstractElement, AbstractRule } from '../grammar/generated/ast.js';
+import type { CstNode } from '../syntax-tree.js';
+import { isCrossReference, isRuleCall } from '../grammar/generated/ast.js';
+import { getRuleType } from '../grammar/internal-grammar-util.js';
+import { getCrossReferenceTerminal } from '../utils/grammar-util.js';
 
 /**
  * Language-specific service for converting string values from the source text format into a value to be held in the AST.

@@ -6,10 +6,10 @@
 
 import type { SignatureHelp, SignatureHelpOptions, SignatureHelpParams } from 'vscode-languageserver';
 import { CancellationToken } from 'vscode-languageserver';
-import type { AstNode } from '../syntax-tree';
-import { findLeafNodeAtOffset } from '../utils/cst-util';
-import type { MaybePromise } from '../utils/promise-util';
-import type { LangiumDocument } from '../workspace/documents';
+import type { AstNode } from '../syntax-tree.js';
+import { findLeafNodeAtOffset } from '../utils/cst-util.js';
+import type { MaybePromise } from '../utils/promise-util.js';
+import type { LangiumDocument } from '../workspace/documents.js';
 
 /**
  * Language-specific service for handling signature help requests.

@@ -3,9 +3,9 @@
  * This program and the accompanying materials are made available under the
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
-import type { AbstractDefinition, Definition, Evaluation, Expression, Module, Statement } from './generated/ast';
-import { isBinaryExpression, isDefinition, isEvaluation, isFunctionCall, isNumberLiteral } from './generated/ast';
-import { applyOp } from './arithmetics-util';
+import type { AbstractDefinition, Definition, Evaluation, Expression, Module, Statement } from './generated/ast.js';
+import { isBinaryExpression, isDefinition, isEvaluation, isFunctionCall, isNumberLiteral } from './generated/ast.js';
+import { applyOp } from './arithmetics-util.js';
 
 export function interpretEvaluations(module: Module): Map<Evaluation, number> {
     const ctx = <InterpreterContext>{

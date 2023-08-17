@@ -5,17 +5,17 @@
  ******************************************************************************/
 
 import type { CallHierarchyIncomingCall, CallHierarchyIncomingCallsParams, CallHierarchyItem, CallHierarchyOutgoingCall, CallHierarchyOutgoingCallsParams, CallHierarchyPrepareParams, CancellationToken } from 'vscode-languageserver';
-import type { GrammarConfig } from '../grammar/grammar-config';
-import type { NameProvider } from '../references/name-provider';
-import type { References } from '../references/references';
-import type { LangiumServices } from '../services';
-import type { AstNode } from '../syntax-tree';
-import type { Stream } from '../utils/stream';
-import type { ReferenceDescription } from '../workspace/ast-descriptions';
-import type { LangiumDocument, LangiumDocuments } from '../workspace/documents';
+import type { GrammarConfig } from '../grammar/grammar-config.js';
+import type { NameProvider } from '../references/name-provider.js';
+import type { References } from '../references/references.js';
+import type { LangiumServices } from '../services.js';
+import type { AstNode } from '../syntax-tree.js';
+import type { Stream } from '../utils/stream.js';
+import type { ReferenceDescription } from '../workspace/ast-descriptions.js';
+import type { LangiumDocument, LangiumDocuments } from '../workspace/documents.js';
 import { SymbolKind } from 'vscode-languageserver';
-import { URI } from 'vscode-uri';
-import { findDeclarationNodeAtOffset } from '../utils/cst-util';
+import { findDeclarationNodeAtOffset } from '../utils/cst-util.js';
+import { URI } from '../utils/uri-util.js';
 
 /**
  * Language-specific service for handling call hierarchy requests.

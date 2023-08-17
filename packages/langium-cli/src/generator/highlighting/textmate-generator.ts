@@ -4,10 +4,10 @@
  * terms of the MIT License, which is available in the project root.
 ******************************************************************************/
 import type { Grammar } from 'langium';
-import type { LangiumLanguageConfig } from '../../package';
+import type { LangiumLanguageConfig } from '../../package.js';
 import { EOL, escapeRegExp, getCaseInsensitivePattern, getTerminalParts, GrammarAST, isCommentTerminal, stream } from 'langium';
-import { terminalRegex } from 'langium/lib/grammar/internal-grammar-util';
-import { collectKeywords } from '../util';
+import { terminalRegex } from 'langium/internal';
+import { collectKeywords } from '../util.js';
 
 /* eslint-disable dot-notation */
 

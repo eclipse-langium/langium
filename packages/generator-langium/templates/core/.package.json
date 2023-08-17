@@ -6,6 +6,7 @@
         "out",
         "src"
     ],
+    "type": "module",
     "scripts": {
         "build": "tsc -b tsconfig.json",
         "watch": "tsc -b tsconfig.json --watch",

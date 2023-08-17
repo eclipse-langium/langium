@@ -4,12 +4,8 @@
     "rootDir": "src",
     "outDir": "out"
   },
-  "references": [{ "path": "../langium" }],
+  "references": [{ "path": "../langium/tsconfig.src.json" }],
   "include": [
     "src/**/*"
-  ],
-  "exclude": [
-    "out",
-    "/node_modules"
   ]
 }

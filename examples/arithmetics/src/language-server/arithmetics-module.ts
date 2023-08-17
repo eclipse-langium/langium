@@ -6,9 +6,9 @@
 
 import type { DefaultSharedModuleContext, LangiumServices, LangiumSharedServices, Module, PartialLangiumServices } from 'langium';
 import { createDefaultModule, createDefaultSharedModule, inject } from 'langium';
-import { ArithmeticsGeneratedModule, ArithmeticsGeneratedSharedModule } from './generated/module';
-import { ArithmeticsValidator, registerValidationChecks } from './arithmetics-validator';
-import { ArithmeticsScopeProvider } from './arithmetics-scope-provider';
+import { ArithmeticsGeneratedModule, ArithmeticsGeneratedSharedModule } from './generated/module.js';
+import { ArithmeticsValidator, registerValidationChecks } from './arithmetics-validator.js';
+import { ArithmeticsScopeProvider } from './arithmetics-scope-provider.js';
 
 /**
  * Declaration of custom services - add your own service classes here.

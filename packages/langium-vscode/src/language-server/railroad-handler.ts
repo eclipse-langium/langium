@@ -5,11 +5,10 @@
  ******************************************************************************/
 
 import type { Grammar, LangiumServices } from 'langium';
-import { DocumentState } from 'langium';
+import { DocumentState, URI } from 'langium';
 import type { Connection} from 'vscode-languageserver';
 import { DiagnosticSeverity } from 'vscode-languageserver';
-import { URI } from 'vscode-uri';
-import { DOCUMENTS_VALIDATED_NOTIFICATION, RAILROAD_DIAGRAM_REQUEST } from './messages';
+import { DOCUMENTS_VALIDATED_NOTIFICATION, RAILROAD_DIAGRAM_REQUEST } from './messages.js';
 import { createGrammarDiagramHtml } from 'langium-railroad';
 
 export function registerRailroadConnectionHandler(connection: Connection, services: LangiumServices): void {

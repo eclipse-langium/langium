@@ -4,15 +4,15 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { Grammar } from '../generated/ast';
-import type { LangiumDocuments } from '../../workspace/documents';
-import type { AstTypes, InterfaceType, PropertyType, TypeOption, UnionType } from './type-collector/types';
-import type { ValidationAstTypes } from './type-collector/all-types';
-import type { PlainAstTypes, PlainInterface, PlainUnion } from './type-collector/plain-types';
-import { findAstTypes, sortInterfacesTopologically } from './types-util';
-import { isInterfaceType, isPrimitiveType, isPropertyUnion, isStringType, isUnionType, isValueType } from './type-collector/types';
-import { collectTypeResources } from './type-collector/all-types';
-import { plainToTypes } from './type-collector/plain-types';
+import type { Grammar } from '../generated/ast.js';
+import type { LangiumDocuments } from '../../workspace/documents.js';
+import type { AstTypes, InterfaceType, PropertyType, TypeOption, UnionType } from './type-collector/types.js';
+import type { ValidationAstTypes } from './type-collector/all-types.js';
+import type { PlainAstTypes, PlainInterface, PlainUnion } from './type-collector/plain-types.js';
+import { findAstTypes, sortInterfacesTopologically } from './types-util.js';
+import { isInterfaceType, isPrimitiveType, isPropertyUnion, isStringType, isUnionType, isValueType } from './type-collector/types.js';
+import { collectTypeResources } from './type-collector/all-types.js';
+import { plainToTypes } from './type-collector/plain-types.js';
 
 /**
  * Collects all types for the generated AST. The types collector entry point.

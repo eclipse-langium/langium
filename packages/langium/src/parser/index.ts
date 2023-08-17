@@ -4,11 +4,11 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-export * from './completion-parser-builder';
-export * from './cst-node-builder';
-export * from './langium-parser-builder';
-export * from './langium-parser';
-export * from './lexer';
-export * from './parser-config';
-export * from './token-builder';
-export * from './value-converter';
+export * from './completion-parser-builder.js';
+export * from './cst-node-builder.js';
+export * from './langium-parser-builder.js';
+export * from './langium-parser.js';
+export * from './lexer.js';
+export * from './parser-config.js';
+export * from './token-builder.js';
+export * from './value-converter.js';

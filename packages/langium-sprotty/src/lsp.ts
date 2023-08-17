@@ -6,7 +6,7 @@
 
 import type { Connection } from 'vscode-languageserver';
 import type { ActionMessage } from 'sprotty-protocol';
-import type { LangiumSprottySharedServices } from './sprotty-services';
+import type { LangiumSprottySharedServices } from './sprotty-services.js';
 import { NotificationType } from 'vscode-languageserver';
 import { isOperationCancelled } from 'langium';
 

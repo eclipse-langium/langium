@@ -4,10 +4,10 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { LanguageClientOptions, ServerOptions } from 'vscode-languageclient/node';
+import type { LanguageClientOptions, ServerOptions } from 'vscode-languageclient/node.js';
 import * as vscode from 'vscode';
-import * as path from 'path';
-import { LanguageClient, TransportKind } from 'vscode-languageclient/node';
+import * as path from 'node:path';
+import { LanguageClient, TransportKind } from 'vscode-languageclient/node.js';
 
 let client: LanguageClient;
 
@@ -25,7 +25,7 @@ export function deactivate(): Thenable<void> | undefined {
 }
 
 function startLanguageClient(context: vscode.ExtensionContext): LanguageClient {
-    const serverModule = context.asAbsolutePath(path.join('out', 'language-server', 'main'));
+    const serverModule = context.asAbsolutePath(path.join('out', 'language-server', 'main.cjs'));
     // The debug options for the server
     // --inspect=6009: runs the server in Node's Inspector mode so VS Code can attach to the server for debugging
     const debugOptions = { execArgv: ['--nolazy', '--inspect=6009'] };

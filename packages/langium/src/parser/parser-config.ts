@@ -4,4 +4,4 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-export { IParserConfig } from 'chevrotain';
+export type { IParserConfig } from 'chevrotain';

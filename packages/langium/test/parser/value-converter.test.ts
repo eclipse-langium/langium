@@ -4,12 +4,10 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { Grammar } from '../../src';
-import type { TerminalRule } from '../../src/grammar/generated/ast';
+import type { Grammar, GrammarAST as GrammarTypes } from 'langium';
 import { describe, expect, test } from 'vitest';
-import { createLangiumGrammarServices, EmptyFileSystem } from '../../src';
-import { CharacterRange } from '../../src/grammar/generated/ast';
-import { parseHelper } from '../../src/test';
+import { createLangiumGrammarServices, EmptyFileSystem, GrammarAST } from 'langium';
+import { parseHelper } from 'langium/test';
 
 const grammarServices = createLangiumGrammarServices(EmptyFileSystem).grammar;
 const parse = parseHelper<Grammar>(grammarServices);
@@ -20,10 +18,10 @@ describe('DefaultValueConverter', () => {
         const doc = await parse(`
             terminal A: 'a\\'\\n\\t\\\\';
         `);
-        const terminalA = doc.parseResult.value.rules[0] as TerminalRule;
+        const terminalA = doc.parseResult.value.rules[0] as GrammarTypes.TerminalRule;
         expect(terminalA).toBeDefined();
-        expect(terminalA.definition.$type).toBe(CharacterRange);
-        expect((terminalA.definition as CharacterRange).left.value).toBe('a\'\n\t\\');
+        expect(terminalA.definition.$type).toBe(GrammarAST.CharacterRange);
+        expect((terminalA.definition as GrammarAST.CharacterRange).left.value).toBe('a\'\n\t\\');
     });
 
 });

@@ -1,22 +1,21 @@
 {
-    "extends": "./tsconfig.json",
     "files": [],
     "references": [
-        { "path": "packages/langium" },
-        { "path": "packages/langium/tsconfig.test.json" },
-        { "path": "packages/langium-railroad" },
-        { "path": "packages/langium-cli" },
-        { "path": "packages/langium-cli/tsconfig.test.json" },
-        { "path": "packages/langium-sprotty" },
-        { "path": "packages/generator-langium" },
-        { "path": "packages/generator-langium/tsconfig.test.json" },
-        { "path": "examples/arithmetics" },
-        { "path": "examples/arithmetics/tsconfig.test.json" },
-        { "path": "examples/domainmodel" },
-        { "path": "examples/domainmodel/tsconfig.test.json" },
-        { "path": "examples/requirements" },
-        { "path": "examples/requirements/tsconfig.test.json" },
-        { "path": "examples/statemachine" },
-        { "path": "examples/statemachine/tsconfig.test.json" }
+        { "path": "./packages/langium/tsconfig.src.json" },
+        { "path": "./packages/langium/tsconfig.test.json" },
+        { "path": "./packages/langium-railroad/tsconfig.json" },
+        { "path": "./packages/langium-cli/tsconfig.src.json" },
+        { "path": "./packages/langium-cli/tsconfig.test.json" },
+        { "path": "./packages/langium-sprotty/tsconfig.json" },
+        { "path": "./packages/generator-langium/tsconfig.src.json" },
+        { "path": "./packages/generator-langium/tsconfig.test.json" },
+        { "path": "./examples/arithmetics/tsconfig.src.json" },
+        { "path": "./examples/arithmetics/tsconfig.test.json" },
+        { "path": "./examples/domainmodel/tsconfig.src.json" },
+        { "path": "./examples/domainmodel/tsconfig.test.json" },
+        { "path": "./examples/requirements/tsconfig.src.json" },
+        { "path": "./examples/requirements/tsconfig.test.json" },
+        { "path": "./examples/statemachine/tsconfig.src.json" },
+        { "path": "./examples/statemachine/tsconfig.test.json" }
     ]
  }

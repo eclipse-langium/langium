@@ -4,11 +4,11 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { CstNode } from '../syntax-tree';
+import type { CstNode } from '../syntax-tree.js';
 import { Position, Range } from 'vscode-languageserver';
-import { URI } from 'vscode-uri';
-import { NEWLINE_REGEXP } from '../generator/template-string';
-import { escapeRegExp } from '../utils/regex-util';
+import { NEWLINE_REGEXP } from '../generator/template-string.js';
+import { escapeRegExp } from '../utils/regex-util.js';
+import { URI } from '../utils/uri-util.js';
 
 export interface JSDocComment extends JSDocValue {
     readonly elements: JSDocElement[]

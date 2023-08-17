@@ -5,14 +5,14 @@
  ******************************************************************************/
 
 import type { CancellationToken, Hover, HoverParams } from 'vscode-languageserver';
-import type { GrammarConfig } from '../grammar/grammar-config';
-import type { References } from '../references/references';
-import type { LangiumServices } from '../services';
-import type { AstNode } from '../syntax-tree';
-import type { MaybePromise } from '../utils/promise-util';
-import type { LangiumDocument } from '../workspace/documents';
-import type { DocumentationProvider } from '../documentation';
-import { findDeclarationNodeAtOffset } from '../utils/cst-util';
+import type { GrammarConfig } from '../grammar/grammar-config.js';
+import type { References } from '../references/references.js';
+import type { LangiumServices } from '../services.js';
+import type { AstNode } from '../syntax-tree.js';
+import type { MaybePromise } from '../utils/promise-util.js';
+import type { LangiumDocument } from '../workspace/documents.js';
+import type { DocumentationProvider } from '../documentation/documentation-provider.js';
+import { findDeclarationNodeAtOffset } from '../utils/cst-util.js';
 
 /**
  * Language-specific service for handling hover requests.

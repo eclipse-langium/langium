@@ -4,5 +4,5 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-export * from './document-validator';
-export * from './validation-registry';
+export * from './document-validator.js';
+export * from './validation-registry.js';

@@ -5,16 +5,9 @@
  ******************************************************************************/
 
 import { beforeAll, describe, expect, test } from 'vitest';
-import { toStringAndTrace, traceToNode } from '../../src/generator/generator-node';
-import type { SourceRegion, TraceRegion } from '../../src/generator/generator-tracing';
-import { joinTracedToNode, joinTracedToNodeIf } from '../../src/generator/node-joiner';
-import { expandToNode, expandTracedToNode } from '../../src/generator/template-node';
-import { expandToString } from '../../src/generator/template-string';
-import type { AstNodeWithTextRegion } from '../../src/serializer/json-serializer';
-import type { AstNode } from '../../src/syntax-tree';
-import { parseHelper } from '../../src/test/langium-test';
-import { createServicesForGrammar, findNodeForKeyword, findNodesForProperty } from '../../src/utils/grammar-util';
-import { TreeStreamImpl } from '../../src/utils/stream';
+import { createServicesForGrammar, expandToNode, expandTracedToNode, expandToString, findNodeForKeyword, findNodesForProperty, joinTracedToNode, joinTracedToNodeIf, toStringAndTrace, traceToNode, TreeStreamImpl } from 'langium';
+import type { SourceRegion, TraceRegion, AstNodeWithTextRegion, AstNode } from 'langium';
+import { parseHelper } from 'langium/test';
 
 // don't bather because of unexpected indentations, e.g. within template substitutions
 /* eslint-disable @typescript-eslint/indent */

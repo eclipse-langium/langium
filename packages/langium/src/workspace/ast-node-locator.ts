@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { AstNode } from '../syntax-tree';
+import type { AstNode } from '../syntax-tree.js';
 
 /**
  * Language-specific service for locating an `AstNode` in a document.

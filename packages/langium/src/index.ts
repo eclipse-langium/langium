@@ -4,23 +4,23 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-export * from './default-module';
-export * from './dependency-injection';
-export * from './service-registry';
-export * from './services';
-export * from './syntax-tree';
-export * from './documentation';
-export * from './generator';
-export * from './grammar';
-export * from './lsp';
-export * from './parser';
-export * from './references';
-export * from './serializer';
-export * from './utils';
-export * from './validation';
-export * from './workspace';
+export * from './default-module.js';
+export * from './dependency-injection.js';
+export * from './service-registry.js';
+export * from './services.js';
+export * from './syntax-tree.js';
+export * from './documentation/index.js';
+export * from './generator/index.js';
+export * from './grammar/index.js';
+export * from './lsp/index.js';
+export * from './parser/index.js';
+export * from './references/index.js';
+export * from './serializer/index.js';
+export * from './utils/index.js';
+export * from './validation/index.js';
+export * from './workspace/index.js';
 
 // Export the Langium Grammar AST definitions in the `GrammarAST` namespace
-import * as GrammarAST from './grammar/generated/ast';
-import type { Grammar } from './grammar/generated/ast';
+import * as GrammarAST from './grammar/generated/ast.js';
+import type { Grammar } from './grammar/generated/ast.js';
 export { Grammar, GrammarAST };

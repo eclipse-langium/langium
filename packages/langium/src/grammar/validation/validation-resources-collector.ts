@@ -4,18 +4,18 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { LangiumDocuments } from '../../workspace/documents';
-import type { AbstractElement, Action, Grammar, Interface, ParserRule, Type } from '../generated/ast';
-import type { AstResources, ValidationAstTypes } from '../type-system/type-collector/all-types';
-import type { TypeToValidationInfo, ValidationResources } from '../workspace/documents';
-import type { LangiumGrammarServices } from '../langium-grammar-module';
-import type { InterfaceType, Property } from '../type-system';
-import { MultiMap } from '../../utils/collections';
-import { stream } from '../../utils/stream';
-import { isAction, isAlternatives, isGroup, isUnorderedGroup } from '../generated/ast';
-import { getActionType, getRuleType } from '../internal-grammar-util';
-import { mergeInterfaces, mergeTypesAndInterfaces } from '../type-system/types-util';
-import { collectValidationAst } from '../type-system/ast-collector';
+import type { LangiumDocuments } from '../../workspace/documents.js';
+import type { AbstractElement, Action, Grammar, Interface, ParserRule, Type } from '../generated/ast.js';
+import type { AstResources, ValidationAstTypes } from '../type-system/type-collector/all-types.js';
+import type { TypeToValidationInfo, ValidationResources } from '../workspace/documents.js';
+import type { LangiumGrammarServices } from '../langium-grammar-module.js';
+import type { InterfaceType, Property } from '../type-system/type-collector/types.js';
+import { MultiMap } from '../../utils/collections.js';
+import { stream } from '../../utils/stream.js';
+import { isAction, isAlternatives, isGroup, isUnorderedGroup } from '../generated/ast.js';
+import { getActionType, getRuleType } from '../internal-grammar-util.js';
+import { mergeInterfaces, mergeTypesAndInterfaces } from '../type-system/types-util.js';
+import { collectValidationAst } from '../type-system/ast-collector.js';
 
 export class LangiumGrammarValidationResourcesCollector {
     private readonly documents: LangiumDocuments;

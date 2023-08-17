@@ -7,25 +7,24 @@
 import type { Diagnostic } from 'vscode-languageserver';
 import type { CodeActionParams } from 'vscode-languageserver-protocol';
 import type { CodeAction, Command, Position, TextEdit } from 'vscode-languageserver-types';
-import type { URI } from 'vscode-uri';
-import type { CodeActionProvider } from '../../lsp/code-action';
-import type { LangiumServices } from '../../services';
-import type { AstReflection, Reference, ReferenceInfo } from '../../syntax-tree';
-import type { MaybePromise } from '../../utils/promise-util';
-import type { LinkingErrorData } from '../../validation/document-validator';
-import type { DiagnosticData } from '../../validation/validation-registry';
-import type { LangiumDocument } from '../../workspace/documents';
-import type { IndexManager } from '../../workspace/index-manager';
+import type { URI } from '../../utils/uri-util.js';
+import type { CodeActionProvider } from '../../lsp/code-action.js';
+import type { LangiumServices } from '../../services.js';
+import type { AstReflection, Reference, ReferenceInfo } from '../../syntax-tree.js';
+import type { MaybePromise } from '../../utils/promise-util.js';
+import type { LinkingErrorData } from '../../validation/document-validator.js';
+import type { DiagnosticData } from '../../validation/validation-registry.js';
+import type { LangiumDocument } from '../../workspace/documents.js';
+import type { IndexManager } from '../../workspace/index-manager.js';
 import { CodeActionKind } from 'vscode-languageserver';
-import { Utils } from 'vscode-uri';
-import { getContainerOfType } from '../../utils/ast-util';
-import { findLeafNodeAtOffset } from '../../utils/cst-util';
-import { findNodeForProperty } from '../../utils/grammar-util';
-import { escapeRegExp } from '../../utils/regex-util';
-import { equalURI, relativeURI } from '../../utils/uri-util';
-import { DocumentValidator } from '../../validation/document-validator';
-import * as ast from '../generated/ast';
-import { IssueCodes } from '../validation/validator';
+import { getContainerOfType } from '../../utils/ast-util.js';
+import { findLeafNodeAtOffset } from '../../utils/cst-util.js';
+import { findNodeForProperty } from '../../utils/grammar-util.js';
+import { escapeRegExp } from '../../utils/regex-util.js';
+import { UriUtils } from '../../utils/uri-util.js';
+import { DocumentValidator } from '../../validation/document-validator.js';
+import * as ast from '../generated/ast.js';
+import { IssueCodes } from '../validation/validator.js';
 
 export class LangiumGrammarCodeActionProvider implements CodeActionProvider {
 
@@ -380,7 +379,7 @@ export class LangiumGrammarCodeActionProvider implements CodeActionProvider {
         let shortestPathIndex = -1;
         let shortestPathLength = -1;
         for (const candidate of candidates) {
-            if (equalURI(candidate.documentUri, document.uri)) {
+            if (UriUtils.equals(candidate.documentUri, document.uri)) {
                 continue;
             }
             // Find an import path and a position to insert the import
@@ -440,8 +439,8 @@ export class LangiumGrammarCodeActionProvider implements CodeActionProvider {
 }
 
 function getRelativeImport(source: URI, target: URI): string {
-    const sourceDir = Utils.dirname(source);
-    let relativePath = relativeURI(sourceDir, target);
+    const sourceDir = UriUtils.dirname(source);
+    let relativePath = UriUtils.relative(sourceDir, target);
     if (!relativePath.startsWith('./') && !relativePath.startsWith('../')) {
         relativePath = './' + relativePath;
     }

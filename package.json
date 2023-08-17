@@ -3,12 +3,12 @@
   "private": true,
   "engineStrict": true,
   "engines": {
-    "npm": ">= 7.7.0"
+    "npm": ">= 9.5.0"
   },
   "scripts": {
-    "clean": "shx rm -rf packages/**/lib packages/**/out packages/**/*.tsbuildinfo",
-    "build": "tsc -b tsconfig.build.json && npm run build --workspace=langium-vscode",
-    "watch": "concurrently -n tsc,esbuild -c blue,yellow \"tsc -b tsconfig.build.json -w\" \"npm run watch --workspace=langium-vscode\"",
+    "clean": "shx rm -rf packages/*/lib packages/*/out packages/*/*.tsbuildinfo examples/*/*.tsbuildinfo",
+    "build": "tsc -b tsconfig.build.json && npm run build --workspace=langium-vscode --workspace=examples/domainmodel --workspace=examples/arithmetics --workspace=examples/statemachine --workspace=examples/requirements",
+    "watch": "concurrently -n tsc,vscode,domainmodel,arithmetics,requirements,statemachine -c blue,yellow,green,green,green,green \"tsc -b tsconfig.build.json -w\" \"npm run watch --workspace=langium-vscode\" \"npm run watch --workspace=examples/domainmodel\" \"npm run watch --workspace=examples/arithmetics\" \"npm run watch --workspace=examples/statemachine\" \"npm run watch --workspace=examples/requirements\"",
     "build:clean": "npm run clean && npm run build",
     "lint": "npm run lint --workspaces",
     "test": "vitest",
@@ -36,8 +36,8 @@
     "vitest": "~0.32.2"
   },
   "volta": {
-    "node": "16.19.0",
-    "npm": "8.19.3"
+    "node": "18.17.0",
+    "npm": "9.5.1"
   },
   "workspaces": [
     "packages/*",

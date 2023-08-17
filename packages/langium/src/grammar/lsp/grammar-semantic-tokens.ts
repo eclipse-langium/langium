@@ -4,11 +4,11 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { AstNode } from '../../syntax-tree';
-import type { SemanticTokenAcceptor } from '../../lsp/semantic-token-provider';
+import type { AstNode } from '../../syntax-tree.js';
+import type { SemanticTokenAcceptor } from '../../lsp/semantic-token-provider.js';
 import { SemanticTokenTypes } from 'vscode-languageserver';
-import { AbstractSemanticTokenProvider } from '../../lsp/semantic-token-provider';
-import { isAction, isAssignment, isParameter, isParameterReference, isReturnType, isRuleCall, isSimpleType, isTypeAttribute } from '../generated/ast';
+import { AbstractSemanticTokenProvider } from '../../lsp/semantic-token-provider.js';
+import { isAction, isAssignment, isParameter, isParameterReference, isReturnType, isRuleCall, isSimpleType, isTypeAttribute } from '../generated/ast.js';
 
 export class LangiumGrammarSemanticTokenProvider extends AbstractSemanticTokenProvider {
 

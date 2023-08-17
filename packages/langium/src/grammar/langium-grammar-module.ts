@@ -4,29 +4,29 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { DefaultSharedModuleContext } from '../default-module';
-import type { Module } from '../dependency-injection';
-import type { LangiumServices, LangiumSharedServices, PartialLangiumServices, PartialLangiumSharedServices } from '../services';
-import type { LangiumGrammarDocument } from './workspace/documents';
-import type { Grammar } from './generated/ast';
-import { createDefaultModule, createDefaultSharedModule } from '../default-module';
-import { inject } from '../dependency-injection';
-import { LangiumGrammarGeneratedModule, LangiumGrammarGeneratedSharedModule } from './generated/module';
-import { LangiumGrammarScopeComputation, LangiumGrammarScopeProvider } from './references/grammar-scope';
-import { LangiumGrammarValidator, registerValidationChecks } from './validation/validator';
-import { LangiumGrammarCodeActionProvider } from './lsp/grammar-code-actions';
-import { LangiumGrammarFoldingRangeProvider } from './lsp/grammar-folding-ranges';
-import { LangiumGrammarFormatter } from './lsp/grammar-formatter';
-import { LangiumGrammarSemanticTokenProvider } from './lsp/grammar-semantic-tokens';
-import { LangiumGrammarNameProvider } from './references/grammar-naming';
-import { LangiumGrammarReferences } from './references/grammar-references';
-import { LangiumGrammarDefinitionProvider } from './lsp/grammar-definition';
-import { LangiumGrammarCallHierarchyProvider } from './lsp/grammar-call-hierarchy';
-import { LangiumGrammarValidationResourcesCollector } from './validation/validation-resources-collector';
-import { LangiumGrammarTypesValidator, registerTypeValidationChecks } from './validation/types-validator';
-import { interruptAndCheck } from '../utils/promise-util';
-import { DocumentState } from '../workspace/documents';
-import { LangiumGrammarCompletionProvider } from './lsp/grammar-completion-provider';
+import type { DefaultSharedModuleContext } from '../default-module.js';
+import type { Module } from '../dependency-injection.js';
+import type { LangiumServices, LangiumSharedServices, PartialLangiumServices, PartialLangiumSharedServices } from '../services.js';
+import type { LangiumGrammarDocument } from './workspace/documents.js';
+import type { Grammar } from './generated/ast.js';
+import { createDefaultModule, createDefaultSharedModule } from '../default-module.js';
+import { inject } from '../dependency-injection.js';
+import { LangiumGrammarGeneratedModule, LangiumGrammarGeneratedSharedModule } from './generated/module.js';
+import { LangiumGrammarScopeComputation, LangiumGrammarScopeProvider } from './references/grammar-scope.js';
+import { LangiumGrammarValidator, registerValidationChecks } from './validation/validator.js';
+import { LangiumGrammarCodeActionProvider } from './lsp/grammar-code-actions.js';
+import { LangiumGrammarCompletionProvider } from './lsp/grammar-completion-provider.js';
+import { LangiumGrammarFoldingRangeProvider } from './lsp/grammar-folding-ranges.js';
+import { LangiumGrammarFormatter } from './lsp/grammar-formatter.js';
+import { LangiumGrammarSemanticTokenProvider } from './lsp/grammar-semantic-tokens.js';
+import { LangiumGrammarNameProvider } from './references/grammar-naming.js';
+import { LangiumGrammarReferences } from './references/grammar-references.js';
+import { LangiumGrammarDefinitionProvider } from './lsp/grammar-definition.js';
+import { LangiumGrammarCallHierarchyProvider } from './lsp/grammar-call-hierarchy.js';
+import { LangiumGrammarValidationResourcesCollector } from './validation/validation-resources-collector.js';
+import { LangiumGrammarTypesValidator, registerTypeValidationChecks } from './validation/types-validator.js';
+import { interruptAndCheck } from '../utils/promise-util.js';
+import { DocumentState } from '../workspace/documents.js';
 
 export type LangiumGrammarAddedServices = {
     validation: {

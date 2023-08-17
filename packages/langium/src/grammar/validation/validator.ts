@@ -4,26 +4,26 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { NamedAstNode } from '../../references/name-provider';
-import type { References } from '../../references/references';
-import type { AstNode, Properties, Reference } from '../../syntax-tree';
-import type { Stream } from '../../utils/stream';
-import type { DiagnosticData, ValidationAcceptor, ValidationChecks } from '../../validation/validation-registry';
-import type { LangiumDocuments } from '../../workspace/documents';
-import type { LangiumGrammarServices } from '../langium-grammar-module';
+import type { NamedAstNode } from '../../references/name-provider.js';
+import type { References } from '../../references/references.js';
+import type { AstNode, Properties, Reference } from '../../syntax-tree.js';
+import type { Stream } from '../../utils/stream.js';
+import type { DiagnosticData, ValidationAcceptor, ValidationChecks } from '../../validation/validation-registry.js';
+import type { LangiumDocuments } from '../../workspace/documents.js';
+import type { LangiumGrammarServices } from '../langium-grammar-module.js';
 import type { Range } from 'vscode-languageserver-types';
 import { DiagnosticTag } from 'vscode-languageserver-types';
-import { getContainerOfType, streamAllContents } from '../../utils/ast-util';
-import { MultiMap } from '../../utils/collections';
-import { toDocumentSegment } from '../../utils/cst-util';
-import { findNameAssignment, findNodeForKeyword, findNodeForProperty, getAllReachableRules } from '../../utils/grammar-util';
-import { stream } from '../../utils/stream';
-import { diagnosticData } from '../../validation/validation-registry';
-import * as ast from '../generated/ast';
-import { isParserRule, isRuleCall } from '../generated/ast';
-import { getTypeNameWithoutError, hasDataTypeReturn, isDataTypeRule, isOptionalCardinality, isPrimitiveType, isStringType, resolveImport, resolveTransitiveImports, terminalRegex } from '../internal-grammar-util';
-import { typeDefinitionToPropertyType } from '../type-system/type-collector/declared-types';
-import { flattenPlainType, isPlainReferenceType } from '../type-system/type-collector/plain-types';
+import { getContainerOfType, streamAllContents } from '../../utils/ast-util.js';
+import { MultiMap } from '../../utils/collections.js';
+import { toDocumentSegment } from '../../utils/cst-util.js';
+import { findNameAssignment, findNodeForKeyword, findNodeForProperty, getAllReachableRules } from '../../utils/grammar-util.js';
+import { stream } from '../../utils/stream.js';
+import { diagnosticData } from '../../validation/validation-registry.js';
+import * as ast from '../generated/ast.js';
+import { isParserRule, isRuleCall } from '../generated/ast.js';
+import { getTypeNameWithoutError, hasDataTypeReturn, isDataTypeRule, isOptionalCardinality, isPrimitiveType, isStringType, resolveImport, resolveTransitiveImports, terminalRegex } from '../internal-grammar-util.js';
+import { typeDefinitionToPropertyType } from '../type-system/type-collector/declared-types.js';
+import { flattenPlainType, isPlainReferenceType } from '../type-system/type-collector/plain-types.js';
 
 export function registerValidationChecks(services: LangiumGrammarServices): void {
     const registry = services.validation.ValidationRegistry;
@@ -280,10 +280,10 @@ export class LangiumGrammarValidator {
             types.add(interfaceType.name);
         }
         // Collect type/interface definitions from imported grammars
-        resolveTransitiveImports(this.documents, grammar).forEach((grammar) => {
-            grammar.types.forEach(type => types.add(type.name));
-            grammar.interfaces.forEach(iface => types.add(iface.name));
-        });
+        for (const importedGrammar of resolveTransitiveImports(this.documents, grammar)) {
+            importedGrammar.types.forEach(type => types.add(type.name));
+            importedGrammar.interfaces.forEach(iface => types.add(iface.name));
+        }
 
         for (const rule of grammar.rules.filter(ast.isParserRule)) {
             if (isEmptyRule(rule)) {

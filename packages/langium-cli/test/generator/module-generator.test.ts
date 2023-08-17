@@ -3,11 +3,12 @@
  * This program and the accompanying materials are made available under the
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
-import type { LangiumConfig, LangiumLanguageConfig } from '../../src/package';
+
+import type { LangiumConfig, LangiumLanguageConfig } from '../../src/package.js';
 import type { Grammar } from 'langium';
 import { describe, expect, test } from 'vitest';
-import { generateModule } from '../../src/generator/module-generator';
-import { RelativePath } from '../../src/package';
+import { generateModule } from '../../src/generator/module-generator.js';
+import { RelativePath } from '../../src/package.js';
 
 describe('Module generator', () => {
     describe('IParserConfig inclusion', () => {
@@ -51,12 +52,13 @@ describe('Module generator', () => {
     });
 
     describe('File extension inclusion', () => {
-        test('should not include .js extension in imports', () => {
+        test('should use empty import extension', () => {
             // arrange
             const config = {
                 projectName: 'Magic',
                 languages: [],
                 [RelativePath]: '/path/to/magic',
+                importExtension: ''
             };
 
             // act

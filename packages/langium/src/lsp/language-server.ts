@@ -26,16 +26,16 @@ import type {
     ServerRequestHandler,
     TextDocumentIdentifier
 } from 'vscode-languageserver';
-import type { LangiumServices, LangiumSharedServices } from '../services';
-import type { LangiumDocument } from '../workspace/documents';
+import type { LangiumServices, LangiumSharedServices } from '../services.js';
+import type { LangiumDocument } from '../workspace/documents.js';
 import { Emitter, FileChangeType, LSPErrorCodes, ResponseError, TextDocumentSyncKind } from 'vscode-languageserver';
-import { URI } from 'vscode-uri';
-import { eagerLoad } from '../dependency-injection';
-import { isOperationCancelled } from '../utils/promise-util';
-import { DocumentState } from '../workspace/documents';
-import { mergeCompletionProviderOptions } from './completion/completion-provider';
-import { DefaultSemanticTokenOptions } from './semantic-token-provider';
-import { mergeSignatureHelpOptions } from './signature-help-provider';
+import { eagerLoad } from '../dependency-injection.js';
+import { isOperationCancelled } from '../utils/promise-util.js';
+import { DocumentState } from '../workspace/documents.js';
+import { mergeCompletionProviderOptions } from './completion/completion-provider.js';
+import { DefaultSemanticTokenOptions } from './semantic-token-provider.js';
+import { mergeSignatureHelpOptions } from './signature-help-provider.js';
+import { URI } from '../utils/uri-util.js';
 
 export interface LanguageServer {
     initialize(params: InitializeParams): Promise<InitializeResult>

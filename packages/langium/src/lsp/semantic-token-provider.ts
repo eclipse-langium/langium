@@ -7,15 +7,15 @@
 /* eslint-disable no-bitwise */
 
 import type { Range, SemanticTokens, SemanticTokensClientCapabilities, SemanticTokensDelta, SemanticTokensDeltaParams, SemanticTokensOptions, SemanticTokensParams, SemanticTokensRangeParams } from 'vscode-languageserver';
-import type { LangiumServices } from '../services';
-import type { AstNode, CstNode, Properties } from '../syntax-tree';
-import type { LangiumDocument } from '../workspace/documents';
-import type { MaybePromise } from '../utils/promise-util';
+import type { LangiumServices } from '../services.js';
+import type { AstNode, CstNode, Properties } from '../syntax-tree.js';
+import type { LangiumDocument } from '../workspace/documents.js';
+import type { MaybePromise } from '../utils/promise-util.js';
 import { CancellationToken, SemanticTokenModifiers, SemanticTokensBuilder as BaseSemanticTokensBuilder, SemanticTokenTypes } from 'vscode-languageserver';
-import { findNodesForKeyword, findNodeForProperty, findNodesForProperty, findNodeForKeyword } from '../utils/grammar-util';
-import { streamAst } from '../utils/ast-util';
-import { interruptAndCheck } from '../utils/promise-util';
-import { inRange } from '../utils/cst-util';
+import { findNodesForKeyword, findNodeForProperty, findNodesForProperty, findNodeForKeyword } from '../utils/grammar-util.js';
+import { streamAst } from '../utils/ast-util.js';
+import { interruptAndCheck } from '../utils/promise-util.js';
+import { inRange } from '../utils/cst-util.js';
 
 export const AllSemanticTokenTypes: Record<string, number> = {
     [SemanticTokenTypes.class]: 0,

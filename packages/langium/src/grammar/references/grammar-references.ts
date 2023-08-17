@@ -4,22 +4,22 @@
 * terms of the MIT License, which is available in the project root.
 ******************************************************************************/
 
-import type { LangiumServices } from '../../services';
-import type { AstNode, CstNode } from '../../syntax-tree';
-import type { Stream } from '../../utils/stream';
-import type { ReferenceDescription } from '../../workspace/ast-descriptions';
-import type { LangiumDocuments } from '../../workspace/documents';
-import type { Action, Assignment, Interface, ParserRule, Type, TypeAttribute } from '../generated/ast';
-import type { FindReferencesOptions } from '../../references/references';
-import { DefaultReferences } from '../../references/references';
-import { getContainerOfType, getDocument } from '../../utils/ast-util';
-import { toDocumentSegment } from '../../utils/cst-util';
-import { findAssignment, findNodeForProperty } from '../../utils/grammar-util';
-import { stream } from '../../utils/stream';
-import { equalURI } from '../../utils/uri-util';
-import { isAction, isAssignment, isInterface, isParserRule, isType, isTypeAttribute } from '../generated/ast';
-import { extractAssignments, getActionAtElement } from '../internal-grammar-util';
-import { collectChildrenTypes, collectSuperTypes } from '../type-system/types-util';
+import type { LangiumServices } from '../../services.js';
+import type { AstNode, CstNode } from '../../syntax-tree.js';
+import type { Stream } from '../../utils/stream.js';
+import type { ReferenceDescription } from '../../workspace/ast-descriptions.js';
+import type { LangiumDocuments } from '../../workspace/documents.js';
+import type { Action, Assignment, Interface, ParserRule, Type, TypeAttribute } from '../generated/ast.js';
+import type { FindReferencesOptions } from '../../references/references.js';
+import { DefaultReferences } from '../../references/references.js';
+import { getContainerOfType, getDocument } from '../../utils/ast-util.js';
+import { toDocumentSegment } from '../../utils/cst-util.js';
+import { findAssignment, findNodeForProperty } from '../../utils/grammar-util.js';
+import { stream } from '../../utils/stream.js';
+import { UriUtils } from '../../utils/uri-util.js';
+import { isAction, isAssignment, isInterface, isParserRule, isType, isTypeAttribute } from '../generated/ast.js';
+import { extractAssignments, getActionAtElement } from '../internal-grammar-util.js';
+import { collectChildrenTypes, collectSuperTypes } from '../type-system/types-util.js';
 
 export class LangiumGrammarReferences extends DefaultReferences {
     protected readonly documents: LangiumDocuments;
@@ -88,7 +88,7 @@ export class LangiumGrammarReferences extends DefaultReferences {
                         targetUri: getDocument(attribute).uri,
                         targetPath: this.nodeLocator.getAstNodePath(attribute),
                         segment: toDocumentSegment(leaf),
-                        local: equalURI(getDocument(assignment).uri, getDocument(attribute).uri)
+                        local: UriUtils.equals(getDocument(assignment).uri, getDocument(attribute).uri)
                     });
                 }
             }
@@ -103,7 +103,7 @@ export class LangiumGrammarReferences extends DefaultReferences {
                         targetUri: getDocument(attribute).uri,
                         targetPath: this.nodeLocator.getAstNodePath(attribute),
                         segment: toDocumentSegment(leaf),
-                        local: equalURI(getDocument(ruleOrAction).uri, getDocument(attribute).uri)
+                        local: UriUtils.equals(getDocument(ruleOrAction).uri, getDocument(attribute).uri)
                     });
                 }
             }

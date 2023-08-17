@@ -4,10 +4,10 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { AstNode, Properties } from '../syntax-tree';
-import type { Generated } from './generator-node';
-import type { SourceRegion } from './generator-tracing';
-import { CompositeGeneratorNode, traceToNode } from './generator-node';
+import type { AstNode, Properties } from '../syntax-tree.js';
+import type { Generated } from './generator-node.js';
+import type { SourceRegion } from './generator-tracing.js';
+import { CompositeGeneratorNode, traceToNode } from './generator-node.js';
 
 export interface JoinOptions<T> {
     filter?: (element: T, index: number, isLast: boolean) => boolean;

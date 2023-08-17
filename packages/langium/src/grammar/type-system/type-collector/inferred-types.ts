@@ -4,13 +4,13 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { ParserRule, Action, AbstractElement, Assignment, RuleCall } from '../../generated/ast';
-import type { PlainAstTypes, PlainInterface, PlainProperty, PlainPropertyType, PlainUnion } from './plain-types';
-import { isNamed } from '../../../references/name-provider';
-import { MultiMap } from '../../../utils/collections';
-import { isAlternatives, isKeyword, isParserRule, isAction, isGroup, isUnorderedGroup, isAssignment, isRuleCall, isCrossReference, isTerminalRule } from '../../generated/ast';
-import { getTypeNameWithoutError, isOptionalCardinality, getRuleType, isPrimitiveType, terminalRegex } from '../../internal-grammar-util';
-import { mergePropertyTypes } from './plain-types';
+import type { ParserRule, Action, AbstractElement, Assignment, RuleCall } from '../../generated/ast.js';
+import type { PlainAstTypes, PlainInterface, PlainProperty, PlainPropertyType, PlainUnion } from './plain-types.js';
+import { isNamed } from '../../../references/name-provider.js';
+import { MultiMap } from '../../../utils/collections.js';
+import { isAlternatives, isKeyword, isParserRule, isAction, isGroup, isUnorderedGroup, isAssignment, isRuleCall, isCrossReference, isTerminalRule } from '../../generated/ast.js';
+import { getTypeNameWithoutError, isOptionalCardinality, getRuleType, isPrimitiveType, terminalRegex } from '../../internal-grammar-util.js';
+import { mergePropertyTypes } from './plain-types.js';
 
 interface TypePart {
     name?: string

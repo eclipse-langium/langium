@@ -4,16 +4,16 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { LangiumServices } from '../services';
-import type { AstNode, AstNodeDescription, AstReflection, CstNode, LinkingError, Reference, ReferenceInfo } from '../syntax-tree';
-import type { AstNodeLocator } from '../workspace/ast-node-locator';
-import type { LangiumDocument, LangiumDocuments } from '../workspace/documents';
-import type { ScopeProvider } from './scope-provider';
+import type { LangiumServices } from '../services.js';
+import type { AstNode, AstNodeDescription, AstReflection, CstNode, LinkingError, Reference, ReferenceInfo } from '../syntax-tree.js';
+import type { AstNodeLocator } from '../workspace/ast-node-locator.js';
+import type { LangiumDocument, LangiumDocuments } from '../workspace/documents.js';
+import type { ScopeProvider } from './scope-provider.js';
 import { CancellationToken } from 'vscode-languageserver';
-import { isAstNode, isAstNodeDescription, isLinkingError } from '../syntax-tree';
-import { getDocument, streamAst, streamReferences } from '../utils/ast-util';
-import { interruptAndCheck } from '../utils/promise-util';
-import { DocumentState } from '../workspace/documents';
+import { isAstNode, isAstNodeDescription, isLinkingError } from '../syntax-tree.js';
+import { getDocument, streamAst, streamReferences } from '../utils/ast-util.js';
+import { interruptAndCheck } from '../utils/promise-util.js';
+import { DocumentState } from '../workspace/documents.js';
 
 /**
  * Language-specific service for resolving cross-references in the AST.

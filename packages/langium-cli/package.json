@@ -4,7 +4,7 @@
   "description": "CLI for Langium - the language engineering tool",
   "homepage": "https://langium.org",
   "engines": {
-    "node": ">=14.0.0"
+    "node": ">=16.0.0"
   },
   "keywords": [
     "cli",
@@ -23,7 +23,13 @@
   "bin": {
     "langium": "./bin/langium.js"
   },
-  "main": "./lib/langium.js",
+  "exports": {
+    ".": {
+      "import": "./lib/index.js",
+      "types": "./lib/index.d.ts"
+    }
+  },
+  "type": "module",
   "scripts": {
     "clean": "shx rm -rf lib coverage",
     "build": "tsc",
@@ -33,7 +39,7 @@
     "publish:latest": "npm publish --tag latest --access public"
   },
   "dependencies": {
-    "chalk": "~4.1.2",
+    "chalk": "~5.3.0",
     "commander": "~10.0.0",
     "fs-extra": "~11.1.0",
     "jsonschema": "~1.4.1",
@@ -45,8 +51,8 @@
     "@types/fs-extra": "~11.0.1"
   },
   "volta": {
-    "node": "16.19.0",
-    "npm": "8.19.3"
+    "node": "18.17.0",
+    "npm": "9.5.1"
   },
   "repository": {
     "type": "git",

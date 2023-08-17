@@ -4,20 +4,20 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { URI } from 'vscode-uri';
-import type { ServiceRegistry } from '../service-registry';
-import type { LangiumSharedServices } from '../services';
-import type { AstNode } from '../syntax-tree';
-import type { MaybePromise } from '../utils/promise-util';
-import type { ValidationOptions } from '../validation/document-validator';
-import type { IndexManager } from '../workspace/index-manager';
-import type { LangiumDocument, LangiumDocuments, LangiumDocumentFactory } from './documents';
+import type { URI } from '../utils/uri-util.js';
+import type { ServiceRegistry } from '../service-registry.js';
+import type { LangiumSharedServices } from '../services.js';
+import type { AstNode } from '../syntax-tree.js';
+import type { MaybePromise } from '../utils/promise-util.js';
+import type { ValidationOptions } from '../validation/document-validator.js';
+import type { IndexManager } from '../workspace/index-manager.js';
+import type { LangiumDocument, LangiumDocuments, LangiumDocumentFactory } from './documents.js';
 import { CancellationToken, Disposable } from 'vscode-languageserver';
-import { MultiMap } from '../utils/collections';
-import { interruptAndCheck } from '../utils/promise-util';
-import { stream } from '../utils/stream';
-import { ValidationCategory } from '../validation/validation-registry';
-import { DocumentState } from './documents';
+import { MultiMap } from '../utils/collections.js';
+import { interruptAndCheck } from '../utils/promise-util.js';
+import { stream } from '../utils/stream.js';
+import { ValidationCategory } from '../validation/validation-registry.js';
+import { DocumentState } from './documents.js';
 
 export interface BuildOptions {
     /**
@@ -122,7 +122,7 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
                     if (previousCategories) {
                         // Validation with explicit options was requested for a document that has already been partly validated.
                         // In this case, we need to merge the previous validation categories with the new ones.
-                        const newCategories = options.validation.categories ?? ValidationCategory.all;
+                        const newCategories = options.validation.categories ?? ValidationCategory.all as ValidationCategory[];
                         const categories = newCategories.filter(c => !previousCategories.includes(c));
                         if (categories.length > 0) {
                             this.buildState.set(key, {

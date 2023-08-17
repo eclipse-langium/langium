@@ -5,11 +5,11 @@
  ******************************************************************************/
 
 import type { AstNode, LangiumDocument, ReferenceDescription } from 'langium';
-import type { Domainmodel } from '../src/language-server/generated/ast';
+import type { Domainmodel } from '../src/language-server/generated/ast.js';
 import { describe, expect, test } from 'vitest';
 import { EmptyFileSystem } from 'langium';
 import { parseDocument } from 'langium/test';
-import { createDomainModelServices } from '../src/language-server/domain-model-module';
+import { createDomainModelServices } from '../src/language-server/domain-model-module.js';
 
 const services = createDomainModelServices(EmptyFileSystem).domainmodel;
 

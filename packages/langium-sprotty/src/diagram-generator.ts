@@ -5,8 +5,8 @@
  ******************************************************************************/
 
 import type { AstNode, LangiumDocument, LangiumDocuments, LangiumServices } from 'langium';
+import { URI } from 'langium';
 import type { GeneratorArguments, IDiagramGenerator, SModelRoot } from 'sprotty-protocol';
-import { URI } from 'vscode-uri';
 import { CancellationToken } from 'vscode-languageserver';
 
 /**

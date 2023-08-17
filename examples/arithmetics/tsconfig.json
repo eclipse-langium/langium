@@ -1,16 +1,12 @@
+// this file is required for VSCode to work properly
 {
-    "extends": "../../tsconfig.json",
-    "compilerOptions": {
-      "rootDir": "src",
-      "outDir": "out",
-      "lib": ["ESNext", "WebWorker"]
-    },
-    "references": [{ "path": "../../packages/langium" }],
-    "include": [
-      "src/**/*"
-    ],
-    "exclude": [
-      "out",
-      "/node_modules"
-    ]
-  }
+  "extends": "./tsconfig.src.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "rootDir": "."
+  },
+  "include": [
+    "src/**/*",
+    "test/**/*"
+  ]
+}

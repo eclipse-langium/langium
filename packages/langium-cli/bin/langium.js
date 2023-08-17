@@ -1,3 +1,3 @@
 #!/usr/bin/env node
 
-require("../lib/langium");
+import '../lib/langium.js';

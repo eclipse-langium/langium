@@ -4,8 +4,8 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { Set, Group, Character, IRegExpAST } from 'regexp-to-ast';
-import { RegExpParser, BaseRegExpVisitor } from 'regexp-to-ast';
+import type { Set, Group, Character, IRegExpAST } from '@chevrotain/regexp-to-ast';
+import { RegExpParser, BaseRegExpVisitor } from '@chevrotain/regexp-to-ast';
 
 const regexParser = new RegExpParser();
 

@@ -6,7 +6,7 @@
 
 import { describe, test } from 'vitest';
 import { normalizeEOL } from 'langium';
-import path from 'path';
+import * as path from 'node:path';
 import { createHelpers } from 'yeoman-test';
 
 const answersForCore = {
@@ -51,8 +51,7 @@ describe('Check yeoman generator works', () => {
                 result.assertFile(files);
                 result.assertJsonFileContent(targetRoot + '/hello-world/package.json', PACKAGE_JSON_EXPECTATION);
                 result.assertFileContent(targetRoot + '/hello-world/.vscode/tasks.json', TASKS_JSON_EXPECTATION);
-            })
-            .finally(() => context.cleanup() /*clean-up*/);
+            });
     }, 120_000);
 
 });

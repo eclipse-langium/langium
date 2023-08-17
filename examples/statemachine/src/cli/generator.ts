@@ -4,12 +4,12 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import fs from 'fs';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 import { expandToNode as toNode, joinToNode as join, toString } from 'langium';
 import type { Generated } from 'langium';
-import path from 'path';
-import type { State, Statemachine } from '../language-server/generated/ast';
-import { extractDestinationAndName } from './cli-util';
+import type { State, Statemachine } from '../language-server/generated/ast.js';
+import { extractDestinationAndName } from './cli-util.js';
 
 // For precise white space handling in generation template
 // we suggest you to enable the display of white space characters in your editor.

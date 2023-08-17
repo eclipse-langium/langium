@@ -4,8 +4,8 @@
  ******************************************************************************/
 
 import type { LangiumGeneratedServices, LangiumGeneratedSharedServices, LangiumSharedServices, LangiumServices, LanguageMetaData, Module, IParserConfig } from 'langium';
-import { DomainModelAstReflection } from './ast';
-import { DomainModelGrammar } from './grammar';
+import { DomainModelAstReflection } from './ast.js';
+import { DomainModelGrammar } from './grammar.js';
 
 export const DomainModelLanguageMetaData = {
     languageId: 'domain-model',

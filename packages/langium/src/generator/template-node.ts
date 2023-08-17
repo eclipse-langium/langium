@@ -4,11 +4,11 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { AstNode, Properties } from '../syntax-tree';
-import type { Generated, GeneratorNode, IndentNode } from './generator-node';
-import type { SourceRegion } from './generator-tracing';
-import { CompositeGeneratorNode, isGeneratorNode, traceToNode } from './generator-node';
-import { findIndentation, NEWLINE_REGEXP } from './template-string';
+import type { AstNode, Properties } from '../syntax-tree.js';
+import type { Generated, GeneratorNode, IndentNode } from './generator-node.js';
+import type { SourceRegion } from './generator-tracing.js';
+import { CompositeGeneratorNode, isGeneratorNode, traceToNode } from './generator-node.js';
+import { findIndentation, NEWLINE_REGEXP } from './template-string.js';
 
 /**
  * A tag function that attaches the template's content to a {@link CompositeGeneratorNode}.

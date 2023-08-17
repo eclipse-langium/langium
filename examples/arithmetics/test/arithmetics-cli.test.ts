@@ -6,7 +6,7 @@
 
 import type { ExecException } from 'child_process';
 import { describe, expect, test } from 'vitest';
-import path from 'path';
+import * as path from 'node:path';
 import { exec } from 'child_process';
 
 describe('Test the arithmetics CLI', () => {

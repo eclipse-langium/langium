@@ -8,7 +8,7 @@ import type { Grammar } from 'langium';
 import { describe, expect, test } from 'vitest';
 import { createLangiumGrammarServices, EmptyFileSystem, normalizeEOL } from 'langium';
 import { parseHelper } from 'langium/test';
-import { generateTypesFile } from '../../src/generator/types-generator';
+import { generateTypesFile } from '../../src/generator/types-generator.js';
 
 const { grammar } = createLangiumGrammarServices(EmptyFileSystem);
 

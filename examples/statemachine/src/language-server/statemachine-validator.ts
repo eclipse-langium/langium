@@ -5,8 +5,8 @@
  ******************************************************************************/
 
 import type { ValidationAcceptor, ValidationChecks } from 'langium';
-import type { State, Statemachine, StatemachineAstType, Event } from './generated/ast';
-import type { StatemachineServices } from './statemachine-module';
+import type { State, Statemachine, StatemachineAstType, Event } from './generated/ast.js';
+import type { StatemachineServices } from './statemachine-module.js';
 import { MultiMap } from 'langium';
 
 export function registerValidationChecks(services: StatemachineServices) {

@@ -5,13 +5,13 @@
  ******************************************************************************/
 
 import type { LangiumDocument, LangiumServices } from 'langium';
-import type { RequirementModel, TestModel } from '../language-server/generated/ast';
+import type { RequirementModel, TestModel } from '../language-server/generated/ast.js';
 import type { WorkspaceFolder } from 'vscode-languageclient';
 import chalk from 'chalk';
-import path from 'path';
-import fs from 'fs';
-import { URI } from 'vscode-uri';
-import { isTestModel } from '../language-server/generated/ast';
+import * as path from 'node:path';
+import * as fs from 'node:fs';
+import { URI } from 'langium';
+import { isTestModel } from '../language-server/generated/ast.js';
 
 /**
  * Read a requirement document with the complete workspace (with requirements and

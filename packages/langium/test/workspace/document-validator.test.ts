@@ -4,13 +4,9 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { ValidationChecks } from '../../src/validation/validation-registry';
-import type { AstNode } from '../../src/syntax-tree';
+import type { AstNode, ValidationChecks } from 'langium';
 import { describe, expect, test } from 'vitest';
-import { createLangiumGrammarServices } from '../../src/grammar/langium-grammar-module';
-import { createServicesForGrammar } from '../../src/utils/grammar-util';
-import { EmptyFileSystem } from '../../src/workspace/file-system-provider';
-import { URI } from 'vscode-uri';
+import { createLangiumGrammarServices, createServicesForGrammar, EmptyFileSystem, URI } from 'langium';
 
 describe('DefaultDocumentValidator', () => {
     const grammarServices = createLangiumGrammarServices(EmptyFileSystem).grammar;

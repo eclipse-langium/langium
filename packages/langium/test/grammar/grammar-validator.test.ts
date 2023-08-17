@@ -4,15 +4,14 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { AstNode, Properties } from '../../src';
-import type { Assignment, CrossReference, Group, ParserRule, RuleCall, UnionType } from '../../src/grammar/generated/ast';
-import type { ValidationResult } from '../../src/test';
+import type { AstNode, Properties } from 'langium';
+import type { GrammarAST as GrammarTypes } from 'langium';
+import type { ValidationResult } from 'langium/test';
 import { afterEach, beforeAll, describe, expect, test } from 'vitest';
 import { DiagnosticSeverity } from 'vscode-languageserver';
-import { createLangiumGrammarServices, EmptyFileSystem, GrammarAST, streamAllContents, streamContents } from '../../src';
-import { isAssignment } from '../../src/grammar/generated/ast';
-import { IssueCodes } from '../../src/grammar/validation/validator';
-import { clearDocuments, expectError, expectIssue, expectNoIssues, expectWarning, parseHelper, validationHelper } from '../../src/test';
+import { createLangiumGrammarServices, EmptyFileSystem, GrammarAST, streamAllContents, streamContents } from 'langium';
+import { IssueCodes } from 'langium/internal';
+import { clearDocuments, expectError, expectIssue, expectNoIssues, expectWarning, parseHelper, validationHelper } from 'langium/test';
 
 const services = createLangiumGrammarServices(EmptyFileSystem);
 const parse = parseHelper(services.grammar);
@@ -155,7 +154,7 @@ describe('Data type rule return type', () => {
             ParserRule returns string: name='ParserRule';
         `);
         expectError(validationResult, 'Normal parser rules are not allowed to return a primitive value. Use a datatype rule for that.', {
-            node: validationResult.document.parseResult.value.rules[0] as ParserRule,
+            node: validationResult.document.parseResult.value.rules[0] as GrammarTypes.ParserRule,
             property: 'dataType'
         });
     });
@@ -181,7 +180,7 @@ describe('Data type rule return type', () => {
             type ParserRuleType = 'ParserRule';
         `);
         expectError(validationResult, 'Normal parser rules are not allowed to return a primitive value. Use a datatype rule for that.', {
-            node: validationResult.document.parseResult.value.rules[0] as ParserRule,
+            node: validationResult.document.parseResult.value.rules[0] as GrammarTypes.ParserRule,
             property: 'returnType'
         });
     });
@@ -224,7 +223,7 @@ describe('checkReferenceToRuleButNotType', () => {
     });
 
     test('AtomType validation', () => {
-        const unionType = validationResult.document.parseResult.value.types[0].type as UnionType;
+        const unionType = validationResult.document.parseResult.value.types[0].type as GrammarTypes.UnionType;
         const missingType = unionType.types[0];
         expectError(validationResult, "Could not resolve reference to AbstractType named 'Reference'.", {
             node: missingType
@@ -634,7 +633,7 @@ describe('Property type is not a mix of cross-ref and non-cross-ref types.', () 
         ;
         `);
         const rule1Assignment = streamContents(validation.document.parseResult.value.rules[1])
-            .filter(node => isAssignment(node)).head() as Assignment;
+            .filter(node => GrammarAST.isAssignment(node)).head() as GrammarTypes.Assignment;
         expect(rule1Assignment).not.toBe(undefined);
 
         expectError(validation, /Mixing a cross-reference with other types is not supported. Consider splitting property /, {
@@ -652,7 +651,7 @@ describe('Property type is not a mix of cross-ref and non-cross-ref types.', () 
         ;
         `);
         const rule1Assignment = streamContents(validation.document.parseResult.value.rules[1])
-            .filter(node => isAssignment(node)).head() as Assignment;
+            .filter(node => GrammarAST.isAssignment(node)).head() as GrammarTypes.Assignment;
         expect(rule1Assignment).not.toBe(undefined);
 
         expectError(validation, /Mixing a cross-reference with other types is not supported. Consider splitting property /, {
@@ -735,8 +734,8 @@ describe('Cross-reference to type union is only valid if all alternatives are AS
 
         terminal ID returns string: /[a-z]+/;
         `);
-        const rule = validationResult.document.parseResult.value.rules[1] as ParserRule;
-        const reference = ((rule.definition as Assignment).terminal as Assignment).terminal as CrossReference;
+        const rule = validationResult.document.parseResult.value.rules[1] as GrammarTypes.ParserRule;
+        const reference = ((rule.definition as GrammarTypes.Assignment).terminal as GrammarTypes.Assignment).terminal as GrammarTypes.CrossReference;
         expectError(
             validationResult,
             /Cross-reference on type union is only valid if all alternatives are AST nodes. B is not an AST node./,
@@ -758,8 +757,8 @@ describe('Cross-reference to type union is only valid if all alternatives are AS
 
         terminal ID returns string: /[a-z]+/;
         `);
-        const rule = validationResult.document.parseResult.value.rules[2] as ParserRule;
-        const reference = ((rule.definition as Assignment).terminal as Assignment).terminal as CrossReference;
+        const rule = validationResult.document.parseResult.value.rules[2] as GrammarTypes.ParserRule;
+        const reference = ((rule.definition as GrammarTypes.Assignment).terminal as GrammarTypes.Assignment).terminal as GrammarTypes.CrossReference;
         expectError(
             validationResult,
             /Cross-reference on type union is only valid if all alternatives are AST nodes. C is not an AST node./,
@@ -778,8 +777,8 @@ describe('Cross-reference to type union is only valid if all alternatives are AS
 
         terminal ID returns string: /[a-z]+/;
         `);
-        const rule = validationResult.document.parseResult.value.rules[0] as ParserRule;
-        const reference = ((rule.definition as Assignment).terminal as Assignment).terminal as CrossReference;
+        const rule = validationResult.document.parseResult.value.rules[0] as GrammarTypes.ParserRule;
+        const reference = ((rule.definition as GrammarTypes.Assignment).terminal as GrammarTypes.Assignment).terminal as GrammarTypes.CrossReference;
         expectError(
             validationResult,
             /Cross-reference on type union is only valid if all alternatives are AST nodes. A, "foo" are not AST nodes./,
@@ -815,11 +814,11 @@ describe('Cross-reference to type union is only valid if all alternatives are AS
 
         const grammar = validationResult.document.parseResult.value;
         expectError(validationResult, /Data type rules for cross-references must be of type string./, {
-            node: (((grammar.rules[0].definition as Group).elements[0] as Assignment).terminal as CrossReference).terminal as RuleCall,
+            node: (((grammar.rules[0].definition as GrammarTypes.Group).elements[0] as GrammarTypes.Assignment).terminal as GrammarTypes.CrossReference).terminal as GrammarTypes.RuleCall,
             property: 'rule'
         });
         expectError(validationResult, /Terminal rules for cross-references must be of type string./, {
-            node: (((grammar.rules[0].definition as Group).elements[1] as Assignment).terminal as CrossReference).terminal as RuleCall,
+            node: (((grammar.rules[0].definition as GrammarTypes.Group).elements[1] as GrammarTypes.Assignment).terminal as GrammarTypes.CrossReference).terminal as GrammarTypes.RuleCall,
             property: 'rule'
         });
     });

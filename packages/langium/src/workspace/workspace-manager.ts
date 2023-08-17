@@ -5,15 +5,15 @@
  ******************************************************************************/
 
 import { CancellationToken } from 'vscode-languageserver';
-import { URI, Utils } from 'vscode-uri';
-import { interruptAndCheck } from '../utils/promise-util';
+import { interruptAndCheck } from '../utils/promise-util.js';
+import { URI, UriUtils } from '../utils/uri-util.js';
 import type { WorkspaceFolder } from 'vscode-languageserver';
-import type { ServiceRegistry } from '../service-registry';
-import type { LangiumSharedServices } from '../services';
-import type { MutexLock } from '../utils/promise-util';
-import type { BuildOptions, DocumentBuilder } from './document-builder';
-import type { LangiumDocument, LangiumDocuments } from './documents';
-import type { FileSystemNode, FileSystemProvider } from './file-system-provider';
+import type { ServiceRegistry } from '../service-registry.js';
+import type { LangiumSharedServices } from '../services.js';
+import type { MutexLock } from '../utils/promise-util.js';
+import type { BuildOptions, DocumentBuilder } from './document-builder.js';
+import type { LangiumDocument, LangiumDocuments } from './documents.js';
+import type { FileSystemNode, FileSystemProvider } from './file-system-provider.js';
 
 /**
  * The workspace manager is responsible for finding source files in the workspace.
@@ -127,14 +127,14 @@ export class DefaultWorkspaceManager implements WorkspaceManager {
      * Determine whether the given folder entry shall be included while indexing the workspace.
      */
     protected includeEntry(workspaceFolder: WorkspaceFolder, entry: FileSystemNode, fileExtensions: string[]): boolean {
-        const name = Utils.basename(entry.uri);
+        const name = UriUtils.basename(entry.uri);
         if (name.startsWith('.')) {
             return false;
         }
         if (entry.isDirectory) {
             return name !== 'node_modules' && name !== 'out';
         } else if (entry.isFile) {
-            const extname = Utils.extname(entry.uri);
+            const extname = UriUtils.extname(entry.uri);
             return fileExtensions.includes(extname);
         }
         return false;

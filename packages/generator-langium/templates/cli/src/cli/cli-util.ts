@@ -1,8 +1,8 @@
 import type { AstNode, LangiumDocument, LangiumServices } from 'langium';
 import chalk from 'chalk';
-import path from 'path';
-import fs from 'fs';
-import { URI } from 'vscode-uri';
+import * as path from 'node:path';
+import * as fs from 'node:fs';
+import { URI } from 'langium';
 
 export async function extractDocument(fileName: string, services: LangiumServices): Promise<LangiumDocument> {
     const extensions = services.LanguageMetaData.fileExtensions;
@@ -17,7 +17,7 @@ export async function extractDocument(fileName: string, services: LangiumService
     }
 
     const document = services.shared.workspace.LangiumDocuments.getOrCreateDocument(URI.file(path.resolve(fileName)));
-    await services.shared.workspace.DocumentBuilder.build([document], { validationChecks: 'all' });
+    await services.shared.workspace.DocumentBuilder.build([document], { validation: true });
 
     const validationErrors = (document.diagnostics ?? []).filter(e => e.severity === 1);
     if (validationErrors.length > 0) {

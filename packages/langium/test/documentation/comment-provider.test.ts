@@ -5,9 +5,8 @@
  ******************************************************************************/
 
 import { describe, expect, test } from 'vitest';
-import { parseHelper } from '../../src/test';
-import { EmptyFileSystem, createLangiumGrammarServices, streamAst } from '../../src';
-import { isAbstractRule } from '../../src/grammar/generated/ast';
+import { parseHelper } from 'langium/test';
+import { createLangiumGrammarServices, streamAst, EmptyFileSystem, GrammarAST } from 'langium';
 
 const services = createLangiumGrammarServices(EmptyFileSystem).grammar;
 const parse = parseHelper(services);
@@ -25,7 +24,7 @@ describe('Comment provider', () => {
         expect(ast).toBeDefined();
         const grammarComment = services.documentation.CommentProvider.getComment(ast);
         expect(grammarComment).toBeUndefined();
-        streamAst(ast).filter(isAbstractRule).forEach(rule => {
+        streamAst(ast).filter(GrammarAST.isAbstractRule).forEach(rule => {
             const comment = services.documentation.CommentProvider.getComment(rule);
             expect(comment).toBe(`/** ${rule.name} */`);
         });

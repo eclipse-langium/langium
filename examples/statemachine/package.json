@@ -44,34 +44,30 @@
         "language-configuration.json"
     ],
     "bin": {
-        "statemachine-cli": "./bin/cli"
+        "statemachine-cli": "./bin/cli.js"
     },
-    "main": "./out/extension.js",
+    "type": "module",
+    "main": "./out/extension.cjs",
     "scripts": {
-        "vscode:prepublish": "npm run build && npm run lint",
-        "build": "tsc",
-        "watch": "tsc -watch",
+        "build": "node esbuild.mjs",
+        "watch": "node esbuild.mjs --watch",
         "lint": "eslint src test --ext ts",
-        "test": "vitest run",
         "langium:generate": "langium generate",
-        "langium:watch": "langium generate --watch",
         "publish:next": "npm --no-git-tag-version version \"$(semver $npm_package_version -i minor)-next.$(git rev-parse --short HEAD)\" && npm publish --tag next",
         "publish:latest": "npm publish --tag latest --access public"
     },
     "dependencies": {
-        "chalk": "~4.1.2",
+        "chalk": "~5.3.0",
         "commander": "~10.0.0",
         "langium": "~1.2.0",
-        "lodash": "^4.17.21",
-        "vscode-languageclient": "~8.0.2",
-        "vscode-languageserver": "~8.0.2"
+        "lodash": "^4.17.21"
     },
     "devDependencies": {
         "langium-cli": "~1.2.0"
     },
     "volta": {
-        "node": "16.19.0",
-        "npm": "8.19.3"
+        "node": "18.17.0",
+        "npm": "9.5.1"
     },
     "repository": {
         "type": "git",

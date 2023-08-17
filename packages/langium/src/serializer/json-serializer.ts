@@ -4,16 +4,16 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { NameProvider } from '../references/name-provider';
-import type { LangiumServices } from '../services';
-import type { AstNode, CstNode, GenericAstNode, Reference } from '../syntax-tree';
-import type { Mutable } from '../utils/ast-util';
-import type { AstNodeLocator } from '../workspace/ast-node-locator';
-import type { DocumentSegment } from '../workspace/documents';
-import { isAstNode, isReference } from '../syntax-tree';
-import { getDocument } from '../utils/ast-util';
-import { findNodesForProperty } from '../utils/grammar-util';
-import type { CommentProvider } from '../documentation/comment-provider';
+import type { NameProvider } from '../references/name-provider.js';
+import type { LangiumServices } from '../services.js';
+import type { AstNode, CstNode, GenericAstNode, Reference } from '../syntax-tree.js';
+import type { Mutable } from '../utils/ast-util.js';
+import type { AstNodeLocator } from '../workspace/ast-node-locator.js';
+import type { DocumentSegment } from '../workspace/documents.js';
+import { isAstNode, isReference } from '../syntax-tree.js';
+import { getDocument } from '../utils/ast-util.js';
+import { findNodesForProperty } from '../utils/grammar-util.js';
+import type { CommentProvider } from '../documentation/comment-provider.js';
 
 export interface JsonSerializeOptions {
     space?: string | number;
