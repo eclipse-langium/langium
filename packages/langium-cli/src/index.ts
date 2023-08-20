@@ -5,4 +5,4 @@
  ******************************************************************************/
 
 export type { GenerateOptions } from './generate.js';
-export { generate } from './langium.js';
+export { generate } from './generate.js';

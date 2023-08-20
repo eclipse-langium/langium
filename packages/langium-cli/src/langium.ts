@@ -4,15 +4,10 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { ExtractTypesOptions, GenerateOptions, GeneratorResult } from './generate.js';
-import type { LangiumConfig } from './package.js';
-import chalk from 'chalk';
-import fs from 'fs-extra';
 import { Command, Option } from 'commander';
-import { validate } from 'jsonschema';
-import { runGenerator, generateTypes } from './generate.js';
-import { cliVersion, elapsedTime, getTime, log, schema } from './generator/util.js';
-import { loadConfig } from './package.js';
+import type { ExtractTypesOptions, GenerateOptions} from './generate.js';
+import { generate, generateTypes } from './generate.js';
+import { cliVersion } from './generator/util.js';
 
 const program = new Command();
 
@@ -43,77 +38,3 @@ program.command('extract-types')
     });
 
 program.parse(process.argv);
-
-export async function generate(options: GenerateOptions): Promise<boolean> {
-    const config = await loadConfig(options);
-    const validation = validate(config, await schema, {
-        nestedErrors: true
-    });
-    if (!validation.valid) {
-        log('error', options, chalk.red('Error: Your Langium configuration is invalid.'));
-        const errors = validation.errors.filter(error => error.path.length > 0);
-        errors.forEach(error => {
-            log('error', options, `--> ${error.stack}`);
-        });
-        return false;
-    }
-    const result = await runGenerator(config, options);
-    if (options.watch) {
-        printSuccess(result);
-        console.log(getTime() + 'Langium generator will continue running in watch mode.');
-        await runWatcher(config, options, await allGeneratorFiles(result));
-    } else {
-        console.log(`Langium generator finished ${chalk.green.bold('successfully')} in ${elapsedTime()}ms`);
-    }
-    return result.success;
-}
-
-async function allGeneratorFiles(results: GeneratorResult): Promise<string[]> {
-    const files = Array.from(new Set(results.files));
-    const filesExist = await Promise.all(files.map(e => fs.exists(e)));
-    return files.filter((_, i) => filesExist[i]);
-}
-
-async function runWatcher(config: LangiumConfig, options: GenerateOptions, files: string[]): Promise<void> {
-    if (files.length === 0) {
-        return;
-    }
-    const watchers: fs.FSWatcher[] = [];
-    for (const grammarFile of files) {
-        const watcher = fs.watch(grammarFile, undefined, watch);
-        watchers.push(watcher);
-    }
-    // The watch might be triggered multiple times
-    // We only want to execute once
-    let watcherTriggered = false;
-
-    async function watch(): Promise<void> {
-        if (watcherTriggered) {
-            return;
-        }
-        watcherTriggered = true;
-        // Delay the generation a bit in case multiple files are changed at once
-        await delay(20);
-        console.log(getTime() + 'File change detected. Starting compilation...');
-        const results = await runGenerator(config, options);
-        for (const watcher of watchers) {
-            watcher.close();
-        }
-        printSuccess(results);
-        runWatcher(config, options, await allGeneratorFiles(results));
-    }
-
-    await new Promise(() => { /* Never resolve */ });
-}
-
-function printSuccess(results: GeneratorResult): void {
-    if (results.success) {
-        console.log(`${getTime()}Langium generator finished ${chalk.green.bold('successfully')} in ${elapsedTime()}ms`);
-    }
-}
-
-async function delay(ms: number): Promise<void> {
-    return new Promise(resolve => {
-        setTimeout(() => resolve(), ms);
-    });
-}
