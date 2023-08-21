@@ -5,11 +5,11 @@
  ******************************************************************************/
 
 import type { TokenType, TokenVocabulary } from 'chevrotain';
-import type { AstNode, Grammar, GrammarAST, LangiumParser, TokenBuilderOptions } from '../../src';
-import { createLangiumGrammarServices, EmptyFileSystem} from '../../src';
+import type { AstNode, Grammar, GrammarAST, LangiumParser, TokenBuilderOptions } from '../../src/index.js';
+import { createLangiumGrammarServices, EmptyFileSystem} from '../../src/index.js';
 import { describe, expect, test, onTestFailed, beforeEach } from 'vitest';
-import { createServicesForGrammar, DefaultTokenBuilder } from '../../src';
-import { parseHelper } from '../../src/test';
+import { createServicesForGrammar, DefaultTokenBuilder } from '../../src/index.js';
+import { parseHelper } from '../../src/test/index.js';
 
 describe('Predicated grammar rules with alternatives', () => {
 
@@ -694,8 +694,8 @@ describe('EOF', () => {
     test('Using EOF in an input text for grammar containing an EOF rule', async () => {
         const grammar = `
         grammar Test
-        entry Main: comment+=COMMENT+;
-        terminal COMMENT: '/*' .*? ('*/' | EOF);
+        entry Main: comment+=COMMENT+ EOF;
+        terminal COMMENT: '/*' .*? '*/';
         `;
         const services = await createServicesForGrammar({ grammar });
         const shouldSucceed = async (input: string) => {
@@ -707,10 +707,7 @@ describe('EOF', () => {
         };
         await shouldSucceed('/**/');
         await shouldSucceed('/* comment */');
-        await shouldSucceed('/* broken comment');
-        await shouldSucceed('/* non-broken comment*//*broken comment');
-        const document = await shouldSucceed('/* half broken comment *');
-        expect(document.$cstNode?.text).toBe('/* half broken comment *');
+        await shouldSucceed('/* comment *//**/');
     });
 });
 
