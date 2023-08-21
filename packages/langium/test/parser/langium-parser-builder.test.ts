@@ -7,7 +7,6 @@
 import type { TokenType, TokenVocabulary } from 'chevrotain';
 import type { AstNode, Grammar, GrammarAST, LangiumParser, TokenBuilderOptions } from '../../src';
 import { createLangiumGrammarServices, EmptyFileSystem} from '../../src';
-import { EOF } from 'chevrotain';
 import { describe, expect, test, onTestFailed, beforeEach } from 'vitest';
 import { createServicesForGrammar, DefaultTokenBuilder } from '../../src';
 import { parseHelper } from '../../src/test';
@@ -678,27 +677,18 @@ describe('ALL(*) parser', () => {
     });
 });
 
-const grammarServices = createLangiumGrammarServices(EmptyFileSystem).grammar;
-const helper = parseHelper<Grammar>(grammarServices);
-const tokenBuilder = grammarServices.parser.TokenBuilder;
-
-async function getTokens(grammarString: string): Promise<TokenType[]> {
-    const grammar = (await helper(grammarString)).parseResult.value;
-    return tokenBuilder.buildTokens(grammar) as TokenType[];
-}
-
 describe('EOF', () => {
     test('Handle EOF', async () => {
-        const text = `
+        const grammar = `
         grammar Test
         entry Main: greet='Hello!' EOF;
         `;
-        const tokens = await getTokens(text);
-        const tokenA = tokens[1];
-        expect(tokenA).toEqual(EOF);
-        const parse = await parseHelper<Grammar>(grammarServices);
-        const grammar = await parse(text, {validation: true});
-        expect(grammar.diagnostics?.length ?? 0).toBe(0);
+        const services = await createLangiumGrammarServices(EmptyFileSystem);
+        const output = await parseHelper(services.grammar)(grammar, {validation: true});
+        console.log(output.parseResult.parserErrors);
+        expect(output.parseResult.lexerErrors.length).toBe(0);
+        expect(output.parseResult.parserErrors.length).toBe(0);
+        expect(output.diagnostics?.length ?? 0).toBe(0);
     });
 
     test('Using EOF in an input text for grammar containing an EOF rule', async () => {
