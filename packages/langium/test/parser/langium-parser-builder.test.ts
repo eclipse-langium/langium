@@ -691,23 +691,23 @@ describe('EOF', () => {
         expect(output.diagnostics?.length ?? 0).toBe(0);
     });
 
-    test('Using EOF in an input text for grammar containing an EOF rule', async () => {
+    test('Using grammar containing a rule with an EOF', async () => {
         const grammar = `
         grammar Test
         entry Main: comment+=COMMENT+ EOF;
-        terminal COMMENT: '/*' .*? '*/';
+        terminal COMMENT: '/*' .* '*/';
         `;
         const services = await createServicesForGrammar({ grammar });
         const shouldSucceed = async (input: string) => {
             const document = await parseHelper(services)(input, {validation: true});
-            expect(document.parseResult.lexerErrors.length).toBe(0);
-            expect(document.parseResult.parserErrors.length).toBe(0);
-            expect(document.diagnostics?.length ?? 0).toBe(0);
-            return document.parseResult.value;
+            expect(document.parseResult.lexerErrors.length + document.parseResult.parserErrors.length + (document.diagnostics?.length ?? 0)).toBe(0);
         };
-        await shouldSucceed('/**/');
-        await shouldSucceed('/* comment */');
+        const shouldFail = async (input: string) => {
+            const document = await parseHelper(services)(input, {validation: true});
+            expect(document.parseResult.lexerErrors.length + document.parseResult.parserErrors.length + (document.diagnostics?.length ?? 0)).toBeGreaterThan(0);
+        };
         await shouldSucceed('/* comment *//**/');
+        await shouldFail('/* comment *//* broken comment');
     });
 });
 
