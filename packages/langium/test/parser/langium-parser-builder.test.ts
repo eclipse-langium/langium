@@ -10,6 +10,7 @@ import { createLangiumGrammarServices, EmptyFileSystem} from 'langium';
 import { describe, expect, test, onTestFailed, beforeEach } from 'vitest';
 import { createServicesForGrammar, DefaultTokenBuilder } from 'langium';
 import { parseHelper } from 'langium/test';
+import { EOF } from 'chevrotain';
 
 describe('Predicated grammar rules with alternatives', () => {
 
@@ -689,6 +690,23 @@ describe('EOF', () => {
         expect(output.parseResult.lexerErrors.length).toBe(0);
         expect(output.parseResult.parserErrors.length).toBe(0);
         expect(output.diagnostics?.length ?? 0).toBe(0);
+    });
+
+    test('Handling EOF impossible', async () => {
+        const grammar = `
+        grammar Test
+        entry Main: greet='Hello!' EOF name='user!';
+        `;
+        const services = await createServicesForGrammar({ grammar });
+        const parse = parseHelper(services);
+        const document = await parse('Hello!user!', {validation: true});
+        expect(document.parseResult.parserErrors.length).toBe(1);
+        expect(document.parseResult.parserErrors[0].name).toBe('MismatchedTokenException');
+        expect(document.parseResult.parserErrors[0].token.tokenType.name).toBe('user!');
+        const second =  await parse('Hello!', {validation: true});
+        expect(second.parseResult.parserErrors.length).toBe(1);
+        expect(second.parseResult.parserErrors[0].name).toBe('MismatchedTokenException');
+        expect(second.parseResult.parserErrors[0].token.tokenType).toBe(EOF);
     });
 
     test('Using grammar containing a rule with an EOF', async () => {
