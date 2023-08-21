@@ -7,10 +7,10 @@
 import type { CustomPatternMatcherFunc, TokenPattern, TokenType, TokenVocabulary } from 'chevrotain';
 import type { AbstractRule, Grammar, Keyword, TerminalRule } from '../grammar/generated/ast.js';
 import type { Stream } from '../utils/stream.js';
-import { Lexer } from 'chevrotain';
-import { isKeyword, isParserRule, isTerminalRule } from '../grammar/generated/ast.js';
+import { Lexer, EOF } from 'chevrotain';
+import { isKeyword, isParserRule, isTerminalRule, isEndOfFile } from '../grammar/generated/ast.js';
 import { terminalRegex } from '../grammar/internal-grammar-util.js';
-import { streamAllContents } from '../utils/ast-util.js';
+import { streamAllContents, streamAst } from '../utils/ast-util.js';
 import { getAllReachableRules } from '../utils/grammar-util.js';
 import { getCaseInsensitivePattern, isWhitespaceRegExp, partialMatches } from '../utils/regex-util.js';
 import { stream } from '../utils/stream.js';
@@ -29,7 +29,9 @@ export class DefaultTokenBuilder implements TokenBuilder {
         const reachableRules = stream(getAllReachableRules(grammar, false));
         const terminalTokens: TokenType[] = this.buildTerminalTokens(reachableRules);
         const tokens: TokenType[] = this.buildKeywordTokens(reachableRules, terminalTokens, options);
-        tokens.push(EOF);
+        if(reachableRules.some(r => streamAst(r.definition).some(isEndOfFile))) {
+            tokens.push(EOF);
+        }
 
         terminalTokens.forEach(terminalToken => {
             const pattern = terminalToken.PATTERN;
