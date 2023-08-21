@@ -47,7 +47,7 @@ export function registerValidationChecks(services: LangiumGrammarServices): void
         TerminalRule: [
             validator.checkTerminalRuleReturnType,
             validator.checkHiddenTerminalRule,
-            validator.checkEmptyTerminalRule,
+            validator.checkEmptyTerminalRule
         ],
         InferredType: validator.checkTypeReservedName,
         Keyword: validator.checkKeyword,
