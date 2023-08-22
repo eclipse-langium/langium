@@ -7,7 +7,7 @@
 import type { Grammar } from 'langium';
 import type { GrammarAST as GrammarTypes } from 'langium';
 import { beforeEach, describe, expect, test } from 'vitest';
-import { createLangiumGrammarServices, EmptyFileSystem, UriUtils } from 'langium';
+import { createLangiumGrammarServices, EmptyFileSystem } from 'langium';
 import { clearDocuments, parseHelper } from 'langium/test';
 
 describe('Type Linking', () => {
@@ -42,10 +42,12 @@ describe('Type Linking', () => {
         A infers A:
             'A' a=ID;
         terminal ID: /[_a-zA-Z][\\w_]*/;
-        `);
+        `, {
+            documentUri: 'file:///inferred.langium'
+        });
         const grammar2 = await parse(`
         grammar Debug
-        import './${UriUtils.basename(grammar1.uri)}'
+        import './inferred'
         entry Model:
             (b+=B | a+=A)*;
         B infers B:
@@ -88,10 +90,12 @@ describe('Type Linking', () => {
         A returns A:
             'A' a=ID;
         terminal ID: /[_a-zA-Z][\\w_]*/;
-        `);
+        `, {
+            documentUri: 'file:///declared.langium'
+        });
         const grammar2 = await parse(`
         grammar Debug
-        import './${UriUtils.basename(grammar1.uri)}'
+        import './declared'
         interface B {
             b: @A
         }
@@ -111,16 +115,20 @@ describe('Type Linking', () => {
         interface A {
             a: string
         }
-        `);
+        `, {
+            documentUri: 'file:///declaredTransitive.langium'
+        });
         const grammar2 = await parse(`
-        import './${UriUtils.basename(grammar1.uri)}'
+        import './declaredTransitive'
         A returns A:
             'A' a=ID;
         terminal ID: /[_a-zA-Z][\\w_]*/;
-        `);
+        `, {
+            documentUri: 'file:///declaredProxy.langium'
+        });
         const grammar3 = await parse(`
         grammar Debug
-        import './${UriUtils.basename(grammar2.uri)}'
+        import './declaredProxy'
         interface B {
             b: @A
         }

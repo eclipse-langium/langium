@@ -8,6 +8,7 @@ export * from './ast-util.js';
 export * from './caching.js';
 export * from './collections.js';
 export * from './cst-util.js';
+export * from './disposable.js';
 export * from './errors.js';
 export * from './grammar-util.js';
 export * from './promise-util.js';
