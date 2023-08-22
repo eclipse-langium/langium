@@ -1,5 +1,9 @@
 # Change Log of `langium-cli`
 
+## v2.0.1 (Aug. 2023)
+
+Fix a bug that prevented usage of the JS API of the CLI package ([#1160](https://github.com/eclipse-langium/langium/pull/1160)).
+
 ## v2.0.0 (Aug. 2023)
 
 ### EcmaScript Modules (ESM)

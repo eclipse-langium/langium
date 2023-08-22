@@ -1,6 +1,6 @@
 {
   "name": "langium",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "A language engineering tool for the Language Server Protocol",
   "homepage": "https://langium.org",
   "engines": {
@@ -53,6 +53,7 @@
     "watch": "tsc --watch",
     "lint": "eslint src test --ext .ts",
     "langium:generate": "langium generate",
+    "langium:generate:production": "langium generate --mode=production",
     "publish:next": "npm --no-git-tag-version version \"$(semver $npm_package_version -i minor)-next.$(git rev-parse --short HEAD)\" && npm publish --tag next",
     "publish:latest": "npm publish --tag latest --access public"
   },

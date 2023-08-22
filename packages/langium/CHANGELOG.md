@@ -1,5 +1,9 @@
 # Change Log of `langium`
 
+## v2.0.1 (Aug. 2023)
+
+Publish Langium's own grammar using minified JSON ([#1158](https://github.com/eclipse-langium/langium/pull/1158)).
+
 ## v2.0.0 (Aug. 2023)
 
 ### EcmaScript Modules (ESM)
