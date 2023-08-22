@@ -4,9 +4,10 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { AstNode, Grammar, LangiumDocument, Mutable} from 'langium';
+import type { AstNode, Grammar, LangiumDocument, Mutable } from 'langium';
+import type { LangiumConfig, LangiumLanguageConfig} from './package.js';
 import { URI } from 'langium';
-import type { LangiumConfig, LangiumLanguageConfig } from './package.js';
+import { loadConfig } from './package.js';
 import { copyAstNode, createLangiumGrammarServices, getDocument, GrammarAST, linkContentToContainer } from 'langium';
 import { resolveImport, resolveTransitiveImports } from 'langium/internal';
 import { NodeFileSystem } from 'langium/node';
@@ -16,14 +17,89 @@ import { generateModule } from './generator/module-generator.js';
 import { generateTextMate } from './generator/highlighting/textmate-generator.js';
 import { generateMonarch } from './generator/highlighting/monarch-generator.js';
 import { generatePrismHighlighting } from './generator/highlighting/prism-generator.js';
-import { getUserChoice, log } from './generator/util.js';
+import { elapsedTime, getTime, getUserChoice, log, schema } from './generator/util.js';
 import { getFilePath, RelativePath } from './package.js';
 import { validateParser } from './parser-validation.js';
 import { generateTypesFile } from './generator/types-generator.js';
 import { createGrammarDiagramHtml } from 'langium-railroad';
+import { validate } from 'jsonschema';
 import chalk from 'chalk';
 import * as path from 'path';
 import fs from 'fs-extra';
+
+export async function generate(options: GenerateOptions): Promise<boolean> {
+    const config = await loadConfig(options);
+    const validation = validate(config, await schema, {
+        nestedErrors: true
+    });
+    if (!validation.valid) {
+        log('error', options, chalk.red('Error: Your Langium configuration is invalid.'));
+        const errors = validation.errors.filter(error => error.path.length > 0);
+        errors.forEach(error => {
+            log('error', options, `--> ${error.stack}`);
+        });
+        return false;
+    }
+    const result = await runGenerator(config, options);
+    if (options.watch) {
+        printSuccess(result);
+        console.log(getTime() + 'Langium generator will continue running in watch mode.');
+        await runWatcher(config, options, await allGeneratorFiles(result));
+    } else {
+        console.log(`Langium generator finished ${chalk.green.bold('successfully')} in ${elapsedTime()}ms`);
+    }
+    return result.success;
+}
+
+async function allGeneratorFiles(results: GeneratorResult): Promise<string[]> {
+    const files = Array.from(new Set(results.files));
+    const filesExist = await Promise.all(files.map(e => fs.exists(e)));
+    return files.filter((_, i) => filesExist[i]);
+}
+
+async function runWatcher(config: LangiumConfig, options: GenerateOptions, files: string[]): Promise<void> {
+    if (files.length === 0) {
+        return;
+    }
+    const watchers: fs.FSWatcher[] = [];
+    for (const grammarFile of files) {
+        const watcher = fs.watch(grammarFile, undefined, watch);
+        watchers.push(watcher);
+    }
+    // The watch might be triggered multiple times
+    // We only want to execute once
+    let watcherTriggered = false;
+
+    async function watch(): Promise<void> {
+        if (watcherTriggered) {
+            return;
+        }
+        watcherTriggered = true;
+        // Delay the generation a bit in case multiple files are changed at once
+        await delay(20);
+        console.log(getTime() + 'File change detected. Starting compilation...');
+        const results = await runGenerator(config, options);
+        for (const watcher of watchers) {
+            watcher.close();
+        }
+        printSuccess(results);
+        runWatcher(config, options, await allGeneratorFiles(results));
+    }
+
+    await new Promise(() => { /* Never resolve */ });
+}
+
+function printSuccess(results: GeneratorResult): void {
+    if (results.success) {
+        console.log(`${getTime()}Langium generator finished ${chalk.green.bold('successfully')} in ${elapsedTime()}ms`);
+    }
+}
+
+async function delay(ms: number): Promise<void> {
+    return new Promise(resolve => {
+        setTimeout(() => resolve(), ms);
+    });
+}
 
 export interface GenerateOptions {
     file?: string;
