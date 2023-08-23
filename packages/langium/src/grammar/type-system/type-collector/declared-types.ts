@@ -4,8 +4,9 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { Interface, Type, TypeDefinition } from '../../../languages/generated/ast.js';
-import type { PlainAstTypes, PlainInterface, PlainProperty, PlainPropertyType, PlainUnion } from './plain-types.js';
+import type { Interface, Type, TypeDefinition, ValueLiteral } from '../../../languages/generated/ast.js';
+import { isArrayLiteral, isBooleanLiteral } from '../../../languages/generated/ast.js';
+import type { PlainAstTypes, PlainInterface, PlainProperty, PlainPropertyDefaultValue, PlainPropertyType, PlainUnion } from './plain-types.js';
 import { isArrayType, isReferenceType, isUnionType, isSimpleType } from '../../../languages/generated/ast.js';
 import { getTypeNameWithoutError, isPrimitiveGrammarType } from '../../internal-grammar-util.js';
 import { getTypeName } from '../../../utils/grammar-util.js';
@@ -17,12 +18,16 @@ export function collectDeclaredTypes(interfaces: Interface[], unions: Type[]): P
     for (const type of interfaces) {
         const properties: PlainProperty[] = [];
         for (const attribute of type.attributes) {
-            properties.push({
+            const property: PlainProperty = {
                 name: attribute.name,
                 optional: attribute.isOptional,
                 astNodes: new Set([attribute]),
                 type: typeDefinitionToPropertyType(attribute.type)
-            });
+            };
+            if (attribute.defaultValue) {
+                property.defaultValue = toPropertyDefaultValue(attribute.defaultValue);
+            }
+            properties.push(property);
         }
         const superTypes = new Set<string>();
         for (const superType of type.superTypes) {
@@ -54,6 +59,16 @@ export function collectDeclaredTypes(interfaces: Interface[], unions: Type[]): P
     }
 
     return declaredTypes;
+}
+
+function toPropertyDefaultValue(literal: ValueLiteral): PlainPropertyDefaultValue {
+    if (isBooleanLiteral(literal)) {
+        return literal.true;
+    } else if (isArrayLiteral(literal)) {
+        return literal.elements.map(toPropertyDefaultValue);
+    } else {
+        return literal.value;
+    }
 }
 
 export function typeDefinitionToPropertyType(type: TypeDefinition): PlainPropertyType {

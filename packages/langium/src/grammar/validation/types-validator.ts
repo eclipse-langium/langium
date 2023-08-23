@@ -12,7 +12,7 @@ import type { DeclaredInfo, InferredInfo, LangiumGrammarDocument, ValidationReso
 import * as ast from '../../languages/generated/ast.js';
 import { MultiMap } from '../../utils/collections.js';
 import { extractAssignments } from '../internal-grammar-util.js';
-import { flattenPropertyUnion, InterfaceType, isArrayType, isInterfaceType, isMandatoryPropertyType, isPropertyUnion, isReferenceType, isTypeAssignable, isUnionType, isValueType, propertyTypeToString } from '../type-system/type-collector/types.js';
+import { flattenPropertyUnion, InterfaceType, isArrayType, isInterfaceType, isMandatoryPropertyType, isPrimitiveType, isPropertyUnion, isReferenceType, isStringType, isTypeAssignable, isUnionType, isValueType, propertyTypeToString } from '../type-system/type-collector/types.js';
 import { isDeclared, isInferred, isInferredAndDeclared } from '../workspace/documents.js';
 
 export function registerTypeValidationChecks(services: LangiumGrammarServices): void {
@@ -25,6 +25,7 @@ export function registerTypeValidationChecks(services: LangiumGrammarServices): 
         Grammar: [
             typesValidator.checkDeclaredTypesConsistency,
             typesValidator.checkDeclaredAndInferredTypesConsistency,
+            typesValidator.checkAttributeDefaultValue
         ],
         Interface: [
             typesValidator.checkCyclicInterface
@@ -37,6 +38,24 @@ export function registerTypeValidationChecks(services: LangiumGrammarServices): 
 }
 
 export class LangiumGrammarTypesValidator {
+
+    checkAttributeDefaultValue(grammar: ast.Grammar, accept: ValidationAcceptor): void {
+        const validationResources = (grammar.$document as LangiumGrammarDocument)?.validationResources;
+        if (validationResources) {
+            for (const grammarInterface of grammar.interfaces) {
+                const matchedProperties = matchInterfaceAttributes(validationResources, grammarInterface);
+                for (const [grammarProperty, property] of matchedProperties) {
+                    const defaultType = getDefaultValueType(grammarProperty.defaultValue);
+                    if (defaultType && !isTypeAssignable(defaultType, property.type)) {
+                        accept('error', `Cannot assign default value of type '${propertyTypeToString(defaultType, 'DeclaredType')}' to type '${propertyTypeToString(property.type, 'DeclaredType')}'.`, {
+                            node: grammarProperty,
+                            property: 'defaultValue'
+                        });
+                    }
+                }
+            }
+        }
+    }
 
     checkCyclicType(type: ast.Type, accept: ValidationAcceptor): void {
         if (isCyclicType(type, new Set())) {
@@ -84,7 +103,66 @@ export class LangiumGrammarTypesValidator {
     }
 }
 
-///////////////////////////////////////////////////////////////////////////////
+function matchInterfaceAttributes(resources: ValidationResources, grammarInterface: ast.Interface): Array<[ast.TypeAttribute, Property]> {
+    const elements: Array<[ast.TypeAttribute, Property]> = [];
+    const interfaceType = resources.typeToValidationInfo.get(grammarInterface.name);
+    if (interfaceType && isDeclared(interfaceType) && isInterfaceType(interfaceType.declared)) {
+        for (const grammarProperty of grammarInterface.attributes.filter(prop => prop.defaultValue)) {
+            const property = interfaceType.declared.properties.find(e => e.name === grammarProperty.name);
+            if (property) {
+                elements.push([grammarProperty, property]);
+            }
+        }
+    }
+    return elements;
+}
+
+function getDefaultValueType(defaultValue?: ast.ValueLiteral): PropertyType | undefined {
+    if (ast.isBooleanLiteral(defaultValue)) {
+        return { primitive: 'boolean' };
+    } else if (ast.isNumberLiteral(defaultValue)) {
+        return { primitive: 'number' };
+    } else if (ast.isStringLiteral(defaultValue)) {
+        return { string: defaultValue.value };
+    } else if (ast.isArrayLiteral(defaultValue)) {
+        return { elementType: generateElementType(defaultValue) };
+    } else {
+        return undefined;
+    }
+}
+
+function generateElementType(arrayLiteral: ast.ArrayLiteral): PropertyType | undefined {
+    if (arrayLiteral.elements.length === 0) {
+        return undefined;
+    }
+    const foundTypes: PropertyType[] = [];
+    for (const element of arrayLiteral.elements) {
+        const elementType = getDefaultValueType(element);
+        if (!elementType) {
+            continue;
+        }
+        if (isPrimitiveType(elementType)) {
+            if (!(foundTypes.some(e => isPrimitiveType(e) && e.primitive === elementType.primitive))) {
+                foundTypes.push(elementType);
+            }
+        } else if (isStringType(elementType)) {
+            if (!(foundTypes.some(e => isStringType(e) && e.string === elementType.string))) {
+                foundTypes.push(elementType);
+            }
+        } else {
+            foundTypes.push(elementType);
+        }
+    }
+    if (foundTypes.length === 0) {
+        return undefined;
+    } else if (foundTypes.length === 1) {
+        return foundTypes[0];
+    } else {
+        return {
+            types: foundTypes
+        };
+    }
+}
 
 function isCyclicType(type: ast.TypeDefinition | ast.AbstractType, visited: Set<AstNode>): boolean {
     if (visited.has(type)) {
@@ -301,7 +379,7 @@ function validatePropertiesConsistency(
     const matchingProp = (type: PropertyType): PropertyType => {
         if (isPropertyUnion(type)) return { types: type.types.map(t => matchingProp(t)) };
         if (isReferenceType(type)) return { referenceType: matchingProp(type.referenceType) };
-        if (isArrayType(type)) return { elementType: matchingProp(type.elementType) };
+        if (isArrayType(type)) return { elementType: type.elementType && matchingProp(type.elementType) };
         if (isValueType(type)) {
             const resource = resources.typeToValidationInfo.get(type.value.name);
             if (!resource) return type;

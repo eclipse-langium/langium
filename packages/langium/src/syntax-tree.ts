@@ -201,18 +201,25 @@ export abstract class AbstractAstReflection implements AstReflection {
 export interface TypeMetaData {
     /** The name of this meta model type. Corresponds to the `AstNode.$type` value. */
     name: string
-    /** A list of mandatory properties. These are defaults for array and boolean based properties (`[]` and `false` respectively). */
-    mandatory: TypeMandatoryProperty[]
+    /** A list of properties. They can contain default values for their respective property in the AST. */
+    properties: TypeProperty[]
 }
 
 /**
- * Mandatory properties are implicitly expected to be set in an AST node.
+ * Describes the meta data of a property of an AST node.
+ *
+ * The optional `defaultValue` indicates that the property is mandatory in the AST node.
  * For example, if an AST node contains an array, but no elements of this array have been parsed, we still expect an empty array instead of `undefined`.
  */
-export interface TypeMandatoryProperty {
+export interface TypeProperty {
     name: string
-    type: 'array' | 'boolean'
+    defaultValue?: PropertyType
 }
+
+/**
+ * Represents a default value for an AST property.
+ */
+export type PropertyType = number | string | boolean | PropertyType[];
 
 /**
  * A node in the Concrete Syntax Tree (CST).

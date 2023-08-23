@@ -648,6 +648,63 @@ describe('Unicode terminal rules', () => {
 
 });
 
+describe('Parsing default values', () => {
+
+    const grammar = `
+        grammar test
+        entry Model returns Model: a=ID b=ID? (c+=ID)*;
+
+        interface Model {
+            a: string
+            b: string = "hello"
+            c: string[] = ["a", "b", "c"]
+        }
+
+        terminal ID: /\\w+/;
+        hidden terminal WS: /\\s+/;
+    `;
+
+    let parser: LangiumParser;
+
+    beforeEach(async () => {
+        parser = await parserFromGrammar(grammar);
+    });
+
+    test('Assigns default values for properties', async () => {
+        const result = parser.parse('hi');
+        const model = result.value as unknown as {
+            a: string
+            b: string
+            c: string[]
+        };
+        expect(model.a).toBe('hi');
+        expect(model.b).toBe('hello');
+        expect(model.c).toEqual(['a', 'b', 'c']);
+    });
+
+    test('Does not overwrite parsed value for "b"', async () => {
+        const result = parser.parse('hi world');
+        const model = result.value as unknown as {
+            a: string
+            b: string
+            c: string[]
+        };
+        expect(model.a).toBe('hi');
+        expect(model.b).toBe('world');
+    });
+
+    test('Does not overwrite parsed value for "c"', async () => {
+        const result = parser.parse('hi you d e');
+        const model = result.value as unknown as {
+            a: string
+            b: string
+            c: string[]
+        };
+        expect(model.c).toEqual(['d', 'e']);
+    });
+
+});
+
 describe('ALL(*) parser', () => {
 
     const grammar = `

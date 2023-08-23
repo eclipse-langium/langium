@@ -16,13 +16,25 @@ entry Grammar:
 Interface:
     'interface' name=ID
     ('extends' superTypes+=[AbstractType:ID] (',' superTypes+=[AbstractType:ID])*)?
-    SchemaType;
-
-fragment SchemaType:
-    '{' attributes+=TypeAttribute* '}' ';'?;
+    '{' 
+        attributes+=TypeAttribute* 
+    '}'
+';'?;
 
 TypeAttribute:
-    name=FeatureName (isOptional?='?')? ':' type=TypeDefinition ';'?;
+    name=FeatureName (isOptional?='?')? ':' type=TypeDefinition ('=' defaultValue=ValueLiteral)? ';'?;
+
+ValueLiteral:
+    StringLiteral | NumberLiteral | BooleanLiteral | ArrayLiteral;
+
+StringLiteral:
+    value=STRING;
+NumberLiteral:
+    value=NUMBER;
+BooleanLiteral:
+    true?='true' | 'false';
+ArrayLiteral:
+    '[' (elements+=ValueLiteral (',' elements+=ValueLiteral)*)? ']';
 
 TypeDefinition: UnionType;
 
@@ -116,9 +128,6 @@ NamedArgument:
     ( parameter=[Parameter:ID] calledByName?='=')?
     ( value=Disjunction );
 
-LiteralCondition:
-    true?='true' | 'false';
-
 Disjunction infers Condition:
     Conjunction ({infer Disjunction.left=current} '|' right=Conjunction)*;
 
@@ -129,7 +138,7 @@ Negation infers Condition:
     Atom | {infer Negation} '!' value=Negation;
 
 Atom infers Condition:
-    ParameterReference | ParenthesizedCondition | LiteralCondition;
+    ParameterReference | ParenthesizedCondition | BooleanLiteral;
 
 ParenthesizedCondition infers Condition:
     '(' Disjunction ')';
@@ -213,6 +222,7 @@ FeatureName returns string:
 
 terminal ID: /\^?[_a-zA-Z][\w_]*/;
 terminal STRING: /"(\\.|[^"\\])*"|'(\\.|[^'\\])*'/;
+terminal NUMBER returns number: /NaN|-?((\d*\.\d+|\d+)([Ee][+-]?\d+)?|Infinity)/;
 terminal RegexLiteral returns string: /\/(?![*+?])(?:[^\r\n\[/\\]|\\.|\[(?:[^\r\n\]\\]|\\.)*\])+\/[a-z]*/;
 
 hidden terminal WS: /\s+/;

@@ -197,7 +197,7 @@ export function findReferenceTypes(type: PropertyType): string[] {
             return [refType.value.name];
         }
     } else if (isArrayType(type)) {
-        return findReferenceTypes(type.elementType);
+        return type.elementType ? findReferenceTypes(type.elementType) : [];
     }
     return [];
 }
@@ -222,7 +222,7 @@ export function findAstTypesInternal(type: PropertyType, visited: Set<PropertyTy
             return [value.name];
         }
     } else if (isArrayType(type)) {
-        return findAstTypesInternal(type.elementType, visited);
+        return type.elementType ? findAstTypesInternal(type.elementType, visited) : [];
     }
     return [];
 }
