@@ -70,18 +70,18 @@
     },
     "dependencies": {
         "chalk": "~5.3.0",
-        "commander": "~10.0.0",
+        "commander": "~11.0.0",
         "langium": "~2.0.0",
         "lodash": "~4.17.21",
-        "vscode-languageclient": "~8.0.2",
-        "vscode-languageserver": "~8.0.2"
+        "vscode-languageclient": "~8.1.0",
+        "vscode-languageserver": "~8.1.0"
     },
     "devDependencies": {
         "langium-cli": "~2.0.0"
     },
     "volta": {
-        "node": "18.17.0",
-        "npm": "9.5.1"
+        "node": "18.17.1",
+        "npm": "9.6.7"
     },
     "repository": {
         "type": "git",

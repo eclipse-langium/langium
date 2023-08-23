@@ -17,27 +17,28 @@
     "version:dependencies": "node ./scripts/update-version.js && npm install",
     "langium:generate": "npm run langium:generate --workspace=langium --workspace=examples/domainmodel --workspace=examples/arithmetics --workspace=examples/statemachine --workspace=examples/requirements",
     "dev-build": "npm run dev-clean && npm install && npm link ./packages/langium && npm link ./packages/langium-cli && npm link ./packages/generator-langium",
-    "dev-clean": "shx rm -rf packages/**/node_modules && npm uninstall -g langium-workspaces langium-cli generator-langium langium && npm unlink langium-workspaces langium-cli generator-langium langium"
+    "dev-clean": "shx rm -rf packages/**/node_modules && npm uninstall -g langium-workspaces langium-cli generator-langium langium && npm unlink langium-workspaces langium-cli generator-langium langium",
+    "reset:repo": "git clean -f -X -d"
   },
   "devDependencies": {
-    "@types/node": "~16.18.11",
+    "@types/node": "~16.18.41",
     "@types/vscode": "~1.67.0",
-    "@typescript-eslint/eslint-plugin": "^5.58.0",
-    "@typescript-eslint/parser": "^5.58.0",
-    "@vitest/coverage-c8": "~0.32.2",
-    "@vitest/ui": "~0.32.2",
-    "concurrently": "^7.6.0",
-    "esbuild": "^0.18.6",
-    "eslint": "^8.33.0",
-    "eslint-plugin-header": "^3.1.1",
-    "editorconfig": "~1.0.2",
-    "shx": "^0.3.4",
-    "typescript": "~5.0.4",
-    "vitest": "~0.32.2"
+    "@typescript-eslint/eslint-plugin": "~6.4.1",
+    "@typescript-eslint/parser": "~6.4.1",
+    "@vitest/coverage-v8": "~0.34.2",
+    "@vitest/ui": "~0.34.2",
+    "concurrently": "~8.2.1",
+    "esbuild": "~0.19.2",
+    "eslint": "~8.47.0",
+    "eslint-plugin-header": "~3.1.1",
+    "editorconfig": "~2.0.0",
+    "shx": "~0.3.4",
+    "typescript": "~5.1.6",
+    "vitest": "~0.34.2"
   },
   "volta": {
-    "node": "18.17.0",
-    "npm": "9.5.1"
+    "node": "18.17.1",
+    "npm": "9.6.7"
   },
   "workspaces": [
     "packages/*",
