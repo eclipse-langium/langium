@@ -6,8 +6,9 @@
 
 import type { TokenType, TokenVocabulary } from 'chevrotain';
 import type { AstNode, CstNode, GenericAstNode, Grammar, GrammarAST, LangiumParser, TokenBuilderOptions } from 'langium';
-import { createLangiumGrammarServices, EmptyFileSystem, createServicesForGrammar, DefaultTokenBuilder } from 'langium';
+import { EmptyFileSystem, DefaultTokenBuilder } from 'langium';
 import { describe, expect, test, onTestFailed, beforeEach } from 'vitest';
+import { createLangiumGrammarServices, createServicesForGrammar } from 'langium/grammar';
 import { parseHelper } from 'langium/test';
 import { EOF } from 'chevrotain';
 

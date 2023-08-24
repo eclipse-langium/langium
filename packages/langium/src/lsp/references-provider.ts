@@ -11,7 +11,7 @@ import type { LeafCstNode } from '../syntax-tree.js';
 import type { LangiumServices } from '../services.js';
 import type { MaybePromise } from '../utils/promise-util.js';
 import type { LangiumDocument } from '../workspace/documents.js';
-import type { GrammarConfig } from '../grammar/grammar-config.js';
+import type { GrammarConfig } from '../language/grammar-config.js';
 import { Location } from 'vscode-languageserver';
 import { findDeclarationNodeAtOffset } from '../utils/cst-util.js';
 

@@ -7,7 +7,8 @@
 import type { Interface, Type, TypeDefinition } from '../../generated/ast.js';
 import type { PlainAstTypes, PlainInterface, PlainProperty, PlainPropertyType, PlainUnion } from './plain-types.js';
 import { isArrayType, isReferenceType, isUnionType, isSimpleType } from '../../generated/ast.js';
-import { getTypeName, getTypeNameWithoutError, isPrimitiveType } from '../../internal-grammar-util.js';
+import { getTypeNameWithoutError, isPrimitiveGrammarType } from '../../internal-grammar-util.js';
+import { getTypeName } from '../../../utils/grammar-util.js';
 
 export function collectDeclaredTypes(interfaces: Interface[], unions: Type[]): PlainAstTypes {
     const declaredTypes: PlainAstTypes = { unions: [], interfaces: [] };
@@ -84,7 +85,7 @@ export function typeDefinitionToPropertyType(type: TypeDefinition): PlainPropert
             const ref = type.typeRef.ref;
             const value = getTypeNameWithoutError(ref);
             if (value) {
-                if (isPrimitiveType(value)) {
+                if (isPrimitiveGrammarType(value)) {
                     return {
                         primitive: value
                     };

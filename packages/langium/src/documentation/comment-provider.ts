@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { GrammarConfig } from '../grammar/grammar-config.js';
+import type { GrammarConfig } from '../language/grammar-config.js';
 import { isAstNodeWithComment } from '../serializer/json-serializer.js';
 import type { LangiumServices } from '../services.js';
 import type { AstNode } from '../syntax-tree.js';

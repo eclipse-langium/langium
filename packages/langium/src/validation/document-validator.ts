@@ -6,7 +6,7 @@
 
 import type { MismatchedTokenException } from 'chevrotain';
 import type { Diagnostic } from 'vscode-languageserver';
-import type { LanguageMetaData } from '../grammar/language-meta-data.js';
+import type { LanguageMetaData } from '../language/language-meta-data.js';
 import type { ParseResult } from '../parser/langium-parser.js';
 import type { LangiumServices } from '../services.js';
 import type { AstNode, CstNode } from '../syntax-tree.js';

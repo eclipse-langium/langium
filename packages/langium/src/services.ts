@@ -8,8 +8,8 @@
 import type { Connection, TextDocuments } from 'vscode-languageserver';
 import type { TextDocument } from 'vscode-languageserver-textdocument';
 import type { Grammar } from './grammar/generated/ast.js';
-import type { GrammarConfig } from './grammar/grammar-config.js';
-import type { LanguageMetaData } from './grammar/language-meta-data.js';
+import type { GrammarConfig } from './language/grammar-config.js';
+import type { LanguageMetaData } from './language/language-meta-data.js';
 import type { ExecuteCommandHandler } from './lsp/execute-command-handler.js';
 import type { CodeActionProvider } from './lsp/code-action.js';
 import type { CompletionProvider } from './lsp/completion/completion-provider.js';

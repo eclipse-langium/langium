@@ -7,8 +7,7 @@
 import type { AbstractElement, AbstractRule } from '../grammar/generated/ast.js';
 import type { CstNode } from '../syntax-tree.js';
 import { isCrossReference, isRuleCall } from '../grammar/generated/ast.js';
-import { getRuleType } from '../grammar/internal-grammar-util.js';
-import { getCrossReferenceTerminal } from '../utils/grammar-util.js';
+import { getCrossReferenceTerminal, getRuleType } from '../utils/grammar-util.js';
 
 /**
  * Language-specific service for converting string values from the source text format into a value to be held in the AST.

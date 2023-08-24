@@ -17,7 +17,7 @@ export function serializeGrammar(services: LangiumServices, grammars: Grammar[],
     ).appendTemplateIf(!!config.langiumInternal)`
 
         import type { Grammar } from './ast${config.importExtension}';
-        import { loadGrammarFromJson } from '../../utils/grammar-util${config.importExtension}';
+        import { loadGrammarFromJson } from '../../utils/grammar-loader${config.importExtension}';
     `.appendTemplateIf(!config.langiumInternal)`
 
         import type { Grammar } from 'langium';

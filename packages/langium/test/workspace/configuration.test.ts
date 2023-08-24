@@ -7,7 +7,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { beforeEach, describe, expect, test } from 'vitest';
-import { createLangiumGrammarServices, EmptyFileSystem } from 'langium';
+import { EmptyFileSystem } from 'langium';
+import { createLangiumGrammarServices } from 'langium/grammar';
 
 describe('ConfigurationProvider', () => {
     const grammarServices = createLangiumGrammarServices(EmptyFileSystem).grammar;

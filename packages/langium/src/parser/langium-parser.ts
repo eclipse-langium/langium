@@ -16,7 +16,7 @@ import type { ValueConverter } from './value-converter.js';
 import { defaultParserErrorProvider, EmbeddedActionsParser, LLkLookaheadStrategy } from 'chevrotain';
 import { LLStarLookaheadStrategy } from 'chevrotain-allstar';
 import { isAssignment, isCrossReference, isKeyword } from '../grammar/generated/ast.js';
-import { getTypeName, isDataTypeRule } from '../grammar/internal-grammar-util.js';
+import { getTypeName, isDataTypeRule } from '../utils/grammar-util.js';
 import { assignMandatoryAstProperties, getContainerOfType, linkContentToContainer } from '../utils/ast-util.js';
 import { CstNodeBuilder } from './cst-node-builder.js';
 

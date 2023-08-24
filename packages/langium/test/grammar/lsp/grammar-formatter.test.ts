@@ -4,8 +4,9 @@
 * terms of the MIT License, which is available in the project root.
 ******************************************************************************/
 
-import { EmptyFileSystem, createLangiumGrammarServices } from 'langium';
+import { EmptyFileSystem } from 'langium';
 import { expandToString } from 'langium/generate';
+import { createLangiumGrammarServices } from 'langium/grammar';
 import { expectFormatting } from 'langium/test';
 import { describe, test } from 'vitest';
 

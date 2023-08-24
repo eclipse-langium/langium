@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import type { CancellationToken, DocumentHighlightParams } from 'vscode-languageserver';
-import type { GrammarConfig } from '../grammar/grammar-config.js';
+import type { GrammarConfig } from '../language/grammar-config.js';
 import type { NameProvider } from '../references/name-provider.js';
 import type { FindReferencesOptions, References } from '../references/references.js';
 import type { LangiumServices } from '../services.js';

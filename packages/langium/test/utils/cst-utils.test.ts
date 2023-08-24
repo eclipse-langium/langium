@@ -5,8 +5,9 @@
  ******************************************************************************/
 
 import type { Grammar, LeafCstNode } from 'langium';
-import { EmptyFileSystem, createLangiumGrammarServices, findLeafNodeAtOffset, findLeafNodeBeforeOffset } from 'langium';
+import { EmptyFileSystem, findLeafNodeAtOffset, findLeafNodeBeforeOffset } from 'langium';
 import { expandToString } from 'langium/generate';
+import { createLangiumGrammarServices } from 'langium/grammar';
 import { parseHelper } from 'langium/test';
 import { describe, expect, test } from 'vitest';
 

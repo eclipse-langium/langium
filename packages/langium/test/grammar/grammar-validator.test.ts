@@ -9,8 +9,8 @@ import type { GrammarAST as GrammarTypes } from 'langium';
 import type { ValidationResult } from 'langium/test';
 import { afterEach, beforeAll, describe, expect, test } from 'vitest';
 import { DiagnosticSeverity } from 'vscode-languageserver';
-import { createLangiumGrammarServices, EmptyFileSystem, GrammarAST, streamAllContents, streamContents } from 'langium';
-import { IssueCodes } from 'langium/internal';
+import { EmptyFileSystem, GrammarAST, streamAllContents, streamContents } from 'langium';
+import { IssueCodes, createLangiumGrammarServices } from 'langium/grammar';
 import { clearDocuments, expectError, expectIssue, expectNoIssues, expectWarning, parseHelper, validationHelper } from 'langium/test';
 
 const services = createLangiumGrammarServices(EmptyFileSystem);

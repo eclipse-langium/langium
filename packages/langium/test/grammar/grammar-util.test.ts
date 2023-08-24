@@ -4,10 +4,11 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { Grammar, GrammarAST as GrammarTypes } from 'langium';
+import type { Grammar, GrammarAST as GrammarTypes} from 'langium';
+import { getTypeName, isDataTypeRule, terminalRegex } from 'langium';
 import { beforeAll, describe, expect, test } from 'vitest';
-import { createLangiumGrammarServices, EmptyFileSystem, findNameAssignment, getEntryRule, stream, GrammarAST } from 'langium';
-import { LangiumGrammarGrammar, getTypeName, isDataTypeRule, terminalRegex } from 'langium/internal';
+import { EmptyFileSystem, findNameAssignment, getEntryRule, stream, GrammarAST } from 'langium';
+import { LangiumGrammarGrammar, createLangiumGrammarServices } from 'langium/grammar';
 import { parseHelper } from 'langium/test';
 
 describe('Data type rules', () => {

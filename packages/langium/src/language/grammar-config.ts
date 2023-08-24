@@ -8,8 +8,8 @@ import type { LangiumServices } from '../services.js';
 import { DefaultNameRegexp } from '../utils/cst-util.js';
 import { isCommentTerminal } from '../utils/grammar-util.js';
 import { isMultilineComment } from '../utils/regex-util.js';
-import { isTerminalRule } from './generated/ast.js';
-import { terminalRegex } from './internal-grammar-util.js';
+import { isTerminalRule } from '../grammar/generated/ast.js';
+import { terminalRegex } from '../utils/grammar-util.js';
 
 export interface GrammarConfig {
     /**

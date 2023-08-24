@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import { describe, expect, test } from 'vitest';
-import { InterfaceType, isAstType } from 'langium/types';
+import { InterfaceType, isAstType } from 'langium/grammar';
 
 describe('isAstType', () => {
 

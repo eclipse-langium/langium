@@ -13,7 +13,8 @@ import { collectInferredTypes } from './inferred-types.js';
 import { collectDeclaredTypes } from './declared-types.js';
 import { getDocument } from '../../../utils/ast-util.js';
 import { isParserRule } from '../../generated/ast.js';
-import { isDataTypeRule, resolveImport } from '../../internal-grammar-util.js';
+import { resolveImport } from '../../internal-grammar-util.js';
+import { isDataTypeRule } from '../../../utils/grammar-util.js';
 
 export type AstResources = {
     parserRules: ParserRule[],

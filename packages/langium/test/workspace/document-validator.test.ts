@@ -6,7 +6,8 @@
 
 import type { AstNode, ValidationChecks } from 'langium';
 import { describe, expect, test } from 'vitest';
-import { createLangiumGrammarServices, createServicesForGrammar, EmptyFileSystem, URI } from 'langium';
+import { EmptyFileSystem, URI } from 'langium';
+import { createLangiumGrammarServices, createServicesForGrammar } from 'langium/grammar';
 
 describe('DefaultDocumentValidator', () => {
     const grammarServices = createLangiumGrammarServices(EmptyFileSystem).grammar;

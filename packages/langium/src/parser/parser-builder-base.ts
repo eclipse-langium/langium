@@ -8,13 +8,12 @@ import type { IOrAlt, TokenType, TokenTypeDictionary } from 'chevrotain';
 import type { AbstractElement, Action, Alternatives, Condition, CrossReference, Grammar, Group, Keyword, NamedArgument, ParserRule, RuleCall, UnorderedGroup } from '../grammar/generated/ast.js';
 import type { BaseParser } from './langium-parser.js';
 import type { AstNode } from '../syntax-tree.js';
-import type { Cardinality } from '../grammar/internal-grammar-util.js';
+import type { Cardinality } from '../utils/grammar-util.js';
 import { EMPTY_ALT, EOF } from 'chevrotain';
 import { isAction, isAlternatives, isEndOfFile, isAssignment, isConjunction, isCrossReference, isDisjunction, isGroup, isKeyword, isLiteralCondition, isNegation, isParameterReference, isParserRule, isRuleCall, isTerminalRule, isUnorderedGroup } from '../grammar/generated/ast.js';
 import { assertUnreachable, ErrorWithLocation } from '../utils/errors.js';
 import { stream } from '../utils/stream.js';
-import { getTypeName } from '../grammar/internal-grammar-util.js';
-import { findNameAssignment, getAllReachableRules } from '../utils/grammar-util.js';
+import { findNameAssignment, getAllReachableRules, getTypeName } from '../utils/grammar-util.js';
 
 type RuleContext = {
     optional: number,

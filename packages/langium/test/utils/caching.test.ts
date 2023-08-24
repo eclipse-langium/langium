@@ -8,7 +8,8 @@
 
 import { beforeEach, describe, expect, test } from 'vitest';
 import type { DefaultDocumentBuilder} from 'langium';
-import { DocumentCache, EmptyFileSystem, URI, WorkspaceCache, createLangiumGrammarServices } from 'langium';
+import { DocumentCache, EmptyFileSystem, URI, WorkspaceCache } from 'langium';
+import { createLangiumGrammarServices } from 'langium/grammar';
 
 const services = createLangiumGrammarServices(EmptyFileSystem);
 const workspace = services.shared.workspace;

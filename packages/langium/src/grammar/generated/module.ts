@@ -3,7 +3,7 @@
  * DO NOT EDIT MANUALLY!
  ******************************************************************************/
 
-import type { LanguageMetaData } from '../language-meta-data.js';
+import type { LanguageMetaData } from '../../language/language-meta-data.js';
 import type { Module } from '../../dependency-injection.js';
 import type { LangiumGeneratedServices, LangiumGeneratedSharedServices, LangiumSharedServices, LangiumServices } from '../../services.js';
 import type { IParserConfig } from '../../parser/parser-config.js';

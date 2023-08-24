@@ -9,8 +9,9 @@ import type { PlainAstTypes, PlainInterface, PlainProperty, PlainPropertyType, P
 import { isNamed } from '../../../references/name-provider.js';
 import { MultiMap } from '../../../utils/collections.js';
 import { isAlternatives, isKeyword, isParserRule, isAction, isGroup, isUnorderedGroup, isAssignment, isRuleCall, isCrossReference, isTerminalRule } from '../../generated/ast.js';
-import { getTypeNameWithoutError, isOptionalCardinality, getRuleType, isPrimitiveType, terminalRegex } from '../../internal-grammar-util.js';
+import { getTypeNameWithoutError, isPrimitiveGrammarType } from '../../internal-grammar-util.js';
 import { mergePropertyTypes } from './plain-types.js';
+import { isOptionalCardinality, terminalRegex, getRuleType } from '../../../utils/grammar-util.js';
 
 interface TypePart {
     name?: string
@@ -655,7 +656,7 @@ function toPropertyType(array: boolean, reference: boolean, types: string[]): Pl
                 string: type.substring(1, type.length - 1)
             };
         }
-        if (isPrimitiveType(type)) {
+        if (isPrimitiveGrammarType(type)) {
             return {
                 primitive: type
             };

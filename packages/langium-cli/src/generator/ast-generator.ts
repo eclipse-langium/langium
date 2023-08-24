@@ -5,10 +5,10 @@
  ******************************************************************************/
 import type { Grammar, LangiumServices } from 'langium';
 import { type Generated, expandToNode, joinToNode, toString } from 'langium/generate';
-import type { AstTypes, Property } from 'langium/types';
+import type { AstTypes, Property } from 'langium/grammar';
 import type { LangiumConfig } from '../package.js';
 import { streamAllContents, MultiMap, GrammarAST } from 'langium';
-import { collectAst, collectTypeHierarchy, findReferenceTypes, hasArrayType, isAstType, hasBooleanType, mergeTypesAndInterfaces } from 'langium/types';
+import { collectAst, collectTypeHierarchy, findReferenceTypes, hasArrayType, isAstType, hasBooleanType, mergeTypesAndInterfaces } from 'langium/grammar';
 import { collectTerminalRegexps, generatedHeader } from './util.js';
 
 export function generateAst(services: LangiumServices, grammars: Grammar[], config: LangiumConfig): string {

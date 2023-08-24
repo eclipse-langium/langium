@@ -6,7 +6,8 @@
 
 import type { ExecuteCommandAcceptor } from 'langium';
 import { describe, expect, test } from 'vitest';
-import { createServicesForGrammar, AbstractExecuteCommandHandler } from 'langium';
+import { AbstractExecuteCommandHandler } from 'langium';
+import { createServicesForGrammar } from 'langium/grammar';
 
 describe('AbstractExecuteCommandHandler', () => {
 

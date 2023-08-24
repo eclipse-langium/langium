@@ -4,8 +4,7 @@
  * terms of the MIT License, which is available in the project root.
 ******************************************************************************/
 import type { Grammar } from 'langium';
-import { escapeRegExp, getCaseInsensitivePattern, getTerminalParts, GrammarAST, isCommentTerminal, stream } from 'langium';
-import { terminalRegex } from 'langium/internal';
+import { escapeRegExp, getCaseInsensitivePattern, getTerminalParts, GrammarAST, isCommentTerminal, stream, terminalRegex } from 'langium';
 import type { LangiumLanguageConfig } from '../../package.js';
 import { collectKeywords } from '../util.js';
 

@@ -4,7 +4,8 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { createLangiumGrammarServices, EmptyFileSystem } from 'langium';
+import { EmptyFileSystem } from 'langium';
+import { createLangiumGrammarServices } from 'langium/grammar';
 import { parseHelper, replaceIndices } from 'langium/test';
 import { describe, expect, test } from 'vitest';
 import { type TypeHierarchyItem } from 'vscode-languageserver';

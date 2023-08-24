@@ -14,11 +14,11 @@ import type { FindReferencesOptions } from '../../references/references.js';
 import { DefaultReferences } from '../../references/references.js';
 import { getContainerOfType, getDocument } from '../../utils/ast-util.js';
 import { toDocumentSegment } from '../../utils/cst-util.js';
-import { findAssignment, findNodeForProperty } from '../../utils/grammar-util.js';
+import { findAssignment, findNodeForProperty, getActionAtElement } from '../../utils/grammar-util.js';
 import { stream } from '../../utils/stream.js';
 import { UriUtils } from '../../utils/uri-util.js';
 import { isAction, isAssignment, isInterface, isParserRule, isType, isTypeAttribute } from '../generated/ast.js';
-import { extractAssignments, getActionAtElement } from '../internal-grammar-util.js';
+import { extractAssignments } from '../internal-grammar-util.js';
 import { collectChildrenTypes, collectSuperTypes } from '../type-system/types-util.js';
 
 export class LangiumGrammarReferences extends DefaultReferences {

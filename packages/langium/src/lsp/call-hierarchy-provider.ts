@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import type { CallHierarchyIncomingCall, CallHierarchyIncomingCallsParams, CallHierarchyItem, CallHierarchyOutgoingCall, CallHierarchyOutgoingCallsParams, CallHierarchyPrepareParams, CancellationToken } from 'vscode-languageserver';
-import type { GrammarConfig } from '../grammar/grammar-config.js';
+import type { GrammarConfig } from '../language/grammar-config.js';
 import type { NameProvider } from '../references/name-provider.js';
 import type { References } from '../references/references.js';
 import type { LangiumServices } from '../services.js';

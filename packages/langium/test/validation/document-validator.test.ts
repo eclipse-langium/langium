@@ -8,7 +8,7 @@ import type { AstNode, ValidationChecks } from 'langium';
 import type { ValidationResult } from 'langium/test';
 import { beforeAll, describe, expect, test } from 'vitest';
 import { Position, Range } from 'vscode-languageserver';
-import { createServicesForGrammar } from 'langium';
+import { createServicesForGrammar } from 'langium/grammar';
 import { validationHelper } from 'langium/test';
 
 // Related to https://github.com/eclipse-langium/langium/issues/571

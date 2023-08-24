@@ -18,7 +18,8 @@ import { findRootNode, getContainerOfType, getDocument, streamAllContents } from
 import { toDocumentSegment } from '../../utils/cst-util.js';
 import { stream } from '../../utils/stream.js';
 import { AbstractType, Interface, isAction, isGrammar, isParserRule, isReturnType, Type } from '../generated/ast.js';
-import { getActionType, resolveImportUri } from '../internal-grammar-util.js';
+import { resolveImportUri } from '../internal-grammar-util.js';
+import { getActionType } from '../../utils/grammar-util.js';
 
 export class LangiumGrammarScopeProvider extends DefaultScopeProvider {
 

@@ -8,7 +8,8 @@ import type { AstNode, LangiumDocument, LangiumServices, Reference, ValidationCh
 import { describe, expect, test } from 'vitest';
 import { CancellationTokenSource } from 'vscode-languageserver';
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { createLangiumGrammarServices, createServicesForGrammar, isOperationCancelled, DocumentState, EmptyFileSystem, URI } from 'langium';
+import { isOperationCancelled, DocumentState, EmptyFileSystem, URI } from 'langium';
+import { createLangiumGrammarServices, createServicesForGrammar } from 'langium/grammar';
 
 describe('DefaultDocumentBuilder', () => {
     const grammarServices = createLangiumGrammarServices(EmptyFileSystem).grammar;

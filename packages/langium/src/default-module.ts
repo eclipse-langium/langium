@@ -10,7 +10,7 @@ import type { LangiumDefaultServices, LangiumDefaultSharedServices, LangiumServi
 import type { FileSystemProvider } from './workspace/file-system-provider.js';
 import { TextDocuments } from 'vscode-languageserver';
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { createGrammarConfig } from './grammar/grammar-config.js';
+import { createGrammarConfig } from './language/grammar-config.js';
 import { createCompletionParser } from './parser/completion-parser-builder.js';
 import { DefaultCompletionProvider } from './lsp/completion/completion-provider.js';
 import { DefaultDocumentHighlightProvider } from './lsp/document-highlight-provider.js';
