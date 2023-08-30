@@ -259,6 +259,36 @@ describe('validate declared types', () => {
             property: 'name'
         });
     });
+
+    test('Does not report false positive cyclic type definition', async () => {
+        const validationResult = await validate(`
+            interface A {
+                propA: Mytype;
+            }
+            interface B {
+                propB: string;
+            }
+            type Mytype = A | A;
+        `);
+        expect(validationResult.diagnostics).toHaveLength(0);
+    });
+
+    test('Does not report false positive cyclic interface definition', async () => {
+        const validationResult = await validate(`
+            interface Basetype {}
+            interface Mytype extends Basetype, Basetype {}
+            interface A {
+                propA: Mytype;
+            }
+            interface B {
+                propB: Basetype;
+            }
+            RuleA returns A: propA=RuleC;
+            RuleB returns B: propB=RuleC;
+            RuleC returns Mytype: {Mytype} 'c';
+        `);
+        expect(validationResult.diagnostics).toHaveLength(0);
+    });
 });
 
 describe('validate actions that use declared types', () => {
