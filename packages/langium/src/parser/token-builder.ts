@@ -40,7 +40,7 @@ export class DefaultTokenBuilder implements TokenBuilder {
         });
 
         //reminder: EOF should always be the last token, because it is very unlikely that it will be matched within the input
-        if(reachableRules.some(r => streamAst(r.definition).some(isEndOfFile))) {
+        if (reachableRules.some(r => streamAst(r.definition).some(isEndOfFile))) {
             tokens.push(EOF);
         }
         return tokens;
