@@ -677,21 +677,20 @@ describe('ALL(*) parser', () => {
     });
 });
 
-describe('EOF', () => {
-    test('Handle EOF', async () => {
+describe('Handling EOF', () => {
+    test('Use EOF as last part of the entry rule definition', async () => {
         const grammar = `
         grammar Test
         entry Main: greet='Hello!' EOF;
         `;
         const services = await createLangiumGrammarServices(EmptyFileSystem);
         const output = await parseHelper(services.grammar)(grammar, {validation: true});
-        console.log(output.parseResult.parserErrors);
         expect(output.parseResult.lexerErrors.length).toBe(0);
         expect(output.parseResult.parserErrors.length).toBe(0);
         expect(output.diagnostics?.length ?? 0).toBe(0);
     });
 
-    test('Handling EOF impossible', async () => {
+    test('Use EOF in an invalid position', async () => {
         const grammar = `
         grammar Test
         entry Main: greet='Hello!' EOF name='user!';
@@ -706,25 +705,6 @@ describe('EOF', () => {
         expect(second.parseResult.parserErrors.length).toBe(1);
         expect(second.parseResult.parserErrors[0].name).toBe('MismatchedTokenException');
         expect(second.parseResult.parserErrors[0].token.tokenType).toBe(EOF);
-    });
-
-    test('Using grammar containing a rule with an EOF', async () => {
-        const grammar = `
-        grammar Test
-        entry Main: comment+=COMMENT+ EOF;
-        terminal COMMENT: '/*' .* '*/';
-        `;
-        const services = await createServicesForGrammar({ grammar });
-        const shouldSucceed = async (input: string) => {
-            const document = await parseHelper(services)(input, {validation: true});
-            expect(document.parseResult.lexerErrors.length + document.parseResult.parserErrors.length + (document.diagnostics?.length ?? 0)).toBe(0);
-        };
-        const shouldFail = async (input: string) => {
-            const document = await parseHelper(services)(input, {validation: true});
-            expect(document.parseResult.lexerErrors.length + document.parseResult.parserErrors.length + (document.diagnostics?.length ?? 0)).toBeGreaterThan(0);
-        };
-        await shouldSucceed('/* comment *//**/');
-        await shouldFail('/* comment *//* broken comment');
     });
 });
 

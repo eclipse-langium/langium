@@ -29,9 +29,6 @@ export class DefaultTokenBuilder implements TokenBuilder {
         const reachableRules = stream(getAllReachableRules(grammar, false));
         const terminalTokens: TokenType[] = this.buildTerminalTokens(reachableRules);
         const tokens: TokenType[] = this.buildKeywordTokens(reachableRules, terminalTokens, options);
-        if(reachableRules.some(r => streamAst(r.definition).some(isEndOfFile))) {
-            tokens.push(EOF);
-        }
 
         terminalTokens.forEach(terminalToken => {
             const pattern = terminalToken.PATTERN;
@@ -41,6 +38,11 @@ export class DefaultTokenBuilder implements TokenBuilder {
                 tokens.push(terminalToken);
             }
         });
+
+        //reminder: EOF should always be the last token, because it is very unlikely that it will be matched within the input
+        if(reachableRules.some(r => streamAst(r.definition).some(isEndOfFile))) {
+            tokens.push(EOF);
+        }
         return tokens;
     }
 
