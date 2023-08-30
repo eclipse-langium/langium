@@ -94,7 +94,7 @@ function isCyclicType(type: ast.TypeDefinition | ast.AbstractType, visited: Set<
     if (ast.isType(type)) {
         return isCyclicType(type.type, visited);
     } else if (ast.isInterface(type)) {
-        return type.superTypes.some(t => t.ref && isCyclicType(t.ref, visited));
+        return type.superTypes.some(t => t.ref && isCyclicType(t.ref, new Set(visited)));
     } else if (ast.isSimpleType(type)) {
         if (type.typeRef?.ref) {
             return isCyclicType(type.typeRef!.ref, visited);
@@ -104,7 +104,7 @@ function isCyclicType(type: ast.TypeDefinition | ast.AbstractType, visited: Set<
     } else if (ast.isArrayType(type)) {
         return isCyclicType(type.elementType, visited);
     } else if (ast.isUnionType(type)) {
-        return type.types.some(t => isCyclicType(t, visited));
+        return type.types.some(t => isCyclicType(t, new Set(visited)));
     }
     return false;
 }
