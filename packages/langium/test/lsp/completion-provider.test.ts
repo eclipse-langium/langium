@@ -4,9 +4,10 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { describe, test, beforeEach } from 'vitest';
-import { createLangiumGrammarServices, createServicesForGrammar, EmptyFileSystem } from 'langium';
+import type { AstNode, AstNodeDescription, LangiumDocument } from 'langium';
+import { DefaultAstNodeDescriptionProvider, DefaultCompletionProvider, EmptyFileSystem, createLangiumGrammarServices, createServicesForGrammar } from 'langium';
 import { clearDocuments, expectCompletion, parseHelper } from 'langium/test';
+import { beforeEach, describe, test } from 'vitest';
 
 describe('Langium completion provider', () => {
 
@@ -152,6 +153,53 @@ describe('Completion within alternatives', () => {
             text,
             index: 0,
             expectedItems: ['A']
+        });
+    });
+
+    test('Should not remove same named NodeDescriptions', async () => {
+        const grammar = `
+        grammar g
+        entry Model: (elements+=(Person | Greeting))*;
+        Person: 'person' name=ID birth=INT;
+        Greeting: 'hello' person=[Person:ID];
+
+        terminal ID: /\\^?[_a-zA-Z][\\w_]*/;
+        terminal INT: /\\d+/;
+        hidden terminal WS: /\\s+/;
+        `;
+
+        const services = await createServicesForGrammar({
+            grammar, module: {
+                lsp: {
+                    CompletionProvider: (services) => new class extends DefaultCompletionProvider {
+                        override createReferenceCompletionItem(nodeDescription: AstNodeDescription) {
+                            // Use <name> <birth> as label
+                            const label = nodeDescription.name + ' ' + (nodeDescription as AstNodeDescription & { birth: string }).birth;
+                            return { ...super.createReferenceCompletionItem(nodeDescription), label };
+                        }
+                    }(services),
+                },
+                workspace: {
+                    AstNodeDescriptionProvider: (services) => new class extends DefaultAstNodeDescriptionProvider {
+                        override createDescription(node: AstNode & { birth?: string }, name: string | undefined, document: LangiumDocument): AstNodeDescription & { birth?: string } {
+                            // Add birth info to index
+                            return { ...super.createDescription(node, name, document), birth: node.birth };
+                        }
+                    }(services)
+                }
+            }
+        });
+        const completion = expectCompletion(services);
+        const text = `
+        person John 1979
+        person John 2023
+        hello <|>
+        `;
+
+        await completion({
+            text,
+            index: 0,
+            expectedItems: ['John 1979', 'John 2023']
         });
     });
 });
