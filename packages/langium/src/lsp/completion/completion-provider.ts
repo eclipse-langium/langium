@@ -398,11 +398,9 @@ export class DefaultCompletionProvider implements CompletionProvider {
             };
             try {
                 const scope = this.scopeProvider.getScope(refInfo);
-                const duplicateStore = new Set<string>();
                 scope.getAllElements().forEach(e => {
-                    if (!duplicateStore.has(e.name) && this.filterCrossReference(e)) {
+                    if (this.filterCrossReference(e)) {
                         acceptor(context, this.createReferenceCompletionItem(e));
-                        duplicateStore.add(e.name);
                     }
                 });
             } catch (err) {
