@@ -91,7 +91,7 @@
     "lint": "eslint src --ext ts"
   },
   "dependencies": {
-    "langium": "2.0.1",
+    "langium": "2.0.2",
     "langium-railroad": "2.0.0",
     "vscode-languageserver": "~8.0.2",
     "ignore": "~5.2.4"

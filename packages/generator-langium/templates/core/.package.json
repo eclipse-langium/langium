@@ -15,7 +15,7 @@
         "langium:watch": "langium generate --watch"
     },
     "dependencies": {
-        "langium": "~2.0.1"
+        "langium": "~2.0.2"
     },
     "devDependencies": {
         "@types/node": "~16.18.11",
