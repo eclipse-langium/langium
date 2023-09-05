@@ -59,7 +59,12 @@ export interface ExpectedBase {
     indexMarker?: string
     rangeStartMarker?: string
     rangeEndMarker?: string
-    dispose?: boolean;
+    /**
+     * Whether to dispose the created documents right after performing the check.
+     *
+     * Defaults to `false`.
+     */
+    disposeAfterCheck?: boolean;
 }
 
 export interface ExpectedHighlight extends ExpectedBase {
@@ -111,7 +116,7 @@ export function expectHighlight(services: LangiumServices): (input: ExpectedHigh
             }
         }
         const disposable = Disposable.create(() => clearDocuments(services, [document]));
-        if (input.dispose) {
+        if (input.disposeAfterCheck) {
             await disposable.dispose();
         }
         return disposable;
@@ -155,7 +160,7 @@ export function expectSymbols(services: LangiumServices): (input: ExpectedSymbol
             }
         }
         const disposable = Disposable.create(() => clearDocuments(services, [document]));
-        if (input.dispose) {
+        if (input.disposeAfterCheck) {
             await disposable.dispose();
         }
         return disposable;
@@ -235,7 +240,7 @@ export function expectFoldings(services: LangiumServices): (input: ExpectedFoldi
             }
         }
         const disposable = Disposable.create(() => clearDocuments(services, [document]));
-        if (input.dispose) {
+        if (input.disposeAfterCheck) {
             await disposable.dispose();
         }
         return disposable;
@@ -289,7 +294,7 @@ export function expectCompletion(services: LangiumServices): (expectedCompletion
             }
         }
         const disposable = Disposable.create(() => clearDocuments(services, [document]));
-        if (expectedCompletion.dispose) {
+        if (expectedCompletion.disposeAfterCheck) {
             await disposable.dispose();
         }
         return disposable;
@@ -328,7 +333,7 @@ export function expectGoToDefinition(services: LangiumServices): (expectedGoToDe
             expectedFunction(range, expectedRange, `Expected range ${rangeToString(expectedRange)} does not match actual range ${rangeToString(range)}`);
         }
         const disposable = Disposable.create(() => clearDocuments(services, [document]));
-        if (expectedGoToDefinition.dispose) {
+        if (expectedGoToDefinition.disposeAfterCheck) {
             await disposable.dispose();
         }
         return disposable;
@@ -358,7 +363,7 @@ export function expectFindReferences(services: LangiumServices): (expectedFindRe
             }
         }
         const disposable = Disposable.create(() => clearDocuments(services, [document]));
-        if (expectedFindReferences.dispose) {
+        if (expectedFindReferences.disposeAfterCheck) {
             await disposable.dispose();
         }
         return disposable;
@@ -395,7 +400,7 @@ export function expectHover(services: LangiumServices): (expectedHover: Expected
             );
         }
         const disposable = Disposable.create(() => clearDocuments(services, [document]));
-        if (expectedHover.dispose) {
+        if (expectedHover.disposeAfterCheck) {
             await disposable.dispose();
         }
         return disposable;
@@ -408,7 +413,12 @@ export interface ExpectFormatting {
     parseOptions?: ParseHelperOptions
     range?: Range
     options?: FormattingOptions
-    dispose?: boolean;
+    /**
+     * Whether to dispose the created documents right after performing the check.
+     *
+     * Defaults to `false`.
+     */
+    disposeAfterCheck?: boolean;
 }
 
 export function expectFormatting(services: LangiumServices): (expectedFormatting: ExpectFormatting) => Promise<AsyncDisposable> {
@@ -431,7 +441,7 @@ export function expectFormatting(services: LangiumServices): (expectedFormatting
         expectedFunction(editedDocument, expectedFormatting.after);
 
         const disposable = Disposable.create(() => clearDocuments(services, [document]));
-        if (expectedFormatting.dispose) {
+        if (expectedFormatting.disposeAfterCheck) {
             await disposable.dispose();
         }
         return disposable;
