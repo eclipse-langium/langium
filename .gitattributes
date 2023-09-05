@@ -1,0 +1,6 @@
+# For the following file types, normalize line endings to LF on
+# checkin and prevent conversion to CRLF when they are checked out
+# (this is required in order to prevent newline related issues like,
+# for example, after the build script is run)
+**/bin/*.js text eol=lf
+.sh         text eol=lf
