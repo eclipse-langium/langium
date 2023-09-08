@@ -21,6 +21,9 @@ import type { AsyncDisposable } from '../utils/disposable.js';
 import { Disposable } from '../utils/disposable.js';
 
 export interface ParseHelperOptions extends BuildOptions {
+    /**
+     * Specifies the URI of the generated document. Will use a counter variable if not specified.
+     */
     documentUri?: string;
 }
 
@@ -54,10 +57,26 @@ export function expectFunction(functions: ExpectFunction): void {
 }
 
 export interface ExpectedBase {
+    /**
+     * Document content.
+     * Use `<|>` and `<|...|>` to mark special items that are relevant to the test case.
+     */
     text: string
+    /**
+     * Parse options used to parse the {@link text} property.
+     */
     parseOptions?: ParseHelperOptions
+    /**
+     * String to mark indices for test cases. `<|>` by default.
+     */
     indexMarker?: string
+    /**
+     * String to mark start indices for test cases. `<|` by default.
+     */
     rangeStartMarker?: string
+    /**
+     * String to mark end indices for test cases. `|>` by default.
+     */
     rangeEndMarker?: string
     /**
      * Whether to dispose the created documents right after performing the check.
@@ -408,10 +427,32 @@ export function expectHover(services: LangiumServices): (expectedHover: Expected
 }
 
 export interface ExpectFormatting {
+    /**
+     * Document content before formatting.
+     */
     before: string
+    /**
+     * Expected document content after formatting.
+     * The test case will compare this to the actual formatted document.
+     */
     after: string
+    /**
+     * Parse options used to parse the {@link text} property.
+     */
     parseOptions?: ParseHelperOptions
+    /**
+     * If given, only the specified range will be affected by the formatter
+     */
     range?: Range
+    /**
+     * Options used by the formatter. Default:
+     * ```ts
+     * {
+     *     insertSpaces: true,
+     *     tabSize: 4
+     * }
+     * ```
+     */
     options?: FormattingOptions
     /**
      * Whether to dispose the created documents right after performing the check.
