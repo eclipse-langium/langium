@@ -16,17 +16,24 @@ import { findNodeForProperty } from '../utils/grammar-util.js';
 import { SemanticTokensDecoder } from '../lsp/semantic-token-provider.js';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import * as assert from 'node:assert';
+import { stream } from '../utils/stream.js';
+import type { AsyncDisposable } from '../utils/disposable.js';
+import { Disposable } from '../utils/disposable.js';
 
 export interface ParseHelperOptions extends BuildOptions {
+    /**
+     * Specifies the URI of the generated document. Will use a counter variable if not specified.
+     */
     documentUri?: string;
 }
+
+let nextDocumentId = 1;
 
 export function parseHelper<T extends AstNode = AstNode>(services: LangiumServices): (input: string, options?: ParseHelperOptions) => Promise<LangiumDocument<T>> {
     const metaData = services.LanguageMetaData;
     const documentBuilder = services.shared.workspace.DocumentBuilder;
     return async (input, options) => {
-        const randomNumber = Math.floor(Math.random() * 10000000) + 1000000;
-        const uri = URI.parse(options?.documentUri ?? `file:///${randomNumber}${metaData.fileExtensions[0]}`);
+        const uri = URI.parse(options?.documentUri ?? `file:///${nextDocumentId++}${metaData.fileExtensions[0] ?? ''}`);
         const document = services.shared.workspace.LangiumDocumentFactory.fromString<T>(input, uri);
         services.shared.workspace.LangiumDocuments.addDocument(document);
         await documentBuilder.build([document], options);
@@ -50,10 +57,33 @@ export function expectFunction(functions: ExpectFunction): void {
 }
 
 export interface ExpectedBase {
+    /**
+     * Document content.
+     * Use `<|>` and `<|...|>` to mark special items that are relevant to the test case.
+     */
     text: string
+    /**
+     * Parse options used to parse the {@link text} property.
+     */
+    parseOptions?: ParseHelperOptions
+    /**
+     * String to mark indices for test cases. `<|>` by default.
+     */
     indexMarker?: string
+    /**
+     * String to mark start indices for test cases. `<|` by default.
+     */
     rangeStartMarker?: string
+    /**
+     * String to mark end indices for test cases. `|>` by default.
+     */
     rangeEndMarker?: string
+    /**
+     * Whether to dispose the created documents right after performing the check.
+     *
+     * Defaults to `false`.
+     */
+    disposeAfterCheck?: boolean;
 }
 
 export interface ExpectedHighlight extends ExpectedBase {
@@ -66,7 +96,7 @@ export interface ExpectedHighlight extends ExpectedBase {
  *
  * @returns A function that performs the assertion
  */
-export function expectHighlight(services: LangiumServices): (input: ExpectedHighlight) => Promise<void> {
+export function expectHighlight(services: LangiumServices): (input: ExpectedHighlight) => Promise<AsyncDisposable> {
     return async input => {
         const { output, indices, ranges } = replaceIndices(input);
         const document = await parseDocument(services, output);
@@ -104,6 +134,11 @@ export function expectHighlight(services: LangiumServices): (input: ExpectedHigh
                 expectedFunction(targetRange, expectedRange, `Expected range ${rangeToString(expectedRange)} does not match actual range ${rangeToString(targetRange)}`);
             }
         }
+        const disposable = Disposable.create(() => clearDocuments(services, [document]));
+        if (input.disposeAfterCheck) {
+            await disposable.dispose();
+        }
+        return disposable;
     };
 }
 
@@ -116,9 +151,9 @@ export interface ExpectedSymbolsCallback extends ExpectedBase {
 }
 export type ExpectedSymbols = ExpectedSymbolsList | ExpectedSymbolsCallback;
 
-export function expectSymbols(services: LangiumServices): (input: ExpectedSymbols) => Promise<void> {
+export function expectSymbols(services: LangiumServices): (input: ExpectedSymbols) => Promise<AsyncDisposable> {
     return async input => {
-        const document = await parseDocument(services, input.text);
+        const document = await parseDocument(services, input.text, input.parseOptions);
         const symbolProvider = services.lsp.DocumentSymbolProvider;
         const symbols = await symbolProvider?.getSymbols(document, textDocumentParams(document)) ?? [];
 
@@ -143,6 +178,11 @@ export function expectSymbols(services: LangiumServices): (input: ExpectedSymbol
                 expectedFunction(symbolsMapped, expectedSymbols, `Expected ${expectedSymbols.length} but found ${symbols.length} symbols in document`);
             }
         }
+        const disposable = Disposable.create(() => clearDocuments(services, [document]));
+        if (input.disposeAfterCheck) {
+            await disposable.dispose();
+        }
+        return disposable;
     };
 }
 
@@ -197,10 +237,10 @@ export interface ExpectedFoldings extends ExpectedBase {
     assert?: (foldings: FoldingRange[], expected: Array<[number, number]>) => void;
 }
 
-export function expectFoldings(services: LangiumServices): (input: ExpectedFoldings) => Promise<void> {
+export function expectFoldings(services: LangiumServices): (input: ExpectedFoldings) => Promise<AsyncDisposable> {
     return async input => {
         const { output, ranges } = replaceIndices(input);
-        const document = await parseDocument(services, output);
+        const document = await parseDocument(services, output, input.parseOptions);
         const foldingRangeProvider = services.lsp.FoldingRangeProvider;
         const foldings = await foldingRangeProvider?.getFoldingRanges(document, textDocumentParams(document)) ?? [];
         foldings.sort((a, b) => a.startLine - b.startLine);
@@ -218,6 +258,11 @@ export function expectFoldings(services: LangiumServices): (input: ExpectedFoldi
                 expectedFunction(item.endLine, expectedEnd.line, `Expected folding end at line ${expectedEnd.line} but received folding end at line ${item.endLine} instead.`);
             }
         }
+        const disposable = Disposable.create(() => clearDocuments(services, [document]));
+        if (input.disposeAfterCheck) {
+            await disposable.dispose();
+        }
+        return disposable;
     };
 }
 
@@ -236,10 +281,10 @@ export interface ExpectedCompletionCallback extends ExpectedBase {
 }
 export type ExpectedCompletion = ExpectedCompletionItems | ExpectedCompletionCallback;
 
-export function expectCompletion(services: LangiumServices): (expectedCompletion: ExpectedCompletion) => Promise<void> {
+export function expectCompletion(services: LangiumServices): (expectedCompletion: ExpectedCompletion) => Promise<AsyncDisposable> {
     return async expectedCompletion => {
         const { output, indices } = replaceIndices(expectedCompletion);
-        const document = await parseDocument(services, output);
+        const document = await parseDocument(services, output, expectedCompletion.parseOptions);
         const completionProvider = services.lsp.CompletionProvider;
         const offset = indices[expectedCompletion.index];
         const completions = await completionProvider?.getCompletion(document, textDocumentPositionParams(document, offset)) ?? { isIncomplete: false, items: [] };
@@ -262,12 +307,16 @@ export function expectCompletion(services: LangiumServices): (expectedCompletion
                         expectedFunction(completion, expected);
                     }
                 }
-
             } else {
                 const itemsMapped = items.map((s, i) => expectedItems[i] === undefined || typeof expectedItems[i] === 'string' ? itemToString(s) : s);
                 expectedFunction(itemsMapped, expectedItems, `Expected ${expectedItems.length} but received ${items.length} completion items`);
             }
         }
+        const disposable = Disposable.create(() => clearDocuments(services, [document]));
+        if (expectedCompletion.disposeAfterCheck) {
+            await disposable.dispose();
+        }
+        return disposable;
     };
 }
 
@@ -276,10 +325,10 @@ export interface ExpectedGoToDefinition extends ExpectedBase {
     rangeIndex: number | number[]
 }
 
-export function expectGoToDefinition(services: LangiumServices): (expectedGoToDefinition: ExpectedGoToDefinition) => Promise<void> {
+export function expectGoToDefinition(services: LangiumServices): (expectedGoToDefinition: ExpectedGoToDefinition) => Promise<AsyncDisposable> {
     return async expectedGoToDefinition => {
         const { output, indices, ranges } = replaceIndices(expectedGoToDefinition);
-        const document = await parseDocument(services, output);
+        const document = await parseDocument(services, output, expectedGoToDefinition.parseOptions);
         const definitionProvider = services.lsp.DefinitionProvider;
         const locationLinks = await definitionProvider?.getDefinition(document, textDocumentPositionParams(document, indices[expectedGoToDefinition.index])) ?? [];
         const rangeIndex = expectedGoToDefinition.rangeIndex;
@@ -302,6 +351,11 @@ export function expectGoToDefinition(services: LangiumServices): (expectedGoToDe
             const range = locationLinks[0].targetSelectionRange;
             expectedFunction(range, expectedRange, `Expected range ${rangeToString(expectedRange)} does not match actual range ${rangeToString(range)}`);
         }
+        const disposable = Disposable.create(() => clearDocuments(services, [document]));
+        if (expectedGoToDefinition.disposeAfterCheck) {
+            await disposable.dispose();
+        }
+        return disposable;
     };
 }
 
@@ -309,10 +363,10 @@ export interface ExpectedFindReferences extends ExpectedBase {
     includeDeclaration: boolean
 }
 
-export function expectFindReferences(services: LangiumServices): (expectedFindReferences: ExpectedFindReferences) => Promise<void> {
+export function expectFindReferences(services: LangiumServices): (expectedFindReferences: ExpectedFindReferences) => Promise<AsyncDisposable> {
     return async expectedFindReferences => {
         const { output, indices, ranges } = replaceIndices(expectedFindReferences);
-        const document = await parseDocument(services, output);
+        const document = await parseDocument(services, output, expectedFindReferences.parseOptions);
         const expectedRanges: Range[] = ranges.map(range => ({
             start: document.textDocument.positionAt(range[0]),
             end: document.textDocument.positionAt(range[1])
@@ -327,7 +381,11 @@ export function expectFindReferences(services: LangiumServices): (expectedFindRe
                 expectedFunction(expectedRanges.some(range => isRangeEqual(range, reference.range)), true, `Found unexpected reference at range ${rangeToString(reference.range)}`);
             }
         }
-        clearDocuments(services);
+        const disposable = Disposable.create(() => clearDocuments(services, [document]));
+        if (expectedFindReferences.disposeAfterCheck) {
+            await disposable.dispose();
+        }
+        return disposable;
     };
 }
 
@@ -343,10 +401,10 @@ export interface ExpectedHover extends ExpectedBase {
     hover?: string | RegExp
 }
 
-export function expectHover(services: LangiumServices): (expectedHover: ExpectedHover) => Promise<void> {
+export function expectHover(services: LangiumServices): (expectedHover: ExpectedHover) => Promise<AsyncDisposable> {
     return async expectedHover => {
         const { output, indices } = replaceIndices(expectedHover);
-        const document = await parseDocument(services, output);
+        const document = await parseDocument(services, output, expectedHover.parseOptions);
         const hoverProvider = services.lsp.HoverProvider;
         const hover = await hoverProvider?.getHoverContent(document, textDocumentPositionParams(document, indices[expectedHover.index]));
         const hoverContent = hover && MarkupContent.is(hover.contents) ? hover.contents.value : undefined;
@@ -360,23 +418,57 @@ export function expectHover(services: LangiumServices): (expectedHover: Expected
                 `Hover '${value}' does not match regex /${expectedHover.hover.source}/${expectedHover.hover.flags}.`
             );
         }
+        const disposable = Disposable.create(() => clearDocuments(services, [document]));
+        if (expectedHover.disposeAfterCheck) {
+            await disposable.dispose();
+        }
+        return disposable;
     };
 }
 
 export interface ExpectFormatting {
+    /**
+     * Document content before formatting.
+     */
     before: string
+    /**
+     * Expected document content after formatting.
+     * The test case will compare this to the actual formatted document.
+     */
     after: string
+    /**
+     * Parse options used to parse the {@link text} property.
+     */
+    parseOptions?: ParseHelperOptions
+    /**
+     * If given, only the specified range will be affected by the formatter
+     */
     range?: Range
+    /**
+     * Options used by the formatter. Default:
+     * ```ts
+     * {
+     *     insertSpaces: true,
+     *     tabSize: 4
+     * }
+     * ```
+     */
     options?: FormattingOptions
+    /**
+     * Whether to dispose the created documents right after performing the check.
+     *
+     * Defaults to `false`.
+     */
+    disposeAfterCheck?: boolean;
 }
 
-export function expectFormatting(services: LangiumServices): (expectedFormatting: ExpectFormatting) => Promise<void> {
+export function expectFormatting(services: LangiumServices): (expectedFormatting: ExpectFormatting) => Promise<AsyncDisposable> {
     const formatter = services.lsp.Formatter;
     if (!formatter) {
         throw new Error(`No formatter registered for language ${services.LanguageMetaData.languageId}`);
     }
     return async expectedFormatting => {
-        const document = await parseDocument(services, expectedFormatting.before);
+        const document = await parseDocument(services, expectedFormatting.before, expectedFormatting.parseOptions);
         const identifier = { uri: document.uri.toString() };
         const options = expectedFormatting.options ?? {
             insertSpaces: true,
@@ -388,6 +480,12 @@ export function expectFormatting(services: LangiumServices): (expectedFormatting
 
         const editedDocument = TextDocument.applyEdits(document.textDocument, edits);
         expectedFunction(editedDocument, expectedFormatting.after);
+
+        const disposable = Disposable.create(() => clearDocuments(services, [document]));
+        if (expectedFormatting.disposeAfterCheck) {
+            await disposable.dispose();
+        }
+        return disposable;
     };
 }
 
@@ -395,8 +493,8 @@ export function textDocumentPositionParams(document: LangiumDocument, offset: nu
     return { textDocument: { uri: document.textDocument.uri }, position: document.textDocument.positionAt(offset) };
 }
 
-export async function parseDocument<T extends AstNode = AstNode>(services: LangiumServices, input: string): Promise<LangiumDocument<T>> {
-    const document = await parseHelper<T>(services)(input);
+export async function parseDocument<T extends AstNode = AstNode>(services: LangiumServices, input: string, options?: ParseHelperOptions): Promise<LangiumDocument<T>> {
+    const document = await parseHelper<T>(services)(input, options);
     if (!document.parseResult) {
         throw new Error('Could not parse document');
     }
@@ -441,16 +539,23 @@ export function replaceIndices(base: ExpectedBase): { output: string, indices: n
     return { output: input, indices, ranges: ranges.sort((a, b) => a[0] - b[0]) };
 }
 
-export interface ValidationResult<T extends AstNode = AstNode> {
+export interface ValidationResult<T extends AstNode = AstNode> extends AsyncDisposable {
     diagnostics: Diagnostic[];
     document: LangiumDocument<T>;
 }
 
-export function validationHelper<T extends AstNode = AstNode>(services: LangiumServices): (input: string) => Promise<ValidationResult<T>> {
+export function validationHelper<T extends AstNode = AstNode>(services: LangiumServices): (input: string, options?: ParseHelperOptions) => Promise<ValidationResult<T>> {
     const parse = parseHelper<T>(services);
-    return async (input) => {
-        const document = await parse(input, { validation: true });
-        return { document, diagnostics: document.diagnostics ?? [] };
+    return async (input, options) => {
+        const document = await parse(input, {
+            ...(options ?? {}),
+            validation: true
+        });
+        return {
+            document,
+            diagnostics: document.diagnostics ?? [],
+            dispose: () => clearDocuments(services, [document])
+        };
     };
 }
 
@@ -588,9 +693,10 @@ export function expectWarning<T extends AstNode = AstNode, N extends AstNode = A
     });
 }
 
-export function clearDocuments(services: LangiumServices): Promise<void> {
-    const allDocs = services.shared.workspace.LangiumDocuments.all.map(x => x.uri).toArray();
-    return services.shared.workspace.DocumentBuilder.update([], allDocs);
+export function clearDocuments(services: LangiumServices | LangiumSharedServices, documents?: LangiumDocument[]): Promise<void> {
+    const shared = 'shared' in services ? services.shared : services;
+    const allDocs = (documents ? stream(documents) : shared.workspace.LangiumDocuments.all).map(x => x.uri).toArray();
+    return shared.workspace.DocumentBuilder.update([], allDocs);
 }
 
 export interface DecodedSemanticTokensWithRanges {
@@ -598,14 +704,14 @@ export interface DecodedSemanticTokensWithRanges {
     ranges: Array<[number, number]>;
 }
 
-export function highlightHelper<T extends AstNode = AstNode>(services: LangiumServices): (input: string) => Promise<DecodedSemanticTokensWithRanges> {
+export function highlightHelper<T extends AstNode = AstNode>(services: LangiumServices): (input: string, options?: ParseHelperOptions) => Promise<DecodedSemanticTokensWithRanges> {
     const parse = parseHelper<T>(services);
     const tokenProvider = services.lsp.SemanticTokenProvider!;
-    return async text => {
+    return async (text, options) => {
         const { output: input, ranges } = replaceIndices({
             text
         });
-        const document = await parse(input);
+        const document = await parse(input, options);
         const params: SemanticTokensParams = { textDocument: { uri: document.textDocument.uri } };
         const tokens = await tokenProvider.semanticHighlight(document, params, new CancellationTokenSource().token);
         return { tokens: SemanticTokensDecoder.decode(tokens, document), ranges };

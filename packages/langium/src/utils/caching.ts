@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { Disposable } from 'vscode-languageserver';
+import type { Disposable } from './disposable.js';
 import type { URI } from './uri-util.js';
 import type { LangiumSharedServices } from '../services.js';
 
