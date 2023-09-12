@@ -89,7 +89,8 @@ function buildElement(ctx: RuleContext, element: AbstractElement, ignoreGuard = 
     } else if (isGroup(element)) {
         method = buildGroup(ctx, element);
     } else if(isEndOfFile(element)) {
-        method = () => ctx.parser.consume(0, EOF, element);
+        const idx = ctx.consume++;
+        method = () => ctx.parser.consume(idx, EOF, element);
     } else {
         throw new ErrorWithLocation(element.$cstNode, `Unexpected element type: ${element.$type}`);
     }
