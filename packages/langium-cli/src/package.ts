@@ -62,10 +62,12 @@ export interface LangiumLanguageConfig {
         /** Output path to syntax highlighting file */
         out: string
     }
-    /** Enable generating a railroad syntax diagram */
+    /** Enable generating railroad syntax diagrams */
     railroad?: {
-        /** Output path to the railroad diagram file */
-        out: string
+        /** Output path for railroad diagrams. */
+        out: string;
+        /** Whether to print diagrams all into a single HTML file or in separate SVG files. */
+        mode?: 'html' | 'svg';
     }
     /** Configure the chevrotain parser for a single language */
     chevrotainParserConfig?: IParserConfig

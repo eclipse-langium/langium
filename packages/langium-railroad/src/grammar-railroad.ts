@@ -39,6 +39,13 @@ export interface GrammarDiagramOptions {
     javascript?: string;
 }
 
+/**
+ * Creates a whole HTML file that contains all railroad diagrams.
+ *
+ * @param grammar - GrammarAST.Grammar
+ * @param options - GrammarDiagramOptions
+ * @returns string
+ */
 export function createGrammarDiagramHtml(grammar: GrammarAST.Grammar, options?: GrammarDiagramOptions): string {
     let text = `<!DOCTYPE HTML>
 <html>
@@ -61,6 +68,27 @@ ${options.javascript}
 </html>`;
 
     return text;
+}
+
+/**
+ * Creates a standalone SVG diagram for each non-terminal of grammar.
+ * 
+ * @param grammar - GrammarAST.Grammar
+ * @returns diagrams -Map<string, string>
+ * For the rule with the name 'NonTerminal', diagrams.get('NonTerminal') has the SVG content.
+ */
+export function createGrammarDiagramSvg(grammar: GrammarAST.Grammar): Map<string, string> {
+    const nonTerminals = grammar.rules.filter(GrammarAST.isParserRule);
+    const diagrams = new Map<string, string>();
+    const style = `<style>${defaultCss}</style>`;
+
+    for (const nonTerminal of nonTerminals) {
+        const ruleDiagram = new rr.Diagram(toRailroad(nonTerminal.definition));
+        ruleDiagram.children =
+            ruleDiagram.children.concat(style);
+        diagrams.set(nonTerminal.name, ruleDiagram.toString());
+    }
+    return diagrams;
 }
 
 export function createGrammarDiagram(grammar: GrammarAST.Grammar): string {
