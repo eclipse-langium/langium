@@ -376,7 +376,6 @@ export async function runGenerator(config: LangiumConfig, options: GenerateOptio
             else {
                 const diagrams = createGrammarDiagramSvg(grammar);
                 log('log', options, `Writing railroad syntax diagrams to ${chalk.white.bold(diagramPath)}`);
-                await mkdirWithFail(diagramPath, options);
                 for (const [name, diagram] of diagrams) {
                     await writeWithFail(`${diagramPath}/${name}.svg`, diagram, options);
                 }
