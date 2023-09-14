@@ -292,7 +292,7 @@ describe('Inferred types', () => {
     });
 
     test('Should infer data type rules as unions', async () => {
-        expectTypes(`
+        await expectTypes(`
             Strings returns string: 'a' | 'b' | 'c';
             MoreStrings returns string: Strings | 'd' | 'e';
             Complex returns string: ID ('.' ID)*;
@@ -323,7 +323,7 @@ describe('Inferred types', () => {
     });
 
     test('Infers X as a super interface of Y and Z with property `id`', async () => {
-        expectTypes(`
+        await expectTypes(`
             entry X: id=ID ({infer Y} 'a' | {infer Z} 'b');
             terminal ID: /[a-zA-Z_][a-zA-Z0-9_]*/;
         `, expandToString`
@@ -343,7 +343,7 @@ describe('Inferred types', () => {
 
 describe('inferred types that are used by the grammar', () => {
     test('B is defined and A is not', async () => {
-        expectTypes(`
+        await expectTypes(`
             A infers B: 'a' name=ID (otherA=[B])?;
             hidden terminal WS: /\\s+/;
             terminal ID: /[a-zA-Z_][a-zA-Z0-9_]*/;
@@ -359,7 +359,7 @@ describe('inferred types that are used by the grammar', () => {
 
 describe('inferred and declared types', () => {
     test('Declared interfaces should be preserved as interfaces', async () => {
-        expectTypes(`
+        await expectTypes(`
             X returns X: Y | Z;
             Y: y='y';
             Z: z='z';
@@ -881,10 +881,10 @@ describe('generated types from declared types include all of them', () => {
 // });
 
 const services = createLangiumGrammarServices(EmptyFileSystem).grammar;
+const helper = parseHelper<Grammar>(services);
 
 async function getTypes(grammar: string): Promise<AstTypes> {
     await clearDocuments(services);
-    const helper = parseHelper<Grammar>(services);
     const result = await helper(grammar);
     const gram = result.parseResult.value;
     return collectAst(gram);

@@ -45,6 +45,42 @@ describe('DefaultDocumentBuilder', () => {
         return services;
     }
 
+    test('emits `onUpdate` on `update` call', async () => {
+        const services = await createServices();
+        const documentFactory = services.shared.workspace.LangiumDocumentFactory;
+        const documents = services.shared.workspace.LangiumDocuments;
+        const document = documentFactory.fromString('', URI.parse('file:///test1.txt'));
+        documents.addDocument(document);
+
+        const builder = services.shared.workspace.DocumentBuilder;
+        await builder.build([document], {});
+        addTextDocument(document, services);
+        let called = false;
+        builder.onUpdate(() => {
+            called = true;
+        });
+        await builder.update([document.uri], []);
+        expect(called).toBe(true);
+    });
+
+    test('emits `onUpdate` on `build` call', async () => {
+        const services = await createServices();
+        const documentFactory = services.shared.workspace.LangiumDocumentFactory;
+        const documents = services.shared.workspace.LangiumDocuments;
+        const document = documentFactory.fromString('', URI.parse('file:///test1.txt'));
+        documents.addDocument(document);
+
+        const builder = services.shared.workspace.DocumentBuilder;
+        await builder.build([document], {});
+        addTextDocument(document, services);
+        let called = false;
+        builder.onUpdate(() => {
+            called = true;
+        });
+        await builder.build([document]);
+        expect(called).toBe(true);
+    });
+
     test('resumes document build after cancellation', async () => {
         const services = await createServices();
         const documentFactory = services.shared.workspace.LangiumDocumentFactory;

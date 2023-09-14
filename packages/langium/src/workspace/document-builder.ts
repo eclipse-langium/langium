@@ -81,7 +81,7 @@ export interface DocumentBuilder {
     onBuildPhase(targetState: DocumentState, callback: DocumentBuildListener): Disposable;
 }
 
-export type DocumentUpdateListener = (changed: URI[], deleted: URI[]) => void
+export type DocumentUpdateListener = (changed: URI[], deleted: URI[]) => void | Promise<void>
 export type DocumentBuildListener = (built: LangiumDocument[], cancelToken: CancellationToken) => void | Promise<void>
 export class DefaultDocumentBuilder implements DocumentBuilder {
 
@@ -144,6 +144,7 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
                 this.buildState.delete(key);
             }
         }
+        await this.emitUpdate(documents.map(e => e.uri), []);
         await this.buildDocuments(documents, options, cancelToken);
     }
 
@@ -173,9 +174,7 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
                 doc.diagnostics = undefined;
             });
         // Notify listeners of the update
-        for (const listener of this.updateListeners) {
-            listener(changed, deleted);
-        }
+        await this.emitUpdate(changed, deleted);
         // Only allow interrupting the execution after all state changes are done
         await interruptAndCheck(cancelToken);
 
@@ -189,6 +188,10 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
             )
             .toArray();
         await this.buildDocuments(rebuildDocuments, this.updateBuildOptions, cancelToken);
+    }
+
+    protected async emitUpdate(changed: URI[], deleted: URI[]): Promise<void> {
+        await Promise.all(this.updateListeners.map(listener => listener(changed, deleted)));
     }
 
     /**
