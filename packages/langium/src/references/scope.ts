@@ -5,6 +5,7 @@
  ******************************************************************************/
 
 import type { AstNodeDescription } from '../syntax-tree.js';
+import { MultiMap } from '../utils/collections.js';
 import type { Stream } from '../utils/stream.js';
 import { EMPTY_STREAM, stream } from '../utils/stream.js';
 
@@ -21,6 +22,8 @@ export interface Scope {
      * @param name Name of the cross-reference target as it appears in the source text.
      */
     getElement(name: string): AstNodeDescription | undefined;
+
+    getElements(name: string): Stream<AstNodeDescription>;
 
     /**
      * Create a stream of all elements in the scope. This is used to compute completion proposals to be
@@ -59,8 +62,9 @@ export class StreamScope implements Scope {
     }
 
     getElement(name: string): AstNodeDescription | undefined {
+        const lowerCaseName = this.caseInsensitive ? name.toLowerCase() : name;
         const local = this.caseInsensitive
-            ? this.elements.find(e => e.name.toLowerCase() === name.toLowerCase())
+            ? this.elements.find(e => e.name.toLowerCase() === lowerCaseName)
             : this.elements.find(e => e.name === name);
         if (local) {
             return local;
@@ -70,28 +74,40 @@ export class StreamScope implements Scope {
         }
         return undefined;
     }
+
+    getElements(name: string): Stream<AstNodeDescription> {
+        const lowerCaseName = this.caseInsensitive ? name.toLowerCase() : name;
+        const local = this.caseInsensitive
+            ? this.elements.filter(e => e.name.toLowerCase() === lowerCaseName)
+            : this.elements.filter(e => e.name === name);
+        if (!local.isEmpty()) {
+            return local;
+        } else {
+            return this.outerScope ? this.outerScope.getElements(name) : EMPTY_STREAM;
+        }
+    }
 }
 
 export class MapScope implements Scope {
-    readonly elements: Map<string, AstNodeDescription>;
+    readonly elements: MultiMap<string, AstNodeDescription>;
     readonly outerScope?: Scope;
     readonly caseInsensitive: boolean;
 
     constructor(elements: Iterable<AstNodeDescription>, outerScope?: Scope, options?: ScopeOptions) {
-        this.elements = new Map();
+        this.elements = new MultiMap();
         this.caseInsensitive = options?.caseInsensitive ?? false;
         for (const element of elements) {
             const name = this.caseInsensitive
                 ? element.name.toLowerCase()
                 : element.name;
-            this.elements.set(name, element);
+            this.elements.add(name, element);
         }
         this.outerScope = outerScope;
     }
 
     getElement(name: string): AstNodeDescription | undefined {
         const localName = this.caseInsensitive ? name.toLowerCase() : name;
-        const local = this.elements.get(localName);
+        const local = this.elements.get(localName)[0];
         if (local) {
             return local;
         }
@@ -99,6 +115,16 @@ export class MapScope implements Scope {
             return this.outerScope.getElement(name);
         }
         return undefined;
+    }
+
+    getElements(name: string): Stream<AstNodeDescription> {
+        const localName = this.caseInsensitive ? name.toLowerCase() : name;
+        const local = this.elements.get(localName);
+        if (local.length > 0) {
+            return stream(local);
+        } else {
+            return this.outerScope ? this.outerScope.getElements(name) : EMPTY_STREAM;
+        }
     }
 
     getAllElements(): Stream<AstNodeDescription> {
@@ -114,6 +140,9 @@ export class MapScope implements Scope {
 export const EMPTY_SCOPE: Scope = {
     getElement(): undefined {
         return undefined;
+    },
+    getElements(): Stream<AstNodeDescription> {
+        return EMPTY_STREAM;
     },
     getAllElements(): Stream<AstNodeDescription> {
         return EMPTY_STREAM;

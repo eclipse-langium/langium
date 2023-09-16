@@ -13,11 +13,12 @@ import type { IndexManager } from '../workspace/index-manager.js';
 import type { NameProvider } from './name-provider.js';
 import type { URI } from '../utils/uri-utils.js';
 import { findAssignment } from '../utils/grammar-utils.js';
-import { isReference } from '../syntax-tree.js';
-import { getDocument } from '../utils/ast-utils.js';
+import { isMultiReference, isReference } from '../syntax-tree.js';
+import { getDocument, getReferenceNodes, streamAst, streamContents } from '../utils/ast-utils.js';
 import { isChildNode, toDocumentSegment } from '../utils/cst-utils.js';
 import { stream } from '../utils/stream.js';
 import { UriUtils } from '../utils/uri-utils.js';
+import { isCrossReference } from '../languages/generated/ast.js';
 
 /**
  * Language-specific service for finding references and declaration of a given `CstNode`.
@@ -25,20 +26,20 @@ import { UriUtils } from '../utils/uri-utils.js';
 export interface References {
 
     /**
-     * If the CstNode is a reference node the target CstNode will be returned.
-     * If the CstNode is a significant node of the CstNode this CstNode will be returned.
+     * If the CstNode is a reference node the target AstNodes will be returned.
+     * If the CstNode is a significant node of the CstNode this AstNode will be returned.
      *
      * @param sourceCstNode CstNode that points to a AstNode
      */
-    findDeclaration(sourceCstNode: CstNode): AstNode | undefined;
+    findDeclarations(sourceCstNode: CstNode): AstNode[];
 
     /**
-     * If the CstNode is a reference node the target CstNode will be returned.
+     * If the CstNode is a reference node the target CstNodes will be returned.
      * If the CstNode is a significant node of the CstNode this CstNode will be returned.
      *
      * @param sourceCstNode CstNode that points to a AstNode
      */
-    findDeclarationNode(sourceCstNode: CstNode): CstNode | undefined;
+    findDeclarationNodes(sourceCstNode: CstNode): CstNode[];
 
     /**
      * Finds all references to the target node as references (local references) or reference descriptions.
@@ -49,10 +50,6 @@ export interface References {
 }
 
 export interface FindReferencesOptions {
-    /**
-     * @deprecated Since v1.2.0. Please use `documentUri` instead.
-     */
-    onlyLocal?: boolean;
     /**
      * When set, the `findReferences` method will only return references/declarations from the specified document.
      */
@@ -67,28 +64,30 @@ export class DefaultReferences implements References {
     protected readonly nameProvider: NameProvider;
     protected readonly index: IndexManager;
     protected readonly nodeLocator: AstNodeLocator;
+    protected hasMultiReference: boolean;
 
     constructor(services: LangiumCoreServices) {
         this.nameProvider = services.references.NameProvider;
         this.index = services.shared.workspace.IndexManager;
         this.nodeLocator = services.workspace.AstNodeLocator;
+        this.hasMultiReference = streamAst(services.Grammar).some(node => isCrossReference(node) && node.isMulti);
     }
 
-    findDeclaration(sourceCstNode: CstNode): AstNode | undefined {
+    findDeclarations(sourceCstNode: CstNode): AstNode[] {
         if (sourceCstNode) {
             const assignment = findAssignment(sourceCstNode);
             const nodeElem = sourceCstNode.astNode;
             if (assignment && nodeElem) {
                 const reference = (nodeElem as GenericAstNode)[assignment.feature];
 
-                if (isReference(reference)) {
-                    return reference.ref;
+                if (isReference(reference) || isMultiReference(reference)) {
+                    return getReferenceNodes(reference);
                 } else if (Array.isArray(reference)) {
                     for (const ref of reference) {
-                        if (isReference(ref) && ref.$refNode
+                        if ((isReference(ref) || isMultiReference(ref)) && ref.$refNode
                             && ref.$refNode.offset <= sourceCstNode.offset
                             && ref.$refNode.end >= sourceCstNode.end) {
-                            return ref.ref;
+                            return getReferenceNodes(ref);
                         }
                     }
                 }
@@ -97,29 +96,54 @@ export class DefaultReferences implements References {
                 const nameNode = this.nameProvider.getNameNode(nodeElem);
                 // Only return the targeted node in case the targeted cst node is the name node or part of it
                 if (nameNode && (nameNode === sourceCstNode || isChildNode(sourceCstNode, nameNode))) {
-                    return nodeElem;
+                    return this.getSelfNodes(nodeElem);
                 }
             }
         }
-        return undefined;
+        return [];
     }
 
-    findDeclarationNode(sourceCstNode: CstNode): CstNode | undefined {
-        const astNode = this.findDeclaration(sourceCstNode);
-        if (astNode?.$cstNode) {
-            const targetNode = this.nameProvider.getNameNode(astNode);
-            return targetNode ?? astNode.$cstNode;
+    /**
+     * In case your grammar features multi references (i.e. references that can target multiple elements at once),
+     * you can override this method to return all possible sibling elements for the specified node. Make sure to return the node itself as well.
+     *
+     * By default, only direct siblings (i.e. those within the same container of the specified node) with the same name as the specified node are returned.
+     * This is also reflected in the builtin implementations of all `Scope` interface.
+     * If your language behaves differently, you might need to adjust the `StreamScope` and `MapScope` behavior accordingly.
+     */
+    protected getSelfNodes(node: AstNode): AstNode[] {
+        if (!this.hasMultiReference) {
+            return [node];
+        } else {
+            const name = this.nameProvider.getName(node);
+            const container = node.$container;
+            // We need the name to find the siblings
+            // If the name is not available, we just return the specified node
+            // Similarly, we cannot find siblings in case the container is not available
+            if (!name || !container) {
+                return [node];
+            }
+            const siblings = streamContents(container).filter(n => this.nameProvider.getName(n) === name);
+            return siblings.toArray();
         }
-        return undefined;
+    }
+
+    findDeclarationNodes(sourceCstNode: CstNode): CstNode[] {
+        const astNodes = this.findDeclarations(sourceCstNode);
+        const cstNodes: CstNode[] = [];
+        for (const astNode of astNodes) {
+            const cstNode = this.nameProvider.getNameNode(astNode) ?? astNode.$cstNode;
+            if (cstNode) {
+                cstNodes.push(cstNode);
+            }
+        }
+        return cstNodes;
     }
 
     findReferences(targetNode: AstNode, options: FindReferencesOptions): Stream<ReferenceDescription> {
         const refs: ReferenceDescription[] = [];
         if (options.includeDeclaration) {
-            const ref = this.getReferenceToSelf(targetNode);
-            if (ref) {
-                refs.push(ref);
-            }
+            refs.push(...this.getSelfReferences(targetNode));
         }
         let indexReferences = this.index.findAllReferences(targetNode, this.nodeLocator.getAstNodePath(targetNode));
         if (options.documentUri) {
@@ -129,20 +153,24 @@ export class DefaultReferences implements References {
         return stream(refs);
     }
 
-    protected getReferenceToSelf(targetNode: AstNode): ReferenceDescription | undefined {
-        const nameNode = this.nameProvider.getNameNode(targetNode);
-        if (nameNode) {
-            const doc = getDocument(targetNode);
-            const path = this.nodeLocator.getAstNodePath(targetNode);
-            return {
-                sourceUri: doc.uri,
-                sourcePath: path,
-                targetUri: doc.uri,
-                targetPath: path,
-                segment: toDocumentSegment(nameNode),
-                local: true
-            };
+    protected getSelfReferences(targetNode: AstNode): ReferenceDescription[] {
+        const selfNodes = this.getSelfNodes(targetNode);
+        const references: ReferenceDescription[] = [];
+        for (const selfNode of selfNodes) {
+            const nameNode = this.nameProvider.getNameNode(selfNode);
+            if (nameNode) {
+                const doc = getDocument(selfNode);
+                const path = this.nodeLocator.getAstNodePath(selfNode);
+                references.push({
+                    sourceUri: doc.uri,
+                    sourcePath: path,
+                    targetUri: doc.uri,
+                    targetPath: path,
+                    segment: toDocumentSegment(nameNode),
+                    local: true
+                });
+            }
         }
-        return undefined;
+        return references;
     }
 }

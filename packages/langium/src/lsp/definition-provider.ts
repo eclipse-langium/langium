@@ -66,26 +66,27 @@ export class DefaultDefinitionProvider implements DefinitionProvider {
     }
 
     protected collectLocationLinks(sourceCstNode: CstNode, _params: DefinitionParams): MaybePromise<LocationLink[] | undefined> {
-        const goToLink = this.findLink(sourceCstNode);
-        if (goToLink) {
-            return [LocationLink.create(
-                goToLink.targetDocument.textDocument.uri,
-                (goToLink.target.astNode.$cstNode ?? goToLink.target).range,
-                goToLink.target.range,
-                goToLink.source.range
-            )];
+        const goToLinks = this.findLinks(sourceCstNode);
+        if (goToLinks.length > 0) {
+            return goToLinks.map(link => LocationLink.create(
+                link.targetDocument.textDocument.uri,
+                (link.target.astNode.$cstNode ?? link.target).range,
+                link.target.range,
+                link.source.range
+            ));
         }
         return undefined;
     }
 
-    protected findLink(source: CstNode): GoToLink | undefined {
-        const target = this.references.findDeclarationNode(source);
-        if (target?.astNode) {
+    protected findLinks(source: CstNode): GoToLink[] {
+        const targets = this.references.findDeclarationNodes(source);
+        const links: GoToLink[] = [];
+        for (const target of targets) {
             const targetDocument = getDocument(target.astNode);
-            if (target && targetDocument) {
-                return { source, target, targetDocument };
+            if (targets && targetDocument) {
+                links.push({ source, target, targetDocument });
             }
         }
-        return undefined;
+        return links;
     }
 }

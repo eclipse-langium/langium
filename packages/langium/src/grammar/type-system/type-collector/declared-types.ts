@@ -83,7 +83,8 @@ export function typeDefinitionToPropertyType(type: TypeDefinition): PlainPropert
         };
     } else if (isReferenceType(type)) {
         return {
-            referenceType: typeDefinitionToPropertyType(type.referenceType)
+            referenceType: typeDefinitionToPropertyType(type.referenceType),
+            mode: type.isMulti ? 'multi' : 'single'
         };
     } else if (isUnionType(type)) {
         return {
