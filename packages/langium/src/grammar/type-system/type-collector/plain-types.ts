@@ -65,6 +65,7 @@ export type PlainPropertyType =
 
 export interface PlainReferenceType {
     referenceType: PlainPropertyType;
+    mode: 'single' | 'multi'
 }
 
 export function isPlainReferenceType(propertyType: PlainPropertyType): propertyType is PlainReferenceType {
@@ -181,7 +182,8 @@ function plainToPropertyType(type: PlainPropertyType, union: UnionType | undefin
         };
     } else if (isPlainReferenceType(type)) {
         return {
-            referenceType: plainToPropertyType(type.referenceType, undefined, interfaces, unions)
+            referenceType: plainToPropertyType(type.referenceType, undefined, interfaces, unions),
+            mode: type.mode
         };
     } else if (isPlainPropertyUnion(type)) {
         return {

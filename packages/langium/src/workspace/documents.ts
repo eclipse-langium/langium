@@ -18,7 +18,7 @@ import type { FileSystemProvider } from './file-system-provider.js';
 import type { ParseResult, ParserOptions } from '../parser/langium-parser.js';
 import type { ServiceRegistry } from '../service-registry.js';
 import type { LangiumSharedCoreServices } from '../services.js';
-import type { AstNode, AstNodeDescription, Mutable, Reference } from '../syntax-tree.js';
+import type { AstNode, AstNodeDescription, MultiReference, Mutable, Reference } from '../syntax-tree.js';
 import type { MultiMap } from '../utils/collections.js';
 import type { Stream } from '../utils/stream.js';
 import { TextDocument } from './documents.js';
@@ -42,7 +42,7 @@ export interface LangiumDocument<T extends AstNode = AstNode> {
     /** Result of the scope precomputation phase */
     precomputedScopes?: PrecomputedScopes;
     /** An array of all cross-references found in the AST while linking */
-    references: Reference[];
+    references: Array<Reference | MultiReference>;
     /** Result of the validation phase */
     diagnostics?: Diagnostic[]
 }

@@ -18,7 +18,7 @@ DataType:
     'datatype' name=ID;
 
 Entity:
-    'entity' name=ID ('extends' superType=[Entity:QualifiedName])? '{'
+    'entity' name=ID ('extends' superType=[+Entity:QualifiedName])? '{'
         (features+=Feature)*
     '}';
 

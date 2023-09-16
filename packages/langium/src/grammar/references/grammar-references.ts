@@ -29,18 +29,20 @@ export class LangiumGrammarReferences extends DefaultReferences {
         this.documents = services.shared.workspace.LangiumDocuments;
     }
 
-    override findDeclaration(sourceCstNode: CstNode): AstNode | undefined {
+    override findDeclarations(sourceCstNode: CstNode): AstNode[] {
         const nodeElem = sourceCstNode.astNode;
         const assignment = findAssignment(sourceCstNode);
         if (assignment && assignment.feature === 'feature') {
             // Only search for a special declaration if the cst node is the feature property of the action/assignment
             if (isAssignment(nodeElem)) {
-                return this.findAssignmentDeclaration(nodeElem);
+                const decl = this.findAssignmentDeclaration(nodeElem);
+                return decl ? [decl] : [];
             } else if (isAction(nodeElem)) {
-                return this.findActionDeclaration(nodeElem);
+                const decl = this.findActionDeclaration(nodeElem);
+                return decl ? [decl] : [];
             }
         }
-        return super.findDeclaration(sourceCstNode);
+        return super.findDeclarations(sourceCstNode);
     }
 
     override findReferences(targetNode: AstNode, options: FindReferencesOptions): Stream<ReferenceDescription> {
@@ -56,10 +58,7 @@ export class LangiumGrammarReferences extends DefaultReferences {
         const interfaceNode = getContainerOfType(targetNode, isInterface);
         if (interfaceNode) {
             if (includeDeclaration) {
-                const ref = this.getReferenceToSelf(targetNode);
-                if (ref) {
-                    refs.push(ref);
-                }
+                refs.push(...this.getSelfReferences(targetNode));
             }
             const interfaces = collectChildrenTypes(interfaceNode, this, this.documents, this.nodeLocator);
             const targetRules: Array<ParserRule | Action> = [];

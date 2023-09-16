@@ -378,7 +378,7 @@ function validatePropertiesConsistency(
     // a corresponding declared type
     const matchingProp = (type: PropertyType): PropertyType => {
         if (isPropertyUnion(type)) return { types: type.types.map(t => matchingProp(t)) };
-        if (isReferenceType(type)) return { referenceType: matchingProp(type.referenceType) };
+        if (isReferenceType(type)) return { referenceType: matchingProp(type.referenceType), mode: type.mode };
         if (isArrayType(type)) return { elementType: type.elementType && matchingProp(type.elementType) };
         if (isValueType(type)) {
             const resource = resources.typeToValidationInfo.get(type.value.name);

@@ -34,7 +34,7 @@ type TypeAlternative = {
 
 type TypeCollection = {
     types: Set<string>
-    reference: boolean
+    reference: 'single' | 'multi' | false
 }
 
 interface TypeCollectionContext {
@@ -549,7 +549,7 @@ function findTypes(terminal: AbstractElement, types: TypeCollection): void {
         if (refTypeName) {
             types.types.add(refTypeName);
         }
-        types.reference = true;
+        types.reference = terminal.isMulti ? 'multi' : 'single';
     }
 }
 
@@ -761,14 +761,15 @@ function extractUnions(interfaces: PlainInterface[], unions: PlainUnion[], decla
     return astTypes;
 }
 
-function toPropertyType(array: boolean, reference: boolean, types: string[]): PlainPropertyType {
+function toPropertyType(array: boolean, reference: false | 'single' | 'multi', types: string[]): PlainPropertyType {
     if (array) {
         return {
             elementType: toPropertyType(false, reference, types)
         };
     } else if (reference) {
         return {
-            referenceType: toPropertyType(false, false, types)
+            referenceType: toPropertyType(false, false, types),
+            mode: reference
         };
     } else if (types.length === 1) {
         const type = types[0];

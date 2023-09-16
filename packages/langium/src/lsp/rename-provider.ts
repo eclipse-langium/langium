@@ -63,15 +63,24 @@ export class DefaultRenameProvider implements RenameProvider {
     async rename(document: LangiumDocument, params: RenameParams, _cancelToken?: CancellationToken): Promise<WorkspaceEdit | undefined> {
         const changes: Record<string, TextEdit[]> = {};
         const rootNode = document.parseResult.value.$cstNode;
-        if (!rootNode) return undefined;
+        if (!rootNode) {
+            return undefined;
+        }
         const offset = document.textDocument.offsetAt(params.position);
         const leafNode = findDeclarationNodeAtOffset(rootNode, offset, this.grammarConfig.nameRegexp);
-        if (!leafNode) return undefined;
-        const targetNode = this.references.findDeclaration(leafNode);
-        if (!targetNode) return undefined;
+        if (!leafNode) {
+            return undefined;
+        }
+        const targetNodes = this.references.findDeclarations(leafNode);
+        if (targetNodes.length === 0) {
+            return undefined;
+        }
+        // We only need to find the references to a single target node
+        // All other nodes should be found via `findReferences` if done correctly
+        const targetNode = targetNodes[0];
         const options = { onlyLocal: false, includeDeclaration: true };
         const references = this.references.findReferences(targetNode, options);
-        references.forEach(ref => {
+        for (const ref of references) {
             const change = TextEdit.replace(ref.segment.range, params.newName);
             const uri = ref.sourceUri.toString();
             if (changes[uri]) {
@@ -79,7 +88,7 @@ export class DefaultRenameProvider implements RenameProvider {
             } else {
                 changes[uri] = [change];
             }
-        });
+        }
         return { changes };
     }
 
@@ -90,12 +99,12 @@ export class DefaultRenameProvider implements RenameProvider {
     protected renameNodeRange(doc: LangiumDocument, position: Position): Range | undefined {
         const rootNode = doc.parseResult.value.$cstNode;
         const offset = doc.textDocument.offsetAt(position);
-        if (rootNode && offset) {
+        if (rootNode) {
             const leafNode = findDeclarationNodeAtOffset(rootNode, offset, this.grammarConfig.nameRegexp);
             if (!leafNode) {
                 return undefined;
             }
-            const isCrossRef = this.references.findDeclaration(leafNode);
+            const isCrossRef = this.references.findDeclarations(leafNode).length > 0;
             // return range if selected CstNode is the name node or it is a crosslink which points to a declaration
             if (isCrossRef || this.isNameNode(leafNode)) {
                 return leafNode.range;

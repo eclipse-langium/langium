@@ -9,7 +9,7 @@ import type { LangiumCompletionParser } from '../../parser/langium-parser.js';
 import type { NameProvider } from '../../references/name-provider.js';
 import type { ScopeProvider } from '../../references/scope-provider.js';
 import type { LangiumServices } from '../lsp-services.js';
-import type { AstNode, AstNodeDescription, AstReflection, CstNode, ReferenceInfo } from '../../syntax-tree.js';
+import type { AstNode, AstNodeDescription, AstReflection, CstNode, MultiReference, Reference, ReferenceInfo } from '../../syntax-tree.js';
 import type { CancellationToken } from '../../utils/cancellation.js';
 import type { MaybePromise } from '../../utils/promise-utils.js';
 import type { LangiumDocument, TextDocument } from '../../workspace/documents.js';
@@ -429,10 +429,20 @@ export class DefaultCompletionProvider implements CompletionProvider {
                 };
                 assignMandatoryProperties(this.astReflection, node);
             }
+            let reference: Reference | MultiReference;
+            if (next.feature.isMulti) {
+                reference = {
+                    $refText: '',
+                    items: []
+                };
+            } else {
+                reference = {
+                    $refText: '',
+                    ref: undefined
+                };
+            }
             const refInfo: ReferenceInfo = {
-                reference: {
-                    $refText: ''
-                },
+                reference,
                 container: node,
                 property: assignment.feature
             };

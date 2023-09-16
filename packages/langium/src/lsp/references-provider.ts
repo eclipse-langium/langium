@@ -61,10 +61,10 @@ export class DefaultReferencesProvider implements ReferencesProvider {
 
     protected getReferences(selectedNode: LeafCstNode, params: ReferenceParams, _document: LangiumDocument): Location[] {
         const locations: Location[] = [];
-        const targetAstNode = this.references.findDeclaration(selectedNode);
-        if (targetAstNode) {
+        const targetAstNode = this.references.findDeclarations(selectedNode);
+        for (const target of targetAstNode) {
             const options = { includeDeclaration: params.context.includeDeclaration };
-            this.references.findReferences(targetAstNode, options).forEach(reference => {
+            this.references.findReferences(target, options).forEach(reference => {
                 locations.push(Location.create(reference.sourceUri.toString(), reference.segment.range));
             });
         }
