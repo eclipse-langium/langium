@@ -1,31 +1,71 @@
-import { MonacoEditorLanguageClientWrapper } from './monaco-editor-wrapper/index.js';
-import { buildWorkerDefinition } from "./monaco-editor-workers/index.js";
-import monarchSyntax from "./syntaxes/<%= language-id %>.monarch.js";
+import { MonacoEditorLanguageClientWrapper } from 'monaco-editor-wrapper';
+import { addMonacoStyles } from 'monaco-editor-wrapper/styles';  
+import { buildWorkerDefinition } from "monaco-editor-workers";
+import monarchSyntax from "../syntaxes/<%= language-id %>.monarch.js";
 
-buildWorkerDefinition('./monaco-editor-workers/workers', new URL('', window.location.href).href, false);
+buildWorkerDefinition('../../node_modules/monaco-editor-workers/dist/workers/', new URL('', window.location.href).href, false);
+addMonacoStyles('monaco-editor-styles');
 
-MonacoEditorLanguageClientWrapper.addMonacoStyles('monaco-editor-styles');
+export const configureServices = () => {
+    return {
+        enableModelService: true,
+        configureEditorOrViewsService: {
+        },
+        configureConfigurationService: {
+            defaultWorkspaceUri: '/tmp/'
+        },
+        enableLanguagesService: true,
+        enableKeybindingsService: true,
+        debugLogging: true
+    }
+};
 
-const client = new MonacoEditorLanguageClientWrapper();
-const editorConfig = client.getEditorConfig();
-editorConfig.setMainLanguageId('<%= language-id %>');
+export const configureWorker = () => {
+    const workerURL = new URL('../worker/<%= language-id %>-server-worker.js', import.meta.url);
+    console.log(`Using the following  worker URL: ${workerURL.href}`);
+    const lsWorker = new Worker(workerURL.href, {
+        type: 'classic',
+        name: '<%= LanguageName %> Language Server'
+    });
 
-editorConfig.setMonarchTokensProvider(monarchSyntax);
+    return {
+        options: {
+            $type: 'WorkerDirect',
+            worker: lsWorker
+        }
+    }
+};
 
-editorConfig.setMainCode(`// <%= RawLanguageName %> is running in the web!`);
+export const configureUserConfig = () => {
+    return {
+        json: `{
+    "workbench.colorTheme": "Default Dark Modern",
+    "editor.semanticHighlighting.enabled": true
+}`
+    }
+};
 
-editorConfig.theme = 'vs-dark';
-editorConfig.useLanguageClient = true;
-editorConfig.useWebSocket = false;
+export const setupConfigClassic = (htmlElement) => {
+    return {
+        htmlElement: htmlElement,
+        wrapperConfig: {
+            serviceConfig: configureServices(),
+            editorAppConfig: {
+                $type: 'classic',
+                languageId: '<%= language-id %>',
+                code: `// <%= RawLanguageName %> is running in the web!`,
+                useDiffEditor: false,
+                languageExtensionConfig: { id: 'langium' },
+                languageDef: monarchSyntax,
+                userConfiguration: configureUserConfig()
+            }
+        },
+        languageClientConfig: configureWorker()
+    };
+};
 
-const workerURL = new URL('./<%= language-id %>-server-worker.js', import.meta.url);
-console.log(workerURL.href);
-
-const lsWorker = new Worker(workerURL.href, {
-    type: 'classic',
-    name: '<%= LanguageName %> Language Server'
-});
-client.setWorker(lsWorker);
-
-// keep a reference to a promise for when the editor is finished starting, we'll use this to setup the canvas on load
-const startingPromise = client.startEditor(document.getElementById("monaco-editor-root"));
+export const executeClassic = async (htmlElement) => {
+    const userConfig = setupConfigClassic(htmlElement);
+    const wrapper = new MonacoEditorLanguageClientWrapper();
+    await wrapper.start(userConfig);
+};

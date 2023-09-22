@@ -17,6 +17,10 @@
             <img width="125" src="https://langium.org/assets/langium_logo_w_nib.svg" alt="Langium">
         </footer>
         <!-- Monaco Configuration -->
-        <script type="module" src="setup.js"></script>
+        <script type="module">
+            import { executeClassic } from './setup.js';
+            // keep a reference to a promise for when the editor is finished starting, we'll use this to setup the canvas on load
+            const startingPromise = executeClassic(document.getElementById('monaco-editor-root'));
+        </script>
     </body>
 </html>

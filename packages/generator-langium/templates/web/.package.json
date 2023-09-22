@@ -1,23 +1,18 @@
 {
     "scripts": {
-        "build:worker": "esbuild --minify ./out/language/main-browser.js --bundle --format=iife --outfile=./public/<%= language-id %>-server-worker.js",
-        "prepare:public": "shx mkdir -p ./public && shx cp -fr ./src/static/* ./public/",
-        "copy:monaco-editor-wrapper": "shx cp -fr ./node_modules/monaco-editor-wrapper/bundle ./public/monaco-editor-wrapper",
-        "copy:monaco-workers": "shx cp -fr ./node_modules/monaco-editor-workers/dist/ ./public/monaco-editor-workers",
-        "copy:monarch-syntax": "shx cp -fr ./out/syntaxes ./public/syntaxes",
-        "build:web": "npm run build && npm run build:monarch && npm run prepare:public && npm run build:worker && npm run copy:monaco-editor-wrapper && npm run copy:monaco-workers && npm run copy:monarch-syntax",
+        "prepare:public": "node ./prepare.js",
+        "build:web": "npm run build && npm run build:monarch && npm run prepare:public && npm run build:worker",
         "build:monarch": "tsc -b tsconfig.monarch.json",
-        "serve": "node ./out/web/app.js"
+        "build:worker": "esbuild --minify ./out/main-browser.js --bundle --format=iife --outfile=./src/worker/<%= language-id %>-server-worker.js",
+        "dev": "vite",
+        "dev:debug": "vite",
+        "serve": "npm run dev"
     },
     "dependencies": {
-        "express": "~4.18.2",
-        "monaco-editor-workers": "~0.34.2",
-        "monaco-editor-wrapper": "~1.6.0",
-        "vscode-languageclient": "~8.1.0"
+        "monaco-editor-workers": "~0.41.0",
+        "monaco-editor-wrapper": "~3.1.0"
     },
     "devDependencies": {
-        "@types/express": "~4.17.17",
-        "shx": "~0.3.4",
-        "esbuild": "~0.19.2"
+        "vite": "~4.4.9"
     }
 }
