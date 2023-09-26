@@ -9,6 +9,7 @@
     <body>
         <h1><%= RawLanguageName %> in Langium</h1>
         <div class="wrapper">
+            <b>Monaco-Editor + Textmate</b>
             <!-- Monaco Root -->
             <div id="monaco-editor-root"></div>
         </div>
@@ -18,9 +19,10 @@
         </footer>
         <!-- Monaco Configuration -->
         <script type="module">
-            import { executeClassic } from './setup.js';
+             import { executeVscodeApi } from './setupVscodeApi.js';
+
             // keep a reference to a promise for when the editor is finished starting, we'll use this to setup the canvas on load
-            const startingPromise = executeClassic(document.getElementById('monaco-editor-root'));
+            const startingPromise = executeVscodeApi(document.getElementById('monaco-editor-root'));
         </script>
     </body>
 </html>

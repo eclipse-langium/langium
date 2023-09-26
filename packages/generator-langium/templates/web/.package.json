@@ -1,11 +1,12 @@
 {
     "scripts": {
-        "prepare:public": "node ./prepare.js",
-        "build:web": "npm run build && npm run build:monarch && npm run prepare:public && npm run build:worker",
+        "prepare:static": "node ./scripts/prepare.js",
+        "build:web": "npm run build && npm run prepare:static && npm run build:monarch && npm run build:worker && npm run build:bundles",
         "build:monarch": "tsc -b tsconfig.monarch.json",
-        "build:worker": "esbuild --minify ./out/main-browser.js --bundle --format=iife --outfile=./src/worker/<%= language-id %>-server-worker.js",
+        "build:bundles": "vite --config ./vite.bundle.classic.config.ts build && vite --config ./vite.bundle.vscodeApi.config.ts build",
+        "build:worker": "esbuild --minify ./out/main-browser.js --bundle --format=iife --outfile=./static/worker/<%= language-id %>-server-worker.js",
         "dev": "vite",
-        "dev:debug": "vite",
+        "dev:debug": "vite --debug --force",
         "serve": "npm run dev"
     },
     "dependencies": {
