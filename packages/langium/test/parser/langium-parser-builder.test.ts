@@ -690,6 +690,28 @@ describe('Handling EOF', () => {
         expect(output.diagnostics?.length ?? 0).toBe(0);
     });
 
+    test('Use EOF as a line break', async () => {
+        const grammar = `
+        grammar Test
+        entry Lines: lines+=Line*;
+        Line: text=ID (EOL | EOF);
+        terminal ID: /[_a-zA-Z][\\w_]*/;
+        terminal EOL: /\\r?\\n/;
+        `;
+        const langiumServices = await createLangiumGrammarServices(EmptyFileSystem);
+        const output = await parseHelper(langiumServices.grammar)(grammar, {validation: true});
+        expect(output.parseResult.lexerErrors.length).toBe(0);
+        expect(output.parseResult.parserErrors.length).toBe(0);
+        expect(output.diagnostics?.length ?? 0).toBe(0);
+
+        const grammarServices = await createServicesForGrammar({ grammar });
+        const parse = parseHelper(grammarServices);
+        const document = await parse('First\nMiddle\nLast', {validation: true});
+        expect(document.parseResult.lexerErrors.length).toBe(0);
+        expect(document.parseResult.parserErrors.length).toBe(0);
+        expect(document.diagnostics?.length ?? 0).toBe(0);
+    });
+
     test('Use EOF in an invalid position', async () => {
         const grammar = `
         grammar Test
@@ -697,10 +719,12 @@ describe('Handling EOF', () => {
         `;
         const services = await createServicesForGrammar({ grammar });
         const parse = parseHelper(services);
+
         const document = await parse('Hello!user!', {validation: true});
         expect(document.parseResult.parserErrors.length).toBe(1);
         expect(document.parseResult.parserErrors[0].name).toBe('MismatchedTokenException');
         expect(document.parseResult.parserErrors[0].token.tokenType.name).toBe('user!');
+
         const second =  await parse('Hello!', {validation: true});
         expect(second.parseResult.parserErrors.length).toBe(1);
         expect(second.parseResult.parserErrors[0].name).toBe('MismatchedTokenException');
