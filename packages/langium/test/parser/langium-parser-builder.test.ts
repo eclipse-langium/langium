@@ -6,8 +6,10 @@
 
 import type { TokenType, TokenVocabulary } from 'chevrotain';
 import type { AstNode, Grammar, GrammarAST, LangiumParser, TokenBuilderOptions } from 'langium';
+import { createLangiumGrammarServices, EmptyFileSystem, createServicesForGrammar, DefaultTokenBuilder} from 'langium';
 import { describe, expect, test, onTestFailed, beforeEach } from 'vitest';
-import { createServicesForGrammar, DefaultTokenBuilder } from 'langium';
+import { parseHelper } from 'langium/test';
+import { EOF } from 'chevrotain';
 
 describe('Predicated grammar rules with alternatives', () => {
 
@@ -672,6 +674,61 @@ describe('ALL(*) parser', () => {
         expect(result.lexerErrors).toHaveLength(0);
         expect(result.parserErrors).toHaveLength(0);
         expect(result.value.$type).toBe('B');
+    });
+});
+
+describe('Handling EOF', () => {
+    test('Use EOF as last part of the entry rule definition', async () => {
+        const grammar = `
+        grammar Test
+        entry Main: greet='Hello!' EOF;
+        `;
+        const services = await createLangiumGrammarServices(EmptyFileSystem);
+        const output = await parseHelper(services.grammar)(grammar, {validation: true});
+        expect(output.parseResult.lexerErrors.length).toBe(0);
+        expect(output.parseResult.parserErrors.length).toBe(0);
+        expect(output.diagnostics?.length ?? 0).toBe(0);
+    });
+
+    test('Use EOF as a line break', async () => {
+        const grammar = `
+        grammar Test
+        entry Lines: lines+=Line*;
+        Line: text=ID (EOL | EOF);
+        terminal ID: /[_a-zA-Z][\\w_]*/;
+        terminal EOL: /\\r?\\n/;
+        `;
+        const langiumServices = await createLangiumGrammarServices(EmptyFileSystem);
+        const output = await parseHelper(langiumServices.grammar)(grammar, {validation: true});
+        expect(output.parseResult.lexerErrors.length).toBe(0);
+        expect(output.parseResult.parserErrors.length).toBe(0);
+        expect(output.diagnostics?.length ?? 0).toBe(0);
+
+        const grammarServices = await createServicesForGrammar({ grammar });
+        const parse = parseHelper(grammarServices);
+        const document = await parse('First\nMiddle\nLast', {validation: true});
+        expect(document.parseResult.lexerErrors.length).toBe(0);
+        expect(document.parseResult.parserErrors.length).toBe(0);
+        expect(document.diagnostics?.length ?? 0).toBe(0);
+    });
+
+    test('Use EOF in an invalid position', async () => {
+        const grammar = `
+        grammar Test
+        entry Main: greet='Hello!' EOF name='user!';
+        `;
+        const services = await createServicesForGrammar({ grammar });
+        const parse = parseHelper(services);
+
+        const document = await parse('Hello!user!', {validation: true});
+        expect(document.parseResult.parserErrors.length).toBe(1);
+        expect(document.parseResult.parserErrors[0].name).toBe('MismatchedTokenException');
+        expect(document.parseResult.parserErrors[0].token.tokenType.name).toBe('user!');
+
+        const second =  await parse('Hello!', {validation: true});
+        expect(second.parseResult.parserErrors.length).toBe(1);
+        expect(second.parseResult.parserErrors[0].name).toBe('MismatchedTokenException');
+        expect(second.parseResult.parserErrors[0].token.tokenType).toBe(EOF);
     });
 });
 
