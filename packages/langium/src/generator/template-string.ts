@@ -57,7 +57,7 @@ export function expandToString(staticParts: TemplateStringsArray, ...substitutio
 }
 
 export const SNLE = Object.freeze('__«SKIP^NEW^LINE^IF^EMPTY»__');
-export const NEWLINE_REGEXP = /\r?\n/g;
+export const NEWLINE_REGEXP = /\r?\n/gm;
 const nonWhitespace = /\S|$/;
 
 // add the alignment of the previous static part to all lines of the following substitution
