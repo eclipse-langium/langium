@@ -4,7 +4,7 @@ import path from 'node:path';
 export default defineConfig({
     build: {
         lib: {
-            entry: path.resolve(__dirname, 'scripts', 'bundleVscodeApi.ts'),
+            entry: path.resolve(__dirname, 'scripts', 'bundleVscodeApi.js'),
             name: 'monaco-vscodeApi',
             fileName: () => 'index.js',
             formats: ['es']

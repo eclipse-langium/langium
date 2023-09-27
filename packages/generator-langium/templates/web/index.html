@@ -10,9 +10,12 @@
 
 <body>
     <div style="padding: 5px">
-        <a href="./static/monacoClassic.html">Monaco-Editor Classic</a>
+        <h1><%= RawLanguageName %> in Langium</h1>
+        Please select which grammar definition you want to use with monaco-editor:
         <br>
-        <a href="./static/monacoVscodeApi.html">Monaco-Editor VscodeApi</a>
+        <a href="./static/monacoClassic.html"><%= RawLanguageName %> + Monarch (Standard monaco-editor config)</a>
+        <br>
+        <a href="./static/monacoVscodeApi.html"><%= RawLanguageName %> + Textmate (Vscode Extension Config)</a>
     </div>
 </body>
 
