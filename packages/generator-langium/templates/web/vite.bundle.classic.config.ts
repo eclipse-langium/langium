@@ -16,7 +16,7 @@ export default defineConfig({
             output: {
                 name: 'monaco-classic',
                 exports: 'named',
-                sourcemap: false,
+                sourcemap: true,
                 assetFileNames: (assetInfo) => {
                     return `assets/${assetInfo.name}`;
                 }
