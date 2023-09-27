@@ -146,7 +146,12 @@ function findFirstFeaturesInternal(options: { next: NextFeature, cardinalities: 
             .map(e => modifyCardinality(e, feature.cardinality, cardinalities));
     } else if (ast.isAlternatives(feature) || ast.isUnorderedGroup(feature)) {
         return feature.elements.flatMap(e => findFirstFeaturesInternal({
-            next: { feature: e, new: false, type },
+            next: {
+                feature: e,
+                new: false,
+                type,
+                property: next.property
+            },
             cardinalities,
             visited,
             plus
@@ -178,7 +183,7 @@ function findFirstFeaturesInternal(options: { next: NextFeature, cardinalities: 
         const ruleCallNext = {
             feature: rule.definition,
             new: true,
-            type: rule.fragment ? undefined : getExplicitRuleType(rule) ?? rule.name,
+            type: rule.fragment || rule.dataType ? undefined : (getExplicitRuleType(rule) ?? rule.name),
             property: next.property
         };
         return findFirstFeaturesInternal({ next: ruleCallNext, cardinalities, visited, plus })
