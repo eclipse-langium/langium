@@ -399,7 +399,7 @@ export class DefaultCompletionProvider implements CompletionProvider {
             try {
                 const scope = this.scopeProvider.getScope(refInfo);
                 scope.getAllElements().forEach(e => {
-                    if (this.filterCrossReference(e)) {
+                    if (this.filterCrossReference(context, e)) {
                         acceptor(context, this.createReferenceCompletionItem(e));
                     }
                 });
@@ -425,13 +425,12 @@ export class DefaultCompletionProvider implements CompletionProvider {
         };
     }
 
-    protected filterCrossReference(_nodeDescription: AstNodeDescription): boolean {
+    protected filterCrossReference(_context: CompletionContext, _nodeDescription: AstNodeDescription): boolean {
         return true;
     }
 
     protected completionForKeyword(context: CompletionContext, keyword: ast.Keyword, acceptor: CompletionAcceptor): MaybePromise<void> {
-        // Filter out keywords that do not contain any word character
-        if (!keyword.value.match(/[\w]/)) {
+        if (!this.filterKeyword(context, keyword)) {
             return;
         }
         acceptor(context, {
@@ -440,6 +439,11 @@ export class DefaultCompletionProvider implements CompletionProvider {
             detail: 'Keyword',
             sortText: '1'
         });
+    }
+
+    protected filterKeyword(_context: CompletionContext, keyword: ast.Keyword): boolean {
+        // Filter out keywords that do not contain any word character
+        return keyword.value.match(/[\w]/) !== null;
     }
 
     protected fillCompletionItem(context: CompletionContext, item: CompletionValueItem): CompletionItem | undefined {
