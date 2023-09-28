@@ -8,6 +8,8 @@ import type { AstNode } from '../../syntax-tree.js';
 import { AbstractFormatter, Formatting } from '../../lsp/formatter.js';
 import * as ast from '../generated/ast.js';
 
+const indentOrSpace = Formatting.fit(Formatting.oneSpace(), Formatting.indent());
+
 export class LangiumGrammarFormatter extends AbstractFormatter {
 
     protected format(node: AstNode): void {
@@ -57,6 +59,26 @@ export class LangiumGrammarFormatter extends AbstractFormatter {
             formatter.keyword('<').surround(Formatting.noSpace());
             formatter.keyword(',').append(Formatting.oneSpace());
             formatter.properties('arguments').append(Formatting.noSpace());
+        } else if (ast.isInterface(node)) {
+            const formatter = this.getNodeFormatter(node);
+            formatter.keyword('interface').append(Formatting.oneSpace());
+            formatter.keyword('extends').prepend(Formatting.oneSpace()).append(indentOrSpace);
+            formatter.keywords(',').prepend(Formatting.noSpace()).append(indentOrSpace);
+            const bracesOpen = formatter.keyword('{');
+            bracesOpen.prepend(Formatting.fit(Formatting.oneSpace(), Formatting.newLine()));
+            const bracesClose = formatter.keyword('}');
+            bracesClose.prepend(Formatting.newLine());
+            formatter.interior(bracesOpen, bracesClose).prepend(Formatting.indent());
+        } else if (ast.isType(node)) {
+            const formatter = this.getNodeFormatter(node);
+            formatter.keyword('type').append(Formatting.oneSpace());
+            formatter.keyword('=').prepend(Formatting.oneSpace()).append(indentOrSpace);
+            formatter.keyword(';').prepend(Formatting.noSpace()).append(Formatting.newLine());
+        } else if (ast.isGrammar(node)) {
+            const formatter = this.getNodeFormatter(node);
+            const nodes = formatter.nodes(...node.rules, ...node.interfaces, ...node.types, ...node.imports);
+            nodes.prepend(Formatting.noIndent());
+            formatter.keyword('grammar').prepend(Formatting.noSpace()).append(Formatting.oneSpace());
         }
 
         if (ast.isAbstractElement(node)) {

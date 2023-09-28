@@ -9,8 +9,8 @@ import type { AbstractElement, Action, Alternatives, Condition, CrossReference, 
 import type { BaseParser } from './langium-parser.js';
 import type { AstNode } from '../syntax-tree.js';
 import type { Cardinality } from '../grammar/internal-grammar-util.js';
-import { EMPTY_ALT } from 'chevrotain';
-import { isAction, isAlternatives, isAssignment, isConjunction, isCrossReference, isDisjunction, isGroup, isKeyword, isLiteralCondition, isNegation, isParameterReference, isParserRule, isRuleCall, isTerminalRule, isUnorderedGroup } from '../grammar/generated/ast.js';
+import { EMPTY_ALT, EOF } from 'chevrotain';
+import { isAction, isAlternatives, isEndOfFile, isAssignment, isConjunction, isCrossReference, isDisjunction, isGroup, isKeyword, isLiteralCondition, isNegation, isParameterReference, isParserRule, isRuleCall, isTerminalRule, isUnorderedGroup } from '../grammar/generated/ast.js';
 import { assertUnreachable, ErrorWithLocation } from '../utils/errors.js';
 import { stream } from '../utils/stream.js';
 import { getTypeName } from '../grammar/internal-grammar-util.js';
@@ -88,6 +88,9 @@ function buildElement(ctx: RuleContext, element: AbstractElement, ignoreGuard = 
         method = buildUnorderedGroup(ctx, element);
     } else if (isGroup(element)) {
         method = buildGroup(ctx, element);
+    } else if(isEndOfFile(element)) {
+        const idx = ctx.consume++;
+        method = () => ctx.parser.consume(idx, EOF, element);
     } else {
         throw new ErrorWithLocation(element.$cstNode, `Unexpected element type: ${element.$type}`);
     }

@@ -19,6 +19,7 @@ import * as assert from 'node:assert';
 import { stream } from '../utils/stream.js';
 import type { AsyncDisposable } from '../utils/disposable.js';
 import { Disposable } from '../utils/disposable.js';
+import { normalizeEOL } from '../generator/template-string.js';
 
 export interface ParseHelperOptions extends BuildOptions {
     /**
@@ -479,7 +480,7 @@ export function expectFormatting(services: LangiumServices): (expectedFormatting
             formatter.formatDocument(document, { options, textDocument: identifier }));
 
         const editedDocument = TextDocument.applyEdits(document.textDocument, edits);
-        expectedFunction(editedDocument, expectedFormatting.after);
+        expectedFunction(normalizeEOL(editedDocument), normalizeEOL(expectedFormatting.after));
 
         const disposable = Disposable.create(() => clearDocuments(services, [document]));
         if (expectedFormatting.disposeAfterCheck) {

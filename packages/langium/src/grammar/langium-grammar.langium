@@ -99,7 +99,12 @@ AbstractTerminal infers AbstractElement:
     ParenthesizedElement |
     PredicatedKeyword |
     PredicatedRuleCall |
-    PredicatedGroup;
+    PredicatedGroup |
+    EndOfFile
+    ;
+
+EndOfFile: 
+    {infer EndOfFile} 'EOF';
 
 Keyword:
     value=STRING;
