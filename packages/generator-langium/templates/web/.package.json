@@ -4,7 +4,7 @@
         "build:web": "npm run build && npm run prepare:static && npm run build:monarch && npm run build:worker && npm run build:bundles",
         "build:monarch": "tsc -b tsconfig.monarch.json",
         "build:bundles": "vite --config ./vite.bundle.classic.config.ts build && vite --config ./vite.bundle.vscodeApi.config.ts build",
-        "build:worker": "esbuild --minify ./out/main-browser.js --bundle --format=iife --outfile=./static/worker/<%= language-id %>-server-worker.js",
+        "build:worker": "esbuild --minify ./out/language/main-browser.js --bundle --format=iife --outfile=./static/worker/<%= language-id %>-server-worker.js",
         "dev": "vite",
         "dev:debug": "vite --debug --force",
         "serve": "npm run dev"
