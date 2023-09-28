@@ -38,8 +38,8 @@ export class DefaultDiagramServerManager implements DiagramServerManager {
     protected readonly diagramServerFactory: (clientId: string, options?: DiagramOptions) => DiagramServer;
     protected readonly diagramServerMap: Map<string, DiagramServer> = new Map();
 
-    private changedUris: URI[] = [];
-    private outdatedDocuments: Map<LangiumDocument, DiagramServer> = new Map();
+    protected changedUris: URI[] = [];
+    protected outdatedDocuments: Map<LangiumDocument, DiagramServer> = new Map();
 
     constructor(services: LangiumSprottySharedServices) {
         this.connection = services.lsp.Connection;
