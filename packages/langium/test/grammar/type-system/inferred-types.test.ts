@@ -440,7 +440,7 @@ describe('expression rules with inferred and declared interfaces', () => {
         `);
     });
 
-    // todo make tests like in this PR: https://github.com/langium/langium/pull/670
+    // todo make tests like in this PR: https://github.com/eclipse-langium/langium/pull/670
     // the PR #670 fixes the demonstrated bug, but cancels type inferrence for declared actions
     // we should fix the issue another way
     async function checkTypes(grammar: string): Promise<void> {
@@ -799,7 +799,7 @@ describe('types of `$container` and `$type` are correct', () => {
     });
 });
 
-// https://github.com/langium/langium/issues/744
+// https://github.com/eclipse-langium/langium/issues/744
 describe('generated types from declared types include all of them', () => {
 
     test('using declared types has no impact on the generated types', async () => {
@@ -830,7 +830,7 @@ describe('generated types from declared types include all of them', () => {
 
 });
 
-// TODO @msujew: Test case for https://github.com/langium/langium/issues/775
+// TODO @msujew: Test case for https://github.com/eclipse-langium/langium/issues/775
 // describe('type merging runs in non-exponential time', () => {
 //
 //     test('grammar with many optional groups is processed correctly', async () => {

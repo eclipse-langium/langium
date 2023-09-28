@@ -47,4 +47,4 @@ The main code of Langium consists of a set of services that are connected via de
 
 ## Examples
 
-The source repository of Langium includes [examples](https://github.com/langium/langium/tree/main/examples) that demonstrate different use cases.
+The source repository of Langium includes [examples](https://github.com/eclipse-langium/langium/tree/main/examples) that demonstrate different use cases.

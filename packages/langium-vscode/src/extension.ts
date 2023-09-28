@@ -16,7 +16,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     client = await startLanguageClient(context);
     registerRailroadWebview(client);
     // cs: TODO rework and update the template decoration feature, if feasible
-    //  see also https://github.com/langium/langium/issues/841
+    //  see also https://github.com/eclipse-langium/langium/issues/841
     // configureTemplateDecoration(context);
 }
 
@@ -75,7 +75,7 @@ async function startLanguageClient(context: vscode.ExtensionContext): Promise<La
 const DELAY = 100; // delay in ms until a render can be cancelled on subsequent document changes
 
 // cs: TODO
-// @ts-expect-error: deactivated the usage of this feature for Langium v1.0 (https://github.com/langium/langium/issues/841)
+// @ts-expect-error: deactivated the usage of this feature for Langium v1.0 (https://github.com/eclipse-langium/langium/issues/841)
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function configureTemplateDecoration(context: vscode.ExtensionContext) {
     // define decoration type
