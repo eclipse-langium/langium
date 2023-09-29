@@ -104,8 +104,16 @@
                     "type": "object",
                     "properties": {
                         "out": {
-                            "description": "The output file path to the generated railroad html file",
+                            "description": "The output path to the generated railroad diagrams",
                             "type": "string"
+                        },
+                        "mode": {
+                            "description": "Whether to print diagrams all into a single html file or in separate svg files",
+                            "type": {
+                                "enum": [
+                                    "html", "svg"
+                                ]
+                            }
                         }
                     },
                     "required": [

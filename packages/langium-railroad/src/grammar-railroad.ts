@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { GrammarAST, findNameAssignment } from 'langium';
+import { GrammarAST, expandToString, findNameAssignment } from 'langium';
 import type { FakeSVG } from 'railroad-diagrams';
 import { default as rr } from 'railroad-diagrams';
 
@@ -40,7 +40,8 @@ export interface GrammarDiagramOptions {
 }
 
 function styling(options?: GrammarDiagramOptions) {
-    return `<style>
+    return expandToString`
+    <style>
     ${defaultCss}
     </style>${options?.css ? `
     <style>
@@ -51,12 +52,11 @@ function styling(options?: GrammarDiagramOptions) {
 /**
  * Creates a whole HTML file that contains all railroad diagrams.
  *
- * @param grammar - GrammarAST.Grammar
- * @param options? - GrammarDiagramOptions
+ * @param grammar
+ * @param options
  * Use to add additional styling to all diagrams and additional behavior for the created HTML.
  *
- * @returns text - string
- * text is a complete HTML document containing all diagrams.
+ * @returns A complete HTML document containing all diagrams.
  */
 export function createGrammarDiagramHtml(grammar: GrammarAST.Grammar, options?: GrammarDiagramOptions): string {
     let text = `<!DOCTYPE HTML>
@@ -80,12 +80,12 @@ ${options.javascript}
 /**
  * Creates a standalone SVG diagram for each non-terminal of grammar.
  *
- * @param grammar - GrammarAST.Grammar
- * @param options? - GrammarDiagramOptions
+ * @param grammar
+ * @param options
  * Use to add additional styling to all diagrams.
  *
- * @returns diagrams -Map<string, string>
- * For the rule with the name 'NonTerminal', diagrams.get('NonTerminal') has the SVG content.
+ * @returns diagrams
+ * For the rule named 'NonTerminal', diagrams.get('NonTerminal') has its SVG content.
  */
 export function createGrammarDiagramSvg(grammar: GrammarAST.Grammar, options?: GrammarDiagramOptions): Map<string, string> {
     const nonTerminals = grammar.rules.filter(GrammarAST.isParserRule);
