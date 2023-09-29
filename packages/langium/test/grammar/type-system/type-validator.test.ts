@@ -484,7 +484,7 @@ describe('Property type is not a mix of cross-ref and non-cross-ref types.', () 
     });
 });
 
-// https://github.com/langium/langium/issues/823
+// https://github.com/eclipse-langium/langium/issues/823
 describe('Property types validation takes in account types hierarchy', () => {
 
     test('Type aliases can be assigned to primitive types.', async () => {

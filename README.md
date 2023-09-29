@@ -1,5 +1,5 @@
 <div id="langium-logo" align="center">
-  <a href="https://github.com/langium/langium">
+  <a href="https://github.com/eclipse-langium/langium">
     <img alt="Langium Logo" width="60%" src="https://user-images.githubusercontent.com/4377073/135283991-90ef7724-649d-440a-8720-df13c23bda82.png">
   </a>
   <h3>
@@ -10,16 +10,16 @@
 <div id="badges" align="center">
 
   [![npm](https://img.shields.io/npm/v/langium)](https://www.npmjs.com/package/langium)
-  [![Build](https://github.com/langium/langium/actions/workflows/build.yml/badge.svg)](https://github.com/langium/langium/actions/workflows/build.yml)
+  [![Build](https://github.com/eclipse-langium/langium/actions/workflows/actions.yml/badge.svg)](https://github.com/eclipse-langium/langium/actions/workflows/actions.yml)
   [![Gitter Chat](https://img.shields.io/badge/chat-on%20gitter-0DBD8B?logo=gitter)](https://app.gitter.im/#/room/#langium:gitter.im)
-  [![Github Discussions](https://img.shields.io/badge/github-discussions-blue?logo=github)](https://github.com/langium/langium/discussions)
-  [![Gitpod Ready-to-Code](https://img.shields.io/badge/Gitpod-ready--to--code-FFAE33?logo=gitpod)](https://gitpod.io/#https://github.com/langium/langium)
+  [![Github Discussions](https://img.shields.io/badge/github-discussions-blue?logo=github)](https://github.com/eclipse-langium/langium/discussions)
+  [![Gitpod Ready-to-Code](https://img.shields.io/badge/Gitpod-ready--to--code-FFAE33?logo=gitpod)](https://gitpod.io/#https://github.com/eclipse-langium/langium)
 
 </div>
 
 ---
 
-Langium (IPA: /ˈlæŋɡiəm/, like **lang**uage and equilibr**ium**) is a language engineering tool for [TypeScript](https://www.typescriptlang.org/) with built-in support for the [Language Server Protocol](https://microsoft.github.io/language-server-protocol/). The framework is an all-in-one solution for building programming languages, domain specific languages, code generators, interpreters and compilers. It serves as a spiritual successor to the [Eclipse Xtext framework](https://www.eclipse.org/Xtext/).
+Eclipse Langium (IPA: /ˈlæŋɡiəm/, like **lang**uage and equilibr**ium**) is a language engineering tool for [TypeScript](https://www.typescriptlang.org/) with built-in support for the [Language Server Protocol](https://microsoft.github.io/language-server-protocol/). The framework is an all-in-one solution for building programming languages, domain specific languages, code generators, interpreters and compilers. It serves as a spiritual successor to the [Eclipse Xtext framework](https://www.eclipse.org/Xtext/).
 
 * **Semantics First:** Building on top of a [grammar declaration language](https://langium.org/docs/grammar-language/), Langium enables you to build the abstract model of your language in parallel to its syntax. Langium parsers are powered by [Chevrotain](https://chevrotain.io).
 * **Lean by Default, Customizable by Design:** Langium offers the infrastructure you need to build languages purely by defining their grammar. If that is not enough, you can fine tune every detail of your language using our [dependency injection system](https://langium.org/docs/configuration-services/).
@@ -53,12 +53,12 @@ The documentation website is hosted in [this repository](https://github.com/lang
 
 ## Examples
 
-We host a number of simple examples in our [main repo](https://github.com/langium/langium/tree/main/examples):
+We host a number of simple examples in our [main repo](https://github.com/eclipse-langium/langium/tree/main/examples):
 
-* **[arithmetics](https://github.com/langium/langium/tree/main/examples/arithmetics)**: How to create an expression language + interpreter.
-* **[domainmodel](https://github.com/langium/langium/tree/main/examples/domainmodel)**: How to create a language with fully qualified name identifiers.
-* **[requirements](https://github.com/langium/langium/tree/main/examples/requirements)**: How to create a Langium project with multiple languages.
-* **[statemachine](https://github.com/langium/langium/tree/main/examples/statemachine)**: How to create a code generator.
+* **[arithmetics](https://github.com/eclipse-langium/langium/tree/main/examples/arithmetics)**: How to create an expression language + interpreter.
+* **[domainmodel](https://github.com/eclipse-langium/langium/tree/main/examples/domainmodel)**: How to create a language with fully qualified name identifiers.
+* **[requirements](https://github.com/eclipse-langium/langium/tree/main/examples/requirements)**: How to create a Langium project with multiple languages.
+* **[statemachine](https://github.com/eclipse-langium/langium/tree/main/examples/statemachine)**: How to create a code generator.
 
 More complex examples are available as separate repositories in [our GitHub organization](https://github.com/langium):
 
@@ -67,6 +67,6 @@ More complex examples are available as separate repositories in [our GitHub orga
 
 ## Contributing
 
-If you want to contribute to Langium, please take a look at [our contributing guide](https://github.com/langium/langium/blob/main/CONTRIBUTING.md).
+If you want to contribute to Langium, please take a look at [our contributing guide](https://github.com/eclipse-langium/langium/blob/main/CONTRIBUTING.md).
 
-Langium is fully [MIT licensed](https://github.com/langium/langium/blob/main/LICENSE).
+Langium is fully [MIT licensed](https://github.com/eclipse-langium/langium/blob/main/LICENSE).

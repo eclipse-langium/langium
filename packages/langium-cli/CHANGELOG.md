@@ -8,18 +8,18 @@ Fix a bug that prevented usage of the JS API of the CLI package ([#1160](https:/
 
 ### EcmaScript Modules (ESM)
 
-This package is now compiling to ESM only, refer to [this changelog entry](https://github.com/langium/langium/blob/main/packages/langium/CHANGELOG.md#ecmascript-modules-esm)
+This package is now compiling to ESM only, refer to [this changelog entry](https://github.com/eclipse-langium/langium/blob/main/packages/langium/CHANGELOG.md#ecmascript-modules-esm)
 
 ### Breaking Changes
 
-* The CLI now always uses the original `projectName` of the `langium-config.json` property for the generated type/object names. It no longer performs kebab-case transformation ([#1122](https://github.com/langium/langium/pull/1122)).
-* We've decided to remove generated `$container` type declarations for types where it isn't clear what the container types can be ([#1055](https://github.com/langium/langium/pull/1055)).
+* The CLI now always uses the original `projectName` of the `langium-config.json` property for the generated type/object names. It no longer performs kebab-case transformation ([#1122](https://github.com/eclipse-langium/langium/pull/1122)).
+* We've decided to remove generated `$container` type declarations for types where it isn't clear what the container types can be ([#1055](https://github.com/eclipse-langium/langium/pull/1055)).
 
 ## v1.3.0 (Aug. 2023)
 
 ### Railroad Syntax Diagrams
 
-With the introduction of [`langium-railroad`](https://github.com/langium/langium/tree/main/packages/langium-railroad), the CLI is now capable of generating railroad syntax diagrams for your language ([#1075](https://github.com/langium/langium/pull/1075)).
+With the introduction of [`langium-railroad`](https://github.com/eclipse-langium/langium/tree/main/packages/langium-railroad), the CLI is now capable of generating railroad syntax diagrams for your language ([#1075](https://github.com/eclipse-langium/langium/pull/1075)).
 To generate them to a file, use the following example config:
 
 ```json
@@ -40,19 +40,19 @@ To generate them to a file, use the following example config:
 
 ### Generated Terminal Definitions
 
-The generated `ast.ts` file will now also contain an object containing all regular expressions used by your grammar's terminal rules ([#1097](https://github.com/langium/langium/pull/1097)).
+The generated `ast.ts` file will now also contain an object containing all regular expressions used by your grammar's terminal rules ([#1097](https://github.com/eclipse-langium/langium/pull/1097)).
 This allows to more easily reuse those regular expressions in your code.
 
 ### General Improvements
 
-* The CLI can now resolve grammar imports transitively ([#1113](https://github.com/langium/langium/pull/1113)).
-* A new `mode` configuration/argument can be used to improve bundle size of Langium projects ([#1077](https://github.com/langium/langium/pull/1077)).
-* Fixed an error in the way the CLI creates directories ([#1105](https://github.com/langium/langium/pull/1105)).
+* The CLI can now resolve grammar imports transitively ([#1113](https://github.com/eclipse-langium/langium/pull/1113)).
+* A new `mode` configuration/argument can be used to improve bundle size of Langium projects ([#1077](https://github.com/eclipse-langium/langium/pull/1077)).
+* Fixed an error in the way the CLI creates directories ([#1105](https://github.com/eclipse-langium/langium/pull/1105)).
 
 ## v1.2.1 (Jun. 2023)
 
-* The generated code now performs split imports for runtime and compile time dependencies ([#1018](https://github.com/langium/langium/pull/1018)).
-* The new configuration field `importExtension` can be used to specify the file extension for generated imports ([#1072](https://github.com/langium/langium/pull/1072)).
+* The generated code now performs split imports for runtime and compile time dependencies ([#1018](https://github.com/eclipse-langium/langium/pull/1018)).
+* The new configuration field `importExtension` can be used to specify the file extension for generated imports ([#1072](https://github.com/eclipse-langium/langium/pull/1072)).
 
 ## v1.2.0 (May. 2023)
 
@@ -78,28 +78,28 @@ Enable the generator by adding it to your `langium-config.json` file:
 
 ### General Improvements
 
-* Various improvements to the type generator/validator. ([#942](https://github.com/langium/langium/pull/942), [#946](https://github.com/langium/langium/pull/946), [#947](https://github.com/langium/langium/pull/947), [#950](https://github.com/langium/langium/pull/950), [#973](https://github.com/langium/langium/pull/973), [#1003](https://github.com/langium/langium/pull/1003))
+* Various improvements to the type generator/validator. ([#942](https://github.com/eclipse-langium/langium/pull/942), [#946](https://github.com/eclipse-langium/langium/pull/946), [#947](https://github.com/eclipse-langium/langium/pull/947), [#950](https://github.com/eclipse-langium/langium/pull/950), [#973](https://github.com/eclipse-langium/langium/pull/973), [#1003](https://github.com/eclipse-langium/langium/pull/1003))
 
 ---
 
 ## v1.1.0 (Feb. 2023)
 
-* Various improvements to the generated AST types ([#845](https://github.com/langium/langium/pull/845)).
-* The `--watch` mode now also watches referenced grammars, not only those directly used in the langium config file ([#908](https://github.com/langium/langium/pull/908)).
+* Various improvements to the generated AST types ([#845](https://github.com/eclipse-langium/langium/pull/845)).
+* The `--watch` mode now also watches referenced grammars, not only those directly used in the langium config file ([#908](https://github.com/eclipse-langium/langium/pull/908)).
 
 ---
 
 ## v1.0.0 (Dec. 2022) 🎉
 
- * New command `extract-types` generates type declarations to be used in your grammar file ([#754](https://github.com/langium/langium/pull/754)). This utility can be used to move from _inferred_ types to _declared_ types, which makes sense when your language project becomes more mature.
- * New reference format in JSON-serialized grammars ([#787](https://github.com/langium/langium/pull/787)).
+ * New command `extract-types` generates type declarations to be used in your grammar file ([#754](https://github.com/eclipse-langium/langium/pull/754)). This utility can be used to move from _inferred_ types to _declared_ types, which makes sense when your language project becomes more mature.
+ * New reference format in JSON-serialized grammars ([#787](https://github.com/eclipse-langium/langium/pull/787)).
  * Adapted to version `1.0.0` of the Langium core library.
 
 ---
 
 ## v0.5.0 (Oct. 2022)
 
- * Added an option to generate syntax highlighting in the [Monarch format](https://microsoft.github.io/monaco-editor/monarch.html) ([#620](https://github.com/langium/langium/pull/620)).
+ * Added an option to generate syntax highlighting in the [Monarch format](https://microsoft.github.io/monaco-editor/monarch.html) ([#620](https://github.com/eclipse-langium/langium/pull/620)).
  * Adapted to version `0.5.0` of the Langium core library.
 
 ---
@@ -114,15 +114,15 @@ This release brings lots of bug fixes and is adapted to version `0.4.0` of the L
 
 ### General Improvements
 
- * Added support for importing other grammar files to state explicitly which rules should be included in your grammar ([#311](https://github.com/langium/langium/pull/311)).
- * Added support for explicit type declarations in the grammar ([#406](https://github.com/langium/langium/pull/406)).
- * Improved generated TextMate syntax highlighting ([#289](https://github.com/langium/langium/pull/289), [#293](https://github.com/langium/langium/pull/293), [#312](https://github.com/langium/langium/pull/312)).
- * Added support for case-insensitive parsing of keywords ([#316](https://github.com/langium/langium/pull/316)).
- * When parser validation errors occur, the file path and line number of the corresponding grammar rule is printed out ([#372](https://github.com/langium/langium/pull/372)).
+ * Added support for importing other grammar files to state explicitly which rules should be included in your grammar ([#311](https://github.com/eclipse-langium/langium/pull/311)).
+ * Added support for explicit type declarations in the grammar ([#406](https://github.com/eclipse-langium/langium/pull/406)).
+ * Improved generated TextMate syntax highlighting ([#289](https://github.com/eclipse-langium/langium/pull/289), [#293](https://github.com/eclipse-langium/langium/pull/293), [#312](https://github.com/eclipse-langium/langium/pull/312)).
+ * Added support for case-insensitive parsing of keywords ([#316](https://github.com/eclipse-langium/langium/pull/316)).
+ * When parser validation errors occur, the file path and line number of the corresponding grammar rule is printed out ([#372](https://github.com/eclipse-langium/langium/pull/372)).
 
 ### Breaking Changes
 
- * In order to support multiple languages running in the same language server, the Langium configuration format was changed ([#311](https://github.com/langium/langium/pull/311)). It now looks like this:
+ * In order to support multiple languages running in the same language server, the Langium configuration format was changed ([#311](https://github.com/eclipse-langium/langium/pull/311)). It now looks like this:
    ```
    {
      "projectName": "Arithmetics",
@@ -145,14 +145,14 @@ This release brings lots of bug fixes and is adapted to version `0.4.0` of the L
 
 ### General Improvements
 
- * We no longer generate code for the parser, but derive it from the serialized grammar instead ([#169](https://github.com/langium/langium/pull/169)).
- * The target folder is deleted before new files are generated ([#180](https://github.com/langium/langium/pull/180)). In case the target folder contains any files that are _not_ regenerated, the CLI shows a question before deleting anything.
- * The language configuration used by `langium-cli` is now read from a separate file `langium-config.json` by default ([#158](https://github.com/langium/langium/pull/158)). Embedding it in `package.json` is still supported.
- * Added the [Chevrotain parser configuration](https://chevrotain.io/documentation/9_1_0/interfaces/IParserConfig.html) to the Langium configuration (`chevrotainParserConfig` property, [#248](https://github.com/langium/langium/pull/248)). Among other things, this enables setting the [maximum lookahead](https://chevrotain.io/documentation/9_1_0/interfaces/IParserConfig.html#maxLookahead).
- * The parser validation of Chevrotain is run as part of `langium-cli` to provide early feedback ([#253](https://github.com/langium/langium/pull/253)).
- * The JSON content of the grammar is written to a TypeScript file instead of a `.json` file, simplifiying the build process ([#142](https://github.com/langium/langium/pull/142)).
- * Some of the language meta data (language id and file extensions) are generated so they are available at runtime ([#170](https://github.com/langium/langium/pull/170)).
+ * We no longer generate code for the parser, but derive it from the serialized grammar instead ([#169](https://github.com/eclipse-langium/langium/pull/169)).
+ * The target folder is deleted before new files are generated ([#180](https://github.com/eclipse-langium/langium/pull/180)). In case the target folder contains any files that are _not_ regenerated, the CLI shows a question before deleting anything.
+ * The language configuration used by `langium-cli` is now read from a separate file `langium-config.json` by default ([#158](https://github.com/eclipse-langium/langium/pull/158)). Embedding it in `package.json` is still supported.
+ * Added the [Chevrotain parser configuration](https://chevrotain.io/documentation/9_1_0/interfaces/IParserConfig.html) to the Langium configuration (`chevrotainParserConfig` property, [#248](https://github.com/eclipse-langium/langium/pull/248)). Among other things, this enables setting the [maximum lookahead](https://chevrotain.io/documentation/9_1_0/interfaces/IParserConfig.html#maxLookahead).
+ * The parser validation of Chevrotain is run as part of `langium-cli` to provide early feedback ([#253](https://github.com/eclipse-langium/langium/pull/253)).
+ * The JSON content of the grammar is written to a TypeScript file instead of a `.json` file, simplifiying the build process ([#142](https://github.com/eclipse-langium/langium/pull/142)).
+ * Some of the language meta data (language id and file extensions) are generated so they are available at runtime ([#170](https://github.com/eclipse-langium/langium/pull/170)).
 
 ### Breaking Changes
 
- * The `extensions` field in the Langium configuration was renamed to `fileExtensions` ([#173](https://github.com/langium/langium/pull/173)).
+ * The `extensions` field in the Langium configuration was renamed to `fileExtensions` ([#173](https://github.com/eclipse-langium/langium/pull/173)).

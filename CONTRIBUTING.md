@@ -2,6 +2,12 @@
 
 Thank you for your interest in the Langium project! The following is a set of guidelines for contributing to Langium.
 
+## Eclipse Contributor Agreement
+
+If you're planning to contribute to this or any other repository in the [`eclipse-langium` GitHub organization](https://github.com/eclipse-langium), please sign the [Eclipse Contributor Agreement (ECA)](https://www.eclipse.org/legal/ECA.php).
+
+By signing the ECA you promise that your contributions adhere to the license used in the repository of the corresponding Eclipse project. This ensures that Langium can be used by any adopter without any legal issues.
+
 ## Prerequisites
 
 For developing Langium you require at least the Maintenance LTS version of Node.js (currently 16) and at least npm version 7.7.0 (`npm@^7.7.0`) to be able to use npm workspaces. With Node.js versions below 16 you have to install the correct version of npm with `npm install -g npm@7`.
@@ -53,7 +59,7 @@ When you add a dependency to a `package.json` npm resolves this from the configu
 
 There is an npm build target available (`npm run dev-build`) linking all Langium packages to your global scope. It unlinks and uninstalls the Langium packages from the global scope, deletes any `node_modules` folders below the packages directory (see warning above), afterwards performs `npm install` and then links all packages to the global scope again. Then your are able to use `yo langium` or `langium generate` containing your local Langium adjustments from everywhere with your local user.
 
-A project you created with `yo langium` contains a dependency to `langium` (e.g. `0.1.0`) and a dev-dependency to `langium-cli`) inside `package.json` by default. Now, you have to link your own global Langium build to your own language project.
+A project you created with `yo langium` contains a dependency to `langium` (e.g. `2.0.0`) and a dev-dependency to `langium-cli`) inside `package.json` by default. Now, you have to link your own global Langium build to your own language project.
 Issue the following commands in a shell from the root of your language project:
 
 ```shell

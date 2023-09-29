@@ -11,7 +11,7 @@ import { Position, Range } from 'vscode-languageserver';
 import { createServicesForGrammar } from 'langium';
 import { validationHelper } from 'langium/test';
 
-// Related to https://github.com/langium/langium/issues/571
+// Related to https://github.com/eclipse-langium/langium/issues/571
 describe('Parser error is thrown on resynced token with NaN position', () => {
 
     const grammar = `grammar HelloWorld
