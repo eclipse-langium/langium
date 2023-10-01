@@ -68,6 +68,8 @@ export interface LangiumLanguageConfig {
         out: string;
         /** Whether to print diagrams all into a single html file or in separate svg files */
         mode?: 'html' | 'svg';
+        /** Path to a css file that will be included in the generated output files */
+        css?: string;
     }
     /** Configure the chevrotain parser for a single language */
     chevrotainParserConfig?: IParserConfig

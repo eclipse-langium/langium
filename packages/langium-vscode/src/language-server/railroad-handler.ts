@@ -5,11 +5,12 @@
  ******************************************************************************/
 
 import type { Grammar, LangiumServices } from 'langium';
-import { DocumentState, URI } from 'langium';
+import { DocumentState, GrammarAST, URI, expandToString } from 'langium';
 import type { Connection} from 'vscode-languageserver';
 import { DiagnosticSeverity } from 'vscode-languageserver';
 import { DOCUMENTS_VALIDATED_NOTIFICATION, RAILROAD_DIAGRAM_REQUEST } from './messages.js';
 import { createGrammarDiagramHtml } from 'langium-railroad';
+import { resolveTransitiveImports } from 'langium/internal';
 
 export function registerRailroadConnectionHandler(connection: Connection, services: LangiumServices): void {
     const documentBuilder = services.shared.workspace.DocumentBuilder;
@@ -27,9 +28,13 @@ export function registerRailroadConnectionHandler(connection: Connection, servic
             if (document.diagnostics?.some(e => e.severity === DiagnosticSeverity.Error)) {
                 return undefined;
             }
-            const generatedRailroadHtml = createGrammarDiagramHtml(document.parseResult.value as Grammar, {
+            const grammar = document.parseResult.value as Grammar;
+            const importedGrammars = resolveTransitiveImports(documents, grammar);
+            // Map all local and imported parser rules into a single array
+            const parserRules = [grammar, ...importedGrammars].flatMap(g => g.rules).filter(GrammarAST.isParserRule);
+            const generatedRailroadHtml = createGrammarDiagramHtml(Array.from(parserRules), {
                 // Setting the state to the current uri allows us to open the webview on vscode restart
-                javascript: `
+                javascript: expandToString`
                     const vscode = acquireVsCodeApi();
                     vscode.setState(${JSON.stringify(uri)});
                 `
