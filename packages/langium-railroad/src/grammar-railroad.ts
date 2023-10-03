@@ -94,6 +94,7 @@ export function createGrammarDiagramSvg(grammar: GrammarAST.Grammar, options?: G
 
     for (const nonTerminal of nonTerminals) {
         const ruleDiagram = new rr.Diagram(toRailroad(nonTerminal.definition));
+        ruleDiagram.attrs.xmlns = 'http://www.w3.org/2000/svg';
         ruleDiagram.children =
             ruleDiagram.children.concat(style);
         diagrams.set(nonTerminal.name, ruleDiagram.toString());
