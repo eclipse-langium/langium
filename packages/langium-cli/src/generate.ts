@@ -21,7 +21,7 @@ import { elapsedTime, getTime, getUserChoice, log, schema } from './generator/ut
 import { getFilePath, RelativePath } from './package.js';
 import { validateParser } from './parser-validation.js';
 import { generateTypesFile } from './generator/types-generator.js';
-import { createGrammarDiagramHtml } from 'langium-railroad';
+import { createGrammarDiagramHtml, createGrammarDiagramSvg } from 'langium-railroad';
 import { validate } from 'jsonschema';
 import chalk from 'chalk';
 import * as path from 'path';
@@ -365,10 +365,22 @@ export async function runGenerator(config: LangiumConfig, options: GenerateOptio
         }
 
         if (languageConfig?.railroad) {
-            const diagram = createGrammarDiagramHtml(grammar);
             const diagramPath = path.resolve(relPath, languageConfig.railroad.out);
-            log('log', options, `Writing railroad syntax diagram to ${chalk.white.bold(diagramPath)}`);
-            await writeWithFail(diagramPath, diagram, options);
+            // Single File or no info -> write to HTML.
+            if (languageConfig.railroad.mode !== 'svg') {
+                const diagram = createGrammarDiagramHtml(grammar);
+                log('log', options, `Writing railroad syntax diagram to ${chalk.white.bold(diagramPath)}`);
+                await writeWithFail(diagramPath, diagram, options);
+            }
+            // Svg files requested -> make dir and write into it.
+            else {
+                const diagrams = createGrammarDiagramSvg(grammar);
+                log('log', options, `Writing railroad syntax diagrams to ${chalk.white.bold(diagramPath)}`);
+                for (const [name, diagram] of diagrams) {
+                    const filePath = path.join(diagramPath, name);
+                    await writeWithFail(`${filePath}.svg`, diagram, options);
+                }
+            }
         }
     }
 

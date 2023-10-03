@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { GrammarAST, findNameAssignment } from 'langium';
+import { GrammarAST, expandToString, findNameAssignment } from 'langium';
 import type { FakeSVG } from 'railroad-diagrams';
 import { default as rr } from 'railroad-diagrams';
 
@@ -39,16 +39,30 @@ export interface GrammarDiagramOptions {
     javascript?: string;
 }
 
+function styling(options?: GrammarDiagramOptions) {
+    return expandToString`
+    <style>
+    ${defaultCss}
+    </style>${options?.css ? `
+    <style>
+    ${options.css}
+    </style>` : ''}`;
+}
+
+/**
+ * Creates a whole HTML file that contains all railroad diagrams.
+ *
+ * @param grammar
+ * @param options
+ * Use to add additional styling to all diagrams and additional behavior for the created HTML.
+ *
+ * @returns A complete HTML document containing all diagrams.
+ */
 export function createGrammarDiagramHtml(grammar: GrammarAST.Grammar, options?: GrammarDiagramOptions): string {
     let text = `<!DOCTYPE HTML>
 <html>
 <head>
-<style>
-${defaultCss}
-</style>${options?.css ? `
-<style>
-${options.css}
-</style>` : ''}
+${styling(options)}
 ${options?.javascript ? `
 <script>
 ${options.javascript}
@@ -61,6 +75,31 @@ ${options.javascript}
 </html>`;
 
     return text;
+}
+
+/**
+ * Creates a standalone SVG diagram for each non-terminal of grammar.
+ *
+ * @param grammar
+ * @param options
+ * Use to add additional styling to all diagrams.
+ *
+ * @returns diagrams
+ * For the rule named 'NonTerminal', diagrams.get('NonTerminal') has its SVG content.
+ */
+export function createGrammarDiagramSvg(grammar: GrammarAST.Grammar, options?: GrammarDiagramOptions): Map<string, string> {
+    const nonTerminals = grammar.rules.filter(GrammarAST.isParserRule);
+    const diagrams = new Map<string, string>();
+    const style = styling(options);
+
+    for (const nonTerminal of nonTerminals) {
+        const ruleDiagram = new rr.Diagram(toRailroad(nonTerminal.definition));
+        ruleDiagram.attrs.xmlns = 'http://www.w3.org/2000/svg';
+        ruleDiagram.children =
+            ruleDiagram.children.concat(style);
+        diagrams.set(nonTerminal.name, ruleDiagram.toString());
+    }
+    return diagrams;
 }
 
 export function createGrammarDiagram(grammar: GrammarAST.Grammar): string {

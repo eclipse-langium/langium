@@ -59,8 +59,10 @@ Schema:
         }
         // Enable generating railroad syntax diagram
         railroad: {
-            // Output path to syntax diagram file (html)
+            // Output path to syntax diagrams
             out: string
+            // Whether to print diagrams all into a single html file or in separate svg files (optional)
+            mode: 'html' | 'svg'
         }
         // Configure the chevrotain parser for a single language
         chevrotainParserConfig: IParserConfig
