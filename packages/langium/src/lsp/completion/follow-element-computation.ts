@@ -25,10 +25,6 @@ export interface NextFeature<T extends ast.AbstractElement = ast.AbstractElement
      * The container property for the new `type`
      */
     property?: string
-    /**
-     * Determines whether this `feature` is directly preceded by a new object declaration (such as an action or a rule call)
-     */
-    new?: boolean
 }
 
 /**
@@ -77,8 +73,7 @@ function findNextFeaturesInternal(options: { next: NextFeature, cardinalities: M
         const repeatingFeatures = findFirstFeaturesInternal({
             next: {
                 feature: item,
-                type: next.type,
-                new: false
+                type: next.type
             },
             cardinalities,
             visited,
@@ -95,8 +90,7 @@ function findNextFeaturesInternal(options: { next: NextFeature, cardinalities: M
         if (ownIndex !== undefined && ownIndex < parent.elements.length - 1) {
             features.push(...findNextFeaturesInGroup({
                 feature: parent,
-                type: next.type,
-                new: false
+                type: next.type
             }, ownIndex + 1, cardinalities, visited, plus));
         }
         // Try to find the next elements of the parent
@@ -105,8 +99,7 @@ function findNextFeaturesInternal(options: { next: NextFeature, cardinalities: M
             features.push(...findNextFeaturesInternal({
                 next: {
                     feature: parent,
-                    type: next.type,
-                    new: false
+                    type: next.type
                 },
                 cardinalities,
                 visited,
@@ -148,7 +141,6 @@ function findFirstFeaturesInternal(options: { next: NextFeature, cardinalities: 
         return feature.elements.flatMap(e => findFirstFeaturesInternal({
             next: {
                 feature: e,
-                new: false,
                 type,
                 property: next.property
             },
@@ -160,7 +152,6 @@ function findFirstFeaturesInternal(options: { next: NextFeature, cardinalities: 
     } else if (ast.isAssignment(feature)) {
         const assignmentNext = {
             feature: feature.terminal,
-            new: false,
             type,
             property: next.property ?? feature.feature
         };
@@ -170,7 +161,6 @@ function findFirstFeaturesInternal(options: { next: NextFeature, cardinalities: 
         return findNextFeaturesInternal({
             next: {
                 feature,
-                new: true,
                 type: getTypeName(feature),
                 property: next.property ?? feature.feature
             },
@@ -182,7 +172,6 @@ function findFirstFeaturesInternal(options: { next: NextFeature, cardinalities: 
         const rule = feature.rule.ref;
         const ruleCallNext = {
             feature: rule.definition,
-            new: true,
             type: rule.fragment || rule.dataType ? undefined : (getExplicitRuleType(rule) ?? rule.name),
             property: next.property
         };
@@ -209,7 +198,11 @@ function findNextFeaturesInGroup(next: NextFeature<ast.Group>, index: number, ca
     const features: NextFeature[] = [];
     let firstFeature: NextFeature;
     while (index < next.feature.elements.length) {
-        firstFeature = { feature: next.feature.elements[index++], new: false, type: next.type };
+        const feature = next.feature.elements[index++];
+        firstFeature = {
+            feature,
+            type: next.type
+        };
         features.push(...findFirstFeaturesInternal({
             next: firstFeature,
             cardinalities,

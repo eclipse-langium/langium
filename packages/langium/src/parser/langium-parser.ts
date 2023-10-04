@@ -17,7 +17,7 @@ import { defaultParserErrorProvider, EmbeddedActionsParser, LLkLookaheadStrategy
 import { LLStarLookaheadStrategy } from 'chevrotain-allstar';
 import { isAssignment, isCrossReference, isKeyword } from '../grammar/generated/ast.js';
 import { getTypeName, isDataTypeRule } from '../grammar/internal-grammar-util.js';
-import { getContainerOfType, linkContentToContainer } from '../utils/ast-util.js';
+import { assignMandatoryAstProperties, getContainerOfType, linkContentToContainer } from '../utils/ast-util.js';
 import { CstNodeBuilder } from './cst-node-builder.js';
 
 export type ParseResult<T = AstNode> = {
@@ -275,21 +275,9 @@ export class LangiumParser extends AbstractLangiumParser {
         if (isDataTypeNode(obj)) {
             return this.converter.convert(obj.value, obj.$cstNode);
         } else {
-            this.assignMandatoryProperties(obj);
+            assignMandatoryAstProperties(this.astReflection, obj);
         }
         return obj;
-    }
-
-    private assignMandatoryProperties(obj: any): void {
-        const typeMetaData = this.astReflection.getTypeMetaData(obj.$type);
-        for (const mandatoryProperty of typeMetaData.mandatory) {
-            const value = obj[mandatoryProperty.name];
-            if (mandatoryProperty.type === 'array' && !Array.isArray(value)) {
-                obj[mandatoryProperty.name] = [];
-            } else if (mandatoryProperty.type === 'boolean' && value === undefined) {
-                obj[mandatoryProperty.name] = false;
-            }
-        }
     }
 
     private getAssignment(feature: AbstractElement): AssignmentElement {

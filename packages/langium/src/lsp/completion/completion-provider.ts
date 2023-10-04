@@ -10,7 +10,7 @@ import type { LangiumCompletionParser } from '../../parser/langium-parser.js';
 import type { NameProvider } from '../../references/name-provider.js';
 import type { ScopeProvider } from '../../references/scope-provider.js';
 import type { LangiumServices } from '../../services.js';
-import type { AstNode, AstNodeDescription, CstNode, Reference, ReferenceInfo } from '../../syntax-tree.js';
+import type { AstNode, AstNodeDescription, AstReflection, CstNode, ReferenceInfo } from '../../syntax-tree.js';
 import type { MaybePromise } from '../../utils/promise-util.js';
 import type { LangiumDocument } from '../../workspace/documents.js';
 import type { NextFeature } from './follow-element-computation.js';
@@ -19,10 +19,11 @@ import type { FuzzyMatcher } from '../fuzzy-matcher.js';
 import type { GrammarConfig } from '../../grammar/grammar-config.js';
 import type { Lexer } from '../../parser/lexer.js';
 import type { IToken } from 'chevrotain';
+import type { Stream } from '../../utils/stream.js';
 import { CompletionItemKind, CompletionList, Position } from 'vscode-languageserver';
 import * as ast from '../../grammar/generated/ast.js';
 import { getExplicitRuleType } from '../../grammar/internal-grammar-util.js';
-import { getContainerOfType } from '../../utils/ast-util.js';
+import { assignMandatoryAstProperties, getContainerOfType } from '../../utils/ast-util.js';
 import { findDeclarationNodeAtOffset, findLeafNodeAtOffset } from '../../utils/cst-util.js';
 import { getEntryRule } from '../../utils/grammar-util.js';
 import { stream } from '../../utils/stream.js';
@@ -128,6 +129,7 @@ export class DefaultCompletionProvider implements CompletionProvider {
     protected readonly nodeKindProvider: NodeKindProvider;
     protected readonly fuzzyMatcher: FuzzyMatcher;
     protected readonly grammarConfig: GrammarConfig;
+    protected readonly astReflection: AstReflection;
 
     constructor(services: LangiumServices) {
         this.scopeProvider = services.references.ScopeProvider;
@@ -138,6 +140,7 @@ export class DefaultCompletionProvider implements CompletionProvider {
         this.nodeKindProvider = services.shared.lsp.NodeKindProvider;
         this.fuzzyMatcher = services.shared.lsp.FuzzyMatcher;
         this.grammarConfig = services.parser.GrammarConfig;
+        this.astReflection = services.shared.AstReflection;
     }
 
     async getCompletion(document: LangiumDocument, params: CompletionParams): Promise<CompletionList | undefined> {
@@ -200,7 +203,6 @@ export class DefaultCompletionProvider implements CompletionProvider {
             const parserRule = getEntryRule(this.grammar)!;
             const firstFeatures = findFirstFeatures({
                 feature: parserRule.definition,
-                new: true,
                 type: getExplicitRuleType(parserRule)
             });
             if (tokens.length > 0) {
@@ -373,13 +375,6 @@ export class DefaultCompletionProvider implements CompletionProvider {
         };
     }
 
-    protected async completionForRule(context: CompletionContext, rule: ast.AbstractRule, acceptor: CompletionAcceptor): Promise<void> {
-        if (ast.isParserRule(rule)) {
-            const firstFeatures = findFirstFeatures(rule.definition);
-            await Promise.all(firstFeatures.map(next => this.completionFor(context, next, acceptor)));
-        }
-    }
-
     protected completionFor(context: CompletionContext, next: NextFeature, acceptor: CompletionAcceptor): MaybePromise<void> {
         if (ast.isKeyword(next.feature)) {
             return this.completionForKeyword(context, next.feature, acceptor);
@@ -392,28 +387,26 @@ export class DefaultCompletionProvider implements CompletionProvider {
         const assignment = getContainerOfType(crossRef.feature, ast.isAssignment);
         let node = context.node;
         if (assignment && node) {
-            if (crossRef.type && (crossRef.new || node.$type !== crossRef.type)) {
+            if (crossRef.type) {
                 node = {
                     $type: crossRef.type,
                     $container: node,
                     $containerProperty: crossRef.property
                 };
-            }
-            if (!context) {
-                return;
+                assignMandatoryAstProperties(this.astReflection, node);
             }
             const refInfo: ReferenceInfo = {
-                reference: {} as Reference,
+                reference: {
+                    $refText: ''
+                },
                 container: node,
                 property: assignment.feature
             };
             try {
                 const scope = this.scopeProvider.getScope(refInfo);
-                scope.getAllElements().forEach(e => {
-                    if (this.filterCrossReference(context, e)) {
-                        acceptor(context, this.createReferenceCompletionItem(e));
-                    }
-                });
+                for (const description of this.filterCrossReferences(context, scope.getAllElements())) {
+                    acceptor(context, this.createReferenceCompletionItem(description));
+                }
             } catch (err) {
                 console.error(err);
             }
@@ -436,8 +429,8 @@ export class DefaultCompletionProvider implements CompletionProvider {
         };
     }
 
-    protected filterCrossReference(_context: CompletionContext, _nodeDescription: AstNodeDescription): boolean {
-        return true;
+    protected filterCrossReferences(context: CompletionContext, nodeDescriptions: Stream<AstNodeDescription>): Stream<AstNodeDescription> {
+        return nodeDescriptions;
     }
 
     protected completionForKeyword(context: CompletionContext, keyword: ast.Keyword, acceptor: CompletionAcceptor): MaybePromise<void> {
@@ -452,7 +445,7 @@ export class DefaultCompletionProvider implements CompletionProvider {
         });
     }
 
-    protected filterKeyword(_context: CompletionContext, keyword: ast.Keyword): boolean {
+    protected filterKeyword(context: CompletionContext, keyword: ast.Keyword): boolean {
         // Filter out keywords that do not contain any word character
         return keyword.value.match(/[\w]/) !== null;
     }
