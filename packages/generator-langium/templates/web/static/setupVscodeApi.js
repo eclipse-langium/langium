@@ -1,13 +1,9 @@
-import { addMonacoStyles, MonacoEditorLanguageClientWrapper } from './bundleVscodeApi/index.js';
-import { configureBaseServices, configureWorker } from './setup.js';
+import { addMonacoStyles, defineUserServices, whenReadyTheme, MonacoEditorLanguageClientWrapper } from './bundleVscodeApi/index.js';
+import { configureWorker } from './setup.js';
 
 addMonacoStyles('monaco-editor-styles');
 
-export const setupConfigVscodeApi = (htmlElement) => {
-    const baseServices = configureBaseServices();
-    baseServices.enableTextmateService = true;
-    baseServices.enableThemeService = true;
-
+export const setupConfigVscodeApi = () => {
     const extensionFilesOrContents = new Map();
     const languageConfigUrl = new URL('../language-configuration.json', window.location.href);
     const textmateConfigUrl = new URL('./syntaxes/<%= language-id %>.tmLanguage.json', window.location.href);
@@ -15,42 +11,44 @@ export const setupConfigVscodeApi = (htmlElement) => {
     extensionFilesOrContents.set('/<%= language-id %>-grammar.json', textmateConfigUrl);
 
     return {
-        htmlElement: htmlElement,
         wrapperConfig: {
-            serviceConfig: baseServices,
+            serviceConfig: defineUserServices(),
             editorAppConfig: {
                 $type: 'vscodeApi',
                 languageId: '<%= language-id %>',
                 code: `// <%= RawLanguageName %> is running in the web!`,
                 useDiffEditor: false,
-                extension: {
-                    name: '<%= language-id %>-web',
-                    publisher: 'generator-langium',
-                    version: '1.0.0',
-                    engines: {
-                        vscode: '*'
+                awaitExtensionReadiness: [whenReadyTheme],
+                extensions: [{
+                    config: {
+                        name: '<%= language-id %>-web',
+                        publisher: 'generator-langium',
+                        version: '1.0.0',
+                        engines: {
+                            vscode: '*'
+                        },
+                        contributes: {
+                            languages: [{
+                                id: '<%= language-id %>',
+                                extensions: [
+                                    '.<%= language-id %>'
+                                ],
+                                configuration: './language-configuration.json'
+                            }],
+                            grammars: [{
+                                language: '<%= language-id %>',
+                                scopeName: 'source.<%= language-id %>',
+                                path: './<%= language-id %>-grammar.json'
+                            }]
+                        }
                     },
-                    contributes: {
-                        languages: [{
-                            id: '<%= language-id %>',
-                            extensions: [
-                                '.<%= language-id %>'
-                            ],
-                            configuration: './language-configuration.json'
-                        }],
-                        grammars: [{
-                            language: '<%= language-id %>',
-                            scopeName: 'source.<%= language-id %>',
-                            path: './<%= language-id %>-grammar.json'
-                        }]
-                    }
-                },
-                extensionFilesOrContents: extensionFilesOrContents,
+                    filesOrContents: extensionFilesOrContents,
+                }],                
                 userConfiguration: {
-                    json: `{
-    "workbench.colorTheme": "Default Dark Modern",
-    "editor.semanticHighlighting.enabled": true
-}`
+                    json: JSON.stringify({
+                        'workbench.colorTheme': 'Default Dark Modern',
+                        'editor.semanticHighlighting.enabled': true
+                    })
                 }
             }
         },
@@ -59,7 +57,7 @@ export const setupConfigVscodeApi = (htmlElement) => {
 };
 
 export const executeVscodeApi = async (htmlElement) => {
-    const userConfig = setupConfigVscodeApi(htmlElement);
+    const userConfig = setupConfigVscodeApi();
     const wrapper = new MonacoEditorLanguageClientWrapper();
-    await wrapper.start(userConfig);
+    await wrapper.start(userConfig, htmlElement);
 };

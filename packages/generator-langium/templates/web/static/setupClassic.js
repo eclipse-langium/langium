@@ -1,14 +1,13 @@
-import { addMonacoStyles, MonacoEditorLanguageClientWrapper } from './bundleClassic/index.js';
+import { addMonacoStyles, defineUserServices, MonacoEditorLanguageClientWrapper } from './bundleClassic/index.js';
 import monarchSyntax from "./syntaxes/<%= language-id %>.monarch.js";
-import { configureBaseServices, configureWorker } from './setup.js';
+import { configureWorker } from './setup.js';
 
 addMonacoStyles('monaco-editor-styles');
 
-export const setupConfigClassic = (htmlElement) => {
+export const setupConfigClassic = () => {
     return {
-        htmlElement: htmlElement,
         wrapperConfig: {
-            serviceConfig: configureBaseServices(),
+            serviceConfig: defineUserServices(),
             editorAppConfig: {
                 $type: 'classic',
                 languageId: '<%= language-id %>',
@@ -27,7 +26,7 @@ export const setupConfigClassic = (htmlElement) => {
 };
 
 export const executeClassic = async (htmlElement) => {
-    const userConfig = setupConfigClassic(htmlElement);
+    const userConfig = setupConfigClassic();
     const wrapper = new MonacoEditorLanguageClientWrapper();
-    await wrapper.start(userConfig);
+    await wrapper.start(userConfig, htmlElement);
 };
