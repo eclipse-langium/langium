@@ -11,10 +11,11 @@ import { CompositeGeneratorNode, traceToNode } from './generator-node.js';
 
 export interface JoinOptions<T> {
     filter?: (element: T, index: number, isLast: boolean) => boolean;
-    prefix?: (element: T, index: number, isLast: boolean) => Generated | undefined;
-    suffix?: (element: T, index: number, isLast: boolean) => Generated | undefined;
+    prefix?: Generated | ((element: T, index: number, isLast: boolean) => Generated | undefined);
+    suffix?: Generated | ((element: T, index: number, isLast: boolean) => Generated | undefined);
     separator?: Generated;
     appendNewLineIfNotEmpty?: true;
+    skipNewLineAfterLastItem?: true;
 }
 
 const defaultToGenerated = (e: unknown): Generated => e === undefined || typeof e === 'string' || isGeneratorNode(e) ? e : String(e);
@@ -100,23 +101,28 @@ export function joinToNode<T>(
 ): CompositeGeneratorNode | undefined {
 
     const toGenerated = typeof toGeneratedOrOptions === 'function' ? toGeneratedOrOptions : defaultToGenerated;
-    const { filter, prefix, suffix, separator, appendNewLineIfNotEmpty } = typeof toGeneratedOrOptions === 'object' ? toGeneratedOrOptions : options;
+    const { filter, prefix, suffix, separator, appendNewLineIfNotEmpty, skipNewLineAfterLastItem } = typeof toGeneratedOrOptions === 'object' ? toGeneratedOrOptions : options;
+
+    const prefixFunc = typeof prefix === 'function' ? prefix : (() => prefix);
+    const suffixFunc = typeof suffix === 'function' ? suffix : (() => suffix);
 
     return reduceWithIsLast(iterable, (node, it, i, isLast) => {
         if (filter && !filter(it, i, isLast)) {
             return node;
         }
         const content = toGenerated(it, i, isLast);
-        return (node ??= new CompositeGeneratorNode())
-            .append(prefix && prefix(it, i, isLast))
+        return content === undefined ? /* in this case don't append anything to */ node : /* otherwise: */ (node ??= new CompositeGeneratorNode())
+            .append(prefixFunc(it, i, isLast))
             .append(content)
-            .append(suffix && suffix(it, i, isLast))
-            .appendIf(!isLast && content !== undefined, separator)
+            .append(suffixFunc(it, i, isLast))
+            .appendIf(!isLast, separator)
             .appendNewLineIfNotEmptyIf(
                 // append 'newLineIfNotEmpty' elements only if 'node' has some content already,
                 //  as if the parent is an IndentNode with 'indentImmediately' set to 'false'
                 //  the indentation is not properly applied to the first non-empty line of the (this) child node
-                !node.isEmpty() && !!appendNewLineIfNotEmpty
+                // besides, append the newLine only if more lines are following, if appending a newline
+                //  is not suppressed for the final item
+                !node.isEmpty() && !!appendNewLineIfNotEmpty && (!isLast || !skipNewLineAfterLastItem)
             );
     });
 }
