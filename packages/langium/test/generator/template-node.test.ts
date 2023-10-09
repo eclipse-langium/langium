@@ -953,6 +953,17 @@ describe('Embedded forEach loops', () => {
     test('ForEach loop with element prefix and Array input', () => {
         const node = n`
             Data:
+              ${joinToNode(['a', 'b'], String, { prefix: ',' })}
+        `;
+        const text = toString(node);
+        expect(text).toBe(s`
+            Data:
+              ,a,b
+        `);
+    });
+    test('ForEach loop with element prefix and Array input 2 (function)', () => {
+        const node = n`
+            Data:
               ${joinToNode(['a', 'b'], String, { prefix: (e, i) => i === 0 ? '': ', ' })}
         `;
         const text = toString(node);
@@ -962,6 +973,17 @@ describe('Embedded forEach loops', () => {
         `);
     });
     test('ForEach loop with element suffix and Set input', () => {
+        const node = n`
+            Data:
+              ${joinToNode(new Set(['a', 'b']), String, { suffix: ',' })}
+        `;
+        const text = toString(node);
+        expect(text).toBe(s`
+            Data:
+              a,b,
+        `);
+    });
+    test('ForEach loop with element suffix and Set input 2 (function)', () => {
         const node = n`
             Data:
               ${joinToNode(new Set(['a', 'b']), String, { suffix: (e, i, isLast) => isLast ? '': ', ' })}
@@ -996,6 +1018,18 @@ describe('Embedded forEach loops', () => {
             
         `);
     });
+    test('ForEach loop with line breaks and skip line break after last line and Stream input', () => {
+        const node = n`
+            Data:
+              ${joinToNode(stream(['a', 'b']), String, { appendNewLineIfNotEmpty: true, skipNewLineAfterLastItem: true})}
+        `;
+        const text = toString(node);
+        expect(text).toBe(s`
+            Data:
+              a
+              b
+        `);
+    });
     test('ForEach loop with separator, line breaks, and Stream input', () => {
         const node = n`
             Data:
@@ -1010,6 +1044,19 @@ describe('Embedded forEach loops', () => {
             
         `);
     });
+    test('ForEach loop with separator, line breaks and skip line break after last line, and Stream input', () => {
+        const node = n`
+            Data:
+              ${joinToNode(stream(['a', undefined, 'b']), String, { separator: ',', appendNewLineIfNotEmpty: true, skipNewLineAfterLastItem: true})}
+        `;
+        const text = toString(node);
+        expect(text).toBe(s`
+            Data:
+              a,
+              undefined,
+              b
+        `);
+    });
     test('ForEach loop with omitted `undefined`, separator, line breaks and Stream input', () => {
         const node = n`
             Data:
@@ -1021,6 +1068,18 @@ describe('Embedded forEach loops', () => {
               a,
               b
             
+        `);
+    });
+    test('ForEach loop with omitted `undefined`, separator, line breaks and skip line break after last line, and Stream input', () => {
+        const node = n`
+            Data:
+              ${joinToNode(stream(['a', undefined, 'b']), e => e && String(e), { separator: ',', appendNewLineIfNotEmpty: true, skipNewLineAfterLastItem: true})}
+        `;
+        const text = toString(node);
+        expect(text).toBe(s`
+            Data:
+              a,
+              b
         `);
     });
 });
