@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import type { AstNode, Properties } from '../syntax-tree.js';
-import type { Generated } from './generator-node.js';
+import { type Generated, isGeneratorNode } from './generator-node.js';
 import type { SourceRegion } from './generator-tracing.js';
 import { CompositeGeneratorNode, traceToNode } from './generator-node.js';
 
@@ -16,6 +16,44 @@ export interface JoinOptions<T> {
     separator?: Generated;
     appendNewLineIfNotEmpty?: true;
 }
+
+const defaultToGenerated = (e: unknown): Generated => e === undefined || typeof e === 'string' || isGeneratorNode(e) ? e : String(e);
+
+/**
+ * Joins the elements of the given `iterable` of pre-computed instances of {@link Generated}
+ * by appending the results to a {@link CompositeGeneratorNode} being returned finally.
+ * Each individual element is tested to be a string, a {@link CompositeGeneratorNode},
+ * or `undefined` and included as is if that test is satisfied. Otherwise the result of
+ * applying {@link String} (string constructor) to the element is included.
+ *
+ * Note: empty strings being included in `iterable` are treated as ordinary string
+ * representations, while the value of `undefined` makes this function to ignore the
+ * corresponding item and no separator is appended, if configured.
+ *
+ * Examples:
+ * ```
+ *   exandToNode`
+ *       ${ joinToNode(['a', 'b'], { appendNewLineIfNotEmpty: true }) }
+ *
+ *       ${ joinToNode(new Set(['a', undefined, getElementNode()]), { separator: ',', appendNewLineIfNotEmpty: true }) }
+ *   `
+ * ```
+ *
+ * @param iterable an {@link Array} or {@link Iterable} providing the elements to be joined
+ *
+ * @param options optional config object for defining a `separator`, contributing specialized
+ *  `prefix` and/or `suffix` providers, and activating conditional line-break insertion. In addition,
+ *  a dedicated `filter` function can be provided that is required get provided with the original
+ *  element indices in the aformentioned functions, if the list is to be filtered. If
+ *  {@link Array.filter} would be applied to the original list, the indices will be those of the
+ *  filtered list during subsequent processing that in particular will cause confusion when using
+ *  the tracing variant of this function named ({@link joinTracedToNode}).
+ * @returns the resulting {@link CompositeGeneratorNode} representing `iterable`'s content
+ */
+export function joinToNode<Generated>(
+    iterable: Iterable<Generated> | Generated[],
+    options?: JoinOptions<Generated>
+): CompositeGeneratorNode | undefined;
 
 /**
  * Joins the elements of the given `iterable` by applying `toGenerated` to each element
@@ -37,7 +75,8 @@ export interface JoinOptions<T> {
  * @param iterable an {@link Array} or {@link Iterable} providing the elements to be joined
  *
  * @param toGenerated a callback converting each individual element to a string, a
- *  {@link CompositeGeneratorNode}, or undefined if to be omitted, defaults to {@link String}
+ *  {@link CompositeGeneratorNode}, or to `undefined` if to be omitted, defaults to the `identity`
+ *  for strings, generator nodes, and `undefined`, and to {@link String} otherwise.
  *
  * @param options optional config object for defining a `separator`, contributing specialized
  *  `prefix` and/or `suffix` providers, and activating conditional line-break insertion. In addition,
@@ -50,9 +89,18 @@ export interface JoinOptions<T> {
  */
 export function joinToNode<T>(
     iterable: Iterable<T> | T[],
-    toGenerated: (element: T, index: number, isLast: boolean) => Generated = String,
-    { filter, prefix, suffix, separator, appendNewLineIfNotEmpty }: JoinOptions<T> = {}
+    toGenerated?: ((element: T, index: number, isLast: boolean) => Generated),
+    options?: JoinOptions<T>
+): CompositeGeneratorNode | undefined;
+
+export function joinToNode<T>(
+    iterable: Iterable<T> | T[],
+    toGeneratedOrOptions: ((element: T, index: number, isLast: boolean) => Generated) | JoinOptions<T> = defaultToGenerated,
+    options: JoinOptions<T> = {}
 ): CompositeGeneratorNode | undefined {
+
+    const toGenerated = typeof toGeneratedOrOptions === 'function' ? toGeneratedOrOptions : defaultToGenerated;
+    const { filter, prefix, suffix, separator, appendNewLineIfNotEmpty } = typeof toGeneratedOrOptions === 'object' ? toGeneratedOrOptions : options;
 
     return reduceWithIsLast(iterable, (node, it, i, isLast) => {
         if (filter && !filter(it, i, isLast)) {
@@ -103,7 +151,7 @@ export function joinToNode<T>(
  *   `.appendNewLine()
  */
 export function joinTracedToNode<T extends AstNode>(astNode: T, property?: Properties<T>): // eslint-disable-next-line @typescript-eslint/indent
-    <E>(iterable: Iterable<E> | E[], toGenerated?: (element: E, index: number, isLast: boolean) => Generated, options?: JoinOptions<E>) => CompositeGeneratorNode | undefined;
+    <E>(iterable: Iterable<E> | E[], toGenerated?: ((element: E, index: number, isLast: boolean) => Generated) | JoinOptions<E>, options?: JoinOptions<E>) => CompositeGeneratorNode | undefined;
 
 /**
  * Convenience function for joining the elements of some `iterable` and gathering tracing information
@@ -129,7 +177,7 @@ export function joinTracedToNode<T extends AstNode>(astNode: T, property?: Prope
  *   `.appendNewLine()
  */
 export function joinTracedToNode(sourceRegion: SourceRegion | undefined): // eslint-disable-next-line @typescript-eslint/indent
-    <E>(iterable: Iterable<E> | E[], toGenerated?: (element: E, index: number, isLast: boolean) => Generated, options?: JoinOptions<E>) => CompositeGeneratorNode | undefined;
+    <E>(iterable: Iterable<E> | E[], toGenerated?: ((element: E, index: number, isLast: boolean) => Generated) | JoinOptions<E>, options?: JoinOptions<E>) => CompositeGeneratorNode | undefined;
 
 /**
  * Convenience function for joining the elements of some `iterable` and gathering tracing information
@@ -158,12 +206,14 @@ export function joinTracedToNode(sourceRegion: SourceRegion | undefined): // esl
  *   `.appendNewLine()
  */
 export function joinTracedToNode(sourceRegions: SourceRegion[]): // eslint-disable-next-line @typescript-eslint/indent
-    <E>(iterable: Iterable<E> | E[], toGenerated?: (element: E, index: number, isLast: boolean) => Generated, options?: JoinOptions<E>) => CompositeGeneratorNode | undefined;
+    <E>(iterable: Iterable<E> | E[], toGenerated?: ((element: E, index: number, isLast: boolean) => Generated) | JoinOptions<E>, options?: JoinOptions<E>) => CompositeGeneratorNode | undefined;
 
 // implementation:
 export function joinTracedToNode<T extends AstNode>(source: T | undefined | SourceRegion | SourceRegion[], property?: Properties<T>): // eslint-disable-next-line @typescript-eslint/indent
-    <E>(iterable: Iterable<E> | E[], toGenerated?: (element: E, index: number, isLast: boolean) => Generated, options?: JoinOptions<E>) => CompositeGeneratorNode | undefined {
-    return (iterable, toGenerated = String, options) => {
+    <E>(iterable: Iterable<E> | E[], toGenerated?: ((element: E, index: number, isLast: boolean) => Generated) | JoinOptions<E>, options?: JoinOptions<E>) => CompositeGeneratorNode | undefined {
+    return (iterable, toGeneratedOrOptions, options) => {
+        options ??= typeof toGeneratedOrOptions === 'object' ? toGeneratedOrOptions : undefined;
+        const toGenerated = typeof toGeneratedOrOptions === 'function' ? toGeneratedOrOptions : defaultToGenerated;
         return traceToNode(source as T, property)(
             joinToNode(
                 iterable,
@@ -209,7 +259,7 @@ export function joinTracedToNode<T extends AstNode>(source: T | undefined | Sour
  *   `.appendNewLine()
  */
 export function joinTracedToNodeIf<T extends AstNode>(condition: boolean, astNode: T, property?: Properties<T>): // eslint-disable-next-line @typescript-eslint/indent
-    <E>(iterable: Iterable<E> | E[], toGenerated?: (element: E, index: number, isLast: boolean) => Generated, options?: JoinOptions<E>) => CompositeGeneratorNode | undefined;
+    <E>(iterable: Iterable<E> | E[], toGenerated?: ((element: E, index: number, isLast: boolean) => Generated) | JoinOptions<E>, options?: JoinOptions<E>) => CompositeGeneratorNode | undefined;
 
 /**
  * Convenience function for joining the elements of some `iterable` and gathering tracing information
@@ -241,7 +291,7 @@ export function joinTracedToNodeIf<T extends AstNode>(condition: boolean, astNod
  *   `.appendNewLine()
  */
 export function joinTracedToNodeIf(condition: boolean, sourceRegion: SourceRegion | undefined | (() => SourceRegion | undefined)): // eslint-disable-next-line @typescript-eslint/indent
-    <E>(iterable: Iterable<E> | E[], toGenerated?: (element: E, index: number, isLast: boolean) => Generated, options?: JoinOptions<E>) => CompositeGeneratorNode | undefined;
+    <E>(iterable: Iterable<E> | E[], toGenerated?: ((element: E, index: number, isLast: boolean) => Generated) | JoinOptions<E>, options?: JoinOptions<E>) => CompositeGeneratorNode | undefined;
 
 /**
  * Convenience function for joining the elements of some `iterable` and gathering tracing information
@@ -275,11 +325,11 @@ export function joinTracedToNodeIf(condition: boolean, sourceRegion: SourceRegio
  *   `.appendNewLine()
  */
 export function joinTracedToNodeIf(condition: boolean, sourceRegions: SourceRegion[] | (() => SourceRegion[])): // eslint-disable-next-line @typescript-eslint/indent
-    <E>(iterable: Iterable<E> | E[], toGenerated?: (element: E, index: number, isLast: boolean) => Generated, options?: JoinOptions<E>) => CompositeGeneratorNode | undefined;
+    <E>(iterable: Iterable<E> | E[], toGenerated?: ((element: E, index: number, isLast: boolean) => Generated) | JoinOptions<E>, options?: JoinOptions<E>) => CompositeGeneratorNode | undefined;
 
 // implementation:
 export function joinTracedToNodeIf<T extends AstNode>(condition: boolean, source: T | undefined | SourceRegion | SourceRegion[] | (() => undefined | SourceRegion | SourceRegion[]), property?: Properties<T>): // eslint-disable-next-line @typescript-eslint/indent
-    <E>(iterable: Iterable<E> | E[], toGenerated?: (element: E, index: number, isLast: boolean) => Generated, options?: JoinOptions<E>) => CompositeGeneratorNode | undefined {
+    <E>(iterable: Iterable<E> | E[], toGenerated?: ((element: E, index: number, isLast: boolean) => Generated) | JoinOptions<E>, options?: JoinOptions<E>) => CompositeGeneratorNode | undefined {
     return condition ? joinTracedToNode((typeof source === 'function' ? source() : source) as T, property) : () => undefined;
 }
 
