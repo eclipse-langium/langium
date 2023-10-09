@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import { describe, expect, test } from 'vitest';
-import { joinToNode, expandToNode as n, expandToString as s, stream, CompositeGeneratorNode, EOL, toString } from 'langium';
+import { joinToNode, expandToNode as n, expandToString as s, stream, CompositeGeneratorNode, EOL, toString, NL } from 'langium';
 
 // deactivate the eslint check 'no-unexpected-multiline' with the message
 //  'Unexpected newline between template tag and template literal', as that's done on purposes in tests below!
@@ -846,6 +846,41 @@ describe('Embedded forEach loops', () => {
             Footer:
         `);
     });
+    test('ForEach loop with empty iterable 2 (\'toGenerated\' === \'undefined\')', () => {
+        const node = n`
+            Data:
+              ${joinToNode([], undefined, { appendNewLineIfNotEmpty: true})}
+            Footer:
+        `;
+        const text = toString(node);
+        expect(text).toBe(s`
+            Data:
+            Footer:
+        `);
+    });
+    test('ForEach loop with empty iterable 3 (no \'toGenerated\')', () => {
+        const node = n`
+            Data:
+              ${joinToNode([], { appendNewLineIfNotEmpty: true})}
+            Footer:
+        `;
+        const text = toString(node);
+        expect(text).toBe(s`
+            Data:
+            Footer:
+        `);
+    });
+    test('ForEach loop with Array input (no \'toGenerated\', no \'options\')', () => {
+        const node = n`
+            Data:
+              ${joinToNode(['a', 'b'])}
+        `;
+        const text = toString(node);
+        expect(text).toBe(s`
+            Data:
+              ab
+        `);
+    });
     test('ForEach loop with separator and Array input', () => {
         const node = n`
             Data:
@@ -855,6 +890,64 @@ describe('Embedded forEach loops', () => {
         expect(text).toBe(s`
             Data:
               a, b
+        `);
+    });
+    test('ForEach loop with separator and Array input 2 (\'toGenerated\' === \'undefined\')', () => {
+        const node = n`
+            Data:
+              ${joinToNode(['a', 'b'], undefined, { separator: ', ' })}
+        `;
+        const text = toString(node);
+        expect(text).toBe(s`
+            Data:
+              a, b
+        `);
+    });
+    test('ForEach loop with separator and Array input 3 (no \'toGenerated\')', () => {
+        const node = n`
+            Data:
+              ${joinToNode(['a', 'b'], { separator: ', ' })}
+        `;
+        const text = toString(node);
+        expect(text).toBe(s`
+            Data:
+              a, b
+        `);
+    });
+    test('ForEach loop with separator and Array of generator nodes input', () => {
+        const node = n`
+            Data:
+              ${joinToNode([n`a`, ' b', NL], n => n, { separator: ',' })}
+        `;
+        const text = toString(node);
+        expect(text).toBe(s`
+            Data:
+              a, b,
+
+        `);
+    });
+    test('ForEach loop with separator and Array of generator nodes input 2 (\'toGenerated\' === \'undefined\')', () => {
+        const node = n`
+            Data:
+              ${joinToNode([n`a`, ' b', NL], undefined, { separator: ',' })}
+        `;
+        const text = toString(node);
+        expect(text).toBe(s`
+            Data:
+              a, b,
+
+        `);
+    });
+    test('ForEach loop with separator and Array of generator nodes input 3 (no \'toGenerated\')', () => {
+        const node = n`
+            Data:
+              ${joinToNode([n`a`, ' b', NL], { separator: ',' })}
+        `;
+        const text = toString(node);
+        expect(text).toBe(s`
+            Data:
+              a, b,
+
         `);
     });
     test('ForEach loop with element prefix and Array input', () => {
@@ -877,6 +970,17 @@ describe('Embedded forEach loops', () => {
         expect(text).toBe(s`
             Data:
               a, b
+        `);
+    });
+    test('ForEach loop with Stream input (no \'toGenerated\', no \'options\')', () => {
+        const node = n`
+            Data:
+              ${joinToNode(stream('a', 'b'))}
+        `;
+        const text = toString(node);
+        expect(text).toBe(s`
+            Data:
+              ab
         `);
     });
     test('ForEach loop with line breaks and Stream input', () => {

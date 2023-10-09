@@ -532,7 +532,7 @@ describe('tracing using $cstNode or $textRegion', () => {
         const source = await parse2('AH "IH" OH 0815') as AstNode & { values: Array<string | number> };
         const { text, trace } = toStringAndTrace(
             expandToNode`
-                beginning ${ joinTracedToNode(source, 'values')(source.values, undefined, { separator: ' ' }) } end
+                beginning ${ joinTracedToNode(source, 'values')(source.values, { separator: ' ' }) } end
             `
         );
         persistSourceRegions(trace);
