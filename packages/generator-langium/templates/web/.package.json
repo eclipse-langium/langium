@@ -1,9 +1,9 @@
 {
     "scripts": {
         "prepare:static": "node ./scripts/prepare.js",
-        "build:web": "npm run build && npm run prepare:static && npm run build:monarch && npm run build:worker && npm run build:bundles",
+        "build:web": "npm run build && npm run prepare:static && npm run build:monarch && npm run build:worker && npm run build:bundle",
         "build:monarch": "tsc -b tsconfig.monarch.json",
-        "build:bundles": "vite --config ./vite.bundle.classic.config.ts build && vite --config ./vite.bundle.vscodeApi.config.ts build",
+        "build:bundle": "vite --config ./vite.bundle.config.ts build",
         "build:worker": "esbuild --minify ./out/language/main-browser.js --bundle --format=iife --outfile=./static/worker/<%= language-id %>-server-worker.js",
         "dev": "vite",
         "dev:debug": "vite --debug --force",
@@ -11,13 +11,9 @@
     },
     "dependencies": {
         "monaco-editor-workers": "~0.43.0",
-        "monaco-editor-wrapper": "~3.2.4",
-        "@codingame/monaco-vscode-configuration-service-override": "~1.82.3",
-        "@codingame/monaco-vscode-editor-service-override": "~1.82.3",
-        "@codingame/monaco-vscode-keybindings-service-override": "~1.82.3",
-        "@codingame/monaco-vscode-textmate-service-override": "~1.82.3",
-        "@codingame/monaco-vscode-theme-defaults-default-extension": "~1.82.3",
-        "@codingame/monaco-vscode-theme-service-override": "~1.82.3"
+        "monaco-editor-wrapper": "~3.3.0-next.2",
+        "@codingame/monaco-vscode-editor-service-override": "~1.82.5",
+        "@codingame/monaco-vscode-keybindings-service-override": "~1.82.5"
     },
     "devDependencies": {
         "vite": "~4.4.11"

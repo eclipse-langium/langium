@@ -4,17 +4,17 @@ import path from 'node:path';
 export default defineConfig({
     build: {
         lib: {
-            entry: path.resolve(__dirname, 'scripts', 'bundleClassic.js'),
-            name: 'monaco-classic',
+            entry: path.resolve(__dirname, 'scripts', 'bundle.js'),
+            name: 'monaco-bundle',
             fileName: () => 'index.js',
             formats: ['es']
         },
-        outDir: 'static/bundleClassic',
-        assetsDir: 'static/bundleClassic/assets',
+        outDir: 'static/bundle',
+        assetsDir: 'static/bundle/assets',
         emptyOutDir: true,
         rollupOptions: {
             output: {
-                name: 'monaco-classic',
+                name: 'monaco-bundle',
                 exports: 'named',
                 sourcemap: true,
                 assetFileNames: (assetInfo) => {

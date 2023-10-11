@@ -1,9 +1,9 @@
-import { addMonacoStyles, defineUserServices, whenReadyTheme, MonacoEditorLanguageClientWrapper } from './bundleVscodeApi/index.js';
+import { addMonacoStyles, defineUserServices, MonacoEditorLanguageClientWrapper } from './bundle/index.js';
 import { configureWorker } from './setup.js';
 
 addMonacoStyles('monaco-editor-styles');
 
-export const setupConfigVscodeApi = () => {
+export const setupConfigExtended = () => {
     const extensionFilesOrContents = new Map();
     const languageConfigUrl = new URL('../language-configuration.json', window.location.href);
     const textmateConfigUrl = new URL('./syntaxes/<%= language-id %>.tmLanguage.json', window.location.href);
@@ -14,11 +14,10 @@ export const setupConfigVscodeApi = () => {
         wrapperConfig: {
             serviceConfig: defineUserServices(),
             editorAppConfig: {
-                $type: 'vscodeApi',
+                $type: 'extended',
                 languageId: '<%= language-id %>',
                 code: `// <%= RawLanguageName %> is running in the web!`,
                 useDiffEditor: false,
-                awaitExtensionReadiness: [whenReadyTheme],
                 extensions: [{
                     config: {
                         name: '<%= language-id %>-web',
@@ -56,8 +55,8 @@ export const setupConfigVscodeApi = () => {
     };
 };
 
-export const executeVscodeApi = async (htmlElement) => {
-    const userConfig = setupConfigVscodeApi();
+export const executeExtended = async (htmlElement) => {
+    const userConfig = setupConfigExtended();
     const wrapper = new MonacoEditorLanguageClientWrapper();
     await wrapper.start(userConfig, htmlElement);
 };

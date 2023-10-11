@@ -19,10 +19,10 @@
         </footer>
         <!-- Monaco Configuration -->
         <script type="module">
-             import { executeVscodeApi } from './setupVscodeApi.js';
+             import { executeExtended } from './setupExtended.js';
 
             // keep a reference to a promise for when the editor is finished starting, we'll use this to setup the canvas on load
-            const startingPromise = executeVscodeApi(document.getElementById('monaco-editor-root'));
+            const startingPromise = executeExtended(document.getElementById('monaco-editor-root'));
         </script>
     </body>
 </html>
