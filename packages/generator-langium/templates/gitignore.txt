@@ -4,5 +4,8 @@
 !.vscode/tasks.json
 node_modules/
 out/
-syntaxes/
 src/language/generated/
+static/bundle/
+static/monaco-editor-workers/
+static/worker/
+syntaxes/

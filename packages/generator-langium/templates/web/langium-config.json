@@ -5,10 +5,10 @@
         "grammar": "src/language/<%= language-id %>.langium",
         "fileExtensions": <%= file-extension %>,
         "textMate": {
-            "out": "static/syntaxes/<%= language-id %>.tmLanguage.json"
+            "out": "syntaxes/<%= language-id %>.tmLanguage.json"
         },
         "monarch": {
-            "out": "static/syntaxes/<%= language-id %>.monarch.ts"
+            "out": "syntaxes/<%= language-id %>.monarch.ts"
         }
     }],
     "out": "src/language/generated"

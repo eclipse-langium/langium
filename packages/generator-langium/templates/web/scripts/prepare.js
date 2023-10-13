@@ -1,7 +1,7 @@
 import { cp, existsSync, mkdirSync } from "node:fs";
 
-if (!existsSync('./static/syntaxes')) {
-    mkdirSync('./static/syntaxes');
+if (!existsSync('./syntaxes')) {
+    mkdirSync('./syntaxes');
 }
 if (!existsSync('./static/worker')) {
     mkdirSync('./static/worker');

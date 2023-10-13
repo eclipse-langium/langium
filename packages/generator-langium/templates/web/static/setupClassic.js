@@ -1,5 +1,5 @@
 import { addMonacoStyles, defineUserServices, MonacoEditorLanguageClientWrapper } from './bundle/index.js';
-import monarchSyntax from "./syntaxes/<%= language-id %>.monarch.js";
+import monarchSyntax from "../syntaxes/<%= language-id %>.monarch.js";
 import { configureWorker } from './setup.js';
 
 addMonacoStyles('monaco-editor-styles');

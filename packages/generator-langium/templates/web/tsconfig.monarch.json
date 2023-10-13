@@ -3,7 +3,7 @@
         "target": "ES2017",
         "module": "ESNext",
         "sourceMap": true,
-        "outDir": "static/syntaxes",
+        "outDir": "syntaxes",
         "strict": true,
         "noUnusedLocals": true,
         "noImplicitReturns": true,
@@ -14,7 +14,7 @@
         "forceConsistentCasingInFileNames": true
     },
     "include": [
-        "static/syntaxes/<%= language-id %>.monarch.ts"
+        "syntaxes/<%= language-id %>.monarch.ts"
     ],
     "exclude": ["out", "node_modules"]
 }

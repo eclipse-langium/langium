@@ -10,10 +10,12 @@
         "serve": "npm run dev"
     },
     "dependencies": {
-        "monaco-editor-workers": "~0.43.0",
-        "monaco-editor-wrapper": "~3.3.0-next.2",
         "@codingame/monaco-vscode-editor-service-override": "~1.82.5",
-        "@codingame/monaco-vscode-keybindings-service-override": "~1.82.5"
+        "@codingame/monaco-vscode-keybindings-service-override": "~1.82.5",
+        "monaco-editor-workers": "~0.43.0",
+        "monaco-editor-wrapper": "~3.3.0-next.3",
+        "monaco-languageclient": "~6.5.3",
+        "vscode-languageserver": "~8.0.2"
     },
     "devDependencies": {
         "vite": "~4.4.11"

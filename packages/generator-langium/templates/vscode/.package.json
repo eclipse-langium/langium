@@ -16,7 +16,7 @@
         "grammars": [{
             "language": "<%= language-id %>",
             "scopeName": "source.<%= language-id %>",
-            "path": "./syntaxes/<%= language-id %>.tmLanguage.json"
+            "path": "syntaxes/<%= language-id %>.tmLanguage.json"
         }]
     },
     "activationEvents": [
@@ -29,7 +29,8 @@
         "watch": "concurrently -n tsc,esbuild -c blue,yellow \"tsc -b tsconfig.json --watch\" \"node esbuild.mjs --watch\""
     },
     "dependencies": {
-        "vscode-languageclient": "~8.1.0"
+        "vscode-languageclient": "~8.1.0",
+        "vscode-languageserver": "~8.1.0"
     },
     "devDependencies": {
         "@types/vscode": "~1.67.0",
