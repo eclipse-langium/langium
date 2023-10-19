@@ -5,9 +5,10 @@
  ******************************************************************************/
 
 import { describe, test } from 'vitest';
-import { normalizeEOL } from 'langium';
-import * as path from 'node:path';
+import * as path from 'path';
 import { createHelpers } from 'yeoman-test';
+
+const currentUrl = new URL('../', import.meta.url).pathname;
 
 const answersForCore = {
     extensionName: 'hello-world',
@@ -22,16 +23,11 @@ const answersForCore = {
 describe('Check yeoman generator works', () => {
 
     test('Should produce files for Core', async () => {
-
-        const context = createHelpers({}).run(path.join(__dirname, '../app'));
-        context.targetDirectory = path.join(__dirname, '../../../examples/hello-world'); // generate in examples
-        const targetRoot = path.join(__dirname, '../../../examples');
+        const targetRoot = path.join(currentUrl, answersForCore.extensionName) + '/';
+        const context = createHelpers({}).run(path.join(currentUrl, './app'));
+        context.targetDirectory = targetRoot;
         context.cleanTestDirectory(true); // clean-up examples/hello-world
         await context
-            .onGenerator(async (generator) => {
-                // will generate into examples/hello-world instead of examples/hello-world/hello-world
-                generator.destinationRoot(targetRoot, false);
-            })
             .withAnswers(answersForCore)
             .withArguments('skip-install')
             .then((result) => {
@@ -87,8 +83,7 @@ const PACKAGE_JSON_EXPECTATION: Record<string, any> = {
     }
 };
 
-const TASKS_JSON_EXPECTATION =
-normalizeEOL(`{
+const TASKS_JSON_EXPECTATION = `{
     // See https://go.microsoft.com/fwlink/?LinkId=733558
     // for the documentation about the tasks.json format
     "version": "2.0.0",
@@ -109,4 +104,4 @@ normalizeEOL(`{
         }
     ]
 }
-`);
+`;
