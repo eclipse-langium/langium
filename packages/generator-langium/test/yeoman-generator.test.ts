@@ -11,9 +11,9 @@ import { createHelpers } from 'yeoman-test';
 const currentUrl = new URL('../', import.meta.url).pathname;
 
 const answersForCore = {
-    extensionName: 'hello-world',
-    rawLanguageName: 'Hello World',
-    fileExtension: '.hello',
+    extensionName: 'test-language',
+    rawLanguageName: 'Test Language',
+    fileExtension: '.test',
     includeVSCode: false,
     includeCLI: false,
     includeWeb: false,
@@ -26,28 +26,29 @@ describe('Check yeoman generator works', () => {
         const targetRoot = path.join(currentUrl, answersForCore.extensionName) + '/';
         const context = createHelpers({}).run(path.join(currentUrl, './app'));
         context.targetDirectory = targetRoot;
-        context.cleanTestDirectory(true); // clean-up examples/hello-world
+        context.cleanTestDirectory(true); // clean-up examples/test-language
         await context
             .withAnswers(answersForCore)
             .withArguments('skip-install')
             .then((result) => {
                 const files = [
-                    targetRoot + '/hello-world/.eslintrc.json',
-                    targetRoot + '/hello-world/.gitignore',
-                    targetRoot + '/hello-world/langium-config.json',
-                    targetRoot + '/hello-world/langium-quickstart.md',
-                    targetRoot + '/hello-world/tsconfig.json',
-                    targetRoot + '/hello-world/package.json',
-                    targetRoot + '/hello-world/.vscode/extensions.json',
-                    targetRoot + '/hello-world/.vscode/tasks.json',
-                    targetRoot + '/hello-world/src/language/hello-world-module.ts',
-                    targetRoot + '/hello-world/src/language/hello-world-validator.ts',
-                    targetRoot + '/hello-world/src/language/hello-world.langium'
+                    targetRoot + '.eslintrc.json',
+                    targetRoot + '.gitignore',
+                    targetRoot + 'langium-config.json',
+                    targetRoot + 'langium-quickstart.md',
+                    targetRoot + 'tsconfig.json',
+                    targetRoot + 'package.json',
+                    targetRoot + '.vscode/extensions.json',
+                    targetRoot + '.vscode/tasks.json',
+                    targetRoot + 'src/language/test-language-module.ts',
+                    targetRoot + 'src/language/test-language-validator.ts',
+                    targetRoot + 'src/language/test-language.langium'
                 ];
                 result.assertFile(files);
-                result.assertJsonFileContent(targetRoot + '/hello-world/package.json', PACKAGE_JSON_EXPECTATION);
-                result.assertFileContent(targetRoot + '/hello-world/.vscode/tasks.json', TASKS_JSON_EXPECTATION);
+                result.assertJsonFileContent(targetRoot + 'package.json', PACKAGE_JSON_EXPECTATION);
+                result.assertFileContent(targetRoot + '.vscode/tasks.json', TASKS_JSON_EXPECTATION);
             });
+        context.cleanup();
     }, 120_000);
 
 });
@@ -59,7 +60,7 @@ const langiumCliVersion = `~${require('../../langium-cli/package.json').version}
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const PACKAGE_JSON_EXPECTATION: Record<string, any> = {
-    name: 'hello-world',
+    name: 'test-language',
     description: 'Please enter a brief description here',
     version: '0.0.1',
     files: ['out', 'src'],
@@ -89,14 +90,14 @@ const TASKS_JSON_EXPECTATION = `{
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "Build hello-world",
+            "label": "Build test-language",
             "command": "npm run langium:generate && npm run build",
             "type": "shell",
             "group": {
                 "kind": "build",
                 "isDefault": true
             },
-            "detail": "Langium: Generate grammar and build the hello-world language",
+            "detail": "Langium: Generate grammar and build the test-language language",
             "icon": {
                 "color": "terminal.ansiGreen",
                 "id": "server-process"
