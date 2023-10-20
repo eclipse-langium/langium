@@ -39,7 +39,8 @@ export const AllSemanticTokenTypes: Record<string, number> = {
     [SemanticTokenTypes.struct]: 18,
     [SemanticTokenTypes.type]: 19,
     [SemanticTokenTypes.typeParameter]: 20,
-    [SemanticTokenTypes.variable]: 21
+    [SemanticTokenTypes.variable]: 21,
+    [SemanticTokenTypes.decorator]: 22
 };
 
 export const AllSemanticTokenModifiers: Record<string, number> = {
@@ -452,4 +453,3 @@ export namespace SemanticTokensDecoder {
         return res;
     }
 }
-
