@@ -4,27 +4,17 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import * as vscodeUri from 'vscode-uri';
-
-// Node.js and some bundlers don't deal well with the type information in `vscode-uri`
-// This is a workaround to support all runtimes and bundlers
-let uri = vscodeUri;
-if ('default' in uri) {
-    uri = uri.default as typeof uri;
-}
-
-type URI = vscodeUri.URI;
-const URI = uri.URI;
+import { URI, Utils } from 'vscode-uri';
 
 export { URI };
 
 export namespace UriUtils {
 
-    export const basename = uri.Utils.basename;
-    export const dirname = uri.Utils.dirname;
-    export const extname = uri.Utils.extname;
-    export const joinPath = uri.Utils.joinPath;
-    export const resolvePath = uri.Utils.resolvePath;
+    export const basename = Utils.basename;
+    export const dirname = Utils.dirname;
+    export const extname = Utils.extname;
+    export const joinPath = Utils.joinPath;
+    export const resolvePath = Utils.resolvePath;
 
     export function equals(a?: URI | string, b?: URI | string): boolean {
         return a?.toString() === b?.toString();
