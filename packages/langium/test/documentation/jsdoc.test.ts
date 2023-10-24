@@ -150,6 +150,16 @@ describe('JSDoc rendering', () => {
         expect(parsed.toMarkdown()).toBe('```\nA\n\n\nB\nC\n\n```');
     });
 
+    test('Renders paragraphs in markdown', () => {
+        const parsed = parseJSDoc('/**\n * A\n * B\n * \n * C\n */');
+        expect(parsed.toMarkdown()).toBe('A\n B\n\n C');
+    });
+
+    test('Renders paragraphs in plain text', () => {
+        const parsed = parseJSDoc('/**\n * A\n * B\n * \n * C\n */');
+        expect(parsed.toString()).toBe('A\n B\n\n C');
+    });
+
     test('Renders single-line tags in markdown', () => {
         const parsed = parseJSDoc('/** @deprecated Since 1.0 */');
         expect(parsed.toMarkdown()).toBe('*@deprecated* — Since 1.0');

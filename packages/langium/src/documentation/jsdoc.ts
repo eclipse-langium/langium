@@ -194,7 +194,7 @@ function tokenize(context: TokenizationContext): JSDocToken[] {
         }
 
         line = line.substring(0, lastCharacter(line));
-        const whitespaceEnd = skipWhitespace(line, 0);
+        const whitespaceEnd = skipWhitespace(line, index);
 
         if (whitespaceEnd >= line.length) {
             // Only create a break token when we already have previous tokens
