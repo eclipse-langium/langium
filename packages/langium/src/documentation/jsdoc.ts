@@ -60,11 +60,11 @@ export interface JSDocParseOptions {
     /**
      * The symbol that start a line of your comment format. Defaults to `*`.
      */
-    readonly end?: RegExp | string
+    readonly line?: RegExp | string
     /**
      * The end symbol of your comment format. Defaults to `*\/`.
      */
-    readonly line?: RegExp | string
+    readonly end?: RegExp | string
 }
 
 export interface JSDocRenderOptions {
