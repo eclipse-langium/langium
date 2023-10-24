@@ -93,7 +93,7 @@
   "dependencies": {
     "langium": "2.0.1",
     "langium-railroad": "2.0.0",
-    "vscode-languageserver": "~8.1.0",
+    "vscode-languageserver": "~9.0.1",
     "ignore": "~5.2.4"
   },
   "volta": {

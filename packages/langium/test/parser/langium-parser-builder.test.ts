@@ -682,6 +682,7 @@ describe('Handling EOF', () => {
         const grammar = `
         grammar Test
         entry Main: greet='Hello!' EOF;
+        hidden terminal WS: /\\s+/;
         `;
         const services = await createLangiumGrammarServices(EmptyFileSystem);
         const output = await parseHelper(services.grammar)(grammar, {validation: true});
@@ -716,6 +717,7 @@ describe('Handling EOF', () => {
         const grammar = `
         grammar Test
         entry Main: greet='Hello!' EOF name='user!';
+        hidden terminal WS: /\\s+/;
         `;
         const services = await createServicesForGrammar({ grammar });
         const parse = parseHelper(services);

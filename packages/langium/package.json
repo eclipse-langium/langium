@@ -60,8 +60,8 @@
   "dependencies": {
     "chevrotain": "~11.0.3",
     "chevrotain-allstar": "~0.3.0",
-    "vscode-languageserver": "~8.1.0",
-    "vscode-languageserver-textdocument": "~1.0.8",
+    "vscode-languageserver": "~9.0.1",
+    "vscode-languageserver-textdocument": "~1.0.11",
     "vscode-uri": "~3.0.7"
   },
   "devDependencies": {
