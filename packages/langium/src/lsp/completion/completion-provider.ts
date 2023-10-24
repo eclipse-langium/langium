@@ -237,13 +237,12 @@ export class DefaultCompletionProvider implements CompletionProvider {
         if (dataTypeRuleOffsets) {
             const [ruleStart, ruleEnd] = dataTypeRuleOffsets;
             const parentNode = findLeafNodeAtOffset(cst, ruleStart)?.astNode;
-            const previousTokenFeatures = this.findFeaturesAt(textDocument, ruleStart);
             yield {
                 ...partialContext,
                 node: parentNode,
                 tokenOffset: ruleStart,
                 tokenEndOffset: ruleEnd,
-                features: previousTokenFeatures,
+                features: this.findFeaturesAt(textDocument, ruleStart),
             };
         }
         // For all other purposes, it's enough to jump to the start of the current/previous token
@@ -251,35 +250,47 @@ export class DefaultCompletionProvider implements CompletionProvider {
         let astNode: AstNode | undefined;
         if (previousTokenStart !== undefined && previousTokenEnd !== undefined && previousTokenEnd === offset) {
             astNode = findLeafNodeAtOffset(cst, previousTokenStart)?.astNode;
-            const previousTokenFeatures = this.findFeaturesAt(textDocument, previousTokenStart);
+            // This context aims to complete the current feature
             yield {
                 ...partialContext,
                 node: astNode,
                 tokenOffset: previousTokenStart,
                 tokenEndOffset: previousTokenEnd,
-                features: previousTokenFeatures,
+                features: this.findFeaturesAt(textDocument, previousTokenStart),
+            };
+            // This context aims to complete the immediate next feature (if one exists at the current cursor position)
+            // It uses the previous AST node for that.
+            yield {
+                ...partialContext,
+                node: astNode,
+                tokenOffset: previousTokenEnd,
+                tokenEndOffset: previousTokenEnd,
+                features: this.findFeaturesAt(textDocument, previousTokenEnd),
             };
         }
         astNode = findLeafNodeAtOffset(cst, nextTokenStart)?.astNode
             ?? (previousTokenStart === undefined ? undefined : findLeafNodeAtOffset(cst, previousTokenStart)?.astNode);
 
         if (!astNode) {
-            const parserRule = getEntryRule(this.grammar)!;
-            const firstFeatures = findFirstFeatures(parserRule.definition);
+            const parserRule = getEntryRule(this.grammar);
+            if (!parserRule) {
+                throw new Error('Missing entry parser rule');
+            }
+            // This context aims to perform completion for the grammar start (usually when the document is empty)
             yield {
                 ...partialContext,
                 tokenOffset: nextTokenStart,
                 tokenEndOffset: nextTokenEnd,
-                features: firstFeatures
+                features: findFirstFeatures(parserRule.definition)
             };
         } else {
-            const nextTokenFeatures = this.findFeaturesAt(textDocument, nextTokenStart);
+            // This context aims to complete the next feature, using the next ast node
             yield {
                 ...partialContext,
                 node: astNode,
                 tokenOffset: nextTokenStart,
                 tokenEndOffset: nextTokenEnd,
-                features: nextTokenFeatures,
+                features: this.findFeaturesAt(textDocument, nextTokenStart),
             };
         }
     }
