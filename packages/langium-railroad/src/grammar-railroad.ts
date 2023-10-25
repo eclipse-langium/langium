@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { GrammarAST, expandToString, findNameAssignment } from 'langium';
+import { EOL, GrammarAST, expandToString, findNameAssignment } from 'langium';
 import type { FakeSVG } from 'railroad-diagrams';
 import { default as rr } from 'railroad-diagrams';
 
@@ -41,12 +41,13 @@ export interface GrammarDiagramOptions {
 
 function styling(options?: GrammarDiagramOptions) {
     return expandToString`
-    <style>
+<style>
     ${defaultCss}
-    </style>${options?.css ? `
-    <style>
-    ${options.css}
-    </style>` : ''}`;
+</style>
+${options?.css ? expandToString`
+<style>
+    ${options.css.trim()}
+</style>` : ''}`;
 }
 
 /**
@@ -58,19 +59,18 @@ function styling(options?: GrammarDiagramOptions) {
  *
  * @returns A complete HTML document containing all diagrams.
  */
-export function createGrammarDiagramHtml(grammar: GrammarAST.Grammar, options?: GrammarDiagramOptions): string {
+export function createGrammarDiagramHtml(rules: GrammarAST.ParserRule[], options?: GrammarDiagramOptions): string {
     let text = `<!DOCTYPE HTML>
 <html>
 <head>
-${styling(options)}
-${options?.javascript ? `
+${styling(options)}${options?.javascript ? `
 <script>
 ${options.javascript}
 </script>` : ''}
 </head>
 <body>
 `;
-    text += createGrammarDiagram(grammar);
+    text += createGrammarDiagram(rules);
     text += `</body>
 </html>`;
 
@@ -87,12 +87,11 @@ ${options.javascript}
  * @returns diagrams
  * For the rule named 'NonTerminal', diagrams.get('NonTerminal') has its SVG content.
  */
-export function createGrammarDiagramSvg(grammar: GrammarAST.Grammar, options?: GrammarDiagramOptions): Map<string, string> {
-    const nonTerminals = grammar.rules.filter(GrammarAST.isParserRule);
+export function createGrammarDiagramSvg(rules: GrammarAST.ParserRule[], options?: GrammarDiagramOptions): Map<string, string> {
     const diagrams = new Map<string, string>();
     const style = styling(options);
 
-    for (const nonTerminal of nonTerminals) {
+    for (const nonTerminal of rules) {
         const ruleDiagram = new rr.Diagram(toRailroad(nonTerminal.definition));
         ruleDiagram.attrs.xmlns = 'http://www.w3.org/2000/svg';
         ruleDiagram.children =
@@ -102,14 +101,12 @@ export function createGrammarDiagramSvg(grammar: GrammarAST.Grammar, options?: G
     return diagrams;
 }
 
-export function createGrammarDiagram(grammar: GrammarAST.Grammar): string {
-    const nonTerminals = grammar.rules.filter(GrammarAST.isParserRule);
-    let text = '';
-    for (const nonTerminal of nonTerminals) {
-        text += '<h2>' + nonTerminal.name + '</h2>\n';
-        text += createRuleDiagram(nonTerminal);
+export function createGrammarDiagram(rules: GrammarAST.ParserRule[]): string {
+    const text: string[] = [];
+    for (const nonTerminal of rules) {
+        text.push('<h2 class="non-terminal-name">', nonTerminal.name, '</h2>', EOL, createRuleDiagram(nonTerminal));
     }
-    return text;
+    return text.join('');
 }
 
 function createRuleDiagram(rule: GrammarAST.ParserRule): string {
@@ -121,28 +118,28 @@ function toRailroad(element: GrammarAST.AbstractElement): FakeSVG[] {
     if (GrammarAST.isAssignment(element)) {
         return wrapCardinality(element.cardinality, toRailroad(element.terminal));
     } else if (GrammarAST.isAlternatives(element)) {
-        return wrapCardinality(element.cardinality, [new rr.Choice(0, element.elements.flatMap(e => toRailroad(e)))]);
+        return wrapCardinality(element.cardinality, new rr.Choice(0, element.elements.flatMap(e => toRailroad(e))));
     } else if (GrammarAST.isUnorderedGroup(element)) {
         const choice = new rr.Choice(0, element.elements.flatMap(e => toRailroad(e)));
         const repetition = new rr.ZeroOrMore(choice);
-        return wrapCardinality(element.cardinality, [repetition]);
+        return wrapCardinality(element.cardinality, repetition);
     } else if (GrammarAST.isGroup(element)) {
-        return wrapCardinality(element.cardinality, [new rr.Sequence(element.elements.flatMap(e => toRailroad(e)))]);
+        return wrapCardinality(element.cardinality, new rr.Sequence(element.elements.flatMap(e => toRailroad(e))));
     } else if (GrammarAST.isKeyword(element)) {
-        return wrapCardinality(element.cardinality, [new rr.Terminal(element.value)]);
+        return wrapCardinality(element.cardinality, new rr.Terminal(element.value));
     } else if (GrammarAST.isRuleCall(element)) {
-        return wrapCardinality(element.cardinality, [new rr.NonTerminal(element.rule.$refText)]);
+        return wrapCardinality(element.cardinality, new rr.NonTerminal(element.rule.$refText));
     } else if (GrammarAST.isCrossReference(element)) {
         if (GrammarAST.isKeyword(element.terminal)) {
-            return wrapCardinality(element.cardinality, [new rr.Terminal(element.terminal.value)]);
+            return wrapCardinality(element.cardinality, new rr.Terminal(element.terminal.value));
         } else if (GrammarAST.isRuleCall(element.terminal)) {
-            return wrapCardinality(element.cardinality, [new rr.NonTerminal(element.terminal.rule.$refText)]);
+            return wrapCardinality(element.cardinality, new rr.NonTerminal(element.terminal.rule.$refText));
         } else {
             const nameAssignment = element.type.ref && findNameAssignment(element.type.ref);
             if (nameAssignment) {
                 return wrapCardinality(element.cardinality, toRailroad(nameAssignment));
             } else {
-                return wrapCardinality(element.cardinality, [new rr.NonTerminal('UNKNOWN')]);
+                return wrapCardinality(element.cardinality, new rr.NonTerminal('UNKNOWN'));
             }
         }
     } else {
@@ -150,7 +147,8 @@ function toRailroad(element: GrammarAST.AbstractElement): FakeSVG[] {
     }
 }
 
-function wrapCardinality(cardinality: '?' | '*' | '+' | undefined, items: FakeSVG[]): FakeSVG[] {
+function wrapCardinality(cardinality: '?' | '*' | '+' | undefined, items: FakeSVG | FakeSVG[]): FakeSVG[] {
+    items = Array.isArray(items) ? items : [items];
     if (cardinality) {
         if (cardinality === '*') {
             return [new rr.ZeroOrMore(new rr.Sequence(items))];

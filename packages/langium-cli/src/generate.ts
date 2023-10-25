@@ -365,16 +365,22 @@ export async function runGenerator(config: LangiumConfig, options: GenerateOptio
         }
 
         if (languageConfig?.railroad) {
+            let css: string | undefined;
+            if (languageConfig.railroad.css) {
+                const cssPath = path.resolve(relPath, languageConfig.railroad.css);
+                css = await readFileWithFail(cssPath, options);
+            }
+            const railroadOptions = { css };
+            const rules = grammar.rules.filter(GrammarAST.isParserRule);
             const diagramPath = path.resolve(relPath, languageConfig.railroad.out);
-            // Single File or no info -> write to HTML.
             if (languageConfig.railroad.mode !== 'svg') {
-                const diagram = createGrammarDiagramHtml(grammar);
+                // Single File or no info -> write to HTML.
+                const diagram = createGrammarDiagramHtml(rules, railroadOptions);
                 log('log', options, `Writing railroad syntax diagram to ${chalk.white.bold(diagramPath)}`);
                 await writeWithFail(diagramPath, diagram, options);
-            }
-            // Svg files requested -> make dir and write into it.
-            else {
-                const diagrams = createGrammarDiagramSvg(grammar);
+            } else {
+                // Svg files requested -> make dir and write into it.
+                const diagrams = createGrammarDiagramSvg(rules, railroadOptions);
                 log('log', options, `Writing railroad syntax diagrams to ${chalk.white.bold(diagramPath)}`);
                 for (const [name, diagram] of diagrams) {
                     const filePath = path.join(diagramPath, name);
@@ -459,12 +465,21 @@ async function mkdirWithFail(path: string, options: GenerateOptions): Promise<bo
     }
 }
 
-async function writeWithFail(filePath: string, content: string, options: { watch?: boolean }): Promise<void> {
+async function writeWithFail(filePath: string, content: string, options: GenerateOptions): Promise<void> {
     try {
         const parentDir = path.dirname(filePath);
         await mkdirWithFail(parentDir, options);
         await fs.writeFile(filePath, content);
     } catch (e) {
         log('error', options, `Failed to write file to ${chalk.red.bold(filePath)}`, e);
+    }
+}
+
+async function readFileWithFail(path: string, options: GenerateOptions): Promise<string | undefined> {
+    try {
+        return await fs.readFile(path, { encoding: 'utf8' });
+    } catch (e) {
+        log('error', options, `Failed to read file from ${chalk.red.bold(path)}`, e);
+        return undefined;
     }
 }

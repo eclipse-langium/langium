@@ -107,6 +107,10 @@
                             "description": "The output path to the generated railroad diagrams",
                             "type": "string"
                         },
+                        "css": {
+                            "description": "File path containing css that will be included in the generated svg/html files",
+                            "type": "string"
+                        },
                         "mode": {
                             "description": "Whether to print diagrams all into a single html file or in separate svg files",
                             "type": {
@@ -153,7 +157,7 @@
             "type": "string"
         },
         "importExtension": {
-            "description": "File extension used for TypeScript import statements. Empty by default",
+            "description": "File extension used for TypeScript import statements. `.js` by default",
             "type": "string"
         },
         "mode": {
