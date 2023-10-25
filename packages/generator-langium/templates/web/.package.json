@@ -15,8 +15,7 @@
         "monaco-editor-workers": "~0.44.0",
         "monaco-editor-wrapper": "~3.3.0",
         "monaco-languageclient": "~6.6.0",
-        "vscode": "npm:@codingame/monaco-vscode-api@>=1.83.2 <1.84.0",
-        "vscode-languageserver": "~8.0.2"
+        "vscode": "npm:@codingame/monaco-vscode-api@>=1.83.2 <1.84.0"
     },
     "devDependencies": {
         "vite": "~4.4.11"
