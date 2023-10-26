@@ -60,11 +60,11 @@ export interface JSDocParseOptions {
     /**
      * The symbol that start a line of your comment format. Defaults to `*`.
      */
-    readonly end?: RegExp | string
+    readonly line?: RegExp | string
     /**
      * The end symbol of your comment format. Defaults to `*\/`.
      */
-    readonly line?: RegExp | string
+    readonly end?: RegExp | string
 }
 
 export interface JSDocRenderOptions {
@@ -194,7 +194,7 @@ function tokenize(context: TokenizationContext): JSDocToken[] {
         }
 
         line = line.substring(0, lastCharacter(line));
-        const whitespaceEnd = skipWhitespace(line, 0);
+        const whitespaceEnd = skipWhitespace(line, index);
 
         if (whitespaceEnd >= line.length) {
             // Only create a break token when we already have previous tokens
