@@ -171,7 +171,7 @@ describe('JSDoc rendering', () => {
                 renderTag: (tag) => {
                     const contentMd = tag.content.toMarkdown();
                     const [paramName, description] = contentMd.split(/\s(.*)/s);
-                    return `**@${tag.name}** *${paramName}* — ${description.trim()}`
+                    return `**@${tag.name}** *${paramName}* — ${description.trim()}`;
                 }
             })).toBe('**@param** *p* — Lorem ipsum.');
         });

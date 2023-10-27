@@ -8,8 +8,9 @@ import type { LangiumServices } from '../services.js';
 import type { AstNode, AstNodeDescription } from '../syntax-tree.js';
 import type { IndexManager } from '../workspace/index-manager.js';
 import type { CommentProvider } from './comment-provider.js';
+import type { JSDocTag } from './jsdoc.js';
 import { getDocument } from '../utils/ast-util.js';
-import {isJSDoc, JSDocTag, parseJSDoc} from './jsdoc.js';
+import { isJSDoc, parseJSDoc } from './jsdoc.js';
 
 /**
  * Provides documentation for AST nodes.
@@ -61,7 +62,7 @@ export class JSDocDocumentationProvider implements DocumentationProvider {
         }
     }
 
-    protected documentationTagRenderer(node: AstNode, tag: JSDocTag): string | undefined {
+    protected documentationTagRenderer(_node: AstNode, _tag: JSDocTag): string | undefined {
         // Fall back to the default tag rendering
         return undefined;
     }

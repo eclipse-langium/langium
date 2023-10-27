@@ -567,7 +567,7 @@ class JSDocTagImpl implements JSDocTag {
     }
 
     toMarkdown(options?: JSDocRenderOptions): string {
-        return options?.renderTag?.(this) ?? this.toMarkdownDefault(options)
+        return options?.renderTag?.(this) ?? this.toMarkdownDefault(options);
     }
 
     private toMarkdownDefault(options?: JSDocRenderOptions): string {
