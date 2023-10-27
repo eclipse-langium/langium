@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Langium Web</title>
+    <link href="./static/styles.css" rel="stylesheet"/>
+</head>
+
+<body>
+    <div style="padding: 5px">
+        <h1><%= RawLanguageName %> in Langium</h1>
+        Please select which grammar definition you want to use with monaco-editor:
+        <br>
+        <a href="./static/monacoClassic.html"><%= RawLanguageName %> + Monarch (Classic monaco-editor config)</a>
+        <br>
+        <a href="./static/monacoExtended.html"><%= RawLanguageName %> + Textmate (Extended Vscode Extension Config)</a>
+    </div>
+</body>
+
+</html>

@@ -3,7 +3,7 @@
         "target": "ES2017",
         "module": "ESNext",
         "sourceMap": true,
-        "outDir": "out/syntaxes",
+        "outDir": "syntaxes",
         "strict": true,
         "noUnusedLocals": true,
         "noImplicitReturns": true,

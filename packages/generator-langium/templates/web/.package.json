@@ -1,23 +1,23 @@
 {
     "scripts": {
-        "build:worker": "esbuild --minify ./out/language/main-browser.js --bundle --format=iife --outfile=./public/<%= language-id %>-server-worker.js",
-        "prepare:public": "shx mkdir -p ./public && shx cp -fr ./src/static/* ./public/",
-        "copy:monaco-editor-wrapper": "shx cp -fr ./node_modules/monaco-editor-wrapper/bundle ./public/monaco-editor-wrapper",
-        "copy:monaco-workers": "shx cp -fr ./node_modules/monaco-editor-workers/dist/ ./public/monaco-editor-workers",
-        "copy:monarch-syntax": "shx cp -fr ./out/syntaxes ./public/syntaxes",
-        "build:web": "npm run build && npm run build:monarch && npm run prepare:public && npm run build:worker && npm run copy:monaco-editor-wrapper && npm run copy:monaco-workers && npm run copy:monarch-syntax",
+        "prepare:static": "node ./scripts/prepare.js",
+        "build:web": "npm run build && npm run prepare:static && npm run build:monarch && npm run build:worker && npm run build:bundle",
         "build:monarch": "tsc -b tsconfig.monarch.json",
-        "serve": "node ./out/web/app.js"
+        "build:bundle": "vite --config ./vite.bundle.config.ts build",
+        "build:worker": "esbuild --minify ./out/language/main-browser.js --bundle --format=iife --outfile=./static/worker/<%= language-id %>-server-worker.js",
+        "dev": "vite",
+        "dev:debug": "vite --debug --force",
+        "serve": "npm run dev"
     },
     "dependencies": {
-        "express": "~4.18.2",
-        "monaco-editor-workers": "~0.34.2",
-        "monaco-editor-wrapper": "~1.6.0",
-        "vscode-languageclient": "~8.1.0"
+        "@codingame/monaco-vscode-editor-service-override": "~1.83.2",
+        "@codingame/monaco-vscode-keybindings-service-override": "~1.83.2",
+        "monaco-editor-workers": "~0.44.0",
+        "monaco-editor-wrapper": "~3.3.0",
+        "monaco-languageclient": "~6.6.0",
+        "vscode": "npm:@codingame/monaco-vscode-api@>=1.83.2 <1.84.0"
     },
     "devDependencies": {
-        "@types/express": "~4.17.17",
-        "shx": "~0.3.4",
-        "esbuild": "~0.19.2"
+        "vite": "~4.4.11"
     }
 }

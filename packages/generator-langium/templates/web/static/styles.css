@@ -13,7 +13,12 @@ footer {
     font-size: 1.2rem;
     margin-bottom: 0.5rem;
 }
-
+a:link {
+    color: gray;
+}
+a:visited {
+    color: lightskyblue;
+}
 /* for monaco */
 .wrapper {
     padding: 0 5%;

@@ -9,6 +9,7 @@
     <body>
         <h1><%= RawLanguageName %> in Langium</h1>
         <div class="wrapper">
+            <b>Monaco-Editor + Textmate</b>
             <!-- Monaco Root -->
             <div id="monaco-editor-root"></div>
         </div>
@@ -17,6 +18,11 @@
             <img width="125" src="https://langium.org/assets/langium_logo_w_nib.svg" alt="Langium">
         </footer>
         <!-- Monaco Configuration -->
-        <script type="module" src="setup.js"></script>
+        <script type="module">
+             import { executeExtended } from './setupExtended.js';
+
+            // keep a reference to a promise for when the editor is finished starting, we'll use this to setup the canvas on load
+            const startingPromise = executeExtended(document.getElementById('monaco-editor-root'));
+        </script>
     </body>
 </html>
