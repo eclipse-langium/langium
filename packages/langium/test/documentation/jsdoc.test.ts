@@ -164,6 +164,18 @@ describe('JSDoc rendering', () => {
             const parsed = parseJSDoc('/** @deprecated Since\n1.0*/');
             expect(parsed.toString()).toBe('@deprecated\nSince\n1.0');
         });
+
+        test('Uses the supplied rendering function', () => {
+            const parsed = parseJSDoc('/** @param p Lorem ipsum. */');
+            expect(parsed.toMarkdown({
+                renderTag: (tag) => {
+                    const contentMd = tag.content.toMarkdown();
+                    const [paramName, description] = contentMd.split(/\s(.*)/s);
+                    return `**@${tag.name}** *${paramName}* — ${description.trim()}`
+                }
+            })).toBe('**@param** *p* — Lorem ipsum.');
+        });
+
     });
 
     test('Renders empty lines', () => {
@@ -181,4 +193,5 @@ describe('JSDoc rendering', () => {
         const parsed = parseJSDoc('/**\n * A\n * B\n * \n * C\n */');
         expect(parsed.toString()).toBe('A\n B\n\n C');
     });
+
 });

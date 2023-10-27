@@ -77,6 +77,11 @@ export interface JSDocRenderOptions {
      */
     link?: 'code' | 'plain'
     /**
+     * Custom tag rendering function.
+     * Return a markdown formatted tag or `undefined` if the tag is not valid.
+     */
+    renderTag?(tag: JSDocTag): string | undefined
+    /**
      * Custom link rendering function. Accepts a link target and a display value for the link.
      * Return a markdown formatted link with the format `[$display]($link)` or `undefined` if the link is not a valid target.
      */
@@ -562,6 +567,10 @@ class JSDocTagImpl implements JSDocTag {
     }
 
     toMarkdown(options?: JSDocRenderOptions): string {
+        return options?.renderTag?.(this) ?? this.toMarkdownDefault(options)
+    }
+
+    private toMarkdownDefault(options?: JSDocRenderOptions): string {
         const content = this.content.toMarkdown(options);
         if (this.inline) {
             const rendered = renderInlineTag(this.name, content, options ?? {});
