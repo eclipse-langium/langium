@@ -144,6 +144,28 @@ describe('JSDoc rendering', () => {
 
     });
 
+    describe('Tag rendering', () => {
+        test('Renders single-line tags in markdown', () => {
+            const parsed = parseJSDoc('/** @deprecated Since 1.0 */');
+            expect(parsed.toMarkdown()).toBe('*@deprecated* — Since 1.0');
+        });
+
+        test('Renders single-line tags in plain text', () => {
+            const parsed = parseJSDoc('/** @deprecated Since 1.0 */');
+            expect(parsed.toString()).toBe('@deprecated Since 1.0');
+        });
+
+        test('Renders multi-line tags in markdown', () => {
+            const parsed = parseJSDoc('/** @deprecated Since\n1.0*/');
+            expect(parsed.toMarkdown()).toBe('*@deprecated*\nSince\n1.0');
+        });
+
+        test('Renders multi-line tags in plain text', () => {
+            const parsed = parseJSDoc('/** @deprecated Since\n1.0*/');
+            expect(parsed.toString()).toBe('@deprecated\nSince\n1.0');
+        });
+    });
+
     test('Renders empty lines', () => {
         // This test ensures that newlines are rendered as they are in the input
         const parsed = parseJSDoc('/** ```\nA\n\n\nB\nC\n\n``` */');
@@ -159,25 +181,4 @@ describe('JSDoc rendering', () => {
         const parsed = parseJSDoc('/**\n * A\n * B\n * \n * C\n */');
         expect(parsed.toString()).toBe('A\n B\n\n C');
     });
-
-    test('Renders single-line tags in markdown', () => {
-        const parsed = parseJSDoc('/** @deprecated Since 1.0 */');
-        expect(parsed.toMarkdown()).toBe('*@deprecated* — Since 1.0');
-    });
-
-    test('Renders single-line tags in plain text', () => {
-        const parsed = parseJSDoc('/** @deprecated Since 1.0 */');
-        expect(parsed.toString()).toBe('@deprecated Since 1.0');
-    });
-
-    test('Renders multi-line tags in markdown', () => {
-        const parsed = parseJSDoc('/** @deprecated Since\n1.0*/');
-        expect(parsed.toMarkdown()).toBe('*@deprecated*\nSince\n1.0');
-    });
-
-    test('Renders multi-line tags in plain text', () => {
-        const parsed = parseJSDoc('/** @deprecated Since\n1.0*/');
-        expect(parsed.toString()).toBe('@deprecated\nSince\n1.0');
-    });
-
 });
