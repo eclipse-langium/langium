@@ -78,7 +78,7 @@ export interface JSDocRenderOptions {
     link?: 'code' | 'plain'
     /**
      * Custom tag rendering function.
-     * Return a markdown formatted tag or `undefined` if the tag is not valid.
+     * Return a markdown formatted tag or `undefined` to fall back to the default rendering.
      */
     renderTag?(tag: JSDocTag): string | undefined
     /**
