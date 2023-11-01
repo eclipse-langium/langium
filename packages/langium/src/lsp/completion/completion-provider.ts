@@ -19,7 +19,6 @@ import type { FuzzyMatcher } from '../fuzzy-matcher.js';
 import type { GrammarConfig } from '../../grammar/grammar-config.js';
 import type { Lexer } from '../../parser/lexer.js';
 import type { IToken } from 'chevrotain';
-import type { Stream } from '../../utils/stream.js';
 import { CompletionItemKind, CompletionList, Position } from 'vscode-languageserver';
 import * as ast from '../../grammar/generated/ast.js';
 import { getExplicitRuleType } from '../../grammar/internal-grammar-util.js';
@@ -381,17 +380,23 @@ export class DefaultCompletionProvider implements CompletionProvider {
         } else if (ast.isCrossReference(next.feature) && context.node) {
             return this.completionForCrossReference(context, next as NextFeature<ast.CrossReference>, acceptor);
         }
+        // Don't offer any completion for other elements (i.e. terminals, datatype rules)
+        // We - from a framework level - cannot reasonably assume their contents.
+        // Adopters can just override `completionFor` if they want to do that anyway.
     }
 
-    protected completionForCrossReference(context: CompletionContext, crossRef: NextFeature<ast.CrossReference>, acceptor: CompletionAcceptor): MaybePromise<void> {
-        const assignment = getContainerOfType(crossRef.feature, ast.isAssignment);
+    protected completionForCrossReference(context: CompletionContext, next: NextFeature<ast.CrossReference>, acceptor: CompletionAcceptor): MaybePromise<void> {
+        const assignment = getContainerOfType(next.feature, ast.isAssignment);
         let node = context.node;
         if (assignment && node) {
-            if (crossRef.type) {
+            if (next.type) {
+                // When `type` is set, it indicates that we have just entered a new parser rule.
+                // The cross reference that we're trying to complete is on a new element that doesn't exist yet.
+                // So we create a new synthetic element with the correct type information.
                 node = {
-                    $type: crossRef.type,
+                    $type: next.type,
                     $container: node,
-                    $containerProperty: crossRef.property
+                    $containerProperty: next.property
                 };
                 assignMandatoryAstProperties(this.astReflection, node);
             }
@@ -404,9 +409,11 @@ export class DefaultCompletionProvider implements CompletionProvider {
             };
             try {
                 const scope = this.scopeProvider.getScope(refInfo);
-                for (const description of this.filterCrossReferences(context, scope.getAllElements())) {
-                    acceptor(context, this.createReferenceCompletionItem(description));
-                }
+                scope.getAllElements().forEach(e => {
+                    if (this.filterCrossReference(context, e)) {
+                        acceptor(context, this.createReferenceCompletionItem(e));
+                    }
+                });
             } catch (err) {
                 console.error(err);
             }
@@ -429,8 +436,8 @@ export class DefaultCompletionProvider implements CompletionProvider {
         };
     }
 
-    protected filterCrossReferences(context: CompletionContext, nodeDescriptions: Stream<AstNodeDescription>): Stream<AstNodeDescription> {
-        return nodeDescriptions;
+    protected filterCrossReference(_context: CompletionContext, _nodeDescription: AstNodeDescription): boolean {
+        return true;
     }
 
     protected completionForKeyword(context: CompletionContext, keyword: ast.Keyword, acceptor: CompletionAcceptor): MaybePromise<void> {
