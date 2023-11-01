@@ -8,6 +8,7 @@ import type { LangiumServices } from '../services.js';
 import type { AstNode, AstNodeDescription } from '../syntax-tree.js';
 import type { IndexManager } from '../workspace/index-manager.js';
 import type { CommentProvider } from './comment-provider.js';
+import type { JSDocTag } from './jsdoc.js';
 import { getDocument } from '../utils/ast-util.js';
 import { isJSDoc, parseJSDoc } from './jsdoc.js';
 
@@ -40,6 +41,9 @@ export class JSDocDocumentationProvider implements DocumentationProvider {
             return parsedJSDoc.toMarkdown({
                 renderLink: (link, display) => {
                     return this.documentationLinkRenderer(node, link, display);
+                },
+                renderTag: (tag) => {
+                    return this.documentationTagRenderer(node, tag);
                 }
             });
         }
@@ -56,6 +60,11 @@ export class JSDocDocumentationProvider implements DocumentationProvider {
         } else {
             return undefined;
         }
+    }
+
+    protected documentationTagRenderer(_node: AstNode, _tag: JSDocTag): string | undefined {
+        // Fall back to the default tag rendering
+        return undefined;
     }
 
     protected findNameInPrecomputedScopes(node: AstNode, name: string): AstNodeDescription | undefined {
