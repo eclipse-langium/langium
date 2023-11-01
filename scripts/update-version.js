@@ -7,6 +7,7 @@ async function runUpdate() {
     const version = langiumPackage.version;
     await Promise.all([
         replaceAll('langium', true, version),
+        replaceAll('langium-railroad', true, version),
         replaceAll('langium-cli', true, version),
         replaceAll('langium-sprotty', true, version),
         replaceAll('langium-vscode', true, version),
@@ -23,7 +24,9 @@ async function replaceAll(project, package, version, dot) {
     let content = await fs.readFile(path, 'utf-8');
     content = content
         .replace(/(?<="langium": "[~\^]?)\d+\.\d+\.\d+/g, version)
-        .replace(/(?<="langium-cli": "[~\^]?)\d+\.\d+\.\d+/g, version);
+        .replace(/(?<="langium-cli": "[~\^]?)\d+\.\d+\.\d+/g, version)
+        .replace(/(?<="langium-railroad": "[~\^]?)\d+\.\d+\.\d+/g, version)
+        .replace(/(?<="langium-sprotty": "[~\^]?)\d+\.\d+\.\d+/g, version);
     await fs.writeFile(path, content);
 }
 
