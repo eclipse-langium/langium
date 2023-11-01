@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import type { Range } from 'vscode-languageserver';
-import type { AstNode, CstNode, GenericAstNode, Reference, ReferenceInfo } from '../syntax-tree.js';
+import type { AstNode, AstReflection, CstNode, GenericAstNode, Reference, ReferenceInfo } from '../syntax-tree.js';
 import type { Stream, TreeStream } from '../utils/stream.js';
 import type { LangiumDocument } from '../workspace/documents.js';
 import { isAstNode, isReference } from '../syntax-tree.js';
@@ -230,6 +230,25 @@ export function findLocalReferences(targetNode: AstNode, lookup = getDocument(ta
         });
     });
     return stream(refs);
+}
+
+/**
+ * Assigns all mandatory AST properties to the specified node.
+ *
+ * @param reflection Reflection object used to gather mandatory properties for the node.
+ * @param node Specified node is modified in place and properties are directly assigned.
+ */
+export function assignMandatoryAstProperties(reflection: AstReflection, node: AstNode): void {
+    const typeMetaData = reflection.getTypeMetaData(node.$type);
+    const genericNode = node as GenericAstNode;
+    for (const mandatoryProperty of typeMetaData.mandatory) {
+        const value = genericNode[mandatoryProperty.name];
+        if (mandatoryProperty.type === 'array' && !Array.isArray(value)) {
+            genericNode[mandatoryProperty.name] = [];
+        } else if (mandatoryProperty.type === 'boolean' && value === undefined) {
+            genericNode[mandatoryProperty.name] = false;
+        }
+    }
 }
 
 /**
