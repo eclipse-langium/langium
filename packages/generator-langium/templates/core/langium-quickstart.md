@@ -21,7 +21,7 @@ This folder contains all necessary files for your language extension.
  * Press `F5` to open a new window with your extension loaded.
  * Create a new file with a file name suffix matching your language.
  * Verify that syntax highlighting, validation, completion etc. are working as expected.
- * Run `./bin/cli` to see options for the CLI; `./bin/cli generate <file>` generates code for a given DSL file.
+ * Run `node ./bin/cli` to see options for the CLI; `node ./bin/cli generate <file>` generates code for a given DSL file.
 
 ## Make changes
 
