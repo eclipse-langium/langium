@@ -1,5 +1,10 @@
 # Change Log of `langium-vscode`
 
+## v2.1.0 (Nov. 2023)
+
+* Improve grammar language formatting ([#1185](https://github.com/eclipse-langium/langium/pull/1185)).
+* Fix a false positive in the grammar language validation ([#1175](https://github.com/eclipse-langium/langium/pull/1175)).
+
 ## v2.0.0 (Aug. 2023)
 
 * Includes a command to open a railroad syntax diagram for the currently selected langium grammar. Use the `Show Railroad Syntax Diagram` command or the corresponding button in the editor title bar to open the diagram ([#1075](https://github.com/eclipse-langium/langium/pull/1075)).
