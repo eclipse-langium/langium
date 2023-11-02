@@ -46,7 +46,7 @@ function internalExpandToString(lineSep: string, staticParts: TemplateStringsArr
         .split(NEWLINE_REGEXP)
         .filter(l => l.trim() !== SNLE)
         // whitespace-only lines are empty (preserving leading whitespace)
-        .map(l => l.replace(SNLE, '').trimRight());
+        .map(l => l.replace(SNLE, '').trimEnd());
 
     // in order to nicely handle single line templates with the leading and trailing termintators (``) on separate lines, like
     //   expandToString`foo
@@ -65,7 +65,7 @@ function internalExpandToString(lineSep: string, staticParts: TemplateStringsArr
     lines = containsLeadingLinebreak ? lines.slice(1) : lines;
 
     // .. and drop the last linebreak if it's the last charactor or is followed by white space
-    const containsTrailingLinebreak = lines.length !== 0 && lines[lines.length-1].trimRight().length === 0;
+    const containsTrailingLinebreak = lines.length !== 0 && lines[lines.length-1].trimEnd().length === 0;
     lines = containsTrailingLinebreak ? lines.slice(0, lines.length-1) : lines;
 
     // finds the minimum indentation
