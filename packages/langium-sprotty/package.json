@@ -1,6 +1,6 @@
 {
   "name": "langium-sprotty",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Use Langium as source for Sprotty diagram models",
   "homepage": "https://langium.org",
   "keywords": [
@@ -34,8 +34,8 @@
     "publish:latest": "npm publish --tag latest --access public"
   },
   "dependencies": {
-    "langium": "~2.0.0",
-    "sprotty-protocol": "~0.13.0"
+    "langium": "~2.1.0",
+    "sprotty-protocol": "~1.0.0"
   },
   "volta": {
     "node": "18.17.1",

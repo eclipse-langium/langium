@@ -1,5 +1,10 @@
 # Change Log of `generator-langium`
 
+## v2.1.0 (Nov. 2023)
+
+* Updated web template ([#1205](https://github.com/eclipse-langium/langium/pull/1205))
+* Fixed the CLI generator for ESM ([#1201](https://github.com/eclipse-langium/langium/pull/1201))
+
 ## v2.0.0 (Aug. 2023)
 
 * Added a bundle configuration using `esbuild` ([#1125](https://github.com/eclipse-langium/langium/pull/1125)).

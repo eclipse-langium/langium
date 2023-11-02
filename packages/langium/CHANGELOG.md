@@ -1,5 +1,22 @@
 # Change Log of `langium`
 
+## v2.1.0 (Nov. 2023)
+
+### End-Of-File Parser Tokens
+
+The grammar language now supports using end-of-file (EOF) tokens.
+This is token can be useful in case your language is whitespace sensitive and you want to enforce that every statement ends on a newline.
+Using EOF allows to replace the last newline token with the EOF token, removing the need for an additional empty line at the end of files. ([#1162](https://github.com/eclipse-langium/langium/pull/1162))
+
+### General Improvements
+
+* Allow JSDoc tag rendering customizations ([#1245](https://github.com/eclipse-langium/langium/pull/1245)).
+* Updated the used `vscode-languageserver` version to 9.0 ([#1237](https://github.com/eclipse-langium/langium/pull/1237))
+* Various improvements to the completion provider ([#1178](https://github.com/eclipse-langium/langium/pull/1178), [#1204](https://github.com/eclipse-langium/langium/pull/1204), [#1215](https://github.com/eclipse-langium/langium/pull/1215), [#1239](https://github.com/eclipse-langium/langium/pull/1239)).
+* Prevent file name collisions during testing ([#1153](https://github.com/eclipse-langium/langium/pull/1153)).
+* Added missing semantic token type `decorator` ([#1234](https://github.com/eclipse-langium/langium/pull/1234)).
+* Emit `onUpdate` event on `DocumentBuilder#build` ([#1190](https://github.com/eclipse-langium/langium/pull/1190)).
+
 ## v2.0.1 (Aug. 2023)
 
 Publish Langium's own grammar using minified JSON ([#1158](https://github.com/eclipse-langium/langium/pull/1158)).

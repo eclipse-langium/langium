@@ -1,5 +1,9 @@
 # Change Log of `langium-railroad`
 
+## v2.1.0 (Nov. 2023)
+
+New monorepo release.
+
 ## v2.0.0 (Aug. 2023)
 
 ### EcmaScript Modules (ESM)
