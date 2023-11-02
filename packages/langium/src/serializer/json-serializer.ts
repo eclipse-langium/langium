@@ -9,19 +9,29 @@ import type { LangiumServices } from '../services.js';
 import type { AstNode, CstNode, GenericAstNode, Reference } from '../syntax-tree.js';
 import type { Mutable } from '../utils/ast-util.js';
 import type { AstNodeLocator } from '../workspace/ast-node-locator.js';
-import type { DocumentSegment } from '../workspace/documents.js';
+import type { DocumentSegment, LangiumDocument, LangiumDocuments } from '../workspace/documents.js';
+import { URI } from 'vscode-uri';
 import { isAstNode, isReference } from '../syntax-tree.js';
 import { getDocument } from '../utils/ast-util.js';
 import { findNodesForProperty } from '../utils/grammar-util.js';
+import { UriUtils } from '../utils/uri-util.js';
 import type { CommentProvider } from '../documentation/comment-provider.js';
 
 export interface JsonSerializeOptions {
+    /** The space parameter for `JSON.stringify`, controlling whether and how to pretty-print the output. */
     space?: string | number;
+    /** Whether to include the `$refText` property for references (the name used to identify the target node). */
     refText?: boolean;
+    /** Whether to include the `$sourceText` property, which holds the full source text from which an AST node was parsed. */
     sourceText?: boolean;
+    /** Whether to include the `$textRegion` property, which holds information to trace AST node properties to their respective source text regions. */
     textRegions?: boolean;
+    /** Whether to include the `$comment` property, which holds comments according to the CommentProvider service. */
     comments?: boolean;
+    /** The replacer parameter for `JSON.stringify`; the default replacer given as parameter should be used to apply basic replacements. */
     replacer?: (key: string, value: unknown, defaultReplacer: (key: string, value: unknown) => unknown) => unknown
+    /** Used to convert and serialize URIs when the target of a cross-reference is in a different document. */
+    uriConverter?: (uri: URI, reference: Reference) => string
 }
 
 /**
@@ -50,7 +60,7 @@ export function isAstNodeWithComment(node: AstNode): node is AstNodeWithComment 
  */
 export interface AstNodeRegionWithAssignments extends DocumentSegment {
     /**
-     * A record containing an entry for each assignd property of the AstNode.
+     * A record containing an entry for each assigned property of the AstNode.
      * The key is equal to the property name and the value is an array of the property values'
      * text regions, regardless of whether the property is a single value or list property.
      */
@@ -74,12 +84,18 @@ export interface JsonSerializer {
     /**
      * Deserialize (parse) a JSON `string` into an `AstNode`.
      */
-    deserialize(content: string): AstNode;
+    deserialize<T extends AstNode = AstNode>(content: string): T;
 }
 
+/**
+ * A cross-reference in the serialized JSON representation of an AstNode.
+ */
 interface IntermediateReference {
-    $refText?: string
+    /** URI pointing to the target element. This is either `#${path}` if the target is in the same document, or `${documentURI}#${path}` otherwise. */
     $ref?: string
+    /** The actual text used to look up the reference target in the surrounding scope. */
+    $refText?: string
+    /** If any problem occurred while resolving the reference, it is described by this property. */
     $error?: string
 }
 
@@ -89,12 +105,19 @@ function isIntermediateReference(obj: unknown): obj is IntermediateReference {
 
 export class DefaultJsonSerializer implements JsonSerializer {
 
-    protected ignoreProperties = new Set(['$container', '$containerProperty', '$containerIndex', '$document', '$cstNode']);
+    /** The set of AstNode properties to be ignored by the serializer. */
+    ignoreProperties = new Set(['$container', '$containerProperty', '$containerIndex', '$document', '$cstNode']);
+
+    /** The document that is currently processed by the serializer; this is used by the replacer function.  */
+    protected currentDocument: LangiumDocument | undefined;
+
+    protected readonly langiumDocuments: LangiumDocuments;
     protected readonly astNodeLocator: AstNodeLocator;
     protected readonly nameProvider: NameProvider;
     protected readonly commentProvider: CommentProvider;
 
     constructor(services: LangiumServices) {
+        this.langiumDocuments = services.shared.workspace.LangiumDocuments;
         this.astNodeLocator = services.workspace.AstNodeLocator;
         this.nameProvider = services.references.NameProvider;
         this.commentProvider = services.documentation.CommentProvider;
@@ -105,51 +128,67 @@ export class DefaultJsonSerializer implements JsonSerializer {
         const defaultReplacer = (key: string, value: unknown) => this.replacer(key, value, options);
         const replacer = specificReplacer ? (key: string, value: unknown) => specificReplacer(key, value, defaultReplacer) : defaultReplacer;
 
-        return JSON.stringify(node, replacer, options?.space);
+        try {
+            this.currentDocument = getDocument(node);
+            return JSON.stringify(node, replacer, options?.space);
+        } finally {
+            this.currentDocument = undefined;
+        }
     }
 
-    deserialize(content: string): AstNode {
+    deserialize<T extends AstNode = AstNode>(content: string): T {
         const root = JSON.parse(content);
         this.linkNode(root, root);
         return root;
     }
 
-    protected replacer(key: string, value: unknown, { refText, sourceText, textRegions, comments }: JsonSerializeOptions = {}): unknown {
+    protected replacer(key: string, value: unknown, { refText, sourceText, textRegions, comments, uriConverter }: JsonSerializeOptions = {}): unknown {
         if (this.ignoreProperties.has(key)) {
             return undefined;
         } else if (isReference(value)) {
             const refValue = value.ref;
             const $refText = refText ? value.$refText : undefined;
             if (refValue) {
+                const targetDocument = getDocument(refValue);
+                let targetUri = '';
+                if (this.currentDocument && !UriUtils.equals(this.currentDocument.uri, targetDocument.uri)) {
+                    if (uriConverter) {
+                        targetUri = uriConverter(targetDocument.uri, value);
+                    } else {
+                        targetUri = targetDocument.uri.toString();
+                    }
+                }
+                const targetPath = this.astNodeLocator.getAstNodePath(refValue);
                 return {
-                    $refText,
-                    $ref: '#' + (refValue && this.astNodeLocator.getAstNodePath(refValue))
-                };
+                    $ref: `${targetUri}#${targetPath}`,
+                    $refText
+                } satisfies IntermediateReference;
             } else {
                 return {
-                    $refText,
-                    $error: value.error?.message ?? 'Could not resolve reference'
-                };
+                    $error: value.error?.message ?? 'Could not resolve reference',
+                    $refText
+                } satisfies IntermediateReference;
             }
-        } else {
+        } else if (isAstNode(value)) {
             let astNode: AstNodeWithTextRegion | undefined = undefined;
-            if (textRegions && isAstNode(value)) {
+            if (textRegions) {
                 astNode = this.addAstNodeRegionWithAssignmentsTo({ ...value });
                 if ((!key || value.$document) && astNode?.$textRegion) {
-                    try {
-                        astNode.$textRegion.documentURI = getDocument(value).uri.toString();
-                    } catch (e) { /* do nothing */ }
+                    // The document URI is added to the root node of the resulting JSON tree
+                    astNode.$textRegion.documentURI = this.currentDocument?.uri.toString();
                 }
             }
-            if (sourceText && !key && isAstNode(value)) {
+            if (sourceText && !key) {
                 astNode ??= { ...value };
                 astNode.$sourceText = value.$cstNode?.text;
             }
-            if (comments && isAstNode(value)) {
+            if (comments) {
                 astNode ??= { ...value };
                 (astNode as AstNodeWithComment).$comment = this.commentProvider.getComment(value);
             }
             return astNode ?? value;
+        } else {
+            return value;
         }
     }
 
@@ -194,7 +233,7 @@ export class DefaultJsonSerializer implements JsonSerializer {
                 this.linkNode(item as GenericAstNode, root, node, propertyName);
             }
         }
-        const mutable = node as Mutable<GenericAstNode>;
+        const mutable = node as Mutable<AstNode>;
         mutable.$container = container;
         mutable.$containerProperty = containerProperty;
         mutable.$containerIndex = containerIndex;
@@ -202,23 +241,29 @@ export class DefaultJsonSerializer implements JsonSerializer {
 
     protected reviveReference(container: AstNode, property: string, root: AstNode, reference: IntermediateReference): Reference | undefined {
         let refText = reference.$refText;
+        let error = reference.$error;
         if (reference.$ref) {
             const ref = this.getRefNode(root, reference.$ref);
-            if (!refText) {
-                refText = this.nameProvider.getName(ref);
+            if (isAstNode(ref)) {
+                if (!refText) {
+                    refText = this.nameProvider.getName(ref);
+                }
+                return {
+                    $refText: refText ?? '',
+                    ref
+                };
+            } else {
+                error = ref;
             }
-            return {
-                $refText: refText ?? '',
-                ref
-            };
-        } else if (reference.$error) {
+        }
+        if (error) {
             const ref: Mutable<Reference> = {
                 $refText: refText ?? ''
             };
             ref.error = {
                 container,
                 property,
-                message: reference.$error,
+                message: error,
                 reference: ref
             };
             return ref;
@@ -227,7 +272,28 @@ export class DefaultJsonSerializer implements JsonSerializer {
         }
     }
 
-    protected getRefNode(root: AstNode, path: string): AstNode {
-        return this.astNodeLocator.getAstNode(root, path.substring(1))!;
+    protected getRefNode(root: AstNode, uri: string): AstNode | string {
+        try {
+            const fragmentIndex = uri.indexOf('#');
+            if (fragmentIndex === 0) {
+                const node = this.astNodeLocator.getAstNode(root, uri.substring(1));
+                if (!node) {
+                    return 'Could not resolve path: ' + uri;
+                }
+                return node;
+            }
+            const document = this.langiumDocuments.getOrCreateDocument(URI.parse(uri.substring(0, fragmentIndex)));
+            if (fragmentIndex < 0 || fragmentIndex === uri.length - 1) {
+                return document.parseResult.value;
+            }
+            const node = this.astNodeLocator.getAstNode(document.parseResult.value, uri.substring(fragmentIndex + 1));
+            if (!node) {
+                return 'Could not resolve URI: ' + uri;
+            }
+            return node;
+        } catch (err) {
+            return String(err);
+        }
     }
+
 }
