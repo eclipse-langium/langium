@@ -190,7 +190,7 @@ export class LangiumParser extends AbstractLangiumParser {
 
     consume(idx: number, tokenType: TokenType, feature: AbstractElement): void {
         const token = this.wrapper.wrapConsume(idx, tokenType);
-        if (!this.isRecording() && !token.isInsertedInRecovery) {
+        if (!this.isRecording() && this.isValidToken(token)) {
             const leafNode = this.nodeBuilder.buildLeafNode(token, feature);
             const { assignment, isCrossRef } = this.getAssignment(feature);
             const current = this.current;
@@ -205,6 +205,16 @@ export class LangiumParser extends AbstractLangiumParser {
                 current.value += text;
             }
         }
+    }
+
+    /**
+     * Most consumed parser tokens are valid. However there are two cases in which they are not valid:
+     *
+     * 1. They were inserted during error recovery by the parser. These tokens don't really exist and should not be further processed
+     * 2. They contain invalid token ranges. This might include the special EOF token, or other tokens produced by invalid token builders.
+     */
+    private isValidToken(token: IToken): boolean {
+        return !token.isInsertedInRecovery && !isNaN(token.startOffset) && typeof token.endOffset === 'number' && !isNaN(token.endOffset);
     }
 
     subrule(idx: number, rule: RuleResult, feature: AbstractElement, args: Args): void {
