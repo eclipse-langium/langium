@@ -8,6 +8,7 @@ import type { DefaultSharedModuleContext, LangiumServices, LangiumSharedServices
 import { createDefaultModule, createDefaultSharedModule, inject } from 'langium';
 import { StatemachineGeneratedModule, StatemachineGeneratedSharedModule } from './generated/module.js';
 import { registerValidationChecks, StatemachineValidator } from './statemachine-validator.js';
+import { StatemachineCodeActionProvider } from './statemachine-code-actions.js';
 import { StatemachineFormatter } from './statemachine-formatter.js';
 
 /**
@@ -15,6 +16,7 @@ import { StatemachineFormatter } from './statemachine-formatter.js';
  */
 export type StatemachineAddedServices = {
     lsp: {
+        CodeActionProvider: StatemachineCodeActionProvider;
         Formatter:  StatemachineFormatter;
     },
     validation: {
@@ -35,6 +37,7 @@ export type StatemachineServices = LangiumServices & StatemachineAddedServices
  */
 export const StatemachineModule: Module<StatemachineServices, PartialLangiumServices & StatemachineAddedServices> = {
     lsp: {
+        CodeActionProvider: () => new StatemachineCodeActionProvider(),
         Formatter: () => new StatemachineFormatter(),
     },
     validation: {
