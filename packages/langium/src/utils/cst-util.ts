@@ -155,28 +155,51 @@ export function isCommentNode(cstNode: CstNode, commentNames: string[]): boolean
     return isLeafCstNode(cstNode) && commentNames.includes(cstNode.tokenType.name);
 }
 
+/**
+ * Finds the leaf CST node at the specified 0-based string offset.
+ * If no CST node exists at the specified position, it will return the leaf node before it.
+ *
+ * @param node The CST node to search through
+ * @param offset The specified offset
+ * @returns The CST node closest to the specified output.
+ */
 export function findLeafNodeAtOffset(node: CstNode, offset: number): LeafCstNode | undefined {
     if (isLeafCstNode(node)) {
         return node;
     } else if (isCompositeCstNode(node)) {
-        let firstChild = 0;
-        let lastChild = node.content.length - 1;
-        while (firstChild < lastChild) {
-            const middleChild = Math.floor((firstChild + lastChild) / 2);
-            const n = node.content[middleChild];
-            if (n.offset > offset) {
-                lastChild = middleChild - 1;
-            } else if (n.end <= offset) {
-                firstChild = middleChild + 1;
-            } else {
-                return findLeafNodeAtOffset(n, offset);
-            }
-        }
-        if (firstChild === lastChild) {
-            return findLeafNodeAtOffset(node.content[firstChild], offset);
+        const searchResult = binarySearch(node, offset);
+        if (searchResult) {
+            return findLeafNodeAtOffset(searchResult, offset);
         }
     }
     return undefined;
+}
+
+function binarySearch(node: CompositeCstNode, offset: number): CstNode | undefined {
+    let left = 0;
+    let right = node.content.length - 1;
+    let closest: CstNode | undefined = undefined;
+
+    while (left <= right) {
+        const middle = Math.floor((left + right) / 2);
+        const middleNode = node.content[middle];
+
+        if (middleNode.offset === offset) {
+            // Found an exact match
+            return middleNode;
+        }
+
+        if (middleNode.offset < offset) {
+            // Update the closest node (less than offset) and move to the right half
+            closest = middleNode;
+            left = middle + 1;
+        } else {
+            // Move to the left half
+            right = middle - 1;
+        }
+    }
+
+    return closest;
 }
 
 export function getPreviousNode(node: CstNode, hidden = true): CstNode | undefined {

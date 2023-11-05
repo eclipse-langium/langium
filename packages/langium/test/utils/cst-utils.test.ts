@@ -55,4 +55,18 @@ describe('CST Utils', () => {
         const leafnode = findLeafNodeAtOffset(grammar.parseResult.value.$cstNode!, offset!);
         expect(leafnode!.text).toBe(';');
     });
+
+    test('Find Leaf Node at Offset: Main: value=AB <|> ;', async () => {
+        const text = `
+        grammar test
+        Main: value=AB  ;
+        terminal fragment Frag: 'B';
+        terminal AB: 'A' Frag;
+        `;
+
+        const grammar = await parser(text);
+        const offset = grammar.textDocument.getText().indexOf('AB') + 3;
+        const leafnode = findLeafNodeAtOffset(grammar.parseResult.value.$cstNode!, offset!);
+        expect(leafnode!.text).toBe('AB');
+    });
 });
