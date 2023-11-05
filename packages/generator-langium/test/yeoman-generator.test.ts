@@ -34,7 +34,7 @@ describe('Check yeoman generator works', () => {
         await context
             .onGenerator(async (generator) => {
                 // will generate into examples/hello-world instead of examples/hello-world/hello-world
-                generator.destinationRoot(targetRoot, false);
+                generator.destinationRoot(targetRoot); // types are wrong, should be string
             })
             .withAnswers(answersForCore)
             .withArguments('skip-install')
