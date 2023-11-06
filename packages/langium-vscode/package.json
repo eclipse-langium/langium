@@ -46,7 +46,11 @@
         "aliases": [
           "Langium"
         ],
-        "configuration": "./data/langium.configuration.json"
+        "configuration": "./data/langium.configuration.json",
+        "icon": {
+          "light": "./data/langium-logo.png",
+          "dark": "./data/langium-logo.png"
+        }
       }
     ],
     "grammars": [
