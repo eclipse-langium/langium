@@ -52,6 +52,7 @@
     "build": "tsc",
     "watch": "tsc --watch",
     "lint": "eslint src test --ext .ts",
+    "validate-exports": "tsc -p test/tsconfig.export-main.json",
     "langium:generate": "langium generate",
     "langium:generate:production": "langium generate --mode=production",
     "publish:next": "npm --no-git-tag-version version \"$(semver $npm_package_version -i minor)-next.$(git rev-parse --short HEAD)\" && npm publish --tag next",

@@ -1,0 +1,10 @@
+// Validate the main package export by excluding parts of the code that shouldn't be directly linked
+{
+    "extends": "../tsconfig.src.json",
+    "compilerOptions": {
+      "noEmit": true
+    },
+    "exclude": [
+        "../src/test/**/*"
+    ]
+}

@@ -14,6 +14,7 @@
     "test": "vitest",
     "test-ui": "vitest --ui",
     "coverage": "vitest run --coverage",
+    "validate-exports": "npm run validate-exports --workspace=langium",
     "version:dependencies": "node ./scripts/update-version.js && npm install",
     "langium:generate": "npm run langium:generate --workspace=langium --workspace=examples/domainmodel --workspace=examples/arithmetics --workspace=examples/statemachine --workspace=examples/requirements",
     "dev-build": "npm run dev-clean && npm install && npm link ./packages/langium && npm link ./packages/langium-cli && npm link ./packages/generator-langium",
