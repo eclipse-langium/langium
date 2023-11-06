@@ -5,8 +5,8 @@
  ******************************************************************************/
 
 import type { TokenType, TokenVocabulary } from 'chevrotain';
-import type { AstNode, Grammar, GrammarAST, LangiumParser, TokenBuilderOptions } from 'langium';
-import { createLangiumGrammarServices, EmptyFileSystem, createServicesForGrammar, DefaultTokenBuilder} from 'langium';
+import type { AstNode, CstNode, GenericAstNode, Grammar, GrammarAST, LangiumParser, TokenBuilderOptions } from 'langium';
+import { createLangiumGrammarServices, EmptyFileSystem, createServicesForGrammar, DefaultTokenBuilder } from 'langium';
 import { describe, expect, test, onTestFailed, beforeEach } from 'vitest';
 import { parseHelper } from 'langium/test';
 import { EOF } from 'chevrotain';
@@ -684,8 +684,8 @@ describe('Handling EOF', () => {
         entry Main: greet='Hello!' EOF;
         hidden terminal WS: /\\s+/;
         `;
-        const services = await createLangiumGrammarServices(EmptyFileSystem);
-        const output = await parseHelper(services.grammar)(grammar, {validation: true});
+        const services = createLangiumGrammarServices(EmptyFileSystem);
+        const output = await parseHelper(services.grammar)(grammar, { validation: true });
         expect(output.parseResult.lexerErrors.length).toBe(0);
         expect(output.parseResult.parserErrors.length).toBe(0);
         expect(output.diagnostics?.length ?? 0).toBe(0);
@@ -699,15 +699,15 @@ describe('Handling EOF', () => {
         terminal ID: /[_a-zA-Z][\\w_]*/;
         terminal EOL: /\\r?\\n/;
         `;
-        const langiumServices = await createLangiumGrammarServices(EmptyFileSystem);
-        const output = await parseHelper(langiumServices.grammar)(grammar, {validation: true});
+        const langiumServices = createLangiumGrammarServices(EmptyFileSystem);
+        const output = await parseHelper(langiumServices.grammar)(grammar, { validation: true });
         expect(output.parseResult.lexerErrors.length).toBe(0);
         expect(output.parseResult.parserErrors.length).toBe(0);
         expect(output.diagnostics?.length ?? 0).toBe(0);
 
         const grammarServices = await createServicesForGrammar({ grammar });
         const parse = parseHelper(grammarServices);
-        const document = await parse('First\nMiddle\nLast', {validation: true});
+        const document = await parse('First\nMiddle\nLast', { validation: true });
         expect(document.parseResult.lexerErrors.length).toBe(0);
         expect(document.parseResult.parserErrors.length).toBe(0);
         expect(document.diagnostics?.length ?? 0).toBe(0);
@@ -722,16 +722,50 @@ describe('Handling EOF', () => {
         const services = await createServicesForGrammar({ grammar });
         const parse = parseHelper(services);
 
-        const document = await parse('Hello!user!', {validation: true});
+        const document = await parse('Hello!user!', { validation: true });
         expect(document.parseResult.parserErrors.length).toBe(1);
         expect(document.parseResult.parserErrors[0].name).toBe('MismatchedTokenException');
         expect(document.parseResult.parserErrors[0].token.tokenType.name).toBe('user!');
 
-        const second =  await parse('Hello!', {validation: true});
+        const second = await parse('Hello!', { validation: true });
         expect(second.parseResult.parserErrors.length).toBe(1);
         expect(second.parseResult.parserErrors[0].name).toBe('MismatchedTokenException');
         expect(second.parseResult.parserErrors[0].token.tokenType).toBe(EOF);
     });
+
+    [
+        `
+        grammar Test
+        entry Main: greet='Hello!' EOF;
+        hidden terminal WS: /\\s+/;
+        `,
+        `
+        grammar Test
+        entry Main: Test;
+        fragment Test: greet='Hello!' EOF;
+        hidden terminal WS: /\\s+/;
+        `
+    ].forEach((grammar, i) => {
+        test('Using EOF does not result in invalid AST/CST #' + i, async () => {
+            const parser = await parserFromGrammar(grammar);
+            const output = parser.parse('Hello!');
+            const value = output.value as GenericAstNode;
+            expect(value.greet).toBe('Hello!');
+            const cst = output.value.$cstNode!;
+            expectValidCstNode(cst);
+        });
+    });
+
+    function expectValidCstNode(cst: CstNode): void {
+        expect(cst).toBeDefined();
+        expect(cst.offset).not.toBeNaN();
+        expect(cst.end).not.toBeNaN();
+        expect(cst.end).toBeGreaterThan(cst.offset);
+        expect(cst.range.start.line).not.toBeNaN();
+        expect(cst.range.start.character).not.toBeNaN();
+        expect(cst.range.end.line).not.toBeNaN();
+        expect(cst.range.end.character).not.toBeNaN();
+    }
 });
 
 async function parserFromGrammar(grammar: string): Promise<LangiumParser> {
