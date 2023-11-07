@@ -10,14 +10,35 @@ export function expandToStringWithNL(staticParts: TemplateStringsArray, ...subst
     return expandToString(staticParts, ...substitutions) + EOL;
 }
 
+export function expandToStringLFWithNL(staticParts: TemplateStringsArray, ...substitutions: unknown[]): string {
+    return expandToStringLF(staticParts, ...substitutions) + '\n';
+}
+
 /**
  * A tag function that automatically aligns embedded multiline strings.
+ * Multiple lines are joined with the platform-specific line separator.
  *
  * @param staticParts the static parts of a tagged template literal
  * @param substitutions the variable parts of a tagged template literal
  * @returns an aligned string that consists of the given parts
  */
 export function expandToString(staticParts: TemplateStringsArray, ...substitutions: unknown[]): string {
+    return internalExpandToString(EOL, staticParts, ...substitutions);
+}
+
+/**
+ * A tag function that automatically aligns embedded multiline strings.
+ * Multiple lines are joined with the LINE_FEED (`\n`) line separator.
+ *
+ * @param staticParts the static parts of a tagged template literal
+ * @param substitutions the variable parts of a tagged template literal
+ * @returns an aligned string that consists of the given parts
+ */
+export function expandToStringLF(staticParts: TemplateStringsArray, ...substitutions: unknown[]): string {
+    return internalExpandToString('\n', staticParts, ...substitutions);
+}
+
+function internalExpandToString(lineSep: string, staticParts: TemplateStringsArray, ...substitutions: unknown[]): string {
     let lines = substitutions
         // align substitutions and fuse them with static parts
         .reduce((acc: string, subst: unknown, i: number) => acc + (subst === undefined ? SNLE : align(toString(subst), acc)) + (staticParts[i + 1] ?? ''), staticParts[0])
@@ -51,9 +72,9 @@ export function expandToString(staticParts: TemplateStringsArray, ...substitutio
     const indent = findIndentation(lines);
     return lines
         // shifts lines to the left
-        .map(line => line.slice(indent).trimRight())
+        .map(line => line.slice(indent).trimEnd())
         // convert lines to string
-        .join(EOL);
+        .join(lineSep);
 }
 
 export const SNLE = Object.freeze('__«SKIP^NEW^LINE^IF^EMPTY»__');
