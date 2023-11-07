@@ -2,15 +2,33 @@
 
 Thank you for your interest in the Langium project! The following is a set of guidelines for contributing to Langium.
 
+## Code of Conduct
+
+This project is governed by the [Eclipse Community Code of Conduct](https://github.com/eclipse/.github/blob/master/CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code.
+
 ## Eclipse Contributor Agreement
 
 If you're planning to contribute to this or any other repository in the [`eclipse-langium` GitHub organization](https://github.com/eclipse-langium), please sign the [Eclipse Contributor Agreement (ECA)](https://www.eclipse.org/legal/ECA.php).
 
 By signing the ECA you promise that your contributions adhere to the license used in the repository of the corresponding Eclipse project. This ensures that Langium can be used by any adopter without any legal issues.
 
+For more information, see the [Eclipse Foundation Project Handbook](https://www.eclipse.org/projects/handbook/#resources-commit).
+
+## Communication
+
+The following communication channels are available:
+
+ * [GitHub issues](https://github.com/eclipse-langium/langium/issues) – for bug reports, feature requests, etc.
+ * [GitHub discussions](https://github.com/eclipse-langium/langium/discussions) – for questions, ideas, announcements, etc.
+ * [Weekly dev meeting](https://github.com/eclipse-langium/langium/discussions/564?sort=new) – for project-related discussions
+ * [Gitter chat](https://app.gitter.im/#/room/#langium:gitter.im) – for questions
+ * [Developer mailing list](https://accounts.eclipse.org/mailing-list/langium-dev) – for organizational issues (e.g. elections of new committers)
+
+In case you have a question, please look into the [documentation](https://langium.org/docs/) first. If you don't find any answer there, feel free to use the discussions or chat to get help.
+
 ## Prerequisites
 
-For developing Langium you require at least the Maintenance LTS version of Node.js (currently 16) and at least npm version 7.7.0 (`npm@^7.7.0`) to be able to use npm workspaces. With Node.js versions below 16 you have to install the correct version of npm with `npm install -g npm@7`.
+For developing Langium, you require at least Node.js version 16 and at least npm version 7.7.0 to be able to use npm workspaces.
 
 ## Local Development Guide
 
