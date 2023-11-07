@@ -6,7 +6,7 @@
 
 import type { Grammar } from 'langium';
 import { describe, expect, test } from 'vitest';
-import { createLangiumGrammarServices, EmptyFileSystem, normalizeEOL } from 'langium';
+import { createLangiumGrammarServices, EmptyFileSystem, expandToStringWithNL } from 'langium';
 import { parseHelper } from 'langium/test';
 import { generateTypesFile } from '../../src/generator/types-generator.js';
 
@@ -24,90 +24,89 @@ describe('Types generator', () => {
 
 });
 
-const EXPECTED_TYPES =
-    normalizeEOL(`type AbstractDefinition = DeclaredParameter | Definition;
+const EXPECTED_TYPES = expandToStringWithNL`
+    type AbstractDefinition = DeclaredParameter | Definition;
 
-type Expression = BinaryExpression | FunctionCall | NumberLiteral;
+    type Expression = BinaryExpression | FunctionCall | NumberLiteral;
 
-type Statement = Definition | Evaluation;
+    type Statement = Definition | Evaluation;
 
-interface BinaryExpression {
-    left: Expression
-    operator: "*" | "+" | "-" | "/"
-    right: Expression
-}
+    interface BinaryExpression {
+        left: Expression
+        operator: "*" | "+" | "-" | "/"
+        right: Expression
+    }
 
-interface DeclaredParameter {
-    name: string
-}
+    interface DeclaredParameter {
+        name: string
+    }
 
-interface Definition {
-    args: DeclaredParameter[]
-    expr: Expression
-    name: string
-}
+    interface Definition {
+        args: DeclaredParameter[]
+        expr: Expression
+        name: string
+    }
 
-interface Evaluation {
-    expression: Expression
-}
+    interface Evaluation {
+        expression: Expression
+    }
 
-interface FunctionCall {
-    args: Expression[]
-    func: @AbstractDefinition
-}
+    interface FunctionCall {
+        args: Expression[]
+        func: @AbstractDefinition
+    }
 
-interface Module {
-    name: string
-    statements: Statement[]
-}
+    interface Module {
+        name: string
+        statements: Statement[]
+    }
 
-interface NumberLiteral {
-    value: number
-}
+    interface NumberLiteral {
+        value: number
+    }
 
-`);
+`;
 
-const TEST_GRAMMAR =
-    `
-grammar Arithmetics
+const TEST_GRAMMAR = expandToStringWithNL`
+    grammar Arithmetics
 
-entry Module:
-    'module' name=ID
-    (statements+=Statement)*;
+    entry Module:
+        'module' name=ID
+        (statements+=Statement)*;
 
-Statement:
-    Definition | Evaluation;
+    Statement:
+        Definition | Evaluation;
 
-Definition:
-    'def' name=ID ('(' args+=DeclaredParameter (',' args+=DeclaredParameter)* ')')?
-    ':' expr=Expression ';';
+    Definition:
+        'def' name=ID ('(' args+=DeclaredParameter (',' args+=DeclaredParameter)* ')')?
+        ':' expr=Expression ';';
 
-DeclaredParameter:
-    name=ID;
+    DeclaredParameter:
+        name=ID;
 
-type AbstractDefinition = Definition | DeclaredParameter;
+    type AbstractDefinition = Definition | DeclaredParameter;
 
-Evaluation:
-    expression=Expression ';';
+    Evaluation:
+        expression=Expression ';';
 
-Expression:
-    Addition;
+    Expression:
+        Addition;
 
-Addition infers Expression:
-    Multiplication ({infer BinaryExpression.left=current} operator=('+' | '-') right=Multiplication)*;
+    Addition infers Expression:
+        Multiplication ({infer BinaryExpression.left=current} operator=('+' | '-') right=Multiplication)*;
 
-Multiplication infers Expression:
-    PrimaryExpression ({infer BinaryExpression.left=current} operator=('*' | '/') right=PrimaryExpression)*;
+    Multiplication infers Expression:
+        PrimaryExpression ({infer BinaryExpression.left=current} operator=('*' | '/') right=PrimaryExpression)*;
 
-PrimaryExpression infers Expression:
-    '(' Expression ')' |
-    {infer NumberLiteral} value=NUMBER |
-    {infer FunctionCall} func=[AbstractDefinition] ('(' args+=Expression (',' args+=Expression)* ')')?;
+    PrimaryExpression infers Expression:
+        '(' Expression ')' |
+        {infer NumberLiteral} value=NUMBER |
+        {infer FunctionCall} func=[AbstractDefinition] ('(' args+=Expression (',' args+=Expression)* ')')?;
 
-hidden terminal WS: /\\s+/;
-terminal ID: /[_a-zA-Z][\\w_]*/;
-terminal NUMBER returns number: /[0-9]+(\\.[0-9]*)?/;
+    hidden terminal WS: /\\s+/;
+    terminal ID: /[_a-zA-Z][\\w_]*/;
+    terminal NUMBER returns number: /[0-9]+(\\.[0-9]*)?/;
 
-hidden terminal ML_COMMENT: /\\/\\*[\\s\\S]*?\\*\\//;
-hidden terminal SL_COMMENT: /\\/\\/[^\\n\\r]*/;
+    hidden terminal ML_COMMENT: /\\/\\*[\\s\\S]*?\\*\\//;
+    hidden terminal SL_COMMENT: /\\/\\/[^\\n\\r]*/;
 `;

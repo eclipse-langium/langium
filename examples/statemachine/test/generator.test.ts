@@ -7,7 +7,7 @@
 import type { Generated } from 'langium';
 import type { Statemachine } from '../src/language-server/generated/ast.js';
 import { describe, expect, test } from 'vitest';
-import { EmptyFileSystem, normalizeEOL, toString } from 'langium';
+import { EmptyFileSystem, expandToStringWithNL, toString } from 'langium';
 import { parseHelper } from 'langium/test';
 import { generateCppContent } from '../src/cli/generator.js';
 import { createStatemachineServices } from '../src/language-server/statemachine-module.js';
@@ -31,7 +31,7 @@ describe('Tests the code generator', () => {
     });
 });
 
-const input = `
+const input = expandToStringWithNL`
     statemachine TrafficLight
 
     events
@@ -60,8 +60,8 @@ const input = `
     end
 `;
 
-const expectedOutput =
-normalizeEOL(`#include <iostream>
+const expectedOutput = expandToStringWithNL`
+#include <iostream>
 #include <map>
 #include <string>
 
@@ -213,4 +213,4 @@ int main() {
     delete statemachine;
     return 0;
 }
-`);
+`;

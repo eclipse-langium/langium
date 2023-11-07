@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import { expect, test } from 'vitest';
-import { expandToString as s, normalizeEOL } from 'langium';
+import { expandToStringLF as s } from 'langium';
 
 test('Should not throw when substituting null', () => {
     expect(s`${null}`).toBe('null');
@@ -16,10 +16,10 @@ test('Should not throw when substituting undefined', () => {
 });
 
 test('Should omit lines containing just a subsitution being undefined', () => {
-    const expected = normalizeEOL(`123
+    const expected = `123
 456
 abc
-def`);
+def`;
     expect(s`
         123
         ${456}
@@ -70,8 +70,8 @@ const frayedIndentation = s`
   test2
 `;
 
-const expectedFrayedIndentation = normalizeEOL(`  test1
-test2`);
+const expectedFrayedIndentation = `  test1
+test2`;
 
 const trimmedMultilineString = s`
   ${1}
@@ -86,7 +86,7 @@ const multilineStringWithWhitespace = s`
           ${3}${''}
     `;
 
-const expectedMultilineStringWithWhitespace = normalizeEOL('// we add some right space\n1\n  2\n    3');
+const expectedMultilineStringWithWhitespace = '// we add some right space\n1\n  2\n    3';
 
 const generator = () => {
     const applyMethod = (paramName: string) => s`
@@ -105,12 +105,12 @@ const generator = () => {
     `;
 };
 
-const expectedGeneratorOutput = normalizeEOL(`public interface PartialFunction<T, R> {
+const expectedGeneratorOutput = `public interface PartialFunction<T, R> {
     R apply(T t);
     boolean isDefinedAt(T t);
     @Override
     String toString() { return "T -> R"; }
-}`);
+}`;
 
 const nestedIndentation = s`
 ${1}x
@@ -120,6 +120,6 @@ ${1}x
   `}
 `;
 
-const expectedNestedIndentation = normalizeEOL(`1x
+const expectedNestedIndentation = `1x
       test1
-  test2`);
+  test2`;
