@@ -23,7 +23,7 @@ import { CompletionItemKind, CompletionList, Position } from 'vscode-languageser
 import * as ast from '../../grammar/generated/ast.js';
 import { getExplicitRuleType } from '../../grammar/internal-grammar-util.js';
 import { assignMandatoryAstProperties, getContainerOfType } from '../../utils/ast-util.js';
-import { findDeclarationNodeAtOffset, findLeafNodeAtOffset } from '../../utils/cst-util.js';
+import { findDeclarationNodeAtOffset, findLeafNodeBeforeOffset } from '../../utils/cst-util.js';
 import { getEntryRule } from '../../utils/grammar-util.js';
 import { stream } from '../../utils/stream.js';
 import { findFirstFeatures, findNextFeatures } from './follow-element-computation.js';
@@ -237,7 +237,7 @@ export class DefaultCompletionProvider implements CompletionProvider {
         const dataTypeRuleOffsets = this.findDataTypeRuleStart(cst, offset);
         if (dataTypeRuleOffsets) {
             const [ruleStart, ruleEnd] = dataTypeRuleOffsets;
-            const parentNode = findLeafNodeAtOffset(cst, ruleStart)?.astNode;
+            const parentNode = findLeafNodeBeforeOffset(cst, ruleStart)?.astNode;
             yield {
                 ...partialContext,
                 node: parentNode,
@@ -253,7 +253,7 @@ export class DefaultCompletionProvider implements CompletionProvider {
             // This check indicates that the cursor is still before the next token, so we should use the previous AST node (if it exists)
             astNodeOffset = previousTokenStart;
         }
-        const astNode = findLeafNodeAtOffset(cst, astNodeOffset)?.astNode;
+        const astNode = findLeafNodeBeforeOffset(cst, astNodeOffset)?.astNode;
         let performNextCompletion = true;
         if (previousTokenStart !== undefined && previousTokenEnd !== undefined && previousTokenEnd === offset) {
             // This context aims to complete the current feature

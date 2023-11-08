@@ -30,7 +30,7 @@ interface A {
 }
 
 X retu<|>rns A:
-    <|>na<|>me<|>=ID;
+    <|>na<|>me<|>=ID; <|>
 `.trim();
 
 const grammarServices = createLangiumGrammarServices(EmptyFileSystem).grammar;
@@ -94,7 +94,7 @@ describe('Definition Provider', () => {
         });
     });
 
-    describe('Should not find anything on keywords', () => {
+    describe('Should not find anything on certain cst nodes', () => {
 
         test('Should find nothing on `terminal` keyword', async () => {
             await gotoDefinition({
@@ -108,6 +108,14 @@ describe('Definition Provider', () => {
             await gotoDefinition({
                 text,
                 index: 5,
+                rangeIndex: []
+            });
+        });
+
+        test('Should find nothing white space', async () => {
+            await gotoDefinition({
+                text,
+                index: 9,
                 rangeIndex: []
             });
         });
