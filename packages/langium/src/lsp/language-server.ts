@@ -24,7 +24,9 @@ import type {
     SemanticTokensPartialResult,
     SemanticTokensRangeParams,
     ServerRequestHandler,
-    TextDocumentIdentifier, TypeHierarchySubtypesParams, TypeHierarchySupertypesParams
+    TextDocumentIdentifier,
+    TypeHierarchySubtypesParams,
+    TypeHierarchySupertypesParams
 } from 'vscode-languageserver';
 import type { LangiumServices, LangiumSharedServices } from '../services.js';
 import type { LangiumDocument } from '../workspace/documents.js';

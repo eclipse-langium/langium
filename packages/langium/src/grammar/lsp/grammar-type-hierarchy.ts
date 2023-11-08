@@ -4,12 +4,12 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { TypeHierarchyItem } from "vscode-languageserver";
-import { AbstractTypeHierarchyProvider } from "../../lsp/type-hierarchy-provider.js";
-import type { AstNode } from "../../syntax-tree.js";
-import { findLeafNodeAtOffset, getDocument, type Stream } from "../../utils/index.js";
-import type { ReferenceDescription } from "../../workspace/index.js";
-import { isInterface } from "../generated/ast.js";
+import type { AstNode } from '../../syntax-tree.js';
+import type { TypeHierarchyItem } from 'vscode-languageserver';
+import type { ReferenceDescription } from '../../workspace/index.js';
+import { AbstractTypeHierarchyProvider } from '../../lsp/type-hierarchy-provider.js';
+import { findLeafNodeAtOffset, getDocument, type Stream } from '../../utils/index.js';
+import { isInterface } from '../generated/ast.js';
 
 export class LangiumGrammarTypeHierarchyProvider extends AbstractTypeHierarchyProvider {
     protected getSupertypes(node: AstNode): TypeHierarchyItem[] | undefined {
@@ -24,7 +24,7 @@ export class LangiumGrammarTypeHierarchyProvider extends AbstractTypeHierarchyPr
             }
 
             return this.getTypeHierarchyItems(ref, getDocument(ref)) ?? [];
-        })
+        });
 
         return items.length === 0 ? undefined : items;
     }
@@ -53,7 +53,7 @@ export class LangiumGrammarTypeHierarchyProvider extends AbstractTypeHierarchyPr
             }
 
             return this.getTypeHierarchyItems(refNode, document) ?? [];
-        }).toArray()
+        }).toArray();
 
         return items.length === 0 ? undefined : items;
     }

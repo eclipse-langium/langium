@@ -1,7 +1,13 @@
-import {createLangiumGrammarServices, EmptyFileSystem} from "langium";
-import {parseHelper, replaceIndices} from "langium/test";
-import {describe, expect, test} from 'vitest';
-import {type TypeHierarchyItem} from 'vscode-languageserver';
+/******************************************************************************
+ * Copyright 2023 TypeFox GmbH
+ * This program and the accompanying materials are made available under the
+ * terms of the MIT License, which is available in the project root.
+ ******************************************************************************/
+
+import { createLangiumGrammarServices, EmptyFileSystem } from 'langium';
+import { parseHelper, replaceIndices } from 'langium/test';
+import { describe, expect, test } from 'vitest';
+import { type TypeHierarchyItem } from 'vscode-languageserver';
 
 const services = createLangiumGrammarServices(EmptyFileSystem).grammar;
 const typeHierarchyProvider = services.lsp.TypeHierarchyProvider!;
@@ -12,7 +18,7 @@ describe('LangiumGrammarTypeHierarchyProvider', async () => {
         const testCases: TypeHierarchyProviderTest[] = [
             {
                 testName: 'interface without supertypes',
-                code: `interface Decla<|>ration {}`,
+                code: 'interface Decla<|>ration {}',
                 expectedItems: undefined,
             },
             {
@@ -52,7 +58,7 @@ describe('LangiumGrammarTypeHierarchyProvider', async () => {
         const testCases: TypeHierarchyProviderTest[] = [
             {
                 testName: 'interface without subtypes',
-                code: `interface Decla<|>ration {}`,
+                code: 'interface Decla<|>ration {}',
                 expectedItems: undefined,
             },
             {
