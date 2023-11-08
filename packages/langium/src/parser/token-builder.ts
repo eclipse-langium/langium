@@ -38,6 +38,8 @@ export class DefaultTokenBuilder implements TokenBuilder {
                 tokens.push(terminalToken);
             }
         });
+        // We don't need to add the EOF token explicitly.
+        // It is automatically available at the end of the token stream.
         return tokens;
     }
 
