@@ -310,8 +310,10 @@ export class DefaultCompletionProvider implements CompletionProvider {
     }
 
     protected performNextTokenCompletion(document: LangiumDocument, text: string, _offset: number, _end: number): boolean {
-        // This regex returns false if the text ends with a letter
+        // This regex returns false if the text ends with a letter.
         // We don't want to complete new text immediately after a keyword, ID etc.
+        // We only care about the last character in the text, so we use $ here.
+        // The \P{L} used here is a Unicode category that matches any character that is not a letter
         return /\P{L}$/u.test(text);
     }
 
