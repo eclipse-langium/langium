@@ -7,6 +7,7 @@
 import type { DefaultSharedModuleContext } from '../default-module.js';
 import type { Module } from '../dependency-injection.js';
 import type { LangiumServices, LangiumSharedServices, PartialLangiumServices, PartialLangiumSharedServices } from '../services.js';
+import { LangiumGrammarTypeHierarchyProvider } from "./lsp/grammar-type-hierarchy.js";
 import type { LangiumGrammarDocument } from './workspace/documents.js';
 import type { Grammar } from './generated/ast.js';
 import { createDefaultModule, createDefaultSharedModule } from '../default-module.js';
@@ -51,6 +52,7 @@ export const LangiumGrammarModule: Module<LangiumGrammarServices, PartialLangium
         Formatter: () => new LangiumGrammarFormatter(),
         DefinitionProvider: (services) => new LangiumGrammarDefinitionProvider(services),
         CallHierarchyProvider: (services) => new LangiumGrammarCallHierarchyProvider(services),
+        TypeHierarchyProvider: (services) => new LangiumGrammarTypeHierarchyProvider(services),
         CompletionProvider: (services) => new LangiumGrammarCompletionProvider(services)
     },
     references: {
