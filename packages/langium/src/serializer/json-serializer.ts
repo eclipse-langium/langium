@@ -14,7 +14,6 @@ import { URI } from 'vscode-uri';
 import { isAstNode, isReference } from '../syntax-tree.js';
 import { getDocument } from '../utils/ast-util.js';
 import { findNodesForProperty } from '../utils/grammar-util.js';
-import { UriUtils } from '../utils/uri-util.js';
 import type { CommentProvider } from '../documentation/comment-provider.js';
 
 export interface JsonSerializeOptions {
@@ -32,6 +31,11 @@ export interface JsonSerializeOptions {
     replacer?: (key: string, value: unknown, defaultReplacer: (key: string, value: unknown) => unknown) => unknown
     /** Used to convert and serialize URIs when the target of a cross-reference is in a different document. */
     uriConverter?: (uri: URI, reference: Reference) => string
+}
+
+export interface JsonDeserializeOptions {
+    /** Used to parse and convert URIs when the target of a cross-reference is in a different document. */
+    uriConverter?: (uri: string) => URI
 }
 
 /**
@@ -84,7 +88,7 @@ export interface JsonSerializer {
     /**
      * Deserialize (parse) a JSON `string` into an `AstNode`.
      */
-    deserialize<T extends AstNode = AstNode>(content: string): T;
+    deserialize<T extends AstNode = AstNode>(content: string, options?: JsonDeserializeOptions): T;
 }
 
 /**
@@ -123,7 +127,7 @@ export class DefaultJsonSerializer implements JsonSerializer {
         this.commentProvider = services.documentation.CommentProvider;
     }
 
-    serialize(node: AstNode, options?: JsonSerializeOptions): string {
+    serialize(node: AstNode, options: JsonSerializeOptions = {}): string {
         const specificReplacer = options?.replacer;
         const defaultReplacer = (key: string, value: unknown) => this.replacer(key, value, options);
         const replacer = specificReplacer ? (key: string, value: unknown) => specificReplacer(key, value, defaultReplacer) : defaultReplacer;
@@ -136,13 +140,13 @@ export class DefaultJsonSerializer implements JsonSerializer {
         }
     }
 
-    deserialize<T extends AstNode = AstNode>(content: string): T {
+    deserialize<T extends AstNode = AstNode>(content: string, options: JsonDeserializeOptions = {}): T {
         const root = JSON.parse(content);
-        this.linkNode(root, root);
+        this.linkNode(root, root, options);
         return root;
     }
 
-    protected replacer(key: string, value: unknown, { refText, sourceText, textRegions, comments, uriConverter }: JsonSerializeOptions = {}): unknown {
+    protected replacer(key: string, value: unknown, { refText, sourceText, textRegions, comments, uriConverter }: JsonSerializeOptions): unknown {
         if (this.ignoreProperties.has(key)) {
             return undefined;
         } else if (isReference(value)) {
@@ -151,7 +155,7 @@ export class DefaultJsonSerializer implements JsonSerializer {
             if (refValue) {
                 const targetDocument = getDocument(refValue);
                 let targetUri = '';
-                if (this.currentDocument && !UriUtils.equals(this.currentDocument.uri, targetDocument.uri)) {
+                if (this.currentDocument && this.currentDocument !== targetDocument) {
                     if (uriConverter) {
                         targetUri = uriConverter(targetDocument.uri, value);
                     } else {
@@ -216,21 +220,21 @@ export class DefaultJsonSerializer implements JsonSerializer {
         return undefined;
     }
 
-    protected linkNode(node: GenericAstNode, root: AstNode, container?: AstNode, containerProperty?: string, containerIndex?: number) {
+    protected linkNode(node: GenericAstNode, root: AstNode, options: JsonDeserializeOptions, container?: AstNode, containerProperty?: string, containerIndex?: number) {
         for (const [propertyName, item] of Object.entries(node)) {
             if (Array.isArray(item)) {
                 for (let index = 0; index < item.length; index++) {
                     const element = item[index];
                     if (isIntermediateReference(element)) {
-                        item[index] = this.reviveReference(node, propertyName, root, element);
+                        item[index] = this.reviveReference(node, propertyName, root, element, options);
                     } else if (isAstNode(element)) {
-                        this.linkNode(element as GenericAstNode, root, node, propertyName, index);
+                        this.linkNode(element as GenericAstNode, root, options, node, propertyName, index);
                     }
                 }
             } else if (isIntermediateReference(item)) {
-                node[propertyName] = this.reviveReference(node, propertyName, root, item);
+                node[propertyName] = this.reviveReference(node, propertyName, root, item, options);
             } else if (isAstNode(item)) {
-                this.linkNode(item as GenericAstNode, root, node, propertyName);
+                this.linkNode(item as GenericAstNode, root, options, node, propertyName);
             }
         }
         const mutable = node as Mutable<AstNode>;
@@ -239,11 +243,11 @@ export class DefaultJsonSerializer implements JsonSerializer {
         mutable.$containerIndex = containerIndex;
     }
 
-    protected reviveReference(container: AstNode, property: string, root: AstNode, reference: IntermediateReference): Reference | undefined {
+    protected reviveReference(container: AstNode, property: string, root: AstNode, reference: IntermediateReference, options: JsonDeserializeOptions): Reference | undefined {
         let refText = reference.$refText;
         let error = reference.$error;
         if (reference.$ref) {
-            const ref = this.getRefNode(root, reference.$ref);
+            const ref = this.getRefNode(root, reference.$ref, options.uriConverter);
             if (isAstNode(ref)) {
                 if (!refText) {
                     refText = this.nameProvider.getName(ref);
@@ -272,7 +276,7 @@ export class DefaultJsonSerializer implements JsonSerializer {
         }
     }
 
-    protected getRefNode(root: AstNode, uri: string): AstNode | string {
+    protected getRefNode(root: AstNode, uri: string, uriConverter?: (uri: string) => URI): AstNode | string {
         try {
             const fragmentIndex = uri.indexOf('#');
             if (fragmentIndex === 0) {
@@ -282,8 +286,14 @@ export class DefaultJsonSerializer implements JsonSerializer {
                 }
                 return node;
             }
-            const document = this.langiumDocuments.getOrCreateDocument(URI.parse(uri.substring(0, fragmentIndex)));
-            if (fragmentIndex < 0 || fragmentIndex === uri.length - 1) {
+            if (fragmentIndex < 0) {
+                const documentUri = uriConverter ? uriConverter(uri) : URI.parse(uri);
+                const document = this.langiumDocuments.getOrCreateDocument(documentUri);
+                return document.parseResult.value;
+            }
+            const documentUri = uriConverter ? uriConverter(uri.substring(0, fragmentIndex)) : URI.parse(uri.substring(0, fragmentIndex));
+            const document = this.langiumDocuments.getOrCreateDocument(documentUri);
+            if (fragmentIndex === uri.length - 1) {
                 return document.parseResult.value;
             }
             const node = this.astNodeLocator.getAstNode(document.parseResult.value, uri.substring(fragmentIndex + 1));

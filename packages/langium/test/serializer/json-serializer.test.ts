@@ -6,6 +6,7 @@
 
 import type { AstNode, Reference } from 'langium';
 import { beforeEach, describe, expect, test } from 'vitest';
+import { URI } from 'vscode-uri';
 import { createServicesForGrammar, expandToStringLF } from 'langium';
 import { clearDocuments, parseHelper } from 'langium/test';
 
@@ -163,6 +164,37 @@ describe('JsonSerializer', async () => {
             }
         `;
         const model = serializer.deserialize<Entry>(json);
+        expect(model.elements).toHaveLength(1);
+        expect(model.elements[0].other?.ref).toStrictEqual(document1.parseResult.value.elements[0]);
+    });
+
+    test('Revive reference to other document with custom URI converter', async () => {
+        const document1 = await parse(`
+            element a
+        `, {
+            documentUri: 'file:///test1.langium'
+        });
+        await services.shared.workspace.DocumentBuilder.build([document1]);
+        const json = expandToStringLF`
+            {
+                "$type": "Entry",
+                "elements": [
+                    {
+                        "$type": "Element",
+                        "name": "b",
+                        "other": {
+                            "$ref": "file:///foo/test1.langium#/elements@0"
+                        }
+                    }
+                ]
+            }
+        `;
+        const model = serializer.deserialize<Entry>(json, {
+            uriConverter: (uriString) => {
+                const uri = URI.parse(uriString);
+                return uri.with({ path: uri.path.substring(4) });
+            }
+        });
         expect(model.elements).toHaveLength(1);
         expect(model.elements[0].other?.ref).toStrictEqual(document1.parseResult.value.elements[0]);
     });
