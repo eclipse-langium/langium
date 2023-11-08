@@ -6,7 +6,7 @@ More information: 🌍 https://langium.org
 
 ## Getting Started
 
-Langium offers a [Yeoman](https://yeoman.io) generator to create a new language extension for VS Code. The only prerequisite for the following terminal commands is [NodeJS](https://nodejs.org/) version 14 or higher.
+Langium offers a [Yeoman](https://yeoman.io) generator to create a new language extension for VS Code. The only prerequisite for the following terminal commands is [NodeJS](https://nodejs.org/) version 16 or higher.
 
 1. Install Yeoman and the Langium extension generator.
 ```
