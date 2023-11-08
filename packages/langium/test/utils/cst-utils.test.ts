@@ -4,55 +4,55 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { Grammar } from 'langium';
+import type { Grammar, LeafCstNode } from 'langium';
 import { describe, expect, test } from 'vitest';
-import { createLangiumGrammarServices, findLeafNodeAtOffset, EmptyFileSystem } from 'langium';
+import { createLangiumGrammarServices, findLeafNodeAtOffset, EmptyFileSystem, findLeafNodeBeforeOffset, expandToString } from 'langium';
 import { parseHelper } from 'langium/test';
 
 const services = createLangiumGrammarServices(EmptyFileSystem);
 const parser = parseHelper<Grammar>(services.grammar);
 
-describe('CST Utils', () => {
+describe('findLeafNode', () => {
 
-    test('Find Leaf Node at Offset: Main: value=<|>AB;', async () => {
-        const text = `
-        grammar test
-        Main: value=AB;
-        terminal fragment Frag: 'B';
-        terminal AB: 'A' Frag;
-        `;
+    for (const findLeafNode of [
+        findLeafNodeAtOffset,
+        findLeafNodeBeforeOffset
+    ]) {
+        test(`Find "AB" using ${findLeafNode.name} at Main: value=<|>AB;`, async () => {
+            const leafnode = await getLeafNode(findLeafNode, 0);
+            expect(leafnode?.text).toBe('AB');
+        });
 
-        const grammar = await parser(text);
-        const offset = grammar.textDocument.getText().indexOf('AB');
-        const leafnode = findLeafNodeAtOffset(grammar.parseResult.value.$cstNode!, offset!);
-        expect(leafnode!.text).toBe('AB');
+        test(`Find "AB" using ${findLeafNode.name} at Main: value=A<|>B;`, async () => {
+            const leafnode = await getLeafNode(findLeafNode, 1);
+            expect(leafnode?.text).toBe('AB');
+        });
+
+        test(`Find ";" using ${findLeafNode.name} at Main: value=AB<|>;`, async () => {
+            const leafnode = await getLeafNode(findLeafNode, 2);
+            expect(leafnode?.text).toBe(';');
+        });
+    }
+
+    test('Find no leaf Node at offset: Main: value=AB <|> ;', async () => {
+        const leafnode = await getLeafNode(findLeafNodeAtOffset, 2, 3);
+        expect(leafnode).toBeUndefined();
     });
 
-    test('Find Leaf Node at Offset: Main: value=A<|>B;', async () => {
-        const text = `
-        grammar test
-        Main: value=AB;
-        terminal fragment Frag: 'B';
-        terminal AB: 'A' Frag;
-        `;
-
-        const grammar = await parser(text);
-        const offset = grammar.textDocument.getText().indexOf('AB') + 1;
-        const leafnode = findLeafNodeAtOffset(grammar.parseResult.value.$cstNode!, offset!);
-        expect(leafnode!.text).toBe('AB');
+    test('Find "AB" before offset: Main: value=AB <|> ;', async () => {
+        const leafnode = await getLeafNode(findLeafNodeBeforeOffset, 2, 3);
+        expect(leafnode).toBeDefined();
+        expect(leafnode?.text).toBe('AB');
     });
 
-    test('Find Leaf Node at Offset: Main: value=AB<|>;', async () => {
-        const text = `
-        grammar test
-        Main: value=AB;
-        terminal fragment Frag: 'B';
-        terminal AB: 'A' Frag;
+    async function getLeafNode(findLeafNode: typeof findLeafNodeAtOffset, index: number, spaces?: number): Promise<LeafCstNode | undefined> {
+        const text = expandToString`
+        Main: value=AB${spaces ? ' '.repeat(spaces) : ''};
+        terminal AB: 'A';
         `;
-
         const grammar = await parser(text);
-        const offset = grammar.textDocument.getText().indexOf('AB') + 2;
-        const leafnode = findLeafNodeAtOffset(grammar.parseResult.value.$cstNode!, offset!);
-        expect(leafnode!.text).toBe(';');
-    });
+        const offset = text.indexOf('AB') + index;
+        const leafnode = findLeafNode(grammar.parseResult.value.$cstNode!, offset!);
+        return leafnode;
+    }
 });

@@ -23,7 +23,7 @@ import { CompletionItemKind, CompletionList, Position } from 'vscode-languageser
 import * as ast from '../../grammar/generated/ast.js';
 import { getExplicitRuleType } from '../../grammar/internal-grammar-util.js';
 import { assignMandatoryAstProperties, getContainerOfType } from '../../utils/ast-util.js';
-import { findDeclarationNodeAtOffset, findLeafNodeAtOffset } from '../../utils/cst-util.js';
+import { findDeclarationNodeAtOffset, findLeafNodeBeforeOffset } from '../../utils/cst-util.js';
 import { getEntryRule } from '../../utils/grammar-util.js';
 import { stream } from '../../utils/stream.js';
 import { findFirstFeatures, findNextFeatures } from './follow-element-computation.js';
@@ -237,7 +237,7 @@ export class DefaultCompletionProvider implements CompletionProvider {
         const dataTypeRuleOffsets = this.findDataTypeRuleStart(cst, offset);
         if (dataTypeRuleOffsets) {
             const [ruleStart, ruleEnd] = dataTypeRuleOffsets;
-            const parentNode = findLeafNodeAtOffset(cst, ruleStart)?.astNode;
+            const parentNode = findLeafNodeBeforeOffset(cst, ruleStart)?.astNode;
             yield {
                 ...partialContext,
                 node: parentNode,
@@ -248,9 +248,14 @@ export class DefaultCompletionProvider implements CompletionProvider {
         }
         // For all other purposes, it's enough to jump to the start of the current/previous token
         const { nextTokenStart, nextTokenEnd, previousTokenStart, previousTokenEnd } = this.backtrackToAnyToken(text, offset);
-        let astNode: AstNode | undefined;
+        let astNodeOffset = nextTokenStart;
+        if (offset <= nextTokenStart && previousTokenStart !== undefined) {
+            // This check indicates that the cursor is still before the next token, so we should use the previous AST node (if it exists)
+            astNodeOffset = previousTokenStart;
+        }
+        const astNode = findLeafNodeBeforeOffset(cst, astNodeOffset)?.astNode;
+        let performNextCompletion = true;
         if (previousTokenStart !== undefined && previousTokenEnd !== undefined && previousTokenEnd === offset) {
-            astNode = findLeafNodeAtOffset(cst, previousTokenStart)?.astNode;
             // This context aims to complete the current feature
             yield {
                 ...partialContext,
@@ -259,18 +264,26 @@ export class DefaultCompletionProvider implements CompletionProvider {
                 tokenEndOffset: previousTokenEnd,
                 features: this.findFeaturesAt(textDocument, previousTokenStart),
             };
-            // This context aims to complete the immediate next feature (if one exists at the current cursor position)
-            // It uses the previous AST node for that.
-            yield {
-                ...partialContext,
-                node: astNode,
-                tokenOffset: previousTokenEnd,
-                tokenEndOffset: previousTokenEnd,
-                features: this.findFeaturesAt(textDocument, previousTokenEnd),
-            };
+            // The completion after the current token should be prevented in case we find out that the current token definitely isn't completed yet
+            // This is usually the case when the current token ends on a letter.
+            performNextCompletion = this.performNextTokenCompletion(
+                document,
+                text.substring(previousTokenStart, previousTokenEnd),
+                previousTokenStart,
+                previousTokenEnd
+            );
+            if (performNextCompletion) {
+                // This context aims to complete the immediate next feature (if one exists at the current cursor position)
+                // It uses the previous cst start/offset for that.
+                yield {
+                    ...partialContext,
+                    node: astNode,
+                    tokenOffset: previousTokenEnd,
+                    tokenEndOffset: previousTokenEnd,
+                    features: this.findFeaturesAt(textDocument, previousTokenEnd),
+                };
+            }
         }
-        astNode = findLeafNodeAtOffset(cst, nextTokenStart)?.astNode
-            ?? (previousTokenStart === undefined ? undefined : findLeafNodeAtOffset(cst, previousTokenStart)?.astNode);
 
         if (!astNode) {
             const parserRule = getEntryRule(this.grammar);
@@ -284,8 +297,8 @@ export class DefaultCompletionProvider implements CompletionProvider {
                 tokenEndOffset: nextTokenEnd,
                 features: findFirstFeatures(parserRule.definition)
             };
-        } else {
-            // This context aims to complete the next feature, using the next ast node
+        } else if (performNextCompletion) {
+            // This context aims to complete the next feature, using the next cst start/end
             yield {
                 ...partialContext,
                 node: astNode,
@@ -294,6 +307,14 @@ export class DefaultCompletionProvider implements CompletionProvider {
                 features: this.findFeaturesAt(textDocument, nextTokenStart),
             };
         }
+    }
+
+    protected performNextTokenCompletion(document: LangiumDocument, text: string, _offset: number, _end: number): boolean {
+        // This regex returns false if the text ends with a letter.
+        // We don't want to complete new text immediately after a keyword, ID etc.
+        // We only care about the last character in the text, so we use $ here.
+        // The \P{L} used here is a Unicode category that matches any character that is not a letter
+        return /\P{L}$/u.test(text);
     }
 
     protected findDataTypeRuleStart(cst: CstNode, offset: number): [number, number] | undefined {
@@ -454,7 +475,7 @@ export class DefaultCompletionProvider implements CompletionProvider {
 
     protected filterKeyword(context: CompletionContext, keyword: ast.Keyword): boolean {
         // Filter out keywords that do not contain any word character
-        return keyword.value.match(/[\w]/) !== null;
+        return /\p{L}/u.test(keyword.value);
     }
 
     protected fillCompletionItem(context: CompletionContext, item: CompletionValueItem): CompletionItem | undefined {

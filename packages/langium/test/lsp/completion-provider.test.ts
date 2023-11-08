@@ -75,6 +75,25 @@ describe('Langium completion provider', () => {
             ]
         });
     });
+
+    test('Should not complete next feature directly after ID', async () => {
+        const model = `
+        grammar g<|>
+        A: name<|>="A";
+        B: "B";`;
+        // The completion provider used to propose any referencable element here
+        // It should not propose anything
+        await completion({
+            text: model,
+            index: 0,
+            expectedItems: []
+        });
+        await completion({
+            text: model,
+            index: 1,
+            expectedItems: []
+        });
+    });
 });
 
 describe('Completion within alternatives', () => {
