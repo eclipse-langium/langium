@@ -6,12 +6,12 @@
 
 import type { AstNode, Reference } from 'langium';
 import { beforeEach, describe, expect, test } from 'vitest';
-import { createServicesForGrammar, expandToString } from 'langium';
+import { createServicesForGrammar, expandToStringLF } from 'langium';
 import { clearDocuments, parseHelper } from 'langium/test';
 
 describe('JsonSerializer', async () => {
 
-    const grammar = expandToString`
+    const grammar = expandToStringLF`
         grammar JsonSerializerTest
 
         entry Entry: elements+=Element*;
@@ -36,7 +36,7 @@ describe('JsonSerializer', async () => {
         `);
         await services.shared.workspace.DocumentBuilder.build([document1, document1]);
         const json = serializer.serialize(document1.parseResult.value, { space: 4 });
-        expect(json).toEqual(normalize(expandToString`
+        expect(json).toEqual(expandToStringLF`
             {
                 "$type": "Entry",
                 "elements": [
@@ -53,7 +53,7 @@ describe('JsonSerializer', async () => {
                     }
                 ]
             }
-        `));
+        `);
     });
 
     test('Serialize reference to other document', async () => {
@@ -69,7 +69,7 @@ describe('JsonSerializer', async () => {
         });
         await services.shared.workspace.DocumentBuilder.build([document1, document2]);
         const json = serializer.serialize(document2.parseResult.value, { space: 4 });
-        expect(json).toEqual(normalize(expandToString`
+        expect(json).toEqual(expandToStringLF`
             {
                 "$type": "Entry",
                 "elements": [
@@ -82,7 +82,7 @@ describe('JsonSerializer', async () => {
                     }
                 ]
             }
-        `));
+        `);
     });
 
     test('Serialize reference to other document with custom URI converter', async () => {
@@ -101,7 +101,7 @@ describe('JsonSerializer', async () => {
             space: 4,
             uriConverter: (uri) => uri.with({ path: '/foo' + uri.path }).toString()
         });
-        expect(json).toEqual(normalize(expandToString`
+        expect(json).toEqual(expandToStringLF`
             {
                 "$type": "Entry",
                 "elements": [
@@ -114,11 +114,11 @@ describe('JsonSerializer', async () => {
                     }
                 ]
             }
-        `));
+        `);
     });
 
     test('Revive reference to same document', async () => {
-        const json = expandToString`
+        const json = expandToStringLF`
             {
                 "$type": "Entry",
                 "elements": [
@@ -148,7 +148,7 @@ describe('JsonSerializer', async () => {
             documentUri: 'file:///test1.langium'
         });
         await services.shared.workspace.DocumentBuilder.build([document1]);
-        const json = expandToString`
+        const json = expandToStringLF`
             {
                 "$type": "Entry",
                 "elements": [
@@ -168,7 +168,7 @@ describe('JsonSerializer', async () => {
     });
 
     test('Reference error with non-existing document', async () => {
-        const json = expandToString`
+        const json = expandToStringLF`
             {
                 "$type": "Entry",
                 "elements": [
@@ -196,8 +196,4 @@ interface Entry extends AstNode {
 interface Element extends AstNode {
     name: string
     other?: Reference<Element>
-}
-
-function normalize(s: string): string {
-    return s.replace(/\r\n/g, '\n');
 }
