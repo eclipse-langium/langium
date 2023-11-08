@@ -24,7 +24,7 @@ import type {
     SemanticTokensPartialResult,
     SemanticTokensRangeParams,
     ServerRequestHandler,
-    TextDocumentIdentifier
+    TextDocumentIdentifier, TypeHierarchySubtypesParams, TypeHierarchySupertypesParams
 } from 'vscode-languageserver';
 import type { LangiumServices, LangiumSharedServices } from '../services.js';
 import type { LangiumDocument } from '../workspace/documents.js';
@@ -104,6 +104,7 @@ export class DefaultLanguageServer implements LanguageServer {
         const hasHoverProvider = this.hasService(e => e.lsp.HoverProvider);
         const hasRenameProvider = this.hasService(e => e.lsp.RenameProvider);
         const hasCallHierarchyProvider = this.hasService(e => e.lsp.CallHierarchyProvider);
+        const hasTypeHierarchyProvider = this.hasService((e) => e.lsp.TypeHierarchyProvider);
         const hasCodeLensProvider = this.hasService(e => e.lsp.CodeLensProvider);
         const hasDeclarationProvider = this.hasService(e => e.lsp.DeclarationProvider);
         const hasInlayHintProvider = this.hasService(e => e.lsp.InlayHintProvider);
@@ -141,6 +142,9 @@ export class DefaultLanguageServer implements LanguageServer {
                 signatureHelpProvider: signatureHelpOptions,
                 implementationProvider: hasGoToImplementationProvider,
                 callHierarchyProvider: hasCallHierarchyProvider
+                    ? {}
+                    : undefined,
+                typeHierarchyProvider: hasTypeHierarchyProvider
                     ? {}
                     : undefined,
                 documentLinkProvider: hasDocumentLinkProvider
@@ -193,6 +197,7 @@ export function startLanguageServer(services: LangiumSharedServices): void {
     addExecuteCommandHandler(connection, services);
     addSignatureHelpHandler(connection, services);
     addCallHierarchyHandler(connection, services);
+    addTypeHierarchyHandler(connection, services);
     addCodeLensHandler(connection, services);
     addDocumentLinkHandler(connection, services);
     addConfigurationChangeHandler(connection, services);
@@ -501,6 +506,47 @@ export function addCallHierarchyHandler(connection: Connection, services: Langiu
 export function createCallHierarchyRequestHandler<P extends CallHierarchyIncomingCallsParams | CallHierarchyOutgoingCallsParams, R, PR, E = void>(
     serviceCall: (services: LangiumServices, params: P, cancelToken: CancellationToken) => HandlerResult<R, E>,
     sharedServices: LangiumSharedServices
+): ServerRequestHandler<P, R, PR, E> {
+    const serviceRegistry = sharedServices.ServiceRegistry;
+    return async (params: P, cancelToken: CancellationToken) => {
+        const uri = URI.parse(params.item.uri);
+        const language = serviceRegistry.getServices(uri);
+        if (!language) {
+            const message = `Could not find service instance for uri: '${uri.toString()}'`;
+            console.error(message);
+            throw new Error(message);
+        }
+        try {
+            return await serviceCall(language, params, cancelToken);
+        } catch (err) {
+            return responseError<E>(err);
+        }
+    };
+}
+
+export function addTypeHierarchyHandler(connection: Connection, sharedServices: LangiumSharedServices): void {
+    connection.languages.typeHierarchy.onPrepare(
+        createServerRequestHandler((services, document, params, cancelToken) => {
+            return services.lsp.TypeHierarchyProvider?.prepareTypeHierarchy(document, params, cancelToken) ?? null;
+        }, sharedServices),
+    );
+
+    connection.languages.typeHierarchy.onSupertypes(
+        createTypeHierarchyRequestHandler((services, params, cancelToken) => {
+            return services.lsp.TypeHierarchyProvider?.supertypes(params, cancelToken) ?? null;
+        }, sharedServices),
+    );
+
+    connection.languages.typeHierarchy.onSubtypes(
+        createTypeHierarchyRequestHandler((services, params, cancelToken) => {
+            return services.lsp.TypeHierarchyProvider?.subtypes(params, cancelToken) ?? null;
+        }, sharedServices),
+    );
+}
+
+export function createTypeHierarchyRequestHandler<P extends TypeHierarchySupertypesParams | TypeHierarchySubtypesParams, R, PR, E = void>(
+    serviceCall: (services: LangiumServices, params: P, cancelToken: CancellationToken) => HandlerResult<R, E>,
+    sharedServices: LangiumSharedServices,
 ): ServerRequestHandler<P, R, PR, E> {
     const serviceRegistry = sharedServices.ServiceRegistry;
     return async (params: P, cancelToken: CancellationToken) => {
