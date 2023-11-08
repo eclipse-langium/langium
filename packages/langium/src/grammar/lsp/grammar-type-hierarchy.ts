@@ -6,9 +6,11 @@
 
 import type { AstNode } from '../../syntax-tree.js';
 import type { TypeHierarchyItem } from 'vscode-languageserver';
-import type { ReferenceDescription } from '../../workspace/index.js';
+import type { ReferenceDescription } from '../../workspace/ast-descriptions.js';
+import type { Stream } from '../../utils/stream.js';
 import { AbstractTypeHierarchyProvider } from '../../lsp/type-hierarchy-provider.js';
-import { findLeafNodeAtOffset, getDocument, type Stream } from '../../utils/index.js';
+import { getDocument } from '../../utils/ast-util.js';
+import { findLeafNodeAtOffset } from '../../utils/cst-util.js';
 import { isInterface } from '../generated/ast.js';
 
 export class LangiumGrammarTypeHierarchyProvider extends AbstractTypeHierarchyProvider {
