@@ -205,6 +205,7 @@ export abstract class AbstractSemanticTokenProvider implements SemanticTokenProv
         this.currentRange = undefined;
         this.currentDocument = document;
         this.currentTokensBuilder = this.getDocumentTokensBuilder(document);
+        this.currentTokensBuilder.previousResult(this.currentTokensBuilder.id);
         await this.computeHighlighting(document, this.createAcceptor(), cancelToken);
         return this.currentTokensBuilder.build();
     }
@@ -213,6 +214,7 @@ export abstract class AbstractSemanticTokenProvider implements SemanticTokenProv
         this.currentRange = params.range;
         this.currentDocument = document;
         this.currentTokensBuilder = this.getDocumentTokensBuilder(document);
+        this.currentTokensBuilder.previousResult(this.currentTokensBuilder.id);
         await this.computeHighlighting(document, this.createAcceptor(), cancelToken);
         return this.currentTokensBuilder.build();
     }

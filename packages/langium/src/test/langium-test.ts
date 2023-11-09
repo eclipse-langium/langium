@@ -9,7 +9,7 @@ import type { LangiumServices, LangiumSharedServices } from '../services.js';
 import type { AstNode, CstNode, Properties } from '../syntax-tree.js';
 import type { LangiumDocument } from '../workspace/documents.js';
 import type { BuildOptions } from '../workspace/document-builder.js';
-import { CancellationTokenSource, DiagnosticSeverity, MarkupContent } from 'vscode-languageserver';
+import { DiagnosticSeverity, MarkupContent } from 'vscode-languageserver';
 import { escapeRegExp } from '../utils/regex-util.js';
 import { URI } from '../utils/uri-util.js';
 import { findNodeForProperty } from '../utils/grammar-util.js';
@@ -707,14 +707,17 @@ export interface DecodedSemanticTokensWithRanges {
 
 export function highlightHelper<T extends AstNode = AstNode>(services: LangiumServices): (input: string, options?: ParseHelperOptions) => Promise<DecodedSemanticTokensWithRanges> {
     const parse = parseHelper<T>(services);
-    const tokenProvider = services.lsp.SemanticTokenProvider!;
+    const tokenProvider = services.lsp.SemanticTokenProvider;
+    if (!tokenProvider) {
+        throw new Error('No semantic token provider provided!');
+    }
     return async (text, options) => {
         const { output: input, ranges } = replaceIndices({
             text
         });
         const document = await parse(input, options);
         const params: SemanticTokensParams = { textDocument: { uri: document.textDocument.uri } };
-        const tokens = await tokenProvider.semanticHighlight(document, params, new CancellationTokenSource().token);
+        const tokens = await tokenProvider.semanticHighlight(document, params);
         return { tokens: SemanticTokensDecoder.decode(tokens, document), ranges };
     };
 }
