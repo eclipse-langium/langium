@@ -134,7 +134,7 @@ function decorateText(document: vscode.TextDocument, decorations: vscode.Decorat
     while ((match = regEx.exec(text))) {
         const startIndex = textIndex + match.index;
         const startPos = document.positionAt(startIndex + indentation);
-        const endPos = document.positionAt(startIndex + match[0].trimRight().length);
+        const endPos = document.positionAt(startIndex + match[0].trimEnd().length);
         if (startPos.isBefore(endPos)) {
             const range = new vscode.Range(startPos, endPos);
             decorations.push({ range });
@@ -144,7 +144,7 @@ function decorateText(document: vscode.TextDocument, decorations: vscode.Decorat
 
 // TODO(@@dd): find bug
 function findIndentation(text: string): number {
-    const indents = text.split(/[\r?\n]/g).map(line => line.trimRight()).filter(line => line.length > 0).map(line => line.search(/\S|$/));
+    const indents = text.split(/[\r?\n]/g).map(line => line.trimEnd()).filter(line => line.length > 0).map(line => line.search(/\S|$/));
     const min = indents.length === 0 ? 0 : Math.min(...indents); // min(...[]) = min() = Infinity
     return Math.max(0, min);
 }

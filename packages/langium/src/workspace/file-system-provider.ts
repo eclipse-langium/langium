@@ -38,11 +38,11 @@ export interface FileSystemProvider {
 export class EmptyFileSystemProvider implements FileSystemProvider {
 
     readFile(): Promise<string> {
-        throw new Error('Method not implemented.');
+        throw new Error('No file system is available.');
     }
 
     readFileSync(): string {
-        throw new Error('Method not implemented.');
+        throw new Error('No file system is available.');
     }
 
     async readDirectory(): Promise<FileSystemNode[]> {
