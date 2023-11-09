@@ -51,9 +51,10 @@ import type { SignatureHelpProvider } from './lsp/signature-help-provider.js';
 import type { TypeDefinitionProvider } from './lsp/type-provider.js';
 import type { ImplementationProvider } from './lsp/implementation-provider.js';
 import type { CallHierarchyProvider } from './lsp/call-hierarchy-provider.js';
-import type { DocumentLinkProvider } from './lsp/document-link-provider.js';
 import type { CodeLensProvider } from './lsp/code-lens-provider.js';
 import type { DeclarationProvider } from './lsp/declaration-provider.js';
+import type { DocumentLinkProvider } from './lsp/document-link-provider.js';
+import type { DocumentUpdateHandler } from './lsp/document-update-handler.js';
 import type { DocumentationProvider } from './documentation/documentation-provider.js';
 import type { InlayHintProvider } from './lsp/inlay-hint-provider.js';
 import type { CommentProvider } from './documentation/comment-provider.js';
@@ -162,11 +163,12 @@ export type LangiumDefaultSharedServices = {
     ServiceRegistry: ServiceRegistry
     lsp: {
         Connection?: Connection
+        LanguageServer: LanguageServer
+        DocumentUpdateHandler: DocumentUpdateHandler
         ExecuteCommandHandler?: ExecuteCommandHandler
         WorkspaceSymbolProvider?: WorkspaceSymbolProvider
         NodeKindProvider: NodeKindProvider
         FuzzyMatcher: FuzzyMatcher
-        LanguageServer: LanguageServer
     }
     workspace: {
         DocumentBuilder: DocumentBuilder

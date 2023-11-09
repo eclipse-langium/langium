@@ -15,6 +15,7 @@ import { createCompletionParser } from './parser/completion-parser-builder.js';
 import { DefaultCompletionProvider } from './lsp/completion/completion-provider.js';
 import { DefaultDocumentHighlightProvider } from './lsp/document-highlight-provider.js';
 import { DefaultDocumentSymbolProvider } from './lsp/document-symbol-provider.js';
+import { DefaultDocumentUpdateHandler } from './lsp/document-update-handler.js';
 import { DefaultFoldingRangeProvider } from './lsp/folding-range-provider.js';
 import { DefaultFuzzyMatcher } from './lsp/fuzzy-matcher.js';
 import { DefaultDefinitionProvider } from './lsp/definition-provider.js';
@@ -136,6 +137,7 @@ export function createDefaultSharedModule(context: DefaultSharedModuleContext): 
         lsp: {
             Connection: () => context.connection,
             LanguageServer: (services) => new DefaultLanguageServer(services),
+            DocumentUpdateHandler: (services) => new DefaultDocumentUpdateHandler(services),
             WorkspaceSymbolProvider: (services) => new DefaultWorkspaceSymbolProvider(services),
             NodeKindProvider: () => new DefaultNodeKindProvider(),
             FuzzyMatcher: () => new DefaultFuzzyMatcher()

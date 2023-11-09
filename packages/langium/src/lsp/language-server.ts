@@ -30,7 +30,7 @@ import type {
 } from 'vscode-languageserver';
 import type { LangiumServices, LangiumSharedServices } from '../services.js';
 import type { LangiumDocument } from '../workspace/documents.js';
-import { Emitter, FileChangeType, LSPErrorCodes, ResponseError, TextDocumentSyncKind } from 'vscode-languageserver';
+import { Emitter, LSPErrorCodes, ResponseError, TextDocumentSyncKind } from 'vscode-languageserver';
 import { eagerLoad } from '../dependency-injection.js';
 import { isOperationCancelled } from '../utils/promise-util.js';
 import { DocumentState } from '../workspace/documents.js';
@@ -87,6 +87,7 @@ export class DefaultLanguageServer implements LanguageServer {
 
     protected buildInitializeResult(_params: InitializeParams): InitializeResult {
         const languages = this.services.ServiceRegistry.all;
+        const fileOperationOptions = this.services.lsp.DocumentUpdateHandler.fileOperationOptions;
         const hasFormattingService = this.hasService(e => e.lsp.Formatter);
         const formattingOnTypeOptions = languages.map(e => e.lsp.Formatter?.formatOnTypeOptions).find(e => Boolean(e));
         const hasCodeActionProvider = this.hasService(e => e.lsp.CodeActionProvider);
@@ -117,7 +118,8 @@ export class DefaultLanguageServer implements LanguageServer {
                 workspace: {
                     workspaceFolders: {
                         supported: true
-                    }
+                    },
+                    fileOperations: fileOperationOptions
                 },
                 executeCommandProvider: commandNames && {
                     commands: commandNames
@@ -222,30 +224,32 @@ export function startLanguageServer(services: LangiumSharedServices): void {
 }
 
 export function addDocumentsHandler(connection: Connection, services: LangiumSharedServices): void {
-    const documentBuilder = services.workspace.DocumentBuilder;
-    const mutex = services.workspace.MutexLock;
-
-    function onDidChange(changed: URI[], deleted: URI[]): void {
-        mutex.lock(token => documentBuilder.update(changed, deleted, token));
-    }
-
+    const handler = services.lsp.DocumentUpdateHandler;
     const documents = services.workspace.TextDocuments;
-    documents.onDidChangeContent(change => {
-        onDidChange([URI.parse(change.document.uri)], []);
-    });
-    connection.onDidChangeWatchedFiles(params => {
-        const changedUris: URI[] = [];
-        const deletedUris: URI[] = [];
-        for (const change of params.changes) {
-            const uri = URI.parse(change.uri);
-            if (change.type === FileChangeType.Deleted) {
-                deletedUris.push(uri);
-            } else {
-                changedUris.push(uri);
-            }
-        }
-        onDidChange(changedUris, deletedUris);
-    });
+    if (handler.didChangeContent) {
+        documents.onDidChangeContent(change => handler.didChangeContent!(change));
+    }
+    if (handler.didChangeWatchedFiles) {
+        connection.onDidChangeWatchedFiles(params => handler.didChangeWatchedFiles!(params));
+    }
+    if (handler.didCreateFiles) {
+        connection.workspace.onDidCreateFiles(params => handler.didCreateFiles!(params));
+    }
+    if (handler.didRenameFiles) {
+        connection.workspace.onDidRenameFiles(params => handler.didRenameFiles!(params));
+    }
+    if (handler.didDeleteFiles) {
+        connection.workspace.onDidDeleteFiles(params => handler.didDeleteFiles!(params));
+    }
+    if (handler.willCreateFiles) {
+        connection.workspace.onWillCreateFiles(params => handler.willCreateFiles!(params));
+    }
+    if (handler.willRenameFiles) {
+        connection.workspace.onWillRenameFiles(params => handler.willRenameFiles!(params));
+    }
+    if (handler.willDeleteFiles) {
+        connection.workspace.onWillDeleteFiles(params => handler.willDeleteFiles!(params));
+    }
 }
 
 export function addDiagnosticsHandler(connection: Connection, services: LangiumSharedServices): void {

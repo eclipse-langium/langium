@@ -45,17 +45,10 @@ async function startLanguageClient(context: vscode.ExtensionContext): Promise<La
         }
     };
 
-    const fileSystemWatcher = vscode.workspace.createFileSystemWatcher('**/*.langium');
-    context.subscriptions.push(fileSystemWatcher);
-
     // Options to control the language client
     const clientOptions: LanguageClientOptions = {
         // Register the server for langium documents
-        documentSelector: [{ scheme: 'file', language: 'langium' }],
-        synchronize: {
-            // Notify the server about file changes to langium files contained in the workspace
-            fileEvents: fileSystemWatcher
-        }
+        documentSelector: [{ scheme: 'file', language: 'langium' }]
     };
 
     // Create the language client and start the client.
