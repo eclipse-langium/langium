@@ -4,9 +4,9 @@
  * terms of the MIT License, which is available in the project root.
 ******************************************************************************/
 import type { Grammar } from 'langium';
-import type { LangiumLanguageConfig } from '../../package.js';
-import { EOL, escapeRegExp, getCaseInsensitivePattern, getTerminalParts, GrammarAST, isCommentTerminal, stream } from 'langium';
+import { escapeRegExp, getCaseInsensitivePattern, getTerminalParts, GrammarAST, isCommentTerminal, stream } from 'langium';
 import { terminalRegex } from 'langium/internal';
+import type { LangiumLanguageConfig } from '../../package.js';
 import { collectKeywords } from '../util.js';
 
 /* eslint-disable dot-notation */
@@ -57,7 +57,7 @@ export function generateTextMate(grammar: Grammar, config: LangiumLanguageConfig
         repository: getRepository(grammar, config)
     };
 
-    return JSON.stringify(json, null, 2) + EOL;
+    return JSON.stringify(json, null, 2) + '\n';
 }
 
 function getPatterns(grammar: Grammar, config: LangiumLanguageConfig): Pattern[] {

@@ -3,11 +3,11 @@
  * This program and the accompanying materials are made available under the
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
-import type { Grammar } from 'langium';
-import type { LangiumLanguageConfig } from '../../package.js';
-import { CompositeGeneratorNode, escapeRegExp, GrammarAST, isCommentTerminal, NL, toString } from 'langium';
+import { GrammarAST, escapeRegExp, isCommentTerminal, type Grammar } from 'langium';
+import { expandToNode, joinToNode, toString, type Generated } from 'langium/generate';
 import { terminalRegex } from 'langium/internal';
 import _ from 'lodash';
+import type { LangiumLanguageConfig } from '../../package.js';
 import { collectKeywords } from '../util.js';
 
 interface HighlightElement {
@@ -52,46 +52,44 @@ export function generatePrismHighlighting(grammar: Grammar, config: LangiumLangu
 }
 
 function generate(highlighter: PrismHighlighter, grammarName: string): string {
-    const generatorNode = new CompositeGeneratorNode(
-        '// This file is generated using a best effort guess for your language.', NL,
-        '// It is not guaranteed contain all expected prism syntax highlighting rules.', NL,
-        '// For more documentation, take a look at https://prismjs.com/extending.html', NL,
-        'Prism.languages.', _.camelCase(grammarName), ' = {', NL
+    /* eslint-disable @typescript-eslint/indent */
+    return toString(
+        expandToNode`
+            // This file is generated using a best effort guess for your language.
+            // It is not guaranteed contain all expected prism syntax highlighting rules.
+            // For more documentation, take a look at https://prismjs.com/extending.html'
+            Prism.languages.${_.camelCase(grammarName)} = {
+                ${joinToNode(
+                    Object.entries(highlighter),
+                    ([name, value]) => {
+                        const propertyName = !idRegex.test(name) ? `"${name}"` : name;
+                        return Array.isArray(value) ? expandToNode`
+                            ${propertyName}: [
+                                ${joinToNode(value, generateElement, { separator: ',', appendNewLineIfNotEmpty: true })}
+                            ]
+                        ` : expandToNode`
+                            ${propertyName}: ${generateElement(value)}
+                        `;
+                    },
+                    { separator: ',', appendNewLineIfNotEmpty: true }
+                )}
+            };
+        `.appendNewLine()
     );
-    generatorNode.indent(propertyIndent => {
-        for (const [name, value] of Object.entries(highlighter)) {
-            let propertyName = name;
-            if (!idRegex.test(name)) {
-                propertyName = `"${name}"`;
-            }
-            propertyIndent.append(propertyName, ': ');
-            if (Array.isArray(value)) {
-                propertyIndent.append('[', NL);
-                propertyIndent.indent(arrayIndent => {
-                    for (const element of value) {
-                        generateElement(arrayIndent, element);
-                    }
-                });
-                propertyIndent.append('],', NL);
-            } else {
-                generateElement(propertyIndent, value);
-            }
-        }
-    });
-    generatorNode.append('};', NL);
-    return toString(generatorNode);
+    /* eslint-enable @typescript-eslint/indent */
 }
 
-function generateElement(node: CompositeGeneratorNode, element: HighlightElement): void {
-    node.append('{', NL);
-    node.indent(objectIndent => {
-        objectIndent.append('pattern: ', element.pattern);
-        if (element.greedy) {
-            objectIndent.append(',', NL, 'greedy: true');
+function generateElement(element: HighlightElement): Generated {
+    const props = [
+        `pattern: ${element.pattern}`,
+        element.greedy ? 'greedy: true' : undefined
+    ].filter(Boolean);
+
+    return expandToNode`
+        {
+            ${joinToNode(props, { separator: ',', appendNewLineIfNotEmpty: true })}
         }
-        objectIndent.append(NL);
-    });
-    node.append('},', NL);
+    `;
 }
 
 function getTerminals(grammar: Grammar): GrammarAST.TerminalRule[] {

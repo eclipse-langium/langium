@@ -4,10 +4,10 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { Grammar } from 'langium';
-import type { LangiumLanguageConfig } from '../../package.js';
-import { getTerminalParts, isCommentTerminal, CompositeGeneratorNode, NL, toString, escapeRegExp, GrammarAST, isWhitespaceRegExp } from 'langium';
+import { type Grammar, getTerminalParts, isCommentTerminal, escapeRegExp, GrammarAST, isWhitespaceRegExp } from 'langium';
+import { type Generated, expandToNode, joinToNode, toString } from 'langium/generate';
 import { terminalRegex } from 'langium/internal';
+import type { LangiumLanguageConfig } from '../../package.js';
 import { collectKeywords } from '../util.js';
 
 /**
@@ -190,22 +190,14 @@ function getTokenizerStates(grammar: Grammar): State[] {
  */
 function prettyPrint(monarchGrammar: MonarchGrammar): string {
     const name = monarchGrammar.languageDefinition.name;
-    const node = new CompositeGeneratorNode(
-        `// Monarch syntax highlighting for the ${name} language.`, NL,
-        'export default {', NL
-    );
+    const node = expandToNode`
+        // Monarch syntax highlighting for the ${name} language.
+        export default {
+            ${prettyPrintLangDef(monarchGrammar.languageDefinition)}
 
-    node.indent(grammarDef => {
-        // add language definitions
-        prettyPrintLangDef(monarchGrammar.languageDefinition, grammarDef);
-        grammarDef.append(NL, NL);
-
-        // add tokenizer parts, simple state machine groupings
-        prettyPrintTokenizer(monarchGrammar.tokenizer, grammarDef);
-        grammarDef.append(NL);
-
-    });
-    node.append('};', NL);
+            ${prettyPrintTokenizer(monarchGrammar.tokenizer)}
+        };
+    `.appendNewLine();
 
     return toString(node);
 }
@@ -216,13 +208,12 @@ function prettyPrint(monarchGrammar: MonarchGrammar): string {
  * @param values Values to add under the given category
  * @returns GeneratorNode containing this printed language definition entry
  */
-function genLanguageDefEntry(name: string, values: string[]): CompositeGeneratorNode {
-    const node = new CompositeGeneratorNode(`${name}: [`, NL);
-    node.indent(langDefValues => {
-        langDefValues.append(values.map(v => `'${v}'`).join(','));
-    });
-    node.append(NL, '],');
-    return node;
+function genLanguageDefEntry(name: string, values: string[]): Generated {
+    return expandToNode`
+        ${name}: [
+            ${ values.map(v => `'${v}'`).join(',') }
+        ],
+    `;
 }
 
 /**
@@ -230,13 +221,13 @@ function genLanguageDefEntry(name: string, values: string[]): CompositeGenerator
  * @param languageDef LanguageDefinition to pretty print
  * @param node Existing generator node to append printed language definition to
  */
-function prettyPrintLangDef(languageDef: LanguageDefinition, node: CompositeGeneratorNode): void {
-    node.append(
-        genLanguageDefEntry('keywords', languageDef.keywords), NL,
-        genLanguageDefEntry('operators', languageDef.operators), NL,
-        // special case, identify symbols via singular regex
-        `symbols: ${new RegExp(languageDef.symbols.map(escapeRegExp).join('|')).toString()},`
-    );
+function prettyPrintLangDef(languageDef: LanguageDefinition): Generated {
+    return expandToNode`
+        ${genLanguageDefEntry('keywords', languageDef.keywords)}
+        ${genLanguageDefEntry('operators', languageDef.operators)}
+        ${/* special case, identify symbols via singular regex*/ undefined}
+        symbols: ${new RegExp(languageDef.symbols.map(escapeRegExp).join('|')).toString()},
+    `;
 }
 
 /**
@@ -244,15 +235,12 @@ function prettyPrintLangDef(languageDef: LanguageDefinition, node: CompositeGene
  * @param tokenizer Tokenizer portion to print out
  * @param node Existing generator node to append printed tokenizer to
  */
-function prettyPrintTokenizer(tokenizer: Tokenizer, node: CompositeGeneratorNode): void {
-    node.append('tokenizer: {', NL);
-    node.indent(tokenizerStates => {
-        for (const state of tokenizer.states) {
-            prettyPrintState(state, tokenizerStates);
-            tokenizerStates.append(NL);
+function prettyPrintTokenizer(tokenizer: Tokenizer): Generated {
+    return expandToNode`
+        tokenizer: {
+            ${joinToNode(tokenizer.states, prettyPrintState, { appendNewLineIfNotEmpty: true})}
         }
-    });
-    node.append('}');
+    `;
 }
 
 /**
@@ -260,14 +248,12 @@ function prettyPrintTokenizer(tokenizer: Tokenizer, node: CompositeGeneratorNode
  * @param state Tokenizer state to pretty print
  * @param node Existing enerator node to append printed state to
  */
-function prettyPrintState(state: State, node: CompositeGeneratorNode): void {
-    node.append(state.name + ': [', NL);
-    node.indent(inode => {
-        for (const rule of state.rules) {
-            inode.append(prettyPrintRule(rule), NL);
-        }
-    });
-    node.append('],');
+function prettyPrintState(state: State): Generated {
+    return expandToNode`
+        ${state.name}: [
+            ${joinToNode(state.rules, prettyPrintRule, { appendNewLineIfNotEmpty: true })}
+        ],
+    `;
 }
 
 /**
@@ -276,14 +262,14 @@ function prettyPrintState(state: State, node: CompositeGeneratorNode): void {
  * @param ruleOrState Rule to pretty print. If it's a state, we include that state's contents implicitly within this context.
  * @returns Generator node containing this printed rule
  */
-function prettyPrintRule(ruleOrState: Rule | State): CompositeGeneratorNode {
+function prettyPrintRule(ruleOrState: Rule | State): Generated {
     if (isRule(ruleOrState)) {
         // extract rule pattern, either just a string or a regex w/ parts
         const rulePatt = ruleOrState.regex instanceof RegExp ? ruleOrState.regex : new RegExp(ruleOrState.regex);
-        return new CompositeGeneratorNode('{ regex: ' + rulePatt.toString() + ', action: ' + prettyPrintAction(ruleOrState.action) + ' },');
+        return expandToNode`{ regex: ${rulePatt.toString()}, action: ${prettyPrintAction(ruleOrState.action)} },`;
     } else {
         // include another state by name, implicitly includes all of its contents
-        return new CompositeGeneratorNode(`{ include: '@${ruleOrState.name}' },`);
+        return expandToNode`{ include: '@${ruleOrState.name}' },`;
     }
 }
 

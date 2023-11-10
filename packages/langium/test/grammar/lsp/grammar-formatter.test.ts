@@ -4,9 +4,10 @@
 * terms of the MIT License, which is available in the project root.
 ******************************************************************************/
 
-import { describe, test } from 'vitest';
-import { EmptyFileSystem, createLangiumGrammarServices, expandToString } from 'langium';
+import { EmptyFileSystem, createLangiumGrammarServices } from 'langium';
+import { expandToString } from 'langium/generate';
 import { expectFormatting } from 'langium/test';
+import { describe, test } from 'vitest';
 
 const services = createLangiumGrammarServices(EmptyFileSystem);
 const formatting = expectFormatting(services.grammar);

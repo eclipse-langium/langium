@@ -5,12 +5,13 @@
  ******************************************************************************/
 
 import type { Grammar, LangiumServices } from 'langium';
-import { DocumentState, GrammarAST, URI, expandToString } from 'langium';
-import type { Connection} from 'vscode-languageserver';
+import { DocumentState, GrammarAST, URI } from 'langium';
+import { createGrammarDiagramHtml } from 'langium-railroad';
+import { expandToString } from 'langium/generate';
+import { resolveTransitiveImports } from 'langium/internal';
+import type { Connection } from 'vscode-languageserver';
 import { DiagnosticSeverity } from 'vscode-languageserver';
 import { DOCUMENTS_VALIDATED_NOTIFICATION, RAILROAD_DIAGRAM_REQUEST } from './messages.js';
-import { createGrammarDiagramHtml } from 'langium-railroad';
-import { resolveTransitiveImports } from 'langium/internal';
 
 export function registerRailroadConnectionHandler(connection: Connection, services: LangiumServices): void {
     const documentBuilder = services.shared.workspace.DocumentBuilder;

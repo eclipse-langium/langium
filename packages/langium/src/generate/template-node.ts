@@ -5,10 +5,11 @@
  ******************************************************************************/
 
 import type { AstNode, Properties } from '../syntax-tree.js';
+import { NEWLINE_REGEXP } from '../utils/regex-util.js';
 import type { Generated, GeneratorNode, IndentNode } from './generator-node.js';
-import type { SourceRegion } from './generator-tracing.js';
 import { CompositeGeneratorNode, isGeneratorNode, traceToNode } from './generator-node.js';
-import { findIndentation, NEWLINE_REGEXP } from './template-string.js';
+import type { SourceRegion } from './generator-tracing.js';
+import { findIndentation } from './template-string.js';
 
 /**
  * A tag function that attaches the template's content to a {@link CompositeGeneratorNode}.

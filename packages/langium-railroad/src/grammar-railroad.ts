@@ -4,7 +4,8 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { EOL, GrammarAST, expandToString, findNameAssignment } from 'langium';
+import { GrammarAST, findNameAssignment } from 'langium';
+import { expandToStringLF, expandToStringLFWithNL } from 'langium/generate';
 import type { FakeSVG } from 'railroad-diagrams';
 import { default as rr } from 'railroad-diagrams';
 
@@ -40,14 +41,16 @@ export interface GrammarDiagramOptions {
 }
 
 function styling(options?: GrammarDiagramOptions) {
-    return expandToString`
-<style>
-    ${defaultCss}
-</style>
-${options?.css ? expandToString`
-<style>
-    ${options.css.trim()}
-</style>` : ''}`;
+    return expandToStringLF`
+        <style>
+            ${defaultCss}
+        </style>
+        ${options?.css ? expandToStringLF`
+                <style>
+                    ${options.css.trim()}
+                </style>
+            ` : ''}
+    `;
 }
 
 /**
@@ -60,21 +63,20 @@ ${options?.css ? expandToString`
  * @returns A complete HTML document containing all diagrams.
  */
 export function createGrammarDiagramHtml(rules: GrammarAST.ParserRule[], options?: GrammarDiagramOptions): string {
-    let text = `<!DOCTYPE HTML>
-<html>
-<head>
-${styling(options)}${options?.javascript ? `
-<script>
-${options.javascript}
-</script>` : ''}
-</head>
-<body>
-`;
-    text += createGrammarDiagram(rules);
-    text += `</body>
-</html>`;
-
-    return text;
+    return expandToStringLFWithNL`
+        <!DOCTYPE HTML>
+        <html>
+        <head>
+        ${styling(options)}${options?.javascript ? `
+        <script>
+        ${options.javascript}
+        </script>` : ''}
+        </head>
+        <body>
+        ${createGrammarDiagram(rules)}
+        </body>
+        </html>
+    `;
 }
 
 /**
@@ -104,7 +106,7 @@ export function createGrammarDiagramSvg(rules: GrammarAST.ParserRule[], options?
 export function createGrammarDiagram(rules: GrammarAST.ParserRule[]): string {
     const text: string[] = [];
     for (const nonTerminal of rules) {
-        text.push('<h2 class="non-terminal-name">', nonTerminal.name, '</h2>', EOL, createRuleDiagram(nonTerminal));
+        text.push('<h2 class="non-terminal-name">', nonTerminal.name, '</h2>', '\n', createRuleDiagram(nonTerminal));
     }
     return text.join('');
 }

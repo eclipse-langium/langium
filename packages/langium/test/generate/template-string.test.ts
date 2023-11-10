@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import { expect, test } from 'vitest';
-import { expandToStringLF as s } from 'langium';
+import { expandToStringLF as s } from 'langium/generate';
 
 test('Should not throw when substituting null', () => {
     expect(s`${null}`).toBe('null');

@@ -19,7 +19,7 @@ import * as assert from 'node:assert';
 import { stream } from '../utils/stream.js';
 import type { AsyncDisposable } from '../utils/disposable.js';
 import { Disposable } from '../utils/disposable.js';
-import { normalizeEOL } from '../generator/template-string.js';
+import { normalizeEOL } from '../generate/template-string.js';
 
 export interface ParseHelperOptions extends BuildOptions {
     /**

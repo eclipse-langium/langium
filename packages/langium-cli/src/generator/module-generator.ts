@@ -5,122 +5,111 @@
  ******************************************************************************/
 
 import type { Grammar, IParserConfig } from 'langium';
+import { type Generated, expandToNode, joinToNode, toString } from 'langium/generate';
 import type { LangiumConfig, LangiumLanguageConfig } from '../package.js';
-import { CompositeGeneratorNode, NL, toString } from 'langium';
 import { generatedHeader } from './util.js';
 
 export function generateModule(grammars: Grammar[], config: LangiumConfig, grammarConfigMap: Map<Grammar, LangiumLanguageConfig>): string {
+    const grammarsWithName = grammars.filter(grammar => !!grammar.name);
     const parserConfig = config.chevrotainParserConfig;
     const hasIParserConfigImport = Boolean(parserConfig) || grammars.some(grammar => grammarConfigMap.get(grammar)?.chevrotainParserConfig !== undefined);
-    const node = new CompositeGeneratorNode();
+    let needsGeneralParserConfig = undefined;
 
-    node.append(generatedHeader);
-    if (config.langiumInternal) {
-        node.append(`import type { LanguageMetaData } from '../language-meta-data${config.importExtension}';`, NL);
-        node.append(`import type { Module } from '../../dependency-injection${config.importExtension}';`, NL);
-        node.append(`import type { LangiumGeneratedServices, LangiumGeneratedSharedServices, LangiumSharedServices, LangiumServices } from '../../services${config.importExtension}';`, NL);
-        if (hasIParserConfigImport) {
-            node.append(`import type { IParserConfig } from '../../parser/parser-config${config.importExtension}';`, NL);
-        }
-    } else {
-        node.append(`import type { LangiumGeneratedServices, LangiumGeneratedSharedServices, LangiumSharedServices, LangiumServices, LanguageMetaData, Module${hasIParserConfigImport ? ', IParserConfig' : ''} } from 'langium';`, NL);
-    }
-    node.append(
-        'import { ',
-        config.projectName,
-        `AstReflection } from './ast${config.importExtension}';`,
-        NL,
-        'import { '
-    );
-    for (let i = 0; i < grammars.length; i++) {
-        const grammar = grammars[i];
-        if (grammar.name) {
-            node.append(grammar.name, 'Grammar');
-            if (i < grammars.length - 1) {
-                node.append(', ');
-            }
-        }
-    }
-    node.append(` } from './grammar${config.importExtension}';`, NL, NL);
+    /* eslint-disable @typescript-eslint/indent */
+    const node = expandToNode`
+        ${generatedHeader}
+    `.appendNewLine(
+    ).appendIf(!!config.langiumInternal,
+        expandToNode`
 
-    for (const grammar of grammars) {
-        if (grammar.name) {
-            const config = grammarConfigMap.get(grammar)!;
-            node.append('export const ', grammar.name, 'LanguageMetaData = {', NL);
-            node.indent(metaData => {
-                metaData.append(`languageId: '${config.id}',`, NL);
-                metaData.append(`fileExtensions: [${config.fileExtensions && config.fileExtensions.map(e => appendQuotesAndDot(e)).join(', ')}],`, NL);
-                metaData.append(`caseInsensitive: ${Boolean(config.caseInsensitive)}`, NL);
-            });
-            node.append('} as const satisfies LanguageMetaData;', NL, NL);
-        }
-    }
+            import type { LanguageMetaData } from '../language-meta-data${config.importExtension}';
+            import type { Module } from '../../dependency-injection${config.importExtension}';
+            import type { LangiumGeneratedServices, LangiumGeneratedSharedServices, LangiumSharedServices, LangiumServices } from '../../services${config.importExtension}';
+        `.appendTemplateIf(hasIParserConfigImport)`
 
-    let needsGeneralParserConfig = false;
-    for (const grammar of grammars) {
-        const grammarConfig = grammarConfigMap.get(grammar)!;
-        const grammarParserConfig = grammarConfig.chevrotainParserConfig;
-        if (grammarParserConfig && grammar.name) {
-            node.append('export const ', grammar.name, 'ParserConfig: IParserConfig = ', generateParserConfig(grammarParserConfig));
-        } else {
-            needsGeneralParserConfig = true;
-        }
-    }
+            import type { IParserConfig } from '../../parser/parser-config${config.importExtension}';
+        `
+    ).appendTemplateIf(!config.langiumInternal)`
 
-    if (needsGeneralParserConfig && parserConfig) {
-        node.append('export const parserConfig: IParserConfig = ', generateParserConfig(parserConfig));
-    }
+        import type { LangiumGeneratedServices, LangiumGeneratedSharedServices, LangiumSharedServices, LangiumServices, LanguageMetaData, Module${hasIParserConfigImport ? ', IParserConfig' : ''} } from 'langium';
+    `.appendTemplate`
 
-    node.append('export const ', config.projectName, 'GeneratedSharedModule: Module<LangiumSharedServices, LangiumGeneratedSharedServices> = {', NL);
-    node.indent(moduleNode => {
-        moduleNode.append(
-            'AstReflection: () => new ', config.projectName, 'AstReflection()', NL
-        );
-    });
-    node.append('};', NL, NL);
+        import { ${config.projectName}AstReflection } from './ast${config.importExtension}';
+        import { ${joinToNode(grammarsWithName, grammar => grammar.name + 'Grammar', { separator: ', '}) } } from './grammar${config.importExtension}';
+        ${joinToNode(
+            grammarsWithName,
+            grammar => {
+                const config = grammarConfigMap.get(grammar)!;
+                return expandToNode`
 
-    for (let i = 0; i < grammars.length; i++) {
-        const grammar = grammars[i];
-        if (grammar.name) {
-            const grammarConfig = grammarConfigMap.get(grammar)!;
-            node.append('export const ', grammar.name, 'GeneratedModule: Module<LangiumServices, LangiumGeneratedServices> = {', NL);
-            node.indent(moduleNode => {
-                moduleNode.append(
-                    'Grammar: () => ', grammar.name!, 'Grammar(),', NL,
-                    'LanguageMetaData: () => ', grammar.name!, 'LanguageMetaData,', NL,
-                    'parser: {'
-                );
-                if (grammarConfig.chevrotainParserConfig ?? parserConfig) {
-                    moduleNode.append(NL);
-                    moduleNode.indent(parserGroupNode => {
-                        const parserConfigName = grammarConfig.chevrotainParserConfig
-                            ? grammar.name + 'ParserConfig'
-                            : 'parserConfig';
-                        parserGroupNode.append('ParserConfig: () => ', parserConfigName, NL);
-                    });
+                    export const ${ grammar.name }LanguageMetaData = {
+                        languageId: '${config.id}',
+                        fileExtensions: [${config.fileExtensions && joinToNode(config.fileExtensions, e => appendQuotesAndDot(e), { separator: ', ' })}],
+                        caseInsensitive: ${Boolean(config.caseInsensitive)}
+                    } as const satisfies LanguageMetaData;
+                `;
+            },
+            { appendNewLineIfNotEmpty: true }
+        )}
+        ${joinToNode(
+            grammarsWithName,
+            grammar => {
+                const grammarParserConfig = grammarConfigMap.get(grammar)!.chevrotainParserConfig;
+                if (grammarParserConfig) {
+                    return expandToNode`
+
+                        export const ${grammar.name}ParserConfig: IParserConfig = {
+                            ${generateParserConfig(grammarParserConfig)}
+                        };
+                    `;
+                } else {
+                    needsGeneralParserConfig = true;
+                    return;
                 }
-                moduleNode.append('}', NL);
-            });
-            node.append('};', NL);
-            if (i < grammars.length - 1) {
-                node.append(NL);
-            }
-        }
-    }
+            },
+            { appendNewLineIfNotEmpty: true }
+        )}
+        ${needsGeneralParserConfig && parserConfig && expandToNode`
+
+            export const parserConfig: IParserConfig = {
+                ${generateParserConfig(parserConfig)}
+            };
+        `}
+
+        export const ${config.projectName}GeneratedSharedModule: Module<LangiumSharedServices, LangiumGeneratedSharedServices> = {
+            AstReflection: () => new ${config.projectName}AstReflection()
+        };
+        ${joinToNode(
+            grammarsWithName,
+            grammar => {
+                const grammarConfig = grammarConfigMap.get(grammar)!;
+                return expandToNode`
+
+                    export const ${grammar.name}GeneratedModule: Module<LangiumServices, LangiumGeneratedServices> = {
+                        Grammar: () => ${grammar.name}Grammar(),
+                        LanguageMetaData: () => ${grammar.name}LanguageMetaData,
+                        parser: {${(grammarConfig.chevrotainParserConfig || parserConfig) && expandToNode`
+                        ${'' /** needed to add the linebreak after the opening brace in case content is to be added, and to enable 'expandToNode' to identify the correct intendation of the subseqent parts. */}
+                            ${grammarConfig.chevrotainParserConfig ? `ParserConfig: () => ${grammar.name}ParserConfig` : undefined}
+                            ${!grammarConfig.chevrotainParserConfig && parserConfig ? 'ParserConfig: () => parserConfig' : undefined}
+                        `}}
+                    };
+                `;
+            },
+            { appendNewLineIfNotEmpty: true}
+        )}
+    `;
+    /* eslint-enable @typescript-eslint/indent */
 
     return toString(node);
 }
 
-function generateParserConfig(config: IParserConfig): CompositeGeneratorNode {
-    const node = new CompositeGeneratorNode();
-    node.append('{', NL);
-    node.indent(configNode => {
-        for (const [key, value] of Object.entries(config)) {
-            configNode.append(`${key}: ${typeof value === 'string' ? `'${value}'` : value},`, NL);
-        }
-    });
-    node.append('};', NL, NL);
-    return node;
+function generateParserConfig(config: IParserConfig): Generated {
+    return joinToNode(
+        Object.entries(config),
+        ([key, value]) => `${key}: ${typeof value === 'string' ? `'${value}'` : value},`,
+        { appendNewLineIfNotEmpty: true }
+    );
 }
 
 function appendQuotesAndDot(input: string): string {

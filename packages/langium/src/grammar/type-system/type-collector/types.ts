@@ -4,9 +4,9 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import { expandToNode, expandToStringWithNL, joinToNode, toString, type Generated } from '../../../generate/index.js';
 import type { CstNode } from '../../../syntax-tree.js';
-import type { Assignment, Action, TypeAttribute } from '../../generated/ast.js';
-import { CompositeGeneratorNode, NL, toString } from '../../../generator/generator-node.js';
+import type { Action, Assignment, TypeAttribute } from '../../generated/ast.js';
 import { distinctAndSorted } from '../types-util.js';
 
 export interface Property {
@@ -119,25 +119,27 @@ export class UnionType {
     }
 
     toAstTypesString(reflectionInfo: boolean): string {
-        const unionNode = new CompositeGeneratorNode();
-        unionNode.append(`export type ${this.name} = ${propertyTypeToString(this.type, 'AstType')};`, NL);
+        const unionNode = expandToNode`
+            export type ${this.name} = ${propertyTypeToString(this.type, 'AstType')};
+        `.appendNewLine();
 
         if (reflectionInfo) {
-            unionNode.append(NL);
-            pushReflectionInfo(unionNode, this.name);
+            unionNode.appendNewLine()
+                .append(addReflectionInfo(this.name));
         }
 
         if (this.dataType) {
-            pushDataTypeReflectionInfo(unionNode, this);
+            unionNode.appendNewLine()
+                .append(addDataTypeReflectionInfo(this));
         }
 
         return toString(unionNode);
     }
 
     toDeclaredTypesString(reservedWords: Set<string>): string {
-        const unionNode = new CompositeGeneratorNode();
-        unionNode.append(`type ${escapeReservedWords(this.name, reservedWords)} = ${propertyTypeToString(this.type, 'DeclaredType')};`, NL);
-        return toString(unionNode);
+        return expandToStringWithNL`
+            type ${escapeReservedWords(this.name, reservedWords)} = ${propertyTypeToString(this.type, 'DeclaredType')};
+        `;
     }
 }
 
@@ -214,42 +216,44 @@ export class InterfaceType {
     }
 
     toAstTypesString(reflectionInfo: boolean): string {
-        const interfaceNode = new CompositeGeneratorNode();
-
         const interfaceSuperTypes = this.interfaceSuperTypes.map(e => e.name);
         const superTypes = interfaceSuperTypes.length > 0 ? distinctAndSorted([...interfaceSuperTypes]) : ['AstNode'];
-        interfaceNode.append(`export interface ${this.name} extends ${superTypes.join(', ')} {`, NL);
+        const interfaceNode = expandToNode`
+            export interface ${this.name} extends ${superTypes.join(', ')} {
+        `.appendNewLine();
 
         interfaceNode.indent(body => {
             if (this.containerTypes.size > 0) {
-                body.append(`readonly $container: ${distinctAndSorted([...this.containerTypes].map(e => e.name)).join(' | ')};`, NL);
+                body.append(`readonly $container: ${distinctAndSorted([...this.containerTypes].map(e => e.name)).join(' | ')};`).appendNewLine();
             }
             if (this.typeNames.size > 0) {
-                body.append(`readonly $type: ${distinctAndSorted([...this.typeNames]).map(e => `'${e}'`).join(' | ')};`, NL);
+                body.append(`readonly $type: ${distinctAndSorted([...this.typeNames]).map(e => `'${e}'`).join(' | ')};`).appendNewLine();
             }
-            pushProperties(body, this.properties, 'AstType');
+            body.append(
+                pushProperties(this.properties, 'AstType')
+            );
         });
-        interfaceNode.append('}', NL);
+        interfaceNode.append('}').appendNewLine();
 
         if (reflectionInfo) {
-            interfaceNode.append(NL);
-            pushReflectionInfo(interfaceNode, this.name);
+            interfaceNode
+                .appendNewLine()
+                .append(addReflectionInfo(this.name));
         }
 
         return toString(interfaceNode);
     }
 
     toDeclaredTypesString(reservedWords: Set<string>): string {
-        const interfaceNode = new CompositeGeneratorNode();
-
         const name = escapeReservedWords(this.name, reservedWords);
         const superTypes = distinctAndSorted(this.interfaceSuperTypes.map(e => e.name)).join(', ');
-        interfaceNode.append(`interface ${name}${superTypes.length > 0 ? ` extends ${superTypes}` : ''} {`, NL);
-
-        interfaceNode.indent(body => pushProperties(body, this.properties, 'DeclaredType', reservedWords));
-
-        interfaceNode.append('}', NL);
-        return toString(interfaceNode);
+        return toString(
+            expandToNode`
+                interface ${name}${superTypes.length > 0 ? ` extends ${superTypes}` : ''} {
+                    ${pushProperties(this.properties, 'DeclaredType', reservedWords)}
+                }
+            `.appendNewLine()
+        );
     }
 }
 
@@ -380,11 +384,10 @@ function typeParenthesis(type: PropertyType, name: string): string {
 }
 
 function pushProperties(
-    node: CompositeGeneratorNode,
     properties: Property[],
     mode: 'AstType' | 'DeclaredType',
     reserved = new Set<string>()
-) {
+): Generated {
 
     function propertyToString(property: Property): string {
         const name = mode === 'AstType' ? property.name : escapeReservedWords(property.name, reserved);
@@ -393,8 +396,11 @@ function pushProperties(
         return `${name}${optional ? '?' : ''}: ${propType}`;
     }
 
-    distinctAndSorted(properties, (a, b) => a.name.localeCompare(b.name))
-        .forEach(property => node.append(propertyToString(property), NL));
+    return joinToNode(
+        distinctAndSorted(properties, (a, b) => a.name.localeCompare(b.name)),
+        propertyToString,
+        { appendNewLineIfNotEmpty: true }
+    );
 }
 
 export function isMandatoryPropertyType(propertyType: PropertyType): boolean {
@@ -412,16 +418,17 @@ export function isMandatoryPropertyType(propertyType: PropertyType): boolean {
     }
 }
 
-function pushReflectionInfo(node: CompositeGeneratorNode, name: string) {
-    node.append(`export const ${name} = '${name}';`, NL);
-    node.append(NL);
+function addReflectionInfo(name: string): Generated {
+    return expandToNode`
+        export const ${name} = '${name}';
 
-    node.append(`export function is${name}(item: unknown): item is ${name} {`, NL);
-    node.indent(body => body.append(`return reflection.isInstance(item, ${name});`, NL));
-    node.append('}', NL);
+        export function is${name}(item: unknown): item is ${name} {
+            return reflection.isInstance(item, ${name});
+        }
+    `.appendNewLine();
 }
 
-function pushDataTypeReflectionInfo(node: CompositeGeneratorNode, union: UnionType) {
+function addDataTypeReflectionInfo(union: UnionType): Generated {
     switch (union.dataType) {
         case 'string':
             if (containsOnlyStringTypes(union.type)) {
@@ -429,21 +436,19 @@ function pushDataTypeReflectionInfo(node: CompositeGeneratorNode, union: UnionTy
                 const strings = collectStringValuesFromDataType(union.type);
                 const regexes = collectRegexesFromDataType(union.type);
                 if (subTypes.length === 0 && strings.length === 0 && regexes.length === 0) {
-                    generateIsDataTypeFunction(node, union.name, `typeof item === '${union.dataType}'`);
+                    return generateIsDataTypeFunction(union.name, `typeof item === '${union.dataType}'`);
                 } else {
                     const returnString = createDataTypeCheckerFunctionReturnString(subTypes, strings, regexes);
-                    generateIsDataTypeFunction(node, union.name, returnString);
+                    return generateIsDataTypeFunction(union.name, returnString);
                 }
             }
-            break;
+            return;
         case 'number':
         case 'boolean':
         case 'bigint':
-            generateIsDataTypeFunction(node, union.name, `typeof item === '${union.dataType}'`);
-            break;
+            return generateIsDataTypeFunction(union.name, `typeof item === '${union.dataType}'`);
         case 'Date':
-            generateIsDataTypeFunction(node, union.name, 'item instanceof Date');
-            break;
+            return generateIsDataTypeFunction(union.name, 'item instanceof Date');
         default:
             return;
     }
@@ -538,8 +543,10 @@ function collectRegexesFromDataType(propertyType: PropertyType): string[] {
     return regexes;
 }
 
-function generateIsDataTypeFunction(node: CompositeGeneratorNode, unionName: string, returnString: string) {
-    node.append(NL, `export function is${unionName}(item: unknown): item is ${unionName} {`, NL);
-    node.indent(body => body.append(`return ${returnString};`, NL));
-    node.append('}', NL);
+function generateIsDataTypeFunction(unionName: string, returnString: string): Generated {
+    return expandToNode`
+        export function is${unionName}(item: unknown): item is ${unionName} {
+            return ${returnString};
+        }
+    `.appendNewLine();
 }

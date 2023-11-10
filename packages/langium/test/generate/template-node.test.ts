@@ -4,8 +4,9 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import { stream } from 'langium';
+import { CompositeGeneratorNode, EOL, NL, joinToNode, expandToNode as n, expandToString as s, toString } from 'langium/generate';
 import { describe, expect, test } from 'vitest';
-import { joinToNode, expandToNode as n, expandToString as s, stream, CompositeGeneratorNode, EOL, toString, NL } from 'langium';
 
 // deactivate the eslint check 'no-unexpected-multiline' with the message
 //  'Unexpected newline between template tag and template literal', as that's done on purposes in tests below!

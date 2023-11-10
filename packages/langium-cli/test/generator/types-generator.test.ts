@@ -5,9 +5,10 @@
  ******************************************************************************/
 
 import type { Grammar } from 'langium';
-import { describe, expect, test } from 'vitest';
-import { createLangiumGrammarServices, EmptyFileSystem, expandToStringWithNL } from 'langium';
+import { EmptyFileSystem, createLangiumGrammarServices } from 'langium';
+import { expandToStringWithNL } from 'langium/generate';
 import { parseHelper } from 'langium/test';
+import { describe, expect, test } from 'vitest';
 import { generateTypesFile } from '../../src/generator/types-generator.js';
 
 const { grammar } = createLangiumGrammarServices(EmptyFileSystem);

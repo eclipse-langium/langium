@@ -4,18 +4,17 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { IndentNode } from 'langium';
-import type { AbstractElement, Domainmodel, Entity, Feature, Type } from '../language-server/generated/ast.js';
+import chalk from 'chalk';
+import { type Generated, expandToNode, joinToNode, toString } from 'langium/generate';
+import { NodeFileSystem } from 'langium/node';
+import _ from 'lodash';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import chalk from 'chalk';
-import _ from 'lodash';
-import { CompositeGeneratorNode, NL, toString } from 'langium';
-import { isEntity, isPackageDeclaration } from '../language-server/generated/ast.js';
-import { extractAstNode, extractDestinationAndName, setRootFolder } from './cli-util.js';
 import { createDomainModelServices } from '../language-server/domain-model-module.js';
+import type { AbstractElement, Domainmodel, Entity, Feature, Type } from '../language-server/generated/ast.js';
+import { isEntity, isPackageDeclaration } from '../language-server/generated/ast.js';
 import { DomainModelLanguageMetaData } from '../language-server/generated/module.js';
-import { NodeFileSystem } from 'langium/node';
+import { extractAstNode, extractDestinationAndName, setRootFolder } from './cli-util.js';
 
 export const generateAction = async (fileName: string, opts: GenerateOptions): Promise<void> => {
     try {
@@ -57,9 +56,11 @@ function generateAbstractElements(destination: string, elements: Array<AbstractE
             if (isPackageDeclaration(elem)) {
                 generateAbstractElementsInternal(elem.elements, path.join(filePath, elem.name.replace(/\./g, '/')));
             } else if (isEntity(elem)) {
-                const fileNode = new CompositeGeneratorNode();
-                fileNode.append(`package ${packagePath};`, NL, NL);
-                generateEntity(elem, fileNode);
+                const fileNode = expandToNode`
+                    package ${packagePath};
+
+                    ${generateEntity(elem)}
+                `;
                 fs.writeFileSync(path.join(fullPath, `${elem.name}.java`), toString(fileNode));
             }
         }
@@ -69,40 +70,32 @@ function generateAbstractElements(destination: string, elements: Array<AbstractE
     return generateAbstractElementsInternal(elements, filePath);
 }
 
-function generateEntity(entity: Entity, fileNode: CompositeGeneratorNode): void {
+function generateEntity(entity: Entity): Generated {
     const maybeExtends = entity.superType ? ` extends ${entity.superType.$refText}` : '';
-    fileNode.append(`class ${entity.name}${maybeExtends} {`, NL);
-    fileNode.indent(classBody => {
-        const featureData = entity.features.map(f => generateFeature(f, classBody));
-        featureData.forEach(([generateField, , ]) => generateField());
-        featureData.forEach(([, generateSetter, generateGetter]) => { generateSetter(); generateGetter(); } );
-    });
-    fileNode.append('}', NL);
+    const featureData = entity.features.map(generateFeature);
+    return expandToNode`
+        class ${entity.name}${maybeExtends} {
+            ${joinToNode(featureData, ([field]) => field, { appendNewLineIfNotEmpty: true})}
+            ${joinToNode(featureData, ([, setterAndGetter]) => setterAndGetter, { appendNewLineIfNotEmpty: true} )}
+        }
+    `.appendNewLine();
 }
 
-function generateFeature(feature: Feature, classBody: IndentNode): [() => void, () => void, () => void] {
+function generateFeature(feature: Feature): [ string, Generated ] {
     const name = feature.name;
     const type = feature.type.$refText + (feature.many ? '[]' : '');
 
     return [
-        () => { // generate the field
-            classBody.append(`private ${type} ${name};`, NL);
-        },
-        () => { // generate the setter
-            classBody.append(NL);
-            classBody.append(`public void set${_.upperFirst(name)}(${type} ${name}) {`, NL);
-            classBody.indent(methodBody => {
-                methodBody.append(`this.${name} = ${name};`, NL);
-            });
-            classBody.append('}', NL);
-        },
-        () => { // generate the getter
-            classBody.append(NL);
-            classBody.append(`public ${type} get${_.upperFirst(name)}() {`, NL);
-            classBody.indent(methodBody => {
-                methodBody.append(`return ${name};`, NL);
-            });
-            classBody.append('}', NL);
-        }
+        `private ${type} ${name};`,
+        expandToNode`
+
+            public void set${_.upperFirst(name)}(${type} ${name}) {
+                this.${name} = ${name};
+            }
+
+            public ${type} get${_.upperFirst(name)}() {
+                return ${name};
+            }
+        `
     ];
 }
