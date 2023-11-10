@@ -527,6 +527,11 @@ export function createCallHierarchyRequestHandler<P extends CallHierarchyIncomin
 }
 
 export function addTypeHierarchyHandler(connection: Connection, sharedServices: LangiumSharedServices): void {
+    // Don't register type hierarchy handlers if no type hierarchy provider is registered
+    if (!sharedServices.ServiceRegistry.all.some(services => services.lsp.TypeHierarchyProvider)) {
+        return;
+    }
+
     connection.languages.typeHierarchy.onPrepare(
         createServerRequestHandler((services, document, params, cancelToken) => {
             return services.lsp.TypeHierarchyProvider?.prepareTypeHierarchy(document, params, cancelToken) ?? null;
