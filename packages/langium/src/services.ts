@@ -56,6 +56,7 @@ import type { DeclarationProvider } from './lsp/declaration-provider.js';
 import type { DocumentLinkProvider } from './lsp/document-link-provider.js';
 import type { DocumentUpdateHandler } from './lsp/document-update-handler.js';
 import type { DocumentationProvider } from './documentation/documentation-provider.js';
+import type { FileOperationHandler } from './lsp/file-operation-handler.js';
 import type { InlayHintProvider } from './lsp/inlay-hint-provider.js';
 import type { CommentProvider } from './documentation/comment-provider.js';
 import type { WorkspaceSymbolProvider } from './lsp/workspace-symbol-provider.js';
@@ -166,6 +167,7 @@ export type LangiumDefaultSharedServices = {
         LanguageServer: LanguageServer
         DocumentUpdateHandler: DocumentUpdateHandler
         ExecuteCommandHandler?: ExecuteCommandHandler
+        FileOperationHandler?: FileOperationHandler
         WorkspaceSymbolProvider?: WorkspaceSymbolProvider
         NodeKindProvider: NodeKindProvider
         FuzzyMatcher: FuzzyMatcher

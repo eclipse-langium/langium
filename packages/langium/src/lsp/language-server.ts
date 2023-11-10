@@ -87,7 +87,7 @@ export class DefaultLanguageServer implements LanguageServer {
 
     protected buildInitializeResult(_params: InitializeParams): InitializeResult {
         const languages = this.services.ServiceRegistry.all;
-        const fileOperationOptions = this.services.lsp.DocumentUpdateHandler.fileOperationOptions;
+        const fileOperationOptions = this.services.lsp.FileOperationHandler?.fileOperationOptions;
         const hasFormattingService = this.hasService(e => e.lsp.Formatter);
         const formattingOnTypeOptions = languages.map(e => e.lsp.Formatter?.formatOnTypeOptions).find(e => Boolean(e));
         const hasCodeActionProvider = this.hasService(e => e.lsp.CodeActionProvider);
@@ -183,6 +183,7 @@ export function startLanguageServer(services: LangiumSharedServices): void {
     }
 
     addDocumentsHandler(connection, services);
+    addFileOperationHandler(connection, services);
     addDiagnosticsHandler(connection, services);
     addCompletionHandler(connection, services);
     addFindReferencesHandler(connection, services);
@@ -231,6 +232,13 @@ export function addDocumentsHandler(connection: Connection, services: LangiumSha
     }
     if (handler.didChangeWatchedFiles) {
         connection.onDidChangeWatchedFiles(params => handler.didChangeWatchedFiles!(params));
+    }
+}
+
+export function addFileOperationHandler(connection: Connection, services: LangiumSharedServices): void {
+    const handler = services.lsp.FileOperationHandler;
+    if (!handler) {
+        return;
     }
     if (handler.didCreateFiles) {
         connection.workspace.onDidCreateFiles(params => handler.didCreateFiles!(params));
