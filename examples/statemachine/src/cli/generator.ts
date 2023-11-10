@@ -6,8 +6,7 @@
 
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import { expandToNode as toNode, joinToNode as join, toString } from 'langium';
-import type { Generated } from 'langium';
+import { type Generated, expandToNode as toNode, joinToNode as join, toString } from 'langium/generate';
 import type { State, Statemachine } from '../language-server/generated/ast.js';
 import { extractDestinationAndName } from './cli-util.js';
 

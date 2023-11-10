@@ -3,165 +3,152 @@
  * This program and the accompanying materials are made available under the
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
-import type { GeneratorNode, Grammar, LangiumServices } from 'langium';
+import type { Grammar, LangiumServices } from 'langium';
+import { type Generated, expandToNode, joinToNode, toString } from 'langium/generate';
 import type { AstTypes, Property } from 'langium/types';
 import type { LangiumConfig } from '../package.js';
-import { IndentNode, CompositeGeneratorNode, NL, toString, streamAllContents, MultiMap, GrammarAST } from 'langium';
+import { streamAllContents, MultiMap, GrammarAST } from 'langium';
 import { collectAst, collectTypeHierarchy, findReferenceTypes, hasArrayType, isAstType, hasBooleanType, mergeTypesAndInterfaces } from 'langium/types';
 import { collectTerminalRegexps, generatedHeader } from './util.js';
 
 export function generateAst(services: LangiumServices, grammars: Grammar[], config: LangiumConfig): string {
     const astTypes = collectAst(grammars, services.shared.workspace.LangiumDocuments);
-    const fileNode = new CompositeGeneratorNode();
-    fileNode.append(
-        generatedHeader,
-        '/* eslint-disable */', NL,
-    );
     const crossRef = grammars.some(grammar => hasCrossReferences(grammar));
     const importFrom = config.langiumInternal ? `../../syntax-tree${config.importExtension}` : 'langium';
-    fileNode.append(
-        `import type { AstNode${crossRef ? ', Reference' : ''}, ReferenceInfo, TypeMetaData } from '${importFrom}';`, NL,
-        `import { AbstractAstReflection } from '${importFrom}';`, NL, NL
-    );
+    /* eslint-disable @typescript-eslint/indent */
+    const fileNode = expandToNode`
+        ${generatedHeader}
 
-    generateTerminalConstants(fileNode, grammars, config);
+        /* eslint-disable */
+        import type { AstNode${crossRef ? ', Reference' : ''}, ReferenceInfo, TypeMetaData } from '${importFrom}';
+        import { AbstractAstReflection } from '${importFrom}';
 
-    astTypes.unions.forEach(union => fileNode.append(union.toAstTypesString(isAstType(union.type)), NL));
-    astTypes.interfaces.forEach(iFace => fileNode.append(iFace.toAstTypesString(true), NL));
-    astTypes.unions = astTypes.unions.filter(e => isAstType(e.type));
-    fileNode.append(generateAstReflection(config, astTypes));
+        ${generateTerminalConstants(grammars, config)}
 
+        ${joinToNode(astTypes.unions, union => union.toAstTypesString(isAstType(union.type)), { appendNewLineIfNotEmpty: true })}
+        ${joinToNode(astTypes.interfaces, iFace => iFace.toAstTypesString(true), { appendNewLineIfNotEmpty: true })}
+        ${
+            astTypes.unions = astTypes.unions.filter(e => isAstType(e.type)),
+            generateAstReflection(config, astTypes)
+        }
+    `;
     return toString(fileNode);
+    /* eslint-enable @typescript-eslint/indent */
 }
 
 function hasCrossReferences(grammar: Grammar): boolean {
     return Boolean(streamAllContents(grammar).find(GrammarAST.isCrossReference));
 }
 
-function generateAstReflection(config: LangiumConfig, astTypes: AstTypes): GeneratorNode {
+function generateAstReflection(config: LangiumConfig, astTypes: AstTypes): Generated {
     const typeNames: string[] = astTypes.interfaces.map(t => t.name)
         .concat(astTypes.unions.map(t => t.name))
         .sort();
     const crossReferenceTypes = buildCrossReferenceTypes(astTypes);
-    const reflectionNode = new CompositeGeneratorNode();
-
-    reflectionNode.append(`export type ${config.projectName}AstType = {`, NL);
-    reflectionNode.indent(astTypeBody => {
-        for (const type of typeNames) {
-            astTypeBody.append(type, ': ', type, NL);
+    return expandToNode`
+        export type ${config.projectName}AstType = {
+            ${joinToNode(typeNames, name => name + ': ' + name, { appendNewLineIfNotEmpty: true })}
         }
-    });
-    reflectionNode.append('}', NL, NL);
 
-    reflectionNode.append(
-        `export class ${config.projectName}AstReflection extends AbstractAstReflection {`, NL, NL
-    );
+        export class ${config.projectName}AstReflection extends AbstractAstReflection {
 
-    reflectionNode.indent(classBody => {
-        classBody.append('getAllTypes(): string[] {', NL);
-        classBody.indent(allTypes => {
-            allTypes.append(`return [${typeNames.map(e => `'${e}'`).join(', ')}];`, NL);
-        });
-        classBody.append(
-            '}', NL, NL,
-            'protected override computeIsSubtype(subtype: string, supertype: string): boolean {', NL,
-            buildIsSubtypeMethod(astTypes), '}', NL, NL,
-            'getReferenceType(refInfo: ReferenceInfo): string {', NL,
-            buildReferenceTypeMethod(crossReferenceTypes), '}', NL, NL,
-            'getTypeMetaData(type: string): TypeMetaData {', NL,
-            buildTypeMetaDataMethod(astTypes), '}', NL
-        );
-    });
+            getAllTypes(): string[] {
+                return [${typeNames.map(e => `'${e}'`).join(', ')}];
+            }
 
-    reflectionNode.append(
-        '}', NL, NL,
-        `export const reflection = new ${config.projectName}AstReflection();`, NL
-    );
+            protected override computeIsSubtype(subtype: string, supertype: string): boolean {
+                ${buildIsSubtypeMethod(astTypes)}
+            }
 
-    return reflectionNode;
-}
+            getReferenceType(refInfo: ReferenceInfo): string {
+                ${buildReferenceTypeMethod(crossReferenceTypes)}
+            }
 
-function buildTypeMetaDataMethod(astTypes: AstTypes): GeneratorNode {
-    const typeSwitchNode = new IndentNode();
-    typeSwitchNode.append('switch (type) {', NL);
-    typeSwitchNode.indent(caseNode => {
-        for (const interfaceType of astTypes.interfaces) {
-            const props = interfaceType.properties;
-            const arrayProps = props.filter(e => hasArrayType(e.type));
-            const booleanProps = props.filter(e => hasBooleanType(e.type));
-            if (arrayProps.length > 0 || booleanProps.length > 0) {
-                caseNode.append(`case '${interfaceType.name}': {`, NL);
-                caseNode.indent(caseContent => {
-                    caseContent.append('return {', NL);
-                    caseContent.indent(returnType => {
-                        returnType.append(`name: '${interfaceType.name}',`, NL);
-                        returnType.append(
-                            'mandatory: [', NL,
-                            buildMandatoryType(arrayProps, booleanProps),
-                            ']', NL);
-                    });
-                    caseContent.append('};', NL);
-                });
-                caseNode.append('}', NL);
+            getTypeMetaData(type: string): TypeMetaData {
+                ${buildTypeMetaDataMethod(astTypes)}
             }
         }
-        caseNode.append('default: {', NL);
-        caseNode.indent(defaultNode => {
-            defaultNode.append('return {', NL);
-            defaultNode.indent(defaultType => {
-                defaultType.append(
-                    'name: type,', NL,
-                    'mandatory: []', NL
-                );
-            });
-            defaultNode.append('};', NL);
-        });
-        caseNode.append('}', NL);
-    });
-    typeSwitchNode.append('}', NL);
-    return typeSwitchNode;
+
+        export const reflection = new ${config.projectName}AstReflection();
+    `.appendNewLine();
 }
 
-function buildMandatoryType(arrayProps: Property[], booleanProps: Property[]): GeneratorNode {
-    const indent = new IndentNode();
+function buildTypeMetaDataMethod(astTypes: AstTypes): Generated {
+    /* eslint-disable @typescript-eslint/indent */
+    return expandToNode`
+        switch (type) {
+            ${
+                joinToNode(
+                    astTypes.interfaces,
+                    interfaceType => {
+                        const props = interfaceType.properties;
+                        const arrayProps = props.filter(e => hasArrayType(e.type));
+                        const booleanProps = props.filter(e => hasBooleanType(e.type));
+                        return (arrayProps.length > 0 || booleanProps.length > 0)
+                            ? expandToNode`
+                                case '${interfaceType.name}': {
+                                    return {
+                                        name: '${interfaceType.name}',
+                                        mandatory: [
+                                            ${buildMandatoryType(arrayProps, booleanProps)}
+                                        ]
+                                    };
+                                }
+                            `
+                            : undefined;
+                    },
+                    {
+                        appendNewLineIfNotEmpty: true
+                    }
+                )
+            }
+            default: {
+                return {
+                    name: type,
+                    mandatory: []
+                };
+            }
+        }
+    `;
+    /* eslint-enable @typescript-eslint/indent */
+}
+
+function buildMandatoryType(arrayProps: Property[], booleanProps: Property[]): Generated {
     const all = arrayProps.concat(booleanProps).sort((a, b) => a.name.localeCompare(b.name));
-    for (let i = 0; i < all.length; i++) {
-        const property = all[i];
-        const type = arrayProps.includes(property) ? 'array' : 'boolean';
-        indent.append("{ name: '", property.name, "', type: '", type, "' }", i < all.length - 1 ? ',' : '', NL);
-    }
-    return indent;
+
+    return joinToNode(
+        all,
+        property => {
+            const type = arrayProps.includes(property) ? 'array' : 'boolean';
+            return `{ name: '${property.name}', type: '${type}' }`;
+        },
+        { separator: ',', appendNewLineIfNotEmpty: true}
+    );
 }
 
-function buildReferenceTypeMethod(crossReferenceTypes: CrossReferenceType[]): GeneratorNode {
-    const typeSwitchNode = new IndentNode();
+function buildReferenceTypeMethod(crossReferenceTypes: CrossReferenceType[]): Generated {
     const buckets = new MultiMap<string, string>(crossReferenceTypes.map(e => [e.referenceType, `${e.type}:${e.feature}`]));
-    typeSwitchNode.append('const referenceId = `${refInfo.container.$type}:${refInfo.property}`;', NL);
-    typeSwitchNode.append('switch (referenceId) {', NL);
-    typeSwitchNode.indent(caseNode => {
-        for (const [target, refs] of buckets.entriesGroupedByKey()) {
-            for (let i = 0; i < refs.length; i++) {
-                const ref = refs[i];
-                caseNode.append(`case '${ref}':`);
-                if (i === refs.length - 1) {
-                    caseNode.append(' {', NL);
-                } else {
-                    caseNode.append(NL);
-                }
+    /* eslint-disable @typescript-eslint/indent */
+    return expandToNode`
+        const referenceId = ${'`${refInfo.container.$type}:${refInfo.property}`'};
+        switch (referenceId) {
+            ${
+                joinToNode(
+                    buckets.entriesGroupedByKey(),
+                    ([target, refs]) => expandToNode`
+                        ${joinToNode(refs, ref => `case '${ref}':`, { appendNewLineIfNotEmpty: true, skipNewLineAfterLastItem: true})} {
+                            return ${target};
+                        }
+                    `,
+                    { appendNewLineIfNotEmpty: true }
+                )
             }
-            caseNode.indent(caseContent => {
-                caseContent.append(`return ${target};`, NL);
-            });
-            caseNode.append('}', NL);
+            default: {
+                throw new Error(${'`${referenceId} is not a valid reference id.`'});
+            }
         }
-        caseNode.append('default: {', NL);
-        caseNode.indent(defaultNode => {
-            defaultNode.append('throw new Error(`${referenceId} is not a valid reference id.`);', NL);
-        });
-        caseNode.append('}', NL);
-    });
-    typeSwitchNode.append('}', NL);
-    return typeSwitchNode;
+    `;
+    /* eslint-enable @typescript-eslint/indent */
 }
 
 type CrossReferenceType = {
@@ -196,34 +183,28 @@ function buildCrossReferenceTypes(astTypes: AstTypes): CrossReferenceType[] {
     return Array.from(crossReferences.values()).sort((a, b) => a.type.localeCompare(b.type));
 }
 
-function buildIsSubtypeMethod(astTypes: AstTypes): GeneratorNode {
-    const methodNode = new IndentNode();
-    methodNode.append(
-        'switch (subtype) {', NL
-    );
-    methodNode.indent(switchNode => {
-        const groups = groupBySupertypes(astTypes);
-
-        for (const [superTypes, typeGroup] of groups.entriesGroupedByKey()) {
-            for (const typeName of typeGroup) {
-                switchNode.append(`case ${typeName}:`, NL);
+function buildIsSubtypeMethod(astTypes: AstTypes): Generated {
+    const groups = groupBySupertypes(astTypes);
+    /* eslint-disable @typescript-eslint/indent */
+    return expandToNode`
+        switch (subtype) {
+            ${
+                joinToNode(
+                    groups.entriesGroupedByKey(),
+                    ([superTypes, typeGroup]) => expandToNode`
+                        ${joinToNode(typeGroup, typeName => `case ${typeName}:`, { appendNewLineIfNotEmpty: true, skipNewLineAfterLastItem: true })} {
+                            return ${superTypes.split(':').sort().map(e => `this.isSubtype(${e}, supertype)`).join(' || ')};
+                        }
+                    `,
+                    { appendNewLineIfNotEmpty: true}
+                )
             }
-            switchNode.contents.pop();
-            switchNode.append(' {', NL);
-            switchNode.indent(caseNode => {
-                caseNode.append(`return ${superTypes.split(':').sort().map(e => `this.isSubtype(${e}, supertype)`).join(' || ')};`);
-            });
-            switchNode.append(NL, '}', NL);
+            default: {
+                return false;
+            }
         }
-
-        switchNode.append('default: {', NL);
-        switchNode.indent(defaultNode => {
-            defaultNode.append('return false;', NL);
-        });
-        switchNode.append('}', NL);
-    });
-    methodNode.append('}', NL);
-    return methodNode;
+    `;
+    /* eslint-enable @typescript-eslint/indent */
 }
 
 function groupBySupertypes(astTypes: AstTypes): MultiMap<string, string> {
@@ -236,19 +217,17 @@ function groupBySupertypes(astTypes: AstTypes): MultiMap<string, string> {
     return superToChild;
 }
 
-function generateTerminalConstants(fileNode: CompositeGeneratorNode, grammars: Grammar[], config: LangiumConfig) {
+function generateTerminalConstants(grammars: Grammar[], config: LangiumConfig): Generated {
     let collection: Record<string, RegExp> = {};
     grammars.forEach(grammar => {
         const terminalConstants = collectTerminalRegexps(grammar);
         collection = {...collection, ...terminalConstants};
     });
 
-    fileNode.append(`export const ${config.projectName}Terminals = {`, NL);
-    fileNode.indent(node => {
-        for (const [name, regexp] of Object.entries(collection)) {
-            node.append(`${name}: ${regexp.toString()},`, NL);
-        }
-    });
-    fileNode.append('};', NL, NL);
+    return expandToNode`
+        export const ${config.projectName}Terminals = {
+            ${joinToNode(Object.entries(collection), ([name, regexp]) => `${name}: ${regexp.toString()},`, { appendNewLineIfNotEmpty: true })}
+        };
+    `.appendNewLine();
 }
 

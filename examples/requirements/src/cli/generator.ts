@@ -4,10 +4,10 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { RequirementModel, TestModel } from '../language-server/generated/ast.js';
+import { expandToNode, joinToNode, toString } from 'langium/generate';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import { CompositeGeneratorNode, NL, toString } from 'langium';
+import type { RequirementModel, TestModel } from '../language-server/generated/ast.js';
 import { extractDestinationAndName } from './cli-util.js';
 
 /**
@@ -17,26 +17,34 @@ import { extractDestinationAndName } from './cli-util.js';
  * @returns the content of the HTML file.
  */
 export function generateSummaryFileHTMLContent(model: RequirementModel, testModels: TestModel[]): string {
-    const fileNode = new CompositeGeneratorNode();
-    fileNode.append('<html>', NL);
-    fileNode.append('<body>', NL);
-    fileNode.append('<h1>Requirement coverage (demo generator)</h1>', NL);
-    fileNode.append(`<div>Source: ${model.$document?.uri.fsPath}</div>`, NL);
-    fileNode.append('<table border="1">', NL);
-    fileNode.append('<TR><TH>Requirement ID</TH><TH>Testcase ID</TH></TR>', NL);
-    model.requirements.forEach(requirement => {
-        fileNode.append(`<TR><TD>${requirement.name}</TD><TD>`, NL);
-        testModels.forEach(testModel => testModel.tests.forEach(test => {
-            if (test.requirements.map(r => r.ref).includes(requirement)) {
-                fileNode.append(`<div>${test.name} (from ${testModel.$document?.uri.fsPath})<div>`, NL);
-            }
-        }));
-        fileNode.append('</TD></TR>', NL);
-    });
-    fileNode.append('</table>', NL);
-    fileNode.append('</body>', NL);
-    fileNode.append('</html>', NL);
-    return toString(fileNode);
+    /* eslint-disable @typescript-eslint/indent */
+    return toString(
+        expandToNode`
+            <html>
+            <body>
+            <h1>Requirement coverage (demo generator)</h1>
+            <div>Source: ${model.$document?.uri.fsPath}</div>
+            <table border="1">
+            <TR><TH>Requirement ID</TH><TH>Testcase ID</TH></TR>
+            ${joinToNode(
+                model.requirements,
+                requirement => expandToNode`
+                    <TR><TD>${requirement.name}</TD><TD>
+                    ${joinToNode(
+                        testModels.flatMap(testModel => testModel.tests.map(test => ({ testModel, test }))).filter( ({ test }) => test.requirements.map(r => r.ref).includes(requirement) ),
+                        ({ testModel, test }) => `<div>${test.name} (from ${testModel.$document?.uri?.fsPath})<div>`,
+                        { appendNewLineIfNotEmpty: true }
+                    )}
+                    </TD></TR>
+                `,
+                { appendNewLineIfNotEmpty: true }
+            )}
+            </table>
+            </body>
+            </html>
+        `.appendNewLine()
+    );
+    /* eslint-enable @typescript-eslint/indent */
 }
 
 export function generateSummary(model: RequirementModel, testModels: TestModel[], filePath: string, destination: string | undefined): string {

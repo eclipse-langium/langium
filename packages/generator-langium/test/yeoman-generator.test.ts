@@ -4,11 +4,11 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { describe, test } from 'vitest';
-import { normalizeEOL } from 'langium';
-import { createHelpers } from 'yeoman-test';
+import { normalizeEOL } from 'langium/generate';
 import * as path from 'node:path';
 import * as url from 'node:url';
+import { describe, test } from 'vitest';
+import { createHelpers } from 'yeoman-test';
 
 const __dirname = url.fileURLToPath(new URL('../', import.meta.url));
 

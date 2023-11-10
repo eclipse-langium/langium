@@ -7,6 +7,8 @@
 import type { Set, Group, Character, IRegExpAST } from '@chevrotain/regexp-to-ast';
 import { RegExpParser, BaseRegExpVisitor } from '@chevrotain/regexp-to-ast';
 
+export const NEWLINE_REGEXP = /\r?\n/gm;
+
 const regexParser = new RegExpParser();
 
 /**

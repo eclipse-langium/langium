@@ -6,7 +6,7 @@
 
 import { EOL } from 'os';
 import { describe, expect, test } from 'vitest';
-import { CompositeGeneratorNode, IndentNode, NewLineNode, NL, NLEmpty, toString as process } from 'langium';
+import { CompositeGeneratorNode, IndentNode, NewLineNode, NL, NLEmpty, toString as process } from 'langium/generate';
 
 describe('new lines', () => {
 

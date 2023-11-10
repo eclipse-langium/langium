@@ -7,7 +7,8 @@
 import type { Grammar } from 'langium';
 import type { AstTypes } from 'langium/types';
 import { describe, expect, test } from 'vitest';
-import { createLangiumGrammarServices, EmptyFileSystem, expandToString, EOL } from 'langium';
+import { createLangiumGrammarServices, EmptyFileSystem } from 'langium';
+import { expandToString, EOL } from 'langium/generate';
 import { collectAst, mergeTypesAndInterfaces } from 'langium/types';
 import { clearDocuments, parseHelper } from 'langium/test';
 

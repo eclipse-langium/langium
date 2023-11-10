@@ -4,10 +4,10 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { beforeAll, describe, expect, test } from 'vitest';
-import { createServicesForGrammar, expandToNode, expandTracedToNode, expandToString, findNodeForKeyword, findNodesForProperty, joinTracedToNode, joinTracedToNodeIf, toStringAndTrace, traceToNode, TreeStreamImpl } from 'langium';
-import type { SourceRegion, TraceRegion, AstNodeWithTextRegion, AstNode } from 'langium';
+import { TreeStreamImpl, createServicesForGrammar, findNodeForKeyword, findNodesForProperty, type AstNode, type AstNodeWithTextRegion } from 'langium';
+import { expandToNode, expandToString, expandTracedToNode, joinTracedToNode, joinTracedToNodeIf, toStringAndTrace, traceToNode, type SourceRegion, type TraceRegion } from 'langium/generate';
 import { parseHelper } from 'langium/test';
+import { beforeAll, describe, expect, test } from 'vitest';
 
 // don't bather because of unexpected indentations, e.g. within template substitutions
 /* eslint-disable @typescript-eslint/indent */

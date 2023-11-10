@@ -5,10 +5,11 @@
  ******************************************************************************/
 
 import type { AstNode, Reference } from 'langium';
+import { createServicesForGrammar } from 'langium';
+import { expandToStringLF } from 'langium/generate';
+import { clearDocuments, parseHelper } from 'langium/test';
 import { beforeEach, describe, expect, test } from 'vitest';
 import { URI } from 'vscode-uri';
-import { createServicesForGrammar, expandToStringLF } from 'langium';
-import { clearDocuments, parseHelper } from 'langium/test';
 
 describe('JsonSerializer', async () => {
 

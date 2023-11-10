@@ -30,6 +30,10 @@
       "types": "./lib/index.d.ts",
       "import": "./lib/index.js"
     },
+    "./generate": {
+      "types": "./lib/generate/index.d.ts",
+      "import": "./lib/generate/index.js"
+    },
     "./test": {
       "types": "./lib/test/index.d.ts",
       "import": "./lib/test/index.js"
