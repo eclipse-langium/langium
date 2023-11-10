@@ -6,8 +6,6 @@
 
 import type { AstNode } from '../../syntax-tree.js';
 import type { TypeHierarchyItem } from 'vscode-languageserver';
-import type { ReferenceDescription } from '../../workspace/ast-descriptions.js';
-import type { Stream } from '../../utils/stream.js';
 import { AbstractTypeHierarchyProvider } from '../../lsp/type-hierarchy-provider.js';
 import { getDocument } from '../../utils/ast-util.js';
 import { findLeafNodeAtOffset } from '../../utils/cst-util.js';
@@ -31,31 +29,34 @@ export class LangiumGrammarTypeHierarchyProvider extends AbstractTypeHierarchyPr
         return items.length === 0 ? undefined : items;
     }
 
-    protected getSubtypes(node: AstNode, references: Stream<ReferenceDescription>): TypeHierarchyItem[] | undefined {
+    protected getSubtypes(node: AstNode): TypeHierarchyItem[] | undefined {
         if (!isInterface(node)) {
             return undefined;
         }
 
-        const items = references.flatMap(ref => {
-            const document = this.documents.getOrCreateDocument(ref.sourceUri);
-            const rootNode = document.parseResult.value;
-            if (!rootNode.$cstNode) {
-                return [];
-            }
+        const items = this.references
+            .findReferences(node, {includeDeclaration: false})
+            .flatMap(ref => {
+                const document = this.documents.getOrCreateDocument(ref.sourceUri);
+                const rootNode = document.parseResult.value;
+                if (!rootNode.$cstNode) {
+                    return [];
+                }
 
-            const refCstNode = findLeafNodeAtOffset(rootNode.$cstNode, ref.segment.offset);
-            if (!refCstNode) {
-                return [];
-            }
+                const refCstNode = findLeafNodeAtOffset(rootNode.$cstNode, ref.segment.offset);
+                if (!refCstNode) {
+                    return [];
+                }
 
-            // Only consider references that occur as a superType of an interface
-            const refNode = refCstNode.astNode;
-            if (!isInterface(refNode) || refNode.superTypes.every(superType => superType.$refNode !== refCstNode)) {
-                return [];
-            }
+                // Only consider references that occur as a superType of an interface
+                const refNode = refCstNode.astNode;
+                if (!isInterface(refNode) || refNode.superTypes.every(superType => superType.$refNode !== refCstNode)) {
+                    return [];
+                }
 
-            return this.getTypeHierarchyItems(refNode, document) ?? [];
-        }).toArray();
+                return this.getTypeHierarchyItems(refNode, document) ?? [];
+            })
+            .toArray();
 
         return items.length === 0 ? undefined : items;
     }

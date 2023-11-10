@@ -18,9 +18,7 @@ import type { References } from '../references/references.js';
 import type { LangiumServices } from '../services.js';
 import type { AstNode } from '../syntax-tree.js';
 import { findDeclarationNodeAtOffset } from '../utils/cst-util.js';
-import type { Stream } from '../utils/stream.js';
 import { URI } from '../utils/uri-util.js';
-import type { ReferenceDescription } from '../workspace/ast-descriptions.js';
 import type { LangiumDocument, LangiumDocuments } from '../workspace/documents.js';
 
 /**
@@ -131,14 +129,11 @@ export abstract class AbstractTypeHierarchyProvider implements TypeHierarchyProv
             return undefined;
         }
 
-        const references = this.references.findReferences(targetNode.astNode, {
-            includeDeclaration: false,
-        });
-        return this.getSubtypes(targetNode.astNode, references);
+        return this.getSubtypes(targetNode.astNode);
     }
 
     /**
      * Override this method to collect the subtypes for your language.
      */
-    protected abstract getSubtypes(node: AstNode, references: Stream<ReferenceDescription>): TypeHierarchyItem[] | undefined;
+    protected abstract getSubtypes(node: AstNode): TypeHierarchyItem[] | undefined;
 }
