@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import type { ValidationAcceptor, ValidationChecks } from 'langium';
-import type { State, Statemachine, StatemachineAstType, Event, Command } from './generated/ast.js';
+import type { State, Statemachine, StatemachineAstType, Event, Command, Transition } from './generated/ast.js';
 import type { StatemachineServices } from './statemachine-module.js';
 import { MultiMap, diagnosticData } from 'langium';
 
@@ -69,7 +69,7 @@ export class StatemachineValidator {
     }
 
     /**
-     * Checks if there are unreached state.
+     * Checks if there are unreached states.
      * @param statemachine the statemachine to check
      * @param accept the acceptor to report errors
      */
@@ -79,21 +79,27 @@ export class StatemachineValidator {
             states.set(state.name, state);
         }
 
-        for (const { transitions } of statemachine.states) {
-            for (const { state: { ref: stateRef } } of transitions) {
-                if (stateRef && states.has(stateRef.name)) {
-                    states.delete(stateRef.name);
-                }
-            }
+        const { ref } = statemachine.init;
+        if (ref && states.has(ref.name)) {
+            states.delete(ref.name);
+            this.removeStates(states, ref.transitions);
         }
 
         for (const [name, state] of states.entries()) {
-            accept('warning', `Unreached state name: ${name}`, {
+            accept('hint', `Unreached state: ${name}`, {
                 node: state,
-                property: 'name',
                 data: diagnosticData(IssueCodes.UnusedSymbol),
                 tags: [1],
             });
+        }
+    }
+
+    private removeStates(states: Map<string, State>, transitions: Transition[]): void {
+        for (const { state: { ref } } of transitions) {
+            if (ref && states.has(ref.name)) {
+                states.delete(ref.name);
+                this.removeStates(states, ref.transitions);
+            }
         }
     }
 
