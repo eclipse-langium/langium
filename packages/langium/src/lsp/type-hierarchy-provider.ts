@@ -85,12 +85,12 @@ export abstract class AbstractTypeHierarchyProvider implements TypeHierarchyProv
     }
 
     /**
-     * Override this method to changes default properties of the type hierarchy item or add additional ones like `tags`
+     * Override this method to change default properties of the type hierarchy item or add additional ones like `tags`
      * or `details`.
      *
      * @example
-     * // Changing the node kind to SymbolKind.Interface
-     * return `{ kind: SymbolKind.Interface }`
+     * // Change the node kind to SymbolKind.Interface
+     * return { kind: SymbolKind.Interface }
      *
      * @see NodeKindProvider
      */
