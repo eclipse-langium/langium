@@ -86,6 +86,16 @@ export abstract class AbstractTypeHierarchyProvider implements TypeHierarchyProv
         ];
     }
 
+    /**
+     * Override this method to changes default properties of the type hierarchy item or add additional ones like `tags`
+     * or `details`.
+     *
+     * @example
+     * // Changing the node kind to SymbolKind.Interface
+     * return `{ kind: SymbolKind.Interface }`
+     *
+     * @see NodeKindProvider
+     */
     protected getTypeHierarchyItem(_targetNode: AstNode): Partial<TypeHierarchyItem> | undefined {
         return undefined;
     }
