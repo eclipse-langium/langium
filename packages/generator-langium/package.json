@@ -41,6 +41,7 @@
   "devDependencies": {
     "@types/lodash": "~4.14.197",
     "@types/which": "~3.0.0",
+    "@yeoman/types": "^1.1.2",
     "yeoman-test": "^8.2.0"
   },
   "volta": {
