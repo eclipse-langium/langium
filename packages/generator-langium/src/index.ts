@@ -56,7 +56,7 @@ function description(...d: string[]): string {
 class LangiumGenerator extends Generator {
     private answers: Answers;
 
-    constructor(args: string | string[], options: Generator.GeneratorOptions) {
+    constructor(args: string | string[], options: Record<string, unknown>) {
         super(args, options);
     }
 
@@ -110,8 +110,7 @@ class LangiumGenerator extends Generator {
                     'Your language can be run inside of a VSCode extension.'
                 ),
                 message: 'Include VSCode extension?',
-                default: 'yes',
-                choices: ['yes', 'no']
+                default: 'yes'
             },
             {
                 type: 'confirm',
@@ -287,7 +286,7 @@ class LangiumGenerator extends Generator {
         return this.destinationPath(USER_DIR, this.answers.extensionName, ...path);
     }
 
-    _replaceTemplateWords(fileExtensionGlob: string, languageName: string, languageId: string, content: Buffer): string {
+    _replaceTemplateWords(fileExtensionGlob: string, languageName: string, languageId: string, content: string | Buffer): string {
         return content.toString()
             .replace(EXTENSION_NAME, this.answers.extensionName)
             .replace(RAW_LANGUAGE_NAME, this.answers.rawLanguageName)

@@ -20,7 +20,7 @@
     "src"
   ],
   "type": "module",
-  "main": "app/index.js",
+  "exports": "./app/index.js",
   "scripts": {
     "clean": "shx rm -rf app",
     "build": "tsc",
@@ -36,14 +36,13 @@
     "chalk": "~5.3.0",
     "lodash": "~4.17.21",
     "which": "~3.0.1",
-    "yeoman-generator": "~5.9.0"
+    "yeoman-generator": "^7.1.0"
   },
   "devDependencies": {
     "@types/lodash": "~4.14.197",
     "@types/which": "~3.0.0",
-    "@types/yeoman-generator": "~5.2.11",
-    "@types/yeoman-test": "~4.0.3",
-    "yeoman-test": "~7.4.0"
+    "@yeoman/types": "^1.1.2",
+    "yeoman-test": "^8.2.0"
   },
   "volta": {
     "node": "18.17.1",
