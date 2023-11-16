@@ -81,26 +81,26 @@ export type LangiumGeneratedServices = {
  * Services related to the Language Server Protocol (LSP).
  */
 export type LangiumLspServices = {
-    CompletionProvider?: CompletionProvider
-    DocumentHighlightProvider?: DocumentHighlightProvider
-    DocumentSymbolProvider?: DocumentSymbolProvider
-    HoverProvider?: HoverProvider
-    FoldingRangeProvider?: FoldingRangeProvider
-    DefinitionProvider?: DefinitionProvider
-    TypeProvider?: TypeDefinitionProvider
-    ImplementationProvider?: ImplementationProvider
-    ReferencesProvider?: ReferencesProvider
-    CodeActionProvider?: CodeActionProvider
-    SemanticTokenProvider?: SemanticTokenProvider
-    RenameProvider?: RenameProvider
-    Formatter?: Formatter
-    SignatureHelp?: SignatureHelpProvider
     CallHierarchyProvider?: CallHierarchyProvider
-    TypeHierarchyProvider?: TypeHierarchyProvider;
-    DeclarationProvider?: DeclarationProvider
-    InlayHintProvider?: InlayHintProvider
+    CodeActionProvider?: CodeActionProvider
     CodeLensProvider?: CodeLensProvider
+    CompletionProvider?: CompletionProvider
+    DeclarationProvider?: DeclarationProvider
+    DefinitionProvider?: DefinitionProvider
+    DocumentHighlightProvider?: DocumentHighlightProvider
     DocumentLinkProvider?: DocumentLinkProvider
+    DocumentSymbolProvider?: DocumentSymbolProvider
+    FoldingRangeProvider?: FoldingRangeProvider
+    Formatter?: Formatter
+    HoverProvider?: HoverProvider
+    ImplementationProvider?: ImplementationProvider
+    InlayHintProvider?: InlayHintProvider
+    ReferencesProvider?: ReferencesProvider
+    RenameProvider?: RenameProvider
+    SemanticTokenProvider?: SemanticTokenProvider
+    SignatureHelp?: SignatureHelpProvider
+    TypeHierarchyProvider?: TypeHierarchyProvider;
+    TypeProvider?: TypeDefinitionProvider
 }
 
 /**
@@ -164,24 +164,24 @@ export type LangiumDefaultSharedServices = {
     ServiceRegistry: ServiceRegistry
     lsp: {
         Connection?: Connection
-        LanguageServer: LanguageServer
         DocumentUpdateHandler: DocumentUpdateHandler
         ExecuteCommandHandler?: ExecuteCommandHandler
         FileOperationHandler?: FileOperationHandler
-        WorkspaceSymbolProvider?: WorkspaceSymbolProvider
-        NodeKindProvider: NodeKindProvider
         FuzzyMatcher: FuzzyMatcher
+        LanguageServer: LanguageServer
+        NodeKindProvider: NodeKindProvider
+        WorkspaceSymbolProvider?: WorkspaceSymbolProvider
     }
     workspace: {
+        ConfigurationProvider: ConfigurationProvider
         DocumentBuilder: DocumentBuilder
+        FileSystemProvider: FileSystemProvider
         IndexManager: IndexManager
         LangiumDocuments: LangiumDocuments
         LangiumDocumentFactory: LangiumDocumentFactory
+        MutexLock: MutexLock
         TextDocuments: TextDocuments<TextDocument>
         WorkspaceManager: WorkspaceManager
-        FileSystemProvider: FileSystemProvider
-        MutexLock: MutexLock
-        ConfigurationProvider: ConfigurationProvider
     }
 }
 

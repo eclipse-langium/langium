@@ -182,7 +182,7 @@ export function startLanguageServer(services: LangiumSharedServices): void {
         throw new Error('Starting a language server requires the languageServer.Connection service to be set.');
     }
 
-    addDocumentsHandler(connection, services);
+    addDocumentUpdateHandler(connection, services);
     addFileOperationHandler(connection, services);
     addDiagnosticsHandler(connection, services);
     addCompletionHandler(connection, services);
@@ -224,15 +224,11 @@ export function startLanguageServer(services: LangiumSharedServices): void {
     connection.listen();
 }
 
-export function addDocumentsHandler(connection: Connection, services: LangiumSharedServices): void {
+export function addDocumentUpdateHandler(connection: Connection, services: LangiumSharedServices): void {
     const handler = services.lsp.DocumentUpdateHandler;
     const documents = services.workspace.TextDocuments;
-    if (handler.didChangeContent) {
-        documents.onDidChangeContent(change => handler.didChangeContent!(change));
-    }
-    if (handler.didChangeWatchedFiles) {
-        connection.onDidChangeWatchedFiles(params => handler.didChangeWatchedFiles!(params));
-    }
+    documents.onDidChangeContent(change => handler.didChangeContent(change));
+    connection.onDidChangeWatchedFiles(params => handler.didChangeWatchedFiles(params));
 }
 
 export function addFileOperationHandler(connection: Connection, services: LangiumSharedServices): void {
