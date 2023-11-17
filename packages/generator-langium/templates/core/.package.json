@@ -8,8 +8,8 @@
     ],
     "type": "module",
     "scripts": {
-        "build": "tsc -b tsconfig.json",
-        "watch": "tsc -b tsconfig.json --watch",
+        "build": "tsc -b <%= tsconfig %>",
+        "watch": "tsc -b <%= tsconfig %> --watch",
         "lint": "eslint src --ext ts",
         "langium:generate": "langium generate",
         "langium:watch": "langium generate --watch"
@@ -18,7 +18,7 @@
         "langium": "~2.1.0"
     },
     "devDependencies": {
-        "@types/node": "~16.18.41",
+        "@types/node": "^18.0.0",
         "@typescript-eslint/parser": "~6.4.1",
         "@typescript-eslint/eslint-plugin": "~6.4.1",
         "eslint": "~8.47.0",

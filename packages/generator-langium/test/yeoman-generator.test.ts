@@ -8,59 +8,132 @@ import { normalizeEOL } from 'langium/generate';
 import * as path from 'node:path';
 import * as url from 'node:url';
 import { describe, test } from 'vitest';
+import type * as Generator from 'yeoman-generator';
 import { createHelpers } from 'yeoman-test';
+import type { Answers, LangiumGenerator, PostAnwers } from '../src/index.js';
 
-const __dirname = url.fileURLToPath(new URL('../', import.meta.url));
-
-const answersForCore = {
+const answersForCore: Answers & PostAnwers = {
     extensionName: 'hello-world',
     rawLanguageName: 'Hello World',
-    fileExtension: '.hello',
+    fileExtensions: '.hello',
     includeVSCode: false,
     includeCLI: false,
     includeWeb: false,
+    includeTest: false,
     openWith: false
 };
 
 describe('Check yeoman generator works', () => {
-    const moduleRoot = path.join(__dirname, 'app');
+    const packageTestDir = url.fileURLToPath(new URL('.', import.meta.url));
+    const moduleRoot = path.join(packageTestDir, '../app');
 
-    test('Should produce files for Core', async () => {
+    const files = (targetRoot: string) => [
+        targetRoot + '/.eslintrc.json',
+        targetRoot + '/.gitignore',
+        targetRoot + '/langium-config.json',
+        targetRoot + '/langium-quickstart.md',
+        targetRoot + '/tsconfig.json',
+        targetRoot + '/package.json',
+        targetRoot + '/.vscode/extensions.json',
+        targetRoot + '/.vscode/tasks.json',
+        targetRoot + '/src/language/hello-world-module.ts',
+        targetRoot + '/src/language/hello-world-validator.ts',
+        targetRoot + '/src/language/hello-world.langium'
+    ];
 
-        const context = createHelpers({}).run(moduleRoot);
-        context.targetDirectory =  path.join(__dirname, '../../../examples/hello-world'); // generate in examples
-        const targetRoot = path.join(__dirname, '../../../examples');
-        context.cleanTestDirectory(true); // clean-up examples/hello-world
+    const testFiles = (targetRoot: string) => [
+        targetRoot + '/tsconfig.src.json',
+        targetRoot + '/test/parsing/parsing.test.ts',
+        targetRoot + '/test/linking/linking.test.ts',
+        targetRoot + '/test/validating/validating.test.ts',
+    ];
+
+    test('1 Should produce files for Core', async () => {
+
+        const context = createHelpers({}).run(path.join(moduleRoot));
+
+        // generate in examples
+        const targetRoot = path.resolve(packageTestDir, '../../../examples');
+        const extensionName = answersForCore.extensionName;
+
+        // remove examples/hello-world (if existing) now and finally (don't delete everything else in examples)
+        context.targetDirectory = path.resolve(targetRoot, extensionName);
+        context.cleanTestDirectory(true);
+
         await context
-            .onGenerator(async (generator) => {
-                // will generate into examples/hello-world instead of examples/hello-world/hello-world
-                generator.destinationRoot(targetRoot); // types are wrong, should be string
+            .withOptions(<Generator.BaseOptions>{
+                // we need to explicitly tell the generator it's destinationRoot
+                destinationRoot: targetRoot
+            })
+            .onTargetDirectory(workingDir => {
+                // just for double checking
+                console.log(`Generating into directory: ${workingDir}`);
             })
             .withAnswers(answersForCore)
             .withArguments('skip-install')
             .then((result) => {
-                const files = [
-                    targetRoot + '/hello-world/.eslintrc.json',
-                    targetRoot + '/hello-world/.gitignore',
-                    targetRoot + '/hello-world/langium-config.json',
-                    targetRoot + '/hello-world/langium-quickstart.md',
-                    targetRoot + '/hello-world/tsconfig.json',
-                    targetRoot + '/hello-world/package.json',
-                    targetRoot + '/hello-world/.vscode/extensions.json',
-                    targetRoot + '/hello-world/.vscode/tasks.json',
-                    targetRoot + '/hello-world/src/language/hello-world-module.ts',
-                    targetRoot + '/hello-world/src/language/hello-world-validator.ts',
-                    targetRoot + '/hello-world/src/language/hello-world.langium'
-                ];
-                result.assertFile(files);
-                result.assertJsonFileContent(targetRoot + '/hello-world/package.json', PACKAGE_JSON_EXPECTATION);
-                result.assertFileContent(targetRoot + '/hello-world/.vscode/tasks.json', TASKS_JSON_EXPECTATION);
+                const projectRoot = targetRoot + '/' + extensionName;
+
+                result.assertFile(files(projectRoot));
+                result.assertNoFile(testFiles(projectRoot));
+
+                result.assertJsonFileContent(projectRoot + '/package.json', PACKAGE_JSON_EXPECTATION);
+                result.assertFileContent(projectRoot + '/.vscode/tasks.json', TASKS_JSON_EXPECTATION);
             }).finally(() => {
                 context.cleanTestDirectory(true);
             });
         context.cleanTestDirectory(true); // clean-up examples/hello-world
     }, 120_000);
 
+    test('2 Should produce files for Core & CLI & test', async () => {
+
+        const context = createHelpers({}).run<LangiumGenerator>(path.join(moduleRoot));
+
+        // generate in examples
+        const targetRoot = path.resolve(packageTestDir, '../../../examples');
+        const extensionName = 'hello-world';
+
+        // remove examples/hello-world (if existing) now and finally (don't delete everything else in examples)
+        context.targetDirectory = path.resolve(targetRoot, extensionName);
+        context.cleanTestDirectory(true);
+
+        await context
+            .withOptions(<Generator.BaseOptions>{
+                // we need to explicitly tell the generator it's destinationRoot
+                destinationRoot: targetRoot
+            })
+            .onTargetDirectory(workingDir => {
+                // just for double checking
+                console.log(`Generating into directory: ${workingDir}`);
+            })
+            .withArguments('skip-install')
+            .withAnswers( <Answers>{
+                ...answersForCore,
+                extensionName,
+                includeCLI: true,
+                includeTest: true
+            }).then((result) => {
+                const projectRoot = targetRoot + '/' + extensionName;
+                result.assertJsonFileContent(projectRoot + '/package.json', {
+                    ...PACKAGE_JSON_EXPECTATION,
+                    files: [ 'bin', 'out', 'src' ],
+                    scripts: {
+                        ...PACKAGE_JSON_EXPECTATION.scripts,
+                        build: PACKAGE_JSON_EXPECTATION.scripts.build.replace(/tsconfig.json/, 'tsconfig.src.json'),
+                        watch: PACKAGE_JSON_EXPECTATION.scripts.watch.replace(/tsconfig.json/, 'tsconfig.src.json')
+                    }
+                });
+
+                const returnVal = result.generator.spawnSync('npm', ['test'], {
+                    cwd: result.generator._extensionPath()
+                });
+
+                result.assertTextEqual(String(returnVal.exitCode), '0');
+
+            }).finally(() => {
+                context.cleanTestDirectory(true);
+            });
+    }, 120_000);
 });
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -85,7 +158,7 @@ const PACKAGE_JSON_EXPECTATION: Record<string, any> = {
         'langium': langiumVersion
     },
     'devDependencies': {
-        '@types/node': '~16.18.41',
+        '@types/node': '^18.0.0',
         '@typescript-eslint/eslint-plugin': '~6.4.1',
         '@typescript-eslint/parser': '~6.4.1',
         'eslint': '~8.47.0',

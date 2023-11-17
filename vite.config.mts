@@ -12,11 +12,13 @@ export default defineConfig({
             provider: 'v8',
             reporter: ['text', 'html'],
             include: ['packages/langium/src'],
-            exclude: ['**/generated'],
+            exclude: ['**/generated', '**/templates'],
         },
         deps: {
             interopDefault: true
         },
-        include: ['**/*.test.ts']
+        include: ['**/test/**/*.test.ts'],
+        exclude: ['**/node_modules/**', '**/dist/**', '**/generated/**', '**/templates/**'],
+        watchExclude: [ '**/examples/hello*/**' /* populated by the yeoman generator test */],
     }
 });

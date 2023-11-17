@@ -1,0 +1,11 @@
+{
+    "compilerOptions": {
+        "rootDir": ".",
+        "noEmit": true
+    },
+    "include": [
+      "src/**/*.ts",
+      "test/**/*.ts"
+    ]
+  }
+  

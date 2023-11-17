@@ -88,6 +88,21 @@
             ]
         },
         {
+            "name": "Run Yeoman Generator",
+            "type": "node",
+            "request": "launch",
+            "cwd": "${workspaceFolder}/examples",
+            "runtimeExecutable": "npx",
+            "runtimeArgs": [
+                "yo",
+                "langium"
+            ],
+            "console": "integratedTerminal",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+        },
+        {
             "name": "Bootstrap",
             "type": "node",
             "request": "launch",
