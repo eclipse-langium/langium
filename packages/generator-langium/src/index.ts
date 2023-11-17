@@ -5,6 +5,7 @@
  ******************************************************************************/
 
 import Generator from 'yeoman-generator';
+import type { CopyOptions } from 'mem-fs-editor';
 import _ from 'lodash';
 import chalk from 'chalk';
 import * as path from 'node:path';
@@ -18,12 +19,14 @@ const TEMPLATE_CORE_DIR = '../templates/core';
 const TEMPLATE_VSCODE_DIR = '../templates/vscode';
 const TEMPLATE_CLI_DIR = '../templates/cli';
 const TEMPLATE_WEB_DIR = '../templates/web';
+const TEMPLATE_TEST_DIR = '../templates/test';
 const USER_DIR = '.';
 
 const EXTENSION_NAME = /<%= extension-name %>/g;
 const RAW_LANGUAGE_NAME = /<%= RawLanguageName %>/g;
 const FILE_EXTENSION = /"?<%= file-extension %>"?/g;
 const FILE_EXTENSION_GLOB = /<%= file-glob-extension %>/g;
+const TSCONFIG_BASE_NAME = /<%= tsconfig %>/g;
 
 const LANGUAGE_NAME = /<%= LanguageName %>/g;
 const LANGUAGE_ID = /<%= language-id %>/g;
@@ -31,13 +34,18 @@ const LANGUAGE_PATH_ID = /language-id/g;
 
 const NEWLINES = /\r?\n/g;
 
-interface Answers {
+export interface Answers {
     extensionName: string;
     rawLanguageName: string;
     fileExtensions: string;
     includeVSCode: boolean;
     includeCLI: boolean;
     includeWeb: boolean;
+    includeTest: boolean;
+}
+
+export interface PostAnwers {
+    openWith: 'code' | false
 }
 
 function printLogo(log: (message: string) => void): void {
@@ -53,7 +61,7 @@ function description(...d: string[]): string {
     return chalk.reset(chalk.dim(d.join(' ') + '\n')) + chalk.green('?');
 }
 
-class LangiumGenerator extends Generator {
+export class LangiumGenerator extends Generator {
     private answers: Answers;
 
     constructor(args: string | string[], options: Record<string, unknown>) {
@@ -62,7 +70,7 @@ class LangiumGenerator extends Generator {
 
     async prompting(): Promise<void> {
         printLogo(this.log);
-        this.answers = await this.prompt([
+        this.answers = await this.prompt<Answers>([
             {
                 type: 'input',
                 name: 'extensionName',
@@ -129,6 +137,15 @@ class LangiumGenerator extends Generator {
                 ),
                 message: 'Include Web worker?',
                 default: 'yes'
+            },
+            {
+                type: 'confirm',
+                name: 'includeTest',
+                prefix: description(
+                    'You can add the setup for language tests using Vitest.'
+                ),
+                message: 'Include language tests?',
+                default: 'yes'
             }
         ]);
     }
@@ -154,6 +171,12 @@ class LangiumGenerator extends Generator {
         );
         const languageId = _.kebabCase(this.answers.rawLanguageName);
 
+        const referencedTsconfigBaseName = this.answers.includeTest ? 'tsconfig.src.json' : 'tsconfig.json';
+        const templateCopyOptions: CopyOptions = {
+            process: content => this._replaceTemplateWords(fileExtensionGlob, languageName, languageId, referencedTsconfigBaseName, content),
+            processDestinationPath: path => this._replaceTemplateNames(languageId, path)
+        };
+
         this.sourceRoot(path.join(__dirname, TEMPLATE_CORE_DIR));
         const pkgJson = this.fs.readJSON(path.join(this.sourceRoot(), '.package.json'));
         this.fs.extendJSON(this._extensionPath('package-template.json'), pkgJson, undefined, 4);
@@ -162,12 +185,7 @@ class LangiumGenerator extends Generator {
             this.fs.copy(
                 this.templatePath(path),
                 this._extensionPath(path),
-                {
-                    process: content =>
-                        this._replaceTemplateWords(fileExtensionGlob, languageName, languageId, content),
-                    processDestinationPath: path =>
-                        this._replaceTemplateNames(languageId, path),
-                }
+                templateCopyOptions
             );
         }
 
@@ -183,10 +201,7 @@ class LangiumGenerator extends Generator {
                 this.fs.copy(
                     this.templatePath(path),
                     this._extensionPath(path),
-                    {
-                        process: content => this._replaceTemplateWords(fileExtensionGlob, languageName, languageId, content),
-                        processDestinationPath: path => this._replaceTemplateNames(languageId, path)
-                    }
+                    templateCopyOptions
                 );
             }
         }
@@ -199,10 +214,7 @@ class LangiumGenerator extends Generator {
                 this.fs.copy(
                     this.templatePath(path),
                     this._extensionPath(path),
-                    {
-                        process: content => this._replaceTemplateWords(fileExtensionGlob, languageName, languageId, content),
-                        processDestinationPath: path => this._replaceTemplateNames(languageId, path)
-                    }
+                    templateCopyOptions
                 );
             }
         }
@@ -216,25 +228,37 @@ class LangiumGenerator extends Generator {
                 this.fs.copy(
                     this.templatePath(path),
                     this._extensionPath(path),
-                    {
-                        process: content =>
-                            this._replaceTemplateWords(fileExtensionGlob, languageName, languageId, content),
-                        processDestinationPath: path =>
-                            this._replaceTemplateNames(languageId, path),
-                    }
+                    templateCopyOptions
                 );
             }
+        }
+
+        if (this.answers.includeTest) {
+            this.sourceRoot(path.join(__dirname, TEMPLATE_TEST_DIR));
+
+            this.fs.copy(
+                this.templatePath('.'),
+                this._extensionPath(),
+                templateCopyOptions
+            );
+
+            // update the scripts section in the package.json to use 'tsconfig.src.json' for building
+            const pkgJson = this.fs.readJSON(this.templatePath('.package.json'));
+            this.fs.extendJSON(this._extensionPath('package-template.json'), pkgJson, undefined, 4);
+
+            // update the 'includes' property in the existing 'tsconfig.json' and adds '"noEmit": true'
+            const tsconfigJson = this.fs.readJSON(this.templatePath('.tsconfig.json'));
+            this.fs.extendJSON(this._extensionPath('tsconfig.json'), tsconfigJson, undefined, 4);
+
+            // the initial '.vscode/extensions.json' can't be extended as above, as it contains comments, which is tolerated by vscode,
+            //  but not by `this.fs.extendJSON(...)`, so
+            this.fs.copy(this.templatePath('.vscode-extensions.json'), this._extensionPath('.vscode/extensions.json'), templateCopyOptions);
         }
 
         this.fs.copy(
             this._extensionPath('package-template.json'),
             this._extensionPath('package.json'),
-            {
-                process: content =>
-                    this._replaceTemplateWords(fileExtensionGlob, languageName, languageId, content),
-                processDestinationPath: path =>
-                    this._replaceTemplateNames(languageId, path),
-            }
+            templateCopyOptions
         );
         this.fs.delete(this._extensionPath('package-template.json'));
     }
@@ -244,23 +268,23 @@ class LangiumGenerator extends Generator {
 
         const opts = { cwd: extensionPath };
         if(!this.args.includes('skip-install')) {
-            this.spawnCommandSync('npm', ['install'], opts);
+            this.spawnSync('npm', ['install'], opts);
         }
-        this.spawnCommandSync('npm', ['run', 'langium:generate'], opts);
+        this.spawnSync('npm', ['run', 'langium:generate'], opts);
 
         if (this.answers.includeVSCode || this.answers.includeCLI) {
-            this.spawnCommandSync('npm', ['run', 'build'], opts);
+            this.spawnSync('npm', ['run', 'build'], opts);
         }
 
         if (this.answers.includeWeb) {
-            this.spawnCommandSync('npm', ['run', 'build:web'], opts);
+            this.spawnSync('npm', ['run', 'build:web'], opts);
         }
     }
 
     async end(): Promise<void> {
         const code = await which('code').catch(() => undefined);
         if (code) {
-            const answer = await this.prompt({
+            const answer = await this.prompt<PostAnwers>({
                 type: 'list',
                 name: 'openWith',
                 message: 'Do you want to open the new folder with Visual Studio Code?',
@@ -277,7 +301,7 @@ class LangiumGenerator extends Generator {
                 ]
             });
             if (answer?.openWith) {
-                this.spawnCommand(answer.openWith, [this._extensionPath()]);
+                this.spawn(answer.openWith, [this._extensionPath()]);
             }
         }
     }
@@ -286,7 +310,7 @@ class LangiumGenerator extends Generator {
         return this.destinationPath(USER_DIR, this.answers.extensionName, ...path);
     }
 
-    _replaceTemplateWords(fileExtensionGlob: string, languageName: string, languageId: string, content: string | Buffer): string {
+    _replaceTemplateWords(fileExtensionGlob: string, languageName: string, languageId: string, tsconfigBaseName: string, content: string | Buffer): string {
         return content.toString()
             .replace(EXTENSION_NAME, this.answers.extensionName)
             .replace(RAW_LANGUAGE_NAME, this.answers.rawLanguageName)
@@ -294,6 +318,7 @@ class LangiumGenerator extends Generator {
             .replace(FILE_EXTENSION_GLOB, fileExtensionGlob)
             .replace(LANGUAGE_NAME, languageName)
             .replace(LANGUAGE_ID, languageId)
+            .replace(TSCONFIG_BASE_NAME, tsconfigBaseName)
             .replace(NEWLINES, EOL);
     }
 

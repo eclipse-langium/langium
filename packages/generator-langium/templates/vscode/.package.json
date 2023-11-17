@@ -25,8 +25,8 @@
     "main": "./out/extension/main.cjs",
     "scripts": {
         "vscode:prepublish": "npm run build && npm run lint",
-        "build": "tsc -b tsconfig.json && node esbuild.mjs",
-        "watch": "concurrently -n tsc,esbuild -c blue,yellow \"tsc -b tsconfig.json --watch\" \"node esbuild.mjs --watch\""
+        "build": "tsc -b <%= tsconfig %> && node esbuild.mjs",
+        "watch": "concurrently -n tsc,esbuild -c blue,yellow \"tsc -b <%= tsconfig %> --watch\" \"node esbuild.mjs --watch\""
     },
     "dependencies": {
         "vscode-languageclient": "~9.0.1",
