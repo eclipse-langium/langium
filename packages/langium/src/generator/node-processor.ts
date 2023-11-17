@@ -22,6 +22,7 @@ class Context {
     private traceData: InternalTraceRegion[] = [];
 
     private lines: string[][] = [[]];
+    private length: number = 0;
 
     constructor(defaultIndent?: string | number) {
         if (typeof defaultIndent === 'string') {
@@ -35,6 +36,10 @@ class Context {
         return this.lines.map(e => e.join('')).join('');
     }
 
+    get contentLength(): number {
+        return this.length;
+    }
+
     get currentLineNumber(): number {
         return this.lines.length - 1;
     }
@@ -45,7 +50,7 @@ class Context {
 
     get currentPosition(): OffsetAndPosition {
         return {
-            offset: this.content.length,
+            offset: this.contentLength,
             line: this.currentLineNumber,
             character: this.currentLineContent.length
         };
@@ -55,6 +60,7 @@ class Context {
         if (value.length > 0) {
             const beforePos = isIndent && this.currentPosition;
             this.lines[this.currentLineNumber].push(value);
+            this.length += value.length;
             if (beforePos) {
                 this.indentPendingTraceRegions(beforePos);
             }
@@ -85,6 +91,7 @@ class Context {
     }
 
     resetCurrentLine() {
+        this.length -= this.lines[this.currentLineNumber].join('').length;
         this.lines[this.currentLineNumber] = [];
         this.pendingIndent = true;
     }
