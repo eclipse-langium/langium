@@ -4,13 +4,13 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { ArithmeticsAstType, Definition, Expression, BinaryExpression, Module, DeclaredParameter, FunctionCall } from './generated/ast.js';
-import type { ArithmeticsServices } from './arithmetics-module.js';
-import type { ValidationChecks, ValidationAcceptor } from 'langium';
-import { isNumberLiteral, isFunctionCall, isBinaryExpression } from './generated/ast.js';
-import { applyOp } from './arithmetics-util.js';
-import { MultiMap } from 'langium';
+import type { AstNode, Reference, ValidationAcceptor, ValidationChecks } from 'langium';
+import { MultiMap, stream } from 'langium';
 import { evalExpression } from './arithmetics-evaluator.js';
+import type { ArithmeticsServices } from './arithmetics-module.js';
+import { applyOp } from './arithmetics-util.js';
+import type { ArithmeticsAstType, BinaryExpression, DeclaredParameter, Definition, Expression, FunctionCall, Module } from './generated/ast.js';
+import { isBinaryExpression, isDefinition, isFunctionCall, isNumberLiteral } from './generated/ast.js';
 
 export function registerValidationChecks(services: ArithmeticsServices): void {
     const registry = services.validation.ValidationRegistry;
@@ -18,7 +18,7 @@ export function registerValidationChecks(services: ArithmeticsServices): void {
     const checks: ValidationChecks<ArithmeticsAstType> = {
         BinaryExpression: validator.checkDivByZero,
         Definition: [validator.checkUniqueParmeters, validator.checkNormalisable],
-        Module: validator.checkUniqueDefinitions,
+        Module: [validator.checkUniqueDefinitions, validator.checkFunctionRecursion],
         FunctionCall: validator.checkMatchingParameters,
     };
     registry.register(checks, validator);
@@ -71,6 +71,79 @@ export class ArithmeticsValidator {
         }
     }
 
+    checkFunctionRecursion(module: Module, accept: ValidationAcceptor): void {
+
+        function* getNestedCalls(host: Definition, expression: Expression = host.expr): Generator<NestedFunctionCall> {
+            if (isFunctionCall(expression)) {
+                if (isResolvedFunctionCall(expression)) yield { call: expression, host };
+            } else if (isBinaryExpression(expression)) {
+                for (const expr of [expression.left, expression.right]) yield* getNestedCalls(host, expr);
+            }
+        }
+
+        const traversedFunctions = new Set<Definition>();
+        function* getNestedCallsIfUnprocessed(func: Definition): Generator<NestedFunctionCall> {
+            if (!traversedFunctions.has(func)) {
+                traversedFunctions.add(func);
+                yield* getNestedCalls(func);
+            }
+        }
+
+        const callsTree = new Map<ResolvedFunctionCall, NestedFunctionCall>();
+        const getCycle = (to: NestedFunctionCall): [NestedFunctionCall, NestedFunctionCall] | undefined => {
+            const referencedFunc = to.call.func.ref;
+            let parent = callsTree.get(to.call);
+            while (parent) {
+                if (parent.host === referencedFunc) return [parent, to];
+                parent = callsTree.get(parent.call);
+            }
+            return undefined;
+        };
+
+        const callCycles: Array<[NestedFunctionCall, NestedFunctionCall]> = [];
+        const printCycle = ([start, end]: [NestedFunctionCall, NestedFunctionCall]): string => {
+            let printedCycle = printNestedFunctionCall(end);
+            let parent = callsTree.get(end.call);
+            while (parent) {
+                printedCycle = printNestedFunctionCall(parent) + '->' + printedCycle;
+                if (parent.call === start.call) break;
+                parent = callsTree.get(parent.call);
+            }
+            return printedCycle;
+        };
+
+        const bfsStep = (parent: NestedFunctionCall): NestedFunctionCall[] => {
+            const uncycledChildren: NestedFunctionCall[] = [];
+            for (const child of getNestedCallsIfUnprocessed(parent.call.func.ref)) {
+                callsTree.set(child.call, parent);
+                const callCycle = getCycle(child);
+                if (callCycle) {
+                    callCycles.push(callCycle);
+                } else {
+                    uncycledChildren.push(child);
+                }
+            }
+            return uncycledChildren;
+        };
+
+        stream(module.statements)
+            .filter(isDefinition)
+            .flatMap(getNestedCallsIfUnprocessed)
+            .forEach(call => {
+                let remainingCalls = Array.of(call);
+                while (remainingCalls.length !== 0) {
+                    remainingCalls = remainingCalls.flatMap(bfsStep);
+                }
+            });
+
+        for (const cycle of callCycles) {
+            const cycleMessage = printCycle(cycle);
+            for (const { call } of cycle) {
+                accept('error', `Recursion is not allowed [${cycleMessage}]`, { node: call, property: 'func' });
+            }
+        }
+    }
+
     checkUniqueParmeters(abstractDefinition: Definition, accept: ValidationAcceptor): void {
         const names = new MultiMap<string, DeclaredParameter>();
         for (const def of abstractDefinition.args) {
@@ -91,4 +164,20 @@ export class ArithmeticsValidator {
             accept('error', `Function ${functionCall.func.ref?.name} expects ${functionCall.args.length} parameters, but ${(functionCall.func.ref as Definition).args.length} were given.`, { node: functionCall, property: 'args' });
         }
     }
+}
+type NestedFunctionCall = {
+    call: ResolvedFunctionCall,
+    host: Definition
+}
+function printNestedFunctionCall({ host, call }: NestedFunctionCall): string {
+    return `${host.name}::${call.func.ref.name}()`;
+}
+type ResolvedFunctionCall = FunctionCall & {
+    func: ResolvedReference<Definition>
+}
+function isResolvedFunctionCall(functionCall: FunctionCall): functionCall is ResolvedFunctionCall {
+    return isDefinition(functionCall.func.ref);
+}
+type ResolvedReference<T extends AstNode = AstNode> = Reference<T> & {
+    readonly ref: T;
 }
