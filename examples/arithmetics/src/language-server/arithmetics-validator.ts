@@ -77,7 +77,9 @@ export class ArithmeticsValidator {
             if (isFunctionCall(expression)) {
                 if (isResolvedFunctionCall(expression)) yield { call: expression, host };
             } else if (isBinaryExpression(expression)) {
-                for (const expr of [expression.left, expression.right]) yield* getNestedCalls(host, expr);
+                for (const expr of [expression.left, expression.right]) {
+                    if (expr) yield* getNestedCalls(host, expr);
+                }
             }
         }
 
