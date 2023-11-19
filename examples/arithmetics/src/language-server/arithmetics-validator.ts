@@ -17,7 +17,7 @@ export function registerValidationChecks(services: ArithmeticsServices): void {
     const validator = services.validation.ArithmeticsValidator;
     const checks: ValidationChecks<ArithmeticsAstType> = {
         BinaryExpression: validator.checkDivByZero,
-        Definition: validator.checkNormalisable,
+        Definition: [validator.checkUniqueParmeters, validator.checkNormalisable],
         Module: validator.checkUniqueDefinitions,
         FunctionCall: validator.checkMatchingParameters,
     };
@@ -55,8 +55,6 @@ export class ArithmeticsValidator {
                 accept('warning', 'Expression could be normalized to constant ' + result, { node: expr });
             }
         }
-
-        this.checkUniqueParmeters(def, accept);
     }
 
     checkUniqueDefinitions(module: Module, accept: ValidationAcceptor): void {
