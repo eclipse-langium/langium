@@ -1,7 +1,7 @@
 Module recursions
 
 def fun1(x):
-    fun2(x) + fun2(x) + fun3(x);
+    fun1(x) + fun2(x) + fun2(x) + fun3(x);
 
 def fun2(x):
     fun3(x) + fun4(x);

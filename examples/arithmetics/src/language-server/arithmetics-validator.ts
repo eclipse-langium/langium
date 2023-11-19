@@ -100,8 +100,11 @@ export class ArithmeticsValidator {
             return undefined;
         };
 
-        const callCycles: Array<[NestedFunctionCall, NestedFunctionCall]> = [];
-        const printCycle = ([start, end]: [NestedFunctionCall, NestedFunctionCall]): string => {
+        const callCycles: NestedFunctionCall[][] = [];
+        const printCycle = (cycle: NestedFunctionCall[]): string => {
+            const start = cycle[0];
+            const end = cycle[cycle.length - 1];
+            if (start === end) return printNestedFunctionCall(start);
             let printedCycle = printNestedFunctionCall(end);
             let parent = callsTree.get(end.call);
             while (parent) {
@@ -113,8 +116,10 @@ export class ArithmeticsValidator {
         };
 
         const bfsStep = (parent: NestedFunctionCall): NestedFunctionCall[] => {
+            const referencedFunc = parent.call.func.ref;
             const uncycledChildren: NestedFunctionCall[] = [];
-            for (const child of getNestedCallsIfUnprocessed(parent.call.func.ref)) {
+            if (parent.host === referencedFunc) callCycles.push([parent]);
+            else for (const child of getNestedCallsIfUnprocessed(referencedFunc)) {
                 callsTree.set(child.call, parent);
                 const callCycle = getCycle(child);
                 if (callCycle) {
