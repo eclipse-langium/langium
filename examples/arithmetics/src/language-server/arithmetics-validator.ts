@@ -4,11 +4,12 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { AstNode, Reference, ValidationAcceptor, ValidationChecks } from 'langium';
+import type { ValidationAcceptor, ValidationChecks } from 'langium';
 import { MultiMap, stream } from 'langium';
 import { evalExpression } from './arithmetics-evaluator.js';
 import type { ArithmeticsServices } from './arithmetics-module.js';
-import { applyOp } from './arithmetics-util.js';
+import type { ResolvedFunctionCall } from './arithmetics-util.js';
+import { applyOp, isResolvedFunctionCall } from './arithmetics-util.js';
 import type { ArithmeticsAstType, BinaryExpression, DeclaredParameter, Definition, Expression, FunctionCall, Module } from './generated/ast.js';
 import { isBinaryExpression, isDefinition, isFunctionCall, isNumberLiteral } from './generated/ast.js';
 
@@ -72,22 +73,11 @@ export class ArithmeticsValidator {
     }
 
     checkFunctionRecursion(module: Module, accept: ValidationAcceptor): void {
-
-        function* getNestedCalls(host: Definition, expression: Expression = host.expr): Generator<NestedFunctionCall> {
-            if (isFunctionCall(expression)) {
-                if (isResolvedFunctionCall(expression)) yield { call: expression, host };
-            } else if (isBinaryExpression(expression)) {
-                for (const expr of [expression.left, expression.right]) {
-                    if (expr) yield* getNestedCalls(host, expr);
-                }
-            }
-        }
-
         const traversedFunctions = new Set<Definition>();
         function* getNotTraversedNestedCalls(func: Definition): Generator<NestedFunctionCall> {
             if (!traversedFunctions.has(func)) {
                 traversedFunctions.add(func);
-                yield* getNestedCalls(func);
+                yield* NestedFunctionCall.selectCalls(func);
             }
         }
 
@@ -165,7 +155,7 @@ namespace FunctionCallCycle {
 
     export function print(cycle: FunctionCallCycle, tree: FunctionCallTree): string {
         return stream(iterateBack(cycle, tree))
-            .map(printNestedFunctionCall)
+            .map(NestedFunctionCall.toString)
             .reduce((child, parent) => parent + '->' + child) ?? '';
     }
 
@@ -187,15 +177,19 @@ type NestedFunctionCall = {
     call: ResolvedFunctionCall,
     host: Definition
 }
-function printNestedFunctionCall({ host, call }: NestedFunctionCall): string {
-    return `${host.name}::${call.func.ref.name}()`;
-}
-type ResolvedFunctionCall = FunctionCall & {
-    func: ResolvedReference<Definition>
-}
-function isResolvedFunctionCall(functionCall: FunctionCall): functionCall is ResolvedFunctionCall {
-    return isDefinition(functionCall.func.ref);
-}
-type ResolvedReference<T extends AstNode = AstNode> = Reference<T> & {
-    readonly ref: T;
+namespace NestedFunctionCall {
+
+    export function* selectCalls(host: Definition, expression: Expression = host.expr): Generator<NestedFunctionCall> {
+        if (isFunctionCall(expression)) {
+            if (isResolvedFunctionCall(expression)) yield { call: expression, host };
+        } else if (isBinaryExpression(expression)) {
+            for (const expr of [expression.left, expression.right]) {
+                if (expr) yield* selectCalls(host, expr);
+            }
+        }
+    }
+
+    export function toString({ host, call }: NestedFunctionCall): string {
+        return `${host.name}::${call.func.ref.name}()`;
+    }
 }

@@ -67,6 +67,10 @@ export function isReference(obj: unknown): obj is Reference {
     return typeof obj === 'object' && obj !== null && typeof (obj as Reference).$refText === 'string';
 }
 
+export type ResolvedReference<T extends AstNode = AstNode> = Reference<T> & {
+    readonly ref: T;
+}
+
 /**
  * A description of an AST node is used when constructing scopes and looking up cross-reference targets.
  */
