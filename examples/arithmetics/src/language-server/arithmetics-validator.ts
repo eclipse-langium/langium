@@ -208,7 +208,7 @@ namespace NestedFunctionCall {
         }
     }
 
-    export function toString({ host, call }: NestedFunctionCall): string {
-        return `${host.name}::${call.func.ref.name}()`;
+    export function toString({ call }: NestedFunctionCall): string {
+        return `${call.func.ref.name}()`;
     }
 }
