@@ -84,46 +84,22 @@ export class ArithmeticsValidator {
         }
 
         const traversedFunctions = new Set<Definition>();
-        function* getNestedCallsIfUnprocessed(func: Definition): Generator<NestedFunctionCall> {
+        function* getNotTraversedNestedCalls(func: Definition): Generator<NestedFunctionCall> {
             if (!traversedFunctions.has(func)) {
                 traversedFunctions.add(func);
                 yield* getNestedCalls(func);
             }
         }
 
-        const callsTree = new Map<ResolvedFunctionCall, NestedFunctionCall>();
-        const getCycle = (to: NestedFunctionCall): [NestedFunctionCall, NestedFunctionCall] | undefined => {
-            const referencedFunc = to.call.func.ref;
-            let parent = callsTree.get(to.call);
-            while (parent) {
-                if (parent.host === referencedFunc) return [parent, to];
-                parent = callsTree.get(parent.call);
-            }
-            return undefined;
-        };
-
-        const callCycles: NestedFunctionCall[][] = [];
-        const printCycle = (cycle: NestedFunctionCall[]): string => {
-            const start = cycle[0];
-            const end = cycle[cycle.length - 1];
-            if (start === end) return printNestedFunctionCall(start);
-            let printedCycle = printNestedFunctionCall(end);
-            let parent = callsTree.get(end.call);
-            while (parent) {
-                printedCycle = printNestedFunctionCall(parent) + '->' + printedCycle;
-                if (parent.call === start.call) break;
-                parent = callsTree.get(parent.call);
-            }
-            return printedCycle;
-        };
-
+        const callsTree: FunctionCallTree = new Map<ResolvedFunctionCall, NestedFunctionCall>();
+        const callCycles: FunctionCallCycle[] = [];
         const bfsStep = (parent: NestedFunctionCall): NestedFunctionCall[] => {
             const referencedFunc = parent.call.func.ref;
             const uncycledChildren: NestedFunctionCall[] = [];
             if (parent.host === referencedFunc) callCycles.push([parent]);
-            else for (const child of getNestedCallsIfUnprocessed(referencedFunc)) {
+            else for (const child of getNotTraversedNestedCalls(referencedFunc)) {
                 callsTree.set(child.call, parent);
-                const callCycle = getCycle(child);
+                const callCycle = FunctionCallCycle.select(child, callsTree);
                 if (callCycle) {
                     callCycles.push(callCycle);
                 } else {
@@ -135,7 +111,7 @@ export class ArithmeticsValidator {
 
         stream(module.statements)
             .filter(isDefinition)
-            .flatMap(getNestedCallsIfUnprocessed)
+            .flatMap(getNotTraversedNestedCalls)
             .forEach(call => {
                 let remainingCalls = Array.of(call);
                 while (remainingCalls.length !== 0) {
@@ -144,8 +120,8 @@ export class ArithmeticsValidator {
             });
 
         for (const cycle of callCycles) {
-            const cycleMessage = printCycle(cycle);
-            for (const { call } of cycle) {
+            const cycleMessage = FunctionCallCycle.print(cycle, callsTree);
+            for (const { call } of FunctionCallCycle.iterateBack(cycle, callsTree)) {
                 accept('error', `Recursion is not allowed [${cycleMessage}]`, { node: call, property: 'func' });
             }
         }
@@ -172,6 +148,41 @@ export class ArithmeticsValidator {
         }
     }
 }
+
+type FunctionCallTree = Map<ResolvedFunctionCall, NestedFunctionCall>
+type FunctionCallCycle = NestedFunctionCall[]
+namespace FunctionCallCycle {
+
+    export function select(to: NestedFunctionCall, tree: FunctionCallTree): FunctionCallCycle | undefined {
+        const referencedFunc = to.call.func.ref;
+        let parent = tree.get(to.call);
+        while (parent) {
+            if (parent.host === referencedFunc) return [parent, to];
+            parent = tree.get(parent.call);
+        }
+        return undefined;
+    }
+
+    export function print(cycle: FunctionCallCycle, tree: FunctionCallTree): string {
+        return stream(iterateBack(cycle, tree))
+            .map(printNestedFunctionCall)
+            .reduce((child, parent) => parent + '->' + child) ?? '';
+    }
+
+    export function* iterateBack(cycle: FunctionCallCycle, tree: FunctionCallTree): Generator<NestedFunctionCall> {
+        const start = cycle[0];
+        const end = cycle[cycle.length - 1];
+        yield end;
+        if (start === end) return;
+        let parent = tree.get(end.call);
+        while (parent) {
+            yield parent;
+            if (parent.call === start.call) break;
+            parent = tree.get(parent.call);
+        }
+    }
+}
+
 type NestedFunctionCall = {
     call: ResolvedFunctionCall,
     host: Definition
