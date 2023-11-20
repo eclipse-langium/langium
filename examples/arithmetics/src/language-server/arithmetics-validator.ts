@@ -46,8 +46,9 @@ export class ArithmeticsValidator {
         };
 
         const evalExpr = (expr: Expression): void => {
-            if (isFunctionCall(expr) || isNumberLiteral(expr)) return;
-            if (isBinaryExpression(expr)) makeOp(expr, applyOp(expr.operator));
+            if (isBinaryExpression(expr)) {
+                makeOp(expr, applyOp(expr.operator));
+            }
         };
 
         evalExpr(def.expr);
@@ -60,8 +61,10 @@ export class ArithmeticsValidator {
 
     checkUniqueDefinitions(module: Module, accept: ValidationAcceptor): void {
         const names = new MultiMap<string, Definition>();
-        for (const def of module.statements as Definition[]) {
-            if (def.name) names.add(def.name, def);
+        for (const def of module.statements) {
+            if (isDefinition(def) && def.name) {
+                names.add(def.name, def);
+            }
         }
         for (const [name, symbols] of names.entriesGroupedByKey()) {
             if (symbols.length > 1) {
@@ -86,8 +89,10 @@ export class ArithmeticsValidator {
         const bfsStep = (parent: NestedFunctionCall): NestedFunctionCall[] => {
             const referencedFunc = parent.call.func.ref;
             const uncycledChildren: NestedFunctionCall[] = [];
-            if (parent.host === referencedFunc) callCycles.push([parent]);
-            else for (const child of getNotTraversedNestedCalls(referencedFunc)) {
+            if (parent.host === referencedFunc) {
+                callCycles.push([parent]);
+            }
+            for (const child of getNotTraversedNestedCalls(referencedFunc)) {
                 callsTree.set(child.call, parent);
                 const callCycle = FunctionCallCycle.select(child, callsTree);
                 if (callCycle) {
@@ -117,10 +122,12 @@ export class ArithmeticsValidator {
         }
     }
 
-    checkUniqueParmeters(abstractDefinition: Definition, accept: ValidationAcceptor): void {
+    checkUniqueParmeters(definition: Definition, accept: ValidationAcceptor): void {
         const names = new MultiMap<string, DeclaredParameter>();
-        for (const def of abstractDefinition.args) {
-            if (def.name) names.add(def.name, def);
+        for (const def of definition.args) {
+            if (def.name) {
+                names.add(def.name, def);
+            }
         }
         for (const [name, symbols] of names.entriesGroupedByKey()) {
             if (symbols.length > 1) {
@@ -149,7 +156,9 @@ namespace FunctionCallCycle {
         const referencedFunc = to.call.func.ref;
         let parent = tree.get(to.call);
         while (parent) {
-            if (parent.host === referencedFunc) return [parent, to];
+            if (parent.host === referencedFunc) {
+                return [parent, to];
+            }
             parent = tree.get(parent.call);
         }
         return undefined;
@@ -165,11 +174,15 @@ namespace FunctionCallCycle {
         const start = cycle[0];
         const end = cycle[cycle.length - 1];
         yield end;
-        if (start === end) return;
+        if (start === end) {
+            return;
+        }
         let parent = tree.get(end.call);
         while (parent) {
             yield parent;
-            if (parent.call === start.call) break;
+            if (parent.call === start.call) {
+                break;
+            }
             parent = tree.get(parent.call);
         }
     }
@@ -183,10 +196,14 @@ namespace NestedFunctionCall {
 
     export function* selectCalls(host: Definition, expression: Expression = host.expr): Generator<NestedFunctionCall> {
         if (isFunctionCall(expression)) {
-            if (isResolvedFunctionCall(expression)) yield { call: expression, host };
+            if (isResolvedFunctionCall(expression)) {
+                yield { call: expression, host };
+            }
         } else if (isBinaryExpression(expression)) {
             for (const expr of [expression.left, expression.right]) {
-                if (expr) yield* selectCalls(host, expr);
+                if (expr) {
+                    yield* selectCalls(host, expr);
+                }
             }
         }
     }
