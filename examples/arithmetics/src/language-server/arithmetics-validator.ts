@@ -132,9 +132,11 @@ export class ArithmeticsValidator {
     }
 
     checkMatchingParameters(functionCall: FunctionCall, accept: ValidationAcceptor): void {
-        if (!functionCall.func.ref || !(functionCall.func.ref as Definition).args) return;
-        if (functionCall.args.length !== (functionCall.func.ref as Definition).args.length) {
-            accept('error', `Function ${functionCall.func.ref?.name} expects ${functionCall.args.length} parameters, but ${(functionCall.func.ref as Definition).args.length} were given.`, { node: functionCall, property: 'args' });
+        if (!isResolvedFunctionCall(functionCall) || !functionCall.func.ref.args) {
+            return;
+        }
+        if (functionCall.args.length !== functionCall.func.ref.args.length) {
+            accept('error', `Function ${functionCall.func.ref.name} expects ${functionCall.func.ref.args.length} parameters, but ${functionCall.args.length} were given.`, { node: functionCall, property: 'args' });
         }
     }
 }
