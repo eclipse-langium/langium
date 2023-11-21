@@ -153,6 +153,13 @@ export class SemanticTokensBuilder extends BaseSemanticTokensBuilder {
         return super.buildEdits();
     }
 
+    /**
+     * Flushes the cached delta token values
+     */
+    flush(): void {
+        this.previousResult(this.id);
+    }
+
     private applyTokens(): void {
         for (const token of this._tokens.sort(this.compareTokens)) {
             super.push(token.line, token.char, token.length, token.tokenType, token.tokenModifiers);
@@ -205,6 +212,7 @@ export abstract class AbstractSemanticTokenProvider implements SemanticTokenProv
         this.currentRange = undefined;
         this.currentDocument = document;
         this.currentTokensBuilder = this.getDocumentTokensBuilder(document);
+        this.currentTokensBuilder.flush();
         await this.computeHighlighting(document, this.createAcceptor(), cancelToken);
         return this.currentTokensBuilder.build();
     }
@@ -213,6 +221,7 @@ export abstract class AbstractSemanticTokenProvider implements SemanticTokenProv
         this.currentRange = params.range;
         this.currentDocument = document;
         this.currentTokensBuilder = this.getDocumentTokensBuilder(document);
+        this.currentTokensBuilder.flush();
         await this.computeHighlighting(document, this.createAcceptor(), cancelToken);
         return this.currentTokensBuilder.build();
     }
