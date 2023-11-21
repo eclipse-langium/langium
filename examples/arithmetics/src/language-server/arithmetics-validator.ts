@@ -18,7 +18,7 @@ export function registerValidationChecks(services: ArithmeticsServices): void {
     const validator = services.validation.ArithmeticsValidator;
     const checks: ValidationChecks<ArithmeticsAstType> = {
         BinaryExpression: validator.checkDivByZero,
-        Definition: [validator.checkUniqueParmeters, validator.checkNormalisable],
+        Definition: [validator.checkUniqueParameters, validator.checkNormalisable],
         Module: [validator.checkUniqueDefinitions, validator.checkFunctionRecursion],
         FunctionCall: validator.checkMatchingParameters,
     };
@@ -122,7 +122,7 @@ export class ArithmeticsValidator {
         }
     }
 
-    checkUniqueParmeters(definition: Definition, accept: ValidationAcceptor): void {
+    checkUniqueParameters(definition: Definition, accept: ValidationAcceptor): void {
         const names = new MultiMap<string, DeclaredParameter>();
         for (const def of definition.args) {
             if (def.name) {
