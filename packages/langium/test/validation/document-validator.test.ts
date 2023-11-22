@@ -84,9 +84,15 @@ describe('Generic `AstNode` validation applies to all nodes', () => {
             grammar
         });
         const validationChecks: ValidationChecks<object> = {
-            AstNode: (node, accept) => {
-                accept('error', 'TEST', { node });
-            }
+            // register two different validations for each AstNode
+            AstNode: [
+                (node, accept) => {
+                    accept('error', 'TEST', { node });
+                },
+                (node, accept) => {
+                    accept('warning', 'Second generic validation', { node });
+                }
+            ]
         };
         services.validation.ValidationRegistry.register(validationChecks);
         validate = validationHelper(services);
@@ -95,8 +101,12 @@ describe('Generic `AstNode` validation applies to all nodes', () => {
     test('Diagnostics are shown on all elements', async () => {
         const validationResult = await validate('a 42');
         const diagnostics = validationResult.diagnostics;
-        // One for each `element`, once on the root model
-        expect(diagnostics).toHaveLength(3);
+        // two validations for each AstNode: One for each `element`, once on the root model
+        expect(diagnostics).toHaveLength(6);
+        expect(diagnostics.filter(d => d.severity === 1)).toHaveLength(3); // 3 errors
+        expect(diagnostics.filter(d => d.severity === 2)).toHaveLength(3); // 3 warnings
+        expect(diagnostics.filter(d => d.severity === 3)).toHaveLength(0);
+        expect(diagnostics.filter(d => d.severity === 4)).toHaveLength(0);
     });
 
 });

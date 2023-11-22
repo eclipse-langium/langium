@@ -73,7 +73,7 @@ export type ValidationCheck<T extends AstNode = AstNode> = (node: T, accept: Val
 export type ValidationChecks<T> = {
     [K in keyof T]?: T[K] extends AstNode ? ValidationCheck<T[K]> | Array<ValidationCheck<T[K]>> : never
 } & {
-    AstNode?: ValidationCheck<AstNode>;
+    AstNode?: ValidationCheck<AstNode> | Array<ValidationCheck<AstNode>>;
 }
 
 /**
