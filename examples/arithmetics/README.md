@@ -10,6 +10,7 @@ The Arithmetics Example features an interpreter that you can run via cli.
 The interpreter calculates each Evaluation in the source file and prints the result.
 
 You also can use `arithmetics-cli` as a replacement for `node ./bin/cli`, if you install the cli globally.
+
 * Run `npm install -g ./` from the arithmetics directory.
 * Use `arithmetics-cli` or `arithmetics-cli eval <full-path-to-calc-file>`.
 

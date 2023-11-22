@@ -4,7 +4,8 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { BinaryExpression } from './generated/ast.js';
+import type { ResolvedReference } from 'langium';
+import { isDefinition, type BinaryExpression, type Definition, type FunctionCall } from './generated/ast.js';
 
 export function applyOp(op: BinaryExpression['operator']): (x: number, y: number) => number {
     switch (op) {
@@ -21,4 +22,12 @@ export function applyOp(op: BinaryExpression['operator']): (x: number, y: number
         };
         default: throw new Error('Unknown operator: ' + op);
     }
+}
+
+export type ResolvedFunctionCall = FunctionCall & {
+    func: ResolvedReference<Definition>
+}
+
+export function isResolvedFunctionCall(functionCall: FunctionCall): functionCall is ResolvedFunctionCall {
+    return isDefinition(functionCall.func.ref);
 }

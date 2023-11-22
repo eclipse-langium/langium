@@ -1,0 +1,19 @@
+Module recursions
+
+def fun1(x):
+    fun1(x) + fun2(x) + fun2(x) + fun3(x);
+
+def fun2(x):
+    fun3(x) + fun4(x);
+
+def fun3(x):
+    3*x;
+
+def fun4(x):
+    fun3(x) + fun1(x);
+
+def fun5(x):
+    fun6(x);
+
+def fun6(x):
+    fun5(x);
