@@ -20,6 +20,6 @@ export * from './validation/index.js';
 export * from './workspace/index.js';
 
 // Export the Langium Grammar AST definitions in the `GrammarAST` namespace
-import * as GrammarAST from './grammar/generated/ast.js';
-import type { Grammar } from './grammar/generated/ast.js';
+import * as GrammarAST from './language/generated/ast.js';
+import type { Grammar } from './language/generated/ast.js';
 export { Grammar, GrammarAST };

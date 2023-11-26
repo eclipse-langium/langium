@@ -8,7 +8,7 @@ import type { Grammar, LangiumServices } from 'langium';
 import { DocumentState, GrammarAST, URI } from 'langium';
 import { createGrammarDiagramHtml } from 'langium-railroad';
 import { expandToString } from 'langium/generate';
-import { resolveTransitiveImports } from 'langium/internal';
+import { resolveTransitiveImports } from 'langium/grammar';
 import type { Connection } from 'vscode-languageserver';
 import { DiagnosticSeverity } from 'vscode-languageserver';
 import { DOCUMENTS_VALIDATED_NOTIFICATION, RAILROAD_DIAGRAM_REQUEST } from './messages.js';

@@ -6,7 +6,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type { DSLMethodOpts, ILexingError, IOrAlt, IParserErrorMessageProvider, IRecognitionException, IToken, TokenType, TokenVocabulary } from 'chevrotain';
-import type { AbstractElement, Action, Assignment, ParserRule } from '../grammar/generated/ast.js';
+import type { AbstractElement, Action, Assignment, ParserRule } from '../language/generated/ast.js';
 import type { Linker } from '../references/linker.js';
 import type { LangiumServices } from '../services.js';
 import type { AstNode, AstReflection, CompositeCstNode, CstNode } from '../syntax-tree.js';
@@ -15,7 +15,7 @@ import type { IParserConfig } from './parser-config.js';
 import type { ValueConverter } from './value-converter.js';
 import { defaultParserErrorProvider, EmbeddedActionsParser, LLkLookaheadStrategy } from 'chevrotain';
 import { LLStarLookaheadStrategy } from 'chevrotain-allstar';
-import { isAssignment, isCrossReference, isKeyword } from '../grammar/generated/ast.js';
+import { isAssignment, isCrossReference, isKeyword } from '../language/generated/ast.js';
 import { getTypeName, isDataTypeRule } from '../utils/grammar-util.js';
 import { assignMandatoryAstProperties, getContainerOfType, linkContentToContainer } from '../utils/ast-util.js';
 import { CstNodeBuilder } from './cst-node-builder.js';

@@ -332,7 +332,7 @@ export async function runGenerator(config: LangiumConfig, options: GenerateOptio
     }
 
     const genAst = generateAst(grammarServices, embeddedGrammars, config);
-    await writeWithFail(path.resolve(output, 'ast.ts'), genAst, options);
+    await writeWithFail(path.resolve(updateLangiumInternalAstPath(output, config), 'ast.ts'), genAst, options);
 
     const serializedGrammar = serializeGrammar(grammarServices, embeddedGrammars, config);
     await writeWithFail(path.resolve(output, 'grammar.ts'), serializedGrammar, options);
@@ -391,6 +391,14 @@ export async function runGenerator(config: LangiumConfig, options: GenerateOptio
     }
 
     return buildResult(true);
+}
+
+function updateLangiumInternalAstPath(output: string, config: LangiumConfig): string {
+    if (config.langiumInternal) {
+        return path.join(output, '..', '..', 'language', 'generated');
+    } else {
+        return output;
+    }
 }
 
 export async function generateTypes(options: ExtractTypesOptions): Promise<void> {

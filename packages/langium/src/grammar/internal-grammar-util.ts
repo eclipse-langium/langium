@@ -7,7 +7,7 @@
 import { URI } from '../utils/uri-util.js';
 import type { LangiumDocuments } from '../workspace/documents.js';
 import type { AstNode } from '../syntax-tree.js';
-import * as ast from '../grammar/generated/ast.js';
+import * as ast from '../language/generated/ast.js';
 import { getDocument } from '../utils/ast-util.js';
 import { UriUtils } from '../utils/uri-util.js';
 import type { LangiumGrammarServices} from './langium-grammar-module.js';

@@ -9,7 +9,7 @@ import type { AstNode, CstNode } from '../../syntax-tree.js';
 import type { Stream } from '../../utils/stream.js';
 import type { ReferenceDescription } from '../../workspace/ast-descriptions.js';
 import type { LangiumDocuments } from '../../workspace/documents.js';
-import type { Action, Assignment, Interface, ParserRule, Type, TypeAttribute } from '../generated/ast.js';
+import type { Action, Assignment, Interface, ParserRule, Type, TypeAttribute } from '../../language/generated/ast.js';
 import type { FindReferencesOptions } from '../../references/references.js';
 import { DefaultReferences } from '../../references/references.js';
 import { getContainerOfType, getDocument } from '../../utils/ast-util.js';
@@ -17,7 +17,7 @@ import { toDocumentSegment } from '../../utils/cst-util.js';
 import { findAssignment, findNodeForProperty, getActionAtElement } from '../../utils/grammar-util.js';
 import { stream } from '../../utils/stream.js';
 import { UriUtils } from '../../utils/uri-util.js';
-import { isAction, isAssignment, isInterface, isParserRule, isType, isTypeAttribute } from '../generated/ast.js';
+import { isAction, isAssignment, isInterface, isParserRule, isType, isTypeAttribute } from '../../language/generated/ast.js';
 import { extractAssignments } from '../internal-grammar-util.js';
 import { collectChildrenTypes, collectSuperTypes } from '../type-system/types-util.js';
 

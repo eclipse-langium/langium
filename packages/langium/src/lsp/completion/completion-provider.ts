@@ -20,7 +20,7 @@ import type { GrammarConfig } from '../../language/grammar-config.js';
 import type { Lexer } from '../../parser/lexer.js';
 import type { IToken } from 'chevrotain';
 import { CompletionItemKind, CompletionList, Position } from 'vscode-languageserver';
-import * as ast from '../../grammar/generated/ast.js';
+import * as ast from '../../language/generated/ast.js';
 import { assignMandatoryAstProperties, getContainerOfType } from '../../utils/ast-util.js';
 import { findDeclarationNodeAtOffset, findLeafNodeBeforeOffset } from '../../utils/cst-util.js';
 import { getEntryRule, getExplicitRuleType } from '../../utils/grammar-util.js';

@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import type { AstNode, CstNode } from '../syntax-tree.js';
-import * as ast from '../grammar/generated/ast.js';
+import * as ast from '../language/generated/ast.js';
 import { isCompositeCstNode } from '../syntax-tree.js';
 import { getContainerOfType, streamAllContents } from '../utils/ast-util.js';
 import { streamCst } from '../utils/cst-util.js';

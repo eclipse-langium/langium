@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { Grammar } from '../generated/ast.js';
+import type { Grammar } from '../../language/generated/ast.js';
 import type { LangiumDocuments } from '../../workspace/documents.js';
 import type { AstTypes, InterfaceType, PropertyType, TypeOption, UnionType } from './type-collector/types.js';
 import type { ValidationAstTypes } from './type-collector/all-types.js';

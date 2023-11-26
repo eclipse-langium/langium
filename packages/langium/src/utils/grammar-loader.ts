@@ -7,7 +7,7 @@
 import type { Mutable } from './ast-util.js';
 import type { Module } from '../dependency-injection.js';
 import type { LangiumServices, LangiumSharedServices, PartialLangiumServices, PartialLangiumSharedServices } from '../services.js';
-import * as ast from '../grammar/generated/ast.js';
+import * as ast from '../language/generated/ast.js';
 import { inject } from '../dependency-injection.js';
 import { createDefaultModule, createDefaultSharedModule } from '../default-module.js';
 import { EmptyFileSystem } from '../workspace/file-system-provider.js';

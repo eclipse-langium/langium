@@ -23,7 +23,7 @@ import { findNodeForProperty } from '../../utils/grammar-util.js';
 import { escapeRegExp } from '../../utils/regex-util.js';
 import { UriUtils } from '../../utils/uri-util.js';
 import { DocumentValidator } from '../../validation/document-validator.js';
-import * as ast from '../generated/ast.js';
+import * as ast from '../../language/generated/ast.js';
 import { IssueCodes } from '../validation/validator.js';
 
 export class LangiumGrammarCodeActionProvider implements CodeActionProvider {

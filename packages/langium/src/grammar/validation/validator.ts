@@ -19,8 +19,7 @@ import { toDocumentSegment } from '../../utils/cst-util.js';
 import { findNameAssignment, findNodeForKeyword, findNodeForProperty, getAllReachableRules, isDataTypeRule, isOptionalCardinality, terminalRegex } from '../../utils/grammar-util.js';
 import { stream } from '../../utils/stream.js';
 import { diagnosticData } from '../../validation/validation-registry.js';
-import * as ast from '../generated/ast.js';
-import { isParserRule, isRuleCall } from '../generated/ast.js';
+import * as ast from '../../language/generated/ast.js';
 import { getTypeNameWithoutError, hasDataTypeReturn, isPrimitiveGrammarType, isStringGrammarType, resolveImport, resolveTransitiveImports } from '../internal-grammar-util.js';
 import { typeDefinitionToPropertyType } from '../type-system/type-collector/declared-types.js';
 import { flattenPlainType, isPlainReferenceType } from '../type-system/type-collector/plain-types.js';
@@ -691,7 +690,7 @@ export class LangiumGrammarValidator {
     }
 
     checkKeyword(keyword: ast.Keyword, accept: ValidationAcceptor): void {
-        if (getContainerOfType(keyword, isParserRule)) {
+        if (getContainerOfType(keyword, ast.isParserRule)) {
             if (keyword.value.length === 0) {
                 accept('error', 'Keywords cannot be empty.', { node: keyword });
             } else if (keyword.value.trim().length === 0) {
@@ -745,7 +744,7 @@ export class LangiumGrammarValidator {
         if (!assignment.terminal) {
             return;
         }
-        if (isRuleCall(assignment.terminal) && isParserRule(assignment.terminal.rule.ref) && assignment.terminal.rule.ref.fragment) {
+        if (ast.isRuleCall(assignment.terminal) && ast.isParserRule(assignment.terminal.rule.ref) && assignment.terminal.rule.ref.fragment) {
             accept('error', `Cannot use fragment rule '${assignment.terminal.rule.ref.name}' for assignment of property '${assignment.feature}'.`, { node: assignment, property: 'terminal' });
         }
     }

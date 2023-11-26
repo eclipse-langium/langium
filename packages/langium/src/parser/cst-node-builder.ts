@@ -6,7 +6,7 @@
 
 import type { IToken, TokenType } from 'chevrotain';
 import type { Range } from 'vscode-languageserver-types';
-import type { AbstractElement } from '../grammar/generated/ast.js';
+import type { AbstractElement } from '../language/generated/ast.js';
 import type { AstNode, CompositeCstNode, CstNode, LeafCstNode, RootCstNode } from '../syntax-tree.js';
 import { Position } from 'vscode-languageserver-types';
 import { isCompositeCstNode } from '../syntax-tree.js';
