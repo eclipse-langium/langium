@@ -9,7 +9,7 @@ import type { DiagnosticInfo, ValidationAcceptor, ValidationChecks } from '../..
 import type { LangiumGrammarServices } from '../langium-grammar-module.js';
 import type { Property, PropertyType } from '../type-system/type-collector/types.js';
 import type { DeclaredInfo, InferredInfo, LangiumGrammarDocument, ValidationResources } from '../workspace/documents.js';
-import * as ast from '../../language/generated/ast.js';
+import * as ast from '../../languages/generated/ast.js';
 import { MultiMap } from '../../utils/collections.js';
 import { extractAssignments } from '../internal-grammar-util.js';
 import { flattenPropertyUnion, InterfaceType, isArrayType, isInterfaceType, isMandatoryPropertyType, isPropertyUnion, isReferenceType, isTypeAssignable, isUnionType, isValueType, propertyTypeToString } from '../type-system/type-collector/types.js';

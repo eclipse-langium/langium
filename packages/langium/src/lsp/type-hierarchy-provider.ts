@@ -12,7 +12,7 @@ import type {
     TypeHierarchySupertypesParams
 } from 'vscode-languageserver';
 import { SymbolKind } from 'vscode-languageserver';
-import type { GrammarConfig } from '../language/grammar-config.js';
+import type { GrammarConfig } from '../languages/grammar-config.js';
 import type { NameProvider } from '../references/name-provider.js';
 import type { References } from '../references/references.js';
 import type { LangiumServices } from '../services.js';

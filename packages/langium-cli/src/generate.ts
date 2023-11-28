@@ -395,7 +395,9 @@ export async function runGenerator(config: LangiumConfig, options: GenerateOptio
 
 function updateLangiumInternalAstPath(output: string, config: LangiumConfig): string {
     if (config.langiumInternal) {
-        return path.join(output, '..', '..', 'language', 'generated');
+        // The Langium internal ast is generated to the languages package.
+        // This is done to prevent internal access to the `langium/grammar` export.
+        return path.join(output, '..', '..', 'languages', 'generated');
     } else {
         return output;
     }

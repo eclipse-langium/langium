@@ -4,9 +4,9 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { Interface, Type, TypeDefinition } from '../../../language/generated/ast.js';
+import type { Interface, Type, TypeDefinition } from '../../../languages/generated/ast.js';
 import type { PlainAstTypes, PlainInterface, PlainProperty, PlainPropertyType, PlainUnion } from './plain-types.js';
-import { isArrayType, isReferenceType, isUnionType, isSimpleType } from '../../../language/generated/ast.js';
+import { isArrayType, isReferenceType, isUnionType, isSimpleType } from '../../../languages/generated/ast.js';
 import { getTypeNameWithoutError, isPrimitiveGrammarType } from '../../internal-grammar-util.js';
 import { getTypeName } from '../../../utils/grammar-util.js';
 

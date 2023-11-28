@@ -3,7 +3,7 @@
  * DO NOT EDIT MANUALLY!
  ******************************************************************************/
 
-import type { Grammar } from '../../language/generated/ast.js';
+import type { Grammar } from '../../languages/generated/ast.js';
 import { loadGrammarFromJson } from '../../utils/grammar-loader.js';
 
 let loadedLangiumGrammarGrammar: Grammar | undefined;

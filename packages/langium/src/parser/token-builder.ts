@@ -5,10 +5,10 @@
  ******************************************************************************/
 
 import type { CustomPatternMatcherFunc, TokenPattern, TokenType, TokenVocabulary } from 'chevrotain';
-import type { AbstractRule, Grammar, Keyword, TerminalRule } from '../language/generated/ast.js';
+import type { AbstractRule, Grammar, Keyword, TerminalRule } from '../languages/generated/ast.js';
 import type { Stream } from '../utils/stream.js';
 import { Lexer } from 'chevrotain';
-import { isKeyword, isParserRule, isTerminalRule } from '../language/generated/ast.js';
+import { isKeyword, isParserRule, isTerminalRule } from '../languages/generated/ast.js';
 import { streamAllContents } from '../utils/ast-util.js';
 import { getAllReachableRules, terminalRegex } from '../utils/grammar-util.js';
 import { getCaseInsensitivePattern, isWhitespaceRegExp, partialMatches } from '../utils/regex-util.js';

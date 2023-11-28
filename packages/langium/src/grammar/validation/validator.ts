@@ -19,7 +19,7 @@ import { toDocumentSegment } from '../../utils/cst-util.js';
 import { findNameAssignment, findNodeForKeyword, findNodeForProperty, getAllReachableRules, isDataTypeRule, isOptionalCardinality, terminalRegex } from '../../utils/grammar-util.js';
 import { stream } from '../../utils/stream.js';
 import { diagnosticData } from '../../validation/validation-registry.js';
-import * as ast from '../../language/generated/ast.js';
+import * as ast from '../../languages/generated/ast.js';
 import { getTypeNameWithoutError, hasDataTypeReturn, isPrimitiveGrammarType, isStringGrammarType, resolveImport, resolveTransitiveImports } from '../internal-grammar-util.js';
 import { typeDefinitionToPropertyType } from '../type-system/type-collector/declared-types.js';
 import { flattenPlainType, isPlainReferenceType } from '../type-system/type-collector/plain-types.js';

@@ -6,7 +6,7 @@
 
 import { expandToNode, expandToStringWithNL, joinToNode, toString, type Generated } from '../../../generate/index.js';
 import type { CstNode } from '../../../syntax-tree.js';
-import type { Action, Assignment, TypeAttribute } from '../../../language/generated/ast.js';
+import type { Action, Assignment, TypeAttribute } from '../../../languages/generated/ast.js';
 import { distinctAndSorted } from '../types-util.js';
 
 export interface Property {

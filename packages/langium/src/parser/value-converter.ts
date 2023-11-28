@@ -4,9 +4,9 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { AbstractElement, AbstractRule } from '../language/generated/ast.js';
+import type { AbstractElement, AbstractRule } from '../languages/generated/ast.js';
 import type { CstNode } from '../syntax-tree.js';
-import { isCrossReference, isRuleCall } from '../language/generated/ast.js';
+import { isCrossReference, isRuleCall } from '../languages/generated/ast.js';
 import { getCrossReferenceTerminal, getRuleType } from '../utils/grammar-util.js';
 
 /**

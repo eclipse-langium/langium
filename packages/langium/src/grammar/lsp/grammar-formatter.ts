@@ -6,7 +6,7 @@
 
 import type { AstNode } from '../../syntax-tree.js';
 import { AbstractFormatter, Formatting } from '../../lsp/formatter.js';
-import * as ast from '../../language/generated/ast.js';
+import * as ast from '../../languages/generated/ast.js';
 
 const indentOrSpace = Formatting.fit(Formatting.oneSpace(), Formatting.indent());
 

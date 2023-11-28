@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import type { IToken } from 'chevrotain';
-import * as ast from '../../language/generated/ast.js';
+import * as ast from '../../languages/generated/ast.js';
 import { isAstNode } from '../../syntax-tree.js';
 import { getContainerOfType } from '../../utils/ast-util.js';
 import type { Cardinality } from '../../utils/grammar-util.js';

@@ -7,9 +7,9 @@
 // Ensure that all imports are erased at runtime to avoid circular dependencies.
 import type { Connection, TextDocuments } from 'vscode-languageserver';
 import type { TextDocument } from 'vscode-languageserver-textdocument';
-import type { Grammar } from './language/generated/ast.js';
-import type { GrammarConfig } from './language/grammar-config.js';
-import type { LanguageMetaData } from './language/language-meta-data.js';
+import type { Grammar } from './languages/generated/ast.js';
+import type { GrammarConfig } from './languages/grammar-config.js';
+import type { LanguageMetaData } from './languages/language-meta-data.js';
 import type { ExecuteCommandHandler } from './lsp/execute-command-handler.js';
 import type { CodeActionProvider } from './lsp/code-action.js';
 import type { CompletionProvider } from './lsp/completion/completion-provider.js';

@@ -9,7 +9,7 @@ import type { TypeHierarchyItem } from 'vscode-languageserver';
 import { AbstractTypeHierarchyProvider } from '../../lsp/type-hierarchy-provider.js';
 import { getDocument } from '../../utils/ast-util.js';
 import { findLeafNodeAtOffset } from '../../utils/cst-util.js';
-import { isInterface } from '../../language/generated/ast.js';
+import { isInterface } from '../../languages/generated/ast.js';
 
 export class LangiumGrammarTypeHierarchyProvider extends AbstractTypeHierarchyProvider {
     protected getSupertypes(node: AstNode): TypeHierarchyItem[] | undefined {

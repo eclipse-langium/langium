@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { Action, Assignment, TypeAttribute } from '../../../language/generated/ast.js';
+import type { Action, Assignment, TypeAttribute } from '../../../languages/generated/ast.js';
 import type { AstTypes, Property, PropertyType } from './types.js';
 import { InterfaceType, UnionType } from './types.js';
 

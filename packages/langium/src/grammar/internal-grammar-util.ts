@@ -7,13 +7,13 @@
 import { URI } from '../utils/uri-util.js';
 import type { LangiumDocuments } from '../workspace/documents.js';
 import type { AstNode } from '../syntax-tree.js';
-import * as ast from '../language/generated/ast.js';
+import * as ast from '../languages/generated/ast.js';
 import { getDocument } from '../utils/ast-util.js';
 import { UriUtils } from '../utils/uri-util.js';
 import type { LangiumGrammarServices} from './langium-grammar-module.js';
 import { createLangiumGrammarServices } from './langium-grammar-module.js';
 import type { IParserConfig } from '../parser/parser-config.js';
-import type { LanguageMetaData } from '../language/language-meta-data.js';
+import type { LanguageMetaData } from '../languages/language-meta-data.js';
 import type { Module} from '../dependency-injection.js';
 import { inject } from '../dependency-injection.js';
 import type { LangiumGeneratedServices, LangiumGeneratedSharedServices, LangiumServices, LangiumSharedServices, PartialLangiumServices, PartialLangiumSharedServices } from '../services.js';

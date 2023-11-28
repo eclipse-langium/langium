@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import type { LangiumDocument } from '../../workspace/documents.js';
-import type { Action, Grammar, Interface, ParserRule, Type } from '../../language/generated/ast.js';
+import type { Action, Grammar, Interface, ParserRule, Type } from '../../languages/generated/ast.js';
 import type { Property, TypeOption } from '../type-system/type-collector/types.js';
 
 /**

@@ -22,8 +22,8 @@ export function generateModule(grammars: Grammar[], config: LangiumConfig, gramm
     ).appendIf(!!config.langiumInternal,
         expandToNode`
 
-            import type { LanguageMetaData } from '../../language/language-meta-data${config.importExtension}';
-            import { ${config.projectName}AstReflection } from '../../language/generated/ast${config.importExtension}';
+            import type { LanguageMetaData } from '../../languages/language-meta-data${config.importExtension}';
+            import { ${config.projectName}AstReflection } from '../../languages/generated/ast${config.importExtension}';
             import type { Module } from '../../dependency-injection${config.importExtension}';
             import type { LangiumGeneratedServices, LangiumGeneratedSharedServices, LangiumSharedServices, LangiumServices } from '../../services${config.importExtension}';
         `.appendTemplateIf(hasIParserConfigImport)`
