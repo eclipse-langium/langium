@@ -23,6 +23,7 @@ export class CstNodeBuilder {
 
     buildRootNode(input: string): RootCstNode {
         this.rootNode = new RootCstNodeImpl(input);
+        this.rootNode.root = this.rootNode;
         this.nodeStack = [this.rootNode];
         return this.rootNode;
     }

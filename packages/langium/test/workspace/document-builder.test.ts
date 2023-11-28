@@ -4,12 +4,13 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { AstNode, LangiumDocument, LangiumServices, Reference, ValidationChecks } from 'langium';
+import type { AstNode, Reference, ValidationChecks } from 'langium';
 import { describe, expect, test } from 'vitest';
 import { CancellationTokenSource } from 'vscode-languageserver';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { isOperationCancelled, DocumentState, EmptyFileSystem, URI } from 'langium';
 import { createLangiumGrammarServices, createServicesForGrammar } from 'langium/grammar';
+import { setTextDocument } from 'langium/test';
 
 describe('DefaultDocumentBuilder', () => {
     const grammarServices = createLangiumGrammarServices(EmptyFileSystem).grammar;
@@ -55,7 +56,7 @@ describe('DefaultDocumentBuilder', () => {
 
         const builder = services.shared.workspace.DocumentBuilder;
         await builder.build([document], {});
-        addTextDocument(document, services);
+        setTextDocument(services, document.textDocument);
         let called = false;
         builder.onUpdate(() => {
             called = true;
@@ -73,7 +74,7 @@ describe('DefaultDocumentBuilder', () => {
 
         const builder = services.shared.workspace.DocumentBuilder;
         await builder.build([document], {});
-        addTextDocument(document, services);
+        setTextDocument(services, document.textDocument);
         let called = false;
         builder.onUpdate(() => {
             called = true;
@@ -114,7 +115,7 @@ describe('DefaultDocumentBuilder', () => {
         expect(document1.state).toBe(DocumentState.IndexedContent);
         expect(document2.state).toBe(DocumentState.IndexedContent);
 
-        addTextDocument(document1, services);
+        setTextDocument(services, document1.textDocument);
         await builder.update([document1.uri], []);
         // While the first document is built with validation due to its reported update, the second one
         // is resumed with its initial build options, which did not include validation.
@@ -151,13 +152,13 @@ describe('DefaultDocumentBuilder', () => {
         expect(document2.state).toBe(DocumentState.IndexedReferences);
         expect(document2.references.filter(r => r.error !== undefined)).toHaveLength(0);
 
-        addTextDocument(document1, services);
+        setTextDocument(services, document1.textDocument);
         TextDocument.update(document1.textDocument, [{
             // Change `foo 1 A` to `foo 1 D`, breaking the local reference
             range: { start: { line: 1, character: 18 }, end: { line: 1, character: 19 } },
             text: 'D'
         }], 1);
-        addTextDocument(document2, services);
+        setTextDocument(services, document2.textDocument);
         builder.updateBuildOptions = {
             validation: {
                 // Only the linking error is reported for the first document
@@ -238,15 +239,6 @@ describe('DefaultDocumentBuilder', () => {
     });
 
 });
-
-/**
- * Add the given document to the TextDocuments service, simulating it being opened in an editor.
- */
-function addTextDocument(doc: LangiumDocument, services: LangiumServices) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const textDocuments = services.shared.workspace.TextDocuments as any;
-    textDocuments._syncedDocuments.set(doc.uri.toString(), doc.textDocument);
-}
 
 type TestAstType = {
     Model: Model
