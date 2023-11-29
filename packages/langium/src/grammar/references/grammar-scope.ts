@@ -77,8 +77,8 @@ export class LangiumGrammarScopeProvider extends DefaultScopeProvider {
             const uri = resolveImportUri(imp0rt);
             if (uri && !importedUris.has(uri.toString())) {
                 importedUris.add(uri.toString());
-                if (this.langiumDocuments.hasDocument(uri)) {
-                    const importedDocument = this.langiumDocuments.getOrCreateDocument(uri);
+                const importedDocument = this.langiumDocuments.getDocument(uri);
+                if (importedDocument) {
                     const rootNode = importedDocument.parseResult.value;
                     if (isGrammar(rootNode)) {
                         this.gatherImports(rootNode, importedUris);

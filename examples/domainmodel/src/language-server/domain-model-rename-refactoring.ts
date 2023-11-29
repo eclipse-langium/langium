@@ -69,8 +69,11 @@ export class DomainModelRenameProvider extends DefaultRenameProvider {
         return { changes };
     }
 
-    protected hasQualifiedNameText(uri: URI, range: Range) {
-        const langiumDoc = this.langiumDocuments.getOrCreateDocument(uri);
+    protected hasQualifiedNameText(uri: URI, range: Range): boolean {
+        const langiumDoc = this.langiumDocuments.getDocument(uri);
+        if (!langiumDoc) {
+            return false;
+        }
         const rangeText = langiumDoc.textDocument.getText(range);
         return rangeText.includes('.', 0);
     }

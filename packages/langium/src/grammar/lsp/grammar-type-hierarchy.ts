@@ -37,7 +37,11 @@ export class LangiumGrammarTypeHierarchyProvider extends AbstractTypeHierarchyPr
         const items = this.references
             .findReferences(node, {includeDeclaration: false})
             .flatMap(ref => {
-                const document = this.documents.getOrCreateDocument(ref.sourceUri);
+                const document = this.documents.getDocument(ref.sourceUri);
+                if (!document) {
+                    return [];
+                }
+
                 const rootNode = document.parseResult.value;
                 if (!rootNode.$cstNode) {
                     return [];

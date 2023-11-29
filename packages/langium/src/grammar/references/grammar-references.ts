@@ -154,13 +154,15 @@ export class LangiumGrammarReferences extends DefaultReferences {
     protected findRulesWithReturnType(interf: Interface | Type): Array<ParserRule | Action> {
         const rules: Array<ParserRule | Action> = [];
         const refs = this.index.findAllReferences(interf, this.nodeLocator.getAstNodePath(interf));
-        refs.forEach(ref => {
-            const doc = this.documents.getOrCreateDocument(ref.sourceUri);
-            const astNode = this.nodeLocator.getAstNode(doc.parseResult.value, ref.sourcePath);
-            if (isParserRule(astNode) || isAction(astNode)) {
-                rules.push(astNode);
+        for (const ref of refs) {
+            const doc = this.documents.getDocument(ref.sourceUri);
+            if (doc) {
+                const astNode = this.nodeLocator.getAstNode(doc.parseResult.value, ref.sourcePath);
+                if (isParserRule(astNode) || isAction(astNode)) {
+                    rules.push(astNode);
+                }
             }
-        });
+        }
         return rules;
     }
 }

@@ -157,10 +157,7 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
         this.indexManager.remove(deleted);
         // Set the state of all changed documents to `Changed` so they are completely rebuilt
         for (const changedUri of changed) {
-            const invalidated = this.langiumDocuments.invalidateDocument(changedUri);
-            if (!invalidated) {
-                this.langiumDocuments.getOrCreateDocument(changedUri);
-            }
+            this.langiumDocuments.invalidateDocument(changedUri);
             this.buildState.delete(changedUri.toString());
         }
         // Set the state of all documents that should be relinked to `ComputedScopes` (if not already lower)
@@ -224,7 +221,7 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
         this.prepareBuild(documents, options);
         // 0. Parse content
         await this.runCancelable(documents, DocumentState.Parsed, cancelToken, doc => {
-            this.langiumDocumentFactory.update(doc);
+            this.langiumDocumentFactory.update(doc, cancelToken);
         });
         // 1. Index content
         await this.runCancelable(documents, DocumentState.IndexedContent, cancelToken, doc =>

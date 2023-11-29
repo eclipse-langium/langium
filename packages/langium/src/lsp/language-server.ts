@@ -590,12 +590,13 @@ export function createServerRequestHandler<P extends { textDocument: TextDocumen
         const uri = URI.parse(params.textDocument.uri);
         const language = serviceRegistry.getServices(uri);
         if (!language) {
-            console.error(`Could not find service instance for uri: '${uri.toString()}'`);
-            throw new Error();
+            const errorText = `Could not find service instance for uri: '${uri}'`;
+            console.error(errorText);
+            throw new Error(errorText);
         }
-        const document = documents.getOrCreateDocument(uri);
+        const document = documents.getDocument(uri);
         if (!document) {
-            throw new Error();
+            throw new Error(`Could not find document for uri: '${uri}'`);
         }
         try {
             return await serviceCall(language, document, params, cancelToken);
@@ -618,7 +619,7 @@ export function createRequestHandler<P extends { textDocument: TextDocumentIdent
             console.error(`Could not find service instance for uri: '${uri.toString()}'`);
             return null;
         }
-        const document = documents.getOrCreateDocument(uri);
+        const document = documents.getDocument(uri);
         if (!document) {
             return null;
         }

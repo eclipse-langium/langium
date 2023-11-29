@@ -99,7 +99,10 @@ export abstract class AbstractTypeHierarchyProvider implements TypeHierarchyProv
     }
 
     supertypes(params: TypeHierarchySupertypesParams, _cancelToken?: CancellationToken): TypeHierarchyItem[] | undefined {
-        const document = this.documents.getOrCreateDocument(URI.parse(params.item.uri));
+        const document = this.documents.getDocument(URI.parse(params.item.uri));
+        if (!document) {
+            return undefined;
+        }
         const rootNode = document.parseResult.value;
         const targetNode = findDeclarationNodeAtOffset(
             rootNode.$cstNode,
@@ -118,7 +121,10 @@ export abstract class AbstractTypeHierarchyProvider implements TypeHierarchyProv
     protected abstract getSupertypes(node: AstNode): TypeHierarchyItem[] | undefined;
 
     subtypes(params: TypeHierarchySubtypesParams, _cancelToken?: CancellationToken): TypeHierarchyItem[] | undefined {
-        const document = this.documents.getOrCreateDocument(URI.parse(params.item.uri));
+        const document = this.documents.getDocument(URI.parse(params.item.uri));
+        if (!document) {
+            return undefined;
+        }
         const rootNode = document.parseResult.value;
         const targetNode = findDeclarationNodeAtOffset(
             rootNode.$cstNode,

@@ -10,6 +10,7 @@ import { TextDocument } from 'vscode-languageserver-textdocument';
 import { DocumentState, EmptyFileSystem } from 'langium';
 import { createLangiumGrammarServices } from 'langium/grammar';
 import { setTextDocument } from 'langium/test';
+import { CancellationToken } from 'vscode-languageserver';
 
 describe('DefaultLangiumDocumentFactory', () => {
 
@@ -23,7 +24,7 @@ describe('DefaultLangiumDocumentFactory', () => {
         document.state = DocumentState.Changed;
         // Update the document with a different text.
         createTextDocument(uri, 'grammar Y', services);
-        const updated = documentFactory.update(document);
+        const updated = await documentFactory.update(document, CancellationToken.None);
         expect(updated.state).toBe(DocumentState.Parsed);
         // Assert that the parse result was updated.
         expect(updated.parseResult.value.name).toBe('Y');
@@ -41,7 +42,7 @@ describe('DefaultLangiumDocumentFactory', () => {
         document.state = DocumentState.Changed;
         // Update the document with the same text.
         createTextDocument(uri, 'grammar X', services);
-        const updated = documentFactory.update(document);
+        const updated = await documentFactory.update(document, CancellationToken.None);
         // Confirm that the parse result wasn't updated.
         expect(updated.parseResult.value.name).toBe('HELLO');
     });

@@ -82,7 +82,10 @@ export abstract class AbstractCallHierarchyProvider implements CallHierarchyProv
     }
 
     incomingCalls(params: CallHierarchyIncomingCallsParams): CallHierarchyIncomingCall[] | undefined {
-        const document = this.documents.getOrCreateDocument(URI.parse(params.item.uri));
+        const document = this.documents.getDocument(URI.parse(params.item.uri));
+        if (!document) {
+            return undefined;
+        }
         const rootNode = document.parseResult.value;
         const targetNode = findDeclarationNodeAtOffset(
             rootNode.$cstNode,
@@ -108,7 +111,10 @@ export abstract class AbstractCallHierarchyProvider implements CallHierarchyProv
     protected abstract getIncomingCalls(node: AstNode, references: Stream<ReferenceDescription>): CallHierarchyIncomingCall[] | undefined;
 
     outgoingCalls(params: CallHierarchyOutgoingCallsParams): CallHierarchyOutgoingCall[] | undefined {
-        const document = this.documents.getOrCreateDocument(URI.parse(params.item.uri));
+        const document = this.documents.getDocument(URI.parse(params.item.uri));
+        if (!document) {
+            return undefined;
+        }
         const rootNode = document.parseResult.value;
         const targetNode = findDeclarationNodeAtOffset(
             rootNode.$cstNode,

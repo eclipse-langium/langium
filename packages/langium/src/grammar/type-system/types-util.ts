@@ -42,8 +42,11 @@ export function collectChildrenTypes(interfaceNode: Interface, references: Refer
     const childrenTypes = new Set<Interface | Type>();
     childrenTypes.add(interfaceNode);
     const refs = references.findReferences(interfaceNode, {});
-    refs.forEach(ref => {
-        const doc = langiumDocuments.getOrCreateDocument(ref.sourceUri);
+    for (const ref of refs) {
+        const doc = langiumDocuments.getDocument(ref.sourceUri);
+        if (!doc) {
+            continue;
+        }
         const astNode = nodeLocator.getAstNode(doc.parseResult.value, ref.sourcePath);
         if (isInterface(astNode)) {
             childrenTypes.add(astNode);
@@ -52,7 +55,7 @@ export function collectChildrenTypes(interfaceNode: Interface, references: Refer
         } else if (astNode && isType(astNode.$container)) {
             childrenTypes.add(astNode.$container);
         }
-    });
+    }
     return childrenTypes;
 }
 

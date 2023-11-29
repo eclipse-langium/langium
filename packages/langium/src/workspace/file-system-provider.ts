@@ -24,11 +24,6 @@ export interface FileSystemProvider {
      */
     readFile(uri: URI): Promise<string>;
     /**
-     * Reads a document synchronously from a given URI.
-     * @returns The string content of the file with the specified URI.
-     */
-    readFileSync(uri: URI): string;
-    /**
      * Reads the directory information for the given URI.
      * @returns The list of file system entries that are contained within the specified directory.
      */
@@ -38,10 +33,6 @@ export interface FileSystemProvider {
 export class EmptyFileSystemProvider implements FileSystemProvider {
 
     readFile(): Promise<string> {
-        throw new Error('No file system is available.');
-    }
-
-    readFileSync(): string {
         throw new Error('No file system is available.');
     }
 

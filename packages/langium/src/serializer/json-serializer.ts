@@ -288,11 +288,17 @@ export class DefaultJsonSerializer implements JsonSerializer {
             }
             if (fragmentIndex < 0) {
                 const documentUri = uriConverter ? uriConverter(uri) : URI.parse(uri);
-                const document = this.langiumDocuments.getOrCreateDocument(documentUri);
+                const document = this.langiumDocuments.getDocument(documentUri);
+                if (!document) {
+                    return 'Could not find document for URI: ' + uri;
+                }
                 return document.parseResult.value;
             }
             const documentUri = uriConverter ? uriConverter(uri.substring(0, fragmentIndex)) : URI.parse(uri.substring(0, fragmentIndex));
-            const document = this.langiumDocuments.getOrCreateDocument(documentUri);
+            const document = this.langiumDocuments.getDocument(documentUri);
+            if (!document) {
+                return 'Could not find document for URI: ' + uri;
+            }
             if (fragmentIndex === uri.length - 1) {
                 return document.parseResult.value;
             }

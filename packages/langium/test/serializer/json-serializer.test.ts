@@ -217,7 +217,7 @@ describe('JsonSerializer', async () => {
         `;
         const model = serializer.deserialize<Entry>(json);
         expect(model.elements).toHaveLength(1);
-        expect(model.elements[0].other?.error?.message).toEqual('Error: No file system is available.');
+        expect(model.elements[0].other?.error?.message).toEqual('Could not find document for URI: file:///does-not-exist.langium#/elements@0');
     });
 
 });

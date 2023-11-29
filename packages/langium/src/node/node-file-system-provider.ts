@@ -19,10 +19,6 @@ export class NodeFileSystemProvider implements FileSystemProvider {
         return fs.promises.readFile(uri.fsPath, this.encoding);
     }
 
-    readFileSync(uri: URI): string {
-        return fs.readFileSync(uri.fsPath, this.encoding);
-    }
-
     async readDirectory(folderPath: URI): Promise<FileSystemNode[]> {
         const dirents = await fs.promises.readdir(folderPath.fsPath, { withFileTypes: true });
         return dirents.map(dirent => ({
