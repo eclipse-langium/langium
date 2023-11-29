@@ -4,6 +4,10 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+// This file contains Langium grammar language internals.
+// It is not supposed to be exported with the general `langium` export.
+// Instead, it is available from `langium/grammar`.
+
 export * from './generated/grammar.js';
 export * from './generated/module.js';
 export * from './lsp/grammar-call-hierarchy.js';
