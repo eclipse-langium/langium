@@ -60,7 +60,7 @@ export class DefaultWorkspaceManager implements WorkspaceManager {
         services.lsp.LanguageServer.onInitialized(_params => {
             // Initialize the workspace even if there are no workspace folders
             // We still want to load additional documents (language library or similar) during initialization
-            this.mutex.lock(token => this.initializeWorkspace(this.folders ?? [], token));
+            this.mutex.write(token => this.initializeWorkspace(this.folders ?? [], token));
         });
     }
 
