@@ -13,8 +13,8 @@ import type { LangiumServices } from '../../services.js';
 import type { MaybePromise } from '../../utils/promise-util.js';
 import { getContainerOfType } from '../../utils/ast-util.js';
 import type { LangiumDocument, LangiumDocuments } from '../../workspace/documents.js';
-import type { AbstractElement } from '../generated/ast.js';
-import { isAssignment } from '../generated/ast.js';
+import type { AbstractElement } from '../../languages/generated/ast.js';
+import { isAssignment } from '../../languages/generated/ast.js';
 import { UriUtils } from '../../utils/uri-util.js';
 
 export class LangiumGrammarCompletionProvider extends DefaultCompletionProvider {

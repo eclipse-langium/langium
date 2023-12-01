@@ -5,7 +5,8 @@
  ******************************************************************************/
 
 import type { LangiumSharedServices, Module, PartialLangiumSharedServices } from 'langium';
-import { createLangiumGrammarServices, startLanguageServer } from 'langium';
+import { startLanguageServer } from 'langium';
+import { createLangiumGrammarServices } from 'langium/grammar';
 import { NodeFileSystem } from 'langium/node';
 import { createConnection, ProposedFeatures } from 'vscode-languageserver/node.js';
 import { LangiumGrammarWorkspaceManager } from './grammar-workspace-manager.js';

@@ -10,15 +10,16 @@ import type { AstNode, AstNodeDescription, ReferenceInfo } from '../../syntax-tr
 import type { Stream } from '../../utils/stream.js';
 import type { AstNodeLocator } from '../../workspace/ast-node-locator.js';
 import type { DocumentSegment, LangiumDocument, LangiumDocuments, PrecomputedScopes } from '../../workspace/documents.js';
-import type { Grammar } from '../generated/ast.js';
+import type { Grammar } from '../../languages/generated/ast.js';
 import { EMPTY_SCOPE, MapScope } from '../../references/scope.js';
 import { DefaultScopeComputation } from '../../references/scope-computation.js';
 import { DefaultScopeProvider } from '../../references/scope-provider.js';
 import { findRootNode, getContainerOfType, getDocument, streamAllContents } from '../../utils/ast-util.js';
 import { toDocumentSegment } from '../../utils/cst-util.js';
 import { stream } from '../../utils/stream.js';
-import { AbstractType, Interface, isAction, isGrammar, isParserRule, isReturnType, Type } from '../generated/ast.js';
-import { getActionType, resolveImportUri } from '../internal-grammar-util.js';
+import { AbstractType, Interface, isAction, isGrammar, isParserRule, isReturnType, Type } from '../../languages/generated/ast.js';
+import { resolveImportUri } from '../internal-grammar-util.js';
+import { getActionType } from '../../utils/grammar-util.js';
 
 export class LangiumGrammarScopeProvider extends DefaultScopeProvider {
 

@@ -6,7 +6,8 @@
 
 import { describe, expect, test } from 'vitest';
 import { parseHelper } from 'langium/test';
-import { createLangiumGrammarServices, streamAst, EmptyFileSystem, GrammarAST } from 'langium';
+import { streamAst, EmptyFileSystem, GrammarAST } from 'langium';
+import { createLangiumGrammarServices } from 'langium/grammar';
 
 const services = createLangiumGrammarServices(EmptyFileSystem).grammar;
 const parse = parseHelper(services);

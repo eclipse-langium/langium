@@ -9,12 +9,12 @@ import type { LangiumServices } from '../../services.js';
 import type { AstNode, LeafCstNode, Properties } from '../../syntax-tree.js';
 import type { MaybePromise } from '../../utils/promise-util.js';
 import type { LangiumDocuments } from '../../workspace/documents.js';
-import type { Grammar, GrammarImport } from '../generated/ast.js';
+import type { Grammar, GrammarImport } from '../../languages/generated/ast.js';
 import { LocationLink, Range } from 'vscode-languageserver';
 import { DefaultDefinitionProvider } from '../../lsp/index.js';
 import { streamContents } from '../../utils/ast-util.js';
 import { findAssignment } from '../../utils/grammar-util.js';
-import { isGrammarImport } from '../generated/ast.js';
+import { isGrammarImport } from '../../languages/generated/ast.js';
 import { resolveImport } from '../internal-grammar-util.js';
 
 export class LangiumGrammarDefinitionProvider extends DefaultDefinitionProvider {

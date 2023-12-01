@@ -5,7 +5,9 @@
       "noEmit": true
     },
     "exclude": [
-        // "../src/generate/**/*", // cs: to be enabled once #1171 is merged
-        "../src/test/**/*"
+        "../src/generate/**/*",
+        "../src/grammar/**/*",
+        "../src/test/**/*",
+        "../src/node/**/*"
     ]
 }

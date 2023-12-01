@@ -3,14 +3,13 @@
  * This program and the accompanying materials are made available under the
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
-import { type Grammar, getAllReachableRules, GrammarAST, stream, streamAllContents } from 'langium';
+import { type Grammar, getAllReachableRules, GrammarAST, stream, streamAllContents, terminalRegex } from 'langium';
 import { type Generated, expandToNode } from 'langium/generate';
 import fs from 'fs-extra';
 import * as path from 'node:path';
 import * as url from 'node:url';
 import * as readline from 'node:readline';
 import chalk from 'chalk';
-import { terminalRegex } from 'langium/internal';
 
 // This is a replacement for `__dirname`
 function getDirname(): string {

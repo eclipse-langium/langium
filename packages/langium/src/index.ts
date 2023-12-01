@@ -10,7 +10,7 @@ export * from './service-registry.js';
 export * from './services.js';
 export * from './syntax-tree.js';
 export * from './documentation/index.js';
-export * from './grammar/index.js';
+export * from './languages/index.js';
 export * from './lsp/index.js';
 export * from './parser/index.js';
 export * from './references/index.js';
@@ -20,6 +20,6 @@ export * from './validation/index.js';
 export * from './workspace/index.js';
 
 // Export the Langium Grammar AST definitions in the `GrammarAST` namespace
-import * as GrammarAST from './grammar/generated/ast.js';
-import type { Grammar } from './grammar/generated/ast.js';
+import * as GrammarAST from './languages/generated/ast.js';
+import type { Grammar } from './languages/generated/ast.js';
 export { Grammar, GrammarAST };

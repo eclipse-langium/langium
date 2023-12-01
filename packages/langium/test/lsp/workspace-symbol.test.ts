@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import { describe, test } from 'vitest';
-import { createServicesForGrammar } from 'langium';
+import { createServicesForGrammar } from 'langium/grammar';
 import { expectWorkspaceSymbols, parseHelper } from 'langium/test';
 
 const grammar = `

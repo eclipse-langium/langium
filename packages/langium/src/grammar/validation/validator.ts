@@ -16,12 +16,11 @@ import { DiagnosticTag } from 'vscode-languageserver-types';
 import { getContainerOfType, streamAllContents } from '../../utils/ast-util.js';
 import { MultiMap } from '../../utils/collections.js';
 import { toDocumentSegment } from '../../utils/cst-util.js';
-import { findNameAssignment, findNodeForKeyword, findNodeForProperty, getAllReachableRules } from '../../utils/grammar-util.js';
+import { findNameAssignment, findNodeForKeyword, findNodeForProperty, getAllReachableRules, isDataTypeRule, isOptionalCardinality, terminalRegex } from '../../utils/grammar-util.js';
 import { stream } from '../../utils/stream.js';
 import { diagnosticData } from '../../validation/validation-registry.js';
-import * as ast from '../generated/ast.js';
-import { isParserRule, isRuleCall } from '../generated/ast.js';
-import { getTypeNameWithoutError, hasDataTypeReturn, isDataTypeRule, isOptionalCardinality, isPrimitiveType, isStringType, resolveImport, resolveTransitiveImports, terminalRegex } from '../internal-grammar-util.js';
+import * as ast from '../../languages/generated/ast.js';
+import { getTypeNameWithoutError, hasDataTypeReturn, isPrimitiveGrammarType, isStringGrammarType, resolveImport, resolveTransitiveImports } from '../internal-grammar-util.js';
 import { typeDefinitionToPropertyType } from '../type-system/type-collector/declared-types.js';
 import { flattenPlainType, isPlainReferenceType } from '../type-system/type-collector/plain-types.js';
 
@@ -691,7 +690,7 @@ export class LangiumGrammarValidator {
     }
 
     checkKeyword(keyword: ast.Keyword, accept: ValidationAcceptor): void {
-        if (getContainerOfType(keyword, isParserRule)) {
+        if (getContainerOfType(keyword, ast.isParserRule)) {
             if (keyword.value.length === 0) {
                 accept('error', 'Keywords cannot be empty.', { node: keyword });
             } else if (keyword.value.trim().length === 0) {
@@ -745,7 +744,7 @@ export class LangiumGrammarValidator {
         if (!assignment.terminal) {
             return;
         }
-        if (isRuleCall(assignment.terminal) && isParserRule(assignment.terminal.rule.ref) && assignment.terminal.rule.ref.fragment) {
+        if (ast.isRuleCall(assignment.terminal) && ast.isParserRule(assignment.terminal.rule.ref) && assignment.terminal.rule.ref.fragment) {
             accept('error', `Cannot use fragment rule '${assignment.terminal.rule.ref.name}' for assignment of property '${assignment.feature}'.`, { node: assignment, property: 'terminal' });
         }
     }
@@ -809,7 +808,7 @@ export class LangiumGrammarValidator {
     }
 
     checkTerminalRuleReturnType(rule: ast.TerminalRule, accept: ValidationAcceptor): void {
-        if (rule.type?.name && !isPrimitiveType(rule.type.name)) {
+        if (rule.type?.name && !isPrimitiveGrammarType(rule.type.name)) {
             accept('error', "Terminal rules can only return primitive types like 'string', 'boolean', 'number', 'Date' or 'bigint'.", { node: rule.type, property: 'name' });
         }
     }
@@ -839,7 +838,7 @@ export class LangiumGrammarValidator {
             const rule = refTerminal.rule.ref;
             if (ast.isParserRule(rule) && !isDataTypeRule(rule)) {
                 accept('error', 'Parser rules cannot be used for cross-references.', { node: refTerminal, property: 'rule' });
-            } else if (ast.isParserRule(rule) && !isStringType(rule)) {
+            } else if (ast.isParserRule(rule) && !isStringGrammarType(rule)) {
                 accept('error', 'Data type rules for cross-references must be of type string.', { node: refTerminal, property: 'rule' });
             } else if (ast.isTerminalRule(rule) && rule.type?.name && rule.type.name !== 'string') {
                 accept('error', 'Terminal rules for cross-references must be of type string.', { node: refTerminal, property: 'rule' });

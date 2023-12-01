@@ -6,7 +6,8 @@
 
 import type { Grammar } from 'langium';
 import { describe, expect, test } from 'vitest';
-import { createLangiumGrammarServices, EmptyFileSystem, getAllReachableRules } from 'langium';
+import { EmptyFileSystem, getAllReachableRules } from 'langium';
+import { createLangiumGrammarServices } from 'langium/grammar';
 import { parseHelper } from 'langium/test';
 
 const services = createLangiumGrammarServices(EmptyFileSystem);

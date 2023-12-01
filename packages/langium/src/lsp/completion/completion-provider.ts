@@ -16,15 +16,14 @@ import type { LangiumDocument } from '../../workspace/documents.js';
 import type { NextFeature } from './follow-element-computation.js';
 import type { NodeKindProvider } from '../node-kind-provider.js';
 import type { FuzzyMatcher } from '../fuzzy-matcher.js';
-import type { GrammarConfig } from '../../grammar/grammar-config.js';
+import type { GrammarConfig } from '../../languages/grammar-config.js';
 import type { Lexer } from '../../parser/lexer.js';
 import type { IToken } from 'chevrotain';
 import { CompletionItemKind, CompletionList, Position } from 'vscode-languageserver';
-import * as ast from '../../grammar/generated/ast.js';
-import { getExplicitRuleType } from '../../grammar/internal-grammar-util.js';
+import * as ast from '../../languages/generated/ast.js';
 import { assignMandatoryAstProperties, getContainerOfType } from '../../utils/ast-util.js';
 import { findDeclarationNodeAtOffset, findLeafNodeBeforeOffset } from '../../utils/cst-util.js';
-import { getEntryRule } from '../../utils/grammar-util.js';
+import { getEntryRule, getExplicitRuleType } from '../../utils/grammar-util.js';
 import { stream } from '../../utils/stream.js';
 import { findFirstFeatures, findNextFeatures } from './follow-element-computation.js';
 

@@ -3,9 +3,11 @@
  * This program and the accompanying materials are made available under the
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
-import type { Grammar, IParserConfig, LangiumDocuments, LangiumGrammarServices, LangiumParser, LanguageMetaData, } from 'langium';
+import type { Grammar, IParserConfig, LangiumDocuments, LangiumParser, LanguageMetaData } from 'langium';
 import type { LangiumConfig, LangiumLanguageConfig } from './package.js';
-import { createServicesForGrammar, getDocument, GrammarAST, prepareLangiumParser } from 'langium';
+import { getDocument, GrammarAST, prepareLangiumParser } from 'langium';
+import type { LangiumGrammarServices} from 'langium/grammar';
+import { createServicesForGrammar } from 'langium/grammar';
 import { getFilePath } from './package.js';
 
 export async function validateParser(grammar: Grammar, config: LangiumConfig, grammarConfigMap: Map<Grammar, LangiumLanguageConfig>,

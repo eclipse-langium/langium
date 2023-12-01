@@ -6,7 +6,8 @@
 
 import { describe, test } from 'vitest';
 import { highlightHelper, expectSemanticToken } from 'langium/test';
-import { createLangiumGrammarServices, EmptyFileSystem } from 'langium';
+import { EmptyFileSystem } from 'langium';
+import { createLangiumGrammarServices } from 'langium/grammar';
 import { SemanticTokenTypes } from 'vscode-languageserver';
 
 const services = createLangiumGrammarServices(EmptyFileSystem);

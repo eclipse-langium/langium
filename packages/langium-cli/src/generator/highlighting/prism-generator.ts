@@ -3,9 +3,8 @@
  * This program and the accompanying materials are made available under the
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
-import { GrammarAST, escapeRegExp, isCommentTerminal, type Grammar } from 'langium';
+import { terminalRegex, GrammarAST, escapeRegExp, isCommentTerminal, type Grammar } from 'langium';
 import { expandToNode, joinToNode, toString, type Generated } from 'langium/generate';
-import { terminalRegex } from 'langium/internal';
 import _ from 'lodash';
 import type { LangiumLanguageConfig } from '../../package.js';
 import { collectKeywords } from '../util.js';

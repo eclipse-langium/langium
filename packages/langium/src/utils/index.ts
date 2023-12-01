@@ -10,6 +10,7 @@ export * from './collections.js';
 export * from './cst-util.js';
 export * from './disposable.js';
 export * from './errors.js';
+export * from './grammar-loader.js';
 export * from './grammar-util.js';
 export * from './promise-util.js';
 export * from './regex-util.js';

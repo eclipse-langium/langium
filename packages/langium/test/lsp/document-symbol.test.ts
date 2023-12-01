@@ -6,7 +6,8 @@
 
 import { describe, test } from 'vitest';
 import { Position, Range, SymbolKind } from 'vscode-languageserver';
-import { createLangiumGrammarServices, EmptyFileSystem } from 'langium';
+import { EmptyFileSystem } from 'langium';
+import { createLangiumGrammarServices } from 'langium/grammar';
 import { expectSymbols } from 'langium/test';
 
 const text = `

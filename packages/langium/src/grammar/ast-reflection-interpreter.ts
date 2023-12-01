@@ -6,11 +6,11 @@
 
 import type { AstReflection, ReferenceInfo, TypeMandatoryProperty, TypeMetaData } from '../syntax-tree.js';
 import type { LangiumDocuments } from '../workspace/documents.js';
-import type { Grammar } from './generated/ast.js';
+import type { Grammar } from '../languages/generated/ast.js';
 import type { AstTypes, Property } from './type-system/type-collector/types.js';
 import { AbstractAstReflection } from '../syntax-tree.js';
 import { MultiMap } from '../utils/collections.js';
-import { isGrammar } from './generated/ast.js';
+import { isGrammar } from '../languages/generated/ast.js';
 import { collectAst } from './type-system/ast-collector.js';
 import { collectTypeHierarchy, findReferenceTypes, hasArrayType, isAstType, hasBooleanType, mergeTypesAndInterfaces } from './type-system/types-util.js';
 

@@ -6,7 +6,7 @@
 
 import type { AstNode } from '../../syntax-tree.js';
 import { DefaultFoldingRangeProvider } from '../../lsp/folding-range-provider.js';
-import { isParserRule } from '../generated/ast.js';
+import { isParserRule } from '../../languages/generated/ast.js';
 
 /**
  * A specialized folding range provider for the grammar language

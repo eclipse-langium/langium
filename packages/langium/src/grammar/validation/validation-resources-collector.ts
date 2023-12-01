@@ -5,17 +5,17 @@
  ******************************************************************************/
 
 import type { LangiumDocuments } from '../../workspace/documents.js';
-import type { AbstractElement, Action, Grammar, Interface, ParserRule, Type } from '../generated/ast.js';
+import type { AbstractElement, Action, Grammar, Interface, ParserRule, Type } from '../../languages/generated/ast.js';
 import type { AstResources, ValidationAstTypes } from '../type-system/type-collector/all-types.js';
 import type { TypeToValidationInfo, ValidationResources } from '../workspace/documents.js';
 import type { LangiumGrammarServices } from '../langium-grammar-module.js';
 import type { InterfaceType, Property } from '../type-system/type-collector/types.js';
 import { MultiMap } from '../../utils/collections.js';
 import { stream } from '../../utils/stream.js';
-import { isAction, isAlternatives, isGroup, isUnorderedGroup } from '../generated/ast.js';
-import { getActionType, getRuleType } from '../internal-grammar-util.js';
+import { isAction, isAlternatives, isGroup, isUnorderedGroup } from '../../languages/generated/ast.js';
 import { mergeInterfaces, mergeTypesAndInterfaces } from '../type-system/types-util.js';
 import { collectValidationAst } from '../type-system/ast-collector.js';
+import { getActionType, getRuleType } from '../../utils/grammar-util.js';
 
 export class LangiumGrammarValidationResourcesCollector {
     private readonly documents: LangiumDocuments;

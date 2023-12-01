@@ -4,24 +4,12 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { Module } from '../dependency-injection.js';
-import type { LangiumGrammarServices } from '../grammar/langium-grammar-module.js';
-import type { LanguageMetaData } from '../grammar/language-meta-data.js';
-import type { IParserConfig } from '../parser/parser-config.js';
-import type { LangiumGeneratedServices, LangiumGeneratedSharedServices, LangiumServices, LangiumSharedServices, PartialLangiumServices, PartialLangiumSharedServices } from '../services.js';
 import type { AstNode, CstNode } from '../syntax-tree.js';
-import type { Mutable } from '../utils/ast-util.js';
-import { createDefaultModule, createDefaultSharedModule } from '../default-module.js';
-import { inject } from '../dependency-injection.js';
-import { interpretAstReflection } from '../grammar/ast-reflection-interpreter.js';
-import * as ast from '../grammar/generated/ast.js';
-import { terminalRegex } from '../grammar/internal-grammar-util.js';
-import { createLangiumGrammarServices } from '../grammar/langium-grammar-module.js';
+import * as ast from '../languages/generated/ast.js';
 import { isCompositeCstNode } from '../syntax-tree.js';
-import { getContainerOfType, getDocument, streamAllContents } from '../utils/ast-util.js';
+import { getContainerOfType, streamAllContents } from '../utils/ast-util.js';
 import { streamCst } from '../utils/cst-util.js';
-import { EmptyFileSystem } from '../workspace/file-system-provider.js';
-import { URI } from './uri-util.js';
+import { escapeRegExp } from './regex-util.js';
 
 /**
  * Returns the entry rule of the given grammar, if any. If the grammar file does not contain an entry rule,
@@ -281,59 +269,286 @@ function findNameAssignmentInternal(type: ast.AbstractType, cache: Map<ast.Abstr
     return undefined;
 }
 
-/**
- * Load a Langium grammar for your language from a JSON string. This is used by several services,
- * most notably the parser builder which interprets the grammar to create a parser.
- */
-export function loadGrammarFromJson(json: string): ast.Grammar {
-    const services = createLangiumGrammarServices(EmptyFileSystem).grammar;
-    const astNode = services.serializer.JsonSerializer.deserialize(json) as Mutable<ast.Grammar>;
-    services.shared.workspace.LangiumDocumentFactory.fromModel(astNode, URI.parse(`memory://${astNode.name ?? 'grammar'}.langium`));
-    return astNode;
+export function getActionAtElement(element: ast.AbstractElement): ast.Action | undefined {
+    const parent = element.$container;
+    if (ast.isGroup(parent)) {
+        const elements = parent.elements;
+        const index = elements.indexOf(element);
+        for (let i = index - 1; i >= 0; i--) {
+            const item = elements[i];
+            if (ast.isAction(item)) {
+                return item;
+            } else {
+                const action = streamAllContents(elements[i]).find(ast.isAction);
+                if (action) {
+                    return action;
+                }
+            }
+        }
+    }
+    if (ast.isAbstractElement(parent)) {
+        return getActionAtElement(parent);
+    } else {
+        return undefined;
+    }
+}
+
+export type Cardinality = '?' | '*' | '+' | undefined;
+export type Operator = '=' | '+=' | '?=' | undefined;
+
+export function isOptionalCardinality(cardinality?: Cardinality, element?: ast.AbstractElement): boolean {
+    return cardinality === '?' || cardinality === '*' || (ast.isGroup(element) && Boolean(element.guardCondition));
+}
+
+export function isArrayCardinality(cardinality?: Cardinality): boolean {
+    return cardinality === '*' || cardinality === '+';
+}
+
+export function isArrayOperator(operator?: Operator): boolean {
+    return operator === '+=';
 }
 
 /**
- * Create an instance of the language services for the given grammar. This function is very
- * useful when the grammar is defined on-the-fly, for example in tests of the Langium framework.
+ * Determines whether the given parser rule is a _data type rule_, meaning that it has a
+ * primitive return type like `number`, `boolean`, etc.
  */
-export async function createServicesForGrammar(config: {
-    grammar: string | ast.Grammar,
-    grammarServices?: LangiumGrammarServices,
-    parserConfig?: IParserConfig,
-    languageMetaData?: LanguageMetaData,
-    module?: Module<LangiumServices, PartialLangiumServices>
-    sharedModule?: Module<LangiumSharedServices, PartialLangiumSharedServices>
-}): Promise<LangiumServices> {
-    const grammarServices = config.grammarServices ?? createLangiumGrammarServices(EmptyFileSystem).grammar;
-    const uri = URI.parse('memory:///grammar.langium');
-    const factory = grammarServices.shared.workspace.LangiumDocumentFactory;
-    const grammarDocument = typeof config.grammar === 'string'
-        ? factory.fromString(config.grammar, uri)
-        : getDocument(config.grammar);
-    const grammarNode = grammarDocument.parseResult.value as ast.Grammar;
-    const documentBuilder = grammarServices.shared.workspace.DocumentBuilder;
-    await documentBuilder.build([grammarDocument], { validation: false });
+export function isDataTypeRule(rule: ast.ParserRule): boolean {
+    return isDataTypeRuleInternal(rule, new Set());
+}
 
-    const parserConfig = config.parserConfig ?? {
-        skipValidations: false
-    };
-    const languageMetaData = config.languageMetaData ?? {
-        caseInsensitive: false,
-        fileExtensions: [`.${grammarNode.name?.toLowerCase() ?? 'unknown'}`],
-        languageId: grammarNode.name ?? 'UNKNOWN'
-    };
-    const generatedSharedModule: Module<LangiumSharedServices, LangiumGeneratedSharedServices> = {
-        AstReflection: () => interpretAstReflection(grammarNode),
-    };
-    const generatedModule: Module<LangiumServices, LangiumGeneratedServices> = {
-        Grammar: () => grammarNode,
-        LanguageMetaData: () => languageMetaData,
-        parser: {
-            ParserConfig: () => parserConfig
+function isDataTypeRuleInternal(rule: ast.ParserRule, visited: Set<ast.ParserRule>): boolean {
+    if (visited.has(rule)) {
+        return true;
+    } else {
+        visited.add(rule);
+    }
+    for (const node of streamAllContents(rule)) {
+        if (ast.isRuleCall(node)) {
+            if (!node.rule.ref) {
+                // RuleCall to unresolved rule. Don't assume `rule` is a DataType rule.
+                return false;
+            }
+            if (ast.isParserRule(node.rule.ref) && !isDataTypeRuleInternal(node.rule.ref, visited)) {
+                return false;
+            }
+        } else if (ast.isAssignment(node)) {
+            return false;
+        } else if (ast.isAction(node)) {
+            return false;
         }
+    }
+    return Boolean(rule.definition);
+}
+
+export function isDataType(type: ast.Type): boolean {
+    return isDataTypeInternal(type.type, new Set());
+}
+
+function isDataTypeInternal(type: ast.TypeDefinition, visited: Set<ast.TypeDefinition>): boolean {
+    if (visited.has(type)) {
+        return true;
+    } else {
+        visited.add(type);
+    }
+    if (ast.isArrayType(type)) {
+        return false;
+    } else if (ast.isReferenceType(type)) {
+        return false;
+    } else if (ast.isUnionType(type)) {
+        return type.types.every(e => isDataTypeInternal(e, visited));
+    } else if (ast.isSimpleType(type)) {
+        if (type.primitiveType !== undefined) {
+            return true;
+        } else if (type.stringType !== undefined) {
+            return true;
+        } else if (type.typeRef !== undefined) {
+            const ref = type.typeRef.ref;
+            if (ast.isType(ref)) {
+                return isDataTypeInternal(ref.type, visited);
+            } else {
+                return false;
+            }
+        } else {
+            return false;
+        }
+    } else {
+        return false;
+    }
+}
+
+export function getExplicitRuleType(rule: ast.ParserRule): string | undefined {
+    if (rule.inferredType) {
+        return rule.inferredType.name;
+    } else if (rule.dataType) {
+        return rule.dataType;
+    } else if (rule.returnType) {
+        const refType = rule.returnType.ref;
+        if(refType) {
+            // check if we need to check Action as return type
+            if (ast.isParserRule(refType)) {
+                return refType.name;
+            }  else if(ast.isInterface(refType) || ast.isType(refType)) {
+                return refType.name;
+            }
+        }
+    }
+    return undefined;
+}
+
+export function getTypeName(type: ast.AbstractType | ast.InferredType): string {
+    if (ast.isParserRule(type)) {
+        return isDataTypeRule(type) ? type.name : getExplicitRuleType(type) ?? type.name;
+    } else if (ast.isInterface(type) || ast.isType(type) || ast.isReturnType(type)) {
+        return type.name;
+    } else if (ast.isAction(type)) {
+        const actionType = getActionType(type);
+        if (actionType) {
+            return actionType;
+        }
+    } else if (ast.isInferredType(type)) {
+        return type.name;
+    }
+    throw new Error('Cannot get name of Unknown Type');
+}
+
+export function getActionType(action: ast.Action): string | undefined {
+    if(action.inferredType) {
+        return action.inferredType.name;
+    } else if (action.type?.ref) {
+        return getTypeName(action.type.ref);
+    }
+    return undefined; // not inferring and not referencing a valid type
+}
+
+export function getRuleType(rule: ast.AbstractRule): string {
+    if (ast.isTerminalRule(rule)) {
+        return rule.type?.name ?? 'string';
+    } else {
+        return isDataTypeRule(rule) ? rule.name : getExplicitRuleType(rule) ?? rule.name;
+    }
+}
+
+export function terminalRegex(terminalRule: ast.TerminalRule): RegExp {
+    const flags: Flags = {
+        s: false,
+        i: false,
+        u: false
     };
-    const shared = inject(createDefaultSharedModule(EmptyFileSystem), generatedSharedModule, config.sharedModule);
-    const services = inject(createDefaultModule({ shared }), generatedModule, config.module);
-    shared.ServiceRegistry.register(services);
-    return services;
+    const source = abstractElementToRegex(terminalRule.definition, flags);
+    const flagText = Object.entries(flags).filter(([, value]) => value).map(([name]) => name).join('');
+    return new RegExp(source, flagText);
+}
+
+// Using [\s\S]* allows to match everything, compared to . which doesn't match line terminators
+const WILDCARD = /[\s\S]/.source;
+
+type Flags = {
+    s: boolean;
+    i: boolean;
+    u: boolean;
+}
+
+function abstractElementToRegex(element: ast.AbstractElement, flags?: Flags): string {
+    if (ast.isTerminalAlternatives(element)) {
+        return terminalAlternativesToRegex(element);
+    } else if (ast.isTerminalGroup(element)) {
+        return terminalGroupToRegex(element);
+    } else if (ast.isCharacterRange(element)) {
+        return characterRangeToRegex(element);
+    } else if (ast.isTerminalRuleCall(element)) {
+        const rule = element.rule.ref;
+        if (!rule) {
+            throw new Error('Missing rule reference.');
+        }
+        return withCardinality(abstractElementToRegex(rule.definition), {
+            cardinality: element.cardinality,
+            lookahead: element.lookahead
+        });
+    } else if (ast.isNegatedToken(element)) {
+        return negateTokenToRegex(element);
+    } else if (ast.isUntilToken(element)) {
+        return untilTokenToRegex(element);
+    } else if (ast.isRegexToken(element)) {
+        const lastSlash = element.regex.lastIndexOf('/');
+        const source = element.regex.substring(1, lastSlash);
+        const regexFlags = element.regex.substring(lastSlash + 1);
+        if (flags) {
+            flags.i = regexFlags.includes('i');
+            flags.s = regexFlags.includes('s');
+            flags.u = regexFlags.includes('u');
+        }
+        return withCardinality(source, {
+            cardinality: element.cardinality,
+            lookahead: element.lookahead,
+            wrap: false
+        });
+    } else if (ast.isWildcard(element)) {
+        return withCardinality(WILDCARD, {
+            cardinality: element.cardinality,
+            lookahead: element.lookahead
+        });
+    } else {
+        throw new Error(`Invalid terminal element: ${element?.$type}`);
+    }
+}
+
+function terminalAlternativesToRegex(alternatives: ast.TerminalAlternatives): string {
+    return withCardinality(alternatives.elements.map(e => abstractElementToRegex(e)).join('|'), {
+        cardinality: alternatives.cardinality,
+        lookahead: alternatives.lookahead
+    });
+}
+
+function terminalGroupToRegex(group: ast.TerminalGroup): string {
+    return withCardinality(group.elements.map(e => abstractElementToRegex(e)).join(''), {
+        cardinality: group.cardinality,
+        lookahead: group.lookahead
+    });
+}
+
+function untilTokenToRegex(until: ast.UntilToken): string {
+    return withCardinality(`${WILDCARD}*?${abstractElementToRegex(until.terminal)}`, {
+        cardinality: until.cardinality,
+        lookahead: until.lookahead
+    });
+}
+
+function negateTokenToRegex(negate: ast.NegatedToken): string {
+    return withCardinality(`(?!${abstractElementToRegex(negate.terminal)})${WILDCARD}*?`, {
+        cardinality: negate.cardinality,
+        lookahead: negate.lookahead
+    });
+}
+
+function characterRangeToRegex(range: ast.CharacterRange): string {
+    if (range.right) {
+        return withCardinality(`[${keywordToRegex(range.left)}-${keywordToRegex(range.right)}]`, {
+            cardinality: range.cardinality,
+            lookahead: range.lookahead,
+            wrap: false
+        });
+    }
+    return withCardinality(keywordToRegex(range.left), {
+        cardinality: range.cardinality,
+        lookahead: range.lookahead,
+        wrap: false
+    });
+}
+
+function keywordToRegex(keyword: ast.Keyword): string {
+    return escapeRegExp(keyword.value);
+}
+
+function withCardinality(regex: string, options: {
+    cardinality?: string
+    wrap?: boolean
+    lookahead?: string
+}): string {
+    if (options.wrap !== false || options.lookahead) {
+        regex = `(${options.lookahead ?? ''}${regex})`;
+    }
+    if (options.cardinality) {
+        return `${regex}${options.cardinality}`;
+    }
+    return regex;
 }

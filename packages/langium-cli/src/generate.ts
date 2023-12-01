@@ -8,8 +8,8 @@ import type { AstNode, Grammar, LangiumDocument, Mutable } from 'langium';
 import type { LangiumConfig, LangiumLanguageConfig} from './package.js';
 import { URI } from 'langium';
 import { loadConfig } from './package.js';
-import { copyAstNode, createLangiumGrammarServices, getDocument, GrammarAST, linkContentToContainer } from 'langium';
-import { resolveImport, resolveTransitiveImports } from 'langium/internal';
+import { copyAstNode, getDocument, GrammarAST, linkContentToContainer } from 'langium';
+import { createLangiumGrammarServices, resolveImport, resolveTransitiveImports } from 'langium/grammar';
 import { NodeFileSystem } from 'langium/node';
 import { generateAst } from './generator/ast-generator.js';
 import { serializeGrammar } from './generator/grammar-serializer.js';
@@ -332,7 +332,7 @@ export async function runGenerator(config: LangiumConfig, options: GenerateOptio
     }
 
     const genAst = generateAst(grammarServices, embeddedGrammars, config);
-    await writeWithFail(path.resolve(output, 'ast.ts'), genAst, options);
+    await writeWithFail(path.resolve(updateLangiumInternalAstPath(output, config), 'ast.ts'), genAst, options);
 
     const serializedGrammar = serializeGrammar(grammarServices, embeddedGrammars, config);
     await writeWithFail(path.resolve(output, 'grammar.ts'), serializedGrammar, options);
@@ -391,6 +391,16 @@ export async function runGenerator(config: LangiumConfig, options: GenerateOptio
     }
 
     return buildResult(true);
+}
+
+function updateLangiumInternalAstPath(output: string, config: LangiumConfig): string {
+    if (config.langiumInternal) {
+        // The Langium internal ast is generated to the languages package.
+        // This is done to prevent internal access to the `langium/grammar` export.
+        return path.join(output, '..', '..', 'languages', 'generated');
+    } else {
+        return output;
+    }
 }
 
 export async function generateTypes(options: ExtractTypesOptions): Promise<void> {

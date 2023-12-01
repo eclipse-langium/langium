@@ -6,7 +6,8 @@
 
 import type { Grammar, GrammarAST as GrammarTypes } from 'langium';
 import { describe, expect, test } from 'vitest';
-import { createLangiumGrammarServices, EmptyFileSystem} from 'langium';
+import { EmptyFileSystem } from 'langium';
+import { createLangiumGrammarServices } from 'langium/grammar';
 import { parseHelper } from 'langium/test';
 
 describe('DefaultAstNodeLocator', () => {

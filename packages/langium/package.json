@@ -42,13 +42,9 @@
       "types": "./lib/node/index.d.ts",
       "import": "./lib/node/index.js"
     },
-    "./types": {
-      "types": "./lib/grammar/type-system/index.d.ts",
-      "import": "./lib/grammar/type-system/index.js"
-    },
-    "./internal": {
-      "types": "./lib/grammar/internal-grammar-util.d.ts",
-      "import": "./lib/grammar/internal-grammar-util.js"
+    "./grammar": {
+      "types": "./lib/grammar/index.d.ts",
+      "import": "./lib/grammar/index.js"
     }
   },
   "scripts": {

@@ -12,7 +12,7 @@ import { SymbolKind } from 'vscode-languageserver';
 import { AbstractCallHierarchyProvider } from '../../lsp/call-hierarchy-provider.js';
 import { getContainerOfType, getDocument, streamAllContents } from '../../utils/ast-util.js';
 import { findLeafNodeAtOffset } from '../../utils/cst-util.js';
-import { isParserRule, isRuleCall } from '../generated/ast.js';
+import { isParserRule, isRuleCall } from '../../languages/generated/ast.js';
 
 export class LangiumGrammarCallHierarchyProvider extends AbstractCallHierarchyProvider {
     protected getIncomingCalls(node: AstNode, references: Stream<ReferenceDescription>): CallHierarchyIncomingCall[] | undefined {

@@ -4,9 +4,10 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { TreeStreamImpl, createServicesForGrammar, findNodeForKeyword, findNodesForProperty, type AstNode, type AstNodeWithTextRegion } from 'langium';
+import { TreeStreamImpl, findNodeForKeyword, findNodesForProperty, type AstNode, type AstNodeWithTextRegion } from 'langium';
 import { expandToNode, expandToString, expandTracedToNode, joinTracedToNode, joinTracedToNodeIf, toStringAndTrace, traceToNode, type SourceRegion, type TraceRegion } from 'langium/generate';
 import { parseHelper } from 'langium/test';
+import { createServicesForGrammar } from 'langium/grammar';
 import { beforeAll, describe, expect, test } from 'vitest';
 
 // don't bather because of unexpected indentations, e.g. within template substitutions

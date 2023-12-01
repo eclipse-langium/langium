@@ -6,7 +6,7 @@
 
 import type { Lexer } from 'langium';
 import { describe, expect, test } from 'vitest';
-import { createServicesForGrammar } from 'langium';
+import { createServicesForGrammar } from 'langium/grammar';
 
 describe('DefaultLexer', () => {
 

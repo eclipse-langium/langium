@@ -5,8 +5,7 @@
  ******************************************************************************/
 
 import { describe, expect, test } from 'vitest';
-import { interpretAstReflection } from 'langium';
-import { InterfaceType } from 'langium/types';
+import { InterfaceType, interpretAstReflection } from 'langium/grammar';
 
 describe('AST reflection interpreter', () => {
 
