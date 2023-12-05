@@ -16,7 +16,7 @@ import type { IParserConfig } from '../parser/parser-config.js';
 import type { LanguageMetaData } from '../languages/language-meta-data.js';
 import type { Module} from '../dependency-injection.js';
 import { inject } from '../dependency-injection.js';
-import type { LangiumGeneratedServices, LangiumGeneratedSharedServices, LangiumServices, LangiumSharedServices, PartialLangiumServices, PartialLangiumSharedServices } from '../services.js';
+import type { LangiumGeneratedServices, LangiumGeneratedSharedServices, LangiumServices, LangiumSharedServices } from '../services.js';
 import { EmptyFileSystem } from '../workspace/file-system-provider.js';
 import { interpretAstReflection } from './ast-reflection-interpreter.js';
 import { createDefaultModule, createDefaultSharedModule } from '../default-module.js';
@@ -157,14 +157,14 @@ export function isPrimitiveGrammarType(type: string): boolean {
  * Create an instance of the language services for the given grammar. This function is very
  * useful when the grammar is defined on-the-fly, for example in tests of the Langium framework.
  */
-export async function createServicesForGrammar(config: {
+export async function createServicesForGrammar<L extends LangiumServices = LangiumServices, S extends LangiumSharedServices = LangiumSharedServices>(config: {
     grammar: string | ast.Grammar,
     grammarServices?: LangiumGrammarServices,
     parserConfig?: IParserConfig,
     languageMetaData?: LanguageMetaData,
-    module?: Module<LangiumServices, PartialLangiumServices>
-    sharedModule?: Module<LangiumSharedServices, PartialLangiumSharedServices>
-}): Promise<LangiumServices> {
+    module?: Module<L, unknown>
+    sharedModule?: Module<S, unknown>
+}): Promise<L> {
     const grammarServices = config.grammarServices ?? createLangiumGrammarServices(EmptyFileSystem).grammar;
     const uri = URI.parse('memory:///grammar.langium');
     const factory = grammarServices.shared.workspace.LangiumDocumentFactory;

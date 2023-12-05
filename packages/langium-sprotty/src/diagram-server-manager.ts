@@ -20,15 +20,22 @@ import { DiagramActionNotification } from './lsp.js';
  * client closes the respective diagram.
  */
 export interface DiagramServerManager {
+
+    /**
+     * Find the DiagramServer instances that match the given document URI.
+     */
+    findServersForUri(documentUri: URI): DiagramServer[];
+
     /**
      * Called when an action message is sent from the client to the server.
      */
-    acceptAction(message: ActionMessage): Promise<void>
+    acceptAction(message: ActionMessage): Promise<void>;
 
     /**
      * The client application notified closing of a specific diagram client.
      */
-    removeClient(clientId: string): void
+    removeClient(clientId: string): void;
+
 }
 
 export class DefaultDiagramServerManager implements DiagramServerManager {
@@ -39,7 +46,7 @@ export class DefaultDiagramServerManager implements DiagramServerManager {
     protected readonly diagramServerMap: Map<string, DiagramServer> = new Map();
 
     protected changedUris: URI[] = [];
-    protected outdatedDocuments: Map<LangiumDocument, DiagramServer> = new Map();
+    protected outdatedDocuments: Map<LangiumDocument, DiagramServer[]> = new Map();
 
     constructor(services: LangiumSprottySharedServices) {
         this.connection = services.lsp.Connection;
@@ -66,43 +73,58 @@ export class DefaultDiagramServerManager implements DiagramServerManager {
      * Listen to completed builds and trigger diagram updates accordingly.
      */
     protected documentsBuilt(built: LangiumDocument[], cancelToken: CancellationToken): Promise<void> {
-        stream(built)
+        for (const document of built) {
             // Only consider documents that were previously marked as changed
-            .filter(doc => this.changedUris.some(uri => UriUtils.equals(uri, doc.uri)))
-            // Track the document URIs to diagram servers via the `sourceUri` option sent with the `RequestModelAction`
-            .map(doc => <[LangiumDocument, DiagramServer]>[
-                doc,
-                stream(this.diagramServerMap.values()).find(server => UriUtils.equals(doc.uri, server.state.options?.sourceUri as string))
-            ])
-            .forEach(entry => {
-                if (entry[1]) {
-                    this.outdatedDocuments.set(entry[0], entry[1]);
+            if (this.changedUris.some(uri => UriUtils.equals(uri, document.uri))) {
+                // Track the document URIs to diagram servers via the `sourceUri` option sent with the `RequestModelAction`
+                const servers = this.findServersForUri(document.uri);
+                if (servers.length > 0) {
+                    this.outdatedDocuments.set(document, servers);
                 }
-            });
+            }
+        }
         this.changedUris = [];
         return this.updateDiagrams(this.outdatedDocuments, cancelToken);
     }
 
-    protected async updateDiagrams(documents: Map<LangiumDocument, DiagramServer>, cancelToken: CancellationToken): Promise<void> {
+    protected async updateDiagrams(documents: Map<LangiumDocument, DiagramServer[]>, cancelToken: CancellationToken): Promise<void> {
         while (documents.size > 0) {
             await interruptAndCheck(cancelToken);
             const [firstEntry] = documents;
-            const [document, diagramServer] = firstEntry;
+            const [document, diagramServers] = firstEntry;
             const language = this.serviceRegistry.getServices(document.uri) as LangiumSprottyServices;
             if (!language.diagram) {
                 throw new Error(`The '${language.LanguageMetaData.languageId}' language does not support diagrams.`);
             }
-            const diagramGenerator = language.diagram.DiagramGenerator;
-            const model = await diagramGenerator.generate(<LangiumDiagramGeneratorArguments>{
-                document,
-                options: diagramServer.state.options ?? {},
-                state: diagramServer.state,
-                cancelToken
-            });
-            // Send a model update without awaiting it (the promise is resolved when the update is finished)
-            diagramServer.updateModel(model).catch(err => console.error('Model update failed: ' + err));
+            if (this.shouldUpdateDiagram(document, language)) {
+                const diagramGenerator = language.diagram.DiagramGenerator;
+                for (const diagramServer of diagramServers) {
+                    const model = await diagramGenerator.generate(<LangiumDiagramGeneratorArguments>{
+                        document,
+                        options: diagramServer.state.options ?? {},
+                        state: diagramServer.state,
+                        cancelToken
+                    });
+                    // Send a model update without awaiting it (the promise is resolved when the update is finished)
+                    diagramServer.updateModel(model).catch(err => console.error('Model update failed: ' + err));
+                }
+            }
             documents.delete(document);
         }
+    }
+
+    /**
+     * Determine whether we should actually update the given document. The default implementation skips
+     * updating if there are lexer errors or parser errors.
+     */
+    protected shouldUpdateDiagram(document: LangiumDocument, _language: LangiumSprottyServices): boolean {
+        return document.parseResult.lexerErrors.length === 0 && document.parseResult.parserErrors.length === 0;
+    }
+
+    findServersForUri(documentUri: URI): DiagramServer[] {
+        return stream(this.diagramServerMap.values())
+            .filter(server => UriUtils.equals(documentUri, server.state.options?.sourceUri as string))
+            .toArray();
     }
 
     acceptAction({ clientId, action }: ActionMessage): Promise<void> {

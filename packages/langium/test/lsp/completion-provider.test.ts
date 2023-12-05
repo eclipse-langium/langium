@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import { describe, test, beforeEach } from 'vitest';
-import type { AstNode, AstNodeDescription, LangiumDocument } from 'langium';
+import type { AstNode, AstNodeDescription, LangiumDocument, LangiumServices, Module, PartialLangiumServices } from 'langium';
 import { DefaultAstNodeDescriptionProvider, DefaultCompletionProvider, EmptyFileSystem } from 'langium';
 import { createLangiumGrammarServices, createServicesForGrammar } from 'langium/grammar';
 import { clearDocuments, expectCompletion, parseHelper } from 'langium/test';
@@ -207,7 +207,7 @@ describe('Completion within alternatives', () => {
                         }
                     }(services)
                 }
-            }
+            } satisfies Module<LangiumServices, PartialLangiumServices>
         });
         const completion = expectCompletion(services);
         const text = `

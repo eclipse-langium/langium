@@ -4,12 +4,29 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { URI, type Module } from 'langium';
+import type { Module, PartialLangiumServices } from 'langium';
 import type { DiagramOptions } from 'sprotty-protocol';
-import type { LangiumSprottyServices, LangiumSprottySharedServices, SprottySharedServices } from './sprotty-services.js';
+import type { LangiumSprottyServices, LangiumSprottySharedServices, SprottyDefaultServices, SprottySharedServices } from './sprotty-services.js';
 import { DiagramServer } from 'sprotty-protocol';
+import { ServerActionHandlerRegistry } from 'sprotty-protocol/lib/action-handler.js';
+import { URI } from 'vscode-uri';
 import { DefaultDiagramServerManager } from './diagram-server-manager.js';
 import { DiagramActionNotification } from './lsp.js';
+import { DefaultPositionTracker, TrackingDocumentHighlightProvider } from './position-tracker.js';
+import { DefaultTraceProvider } from './trace-provider.js';
+import { DefaultDiagnosticMarkerProvider } from './diagnostic-marker-provider.js';
+
+export const SprottyDefaultModule: Module<LangiumSprottyServices, SprottyDefaultServices & PartialLangiumServices> = {
+    diagram: {
+        DiagnosticMarkerProvider: (services) => new DefaultDiagnosticMarkerProvider(services),
+        PositionTracker: (services) => new DefaultPositionTracker(services),
+        ServerActionHandlerRegistry: () => new ServerActionHandlerRegistry(),
+        TraceProvider: (services) => new DefaultTraceProvider(services)
+    },
+    lsp: {
+        DocumentHighlightProvider: (services) => new TrackingDocumentHighlightProvider(services)
+    }
+};
 
 export const defaultDiagramServerFactory =
 (services: LangiumSprottySharedServices): ((clientId: string, options?: DiagramOptions) => DiagramServer) => {
@@ -36,6 +53,6 @@ export const defaultDiagramServerFactory =
 export const SprottySharedModule: Module<LangiumSprottySharedServices, SprottySharedServices> = {
     diagram: {
         diagramServerFactory: defaultDiagramServerFactory,
-        DiagramServerManager: services => new DefaultDiagramServerManager(services)
+        DiagramServerManager: (services) => new DefaultDiagramServerManager(services)
     }
 };
