@@ -6,7 +6,11 @@
 
 import type { LangiumServices, LangiumSharedServices } from 'langium';
 import type { DiagramOptions, DiagramServer, DiagramServices } from 'sprotty-protocol';
+import type { ServerActionHandlerRegistry } from 'sprotty-protocol/lib/action-handler.js';
+import type { DiagnosticMarkerProvider } from './diagnostic-marker-provider.js';
 import type { DiagramServerManager } from './diagram-server-manager.js';
+import type { PositionTracker } from './position-tracker.js';
+import type { TraceProvider } from './trace-provider.js';
 
 /**
  * Services required by the Sprotty diagram server to generate diagram models from a Langium AST.
@@ -16,9 +20,23 @@ export type SprottyDiagramServices = {
 }
 
 /**
+ * Services provided by default implementations of the Langium-Sprotty integration.
+ */
+export type SprottyDefaultServices = {
+    diagram: {
+        DiagnosticMarkerProvider: DiagnosticMarkerProvider
+        PositionTracker: PositionTracker
+        ServerActionHandlerRegistry: ServerActionHandlerRegistry
+        TraceProvider: TraceProvider
+    }
+}
+
+/**
  * Extension of the `LangiumServices` with the diagram-related services.
  */
-export type LangiumSprottyServices = LangiumServices & SprottyDiagramServices
+export type LangiumSprottyServices = LangiumServices & SprottyDiagramServices & SprottyDefaultServices & {
+    shared: LangiumSprottySharedServices
+}
 
 /**
  * Services provided by the `SprottySharedModule` for the integration of Langium and Sprotty.

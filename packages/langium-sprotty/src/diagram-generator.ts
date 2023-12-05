@@ -4,9 +4,12 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { AstNode, LangiumDocument, LangiumDocuments, LangiumServices } from 'langium';
-import { URI } from 'langium';
+import type { AstNode, LangiumDocument, LangiumDocuments } from 'langium';
 import type { GeneratorArguments, IDiagramGenerator, SModelRoot } from 'sprotty-protocol';
+import type { DiagnosticMarkerProvider } from './diagnostic-marker-provider.js';
+import type { TraceProvider } from './trace-provider.js';
+import type { LangiumSprottyServices } from './sprotty-services.js';
+import { URI } from 'langium';
 import { CancellationToken } from 'vscode-languageserver';
 
 /**
@@ -34,9 +37,13 @@ export interface GeneratorContext<T extends AstNode = AstNode> extends LangiumDi
 export abstract class LangiumDiagramGenerator implements IDiagramGenerator {
 
     protected readonly langiumDocuments: LangiumDocuments;
+    protected readonly markerProvider: DiagnosticMarkerProvider;
+    protected readonly traceProvider: TraceProvider;
 
-    constructor(services: LangiumServices) {
+    constructor(services: LangiumSprottyServices) {
         this.langiumDocuments = services.shared.workspace.LangiumDocuments;
+        this.markerProvider = services.diagram.DiagnosticMarkerProvider;
+        this.traceProvider = services.diagram.TraceProvider;
     }
 
     /**

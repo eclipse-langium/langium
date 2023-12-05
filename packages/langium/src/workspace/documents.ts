@@ -4,8 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { Range } from 'vscode-languageserver-textdocument';
-import type { Diagnostic, TextDocuments } from 'vscode-languageserver';
+import type { Diagnostic, Range, TextDocuments } from 'vscode-languageserver';
 import type { ParseResult } from '../parser/langium-parser.js';
 import type { ServiceRegistry } from '../service-registry.js';
 import type { LangiumSharedServices } from '../services.js';
