@@ -5,9 +5,9 @@
  ******************************************************************************/
 
 import { describe, expect, test } from 'vitest';
-import { Deferred, delayNextTick, DefaultMutexLock } from 'langium';
+import { Deferred, delayNextTick, DefaultWorkspaceLock } from 'langium';
 
-describe('Mutex locking', () => {
+describe('WorkspaceLock', () => {
 
     test('Actions are executed sequentially', async () => {
         const size = 5;
@@ -16,7 +16,7 @@ describe('Mutex locking', () => {
             counter++;
             await deferred.promise;
         };
-        const mutex = new DefaultMutexLock();
+        const mutex = new DefaultWorkspaceLock();
         const deferredItems: Deferred[] = [];
         for (let i = 0; i < size; i++) {
             const deferred = new Deferred();
@@ -32,7 +32,7 @@ describe('Mutex locking', () => {
 
     test('Write actions have higher priority than read actions', async () => {
         let counter = 0;
-        const mutex = new DefaultMutexLock();
+        const mutex = new DefaultWorkspaceLock();
         mutex.write(async () => {
             // Increase counter to 1
             counter++;
@@ -58,7 +58,7 @@ describe('Mutex locking', () => {
     });
 
     test('Write action results can be awaited', async () => {
-        const mutex = new DefaultMutexLock();
+        const mutex = new DefaultWorkspaceLock();
         const now = Date.now();
         const magicalNumber = await mutex.read(() => new Promise(resolve => setTimeout(() => resolve(42), 10)));
         // Confirm that at least 10ms have elapsed
@@ -69,7 +69,7 @@ describe('Mutex locking', () => {
 
     test('Actions can be cancelled explicitly', async () => {
         let counter = 0;
-        const mutex = new DefaultMutexLock();
+        const mutex = new DefaultWorkspaceLock();
         mutex.write(async token => {
             // Increase counter to 1
             counter++;
@@ -83,7 +83,7 @@ describe('Mutex locking', () => {
 
         await delayNextTick();
         expect(counter).toBe(1);
-        mutex.cancel();
+        mutex.cancelWrite();
         await delayNextTick();
         // Counter is 1, since first action has been cancelled
         expect(counter).toBe(1);
@@ -91,7 +91,7 @@ describe('Mutex locking', () => {
 
     test('Actions can be cancelled by enqueueing another action', async () => {
         let counter = 0;
-        const mutex = new DefaultMutexLock();
+        const mutex = new DefaultWorkspaceLock();
         mutex.write(async token => {
             // Increase counter to 1
             counter++;

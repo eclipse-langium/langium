@@ -10,10 +10,10 @@ import { URI, UriUtils } from '../utils/uri-util.js';
 import type { WorkspaceFolder } from 'vscode-languageserver';
 import type { ServiceRegistry } from '../service-registry.js';
 import type { LangiumSharedServices } from '../services.js';
-import type { MutexLock } from '../utils/promise-util.js';
 import type { BuildOptions, DocumentBuilder } from './document-builder.js';
 import type { LangiumDocument, LangiumDocuments } from './documents.js';
 import type { FileSystemNode, FileSystemProvider } from './file-system-provider.js';
+import type { WorkspaceLock } from './workspace-lock.js';
 
 /**
  * The workspace manager is responsible for finding source files in the workspace.
@@ -43,7 +43,7 @@ export class DefaultWorkspaceManager implements WorkspaceManager {
     protected readonly langiumDocuments: LangiumDocuments;
     protected readonly documentBuilder: DocumentBuilder;
     protected readonly fileSystemProvider: FileSystemProvider;
-    protected readonly mutex: MutexLock;
+    protected readonly mutex: WorkspaceLock;
     protected folders?: WorkspaceFolder[];
 
     constructor(services: LangiumSharedServices) {
@@ -51,7 +51,7 @@ export class DefaultWorkspaceManager implements WorkspaceManager {
         this.langiumDocuments = services.workspace.LangiumDocuments;
         this.documentBuilder = services.workspace.DocumentBuilder;
         this.fileSystemProvider = services.workspace.FileSystemProvider;
-        this.mutex = services.workspace.MutexLock;
+        this.mutex = services.workspace.WorkspaceLock;
 
         services.lsp.LanguageServer.onInitialize(params => {
             this.folders = params.workspaceFolders ?? undefined;

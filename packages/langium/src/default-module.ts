@@ -35,7 +35,6 @@ import { DefaultScopeComputation } from './references/scope-computation.js';
 import { DefaultScopeProvider } from './references/scope-provider.js';
 import { DefaultJsonSerializer } from './serializer/json-serializer.js';
 import { DefaultServiceRegistry } from './service-registry.js';
-import { DefaultMutexLock } from './utils/promise-util.js';
 import { DefaultDocumentValidator } from './validation/document-validator.js';
 import { ValidationRegistry } from './validation/validation-registry.js';
 import { DefaultAstNodeDescriptionProvider, DefaultReferenceDescriptionProvider } from './workspace/ast-descriptions.js';
@@ -49,6 +48,7 @@ import { DefaultLexer } from './parser/lexer.js';
 import { JSDocDocumentationProvider } from './documentation/documentation-provider.js';
 import { DefaultCommentProvider } from './documentation/comment-provider.js';
 import { LangiumParserErrorMessageProvider } from './parser/langium-parser.js';
+import { DefaultWorkspaceLock } from './workspace/workspace-lock.js';
 
 /**
  * Context required for creating the default language-specific dependency injection module.
@@ -150,7 +150,7 @@ export function createDefaultSharedModule(context: DefaultSharedModuleContext): 
             IndexManager: (services) => new DefaultIndexManager(services),
             WorkspaceManager: (services) => new DefaultWorkspaceManager(services),
             FileSystemProvider: (services) => context.fileSystemProvider(services),
-            MutexLock: () => new DefaultMutexLock(),
+            WorkspaceLock: () => new DefaultWorkspaceLock(),
             ConfigurationProvider: (services) => new DefaultConfigurationProvider(services)
         }
     };

@@ -11,4 +11,5 @@ export * from './document-builder.js';
 export * from './documents.js';
 export * from './file-system-provider.js';
 export * from './index-manager.js';
+export * from './workspace-lock.js';
 export * from './workspace-manager.js';
