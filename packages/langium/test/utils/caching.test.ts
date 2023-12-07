@@ -10,15 +10,14 @@ import { beforeEach, describe, expect, test } from 'vitest';
 import type { DefaultDocumentBuilder} from 'langium';
 import { DocumentCache, EmptyFileSystem, URI, WorkspaceCache } from 'langium';
 import { createLangiumGrammarServices } from 'langium/grammar';
+import { setTextDocument } from 'langium/test';
 
 const services = createLangiumGrammarServices(EmptyFileSystem);
 const workspace = services.shared.workspace;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const textDocuments = services.shared.workspace.TextDocuments as any;
 const document1 = workspace.LangiumDocumentFactory.fromString('', URI.file('/document1.langium'));
-textDocuments._syncedDocuments.set(document1.uri.toString(), document1.textDocument);
+setTextDocument(services.shared, document1.textDocument);
 const document2 = workspace.LangiumDocumentFactory.fromString('', URI.file('/document2.langium'));
-textDocuments._syncedDocuments.set(document2.uri.toString(), document2.textDocument);
+setTextDocument(services.shared, document2.textDocument);
 workspace.LangiumDocuments.addDocument(document1);
 workspace.LangiumDocuments.addDocument(document2);
 

@@ -694,6 +694,19 @@ export function expectWarning<T extends AstNode = AstNode, N extends AstNode = A
     });
 }
 
+/**
+ * Add the given document to the `TextDocuments` service, simulating it being opened in an editor.
+ */
+export function setTextDocument(services: LangiumServices | LangiumSharedServices, document: TextDocument): Disposable {
+    const shared = 'shared' in services ? services.shared : services;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const textDocuments = shared.workspace.TextDocuments as any;
+    textDocuments._syncedDocuments.set(document.uri, document);
+    return Disposable.create(() => {
+        textDocuments._syncedDocuments.delete(document.uri);
+    });
+}
+
 export function clearDocuments(services: LangiumServices | LangiumSharedServices, documents?: LangiumDocument[]): Promise<void> {
     const shared = 'shared' in services ? services.shared : services;
     const allDocs = (documents ? stream(documents) : shared.workspace.LangiumDocuments.all).map(x => x.uri).toArray();

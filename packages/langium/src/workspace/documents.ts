@@ -220,6 +220,8 @@ export class DefaultLangiumDocumentFactory implements LangiumDocumentFactory {
     }
 
     update<T extends AstNode = AstNode>(document: Mutable<LangiumDocument<T>>): LangiumDocument<T> {
+        // The CST full text property contains the original text that was used to create the AST.
+        const oldText = document.parseResult.value.$cstNode?.root.fullText;
         const textDocument = this.textDocuments.get(document.uri.toString());
         const text = textDocument ? textDocument.getText() : this.getContentFromFileSystem(document.uri);
 
@@ -240,8 +242,13 @@ export class DefaultLangiumDocumentFactory implements LangiumDocumentFactory {
             );
         }
 
-        document.parseResult = this.parse(document.uri, text);
-        (document.parseResult.value as Mutable<AstNode>).$document = document;
+        // Some of these documents can be pretty large, so parsing them again can be quite expensive.
+        // Therefore, we only parse if the text has actually changed.
+        if (oldText !== text) {
+            document.parseResult = this.parse(document.uri, text);
+            (document.parseResult.value as Mutable<AstNode>).$document = document;
+        }
+        document.state = DocumentState.Parsed;
         return document;
     }
 

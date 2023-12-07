@@ -8,7 +8,7 @@ import type { AstNode, LangiumDocument, ReferenceDescription, URI } from 'langiu
 import type { Domainmodel } from '../src/language-server/generated/ast.js';
 import { describe, expect, test } from 'vitest';
 import { EmptyFileSystem, getDocument } from 'langium';
-import { parseDocument } from 'langium/test';
+import { parseDocument, setTextDocument } from 'langium/test';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { createDomainModelServices } from '../src/language-server/domain-model-module.js';
 
@@ -21,10 +21,15 @@ describe('Cross references indexed after affected process', () => {
         let allRefs = await getReferences((superDoc.parseResult.value as Domainmodel).elements[0]);
         expect(allRefs.length).toEqual(0); // linking error
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const textDocs: any = services.shared.workspace.TextDocuments;
-        textDocs._syncedDocuments.set(superDoc.textDocument.uri.toString(),
-            TextDocument.create(superDoc.textDocument.uri.toString(), superDoc.textDocument.languageId, 0, 'entity SuperEntity {}'));
+        setTextDocument(
+            services,
+            TextDocument.create(
+                superDoc.textDocument.uri.toString(),
+                superDoc.textDocument.languageId,
+                0,
+                'entity SuperEntity {}'
+            )
+        );
         await services.shared.workspace.DocumentBuilder.update([superDoc.uri], []);
 
         const updatedSuperDoc = await services.shared.workspace.LangiumDocuments.getOrCreateDocument(superDoc.uri);
