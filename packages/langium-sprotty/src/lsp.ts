@@ -67,6 +67,7 @@ interface DSWithIndex extends DiagramState {
  */
 export function addDiagramSelectionHandler(services: LangiumSprottyServices): void {
     const traceProvider = services.diagram.TraceProvider;
+    const nameProvider = services.references.NameProvider;
     const connection = services.shared.lsp.Connection;
     if (!connection) {
         return;
@@ -78,10 +79,11 @@ export function addDiagramSelectionHandler(services: LangiumSprottyServices): vo
             if (selectedElement) {
                 const source = traceProvider.getSource(selectedElement);
                 if (source && source.$cstNode) {
+                    const nameNode = nameProvider.getNameNode(source);
                     connection.sendNotification(OpenInTextEditorNotification.type, {
                         location: {
                             uri: getDocument(source).uri.toString(),
-                            range: source.$cstNode.range
+                            range: (nameNode ?? source.$cstNode).range
                         },
                         forceOpen: false
                     });
@@ -96,7 +98,7 @@ export function addDiagramSelectionHandler(services: LangiumSprottyServices): vo
  * Adds a listener for text position changes that sends actions to the diagram client to select the corresponding
  * target elements in the diagram, if a trace is available.
  */
-export function addTextSelectionHandler(services: LangiumSprottyServices, fitToScreen?: Partial<FitToScreenAction> | 'none'): void {
+export function addTextSelectionHandler(services: LangiumSprottyServices, options: { fitToScreen?: Partial<FitToScreenAction> | 'none' } = {}): void {
     const diagramServerManager = services.shared.diagram.DiagramServerManager;
     const traceProvider = services.diagram.TraceProvider;
     const grammarConfig = services.parser.GrammarConfig;
@@ -124,11 +126,11 @@ export function addTextSelectionHandler(services: LangiumSprottyServices, fitToS
                             deselectedElementsIDs: []
                         } satisfies SelectAction);
                         // Navigate to the target element
-                        if (fitToScreen !== 'none') {
+                        if (options.fitToScreen !== 'none') {
                             diagramServer.dispatch({
                                 maxZoom: 1.0,
                                 animate: true,
-                                ...fitToScreen,
+                                ...options.fitToScreen,
                                 kind: FitToScreenAction.KIND,
                                 elementIds: [target.id]
                             } satisfies FitToScreenAction);
