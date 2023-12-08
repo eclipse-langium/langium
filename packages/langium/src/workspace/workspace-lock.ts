@@ -72,55 +72,41 @@ export class DefaultWorkspaceLock implements WorkspaceLock {
             cancellationToken: cancellationToken ?? CancellationToken.None
         };
         queue.push(entry);
-        this.tryPerformNextOperation();
+        this.performNextOperation();
         return deferred.promise as Promise<T>;
     }
 
-    private tryPerformNextOperation(): void {
-        if (this.done) {
-            this.performNextOperation();
+    private async performNextOperation(): Promise<void> {
+        if (!this.done) {
+            return;
         }
-    }
-
-    private performNextOperation(): void {
+        const entries: LockEntry[] = [];
         if (this.writeQueue.length > 0) {
             // Just perform the next write action
-            this.performOperation([this.writeQueue.shift()!]);
+            entries.push(this.writeQueue.shift()!);
         } else if (this.readQueue.length > 0) {
             // Empty the read queue and perform all actions in parallel
-            const entries = this.readQueue.splice(0, this.readQueue.length);
-            this.performOperation(entries);
-        }
-    }
-
-    private performOperation(entries: LockEntry[]): void {
-        if (!this.done) {
-            throw new Error('Mutex is not ready to accept new operation');
+            entries.push(...this.readQueue.splice(0, this.readQueue.length));
+        } else {
+            return;
         }
         this.done = false;
-        let completed = 0;
-        const goToNext = () => {
-            completed += 1;
-            // If all specified actions have been completed, we can perform the next operation
-            if (completed === entries.length) {
-                this.done = true;
-                this.performNextOperation();
+        await Promise.all(entries.map(async ({ action, deferred, cancellationToken }) => {
+            try {
+                // Move the execution of the action to the next event loop tick via `Promise.resolve()`
+                const result = await Promise.resolve().then(() => action(cancellationToken));
+                deferred.resolve(result);
+            } catch (err) {
+                if (isOperationCancelled(err)) {
+                    // If the operation was cancelled, we don't want to reject the promise
+                    deferred.resolve(undefined);
+                } else {
+                    deferred.reject(err);
+                }
             }
-        };
-        for (const entry of entries) {
-            const { action, deferred, cancellationToken } = entry;
-            Promise.resolve()
-                .then(() => action(cancellationToken))
-                .then(result => deferred.resolve(result))
-                .catch(err => {
-                    if (isOperationCancelled(err)) {
-                        // If the operation was cancelled, we don't want to reject the promise
-                        deferred.resolve(undefined);
-                    } else {
-                        deferred.reject(err);
-                    }
-                }).finally(() => goToNext());
-        }
+        }));
+        this.done = true;
+        this.performNextOperation();
     }
 
     cancelWrite(): void {
