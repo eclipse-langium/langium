@@ -79,8 +79,16 @@ export class DefaultDocumentUpdateHandler implements DocumentUpdateHandler {
     }
 
     didChangeWatchedFiles(params: DidChangeWatchedFilesParams): void {
-        const changedUris = params.changes.filter(c => c.type !== FileChangeType.Deleted).map(c => URI.parse(c.uri));
-        const deletedUris = params.changes.filter(c => c.type === FileChangeType.Deleted).map(c => URI.parse(c.uri));
+        const changedUris = stream(params.changes)
+            .filter(c => c.type !== FileChangeType.Deleted)
+            .distinct(c => c.uri)
+            .map(c => URI.parse(c.uri))
+            .toArray();
+        const deletedUris = stream(params.changes)
+            .filter(c => c.type === FileChangeType.Deleted)
+            .distinct(c => c.uri)
+            .map(c => URI.parse(c.uri))
+            .toArray();
         this.fireDocumentUpdate(changedUris, deletedUris);
     }
 
