@@ -58,6 +58,7 @@ describe('Check yeoman generator works', () => {
             }).finally(() => {
                 context.cleanTestDirectory(true);
             });
+        context.cleanTestDirectory(true); // clean-up examples/hello-world
     }, 120_000);
 
 });

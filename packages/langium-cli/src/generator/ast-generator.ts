@@ -5,10 +5,10 @@
  ******************************************************************************/
 import type { Grammar, LangiumServices } from 'langium';
 import { type Generated, expandToNode, joinToNode, toString } from 'langium/generate';
-import type { AstTypes, Property } from 'langium/grammar';
+import type { AstTypes, Property, PropertyDefaultValue } from 'langium/grammar';
 import type { LangiumConfig } from '../package.js';
 import { streamAllContents, MultiMap, GrammarAST } from 'langium';
-import { collectAst, collectTypeHierarchy, findReferenceTypes, hasArrayType, isAstType, hasBooleanType, mergeTypesAndInterfaces } from 'langium/grammar';
+import { collectAst, collectTypeHierarchy, findReferenceTypes, isAstType, mergeTypesAndInterfaces } from 'langium/grammar';
 import { collectTerminalRegexps, generatedHeader } from './util.js';
 
 export function generateAst(services: LangiumServices, grammars: Grammar[], config: LangiumConfig): string {
@@ -82,15 +82,13 @@ function buildTypeMetaDataMethod(astTypes: AstTypes): Generated {
                     astTypes.interfaces,
                     interfaceType => {
                         const props = interfaceType.properties;
-                        const arrayProps = props.filter(e => hasArrayType(e.type));
-                        const booleanProps = props.filter(e => hasBooleanType(e.type));
-                        return (arrayProps.length > 0 || booleanProps.length > 0)
+                        return (props.length > 0)
                             ? expandToNode`
                                 case '${interfaceType.name}': {
                                     return {
                                         name: '${interfaceType.name}',
-                                        mandatory: [
-                                            ${buildMandatoryType(arrayProps, booleanProps)}
+                                        properties: [
+                                            ${buildPropertyType(props)}
                                         ]
                                     };
                                 }
@@ -105,7 +103,7 @@ function buildTypeMetaDataMethod(astTypes: AstTypes): Generated {
             default: {
                 return {
                     name: type,
-                    mandatory: []
+                    properties: []
                 };
             }
         }
@@ -113,17 +111,29 @@ function buildTypeMetaDataMethod(astTypes: AstTypes): Generated {
     /* eslint-enable @typescript-eslint/indent */
 }
 
-function buildMandatoryType(arrayProps: Property[], booleanProps: Property[]): Generated {
-    const all = arrayProps.concat(booleanProps).sort((a, b) => a.name.localeCompare(b.name));
+function buildPropertyType(props: Property[]): Generated {
+    const all = props.sort((a, b) => a.name.localeCompare(b.name));
 
     return joinToNode(
         all,
         property => {
-            const type = arrayProps.includes(property) ? 'array' : 'boolean';
-            return `{ name: '${property.name}', type: '${type}' }`;
+            const defaultValue = stringifyDefaultValue(property.defaultValue);
+            return `{ name: '${property.name}'${defaultValue ? `, defaultValue: ${defaultValue}` : ''} }`;
         },
         { separator: ',', appendNewLineIfNotEmpty: true}
     );
+}
+
+function stringifyDefaultValue(value?: PropertyDefaultValue): string | undefined {
+    if (typeof value === 'string') {
+        return `"${value}"`;
+    } else if (Array.isArray(value)) {
+        return `[${value.map(e => stringifyDefaultValue(e)).join(', ')}]`;
+    } else if (value !== undefined) {
+        return value.toString();
+    } else {
+        return undefined;
+    }
 }
 
 function buildReferenceTypeMethod(crossReferenceTypes: CrossReferenceType[]): Generated {

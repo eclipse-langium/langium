@@ -10,6 +10,7 @@ import { AbstractAstReflection } from '../../syntax-tree.js';
 export const LangiumGrammarTerminals = {
     ID: /\^?[_a-zA-Z][\w_]*/,
     STRING: /"(\\.|[^"\\])*"|'(\\.|[^'\\])*'/,
+    NUMBER: /NaN|-?((\d*\.\d+|\d+)([Ee][+-]?\d+)?|Infinity)/,
     RegexLiteral: /\/(?![*+?])(?:[^\r\n\[/\\]|\\.|\[(?:[^\r\n\]\\]|\\.)*\])+\/[a-z]*/,
     WS: /\s+/,
     ML_COMMENT: /\/\*[\s\S]*?\*\//,
@@ -32,7 +33,7 @@ export function isAbstractType(item: unknown): item is AbstractType {
     return reflection.isInstance(item, AbstractType);
 }
 
-export type Condition = Conjunction | Disjunction | LiteralCondition | Negation | ParameterReference;
+export type Condition = BooleanLiteral | Conjunction | Disjunction | Negation | ParameterReference;
 
 export const Condition = 'Condition';
 
@@ -60,6 +61,14 @@ export function isTypeDefinition(item: unknown): item is TypeDefinition {
     return reflection.isInstance(item, TypeDefinition);
 }
 
+export type ValueLiteral = ArrayLiteral | BooleanLiteral | NumberLiteral | StringLiteral;
+
+export const ValueLiteral = 'ValueLiteral';
+
+export function isValueLiteral(item: unknown): item is ValueLiteral {
+    return reflection.isInstance(item, ValueLiteral);
+}
+
 export interface AbstractElement extends AstNode {
     readonly $type: 'AbstractElement' | 'Action' | 'Alternatives' | 'Assignment' | 'CharacterRange' | 'CrossReference' | 'EndOfFile' | 'Group' | 'Keyword' | 'NegatedToken' | 'RegexToken' | 'RuleCall' | 'TerminalAlternatives' | 'TerminalGroup' | 'TerminalRuleCall' | 'UnorderedGroup' | 'UntilToken' | 'Wildcard';
     cardinality?: '*' | '+' | '?'
@@ -72,6 +81,18 @@ export function isAbstractElement(item: unknown): item is AbstractElement {
     return reflection.isInstance(item, AbstractElement);
 }
 
+export interface ArrayLiteral extends AstNode {
+    readonly $container: ArrayLiteral | TypeAttribute;
+    readonly $type: 'ArrayLiteral';
+    elements: Array<ValueLiteral>
+}
+
+export const ArrayLiteral = 'ArrayLiteral';
+
+export function isArrayLiteral(item: unknown): item is ArrayLiteral {
+    return reflection.isInstance(item, ArrayLiteral);
+}
+
 export interface ArrayType extends AstNode {
     readonly $container: ArrayType | ReferenceType | Type | TypeAttribute | UnionType;
     readonly $type: 'ArrayType';
@@ -82,6 +103,18 @@ export const ArrayType = 'ArrayType';
 
 export function isArrayType(item: unknown): item is ArrayType {
     return reflection.isInstance(item, ArrayType);
+}
+
+export interface BooleanLiteral extends AstNode {
+    readonly $container: ArrayLiteral | Conjunction | Disjunction | Group | NamedArgument | Negation | TypeAttribute;
+    readonly $type: 'BooleanLiteral';
+    true: boolean
+}
+
+export const BooleanLiteral = 'BooleanLiteral';
+
+export function isBooleanLiteral(item: unknown): item is BooleanLiteral {
+    return reflection.isInstance(item, BooleanLiteral);
 }
 
 export interface Conjunction extends AstNode {
@@ -167,18 +200,6 @@ export function isInterface(item: unknown): item is Interface {
     return reflection.isInstance(item, Interface);
 }
 
-export interface LiteralCondition extends AstNode {
-    readonly $container: Conjunction | Disjunction | Group | NamedArgument | Negation;
-    readonly $type: 'LiteralCondition';
-    true: boolean
-}
-
-export const LiteralCondition = 'LiteralCondition';
-
-export function isLiteralCondition(item: unknown): item is LiteralCondition {
-    return reflection.isInstance(item, LiteralCondition);
-}
-
 export interface NamedArgument extends AstNode {
     readonly $container: RuleCall;
     readonly $type: 'NamedArgument';
@@ -203,6 +224,18 @@ export const Negation = 'Negation';
 
 export function isNegation(item: unknown): item is Negation {
     return reflection.isInstance(item, Negation);
+}
+
+export interface NumberLiteral extends AstNode {
+    readonly $container: ArrayLiteral | TypeAttribute;
+    readonly $type: 'NumberLiteral';
+    value: number
+}
+
+export const NumberLiteral = 'NumberLiteral';
+
+export function isNumberLiteral(item: unknown): item is NumberLiteral {
+    return reflection.isInstance(item, NumberLiteral);
 }
 
 export interface Parameter extends AstNode {
@@ -289,6 +322,18 @@ export function isSimpleType(item: unknown): item is SimpleType {
     return reflection.isInstance(item, SimpleType);
 }
 
+export interface StringLiteral extends AstNode {
+    readonly $container: ArrayLiteral | TypeAttribute;
+    readonly $type: 'StringLiteral';
+    value: string
+}
+
+export const StringLiteral = 'StringLiteral';
+
+export function isStringLiteral(item: unknown): item is StringLiteral {
+    return reflection.isInstance(item, StringLiteral);
+}
+
 export interface TerminalRule extends AstNode {
     readonly $container: Grammar;
     readonly $type: 'TerminalRule';
@@ -321,6 +366,7 @@ export function isType(item: unknown): item is Type {
 export interface TypeAttribute extends AstNode {
     readonly $container: Interface;
     readonly $type: 'TypeAttribute';
+    defaultValue?: ValueLiteral
     isOptional: boolean
     name: FeatureName
     type: TypeDefinition
@@ -546,8 +592,10 @@ export type LangiumGrammarAstType = {
     AbstractType: AbstractType
     Action: Action
     Alternatives: Alternatives
+    ArrayLiteral: ArrayLiteral
     ArrayType: ArrayType
     Assignment: Assignment
+    BooleanLiteral: BooleanLiteral
     CharacterRange: CharacterRange
     Condition: Condition
     Conjunction: Conjunction
@@ -560,10 +608,10 @@ export type LangiumGrammarAstType = {
     InferredType: InferredType
     Interface: Interface
     Keyword: Keyword
-    LiteralCondition: LiteralCondition
     NamedArgument: NamedArgument
     NegatedToken: NegatedToken
     Negation: Negation
+    NumberLiteral: NumberLiteral
     Parameter: Parameter
     ParameterReference: ParameterReference
     ParserRule: ParserRule
@@ -572,6 +620,7 @@ export type LangiumGrammarAstType = {
     ReturnType: ReturnType
     RuleCall: RuleCall
     SimpleType: SimpleType
+    StringLiteral: StringLiteral
     TerminalAlternatives: TerminalAlternatives
     TerminalGroup: TerminalGroup
     TerminalRule: TerminalRule
@@ -582,13 +631,14 @@ export type LangiumGrammarAstType = {
     UnionType: UnionType
     UnorderedGroup: UnorderedGroup
     UntilToken: UntilToken
+    ValueLiteral: ValueLiteral
     Wildcard: Wildcard
 }
 
 export class LangiumGrammarAstReflection extends AbstractAstReflection {
 
     getAllTypes(): string[] {
-        return ['AbstractElement', 'AbstractRule', 'AbstractType', 'Action', 'Alternatives', 'ArrayType', 'Assignment', 'CharacterRange', 'Condition', 'Conjunction', 'CrossReference', 'Disjunction', 'EndOfFile', 'Grammar', 'GrammarImport', 'Group', 'InferredType', 'Interface', 'Keyword', 'LiteralCondition', 'NamedArgument', 'NegatedToken', 'Negation', 'Parameter', 'ParameterReference', 'ParserRule', 'ReferenceType', 'RegexToken', 'ReturnType', 'RuleCall', 'SimpleType', 'TerminalAlternatives', 'TerminalGroup', 'TerminalRule', 'TerminalRuleCall', 'Type', 'TypeAttribute', 'TypeDefinition', 'UnionType', 'UnorderedGroup', 'UntilToken', 'Wildcard'];
+        return ['AbstractElement', 'AbstractRule', 'AbstractType', 'Action', 'Alternatives', 'ArrayLiteral', 'ArrayType', 'Assignment', 'BooleanLiteral', 'CharacterRange', 'Condition', 'Conjunction', 'CrossReference', 'Disjunction', 'EndOfFile', 'Grammar', 'GrammarImport', 'Group', 'InferredType', 'Interface', 'Keyword', 'NamedArgument', 'NegatedToken', 'Negation', 'NumberLiteral', 'Parameter', 'ParameterReference', 'ParserRule', 'ReferenceType', 'RegexToken', 'ReturnType', 'RuleCall', 'SimpleType', 'StringLiteral', 'TerminalAlternatives', 'TerminalGroup', 'TerminalRule', 'TerminalRuleCall', 'Type', 'TypeAttribute', 'TypeDefinition', 'UnionType', 'UnorderedGroup', 'UntilToken', 'ValueLiteral', 'Wildcard'];
     }
 
     protected override computeIsSubtype(subtype: string, supertype: string): boolean {
@@ -614,15 +664,22 @@ export class LangiumGrammarAstReflection extends AbstractAstReflection {
             case Wildcard: {
                 return this.isSubtype(AbstractElement, supertype);
             }
+            case ArrayLiteral:
+            case NumberLiteral:
+            case StringLiteral: {
+                return this.isSubtype(ValueLiteral, supertype);
+            }
             case ArrayType:
             case ReferenceType:
             case SimpleType:
             case UnionType: {
                 return this.isSubtype(TypeDefinition, supertype);
             }
+            case BooleanLiteral: {
+                return this.isSubtype(Condition, supertype) || this.isSubtype(ValueLiteral, supertype);
+            }
             case Conjunction:
             case Disjunction:
-            case LiteralCondition:
             case Negation:
             case ParameterReference: {
                 return this.isSubtype(Condition, supertype);
@@ -676,144 +733,367 @@ export class LangiumGrammarAstReflection extends AbstractAstReflection {
 
     getTypeMetaData(type: string): TypeMetaData {
         switch (type) {
+            case 'AbstractElement': {
+                return {
+                    name: 'AbstractElement',
+                    properties: [
+                        { name: 'cardinality' },
+                        { name: 'lookahead' }
+                    ]
+                };
+            }
+            case 'ArrayLiteral': {
+                return {
+                    name: 'ArrayLiteral',
+                    properties: [
+                        { name: 'elements', defaultValue: [] }
+                    ]
+                };
+            }
+            case 'ArrayType': {
+                return {
+                    name: 'ArrayType',
+                    properties: [
+                        { name: 'elementType' }
+                    ]
+                };
+            }
+            case 'BooleanLiteral': {
+                return {
+                    name: 'BooleanLiteral',
+                    properties: [
+                        { name: 'true', defaultValue: false }
+                    ]
+                };
+            }
+            case 'Conjunction': {
+                return {
+                    name: 'Conjunction',
+                    properties: [
+                        { name: 'left' },
+                        { name: 'right' }
+                    ]
+                };
+            }
+            case 'Disjunction': {
+                return {
+                    name: 'Disjunction',
+                    properties: [
+                        { name: 'left' },
+                        { name: 'right' }
+                    ]
+                };
+            }
             case 'Grammar': {
                 return {
                     name: 'Grammar',
-                    mandatory: [
-                        { name: 'definesHiddenTokens', type: 'boolean' },
-                        { name: 'hiddenTokens', type: 'array' },
-                        { name: 'imports', type: 'array' },
-                        { name: 'interfaces', type: 'array' },
-                        { name: 'isDeclared', type: 'boolean' },
-                        { name: 'rules', type: 'array' },
-                        { name: 'types', type: 'array' },
-                        { name: 'usedGrammars', type: 'array' }
+                    properties: [
+                        { name: 'definesHiddenTokens', defaultValue: false },
+                        { name: 'hiddenTokens', defaultValue: [] },
+                        { name: 'imports', defaultValue: [] },
+                        { name: 'interfaces', defaultValue: [] },
+                        { name: 'isDeclared', defaultValue: false },
+                        { name: 'name' },
+                        { name: 'rules', defaultValue: [] },
+                        { name: 'types', defaultValue: [] },
+                        { name: 'usedGrammars', defaultValue: [] }
+                    ]
+                };
+            }
+            case 'GrammarImport': {
+                return {
+                    name: 'GrammarImport',
+                    properties: [
+                        { name: 'path' }
+                    ]
+                };
+            }
+            case 'InferredType': {
+                return {
+                    name: 'InferredType',
+                    properties: [
+                        { name: 'name' }
                     ]
                 };
             }
             case 'Interface': {
                 return {
                     name: 'Interface',
-                    mandatory: [
-                        { name: 'attributes', type: 'array' },
-                        { name: 'superTypes', type: 'array' }
-                    ]
-                };
-            }
-            case 'LiteralCondition': {
-                return {
-                    name: 'LiteralCondition',
-                    mandatory: [
-                        { name: 'true', type: 'boolean' }
+                    properties: [
+                        { name: 'attributes', defaultValue: [] },
+                        { name: 'name' },
+                        { name: 'superTypes', defaultValue: [] }
                     ]
                 };
             }
             case 'NamedArgument': {
                 return {
                     name: 'NamedArgument',
-                    mandatory: [
-                        { name: 'calledByName', type: 'boolean' }
+                    properties: [
+                        { name: 'calledByName', defaultValue: false },
+                        { name: 'parameter' },
+                        { name: 'value' }
+                    ]
+                };
+            }
+            case 'Negation': {
+                return {
+                    name: 'Negation',
+                    properties: [
+                        { name: 'value' }
+                    ]
+                };
+            }
+            case 'NumberLiteral': {
+                return {
+                    name: 'NumberLiteral',
+                    properties: [
+                        { name: 'value' }
+                    ]
+                };
+            }
+            case 'Parameter': {
+                return {
+                    name: 'Parameter',
+                    properties: [
+                        { name: 'name' }
+                    ]
+                };
+            }
+            case 'ParameterReference': {
+                return {
+                    name: 'ParameterReference',
+                    properties: [
+                        { name: 'parameter' }
                     ]
                 };
             }
             case 'ParserRule': {
                 return {
                     name: 'ParserRule',
-                    mandatory: [
-                        { name: 'definesHiddenTokens', type: 'boolean' },
-                        { name: 'entry', type: 'boolean' },
-                        { name: 'fragment', type: 'boolean' },
-                        { name: 'hiddenTokens', type: 'array' },
-                        { name: 'parameters', type: 'array' },
-                        { name: 'wildcard', type: 'boolean' }
+                    properties: [
+                        { name: 'dataType' },
+                        { name: 'definesHiddenTokens', defaultValue: false },
+                        { name: 'definition' },
+                        { name: 'entry', defaultValue: false },
+                        { name: 'fragment', defaultValue: false },
+                        { name: 'hiddenTokens', defaultValue: [] },
+                        { name: 'inferredType' },
+                        { name: 'name' },
+                        { name: 'parameters', defaultValue: [] },
+                        { name: 'returnType' },
+                        { name: 'wildcard', defaultValue: false }
+                    ]
+                };
+            }
+            case 'ReferenceType': {
+                return {
+                    name: 'ReferenceType',
+                    properties: [
+                        { name: 'referenceType' }
+                    ]
+                };
+            }
+            case 'ReturnType': {
+                return {
+                    name: 'ReturnType',
+                    properties: [
+                        { name: 'name' }
+                    ]
+                };
+            }
+            case 'SimpleType': {
+                return {
+                    name: 'SimpleType',
+                    properties: [
+                        { name: 'primitiveType' },
+                        { name: 'stringType' },
+                        { name: 'typeRef' }
+                    ]
+                };
+            }
+            case 'StringLiteral': {
+                return {
+                    name: 'StringLiteral',
+                    properties: [
+                        { name: 'value' }
                     ]
                 };
             }
             case 'TerminalRule': {
                 return {
                     name: 'TerminalRule',
-                    mandatory: [
-                        { name: 'fragment', type: 'boolean' },
-                        { name: 'hidden', type: 'boolean' }
+                    properties: [
+                        { name: 'definition' },
+                        { name: 'fragment', defaultValue: false },
+                        { name: 'hidden', defaultValue: false },
+                        { name: 'name' },
+                        { name: 'type' }
+                    ]
+                };
+            }
+            case 'Type': {
+                return {
+                    name: 'Type',
+                    properties: [
+                        { name: 'name' },
+                        { name: 'type' }
                     ]
                 };
             }
             case 'TypeAttribute': {
                 return {
                     name: 'TypeAttribute',
-                    mandatory: [
-                        { name: 'isOptional', type: 'boolean' }
+                    properties: [
+                        { name: 'defaultValue' },
+                        { name: 'isOptional', defaultValue: false },
+                        { name: 'name' },
+                        { name: 'type' }
                     ]
                 };
             }
             case 'UnionType': {
                 return {
                     name: 'UnionType',
-                    mandatory: [
-                        { name: 'types', type: 'array' }
+                    properties: [
+                        { name: 'types', defaultValue: [] }
+                    ]
+                };
+            }
+            case 'Action': {
+                return {
+                    name: 'Action',
+                    properties: [
+                        { name: 'feature' },
+                        { name: 'inferredType' },
+                        { name: 'operator' },
+                        { name: 'type' }
                     ]
                 };
             }
             case 'Alternatives': {
                 return {
                     name: 'Alternatives',
-                    mandatory: [
-                        { name: 'elements', type: 'array' }
+                    properties: [
+                        { name: 'elements', defaultValue: [] }
+                    ]
+                };
+            }
+            case 'Assignment': {
+                return {
+                    name: 'Assignment',
+                    properties: [
+                        { name: 'feature' },
+                        { name: 'operator' },
+                        { name: 'terminal' }
+                    ]
+                };
+            }
+            case 'CharacterRange': {
+                return {
+                    name: 'CharacterRange',
+                    properties: [
+                        { name: 'left' },
+                        { name: 'right' }
                     ]
                 };
             }
             case 'CrossReference': {
                 return {
                     name: 'CrossReference',
-                    mandatory: [
-                        { name: 'deprecatedSyntax', type: 'boolean' }
+                    properties: [
+                        { name: 'deprecatedSyntax', defaultValue: false },
+                        { name: 'terminal' },
+                        { name: 'type' }
                     ]
                 };
             }
             case 'Group': {
                 return {
                     name: 'Group',
-                    mandatory: [
-                        { name: 'elements', type: 'array' }
+                    properties: [
+                        { name: 'elements', defaultValue: [] },
+                        { name: 'guardCondition' }
+                    ]
+                };
+            }
+            case 'Keyword': {
+                return {
+                    name: 'Keyword',
+                    properties: [
+                        { name: 'value' }
+                    ]
+                };
+            }
+            case 'NegatedToken': {
+                return {
+                    name: 'NegatedToken',
+                    properties: [
+                        { name: 'terminal' }
+                    ]
+                };
+            }
+            case 'RegexToken': {
+                return {
+                    name: 'RegexToken',
+                    properties: [
+                        { name: 'regex' }
                     ]
                 };
             }
             case 'RuleCall': {
                 return {
                     name: 'RuleCall',
-                    mandatory: [
-                        { name: 'arguments', type: 'array' }
+                    properties: [
+                        { name: 'arguments', defaultValue: [] },
+                        { name: 'rule' }
                     ]
                 };
             }
             case 'TerminalAlternatives': {
                 return {
                     name: 'TerminalAlternatives',
-                    mandatory: [
-                        { name: 'elements', type: 'array' }
+                    properties: [
+                        { name: 'elements', defaultValue: [] }
                     ]
                 };
             }
             case 'TerminalGroup': {
                 return {
                     name: 'TerminalGroup',
-                    mandatory: [
-                        { name: 'elements', type: 'array' }
+                    properties: [
+                        { name: 'elements', defaultValue: [] }
+                    ]
+                };
+            }
+            case 'TerminalRuleCall': {
+                return {
+                    name: 'TerminalRuleCall',
+                    properties: [
+                        { name: 'rule' }
                     ]
                 };
             }
             case 'UnorderedGroup': {
                 return {
                     name: 'UnorderedGroup',
-                    mandatory: [
-                        { name: 'elements', type: 'array' }
+                    properties: [
+                        { name: 'elements', defaultValue: [] }
+                    ]
+                };
+            }
+            case 'UntilToken': {
+                return {
+                    name: 'UntilToken',
+                    properties: [
+                        { name: 'terminal' }
                     ]
                 };
             }
             default: {
                 return {
                     name: type,
-                    mandatory: []
+                    properties: []
                 };
             }
         }

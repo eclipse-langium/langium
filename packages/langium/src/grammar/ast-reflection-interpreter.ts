@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { AstReflection, ReferenceInfo, TypeMandatoryProperty, TypeMetaData } from '../syntax-tree.js';
+import type { AstReflection, ReferenceInfo, TypeProperty, TypeMetaData } from '../syntax-tree.js';
 import type { LangiumDocuments } from '../workspace/documents.js';
 import type { Grammar } from '../languages/generated/ast.js';
 import type { AstTypes, Property } from './type-system/type-collector/types.js';
@@ -12,7 +12,7 @@ import { AbstractAstReflection } from '../syntax-tree.js';
 import { MultiMap } from '../utils/collections.js';
 import { isGrammar } from '../languages/generated/ast.js';
 import { collectAst } from './type-system/ast-collector.js';
-import { collectTypeHierarchy, findReferenceTypes, hasArrayType, isAstType, hasBooleanType, mergeTypesAndInterfaces } from './type-system/types-util.js';
+import { collectTypeHierarchy, findReferenceTypes, isAstType, mergeTypesAndInterfaces } from './type-system/types-util.js';
 
 export function interpretAstReflection(astTypes: AstTypes): AstReflection;
 export function interpretAstReflection(grammar: Grammar, documents?: LangiumDocuments): AstReflection;
@@ -72,7 +72,7 @@ class InterpretedAstReflection extends AbstractAstReflection {
     getTypeMetaData(type: string): TypeMetaData {
         return this.metaData.get(type) ?? {
             name: type,
-            mandatory: []
+            properties: []
         };
     }
 
@@ -112,27 +112,23 @@ function buildTypeMetaData(astTypes: AstTypes): Map<string, TypeMetaData> {
     const map = new Map<string, TypeMetaData>();
     for (const interfaceType of astTypes.interfaces) {
         const props = interfaceType.superProperties;
-        const arrayProps = props.filter(e => hasArrayType(e.type));
-        const booleanProps = props.filter(e => !hasArrayType(e.type) && hasBooleanType(e.type));
-        if (arrayProps.length > 0 || booleanProps.length > 0) {
-            map.set(interfaceType.name, {
-                name: interfaceType.name,
-                mandatory: buildMandatoryMetaData(arrayProps, booleanProps)
-            });
-        }
+        map.set(interfaceType.name, {
+            name: interfaceType.name,
+            properties: buildPropertyMetaData(props)
+        });
     }
     return map;
 }
 
-function buildMandatoryMetaData(arrayProps: Property[], booleanProps: Property[]): TypeMandatoryProperty[] {
-    const array: TypeMandatoryProperty[] = [];
-    const all = arrayProps.concat(booleanProps).sort((a, b) => a.name.localeCompare(b.name));
+function buildPropertyMetaData(props: Property[]): TypeProperty[] {
+    const array: TypeProperty[] = [];
+    const all = props.sort((a, b) => a.name.localeCompare(b.name));
     for (const property of all) {
-        const type = arrayProps.includes(property) ? 'array' : 'boolean';
-        array.push({
+        const mandatoryProperty: TypeProperty = {
             name: property.name,
-            type
-        });
+            defaultValue: property.defaultValue
+        };
+        array.push(mandatoryProperty);
     }
     return array;
 }

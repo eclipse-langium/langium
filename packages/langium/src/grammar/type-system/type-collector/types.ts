@@ -10,11 +10,14 @@ import type { Action, Assignment, TypeAttribute } from '../../../languages/gener
 import { distinctAndSorted } from '../types-util.js';
 
 export interface Property {
-    name: string,
-    optional: boolean,
-    type: PropertyType,
-    astNodes: Set<Assignment | Action | TypeAttribute>,
+    name: string;
+    optional: boolean;
+    type: PropertyType;
+    defaultValue?: PropertyDefaultValue;
+    astNodes: Set<Assignment | Action | TypeAttribute>;
 }
+
+export type PropertyDefaultValue = string | number | boolean | PropertyDefaultValue[];
 
 export type PropertyType =
     | ReferenceType
@@ -33,7 +36,7 @@ export function isReferenceType(propertyType: PropertyType): propertyType is Ref
 }
 
 export interface ArrayType {
-    elementType: PropertyType
+    elementType: PropertyType | undefined
 }
 
 export function isArrayType(propertyType: PropertyType): propertyType is ArrayType {
@@ -272,7 +275,12 @@ export function isTypeAssignable(from: PropertyType, to: PropertyType): boolean 
     return isTypeAssignableInternal(from, to, new Map());
 }
 
-function isTypeAssignableInternal(from: PropertyType, to: PropertyType, visited: Map<string, boolean>): boolean {
+function isTypeAssignableInternal(from: PropertyType | undefined, to: PropertyType | undefined, visited: Map<string, boolean>): boolean {
+    if (!from) {
+        return true;
+    } else if (!to) {
+        return false;
+    }
     const key = `${propertyTypeToKeyString(from)}»${propertyTypeToKeyString(to)}`;
     let result = visited.get(key);
     if (result !== undefined) {
@@ -337,7 +345,7 @@ function propertyTypeToKeyString(type: PropertyType): string {
     if (isReferenceType(type)) {
         return `@(${propertyTypeToKeyString(type.referenceType)})}`;
     } else if (isArrayType(type)) {
-        return `(${propertyTypeToKeyString(type.elementType)})[]`;
+        return type.elementType ? `(${propertyTypeToKeyString(type.elementType)})[]` : 'unknown[]';
     } else if (isPropertyUnion(type)) {
         const union = type.types.map(e => propertyTypeToKeyString(e)).join(' | ');
         if (type.types.length <= 1) {
@@ -354,13 +362,16 @@ function propertyTypeToKeyString(type: PropertyType): string {
     throw new Error('Invalid type');
 }
 
-export function propertyTypeToString(type: PropertyType, mode: 'AstType' | 'DeclaredType' = 'AstType'): string {
+export function propertyTypeToString(type?: PropertyType, mode: 'AstType' | 'DeclaredType' = 'AstType'): string {
+    if (!type) {
+        return 'unknown';
+    }
     if (isReferenceType(type)) {
         const refType = propertyTypeToString(type.referenceType, mode);
         return mode === 'AstType' ? `Reference<${refType}>` : `@${typeParenthesis(type.referenceType, refType)}`;
     } else if (isArrayType(type)) {
         const arrayType = propertyTypeToString(type.elementType, mode);
-        return mode === 'AstType' ? `Array<${arrayType}>` : `${typeParenthesis(type.elementType, arrayType)}[]`;
+        return mode === 'AstType' ? `Array<${arrayType}>` : `${type.elementType ? typeParenthesis(type.elementType, arrayType) : 'unknown'}[]`;
     } else if (isPropertyUnion(type)) {
         const types = type.types.map(e => typeParenthesis(e, propertyTypeToString(e, mode)));
         return distinctAndSorted(types).join(' | ');

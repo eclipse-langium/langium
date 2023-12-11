@@ -135,44 +135,67 @@ export class RequirementsAndTestsAstReflection extends AbstractAstReflection {
 
     getTypeMetaData(type: string): TypeMetaData {
         switch (type) {
+            case 'Contact': {
+                return {
+                    name: 'Contact',
+                    properties: [
+                        { name: 'user_name' }
+                    ]
+                };
+            }
+            case 'Environment': {
+                return {
+                    name: 'Environment',
+                    properties: [
+                        { name: 'description' },
+                        { name: 'name' }
+                    ]
+                };
+            }
             case 'Requirement': {
                 return {
                     name: 'Requirement',
-                    mandatory: [
-                        { name: 'environments', type: 'array' }
+                    properties: [
+                        { name: 'environments', defaultValue: [] },
+                        { name: 'name' },
+                        { name: 'text' }
                     ]
                 };
             }
             case 'RequirementModel': {
                 return {
                     name: 'RequirementModel',
-                    mandatory: [
-                        { name: 'environments', type: 'array' },
-                        { name: 'requirements', type: 'array' }
+                    properties: [
+                        { name: 'contact' },
+                        { name: 'environments', defaultValue: [] },
+                        { name: 'requirements', defaultValue: [] }
                     ]
                 };
             }
             case 'Test': {
                 return {
                     name: 'Test',
-                    mandatory: [
-                        { name: 'environments', type: 'array' },
-                        { name: 'requirements', type: 'array' }
+                    properties: [
+                        { name: 'environments', defaultValue: [] },
+                        { name: 'name' },
+                        { name: 'requirements', defaultValue: [] },
+                        { name: 'testFile' }
                     ]
                 };
             }
             case 'TestModel': {
                 return {
                     name: 'TestModel',
-                    mandatory: [
-                        { name: 'tests', type: 'array' }
+                    properties: [
+                        { name: 'contact' },
+                        { name: 'tests', defaultValue: [] }
                     ]
                 };
             }
             default: {
                 return {
                     name: type,
-                    mandatory: []
+                    properties: []
                 };
             }
         }

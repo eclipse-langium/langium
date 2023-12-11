@@ -149,42 +149,55 @@ export class DomainModelAstReflection extends AbstractAstReflection {
 
     getTypeMetaData(type: string): TypeMetaData {
         switch (type) {
+            case 'DataType': {
+                return {
+                    name: 'DataType',
+                    properties: [
+                        { name: 'name' }
+                    ]
+                };
+            }
             case 'Domainmodel': {
                 return {
                     name: 'Domainmodel',
-                    mandatory: [
-                        { name: 'elements', type: 'array' }
+                    properties: [
+                        { name: 'elements', defaultValue: [] }
                     ]
                 };
             }
             case 'Entity': {
                 return {
                     name: 'Entity',
-                    mandatory: [
-                        { name: 'features', type: 'array' }
+                    properties: [
+                        { name: 'features', defaultValue: [] },
+                        { name: 'name' },
+                        { name: 'superType' }
                     ]
                 };
             }
             case 'Feature': {
                 return {
                     name: 'Feature',
-                    mandatory: [
-                        { name: 'many', type: 'boolean' }
+                    properties: [
+                        { name: 'many', defaultValue: false },
+                        { name: 'name' },
+                        { name: 'type' }
                     ]
                 };
             }
             case 'PackageDeclaration': {
                 return {
                     name: 'PackageDeclaration',
-                    mandatory: [
-                        { name: 'elements', type: 'array' }
+                    properties: [
+                        { name: 'elements', defaultValue: [] },
+                        { name: 'name' }
                     ]
                 };
             }
             default: {
                 return {
                     name: type,
-                    mandatory: []
+                    properties: []
                 };
             }
         }

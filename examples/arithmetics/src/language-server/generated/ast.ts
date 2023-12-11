@@ -183,34 +183,72 @@ export class ArithmeticsAstReflection extends AbstractAstReflection {
 
     getTypeMetaData(type: string): TypeMetaData {
         switch (type) {
+            case 'BinaryExpression': {
+                return {
+                    name: 'BinaryExpression',
+                    properties: [
+                        { name: 'left' },
+                        { name: 'operator' },
+                        { name: 'right' }
+                    ]
+                };
+            }
+            case 'DeclaredParameter': {
+                return {
+                    name: 'DeclaredParameter',
+                    properties: [
+                        { name: 'name' }
+                    ]
+                };
+            }
             case 'Definition': {
                 return {
                     name: 'Definition',
-                    mandatory: [
-                        { name: 'args', type: 'array' }
+                    properties: [
+                        { name: 'args', defaultValue: [] },
+                        { name: 'expr' },
+                        { name: 'name' }
+                    ]
+                };
+            }
+            case 'Evaluation': {
+                return {
+                    name: 'Evaluation',
+                    properties: [
+                        { name: 'expression' }
                     ]
                 };
             }
             case 'FunctionCall': {
                 return {
                     name: 'FunctionCall',
-                    mandatory: [
-                        { name: 'args', type: 'array' }
+                    properties: [
+                        { name: 'args', defaultValue: [] },
+                        { name: 'func' }
                     ]
                 };
             }
             case 'Module': {
                 return {
                     name: 'Module',
-                    mandatory: [
-                        { name: 'statements', type: 'array' }
+                    properties: [
+                        { name: 'name' },
+                        { name: 'statements', defaultValue: [] }
+                    ]
+                };
+            }
+            case 'NumberLiteral': {
+                return {
+                    name: 'NumberLiteral',
+                    properties: [
+                        { name: 'value' }
                     ]
                 };
             }
             default: {
                 return {
                     name: type,
-                    mandatory: []
+                    properties: []
                 };
             }
         }

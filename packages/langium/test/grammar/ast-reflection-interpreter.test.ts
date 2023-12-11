@@ -21,7 +21,8 @@ describe('AST reflection interpreter', () => {
                 elementType: {
                     primitive: 'string'
                 }
-            }
+            },
+            defaultValue: 'a'
         }, {
             name: 'Ref',
             astNodes: new Set(),
@@ -42,7 +43,8 @@ describe('AST reflection interpreter', () => {
                 elementType: {
                     primitive: 'string'
                 }
-            }
+            },
+            defaultValue: 'b'
         });
         subType.superTypes.add(superType);
 
@@ -81,12 +83,19 @@ describe('AST reflection interpreter', () => {
 
         test('Creates metadata with super types', () => {
             const superMetadata = reflectionForInheritance.getTypeMetaData('Super');
-            expect(superMetadata.mandatory).toHaveLength(1);
-            expect(superMetadata.mandatory[0].name).toBe('A');
+            expect(superMetadata.properties).toHaveLength(2);
+            expect(superMetadata.properties[0].name).toBe('A');
+            expect(superMetadata.properties[0].defaultValue).toBe('a');
+            expect(superMetadata.properties[1].name).toBe('Ref');
+            expect(superMetadata.properties[1].defaultValue).toBeUndefined();
             const subMetadata = reflectionForInheritance.getTypeMetaData('Sub');
-            expect(subMetadata.mandatory).toHaveLength(2);
-            expect(subMetadata.mandatory[0].name).toBe('A');
-            expect(subMetadata.mandatory[1].name).toBe('B');
+            expect(subMetadata.properties).toHaveLength(3);
+            expect(subMetadata.properties[0].name).toBe('A');
+            expect(subMetadata.properties[0].defaultValue).toBe('a');
+            expect(subMetadata.properties[1].name).toBe('B');
+            expect(subMetadata.properties[1].defaultValue).toBe('b');
+            expect(subMetadata.properties[2].name).toBe('Ref');
+            expect(subMetadata.properties[2].defaultValue).toBeUndefined();
         });
 
     });

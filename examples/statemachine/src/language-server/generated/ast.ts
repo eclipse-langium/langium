@@ -123,29 +123,57 @@ export class StatemachineAstReflection extends AbstractAstReflection {
 
     getTypeMetaData(type: string): TypeMetaData {
         switch (type) {
+            case 'Command': {
+                return {
+                    name: 'Command',
+                    properties: [
+                        { name: 'name' }
+                    ]
+                };
+            }
+            case 'Event': {
+                return {
+                    name: 'Event',
+                    properties: [
+                        { name: 'name' }
+                    ]
+                };
+            }
             case 'State': {
                 return {
                     name: 'State',
-                    mandatory: [
-                        { name: 'actions', type: 'array' },
-                        { name: 'transitions', type: 'array' }
+                    properties: [
+                        { name: 'actions', defaultValue: [] },
+                        { name: 'name' },
+                        { name: 'transitions', defaultValue: [] }
                     ]
                 };
             }
             case 'Statemachine': {
                 return {
                     name: 'Statemachine',
-                    mandatory: [
-                        { name: 'commands', type: 'array' },
-                        { name: 'events', type: 'array' },
-                        { name: 'states', type: 'array' }
+                    properties: [
+                        { name: 'commands', defaultValue: [] },
+                        { name: 'events', defaultValue: [] },
+                        { name: 'init' },
+                        { name: 'name' },
+                        { name: 'states', defaultValue: [] }
+                    ]
+                };
+            }
+            case 'Transition': {
+                return {
+                    name: 'Transition',
+                    properties: [
+                        { name: 'event' },
+                        { name: 'state' }
                     ]
                 };
             }
             default: {
                 return {
                     name: type,
-                    mandatory: []
+                    properties: []
                 };
             }
         }

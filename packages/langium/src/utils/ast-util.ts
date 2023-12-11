@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import type { Range } from 'vscode-languageserver';
-import type { AstNode, AstReflection, CstNode, GenericAstNode, Reference, ReferenceInfo } from '../syntax-tree.js';
+import type { AstNode, AstReflection, CstNode, GenericAstNode, PropertyType, Reference, ReferenceInfo } from '../syntax-tree.js';
 import type { Stream, TreeStream } from '../utils/stream.js';
 import type { LangiumDocument } from '../workspace/documents.js';
 import { isAstNode, isReference } from '../syntax-tree.js';
@@ -241,13 +241,19 @@ export function findLocalReferences(targetNode: AstNode, lookup = getDocument(ta
 export function assignMandatoryAstProperties(reflection: AstReflection, node: AstNode): void {
     const typeMetaData = reflection.getTypeMetaData(node.$type);
     const genericNode = node as GenericAstNode;
-    for (const mandatoryProperty of typeMetaData.mandatory) {
-        const value = genericNode[mandatoryProperty.name];
-        if (mandatoryProperty.type === 'array' && !Array.isArray(value)) {
-            genericNode[mandatoryProperty.name] = [];
-        } else if (mandatoryProperty.type === 'boolean' && value === undefined) {
-            genericNode[mandatoryProperty.name] = false;
+    for (const property of typeMetaData.properties) {
+        // Only set the value if the property is not already set and if it has a default value
+        if (property.defaultValue !== undefined && genericNode[property.name] === undefined) {
+            genericNode[property.name] = copyDefaultValue(property.defaultValue);
         }
+    }
+}
+
+function copyDefaultValue(propertyType: PropertyType): PropertyType {
+    if (Array.isArray(propertyType)) {
+        return [...propertyType.map(copyDefaultValue)];
+    } else {
+        return propertyType;
     }
 }
 
