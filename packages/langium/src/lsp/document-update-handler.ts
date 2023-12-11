@@ -7,10 +7,10 @@
 import type { DidChangeWatchedFilesParams, DidChangeWatchedFilesRegistrationOptions, TextDocumentChangeEvent } from 'vscode-languageserver';
 import type { TextDocument } from 'vscode-languageserver-textdocument';
 import type { LangiumSharedServices } from '../services.js';
-import type { MutexLock } from '../utils/promise-util.js';
+import type { WorkspaceLock } from '../workspace/workspace-lock.js';
 import type { DocumentBuilder } from '../workspace/document-builder.js';
 import { DidChangeWatchedFilesNotification, FileChangeType } from 'vscode-languageserver';
-import { URI } from 'vscode-uri';
+import { URI } from '../utils/uri-util.js';
 import { stream } from '../utils/stream.js';
 
 /**
@@ -33,11 +33,11 @@ export interface DocumentUpdateHandler {
 export class DefaultDocumentUpdateHandler implements DocumentUpdateHandler {
 
     protected readonly documentBuilder: DocumentBuilder;
-    protected readonly mutexLock: MutexLock;
+    protected readonly workspaceLock: WorkspaceLock;
 
     constructor(services: LangiumSharedServices) {
         this.documentBuilder = services.workspace.DocumentBuilder;
-        this.mutexLock = services.workspace.MutexLock;
+        this.workspaceLock = services.workspace.WorkspaceLock;
 
         let canRegisterFileWatcher = false;
         services.lsp.LanguageServer.onInitialize(params => {
@@ -71,7 +71,7 @@ export class DefaultDocumentUpdateHandler implements DocumentUpdateHandler {
     }
 
     protected fireDocumentUpdate(changed: URI[], deleted: URI[]): void {
-        this.mutexLock.lock(token => this.documentBuilder.update(changed, deleted, token));
+        this.workspaceLock.write(token => this.documentBuilder.update(changed, deleted, token));
     }
 
     didChangeContent(change: TextDocumentChangeEvent<TextDocument>): void {
