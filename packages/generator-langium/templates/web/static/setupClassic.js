@@ -28,5 +28,5 @@ export const setupConfigClassic = () => {
 export const executeClassic = async (htmlElement) => {
     const userConfig = setupConfigClassic();
     const wrapper = new MonacoEditorLanguageClientWrapper();
-    await wrapper.start(userConfig, htmlElement);
+    await wrapper.initAndStart(userConfig, htmlElement);
 };
