@@ -86,45 +86,6 @@ export async function interruptAndCheck(token: CancellationToken): Promise<void>
 }
 
 /**
- * Utility class to execute mutually exclusive actions.
- */
-export class MutexLock {
-
-    private previousAction = Promise.resolve();
-    private previousTokenSource = new CancellationTokenSource();
-
-    /**
-     * Performs a single async action, like initializing the workspace or processing document changes.
-     * Only one action will be executed at a time.
-     *
-     * When another action is queued up, the token provided for the action will be cancelled.
-     * Assuming the action makes use of this token, the next action only has to wait for the current action to finish cancellation.
-     */
-    lock(action: (token: CancellationToken) => Promise<void>): Promise<void> {
-        this.cancel();
-        const tokenSource = new CancellationTokenSource();
-        this.previousTokenSource = tokenSource;
-        // Append the new action to the previous action. We usually don't have to wait for long, as the previous action
-        // 1. has either completed
-        // 2. has been cancelled
-        return this.previousAction = this.previousAction.then(
-            () => action(tokenSource.token).catch(err => {
-                if (!isOperationCancelled(err)) {
-                    console.error('Error: ', err);
-                }
-            })
-        );
-    }
-
-    /**
-     * Cancels the currently executed action
-     */
-    cancel(): void {
-        this.previousTokenSource.cancel();
-    }
-}
-
-/**
  * Simple implementation of the deferred pattern.
  * An object that exposes a promise and functions to resolve and reject it.
  */

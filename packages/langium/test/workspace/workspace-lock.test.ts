@@ -5,9 +5,9 @@
  ******************************************************************************/
 
 import { describe, expect, test } from 'vitest';
-import { Deferred, delayNextTick, MutexLock } from 'langium';
+import { Deferred, delayNextTick, DefaultWorkspaceLock } from 'langium';
 
-describe('Mutex locking', () => {
+describe('WorkspaceLock', () => {
 
     test('Actions are executed sequentially', async () => {
         const size = 5;
@@ -16,12 +16,12 @@ describe('Mutex locking', () => {
             counter++;
             await deferred.promise;
         };
-        const mutex = new MutexLock();
+        const mutex = new DefaultWorkspaceLock();
         const deferredItems: Deferred[] = [];
         for (let i = 0; i < size; i++) {
             const deferred = new Deferred();
             deferredItems.push(deferred);
-            mutex.lock(() => pushAction(deferred));
+            mutex.write(() => pushAction(deferred));
         }
         for (let i = 0; i < size; i++) {
             await delayNextTick();
@@ -30,10 +30,47 @@ describe('Mutex locking', () => {
         }
     });
 
+    test('Write actions have higher priority than read actions', async () => {
+        let counter = 0;
+        const mutex = new DefaultWorkspaceLock();
+        mutex.write(async () => {
+            // Increase counter to 1
+            counter++;
+            await delayNextTick();
+        });
+        const counterRead = mutex.read(() => {
+            // This read action has been queued after the first write action
+            // However, write action always have priority over read actions
+            // With the second write action executed first, the counter is 2
+            return counter;
+        });
+        mutex.write(async () => {
+            // Increase counter to 2
+            counter++;
+            await delayNextTick();
+        });
+        await delayNextTick();
+        expect(counter).toBe(1);
+        await delayNextTick();
+        expect(counter).toBe(2);
+        await delayNextTick();
+        expect(await counterRead).toBe(2);
+    });
+
+    test('Write action results can be awaited', async () => {
+        const mutex = new DefaultWorkspaceLock();
+        const now = Date.now();
+        const magicalNumber = await mutex.read(() => new Promise(resolve => setTimeout(() => resolve(42), 10)));
+        // Confirm that at least 10ms have elapsed
+        expect(Date.now() - now).toBeGreaterThanOrEqual(10);
+        // Confirm the returned value
+        expect(magicalNumber).toBe(42);
+    });
+
     test('Actions can be cancelled explicitly', async () => {
         let counter = 0;
-        const mutex = new MutexLock();
-        mutex.lock(async token => {
+        const mutex = new DefaultWorkspaceLock();
+        mutex.write(async token => {
             // Increase counter to 1
             counter++;
             await delayNextTick();
@@ -46,7 +83,7 @@ describe('Mutex locking', () => {
 
         await delayNextTick();
         expect(counter).toBe(1);
-        mutex.cancel();
+        mutex.cancelWrite();
         await delayNextTick();
         // Counter is 1, since first action has been cancelled
         expect(counter).toBe(1);
@@ -54,8 +91,8 @@ describe('Mutex locking', () => {
 
     test('Actions can be cancelled by enqueueing another action', async () => {
         let counter = 0;
-        const mutex = new MutexLock();
-        mutex.lock(async token => {
+        const mutex = new DefaultWorkspaceLock();
+        mutex.write(async token => {
             // Increase counter to 1
             counter++;
             await delayNextTick();
@@ -68,7 +105,7 @@ describe('Mutex locking', () => {
 
         await delayNextTick();
         expect(counter).toBe(1);
-        mutex.lock(async () => { counter--; });
+        mutex.write(async () => { counter--; });
         expect(counter).toBe(1);
         await delayNextTick();
         // Counter is 0, since first action has been cancelled

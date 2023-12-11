@@ -652,7 +652,7 @@ describe('Parsing default values', () => {
 
     const grammar = `
         grammar test
-        entry Model returns Model: a=ID b=ID? (c+=ID)*;
+        entry Model returns Model: a=ID b="world"? (c+=ID)*;
 
         interface Model {
             a: string
@@ -694,7 +694,7 @@ describe('Parsing default values', () => {
     });
 
     test('Does not overwrite parsed value for "c"', async () => {
-        const result = parser.parse('hi you d e');
+        const result = parser.parse('hi world d e');
         const model = result.value as unknown as {
             a: string
             b: string
