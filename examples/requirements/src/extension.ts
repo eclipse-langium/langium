@@ -6,7 +6,7 @@
 
 import type { LanguageClientOptions, ServerOptions } from 'vscode-languageclient/node.js';
 import { LanguageClient, TransportKind } from 'vscode-languageclient/node.js';
-import * as vscode from 'vscode';
+import type * as vscode from 'vscode';
 import * as path from 'node:path';
 
 let client: LanguageClient;
@@ -38,18 +38,11 @@ function startLanguageClient(context: vscode.ExtensionContext): LanguageClient {
         debug: { module: serverModule, transport: TransportKind.ipc, options: debugOptions }
     };
 
-    const fileSystemWatcher = vscode.workspace.createFileSystemWatcher('**/*.(req|tst)');
-    context.subscriptions.push(fileSystemWatcher);
-
     // Options to control the language client
     const clientOptions: LanguageClientOptions = {
         documentSelector: [
             { scheme: 'file', language: 'tests-lang' },
-            { scheme: 'file', language: 'requirements-lang' }],
-        synchronize: {
-            // Notify the server about file changes to files contained in the workspace
-            fileEvents: fileSystemWatcher
-        }
+            { scheme: 'file', language: 'requirements-lang' }]
     };
 
     // Create the language client and start the client.

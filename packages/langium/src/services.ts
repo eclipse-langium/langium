@@ -51,10 +51,12 @@ import type { SignatureHelpProvider } from './lsp/signature-help-provider.js';
 import type { TypeDefinitionProvider } from './lsp/type-provider.js';
 import type { ImplementationProvider } from './lsp/implementation-provider.js';
 import type { CallHierarchyProvider } from './lsp/call-hierarchy-provider.js';
-import type { DocumentLinkProvider } from './lsp/document-link-provider.js';
 import type { CodeLensProvider } from './lsp/code-lens-provider.js';
 import type { DeclarationProvider } from './lsp/declaration-provider.js';
+import type { DocumentLinkProvider } from './lsp/document-link-provider.js';
+import type { DocumentUpdateHandler } from './lsp/document-update-handler.js';
 import type { DocumentationProvider } from './documentation/documentation-provider.js';
+import type { FileOperationHandler } from './lsp/file-operation-handler.js';
 import type { InlayHintProvider } from './lsp/inlay-hint-provider.js';
 import type { CommentProvider } from './documentation/comment-provider.js';
 import type { WorkspaceSymbolProvider } from './lsp/workspace-symbol-provider.js';
@@ -79,26 +81,26 @@ export type LangiumGeneratedServices = {
  * Services related to the Language Server Protocol (LSP).
  */
 export type LangiumLspServices = {
-    CompletionProvider?: CompletionProvider
-    DocumentHighlightProvider?: DocumentHighlightProvider
-    DocumentSymbolProvider?: DocumentSymbolProvider
-    HoverProvider?: HoverProvider
-    FoldingRangeProvider?: FoldingRangeProvider
-    DefinitionProvider?: DefinitionProvider
-    TypeProvider?: TypeDefinitionProvider
-    ImplementationProvider?: ImplementationProvider
-    ReferencesProvider?: ReferencesProvider
-    CodeActionProvider?: CodeActionProvider
-    SemanticTokenProvider?: SemanticTokenProvider
-    RenameProvider?: RenameProvider
-    Formatter?: Formatter
-    SignatureHelp?: SignatureHelpProvider
     CallHierarchyProvider?: CallHierarchyProvider
-    TypeHierarchyProvider?: TypeHierarchyProvider;
-    DeclarationProvider?: DeclarationProvider
-    InlayHintProvider?: InlayHintProvider
+    CodeActionProvider?: CodeActionProvider
     CodeLensProvider?: CodeLensProvider
+    CompletionProvider?: CompletionProvider
+    DeclarationProvider?: DeclarationProvider
+    DefinitionProvider?: DefinitionProvider
+    DocumentHighlightProvider?: DocumentHighlightProvider
     DocumentLinkProvider?: DocumentLinkProvider
+    DocumentSymbolProvider?: DocumentSymbolProvider
+    FoldingRangeProvider?: FoldingRangeProvider
+    Formatter?: Formatter
+    HoverProvider?: HoverProvider
+    ImplementationProvider?: ImplementationProvider
+    InlayHintProvider?: InlayHintProvider
+    ReferencesProvider?: ReferencesProvider
+    RenameProvider?: RenameProvider
+    SemanticTokenProvider?: SemanticTokenProvider
+    SignatureHelp?: SignatureHelpProvider
+    TypeHierarchyProvider?: TypeHierarchyProvider;
+    TypeProvider?: TypeDefinitionProvider
 }
 
 /**
@@ -162,22 +164,24 @@ export type LangiumDefaultSharedServices = {
     ServiceRegistry: ServiceRegistry
     lsp: {
         Connection?: Connection
+        DocumentUpdateHandler: DocumentUpdateHandler
         ExecuteCommandHandler?: ExecuteCommandHandler
-        WorkspaceSymbolProvider?: WorkspaceSymbolProvider
-        NodeKindProvider: NodeKindProvider
+        FileOperationHandler?: FileOperationHandler
         FuzzyMatcher: FuzzyMatcher
         LanguageServer: LanguageServer
+        NodeKindProvider: NodeKindProvider
+        WorkspaceSymbolProvider?: WorkspaceSymbolProvider
     }
     workspace: {
+        ConfigurationProvider: ConfigurationProvider
         DocumentBuilder: DocumentBuilder
+        FileSystemProvider: FileSystemProvider
         IndexManager: IndexManager
         LangiumDocuments: LangiumDocuments
         LangiumDocumentFactory: LangiumDocumentFactory
+        MutexLock: MutexLock
         TextDocuments: TextDocuments<TextDocument>
         WorkspaceManager: WorkspaceManager
-        FileSystemProvider: FileSystemProvider
-        MutexLock: MutexLock
-        ConfigurationProvider: ConfigurationProvider
     }
 }
 
