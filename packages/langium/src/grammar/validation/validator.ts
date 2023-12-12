@@ -616,7 +616,6 @@ export class LangiumGrammarValidator {
                 if (ast.isParserRule(rule) && parserRulesUsedByCrossReferences.has(rule)) {
                     accept('hint', 'This parser rule is not used for parsing, but referenced by cross-references. Consider to replace this rule by a type declaration.', {
                         node: rule,
-                        // property: 'name',
                         data: diagnosticData(IssueCodes.ParserRuleToTypeDecl)
                     });
                 } else {
