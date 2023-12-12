@@ -16,13 +16,14 @@ import { DiagnosticTag } from 'vscode-languageserver-types';
 import { getContainerOfType, streamAllContents } from '../../utils/ast-utils.js';
 import { MultiMap } from '../../utils/collections.js';
 import { toDocumentSegment } from '../../utils/cst-utils.js';
-import { findNameAssignment, findNodeForKeyword, findNodeForProperty, getAllReachableRules, isDataTypeRule, isOptionalCardinality, terminalRegex } from '../../utils/grammar-utils.js';
+import { findNameAssignment, findNodeForKeyword, findNodeForProperty, getAllReachableRules, getAllRulesUsedForCrossReferences } from '../../utils/grammar-util.js';
 import { stream } from '../../utils/stream.js';
 import { diagnosticData } from '../../validation/validation-registry.js';
 import * as ast from '../../languages/generated/ast.js';
 import { getTypeNameWithoutError, hasDataTypeReturn, isPrimitiveGrammarType, isStringGrammarType, resolveImport, resolveTransitiveImports } from '../internal-grammar-util.js';
 import { typeDefinitionToPropertyType } from '../type-system/type-collector/declared-types.js';
 import { flattenPlainType, isPlainReferenceType } from '../type-system/type-collector/plain-types.js';
+import { isDataTypeRule, terminalRegex, isOptionalCardinality } from '../../utils/grammar-utils.js';
 
 export function registerValidationChecks(services: LangiumGrammarServices): void {
     const registry = services.validation.ValidationRegistry;
@@ -554,17 +555,25 @@ export class LangiumGrammarValidator {
 
     checkGrammarForUnusedRules(grammar: ast.Grammar, accept: ValidationAcceptor): void {
         const reachableRules = getAllReachableRules(grammar, true);
+        const parserRulesUsedByCrossReferences = getAllRulesUsedForCrossReferences(grammar);
 
         for (const rule of grammar.rules) {
             if (ast.isTerminalRule(rule) && rule.hidden || isEmptyRule(rule)) {
                 continue;
             }
             if (!reachableRules.has(rule)) {
-                accept('hint', 'This rule is declared but never referenced.', {
-                    node: rule,
-                    property: 'name',
-                    tags: [DiagnosticTag.Unnecessary]
-                });
+                if (ast.isParserRule(rule) && parserRulesUsedByCrossReferences.has(rule)) {
+                    accept('hint', 'This parser rule is not used for parsing, but referenced by cross-references. Consider to replace this rule by a type declaration.', {
+                        node: rule,
+                        property: 'name'
+                    });
+                } else {
+                    accept('hint', 'This rule is declared but never referenced.', {
+                        node: rule,
+                        property: 'name',
+                        tags: [DiagnosticTag.Unnecessary]
+                    });
+                }
             }
         }
     }
