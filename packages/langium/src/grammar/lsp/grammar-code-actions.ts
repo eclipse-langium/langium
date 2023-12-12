@@ -215,8 +215,8 @@ export class LangiumGrammarCodeActionProvider implements CodeActionProvider {
             const cstNode = findLeafNodeAtOffset(rootCst, offset);
             const rule = getContainerOfType(cstNode?.astNode, ast.isParserRule);
             if (rule && rule.$cstNode) {
-                const isFixable = this.isReplaceableRule(rule) && this.isReplaceable(rule.definition);
-                if (isFixable) {
+                const isRuleReplaceable = this.isReplaceableRule(rule) && this.isReplaceable(rule.definition);
+                if (isRuleReplaceable) {
                     const newText = `type ${this.replaceRule(rule)} = ${this.replace(rule.definition)};`;
                     return {
                         title: 'Replace parser rule by type declaration',
