@@ -512,6 +512,37 @@ describe('Unused rules validation', () => {
         });
     });
 
+    test('Parser rules used only as type in cross-references are correctly identified as used', async () => {
+        // this test case targets https://github.com/eclipse-langium/langium/issues/1309
+        const text = `
+        grammar HelloWorld
+
+        entry Model:
+            (persons+=Neighbor | friends+=Friend | greetings+=Greeting)*;
+
+        Neighbor:
+            'neighbor' name=ID;
+        Friend:
+            'friend' name=ID;
+
+        Person: Neighbor | Friend; // 'Person' is used only for cross-references, not as parser rule
+
+        Greeting:
+            'Hello' person=[Person:ID] '!';
+
+        hidden terminal WS: /\\s+/;
+        terminal ID: /[_a-zA-Z][\\w_]*/;
+        `;
+        const validation = await validate(text);
+        expect(validation.diagnostics).toHaveLength(1);
+        const ruleWithHint = validation.document.parseResult.value.rules.find(e => e.name === 'Person')!;
+        expectIssue(validation, {
+            node: ruleWithHint,
+            property: 'name',
+            severity: DiagnosticSeverity.Hint
+        });
+    });
+
 });
 
 describe('Reserved names', () => {
