@@ -10,7 +10,7 @@ import type { CodeAction, Command, Position, TextEdit } from 'vscode-languageser
 import type { URI } from '../../utils/uri-utils.js';
 import type { CodeActionProvider } from '../../lsp/code-action.js';
 import type { LangiumServices } from '../../lsp/lsp-services.js';
-import type { AstReflection, Reference, ReferenceInfo } from '../../syntax-tree.js';
+import type { AstNode, AstReflection, Reference, ReferenceInfo } from '../../syntax-tree.js';
 import type { MaybePromise } from '../../utils/promise-utils.js';
 import type { LinkingErrorData } from '../../validation/document-validator.js';
 import type { DiagnosticData } from '../../validation/validation-registry.js';
@@ -62,6 +62,9 @@ export class LangiumGrammarCodeActionProvider implements CodeActionProvider {
                 break;
             case IssueCodes.CrossRefTokenSyntax:
                 accept(this.fixCrossRefSyntax(diagnostic, document));
+                break;
+            case IssueCodes.ParserRuleToTypeDecl:
+                accept(this.replaceParserRuleByTypeDeclaration(diagnostic, document));
                 break;
             case IssueCodes.UnnecessaryFileExtension:
                 accept(this.fixUnnecessaryFileExtension(diagnostic, document));
@@ -176,6 +179,61 @@ export class LangiumGrammarCodeActionProvider implements CodeActionProvider {
                     }
                 }
             };
+        }
+        return undefined;
+    }
+
+    private isReplaceableRule(rule: ast.ParserRule): boolean {
+        // OK are: definition use only Alternatives! infers! (TODO return ginge theoretisch auch)
+        return !rule.fragment && !rule.entry && rule.parameters.length === 0 && !rule.definesHiddenTokens && !rule.wildcard && !rule.returnType && !rule.dataType;
+    }
+    private replaceRule(rule: ast.ParserRule): string {
+        return rule.name; // TODO alternative Namen/Types berücksichtigen!
+    }
+    private isReplaceable(node: AstNode): node is ast.AbstractElement {
+        return (ast.isRuleCall(node) && node.arguments.length === 0 && ast.isParserRule(node.rule.ref) && this.isReplaceableRule(node.rule.ref))
+            || (ast.isAlternatives(node) && node.elements.every(child => this.isReplaceable(child)))
+            || (ast.isUnorderedGroup(node) && node.elements.every(child => this.isReplaceable(child)));
+    }
+    private replace(node: ast.AbstractElement): string {
+        if (ast.isRuleCall(node)) {
+            return this.replaceRule(node.rule.ref as ast.ParserRule);
+        }
+        if (ast.isAlternatives(node)) {
+            return node.elements.map(child => this.replace(child)).join(' | ');
+        }
+        if (ast.isUnorderedGroup(node)) {
+            return node.elements.map(child => this.replace(child)).join(' & '); // TODO
+        }
+        throw new Error('missing code for ' + node);
+    }
+
+    private replaceParserRuleByTypeDeclaration(diagnostic: Diagnostic, document: LangiumDocument): CodeAction | undefined {
+        const rootCst = document.parseResult.value.$cstNode;
+        if (rootCst) {
+            const offset = document.textDocument.offsetAt(diagnostic.range.start);
+            const cstNode = findLeafNodeAtOffset(rootCst, offset);
+            const rule = getContainerOfType(cstNode?.astNode, ast.isParserRule);
+            if (rule && rule.$cstNode) {
+                const isFixable = this.isReplaceableRule(rule) && this.isReplaceable(rule.definition);
+                if (isFixable) {
+                    const newText = `type ${this.replaceRule(rule)} = ${this.replace(rule.definition)};`;
+                    return {
+                        title: 'Replace parser rule by type declaration',
+                        kind: CodeActionKind.QuickFix,
+                        diagnostics: [diagnostic],
+                        isPreferred: true,
+                        edit: {
+                            changes: {
+                                [document.textDocument.uri]: [{
+                                    range: diagnostic.range,
+                                    newText
+                                }]
+                            }
+                        }
+                    };
+                }
+            }
         }
         return undefined;
     }
