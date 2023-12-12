@@ -107,6 +107,7 @@ export namespace IssueCodes {
     export const UseRegexTokens = 'use-regex-tokens';
     export const EntryRuleTokenSyntax = 'entry-rule-token-syntax';
     export const CrossRefTokenSyntax = 'cross-ref-token-syntax';
+    export const ParserRuleToTypeDecl = 'parser-rule-to-type-decl';
     export const UnnecessaryFileExtension = 'unnecessary-file-extension';
     export const InvalidReturns = 'invalid-returns';
     export const InvalidInfers = 'invalid-infers';
@@ -615,7 +616,8 @@ export class LangiumGrammarValidator {
                 if (ast.isParserRule(rule) && parserRulesUsedByCrossReferences.has(rule)) {
                     accept('hint', 'This parser rule is not used for parsing, but referenced by cross-references. Consider to replace this rule by a type declaration.', {
                         node: rule,
-                        property: 'name'
+                        // property: 'name',
+                        data: diagnosticData(IssueCodes.ParserRuleToTypeDecl)
                     });
                 } else {
                     accept('hint', 'This rule is declared but never referenced.', {

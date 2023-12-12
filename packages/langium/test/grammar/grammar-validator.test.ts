@@ -8,10 +8,11 @@ import type { AstNode, Properties } from 'langium';
 import type { GrammarAST as GrammarTypes } from 'langium';
 import type { ValidationResult } from 'langium/test';
 import { afterEach, beforeAll, describe, expect, test } from 'vitest';
-import { DiagnosticSeverity } from 'vscode-languageserver';
+import { CodeAction, DiagnosticSeverity } from 'vscode-languageserver';
 import { AstUtils, EmptyFileSystem, GrammarAST } from 'langium';
 import { IssueCodes, createLangiumGrammarServices } from 'langium/grammar';
-import { clearDocuments, expectError, expectIssue, expectNoIssues, expectWarning, parseHelper, validationHelper } from 'langium/test';
+import { clearDocuments, expectError, expectIssue, expectNoIssues, expectWarning, parseHelper, textDocumentParams, validationHelper } from 'langium/test';
+import { TextDocument } from 'vscode-languageserver-textdocument';
 
 const services = createLangiumGrammarServices(EmptyFileSystem);
 const parse = parseHelper(services.grammar);
@@ -515,7 +516,7 @@ describe('Unused rules validation', () => {
     test('Parser rules used only as type in cross-references are correctly identified as used', async () => {
         // this test case targets https://github.com/eclipse-langium/langium/issues/1309
         const text = `
-        grammar HelloWorld
+        grammar ParserRulesOnlyForCrossReferences
 
         entry Model:
             (persons+=Neighbor | friends+=Friend | greetings+=Greeting)*;
@@ -533,14 +534,59 @@ describe('Unused rules validation', () => {
         hidden terminal WS: /\\s+/;
         terminal ID: /[_a-zA-Z][\\w_]*/;
         `;
+        // check, that the expected validation hint is available
         const validation = await validate(text);
         expect(validation.diagnostics).toHaveLength(1);
         const ruleWithHint = validation.document.parseResult.value.rules.find(e => e.name === 'Person')!;
         expectIssue(validation, {
             node: ruleWithHint,
-            property: 'name',
+            // property: 'name',
             severity: DiagnosticSeverity.Hint
         });
+        // check, that the quick-fix is generated
+        const actionProvider = services.grammar.lsp.CodeActionProvider;
+        expect(actionProvider).toBeTruthy();
+        const currentAcctions = await actionProvider!.getCodeActions(validation.document, {
+            ...textDocumentParams(validation.document),
+            range: validation.diagnostics[0].range,
+            context: {
+                diagnostics: validation.diagnostics,
+                triggerKind: 1 // explicitly triggered by users (or extensions)
+            }
+        });
+        // there is one quick-fix
+        expect(currentAcctions).toBeTruthy();
+        expect(Array.isArray(currentAcctions)).toBeTruthy();
+        expect(currentAcctions!.length).toBe(1);
+        expect(CodeAction.is(currentAcctions![0])).toBeTruthy();
+        const action: CodeAction = currentAcctions![0] as CodeAction;
+        // execute the found quick-fix
+        expect(action.title).toBe('Replace parser rule by type declaration');
+        const edits = action.edit?.changes![validation.document.textDocument.uri];
+        expect(edits).toBeTruthy();
+        const updatedText = TextDocument.applyEdits(validation.document.textDocument, edits!);
+
+        // check the result
+        const textExpected = `
+        grammar ParserRulesOnlyForCrossReferences
+
+        entry Model:
+            (persons+=Neighbor | friends+=Friend | greetings+=Greeting)*;
+
+        Neighbor:
+            'neighbor' name=ID;
+        Friend:
+            'friend' name=ID;
+
+        type Person = Neighbor | Friend; // 'Person' is used only for cross-references, not as parser rule
+
+        Greeting:
+            'Hello' person=[Person:ID] '!';
+
+        hidden terminal WS: /\\s+/;
+        terminal ID: /[_a-zA-Z][\\w_]*/;
+        `;
+        expect(updatedText).toBe(textExpected);
     });
 
 });
