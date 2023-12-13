@@ -32,12 +32,12 @@ import type { LangiumServices, LangiumSharedServices } from '../services.js';
 import type { LangiumDocument } from '../workspace/documents.js';
 import { Emitter, LSPErrorCodes, ResponseError, TextDocumentSyncKind } from 'vscode-languageserver';
 import { eagerLoad } from '../dependency-injection.js';
-import { isOperationCancelled } from '../utils/promise-util.js';
+import { isOperationCancelled } from '../utils/promise-utils.js';
 import { DocumentState } from '../workspace/documents.js';
 import { mergeCompletionProviderOptions } from './completion/completion-provider.js';
 import { DefaultSemanticTokenOptions } from './semantic-token-provider.js';
 import { mergeSignatureHelpOptions } from './signature-help-provider.js';
-import { URI } from '../utils/uri-util.js';
+import { URI } from '../utils/uri-utils.js';
 
 export interface LanguageServer {
     initialize(params: InitializeParams): Promise<InitializeResult>

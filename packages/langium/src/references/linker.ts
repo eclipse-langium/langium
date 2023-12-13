@@ -11,8 +11,8 @@ import type { LangiumDocument, LangiumDocuments } from '../workspace/documents.j
 import type { ScopeProvider } from './scope-provider.js';
 import { CancellationToken } from 'vscode-languageserver';
 import { isAstNode, isAstNodeDescription, isLinkingError } from '../syntax-tree.js';
-import { getDocument, streamAst, streamReferences } from '../utils/ast-util.js';
-import { interruptAndCheck } from '../utils/promise-util.js';
+import { getDocument, streamAst, streamReferences } from '../utils/ast-utils.js';
+import { interruptAndCheck } from '../utils/promise-utils.js';
 import { DocumentState } from '../workspace/documents.js';
 
 /**

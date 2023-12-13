@@ -6,7 +6,7 @@
 
 import type { AstNode, CstNode } from '../../syntax-tree.js';
 import { DefaultNameProvider } from '../../references/name-provider.js';
-import { findNodeForProperty } from '../../utils/grammar-util.js';
+import { findNodeForProperty } from '../../utils/grammar-utils.js';
 import { isAssignment } from '../../languages/generated/ast.js';
 
 export class LangiumGrammarNameProvider extends DefaultNameProvider {

@@ -9,12 +9,11 @@ import { CancellationToken } from 'vscode-languageserver';
 import type { ParseResult } from '../parser/langium-parser.js';
 import type { ServiceRegistry } from '../service-registry.js';
 import type { LangiumSharedServices } from '../services.js';
-import type { AstNode, AstNodeDescription, Reference } from '../syntax-tree.js';
-import type { Mutable } from '../utils/ast-util.js';
+import type { AstNode, AstNodeDescription, Mutable, Reference } from '../syntax-tree.js';
 import type { MultiMap } from '../utils/collections.js';
 import type { Stream } from '../utils/stream.js';
 import type { FileSystemProvider } from './file-system-provider.js';
-import { URI } from '../utils/uri-util.js';
+import { URI } from '../utils/uri-utils.js';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { stream } from '../utils/stream.js';
 

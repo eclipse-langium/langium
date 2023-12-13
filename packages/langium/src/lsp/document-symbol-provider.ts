@@ -8,8 +8,8 @@ import type { CancellationToken, DocumentSymbol, DocumentSymbolParams} from 'vsc
 import type { NameProvider } from '../references/name-provider.js';
 import type { LangiumServices } from '../services.js';
 import type { AstNode } from '../syntax-tree.js';
-import { streamContents } from '../utils/ast-util.js';
-import type { MaybePromise } from '../utils/promise-util.js';
+import { streamContents } from '../utils/ast-utils.js';
+import type { MaybePromise } from '../utils/promise-utils.js';
 import type { LangiumDocument } from '../workspace/documents.js';
 import type { NodeKindProvider } from './node-kind-provider.js';
 

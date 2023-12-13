@@ -12,7 +12,7 @@ import type { IndexManager } from '../workspace/index-manager.js';
 import type { NameProvider } from './name-provider.js';
 import type { Scope, ScopeOptions} from './scope.js';
 import { MapScope, StreamScope } from './scope.js';
-import { getDocument } from '../utils/ast-util.js';
+import { getDocument } from '../utils/ast-utils.js';
 import { stream } from '../utils/stream.js';
 import { WorkspaceCache } from '../utils/caching.js';
 

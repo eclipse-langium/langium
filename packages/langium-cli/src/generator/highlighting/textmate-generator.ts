@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
 ******************************************************************************/
 import type { Grammar } from 'langium';
-import { escapeRegExp, getCaseInsensitivePattern, getTerminalParts, GrammarAST, isCommentTerminal, stream, terminalRegex } from 'langium';
+import { GrammarAST, GrammarUtils, RegExpUtils, stream } from 'langium';
 import type { LangiumLanguageConfig } from '../../package.js';
 import { collectKeywords } from '../util.js';
 
@@ -74,8 +74,8 @@ function getRepository(grammar: Grammar, config: LangiumLanguageConfig): Reposit
     const commentPatterns: Pattern[] = [];
     let stringEscapePattern: Pattern | undefined;
     for (const rule of grammar.rules) {
-        if (GrammarAST.isTerminalRule(rule) && isCommentTerminal(rule)) {
-            const parts = getTerminalParts(terminalRegex(rule));
+        if (GrammarAST.isTerminalRule(rule) && GrammarUtils.isCommentTerminal(rule)) {
+            const parts = RegExpUtils.getTerminalParts(GrammarUtils.terminalRegex(rule));
             for (const part of parts) {
                 if (part.end) {
                     commentPatterns.push({
@@ -144,7 +144,7 @@ function groupKeywords(keywords: string[], caseInsensitive: boolean | undefined)
     } = { letter: [], leftSpecial: [], rightSpecial: [], special: [] };
 
     keywords.forEach(keyword => {
-        const keywordPattern = caseInsensitive ? getCaseInsensitivePattern(keyword) : escapeRegExp(keyword);
+        const keywordPattern = caseInsensitive ? RegExpUtils.getCaseInsensitivePattern(keyword) : RegExpUtils.escapeRegExp(keyword);
         if (/\w/.test(keyword[0])) {
             if (/\w/.test(keyword[keyword.length - 1])) {
                 groups.letter.push(keywordPattern);
@@ -173,7 +173,7 @@ function getStringPatterns(grammar: Grammar, pack: LangiumLanguageConfig): Patte
     const stringTerminal = terminals.find(e => e.name.toLowerCase() === 'string');
     const stringPatterns: Pattern[] = [];
     if (stringTerminal) {
-        const parts = getTerminalParts(terminalRegex(stringTerminal));
+        const parts = RegExpUtils.getTerminalParts(GrammarUtils.terminalRegex(stringTerminal));
         for (const part of parts) {
             if (part.end) {
                 stringPatterns.push({

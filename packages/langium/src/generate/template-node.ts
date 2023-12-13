@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import type { AstNode, Properties } from '../syntax-tree.js';
-import { NEWLINE_REGEXP } from '../utils/regex-util.js';
+import { NEWLINE_REGEXP } from '../utils/regexp-utils.js';
 import type { Generated, GeneratorNode, IndentNode } from './generator-node.js';
 import { CompositeGeneratorNode, isGeneratorNode, traceToNode } from './generator-node.js';
 import type { SourceRegion } from './generator-tracing.js';

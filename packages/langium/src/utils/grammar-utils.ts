@@ -7,9 +7,9 @@
 import type { AstNode, CstNode } from '../syntax-tree.js';
 import * as ast from '../languages/generated/ast.js';
 import { isCompositeCstNode } from '../syntax-tree.js';
-import { getContainerOfType, streamAllContents } from '../utils/ast-util.js';
-import { streamCst } from '../utils/cst-util.js';
-import { escapeRegExp } from './regex-util.js';
+import { getContainerOfType, streamAllContents } from './ast-utils.js';
+import { streamCst } from './cst-utils.js';
+import { escapeRegExp } from './regexp-utils.js';
 
 /**
  * Returns the entry rule of the given grammar, if any. If the grammar file does not contain an entry rule,

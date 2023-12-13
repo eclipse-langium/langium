@@ -9,7 +9,7 @@ import type { SModelElement, SModelRoot } from 'sprotty-protocol';
 import type { Range } from 'vscode-languageserver';
 import { URI } from 'vscode-uri';
 import type { LangiumSprottyServices } from './sprotty-services.js';
-import { findNodeForProperty, getDocument, stream, } from 'langium';
+import { AstUtils, GrammarUtils, stream, } from 'langium';
 
 export interface TracedModelElement extends SModelElement {
     trace?: string
@@ -51,7 +51,7 @@ export class DefaultTraceProvider implements TraceProvider {
     trace(target: TracedModelElement, source: AstNode, property?: string | undefined, index?: number | undefined): void {
         let range: Range | undefined;
         if (property) {
-            range = findNodeForProperty(source.$cstNode, property, index)?.range;
+            range = GrammarUtils.findNodeForProperty(source.$cstNode, property, index)?.range;
         } else {
             range = source.$cstNode?.range;
         }
@@ -59,7 +59,7 @@ export class DefaultTraceProvider implements TraceProvider {
             return;
         }
 
-        const traceUri = getDocument(source).uri.with({
+        const traceUri = AstUtils.getDocument(source).uri.with({
             fragment: this.astNodeLocator.getAstNodePath(source),
             query: `${range.start.line}:${range.start.character}-${range.end.line}:${range.end.character}`
         });
@@ -84,7 +84,7 @@ export class DefaultTraceProvider implements TraceProvider {
     }
 
     getTarget(source: AstNode, root: SModelRoot): TracedModelElement | undefined {
-        const documentUri = getDocument(source).uri;
+        const documentUri = AstUtils.getDocument(source).uri;
         const containerChain = [];
         let currentContainer: AstNode | undefined = source;
         while (currentContainer) {

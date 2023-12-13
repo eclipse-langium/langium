@@ -7,8 +7,8 @@
 import type { SignatureHelp, SignatureHelpOptions, SignatureHelpParams } from 'vscode-languageserver';
 import { CancellationToken } from 'vscode-languageserver';
 import type { AstNode } from '../syntax-tree.js';
-import { findLeafNodeAtOffset } from '../utils/cst-util.js';
-import type { MaybePromise } from '../utils/promise-util.js';
+import { findLeafNodeAtOffset } from '../utils/cst-utils.js';
+import type { MaybePromise } from '../utils/promise-utils.js';
 import type { LangiumDocument } from '../workspace/documents.js';
 
 /**

@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { URI } from '../utils/uri-util.js';
+import type { URI } from '../utils/uri-utils.js';
 import type { ServiceRegistry } from '../service-registry.js';
 import type { LangiumSharedServices } from '../services.js';
 import type { AstNode, AstNodeDescription, AstReflection } from '../syntax-tree.js';
@@ -12,9 +12,9 @@ import type { Stream } from '../utils/stream.js';
 import type { ReferenceDescription } from './ast-descriptions.js';
 import type { LangiumDocument, LangiumDocuments } from './documents.js';
 import { CancellationToken } from 'vscode-languageserver';
-import { getDocument } from '../utils/ast-util.js';
+import { getDocument } from '../utils/ast-utils.js';
 import { stream } from '../utils/stream.js';
-import { UriUtils } from '../utils/uri-util.js';
+import { UriUtils } from '../utils/uri-utils.js';
 import { ContextCache } from '../utils/caching.js';
 
 /**

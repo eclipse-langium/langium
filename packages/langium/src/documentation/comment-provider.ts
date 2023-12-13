@@ -8,7 +8,7 @@ import type { GrammarConfig } from '../languages/grammar-config.js';
 import { isAstNodeWithComment } from '../serializer/json-serializer.js';
 import type { LangiumServices } from '../services.js';
 import type { AstNode } from '../syntax-tree.js';
-import { findCommentNode } from '../utils/cst-util.js';
+import { findCommentNode } from '../utils/cst-utils.js';
 
 /**
  * Provides comments for AST nodes.

@@ -9,7 +9,7 @@ import type { Range, WorkspaceEdit } from 'vscode-languageserver';
 import type { RenameParams } from 'vscode-languageserver-protocol';
 import type { DomainModelServices } from './domain-model-module.js';
 import type { QualifiedNameProvider } from './domain-model-naming.js';
-import { DefaultRenameProvider, findDeclarationNodeAtOffset, getDocument, isNamed, streamAst, toDocumentSegment } from 'langium';
+import { AstUtils, CstUtils, DefaultRenameProvider, isNamed } from 'langium';
 import { Location } from 'vscode-languageserver';
 import { TextEdit } from 'vscode-languageserver-types';
 import { isPackageDeclaration } from './generated/ast.js';
@@ -30,7 +30,7 @@ export class DomainModelRenameProvider extends DefaultRenameProvider {
         const rootNode = document.parseResult.value.$cstNode;
         if (!rootNode) return undefined;
         const offset = document.textDocument.offsetAt(params.position);
-        const leafNode = findDeclarationNodeAtOffset(rootNode, offset, this.grammarConfig.nameRegexp);
+        const leafNode = CstUtils.findDeclarationNodeAtOffset(rootNode, offset, this.grammarConfig.nameRegexp);
         if (!leafNode) return undefined;
         const targetNode = this.references.findDeclaration(leafNode);
         if (!targetNode) return undefined;
@@ -48,7 +48,7 @@ export class DomainModelRenameProvider extends DefaultRenameProvider {
             }
         }
 
-        for (const node of streamAst(targetNode)) {
+        for (const node of AstUtils.streamAst(targetNode)) {
             const qn = this.buildQualifiedName(node);
             if (qn) {
                 const options = { onlyLocal: false, includeDeclaration: false };
@@ -88,10 +88,10 @@ export class DomainModelRenameProvider extends DefaultRenameProvider {
     getNodeLocation(targetNode: AstNode): Location | undefined {
         const nameNode = this.nameProvider.getNameNode(targetNode);
         if (nameNode) {
-            const doc = getDocument(targetNode);
+            const doc = AstUtils.getDocument(targetNode);
             return Location.create(
                 doc.uri.toString(),
-                toDocumentSegment(nameNode).range
+                CstUtils.toDocumentSegment(nameNode).range
             );
         }
         return undefined;

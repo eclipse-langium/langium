@@ -10,7 +10,7 @@ import type { AbstractElement } from '../languages/generated/ast.js';
 import type { AstNode, CompositeCstNode, CstNode, LeafCstNode, RootCstNode } from '../syntax-tree.js';
 import { Position } from 'vscode-languageserver-types';
 import { isCompositeCstNode } from '../syntax-tree.js';
-import { tokenToRange } from '../utils/cst-util.js';
+import { tokenToRange } from '../utils/cst-utils.js';
 
 export class CstNodeBuilder {
 

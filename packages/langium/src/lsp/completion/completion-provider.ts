@@ -11,7 +11,7 @@ import type { NameProvider } from '../../references/name-provider.js';
 import type { ScopeProvider } from '../../references/scope-provider.js';
 import type { LangiumServices } from '../../services.js';
 import type { AstNode, AstNodeDescription, AstReflection, CstNode, ReferenceInfo } from '../../syntax-tree.js';
-import type { MaybePromise } from '../../utils/promise-util.js';
+import type { MaybePromise } from '../../utils/promise-utils.js';
 import type { LangiumDocument } from '../../workspace/documents.js';
 import type { NextFeature } from './follow-element-computation.js';
 import type { NodeKindProvider } from '../node-kind-provider.js';
@@ -21,9 +21,9 @@ import type { Lexer } from '../../parser/lexer.js';
 import type { IToken } from 'chevrotain';
 import { CompletionItemKind, CompletionList, Position } from 'vscode-languageserver';
 import * as ast from '../../languages/generated/ast.js';
-import { assignMandatoryAstProperties, getContainerOfType } from '../../utils/ast-util.js';
-import { findDeclarationNodeAtOffset, findLeafNodeBeforeOffset } from '../../utils/cst-util.js';
-import { getEntryRule, getExplicitRuleType } from '../../utils/grammar-util.js';
+import { assignMandatoryProperties, getContainerOfType } from '../../utils/ast-utils.js';
+import { findDeclarationNodeAtOffset, findLeafNodeBeforeOffset } from '../../utils/cst-utils.js';
+import { getEntryRule, getExplicitRuleType } from '../../utils/grammar-utils.js';
 import { stream } from '../../utils/stream.js';
 import { findFirstFeatures, findNextFeatures } from './follow-element-computation.js';
 
@@ -418,7 +418,7 @@ export class DefaultCompletionProvider implements CompletionProvider {
                     $container: node,
                     $containerProperty: next.property
                 };
-                assignMandatoryAstProperties(this.astReflection, node);
+                assignMandatoryProperties(this.astReflection, node);
             }
             const refInfo: ReferenceInfo = {
                 reference: {

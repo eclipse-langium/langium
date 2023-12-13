@@ -7,10 +7,10 @@
 import type { InlayHint, InlayHintParams } from 'vscode-languageserver';
 import type { AstNode } from '../syntax-tree.js';
 import { CancellationToken } from 'vscode-languageserver';
-import type { MaybePromise } from '../utils/promise-util.js';
+import type { MaybePromise } from '../utils/promise-utils.js';
 import type { LangiumDocument } from '../workspace/documents.js';
-import { streamAst } from '../utils/ast-util.js';
-import { interruptAndCheck } from '../utils/promise-util.js';
+import { streamAst } from '../utils/ast-utils.js';
+import { interruptAndCheck } from '../utils/promise-utils.js';
 
 export type InlayHintAcceptor = (inlayHint: InlayHint) => void;
 

@@ -5,11 +5,11 @@
  ******************************************************************************/
 
 import type { LangiumServices } from '../services.js';
-import { DefaultNameRegexp } from '../utils/cst-util.js';
-import { isCommentTerminal } from '../utils/grammar-util.js';
-import { isMultilineComment } from '../utils/regex-util.js';
+import { DefaultNameRegexp } from '../utils/cst-utils.js';
+import { isCommentTerminal } from '../utils/grammar-utils.js';
+import { isMultilineComment } from '../utils/regexp-utils.js';
 import { isTerminalRule } from './generated/ast.js';
-import { terminalRegex } from '../utils/grammar-util.js';
+import { terminalRegex } from '../utils/grammar-utils.js';
 
 export interface GrammarConfig {
     /**
@@ -22,6 +22,10 @@ export interface GrammarConfig {
     nameRegexp: RegExp
 }
 
+/**
+ * Create the default grammar configuration (used by `createDefaultModule`). This can be overridden in a
+ * language-specific module.
+ */
 export function createGrammarConfig(services: LangiumServices): GrammarConfig {
     const rules: string[] = [];
     const grammar = services.Grammar;

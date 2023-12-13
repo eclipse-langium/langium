@@ -4,15 +4,17 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-export * from './ast-util.js';
 export * from './caching.js';
 export * from './collections.js';
-export * from './cst-util.js';
 export * from './disposable.js';
 export * from './errors.js';
 export * from './grammar-loader.js';
-export * from './grammar-util.js';
-export * from './promise-util.js';
-export * from './regex-util.js';
+export * from './promise-utils.js';
 export * from './stream.js';
-export * from './uri-util.js';
+export * from './uri-utils.js';
+
+import * as AstUtils from './ast-utils.js';
+import * as CstUtils from './cst-utils.js';
+import * as GrammarUtils from './grammar-utils.js';
+import * as RegExpUtils from './regexp-utils.js';
+export { AstUtils, CstUtils, GrammarUtils, RegExpUtils };

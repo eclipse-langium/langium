@@ -9,9 +9,9 @@ import type { AbstractRule, Grammar, Keyword, TerminalRule } from '../languages/
 import type { Stream } from '../utils/stream.js';
 import { Lexer } from 'chevrotain';
 import { isKeyword, isParserRule, isTerminalRule } from '../languages/generated/ast.js';
-import { streamAllContents } from '../utils/ast-util.js';
-import { getAllReachableRules, terminalRegex } from '../utils/grammar-util.js';
-import { getCaseInsensitivePattern, isWhitespaceRegExp, partialMatches } from '../utils/regex-util.js';
+import { streamAllContents } from '../utils/ast-utils.js';
+import { getAllReachableRules, terminalRegex } from '../utils/grammar-utils.js';
+import { getCaseInsensitivePattern, isWhitespace, partialMatches } from '../utils/regexp-utils.js';
 import { stream } from '../utils/stream.js';
 
 export interface TokenBuilderOptions {
@@ -31,7 +31,7 @@ export class DefaultTokenBuilder implements TokenBuilder {
 
         terminalTokens.forEach(terminalToken => {
             const pattern = terminalToken.PATTERN;
-            if (typeof pattern === 'object' && pattern && 'test' in pattern && isWhitespaceRegExp(pattern)) {
+            if (typeof pattern === 'object' && pattern && 'test' in pattern && isWhitespace(pattern)) {
                 tokens.unshift(terminalToken);
             } else {
                 tokens.push(terminalToken);
@@ -57,7 +57,7 @@ export class DefaultTokenBuilder implements TokenBuilder {
         };
         if (terminal.hidden) {
             // Only skip tokens that are able to accept whitespace
-            tokenType.GROUP = isWhitespaceRegExp(regex) ? Lexer.SKIPPED : 'hidden';
+            tokenType.GROUP = isWhitespace(regex) ? Lexer.SKIPPED : 'hidden';
         }
         return tokenType;
     }

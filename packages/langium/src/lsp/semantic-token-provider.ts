@@ -10,12 +10,12 @@ import type { Range, SemanticTokens, SemanticTokensClientCapabilities, SemanticT
 import type { LangiumServices } from '../services.js';
 import type { AstNode, CstNode, Properties } from '../syntax-tree.js';
 import type { LangiumDocument } from '../workspace/documents.js';
-import type { MaybePromise } from '../utils/promise-util.js';
+import type { MaybePromise } from '../utils/promise-utils.js';
 import { CancellationToken, SemanticTokenModifiers, SemanticTokensBuilder as BaseSemanticTokensBuilder, SemanticTokenTypes } from 'vscode-languageserver';
-import { findNodesForKeyword, findNodeForProperty, findNodesForProperty, findNodeForKeyword } from '../utils/grammar-util.js';
-import { streamAst } from '../utils/ast-util.js';
-import { interruptAndCheck } from '../utils/promise-util.js';
-import { inRange } from '../utils/cst-util.js';
+import { findNodesForKeyword, findNodeForProperty, findNodesForProperty, findNodeForKeyword } from '../utils/grammar-utils.js';
+import { streamAst } from '../utils/ast-utils.js';
+import { interruptAndCheck } from '../utils/promise-utils.js';
+import { inRange } from '../utils/cst-utils.js';
 
 export const AllSemanticTokenTypes: Record<string, number> = {
     [SemanticTokenTypes.class]: 0,

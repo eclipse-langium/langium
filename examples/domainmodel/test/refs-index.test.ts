@@ -7,7 +7,7 @@
 import type { AstNode, LangiumDocument, ReferenceDescription, URI } from 'langium';
 import type { Domainmodel } from '../src/language-server/generated/ast.js';
 import { describe, expect, test } from 'vitest';
-import { EmptyFileSystem, getDocument } from 'langium';
+import { AstUtils, EmptyFileSystem } from 'langium';
 import { parseDocument, setTextDocument } from 'langium/test';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { createDomainModelServices } from '../src/language-server/domain-model-module.js';
@@ -62,7 +62,7 @@ function refString(ref: ReferenceDescription): string {
 }
 
 function nodeRefString(from: AstNode, to: AstNode): string {
-    return asString(getDocument(from).uri, createPath(from), getDocument(to).uri, createPath(to));
+    return asString(AstUtils.getDocument(from).uri, createPath(from), AstUtils.getDocument(to).uri, createPath(to));
 }
 
 function createPath(node: AstNode): string {

@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { URI } from '../utils/uri-util.js';
+import type { URI } from '../utils/uri-utils.js';
 
 export interface FileSystemNode {
     readonly isFile: boolean;

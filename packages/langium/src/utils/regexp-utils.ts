@@ -9,45 +9,45 @@ import { RegExpParser, BaseRegExpVisitor } from '@chevrotain/regexp-to-ast';
 
 export const NEWLINE_REGEXP = /\r?\n/gm;
 
-const regexParser = new RegExpParser();
+const regexpParser = new RegExpParser();
 
 /**
  * This class is in charge of heuristically identifying start/end tokens of terminals.
  *
  * The way this works is by doing the following:
  * 1. Traverse the regular expression in the "start state"
- * 2. Add any encountered sets/single characters to the "start regex"
+ * 2. Add any encountered sets/single characters to the "start regexp"
  * 3. Once we encounter any variable-length content (i.e. with quantifiers such as +/?/*), we enter the "end state"
  * 4. In the end state, any sets/single characters are added to an "end stack".
  * 5. If we re-encounter any variable-length content we reset the end stack
  * 6. We continue visiting the regex until the end, reseting the end stack and rebuilding it as necessary
  *
- * After traversing a regular expression the `startRegex/endRegex` properties allow access to the stored start/end of the terminal
+ * After traversing a regular expression the `startRegexp/endRegexp` properties allow access to the stored start/end of the terminal
  */
-class TerminalRegexVisitor extends BaseRegExpVisitor {
+class TerminalRegExpVisitor extends BaseRegExpVisitor {
 
     private isStarting = true;
-    startRegex: string;
-    private endRegexStack: string[] = [];
+    startRegexp: string;
+    private endRegexpStack: string[] = [];
     multiline = false;
     regex: string;
 
     get endRegex(): string {
-        return this.endRegexStack.join('');
+        return this.endRegexpStack.join('');
     }
 
     reset(regex: string): void {
         this.multiline = false;
         this.regex = regex;
-        this.startRegex = '';
+        this.startRegexp = '';
         this.isStarting = true;
-        this.endRegexStack = [];
+        this.endRegexpStack = [];
     }
 
     override visitGroup(node: Group) {
         if (node.quantifier) {
             this.isStarting = false;
-            this.endRegexStack = [];
+            this.endRegexpStack = [];
         }
     }
 
@@ -58,12 +58,12 @@ class TerminalRegexVisitor extends BaseRegExpVisitor {
         }
         if (node.quantifier) {
             this.isStarting = false;
-            this.endRegexStack = [];
+            this.endRegexpStack = [];
         } else {
             const escapedChar = escapeRegExp(char);
-            this.endRegexStack.push(escapedChar);
+            this.endRegexpStack.push(escapedChar);
             if (this.isStarting) {
-                this.startRegex += escapedChar;
+                this.startRegexp += escapedChar;
             }
         }
     }
@@ -76,12 +76,12 @@ class TerminalRegexVisitor extends BaseRegExpVisitor {
         }
         if (node.quantifier) {
             this.isStarting = false;
-            this.endRegexStack = [];
+            this.endRegexpStack = [];
         } else {
             const set = this.regex.substring(node.loc.begin, node.loc.end);
-            this.endRegexStack.push(set);
+            this.endRegexpStack.push(set);
             if (this.isStarting) {
-                this.startRegex += set;
+                this.startRegexp += set;
             }
         }
     }
@@ -99,21 +99,21 @@ class TerminalRegexVisitor extends BaseRegExpVisitor {
     }
 }
 
-const visitor = new TerminalRegexVisitor();
+const visitor = new TerminalRegExpVisitor();
 
-export function getTerminalParts(regex: RegExp | string): Array<{ start: string, end: string }> {
+export function getTerminalParts(regexp: RegExp | string): Array<{ start: string, end: string }> {
     try {
-        if (typeof regex !== 'string') {
-            regex = regex.source;
+        if (typeof regexp !== 'string') {
+            regexp = regexp.source;
         }
-        regex = `/${regex}/`;
-        const pattern = regexParser.pattern(regex);
+        regexp = `/${regexp}/`;
+        const pattern = regexpParser.pattern(regexp);
         const parts: Array<{ start: string, end: string }> = [];
         for (const alternative of pattern.value.value) {
-            visitor.reset(regex);
+            visitor.reset(regexp);
             visitor.visit(alternative);
             parts.push({
-                start: visitor.startRegex,
+                start: visitor.startRegexp,
                 end: visitor.endRegex
             });
         }
@@ -123,22 +123,22 @@ export function getTerminalParts(regex: RegExp | string): Array<{ start: string,
     }
 }
 
-export function isMultilineComment(regex: RegExp | string): boolean {
+export function isMultilineComment(regexp: RegExp | string): boolean {
     try {
-        if (typeof regex === 'string') {
-            regex = new RegExp(regex);
+        if (typeof regexp === 'string') {
+            regexp = new RegExp(regexp);
         }
-        regex = regex.toString();
-        visitor.reset(regex);
+        regexp = regexp.toString();
+        visitor.reset(regexp);
         // Parsing the pattern might fail (since it's user code)
-        visitor.visit(regexParser.pattern(regex));
+        visitor.visit(regexpParser.pattern(regexp));
         return visitor.multiline;
     } catch {
         return false;
     }
 }
 
-export function isWhitespaceRegExp(value: RegExp | string): boolean {
+export function isWhitespace(value: RegExp | string): boolean {
     const regexp = typeof value === 'string' ? new RegExp(value) : value;
     return regexp.test(' ');
 }
@@ -160,7 +160,7 @@ export function getCaseInsensitivePattern(keyword: string): string {
  * @returns Whether any match exists.
  */
 export function partialMatches(regex: RegExp | string, input: string): boolean {
-    const partial = partialRegex(regex);
+    const partial = partialRegExp(regex);
     const match = input.match(partial);
     return !!match && match[0].length > 0;
 }
@@ -171,7 +171,7 @@ export function partialMatches(regex: RegExp | string, input: string): boolean {
  * @param regex The input regex to be converted.
  * @returns A partial regex constructed from the input regex.
  */
-export function partialRegex(regex: RegExp | string): RegExp {
+export function partialRegExp(regex: RegExp | string): RegExp {
     if (typeof regex === 'string') {
         regex = new RegExp(regex);
     }

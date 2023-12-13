@@ -10,11 +10,11 @@ import type { NameProvider } from '../references/name-provider.js';
 import type { References } from '../references/references.js';
 import type { LangiumServices } from '../services.js';
 import type { CstNode } from '../syntax-tree.js';
-import type { MaybePromise } from '../utils/promise-util.js';
+import type { MaybePromise } from '../utils/promise-utils.js';
 import type { LangiumDocument } from '../workspace/documents.js';
 import { LocationLink } from 'vscode-languageserver';
-import { getDocument } from '../utils/ast-util.js';
-import { findDeclarationNodeAtOffset } from '../utils/cst-util.js';
+import { getDocument } from '../utils/ast-utils.js';
+import { findDeclarationNodeAtOffset } from '../utils/cst-utils.js';
 
 /**
  * Language-specific service for handling go to definition requests.

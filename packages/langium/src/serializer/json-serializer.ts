@@ -6,14 +6,13 @@
 
 import type { NameProvider } from '../references/name-provider.js';
 import type { LangiumServices } from '../services.js';
-import type { AstNode, CstNode, GenericAstNode, Reference } from '../syntax-tree.js';
-import type { Mutable } from '../utils/ast-util.js';
+import type { AstNode, CstNode, GenericAstNode, Mutable, Reference } from '../syntax-tree.js';
 import type { AstNodeLocator } from '../workspace/ast-node-locator.js';
 import type { DocumentSegment, LangiumDocument, LangiumDocuments } from '../workspace/documents.js';
 import { URI } from 'vscode-uri';
 import { isAstNode, isReference } from '../syntax-tree.js';
-import { getDocument } from '../utils/ast-util.js';
-import { findNodesForProperty } from '../utils/grammar-util.js';
+import { getDocument } from '../utils/ast-utils.js';
+import { findNodesForProperty } from '../utils/grammar-utils.js';
 import type { CommentProvider } from '../documentation/comment-provider.js';
 
 export interface JsonSerializeOptions {

@@ -8,7 +8,7 @@ import type { Connection } from 'vscode-languageserver';
 import type { ActionMessage, DiagramState, SModelIndex } from 'sprotty-protocol';
 import type { Location } from 'vscode-languageserver';
 import type { LangiumSprottyServices, LangiumSprottySharedServices } from './sprotty-services.js';
-import { findDeclarationNodeAtOffset, getDocument, isOperationCancelled } from 'langium';
+import { AstUtils, CstUtils, isOperationCancelled } from 'langium';
 import { findElement, FitToScreenAction, SelectAction, SelectAllAction } from 'sprotty-protocol';
 import { NotificationType } from 'vscode-languageserver';
 
@@ -82,7 +82,7 @@ export function addDiagramSelectionHandler(services: LangiumSprottyServices): vo
                     const nameNode = nameProvider.getNameNode(source);
                     connection.sendNotification(OpenInTextEditorNotification.type, {
                         location: {
-                            uri: getDocument(source).uri.toString(),
+                            uri: AstUtils.getDocument(source).uri.toString(),
                             range: (nameNode ?? source.$cstNode).range
                         },
                         forceOpen: false
@@ -107,7 +107,7 @@ export function addTextSelectionHandler(services: LangiumSprottyServices, option
         if (diagramServers.length > 0) {
             const rootNode = document.parseResult.value.$cstNode;
             const offset = document.textDocument.offsetAt(position);
-            const selectedToken = findDeclarationNodeAtOffset(rootNode, offset, grammarConfig.nameRegexp);
+            const selectedToken = CstUtils.findDeclarationNodeAtOffset(rootNode, offset, grammarConfig.nameRegexp);
             const node = selectedToken?.astNode;
             if (node) {
                 for (const diagramServer of diagramServers) {

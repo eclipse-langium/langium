@@ -7,13 +7,13 @@
 import type { CancellationToken, DocumentFormattingParams, DocumentOnTypeFormattingOptions, DocumentOnTypeFormattingParams, DocumentRangeFormattingParams, FormattingOptions, Range, TextEdit } from 'vscode-languageserver';
 import type { TextDocument } from 'vscode-languageserver-textdocument';
 import type { AstNode, CstNode, Properties } from '../syntax-tree.js';
-import type { MaybePromise } from '../utils/promise-util.js';
+import type { MaybePromise } from '../utils/promise-utils.js';
 import type { Stream } from '../utils/stream.js';
 import type { LangiumDocument } from '../workspace/documents.js';
-import { findNodeForKeyword, findNodesForKeyword, findNodeForProperty, findNodesForProperty } from '../utils/grammar-util.js';
+import { findNodeForKeyword, findNodesForKeyword, findNodeForProperty, findNodesForProperty } from '../utils/grammar-utils.js';
 import { isCompositeCstNode, isLeafCstNode } from '../syntax-tree.js';
-import { streamAllContents } from '../utils/ast-util.js';
-import { getInteriorNodes, getNextNode } from '../utils/cst-util.js';
+import { streamAllContents } from '../utils/ast-utils.js';
+import { getInteriorNodes, getNextNode } from '../utils/cst-utils.js';
 import { DONE_RESULT, EMPTY_STREAM, StreamImpl, TreeStreamImpl } from '../utils/stream.js';
 
 /**

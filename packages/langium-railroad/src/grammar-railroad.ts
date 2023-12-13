@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { GrammarAST, findNameAssignment } from 'langium';
+import { GrammarAST, GrammarUtils } from 'langium';
 import { expandToStringLF, expandToStringLFWithNL } from 'langium/generate';
 import type { FakeSVG } from 'railroad-diagrams';
 import { default as rr } from 'railroad-diagrams';
@@ -137,7 +137,7 @@ function toRailroad(element: GrammarAST.AbstractElement): FakeSVG[] {
         } else if (GrammarAST.isRuleCall(element.terminal)) {
             return wrapCardinality(element.cardinality, new rr.NonTerminal(element.terminal.rule.$refText));
         } else {
-            const nameAssignment = element.type.ref && findNameAssignment(element.type.ref);
+            const nameAssignment = element.type.ref && GrammarUtils.findNameAssignment(element.type.ref);
             if (nameAssignment) {
                 return wrapCardinality(element.cardinality, toRailroad(nameAssignment));
             } else {

@@ -8,7 +8,7 @@ import type { AstNode, Grammar, LangiumDocument, Mutable } from 'langium';
 import type { LangiumConfig, LangiumLanguageConfig} from './package.js';
 import { URI } from 'langium';
 import { loadConfig } from './package.js';
-import { copyAstNode, getDocument, GrammarAST, linkContentToContainer } from 'langium';
+import { AstUtils, GrammarAST } from 'langium';
 import { createLangiumGrammarServices, resolveImport, resolveImportUri, resolveTransitiveImports } from 'langium/grammar';
 import { NodeFileSystem } from 'langium/node';
 import { generateAst } from './generator/ast-generator.js';
@@ -148,7 +148,7 @@ async function eagerLoad(document: LangiumDocument, uris: Set<string> = new Set(
  */
 function mapGrammarElements(grammars: Grammar[], visited: Set<string> = new Set(), map: Map<Grammar, GrammarElement[]> = new Map()): Map<Grammar, GrammarElement[]> {
     for (const grammar of grammars) {
-        const doc = getDocument(grammar);
+        const doc = AstUtils.getDocument(grammar);
         const uriString = doc.uri.toString();
         if (!visited.has(uriString)) {
             visited.add(uriString);
@@ -172,7 +172,7 @@ function embedReferencedGrammar(grammar: Grammar, map: Map<Grammar, GrammarEleme
     for (const importedGrammar of allGrammars) {
         const grammarElements = map.get(importedGrammar) ?? [];
         for (const element of grammarElements) {
-            const copy = copyAstNode(element, buildReference);
+            const copy = AstUtils.copyAstNode(element, buildReference);
             // Deactivate copied entry rule
             if (GrammarAST.isParserRule(copy)) {
                 copy.entry = false;
@@ -194,7 +194,7 @@ function embedReferencedGrammar(grammar: Grammar, map: Map<Grammar, GrammarEleme
         imports: []
     };
     // Link newly added elements to grammar
-    linkContentToContainer(grammarCopy);
+    AstUtils.linkContentToContainer(grammarCopy);
     return grammarCopy;
 }
 
@@ -211,7 +211,7 @@ async function relinkGrammars(grammars: Grammar[]): Promise<void> {
     await documentBuilder.update([], documents.map(e => e.uri));
     // Create and build new documents
     const newDocuments = grammars.map(e => {
-        const uri = getDocument(e).uri;
+        const uri = AstUtils.getDocument(e).uri;
         const newDoc = documentFactory.fromModel(e, uri);
         (e as Mutable<AstNode>).$document = newDoc;
         return newDoc;

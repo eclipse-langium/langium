@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import type { CancellationToken, DeclarationParams, LocationLink } from 'vscode-languageserver';
-import type { MaybePromise } from '../utils/promise-util.js';
+import type { MaybePromise } from '../utils/promise-utils.js';
 import type { LangiumDocument } from '../workspace/documents.js';
 
 /**

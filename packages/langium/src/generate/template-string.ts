@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { NEWLINE_REGEXP } from '../utils/regex-util.js';
+import { NEWLINE_REGEXP } from '../utils/regexp-utils.js';
 import { EOL, toString } from './generator-node.js';
 
 export function expandToStringWithNL(staticParts: TemplateStringsArray, ...substitutions: unknown[]): string {

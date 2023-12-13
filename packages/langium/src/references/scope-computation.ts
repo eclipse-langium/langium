@@ -10,9 +10,9 @@ import type { AstNodeDescriptionProvider } from '../workspace/ast-descriptions.j
 import type { LangiumDocument, PrecomputedScopes } from '../workspace/documents.js';
 import type { NameProvider } from './name-provider.js';
 import { CancellationToken } from 'vscode-jsonrpc';
-import { streamAllContents, streamContents } from '../utils/ast-util.js';
+import { streamAllContents, streamContents } from '../utils/ast-utils.js';
 import { MultiMap } from '../utils/collections.js';
-import { interruptAndCheck } from '../utils/promise-util.js';
+import { interruptAndCheck } from '../utils/promise-utils.js';
 
 /**
  * Language-specific service for precomputing global and local scopes. The service methods are executed

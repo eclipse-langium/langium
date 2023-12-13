@@ -9,7 +9,7 @@ import type { AstNode, AstNodeDescription } from '../syntax-tree.js';
 import type { IndexManager } from '../workspace/index-manager.js';
 import type { CommentProvider } from './comment-provider.js';
 import type { JSDocTag } from './jsdoc.js';
-import { getDocument } from '../utils/ast-util.js';
+import { getDocument } from '../utils/ast-utils.js';
 import { isJSDoc, parseJSDoc } from './jsdoc.js';
 
 /**

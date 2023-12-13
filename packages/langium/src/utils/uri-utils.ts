@@ -37,12 +37,3 @@ export namespace UriUtils {
     }
 
 }
-
-/**
- * @deprecated Use `UriUtils.equals` instead.
- */
-export const equalURI = UriUtils.equals;
-/**
- * @deprecated Use `UriUtils.relative` instead.
- */
-export const relativeURI = UriUtils.relative;

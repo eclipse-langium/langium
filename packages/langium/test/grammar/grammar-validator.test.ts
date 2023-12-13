@@ -9,7 +9,7 @@ import type { GrammarAST as GrammarTypes } from 'langium';
 import type { ValidationResult } from 'langium/test';
 import { afterEach, beforeAll, describe, expect, test } from 'vitest';
 import { DiagnosticSeverity } from 'vscode-languageserver';
-import { EmptyFileSystem, GrammarAST, streamAllContents, streamContents } from 'langium';
+import { AstUtils, EmptyFileSystem, GrammarAST } from 'langium';
 import { IssueCodes, createLangiumGrammarServices } from 'langium/grammar';
 import { clearDocuments, expectError, expectIssue, expectNoIssues, expectWarning, parseHelper, validationHelper } from 'langium/test';
 
@@ -215,7 +215,7 @@ describe('checkReferenceToRuleButNotType', () => {
     });
 
     test('CrossReference validation', () => {
-        const crossRef = streamAllContents(validationResult.document.parseResult.value).find(GrammarAST.isCrossReference)!;
+        const crossRef = AstUtils.streamAllContents(validationResult.document.parseResult.value).find(GrammarAST.isCrossReference)!;
         expectError(validationResult, "Could not resolve reference to AbstractType named 'Definition'.", {
             node: crossRef,
             property: 'type'
@@ -451,7 +451,7 @@ describe('Reserved names', () => {
 
     function expectReservedName<T extends AstNode>(validation: ValidationResult<GrammarAST.Grammar>, predicate: (node: AstNode) => node is T, property: Properties<T>): void {
         expect(validation.diagnostics).toHaveLength(1);
-        const node = streamAllContents(validation.document.parseResult.value).find(predicate)!;
+        const node = AstUtils.streamAllContents(validation.document.parseResult.value).find(predicate)!;
         expectIssue(validation, {
             node,
             message: / is a reserved name of the JavaScript runtime\.$/,
@@ -632,7 +632,7 @@ describe('Property type is not a mix of cross-ref and non-cross-ref types.', () 
             prop = ('string' | [Rule])
         ;
         `);
-        const rule1Assignment = streamContents(validation.document.parseResult.value.rules[1])
+        const rule1Assignment = AstUtils.streamContents(validation.document.parseResult.value.rules[1])
             .filter(node => GrammarAST.isAssignment(node)).head() as GrammarTypes.Assignment;
         expect(rule1Assignment).not.toBe(undefined);
 
@@ -650,7 +650,7 @@ describe('Property type is not a mix of cross-ref and non-cross-ref types.', () 
             prop = ('int' | ('string' | [Rule]))
         ;
         `);
-        const rule1Assignment = streamContents(validation.document.parseResult.value.rules[1])
+        const rule1Assignment = AstUtils.streamContents(validation.document.parseResult.value.rules[1])
             .filter(node => GrammarAST.isAssignment(node)).head() as GrammarTypes.Assignment;
         expect(rule1Assignment).not.toBe(undefined);
 

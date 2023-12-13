@@ -26,7 +26,7 @@ import { LangiumGrammarDefinitionProvider } from './lsp/grammar-definition.js';
 import { LangiumGrammarCallHierarchyProvider } from './lsp/grammar-call-hierarchy.js';
 import { LangiumGrammarValidationResourcesCollector } from './validation/validation-resources-collector.js';
 import { LangiumGrammarTypesValidator, registerTypeValidationChecks } from './validation/types-validator.js';
-import { interruptAndCheck } from '../utils/promise-util.js';
+import { interruptAndCheck } from '../utils/promise-utils.js';
 import { DocumentState } from '../workspace/documents.js';
 
 export type LangiumGrammarAddedServices = {

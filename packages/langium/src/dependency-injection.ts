@@ -43,8 +43,12 @@ export function inject<I1, I2, I3, I4, I extends I1 & I2 & I3 & I4>(module1: Mod
 
 const isProxy = Symbol('isProxy');
 
-export function eagerLoad(item: any): any {
-    if (item && item[isProxy]) {
+/**
+ * Eagerly load all services in the given dependency injection container. This is sometimes
+ * necessary because services can register event listeners in their constructors.
+ */
+export function eagerLoad<T>(item: T): T {
+    if (item && (item as any)[isProxy]) {
         for (const value of Object.values(item)) {
             eagerLoad(value);
         }

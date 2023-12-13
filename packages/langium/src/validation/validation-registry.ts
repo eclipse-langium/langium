@@ -7,11 +7,11 @@
 import type { CancellationToken, CodeDescription, DiagnosticRelatedInformation, DiagnosticTag, integer, Range } from 'vscode-languageserver';
 import type { LangiumServices } from '../services.js';
 import type { AstNode, AstReflection, Properties } from '../syntax-tree.js';
-import type { MaybePromise } from '../utils/promise-util.js';
+import type { MaybePromise } from '../utils/promise-utils.js';
 import type { Stream } from '../utils/stream.js';
 import type { DocumentSegment } from '../workspace/documents.js';
 import { MultiMap } from '../utils/collections.js';
-import { isOperationCancelled } from '../utils/promise-util.js';
+import { isOperationCancelled } from '../utils/promise-utils.js';
 import { stream } from '../utils/stream.js';
 
 export type DiagnosticInfo<N extends AstNode, P extends string = Properties<N>> = {
@@ -49,6 +49,9 @@ export interface DiagnosticData {
     actionRange?: Range
 }
 
+/**
+ * Create DiagnosticData for a given diagnostic code. The result can be put into the `data` field of a DiagnosticInfo.
+ */
 export function diagnosticData(code: string): DiagnosticData {
     return { code };
 }

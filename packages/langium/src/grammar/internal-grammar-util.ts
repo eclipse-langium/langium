@@ -4,12 +4,12 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { URI } from '../utils/uri-util.js';
+import { URI } from '../utils/uri-utils.js';
 import type { LangiumDocuments } from '../workspace/documents.js';
 import type { AstNode } from '../syntax-tree.js';
 import * as ast from '../languages/generated/ast.js';
-import { getDocument } from '../utils/ast-util.js';
-import { UriUtils } from '../utils/uri-util.js';
+import { getDocument } from '../utils/ast-utils.js';
+import { UriUtils } from '../utils/uri-utils.js';
 import type { LangiumGrammarServices} from './langium-grammar-module.js';
 import { createLangiumGrammarServices } from './langium-grammar-module.js';
 import type { IParserConfig } from '../parser/parser-config.js';
@@ -20,7 +20,7 @@ import type { LangiumGeneratedServices, LangiumGeneratedSharedServices, LangiumS
 import { EmptyFileSystem } from '../workspace/file-system-provider.js';
 import { interpretAstReflection } from './ast-reflection-interpreter.js';
 import { createDefaultModule, createDefaultSharedModule } from '../default-module.js';
-import { getTypeName, isDataType } from '../utils/grammar-util.js';
+import { getTypeName, isDataType } from '../utils/grammar-utils.js';
 
 export function hasDataTypeReturn(rule: ast.ParserRule): boolean {
     const returnType = rule.returnType?.ref;

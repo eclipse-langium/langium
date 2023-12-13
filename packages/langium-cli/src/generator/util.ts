@@ -3,7 +3,7 @@
  * This program and the accompanying materials are made available under the
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
-import { type Grammar, getAllReachableRules, GrammarAST, stream, streamAllContents, terminalRegex } from 'langium';
+import { AstUtils, type Grammar, GrammarAST, GrammarUtils, stream } from 'langium';
 import { type Generated, expandToNode } from 'langium/generate';
 import fs from 'fs-extra';
 import * as path from 'node:path';
@@ -59,11 +59,11 @@ function getGeneratedHeader(): Generated {
 
 export function collectKeywords(grammar: Grammar): string[] {
     const keywords = new Set<string>();
-    const reachableRules = getAllReachableRules(grammar, false);
+    const reachableRules = GrammarUtils.getAllReachableRules(grammar, false);
 
     for (const keyword of stream(reachableRules)
         .filter(GrammarAST.isParserRule)
-        .flatMap(rule => streamAllContents(rule).filter(GrammarAST.isKeyword))) {
+        .flatMap(rule => AstUtils.streamAllContents(rule).filter(GrammarAST.isKeyword))) {
         keywords.add(keyword.value);
     }
 
@@ -97,10 +97,10 @@ export async function getUserChoice<R extends string>(text: string, values: R[],
 
 export function collectTerminalRegexps(grammar: Grammar): Record<string, RegExp> {
     const result: Record<string, RegExp> = {};
-    const reachableRules = getAllReachableRules(grammar, false);
+    const reachableRules = GrammarUtils.getAllReachableRules(grammar, false);
     for (const terminalRule of stream(reachableRules).filter(GrammarAST.isTerminalRule)) {
         const name = terminalRule.name;
-        const regexp = terminalRegex(terminalRule);
+        const regexp = GrammarUtils.terminalRegex(terminalRule);
         result[name] = regexp;
     }
     return result;

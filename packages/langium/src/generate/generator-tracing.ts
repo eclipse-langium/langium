@@ -7,8 +7,8 @@
 import type { Range } from 'vscode-languageserver-textdocument';
 import type { AstNodeRegionWithAssignments, AstNodeWithTextRegion } from '../serializer/json-serializer.js';
 import type { AstNode, CstNode, GenericAstNode } from '../syntax-tree.js';
-import { getDocument } from '../utils/ast-util.js';
-import { findNodesForProperty } from '../utils/grammar-util.js';
+import { getDocument } from '../utils/ast-utils.js';
+import { findNodesForProperty } from '../utils/grammar-utils.js';
 import { TreeStreamImpl } from '../utils/stream.js';
 import type { DocumentSegment } from '../workspace/documents.js';
 

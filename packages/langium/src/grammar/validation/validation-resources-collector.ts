@@ -15,7 +15,7 @@ import { stream } from '../../utils/stream.js';
 import { isAction, isAlternatives, isGroup, isUnorderedGroup } from '../../languages/generated/ast.js';
 import { mergeInterfaces, mergeTypesAndInterfaces } from '../type-system/types-util.js';
 import { collectValidationAst } from '../type-system/ast-collector.js';
-import { getActionType, getRuleType } from '../../utils/grammar-util.js';
+import { getActionType, getRuleType } from '../../utils/grammar-utils.js';
 
 export class LangiumGrammarValidationResourcesCollector {
     private readonly documents: LangiumDocuments;

@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import type { Disposable } from './disposable.js';
-import type { URI } from './uri-util.js';
+import type { URI } from './uri-utils.js';
 import type { LangiumSharedServices } from '../services.js';
 
 export abstract class DisposableCache implements Disposable {
