@@ -10,7 +10,7 @@ import type { LangiumSharedServices } from '../services.js';
 import type { WorkspaceLock } from '../workspace/workspace-lock.js';
 import type { DocumentBuilder } from '../workspace/document-builder.js';
 import { DidChangeWatchedFilesNotification, FileChangeType } from 'vscode-languageserver';
-import { URI } from '../utils/uri-util.js';
+import { URI } from '../utils/uri-utils.js';
 import { stream } from '../utils/stream.js';
 
 /**

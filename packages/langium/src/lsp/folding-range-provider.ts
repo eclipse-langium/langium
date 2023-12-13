@@ -7,11 +7,11 @@
 import type { CancellationToken, FoldingRangeParams } from 'vscode-languageserver';
 import type { LangiumServices } from '../services.js';
 import type { AstNode, CstNode } from '../syntax-tree.js';
-import type { MaybePromise } from '../utils/promise-util.js';
+import type { MaybePromise } from '../utils/promise-utils.js';
 import type { LangiumDocument } from '../workspace/documents.js';
 import { FoldingRange, FoldingRangeKind } from 'vscode-languageserver';
-import { streamAllContents } from '../utils/ast-util.js';
-import { flattenCst } from '../utils/cst-util.js';
+import { streamAllContents } from '../utils/ast-utils.js';
+import { flattenCst } from '../utils/cst-utils.js';
 
 /**
  * Language-specific service for handling folding range requests.

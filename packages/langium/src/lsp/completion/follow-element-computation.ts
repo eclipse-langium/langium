@@ -7,9 +7,9 @@
 import type { IToken } from 'chevrotain';
 import * as ast from '../../languages/generated/ast.js';
 import { isAstNode } from '../../syntax-tree.js';
-import { getContainerOfType } from '../../utils/ast-util.js';
-import type { Cardinality } from '../../utils/grammar-util.js';
-import { getCrossReferenceTerminal, getExplicitRuleType, getTypeName, isArrayCardinality, isOptionalCardinality, terminalRegex } from '../../utils/grammar-util.js';
+import { getContainerOfType } from '../../utils/ast-utils.js';
+import type { Cardinality } from '../../utils/grammar-utils.js';
+import { getCrossReferenceTerminal, getExplicitRuleType, getTypeName, isArrayCardinality, isOptionalCardinality, terminalRegex } from '../../utils/grammar-utils.js';
 
 export interface NextFeature<T extends ast.AbstractElement = ast.AbstractElement> {
     /**

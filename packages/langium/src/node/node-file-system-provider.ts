@@ -4,8 +4,8 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { URI } from '../utils/uri-util.js';
-import { UriUtils } from '../utils/uri-util.js';
+import type { URI } from '../utils/uri-utils.js';
+import { UriUtils } from '../utils/uri-utils.js';
 import type { FileSystemNode, FileSystemProvider } from '../workspace/file-system-provider.js';
 import * as fs from 'node:fs';
 

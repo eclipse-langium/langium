@@ -13,10 +13,10 @@ import type { AstNode, CstNode } from '../syntax-tree.js';
 import type { LangiumDocument } from '../workspace/documents.js';
 import type { DiagnosticData, DiagnosticInfo, ValidationAcceptor, ValidationCategory, ValidationRegistry } from './validation-registry.js';
 import { CancellationToken, DiagnosticSeverity, Position, Range } from 'vscode-languageserver';
-import { findNodeForKeyword, findNodeForProperty } from '../utils/grammar-util.js';
-import { streamAst } from '../utils/ast-util.js';
-import { tokenToRange } from '../utils/cst-util.js';
-import { interruptAndCheck, isOperationCancelled } from '../utils/promise-util.js';
+import { findNodeForKeyword, findNodeForProperty } from '../utils/grammar-utils.js';
+import { streamAst } from '../utils/ast-utils.js';
+import { tokenToRange } from '../utils/cst-utils.js';
+import { interruptAndCheck, isOperationCancelled } from '../utils/promise-utils.js';
 import { diagnosticData } from './validation-registry.js';
 
 export interface ValidationOptions {

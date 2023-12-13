@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import type { TokenType } from 'chevrotain';
-import type { URI } from './utils/uri-util.js';
+import type { URI } from './utils/uri-utils.js';
 import type { AbstractElement } from './languages/generated/ast.js';
 import type { DocumentSegment, LangiumDocument } from './workspace/documents.js';
 
@@ -304,3 +304,7 @@ export type AstTypeList<T> = Record<keyof T, AstNode>;
 export type AstNodeTypesWithCrossReferences<A extends AstTypeList<A>> = {
     [T in keyof A]: CrossReferencesOfAstNodeType<A[T]> extends never ? never : A[T]
 }[keyof A];
+
+export type Mutable<T> = {
+    -readonly [P in keyof T]: T[P]
+};

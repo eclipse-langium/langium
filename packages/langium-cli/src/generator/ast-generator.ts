@@ -7,7 +7,7 @@ import type { Grammar, LangiumServices } from 'langium';
 import { type Generated, expandToNode, joinToNode, toString } from 'langium/generate';
 import type { AstTypes, Property, PropertyDefaultValue } from 'langium/grammar';
 import type { LangiumConfig } from '../package.js';
-import { streamAllContents, MultiMap, GrammarAST } from 'langium';
+import { AstUtils, MultiMap, GrammarAST } from 'langium';
 import { collectAst, collectTypeHierarchy, findReferenceTypes, isAstType, mergeTypesAndInterfaces } from 'langium/grammar';
 import { collectTerminalRegexps, generatedHeader } from './util.js';
 
@@ -37,7 +37,7 @@ export function generateAst(services: LangiumServices, grammars: Grammar[], conf
 }
 
 function hasCrossReferences(grammar: Grammar): boolean {
-    return Boolean(streamAllContents(grammar).find(GrammarAST.isCrossReference));
+    return Boolean(AstUtils.streamAllContents(grammar).find(GrammarAST.isCrossReference));
 }
 
 function generateAstReflection(config: LangiumConfig, astTypes: AstTypes): Generated {

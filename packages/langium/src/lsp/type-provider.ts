@@ -8,10 +8,10 @@ import type { LocationLink, TypeDefinitionParams } from 'vscode-languageserver';
 import type { References } from '../references/references.js';
 import type { LangiumServices } from '../services.js';
 import type { AstNode } from '../syntax-tree.js';
-import type { MaybePromise } from '../utils/promise-util.js';
+import type { MaybePromise } from '../utils/promise-utils.js';
 import type { LangiumDocument } from '../workspace/documents.js';
 import { CancellationToken } from 'vscode-languageserver';
-import { findDeclarationNodeAtOffset } from '../utils/cst-util.js';
+import { findDeclarationNodeAtOffset } from '../utils/cst-utils.js';
 
 /**
  * Language-specific service for handling go to type requests.

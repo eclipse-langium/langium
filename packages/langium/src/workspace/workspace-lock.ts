@@ -5,8 +5,8 @@
  ******************************************************************************/
 
 import { CancellationToken, CancellationTokenSource } from 'vscode-languageserver';
-import type { MaybePromise } from '../utils/promise-util.js';
-import { Deferred, isOperationCancelled } from '../utils/promise-util.js';
+import type { MaybePromise } from '../utils/promise-utils.js';
+import { Deferred, isOperationCancelled } from '../utils/promise-utils.js';
 
 /**
  * Utility service to execute mutually exclusive actions.

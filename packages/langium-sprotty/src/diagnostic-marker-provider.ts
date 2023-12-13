@@ -9,7 +9,7 @@ import type { SModelElement } from 'sprotty-protocol';
 import type { Diagnostic, Range } from 'vscode-languageserver';
 import type { GeneratorContext } from './diagram-generator.js';
 import type { LangiumSprottyServices } from './sprotty-services.js';
-import { getDocument } from 'langium';
+import { AstUtils } from 'langium';
 
 /**
  * Used to add diagnostic markers to the generated diagram.
@@ -56,7 +56,7 @@ export class DefaultDiagnosticMarkerProvider implements DiagnosticMarkerProvider
     }
 
     protected getDiagnostics(source: AstNode): Diagnostic[] {
-        const document = getDocument(source);
+        const document = AstUtils.getDocument(source);
         if (!document.diagnostics || !source.$cstNode) {
             return [];
         }

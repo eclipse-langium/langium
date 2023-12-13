@@ -7,7 +7,7 @@
 import type { Diagnostic } from 'vscode-languageserver';
 import { describe, expect, test } from 'vitest';
 import { DiagnosticSeverity } from 'vscode-languageserver';
-import { EmptyFileSystem, streamAllContents, streamContents, GrammarAST } from 'langium';
+import { AstUtils, EmptyFileSystem, GrammarAST } from 'langium';
 import { createLangiumGrammarServices } from 'langium/grammar';
 import { expectError, expectNoIssues, parseDocument, validationHelper } from 'langium/test';
 
@@ -508,7 +508,7 @@ describe('Property type is not a mix of cross-ref and non-cross-ref types.', () 
 
             terminal ID: /[_a-zA-Z][\\w_]*/;
         `);
-        const rule1Assignment = streamContents(validation.document.parseResult.value.rules[1])
+        const rule1Assignment = AstUtils.streamContents(validation.document.parseResult.value.rules[1])
             .filter(node => GrammarAST.isAssignment(node)).head() as GrammarAST.Assignment;
         expect(rule1Assignment).not.toBe(undefined);
 
@@ -524,7 +524,7 @@ describe('Property type is not a mix of cross-ref and non-cross-ref types.', () 
             ;
             terminal ID: /[_a-zA-Z][\\w_]*/;
         `);
-        const propAssignments = streamAllContents(validation.document.parseResult.value.rules[0])
+        const propAssignments = AstUtils.streamAllContents(validation.document.parseResult.value.rules[0])
             .filter(node => GrammarAST.isAssignment(node)).toArray();
         expect(propAssignments.length).toBe(2);
 
@@ -688,7 +688,7 @@ describe('Property types validation takes in account types hierarchy', () => {
             terminal NUMBER returns number: /[0-9]+(\\.[0-9]*)?/;
         `);
 
-        const assignment = streamAllContents(validation.document.parseResult.value).filter(GrammarAST.isAssignment).toArray()[0];
+        const assignment = AstUtils.streamAllContents(validation.document.parseResult.value).filter(GrammarAST.isAssignment).toArray()[0];
         expectError(validation, "The assigned type 'Z2' is not compatible with the declared property 'y' of type 'Z1'.", {
             node: assignment,
             property: 'feature'

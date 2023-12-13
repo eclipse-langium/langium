@@ -5,7 +5,7 @@
  ******************************************************************************/
 import type { Grammar, IParserConfig, LangiumDocuments, LangiumParser, LanguageMetaData } from 'langium';
 import type { LangiumConfig, LangiumLanguageConfig } from './package.js';
-import { getDocument, GrammarAST, prepareLangiumParser } from 'langium';
+import { AstUtils, GrammarAST, prepareLangiumParser } from 'langium';
 import type { LangiumGrammarServices} from 'langium/grammar';
 import { createServicesForGrammar } from 'langium/grammar';
 import { getFilePath } from './package.js';
@@ -39,7 +39,7 @@ export async function validateParser(grammar: Grammar, config: LangiumConfig, gr
                 if (defError.ruleName) {
                     const rule = findRule(defError.ruleName, grammar, grammarServices.shared.workspace.LangiumDocuments);
                     if (rule && rule.$cstNode) {
-                        const filePath = getFilePath(getDocument(rule).uri.fsPath, config);
+                        const filePath = getFilePath(AstUtils.getDocument(rule).uri.fsPath, config);
                         const line = rule.$cstNode.range.start.line + 1;
                         message += `${filePath}:${line} - `;
                     }

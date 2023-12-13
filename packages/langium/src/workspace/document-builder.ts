@@ -4,17 +4,17 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { URI } from '../utils/uri-util.js';
+import type { URI } from '../utils/uri-utils.js';
 import type { ServiceRegistry } from '../service-registry.js';
 import type { LangiumSharedServices } from '../services.js';
 import type { AstNode } from '../syntax-tree.js';
-import type { MaybePromise } from '../utils/promise-util.js';
+import type { MaybePromise } from '../utils/promise-utils.js';
 import type { ValidationOptions } from '../validation/document-validator.js';
 import type { IndexManager } from '../workspace/index-manager.js';
 import type { LangiumDocument, LangiumDocuments, LangiumDocumentFactory } from './documents.js';
 import { CancellationToken, Disposable } from 'vscode-languageserver';
 import { MultiMap } from '../utils/collections.js';
-import { interruptAndCheck } from '../utils/promise-util.js';
+import { interruptAndCheck } from '../utils/promise-utils.js';
 import { stream } from '../utils/stream.js';
 import { ValidationCategory } from '../validation/validation-registry.js';
 import { DocumentState } from './documents.js';

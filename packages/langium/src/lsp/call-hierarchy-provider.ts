@@ -13,10 +13,10 @@ import type { AstNode } from '../syntax-tree.js';
 import type { Stream } from '../utils/stream.js';
 import type { ReferenceDescription } from '../workspace/ast-descriptions.js';
 import type { LangiumDocument, LangiumDocuments } from '../workspace/documents.js';
-import type { MaybePromise } from '../utils/promise-util.js';
+import type { MaybePromise } from '../utils/promise-utils.js';
 import { SymbolKind } from 'vscode-languageserver';
-import { findDeclarationNodeAtOffset } from '../utils/cst-util.js';
-import { URI } from '../utils/uri-util.js';
+import { findDeclarationNodeAtOffset } from '../utils/cst-utils.js';
+import { URI } from '../utils/uri-utils.js';
 
 /**
  * Language-specific service for handling call hierarchy requests.

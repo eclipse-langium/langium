@@ -9,10 +9,10 @@ import type { GrammarConfig } from '../languages/grammar-config.js';
 import type { References } from '../references/references.js';
 import type { LangiumServices } from '../services.js';
 import type { AstNode } from '../syntax-tree.js';
-import type { MaybePromise } from '../utils/promise-util.js';
+import type { MaybePromise } from '../utils/promise-utils.js';
 import type { LangiumDocument } from '../workspace/documents.js';
 import type { DocumentationProvider } from '../documentation/documentation-provider.js';
-import { findDeclarationNodeAtOffset } from '../utils/cst-util.js';
+import { findDeclarationNodeAtOffset } from '../utils/cst-utils.js';
 
 /**
  * Language-specific service for handling hover requests.

@@ -17,10 +17,10 @@ import type { NameProvider } from '../references/name-provider.js';
 import type { References } from '../references/references.js';
 import type { LangiumServices } from '../services.js';
 import type { AstNode } from '../syntax-tree.js';
-import { findDeclarationNodeAtOffset } from '../utils/cst-util.js';
-import { URI } from '../utils/uri-util.js';
+import { findDeclarationNodeAtOffset } from '../utils/cst-utils.js';
+import { URI } from '../utils/uri-utils.js';
 import type { LangiumDocument, LangiumDocuments } from '../workspace/documents.js';
-import type { MaybePromise } from '../utils/promise-util.js';
+import type { MaybePromise } from '../utils/promise-utils.js';
 
 /**
  * Language-specific service for handling type hierarchy requests.

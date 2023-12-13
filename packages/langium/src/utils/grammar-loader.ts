@@ -4,14 +4,14 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { Mutable } from './ast-util.js';
 import type { Module } from '../dependency-injection.js';
 import type { LangiumServices, LangiumSharedServices, PartialLangiumServices, PartialLangiumSharedServices } from '../services.js';
+import type { Mutable } from '../syntax-tree.js';
 import * as ast from '../languages/generated/ast.js';
 import { inject } from '../dependency-injection.js';
 import { createDefaultModule, createDefaultSharedModule } from '../default-module.js';
 import { EmptyFileSystem } from '../workspace/file-system-provider.js';
-import { URI } from './uri-util.js';
+import { URI } from './uri-utils.js';
 
 const minimalGrammarModule: Module<LangiumServices, PartialLangiumServices> = {
     Grammar: () => undefined as unknown as ast.Grammar,

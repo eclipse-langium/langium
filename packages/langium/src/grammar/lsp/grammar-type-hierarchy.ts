@@ -7,8 +7,8 @@
 import type { AstNode } from '../../syntax-tree.js';
 import type { TypeHierarchyItem } from 'vscode-languageserver';
 import { AbstractTypeHierarchyProvider } from '../../lsp/type-hierarchy-provider.js';
-import { getDocument } from '../../utils/ast-util.js';
-import { findLeafNodeAtOffset } from '../../utils/cst-util.js';
+import { getDocument } from '../../utils/ast-utils.js';
+import { findLeafNodeAtOffset } from '../../utils/cst-utils.js';
 import { isInterface } from '../../languages/generated/ast.js';
 
 export class LangiumGrammarTypeHierarchyProvider extends AbstractTypeHierarchyProvider {

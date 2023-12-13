@@ -6,7 +6,7 @@
 
 import type { Grammar } from 'langium';
 import { describe, expect, test } from 'vitest';
-import { EmptyFileSystem, getAllReachableRules } from 'langium';
+import { EmptyFileSystem, GrammarUtils } from 'langium';
 import { createLangiumGrammarServices } from 'langium/grammar';
 import { parseHelper } from 'langium/test';
 
@@ -31,7 +31,7 @@ describe('Grammar Utils', () => {
         const output = await parse(input);
 
         // act
-        const reachableRules = [...getAllReachableRules(output.parseResult.value, true)].map(r => r.name);
+        const reachableRules = [...GrammarUtils.getAllReachableRules(output.parseResult.value, true)].map(r => r.name);
 
         // assert
         expect(reachableRules).toContain('Ws');

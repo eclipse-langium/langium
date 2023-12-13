@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { type Grammar, getTerminalParts, isCommentTerminal, escapeRegExp, GrammarAST, isWhitespaceRegExp, terminalRegex } from 'langium';
+import { type Grammar, GrammarAST, GrammarUtils, RegExpUtils } from 'langium';
 import { type Generated, expandToNode, joinToNode, toString } from 'langium/generate';
 import type { LangiumLanguageConfig } from '../../package.js';
 import { collectKeywords } from '../util.js';
@@ -225,7 +225,7 @@ function prettyPrintLangDef(languageDef: LanguageDefinition): Generated {
         ${genLanguageDefEntry('keywords', languageDef.keywords)}
         ${genLanguageDefEntry('operators', languageDef.operators)}
         ${/* special case, identify symbols via singular regex*/ undefined}
-        symbols: ${new RegExp(languageDef.symbols.map(escapeRegExp).join('|')).toString()},
+        symbols: ${new RegExp(languageDef.symbols.map(RegExpUtils.escapeRegExp).join('|')).toString()},
     `;
 }
 
@@ -315,20 +315,20 @@ function getWhitespaceRules(grammar: Grammar): Rule[] {
     const rules: Rule[] = [];
     for (const rule of grammar.rules) {
         if (GrammarAST.isTerminalRule(rule)) {
-            const regex = terminalRegex(rule);
+            const regex = GrammarUtils.terminalRegex(rule);
 
-            if (!isCommentTerminal(rule) && !isWhitespaceRegExp(regex)) {
+            if (!GrammarUtils.isCommentTerminal(rule) && !RegExpUtils.isWhitespace(regex)) {
                 // skip rules that are not comments or whitespace
                 continue;
             }
 
             // token name is either comment or whitespace
-            const tokenName = isCommentTerminal(rule) ? 'comment' : 'white';
+            const tokenName = GrammarUtils.isCommentTerminal(rule) ? 'comment' : 'white';
 
-            const part = getTerminalParts(regex)[0];
+            const part = RegExpUtils.getTerminalParts(regex)[0];
 
             // check if this is a comment terminal w/ a start & end sequence (multi-line)
-            if (part.start !== '' && part.end !== '' && isCommentTerminal(rule)) {
+            if (part.start !== '' && part.end !== '' && GrammarUtils.isCommentTerminal(rule)) {
                 // state-based comment rule, only add push to jump into it
                 rules.push({
                     regex: part.start,
@@ -356,9 +356,9 @@ function getWhitespaceRules(grammar: Grammar): Rule[] {
 function getCommentRules(grammar: Grammar): Rule[] {
     const rules: Rule[] = [];
     for (const rule of grammar.rules) {
-        if (GrammarAST.isTerminalRule(rule) && isCommentTerminal(rule)) {
+        if (GrammarAST.isTerminalRule(rule) && GrammarUtils.isCommentTerminal(rule)) {
             const tokenName = 'comment';
-            const part = getTerminalParts(terminalRegex(rule))[0];
+            const part = RegExpUtils.getTerminalParts(GrammarUtils.terminalRegex(rule))[0];
             if (part.start !== '' && part.end !== '') {
                 // rules to manage comment start/end
                 // rule order matters
@@ -398,10 +398,10 @@ function getCommentRules(grammar: Grammar): Rule[] {
 function getTerminalRules(grammar: Grammar): Rule[] {
     const rules: Rule[] = [];
     for (const rule of grammar.rules) {
-        if (GrammarAST.isTerminalRule(rule) && !isCommentTerminal(rule)) {
-            const regex = terminalRegex(rule);
+        if (GrammarAST.isTerminalRule(rule) && !GrammarUtils.isCommentTerminal(rule)) {
+            const regex = GrammarUtils.terminalRegex(rule);
 
-            if (isWhitespaceRegExp(regex)) {
+            if (RegExpUtils.isWhitespace(regex)) {
                 // disallow terminal rules that match whitespace
                 continue;
             }

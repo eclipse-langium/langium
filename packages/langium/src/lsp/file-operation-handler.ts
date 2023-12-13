@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import type { CreateFilesParams, DeleteFilesParams, FileOperationOptions, RenameFilesParams, WorkspaceEdit } from 'vscode-languageserver';
-import type { MaybePromise } from '../utils/promise-util.js';
+import type { MaybePromise } from '../utils/promise-utils.js';
 
 /**
  * Shared service for handling file changes such as file creation, deletion and renaming.

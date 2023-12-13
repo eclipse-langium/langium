@@ -7,13 +7,13 @@
 import type { DefinitionParams } from 'vscode-languageserver';
 import type { LangiumServices } from '../../services.js';
 import type { AstNode, LeafCstNode, Properties } from '../../syntax-tree.js';
-import type { MaybePromise } from '../../utils/promise-util.js';
+import type { MaybePromise } from '../../utils/promise-utils.js';
 import type { LangiumDocuments } from '../../workspace/documents.js';
 import type { Grammar, GrammarImport } from '../../languages/generated/ast.js';
 import { LocationLink, Range } from 'vscode-languageserver';
 import { DefaultDefinitionProvider } from '../../lsp/index.js';
-import { streamContents } from '../../utils/ast-util.js';
-import { findAssignment } from '../../utils/grammar-util.js';
+import { streamContents } from '../../utils/ast-utils.js';
+import { findAssignment } from '../../utils/grammar-utils.js';
 import { isGrammarImport } from '../../languages/generated/ast.js';
 import { resolveImport } from '../internal-grammar-util.js';
 

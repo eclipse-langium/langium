@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import type { LangiumServices } from './services.js';
-import { UriUtils, type URI } from './utils/uri-util.js';
+import { UriUtils, type URI } from './utils/uri-utils.js';
 
 /**
  * The service registry provides access to the language-specific services. These are resolved

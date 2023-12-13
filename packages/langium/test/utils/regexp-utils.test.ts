@@ -5,9 +5,11 @@
  ******************************************************************************/
 
 import { describe, expect, test } from 'vitest';
-import { getTerminalParts, isMultilineComment, partialMatches } from 'langium';
+import { RegExpUtils } from 'langium';
 
-describe('partial regex', () => {
+const { getTerminalParts, isMultilineComment, partialMatches } = RegExpUtils;
+
+describe('Partial regexp', () => {
 
     test('should match /ab/ string with "a"', () => {
         expect(partialMatches('^ab', 'a')).toBeTruthy();
@@ -71,7 +73,7 @@ describe('partial regex', () => {
 
 });
 
-describe('multiline comment detection', () => {
+describe('Multiline comment detection', () => {
 
     test('single character string should be not multiline comment', () => {
         expect(isMultilineComment('x')).toBeFalsy();
@@ -95,7 +97,7 @@ describe('multiline comment detection', () => {
 
 });
 
-describe('comment start/end parts', () => {
+describe('Comment start/end parts', () => {
 
     test('JS style singleline comment should start with //', () => {
         expect(getTerminalParts(/\/\/[^\n\r]*/)).toEqual([{

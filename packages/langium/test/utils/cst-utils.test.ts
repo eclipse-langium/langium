@@ -5,11 +5,13 @@
  ******************************************************************************/
 
 import type { Grammar, LeafCstNode } from 'langium';
-import { EmptyFileSystem, findLeafNodeAtOffset, findLeafNodeBeforeOffset } from 'langium';
+import { CstUtils, EmptyFileSystem } from 'langium';
 import { expandToString } from 'langium/generate';
 import { createLangiumGrammarServices } from 'langium/grammar';
 import { parseHelper } from 'langium/test';
 import { describe, expect, test } from 'vitest';
+
+const { findLeafNodeAtOffset, findLeafNodeBeforeOffset } = CstUtils;
 
 const services = createLangiumGrammarServices(EmptyFileSystem);
 const parser = parseHelper<Grammar>(services.grammar);

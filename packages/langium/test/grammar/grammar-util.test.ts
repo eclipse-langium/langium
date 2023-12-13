@@ -5,11 +5,12 @@
  ******************************************************************************/
 
 import type { Grammar, GrammarAST as GrammarTypes} from 'langium';
-import { getTypeName, isDataTypeRule, terminalRegex } from 'langium';
 import { beforeAll, describe, expect, test } from 'vitest';
-import { EmptyFileSystem, findNameAssignment, getEntryRule, stream, GrammarAST } from 'langium';
+import { EmptyFileSystem, GrammarUtils, stream, GrammarAST } from 'langium';
 import { LangiumGrammarGrammar, createLangiumGrammarServices } from 'langium/grammar';
 import { parseHelper } from 'langium/test';
+
+const { isDataTypeRule, findNameAssignment, getEntryRule, getTypeName, terminalRegex } = GrammarUtils;
 
 describe('Data type rules', () => {
 

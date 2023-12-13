@@ -16,8 +16,8 @@ import type { ValueConverter } from './value-converter.js';
 import { defaultParserErrorProvider, EmbeddedActionsParser, LLkLookaheadStrategy } from 'chevrotain';
 import { LLStarLookaheadStrategy } from 'chevrotain-allstar';
 import { isAssignment, isCrossReference, isKeyword } from '../languages/generated/ast.js';
-import { getTypeName, isDataTypeRule } from '../utils/grammar-util.js';
-import { assignMandatoryAstProperties, getContainerOfType, linkContentToContainer } from '../utils/ast-util.js';
+import { getTypeName, isDataTypeRule } from '../utils/grammar-utils.js';
+import { assignMandatoryProperties, getContainerOfType, linkContentToContainer } from '../utils/ast-utils.js';
 import { CstNodeBuilder } from './cst-node-builder.js';
 
 export type ParseResult<T = AstNode> = {
@@ -285,7 +285,7 @@ export class LangiumParser extends AbstractLangiumParser {
         if (isDataTypeNode(obj)) {
             return this.converter.convert(obj.value, obj.$cstNode);
         } else {
-            assignMandatoryAstProperties(this.astReflection, obj);
+            assignMandatoryProperties(this.astReflection, obj);
         }
         return obj;
     }

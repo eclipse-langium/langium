@@ -5,8 +5,8 @@
  ******************************************************************************/
 
 import { CancellationToken } from 'vscode-languageserver';
-import { interruptAndCheck } from '../utils/promise-util.js';
-import { URI, UriUtils } from '../utils/uri-util.js';
+import { interruptAndCheck } from '../utils/promise-utils.js';
+import { URI, UriUtils } from '../utils/uri-utils.js';
 import type { WorkspaceFolder } from 'vscode-languageserver';
 import type { ServiceRegistry } from '../service-registry.js';
 import type { LangiumSharedServices } from '../services.js';

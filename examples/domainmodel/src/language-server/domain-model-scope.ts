@@ -8,7 +8,7 @@ import type { AstNode, AstNodeDescription, LangiumDocument, PrecomputedScopes } 
 import type { DomainModelServices } from './domain-model-module.js';
 import type { QualifiedNameProvider } from './domain-model-naming.js';
 import type { Domainmodel, PackageDeclaration } from './generated/ast.js';
-import { DefaultScopeComputation, interruptAndCheck, MultiMap, streamAllContents } from 'langium';
+import { AstUtils, DefaultScopeComputation, interruptAndCheck, MultiMap } from 'langium';
 import { CancellationToken } from 'vscode-jsonrpc';
 import { isType, isPackageDeclaration } from './generated/ast.js';
 
@@ -26,7 +26,7 @@ export class DomainModelScopeComputation extends DefaultScopeComputation {
      */
     override async computeExports(document: LangiumDocument, cancelToken = CancellationToken.None): Promise<AstNodeDescription[]> {
         const descr: AstNodeDescription[] = [];
-        for (const modelNode of streamAllContents(document.parseResult.value)) {
+        for (const modelNode of AstUtils.streamAllContents(document.parseResult.value)) {
             await interruptAndCheck(cancelToken);
             if (isType(modelNode)) {
                 let name = this.nameProvider.getName(modelNode);

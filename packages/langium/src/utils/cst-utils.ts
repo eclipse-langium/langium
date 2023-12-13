@@ -36,7 +36,7 @@ export function flattenCst(node: CstNode): Stream<LeafCstNode> {
 /**
  * Determines whether the specified cst node is a child of the specified parent node.
  */
-export function isCstChildNode(child: CstNode, parent: CstNode): boolean {
+export function isChildNode(child: CstNode, parent: CstNode): boolean {
     while (child.container) {
         child = child.container;
         if (child === parent) {

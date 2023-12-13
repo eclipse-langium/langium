@@ -14,12 +14,12 @@ import type { Grammar } from '../../languages/generated/ast.js';
 import { EMPTY_SCOPE, MapScope } from '../../references/scope.js';
 import { DefaultScopeComputation } from '../../references/scope-computation.js';
 import { DefaultScopeProvider } from '../../references/scope-provider.js';
-import { findRootNode, getContainerOfType, getDocument, streamAllContents } from '../../utils/ast-util.js';
-import { toDocumentSegment } from '../../utils/cst-util.js';
+import { findRootNode, getContainerOfType, getDocument, streamAllContents } from '../../utils/ast-utils.js';
+import { toDocumentSegment } from '../../utils/cst-utils.js';
 import { stream } from '../../utils/stream.js';
 import { AbstractType, Interface, isAction, isGrammar, isParserRule, isReturnType, Type } from '../../languages/generated/ast.js';
 import { resolveImportUri } from '../internal-grammar-util.js';
-import { getActionType } from '../../utils/grammar-util.js';
+import { getActionType } from '../../utils/grammar-utils.js';
 
 export class LangiumGrammarScopeProvider extends DefaultScopeProvider {
 

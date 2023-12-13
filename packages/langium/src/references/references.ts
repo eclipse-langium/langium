@@ -11,13 +11,13 @@ import type { ReferenceDescription } from '../workspace/ast-descriptions.js';
 import type { AstNodeLocator } from '../workspace/ast-node-locator.js';
 import type { IndexManager } from '../workspace/index-manager.js';
 import type { NameProvider } from './name-provider.js';
-import type { URI } from '../utils/uri-util.js';
-import { findAssignment } from '../utils/grammar-util.js';
+import type { URI } from '../utils/uri-utils.js';
+import { findAssignment } from '../utils/grammar-utils.js';
 import { isReference } from '../syntax-tree.js';
-import { getDocument } from '../utils/ast-util.js';
-import { isCstChildNode, toDocumentSegment } from '../utils/cst-util.js';
+import { getDocument } from '../utils/ast-utils.js';
+import { isChildNode, toDocumentSegment } from '../utils/cst-utils.js';
 import { stream } from '../utils/stream.js';
-import { UriUtils } from '../utils/uri-util.js';
+import { UriUtils } from '../utils/uri-utils.js';
 
 /**
  * Language-specific service for finding references and declaration of a given `CstNode`.
@@ -96,7 +96,7 @@ export class DefaultReferences implements References {
             if (nodeElem) {
                 const nameNode = this.nameProvider.getNameNode(nodeElem);
                 // Only return the targeted node in case the targeted cst node is the name node or part of it
-                if (nameNode && (nameNode === sourceCstNode || isCstChildNode(sourceCstNode, nameNode))) {
+                if (nameNode && (nameNode === sourceCstNode || isChildNode(sourceCstNode, nameNode))) {
                     return nodeElem;
                 }
             }

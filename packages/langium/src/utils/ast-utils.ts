@@ -5,16 +5,12 @@
  ******************************************************************************/
 
 import type { Range } from 'vscode-languageserver';
-import type { AstNode, AstReflection, CstNode, GenericAstNode, PropertyType, Reference, ReferenceInfo } from '../syntax-tree.js';
-import type { Stream, TreeStream } from '../utils/stream.js';
+import type { AstNode, AstReflection, CstNode, GenericAstNode, Mutable, PropertyType, Reference, ReferenceInfo } from '../syntax-tree.js';
+import type { Stream, TreeStream } from './stream.js';
 import type { LangiumDocument } from '../workspace/documents.js';
 import { isAstNode, isReference } from '../syntax-tree.js';
-import { DONE_RESULT, stream, StreamImpl, TreeStreamImpl } from '../utils/stream.js';
-import { inRange } from './cst-util.js';
-
-export type Mutable<T> = {
-    -readonly [P in keyof T]: T[P]
-};
+import { DONE_RESULT, stream, StreamImpl, TreeStreamImpl } from './stream.js';
+import { inRange } from './cst-utils.js';
 
 /**
  * Link the `$container` and other related properties of every AST node that is directly contained
@@ -238,7 +234,7 @@ export function findLocalReferences(targetNode: AstNode, lookup = getDocument(ta
  * @param reflection Reflection object used to gather mandatory properties for the node.
  * @param node Specified node is modified in place and properties are directly assigned.
  */
-export function assignMandatoryAstProperties(reflection: AstReflection, node: AstNode): void {
+export function assignMandatoryProperties(reflection: AstReflection, node: AstNode): void {
     const typeMetaData = reflection.getTypeMetaData(node.$type);
     const genericNode = node as GenericAstNode;
     for (const property of typeMetaData.properties) {

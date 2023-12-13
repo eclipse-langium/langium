@@ -3,7 +3,7 @@
  * This program and the accompanying materials are made available under the
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
-import { terminalRegex, GrammarAST, escapeRegExp, isCommentTerminal, type Grammar } from 'langium';
+import { GrammarAST, type Grammar, GrammarUtils, RegExpUtils } from 'langium';
 import { expandToNode, joinToNode, toString, type Generated } from 'langium/generate';
 import _ from 'lodash';
 import type { LangiumLanguageConfig } from '../../package.js';
@@ -23,26 +23,26 @@ export function generatePrismHighlighting(grammar: Grammar, config: LangiumLangu
     const terminals = getTerminals(grammar);
     const modifier = config.caseInsensitive ? 'i' : '';
 
-    const commentTerminals = terminals.filter(isCommentTerminal);
+    const commentTerminals = terminals.filter(GrammarUtils.isCommentTerminal);
     if (commentTerminals.length === 1) {
         highlighter.comment = {
-            pattern: terminalRegex(commentTerminals[0]).toString(),
+            pattern: GrammarUtils.terminalRegex(commentTerminals[0]).toString(),
             greedy: true
         };
     } else if (commentTerminals.length > 0) {
         highlighter.comment = commentTerminals.map(e => ({
-            pattern: terminalRegex(e).toString(),
+            pattern: GrammarUtils.terminalRegex(e).toString(),
             greedy: true
         }));
     }
     const stringTerminal = terminals.find(e => e.name.toLowerCase() === 'string');
     if (stringTerminal) {
         highlighter.string = {
-            pattern: terminalRegex(stringTerminal).toString(),
+            pattern: GrammarUtils.terminalRegex(stringTerminal).toString(),
             greedy: true
         };
     }
-    const filteredKeywords = keywords.filter(e => idRegex.test(e)).sort((a, b) => b.length - a.length).map(escapeRegExp);
+    const filteredKeywords = keywords.filter(e => idRegex.test(e)).sort((a, b) => b.length - a.length).map(RegExpUtils.escapeRegExp);
     highlighter.keyword = {
         pattern: `/\\b(${filteredKeywords.join('|')})\\b/${modifier}`
     };

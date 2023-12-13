@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { TreeStreamImpl, findNodeForKeyword, findNodesForProperty, type AstNode, type AstNodeWithTextRegion } from 'langium';
+import { TreeStreamImpl, GrammarUtils, type AstNode, type AstNodeWithTextRegion } from 'langium';
 import { expandToNode, expandToString, expandTracedToNode, joinTracedToNode, joinTracedToNodeIf, toStringAndTrace, traceToNode, type SourceRegion, type TraceRegion } from 'langium/generate';
 import { parseHelper } from 'langium/test';
 import { createServicesForGrammar } from 'langium/grammar';
@@ -153,8 +153,8 @@ describe('tracing based on provided text regions', () => {
             expandTracedToNode(source.$cstNode)`
                 beginning ${
                     joinTracedToNodeIf(source.children.length > 0, () => [
-                        findNodeForKeyword(source.$cstNode, '{')!,
-                        findNodeForKeyword(source.$cstNode, '}')!
+                        GrammarUtils.findNodeForKeyword(source.$cstNode, '{')!,
+                        GrammarUtils.findNodeForKeyword(source.$cstNode, '}')!
                     ] )(source.children, c => c.name)
                 } end
             `
@@ -177,7 +177,7 @@ describe('tracing based on provided text regions', () => {
         const { text, trace } = toStringAndTrace(
             expandTracedToNode(source.$cstNode)`
                 beginning ${
-                    joinTracedToNodeIf(source.values.length > 0, () => findNodesForProperty(source.$cstNode, 'values'))(source.values)
+                    joinTracedToNodeIf(source.values.length > 0, () => GrammarUtils.findNodesForProperty(source.$cstNode, 'values'))(source.values)
                 } end
             `
         );
@@ -200,8 +200,8 @@ describe('tracing based on provided text regions', () => {
             expandTracedToNode(source.$cstNode)`
                 beginning ${
                     joinTracedToNodeIf(!!source.children /* incomplete condition, array is always initialized, but possibly empty */, () => [
-                        findNodeForKeyword(source.$cstNode, '{')!,
-                        findNodeForKeyword(source.$cstNode, '}')!
+                        GrammarUtils.findNodeForKeyword(source.$cstNode, '{')!,
+                        GrammarUtils.findNodeForKeyword(source.$cstNode, '}')!
                     ] )(source.children!, c => c.name)
                 } end
             `

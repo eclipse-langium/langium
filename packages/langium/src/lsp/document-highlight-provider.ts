@@ -9,13 +9,13 @@ import type { GrammarConfig } from '../languages/grammar-config.js';
 import type { NameProvider } from '../references/name-provider.js';
 import type { FindReferencesOptions, References } from '../references/references.js';
 import type { LangiumServices } from '../services.js';
-import type { MaybePromise } from '../utils/promise-util.js';
+import type { MaybePromise } from '../utils/promise-utils.js';
 import type { ReferenceDescription } from '../workspace/ast-descriptions.js';
 import type { LangiumDocument } from '../workspace/documents.js';
 import { DocumentHighlight } from 'vscode-languageserver';
-import { getDocument } from '../utils/ast-util.js';
-import { findDeclarationNodeAtOffset } from '../utils/cst-util.js';
-import { UriUtils } from '../utils/uri-util.js';
+import { getDocument } from '../utils/ast-utils.js';
+import { findDeclarationNodeAtOffset } from '../utils/cst-utils.js';
+import { UriUtils } from '../utils/uri-utils.js';
 
 /**
  * Language-specific service for handling document highlight requests.
