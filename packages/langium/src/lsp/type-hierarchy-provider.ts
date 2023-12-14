@@ -20,17 +20,18 @@ import type { AstNode } from '../syntax-tree.js';
 import { findDeclarationNodeAtOffset } from '../utils/cst-util.js';
 import { URI } from '../utils/uri-util.js';
 import type { LangiumDocument, LangiumDocuments } from '../workspace/documents.js';
+import type { MaybePromise } from '../utils/promise-util.js';
 
 /**
  * Language-specific service for handling type hierarchy requests.
  */
 
 export interface TypeHierarchyProvider {
-    prepareTypeHierarchy(document: LangiumDocument, params: TypeHierarchyPrepareParams, cancelToken?: CancellationToken): TypeHierarchyItem[] | undefined;
+    prepareTypeHierarchy(document: LangiumDocument, params: TypeHierarchyPrepareParams, cancelToken?: CancellationToken): MaybePromise<TypeHierarchyItem[] | undefined>;
 
-    supertypes(params: TypeHierarchySupertypesParams, cancelToken?: CancellationToken): TypeHierarchyItem[] | undefined;
+    supertypes(params: TypeHierarchySupertypesParams, cancelToken?: CancellationToken): MaybePromise<TypeHierarchyItem[] | undefined>;
 
-    subtypes(params: TypeHierarchySubtypesParams, cancelToken?: CancellationToken): TypeHierarchyItem[] | undefined;
+    subtypes(params: TypeHierarchySubtypesParams, cancelToken?: CancellationToken): MaybePromise<TypeHierarchyItem[] | undefined>;
 }
 
 export abstract class AbstractTypeHierarchyProvider implements TypeHierarchyProvider {
@@ -46,7 +47,7 @@ export abstract class AbstractTypeHierarchyProvider implements TypeHierarchyProv
         this.references = services.references.References;
     }
 
-    prepareTypeHierarchy(document: LangiumDocument, params: TypeHierarchyPrepareParams, _cancelToken?: CancellationToken): TypeHierarchyItem[] | undefined {
+    prepareTypeHierarchy(document: LangiumDocument, params: TypeHierarchyPrepareParams, _cancelToken?: CancellationToken): MaybePromise<TypeHierarchyItem[] | undefined> {
         const rootNode = document.parseResult.value;
         const targetNode = findDeclarationNodeAtOffset(
             rootNode.$cstNode,
@@ -98,11 +99,8 @@ export abstract class AbstractTypeHierarchyProvider implements TypeHierarchyProv
         return undefined;
     }
 
-    supertypes(params: TypeHierarchySupertypesParams, _cancelToken?: CancellationToken): TypeHierarchyItem[] | undefined {
-        const document = this.documents.getDocument(URI.parse(params.item.uri));
-        if (!document) {
-            return undefined;
-        }
+    async supertypes(params: TypeHierarchySupertypesParams, _cancelToken?: CancellationToken): Promise<TypeHierarchyItem[] | undefined> {
+        const document = await this.documents.getOrCreateDocument(URI.parse(params.item.uri));
         const rootNode = document.parseResult.value;
         const targetNode = findDeclarationNodeAtOffset(
             rootNode.$cstNode,
@@ -118,13 +116,10 @@ export abstract class AbstractTypeHierarchyProvider implements TypeHierarchyProv
     /**
      * Override this method to collect the supertypes for your language.
      */
-    protected abstract getSupertypes(node: AstNode): TypeHierarchyItem[] | undefined;
+    protected abstract getSupertypes(node: AstNode): MaybePromise<TypeHierarchyItem[] | undefined>;
 
-    subtypes(params: TypeHierarchySubtypesParams, _cancelToken?: CancellationToken): TypeHierarchyItem[] | undefined {
-        const document = this.documents.getDocument(URI.parse(params.item.uri));
-        if (!document) {
-            return undefined;
-        }
+    async subtypes(params: TypeHierarchySubtypesParams, _cancelToken?: CancellationToken): Promise<TypeHierarchyItem[] | undefined> {
+        const document = await this.documents.getOrCreateDocument(URI.parse(params.item.uri));
         const rootNode = document.parseResult.value;
         const targetNode = findDeclarationNodeAtOffset(
             rootNode.$cstNode,
@@ -141,5 +136,5 @@ export abstract class AbstractTypeHierarchyProvider implements TypeHierarchyProv
     /**
      * Override this method to collect the subtypes for your language.
      */
-    protected abstract getSubtypes(node: AstNode): TypeHierarchyItem[] | undefined;
+    protected abstract getSubtypes(node: AstNode): MaybePromise<TypeHierarchyItem[] | undefined>;
 }

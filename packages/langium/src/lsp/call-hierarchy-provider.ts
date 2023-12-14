@@ -13,6 +13,7 @@ import type { AstNode } from '../syntax-tree.js';
 import type { Stream } from '../utils/stream.js';
 import type { ReferenceDescription } from '../workspace/ast-descriptions.js';
 import type { LangiumDocument, LangiumDocuments } from '../workspace/documents.js';
+import type { MaybePromise } from '../utils/promise-util.js';
 import { SymbolKind } from 'vscode-languageserver';
 import { findDeclarationNodeAtOffset } from '../utils/cst-util.js';
 import { URI } from '../utils/uri-util.js';
@@ -21,11 +22,11 @@ import { URI } from '../utils/uri-util.js';
  * Language-specific service for handling call hierarchy requests.
  */
 export interface CallHierarchyProvider {
-    prepareCallHierarchy(document: LangiumDocument, params: CallHierarchyPrepareParams, cancelToken?: CancellationToken): CallHierarchyItem[] | undefined;
+    prepareCallHierarchy(document: LangiumDocument, params: CallHierarchyPrepareParams, cancelToken?: CancellationToken): MaybePromise<CallHierarchyItem[] | undefined>;
 
-    incomingCalls(params: CallHierarchyIncomingCallsParams, cancelToken?: CancellationToken): CallHierarchyIncomingCall[] | undefined;
+    incomingCalls(params: CallHierarchyIncomingCallsParams, cancelToken?: CancellationToken): MaybePromise<CallHierarchyIncomingCall[] | undefined>;
 
-    outgoingCalls(params: CallHierarchyOutgoingCallsParams, cancelToken?: CancellationToken): CallHierarchyOutgoingCall[] | undefined;
+    outgoingCalls(params: CallHierarchyOutgoingCallsParams, cancelToken?: CancellationToken): MaybePromise<CallHierarchyOutgoingCall[] | undefined>;
 }
 
 export abstract class AbstractCallHierarchyProvider implements CallHierarchyProvider {
@@ -41,7 +42,7 @@ export abstract class AbstractCallHierarchyProvider implements CallHierarchyProv
         this.references = services.references.References;
     }
 
-    prepareCallHierarchy(document: LangiumDocument<AstNode>, params: CallHierarchyPrepareParams): CallHierarchyItem[] | undefined {
+    prepareCallHierarchy(document: LangiumDocument<AstNode>, params: CallHierarchyPrepareParams): MaybePromise<CallHierarchyItem[] | undefined> {
         const rootNode = document.parseResult.value;
         const targetNode = findDeclarationNodeAtOffset(
             rootNode.$cstNode,
@@ -81,11 +82,8 @@ export abstract class AbstractCallHierarchyProvider implements CallHierarchyProv
         return undefined;
     }
 
-    incomingCalls(params: CallHierarchyIncomingCallsParams): CallHierarchyIncomingCall[] | undefined {
-        const document = this.documents.getDocument(URI.parse(params.item.uri));
-        if (!document) {
-            return undefined;
-        }
+    async incomingCalls(params: CallHierarchyIncomingCallsParams): Promise<CallHierarchyIncomingCall[] | undefined> {
+        const document = await this.documents.getOrCreateDocument(URI.parse(params.item.uri));
         const rootNode = document.parseResult.value;
         const targetNode = findDeclarationNodeAtOffset(
             rootNode.$cstNode,
@@ -108,13 +106,10 @@ export abstract class AbstractCallHierarchyProvider implements CallHierarchyProv
     /**
      * Override this method to collect the incoming calls for your language
      */
-    protected abstract getIncomingCalls(node: AstNode, references: Stream<ReferenceDescription>): CallHierarchyIncomingCall[] | undefined;
+    protected abstract getIncomingCalls(node: AstNode, references: Stream<ReferenceDescription>): MaybePromise<CallHierarchyIncomingCall[] | undefined>;
 
-    outgoingCalls(params: CallHierarchyOutgoingCallsParams): CallHierarchyOutgoingCall[] | undefined {
-        const document = this.documents.getDocument(URI.parse(params.item.uri));
-        if (!document) {
-            return undefined;
-        }
+    async outgoingCalls(params: CallHierarchyOutgoingCallsParams): Promise<CallHierarchyOutgoingCall[] | undefined> {
+        const document = await this.documents.getOrCreateDocument(URI.parse(params.item.uri));
         const rootNode = document.parseResult.value;
         const targetNode = findDeclarationNodeAtOffset(
             rootNode.$cstNode,
@@ -130,5 +125,5 @@ export abstract class AbstractCallHierarchyProvider implements CallHierarchyProv
     /**
      * Override this method to collect the outgoing calls for your language
      */
-    protected abstract getOutgoingCalls(node: AstNode): CallHierarchyOutgoingCall[] | undefined;
+    protected abstract getOutgoingCalls(node: AstNode): MaybePromise<CallHierarchyOutgoingCall[] | undefined>;
 }

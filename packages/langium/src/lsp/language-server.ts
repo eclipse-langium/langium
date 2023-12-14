@@ -483,55 +483,37 @@ export function addWorkspaceSymbolHandler(connection: Connection, services: Lang
 
 export function addCallHierarchyHandler(connection: Connection, services: LangiumSharedServices): void {
     connection.languages.callHierarchy.onPrepare(createServerRequestHandler(
-        (services, document, params, cancelToken) => {
+        async (services, document, params, cancelToken) => {
             if (services.lsp.CallHierarchyProvider) {
-                return services.lsp.CallHierarchyProvider.prepareCallHierarchy(document, params, cancelToken) ?? null;
+                const result = await services.lsp.CallHierarchyProvider.prepareCallHierarchy(document, params, cancelToken);
+                return result ?? null;
             }
             return null;
         },
         services
     ));
 
-    connection.languages.callHierarchy.onIncomingCalls(createCallHierarchyRequestHandler(
-        (services, params, cancelToken) => {
+    connection.languages.callHierarchy.onIncomingCalls(createHierarchyRequestHandler(
+        async (services, params, cancelToken) => {
             if (services.lsp.CallHierarchyProvider) {
-                return services.lsp.CallHierarchyProvider.incomingCalls(params, cancelToken) ?? null;
+                const result = await services.lsp.CallHierarchyProvider.incomingCalls(params, cancelToken);
+                return result ?? null;
             }
             return null;
         },
         services
     ));
 
-    connection.languages.callHierarchy.onOutgoingCalls(createCallHierarchyRequestHandler(
-        (services, params, cancelToken) => {
+    connection.languages.callHierarchy.onOutgoingCalls(createHierarchyRequestHandler(
+        async (services, params, cancelToken) => {
             if (services.lsp.CallHierarchyProvider) {
-                return services.lsp.CallHierarchyProvider.outgoingCalls(params, cancelToken) ?? null;
+                const result = await services.lsp.CallHierarchyProvider.outgoingCalls(params, cancelToken);
+                return result ?? null;
             }
             return null;
         },
         services
     ));
-}
-
-export function createCallHierarchyRequestHandler<P extends CallHierarchyIncomingCallsParams | CallHierarchyOutgoingCallsParams, R, PR, E = void>(
-    serviceCall: (services: LangiumServices, params: P, cancelToken: CancellationToken) => HandlerResult<R, E>,
-    sharedServices: LangiumSharedServices
-): ServerRequestHandler<P, R, PR, E> {
-    const serviceRegistry = sharedServices.ServiceRegistry;
-    return async (params: P, cancelToken: CancellationToken) => {
-        const uri = URI.parse(params.item.uri);
-        const language = serviceRegistry.getServices(uri);
-        if (!language) {
-            const message = `Could not find service instance for uri: '${uri.toString()}'`;
-            console.error(message);
-            throw new Error(message);
-        }
-        try {
-            return await serviceCall(language, params, cancelToken);
-        } catch (err) {
-            return responseError<E>(err);
-        }
-    };
 }
 
 export function addTypeHierarchyHandler(connection: Connection, sharedServices: LangiumSharedServices): void {
@@ -541,25 +523,28 @@ export function addTypeHierarchyHandler(connection: Connection, sharedServices: 
     }
 
     connection.languages.typeHierarchy.onPrepare(
-        createServerRequestHandler((services, document, params, cancelToken) => {
-            return services.lsp.TypeHierarchyProvider?.prepareTypeHierarchy(document, params, cancelToken) ?? null;
+        createServerRequestHandler(async (services, document, params, cancelToken) => {
+            const result = await services.lsp.TypeHierarchyProvider?.prepareTypeHierarchy(document, params, cancelToken);
+            return result ?? null;
         }, sharedServices),
     );
 
     connection.languages.typeHierarchy.onSupertypes(
-        createTypeHierarchyRequestHandler((services, params, cancelToken) => {
-            return services.lsp.TypeHierarchyProvider?.supertypes(params, cancelToken) ?? null;
+        createHierarchyRequestHandler(async (services, params, cancelToken) => {
+            const result = await services.lsp.TypeHierarchyProvider?.supertypes(params, cancelToken);
+            return result ?? null;
         }, sharedServices),
     );
 
     connection.languages.typeHierarchy.onSubtypes(
-        createTypeHierarchyRequestHandler((services, params, cancelToken) => {
-            return services.lsp.TypeHierarchyProvider?.subtypes(params, cancelToken) ?? null;
+        createHierarchyRequestHandler(async (services, params, cancelToken) => {
+            const result = await services.lsp.TypeHierarchyProvider?.subtypes(params, cancelToken);
+            return result ?? null;
         }, sharedServices),
     );
 }
 
-export function createTypeHierarchyRequestHandler<P extends TypeHierarchySupertypesParams | TypeHierarchySubtypesParams, R, PR, E = void>(
+export function createHierarchyRequestHandler<P extends TypeHierarchySupertypesParams | TypeHierarchySubtypesParams | CallHierarchyIncomingCallsParams | CallHierarchyOutgoingCallsParams, R, PR, E = void>(
     serviceCall: (services: LangiumServices, params: P, cancelToken: CancellationToken) => HandlerResult<R, E>,
     sharedServices: LangiumSharedServices,
 ): ServerRequestHandler<P, R, PR, E> {
@@ -594,10 +579,7 @@ export function createServerRequestHandler<P extends { textDocument: TextDocumen
             console.error(errorText);
             throw new Error(errorText);
         }
-        const document = documents.getDocument(uri);
-        if (!document) {
-            throw new Error(`Could not find document for uri: '${uri}'`);
-        }
+        const document = await documents.getOrCreateDocument(uri);
         try {
             return await serviceCall(language, document, params, cancelToken);
         } catch (err) {
