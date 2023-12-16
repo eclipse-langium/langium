@@ -40,9 +40,37 @@ export const textExpectedParserRuleCrossReferences = `
     terminal ID: /[_a-zA-Z][\\w_]*/;
 `;
 
-describe('Langium grammar quick-fixes for validations', () => {
-    test('Parser rules used only as type in cross-references are correctly identified as used', async () => {
-        // this test case targets https://github.com/eclipse-langium/langium/issues/1309
+export const textBeforeParserRuleCrossReferencesWithInfers = `
+    grammar ParserRulesOnlyForCrossReferences
+    entry Model: (persons+=Neighbor | friends+=Friend | greetings+=Greeting)*;
+    Neighbor:   'neighbor'  name=ID;
+    Friend:     'friend'    name=ID;
+
+    Person infers PersonType: Neighbor | Friend; // 'Person' is used only for cross-references, not as parser rule
+    Greeting: 'Hello' person=[PersonType:ID] '!';
+
+    hidden terminal WS: /\\s+/;
+    terminal ID: /[_a-zA-Z][\\w_]*/;
+`;
+
+export const textExpectedParserRuleCrossReferencesWithInfers = `
+    grammar ParserRulesOnlyForCrossReferences
+    entry Model: (persons+=Neighbor | friends+=Friend | greetings+=Greeting)*;
+    Neighbor:   'neighbor'  name=ID;
+    Friend:     'friend'    name=ID;
+
+    type PersonType = Neighbor | Friend; // 'Person' is used only for cross-references, not as parser rule
+    Greeting: 'Hello' person=[PersonType:ID] '!';
+
+    hidden terminal WS: /\\s+/;
+    terminal ID: /[_a-zA-Z][\\w_]*/;
+`;
+
+
+describe('Langium grammar quick-fixes for validations: Parser rules used only as type in cross-references are not marked as unused, but with a hint suggesting a type declaration', () => {
+    // these test cases target https://github.com/eclipse-langium/langium/issues/1309
+
+    test('union of two types', async () => {
         // check, that the expected validation hint is available
         const validation = await validate(textBeforeParserRuleCrossReferences);
         expect(validation.diagnostics).toHaveLength(1);
@@ -74,5 +102,4 @@ describe('Langium grammar quick-fixes for validations', () => {
         const validationUpdated = await validate(updatedText);
         expect(validationUpdated.diagnostics).toHaveLength(0);
     });
-
 });
