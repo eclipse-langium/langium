@@ -4,16 +4,14 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { AstNode, Properties } from 'langium';
-import type { GrammarAST as GrammarTypes } from 'langium';
-import type { ValidationResult } from 'langium/test';
-import { afterEach, beforeAll, describe, expect, test } from 'vitest';
-import { CodeAction, DiagnosticSeverity } from 'vscode-languageserver';
+import type { AstNode, GrammarAST as GrammarTypes, Properties } from 'langium';
 import { AstUtils, EmptyFileSystem, GrammarAST } from 'langium';
 import { IssueCodes, createLangiumGrammarServices } from 'langium/grammar';
-import { clearDocuments, expectError, expectIssue, expectNoIssues, expectWarning, parseHelper, textDocumentParams, validationHelper } from 'langium/test';
-import { TextDocument } from 'vscode-languageserver-textdocument';
-import { textBeforeParserRuleCrossReferences, textExpectedParserRuleCrossReferences } from './lsp/grammar-code-actions.test.js';
+import type { ValidationResult } from 'langium/test';
+import { clearDocuments, expectError, expectIssue, expectNoIssues, expectWarning, parseHelper, validationHelper } from 'langium/test';
+import { afterEach, beforeAll, describe, expect, test } from 'vitest';
+import { DiagnosticSeverity } from 'vscode-languageserver';
+import { textBeforeParserRuleCrossReferences, textBeforeParserRuleCrossReferencesWithInfers } from './lsp/grammar-code-actions.test.js';
 
 const services = createLangiumGrammarServices(EmptyFileSystem);
 const parse = parseHelper(services.grammar);
@@ -514,8 +512,12 @@ describe('Unused rules validation', () => {
         });
     });
 
-    test('Parser rules used only as type in cross-references are not marked as unused, but with a hint suggesting a type declaration', async () => {
-        // this test case targets https://github.com/eclipse-langium/langium/issues/1309
+});
+
+describe('Parser rules used only as type in cross-references are not marked as unused, but with a hint suggesting a type declaration', () => {
+    // these test cases target https://github.com/eclipse-langium/langium/issues/1309
+
+    test('union of two types', async () => {
         const validation = await validate(textBeforeParserRuleCrossReferences);
         expect(validation.diagnostics).toHaveLength(1);
         const ruleWithHint = validation.document.parseResult.value.rules.find(e => e.name === 'Person')!;
@@ -525,6 +527,15 @@ describe('Unused rules validation', () => {
         });
     });
 
+    test('union of two types, with infers', async () => {
+        const validation = await validate(textBeforeParserRuleCrossReferencesWithInfers);
+        expect(validation.diagnostics).toHaveLength(1);
+        const ruleWithHint = validation.document.parseResult.value.rules.find(e => e.name === 'Person')!;
+        expectIssue(validation, {
+            node: ruleWithHint,
+            severity: DiagnosticSeverity.Hint
+        });
+    });
 });
 
 describe('Reserved names', () => {
