@@ -160,9 +160,12 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
         for (const changedUri of changed) {
             const invalidated = this.langiumDocuments.invalidateDocument(changedUri);
             if (!invalidated) {
-                // A "changed" document might also be one we haven't seen before (e.g. when creating a new file).
-                // In this case, we create a new document and parse it from scratch.
-                newDocuments.push(this.langiumDocuments.getOrCreateDocument(changedUri));
+                // We create an unparsed, invalid document.
+                // This will be parsed as soon as we reach the first document builder phase.
+                // This allows to cancel the parsing process later in case we need it.
+                const newDocument = this.langiumDocumentFactory.fromModel({ $type: 'INVALID' }, changedUri);
+                newDocument.state = DocumentState.Changed;
+                this.langiumDocuments.addDocument(newDocument);
             }
             this.buildState.delete(changedUri.toString());
         }
