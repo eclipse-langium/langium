@@ -131,6 +131,11 @@ export interface LangiumDocumentFactory {
     fromModel<T extends AstNode = AstNode>(model: T, uri: URI): LangiumDocument<T>;
 
     /**
+     * Create an Langium document from a specified `URI`. The factory will use the `FileSystemAccess` service to read the file.
+     */
+    fromUri<T extends AstNode = AstNode>(uri: URI, cancellationToken?: CancellationToken): Promise<LangiumDocument<T>>;
+
+    /**
      * Update the given document after changes in the corresponding textual representation.
      * Method is called by the document builder after it has been requested to build an exisiting
      * document and the document's state is {@link DocumentState.Changed}.
@@ -150,6 +155,11 @@ export class DefaultLangiumDocumentFactory implements LangiumDocumentFactory {
         this.serviceRegistry = services.ServiceRegistry;
         this.textDocuments = services.workspace.TextDocuments;
         this.fileSystemProvider = services.workspace.FileSystemProvider;
+    }
+
+    async fromUri<T extends AstNode = AstNode>(uri: URI, cancellationToken = CancellationToken.None): Promise<LangiumDocument<T>> {
+        const content = await this.fileSystemProvider.readFile(uri);
+        return this.createAsync<T>(uri, content, cancellationToken);
     }
 
     fromTextDocument<T extends AstNode = AstNode>(textDocument: TextDocument, uri?: URI): LangiumDocument<T>;
@@ -325,6 +335,8 @@ export interface LangiumDocuments {
     /**
      * Creates a new document with the given URI and text content.
      * The new document is automatically added to this service and can be retrieved using {@link getDocument}.
+     *
+     * @throws an error if a document with the same URI is already present.
      */
     createDocument(uri: URI, text: string): LangiumDocument;
 
@@ -332,6 +344,8 @@ export interface LangiumDocuments {
      * Creates a new document with the given URI and text content asynchronously.
      * The process can be interrupted with a cancellation token.
      * The new document is automatically added to this service and can be retrieved using {@link getDocument}.
+     *
+     * @throws an error if a document with the same URI is already present.
      */
     createDocument(uri: URI, text: string, cancellationToken: CancellationToken): Promise<LangiumDocument>;
 
@@ -362,13 +376,11 @@ export interface LangiumDocuments {
 export class DefaultLangiumDocuments implements LangiumDocuments {
 
     protected readonly langiumDocumentFactory: LangiumDocumentFactory;
-    protected readonly fileSystemProvider: FileSystemProvider;
 
     protected readonly documentMap: Map<string, LangiumDocument> = new Map();
 
     constructor(services: LangiumSharedServices) {
         this.langiumDocumentFactory = services.workspace.LangiumDocumentFactory;
-        this.fileSystemProvider = services.workspace.FileSystemProvider;
     }
 
     get all(): Stream<LangiumDocument> {
@@ -393,8 +405,8 @@ export class DefaultLangiumDocuments implements LangiumDocuments {
         if (document) {
             return document;
         }
-        const text = await this.fileSystemProvider.readFile(uri);
-        document = await this.createDocument(uri, text, cancellationToken ?? CancellationToken.None);
+        document = await this.langiumDocumentFactory.fromUri(uri, cancellationToken);
+        this.addDocument(document);
         return document;
     }
 

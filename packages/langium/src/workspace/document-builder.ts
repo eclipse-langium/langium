@@ -155,7 +155,6 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
             this.buildState.delete(deletedUri.toString());
         }
         this.indexManager.remove(deleted);
-        const newDocuments: Array<Promise<unknown>> = [];
         // Set the state of all changed documents to `Changed` so they are completely rebuilt
         for (const changedUri of changed) {
             const invalidated = this.langiumDocuments.invalidateDocument(changedUri);
@@ -169,8 +168,6 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
             }
             this.buildState.delete(changedUri.toString());
         }
-        // Parse documents in parallel (if possible)
-        await Promise.all(newDocuments);
         // Set the state of all documents that should be relinked to `ComputedScopes` (if not already lower)
         const allChangedUris = stream(changed).concat(deleted).map(uri => uri.toString()).toSet();
         this.langiumDocuments.all
