@@ -100,23 +100,17 @@ describe('LangiumGrammarTypeHierarchyProvider', async () => {
 });
 
 const getActualSimpleSupertypes = async (code: string): Promise<SimpleTypeHierarchyItem[] | undefined> => {
-    return typeHierarchyProvider
-        .supertypes({
-            item: await getUniqueTypeHierarchyItem(code),
-        })
-        ?.map((type) => ({
-            name: type.name,
-        }));
+    const supertypes = await typeHierarchyProvider.supertypes({ item: await getUniqueTypeHierarchyItem(code) });
+    return supertypes?.map((type) => ({
+        name: type.name,
+    }));
 };
 
 const getActualSimpleSubtypes = async (code: string): Promise<SimpleTypeHierarchyItem[] | undefined> => {
-    return typeHierarchyProvider
-        .subtypes({
-            item: await getUniqueTypeHierarchyItem(code),
-        })
-        ?.map((type) => ({
-            name: type.name,
-        }));
+    const supertypes = await typeHierarchyProvider.subtypes({ item: await getUniqueTypeHierarchyItem(code) });
+    return supertypes?.map((type) => ({
+        name: type.name,
+    }));
 };
 
 const getUniqueTypeHierarchyItem = async (code: string): Promise<TypeHierarchyItem> => {
@@ -132,7 +126,7 @@ const getUniqueTypeHierarchyItem = async (code: string): Promise<TypeHierarchyIt
     const position = document.textDocument.positionAt(indices[0]);
 
     const items =
-        typeHierarchyProvider.prepareTypeHierarchy(document, {
+        await typeHierarchyProvider.prepareTypeHierarchy(document, {
             textDocument: {
                 uri: document.textDocument.uri,
             },

@@ -15,6 +15,7 @@ import { findLeafNodeAtOffset } from '../../utils/cst-util.js';
 import { isParserRule, isRuleCall } from '../../languages/generated/ast.js';
 
 export class LangiumGrammarCallHierarchyProvider extends AbstractCallHierarchyProvider {
+
     protected getIncomingCalls(node: AstNode, references: Stream<ReferenceDescription>): CallHierarchyIncomingCall[] | undefined {
         if (!isParserRule(node)) {
             return undefined;
@@ -22,7 +23,10 @@ export class LangiumGrammarCallHierarchyProvider extends AbstractCallHierarchyPr
         // This map is used to group incoming calls to avoid duplicates.
         const uniqueRules = new Map<string, { parserRule: CstNode, nameNode: CstNode, targetNodes: CstNode[], docUri: string }>();
         references.forEach(ref => {
-            const doc = this.documents.getOrCreateDocument(ref.sourceUri);
+            const doc = this.documents.getDocument(ref.sourceUri);
+            if (!doc) {
+                return;
+            }
             const rootNode = doc.parseResult.value;
             if (!rootNode.$cstNode) {
                 return;

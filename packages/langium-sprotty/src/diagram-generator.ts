@@ -49,13 +49,13 @@ export abstract class LangiumDiagramGenerator implements IDiagramGenerator {
     /**
      * Builds a `GeneratorContext` and calls `generateRoot` with it.
      */
-    generate(args: LangiumDiagramGeneratorArguments): SModelRoot | Promise<SModelRoot> {
+    async generate(args: LangiumDiagramGeneratorArguments): Promise<SModelRoot> {
         if (!args.document) {
             const sourceUri = args.options.sourceUri as string;
             if (!sourceUri) {
                 return Promise.reject("Missing 'sourceUri' option in request.");
             }
-            args.document = this.langiumDocuments.getOrCreateDocument(URI.parse(sourceUri));
+            args.document = await this.langiumDocuments.getOrCreateDocument(URI.parse(sourceUri));
         }
         if (!args.cancelToken) {
             args.cancelToken = CancellationToken.None;

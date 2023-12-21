@@ -48,6 +48,7 @@ import { DefaultLexer } from './parser/lexer.js';
 import { JSDocDocumentationProvider } from './documentation/documentation-provider.js';
 import { DefaultCommentProvider } from './documentation/comment-provider.js';
 import { LangiumParserErrorMessageProvider } from './parser/langium-parser.js';
+import { DefaultAsyncParser } from './parser/async-parser.js';
 import { DefaultWorkspaceLock } from './workspace/workspace-lock.js';
 
 /**
@@ -68,6 +69,7 @@ export function createDefaultModule(context: DefaultModuleContext): Module<Langi
             DocumentationProvider: (services) => new JSDocDocumentationProvider(services)
         },
         parser: {
+            AsyncParser: (services) => new DefaultAsyncParser(services),
             GrammarConfig: (services) => createGrammarConfig(services),
             LangiumParser: (services) => createLangiumParser(services),
             CompletionParser: (services) => createCompletionParser(services),

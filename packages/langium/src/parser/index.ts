@@ -4,6 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+export * from './async-parser.js';
 export * from './completion-parser-builder.js';
 export * from './cst-node-builder.js';
 export * from './langium-parser-builder.js';

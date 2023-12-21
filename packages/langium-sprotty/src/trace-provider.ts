@@ -72,7 +72,10 @@ export class DefaultTraceProvider implements TraceProvider {
         }
         try {
             const traceUri = URI.parse(target.trace);
-            const document = this.langiumDocuments.getOrCreateDocument(traceUri.with({ fragment: null, query: null }));
+            const document = this.langiumDocuments.getDocument(traceUri.with({ fragment: null, query: null }));
+            if (!document) {
+                return undefined;
+            }
             return this.astNodeLocator.getAstNode(document.parseResult.value, traceUri.fragment);
         } catch (err) {
             console.warn(`Could not retrieve source of trace: ${target.trace}`, err);

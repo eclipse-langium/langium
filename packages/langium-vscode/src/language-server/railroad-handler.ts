@@ -22,10 +22,10 @@ export function registerRailroadConnectionHandler(connection: Connection, servic
     });
     // After receiving the `DOCUMENTS_VALIDATED_NOTIFICATION`
     // the vscode extension will perform the following request
-    connection.onRequest(RAILROAD_DIAGRAM_REQUEST, (uri: string) => {
+    connection.onRequest(RAILROAD_DIAGRAM_REQUEST, async (uri: string) => {
         try {
             const parsedUri = URI.parse(uri);
-            const document = documents.getOrCreateDocument(parsedUri);
+            const document = await documents.getOrCreateDocument(parsedUri);
             if (document.diagnostics?.some(e => e.severity === DiagnosticSeverity.Error)) {
                 return undefined;
             }

@@ -54,7 +54,7 @@ export async function extractDocuments(fileName: string, services: LangiumServic
             process.exit(1);
         }
     });
-    const mainDocument = services.shared.workspace.LangiumDocuments.getOrCreateDocument(URI.file(path.resolve(fileName)));
+    const mainDocument = await services.shared.workspace.LangiumDocuments.getOrCreateDocument(URI.file(path.resolve(fileName)));
 
     return [mainDocument, documents];
 }

@@ -116,7 +116,7 @@ export class DefaultWorkspaceManager implements WorkspaceManager {
                 if (entry.isDirectory) {
                     await this.traverseFolder(workspaceFolder, entry.uri, fileExtensions, collector);
                 } else if (entry.isFile) {
-                    const document = this.langiumDocuments.getOrCreateDocument(entry.uri);
+                    const document = await this.langiumDocuments.getOrCreateDocument(entry.uri);
                     collector(document);
                 }
             }

@@ -63,6 +63,7 @@ import type { NodeKindProvider } from './lsp/node-kind-provider.js';
 import type { FuzzyMatcher } from './lsp/fuzzy-matcher.js';
 import type { IParserErrorMessageProvider } from 'chevrotain';
 import type { TypeHierarchyProvider } from './lsp/type-hierarchy-provider.js';
+import type { AsyncParser } from './parser/async-parser.js';
 import type { WorkspaceLock } from './workspace/workspace-lock.js';
 
 /**
@@ -109,6 +110,7 @@ export type LangiumLspServices = {
 export type LangiumDefaultServices = {
     lsp: LangiumLspServices
     parser: {
+        AsyncParser: AsyncParser
         GrammarConfig: GrammarConfig
         ValueConverter: ValueConverter
         LangiumParser: LangiumParser

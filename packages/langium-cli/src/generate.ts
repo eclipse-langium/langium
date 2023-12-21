@@ -9,7 +9,7 @@ import type { LangiumConfig, LangiumLanguageConfig} from './package.js';
 import { URI } from 'langium';
 import { loadConfig } from './package.js';
 import { copyAstNode, getDocument, GrammarAST, linkContentToContainer } from 'langium';
-import { createLangiumGrammarServices, resolveImport, resolveTransitiveImports } from 'langium/grammar';
+import { createLangiumGrammarServices, resolveImport, resolveImportUri, resolveTransitiveImports } from 'langium/grammar';
 import { NodeFileSystem } from 'langium/node';
 import { generateAst } from './generator/ast-generator.js';
 import { serializeGrammar } from './generator/grammar-serializer.js';
@@ -123,17 +123,17 @@ type GrammarElement = GrammarAST.AbstractRule | GrammarAST.Type | GrammarAST.Int
 const { shared: sharedServices, grammar: grammarServices } = createLangiumGrammarServices(NodeFileSystem);
 const documents = sharedServices.workspace.LangiumDocuments;
 
-function eagerLoad(document: LangiumDocument, uris: Set<string> = new Set()): URI[] {
+async function eagerLoad(document: LangiumDocument, uris: Set<string> = new Set()): Promise<URI[]> {
     const uriString = document.uri.toString();
     if (!uris.has(uriString)) {
         uris.add(uriString);
         const grammar = document.parseResult.value;
         if (GrammarAST.isGrammar(grammar)) {
             for (const imp of grammar.imports) {
-                const importedGrammar = resolveImport(documents, imp);
-                if (importedGrammar) {
-                    const importedDoc = getDocument(importedGrammar);
-                    eagerLoad(importedDoc, uris);
+                const importUri = resolveImportUri(imp);
+                if (importUri) {
+                    const document = await sharedServices.workspace.LangiumDocuments.getOrCreateDocument(importUri);
+                    await eagerLoad(document, uris);
                 }
             }
         }
@@ -229,8 +229,8 @@ async function buildAll(config: LangiumConfig): Promise<Map<string, LangiumDocum
     const uris = new Set<string>();
     for (const languageConfig of config.languages) {
         const absGrammarPath = URI.file(path.resolve(relPath, languageConfig.grammar));
-        const document = documents.getOrCreateDocument(absGrammarPath);
-        eagerLoad(document, uris);
+        const document = await documents.getOrCreateDocument(absGrammarPath);
+        await eagerLoad(document, uris);
     }
     for (const doc of documents.all) {
         map.set(doc.uri.fsPath, doc);
@@ -419,8 +419,7 @@ export async function generateTypes(options: ExtractTypesOptions): Promise<void>
             return;
         }
     }
-
-    const grammarDoc = await doLoadAndUpdate(documents.getOrCreateDocument(URI.file(grammarPath)));
+    const grammarDoc = await doLoadAndUpdate(await documents.getOrCreateDocument(URI.file(grammarPath)));
     const genTypes = generateTypesFile(grammarServices, [grammarDoc.parseResult.value as Grammar]);
     await writeWithFail(typesFilePath, genTypes, { watch: false });
     log('log', { watch: false }, `Generated type definitions to: ${chalk.white.bold(typesFilePath)}`);
@@ -431,7 +430,7 @@ export async function generateTypes(options: ExtractTypesOptions): Promise<void>
  * Builds the given grammar document and all imported grammars.
  */
 async function doLoadAndUpdate(grammarDoc: LangiumDocument): Promise<LangiumDocument> {
-    const allUris = eagerLoad(grammarDoc);
+    const allUris = await eagerLoad(grammarDoc);
     await sharedServices.workspace.DocumentBuilder.update(allUris, []);
     for (const doc of documents.all) {
         await sharedServices.workspace.DocumentBuilder.build([doc]);

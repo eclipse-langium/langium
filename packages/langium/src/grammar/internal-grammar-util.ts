@@ -89,16 +89,16 @@ export function resolveImportUri(imp: ast.GrammarImport): URI | undefined {
 
 export function resolveImport(documents: LangiumDocuments, imp: ast.GrammarImport): ast.Grammar | undefined {
     const resolvedUri = resolveImportUri(imp);
-    try {
-        if (resolvedUri) {
-            const resolvedDocument = documents.getOrCreateDocument(resolvedUri);
-            const node = resolvedDocument.parseResult.value;
-            if (ast.isGrammar(node)) {
-                return node;
-            }
-        }
-    } catch {
-        // NOOP
+    if (!resolvedUri) {
+        return undefined;
+    }
+    const resolvedDocument = documents.getDocument(resolvedUri);
+    if (!resolvedDocument) {
+        return undefined;
+    }
+    const node = resolvedDocument.parseResult.value;
+    if (ast.isGrammar(node)) {
+        return node;
     }
     return undefined;
 }

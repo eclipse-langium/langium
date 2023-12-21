@@ -5,6 +5,7 @@
  ******************************************************************************/
 
 import type { Diagnostic, Range, TextDocuments } from 'vscode-languageserver';
+import { CancellationToken } from 'vscode-languageserver';
 import type { ParseResult } from '../parser/langium-parser.js';
 import type { ServiceRegistry } from '../service-registry.js';
 import type { LangiumSharedServices } from '../services.js';
@@ -110,11 +111,19 @@ export interface LangiumDocumentFactory {
      * Create a Langium document from a `TextDocument` (usually associated with a file).
      */
     fromTextDocument<T extends AstNode = AstNode>(textDocument: TextDocument, uri?: URI): LangiumDocument<T>;
+    /**
+     * Create a Langium document from a `TextDocument` asynchronously. This action can be cancelled if a cancellable parser implementation has been provided.
+     */
+    fromTextDocument<T extends AstNode = AstNode>(textDocument: TextDocument, uri: URI | undefined, cancellationToken: CancellationToken): Promise<LangiumDocument<T>>;
 
     /**
      * Create an Langium document from an in-memory string.
      */
     fromString<T extends AstNode = AstNode>(text: string, uri: URI): LangiumDocument<T>;
+    /**
+     * Create a Langium document from an in-memory string asynchronously. This action can be cancelled if a cancellable parser implementation has been provided.
+     */
+    fromString<T extends AstNode = AstNode>(text: string, uri: URI, cancellationToken: CancellationToken): Promise<LangiumDocument<T>>;
 
     /**
      * Create an Langium document from a model that has been constructed in memory.
@@ -122,10 +131,9 @@ export interface LangiumDocumentFactory {
     fromModel<T extends AstNode = AstNode>(model: T, uri: URI): LangiumDocument<T>;
 
     /**
-     * Create a Langium document for the given URI. The document shall be fetched from the {@link TextDocuments}
-     * service if present, and loaded via the configured {@link FileSystemProvider} otherwise.
+     * Create an Langium document from a specified `URI`. The factory will use the `FileSystemAccess` service to read the file.
      */
-    create<T extends AstNode = AstNode>(uri: URI): LangiumDocument<T>
+    fromUri<T extends AstNode = AstNode>(uri: URI, cancellationToken?: CancellationToken): Promise<LangiumDocument<T>>;
 
     /**
      * Update the given document after changes in the corresponding textual representation.
@@ -134,7 +142,7 @@ export interface LangiumDocumentFactory {
      * The text parsing is expected to be done the same way as in {@link fromTextDocument}
      * and {@link fromString}.
      */
-    update<T extends AstNode = AstNode>(document: LangiumDocument<T>): LangiumDocument<T>
+    update<T extends AstNode = AstNode>(document: LangiumDocument<T>, cancellationToken: CancellationToken): Promise<LangiumDocument<T>>
 }
 
 export class DefaultLangiumDocumentFactory implements LangiumDocumentFactory {
@@ -149,24 +157,37 @@ export class DefaultLangiumDocumentFactory implements LangiumDocumentFactory {
         this.fileSystemProvider = services.workspace.FileSystemProvider;
     }
 
-    fromTextDocument<T extends AstNode = AstNode>(textDocument: TextDocument, uri?: URI): LangiumDocument<T> {
-        return this.create<T>(uri ?? URI.parse(textDocument.uri), textDocument);
+    async fromUri<T extends AstNode = AstNode>(uri: URI, cancellationToken = CancellationToken.None): Promise<LangiumDocument<T>> {
+        const content = await this.fileSystemProvider.readFile(uri);
+        return this.createAsync<T>(uri, content, cancellationToken);
     }
 
-    fromString<T extends AstNode = AstNode>(text: string, uri: URI): LangiumDocument<T> {
-        return this.create<T>(uri, text);
+    fromTextDocument<T extends AstNode = AstNode>(textDocument: TextDocument, uri?: URI): LangiumDocument<T>;
+    fromTextDocument<T extends AstNode = AstNode>(textDocument: TextDocument, uri: URI | undefined, cancellationToken: CancellationToken): Promise<LangiumDocument<T>>;
+    fromTextDocument<T extends AstNode = AstNode>(textDocument: TextDocument, uri?: URI, cancellationToken?: CancellationToken): LangiumDocument<T> | Promise<LangiumDocument<T>> {
+        uri = uri ?? URI.parse(textDocument.uri);
+        if (cancellationToken) {
+            return this.createAsync<T>(uri, textDocument, cancellationToken);
+        } else {
+            return this.create<T>(uri, textDocument);
+        }
+    }
+
+    fromString<T extends AstNode = AstNode>(text: string, uri: URI): LangiumDocument<T>;
+    fromString<T extends AstNode = AstNode>(text: string, uri: URI, cancellationToken: CancellationToken): Promise<LangiumDocument<T>>;
+    fromString<T extends AstNode = AstNode>(text: string, uri: URI, cancellationToken?: CancellationToken): LangiumDocument<T> | Promise<LangiumDocument<T>> {
+        if (cancellationToken) {
+            return this.createAsync<T>(uri, text, cancellationToken);
+        } else {
+            return this.create<T>(uri, text);
+        }
     }
 
     fromModel<T extends AstNode = AstNode>(model: T, uri: URI): LangiumDocument<T> {
         return this.create<T>(uri, { $model: model });
     }
 
-    create<T extends AstNode = AstNode>(uri: URI, content?: string | TextDocument | { $model: T }): LangiumDocument<T> {
-        // if no document is given, check the textDocuments service first, it maintains documents being opened in an editor
-        content ??= this.textDocuments.get(uri.toString());
-        // if still no document is found try to load it from the file system
-        content ??= this.getContentFromFileSystem(uri);
-
+    protected create<T extends AstNode = AstNode>(uri: URI, content: string | TextDocument | { $model: T }): LangiumDocument<T> {
         if (typeof content === 'string') {
             const parseResult = this.parse<T>(uri, content);
             return this.createLangiumDocument<T>(parseResult, uri, undefined, content);
@@ -177,6 +198,16 @@ export class DefaultLangiumDocumentFactory implements LangiumDocumentFactory {
 
         } else {
             const parseResult = this.parse<T>(uri, content.getText());
+            return this.createLangiumDocument(parseResult, uri, content);
+        }
+    }
+
+    protected async createAsync<T extends AstNode = AstNode>(uri: URI, content: string | TextDocument, cancelToken: CancellationToken): Promise<LangiumDocument<T>> {
+        if (typeof content === 'string') {
+            const parseResult = await this.parseAsync<T>(uri, content, cancelToken);
+            return this.createLangiumDocument<T>(parseResult, uri, undefined, content);
+        } else {
+            const parseResult = await this.parseAsync<T>(uri, content.getText(), cancelToken);
             return this.createLangiumDocument(parseResult, uri, content);
         }
     }
@@ -218,15 +249,16 @@ export class DefaultLangiumDocumentFactory implements LangiumDocumentFactory {
         return document;
     }
 
-    update<T extends AstNode = AstNode>(document: Mutable<LangiumDocument<T>>): LangiumDocument<T> {
+    async update<T extends AstNode = AstNode>(document: Mutable<LangiumDocument<T>>, cancellationToken: CancellationToken): Promise<LangiumDocument<T>> {
         // The CST full text property contains the original text that was used to create the AST.
         const oldText = document.parseResult.value.$cstNode?.root.fullText;
         const textDocument = this.textDocuments.get(document.uri.toString());
-        const text = textDocument ? textDocument.getText() : this.getContentFromFileSystem(document.uri);
+        const text = textDocument ? textDocument.getText() : await this.fileSystemProvider.readFile(document.uri);
 
         if (textDocument) {
             Object.defineProperty(
-                document, 'textDocument',
+                document,
+                'textDocument',
                 {
                     value: textDocument
                 }
@@ -234,7 +266,8 @@ export class DefaultLangiumDocumentFactory implements LangiumDocumentFactory {
         } else {
             const textDocumentGetter = this.createTextDocumentGetter(document.uri, text);
             Object.defineProperty(
-                document, 'textDocument',
+                document,
+                'textDocument',
                 {
                     get: textDocumentGetter
                 }
@@ -244,20 +277,21 @@ export class DefaultLangiumDocumentFactory implements LangiumDocumentFactory {
         // Some of these documents can be pretty large, so parsing them again can be quite expensive.
         // Therefore, we only parse if the text has actually changed.
         if (oldText !== text) {
-            document.parseResult = this.parse(document.uri, text);
+            document.parseResult = await this.parseAsync(document.uri, text, cancellationToken);
             (document.parseResult.value as Mutable<AstNode>).$document = document;
         }
         document.state = DocumentState.Parsed;
         return document;
     }
 
-    protected getContentFromFileSystem(uri: URI): string {
-        return this.fileSystemProvider.readFileSync(uri);
-    }
-
     protected parse<T extends AstNode>(uri: URI, text: string): ParseResult<T> {
         const services = this.serviceRegistry.getServices(uri);
         return services.parser.LangiumParser.parse<T>(text);
+    }
+
+    protected parseAsync<T extends AstNode>(uri: URI, text: string, cancellationToken: CancellationToken): Promise<ParseResult<T>> {
+        const services = this.serviceRegistry.getServices(uri);
+        return services.parser.AsyncParser.parse<T>(text, cancellationToken);
     }
 
     protected createTextDocumentGetter(uri: URI, text?: string): () => TextDocument {
@@ -288,10 +322,32 @@ export interface LangiumDocuments {
     addDocument(document: LangiumDocument): void;
 
     /**
-     * Retrieve the document with the given URI, if present. Otherwise create a new document
-     * and add it to the managed documents.
+     * Retrieve the document with the given URI, if present. Otherwise returns `undefined`.
      */
-    getOrCreateDocument(uri: URI): LangiumDocument;
+    getDocument(uri: URI): LangiumDocument | undefined;
+
+    /**
+     * Retrieve the document with the given URI. If not present, a new one will be created using the file system access.
+     * The new document will be added to the list of documents managed under this service.
+     */
+    getOrCreateDocument(uri: URI, cancellationToken?: CancellationToken): Promise<LangiumDocument>;
+
+    /**
+     * Creates a new document with the given URI and text content.
+     * The new document is automatically added to this service and can be retrieved using {@link getDocument}.
+     *
+     * @throws an error if a document with the same URI is already present.
+     */
+    createDocument(uri: URI, text: string): LangiumDocument;
+
+    /**
+     * Creates a new document with the given URI and text content asynchronously.
+     * The process can be interrupted with a cancellation token.
+     * The new document is automatically added to this service and can be retrieved using {@link getDocument}.
+     *
+     * @throws an error if a document with the same URI is already present.
+     */
+    createDocument(uri: URI, text: string, cancellationToken: CancellationToken): Promise<LangiumDocument>;
 
     /**
      * Returns `true` if a document with the given URI is managed under this service.
@@ -339,16 +395,34 @@ export class DefaultLangiumDocuments implements LangiumDocuments {
         this.documentMap.set(uriString, document);
     }
 
-    getOrCreateDocument(uri: URI): LangiumDocument {
+    getDocument(uri: URI): LangiumDocument | undefined {
         const uriString = uri.toString();
-        let langiumDoc = this.documentMap.get(uriString);
-        if (langiumDoc) {
-            // The document is already present in our map
-            return langiumDoc;
+        return this.documentMap.get(uriString);
+    }
+
+    async getOrCreateDocument(uri: URI, cancellationToken?: CancellationToken): Promise<LangiumDocument> {
+        let document = this.getDocument(uri);
+        if (document) {
+            return document;
         }
-        langiumDoc = this.langiumDocumentFactory.create(uri);
-        this.documentMap.set(uriString, langiumDoc);
-        return langiumDoc;
+        document = await this.langiumDocumentFactory.fromUri(uri, cancellationToken);
+        this.addDocument(document);
+        return document;
+    }
+
+    createDocument(uri: URI, text: string): LangiumDocument;
+    createDocument(uri: URI, text: string, cancellationToken: CancellationToken): Promise<LangiumDocument>;
+    createDocument(uri: URI, text: string, cancellationToken?: CancellationToken): LangiumDocument | Promise<LangiumDocument> {
+        if (cancellationToken) {
+            return this.langiumDocumentFactory.fromString(text, uri, cancellationToken).then(document => {
+                this.addDocument(document);
+                return document;
+            });
+        } else {
+            const document = this.langiumDocumentFactory.fromString(text, uri);
+            this.addDocument(document);
+            return document;
+        }
     }
 
     hasDocument(uri: URI): boolean {
