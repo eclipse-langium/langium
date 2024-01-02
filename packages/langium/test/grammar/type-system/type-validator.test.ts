@@ -10,7 +10,8 @@ import { DiagnosticSeverity } from 'vscode-languageserver';
 import { AstUtils, EmptyFileSystem, GrammarAST } from 'langium';
 import { createLangiumGrammarServices } from 'langium/grammar';
 import { expectError, expectNoIssues, parseDocument, validationHelper } from 'langium/test';
-import { Assignment, CrossReference, Group, ParserRule, isCrossReference, isInferredType, isParserRule } from '../../../src/languages/generated/ast.js';
+import { isCrossReference, isInferredType, isParserRule } from '../../../src/languages/generated/ast.js';
+import type { Assignment, CrossReference, Group, ParserRule } from '../../../src/languages/generated/ast.js';
 
 const grammarServices = createLangiumGrammarServices(EmptyFileSystem).grammar;
 const validate = validationHelper<GrammarAST.Grammar>(grammarServices);
