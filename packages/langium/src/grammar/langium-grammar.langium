@@ -55,7 +55,7 @@ SimpleType infers TypeDefinition:
 PrimitiveType returns string:
     'string' | 'number' | 'boolean' | 'Date' | 'bigint';
 
-type AbstractType = Interface | Type | Action | ParserRule;
+type AbstractType = Interface | Type | Action | ParserRule | InferredType;
 
 Type:
     'type' name=ID '=' type=TypeDefinition ';'?;
