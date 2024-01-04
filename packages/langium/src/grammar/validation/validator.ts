@@ -372,7 +372,7 @@ export class LangiumGrammarValidator {
         }
     }
 
-    private getActionType(rule: ast.Action): ast.AbstractType | ast.InferredType | undefined {
+    private getActionType(rule: ast.Action): ast.AbstractType | undefined {
         if (rule.type) {
             return rule.type?.ref;
         } else if (rule.inferredType) {

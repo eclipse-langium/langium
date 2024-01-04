@@ -234,7 +234,7 @@ export function findAssignment(cstNode: CstNode): ast.Assignment | undefined {
  * from a parser rule, and that rule must contain an assignment to the `name` property. In all other cases,
  * this function returns `undefined`.
  */
-export function findNameAssignment(type: ast.AbstractType | ast.InferredType): ast.Assignment | undefined {
+export function findNameAssignment(type: ast.AbstractType): ast.Assignment | undefined {
     if (ast.isInferredType(type)) {
         // inferred type is unexpected, extract AbstractType first
         type = type.$container;
@@ -395,7 +395,7 @@ export function getExplicitRuleType(rule: ast.ParserRule): string | undefined {
     return undefined;
 }
 
-export function getTypeName(type: ast.AbstractType | ast.InferredType): string {
+export function getTypeName(type: ast.AbstractType): string {
     if (ast.isParserRule(type)) {
         return isDataTypeRule(type) ? type.name : getExplicitRuleType(type) ?? type.name;
     } else if (ast.isInterface(type) || ast.isType(type) || ast.isReturnType(type)) {
@@ -412,7 +412,7 @@ export function getTypeName(type: ast.AbstractType | ast.InferredType): string {
 }
 
 export function getActionType(action: ast.Action): string | undefined {
-    if(action.inferredType) {
+    if (action.inferredType) {
         return action.inferredType.name;
     } else if (action.type?.ref) {
         return getTypeName(action.type.ref);
