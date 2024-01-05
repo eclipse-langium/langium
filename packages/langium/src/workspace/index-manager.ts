@@ -25,12 +25,12 @@ import { ContextCache } from '../utils/caching.js';
 export interface IndexManager {
 
     /**
-     * Deletes the specified document uris from the index.
+     * Removes the specified document URI from the index.
      * Necessary when documents are deleted and not referenceable anymore.
      *
-     * @param uris The document uris to delete.
+     * @param uri The URI of the document for which index data shall be removed
      */
-    remove(uris: URI[]): void;
+    remove(uri: URI): void;
 
     /**
      * Updates the information about the exportable content of a document inside the index.
@@ -88,15 +88,15 @@ export class DefaultIndexManager implements IndexManager {
     protected readonly astReflection: AstReflection;
 
     /**
-     * The `simpleIndex` stores all `AstNodeDescription` items exported by a document.
+     * The symbol index stores all `AstNodeDescription` items exported by a document.
      * The key used in this map is the string representation of the specific document URI.
      */
-    protected readonly simpleIndex = new Map<string, AstNodeDescription[]>();
+    protected readonly symbolIndex = new Map<string, AstNodeDescription[]>();
     /**
      * This is a cache for the `allElements()` method.
-     * It caches the descriptions from `simpleIndex` grouped by types.
+     * It caches the descriptions from `symbolIndex` grouped by types.
      */
-    protected readonly simpleTypeIndex = new ContextCache<string, string, AstNodeDescription[]>();
+    protected readonly symbolByTypeIndex = new ContextCache<string, string, AstNodeDescription[]>();
     /**
      * This index keeps track of all `ReferenceDescription` items exported by a document.
      * This is used to compute which elements are affected by a document change
@@ -124,7 +124,7 @@ export class DefaultIndexManager implements IndexManager {
     }
 
     allElements(nodeType?: string, uris?: Set<string>): Stream<AstNodeDescription> {
-        let documentUris = stream(this.simpleIndex.keys());
+        let documentUris = stream(this.symbolIndex.keys());
         if (uris) {
             documentUris = documentUris.filter(uri => !uris || uris.has(uri));
         }
@@ -135,38 +135,33 @@ export class DefaultIndexManager implements IndexManager {
 
     protected getFileDescriptions(uri: string, nodeType?: string): AstNodeDescription[] {
         if (!nodeType) {
-            return this.simpleIndex.get(uri) ?? [];
+            return this.symbolIndex.get(uri) ?? [];
         }
-        const descriptions = this.simpleTypeIndex.get(uri, nodeType, () => {
-            const allFileDescriptions = this.simpleIndex.get(uri) ?? [];
+        const descriptions = this.symbolByTypeIndex.get(uri, nodeType, () => {
+            const allFileDescriptions = this.symbolIndex.get(uri) ?? [];
             return allFileDescriptions.filter(e => this.astReflection.isSubtype(e.type, nodeType));
         });
         return descriptions;
     }
 
-    remove(uris: URI[]): void {
-        for (const uri of uris) {
-            const uriString = uri.toString();
-            this.simpleIndex.delete(uriString);
-            this.simpleTypeIndex.clear(uriString);
-            this.referenceIndex.delete(uriString);
-        }
+    remove(uri: URI): void {
+        const uriString = uri.toString();
+        this.symbolIndex.delete(uriString);
+        this.symbolByTypeIndex.clear(uriString);
+        this.referenceIndex.delete(uriString);
     }
 
     async updateContent(document: LangiumDocument, cancelToken = CancellationToken.None): Promise<void> {
         const services = this.serviceRegistry.getServices(document.uri);
-        const exports: AstNodeDescription[] = await services.references.ScopeComputation.computeExports(document, cancelToken);
-        for (const data of exports) {
-            data.node = undefined; // clear reference to the AST Node
-        }
+        const exports = await services.references.ScopeComputation.computeExports(document, cancelToken);
         const uri = document.uri.toString();
-        this.simpleIndex.set(uri, exports);
-        this.simpleTypeIndex.clear(uri);
+        this.symbolIndex.set(uri, exports);
+        this.symbolByTypeIndex.clear(uri);
     }
 
     async updateReferences(document: LangiumDocument, cancelToken = CancellationToken.None): Promise<void> {
         const services = this.serviceRegistry.getServices(document.uri);
-        const indexData: ReferenceDescription[] = await services.workspace.ReferenceDescriptionProvider.createDescriptions(document, cancelToken);
+        const indexData = await services.workspace.ReferenceDescriptionProvider.createDescriptions(document, cancelToken);
         this.referenceIndex.set(document.uri.toString(), indexData);
     }
 
