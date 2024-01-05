@@ -25,7 +25,7 @@ export function isAbstractRule(item: unknown): item is AbstractRule {
     return reflection.isInstance(item, AbstractRule);
 }
 
-export type AbstractType = Action | InferredType | Interface | ParserRule | Type;
+export type AbstractType = InferredType | Interface | ParserRule | Type;
 
 export const AbstractType = 'AbstractType';
 
@@ -643,9 +643,7 @@ export class LangiumGrammarAstReflection extends AbstractAstReflection {
 
     protected override computeIsSubtype(subtype: string, supertype: string): boolean {
         switch (subtype) {
-            case Action: {
-                return this.isSubtype(AbstractElement, supertype) || this.isSubtype(AbstractType, supertype);
-            }
+            case Action:
             case Alternatives:
             case Assignment:
             case CharacterRange:

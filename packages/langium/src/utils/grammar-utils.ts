@@ -237,6 +237,10 @@ export function findAssignment(cstNode: CstNode): ast.Assignment | undefined {
 export function findNameAssignment(type: ast.AbstractType): ast.Assignment | undefined {
     if (ast.isInferredType(type)) {
         // inferred type is unexpected, extract AbstractType first
+        if (ast.isAction(type.$container)) {
+            // a type which is explicitly inferred by an action
+            return undefined;
+        }
         type = type.$container;
     }
     return findNameAssignmentInternal(type, new Map());
@@ -254,7 +258,9 @@ function findNameAssignmentInternal(type: ast.AbstractType, cache: Map<ast.Abstr
         return childAssignment;
     }
 
-    if (cache.has(type)) return cache.get(type);
+    if (cache.has(type)) {
+        return cache.get(type);
+    }
     cache.set(type, undefined);
     for (const node of streamAllContents(type)) {
         if (ast.isAssignment(node) && node.feature.toLowerCase() === 'name') {
@@ -395,7 +401,7 @@ export function getExplicitRuleType(rule: ast.ParserRule): string | undefined {
     return undefined;
 }
 
-export function getTypeName(type: ast.AbstractType): string {
+export function getTypeName(type: ast.AbstractType | ast.Action): string {
     if (ast.isParserRule(type)) {
         return isDataTypeRule(type) ? type.name : getExplicitRuleType(type) ?? type.name;
     } else if (ast.isInterface(type) || ast.isType(type) || ast.isReturnType(type)) {

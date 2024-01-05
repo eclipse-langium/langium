@@ -64,7 +64,7 @@ function isStringTypeInternal(type: ast.AbstractType | ast.TypeDefinition, visit
     return false;
 }
 
-export function getTypeNameWithoutError(type?: ast.AbstractType): string | undefined {
+export function getTypeNameWithoutError(type?: ast.AbstractType | ast.Action): string | undefined {
     if (!type) {
         return undefined;
     }

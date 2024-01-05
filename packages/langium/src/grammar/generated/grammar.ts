@@ -3907,12 +3907,6 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
           {
             "$type": "SimpleType",
             "typeRef": {
-              "$ref": "#/rules@27/definition/elements@0"
-            }
-          },
-          {
-            "$type": "SimpleType",
-            "typeRef": {
               "$ref": "#/rules@17"
             }
           },
