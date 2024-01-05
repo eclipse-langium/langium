@@ -153,8 +153,8 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
         for (const deletedUri of deleted) {
             this.langiumDocuments.deleteDocument(deletedUri);
             this.buildState.delete(deletedUri.toString());
+            this.indexManager.remove(deletedUri);
         }
-        this.indexManager.remove(deleted);
         // Set the state of all changed documents to `Changed` so they are completely rebuilt
         for (const changedUri of changed) {
             const invalidated = this.langiumDocuments.invalidateDocument(changedUri);
