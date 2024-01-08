@@ -315,7 +315,8 @@ export const DomainModelGrammar = (): Grammar => loadedDomainModelGrammar ?? (lo
       "fragment": false,
       "hiddenTokens": [],
       "parameters": [],
-      "wildcard": false
+      "wildcard": false,
+      "$comment": "/**\\r\\n * This comment should be generated into the grammar!\\r\\n */"
     },
     {
       "$type": "ParserRule",

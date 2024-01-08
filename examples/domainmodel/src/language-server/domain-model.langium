@@ -22,6 +22,9 @@ Entity:
         (features+=Feature)*
     '}';
 
+/**
+ * This comment should be generated into the grammar!
+ */
 Feature:
     (many?='many')? name=ID ':' type=[Type:QualifiedName];
 

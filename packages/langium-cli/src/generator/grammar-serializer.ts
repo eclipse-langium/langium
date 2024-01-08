@@ -36,6 +36,7 @@ export function serializeGrammar(services: LangiumServices, grammars: Grammar[],
                 };
                 const serializedGrammar = services.serializer.JsonSerializer.serialize(grammar, {
                     space: production ? undefined : 2,
+                    comments: true,
                     uriConverter
                 });
                 // The json serializer returns strings with \n line delimiter by default
