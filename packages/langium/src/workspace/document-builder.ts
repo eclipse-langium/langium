@@ -80,6 +80,11 @@ export interface DocumentBuilder {
      * Notify the given callback when a set of documents has been built reaching a desired target state.
      */
     onBuildPhase(targetState: DocumentState, callback: DocumentBuildListener): Disposable;
+
+    /**
+     * Wait until the workspace has reached the specified state for all documents.
+     */
+    waitUntil(state: DocumentState): Promise<void>;
 }
 
 export type DocumentUpdateListener = (changed: URI[], deleted: URI[]) => void | Promise<void>
@@ -100,6 +105,7 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
     protected readonly updateListeners: DocumentUpdateListener[] = [];
     protected readonly buildPhaseListeners: MultiMap<DocumentState, DocumentBuildListener> = new MultiMap();
     protected readonly buildState: Map<string, DocumentBuildState> = new Map();
+    protected currentState: DocumentState = DocumentState.Changed;
 
     constructor(services: LangiumSharedCoreServices) {
         this.langiumDocuments = services.workspace.LangiumDocuments;
@@ -291,12 +297,25 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
             document.state = targetState;
         }
         await this.notifyBuildPhase(filtered, targetState, cancelToken);
+        this.currentState = targetState;
     }
 
     onBuildPhase(targetState: DocumentState, callback: DocumentBuildListener): Disposable {
         this.buildPhaseListeners.add(targetState, callback);
         return Disposable.create(() => {
             this.buildPhaseListeners.delete(targetState, callback);
+        });
+    }
+
+    waitUntil(state: DocumentState): Promise<void> {
+        if (this.currentState >= state) {
+            return Promise.resolve();
+        }
+        return new Promise(resolve => {
+            const disposable = this.onBuildPhase(state, () => {
+                disposable.dispose();
+                resolve();
+            });
         });
     }
 
