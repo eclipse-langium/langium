@@ -10,6 +10,11 @@ import { createServicesForGrammar } from 'langium/grammar';
 import { setTextDocument } from 'langium/test';
 import { describe, expect, test } from 'vitest';
 import { CancellationTokenSource } from 'vscode-languageserver';
+import { TextDocument } from 'vscode-languageserver-textdocument';
+import { isOperationCancelled, DocumentState, EmptyFileSystem, URI, delayNextTick } from 'langium';
+import { createLangiumGrammarServices, createServicesForGrammar } from 'langium/grammar';
+import { setTextDocument } from 'langium/test';
+import { fail } from 'assert';
 
 describe('DefaultDocumentBuilder', () => {
     async function createServices() {
@@ -234,6 +239,88 @@ describe('DefaultDocumentBuilder', () => {
             'Value is too large: 11',
             'Bar is too long: AnotherStrangeBar'
         ]);
+    });
+
+    test('waits until a specific workspace stage has been reached', async () => {
+        const services = await createServices();
+        const documentFactory = services.shared.workspace.LangiumDocumentFactory;
+        const documents = services.shared.workspace.LangiumDocuments;
+        const builder = services.shared.workspace.DocumentBuilder;
+        const document = documentFactory.fromString('', URI.parse('file:///test1.txt'));
+        documents.addDocument(document);
+
+        const actual: string[] = [];
+        const expected: string[] = [];
+        function wait(state: DocumentState): void {
+            expected.push('B' + state);
+            expected.push('W' + state);
+            builder.onBuildPhase(state, async () => {
+                actual.push('B' + state);
+                await delayNextTick();
+            });
+            builder.waitUntil(state).then(() => actual.push('W' + state));
+        }
+        for (let i = 2; i <= 6; i++) {
+            wait(i);
+        }
+        await builder.build([document], { validation: true });
+        expect(actual).toEqual(expected);
+    });
+
+    test('`waitUntil` will correctly wait even though the build process has been cancelled', async () => {
+        const services = await createServices();
+        const documentFactory = services.shared.workspace.LangiumDocumentFactory;
+        const documents = services.shared.workspace.LangiumDocuments;
+        const builder = services.shared.workspace.DocumentBuilder;
+        const document = documentFactory.fromString('', URI.parse('file:///test1.txt'));
+        documents.addDocument(document);
+
+        const actual: string[] = [];
+        const cancelTokenSource = new CancellationTokenSource();
+        function wait(state: DocumentState): void {
+            builder.onBuildPhase(state, async () => {
+                actual.push('B' + state);
+                await delayNextTick();
+            });
+        }
+        for (let i = 2; i <= 6; i++) {
+            wait(i);
+        }
+        builder.waitUntil(DocumentState.ComputedScopes).then(() => cancelTokenSource.cancel());
+        builder.waitUntil(DocumentState.IndexedReferences).then(() => {
+            actual.push('W' + DocumentState.IndexedReferences);
+        });
+        // Build twice but interrupt the first build after the computing scope phase
+        try {
+            await builder.build([document], { validation: true }, cancelTokenSource.token);
+        } catch {
+            // build has been cancelled, ignore
+        }
+        document.state = DocumentState.Parsed;
+        await builder.build([document], { validation: true });
+        // The B2 and B3 phases are duplicated because the first build has been cancelled
+        // W5 still appears as expected after B5
+        expect(actual).toEqual(['B2', 'B3', 'B2', 'B3', 'B4', 'B5', 'W5', 'B6']);
+    });
+
+    test('`waitUntil` can be cancelled before it gets triggered', async () => {
+        const services = await createServices();
+        const documentFactory = services.shared.workspace.LangiumDocumentFactory;
+        const documents = services.shared.workspace.LangiumDocuments;
+        const builder = services.shared.workspace.DocumentBuilder;
+        const document = documentFactory.fromString('', URI.parse('file:///test1.txt'));
+        documents.addDocument(document);
+
+        const cancelTokenSource = new CancellationTokenSource();
+        builder.waitUntil(DocumentState.IndexedReferences, cancelTokenSource.token).then(() => {
+            fail('This should have been cancelled');
+        }).catch(err => {
+            expect(isOperationCancelled(err)).toBeTruthy();
+        });
+        builder.onBuildPhase(DocumentState.ComputedScopes, () => {
+            cancelTokenSource.cancel();
+        });
+        await builder.build([document], { validation: true });
     });
 
 });

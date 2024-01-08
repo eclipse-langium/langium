@@ -522,7 +522,7 @@ export function addWorkspaceSymbolHandler(connection: Connection, services: Lang
         const documentBuilder = services.workspace.DocumentBuilder;
         connection.onWorkspaceSymbol(async (params, token) => {
             try {
-                await documentBuilder.waitUntil(DocumentState.IndexedContent);
+                await documentBuilder.waitUntil(DocumentState.IndexedContent, token);
                 return await workspaceSymbolProvider.getSymbols(params, token);
             } catch (err) {
                 return responseError(err);
@@ -532,7 +532,7 @@ export function addWorkspaceSymbolHandler(connection: Connection, services: Lang
         if (resolveWorkspaceSymbol) {
             connection.onWorkspaceSymbolResolve(async (workspaceSymbol, token) => {
                 try {
-                    await documentBuilder.waitUntil(DocumentState.IndexedContent);
+                    await documentBuilder.waitUntil(DocumentState.IndexedContent, token);
                     return await resolveWorkspaceSymbol(workspaceSymbol, token);
                 } catch (err) {
                     return responseError(err);
@@ -621,9 +621,11 @@ export function createHierarchyRequestHandler<P extends TypeHierarchySupertypesP
     sharedServices: LangiumSharedServices,
 ): ServerRequestHandler<P, R, PR, E> {
     const serviceRegistry = sharedServices.ServiceRegistry;
-    const documentBuilder = sharedServices.workspace.DocumentBuilder;
     return async (params: P, cancelToken: CancellationToken) => {
-        await documentBuilder.waitUntil(DocumentState.IndexedReferences);
+        const cancellationError = await waitUntilPhase<E>(sharedServices, cancelToken, DocumentState.IndexedReferences);
+        if (cancellationError) {
+            return cancellationError;
+        }
         const uri = URI.parse(params.item.uri);
         const language = serviceRegistry.getServices(uri);
         if (!language) {
@@ -645,11 +647,11 @@ export function createServerRequestHandler<P extends { textDocument: TextDocumen
     targetState?: DocumentState
 ): ServerRequestHandler<P, R, PR, E> {
     const documents = sharedServices.workspace.LangiumDocuments;
-    const documentBuilder = sharedServices.workspace.DocumentBuilder;
     const serviceRegistry = sharedServices.ServiceRegistry;
     return async (params: P, cancelToken: CancellationToken) => {
-        if (targetState !== undefined) {
-            await documentBuilder.waitUntil(targetState);
+        const cancellationError = await waitUntilPhase<E>(sharedServices, cancelToken, targetState);
+        if (cancellationError) {
+            return cancellationError;
         }
         const uri = URI.parse(params.textDocument.uri);
         const language = serviceRegistry.getServices(uri);
@@ -673,11 +675,11 @@ export function createRequestHandler<P extends { textDocument: TextDocumentIdent
     targetState?: DocumentState
 ): RequestHandler<P, R | null, E> {
     const documents = sharedServices.workspace.LangiumDocuments;
-    const documentBuilder = sharedServices.workspace.DocumentBuilder;
     const serviceRegistry = sharedServices.ServiceRegistry;
     return async (params: P, cancelToken: CancellationToken) => {
-        if (targetState !== undefined) {
-            await documentBuilder.waitUntil(targetState);
+        const cancellationError = await waitUntilPhase<E>(sharedServices, cancelToken, targetState);
+        if (cancellationError) {
+            return cancellationError;
         }
         const uri = URI.parse(params.textDocument.uri);
         const language = serviceRegistry.getServices(uri);
@@ -695,6 +697,18 @@ export function createRequestHandler<P extends { textDocument: TextDocumentIdent
             return responseError<E>(err);
         }
     };
+}
+
+async function waitUntilPhase<E>(services: LangiumSharedServices, cancelToken: CancellationToken, targetState?: DocumentState): Promise<ResponseError<E> | undefined> {
+    if (targetState !== undefined) {
+        const documentBuilder = services.workspace.DocumentBuilder;
+        try {
+            await documentBuilder.waitUntil(targetState, cancelToken);
+        } catch (err) {
+            return responseError(err);
+        }
+    }
+    return undefined;
 }
 
 function responseError<E = void>(err: unknown): ResponseError<E> {

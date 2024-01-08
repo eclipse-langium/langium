@@ -83,8 +83,12 @@ export interface DocumentBuilder {
 
     /**
      * Wait until the workspace has reached the specified state for all documents.
+     *
+     * @param state The desired state. The promise won't resolve until all documents have reached this state
+     * @param cancelToken Optionally allows to cancel the wait operation, disposing any listeners in the process
+     * @throws `OperationCancelled` if cancellation has been requested before the state has been reached
      */
-    waitUntil(state: DocumentState): Promise<void>;
+    waitUntil(state: DocumentState, cancelToken?: CancellationToken): Promise<void>;
 }
 
 export type DocumentUpdateListener = (changed: URI[], deleted: URI[]) => void | Promise<void>
@@ -307,14 +311,22 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
         });
     }
 
-    waitUntil(state: DocumentState): Promise<void> {
+    waitUntil(state: DocumentState, cancelToken = CancellationToken.None): Promise<void> {
         if (this.currentState >= state) {
             return Promise.resolve();
+        } else if (cancelToken.isCancellationRequested) {
+            return Promise.reject(OperationCancelled);
         }
-        return new Promise(resolve => {
-            const disposable = this.onBuildPhase(state, () => {
-                disposable.dispose();
+        return new Promise((resolve, reject) => {
+            const buildDisposable = this.onBuildPhase(state, () => {
+                buildDisposable.dispose();
+                cancelDisposable.dispose();
                 resolve();
+            });
+            const cancelDisposable = cancelToken.onCancellationRequested(() => {
+                buildDisposable.dispose();
+                cancelDisposable.dispose();
+                reject(OperationCancelled);
             });
         });
     }
