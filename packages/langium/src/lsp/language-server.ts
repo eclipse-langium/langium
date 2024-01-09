@@ -622,11 +622,11 @@ export function createHierarchyRequestHandler<P extends TypeHierarchySupertypesP
 ): ServerRequestHandler<P, R, PR, E> {
     const serviceRegistry = sharedServices.ServiceRegistry;
     return async (params: P, cancelToken: CancellationToken) => {
-        const cancellationError = await waitUntilPhase<E>(sharedServices, cancelToken, DocumentState.IndexedReferences);
+        const uri = URI.parse(params.item.uri);
+        const cancellationError = await waitUntilPhase<E>(sharedServices, cancelToken, uri, DocumentState.IndexedReferences);
         if (cancellationError) {
             return cancellationError;
         }
-        const uri = URI.parse(params.item.uri);
         const language = serviceRegistry.getServices(uri);
         if (!language) {
             const message = `Could not find service instance for uri: '${uri.toString()}'`;
@@ -649,11 +649,11 @@ export function createServerRequestHandler<P extends { textDocument: TextDocumen
     const documents = sharedServices.workspace.LangiumDocuments;
     const serviceRegistry = sharedServices.ServiceRegistry;
     return async (params: P, cancelToken: CancellationToken) => {
-        const cancellationError = await waitUntilPhase<E>(sharedServices, cancelToken, targetState);
+        const uri = URI.parse(params.textDocument.uri);
+        const cancellationError = await waitUntilPhase<E>(sharedServices, cancelToken, uri, targetState);
         if (cancellationError) {
             return cancellationError;
         }
-        const uri = URI.parse(params.textDocument.uri);
         const language = serviceRegistry.getServices(uri);
         if (!language) {
             const errorText = `Could not find service instance for uri: '${uri}'`;
@@ -677,11 +677,11 @@ export function createRequestHandler<P extends { textDocument: TextDocumentIdent
     const documents = sharedServices.workspace.LangiumDocuments;
     const serviceRegistry = sharedServices.ServiceRegistry;
     return async (params: P, cancelToken: CancellationToken) => {
-        const cancellationError = await waitUntilPhase<E>(sharedServices, cancelToken, targetState);
+        const uri = URI.parse(params.textDocument.uri);
+        const cancellationError = await waitUntilPhase<E>(sharedServices, cancelToken, uri, targetState);
         if (cancellationError) {
             return cancellationError;
         }
-        const uri = URI.parse(params.textDocument.uri);
         const language = serviceRegistry.getServices(uri);
         if (!language) {
             console.error(`Could not find service instance for uri: '${uri.toString()}'`);
@@ -699,11 +699,11 @@ export function createRequestHandler<P extends { textDocument: TextDocumentIdent
     };
 }
 
-async function waitUntilPhase<E>(services: LangiumSharedServices, cancelToken: CancellationToken, targetState?: DocumentState): Promise<ResponseError<E> | undefined> {
+async function waitUntilPhase<E>(services: LangiumSharedServices, cancelToken: CancellationToken, uri?: URI, targetState?: DocumentState): Promise<ResponseError<E> | undefined> {
     if (targetState !== undefined) {
         const documentBuilder = services.workspace.DocumentBuilder;
         try {
-            await documentBuilder.waitUntil(targetState, cancelToken);
+            await documentBuilder.waitUntil(targetState, uri, cancelToken);
         } catch (err) {
             return responseError(err);
         }
