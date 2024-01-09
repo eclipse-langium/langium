@@ -188,7 +188,10 @@ export class DefaultJsonSerializer implements JsonSerializer {
             }
             if (comments) {
                 astNode ??= { ...value };
-                (astNode as AstNodeWithComment).$comment = this.commentProvider.getComment(value);
+                const comment = this.commentProvider.getComment(value);
+                if (comment) {
+                    (astNode as AstNodeWithComment).$comment = comment.replace(/\r/g, '');
+                }
             }
             return astNode ?? value;
         } else {

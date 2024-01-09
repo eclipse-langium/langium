@@ -306,7 +306,8 @@ export const DomainModelGrammar = (): Grammar => loadedDomainModelGrammar ?? (lo
                 "arguments": []
               },
               "deprecatedSyntax": false
-            }
+            },
+            "$comment": "/** This is an assignment */"
           }
         ]
       },
@@ -316,7 +317,7 @@ export const DomainModelGrammar = (): Grammar => loadedDomainModelGrammar ?? (lo
       "hiddenTokens": [],
       "parameters": [],
       "wildcard": false,
-      "$comment": "/**\\r\\n * This comment should be generated into the grammar!\\r\\n */"
+      "$comment": "/**\\n * This is a parser rule\\n */"
     },
     {
       "$type": "ParserRule",

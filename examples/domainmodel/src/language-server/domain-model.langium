@@ -23,10 +23,10 @@ Entity:
     '}';
 
 /**
- * This comment should be generated into the grammar!
+ * This is a parser rule
  */
 Feature:
-    (many?='many')? name=ID ':' type=[Type:QualifiedName];
+    (many?='many')? name=ID ':' /** This is an assignment */ type=[Type:QualifiedName];
 
 QualifiedName returns string:
     ID ('.' ID)*;
