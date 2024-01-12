@@ -19,7 +19,6 @@ import { toDocumentSegment } from '../../utils/cst-utils.js';
 import { stream } from '../../utils/stream.js';
 import { AbstractType, InferredType, Interface, isAction, isGrammar, isParserRule, isReturnType, Type } from '../../languages/generated/ast.js';
 import { resolveImportUri } from '../internal-grammar-util.js';
-import { getActionType } from '../../utils/grammar-utils.js';
 
 export class LangiumGrammarScopeProvider extends DefaultScopeProvider {
 
@@ -119,17 +118,14 @@ export class LangiumGrammarScopeComputation extends DefaultScopeComputation {
         // additionally, export inferred types:
         if (isParserRule(node)) {
             if (!node.returnType && !node.dataType) {
-                // Export inferred rule type
+                // Export implicitly and explicitly inferred type from parser rule
                 const typeNode = node.inferredType ?? node;
                 exports.push(this.createInferredTypeDescription(typeNode, typeNode.name, document));
             }
             streamAllContents(node).forEach(childNode => {
                 if (isAction(childNode) && childNode.inferredType) {
-                    const typeName = getActionType(childNode);
-                    if (typeName) {
-                        // Export inferred action type as interface
-                        exports.push(this.createInferredTypeDescription(childNode, typeName, document));
-                    }
+                    // Export explicitly inferred type from action
+                    exports.push(this.createInferredTypeDescription(childNode.inferredType, childNode.inferredType.name, document));
                 }
             });
         }
@@ -165,10 +161,7 @@ export class LangiumGrammarScopeComputation extends DefaultScopeComputation {
     protected processActionNode(node: AstNode, document: LangiumDocument, scopes: PrecomputedScopes): void {
         const container = findRootNode(node);
         if (container && isAction(node) && node.inferredType) {
-            const typeName = getActionType(node);
-            if (typeName) {
-                scopes.add(container, this.createInferredTypeDescription(node, typeName, document));
-            }
+            scopes.add(container, this.createInferredTypeDescription(node.inferredType, node.inferredType.name, document));
         }
     }
 
