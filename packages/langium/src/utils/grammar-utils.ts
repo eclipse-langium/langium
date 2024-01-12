@@ -235,24 +235,30 @@ export function findAssignment(cstNode: CstNode): ast.Assignment | undefined {
  * this function returns `undefined`.
  */
 export function findNameAssignment(type: ast.AbstractType): ast.Assignment | undefined {
-    if (ast.isInferredType(type)) {
-        // inferred type is unexpected, extract AbstractType first
-        if (ast.isAction(type.$container)) {
-            // a type which is explicitly inferred by an action
-            return undefined;
+    let startNode: AstNode = type;
+    if (ast.isInferredType(startNode)) {
+        // for inferred types, the location to start searching for the name-assignment is different
+        if (ast.isAction(startNode.$container)) {
+            // a type which is explicitly inferred by an action: investigate the sibbling of the Action node, i.e. start searching at the Action's parent
+            startNode = startNode.$container.$container!;
+        } else if (ast.isParserRule(startNode.$container)) {
+            // investigate the parser rule with the explicitly inferred type
+            startNode = startNode.$container;
+        } else {
+            throw new Error('impossible');
         }
-        type = type.$container;
     }
-    return findNameAssignmentInternal(type, new Map());
+    return findNameAssignmentInternal(type, startNode, new Map());
 }
 
-function findNameAssignmentInternal(type: ast.AbstractType, cache: Map<ast.AbstractType, ast.Assignment | undefined>): ast.Assignment | undefined {
+function findNameAssignmentInternal(type: ast.AbstractType, startNode: AstNode, cache: Map<ast.AbstractType, ast.Assignment | undefined>): ast.Assignment | undefined {
+    // the cache is only required to prevent infinite loops
     function go(node: AstNode, refType: ast.AbstractType): ast.Assignment | undefined {
         let childAssignment: ast.Assignment | undefined = undefined;
         const parentAssignment = getContainerOfType(node, ast.isAssignment);
         // No parent assignment implies unassigned rule call
         if (!parentAssignment) {
-            childAssignment = findNameAssignmentInternal(refType, cache);
+            childAssignment = findNameAssignmentInternal(refType, refType, cache);
         }
         cache.set(type, childAssignment);
         return childAssignment;
@@ -262,7 +268,7 @@ function findNameAssignmentInternal(type: ast.AbstractType, cache: Map<ast.Abstr
         return cache.get(type);
     }
     cache.set(type, undefined);
-    for (const node of streamAllContents(type)) {
+    for (const node of streamAllContents(startNode)) {
         if (ast.isAssignment(node) && node.feature.toLowerCase() === 'name') {
             cache.set(type, node);
             return node;
