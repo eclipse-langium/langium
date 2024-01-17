@@ -26,17 +26,17 @@ describe('Inferred types', () => {
         `, expandToString`
             export interface A extends AstNode {
                 readonly $type: 'A';
-                name: string
-                value?: number
+                name: string;
+                value?: number;
             }
             export interface B extends AstNode {
                 readonly $type: 'B';
-                name: FQN
-                values: Array<number>
+                name: FQN;
+                values: Array<number>;
             }
             export interface C extends AstNode {
                 readonly $type: 'C';
-                ref: Reference<A>
+                ref: Reference<A>;
             }
             export type FQN = string;
         `);
@@ -55,20 +55,20 @@ describe('Inferred types', () => {
         `, expandToString`
             export interface D extends AstNode {
                 readonly $type: 'A' | 'B' | 'D';
-                name: string
+                name: string;
             }
             export interface E extends AstNode {
                 readonly $type: 'E';
-                name?: string
-                value?: number
+                name?: string;
+                value?: number;
             }
             export interface A extends D {
                 readonly $type: 'A';
-                name: number | string
+                name: number | string;
             }
             export interface B extends D {
                 readonly $type: 'B';
-                name: number | string
+                name: number | string;
             }
             export type C = A | B;
         `);
@@ -81,8 +81,8 @@ describe('Inferred types', () => {
         `, expandToString`
             export interface A extends AstNode {
                 readonly $type: 'A';
-                a: string
-                b?: string
+                a: string;
+                b?: string;
             }
         `);
     });
@@ -94,18 +94,18 @@ describe('Inferred types', () => {
         `, expandToString`
             export interface A extends AstNode {
                 readonly $type: 'A' | 'B' | 'C';
-                a: string
-                d: string
+                a: string;
+                d: string;
             }
             export interface B extends A {
                 readonly $type: 'B' | 'C';
-                b: string
-                d: string
+                b: string;
+                d: string;
             }
             export interface C extends B {
                 readonly $type: 'C';
-                c: string
-                d: string
+                c: string;
+                d: string;
             }
         `);
     });
@@ -119,9 +119,9 @@ describe('Inferred types', () => {
             export interface B extends AstNode {
                 readonly $container: B;
                 readonly $type: 'B';
-                a?: string
-                b?: B
-                c?: string
+                a?: string;
+                b?: B;
+                c?: string;
             }
             export type A = B;
         `);
@@ -135,8 +135,8 @@ describe('Inferred types', () => {
             export interface A extends AstNode {
                 readonly $container: A;
                 readonly $type: 'A';
-                item?: A
-                value: string
+                item?: A;
+                value: string;
             }
         `);
     });
@@ -148,23 +148,23 @@ describe('Inferred types', () => {
         `, expandToString`
             export interface B extends AstNode {
                 readonly $type: 'B';
-                back: string
-                front: X | Y | Z
+                back: string;
+                front: X | Y | Z;
             }
             export interface X extends AstNode {
                 readonly $container: B;
                 readonly $type: 'X';
-                x: string
+                x: string;
             }
             export interface Y extends AstNode {
                 readonly $container: B;
                 readonly $type: 'Y';
-                y: string
+                y: string;
             }
             export interface Z extends AstNode {
                 readonly $container: B;
                 readonly $type: 'Z';
-                z: string
+                z: string;
             }
             export type A = B | X | Y | Z;
         `);
@@ -178,11 +178,11 @@ describe('Inferred types', () => {
         `, expandToString`
             export interface A extends AstNode {
                 readonly $type: 'A' | 'B';
-                a: string
+                a: string;
             }
             export interface B extends A {
                 readonly $type: 'B';
-                b: string
+                b: string;
             }
         `);
     });
@@ -213,28 +213,28 @@ describe('Inferred types', () => {
         `, expandToString`
             export interface Access extends AstNode {
                 readonly $type: 'Access';
-                member: string
-                receiver?: Ref
+                member: string;
+                receiver?: Ref;
             }
             export interface FirstBranch extends AstNode {
                 readonly $type: 'FirstBranch';
-                first: string
-                value: IdRule
+                first: string;
+                value: IdRule;
             }
             export interface IdRule extends AstNode {
                 readonly $container: FirstBranch | SecondBranch;
                 readonly $type: 'IdRule';
-                name: string
+                name: string;
             }
             export interface Ref extends AstNode {
                 readonly $container: Access;
                 readonly $type: 'Ref';
-                ref: string
+                ref: string;
             }
             export interface SecondBranch extends AstNode {
                 readonly $type: 'SecondBranch';
-                second: string
-                value: IdRule
+                second: string;
+                value: IdRule;
             }
             export type Entry = Expr;
             export type Expr = Access | Ref;
@@ -252,9 +252,9 @@ describe('Inferred types', () => {
         `, expandToString`
             export interface X extends AstNode {
                 readonly $type: 'X';
-                a: string
-                b?: string
-                c?: string
+                a: string;
+                b?: string;
+                c?: string;
             }
         `);
     });
@@ -271,22 +271,22 @@ describe('Inferred types', () => {
         `, expandToString`
             export interface A extends AstNode {
                 readonly $type: 'A';
-                a: string
+                a: string;
             }
             export interface B extends AstNode {
                 readonly $type: 'B';
-                b: string
+                b: string;
             }
             export interface C extends AstNode {
                 readonly $container: C;
                 readonly $type: 'C' | 'Y';
-                item: Y
-                value: string
+                item: Y;
+                value: string;
             }
             export interface Y extends C {
                 readonly $container: C;
                 readonly $type: 'Y';
-                y: string
+                y: string;
             }
             export type X = A | B;
         `);
@@ -330,7 +330,7 @@ describe('Inferred types', () => {
         `, expandToString`
             export interface X extends AstNode {
                 readonly $type: 'X' | 'Y' | 'Z';
-                id: string
+                id: string;
             }
             export interface Y extends X {
                 readonly $type: 'Y';
@@ -351,8 +351,8 @@ describe('inferred types that are used by the grammar', () => {
         `, expandToString`
             export interface B extends AstNode {
                 readonly $type: 'B';
-                name: string
-                otherA?: Reference<B>
+                name: string;
+                otherA?: Reference<B>;
             }
         `);
     });
@@ -372,11 +372,11 @@ describe('inferred and declared types', () => {
             }
             export interface Y extends X {
                 readonly $type: 'Y';
-                y: 'y'
+                y: 'y';
             }
             export interface Z extends X {
                 readonly $type: 'Z';
-                z: 'z'
+                z: 'z';
             }
         `);
     });
@@ -449,12 +449,12 @@ describe('expression rules with inferred and declared interfaces', () => {
             export interface BooleanLiteral extends AstNode {
                 readonly $container: MemberAccess;
                 readonly $type: 'BooleanLiteral';
-                value: boolean
+                value: boolean;
             }
             export interface MemberAccess extends AstNode {
                 readonly $type: 'MemberAccess' | 'SuperMemberAccess';
-                member: Reference<Symbol>
-                receiver: PrimaryExpression
+                member: Reference<Symbol>;
+                receiver: PrimaryExpression;
             }
             export interface Symbol extends AstNode {
                 readonly $type: 'Symbol';
@@ -482,23 +482,23 @@ describe('types of `$container` and `$type` are correct', () => {
         `, expandToString`
             export interface A extends AstNode {
                 readonly $type: 'A' | 'C';
-                strA: string
+                strA: string;
             }
             export interface B extends AstNode {
                 readonly $type: 'B' | 'C';
-                strB: string
+                strB: string;
             }
             export interface D extends AstNode {
                 readonly $type: 'D';
-                a: A
+                a: A;
             }
             export interface E extends AstNode {
                 readonly $type: 'E';
-                b: B
+                b: B;
             }
             export interface C extends A, B {
                 readonly $type: 'C';
-                strC: string
+                strC: string;
             }
         `);
     });
@@ -515,23 +515,23 @@ describe('types of `$container` and `$type` are correct', () => {
         `, expandToString`
             export interface A extends AstNode {
                 readonly $type: 'A' | 'C';
-                strA: string
+                strA: string;
             }
             export interface B extends AstNode {
                 readonly $type: 'B' | 'C';
-                strB: string
+                strB: string;
             }
             export interface D extends AstNode {
                 readonly $type: 'D';
-                a: A
+                a: A;
             }
             export interface E extends AstNode {
                 readonly $type: 'E';
-                b: B
+                b: B;
             }
             export interface C extends A, B {
                 readonly $type: 'C';
-                strC: string
+                strC: string;
             }
         `);
     });
@@ -548,15 +548,15 @@ describe('types of `$container` and `$type` are correct', () => {
             export interface C extends AstNode {
                 readonly $container: D | E;
                 readonly $type: 'C';
-                strC: string
+                strC: string;
             }
             export interface D extends AstNode {
                 readonly $type: 'D';
-                a: A
+                a: A;
             }
             export interface E extends AstNode {
                 readonly $type: 'E';
-                b: B
+                b: B;
             }
             export type A = C;
             export type B = C;
@@ -577,38 +577,38 @@ describe('types of `$container` and `$type` are correct', () => {
             export interface A extends AstNode {
                 readonly $container: E | F | G;
                 readonly $type: 'A' | 'C' | 'D';
-                strA: string
+                strA: string;
             }
             export interface B extends AstNode {
                 readonly $container: E | F | H;
                 readonly $type: 'B' | 'C' | 'D';
-                strB: string
+                strB: string;
             }
             export interface E extends AstNode {
                 readonly $type: 'E';
-                c: C
+                c: C;
             }
             export interface F extends AstNode {
                 readonly $type: 'F';
-                d: D
+                d: D;
             }
             export interface G extends AstNode {
                 readonly $type: 'G';
-                a: A
+                a: A;
             }
             export interface H extends AstNode {
                 readonly $type: 'H';
-                b: B
+                b: B;
             }
             export interface C extends A, B {
                 readonly $container: E;
                 readonly $type: 'C';
-                strC: string
+                strC: string;
             }
             export interface D extends A, B {
                 readonly $container: F;
                 readonly $type: 'D';
-                strC: string
+                strC: string;
             }
         `);
     });
@@ -629,41 +629,41 @@ describe('types of `$container` and `$type` are correct', () => {
         `, expandToString`
             export interface A extends AstNode {
                 readonly $type: 'A' | 'C' | 'D' | 'X';
-                strA: string
+                strA: string;
             }
             export interface B extends AstNode {
                 readonly $type: 'B' | 'C' | 'D' | 'X';
-                strB: string
+                strB: string;
             }
             export interface E extends AstNode {
                 readonly $type: 'E';
-                c: C
+                c: C;
             }
             export interface F extends AstNode {
                 readonly $type: 'F';
-                d: D
+                d: D;
             }
             export interface G extends AstNode {
                 readonly $type: 'G';
-                a: A
+                a: A;
             }
             export interface H extends AstNode {
                 readonly $type: 'H';
-                b: B
+                b: B;
             }
             export interface C extends A, B {
                 readonly $container: E;
                 readonly $type: 'C';
-                strC: string
+                strC: string;
             }
             export interface D extends A, B {
                 readonly $container: F;
                 readonly $type: 'D';
-                strC: string
+                strC: string;
             }
             export interface X extends A, B {
                 readonly $type: 'X';
-                strC: string
+                strC: string;
             }
         `);
     });
@@ -682,23 +682,23 @@ describe('types of `$container` and `$type` are correct', () => {
         `, expandToString`
             export interface A extends AstNode {
                 readonly $type: 'A' | 'C';
-                strA: string
+                strA: string;
             }
             export interface B extends AstNode {
                 readonly $type: 'B' | 'C';
-                strB: string
+                strB: string;
             }
             export interface D extends AstNode {
                 readonly $type: 'D';
-                a: A
+                a: A;
             }
             export interface E extends AstNode {
                 readonly $type: 'E';
-                b: B
+                b: B;
             }
             export interface C extends A, B {
                 readonly $type: 'C';
-                strC: string
+                strC: string;
             }
         `);
     });

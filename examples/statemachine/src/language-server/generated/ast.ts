@@ -17,7 +17,7 @@ export const StatemachineTerminals = {
 export interface Command extends AstNode {
     readonly $container: Statemachine;
     readonly $type: 'Command';
-    name: string
+    name: string;
 }
 
 export const Command = 'Command';
@@ -29,7 +29,7 @@ export function isCommand(item: unknown): item is Command {
 export interface Event extends AstNode {
     readonly $container: Statemachine;
     readonly $type: 'Event';
-    name: string
+    name: string;
 }
 
 export const Event = 'Event';
@@ -41,9 +41,9 @@ export function isEvent(item: unknown): item is Event {
 export interface State extends AstNode {
     readonly $container: Statemachine;
     readonly $type: 'State';
-    actions: Array<Reference<Command>>
-    name: string
-    transitions: Array<Transition>
+    actions: Array<Reference<Command>>;
+    name: string;
+    transitions: Array<Transition>;
 }
 
 export const State = 'State';
@@ -54,11 +54,11 @@ export function isState(item: unknown): item is State {
 
 export interface Statemachine extends AstNode {
     readonly $type: 'Statemachine';
-    commands: Array<Command>
-    events: Array<Event>
-    init: Reference<State>
-    name: string
-    states: Array<State>
+    commands: Array<Command>;
+    events: Array<Event>;
+    init: Reference<State>;
+    name: string;
+    states: Array<State>;
 }
 
 export const Statemachine = 'Statemachine';
@@ -70,8 +70,8 @@ export function isStatemachine(item: unknown): item is Statemachine {
 export interface Transition extends AstNode {
     readonly $container: State;
     readonly $type: 'Transition';
-    event: Reference<Event>
-    state: Reference<State>
+    event: Reference<Event>;
+    state: Reference<State>;
 }
 
 export const Transition = 'Transition';

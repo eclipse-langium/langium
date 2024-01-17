@@ -34,37 +34,37 @@ const EXPECTED_TYPES = expandToStringWithNL`
     type Statement = Definition | Evaluation;
 
     interface BinaryExpression {
-        left: Expression
-        operator: "*" | "+" | "-" | "/"
-        right: Expression
+        left: Expression;
+        operator: "*" | "+" | "-" | "/";
+        right: Expression;
     }
 
     interface DeclaredParameter {
-        name: string
+        name: string;
     }
 
     interface Definition {
-        args: DeclaredParameter[]
-        expr: Expression
-        name: string
+        args: DeclaredParameter[];
+        expr: Expression;
+        name: string;
     }
 
     interface Evaluation {
-        expression: Expression
+        expression: Expression;
     }
 
     interface FunctionCall {
-        args: Expression[]
-        func: @AbstractDefinition
+        args: Expression[];
+        func: @AbstractDefinition;
     }
 
     interface Module {
-        name: string
-        statements: Statement[]
+        name: string;
+        statements: Statement[];
     }
 
     interface NumberLiteral {
-        value: number
+        value: number;
     }
 
 `;

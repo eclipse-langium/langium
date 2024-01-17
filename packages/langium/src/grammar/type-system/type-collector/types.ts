@@ -404,7 +404,7 @@ function pushProperties(
         const name = mode === 'AstType' ? property.name : escapeReservedWords(property.name, reserved);
         const optional = property.optional && !isMandatoryPropertyType(property.type);
         const propType = propertyTypeToString(property.type, mode);
-        return `${name}${optional ? '?' : ''}: ${propType}`;
+        return `${name}${optional ? '?' : ''}: ${propType};`;
     }
 
     return joinToNode(
