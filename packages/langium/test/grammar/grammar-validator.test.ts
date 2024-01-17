@@ -822,4 +822,22 @@ describe('Cross-reference to type union is only valid if all alternatives are AS
             property: 'rule'
         });
     });
+
+    test('Hidden terminals can be used in terminal lookahead', async () => {
+        const validationResult = await validate(`
+        hidden terminal WS: /\\s+/;
+        terminal ID: /[_a-zA-Z][\\w_]*/;
+        terminal TEST: ID (?=WS);`);
+
+        expectNoIssues(validationResult);
+    });
+
+    test('Hidden terminals can be used in terminal lookahead regardless of terminal grouping', async () => {
+        const validationResult = await validate(`
+        hidden terminal WS: /\\s+/;
+        terminal ID: /[_a-zA-Z][\\w_]*/;
+        terminal TEST: ID (?=WS (WS (WS | WS)));`);
+
+        expectNoIssues(validationResult);
+    });
 });

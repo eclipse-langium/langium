@@ -481,6 +481,16 @@ export class LangiumGrammarValidator {
             if ('hidden' in parentRule && parentRule.hidden) {
                 return;
             }
+
+            if (ruleCall.lookahead) {
+                return;
+            }
+
+            const terminalGroup = findLookAheadGroup(ruleCall);
+            if (terminalGroup && terminalGroup.lookahead) {
+                return;
+            }
+
             const ref = ruleCall.rule.ref;
             if (ast.isTerminalRule(ref) && ref.hidden) {
                 accept('error', 'Cannot use hidden terminal in non-hidden rule', { node: ruleCall, property: 'rule' });
@@ -574,7 +584,7 @@ export class LangiumGrammarValidator {
             }
         }
 
-        // Collect imported terminals/keywords and their respectives imports
+        // Collect imported terminals/keywords and their respective imports
         const importedTerminals = new MultiMap<string, ast.GrammarImport>();
         const importedKeywords = new MultiMap<string, ast.GrammarImport>();
 
@@ -992,3 +1002,14 @@ function checkTypeUnionContainsOnlyParseRules(type: ast.UnionType): string[] {
     return Array.from(new Set(errors));
 }
 
+function findLookAheadGroup(rule: AstNode | undefined): ast.TerminalGroup | undefined {
+    const terminalGroup = getContainerOfType(rule, ast.isTerminalGroup);
+    if (!terminalGroup) {
+        return undefined;
+    }
+    if (terminalGroup.lookahead) {
+        return terminalGroup;
+    } else {
+        return findLookAheadGroup(terminalGroup.$container);
+    }
+}
