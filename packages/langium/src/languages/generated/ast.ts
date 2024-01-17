@@ -71,8 +71,8 @@ export function isValueLiteral(item: unknown): item is ValueLiteral {
 
 export interface AbstractElement extends AstNode {
     readonly $type: 'AbstractElement' | 'Action' | 'Alternatives' | 'Assignment' | 'CharacterRange' | 'CrossReference' | 'EndOfFile' | 'Group' | 'Keyword' | 'NegatedToken' | 'RegexToken' | 'RuleCall' | 'TerminalAlternatives' | 'TerminalGroup' | 'TerminalRuleCall' | 'UnorderedGroup' | 'UntilToken' | 'Wildcard';
-    cardinality?: '*' | '+' | '?'
-    lookahead?: '?!' | '?='
+    cardinality?: '*' | '+' | '?';
+    lookahead?: '?!' | '?=';
 }
 
 export const AbstractElement = 'AbstractElement';
@@ -84,7 +84,7 @@ export function isAbstractElement(item: unknown): item is AbstractElement {
 export interface ArrayLiteral extends AstNode {
     readonly $container: ArrayLiteral | TypeAttribute;
     readonly $type: 'ArrayLiteral';
-    elements: Array<ValueLiteral>
+    elements: Array<ValueLiteral>;
 }
 
 export const ArrayLiteral = 'ArrayLiteral';
@@ -96,7 +96,7 @@ export function isArrayLiteral(item: unknown): item is ArrayLiteral {
 export interface ArrayType extends AstNode {
     readonly $container: ArrayType | ReferenceType | Type | TypeAttribute | UnionType;
     readonly $type: 'ArrayType';
-    elementType: TypeDefinition
+    elementType: TypeDefinition;
 }
 
 export const ArrayType = 'ArrayType';
@@ -108,7 +108,7 @@ export function isArrayType(item: unknown): item is ArrayType {
 export interface BooleanLiteral extends AstNode {
     readonly $container: ArrayLiteral | Conjunction | Disjunction | Group | NamedArgument | Negation | TypeAttribute;
     readonly $type: 'BooleanLiteral';
-    true: boolean
+    true: boolean;
 }
 
 export const BooleanLiteral = 'BooleanLiteral';
@@ -120,8 +120,8 @@ export function isBooleanLiteral(item: unknown): item is BooleanLiteral {
 export interface Conjunction extends AstNode {
     readonly $container: Conjunction | Disjunction | Group | NamedArgument | Negation;
     readonly $type: 'Conjunction';
-    left: Condition
-    right: Condition
+    left: Condition;
+    right: Condition;
 }
 
 export const Conjunction = 'Conjunction';
@@ -133,8 +133,8 @@ export function isConjunction(item: unknown): item is Conjunction {
 export interface Disjunction extends AstNode {
     readonly $container: Conjunction | Disjunction | Group | NamedArgument | Negation;
     readonly $type: 'Disjunction';
-    left: Condition
-    right: Condition
+    left: Condition;
+    right: Condition;
 }
 
 export const Disjunction = 'Disjunction';
@@ -145,15 +145,15 @@ export function isDisjunction(item: unknown): item is Disjunction {
 
 export interface Grammar extends AstNode {
     readonly $type: 'Grammar';
-    definesHiddenTokens: boolean
-    hiddenTokens: Array<Reference<AbstractRule>>
-    imports: Array<GrammarImport>
-    interfaces: Array<Interface>
-    isDeclared: boolean
-    name?: string
-    rules: Array<AbstractRule>
-    types: Array<Type>
-    usedGrammars: Array<Reference<Grammar>>
+    definesHiddenTokens: boolean;
+    hiddenTokens: Array<Reference<AbstractRule>>;
+    imports: Array<GrammarImport>;
+    interfaces: Array<Interface>;
+    isDeclared: boolean;
+    name?: string;
+    rules: Array<AbstractRule>;
+    types: Array<Type>;
+    usedGrammars: Array<Reference<Grammar>>;
 }
 
 export const Grammar = 'Grammar';
@@ -165,7 +165,7 @@ export function isGrammar(item: unknown): item is Grammar {
 export interface GrammarImport extends AstNode {
     readonly $container: Grammar;
     readonly $type: 'GrammarImport';
-    path: string
+    path: string;
 }
 
 export const GrammarImport = 'GrammarImport';
@@ -177,7 +177,7 @@ export function isGrammarImport(item: unknown): item is GrammarImport {
 export interface InferredType extends AstNode {
     readonly $container: Action | ParserRule;
     readonly $type: 'InferredType';
-    name: string
+    name: string;
 }
 
 export const InferredType = 'InferredType';
@@ -189,9 +189,9 @@ export function isInferredType(item: unknown): item is InferredType {
 export interface Interface extends AstNode {
     readonly $container: Grammar;
     readonly $type: 'Interface';
-    attributes: Array<TypeAttribute>
-    name: string
-    superTypes: Array<Reference<AbstractType>>
+    attributes: Array<TypeAttribute>;
+    name: string;
+    superTypes: Array<Reference<AbstractType>>;
 }
 
 export const Interface = 'Interface';
@@ -203,9 +203,9 @@ export function isInterface(item: unknown): item is Interface {
 export interface NamedArgument extends AstNode {
     readonly $container: RuleCall;
     readonly $type: 'NamedArgument';
-    calledByName: boolean
-    parameter?: Reference<Parameter>
-    value: Condition
+    calledByName: boolean;
+    parameter?: Reference<Parameter>;
+    value: Condition;
 }
 
 export const NamedArgument = 'NamedArgument';
@@ -217,7 +217,7 @@ export function isNamedArgument(item: unknown): item is NamedArgument {
 export interface Negation extends AstNode {
     readonly $container: Conjunction | Disjunction | Group | NamedArgument | Negation;
     readonly $type: 'Negation';
-    value: Condition
+    value: Condition;
 }
 
 export const Negation = 'Negation';
@@ -229,7 +229,7 @@ export function isNegation(item: unknown): item is Negation {
 export interface NumberLiteral extends AstNode {
     readonly $container: ArrayLiteral | TypeAttribute;
     readonly $type: 'NumberLiteral';
-    value: number
+    value: number;
 }
 
 export const NumberLiteral = 'NumberLiteral';
@@ -241,7 +241,7 @@ export function isNumberLiteral(item: unknown): item is NumberLiteral {
 export interface Parameter extends AstNode {
     readonly $container: ParserRule;
     readonly $type: 'Parameter';
-    name: string
+    name: string;
 }
 
 export const Parameter = 'Parameter';
@@ -253,7 +253,7 @@ export function isParameter(item: unknown): item is Parameter {
 export interface ParameterReference extends AstNode {
     readonly $container: Conjunction | Disjunction | Group | NamedArgument | Negation;
     readonly $type: 'ParameterReference';
-    parameter: Reference<Parameter>
+    parameter: Reference<Parameter>;
 }
 
 export const ParameterReference = 'ParameterReference';
@@ -265,17 +265,17 @@ export function isParameterReference(item: unknown): item is ParameterReference 
 export interface ParserRule extends AstNode {
     readonly $container: Grammar;
     readonly $type: 'ParserRule';
-    dataType?: PrimitiveType
-    definesHiddenTokens: boolean
-    definition: AbstractElement
-    entry: boolean
-    fragment: boolean
-    hiddenTokens: Array<Reference<AbstractRule>>
-    inferredType?: InferredType
-    name: string
-    parameters: Array<Parameter>
-    returnType?: Reference<AbstractType>
-    wildcard: boolean
+    dataType?: PrimitiveType;
+    definesHiddenTokens: boolean;
+    definition: AbstractElement;
+    entry: boolean;
+    fragment: boolean;
+    hiddenTokens: Array<Reference<AbstractRule>>;
+    inferredType?: InferredType;
+    name: string;
+    parameters: Array<Parameter>;
+    returnType?: Reference<AbstractType>;
+    wildcard: boolean;
 }
 
 export const ParserRule = 'ParserRule';
@@ -287,7 +287,7 @@ export function isParserRule(item: unknown): item is ParserRule {
 export interface ReferenceType extends AstNode {
     readonly $container: ArrayType | ReferenceType | Type | TypeAttribute | UnionType;
     readonly $type: 'ReferenceType';
-    referenceType: TypeDefinition
+    referenceType: TypeDefinition;
 }
 
 export const ReferenceType = 'ReferenceType';
@@ -299,7 +299,7 @@ export function isReferenceType(item: unknown): item is ReferenceType {
 export interface ReturnType extends AstNode {
     readonly $container: TerminalRule;
     readonly $type: 'ReturnType';
-    name: PrimitiveType | string
+    name: PrimitiveType | string;
 }
 
 export const ReturnType = 'ReturnType';
@@ -311,9 +311,9 @@ export function isReturnType(item: unknown): item is ReturnType {
 export interface SimpleType extends AstNode {
     readonly $container: ArrayType | ReferenceType | Type | TypeAttribute | UnionType;
     readonly $type: 'SimpleType';
-    primitiveType?: PrimitiveType
-    stringType?: string
-    typeRef?: Reference<AbstractType>
+    primitiveType?: PrimitiveType;
+    stringType?: string;
+    typeRef?: Reference<AbstractType>;
 }
 
 export const SimpleType = 'SimpleType';
@@ -325,7 +325,7 @@ export function isSimpleType(item: unknown): item is SimpleType {
 export interface StringLiteral extends AstNode {
     readonly $container: ArrayLiteral | TypeAttribute;
     readonly $type: 'StringLiteral';
-    value: string
+    value: string;
 }
 
 export const StringLiteral = 'StringLiteral';
@@ -337,11 +337,11 @@ export function isStringLiteral(item: unknown): item is StringLiteral {
 export interface TerminalRule extends AstNode {
     readonly $container: Grammar;
     readonly $type: 'TerminalRule';
-    definition: AbstractElement
-    fragment: boolean
-    hidden: boolean
-    name: string
-    type?: ReturnType
+    definition: AbstractElement;
+    fragment: boolean;
+    hidden: boolean;
+    name: string;
+    type?: ReturnType;
 }
 
 export const TerminalRule = 'TerminalRule';
@@ -353,8 +353,8 @@ export function isTerminalRule(item: unknown): item is TerminalRule {
 export interface Type extends AstNode {
     readonly $container: Grammar;
     readonly $type: 'Type';
-    name: string
-    type: TypeDefinition
+    name: string;
+    type: TypeDefinition;
 }
 
 export const Type = 'Type';
@@ -366,10 +366,10 @@ export function isType(item: unknown): item is Type {
 export interface TypeAttribute extends AstNode {
     readonly $container: Interface;
     readonly $type: 'TypeAttribute';
-    defaultValue?: ValueLiteral
-    isOptional: boolean
-    name: FeatureName
-    type: TypeDefinition
+    defaultValue?: ValueLiteral;
+    isOptional: boolean;
+    name: FeatureName;
+    type: TypeDefinition;
 }
 
 export const TypeAttribute = 'TypeAttribute';
@@ -381,7 +381,7 @@ export function isTypeAttribute(item: unknown): item is TypeAttribute {
 export interface UnionType extends AstNode {
     readonly $container: ArrayType | ReferenceType | Type | TypeAttribute | UnionType;
     readonly $type: 'UnionType';
-    types: Array<TypeDefinition>
+    types: Array<TypeDefinition>;
 }
 
 export const UnionType = 'UnionType';
@@ -392,10 +392,10 @@ export function isUnionType(item: unknown): item is UnionType {
 
 export interface Action extends AbstractElement {
     readonly $type: 'Action';
-    feature?: FeatureName
-    inferredType?: InferredType
-    operator?: '+=' | '='
-    type?: Reference<AbstractType>
+    feature?: FeatureName;
+    inferredType?: InferredType;
+    operator?: '+=' | '=';
+    type?: Reference<AbstractType>;
 }
 
 export const Action = 'Action';
@@ -406,7 +406,7 @@ export function isAction(item: unknown): item is Action {
 
 export interface Alternatives extends AbstractElement {
     readonly $type: 'Alternatives';
-    elements: Array<AbstractElement>
+    elements: Array<AbstractElement>;
 }
 
 export const Alternatives = 'Alternatives';
@@ -417,9 +417,9 @@ export function isAlternatives(item: unknown): item is Alternatives {
 
 export interface Assignment extends AbstractElement {
     readonly $type: 'Assignment';
-    feature: FeatureName
-    operator: '+=' | '=' | '?='
-    terminal: AbstractElement
+    feature: FeatureName;
+    operator: '+=' | '=' | '?=';
+    terminal: AbstractElement;
 }
 
 export const Assignment = 'Assignment';
@@ -430,8 +430,8 @@ export function isAssignment(item: unknown): item is Assignment {
 
 export interface CharacterRange extends AbstractElement {
     readonly $type: 'CharacterRange';
-    left: Keyword
-    right?: Keyword
+    left: Keyword;
+    right?: Keyword;
 }
 
 export const CharacterRange = 'CharacterRange';
@@ -442,9 +442,9 @@ export function isCharacterRange(item: unknown): item is CharacterRange {
 
 export interface CrossReference extends AbstractElement {
     readonly $type: 'CrossReference';
-    deprecatedSyntax: boolean
-    terminal?: AbstractElement
-    type: Reference<AbstractType>
+    deprecatedSyntax: boolean;
+    terminal?: AbstractElement;
+    type: Reference<AbstractType>;
 }
 
 export const CrossReference = 'CrossReference';
@@ -465,8 +465,8 @@ export function isEndOfFile(item: unknown): item is EndOfFile {
 
 export interface Group extends AbstractElement {
     readonly $type: 'Group';
-    elements: Array<AbstractElement>
-    guardCondition?: Condition
+    elements: Array<AbstractElement>;
+    guardCondition?: Condition;
 }
 
 export const Group = 'Group';
@@ -478,7 +478,7 @@ export function isGroup(item: unknown): item is Group {
 export interface Keyword extends AbstractElement {
     readonly $container: CharacterRange;
     readonly $type: 'Keyword';
-    value: string
+    value: string;
 }
 
 export const Keyword = 'Keyword';
@@ -489,7 +489,7 @@ export function isKeyword(item: unknown): item is Keyword {
 
 export interface NegatedToken extends AbstractElement {
     readonly $type: 'NegatedToken';
-    terminal: AbstractElement
+    terminal: AbstractElement;
 }
 
 export const NegatedToken = 'NegatedToken';
@@ -500,7 +500,7 @@ export function isNegatedToken(item: unknown): item is NegatedToken {
 
 export interface RegexToken extends AbstractElement {
     readonly $type: 'RegexToken';
-    regex: string
+    regex: string;
 }
 
 export const RegexToken = 'RegexToken';
@@ -511,8 +511,8 @@ export function isRegexToken(item: unknown): item is RegexToken {
 
 export interface RuleCall extends AbstractElement {
     readonly $type: 'RuleCall';
-    arguments: Array<NamedArgument>
-    rule: Reference<AbstractRule>
+    arguments: Array<NamedArgument>;
+    rule: Reference<AbstractRule>;
 }
 
 export const RuleCall = 'RuleCall';
@@ -523,7 +523,7 @@ export function isRuleCall(item: unknown): item is RuleCall {
 
 export interface TerminalAlternatives extends AbstractElement {
     readonly $type: 'TerminalAlternatives';
-    elements: Array<AbstractElement>
+    elements: Array<AbstractElement>;
 }
 
 export const TerminalAlternatives = 'TerminalAlternatives';
@@ -534,7 +534,7 @@ export function isTerminalAlternatives(item: unknown): item is TerminalAlternati
 
 export interface TerminalGroup extends AbstractElement {
     readonly $type: 'TerminalGroup';
-    elements: Array<AbstractElement>
+    elements: Array<AbstractElement>;
 }
 
 export const TerminalGroup = 'TerminalGroup';
@@ -545,7 +545,7 @@ export function isTerminalGroup(item: unknown): item is TerminalGroup {
 
 export interface TerminalRuleCall extends AbstractElement {
     readonly $type: 'TerminalRuleCall';
-    rule: Reference<TerminalRule>
+    rule: Reference<TerminalRule>;
 }
 
 export const TerminalRuleCall = 'TerminalRuleCall';
@@ -556,7 +556,7 @@ export function isTerminalRuleCall(item: unknown): item is TerminalRuleCall {
 
 export interface UnorderedGroup extends AbstractElement {
     readonly $type: 'UnorderedGroup';
-    elements: Array<AbstractElement>
+    elements: Array<AbstractElement>;
 }
 
 export const UnorderedGroup = 'UnorderedGroup';
@@ -567,7 +567,7 @@ export function isUnorderedGroup(item: unknown): item is UnorderedGroup {
 
 export interface UntilToken extends AbstractElement {
     readonly $type: 'UntilToken';
-    terminal: AbstractElement
+    terminal: AbstractElement;
 }
 
 export const UntilToken = 'UntilToken';

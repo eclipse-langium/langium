@@ -18,7 +18,7 @@ export const RequirementsAndTestsTerminals = {
 export interface Contact extends AstNode {
     readonly $container: RequirementModel | TestModel;
     readonly $type: 'Contact';
-    user_name: string
+    user_name: string;
 }
 
 export const Contact = 'Contact';
@@ -30,8 +30,8 @@ export function isContact(item: unknown): item is Contact {
 export interface Environment extends AstNode {
     readonly $container: RequirementModel;
     readonly $type: 'Environment';
-    description: string
-    name: string
+    description: string;
+    name: string;
 }
 
 export const Environment = 'Environment';
@@ -43,9 +43,9 @@ export function isEnvironment(item: unknown): item is Environment {
 export interface Requirement extends AstNode {
     readonly $container: RequirementModel;
     readonly $type: 'Requirement';
-    environments: Array<Reference<Environment>>
-    name: string
-    text: string
+    environments: Array<Reference<Environment>>;
+    name: string;
+    text: string;
 }
 
 export const Requirement = 'Requirement';
@@ -56,9 +56,9 @@ export function isRequirement(item: unknown): item is Requirement {
 
 export interface RequirementModel extends AstNode {
     readonly $type: 'RequirementModel';
-    contact?: Contact
-    environments: Array<Environment>
-    requirements: Array<Requirement>
+    contact?: Contact;
+    environments: Array<Environment>;
+    requirements: Array<Requirement>;
 }
 
 export const RequirementModel = 'RequirementModel';
@@ -70,10 +70,10 @@ export function isRequirementModel(item: unknown): item is RequirementModel {
 export interface Test extends AstNode {
     readonly $container: TestModel;
     readonly $type: 'Test';
-    environments: Array<Reference<Environment>>
-    name: string
-    requirements: Array<Reference<Requirement>>
-    testFile?: string
+    environments: Array<Reference<Environment>>;
+    name: string;
+    requirements: Array<Reference<Requirement>>;
+    testFile?: string;
 }
 
 export const Test = 'Test';
@@ -84,8 +84,8 @@ export function isTest(item: unknown): item is Test {
 
 export interface TestModel extends AstNode {
     readonly $type: 'TestModel';
-    contact?: Contact
-    tests: Array<Test>
+    contact?: Contact;
+    tests: Array<Test>;
 }
 
 export const TestModel = 'TestModel';
