@@ -4,22 +4,26 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { CancellationToken } from 'vscode-languageserver';
+import { CancellationToken } from 'vscode-jsonrpc';
+import type { WorkspaceFolder } from 'vscode-languageserver-types';
+import type { ServiceRegistry } from '../service-registry.js';
+import type { InitializableService, InitializeParams, InitializedParams, LangiumSharedCoreServices } from '../services.js';
 import { interruptAndCheck } from '../utils/promise-utils.js';
 import { URI, UriUtils } from '../utils/uri-utils.js';
-import type { WorkspaceFolder } from 'vscode-languageserver';
-import type { ServiceRegistry } from '../service-registry.js';
-import type { LangiumSharedServices } from '../services.js';
 import type { BuildOptions, DocumentBuilder } from './document-builder.js';
 import type { LangiumDocument, LangiumDocuments } from './documents.js';
 import type { FileSystemNode, FileSystemProvider } from './file-system-provider.js';
 import type { WorkspaceLock } from './workspace-lock.js';
 
+// export type WorkspaceFolder from 'vscode-languageserver-types' for convenience,
+//  is supposed to avoid confusion as 'WorkspaceFolder' might accidentally be imported via 'vscode-languageclient'
+export type { WorkspaceFolder };
+
 /**
  * The workspace manager is responsible for finding source files in the workspace.
  * This service is shared between all languages of a language server.
  */
-export interface WorkspaceManager {
+export interface WorkspaceManager extends InitializableService {
 
     /** The options used for the initial workspace build. */
     initialBuildOptions: BuildOptions | undefined;
@@ -46,22 +50,22 @@ export class DefaultWorkspaceManager implements WorkspaceManager {
     protected readonly mutex: WorkspaceLock;
     protected folders?: WorkspaceFolder[];
 
-    constructor(services: LangiumSharedServices) {
+    constructor(services: LangiumSharedCoreServices) {
         this.serviceRegistry = services.ServiceRegistry;
         this.langiumDocuments = services.workspace.LangiumDocuments;
         this.documentBuilder = services.workspace.DocumentBuilder;
         this.fileSystemProvider = services.workspace.FileSystemProvider;
         this.mutex = services.workspace.WorkspaceLock;
+    }
 
-        services.lsp.LanguageServer.onInitialize(params => {
-            this.folders = params.workspaceFolders ?? undefined;
-        });
+    initialize(params: InitializeParams): void {
+        this.folders = params.workspaceFolders ?? undefined;
+    }
 
-        services.lsp.LanguageServer.onInitialized(_params => {
-            // Initialize the workspace even if there are no workspace folders
-            // We still want to load additional documents (language library or similar) during initialization
-            this.mutex.write(token => this.initializeWorkspace(this.folders ?? [], token));
-        });
+    initialized(_params: InitializedParams): Promise<void> {
+        // Initialize the workspace even if there are no workspace folders
+        // We still want to load additional documents (language library or similar) during initialization
+        return this.mutex.write(token => this.initializeWorkspace(this.folders ?? [], token));
     }
 
     async initializeWorkspace(folders: WorkspaceFolder[], cancelToken = CancellationToken.None): Promise<void> {
@@ -126,7 +130,7 @@ export class DefaultWorkspaceManager implements WorkspaceManager {
     /**
      * Determine whether the given folder entry shall be included while indexing the workspace.
      */
-    protected includeEntry(workspaceFolder: WorkspaceFolder, entry: FileSystemNode, fileExtensions: string[]): boolean {
+    protected includeEntry(_workspaceFolder: WorkspaceFolder, entry: FileSystemNode, fileExtensions: string[]): boolean {
         const name = UriUtils.basename(entry.uri);
         if (name.startsWith('.')) {
             return false;

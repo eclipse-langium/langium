@@ -6,7 +6,7 @@
 
 import type { SignatureHelpOptions } from 'vscode-languageserver';
 import { describe, expect, test } from 'vitest';
-import { mergeSignatureHelpOptions } from 'langium';
+import { mergeSignatureHelpOptions } from 'langium/lsp';
 
 describe('MergeSignatureHelpOptions', () => {
     test('Must merge SignatureHelpOptions triggerCharacters', async () => {

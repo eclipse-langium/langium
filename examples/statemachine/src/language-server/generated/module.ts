@@ -3,7 +3,8 @@
  * DO NOT EDIT MANUALLY!
  ******************************************************************************/
 
-import type { LangiumGeneratedServices, LangiumGeneratedSharedServices, LangiumSharedServices, LangiumServices, LanguageMetaData, Module } from 'langium';
+import type { LangiumGeneratedCoreServices, LangiumGeneratedSharedCoreServices, LanguageMetaData, Module } from 'langium';
+import type { LangiumSharedServices, LangiumServices } from 'langium/lsp';
 import { StatemachineAstReflection } from './ast.js';
 import { StatemachineGrammar } from './grammar.js';
 
@@ -13,11 +14,11 @@ export const StatemachineLanguageMetaData = {
     caseInsensitive: false
 } as const satisfies LanguageMetaData;
 
-export const StatemachineGeneratedSharedModule: Module<LangiumSharedServices, LangiumGeneratedSharedServices> = {
+export const StatemachineGeneratedSharedModule: Module<LangiumSharedServices, LangiumGeneratedSharedCoreServices> = {
     AstReflection: () => new StatemachineAstReflection()
 };
 
-export const StatemachineGeneratedModule: Module<LangiumServices, LangiumGeneratedServices> = {
+export const StatemachineGeneratedModule: Module<LangiumServices, LangiumGeneratedCoreServices> = {
     Grammar: () => StatemachineGrammar(),
     LanguageMetaData: () => StatemachineLanguageMetaData,
     parser: {}

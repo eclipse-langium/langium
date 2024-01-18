@@ -5,9 +5,11 @@
  ******************************************************************************/
 
 import { describe, test, beforeEach } from 'vitest';
-import type { AstNode, AstNodeDescription, LangiumDocument, LangiumServices, Module, PartialLangiumServices } from 'langium';
-import { DefaultAstNodeDescriptionProvider, DefaultCompletionProvider, EmptyFileSystem } from 'langium';
+import type { AstNode, AstNodeDescription, LangiumDocument, Module } from 'langium';
+import { DefaultAstNodeDescriptionProvider, EmptyFileSystem } from 'langium';
 import { createLangiumGrammarServices, createServicesForGrammar } from 'langium/grammar';
+import { DefaultCompletionProvider } from 'langium/lsp';
+import type { LangiumServices, PartialLangiumServices } from 'langium/lsp';
 import { clearDocuments, expectCompletion, parseHelper } from 'langium/test';
 
 describe('Langium completion provider', () => {

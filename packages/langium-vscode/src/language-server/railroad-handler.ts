@@ -4,11 +4,11 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { Grammar, LangiumServices } from 'langium';
-import { DocumentState, GrammarAST, URI } from 'langium';
+import { DocumentState, GrammarAST, URI, type Grammar } from 'langium';
 import { createGrammarDiagramHtml } from 'langium-railroad';
 import { expandToString } from 'langium/generate';
 import { resolveTransitiveImports } from 'langium/grammar';
+import type { LangiumServices } from 'langium/lsp';
 import type { Connection } from 'vscode-languageserver';
 import { DiagnosticSeverity } from 'vscode-languageserver';
 import { DOCUMENTS_VALIDATED_NOTIFICATION, RAILROAD_DIAGRAM_REQUEST } from './messages.js';

@@ -5,9 +5,9 @@
  ******************************************************************************/
 
 import type { CancellationToken } from 'vscode-languageserver';
-import type { LangiumParser, ParseResult } from './langium-parser.js';
-import type { LangiumServices } from '../services.js';
+import type { LangiumCoreServices } from '../services.js';
 import type { AstNode } from '../syntax-tree.js';
+import type { LangiumParser, ParseResult } from './langium-parser.js';
 
 /**
  * Async parser that allows to cancel the current parsing process.
@@ -29,7 +29,7 @@ export class DefaultAsyncParser implements AsyncParser {
 
     protected readonly syncParser: LangiumParser;
 
-    constructor(services: LangiumServices) {
+    constructor(services: LangiumCoreServices) {
         this.syncParser = services.parser.LangiumParser;
     }
 

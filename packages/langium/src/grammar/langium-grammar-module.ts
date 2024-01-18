@@ -4,13 +4,12 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { DefaultSharedModuleContext } from '../default-module.js';
 import type { Module } from '../dependency-injection.js';
-import type { LangiumServices, LangiumSharedServices, PartialLangiumServices, PartialLangiumSharedServices } from '../services.js';
+import type { LangiumServices, LangiumSharedServices, PartialLangiumServices, PartialLangiumSharedServices } from '../lsp/lsp-services.js';
 import { LangiumGrammarTypeHierarchyProvider } from './lsp/grammar-type-hierarchy.js';
 import type { LangiumGrammarDocument } from './workspace/documents.js';
 import type { Grammar } from '../languages/generated/ast.js';
-import { createDefaultModule, createDefaultSharedModule } from '../default-module.js';
+import { type DefaultSharedModuleContext, createDefaultModule, createDefaultSharedModule } from '../lsp/default-lsp-module.js';
 import { inject } from '../dependency-injection.js';
 import { LangiumGrammarGeneratedModule, LangiumGrammarGeneratedSharedModule } from './generated/module.js';
 import { LangiumGrammarScopeComputation, LangiumGrammarScopeProvider } from './references/grammar-scope.js';
@@ -63,6 +62,13 @@ export const LangiumGrammarModule: Module<LangiumGrammarServices, PartialLangium
     }
 };
 
+/**
+ * Creates Langium grammar services, enriched with LSP functionality
+ *
+ * @param context Shared module context, used to create additional shared modules
+ * @param sharedModule Existing shared module to inject together with new shared services
+ * @returns Shared services enriched with LSP services + Grammar services, per usual
+ */
 export function createLangiumGrammarServices(context: DefaultSharedModuleContext,
     sharedModule?: Module<LangiumSharedServices, PartialLangiumSharedServices>): {
         shared: LangiumSharedServices,

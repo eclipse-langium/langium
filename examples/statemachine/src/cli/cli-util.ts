@@ -7,10 +7,10 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import chalk from 'chalk';
-import type { AstNode, LangiumDocument, LangiumServices } from 'langium';
+import type { AstNode, LangiumDocument, LangiumCoreServices } from 'langium';
 import { URI } from 'langium';
 
-export async function extractDocument(fileName: string, extensions: readonly string[], services: LangiumServices): Promise<LangiumDocument> {
+export async function extractDocument(fileName: string, extensions: readonly string[], services: LangiumCoreServices): Promise<LangiumDocument> {
     if (!extensions.includes(path.extname(fileName))) {
         console.error(chalk.yellow(`Please, choose a file with one of these extensions: ${extensions}.`));
         process.exit(1);
@@ -38,7 +38,7 @@ export async function extractDocument(fileName: string, extensions: readonly str
     return document;
 }
 
-export async function extractAstNode<T extends AstNode>(fileName: string, extensions: readonly string[], services: LangiumServices): Promise<T> {
+export async function extractAstNode<T extends AstNode>(fileName: string, extensions: readonly string[], services: LangiumCoreServices): Promise<T> {
     return (await extractDocument(fileName, extensions, services)).parseResult?.value as T;
 }
 

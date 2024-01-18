@@ -5,27 +5,18 @@
  ******************************************************************************/
 
 // Ensure that all imports are erased at runtime to avoid circular dependencies.
-import type { Connection, TextDocuments } from 'vscode-languageserver';
-import type { TextDocument } from 'vscode-languageserver-textdocument';
+import type { IParserErrorMessageProvider } from 'chevrotain';
+import type { InitializeParams, InitializedParams } from 'vscode-languageserver-protocol';
+import type { CommentProvider } from './documentation/comment-provider.js';
+import type { DocumentationProvider } from './documentation/documentation-provider.js';
 import type { Grammar } from './languages/generated/ast.js';
 import type { GrammarConfig } from './languages/grammar-config.js';
 import type { LanguageMetaData } from './languages/language-meta-data.js';
-import type { ExecuteCommandHandler } from './lsp/execute-command-handler.js';
-import type { CodeActionProvider } from './lsp/code-action.js';
-import type { CompletionProvider } from './lsp/completion/completion-provider.js';
-import type { DocumentHighlightProvider } from './lsp/document-highlight-provider.js';
-import type { DocumentSymbolProvider } from './lsp/document-symbol-provider.js';
-import type { FoldingRangeProvider } from './lsp/folding-range-provider.js';
-import type { Formatter } from './lsp/formatter.js';
-import type { DefinitionProvider } from './lsp/definition-provider.js';
-import type { HoverProvider } from './lsp/hover-provider.js';
-import type { ReferencesProvider } from './lsp/references-provider.js';
-import type { RenameProvider } from './lsp/rename-provider.js';
-import type { SemanticTokenProvider } from './lsp/semantic-token-provider.js';
+import type { AsyncParser } from './parser/async-parser.js';
 import type { LangiumCompletionParser, LangiumParser } from './parser/langium-parser.js';
+import type { Lexer } from './parser/lexer.js';
 import type { IParserConfig } from './parser/parser-config.js';
 import type { TokenBuilder } from './parser/token-builder.js';
-import type { Lexer } from './parser/lexer.js';
 import type { ValueConverter } from './parser/value-converter.js';
 import type { Linker } from './references/linker.js';
 import type { NameProvider } from './references/name-provider.js';
@@ -35,42 +26,33 @@ import type { ScopeProvider } from './references/scope-provider.js';
 import type { JsonSerializer } from './serializer/json-serializer.js';
 import type { ServiceRegistry } from './service-registry.js';
 import type { AstReflection } from './syntax-tree.js';
+import type { MaybePromise } from './utils/promise-utils.js';
 import type { DocumentValidator } from './validation/document-validator.js';
 import type { ValidationRegistry } from './validation/validation-registry.js';
 import type { AstNodeDescriptionProvider, ReferenceDescriptionProvider } from './workspace/ast-descriptions.js';
 import type { AstNodeLocator } from './workspace/ast-node-locator.js';
 import type { ConfigurationProvider } from './workspace/configuration.js';
 import type { DocumentBuilder } from './workspace/document-builder.js';
-import type { LangiumDocumentFactory, LangiumDocuments } from './workspace/documents.js';
+import type { LangiumDocumentFactory, LangiumDocuments, TextDocumentProvider } from './workspace/documents.js';
 import type { FileSystemProvider } from './workspace/file-system-provider.js';
 import type { IndexManager } from './workspace/index-manager.js';
-import type { WorkspaceManager } from './workspace/workspace-manager.js';
-import type { LanguageServer } from './lsp/language-server.js';
-import type { SignatureHelpProvider } from './lsp/signature-help-provider.js';
-import type { TypeDefinitionProvider } from './lsp/type-provider.js';
-import type { ImplementationProvider } from './lsp/implementation-provider.js';
-import type { CallHierarchyProvider } from './lsp/call-hierarchy-provider.js';
-import type { CodeLensProvider } from './lsp/code-lens-provider.js';
-import type { DeclarationProvider } from './lsp/declaration-provider.js';
-import type { DocumentLinkProvider } from './lsp/document-link-provider.js';
-import type { DocumentUpdateHandler } from './lsp/document-update-handler.js';
-import type { DocumentationProvider } from './documentation/documentation-provider.js';
-import type { FileOperationHandler } from './lsp/file-operation-handler.js';
-import type { InlayHintProvider } from './lsp/inlay-hint-provider.js';
-import type { CommentProvider } from './documentation/comment-provider.js';
-import type { WorkspaceSymbolProvider } from './lsp/workspace-symbol-provider.js';
-import type { NodeKindProvider } from './lsp/node-kind-provider.js';
-import type { FuzzyMatcher } from './lsp/fuzzy-matcher.js';
-import type { IParserErrorMessageProvider } from 'chevrotain';
-import type { TypeHierarchyProvider } from './lsp/type-hierarchy-provider.js';
-import type { AsyncParser } from './parser/async-parser.js';
 import type { WorkspaceLock } from './workspace/workspace-lock.js';
+import type { WorkspaceManager } from './workspace/workspace-manager.js';
+
+export type {
+    InitializeParams, InitializedParams
+};
+
+export interface InitializableService {
+    initialize(params: InitializeParams): void
+    initialized(params: InitializedParams): MaybePromise<void>
+}
 
 /**
- * The services generated by `langium-cli` for a single language. These are derived from the
+ * The services generated by `langium-cli` for a specific language. These are derived from the
  * grammar definition and the language configuration.
  */
-export type LangiumGeneratedServices = {
+export type LangiumGeneratedCoreServices = {
     Grammar: Grammar
     LanguageMetaData: LanguageMetaData
     parser: {
@@ -79,36 +61,9 @@ export type LangiumGeneratedServices = {
 }
 
 /**
- * Services related to the Language Server Protocol (LSP).
+ * Core services for a specific language of which Langium provides default implementations.
  */
-export type LangiumLspServices = {
-    CallHierarchyProvider?: CallHierarchyProvider
-    CodeActionProvider?: CodeActionProvider
-    CodeLensProvider?: CodeLensProvider
-    CompletionProvider?: CompletionProvider
-    DeclarationProvider?: DeclarationProvider
-    DefinitionProvider?: DefinitionProvider
-    DocumentHighlightProvider?: DocumentHighlightProvider
-    DocumentLinkProvider?: DocumentLinkProvider
-    DocumentSymbolProvider?: DocumentSymbolProvider
-    FoldingRangeProvider?: FoldingRangeProvider
-    Formatter?: Formatter
-    HoverProvider?: HoverProvider
-    ImplementationProvider?: ImplementationProvider
-    InlayHintProvider?: InlayHintProvider
-    ReferencesProvider?: ReferencesProvider
-    RenameProvider?: RenameProvider
-    SemanticTokenProvider?: SemanticTokenProvider
-    SignatureHelp?: SignatureHelpProvider
-    TypeHierarchyProvider?: TypeHierarchyProvider;
-    TypeProvider?: TypeDefinitionProvider
-}
-
-/**
- * Services for a single language where Langium provides default implementations.
- */
-export type LangiumDefaultServices = {
-    lsp: LangiumLspServices
+export type LangiumDefaultCoreServices = {
     parser: {
         AsyncParser: AsyncParser
         GrammarConfig: GrammarConfig
@@ -142,38 +97,28 @@ export type LangiumDefaultServices = {
         AstNodeDescriptionProvider: AstNodeDescriptionProvider
         ReferenceDescriptionProvider: ReferenceDescriptionProvider
     }
-    shared: LangiumSharedServices
+    shared: LangiumSharedCoreServices
 }
 
 /**
- * The full set of services available for a language. These are either generated by `langium-cli`
+ * The core set of services available for a language. These are either generated by `langium-cli`
  * or provided as default implementations.
  */
-export type LangiumServices = LangiumGeneratedServices & LangiumDefaultServices
+export type LangiumCoreServices = LangiumGeneratedCoreServices & LangiumDefaultCoreServices
 
 /**
  * The services generated by `langium-cli` that are shared between multiple languages. These are
  * derived from the grammar definition.
  */
-export type LangiumGeneratedSharedServices = {
+export type LangiumGeneratedSharedCoreServices = {
     AstReflection: AstReflection
 }
 
 /**
- * Services shared between multiple languages where Langium provides default implementations.
+ * Core services shared between multiple languages where Langium provides default implementations.
  */
-export type LangiumDefaultSharedServices = {
+export type LangiumDefaultSharedCoreServices = {
     ServiceRegistry: ServiceRegistry
-    lsp: {
-        Connection?: Connection
-        DocumentUpdateHandler: DocumentUpdateHandler
-        ExecuteCommandHandler?: ExecuteCommandHandler
-        FileOperationHandler?: FileOperationHandler
-        FuzzyMatcher: FuzzyMatcher
-        LanguageServer: LanguageServer
-        NodeKindProvider: NodeKindProvider
-        WorkspaceSymbolProvider?: WorkspaceSymbolProvider
-    }
     workspace: {
         ConfigurationProvider: ConfigurationProvider
         DocumentBuilder: DocumentBuilder
@@ -181,17 +126,17 @@ export type LangiumDefaultSharedServices = {
         IndexManager: IndexManager
         LangiumDocuments: LangiumDocuments
         LangiumDocumentFactory: LangiumDocumentFactory
-        TextDocuments: TextDocuments<TextDocument>
+        TextDocuments?: TextDocumentProvider
         WorkspaceLock: WorkspaceLock
         WorkspaceManager: WorkspaceManager
     }
 }
 
 /**
- * The shared services are a set of services that are used by every language within a Langium project.
+ * The shared core services are a set of services that are used by every language within a Langium project (excluding LSP services)
  * This is necessary to enable features like cross references across different languages.
  */
-export type LangiumSharedServices = LangiumDefaultSharedServices & LangiumGeneratedSharedServices
+export type LangiumSharedCoreServices = LangiumDefaultSharedCoreServices & LangiumGeneratedSharedCoreServices
 
 /**
  * A deep partial type definition for services. We look into T to see whether its type definition contains
@@ -203,11 +148,11 @@ export type DeepPartial<T> = T[keyof T] extends Function ? T : {
 }
 
 /**
- * Language-specific services to be partially overridden via dependency injection.
+ * Language-specific core services to be partially overridden via dependency injection.
  */
-export type PartialLangiumServices = DeepPartial<LangiumServices>
+export type PartialLangiumCoreServices = DeepPartial<LangiumCoreServices>
 
 /**
- * Shared services to be partially overridden via dependency injection.
+ * Shared core services to be partially overridden via dependency injection.
  */
-export type PartialLangiumSharedServices = DeepPartial<LangiumSharedServices>
+export type PartialLangiumSharedCoreServices = DeepPartial<LangiumSharedCoreServices>

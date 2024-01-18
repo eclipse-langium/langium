@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { CancellationToken, CancellationTokenSource } from 'vscode-languageserver';
+import { CancellationToken, CancellationTokenSource } from 'vscode-jsonrpc';
 import type { MaybePromise } from '../utils/promise-utils.js';
 import { Deferred, isOperationCancelled } from '../utils/promise-utils.js';
 

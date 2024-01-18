@@ -8,7 +8,7 @@ import type { CallHierarchyIncomingCall, CallHierarchyIncomingCallsParams, CallH
 import type { GrammarConfig } from '../languages/grammar-config.js';
 import type { NameProvider } from '../references/name-provider.js';
 import type { References } from '../references/references.js';
-import type { LangiumServices } from '../services.js';
+import type { LangiumServices } from './lsp-services.js';
 import type { AstNode } from '../syntax-tree.js';
 import type { Stream } from '../utils/stream.js';
 import type { ReferenceDescription } from '../workspace/ast-descriptions.js';

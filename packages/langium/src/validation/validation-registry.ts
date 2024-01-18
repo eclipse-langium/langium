@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import type { CancellationToken, CodeDescription, DiagnosticRelatedInformation, DiagnosticTag, integer, Range } from 'vscode-languageserver';
-import type { LangiumServices } from '../services.js';
+import type { LangiumCoreServices } from '../services.js';
 import type { AstNode, AstReflection, Properties } from '../syntax-tree.js';
 import type { MaybePromise } from '../utils/promise-utils.js';
 import type { Stream } from '../utils/stream.js';
@@ -107,7 +107,7 @@ export class ValidationRegistry {
     private readonly entries = new MultiMap<string, ValidationCheckEntry>();
     private readonly reflection: AstReflection;
 
-    constructor(services: LangiumServices) {
+    constructor(services: LangiumCoreServices) {
         this.reflection = services.shared.AstReflection;
     }
 

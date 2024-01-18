@@ -3,7 +3,8 @@
  * DO NOT EDIT MANUALLY!
  ******************************************************************************/
 
-import type { LangiumGeneratedServices, LangiumGeneratedSharedServices, LangiumSharedServices, LangiumServices, LanguageMetaData, Module, IParserConfig } from 'langium';
+import type { LangiumGeneratedCoreServices, LangiumGeneratedSharedCoreServices, LanguageMetaData, Module, IParserConfig } from 'langium';
+import type { LangiumSharedServices, LangiumServices } from 'langium/lsp';
 import { DomainModelAstReflection } from './ast.js';
 import { DomainModelGrammar } from './grammar.js';
 
@@ -19,11 +20,11 @@ export const parserConfig: IParserConfig = {
     maxLookahead: 3,
 };
 
-export const DomainModelGeneratedSharedModule: Module<LangiumSharedServices, LangiumGeneratedSharedServices> = {
+export const DomainModelGeneratedSharedModule: Module<LangiumSharedServices, LangiumGeneratedSharedCoreServices> = {
     AstReflection: () => new DomainModelAstReflection()
 };
 
-export const DomainModelGeneratedModule: Module<LangiumServices, LangiumGeneratedServices> = {
+export const DomainModelGeneratedModule: Module<LangiumServices, LangiumGeneratedCoreServices> = {
     Grammar: () => DomainModelGrammar(),
     LanguageMetaData: () => DomainModelLanguageMetaData,
     parser: {

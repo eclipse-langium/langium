@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { LangiumServices } from '../services.js';
+import type { LangiumCoreServices } from '../services.js';
 import type { AstNode, CstNode, GenericAstNode } from '../syntax-tree.js';
 import type { Stream } from '../utils/stream.js';
 import type { ReferenceDescription } from '../workspace/ast-descriptions.js';
@@ -68,7 +68,7 @@ export class DefaultReferences implements References {
     protected readonly index: IndexManager;
     protected readonly nodeLocator: AstNodeLocator;
 
-    constructor(services: LangiumServices) {
+    constructor(services: LangiumCoreServices) {
         this.nameProvider = services.references.NameProvider;
         this.index = services.shared.workspace.IndexManager;
         this.nodeLocator = services.workspace.AstNodeLocator;

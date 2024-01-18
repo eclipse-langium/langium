@@ -4,12 +4,11 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { LangiumServices } from '../services.js';
+import type { LangiumCoreServices } from '../services.js';
 import { DefaultNameRegexp } from '../utils/cst-utils.js';
-import { isCommentTerminal } from '../utils/grammar-utils.js';
+import { isCommentTerminal, terminalRegex } from '../utils/grammar-utils.js';
 import { isMultilineComment } from '../utils/regexp-utils.js';
 import { isTerminalRule } from './generated/ast.js';
-import { terminalRegex } from '../utils/grammar-utils.js';
 
 export interface GrammarConfig {
     /**
@@ -26,7 +25,7 @@ export interface GrammarConfig {
  * Create the default grammar configuration (used by `createDefaultModule`). This can be overridden in a
  * language-specific module.
  */
-export function createGrammarConfig(services: LangiumServices): GrammarConfig {
+export function createGrammarConfig(services: LangiumCoreServices): GrammarConfig {
     const rules: string[] = [];
     const grammar = services.Grammar;
     for (const rule of grammar.rules) {

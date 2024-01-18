@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import type { WorkspaceSymbol, WorkspaceSymbolParams } from 'vscode-languageserver';
-import type { LangiumSharedServices } from '../services.js';
+import type { LangiumSharedServices } from './lsp-services.js';
 import type { IndexManager } from '../workspace/index-manager.js';
 import type { MaybePromise} from '../utils/promise-utils.js';
 import type { AstNodeDescription } from '../syntax-tree.js';

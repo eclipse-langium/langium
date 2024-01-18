@@ -4,18 +4,18 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { URI } from '../utils/uri-utils.js';
+import { CancellationToken } from 'vscode-languageserver';
 import type { ServiceRegistry } from '../service-registry.js';
-import type { LangiumSharedServices } from '../services.js';
+import type { LangiumSharedCoreServices } from '../services.js';
 import type { AstNode, AstNodeDescription, AstReflection } from '../syntax-tree.js';
+import { getDocument } from '../utils/ast-utils.js';
+import { ContextCache } from '../utils/caching.js';
 import type { Stream } from '../utils/stream.js';
+import { stream } from '../utils/stream.js';
+import type { URI } from '../utils/uri-utils.js';
+import { UriUtils } from '../utils/uri-utils.js';
 import type { ReferenceDescription } from './ast-descriptions.js';
 import type { LangiumDocument, LangiumDocuments } from './documents.js';
-import { CancellationToken } from 'vscode-languageserver';
-import { getDocument } from '../utils/ast-utils.js';
-import { stream } from '../utils/stream.js';
-import { UriUtils } from '../utils/uri-utils.js';
-import { ContextCache } from '../utils/caching.js';
 
 /**
  * The index manager is responsible for keeping metadata about symbols and cross-references
@@ -104,7 +104,7 @@ export class DefaultIndexManager implements IndexManager {
      */
     protected readonly referenceIndex = new Map<string, ReferenceDescription[]>();
 
-    constructor(services: LangiumSharedServices) {
+    constructor(services: LangiumSharedCoreServices) {
         this.documents = services.workspace.LangiumDocuments;
         this.serviceRegistry = services.ServiceRegistry;
         this.astReflection = services.AstReflection;

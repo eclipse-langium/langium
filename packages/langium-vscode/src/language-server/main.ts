@@ -4,11 +4,11 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { LangiumSharedServices, Module, PartialLangiumSharedServices } from 'langium';
-import { startLanguageServer } from 'langium';
+import type { Module } from 'langium';
 import { createLangiumGrammarServices } from 'langium/grammar';
+import { startLanguageServer, type LangiumSharedServices, type PartialLangiumSharedServices } from 'langium/lsp';
 import { NodeFileSystem } from 'langium/node';
-import { createConnection, ProposedFeatures } from 'vscode-languageserver/node.js';
+import { ProposedFeatures, createConnection } from 'vscode-languageserver/node.js';
 import { LangiumGrammarWorkspaceManager } from './grammar-workspace-manager.js';
 import { registerRailroadConnectionHandler } from './railroad-handler.js';
 

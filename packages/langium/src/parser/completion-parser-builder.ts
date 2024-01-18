@@ -4,11 +4,11 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { LangiumServices } from '../services.js';
+import type { LangiumCoreServices } from '../services.js';
 import { LangiumCompletionParser } from './langium-parser.js';
 import { createParser } from './parser-builder-base.js';
 
-export function createCompletionParser(services: LangiumServices): LangiumCompletionParser {
+export function createCompletionParser(services: LangiumCoreServices): LangiumCompletionParser {
     const grammar = services.Grammar;
     const lexer = services.parser.Lexer;
     const parser = new LangiumCompletionParser(services);

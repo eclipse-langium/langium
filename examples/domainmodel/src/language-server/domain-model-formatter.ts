@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import type { AstNode } from 'langium';
-import { AbstractFormatter, Formatting } from 'langium';
+import { AbstractFormatter, Formatting } from 'langium/lsp';
 import * as ast from './generated/ast.js';
 
 export class DomainModelFormatter extends AbstractFormatter {

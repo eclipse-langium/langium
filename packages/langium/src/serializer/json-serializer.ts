@@ -4,16 +4,16 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { NameProvider } from '../references/name-provider.js';
-import type { LangiumServices } from '../services.js';
-import type { AstNode, CstNode, GenericAstNode, Mutable, Reference } from '../syntax-tree.js';
-import type { AstNodeLocator } from '../workspace/ast-node-locator.js';
-import type { DocumentSegment, LangiumDocument, LangiumDocuments } from '../workspace/documents.js';
 import { URI } from 'vscode-uri';
+import type { CommentProvider } from '../documentation/comment-provider.js';
+import type { NameProvider } from '../references/name-provider.js';
+import type { LangiumCoreServices } from '../services.js';
+import type { AstNode, CstNode, GenericAstNode, Mutable, Reference } from '../syntax-tree.js';
 import { isAstNode, isReference } from '../syntax-tree.js';
 import { getDocument } from '../utils/ast-utils.js';
 import { findNodesForProperty } from '../utils/grammar-utils.js';
-import type { CommentProvider } from '../documentation/comment-provider.js';
+import type { AstNodeLocator } from '../workspace/ast-node-locator.js';
+import type { DocumentSegment, LangiumDocument, LangiumDocuments } from '../workspace/documents.js';
 
 export interface JsonSerializeOptions {
     /** The space parameter for `JSON.stringify`, controlling whether and how to pretty-print the output. */
@@ -119,7 +119,7 @@ export class DefaultJsonSerializer implements JsonSerializer {
     protected readonly nameProvider: NameProvider;
     protected readonly commentProvider: CommentProvider;
 
-    constructor(services: LangiumServices) {
+    constructor(services: LangiumCoreServices) {
         this.langiumDocuments = services.shared.workspace.LangiumDocuments;
         this.astNodeLocator = services.workspace.AstNodeLocator;
         this.nameProvider = services.references.NameProvider;

@@ -6,7 +6,7 @@
 
 import type { Disposable } from './disposable.js';
 import type { URI } from './uri-utils.js';
-import type { LangiumSharedServices } from '../services.js';
+import type { LangiumSharedCoreServices } from '../services.js';
 
 export abstract class DisposableCache implements Disposable {
 
@@ -141,7 +141,7 @@ export class ContextCache<Context, Key, Value, ContextKey = Context> extends Dis
  * If this document is changed or deleted, all associated key/value pairs are deleted.
  */
 export class DocumentCache<K, V> extends ContextCache<URI | string, K, V, string> {
-    constructor(sharedServices: LangiumSharedServices) {
+    constructor(sharedServices: LangiumSharedCoreServices) {
         super(uri => uri.toString());
         this.onDispose(sharedServices.workspace.DocumentBuilder.onUpdate((changed, deleted) => {
             const allUris = changed.concat(deleted);
@@ -157,7 +157,7 @@ export class DocumentCache<K, V> extends ContextCache<URI | string, K, V, string
  * If any document in the workspace changes, the whole cache is evicted.
  */
 export class WorkspaceCache<K, V> extends SimpleCache<K, V> {
-    constructor(sharedServices: LangiumSharedServices) {
+    constructor(sharedServices: LangiumSharedCoreServices) {
         super();
         this.onDispose(sharedServices.workspace.DocumentBuilder.onUpdate(() => {
             this.clear();

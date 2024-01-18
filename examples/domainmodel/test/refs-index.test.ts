@@ -5,14 +5,14 @@
  ******************************************************************************/
 
 import type { AstNode, LangiumDocument, ReferenceDescription, URI } from 'langium';
-import type { Domainmodel } from '../src/language-server/generated/ast.js';
-import { describe, expect, test } from 'vitest';
 import { AstUtils, EmptyFileSystem } from 'langium';
 import { parseDocument, setTextDocument } from 'langium/test';
+import { describe, expect, test } from 'vitest';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { createDomainModelServices } from '../src/language-server/domain-model-module.js';
+import type { Domainmodel } from '../src/language-server/generated/ast.js';
 
-const services = createDomainModelServices(EmptyFileSystem).domainmodel;
+const { shared, domainmodel } = createDomainModelServices(EmptyFileSystem);
 
 describe('Cross references indexed after affected process', () => {
     test('Fixed reference is in index', async () => {
@@ -22,7 +22,7 @@ describe('Cross references indexed after affected process', () => {
         expect(allRefs.length).toEqual(0); // linking error
 
         setTextDocument(
-            services,
+            shared,
             TextDocument.create(
                 superDoc.textDocument.uri.toString(),
                 superDoc.textDocument.languageId,
@@ -30,9 +30,9 @@ describe('Cross references indexed after affected process', () => {
                 'entity SuperEntity {}'
             )
         );
-        await services.shared.workspace.DocumentBuilder.update([superDoc.uri], []);
+        await shared.workspace.DocumentBuilder.update([superDoc.uri], []);
 
-        const updatedSuperDoc = await services.shared.workspace.LangiumDocuments.getOrCreateDocument(superDoc.uri);
+        const updatedSuperDoc = await shared.workspace.LangiumDocuments.getOrCreateDocument(superDoc.uri);
         const superEntity = (updatedSuperDoc.parseResult.value as Domainmodel).elements[0];
         allRefs = await getReferences(superEntity);
         expect(allRefs.length).toEqual(1); // re-linked
@@ -43,16 +43,16 @@ describe('Cross references indexed after affected process', () => {
 });
 
 async function updateDocuments(extendsFile: string, superFile: string): Promise<{ 'super': LangiumDocument, 'extends': LangiumDocument }> {
-    const superDoc: LangiumDocument = await parseDocument(services, superFile);
-    const extendsDoc: LangiumDocument = await parseDocument(services, extendsFile);
+    const superDoc: LangiumDocument = await parseDocument(domainmodel, superFile);
+    const extendsDoc: LangiumDocument = await parseDocument(domainmodel, extendsFile);
 
-    await services.shared.workspace.DocumentBuilder.build([extendsDoc, superDoc]);
+    await shared.workspace.DocumentBuilder.build([extendsDoc, superDoc]);
     return { 'super': superDoc, 'extends': extendsDoc };
 }
 
 async function getReferences(node: AstNode): Promise<ReferenceDescription[]> {
     const allRefs: ReferenceDescription[] = [];
-    services.shared.workspace.IndexManager.findAllReferences(node, createPath(node))
+    shared.workspace.IndexManager.findAllReferences(node, createPath(node))
         .forEach((ref) => allRefs.push(ref));
     return allRefs;
 }
@@ -66,7 +66,7 @@ function nodeRefString(from: AstNode, to: AstNode): string {
 }
 
 function createPath(node: AstNode): string {
-    return services.workspace.AstNodeLocator.getAstNodePath(node);
+    return domainmodel.workspace.AstNodeLocator.getAstNodePath(node);
 }
 
 function asString(fromUri: URI, fromPath: string, toUri: URI, toPath: string): string {

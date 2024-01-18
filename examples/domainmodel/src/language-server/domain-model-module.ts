@@ -4,14 +4,15 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { LangiumServices, Module, PartialLangiumServices, LangiumSharedServices, DefaultSharedModuleContext } from 'langium';
-import { inject, createDefaultSharedModule, createDefaultModule } from 'langium';
-import { DomainModelGeneratedModule, DomainModelGeneratedSharedModule } from './generated/module.js';
-import { DomainModelValidator, registerValidationChecks } from './domain-model-validator.js';
-import { DomainModelScopeComputation } from './domain-model-scope.js';
-import { QualifiedNameProvider } from './domain-model-naming.js';
+import { type Module, inject } from 'langium';
+import type { LangiumServices, LangiumSharedServices, PartialLangiumServices } from 'langium/lsp';
+import { createDefaultModule, createDefaultSharedModule, type DefaultSharedModuleContext } from 'langium/lsp';
 import { DomainModelFormatter } from './domain-model-formatter.js';
+import { QualifiedNameProvider } from './domain-model-naming.js';
 import { DomainModelRenameProvider } from './domain-model-rename-refactoring.js';
+import { DomainModelScopeComputation } from './domain-model-scope.js';
+import { DomainModelValidator, registerValidationChecks } from './domain-model-validator.js';
+import { DomainModelGeneratedModule, DomainModelGeneratedSharedModule } from './generated/module.js';
 
 export type DomainModelAddedServices = {
     references: {
@@ -22,7 +23,7 @@ export type DomainModelAddedServices = {
     }
 }
 
-export type DomainModelServices = LangiumServices & DomainModelAddedServices
+export type DomainModelServices = LangiumServices & DomainModelAddedServices;
 
 export const DomainModelModule: Module<DomainModelServices, PartialLangiumServices & DomainModelAddedServices> = {
     references: {

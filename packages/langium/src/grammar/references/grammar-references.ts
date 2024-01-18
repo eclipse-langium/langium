@@ -4,7 +4,7 @@
 * terms of the MIT License, which is available in the project root.
 ******************************************************************************/
 
-import type { LangiumServices } from '../../services.js';
+import type { LangiumCoreServices } from '../../services.js';
 import type { AstNode, CstNode } from '../../syntax-tree.js';
 import type { Stream } from '../../utils/stream.js';
 import type { ReferenceDescription } from '../../workspace/ast-descriptions.js';
@@ -24,7 +24,7 @@ import { collectChildrenTypes, collectSuperTypes } from '../type-system/types-ut
 export class LangiumGrammarReferences extends DefaultReferences {
     protected readonly documents: LangiumDocuments;
 
-    constructor(services: LangiumServices) {
+    constructor(services: LangiumCoreServices) {
         super(services);
         this.documents = services.shared.workspace.LangiumDocuments;
     }

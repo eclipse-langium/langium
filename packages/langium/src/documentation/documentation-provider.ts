@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { LangiumServices } from '../services.js';
+import type { LangiumCoreServices } from '../services.js';
 import type { AstNode, AstNodeDescription } from '../syntax-tree.js';
 import type { IndexManager } from '../workspace/index-manager.js';
 import type { CommentProvider } from './comment-provider.js';
@@ -29,7 +29,7 @@ export class JSDocDocumentationProvider implements DocumentationProvider {
     protected readonly indexManager: IndexManager;
     protected readonly commentProvider: CommentProvider;
 
-    constructor(services: LangiumServices) {
+    constructor(services: LangiumCoreServices) {
         this.indexManager = services.shared.workspace.IndexManager;
         this.commentProvider = services.documentation.CommentProvider;
     }

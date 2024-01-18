@@ -3,7 +3,7 @@
  * This program and the accompanying materials are made available under the
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
-import type { Grammar, LangiumServices } from 'langium';
+import type { Grammar, LangiumCoreServices } from 'langium';
 import { type Generated, expandToNode, joinToNode, toString } from 'langium/generate';
 import type { AstTypes, Property, PropertyDefaultValue } from 'langium/grammar';
 import type { LangiumConfig } from '../package.js';
@@ -11,7 +11,7 @@ import { AstUtils, MultiMap, GrammarAST } from 'langium';
 import { collectAst, collectTypeHierarchy, findReferenceTypes, isAstType, mergeTypesAndInterfaces } from 'langium/grammar';
 import { collectTerminalRegexps, generatedHeader } from './util.js';
 
-export function generateAst(services: LangiumServices, grammars: Grammar[], config: LangiumConfig): string {
+export function generateAst(services: LangiumCoreServices, grammars: Grammar[], config: LangiumConfig): string {
     const astTypes = collectAst(grammars, services.shared.workspace.LangiumDocuments);
     const crossRef = grammars.some(grammar => hasCrossReferences(grammar));
     const importFrom = config.langiumInternal ? `../../syntax-tree${config.importExtension}` : 'langium';

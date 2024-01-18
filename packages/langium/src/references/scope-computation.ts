@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { LangiumServices } from '../services.js';
+import type { LangiumCoreServices } from '../services.js';
 import type { AstNode, AstNodeDescription } from '../syntax-tree.js';
 import type { AstNodeDescriptionProvider } from '../workspace/ast-descriptions.js';
 import type { LangiumDocument, PrecomputedScopes } from '../workspace/documents.js';
@@ -68,7 +68,7 @@ export class DefaultScopeComputation implements ScopeComputation {
     protected readonly nameProvider: NameProvider;
     protected readonly descriptions: AstNodeDescriptionProvider;
 
-    constructor(services: LangiumServices) {
+    constructor(services: LangiumCoreServices) {
         this.nameProvider = services.references.NameProvider;
         this.descriptions = services.workspace.AstNodeDescriptionProvider;
     }

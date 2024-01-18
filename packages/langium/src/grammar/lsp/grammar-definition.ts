@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import type { DefinitionParams } from 'vscode-languageserver';
-import type { LangiumServices } from '../../services.js';
+import type { LangiumServices } from '../../lsp/lsp-services.js';
 import type { AstNode, LeafCstNode, Properties } from '../../syntax-tree.js';
 import type { MaybePromise } from '../../utils/promise-utils.js';
 import type { LangiumDocuments } from '../../workspace/documents.js';

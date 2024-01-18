@@ -4,19 +4,19 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { URI } from '../utils/uri-utils.js';
+import { CancellationToken, Disposable } from 'vscode-jsonrpc';
 import type { ServiceRegistry } from '../service-registry.js';
-import type { LangiumSharedServices } from '../services.js';
+import type { LangiumSharedCoreServices } from '../services.js';
 import type { AstNode } from '../syntax-tree.js';
-import type { MaybePromise } from '../utils/promise-utils.js';
-import type { ValidationOptions } from '../validation/document-validator.js';
-import type { IndexManager } from '../workspace/index-manager.js';
-import type { LangiumDocument, LangiumDocuments, LangiumDocumentFactory } from './documents.js';
-import { CancellationToken, Disposable } from 'vscode-languageserver';
 import { MultiMap } from '../utils/collections.js';
+import type { MaybePromise } from '../utils/promise-utils.js';
 import { interruptAndCheck } from '../utils/promise-utils.js';
 import { stream } from '../utils/stream.js';
+import type { URI } from '../utils/uri-utils.js';
+import type { ValidationOptions } from '../validation/document-validator.js';
 import { ValidationCategory } from '../validation/validation-registry.js';
+import type { IndexManager } from '../workspace/index-manager.js';
+import type { LangiumDocument, LangiumDocumentFactory, LangiumDocuments } from './documents.js';
 import { DocumentState } from './documents.js';
 
 export interface BuildOptions {
@@ -100,7 +100,7 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
     protected readonly buildPhaseListeners: MultiMap<DocumentState, DocumentBuildListener> = new MultiMap();
     protected readonly buildState: Map<string, DocumentBuildState> = new Map();
 
-    constructor(services: LangiumSharedServices) {
+    constructor(services: LangiumSharedCoreServices) {
         this.langiumDocuments = services.workspace.LangiumDocuments;
         this.langiumDocumentFactory = services.workspace.LangiumDocumentFactory;
         this.indexManager = services.workspace.IndexManager;

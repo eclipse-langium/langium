@@ -4,7 +4,8 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { Module, PartialLangiumServices } from 'langium';
+import type { Module } from 'langium';
+import type { PartialLangiumServices } from 'langium/lsp';
 import type { DiagramOptions } from 'sprotty-protocol';
 import type { LangiumSprottyServices, LangiumSprottySharedServices, SprottyDefaultServices, SprottySharedServices } from './sprotty-services.js';
 import { DiagramServer } from 'sprotty-protocol';

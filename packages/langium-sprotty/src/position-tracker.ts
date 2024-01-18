@@ -8,7 +8,7 @@ import type { LangiumDocument, MaybePromise } from 'langium';
 import type { Position } from 'vscode-languageserver';
 import type { DocumentHighlight, DocumentHighlightParams } from 'vscode-languageserver';
 import type { LangiumSprottyServices } from './sprotty-services.js';
-import { DefaultDocumentHighlightProvider } from 'langium';
+import { DefaultDocumentHighlightProvider } from 'langium/lsp';
 
 /**
  * This service provides access to the user's current cursor position.

@@ -19,8 +19,12 @@ export type Module<I, T = I> = {
     [K in keyof T]: Module<I, T[K]> | ((injector: I) => T[K])
 }
 
+export namespace Module {
+    export const merge = <M1, M2, R extends M1 & M2>(m1: Module<R, M1>, m2: Module<R, M2>) => (_merge(_merge({}, m1), m2) as Module<R, M1 & M2>);
+}
+
 /**
- * Given a set of modules, the inject function returns a lazily evaluted injector
+ * Given a set of modules, the inject function returns a lazily evaluated injector
  * that injects dependencies into the requested service when it is requested the
  * first time. Subsequent requests will return the same service.
  *
@@ -34,10 +38,17 @@ export type Module<I, T = I> = {
  * @param module2 (optional) second Module
  * @param module3 (optional) third Module
  * @param module4 (optional) fourth Module
+ * @param module5 (optional) fifth Module
+ * @param module6 (optional) sixth Module
+ * @param module7 (optional) seventh Module
+ * @param module8 (optional) eighth Module
+ * @param module9 (optional) ninth Module
  * @returns a new object of type I
  */
-export function inject<I1, I2, I3, I4, I extends I1 & I2 & I3 & I4>(module1: Module<I, I1>, module2?: Module<I, I2>, module3?: Module<I, I3>, module4?: Module<I, I4>): I {
-    const module = [module1, module2, module3, module4].reduce(_merge, {}) as Module<I>;
+export function inject<I1, I2, I3, I4, I5, I6, I7, I8, I9, I extends I1 & I2 & I3 & I4 & I5 & I6 & I7 & I8 & I9>(
+    module1: Module<I, I1>, module2?: Module<I, I2>, module3?: Module<I, I3>, module4?: Module<I, I4>, module5?: Module<I, I5>, module6?: Module<I, I6>, module7?: Module<I, I7>, module8?: Module<I, I8>, module9?: Module<I, I9>
+): I {
+    const module = [module1, module2, module3, module4, module5, module6, module7, module8, module9].reduce(_merge, {}) as Module<I>;
     return _inject(module);
 }
 

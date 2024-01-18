@@ -7,15 +7,15 @@
 /* eslint-disable no-bitwise */
 
 import type { Range, SemanticTokens, SemanticTokensClientCapabilities, SemanticTokensDelta, SemanticTokensDeltaParams, SemanticTokensOptions, SemanticTokensParams, SemanticTokensRangeParams } from 'vscode-languageserver';
-import type { LangiumServices } from '../services.js';
+import { SemanticTokensBuilder as BaseSemanticTokensBuilder, CancellationToken, SemanticTokenModifiers, SemanticTokenTypes } from 'vscode-languageserver';
 import type { AstNode, CstNode, Properties } from '../syntax-tree.js';
-import type { LangiumDocument } from '../workspace/documents.js';
-import type { MaybePromise } from '../utils/promise-utils.js';
-import { CancellationToken, SemanticTokenModifiers, SemanticTokensBuilder as BaseSemanticTokensBuilder, SemanticTokenTypes } from 'vscode-languageserver';
-import { findNodesForKeyword, findNodeForProperty, findNodesForProperty, findNodeForKeyword } from '../utils/grammar-utils.js';
 import { streamAst } from '../utils/ast-utils.js';
-import { interruptAndCheck } from '../utils/promise-utils.js';
 import { inRange } from '../utils/cst-utils.js';
+import { findNodeForKeyword, findNodeForProperty, findNodesForKeyword, findNodesForProperty } from '../utils/grammar-utils.js';
+import type { MaybePromise } from '../utils/promise-utils.js';
+import { interruptAndCheck } from '../utils/promise-utils.js';
+import type { LangiumDocument } from '../workspace/documents.js';
+import type { LangiumServices } from './lsp-services.js';
 
 export const AllSemanticTokenTypes: Record<string, number> = {
     [SemanticTokenTypes.class]: 0,

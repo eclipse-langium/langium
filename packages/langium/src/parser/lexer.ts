@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import type { ILexingError, IMultiModeLexerDefinition, IToken, TokenType, TokenTypeDictionary, TokenVocabulary } from 'chevrotain';
-import type { LangiumServices } from '../services.js';
+import type { LangiumCoreServices } from '../services.js';
 import { Lexer as ChevrotainLexer } from 'chevrotain';
 
 export interface LexerResult {
@@ -33,7 +33,7 @@ export class DefaultLexer implements Lexer {
     protected chevrotainLexer: ChevrotainLexer;
     protected tokenTypes: TokenTypeDictionary;
 
-    constructor(services: LangiumServices) {
+    constructor(services: LangiumCoreServices) {
         const tokens = services.parser.TokenBuilder.buildTokens(services.Grammar, {
             caseInsensitive: services.LanguageMetaData.caseInsensitive
         });

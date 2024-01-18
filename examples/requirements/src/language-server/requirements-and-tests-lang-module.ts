@@ -4,13 +4,13 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { DefaultSharedModuleContext, LangiumSharedServices } from 'langium';
-import type { RequirementsLangServices } from './requirements-lang-module.js';
-import type { TestsLangServices } from './tests-lang-module.js';
-import { createDefaultModule, createDefaultSharedModule, inject } from 'langium';
+import { inject } from 'langium';
+import { createDefaultModule, createDefaultSharedModule, type DefaultSharedModuleContext, type LangiumSharedServices } from 'langium/lsp';
 import { RequirementsAndTestsGeneratedSharedModule, RequirementsGeneratedModule, TestsGeneratedModule } from './generated/module.js';
+import type { RequirementsLangServices } from './requirements-lang-module.js';
 import { RequirementsLangModule } from './requirements-lang-module.js';
 import { registerRequirementsValidationChecks } from './requirements-lang-validator.js';
+import type { TestsLangServices } from './tests-lang-module.js';
 import { TestsLangModule } from './tests-lang-module.js';
 import { registerTestsValidationChecks } from './tests-lang-validator.js';
 

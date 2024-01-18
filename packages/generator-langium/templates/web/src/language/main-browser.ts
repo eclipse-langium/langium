@@ -1,4 +1,5 @@
-import { EmptyFileSystem, startLanguageServer } from 'langium';
+import { EmptyFileSystem } from 'langium';
+import { startLanguageServer } from 'langium/lsp';
 import { BrowserMessageReader, BrowserMessageWriter, createConnection } from 'vscode-languageserver/browser.js';
 import { create<%= LanguageName %>Services } from './<%= language-id %>-module.js';
 
