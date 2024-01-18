@@ -5,13 +5,12 @@
  ******************************************************************************/
 
 import type { AstNode, LangiumDocument, LangiumDocuments, ReferenceDescription, URI } from 'langium';
-import type { Range, WorkspaceEdit } from 'vscode-languageserver';
+import { AstUtils, CstUtils, isNamed } from 'langium';
+import { DefaultRenameProvider } from 'langium/lsp';
 import type { RenameParams } from 'vscode-languageserver-protocol';
+import { Location, TextEdit, type Range, type WorkspaceEdit } from 'vscode-languageserver-types';
 import type { DomainModelServices } from './domain-model-module.js';
 import type { QualifiedNameProvider } from './domain-model-naming.js';
-import { AstUtils, CstUtils, DefaultRenameProvider, isNamed } from 'langium';
-import { Location } from 'vscode-languageserver';
-import { TextEdit } from 'vscode-languageserver-types';
 import { isPackageDeclaration } from './generated/ast.js';
 
 export class DomainModelRenameProvider extends DefaultRenameProvider {

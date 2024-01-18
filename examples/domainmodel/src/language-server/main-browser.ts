@@ -5,7 +5,8 @@
  ******************************************************************************/
 
 import type { Diagnostic } from 'vscode-languageserver/browser.js';
-import { startLanguageServer, EmptyFileSystem, DocumentState } from 'langium';
+import { EmptyFileSystem, DocumentState } from 'langium';
+import { startLanguageServer } from 'langium/lsp';
 import { BrowserMessageReader, BrowserMessageWriter, createConnection, NotificationType } from 'vscode-languageserver/browser.js';
 import { createDomainModelServices } from './domain-model-module.js';
 

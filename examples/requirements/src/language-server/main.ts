@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { startLanguageServer } from 'langium';
+import { startLanguageServer } from 'langium/lsp';
 import { createConnection, ProposedFeatures } from 'vscode-languageserver/node.js';
 import { createRequirementsAndTestsLangServices } from './requirements-and-tests-lang-module.js';
 import { NodeFileSystem } from 'langium/node';

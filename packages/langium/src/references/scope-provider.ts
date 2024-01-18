@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { LangiumServices } from '../services.js';
+import type { LangiumCoreServices } from '../services.js';
 import type { AstNode, AstNodeDescription, AstReflection, ReferenceInfo } from '../syntax-tree.js';
 import type { Stream } from '../utils/stream.js';
 import type { AstNodeDescriptionProvider } from '../workspace/ast-descriptions.js';
@@ -40,7 +40,7 @@ export class DefaultScopeProvider implements ScopeProvider {
 
     protected readonly globalScopeCache: WorkspaceCache<string, Scope>;
 
-    constructor(services: LangiumServices) {
+    constructor(services: LangiumCoreServices) {
         this.reflection = services.shared.AstReflection;
         this.nameProvider = services.references.NameProvider;
         this.descriptions = services.workspace.AstNodeDescriptionProvider;

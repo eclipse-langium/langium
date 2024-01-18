@@ -5,10 +5,10 @@
  ******************************************************************************/
 
 import type { Ignore } from 'ignore';
-import type { LangiumSharedServices, ConfigurationProvider, FileSystemNode } from 'langium';
-import type { WorkspaceFolder } from 'vscode-languageserver-protocol';
 import ignore from 'ignore';
+import type { ConfigurationProvider, FileSystemNode, WorkspaceFolder } from 'langium';
 import { DefaultWorkspaceManager, URI, UriUtils } from 'langium';
+import type { LangiumSharedServices } from 'langium/lsp';
 import * as path from 'path';
 import { CancellationToken } from 'vscode-languageserver-protocol';
 

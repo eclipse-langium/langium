@@ -8,7 +8,7 @@ import type { MismatchedTokenException } from 'chevrotain';
 import type { Diagnostic } from 'vscode-languageserver';
 import type { LanguageMetaData } from '../languages/language-meta-data.js';
 import type { ParseResult } from '../parser/langium-parser.js';
-import type { LangiumServices } from '../services.js';
+import type { LangiumCoreServices } from '../services.js';
 import type { AstNode, CstNode } from '../syntax-tree.js';
 import type { LangiumDocument } from '../workspace/documents.js';
 import type { DiagnosticData, DiagnosticInfo, ValidationAcceptor, ValidationCategory, ValidationRegistry } from './validation-registry.js';
@@ -53,7 +53,7 @@ export class DefaultDocumentValidator implements DocumentValidator {
     protected readonly validationRegistry: ValidationRegistry;
     protected readonly metadata: LanguageMetaData;
 
-    constructor(services: LangiumServices) {
+    constructor(services: LangiumCoreServices) {
         this.validationRegistry = services.validation.ValidationRegistry;
         this.metadata = services.LanguageMetaData;
     }

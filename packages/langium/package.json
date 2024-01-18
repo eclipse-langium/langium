@@ -45,6 +45,10 @@
     "./grammar": {
       "types": "./lib/grammar/index.d.ts",
       "import": "./lib/grammar/index.js"
+    },
+    "./lsp": {
+        "types": "./lib/lsp/index.d.ts",
+        "import": "./lib/lsp/index.js"
     }
   },
   "scripts": {

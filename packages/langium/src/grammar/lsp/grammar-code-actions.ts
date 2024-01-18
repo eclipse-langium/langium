@@ -9,7 +9,7 @@ import type { CodeActionParams } from 'vscode-languageserver-protocol';
 import type { CodeAction, Command, Position, TextEdit } from 'vscode-languageserver-types';
 import type { URI } from '../../utils/uri-utils.js';
 import type { CodeActionProvider } from '../../lsp/code-action.js';
-import type { LangiumServices } from '../../services.js';
+import type { LangiumServices } from '../../lsp/lsp-services.js';
 import type { AstReflection, Reference, ReferenceInfo } from '../../syntax-tree.js';
 import type { MaybePromise } from '../../utils/promise-utils.js';
 import type { LinkingErrorData } from '../../validation/document-validator.js';

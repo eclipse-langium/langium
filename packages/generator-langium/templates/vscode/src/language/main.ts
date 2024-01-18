@@ -1,4 +1,4 @@
-import { startLanguageServer } from 'langium';
+import { startLanguageServer } from 'langium/lsp';
 import { NodeFileSystem } from 'langium/node';
 import { createConnection, ProposedFeatures } from 'vscode-languageserver/node.js';
 import { create<%= LanguageName %>Services } from './<%= language-id %>-module.js';

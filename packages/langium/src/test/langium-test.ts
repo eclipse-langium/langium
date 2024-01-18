@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import type { CompletionItem, CompletionList, Diagnostic, DocumentSymbol, FoldingRange, FormattingOptions, Range, ReferenceParams, SemanticTokensParams, SemanticTokenTypes, TextDocumentIdentifier, TextDocumentPositionParams, WorkspaceSymbol } from 'vscode-languageserver';
-import type { LangiumServices, LangiumSharedServices } from '../services.js';
+import type { LangiumCoreServices, LangiumSharedCoreServices } from '../services.js';
 import type { AstNode, CstNode, Properties } from '../syntax-tree.js';
 import type { LangiumDocument } from '../workspace/documents.js';
 import type { BuildOptions } from '../workspace/document-builder.js';
@@ -20,6 +20,7 @@ import { stream } from '../utils/stream.js';
 import type { AsyncDisposable } from '../utils/disposable.js';
 import { Disposable } from '../utils/disposable.js';
 import { normalizeEOL } from '../generate/template-string.js';
+import type { LangiumServices, LangiumSharedLSPServices } from '../lsp/lsp-services.js';
 
 export interface ParseHelperOptions extends BuildOptions {
     /**
@@ -30,7 +31,7 @@ export interface ParseHelperOptions extends BuildOptions {
 
 let nextDocumentId = 1;
 
-export function parseHelper<T extends AstNode = AstNode>(services: LangiumServices): (input: string, options?: ParseHelperOptions) => Promise<LangiumDocument<T>> {
+export function parseHelper<T extends AstNode = AstNode>(services: LangiumCoreServices): (input: string, options?: ParseHelperOptions) => Promise<LangiumDocument<T>> {
     const metaData = services.LanguageMetaData;
     const documentBuilder = services.shared.workspace.DocumentBuilder;
     return async (input, options) => {
@@ -202,7 +203,7 @@ export interface ExpectedWorkspaceSymbolsCallback extends ExpectedWorkspaceSymbo
 
 export type ExpectedWorkspaceSymbols = ExpectedWorkspaceSymbolsList | ExpectedWorkspaceSymbolsCallback;
 
-export function expectWorkspaceSymbols(services: LangiumSharedServices): (input: ExpectedWorkspaceSymbols) => Promise<void> {
+export function expectWorkspaceSymbols(services: LangiumSharedLSPServices): (input: ExpectedWorkspaceSymbols) => Promise<void> {
     return async input => {
         const symbolProvider = services.lsp.WorkspaceSymbolProvider;
         const symbols = await symbolProvider?.getSymbols({
@@ -494,7 +495,7 @@ export function textDocumentPositionParams(document: LangiumDocument, offset: nu
     return { textDocument: { uri: document.textDocument.uri }, position: document.textDocument.positionAt(offset) };
 }
 
-export async function parseDocument<T extends AstNode = AstNode>(services: LangiumServices, input: string, options?: ParseHelperOptions): Promise<LangiumDocument<T>> {
+export async function parseDocument<T extends AstNode = AstNode>(services: LangiumCoreServices, input: string, options?: ParseHelperOptions): Promise<LangiumDocument<T>> {
     const document = await parseHelper<T>(services)(input, options);
     if (!document.parseResult) {
         throw new Error('Could not parse document');
@@ -545,7 +546,7 @@ export interface ValidationResult<T extends AstNode = AstNode> extends AsyncDisp
     document: LangiumDocument<T>;
 }
 
-export function validationHelper<T extends AstNode = AstNode>(services: LangiumServices): (input: string, options?: ParseHelperOptions) => Promise<ValidationResult<T>> {
+export function validationHelper<T extends AstNode = AstNode>(services: LangiumCoreServices): (input: string, options?: ParseHelperOptions) => Promise<ValidationResult<T>> {
     const parse = parseHelper<T>(services);
     return async (input, options) => {
         const document = await parse(input, {
@@ -697,7 +698,7 @@ export function expectWarning<T extends AstNode = AstNode, N extends AstNode = A
 /**
  * Add the given document to the `TextDocuments` service, simulating it being opened in an editor.
  */
-export function setTextDocument(services: LangiumServices | LangiumSharedServices, document: TextDocument): Disposable {
+export function setTextDocument(services: LangiumServices | LangiumSharedLSPServices, document: TextDocument): Disposable {
     const shared = 'shared' in services ? services.shared : services;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const textDocuments = shared.workspace.TextDocuments as any;
@@ -707,7 +708,7 @@ export function setTextDocument(services: LangiumServices | LangiumSharedService
     });
 }
 
-export function clearDocuments(services: LangiumServices | LangiumSharedServices, documents?: LangiumDocument[]): Promise<void> {
+export function clearDocuments(services: LangiumCoreServices | LangiumSharedCoreServices, documents?: LangiumDocument[]): Promise<void> {
     const shared = 'shared' in services ? services.shared : services;
     const allDocs = (documents ? stream(documents) : shared.workspace.LangiumDocuments.all).map(x => x.uri).toArray();
     return shared.workspace.DocumentBuilder.update([], allDocs);

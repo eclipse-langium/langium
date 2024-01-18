@@ -28,16 +28,17 @@ import type {
     TypeHierarchySubtypesParams,
     TypeHierarchySupertypesParams
 } from 'vscode-languageserver';
-import type { LangiumServices, LangiumSharedServices } from '../services.js';
-import type { LangiumDocument } from '../workspace/documents.js';
-import { Emitter, LSPErrorCodes, ResponseError, TextDocumentSyncKind } from 'vscode-languageserver';
+import { DidChangeConfigurationNotification, Emitter, LSPErrorCodes, ResponseError, TextDocumentSyncKind } from 'vscode-languageserver';
 import { eagerLoad } from '../dependency-injection.js';
+import type { LangiumCoreServices } from '../services.js';
 import { isOperationCancelled } from '../utils/promise-utils.js';
-import { DocumentState } from '../workspace/documents.js';
+import { URI } from '../utils/uri-utils.js';
+import type { ConfigurationInitializedParams } from '../workspace/configuration.js';
+import { DocumentState, type LangiumDocument } from '../workspace/documents.js';
 import { mergeCompletionProviderOptions } from './completion/completion-provider.js';
+import type { LangiumSharedServices, PartialLangiumLSPServices } from './lsp-services.js';
 import { DefaultSemanticTokenOptions } from './semantic-token-provider.js';
 import { mergeSignatureHelpOptions } from './signature-help-provider.js';
-import { URI } from '../utils/uri-utils.js';
 
 export interface LanguageServer {
     initialize(params: InitializeParams): Promise<InitializeResult>
@@ -45,6 +46,13 @@ export interface LanguageServer {
     onInitialize(callback: (params: InitializeParams) => void): Disposable
     onInitialized(callback: (params: InitializedParams) => void): Disposable
 }
+
+/**
+ * Language-specific core and optional LSP services.
+ * To be used while accessing the language-specific services via the service registry without a-priori knowledge about the presence of LSP services for the particular languages.
+ * Shared services should be accessed via the language server's `services` property.
+ */
+export type LangiumCoreAndPartialLSPServices = Omit<LangiumCoreServices & PartialLangiumLSPServices, 'shared'>
 
 export class DefaultLanguageServer implements LanguageServer {
 
@@ -67,6 +75,9 @@ export class DefaultLanguageServer implements LanguageServer {
 
     async initialize(params: InitializeParams): Promise<InitializeResult> {
         this.eagerLoadServices();
+
+        this.fireInitializeOnDefaultServices(params);
+
         this.onInitializeEmitter.fire(params);
         this.onInitializeEmitter.dispose();
         return this.buildInitializeResult(params);
@@ -81,37 +92,38 @@ export class DefaultLanguageServer implements LanguageServer {
         this.services.ServiceRegistry.all.forEach(language => eagerLoad(language));
     }
 
-    protected hasService(callback: (language: LangiumServices) => object | undefined): boolean {
-        return this.services.ServiceRegistry.all.some(language => callback(language) !== undefined);
+    protected hasService(callback: (language: LangiumCoreAndPartialLSPServices) => object | undefined): boolean {
+        const allServices: readonly LangiumCoreAndPartialLSPServices[] = this.services.ServiceRegistry.all;
+        return allServices.some(services => callback(services) !== undefined);
     }
 
     protected buildInitializeResult(_params: InitializeParams): InitializeResult {
-        const languages = this.services.ServiceRegistry.all;
         const fileOperationOptions = this.services.lsp.FileOperationHandler?.fileOperationOptions;
-        const hasFormattingService = this.hasService(e => e.lsp.Formatter);
-        const formattingOnTypeOptions = languages.map(e => e.lsp.Formatter?.formatOnTypeOptions).find(e => Boolean(e));
-        const hasCodeActionProvider = this.hasService(e => e.lsp.CodeActionProvider);
-        const hasSemanticTokensProvider = this.hasService(e => e.lsp.SemanticTokenProvider);
-        const commandNames = this.services.lsp.ExecuteCommandHandler?.commands;
-        const hasDocumentLinkProvider = this.hasService(e => e.lsp.DocumentLinkProvider);
-        const signatureHelpOptions = mergeSignatureHelpOptions(languages.map(e => e.lsp.SignatureHelp?.signatureHelpOptions));
-        const hasGoToTypeProvider = this.hasService(e => e.lsp.TypeProvider);
-        const hasGoToImplementationProvider = this.hasService(e => e.lsp.ImplementationProvider);
-        const hasCompletionProvider = this.hasService(e => e.lsp.CompletionProvider);
-        const completionOptions = mergeCompletionProviderOptions(languages.map(e => e.lsp.CompletionProvider?.completionOptions));
-        const hasReferencesProvider = this.hasService(e => e.lsp.ReferencesProvider);
-        const hasDocumentSymbolProvider = this.hasService(e => e.lsp.DocumentSymbolProvider);
-        const hasDefinitionProvider = this.hasService(e => e.lsp.DefinitionProvider);
-        const hasDocumentHighlightProvider = this.hasService(e => e.lsp.DocumentHighlightProvider);
-        const hasFoldingRangeProvider = this.hasService(e => e.lsp.FoldingRangeProvider);
-        const hasHoverProvider = this.hasService(e => e.lsp.HoverProvider);
-        const hasRenameProvider = this.hasService(e => e.lsp.RenameProvider);
-        const hasCallHierarchyProvider = this.hasService(e => e.lsp.CallHierarchyProvider);
-        const hasTypeHierarchyProvider = this.hasService((e) => e.lsp.TypeHierarchyProvider);
-        const hasCodeLensProvider = this.hasService(e => e.lsp.CodeLensProvider);
-        const hasDeclarationProvider = this.hasService(e => e.lsp.DeclarationProvider);
-        const hasInlayHintProvider = this.hasService(e => e.lsp.InlayHintProvider);
-        const workspaceSymbolProvider = this.services.lsp.WorkspaceSymbolProvider;
+        const allServices: readonly LangiumCoreAndPartialLSPServices[] = this.services.ServiceRegistry.all;
+        const hasFormattingService = this.hasService(e => e.lsp?.Formatter);
+        const formattingOnTypeOptions = allServices.map(e => e.lsp?.Formatter?.formatOnTypeOptions).find(e => Boolean(e));
+        const hasCodeActionProvider = this.hasService(e => e.lsp?.CodeActionProvider);
+        const hasSemanticTokensProvider = this.hasService(e => e.lsp?.SemanticTokenProvider);
+        const commandNames = this.services.lsp?.ExecuteCommandHandler?.commands;
+        const hasDocumentLinkProvider = this.hasService(e => e.lsp?.DocumentLinkProvider);
+        const signatureHelpOptions = mergeSignatureHelpOptions(allServices.map(e => e.lsp?.SignatureHelp?.signatureHelpOptions));
+        const hasGoToTypeProvider = this.hasService(e => e.lsp?.TypeProvider);
+        const hasGoToImplementationProvider = this.hasService(e => e.lsp?.ImplementationProvider);
+        const hasCompletionProvider = this.hasService(e => e.lsp?.CompletionProvider);
+        const completionOptions = mergeCompletionProviderOptions(allServices.map(e => e.lsp?.CompletionProvider?.completionOptions));
+        const hasReferencesProvider = this.hasService(e => e.lsp?.ReferencesProvider);
+        const hasDocumentSymbolProvider = this.hasService(e => e.lsp?.DocumentSymbolProvider);
+        const hasDefinitionProvider = this.hasService(e => e.lsp?.DefinitionProvider);
+        const hasDocumentHighlightProvider = this.hasService(e => e.lsp?.DocumentHighlightProvider);
+        const hasFoldingRangeProvider = this.hasService(e => e.lsp?.FoldingRangeProvider);
+        const hasHoverProvider = this.hasService(e => e.lsp?.HoverProvider);
+        const hasRenameProvider = this.hasService(e => e.lsp?.RenameProvider);
+        const hasCallHierarchyProvider = this.hasService(e => e.lsp?.CallHierarchyProvider);
+        const hasTypeHierarchyProvider = this.hasService((e) => e.lsp?.TypeHierarchyProvider);
+        const hasCodeLensProvider = this.hasService(e => e.lsp?.CodeLensProvider);
+        const hasDeclarationProvider = this.hasService(e => e.lsp?.DeclarationProvider);
+        const hasInlayHintProvider = this.hasService(e => e.lsp?.InlayHintProvider);
+        const workspaceSymbolProvider = this.services.lsp?.WorkspaceSymbolProvider;
 
         const result: InitializeResult = {
             capabilities: {
@@ -171,8 +183,27 @@ export class DefaultLanguageServer implements LanguageServer {
     }
 
     async initialized(params: InitializedParams): Promise<void> {
+        await this.fireInitializedOnDefaultServices(params);
+
         this.onInitializedEmitter.fire(params);
         this.onInitializedEmitter.dispose();
+    }
+
+    protected fireInitializeOnDefaultServices(params: InitializeParams): void {
+        this.services.workspace.ConfigurationProvider.initialize(params);
+        this.services.workspace.WorkspaceManager.initialize(params);
+    }
+
+    protected async fireInitializedOnDefaultServices(params: InitializedParams): Promise<void> {
+        const connection = this.services.lsp.Connection;
+        const configurationParams = connection ? <ConfigurationInitializedParams>{
+            ...params,
+            register: params => connection.client.register(DidChangeConfigurationNotification.type, params),
+            getConfiguration: params => connection.workspace.getConfiguration(params)
+        } : params;
+
+        await this.services.workspace.ConfigurationProvider.initialized(configurationParams);
+        await this.services.workspace.WorkspaceManager.initialized(params);
     }
 }
 
@@ -224,6 +255,10 @@ export function startLanguageServer(services: LangiumSharedServices): void {
     connection.listen();
 }
 
+/**
+ * Adds a handler for document updates when content changes, or watch catches a change.
+ * In the case there is no handler service registered, this function does nothing.
+ */
 export function addDocumentUpdateHandler(connection: Connection, services: LangiumSharedServices): void {
     const handler = services.lsp.DocumentUpdateHandler;
     const documents = services.workspace.TextDocuments;
@@ -276,7 +311,7 @@ export function addDiagnosticsHandler(connection: Connection, services: LangiumS
 export function addCompletionHandler(connection: Connection, services: LangiumSharedServices): void {
     connection.onCompletion(createRequestHandler(
         (services, document, params, cancelToken) => {
-            return services.lsp.CompletionProvider?.getCompletion(document, params, cancelToken);
+            return services.lsp?.CompletionProvider?.getCompletion(document, params, cancelToken);
         },
         services
     ));
@@ -284,103 +319,103 @@ export function addCompletionHandler(connection: Connection, services: LangiumSh
 
 export function addFindReferencesHandler(connection: Connection, services: LangiumSharedServices): void {
     connection.onReferences(createRequestHandler(
-        (services, document, params, cancelToken) => services.lsp.ReferencesProvider?.findReferences(document, params, cancelToken),
+        (services, document, params, cancelToken) => services.lsp?.ReferencesProvider?.findReferences(document, params, cancelToken),
         services
     ));
 }
 
 export function addCodeActionHandler(connection: Connection, services: LangiumSharedServices): void {
     connection.onCodeAction(createRequestHandler(
-        (services, document, params, cancelToken) => services.lsp.CodeActionProvider?.getCodeActions(document, params, cancelToken),
+        (services, document, params, cancelToken) => services.lsp?.CodeActionProvider?.getCodeActions(document, params, cancelToken),
         services
     ));
 }
 
 export function addDocumentSymbolHandler(connection: Connection, services: LangiumSharedServices): void {
     connection.onDocumentSymbol(createRequestHandler(
-        (services, document, params, cancelToken) => services.lsp.DocumentSymbolProvider?.getSymbols(document, params, cancelToken),
+        (services, document, params, cancelToken) => services.lsp?.DocumentSymbolProvider?.getSymbols(document, params, cancelToken),
         services
     ));
 }
 
 export function addGotoDefinitionHandler(connection: Connection, services: LangiumSharedServices): void {
     connection.onDefinition(createRequestHandler(
-        (services, document, params, cancelToken) => services.lsp.DefinitionProvider?.getDefinition(document, params, cancelToken),
+        (services, document, params, cancelToken) => services.lsp?.DefinitionProvider?.getDefinition(document, params, cancelToken),
         services
     ));
 }
 
 export function addGoToTypeDefinitionHandler(connection: Connection, services: LangiumSharedServices): void {
     connection.onTypeDefinition(createRequestHandler(
-        (services, document, params, cancelToken) => services.lsp.TypeProvider?.getTypeDefinition(document, params, cancelToken),
+        (services, document, params, cancelToken) => services.lsp?.TypeProvider?.getTypeDefinition(document, params, cancelToken),
         services
     ));
 }
 
 export function addGoToImplementationHandler(connection: Connection, services: LangiumSharedServices) {
     connection.onImplementation(createRequestHandler(
-        (services, document, params, cancelToken) => services.lsp.ImplementationProvider?.getImplementation(document, params, cancelToken),
+        (services, document, params, cancelToken) => services.lsp?.ImplementationProvider?.getImplementation(document, params, cancelToken),
         services
     ));
 }
 
 export function addGoToDeclarationHandler(connection: Connection, services: LangiumSharedServices) {
     connection.onDeclaration(createRequestHandler(
-        (services, document, params, cancelToken) => services.lsp.DeclarationProvider?.getDeclaration(document, params, cancelToken),
+        (services, document, params, cancelToken) => services.lsp?.DeclarationProvider?.getDeclaration(document, params, cancelToken),
         services
     ));
 }
 
 export function addDocumentHighlightsHandler(connection: Connection, services: LangiumSharedServices): void {
     connection.onDocumentHighlight(createRequestHandler(
-        (services, document, params, cancelToken) => services.lsp.DocumentHighlightProvider?.getDocumentHighlight(document, params, cancelToken),
+        (services, document, params, cancelToken) => services.lsp?.DocumentHighlightProvider?.getDocumentHighlight(document, params, cancelToken),
         services
     ));
 }
 
 export function addHoverHandler(connection: Connection, services: LangiumSharedServices): void {
     connection.onHover(createRequestHandler(
-        (services, document, params, cancelToken) => services.lsp.HoverProvider?.getHoverContent(document, params, cancelToken),
+        (services, document, params, cancelToken) => services.lsp?.HoverProvider?.getHoverContent(document, params, cancelToken),
         services
     ));
 }
 
 export function addFoldingRangeHandler(connection: Connection, services: LangiumSharedServices): void {
     connection.onFoldingRanges(createRequestHandler(
-        (services, document, params, cancelToken) => services.lsp.FoldingRangeProvider?.getFoldingRanges(document, params, cancelToken),
+        (services, document, params, cancelToken) => services.lsp?.FoldingRangeProvider?.getFoldingRanges(document, params, cancelToken),
         services
     ));
 }
 
 export function addFormattingHandler(connection: Connection, services: LangiumSharedServices): void {
     connection.onDocumentFormatting(createRequestHandler(
-        (services, document, params, cancelToken) => services.lsp.Formatter?.formatDocument(document, params, cancelToken),
+        (services, document, params, cancelToken) => services.lsp?.Formatter?.formatDocument(document, params, cancelToken),
         services
     ));
     connection.onDocumentRangeFormatting(createRequestHandler(
-        (services, document, params, cancelToken) => services.lsp.Formatter?.formatDocumentRange(document, params, cancelToken),
+        (services, document, params, cancelToken) => services.lsp?.Formatter?.formatDocumentRange(document, params, cancelToken),
         services
     ));
     connection.onDocumentOnTypeFormatting(createRequestHandler(
-        (services, document, params, cancelToken) => services.lsp.Formatter?.formatDocumentOnType(document, params, cancelToken),
+        (services, document, params, cancelToken) => services.lsp?.Formatter?.formatDocumentOnType(document, params, cancelToken),
         services
     ));
 }
 
 export function addRenameHandler(connection: Connection, services: LangiumSharedServices): void {
     connection.onRenameRequest(createRequestHandler(
-        (services, document, params, cancelToken) => services.lsp.RenameProvider?.rename(document, params, cancelToken),
+        (services, document, params, cancelToken) => services.lsp?.RenameProvider?.rename(document, params, cancelToken),
         services
     ));
     connection.onPrepareRename(createRequestHandler(
-        (services, document, params, cancelToken) => services.lsp.RenameProvider?.prepareRename(document, params, cancelToken),
+        (services, document, params, cancelToken) => services.lsp?.RenameProvider?.prepareRename(document, params, cancelToken),
         services
     ));
 }
 
 export function addInlayHintHandler(connection: Connection, services: LangiumSharedServices): void {
     connection.languages.inlayHint.on(createServerRequestHandler(
-        (services, document, params, cancelToken) => services.lsp.InlayHintProvider?.getInlayHints(document, params, cancelToken),
+        (services, document, params, cancelToken) => services.lsp?.InlayHintProvider?.getInlayHints(document, params, cancelToken),
         services
     ));
 }
@@ -390,7 +425,7 @@ export function addSemanticTokenHandler(connection: Connection, services: Langiu
     const emptyResult: SemanticTokens = { data: [] };
     connection.languages.semanticTokens.on(createServerRequestHandler<SemanticTokensParams, SemanticTokens, SemanticTokensPartialResult, void>(
         (services, document, params, cancelToken) => {
-            if (services.lsp.SemanticTokenProvider) {
+            if (services.lsp?.SemanticTokenProvider) {
                 return services.lsp.SemanticTokenProvider.semanticHighlight(document, params, cancelToken);
             }
             return emptyResult;
@@ -399,7 +434,7 @@ export function addSemanticTokenHandler(connection: Connection, services: Langiu
     ));
     connection.languages.semanticTokens.onDelta(createServerRequestHandler<SemanticTokensDeltaParams, SemanticTokens | SemanticTokensDelta, SemanticTokensDeltaPartialResult, void>(
         (services, document, params, cancelToken) => {
-            if (services.lsp.SemanticTokenProvider) {
+            if (services.lsp?.SemanticTokenProvider) {
                 return services.lsp.SemanticTokenProvider.semanticHighlightDelta(document, params, cancelToken);
             }
             return emptyResult;
@@ -408,7 +443,7 @@ export function addSemanticTokenHandler(connection: Connection, services: Langiu
     ));
     connection.languages.semanticTokens.onRange(createServerRequestHandler<SemanticTokensRangeParams, SemanticTokens, SemanticTokensPartialResult, void>(
         (services, document, params, cancelToken) => {
-            if (services.lsp.SemanticTokenProvider) {
+            if (services.lsp?.SemanticTokenProvider) {
                 return services.lsp.SemanticTokenProvider.semanticHighlightRange(document, params, cancelToken);
             }
             return emptyResult;
@@ -439,21 +474,21 @@ export function addExecuteCommandHandler(connection: Connection, services: Langi
 
 export function addDocumentLinkHandler(connection: Connection, services: LangiumSharedServices): void {
     connection.onDocumentLinks(createServerRequestHandler(
-        (services, document, params, cancelToken) => services.lsp.DocumentLinkProvider?.getDocumentLinks(document, params, cancelToken),
+        (services, document, params, cancelToken) => services.lsp?.DocumentLinkProvider?.getDocumentLinks(document, params, cancelToken),
         services
     ));
 }
 
 export function addSignatureHelpHandler(connection: Connection, services: LangiumSharedServices): void {
     connection.onSignatureHelp(createServerRequestHandler(
-        (services, document, params, cancelToken) => services.lsp.SignatureHelp?.provideSignatureHelp(document, params, cancelToken),
+        (services, document, params, cancelToken) => services.lsp?.SignatureHelp?.provideSignatureHelp(document, params, cancelToken),
         services
     ));
 }
 
 export function addCodeLensHandler(connection: Connection, services: LangiumSharedServices): void {
     connection.onCodeLens(createServerRequestHandler(
-        (services, document, params, cancelToken) => services.lsp.CodeLensProvider?.provideCodeLens(document, params, cancelToken),
+        (services, document, params, cancelToken) => services.lsp?.CodeLensProvider?.provideCodeLens(document, params, cancelToken),
         services
     ));
 }
@@ -484,7 +519,7 @@ export function addWorkspaceSymbolHandler(connection: Connection, services: Lang
 export function addCallHierarchyHandler(connection: Connection, services: LangiumSharedServices): void {
     connection.languages.callHierarchy.onPrepare(createServerRequestHandler(
         async (services, document, params, cancelToken) => {
-            if (services.lsp.CallHierarchyProvider) {
+            if (services.lsp?.CallHierarchyProvider) {
                 const result = await services.lsp.CallHierarchyProvider.prepareCallHierarchy(document, params, cancelToken);
                 return result ?? null;
             }
@@ -495,7 +530,7 @@ export function addCallHierarchyHandler(connection: Connection, services: Langiu
 
     connection.languages.callHierarchy.onIncomingCalls(createHierarchyRequestHandler(
         async (services, params, cancelToken) => {
-            if (services.lsp.CallHierarchyProvider) {
+            if (services.lsp?.CallHierarchyProvider) {
                 const result = await services.lsp.CallHierarchyProvider.incomingCalls(params, cancelToken);
                 return result ?? null;
             }
@@ -506,7 +541,7 @@ export function addCallHierarchyHandler(connection: Connection, services: Langiu
 
     connection.languages.callHierarchy.onOutgoingCalls(createHierarchyRequestHandler(
         async (services, params, cancelToken) => {
-            if (services.lsp.CallHierarchyProvider) {
+            if (services.lsp?.CallHierarchyProvider) {
                 const result = await services.lsp.CallHierarchyProvider.outgoingCalls(params, cancelToken);
                 return result ?? null;
             }
@@ -518,34 +553,34 @@ export function addCallHierarchyHandler(connection: Connection, services: Langiu
 
 export function addTypeHierarchyHandler(connection: Connection, sharedServices: LangiumSharedServices): void {
     // Don't register type hierarchy handlers if no type hierarchy provider is registered
-    if (!sharedServices.ServiceRegistry.all.some(services => services.lsp.TypeHierarchyProvider)) {
+    if (!sharedServices.ServiceRegistry.all.some((services: LangiumCoreAndPartialLSPServices) => services.lsp?.TypeHierarchyProvider)) {
         return;
     }
 
     connection.languages.typeHierarchy.onPrepare(
         createServerRequestHandler(async (services, document, params, cancelToken) => {
-            const result = await services.lsp.TypeHierarchyProvider?.prepareTypeHierarchy(document, params, cancelToken);
+            const result = await services.lsp?.TypeHierarchyProvider?.prepareTypeHierarchy(document, params, cancelToken);
             return result ?? null;
         }, sharedServices),
     );
 
     connection.languages.typeHierarchy.onSupertypes(
         createHierarchyRequestHandler(async (services, params, cancelToken) => {
-            const result = await services.lsp.TypeHierarchyProvider?.supertypes(params, cancelToken);
+            const result = await services.lsp?.TypeHierarchyProvider?.supertypes(params, cancelToken);
             return result ?? null;
         }, sharedServices),
     );
 
     connection.languages.typeHierarchy.onSubtypes(
         createHierarchyRequestHandler(async (services, params, cancelToken) => {
-            const result = await services.lsp.TypeHierarchyProvider?.subtypes(params, cancelToken);
+            const result = await services.lsp?.TypeHierarchyProvider?.subtypes(params, cancelToken);
             return result ?? null;
         }, sharedServices),
     );
 }
 
 export function createHierarchyRequestHandler<P extends TypeHierarchySupertypesParams | TypeHierarchySubtypesParams | CallHierarchyIncomingCallsParams | CallHierarchyOutgoingCallsParams, R, PR, E = void>(
-    serviceCall: (services: LangiumServices, params: P, cancelToken: CancellationToken) => HandlerResult<R, E>,
+    serviceCall: (services: LangiumCoreAndPartialLSPServices, params: P, cancelToken: CancellationToken) => HandlerResult<R, E>,
     sharedServices: LangiumSharedServices,
 ): ServerRequestHandler<P, R, PR, E> {
     const serviceRegistry = sharedServices.ServiceRegistry;
@@ -566,7 +601,7 @@ export function createHierarchyRequestHandler<P extends TypeHierarchySupertypesP
 }
 
 export function createServerRequestHandler<P extends { textDocument: TextDocumentIdentifier }, R, PR, E = void>(
-    serviceCall: (services: LangiumServices, document: LangiumDocument, params: P, cancelToken: CancellationToken) => HandlerResult<R, E>,
+    serviceCall: (services: LangiumCoreAndPartialLSPServices, document: LangiumDocument, params: P, cancelToken: CancellationToken) => HandlerResult<R, E>,
     sharedServices: LangiumSharedServices
 ): ServerRequestHandler<P, R, PR, E> {
     const documents = sharedServices.workspace.LangiumDocuments;
@@ -589,7 +624,7 @@ export function createServerRequestHandler<P extends { textDocument: TextDocumen
 }
 
 export function createRequestHandler<P extends { textDocument: TextDocumentIdentifier }, R, E = void>(
-    serviceCall: (services: LangiumServices, document: LangiumDocument, params: P, cancelToken: CancellationToken) => HandlerResult<R, E>,
+    serviceCall: (services: LangiumCoreAndPartialLSPServices, document: LangiumDocument, params: P, cancelToken: CancellationToken) => HandlerResult<R, E>,
     sharedServices: LangiumSharedServices
 ): RequestHandler<P, R | null, E> {
     const documents = sharedServices.workspace.LangiumDocuments;

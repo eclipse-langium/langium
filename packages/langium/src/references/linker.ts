@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { LangiumServices } from '../services.js';
+import type { LangiumCoreServices } from '../services.js';
 import type { AstNode, AstNodeDescription, AstReflection, CstNode, LinkingError, Reference, ReferenceInfo } from '../syntax-tree.js';
 import type { AstNodeLocator } from '../workspace/ast-node-locator.js';
 import type { LangiumDocument, LangiumDocuments } from '../workspace/documents.js';
@@ -78,7 +78,7 @@ export class DefaultLinker implements Linker {
     protected readonly astNodeLocator: AstNodeLocator;
     protected readonly langiumDocuments: () => LangiumDocuments;
 
-    constructor(services: LangiumServices) {
+    constructor(services: LangiumCoreServices) {
         this.reflection = services.shared.AstReflection;
         this.langiumDocuments = () => services.shared.workspace.LangiumDocuments;
         this.scopeProvider = services.references.ScopeProvider;

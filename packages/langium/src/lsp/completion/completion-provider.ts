@@ -9,7 +9,7 @@ import type { TextDocument, TextEdit } from 'vscode-languageserver-textdocument'
 import type { LangiumCompletionParser } from '../../parser/langium-parser.js';
 import type { NameProvider } from '../../references/name-provider.js';
 import type { ScopeProvider } from '../../references/scope-provider.js';
-import type { LangiumServices } from '../../services.js';
+import type { LangiumServices } from '../lsp-services.js';
 import type { AstNode, AstNodeDescription, AstReflection, CstNode, ReferenceInfo } from '../../syntax-tree.js';
 import type { MaybePromise } from '../../utils/promise-utils.js';
 import type { LangiumDocument } from '../../workspace/documents.js';

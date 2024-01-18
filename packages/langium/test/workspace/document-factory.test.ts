@@ -4,7 +4,8 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { Grammar, LangiumServices } from 'langium';
+import type { Grammar } from 'langium';
+import type { LangiumServices } from 'langium/lsp';
 import { describe, expect, test } from 'vitest';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { DocumentState, EmptyFileSystem } from 'langium';

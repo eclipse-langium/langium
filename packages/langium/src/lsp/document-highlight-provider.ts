@@ -8,7 +8,7 @@ import type { CancellationToken, DocumentHighlightParams } from 'vscode-language
 import type { GrammarConfig } from '../languages/grammar-config.js';
 import type { NameProvider } from '../references/name-provider.js';
 import type { FindReferencesOptions, References } from '../references/references.js';
-import type { LangiumServices } from '../services.js';
+import type { LangiumServices } from './lsp-services.js';
 import type { MaybePromise } from '../utils/promise-utils.js';
 import type { ReferenceDescription } from '../workspace/ast-descriptions.js';
 import type { LangiumDocument } from '../workspace/documents.js';

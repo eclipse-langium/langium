@@ -4,18 +4,18 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { Diagnostic, Range, TextDocuments } from 'vscode-languageserver';
-import { CancellationToken } from 'vscode-languageserver';
+import { CancellationToken } from 'vscode-jsonrpc';
+import { TextDocument } from 'vscode-languageserver-textdocument';
+import type { Diagnostic, Range } from 'vscode-languageserver-types';
 import type { ParseResult } from '../parser/langium-parser.js';
 import type { ServiceRegistry } from '../service-registry.js';
-import type { LangiumSharedServices } from '../services.js';
+import type { LangiumSharedCoreServices } from '../services.js';
 import type { AstNode, AstNodeDescription, Mutable, Reference } from '../syntax-tree.js';
 import type { MultiMap } from '../utils/collections.js';
 import type { Stream } from '../utils/stream.js';
-import type { FileSystemProvider } from './file-system-provider.js';
-import { URI } from '../utils/uri-utils.js';
-import { TextDocument } from 'vscode-languageserver-textdocument';
 import { stream } from '../utils/stream.js';
+import { URI } from '../utils/uri-utils.js';
+import type { FileSystemProvider } from './file-system-provider.js';
 
 /**
  * A Langium document holds the parse result (AST and CST) and any additional state that is derived
@@ -99,6 +99,14 @@ export interface DocumentSegment {
 }
 
 /**
+ * Surrogate definition of the `TextDocuments` interface from the `vscode-languageserver` package.
+ * No implementation object is expected to be offered by `LangiumCoreServices`, but only by `LangiumLSPServices`.
+ */
+export type TextDocumentProvider = {
+    get(uri: string): TextDocument | undefined
+}
+
+/**
  * Shared service for creating `LangiumDocument` instances.
  *
  * Register a custom implementation if special (additional) behavior is required for your language(s).
@@ -136,7 +144,7 @@ export interface LangiumDocumentFactory {
 
     /**
      * Update the given document after changes in the corresponding textual representation.
-     * Method is called by the document builder after it has been requested to build an exisiting
+     * Method is called by the document builder after it has been requested to build an existing
      * document and the document's state is {@link DocumentState.Changed}.
      * The text parsing is expected to be done the same way as in {@link fromTextDocument}
      * and {@link fromString}.
@@ -147,10 +155,10 @@ export interface LangiumDocumentFactory {
 export class DefaultLangiumDocumentFactory implements LangiumDocumentFactory {
 
     protected readonly serviceRegistry: ServiceRegistry;
-    protected readonly textDocuments: TextDocuments<TextDocument>;
+    protected readonly textDocuments?: TextDocumentProvider;
     protected readonly fileSystemProvider: FileSystemProvider;
 
-    constructor(services: LangiumSharedServices) {
+    constructor(services: LangiumSharedCoreServices) {
         this.serviceRegistry = services.ServiceRegistry;
         this.textDocuments = services.workspace.TextDocuments;
         this.fileSystemProvider = services.workspace.FileSystemProvider;
@@ -251,7 +259,7 @@ export class DefaultLangiumDocumentFactory implements LangiumDocumentFactory {
     async update<T extends AstNode = AstNode>(document: Mutable<LangiumDocument<T>>, cancellationToken: CancellationToken): Promise<LangiumDocument<T>> {
         // The CST full text property contains the original text that was used to create the AST.
         const oldText = document.parseResult.value.$cstNode?.root.fullText;
-        const textDocument = this.textDocuments.get(document.uri.toString());
+        const textDocument = this.textDocuments?.get(document.uri.toString());
         const text = textDocument ? textDocument.getText() : await this.fileSystemProvider.readFile(document.uri);
 
         if (textDocument) {
@@ -378,7 +386,7 @@ export class DefaultLangiumDocuments implements LangiumDocuments {
 
     protected readonly documentMap: Map<string, LangiumDocument> = new Map();
 
-    constructor(services: LangiumSharedServices) {
+    constructor(services: LangiumSharedCoreServices) {
         this.langiumDocumentFactory = services.workspace.LangiumDocumentFactory;
     }
 

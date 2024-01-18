@@ -4,9 +4,8 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { LangiumDocument, LangiumServices } from 'langium';
+import type { LangiumDocument, LangiumCoreServices, WorkspaceFolder } from 'langium';
 import type { RequirementModel, TestModel } from '../language-server/generated/ast.js';
-import type { WorkspaceFolder } from 'vscode-languageclient';
 import chalk from 'chalk';
 import * as path from 'node:path';
 import * as fs from 'node:fs';
@@ -21,7 +20,7 @@ import { isTestModel } from '../language-server/generated/ast.js';
  * @returns a tuple with the document indicated by the fileName and a list of
  *          documents from the workspace.
  */
-export async function extractDocuments(fileName: string, services: LangiumServices): Promise<[LangiumDocument, LangiumDocument[]]> {
+export async function extractDocuments(fileName: string, services: LangiumCoreServices): Promise<[LangiumDocument, LangiumDocument[]]> {
     const extensions = services.LanguageMetaData.fileExtensions;
     if (!extensions.includes(path.extname(fileName))) {
         console.error(chalk.yellow(`Please choose a file with one of these extensions: ${extensions}.`));
@@ -66,7 +65,7 @@ export async function extractDocuments(fileName: string, services: LangiumServic
  * @returns a tuple with the model indicated by the fileName and a list of
  *          test models from the workspace.
 chr */
-export async function extractRequirementModelWithTestModels(fileName: string, services: LangiumServices): Promise<[RequirementModel, TestModel[]]> {
+export async function extractRequirementModelWithTestModels(fileName: string, services: LangiumCoreServices): Promise<[RequirementModel, TestModel[]]> {
     const [mainDocument, allDocuments] = await extractDocuments(fileName, services);
     return [
         mainDocument.parseResult?.value as RequirementModel,

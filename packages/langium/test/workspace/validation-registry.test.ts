@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { GrammarAST as GrammarTypes, LangiumServices, ValidationChecks } from 'langium';
+import type { GrammarAST as GrammarTypes, LangiumCoreServices, ValidationChecks } from 'langium';
 import { describe, expect, test } from 'vitest';
 import { GrammarAST, ValidationRegistry } from 'langium';
 
@@ -15,7 +15,7 @@ describe('ValidationRegistry', () => {
             shared: {
                 AstReflection: new GrammarAST.LangiumGrammarAstReflection()
             }
-        } as unknown as LangiumServices;
+        } as unknown as LangiumCoreServices;
         return new ValidationRegistry(services);
     }
 

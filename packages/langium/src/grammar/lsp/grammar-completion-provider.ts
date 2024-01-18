@@ -7,15 +7,14 @@
 import type { Range } from 'vscode-languageserver-types';
 import { CompletionItemKind } from 'vscode-languageserver-types';
 import type { NextFeature } from '../../lsp/completion/follow-element-computation.js';
-import type { CompletionAcceptor, CompletionContext } from '../../lsp/completion/completion-provider.js';
-import { DefaultCompletionProvider } from '../../lsp/completion/completion-provider.js';
-import type { LangiumServices } from '../../services.js';
+import { DefaultCompletionProvider, type CompletionAcceptor, type CompletionContext } from '../../lsp/completion/completion-provider.js';
 import type { MaybePromise } from '../../utils/promise-utils.js';
 import { getContainerOfType } from '../../utils/ast-utils.js';
 import type { LangiumDocument, LangiumDocuments } from '../../workspace/documents.js';
 import type { AbstractElement } from '../../languages/generated/ast.js';
 import { isAssignment } from '../../languages/generated/ast.js';
 import { UriUtils } from '../../utils/uri-utils.js';
+import type { LangiumServices } from '../../lsp/lsp-services.js';
 
 export class LangiumGrammarCompletionProvider extends DefaultCompletionProvider {
 

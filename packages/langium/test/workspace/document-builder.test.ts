@@ -8,12 +8,11 @@ import type { AstNode, Reference, ValidationChecks } from 'langium';
 import { describe, expect, test } from 'vitest';
 import { CancellationTokenSource } from 'vscode-languageserver';
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { isOperationCancelled, DocumentState, EmptyFileSystem, URI } from 'langium';
-import { createLangiumGrammarServices, createServicesForGrammar } from 'langium/grammar';
 import { setTextDocument } from 'langium/test';
+import { isOperationCancelled, DocumentState, URI } from 'langium';
+import { createServicesForGrammar } from 'langium/grammar';
 
 describe('DefaultDocumentBuilder', () => {
-    const grammarServices = createLangiumGrammarServices(EmptyFileSystem).grammar;
     async function createServices() {
         const grammar = `
             grammar Test
@@ -27,7 +26,7 @@ describe('DefaultDocumentBuilder', () => {
             terminal ID: /[_a-zA-Z][\\w_]*/;
             hidden terminal WS: /\\s+/;
         `;
-        const services = await createServicesForGrammar({ grammar, grammarServices });
+        const services = await createServicesForGrammar({ grammar });
         const fastChecks: ValidationChecks<TestAstType> = {
             Foo: (node, accept) => {
                 if (node.value > 10) {

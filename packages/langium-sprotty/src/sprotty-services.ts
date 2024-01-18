@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { LangiumServices, LangiumSharedServices } from 'langium';
+import type { LangiumServices, LangiumSharedServices } from 'langium/lsp';
 import type { DiagramOptions, DiagramServer, DiagramServices } from 'sprotty-protocol';
 import type { ServerActionHandlerRegistry } from 'sprotty-protocol/lib/action-handler.js';
 import type { DiagnosticMarkerProvider } from './diagnostic-marker-provider.js';

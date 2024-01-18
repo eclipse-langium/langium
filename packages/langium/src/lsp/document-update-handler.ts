@@ -4,14 +4,13 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { DidChangeWatchedFilesParams, DidChangeWatchedFilesRegistrationOptions, TextDocumentChangeEvent } from 'vscode-languageserver';
+import { DidChangeWatchedFilesNotification, FileChangeType, type DidChangeWatchedFilesParams, type DidChangeWatchedFilesRegistrationOptions, type TextDocumentChangeEvent } from 'vscode-languageserver';
 import type { TextDocument } from 'vscode-languageserver-textdocument';
-import type { LangiumSharedServices } from '../services.js';
-import type { WorkspaceLock } from '../workspace/workspace-lock.js';
-import type { DocumentBuilder } from '../workspace/document-builder.js';
-import { DidChangeWatchedFilesNotification, FileChangeType } from 'vscode-languageserver';
-import { URI } from '../utils/uri-utils.js';
 import { stream } from '../utils/stream.js';
+import { URI } from '../utils/uri-utils.js';
+import type { DocumentBuilder } from '../workspace/document-builder.js';
+import type { WorkspaceLock } from '../workspace/workspace-lock.js';
+import type { LangiumSharedServices } from './lsp-services.js';
 
 /**
  * Shared service for handling text document changes and watching relevant files.

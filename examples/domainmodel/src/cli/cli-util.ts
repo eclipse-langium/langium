@@ -4,14 +4,13 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { AstNode, LangiumDocument, LangiumServices } from 'langium';
-import type { WorkspaceFolder } from 'vscode-languageserver';
+import chalk from 'chalk';
+import type { AstNode, LangiumCoreServices, LangiumDocument, WorkspaceFolder } from 'langium';
+import { URI } from 'langium';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import chalk from 'chalk';
-import { URI } from 'langium';
 
-export async function extractDocument<T extends AstNode>(fileName: string, extensions: readonly string[], services: LangiumServices): Promise<LangiumDocument<T>> {
+export async function extractDocument<T extends AstNode>(fileName: string, extensions: readonly string[], services: LangiumCoreServices): Promise<LangiumDocument<T>> {
     if (!extensions.includes(path.extname(fileName))) {
         console.error(chalk.yellow(`Please, choose a file with one of these extensions: ${extensions}.`));
         process.exit(1);
@@ -39,11 +38,11 @@ export async function extractDocument<T extends AstNode>(fileName: string, exten
     return document as LangiumDocument<T>;
 }
 
-export async function extractAstNode<T extends AstNode>(fileName: string, extensions: readonly string[], services: LangiumServices): Promise<T> {
+export async function extractAstNode<T extends AstNode>(fileName: string, extensions: readonly string[], services: LangiumCoreServices): Promise<T> {
     return (await extractDocument(fileName, extensions, services)).parseResult.value as T;
 }
 
-export async function setRootFolder(fileName: string, services: LangiumServices, root?: string): Promise<void> {
+export async function setRootFolder(fileName: string, services: LangiumCoreServices, root?: string): Promise<void> {
     if (!root) {
         root = path.dirname(fileName);
     }

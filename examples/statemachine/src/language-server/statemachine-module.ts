@@ -4,10 +4,11 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { DefaultSharedModuleContext, LangiumServices, LangiumSharedServices, Module, PartialLangiumServices } from 'langium';
-import { createDefaultModule, createDefaultSharedModule, inject } from 'langium';
+import { type Module, inject } from 'langium';
+import type { LangiumServices, LangiumSharedServices, PartialLangiumServices } from 'langium/lsp';
+import { createDefaultModule, createDefaultSharedModule, type DefaultSharedModuleContext } from 'langium/lsp';
 import { StatemachineGeneratedModule, StatemachineGeneratedSharedModule } from './generated/module.js';
-import { registerValidationChecks, StatemachineValidator } from './statemachine-validator.js';
+import { StatemachineValidator, registerValidationChecks } from './statemachine-validator.js';
 
 /**
  * Declaration of custom services - add your own service classes here.

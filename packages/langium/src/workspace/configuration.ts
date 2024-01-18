@@ -4,21 +4,19 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { Connection, DidChangeConfigurationParams } from 'vscode-languageserver';
-import type { ConfigurationItem } from 'vscode-languageserver-protocol';
+import type { ConfigurationItem, DidChangeConfigurationParams, DidChangeConfigurationRegistrationOptions } from 'vscode-languageserver-protocol';
 import type { ServiceRegistry } from '../service-registry.js';
-import type { LangiumSharedServices } from '../services.js';
-import { DidChangeConfigurationNotification } from 'vscode-languageserver-protocol';
+import type { InitializableService, InitializeParams, InitializedParams, LangiumSharedCoreServices } from '../services.js';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-export interface ConfigurationProvider {
+export interface ConfigurationProvider extends InitializableService {
     /**
-    * Returns a configuration value stored for the given language.
-    *
-    * @param language The language id
-    * @param configuration Configuration name
-    */
+     * Returns a configuration value stored for the given language.
+     *
+     * @param language The language id
+     * @param configuration Configuration name
+     */
     getConfiguration(language: string, configuration: string): Promise<any>;
 
     /**
@@ -30,42 +28,64 @@ export interface ConfigurationProvider {
     updateConfiguration(change: DidChangeConfigurationParams): void;
 }
 
+export interface ConfigurationInitializedParams extends InitializedParams {
+    register?: (params: DidChangeConfigurationRegistrationOptions) => void,
+    getConfiguration?: (configuration: ConfigurationItem[]) => Promise<any>
+}
+
+/**
+ * Base configuration provider for building up other configuration providers
+ */
 export class DefaultConfigurationProvider implements ConfigurationProvider {
 
+    protected readonly serviceRegistry: ServiceRegistry;
     protected settings: Record<string, Record<string, any>> = {};
     protected workspaceConfig = false;
-    protected initialized = false;
-    protected readonly serviceRegistry: ServiceRegistry;
-    protected readonly connection: Connection | undefined;
 
-    constructor(services: LangiumSharedServices) {
+    constructor(services: LangiumSharedCoreServices) {
         this.serviceRegistry = services.ServiceRegistry;
-        this.connection = services.lsp.Connection;
-        services.lsp.LanguageServer.onInitialize(params => {
-            this.workspaceConfig = params.capabilities.workspace?.configuration ?? false;
-        });
-        services.lsp.LanguageServer.onInitialized(_params => {
-            const languages = this.serviceRegistry.all;
-            services.lsp.Connection?.client.register(DidChangeConfigurationNotification.type, {
-                // Listen to configuration changes for all languages
-                section: languages.map(lang => this.toSectionName(lang.LanguageMetaData.languageId))
-            });
-        });
     }
 
-    protected async initialize(): Promise<void> {
-        if (this.workspaceConfig && this.connection) {
-            const languages = this.serviceRegistry.all;
-            const configToUpdate: ConfigurationItem[] = languages.map(lang => { return { section: this.toSectionName(lang.LanguageMetaData.languageId) }; });
-            // get workspace configurations (default scope URI)
-            const configs = await this.connection.workspace.getConfiguration(configToUpdate);
-            configToUpdate.forEach((conf, idx) => {
-                this.updateSectionConfiguration(conf.section!, configs[idx]);
-            });
+    initialize(params: InitializeParams): void {
+        this.workspaceConfig = params.capabilities.workspace?.configuration ?? false;
+    }
+
+    async initialized(params: ConfigurationInitializedParams): Promise<void> {
+        if (this.workspaceConfig) {
+            if (params.register) {
+                // params.register(...) is a function to be provided by the calling language server for the sake of
+                //  decoupling this implementation from the concrete LSP implementations, specifically the LSP Connection
+
+                const languages = this.serviceRegistry.all;
+                params.register({
+                    // Listen to configuration changes for all languages
+                    section: languages.map(lang => this.toSectionName(lang.LanguageMetaData.languageId))
+                });
+            }
+
+            if (params.getConfiguration) {
+                // params.getConfiguration(...) is a function to be provided by the calling language server for the sake of
+                //  decoupling this implementation from the concrete LSP implementations, specifically the LSP Connection
+
+                const configToUpdate = this.serviceRegistry.all.map(lang => <ConfigurationItem>{
+                    // Fetch the configuration changes for all languages
+                    section: this.toSectionName(lang.LanguageMetaData.languageId)
+                });
+                // get workspace configurations (default scope URI)
+                const configs = await params.getConfiguration(configToUpdate);
+                configToUpdate.forEach((conf, idx) => {
+                    this.updateSectionConfiguration(conf.section!, configs[idx]);
+                });
+            }
         }
-        this.initialized = true;
     }
 
+    /**
+     *  Updates the cached configurations using the `change` notification parameters.
+     *
+     * @param change The parameters of a change configuration notification.
+     * `settings` property of the change object could be expressed as `Record<string, Record<string, any>>`
+     */
     updateConfiguration(change: DidChangeConfigurationParams): void {
         if (!change.settings) {
             return;
@@ -79,10 +99,13 @@ export class DefaultConfigurationProvider implements ConfigurationProvider {
         this.settings[section] = configuration;
     }
 
+    /**
+    * Returns a configuration value stored for the given language.
+    *
+    * @param language The language id
+    * @param configuration Configuration name
+    */
     async getConfiguration(language: string, configuration: string): Promise<any> {
-        if (!this.initialized) {
-            await this.initialize();
-        }
         const sectionName = this.toSectionName(language);
         if (this.settings[sectionName]) {
             return this.settings[sectionName][configuration];
@@ -93,4 +116,3 @@ export class DefaultConfigurationProvider implements ConfigurationProvider {
         return `${languageId}`;
     }
 }
-

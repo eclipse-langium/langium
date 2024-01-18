@@ -4,38 +4,41 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { LangiumServices } from './services.js';
+import type { LangiumCoreServices } from './services.js';
 import { UriUtils, type URI } from './utils/uri-utils.js';
 
 /**
- * The service registry provides access to the language-specific services. These are resolved
- * via the URI of a text document.
+ * The service registry provides access to the language-specific {@link LangiumCoreServices} optionally including LSP-related services.
+ * These are resolved via the URI of a text document.
  */
 export interface ServiceRegistry {
 
     /**
      * Register a language via its injected services.
      */
-    register(language: LangiumServices): void;
+    register(language: LangiumCoreServices): void;
 
     /**
      * Retrieve the language-specific services for the given URI. In case only one language is
      * registered, it may be used regardless of the URI format.
      */
-    getServices(uri: URI): LangiumServices;
+    getServices(uri: URI): LangiumCoreServices;
 
     /**
      * The full set of registered language services.
      */
-    readonly all: readonly LangiumServices[];
+    readonly all: readonly LangiumCoreServices[];
 }
 
+/**
+ * Generic registry for Langium services, but capable of being used with extending service sets as well (such as the lsp-complete LangiumCoreServices set)
+ */
 export class DefaultServiceRegistry implements ServiceRegistry {
 
-    protected singleton?: LangiumServices;
-    protected map?: Record<string, LangiumServices>;
+    protected singleton?: LangiumCoreServices;
+    protected map?: Record<string, LangiumCoreServices>;
 
-    register(language: LangiumServices): void {
+    register(language: LangiumCoreServices): void {
         if (!this.singleton && !this.map) {
             // This is the first language to be registered; store it as singleton.
             this.singleton = language;
@@ -60,7 +63,7 @@ export class DefaultServiceRegistry implements ServiceRegistry {
         }
     }
 
-    getServices(uri: URI): LangiumServices {
+    getServices(uri: URI): LangiumCoreServices {
         if (this.singleton !== undefined) {
             return this.singleton;
         }
@@ -75,7 +78,7 @@ export class DefaultServiceRegistry implements ServiceRegistry {
         return services;
     }
 
-    get all(): readonly LangiumServices[] {
+    get all(): readonly LangiumCoreServices[] {
         if (this.singleton !== undefined) {
             return [this.singleton];
         }

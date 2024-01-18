@@ -16,10 +16,11 @@ import type { IParserConfig } from '../parser/parser-config.js';
 import type { LanguageMetaData } from '../languages/language-meta-data.js';
 import type { Module} from '../dependency-injection.js';
 import { inject } from '../dependency-injection.js';
-import type { LangiumGeneratedServices, LangiumGeneratedSharedServices, LangiumServices, LangiumSharedServices } from '../services.js';
+import type { LangiumGeneratedCoreServices, LangiumGeneratedSharedCoreServices } from '../services.js';
+import type { LangiumServices, LangiumSharedServices } from '../lsp/lsp-services.js';
+import { createDefaultModule, createDefaultSharedModule } from '../lsp/default-lsp-module.js';
 import { EmptyFileSystem } from '../workspace/file-system-provider.js';
 import { interpretAstReflection } from './ast-reflection-interpreter.js';
-import { createDefaultModule, createDefaultSharedModule } from '../default-module.js';
 import { getTypeName, isDataType } from '../utils/grammar-utils.js';
 
 export function hasDataTypeReturn(rule: ast.ParserRule): boolean {
@@ -183,10 +184,10 @@ export async function createServicesForGrammar<L extends LangiumServices = Langi
         fileExtensions: [`.${grammarNode.name?.toLowerCase() ?? 'unknown'}`],
         languageId: grammarNode.name ?? 'UNKNOWN'
     };
-    const generatedSharedModule: Module<LangiumSharedServices, LangiumGeneratedSharedServices> = {
+    const generatedSharedModule: Module<LangiumGeneratedSharedCoreServices> = {
         AstReflection: () => interpretAstReflection(grammarNode),
     };
-    const generatedModule: Module<LangiumServices, LangiumGeneratedServices> = {
+    const generatedModule: Module<LangiumGeneratedCoreServices> = {
         Grammar: () => grammarNode,
         LanguageMetaData: () => languageMetaData,
         parser: {

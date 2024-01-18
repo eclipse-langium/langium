@@ -8,7 +8,7 @@ import type { CancellationToken, ReferenceParams } from 'vscode-languageserver';
 import type { NameProvider } from '../references/name-provider.js';
 import type { References } from '../references/references.js';
 import type { LeafCstNode } from '../syntax-tree.js';
-import type { LangiumServices } from '../services.js';
+import type { LangiumServices } from './lsp-services.js';
 import type { MaybePromise } from '../utils/promise-utils.js';
 import type { LangiumDocument } from '../workspace/documents.js';
 import type { GrammarConfig } from '../languages/grammar-config.js';

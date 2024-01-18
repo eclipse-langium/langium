@@ -4,16 +4,16 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import { createDefaultCoreModule, createDefaultSharedCoreModule } from '../default-module.js';
 import type { Module } from '../dependency-injection.js';
-import type { LangiumServices, LangiumSharedServices, PartialLangiumServices, PartialLangiumSharedServices } from '../services.js';
-import type { Mutable } from '../syntax-tree.js';
-import * as ast from '../languages/generated/ast.js';
 import { inject } from '../dependency-injection.js';
-import { createDefaultModule, createDefaultSharedModule } from '../default-module.js';
+import * as ast from '../languages/generated/ast.js';
+import type { LangiumCoreServices, LangiumSharedCoreServices, PartialLangiumCoreServices, PartialLangiumSharedCoreServices } from '../services.js';
+import type { Mutable } from '../syntax-tree.js';
 import { EmptyFileSystem } from '../workspace/file-system-provider.js';
 import { URI } from './uri-utils.js';
 
-const minimalGrammarModule: Module<LangiumServices, PartialLangiumServices> = {
+const minimalGrammarModule: Module<LangiumCoreServices, PartialLangiumCoreServices> = {
     Grammar: () => undefined as unknown as ast.Grammar,
     LanguageMetaData: () => ({
         caseInsensitive: false,
@@ -22,17 +22,17 @@ const minimalGrammarModule: Module<LangiumServices, PartialLangiumServices> = {
     })
 };
 
-const minimalSharedGrammarModule: Module<LangiumSharedServices, PartialLangiumSharedServices> = {
+const minimalSharedGrammarModule: Module<LangiumSharedCoreServices, PartialLangiumSharedCoreServices> = {
     AstReflection: () => new ast.LangiumGrammarAstReflection()
 };
 
-function createMinimalGrammarServices(): LangiumServices {
+function createMinimalGrammarServices(): LangiumCoreServices {
     const shared = inject(
-        createDefaultSharedModule(EmptyFileSystem),
+        createDefaultSharedCoreModule(EmptyFileSystem),
         minimalSharedGrammarModule
     );
     const grammar = inject(
-        createDefaultModule({ shared }),
+        createDefaultCoreModule({ shared }),
         minimalGrammarModule
     );
     shared.ServiceRegistry.register(grammar);

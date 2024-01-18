@@ -6,7 +6,8 @@
 import type { LanguageMetaData } from '../../languages/language-meta-data.js';
 import { LangiumGrammarAstReflection } from '../../languages/generated/ast.js';
 import type { Module } from '../../dependency-injection.js';
-import type { LangiumGeneratedServices, LangiumGeneratedSharedServices, LangiumSharedServices, LangiumServices } from '../../services.js';
+import type { LangiumGeneratedCoreServices, LangiumGeneratedSharedCoreServices } from '../../services.js';
+import type { LangiumSharedServices, LangiumServices } from '../../lsp/lsp-services.js';
 import type { IParserConfig } from '../../parser/parser-config.js';
 import { LangiumGrammarGrammar } from './grammar.js';
 
@@ -20,11 +21,11 @@ export const LangiumGrammarParserConfig: IParserConfig = {
     maxLookahead: 3,
 };
 
-export const LangiumGrammarGeneratedSharedModule: Module<LangiumSharedServices, LangiumGeneratedSharedServices> = {
+export const LangiumGrammarGeneratedSharedModule: Module<LangiumSharedServices, LangiumGeneratedSharedCoreServices> = {
     AstReflection: () => new LangiumGrammarAstReflection()
 };
 
-export const LangiumGrammarGeneratedModule: Module<LangiumServices, LangiumGeneratedServices> = {
+export const LangiumGrammarGeneratedModule: Module<LangiumServices, LangiumGeneratedCoreServices> = {
     Grammar: () => LangiumGrammarGrammar(),
     LanguageMetaData: () => LangiumGrammarLanguageMetaData,
     parser: {

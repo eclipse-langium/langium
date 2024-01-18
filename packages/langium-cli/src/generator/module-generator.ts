@@ -25,14 +25,16 @@ export function generateModule(grammars: Grammar[], config: LangiumConfig, gramm
             import type { LanguageMetaData } from '../../languages/language-meta-data${config.importExtension}';
             import { ${config.projectName}AstReflection } from '../../languages/generated/ast${config.importExtension}';
             import type { Module } from '../../dependency-injection${config.importExtension}';
-            import type { LangiumGeneratedServices, LangiumGeneratedSharedServices, LangiumSharedServices, LangiumServices } from '../../services${config.importExtension}';
+            import type { LangiumGeneratedCoreServices, LangiumGeneratedSharedCoreServices } from '../../services${config.importExtension}';
+            import type { LangiumSharedServices, LangiumServices } from '../../lsp/lsp-services${config.importExtension}';
         `.appendTemplateIf(hasIParserConfigImport)`
 
             import type { IParserConfig } from '../../parser/parser-config${config.importExtension}';
         `
     ).appendTemplateIf(!config.langiumInternal)`
 
-        import type { LangiumGeneratedServices, LangiumGeneratedSharedServices, LangiumSharedServices, LangiumServices, LanguageMetaData, Module${hasIParserConfigImport ? ', IParserConfig' : ''} } from 'langium';
+        import type { LangiumGeneratedCoreServices, LangiumGeneratedSharedCoreServices, LanguageMetaData, Module${hasIParserConfigImport ? ', IParserConfig' : ''} } from 'langium';
+        import type { LangiumSharedServices, LangiumServices } from 'langium/lsp';
         import { ${config.projectName}AstReflection } from './ast${config.importExtension}';
     `.appendTemplate`
 
@@ -77,7 +79,7 @@ export function generateModule(grammars: Grammar[], config: LangiumConfig, gramm
             };
         `}
 
-        export const ${config.projectName}GeneratedSharedModule: Module<LangiumSharedServices, LangiumGeneratedSharedServices> = {
+        export const ${config.projectName}GeneratedSharedModule: Module<LangiumSharedServices, LangiumGeneratedSharedCoreServices> = {
             AstReflection: () => new ${config.projectName}AstReflection()
         };
         ${joinToNode(
@@ -86,7 +88,7 @@ export function generateModule(grammars: Grammar[], config: LangiumConfig, gramm
                 const grammarConfig = grammarConfigMap.get(grammar)!;
                 return expandToNode`
 
-                    export const ${grammar.name}GeneratedModule: Module<LangiumServices, LangiumGeneratedServices> = {
+                    export const ${grammar.name}GeneratedModule: Module<LangiumServices, LangiumGeneratedCoreServices> = {
                         Grammar: () => ${grammar.name}Grammar(),
                         LanguageMetaData: () => ${grammar.name}LanguageMetaData,
                         parser: {${(grammarConfig.chevrotainParserConfig || parserConfig) && expandToNode`

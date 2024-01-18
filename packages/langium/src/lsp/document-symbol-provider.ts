@@ -6,7 +6,7 @@
 
 import type { CancellationToken, DocumentSymbol, DocumentSymbolParams} from 'vscode-languageserver';
 import type { NameProvider } from '../references/name-provider.js';
-import type { LangiumServices } from '../services.js';
+import type { LangiumServices } from './lsp-services.js';
 import type { AstNode } from '../syntax-tree.js';
 import { streamContents } from '../utils/ast-utils.js';
 import type { MaybePromise } from '../utils/promise-utils.js';

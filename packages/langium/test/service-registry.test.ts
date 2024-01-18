@@ -6,14 +6,14 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import type { LangiumServices } from 'langium';
+import type { LangiumCoreServices } from 'langium';
 import { describe, expect, test } from 'vitest';
 import { DefaultServiceRegistry, URI } from 'langium';
 
 describe('DefaultServiceRegistry', () => {
 
     test('should work with a single language', () => {
-        const language: LangiumServices = { foo: 'bar' } as any;
+        const language: LangiumCoreServices = { foo: 'bar' } as any;
         const registry = new DefaultServiceRegistry();
         registry.register(language);
         expect(registry.getServices(URI.parse('file:/foo.bar'))).toBe(language);
@@ -21,8 +21,8 @@ describe('DefaultServiceRegistry', () => {
     });
 
     test('should work with two languages', () => {
-        const language1: LangiumServices = { LanguageMetaData: { fileExtensions: ['.foo'] } } as any;
-        const language2: LangiumServices = { LanguageMetaData: { fileExtensions: ['.bar'] } } as any;
+        const language1: LangiumCoreServices = { LanguageMetaData: { fileExtensions: ['.foo'] } } as any;
+        const language2: LangiumCoreServices = { LanguageMetaData: { fileExtensions: ['.bar'] } } as any;
         const registry = new DefaultServiceRegistry();
         registry.register(language1);
         registry.register(language2);

@@ -6,7 +6,7 @@
 
 import type { GrammarConfig } from '../languages/grammar-config.js';
 import { isAstNodeWithComment } from '../serializer/json-serializer.js';
-import type { LangiumServices } from '../services.js';
+import type { LangiumCoreServices } from '../services.js';
 import type { AstNode } from '../syntax-tree.js';
 import { findCommentNode } from '../utils/cst-utils.js';
 
@@ -24,7 +24,7 @@ export interface CommentProvider {
 
 export class DefaultCommentProvider implements CommentProvider {
     protected readonly grammarConfig: () => GrammarConfig;
-    constructor(services: LangiumServices) {
+    constructor(services: LangiumCoreServices) {
         this.grammarConfig = () => services.parser.GrammarConfig;
     }
     getComment(node: AstNode): string | undefined {

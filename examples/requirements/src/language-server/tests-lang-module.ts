@@ -4,8 +4,9 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { LangiumServices, Module, PartialLangiumServices } from 'langium';
+import type { Module } from 'langium';
 import { TestsLangValidator } from './tests-lang-validator.js';
+import type { LangiumServices, PartialLangiumServices } from 'langium/lsp';
 
 /**
  * Declaration of custom services - add your own service classes here.

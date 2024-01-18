@@ -8,7 +8,7 @@
 import type { DSLMethodOpts, ILexingError, IOrAlt, IParserErrorMessageProvider, IRecognitionException, IToken, TokenType, TokenVocabulary } from 'chevrotain';
 import type { AbstractElement, Action, Assignment, ParserRule } from '../languages/generated/ast.js';
 import type { Linker } from '../references/linker.js';
-import type { LangiumServices } from '../services.js';
+import type { LangiumCoreServices } from '../services.js';
 import type { AstNode, AstReflection, CompositeCstNode, CstNode } from '../syntax-tree.js';
 import type { Lexer } from './lexer.js';
 import type { IParserConfig } from './parser-config.js';
@@ -75,7 +75,7 @@ export abstract class AbstractLangiumParser implements BaseParser {
     protected readonly wrapper: ChevrotainWrapper;
     protected _unorderedGroups: Map<string, boolean[]> = new Map<string, boolean[]>();
 
-    constructor(services: LangiumServices) {
+    constructor(services: LangiumCoreServices) {
         this.lexer = services.parser.Lexer;
         const tokens = this.lexer.definition;
         this.wrapper = new ChevrotainWrapper(tokens, {
@@ -136,7 +136,7 @@ export class LangiumParser extends AbstractLangiumParser {
         return this.stack[this.stack.length - 1];
     }
 
-    constructor(services: LangiumServices) {
+    constructor(services: LangiumCoreServices) {
         super(services);
         this.linker = services.references.Linker;
         this.converter = services.parser.ValueConverter;

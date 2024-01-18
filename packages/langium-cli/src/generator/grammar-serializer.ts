@@ -4,13 +4,13 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { Grammar, LangiumServices, Reference } from 'langium';
+import type { Grammar, LangiumCoreServices, Reference } from 'langium';
 import { expandToNode, joinToNode, normalizeEOL, toString } from 'langium/generate';
 import type { URI } from 'vscode-uri';
 import type { LangiumConfig } from '../package.js';
 import { generatedHeader } from './util.js';
 
-export function serializeGrammar(services: LangiumServices, grammars: Grammar[], config: LangiumConfig): string {
+export function serializeGrammar(services: LangiumCoreServices, grammars: Grammar[], config: LangiumConfig): string {
     const node = expandToNode`
         ${generatedHeader}
     `.appendNewLine(

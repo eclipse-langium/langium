@@ -6,7 +6,7 @@
 
 import type { URI } from '../utils/uri-utils.js';
 import type { NameProvider } from '../references/name-provider.js';
-import type { LangiumServices } from '../services.js';
+import type { LangiumCoreServices } from '../services.js';
 import type { AstNode, AstNodeDescription, ReferenceInfo } from '../syntax-tree.js';
 import type { AstNodeLocator } from './ast-node-locator.js';
 import type { DocumentSegment, LangiumDocument } from './documents.js';
@@ -41,7 +41,7 @@ export class DefaultAstNodeDescriptionProvider implements AstNodeDescriptionProv
     protected readonly astNodeLocator: AstNodeLocator;
     protected readonly nameProvider: NameProvider;
 
-    constructor(services: LangiumServices) {
+    constructor(services: LangiumCoreServices) {
         this.astNodeLocator = services.workspace.AstNodeLocator;
         this.nameProvider = services.references.NameProvider;
     }
@@ -108,7 +108,7 @@ export class DefaultReferenceDescriptionProvider implements ReferenceDescription
 
     protected readonly nodeLocator: AstNodeLocator;
 
-    constructor(services: LangiumServices) {
+    constructor(services: LangiumCoreServices) {
         this.nodeLocator = services.workspace.AstNodeLocator;
     }
 

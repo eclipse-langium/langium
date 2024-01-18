@@ -3,7 +3,8 @@
  * DO NOT EDIT MANUALLY!
  ******************************************************************************/
 
-import type { LangiumGeneratedServices, LangiumGeneratedSharedServices, LangiumSharedServices, LangiumServices, LanguageMetaData, Module } from 'langium';
+import type { LangiumGeneratedCoreServices, LangiumGeneratedSharedCoreServices, LanguageMetaData, Module } from 'langium';
+import type { LangiumSharedServices, LangiumServices } from 'langium/lsp';
 import { ArithmeticsAstReflection } from './ast.js';
 import { ArithmeticsGrammar } from './grammar.js';
 
@@ -13,11 +14,11 @@ export const ArithmeticsLanguageMetaData = {
     caseInsensitive: true
 } as const satisfies LanguageMetaData;
 
-export const ArithmeticsGeneratedSharedModule: Module<LangiumSharedServices, LangiumGeneratedSharedServices> = {
+export const ArithmeticsGeneratedSharedModule: Module<LangiumSharedServices, LangiumGeneratedSharedCoreServices> = {
     AstReflection: () => new ArithmeticsAstReflection()
 };
 
-export const ArithmeticsGeneratedModule: Module<LangiumServices, LangiumGeneratedServices> = {
+export const ArithmeticsGeneratedModule: Module<LangiumServices, LangiumGeneratedCoreServices> = {
     Grammar: () => ArithmeticsGrammar(),
     LanguageMetaData: () => ArithmeticsLanguageMetaData,
     parser: {}

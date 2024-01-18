@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import type { Scope } from '../../references/scope.js';
-import type { LangiumServices } from '../../services.js';
+import type { LangiumCoreServices } from '../../services.js';
 import type { AstNode, AstNodeDescription, ReferenceInfo } from '../../syntax-tree.js';
 import type { Stream } from '../../utils/stream.js';
 import type { AstNodeLocator } from '../../workspace/ast-node-locator.js';
@@ -24,7 +24,7 @@ export class LangiumGrammarScopeProvider extends DefaultScopeProvider {
 
     protected readonly langiumDocuments: LangiumDocuments;
 
-    constructor(services: LangiumServices) {
+    constructor(services: LangiumCoreServices) {
         super(services);
         this.langiumDocuments = services.shared.workspace.LangiumDocuments;
     }
@@ -92,7 +92,7 @@ export class LangiumGrammarScopeProvider extends DefaultScopeProvider {
 export class LangiumGrammarScopeComputation extends DefaultScopeComputation {
     protected readonly astNodeLocator: AstNodeLocator;
 
-    constructor(services: LangiumServices) {
+    constructor(services: LangiumCoreServices) {
         super(services);
         this.astNodeLocator = services.workspace.AstNodeLocator;
     }
