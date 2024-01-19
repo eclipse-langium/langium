@@ -5,10 +5,9 @@
  ******************************************************************************/
 
 import type { AstNode, LangiumDocument, ReferenceDescription, URI } from 'langium';
-import { AstUtils, EmptyFileSystem } from 'langium';
+import { AstUtils, EmptyFileSystem, TextDocument } from 'langium';
 import { parseDocument, setTextDocument } from 'langium/test';
 import { describe, expect, test } from 'vitest';
-import { TextDocument } from 'vscode-languageserver-textdocument';
 import { createDomainModelServices } from '../src/language-server/domain-model-module.js';
 import type { Domainmodel } from '../src/language-server/generated/ast.js';
 

@@ -5,10 +5,10 @@
  ******************************************************************************/
 
 import { DidChangeWatchedFilesNotification, FileChangeType, type DidChangeWatchedFilesParams, type DidChangeWatchedFilesRegistrationOptions, type TextDocumentChangeEvent } from 'vscode-languageserver';
-import type { TextDocument } from 'vscode-languageserver-textdocument';
 import { stream } from '../utils/stream.js';
 import { URI } from '../utils/uri-utils.js';
 import type { DocumentBuilder } from '../workspace/document-builder.js';
+import type { TextDocument } from '../workspace/documents.js';
 import type { WorkspaceLock } from '../workspace/workspace-lock.js';
 import type { LangiumSharedServices } from './lsp-services.js';
 

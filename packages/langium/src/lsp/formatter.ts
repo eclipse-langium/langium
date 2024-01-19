@@ -4,12 +4,11 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { CancellationToken, DocumentFormattingParams, DocumentOnTypeFormattingOptions, DocumentOnTypeFormattingParams, DocumentRangeFormattingParams, FormattingOptions, Range, TextEdit } from 'vscode-languageserver';
-import type { TextDocument } from 'vscode-languageserver-textdocument';
+import type { CancellationToken, DocumentFormattingParams, DocumentOnTypeFormattingOptions, DocumentOnTypeFormattingParams, DocumentRangeFormattingParams, FormattingOptions, Range, TextEdit } from 'vscode-languageserver-protocol';
 import type { AstNode, CstNode, Properties } from '../syntax-tree.js';
 import type { MaybePromise } from '../utils/promise-utils.js';
 import type { Stream } from '../utils/stream.js';
-import type { LangiumDocument } from '../workspace/documents.js';
+import type { LangiumDocument, TextDocument } from '../workspace/documents.js';
 import { findNodeForKeyword, findNodesForKeyword, findNodeForProperty, findNodesForProperty } from '../utils/grammar-utils.js';
 import { isCompositeCstNode, isLeafCstNode } from '../syntax-tree.js';
 import { streamAllContents } from '../utils/ast-utils.js';

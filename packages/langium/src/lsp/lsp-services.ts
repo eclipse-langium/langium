@@ -5,8 +5,8 @@
  ******************************************************************************/
 
 import type { Connection, TextDocuments } from 'vscode-languageserver';
-import type { TextDocument } from 'vscode-languageserver-textdocument';
 import type { DeepPartial, LangiumCoreServices, LangiumSharedCoreServices } from '../services.js';
+import type { TextDocument } from '../workspace/documents.js';
 import type { CallHierarchyProvider } from './call-hierarchy-provider.js';
 import type { CodeActionProvider } from './code-action.js';
 import type { CodeLensProvider } from './code-lens-provider.js';
