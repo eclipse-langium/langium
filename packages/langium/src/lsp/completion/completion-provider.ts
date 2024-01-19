@@ -4,22 +4,21 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { CancellationToken, CompletionItem, CompletionParams } from 'vscode-languageserver';
-import type { TextDocument, TextEdit } from 'vscode-languageserver-textdocument';
+import type { CompletionItem, CompletionParams, TextEdit } from 'vscode-languageserver-protocol';
 import type { LangiumCompletionParser } from '../../parser/langium-parser.js';
 import type { NameProvider } from '../../references/name-provider.js';
 import type { ScopeProvider } from '../../references/scope-provider.js';
 import type { LangiumServices } from '../lsp-services.js';
 import type { AstNode, AstNodeDescription, AstReflection, CstNode, ReferenceInfo } from '../../syntax-tree.js';
 import type { MaybePromise } from '../../utils/promise-utils.js';
-import type { LangiumDocument } from '../../workspace/documents.js';
+import type { LangiumDocument, TextDocument } from '../../workspace/documents.js';
 import type { NextFeature } from './follow-element-computation.js';
 import type { NodeKindProvider } from '../node-kind-provider.js';
 import type { FuzzyMatcher } from '../fuzzy-matcher.js';
 import type { GrammarConfig } from '../../languages/grammar-config.js';
 import type { Lexer } from '../../parser/lexer.js';
 import type { IToken } from 'chevrotain';
-import { CompletionItemKind, CompletionList, Position } from 'vscode-languageserver';
+import { CancellationToken, CompletionItemKind, CompletionList, Position } from 'vscode-languageserver';
 import * as ast from '../../languages/generated/ast.js';
 import { assignMandatoryProperties, getContainerOfType } from '../../utils/ast-utils.js';
 import { findDeclarationNodeAtOffset, findLeafNodeBeforeOffset } from '../../utils/cst-utils.js';

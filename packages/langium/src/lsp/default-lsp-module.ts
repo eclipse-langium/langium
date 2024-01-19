@@ -5,10 +5,10 @@
 ******************************************************************************/
 
 import { type Connection, TextDocuments } from 'vscode-languageserver';
-import { TextDocument } from 'vscode-languageserver-textdocument';
 import { createDefaultCoreModule, createDefaultSharedCoreModule, type DefaultCoreModuleContext, type DefaultSharedCoreModuleContext } from '../default-module.js';
 import { Module } from '../dependency-injection.js';
 import type { LangiumDefaultCoreServices, LangiumDefaultSharedCoreServices } from '../services.js';
+import { TextDocument } from '../workspace/documents.js';
 import { DefaultCompletionProvider } from './completion/completion-provider.js';
 import { DefaultDefinitionProvider } from './definition-provider.js';
 import { DefaultDocumentHighlightProvider } from './document-highlight-provider.js';

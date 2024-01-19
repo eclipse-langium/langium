@@ -4,17 +4,16 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { CompletionItem, CompletionList, Diagnostic, DocumentSymbol, FoldingRange, FormattingOptions, Range, ReferenceParams, SemanticTokensParams, SemanticTokenTypes, TextDocumentIdentifier, TextDocumentPositionParams, WorkspaceSymbol } from 'vscode-languageserver';
+import type { CompletionItem, CompletionList, Diagnostic, DocumentSymbol, FoldingRange, FormattingOptions, Range, ReferenceParams, SemanticTokensParams, SemanticTokenTypes, TextDocumentIdentifier, TextDocumentPositionParams, WorkspaceSymbol } from 'vscode-languageserver-protocol';
 import type { LangiumCoreServices, LangiumSharedCoreServices } from '../services.js';
 import type { AstNode, CstNode, Properties } from '../syntax-tree.js';
-import type { LangiumDocument } from '../workspace/documents.js';
+import { type LangiumDocument, TextDocument } from '../workspace/documents.js';
 import type { BuildOptions } from '../workspace/document-builder.js';
-import { DiagnosticSeverity, MarkupContent } from 'vscode-languageserver';
+import { DiagnosticSeverity, MarkupContent } from 'vscode-languageserver-types';
 import { escapeRegExp } from '../utils/regexp-utils.js';
 import { URI } from '../utils/uri-utils.js';
 import { findNodeForProperty } from '../utils/grammar-utils.js';
 import { SemanticTokensDecoder } from '../lsp/semantic-token-provider.js';
-import { TextDocument } from 'vscode-languageserver-textdocument';
 import * as assert from 'node:assert';
 import { stream } from '../utils/stream.js';
 import type { AsyncDisposable } from '../utils/disposable.js';

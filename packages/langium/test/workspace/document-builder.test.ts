@@ -5,12 +5,11 @@
  ******************************************************************************/
 
 import type { AstNode, Reference, ValidationChecks } from 'langium';
+import { DocumentState, TextDocument, URI, isOperationCancelled } from 'langium';
+import { createServicesForGrammar } from 'langium/grammar';
+import { setTextDocument } from 'langium/test';
 import { describe, expect, test } from 'vitest';
 import { CancellationTokenSource } from 'vscode-languageserver';
-import { TextDocument } from 'vscode-languageserver-textdocument';
-import { setTextDocument } from 'langium/test';
-import { isOperationCancelled, DocumentState, URI } from 'langium';
-import { createServicesForGrammar } from 'langium/grammar';
 
 describe('DefaultDocumentBuilder', () => {
     async function createServices() {

@@ -4,18 +4,27 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+/**
+ * Re-export 'TextDocument' from 'vscode-languageserver-textdocument' for convenience,
+ *  including both type _and_ symbol (namespace), as we here and there also refer to the symbol,
+ *  the overhead is very small, just a few kilobytes.
+ * Everything else of that package (at the time contributing) is also defined
+ *  in 'vscode-languageserver-protocol' or 'vscode-languageserver-types'.
+ */
+export { TextDocument } from 'vscode-languageserver-textdocument';
+
 import { CancellationToken } from 'vscode-jsonrpc';
-import { TextDocument } from 'vscode-languageserver-textdocument';
 import type { Diagnostic, Range } from 'vscode-languageserver-types';
+import type { FileSystemProvider } from './file-system-provider.js';
 import type { ParseResult } from '../parser/langium-parser.js';
 import type { ServiceRegistry } from '../service-registry.js';
 import type { LangiumSharedCoreServices } from '../services.js';
 import type { AstNode, AstNodeDescription, Mutable, Reference } from '../syntax-tree.js';
 import type { MultiMap } from '../utils/collections.js';
 import type { Stream } from '../utils/stream.js';
+import { TextDocument } from './documents.js';
 import { stream } from '../utils/stream.js';
 import { URI } from '../utils/uri-utils.js';
-import type { FileSystemProvider } from './file-system-provider.js';
 
 /**
  * A Langium document holds the parse result (AST and CST) and any additional state that is derived

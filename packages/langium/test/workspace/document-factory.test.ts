@@ -7,8 +7,7 @@
 import type { Grammar } from 'langium';
 import type { LangiumServices } from 'langium/lsp';
 import { describe, expect, test } from 'vitest';
-import { TextDocument } from 'vscode-languageserver-textdocument';
-import { DocumentState, EmptyFileSystem } from 'langium';
+import { DocumentState, EmptyFileSystem, TextDocument } from 'langium';
 import { createLangiumGrammarServices } from 'langium/grammar';
 import { setTextDocument } from 'langium/test';
 import { CancellationToken } from 'vscode-languageserver';

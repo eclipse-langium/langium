@@ -28,7 +28,7 @@ import type {
     TypeHierarchySubtypesParams,
     TypeHierarchySupertypesParams
 } from 'vscode-languageserver';
-import { DidChangeConfigurationNotification, Emitter, LSPErrorCodes, ResponseError, TextDocumentSyncKind } from 'vscode-languageserver';
+import { DidChangeConfigurationNotification, Emitter, LSPErrorCodes, ResponseError, TextDocumentSyncKind } from 'vscode-languageserver-protocol';
 import { eagerLoad } from '../dependency-injection.js';
 import type { LangiumCoreServices } from '../services.js';
 import { isOperationCancelled } from '../utils/promise-utils.js';
