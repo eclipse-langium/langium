@@ -9,21 +9,16 @@ import { Disposable } from '../utils/disposable.js';
 import type { ServiceRegistry } from '../service-registry.js';
 import type { LangiumSharedCoreServices } from '../services.js';
 import type { AstNode } from '../syntax-tree.js';
-import type { MaybePromise } from '../utils/promise-util.js';
-import type { Deferred } from '../utils/promise-util.js';
+import type { MaybePromise } from '../utils/promise-utils.js';
+import type { Deferred } from '../utils/promise-utils.js';
 import type { ValidationOptions } from '../validation/document-validator.js';
 import type { IndexManager } from '../workspace/index-manager.js';
 import type { LangiumDocument, LangiumDocuments, LangiumDocumentFactory } from './documents.js';
-import { CancellationToken, Disposable } from 'vscode-languageserver';
 import { MultiMap } from '../utils/collections.js';
-import type { MaybePromise } from '../utils/promise-utils.js';
-import { interruptAndCheck } from '../utils/promise-utils.js';
+import { OperationCancelled, interruptAndCheck } from '../utils/promise-utils.js';
 import { stream } from '../utils/stream.js';
 import type { URI } from '../utils/uri-utils.js';
-import type { ValidationOptions } from '../validation/document-validator.js';
 import { ValidationCategory } from '../validation/validation-registry.js';
-import type { IndexManager } from '../workspace/index-manager.js';
-import type { LangiumDocument, LangiumDocumentFactory, LangiumDocuments } from './documents.js';
 import { DocumentState } from './documents.js';
 
 export interface BuildOptions {
@@ -99,12 +94,13 @@ export interface DocumentBuilder {
     /**
      * Wait until the document specified by the {@link uri} has reached the specified state.
      *
-     * @param state The desired state. The promise won't resolve until the document has reached this state
-     * @param uri The specified URI that points to the document. If the URI does not exist, the promise will never resolve.
-     * @param cancelToken Optionally allows to cancel the wait operation, disposing any listeners in the process
+     * @param state The desired state. The promise won't resolve until the document has reached this state.
+     * @param uri The specified URI that points to the document. If the URI does not exist, the promise will resolve once the workspace has reached the specified state.
+     * @param cancelToken Optionally allows to cancel the wait operation, disposing any listeners in the process.
+     * @return The URI of the document that has reached the desired state, or `undefined` if the document does not exist.
      * @throws `OperationCancelled` if cancellation has been requested before the state has been reached
      */
-    waitUntil(state: DocumentState, uri?: URI, cancelToken?: CancellationToken): Promise<void>;
+    waitUntil(state: DocumentState, uri?: URI, cancelToken?: CancellationToken): Promise<URI | undefined>;
 }
 
 export type DocumentUpdateListener = (changed: URI[], deleted: URI[]) => void | Promise<void>
@@ -331,8 +327,8 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
     }
 
     waitUntil(state: DocumentState, cancelToken?: CancellationToken): Promise<void>;
-    waitUntil(state: DocumentState, uri?: URI, cancelToken?: CancellationToken): Promise<void>;
-    waitUntil(state: DocumentState, uriOrToken?: URI | CancellationToken, cancelToken?: CancellationToken): Promise<void> {
+    waitUntil(state: DocumentState, uri?: URI, cancelToken?: CancellationToken): Promise<URI | undefined>;
+    waitUntil(state: DocumentState, uriOrToken?: URI | CancellationToken, cancelToken?: CancellationToken): Promise<URI | undefined | void> {
         let uri: URI | undefined = undefined;
         if (uriOrToken && 'path' in uriOrToken) {
             uri = uriOrToken;
@@ -340,22 +336,27 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
             cancelToken = uriOrToken;
         }
         cancelToken ??= CancellationToken.None;
-        if (this.currentState >= state) {
-            return Promise.resolve();
-        } else if (cancelToken.isCancellationRequested) {
-            return Promise.reject(OperationCancelled);
-        }
         if (uri) {
             const document = this.langiumDocuments.getDocument(uri);
             if (document && document.state > state) {
-                return Promise.resolve();
+                return Promise.resolve(uri);
             }
+        }
+        if (this.currentState >= state) {
+            return Promise.resolve(undefined);
+        } else if (cancelToken.isCancellationRequested) {
+            return Promise.reject(OperationCancelled);
         }
         return new Promise((resolve, reject) => {
             const buildDisposable = this.onBuildPhase(state, () => {
                 buildDisposable.dispose();
                 cancelDisposable.dispose();
-                resolve();
+                if (uri) {
+                    const document = this.langiumDocuments.getDocument(uri);
+                    resolve(document?.uri);
+                } else {
+                    resolve(undefined);
+                }
             });
             const cancelDisposable = cancelToken!.onCancellationRequested(() => {
                 buildDisposable.dispose();

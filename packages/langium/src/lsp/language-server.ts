@@ -587,7 +587,7 @@ export function addTypeHierarchyHandler(connection: Connection, sharedServices: 
     connection.languages.typeHierarchy.onPrepare(
         createServerRequestHandler(
             async (services, document, params, cancelToken) => {
-                const result = await services.lsp.TypeHierarchyProvider?.prepareTypeHierarchy(document, params, cancelToken);
+                const result = await services.lsp?.TypeHierarchyProvider?.prepareTypeHierarchy(document, params, cancelToken);
                 return result ?? null;
             },
             sharedServices,
@@ -598,7 +598,7 @@ export function addTypeHierarchyHandler(connection: Connection, sharedServices: 
     connection.languages.typeHierarchy.onSupertypes(
         createHierarchyRequestHandler(
             async (services, params, cancelToken) => {
-                const result = await services.lsp.TypeHierarchyProvider?.supertypes(params, cancelToken);
+                const result = await services.lsp?.TypeHierarchyProvider?.supertypes(params, cancelToken);
                 return result ?? null;
             },
             sharedServices
@@ -608,7 +608,7 @@ export function addTypeHierarchyHandler(connection: Connection, sharedServices: 
     connection.languages.typeHierarchy.onSubtypes(
         createHierarchyRequestHandler(
             async (services, params, cancelToken) => {
-                const result = await services.lsp.TypeHierarchyProvider?.subtypes(params, cancelToken);
+                const result = await services.lsp?.TypeHierarchyProvider?.subtypes(params, cancelToken);
                 return result ?? null;
             },
             sharedServices
@@ -642,7 +642,7 @@ export function createHierarchyRequestHandler<P extends TypeHierarchySupertypesP
 }
 
 export function createServerRequestHandler<P extends { textDocument: TextDocumentIdentifier }, R, PR, E = void>(
-    serviceCall: (services: LangiumServices, document: LangiumDocument, params: P, cancelToken: CancellationToken) => HandlerResult<R, E>,
+    serviceCall: (services: LangiumCoreAndPartialLSPServices, document: LangiumDocument, params: P, cancelToken: CancellationToken) => HandlerResult<R, E>,
     sharedServices: LangiumSharedServices,
     targetState?: DocumentState
 ): ServerRequestHandler<P, R, PR, E> {
@@ -670,7 +670,7 @@ export function createServerRequestHandler<P extends { textDocument: TextDocumen
 }
 
 export function createRequestHandler<P extends { textDocument: TextDocumentIdentifier }, R, E = void>(
-    serviceCall: (services: LangiumServices, document: LangiumDocument, params: P, cancelToken: CancellationToken) => HandlerResult<R, E>,
+    serviceCall: (services: LangiumCoreAndPartialLSPServices, document: LangiumDocument, params: P, cancelToken: CancellationToken) => HandlerResult<R, E>,
     sharedServices: LangiumSharedServices,
     targetState?: DocumentState
 ): RequestHandler<P, R | null, E> {

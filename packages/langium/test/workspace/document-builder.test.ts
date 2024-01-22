@@ -10,10 +10,6 @@ import { createServicesForGrammar } from 'langium/grammar';
 import { setTextDocument } from 'langium/test';
 import { describe, expect, test } from 'vitest';
 import { CancellationTokenSource } from 'vscode-languageserver';
-import { TextDocument } from 'vscode-languageserver-textdocument';
-import { isOperationCancelled, DocumentState, EmptyFileSystem, URI, delayNextTick } from 'langium';
-import { createLangiumGrammarServices, createServicesForGrammar } from 'langium/grammar';
-import { setTextDocument } from 'langium/test';
 import { fail } from 'assert';
 
 describe('DefaultDocumentBuilder', () => {
@@ -250,21 +246,19 @@ describe('DefaultDocumentBuilder', () => {
         documents.addDocument(document);
 
         const actual: string[] = [];
-        const expected: string[] = [];
         function wait(state: DocumentState): void {
-            expected.push('B' + state);
-            expected.push('W' + state);
             builder.onBuildPhase(state, async () => {
                 actual.push('B' + state);
-                await delayNextTick();
             });
             builder.waitUntil(state).then(() => actual.push('W' + state));
         }
-        for (let i = 2; i <= 6; i++) {
+        // Register listeners for all possible document states
+        // On each new state, there's supposed to be two new entries to the list
+        for (let i = DocumentState.IndexedContent; i <= DocumentState.Validated; i++) {
             wait(i);
         }
         await builder.build([document], { validation: true });
-        expect(actual).toEqual(expected);
+        expect(actual).toEqual(['B2', 'W2', 'B3', 'W3', 'B4', 'W4', 'B5', 'W5', 'B6', 'W6']);
     });
 
     test('`waitUntil` will correctly wait even though the build process has been cancelled', async () => {
@@ -280,10 +274,9 @@ describe('DefaultDocumentBuilder', () => {
         function wait(state: DocumentState): void {
             builder.onBuildPhase(state, async () => {
                 actual.push('B' + state);
-                await delayNextTick();
             });
         }
-        for (let i = 2; i <= 6; i++) {
+        for (let i = DocumentState.IndexedContent; i <= DocumentState.Validated; i++) {
             wait(i);
         }
         builder.waitUntil(DocumentState.ComputedScopes).then(() => cancelTokenSource.cancel());
@@ -293,6 +286,7 @@ describe('DefaultDocumentBuilder', () => {
         // Build twice but interrupt the first build after the computing scope phase
         try {
             await builder.build([document], { validation: true }, cancelTokenSource.token);
+            fail('The build is supposed to be cancelled');
         } catch {
             // build has been cancelled, ignore
         }
@@ -313,7 +307,7 @@ describe('DefaultDocumentBuilder', () => {
 
         const cancelTokenSource = new CancellationTokenSource();
         builder.waitUntil(DocumentState.IndexedReferences, cancelTokenSource.token).then(() => {
-            fail('This should have been cancelled');
+            fail('The test should fail here because the cancellation should reject the promise');
         }).catch(err => {
             expect(isOperationCancelled(err)).toBeTruthy();
         });
