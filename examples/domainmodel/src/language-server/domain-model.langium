@@ -22,11 +22,8 @@ Entity:
         (features+=Feature)*
     '}';
 
-/**
- * This is a parser rule
- */
 Feature:
-    (many?='many')? name=ID ':' /** This is an assignment */ type=[Type:QualifiedName];
+    (many?='many')? name=ID ':' type=[Type:QualifiedName];
 
 QualifiedName returns string:
     ID ('.' ID)*;
