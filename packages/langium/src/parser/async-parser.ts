@@ -42,7 +42,7 @@ export abstract class AbstractThreadedAsyncParser implements AsyncParser {
 
     /**
      * The thread count determines how many threads are used to parse files in parallel.
-     * The default value is 8. Decreasing this value increases startup performance, but decreases parsing performance.
+     * The default value is 8. Decreasing this value increases startup performance, but decreases parallel parsing performance.
      */
     protected threadCount = 8;
     /**
@@ -57,6 +57,22 @@ export abstract class AbstractThreadedAsyncParser implements AsyncParser {
 
     constructor(services: LangiumServices) {
         this.hydrator = services.serializer.Hydrator;
+    }
+
+    protected initializeWorkers(): void {
+        while (this.workerPool.length < this.threadCount) {
+            const worker = this.createWorker();
+            worker.onReady(() => {
+                if (this.queue.length > 0) {
+                    const deferred = this.queue.shift();
+                    if (deferred) {
+                        worker.lock();
+                        deferred.resolve(worker);
+                    }
+                }
+            });
+            this.workerPool.push(worker);
+        }
     }
 
     async parse<T extends AstNode>(text: string, cancelToken: CancellationToken): Promise<ParseResult<T>> {
@@ -87,37 +103,23 @@ export abstract class AbstractThreadedAsyncParser implements AsyncParser {
     }
 
     protected async acquireParserWorker(cancelToken: CancellationToken): Promise<ParserWorker> {
-        if (this.workerPool.length < this.threadCount) {
-            const worker = this.createWorker();
-            worker.onReady(() => {
-                if (this.queue.length > 0) {
-                    const deferred = this.queue.shift();
-                    if (deferred) {
-                        worker.lock();
-                        deferred.resolve(worker);
-                    }
-                }
-            });
-            this.workerPool.push(worker);
-            return worker;
-        } else {
-            for (const worker of this.workerPool) {
-                if (worker.ready) {
-                    worker.lock();
-                    return worker;
-                }
+        this.initializeWorkers();
+        for (const worker of this.workerPool) {
+            if (worker.ready) {
+                worker.lock();
+                return worker;
             }
-            const deferred = new Deferred<ParserWorker>();
-            deferred.disposables.push(cancelToken.onCancellationRequested(() => {
-                const index = this.queue.indexOf(deferred);
-                if (index >= 0) {
-                    this.queue.splice(index, 1);
-                }
-                deferred.reject(OperationCancelled);
-            }));
-            this.queue.push(deferred);
-            return deferred.promise;
         }
+        const deferred = new Deferred<ParserWorker>();
+        deferred.disposables.push(cancelToken.onCancellationRequested(() => {
+            const index = this.queue.indexOf(deferred);
+            if (index >= 0) {
+                this.queue.splice(index, 1);
+            }
+            deferred.reject(OperationCancelled);
+        }));
+        this.queue.push(deferred);
+        return deferred.promise;
     }
 
     protected abstract getWorkerPath(): string;
@@ -134,7 +136,7 @@ export class ParserWorker {
     protected readonly onReadyEmitter = new Emitter<void>();
 
     protected deferred = new Deferred<ParseResult>();
-    protected _ready: boolean = false;
+    protected _ready: boolean = true;
 
     get ready(): boolean {
         return this._ready;

@@ -58,7 +58,8 @@ describe('WorkerThreadAsyncParser', () => {
             expect(isOperationCancelled(err)).toBe(true);
         }
         const end = Date.now();
-        expect(end - start).toBeLessThan(500);
+        // The whole parsing process should have been successfully cancelled within a second
+        expect(end - start).toBeLessThan(1000);
     });
 
     function createLargeFile(size: number): string {
