@@ -10,7 +10,7 @@ import type { LangiumServices } from './lsp-services.js';
 import type { AstNode } from '../syntax-tree.js';
 import type { MaybePromise } from '../utils/promise-utils.js';
 import type { LangiumDocument } from '../workspace/documents.js';
-import { CancellationToken } from 'vscode-languageserver';
+import { CancellationToken } from '../utils/cancellation.js';
 import { findDeclarationNodeAtOffset } from '../utils/cst-utils.js';
 
 /**

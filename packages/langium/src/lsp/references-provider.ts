@@ -4,7 +4,8 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { CancellationToken, ReferenceParams } from 'vscode-languageserver';
+import type { ReferenceParams } from 'vscode-languageserver';
+import type { CancellationToken } from '../utils/cancellation.js';
 import type { NameProvider } from '../references/name-provider.js';
 import type { References } from '../references/references.js';
 import type { LeafCstNode } from '../syntax-tree.js';

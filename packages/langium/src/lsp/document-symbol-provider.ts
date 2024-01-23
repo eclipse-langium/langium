@@ -4,7 +4,8 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { CancellationToken, DocumentSymbol, DocumentSymbolParams} from 'vscode-languageserver';
+import type { DocumentSymbol, DocumentSymbolParams } from 'vscode-languageserver';
+import type { CancellationToken } from '../utils/cancellation.js';
 import type { NameProvider } from '../references/name-provider.js';
 import type { LangiumServices } from './lsp-services.js';
 import type { AstNode } from '../syntax-tree.js';

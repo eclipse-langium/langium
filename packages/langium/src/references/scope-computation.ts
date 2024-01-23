@@ -9,7 +9,7 @@ import type { AstNode, AstNodeDescription } from '../syntax-tree.js';
 import type { AstNodeDescriptionProvider } from '../workspace/ast-descriptions.js';
 import type { LangiumDocument, PrecomputedScopes } from '../workspace/documents.js';
 import type { NameProvider } from './name-provider.js';
-import { CancellationToken } from 'vscode-jsonrpc';
+import { CancellationToken } from '../utils/cancellation.js';
 import { streamAllContents, streamContents } from '../utils/ast-utils.js';
 import { MultiMap } from '../utils/collections.js';
 import { interruptAndCheck } from '../utils/promise-utils.js';

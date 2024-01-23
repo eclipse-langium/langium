@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import type { SignatureHelp, SignatureHelpOptions, SignatureHelpParams } from 'vscode-languageserver';
-import { CancellationToken } from 'vscode-languageserver';
+import { CancellationToken } from '../utils/cancellation.js';
 import type { AstNode } from '../syntax-tree.js';
 import { findLeafNodeAtOffset } from '../utils/cst-utils.js';
 import type { MaybePromise } from '../utils/promise-utils.js';

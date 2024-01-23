@@ -4,7 +4,8 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { CancellationToken, DocumentHighlightParams } from 'vscode-languageserver';
+import type { DocumentHighlightParams } from 'vscode-languageserver';
+import type { CancellationToken } from '../utils/cancellation.js';
 import type { GrammarConfig } from '../languages/grammar-config.js';
 import type { NameProvider } from '../references/name-provider.js';
 import type { FindReferencesOptions, References } from '../references/references.js';

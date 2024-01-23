@@ -4,7 +4,8 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { CancellationToken, Hover, HoverParams } from 'vscode-languageserver';
+import type { Hover, HoverParams } from 'vscode-languageserver';
+import type { CancellationToken } from '../utils/cancellation.js';
 import type { GrammarConfig } from '../languages/grammar-config.js';
 import type { References } from '../references/references.js';
 import type { LangiumServices } from './lsp-services.js';

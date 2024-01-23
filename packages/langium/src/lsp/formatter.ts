@@ -4,7 +4,8 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { CancellationToken, DocumentFormattingParams, DocumentOnTypeFormattingOptions, DocumentOnTypeFormattingParams, DocumentRangeFormattingParams, FormattingOptions, Range, TextEdit } from 'vscode-languageserver-protocol';
+import type { DocumentFormattingParams, DocumentOnTypeFormattingOptions, DocumentOnTypeFormattingParams, DocumentRangeFormattingParams, FormattingOptions, Range, TextEdit } from 'vscode-languageserver-protocol';
+import type { CancellationToken } from '../utils/cancellation.js';
 import type { AstNode, CstNode, Properties } from '../syntax-tree.js';
 import type { MaybePromise } from '../utils/promise-utils.js';
 import type { Stream } from '../utils/stream.js';

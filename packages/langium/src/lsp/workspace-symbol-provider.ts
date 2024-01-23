@@ -11,7 +11,7 @@ import type { MaybePromise} from '../utils/promise-utils.js';
 import type { AstNodeDescription } from '../syntax-tree.js';
 import type { NodeKindProvider } from './node-kind-provider.js';
 import type { FuzzyMatcher } from './fuzzy-matcher.js';
-import { CancellationToken } from 'vscode-languageserver';
+import { CancellationToken } from '../utils/cancellation.js';
 import { interruptAndCheck } from '../utils/promise-utils.js';
 
 /**

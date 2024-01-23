@@ -13,7 +13,6 @@
  */
 export { TextDocument } from 'vscode-languageserver-textdocument';
 
-import { CancellationToken } from 'vscode-jsonrpc';
 import type { Diagnostic, Range } from 'vscode-languageserver-types';
 import type { FileSystemProvider } from './file-system-provider.js';
 import type { ParseResult } from '../parser/langium-parser.js';
@@ -23,6 +22,7 @@ import type { AstNode, AstNodeDescription, Mutable, Reference } from '../syntax-
 import type { MultiMap } from '../utils/collections.js';
 import type { Stream } from '../utils/stream.js';
 import { TextDocument } from './documents.js';
+import { CancellationToken } from '../utils/cancellation.js';
 import { stream } from '../utils/stream.js';
 import { URI } from '../utils/uri-utils.js';
 

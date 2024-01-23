@@ -14,7 +14,8 @@ export * from './stream.js';
 export * from './uri-utils.js';
 
 import * as AstUtils from './ast-utils.js';
+import * as Cancellation from './cancellation.js';
 import * as CstUtils from './cst-utils.js';
 import * as GrammarUtils from './grammar-utils.js';
 import * as RegExpUtils from './regexp-utils.js';
-export { AstUtils, CstUtils, GrammarUtils, RegExpUtils };
+export { AstUtils, Cancellation, CstUtils, GrammarUtils, RegExpUtils };

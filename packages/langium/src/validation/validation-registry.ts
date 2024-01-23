@@ -4,7 +4,8 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { CancellationToken, CodeDescription, DiagnosticRelatedInformation, DiagnosticTag, integer, Range } from 'vscode-languageserver';
+import type { CodeDescription, DiagnosticRelatedInformation, DiagnosticTag, integer, Range } from 'vscode-languageserver';
+import type { CancellationToken } from '../utils/cancellation.js';
 import type { LangiumCoreServices } from '../services.js';
 import type { AstNode, AstReflection, Properties } from '../syntax-tree.js';
 import type { MaybePromise } from '../utils/promise-utils.js';
