@@ -164,3 +164,52 @@ export class MultiMap<K, V> {
     }
 
 }
+
+export class BiMap<K, V> {
+
+    private map = new Map<K, V>();
+    private inverse = new Map<V, K>();
+
+    get size(): number {
+        return this.map.size;
+    }
+
+    constructor()
+    constructor(elements: Array<[K, V]>)
+    constructor(elements?: Array<[K, V]>) {
+        if (elements) {
+            for (const [key, value] of elements) {
+                this.set(key, value);
+            }
+        }
+    }
+
+    clear(): void {
+        this.map.clear();
+        this.inverse.clear();
+    }
+
+    set(key: K, value: V): this {
+        this.map.set(key, value);
+        this.inverse.set(value, key);
+        return this;
+    }
+
+    get(key: K): V | undefined {
+        return this.map.get(key);
+    }
+
+    getKey(value: V): K | undefined {
+        return this.inverse.get(value);
+    }
+
+    delete(key: K): boolean {
+        const value = this.map.get(key);
+        if (value !== undefined) {
+            this.map.delete(key);
+            this.inverse.delete(value);
+            return true;
+        }
+        return false;
+    }
+}

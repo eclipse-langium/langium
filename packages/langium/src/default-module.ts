@@ -34,6 +34,7 @@ import { DefaultCommentProvider } from './documentation/comment-provider.js';
 import { LangiumParserErrorMessageProvider } from './parser/langium-parser.js';
 import { DefaultAsyncParser } from './parser/async-parser.js';
 import { DefaultWorkspaceLock } from './workspace/workspace-lock.js';
+import { DefaultHydrator } from './serializer/hydrator.js';
 
 /**
  * Context required for creating the default language-specific dependency injection module.
@@ -75,6 +76,7 @@ export function createDefaultCoreModule(context: DefaultCoreModuleContext): Modu
             References: (services) => new DefaultReferences(services)
         },
         serializer: {
+            Hydrator: (services) => new DefaultHydrator(services),
             JsonSerializer: (services) => new DefaultJsonSerializer(services)
         },
         validation: {

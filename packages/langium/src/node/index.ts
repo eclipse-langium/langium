@@ -5,3 +5,4 @@
  ******************************************************************************/
 
 export * from './node-file-system-provider.js';
+export * from './worker-thread-async-parser.js';

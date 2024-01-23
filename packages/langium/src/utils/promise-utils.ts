@@ -88,12 +88,28 @@ export async function interruptAndCheck(token: CancellationToken): Promise<void>
  * Simple implementation of the deferred pattern.
  * An object that exposes a promise and functions to resolve and reject it.
  */
-export class Deferred<T = void> {
+export class Deferred<T = void> implements Disposable {
     resolve: (value: T) => this;
     reject: (err?: unknown) => this;
 
+    disposables: Disposable[] = [];
+
     promise = new Promise<T>((resolve, reject) => {
-        this.resolve = (arg) => (resolve(arg), this);
-        this.reject = (err) => (reject(err), this);
+        this.resolve = (arg) => {
+            this.dispose();
+            resolve(arg);
+            return this;
+        };
+        this.reject = (err) => {
+            this.dispose();
+            reject(err);
+            return this;
+        };
     });
+
+    dispose(): void {
+        for (const disposable of this.disposables) {
+            disposable.dispose();
+        }
+    }
 }

@@ -37,3 +37,137 @@ export class DefaultAsyncParser implements AsyncParser {
         return Promise.resolve(this.syncParser.parse<T>(text));
     }
 }
+
+export abstract class AbstractThreadedAsyncParser implements AsyncParser {
+
+    // Default thread count, can be changed as desired
+    protected threadCount = 4;
+    protected terminationDelay = 200;
+    protected workerPool: ParserWorker[] = [];
+    protected queue: Array<Deferred<ParserWorker>> = [];
+
+    protected readonly hydrator: Hydrator;
+
+    constructor(services: LangiumServices) {
+        this.hydrator = services.serializer.Hydrator;
+    }
+
+    async parse<T extends AstNode>(text: string, cancelToken: CancellationToken): Promise<ParseResult<T>> {
+        const worker = await this.acquireParserWorker(cancelToken);
+        const deferred = new Deferred<ParseResult<T>>();
+        deferred.disposables.push(cancelToken.onCancellationRequested(() => {
+            const timeout = setTimeout(() => {
+                this.killWorker(worker);
+                deferred.reject(OperationCancelled);
+            }, this.terminationDelay);
+            deferred.disposables.push(Disposable.create(() => clearTimeout(timeout!)));
+        }));
+        worker.parse(text).then(result => {
+            result.value = this.hydrator.hydrate(result.value);
+            deferred.resolve(result as ParseResult<T>);
+        }).catch(err => {
+            deferred.reject(err);
+        });
+        return deferred.promise;
+    }
+
+    protected killWorker(worker: ParserWorker): void {
+        worker.terminate();
+        const index = this.workerPool.indexOf(worker);
+        if (index >= 0) {
+            this.workerPool.splice(index, 1);
+        }
+    }
+
+    protected async acquireParserWorker(cancelToken: CancellationToken): Promise<ParserWorker> {
+        if (this.workerPool.length < this.threadCount) {
+            const worker = this.createWorker();
+            worker.onReady(() => {
+                if (this.queue.length > 0) {
+                    const deferred = this.queue.shift();
+                    if (deferred) {
+                        worker.lock();
+                        deferred.resolve(worker);
+                    }
+                }
+            });
+            this.workerPool.push(worker);
+            return worker;
+        } else {
+            for (const worker of this.workerPool) {
+                if (worker.ready) {
+                    worker.lock();
+                    return worker;
+                }
+            }
+            const deferred = new Deferred<ParserWorker>();
+            deferred.disposables.push(cancelToken.onCancellationRequested(() => {
+                const index = this.queue.indexOf(deferred);
+                if (index >= 0) {
+                    this.queue.splice(index, 1);
+                }
+                deferred.reject(OperationCancelled);
+            }));
+            this.queue.push(deferred);
+            return deferred.promise;
+        }
+    }
+
+    protected abstract getWorkerPath(): string;
+    protected abstract createWorker(): ParserWorker;
+}
+
+export type WorkerMessagePost = (message: unknown) => void;
+export type WorkerMessageCallback = (cb: (message: unknown) => void) => void;
+
+export class ParserWorker {
+
+    protected readonly sendMessage: WorkerMessagePost;
+    protected readonly _terminate: () => void;
+    protected readonly onReadyEmitter = new Emitter<void>();
+
+    protected deferred = new Deferred<ParseResult>();
+    protected _ready: boolean = false;
+
+    get ready(): boolean {
+        return this._ready;
+    }
+
+    get onReady(): Event<void> {
+        return this.onReadyEmitter.event;
+    }
+
+    constructor(sendMessage: WorkerMessagePost, onMessage: WorkerMessageCallback, onError: WorkerMessageCallback, terminate: () => void) {
+        this.sendMessage = sendMessage;
+        this._terminate = terminate;
+        onMessage(result => {
+            const parseResult = result as ParseResult;
+            this.deferred.resolve(parseResult);
+            this.unlock();
+        });
+        onError(error => {
+            this.deferred.reject(error);
+            this.unlock();
+        });
+    }
+
+    terminate(): void {
+        this.deferred.reject(OperationCancelled);
+        this._terminate();
+    }
+
+    lock(): void {
+        this._ready = false;
+    }
+
+    unlock(): void {
+        this._ready = true;
+        this.onReadyEmitter.fire();
+    }
+
+    parse(text: string): Promise<ParseResult> {
+        this.deferred = new Deferred();
+        this.sendMessage(text);
+        return this.deferred.promise;
+    }
+}

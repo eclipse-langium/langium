@@ -4,4 +4,5 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+export * from './hydrator.js';
 export * from './json-serializer.js';
