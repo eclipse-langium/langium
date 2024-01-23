@@ -7,10 +7,9 @@
 import type { Ignore } from 'ignore';
 import ignore from 'ignore';
 import type { ConfigurationProvider, FileSystemNode, WorkspaceFolder } from 'langium';
-import { DefaultWorkspaceManager, URI, UriUtils } from 'langium';
+import { Cancellation, DefaultWorkspaceManager, URI, UriUtils } from 'langium';
 import type { LangiumSharedServices } from 'langium/lsp';
 import * as path from 'path';
-import { CancellationToken } from 'vscode-languageserver-protocol';
 
 const CONFIG_KEY = 'build';
 
@@ -31,7 +30,7 @@ export class LangiumGrammarWorkspaceManager extends DefaultWorkspaceManager {
         this.configurationProvider = services.workspace.ConfigurationProvider;
     }
 
-    override async initializeWorkspace(folders: WorkspaceFolder[], cancelToken = CancellationToken.None): Promise<void> {
+    override async initializeWorkspace(folders: WorkspaceFolder[], cancelToken = Cancellation.CancellationToken.None): Promise<void> {
         const buildConf: WorkspaceManagerConf = await this.configurationProvider.getConfiguration('langium', CONFIG_KEY);
         const ignorePatterns = buildConf.ignorePatterns?.split(',')?.map(pattern => pattern.trim())?.filter(pattern => pattern.length > 0);
         this.matcher = ignorePatterns ? ignore.default().add(ignorePatterns) : undefined;

@@ -8,8 +8,7 @@ import type { AstNode, AstNodeDescription, LangiumDocument, PrecomputedScopes } 
 import type { DomainModelServices } from './domain-model-module.js';
 import type { QualifiedNameProvider } from './domain-model-naming.js';
 import type { Domainmodel, PackageDeclaration } from './generated/ast.js';
-import { AstUtils, DefaultScopeComputation, interruptAndCheck, MultiMap } from 'langium';
-import { CancellationToken } from 'vscode-jsonrpc';
+import { AstUtils, Cancellation, DefaultScopeComputation, interruptAndCheck, MultiMap } from 'langium';
 import { isType, isPackageDeclaration } from './generated/ast.js';
 
 export class DomainModelScopeComputation extends DefaultScopeComputation {
@@ -24,7 +23,7 @@ export class DomainModelScopeComputation extends DefaultScopeComputation {
     /**
      * Exports only types (`DataType or `Entity`) with their qualified names.
      */
-    override async computeExports(document: LangiumDocument, cancelToken = CancellationToken.None): Promise<AstNodeDescription[]> {
+    override async computeExports(document: LangiumDocument, cancelToken = Cancellation.CancellationToken.None): Promise<AstNodeDescription[]> {
         const descr: AstNodeDescription[] = [];
         for (const modelNode of AstUtils.streamAllContents(document.parseResult.value)) {
             await interruptAndCheck(cancelToken);
@@ -41,14 +40,14 @@ export class DomainModelScopeComputation extends DefaultScopeComputation {
         return descr;
     }
 
-    override async computeLocalScopes(document: LangiumDocument, cancelToken = CancellationToken.None): Promise<PrecomputedScopes> {
+    override async computeLocalScopes(document: LangiumDocument, cancelToken = Cancellation.CancellationToken.None): Promise<PrecomputedScopes> {
         const model = document.parseResult.value as Domainmodel;
         const scopes = new MultiMap<AstNode, AstNodeDescription>();
         await this.processContainer(model, scopes, document, cancelToken);
         return scopes;
     }
 
-    protected async processContainer(container: Domainmodel | PackageDeclaration, scopes: PrecomputedScopes, document: LangiumDocument, cancelToken: CancellationToken): Promise<AstNodeDescription[]> {
+    protected async processContainer(container: Domainmodel | PackageDeclaration, scopes: PrecomputedScopes, document: LangiumDocument, cancelToken: Cancellation.CancellationToken): Promise<AstNodeDescription[]> {
         const localDescriptions: AstNodeDescription[] = [];
         for (const element of container.elements) {
             await interruptAndCheck(cancelToken);

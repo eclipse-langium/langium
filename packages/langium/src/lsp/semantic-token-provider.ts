@@ -7,7 +7,8 @@
 /* eslint-disable no-bitwise */
 
 import type { Range, SemanticTokens, SemanticTokensClientCapabilities, SemanticTokensDelta, SemanticTokensDeltaParams, SemanticTokensOptions, SemanticTokensParams, SemanticTokensRangeParams } from 'vscode-languageserver';
-import { SemanticTokensBuilder as BaseSemanticTokensBuilder, CancellationToken, SemanticTokenModifiers, SemanticTokenTypes } from 'vscode-languageserver';
+import { SemanticTokensBuilder as BaseSemanticTokensBuilder, SemanticTokenModifiers, SemanticTokenTypes } from 'vscode-languageserver';
+import { CancellationToken } from '../utils/cancellation.js';
 import type { AstNode, CstNode, Properties } from '../syntax-tree.js';
 import { streamAst } from '../utils/ast-utils.js';
 import { inRange } from '../utils/cst-utils.js';

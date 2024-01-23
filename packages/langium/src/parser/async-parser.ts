@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { CancellationToken } from 'vscode-languageserver';
+import type { CancellationToken } from '../utils/cancellation.js';
 import type { LangiumCoreServices } from '../services.js';
 import type { AstNode } from '../syntax-tree.js';
 import type { LangiumParser, ParseResult } from './langium-parser.js';

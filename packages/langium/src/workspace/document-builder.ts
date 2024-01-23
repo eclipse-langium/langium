@@ -4,7 +4,8 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { CancellationToken, Disposable } from 'vscode-jsonrpc';
+import { CancellationToken } from '../utils/cancellation.js';
+import { Disposable } from '../utils/disposable.js';
 import type { ServiceRegistry } from '../service-registry.js';
 import type { LangiumSharedCoreServices } from '../services.js';
 import type { AstNode } from '../syntax-tree.js';

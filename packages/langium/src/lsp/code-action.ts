@@ -4,7 +4,8 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { CancellationToken, CodeAction, CodeActionParams, Command } from 'vscode-languageserver';
+import type { CodeAction, CodeActionParams, Command } from 'vscode-languageserver';
+import type { CancellationToken } from '../utils/cancellation.js';
 import type { MaybePromise } from '../utils/promise-utils.js';
 import type { LangiumDocument } from '../workspace/documents.js';
 

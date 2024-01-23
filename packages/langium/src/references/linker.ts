@@ -9,7 +9,7 @@ import type { AstNode, AstNodeDescription, AstReflection, CstNode, LinkingError,
 import type { AstNodeLocator } from '../workspace/ast-node-locator.js';
 import type { LangiumDocument, LangiumDocuments } from '../workspace/documents.js';
 import type { ScopeProvider } from './scope-provider.js';
-import { CancellationToken } from 'vscode-languageserver';
+import { CancellationToken } from '../utils/cancellation.js';
 import { isAstNode, isAstNodeDescription, isLinkingError } from '../syntax-tree.js';
 import { getDocument, streamAst, streamReferences } from '../utils/ast-utils.js';
 import { interruptAndCheck } from '../utils/promise-utils.js';

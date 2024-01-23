@@ -4,7 +4,8 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { CancellationToken, FoldingRangeParams } from 'vscode-languageserver';
+import type { FoldingRangeParams } from 'vscode-languageserver';
+import type { CancellationToken } from '../utils/cancellation.js';
 import type { LangiumServices } from './lsp-services.js';
 import type { AstNode, CstNode } from '../syntax-tree.js';
 import type { MaybePromise } from '../utils/promise-utils.js';

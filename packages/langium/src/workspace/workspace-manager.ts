@@ -4,10 +4,10 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { CancellationToken } from 'vscode-jsonrpc';
 import type { WorkspaceFolder } from 'vscode-languageserver-types';
 import type { ServiceRegistry } from '../service-registry.js';
 import type { InitializableService, InitializeParams, InitializedParams, LangiumSharedCoreServices } from '../services.js';
+import { CancellationToken } from '../utils/cancellation.js';
 import { interruptAndCheck } from '../utils/promise-utils.js';
 import { URI, UriUtils } from '../utils/uri-utils.js';
 import type { BuildOptions, DocumentBuilder } from './document-builder.js';

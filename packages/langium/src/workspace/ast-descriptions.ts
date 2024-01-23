@@ -10,7 +10,7 @@ import type { LangiumCoreServices } from '../services.js';
 import type { AstNode, AstNodeDescription, ReferenceInfo } from '../syntax-tree.js';
 import type { AstNodeLocator } from './ast-node-locator.js';
 import type { DocumentSegment, LangiumDocument } from './documents.js';
-import { CancellationToken } from 'vscode-languageserver';
+import { CancellationToken } from '../utils/cancellation.js';
 import { isLinkingError } from '../syntax-tree.js';
 import { getDocument, streamAst, streamReferences } from '../utils/ast-utils.js';
 import { toDocumentSegment } from '../utils/cst-utils.js';

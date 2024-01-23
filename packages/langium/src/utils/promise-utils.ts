@@ -4,8 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { AbstractCancellationTokenSource } from 'vscode-jsonrpc';
-import { CancellationToken, CancellationTokenSource } from 'vscode-jsonrpc';
+import { CancellationToken, CancellationTokenSource, type AbstractCancellationTokenSource } from '../utils/cancellation.js';
 
 export type MaybePromise<T> = T | Promise<T>
 
