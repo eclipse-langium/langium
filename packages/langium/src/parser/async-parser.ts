@@ -40,8 +40,15 @@ export class DefaultAsyncParser implements AsyncParser {
 
 export abstract class AbstractThreadedAsyncParser implements AsyncParser {
 
-    // Default thread count, can be changed as desired
-    protected threadCount = 4;
+    /**
+     * The thread count determines how many threads are used to parse files in parallel.
+     * The default value is 8. Decreasing this value increases startup performance, but decreases parsing performance.
+     */
+    protected threadCount = 8;
+    /**
+     * The termination delay determines how long the parser waits for a thread to finish after a cancellation request.
+     * The default value is 200(ms).
+     */
     protected terminationDelay = 200;
     protected workerPool: ParserWorker[] = [];
     protected queue: Array<Deferred<ParserWorker>> = [];
