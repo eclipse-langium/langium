@@ -4,4 +4,5 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+// eslint-disable-next-line no-restricted-imports
 export * from 'vscode-jsonrpc/lib/common/cancellation.js';

@@ -50,6 +50,22 @@
             "block",
             { "pattern": "MIT License|DO NOT EDIT MANUALLY!" }
         ],
+        "no-restricted-imports": ["error", {
+            "paths": [{
+                "name": "vscode-jsonrpc",
+                "importNames": [ "CancellationToken" ],
+                "message": "Import 'CancellationToken' via 'Cancellation.CancellationToken' from 'langium', or directly from './utils/cancellation.ts' within Langium."
+            }, {
+                "name": "vscode-jsonrpc/",
+                "importNames": [ "CancellationToken"],
+                "message": "Import 'CancellationToken' via 'Cancellation.CancellationToken' from 'langium', or directly from './utils/cancellation.ts' within Langium."
+            }],
+            "patterns": [ {
+                "group": [ "vscode-jsonrpc" ],
+                "importNamePattern": "^(?!CancellationToken)",
+                "message": "Don't import types or symbols from 'vscode-jsonrpc' (package index), as that brings a large overhead in bundle size. Import from 'vscode-jsonrpc/lib/common/...js' and add a // eslint-disable..., if really necessary."
+            }]
+        }],
         // List of [@typescript-eslint rules](https://github.com/typescript-eslint/typescript-eslint/tree/master/packages/eslint-plugin#supported-rules)
         "@typescript-eslint/adjacent-overload-signatures": "error", // grouping same method names
         "@typescript-eslint/array-type": ["error", {                // string[] instead of Array<string>
