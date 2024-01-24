@@ -31,7 +31,7 @@
     "@vitest/ui": "~1.0.0",
     "concurrently": "~8.2.1",
     "esbuild": "~0.19.2",
-    "eslint": "~8.47.0",
+    "eslint": "~8.56.0",
     "eslint-plugin-header": "~3.1.1",
     "editorconfig": "~2.0.0",
     "shx": "~0.3.4",
