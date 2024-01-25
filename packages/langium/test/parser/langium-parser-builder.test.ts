@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import type { TokenType, TokenVocabulary } from 'chevrotain';
-import type { AstNode, CstNode, GenericAstNode, Grammar, GrammarAST, LangiumParser, TokenBuilderOptions } from 'langium';
+import type { AstNode, CstNode, GenericAstNode, Grammar, GrammarAST, LangiumParser, ParseResult, TokenBuilderOptions } from 'langium';
 import { EmptyFileSystem, DefaultTokenBuilder } from 'langium';
 import { describe, expect, test, onTestFailed, beforeEach } from 'vitest';
 import { createLangiumGrammarServices, createServicesForGrammar } from 'langium/grammar';
@@ -852,7 +852,31 @@ describe('Unassigned data type rules', () => {
         expect(parseResult.lexerErrors).toHaveLength(0);
         expect(parseResult.parserErrors).toHaveLength(0);
     });
+});
 
+describe('Parsing with lookbehind tokens', () => {
+    test('Parser Success / Failure with positive lookbehind', async () => {
+        await testLookbehind(true, 'AB', 'CB');
+    });
+
+    test('Parser Success / Failure with negative lookbehind', async () => {
+        await testLookbehind(false, 'CB', 'AB');
+    });
+
+    async function testLookbehind(positive: boolean, success: string, failure: string): Promise<void> {
+        const parser = await parserFromGrammar(`
+            grammar test
+            entry Main: ('A' | 'C') b=B;
+            terminal B: (?<${positive ? '=' : '!'}'A')'B';
+            hidden terminal WS: /\\s+/;
+            `
+        );
+        const validResult = parser.parse(success) as ParseResult<GenericAstNode>;
+        expect(validResult.value.b).toEqual('B');
+        const invalidResult = parser.parse(failure);
+        expect(invalidResult.lexerErrors).toHaveLength(1);
+        expect(invalidResult.parserErrors).toHaveLength(1);
+    }
 });
 
 async function parserFromGrammar(grammar: string): Promise<LangiumParser> {

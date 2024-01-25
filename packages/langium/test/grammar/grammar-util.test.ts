@@ -170,6 +170,18 @@ describe('TerminalRule to regex', () => {
         expect(regex).toEqual(/(a(?!b))/);
     });
 
+    test('Should create negative lookbehind group', async () => {
+        const terminal = await getTerminal("terminal X: 'a' (?<!'b');");
+        const regex = terminalRegex(terminal);
+        expect(regex).toEqual(/(a(?<!b))/);
+    });
+
+    test('Should create positive lookbehind group', async () => {
+        const terminal = await getTerminal("terminal X: 'a' (?<='b');");
+        const regex = terminalRegex(terminal);
+        expect(regex).toEqual(/(a(?<=b))/);
+    });
+
     test('Should create terminal reference in terminal definition', async () => {
         const terminal = await getTerminal(`
         terminal X: Y Y;
