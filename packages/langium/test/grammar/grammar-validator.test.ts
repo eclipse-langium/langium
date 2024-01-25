@@ -253,7 +253,7 @@ describe('Check Rule Fragment Validation', () => {
 });
 
 describe('Check cross-references to inferred types', () => {
-    test.only('infer after the parser rules names', async () => {
+    test('infer after the parser rules names', async () => {
         const validationResult = await validate(`
         grammar HelloWorld
 
@@ -261,7 +261,7 @@ describe('Check cross-references to inferred types', () => {
 
         A infers B: 'a' name=ID (otherA=[B])?; // works
 
-        hidden terminal WS: /\s+/;
+        hidden terminal WS: /\\s+/;
         terminal ID: /[a-zA-Z_][a-zA-Z0-9_]*/;
         `.trim());
         expectNoIssues(validationResult);
@@ -270,7 +270,7 @@ describe('Check cross-references to inferred types', () => {
         // expectError(validationResult, 'Cannot use rule fragments in types.');
     });
 
-    test.only('infer in the parser rules body', async () => {
+    test('infer in the parser rules body', async () => {
         const validationResult = await validate(`
         grammar HelloWorld
 
@@ -278,7 +278,7 @@ describe('Check cross-references to inferred types', () => {
 
         A: {infer B} 'a' name=ID (otherA=[B])?;
 
-        hidden terminal WS: /\s+/;
+        hidden terminal WS: /\\s+/;
         terminal ID: /[a-zA-Z_][a-zA-Z0-9_]*/;
         `.trim());
         expectNoIssues(validationResult);
