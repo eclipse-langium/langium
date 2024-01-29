@@ -177,9 +177,6 @@ export class ParserWorker {
     }
 
     parse(text: string): Promise<ParseResult> {
-        if (!this._ready) {
-            throw new Error('Parser is not ready yet');
-        }
         this.deferred = new Deferred();
         this.sendMessage(text);
         return this.deferred.promise;
