@@ -138,7 +138,8 @@ export class ParserWorker {
     protected readonly onReadyEmitter = new Emitter<void>();
 
     protected deferred = new Deferred<ParseResult>();
-    protected _ready: boolean = true;
+    protected _ready = true;
+    protected _parsing = false;
 
     get ready(): boolean {
         return this._ready;
@@ -173,10 +174,15 @@ export class ParserWorker {
 
     unlock(): void {
         this._ready = true;
+        this._parsing = false;
         this.onReadyEmitter.fire();
     }
 
     parse(text: string): Promise<ParseResult> {
+        if (this._parsing) {
+            throw new Error('This parser worker is already busy');
+        }
+        this._parsing = true;
         this.deferred = new Deferred();
         this.sendMessage(text);
         return this.deferred.promise;
