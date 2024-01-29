@@ -4,8 +4,9 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { AstNode, CstNode } from '../syntax-tree.js';
+import { assertUnreachable } from '../utils/errors.js';
 import * as ast from '../languages/generated/ast.js';
+import type { AstNode, CstNode } from '../syntax-tree.js';
 import { isCompositeCstNode } from '../syntax-tree.js';
 import { getContainerOfType, streamAllContents } from './ast-utils.js';
 import { streamCst } from './cst-utils.js';
@@ -245,7 +246,7 @@ export function findNameAssignment(type: ast.AbstractType): ast.Assignment | und
             // investigate the parser rule with the explicitly inferred type
             startNode = startNode.$container;
         } else {
-            throw new Error('impossible');
+            assertUnreachable(startNode.$container);
         }
     }
     return findNameAssignmentInternal(type, startNode, new Map());
