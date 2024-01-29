@@ -78,13 +78,14 @@ export abstract class AbstractThreadedAsyncParser implements AsyncParser {
     async parse<T extends AstNode>(text: string, cancelToken: CancellationToken): Promise<ParseResult<T>> {
         const worker = await this.acquireParserWorker(cancelToken);
         const deferred = new Deferred<ParseResult<T>>();
-        deferred.disposables.push(cancelToken.onCancellationRequested(() => {
+        const disposable = cancelToken.onCancellationRequested(() => {
             const timeout = setTimeout(() => {
                 this.killWorker(worker);
                 deferred.reject(OperationCancelled);
             }, this.terminationDelay);
-            deferred.disposables.push(Disposable.create(() => clearTimeout(timeout!)));
-        }));
+            deferred.promise.finally(() => clearTimeout(timeout));
+        });
+        deferred.promise.finally(() => disposable.dispose());
         worker.parse(text).then(result => {
             result.value = this.hydrator.hydrate(result.value);
             deferred.resolve(result as ParseResult<T>);
@@ -111,13 +112,14 @@ export abstract class AbstractThreadedAsyncParser implements AsyncParser {
             }
         }
         const deferred = new Deferred<ParserWorker>();
-        deferred.disposables.push(cancelToken.onCancellationRequested(() => {
+        const disposable = cancelToken.onCancellationRequested(() => {
             const index = this.queue.indexOf(deferred);
             if (index >= 0) {
                 this.queue.splice(index, 1);
             }
             deferred.reject(OperationCancelled);
-        }));
+        });
+        deferred.promise.finally(() => disposable.dispose());
         this.queue.push(deferred);
         return deferred.promise;
     }
@@ -175,6 +177,9 @@ export class ParserWorker {
     }
 
     parse(text: string): Promise<ParseResult> {
+        if (!this._ready) {
+            throw new Error('Parser is not ready yet');
+        }
         this.deferred = new Deferred();
         this.sendMessage(text);
         return this.deferred.promise;
