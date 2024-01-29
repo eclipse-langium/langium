@@ -5,4 +5,4 @@
  ******************************************************************************/
 
 // eslint-disable-next-line no-restricted-imports
-export * from 'vscode-jsonrpc/lib/common/cancellation.js';
+export * from 'vscode-jsonrpc/lib/common/events.js';

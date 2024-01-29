@@ -8,6 +8,11 @@ import type { CancellationToken } from '../utils/cancellation.js';
 import type { LangiumCoreServices } from '../services.js';
 import type { AstNode } from '../syntax-tree.js';
 import type { LangiumParser, ParseResult } from './langium-parser.js';
+import type { Hydrator } from '../serializer/hydrator.js';
+import type { Event } from '../utils/event.js';
+import { Deferred, OperationCancelled } from '../utils/promise-utils.js';
+import { Disposable } from '../utils/disposable.js';
+import { Emitter } from '../utils/event.js';
 
 /**
  * Async parser that allows to cancel the current parsing process.
@@ -55,7 +60,7 @@ export abstract class AbstractThreadedAsyncParser implements AsyncParser {
 
     protected readonly hydrator: Hydrator;
 
-    constructor(services: LangiumServices) {
+    constructor(services: LangiumCoreServices) {
         this.hydrator = services.serializer.Hydrator;
     }
 
@@ -78,14 +83,13 @@ export abstract class AbstractThreadedAsyncParser implements AsyncParser {
     async parse<T extends AstNode>(text: string, cancelToken: CancellationToken): Promise<ParseResult<T>> {
         const worker = await this.acquireParserWorker(cancelToken);
         const deferred = new Deferred<ParseResult<T>>();
-        const disposable = cancelToken.onCancellationRequested(() => {
+        deferred.disposables.push(cancelToken.onCancellationRequested(() => {
             const timeout = setTimeout(() => {
                 this.killWorker(worker);
                 deferred.reject(OperationCancelled);
             }, this.terminationDelay);
-            deferred.promise.finally(() => clearTimeout(timeout));
-        });
-        deferred.promise.finally(() => disposable.dispose());
+            deferred.disposables.push(Disposable.create(() => clearTimeout(timeout)));
+        }));
         worker.parse(text).then(result => {
             result.value = this.hydrator.hydrate(result.value);
             deferred.resolve(result as ParseResult<T>);
@@ -112,14 +116,13 @@ export abstract class AbstractThreadedAsyncParser implements AsyncParser {
             }
         }
         const deferred = new Deferred<ParserWorker>();
-        const disposable = cancelToken.onCancellationRequested(() => {
+        deferred.disposables.push(cancelToken.onCancellationRequested(() => {
             const index = this.queue.indexOf(deferred);
             if (index >= 0) {
                 this.queue.splice(index, 1);
             }
             deferred.reject(OperationCancelled);
-        });
-        deferred.promise.finally(() => disposable.dispose());
+        }));
         this.queue.push(deferred);
         return deferred.promise;
     }
@@ -173,14 +176,14 @@ export class ParserWorker {
     }
 
     unlock(): void {
-        this._ready = true;
         this._parsing = false;
+        this._ready = true;
         this.onReadyEmitter.fire();
     }
 
     parse(text: string): Promise<ParseResult> {
         if (this._parsing) {
-            throw new Error('This parser worker is already busy');
+            throw new Error('Parser worker is busy');
         }
         this._parsing = true;
         this.deferred = new Deferred();

@@ -5,6 +5,7 @@
  ******************************************************************************/
 
 export * from './caching.js';
+export * from './event.js';
 export * from './collections.js';
 export * from './disposable.js';
 export * from './errors.js';

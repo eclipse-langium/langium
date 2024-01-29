@@ -11,7 +11,7 @@ import { CompositeCstNodeImpl, LeafCstNodeImpl, RootCstNodeImpl } from '../index
 import { isAbstractElement, type AbstractElement, type Grammar } from '../languages/generated/ast.js';
 import type { Linker } from '../references/linker.js';
 import type { Lexer } from '../parser/lexer.js';
-import type { LangiumServices } from '../services.js';
+import type { LangiumCoreServices } from '../services.js';
 import type { Reference, AstNode, CstNode, LeafCstNode, GenericAstNode, Mutable } from '../syntax-tree.js';
 import { isRootCstNode, isCompositeCstNode, isLeafCstNode, isAstNode, isReference } from '../syntax-tree.js';
 import { streamAst } from '../utils/ast-utils.js';
@@ -52,7 +52,7 @@ export class DefaultHydrator implements Hydrator {
     protected readonly grammarElementIdMap = new BiMap<AbstractElement, number>();
     protected readonly tokenTypeIdMap = new BiMap<number, TokenType>();
 
-    constructor(services: LangiumServices) {
+    constructor(services: LangiumCoreServices) {
         this.grammar = services.Grammar;
         this.lexer = services.parser.Lexer;
         this.linker = () => services.references.Linker;
