@@ -4,8 +4,9 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { AstNode, CstNode } from '../syntax-tree.js';
+import { assertUnreachable } from '../utils/errors.js';
 import * as ast from '../languages/generated/ast.js';
+import type { AstNode, CstNode } from '../syntax-tree.js';
 import { isCompositeCstNode } from '../syntax-tree.js';
 import { getContainerOfType, streamAllContents } from './ast-utils.js';
 import { streamCst } from './cst-utils.js';
@@ -234,29 +235,41 @@ export function findAssignment(cstNode: CstNode): ast.Assignment | undefined {
  * from a parser rule, and that rule must contain an assignment to the `name` property. In all other cases,
  * this function returns `undefined`.
  */
-export function findNameAssignment(type: ast.AbstractType | ast.InferredType): ast.Assignment | undefined {
-    if (ast.isInferredType(type)) {
-        // inferred type is unexpected, extract AbstractType first
-        type = type.$container;
+export function findNameAssignment(type: ast.AbstractType): ast.Assignment | undefined {
+    let startNode: AstNode = type;
+    if (ast.isInferredType(startNode)) {
+        // for inferred types, the location to start searching for the name-assignment is different
+        if (ast.isAction(startNode.$container)) {
+            // a type which is explicitly inferred by an action: investigate the sibbling of the Action node, i.e. start searching at the Action's parent
+            startNode = startNode.$container.$container!;
+        } else if (ast.isParserRule(startNode.$container)) {
+            // investigate the parser rule with the explicitly inferred type
+            startNode = startNode.$container;
+        } else {
+            assertUnreachable(startNode.$container);
+        }
     }
-    return findNameAssignmentInternal(type, new Map());
+    return findNameAssignmentInternal(type, startNode, new Map());
 }
 
-function findNameAssignmentInternal(type: ast.AbstractType, cache: Map<ast.AbstractType, ast.Assignment | undefined>): ast.Assignment | undefined {
+function findNameAssignmentInternal(type: ast.AbstractType, startNode: AstNode, cache: Map<ast.AbstractType, ast.Assignment | undefined>): ast.Assignment | undefined {
+    // the cache is only required to prevent infinite loops
     function go(node: AstNode, refType: ast.AbstractType): ast.Assignment | undefined {
         let childAssignment: ast.Assignment | undefined = undefined;
         const parentAssignment = getContainerOfType(node, ast.isAssignment);
         // No parent assignment implies unassigned rule call
         if (!parentAssignment) {
-            childAssignment = findNameAssignmentInternal(refType, cache);
+            childAssignment = findNameAssignmentInternal(refType, refType, cache);
         }
         cache.set(type, childAssignment);
         return childAssignment;
     }
 
-    if (cache.has(type)) return cache.get(type);
+    if (cache.has(type)) {
+        return cache.get(type);
+    }
     cache.set(type, undefined);
-    for (const node of streamAllContents(type)) {
+    for (const node of streamAllContents(startNode)) {
         if (ast.isAssignment(node) && node.feature.toLowerCase() === 'name') {
             cache.set(type, node);
             return node;
@@ -395,7 +408,7 @@ export function getExplicitRuleType(rule: ast.ParserRule): string | undefined {
     return undefined;
 }
 
-export function getTypeName(type: ast.AbstractType | ast.InferredType): string {
+export function getTypeName(type: ast.AbstractType | ast.Action): string {
     if (ast.isParserRule(type)) {
         return isDataTypeRule(type) ? type.name : getExplicitRuleType(type) ?? type.name;
     } else if (ast.isInterface(type) || ast.isType(type) || ast.isReturnType(type)) {
@@ -412,7 +425,7 @@ export function getTypeName(type: ast.AbstractType | ast.InferredType): string {
 }
 
 export function getActionType(action: ast.Action): string | undefined {
-    if(action.inferredType) {
+    if (action.inferredType) {
         return action.inferredType.name;
     } else if (action.type?.ref) {
         return getTypeName(action.type.ref);

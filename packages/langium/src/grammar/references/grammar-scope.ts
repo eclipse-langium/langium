@@ -17,9 +17,8 @@ import { DefaultScopeProvider } from '../../references/scope-provider.js';
 import { findRootNode, getContainerOfType, getDocument, streamAllContents } from '../../utils/ast-utils.js';
 import { toDocumentSegment } from '../../utils/cst-utils.js';
 import { stream } from '../../utils/stream.js';
-import { AbstractType, Interface, isAction, isGrammar, isParserRule, isReturnType, Type } from '../../languages/generated/ast.js';
+import { AbstractType, InferredType, Interface, isAction, isGrammar, isParserRule, isReturnType, Type } from '../../languages/generated/ast.js';
 import { resolveImportUri } from '../internal-grammar-util.js';
-import { getActionType } from '../../utils/grammar-utils.js';
 
 export class LangiumGrammarScopeProvider extends DefaultScopeProvider {
 
@@ -46,7 +45,7 @@ export class LangiumGrammarScopeProvider extends DefaultScopeProvider {
         if (precomputed && rootNode) {
             const allDescriptions = precomputed.get(rootNode);
             if (allDescriptions.length > 0) {
-                localScope = stream(allDescriptions).filter(des => des.type === Interface || des.type === Type);
+                localScope = stream(allDescriptions).filter(des => des.type === Interface || des.type === Type || des.type === InferredType);
             }
         }
 
@@ -67,7 +66,7 @@ export class LangiumGrammarScopeProvider extends DefaultScopeProvider {
         this.gatherImports(grammar, importedUris);
         let importedElements = this.indexManager.allElements(referenceType, importedUris);
         if (referenceType === AbstractType) {
-            importedElements = importedElements.filter(des => des.type === Interface || des.type === Type);
+            importedElements = importedElements.filter(des => des.type === Interface || des.type === Type || des.type === InferredType);
         }
         return new MapScope(importedElements);
     }
@@ -99,60 +98,74 @@ export class LangiumGrammarScopeComputation extends DefaultScopeComputation {
     }
 
     protected override exportNode(node: AstNode, exports: AstNodeDescription[], document: LangiumDocument): void {
+        // this function is called in order to export nodes to the GLOBAL scope
+
+        /* Among others, TYPES need to be exported.
+         * There are three ways to define types:
+         * - explicit "type" declarations
+         * - explicit "interface" declarations
+         * - "inferred types", which can be distinguished into ...
+         *     - inferred types with explicitly declared names, i.e. parser rules with "infers", actions with "infer"
+         *       Note, that multiple explicitly inferred types might have the same name! Cross-references to such types are resolved to the first declaration.
+         *     - implicitly inferred types, i.e. parser rules without "infers" and without "returns",
+         *       which implicitly declare a type with the same name as the parser rule
+         *       Note, that implicitly inferred types are unique, since names of parser rules must be unique.
+         */
+
+        // export the top-level elements: parser rules, terminal rules, types, interfaces
         super.exportNode(node, exports, document);
+
+        // additionally, export inferred types:
         if (isParserRule(node)) {
             if (!node.returnType && !node.dataType) {
-                // Export inferred rule type as interface
+                // Export implicitly and explicitly inferred type from parser rule
                 const typeNode = node.inferredType ?? node;
-                exports.push(this.createInterfaceDescription(typeNode, typeNode.name, document));
+                exports.push(this.createInferredTypeDescription(typeNode, typeNode.name, document));
             }
             streamAllContents(node).forEach(childNode => {
                 if (isAction(childNode) && childNode.inferredType) {
-                    const typeName = getActionType(childNode);
-                    if (typeName) {
-                        // Export inferred action type as interface
-                        exports.push(this.createInterfaceDescription(childNode, typeName, document));
-                    }
+                    // Export explicitly inferred type from action
+                    exports.push(this.createInferredTypeDescription(childNode.inferredType, childNode.inferredType.name, document));
                 }
             });
         }
     }
 
     protected override processNode(node: AstNode, document: LangiumDocument, scopes: PrecomputedScopes): void {
-        if (isReturnType(node)) return;
+        // for the precompution of the local scope
+        if (isReturnType(node)) {
+            return;
+        }
         this.processTypeNode(node, document, scopes);
         this.processActionNode(node, document, scopes);
         super.processNode(node, document, scopes);
     }
 
     /**
-     * Add synthetic Interface in case of explicitly or implicitly inferred type:<br>
+     * Add synthetic type into the scope in case of explicitly or implicitly inferred type:<br>
      * cases: `ParserRule: ...;` or `ParserRule infers Type: ...;`
      */
     protected processTypeNode(node: AstNode, document: LangiumDocument, scopes: PrecomputedScopes): void {
         const container = node.$container;
         if (container && isParserRule(node) && !node.returnType && !node.dataType) {
             const typeNode = node.inferredType ?? node;
-            scopes.add(container, this.createInterfaceDescription(typeNode, typeNode.name, document));
+            scopes.add(container, this.createInferredTypeDescription(typeNode, typeNode.name, document));
         }
     }
 
     /**
-     * Add synthetic Interface in case of explicitly inferred type:
+     * Add synthetic type into the scope in case of explicitly inferred type:
      *
      * case: `{infer Action}`
      */
     protected processActionNode(node: AstNode, document: LangiumDocument, scopes: PrecomputedScopes): void {
         const container = findRootNode(node);
         if (container && isAction(node) && node.inferredType) {
-            const typeName = getActionType(node);
-            if (typeName) {
-                scopes.add(container, this.createInterfaceDescription(node, typeName, document));
-            }
+            scopes.add(container, this.createInferredTypeDescription(node.inferredType, node.inferredType.name, document));
         }
     }
 
-    protected createInterfaceDescription(node: AstNode, name: string, document: LangiumDocument = getDocument(node)): AstNodeDescription {
+    protected createInferredTypeDescription(node: AstNode, name: string, document: LangiumDocument = getDocument(node)): AstNodeDescription {
         let nameNodeSegment: DocumentSegment | undefined;
         const nameSegmentGetter = () => nameNodeSegment ??= toDocumentSegment(this.nameProvider.getNameNode(node) ?? node.$cstNode);
         return {
@@ -162,7 +175,7 @@ export class LangiumGrammarScopeComputation extends DefaultScopeComputation {
                 return nameSegmentGetter();
             },
             selectionSegment: toDocumentSegment(node.$cstNode),
-            type: 'Interface',
+            type: InferredType,
             documentUri: document.uri,
             path: this.astNodeLocator.getAstNodePath(node)
         };

@@ -252,6 +252,42 @@ describe('Check Rule Fragment Validation', () => {
     });
 });
 
+describe('Check cross-references to inferred types', () => {
+    test('infer after the parser rules names', async () => {
+        const validationResult = await validate(`
+        grammar HelloWorld
+
+        entry Model: a+=A*;
+
+        A infers B: 'a' name=ID (otherA=[B])?; // works
+
+        hidden terminal WS: /\\s+/;
+        terminal ID: /[a-zA-Z_][a-zA-Z0-9_]*/;
+        `.trim());
+        expectNoIssues(validationResult);
+        // expect(validationResult.diagnostics).toHaveLength(1);
+        // expect(validationResult.diagnostics[0].message).toBe('Cannot infer terminal or data type rule for cross-reference.');
+        // expectError(validationResult, 'Cannot use rule fragments in types.');
+    });
+
+    test('infer in the parser rules body', async () => {
+        const validationResult = await validate(`
+        grammar HelloWorld
+
+        entry Model: a+=A*;
+
+        A: {infer B} 'a' name=ID (otherA=[B])?;
+
+        hidden terminal WS: /\\s+/;
+        terminal ID: /[a-zA-Z_][a-zA-Z0-9_]*/;
+        `.trim());
+        expectNoIssues(validationResult);
+        // expect(validationResult.diagnostics).toHaveLength(1);
+        // expect(validationResult.diagnostics[0].message).toBe('Cannot infer terminal or data type rule for cross-reference.');
+        // expectError(validationResult, 'Cannot use rule fragments in types.');
+    });
+});
+
 describe('Checked Named CrossRefs', () => {
     const input = `
     grammar g

@@ -10,6 +10,8 @@ import { DiagnosticSeverity } from 'vscode-languageserver';
 import { AstUtils, EmptyFileSystem, GrammarAST } from 'langium';
 import { createLangiumGrammarServices } from 'langium/grammar';
 import { expectError, expectNoIssues, parseDocument, validationHelper } from 'langium/test';
+import { isCrossReference, isInferredType, isParserRule } from '../../../src/languages/generated/ast.js';
+import type { Assignment, CrossReference, Group, ParserRule } from '../../../src/languages/generated/ast.js';
 
 const grammarServices = createLangiumGrammarServices(EmptyFileSystem).grammar;
 const validate = validationHelper<GrammarAST.Grammar>(grammarServices);
@@ -86,18 +88,36 @@ describe('validate params in types', () => {
 });
 
 describe('validate inferred types', () => {
+    const prog = `
+    A infers B: 'a' name=ID (otherA=[B])?;
+    hidden terminal WS: /\\s+/;
+    terminal ID: /[a-zA-Z_][a-zA-Z0-9_]*/;
+    `.trim();
 
     test('inferred type in cross-reference should not produce an error', async () => {
-        const prog = `
-        A infers B: 'a' name=ID (otherA=[B])?;
-        hidden terminal WS: /\\s+/;
-        terminal ID: /[a-zA-Z_][a-zA-Z0-9_]*/;
-        `.trim();
-
         const validation = await validate(prog);
         expectNoIssues(validation, {
             severity: DiagnosticSeverity.Error
         });
+    });
+
+    test('AbstractType for cross-reference includes InferredType', async () => {
+        const validation = await validate(prog);
+        // parser rule with explicitly inferred type
+        const rule: ParserRule = validation.document.parseResult.value.rules.filter(r => isParserRule(r))[0] as ParserRule;
+        expect(rule.inferredType).toBeTruthy();
+        expect(rule.inferredType!.name).toBe('B');
+        // determine the cross-reference
+        const assignment: Assignment = (rule.definition as Group).elements[2] as Assignment;
+        expect(isCrossReference(assignment.terminal)).toBeTruthy();
+        const crossRef: CrossReference = assignment.terminal as CrossReference;
+        const refType = crossRef.type.ref!;
+        // the type of the cross-reference is the inferred type of the parser rule
+        expect(isInferredType(refType)).toBeTruthy();
+        expect(refType.$type).toBe('InferredType');
+        if (isInferredType(refType)) {
+            expect(isParserRule(refType.$container)).toBeTruthy();
+        }
     });
 });
 
