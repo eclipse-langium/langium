@@ -239,7 +239,7 @@ export class LangiumParser extends AbstractLangiumParser {
             const current = this.current;
             if (isDataTypeNode(current)) {
                 current.value += result.toString();
-            } else {
+            } else if (typeof result === 'object' && result) { // Check whether it's an AST node
                 const resultKind = result.$type;
                 const object = this.assignWithoutOverride(result, current);
                 if (resultKind) {

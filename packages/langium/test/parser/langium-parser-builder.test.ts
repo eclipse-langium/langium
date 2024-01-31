@@ -9,6 +9,7 @@ import type { AstNode, CstNode, GenericAstNode, Grammar, GrammarAST, LangiumPars
 import { EmptyFileSystem, DefaultTokenBuilder } from 'langium';
 import { describe, expect, test, onTestFailed, beforeEach } from 'vitest';
 import { createLangiumGrammarServices, createServicesForGrammar } from 'langium/grammar';
+import { expandToString } from 'langium/generate';
 import { parseHelper } from 'langium/test';
 import { EOF } from 'chevrotain';
 
@@ -824,6 +825,34 @@ describe('Handling EOF', () => {
         expect(cst.range.end.line).not.toBeNaN();
         expect(cst.range.end.character).not.toBeNaN();
     }
+});
+
+describe('Unassigned data type rules', () => {
+
+    test('Can successfully parse unassigned data type rule in parser rule', async () => {
+        const parser = await parserFromGrammar(expandToString`
+            grammar HelloWorld
+
+            entry Model:
+                ((persons+=Person) EOL)*;
+
+            Person:
+                'person' name=ID;
+
+            hidden terminal WS: /[ \\t]+/;
+            terminal ID: /[_a-zA-Z][\\w_]*/;
+            terminal NEWLINE: '\\n';
+            EOL returns string:
+                NEWLINE | EOF;`
+        );
+        const parseResult = parser.parse(expandToString`
+            person John
+            person Jane
+        `);
+        expect(parseResult.lexerErrors).toHaveLength(0);
+        expect(parseResult.parserErrors).toHaveLength(0);
+    });
+
 });
 
 async function parserFromGrammar(grammar: string): Promise<LangiumParser> {
