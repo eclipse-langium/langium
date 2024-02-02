@@ -841,7 +841,7 @@ describe('Unassigned data type rules', () => {
 
             hidden terminal WS: /[ \\t]+/;
             terminal ID: /[_a-zA-Z][\\w_]*/;
-            terminal NEWLINE: '\\n';
+            terminal NEWLINE: /\\r?\\n/;
             EOL returns string:
                 NEWLINE | EOF;`
         );
