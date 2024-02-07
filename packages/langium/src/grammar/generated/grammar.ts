@@ -3923,12 +3923,6 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
             "typeRef": {
               "$ref": "#/rules@18"
             }
-          },
-          {
-            "$type": "SimpleType",
-            "typeRef": {
-              "$ref": "#/rules@14"
-            }
           }
         ]
       }

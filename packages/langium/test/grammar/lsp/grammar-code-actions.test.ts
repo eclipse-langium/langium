@@ -5,11 +5,12 @@
  ******************************************************************************/
 
 import type { GrammarAST } from 'langium';
-import { EmptyFileSystem, createLangiumGrammarServices } from 'langium';
+import { EmptyFileSystem } from 'langium';
 import { textDocumentParams, validationHelper } from 'langium/test';
 import { describe, expect, test } from 'vitest';
 import { CodeAction } from 'vscode-languageserver';
 import { TextDocument } from 'vscode-languageserver-textdocument';
+import { createLangiumGrammarServices } from '../../../src/grammar/langium-grammar-module.js';
 
 const services = createLangiumGrammarServices(EmptyFileSystem);
 const validate = validationHelper<GrammarAST.Grammar>(services.grammar);
