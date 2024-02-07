@@ -16,14 +16,13 @@ import { DiagnosticTag } from 'vscode-languageserver-types';
 import { getContainerOfType, streamAllContents } from '../../utils/ast-utils.js';
 import { MultiMap } from '../../utils/collections.js';
 import { toDocumentSegment } from '../../utils/cst-utils.js';
-import { findNameAssignment, findNodeForKeyword, findNodeForProperty, getAllReachableRules, getAllRulesUsedForCrossReferences } from '../../utils/grammar-util.js';
 import { stream } from '../../utils/stream.js';
 import { diagnosticData } from '../../validation/validation-registry.js';
 import * as ast from '../../languages/generated/ast.js';
 import { getTypeNameWithoutError, hasDataTypeReturn, isPrimitiveGrammarType, isStringGrammarType, resolveImport, resolveTransitiveImports } from '../internal-grammar-util.js';
 import { typeDefinitionToPropertyType } from '../type-system/type-collector/declared-types.js';
 import { flattenPlainType, isPlainReferenceType } from '../type-system/type-collector/plain-types.js';
-import { isDataTypeRule, terminalRegex, isOptionalCardinality } from '../../utils/grammar-utils.js';
+import { isDataTypeRule, terminalRegex, isOptionalCardinality, findNameAssignment, findNodeForKeyword, findNodeForProperty, getAllReachableRules, getAllRulesUsedForCrossReferences } from '../../utils/grammar-utils.js';
 
 export function registerValidationChecks(services: LangiumGrammarServices): void {
     const registry = services.validation.ValidationRegistry;
