@@ -19,6 +19,7 @@ import { isAssignment, isCrossReference, isKeyword } from '../languages/generate
 import { getTypeName, isDataTypeRule } from '../utils/grammar-utils.js';
 import { assignMandatoryProperties, getContainerOfType, linkContentToContainer } from '../utils/ast-utils.js';
 import { CstNodeBuilder } from './cst-node-builder.js';
+import { isAstNode } from '../../lib/syntax-tree.js';
 
 export type ParseResult<T = AstNode> = {
     value: T,
@@ -233,13 +234,15 @@ export class LangiumParser extends AbstractLangiumParser {
         if (assignment) {
             this.assign(assignment.operator, assignment.feature, result, cstNode, isCrossRef);
         } else if (!assignment) {
-            // If we call a subrule without an assignment
-            // We either append the result of the subrule (data type rule)
-            // Or override the current object with the newly parsed object
+            // If we call a subrule without an assignment we either:
+            // 1. append the result of the subrule (data type rule)
+            // 2. override the current object with the newly parsed object
+            // If the current element is an AST node and the result of the subrule
+            // is a data type rule, we can safely discard the results.
             const current = this.current;
             if (isDataTypeNode(current)) {
                 current.value += result.toString();
-            } else if (typeof result === 'object' && result) { // Check whether it's an AST node
+            } else if (isAstNode(result)) {
                 const resultKind = result.$type;
                 const object = this.assignWithoutOverride(result, current);
                 if (resultKind) {
