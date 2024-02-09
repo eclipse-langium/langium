@@ -19,7 +19,6 @@ import { isAssignment, isCrossReference, isKeyword } from '../languages/generate
 import { getTypeName, isDataTypeRule } from '../utils/grammar-utils.js';
 import { assignMandatoryProperties, getContainerOfType, linkContentToContainer } from '../utils/ast-utils.js';
 import { CstNodeBuilder } from './cst-node-builder.js';
-import { isAstNode } from '../syntax-tree.js';
 
 export type ParseResult<T = AstNode> = {
     value: T,
@@ -242,7 +241,7 @@ export class LangiumParser extends AbstractLangiumParser {
             const current = this.current;
             if (isDataTypeNode(current)) {
                 current.value += result.toString();
-            } else if (isAstNode(result)) {
+            } else if (typeof result === 'object' && result) {
                 const resultKind = result.$type;
                 const object = this.assignWithoutOverride(result, current);
                 if (resultKind) {
