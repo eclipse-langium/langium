@@ -19,7 +19,7 @@ import { isAssignment, isCrossReference, isKeyword } from '../languages/generate
 import { getTypeName, isDataTypeRule } from '../utils/grammar-utils.js';
 import { assignMandatoryProperties, getContainerOfType, linkContentToContainer } from '../utils/ast-utils.js';
 import { CstNodeBuilder } from './cst-node-builder.js';
-import { isAstNode } from '../../lib/syntax-tree.js';
+import { isAstNode } from '../syntax-tree.js';
 
 export type ParseResult<T = AstNode> = {
     value: T,
