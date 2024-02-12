@@ -6,6 +6,7 @@
 
 import fs from 'fs-extra';
 import type { IParserConfig } from 'langium';
+import { EOL } from 'os';
 import * as path from 'path';
 import type { GenerateOptions } from './generate.js';
 import { log } from './generator/util.js';
@@ -92,15 +93,24 @@ export async function loadConfig(options: GenerateOptions): Promise<LangiumConfi
         filePath = path.normalize(defaultFile);
     }
     const relativePath = path.dirname(filePath);
+    if (!path.isAbsolute(filePath)) {
+        filePath = path.resolve(process.cwd(), filePath);
+    }
     log('log', options, `Reading config from ${chalk.white.bold(filePath)}`);
     try {
         const obj = await fs.readJson(filePath, { encoding: 'utf-8' });
-        const config: LangiumConfig = path.basename(filePath) === 'package.json' ? obj.langium : obj;
+        const config: LangiumConfig | undefined = path.basename(filePath) === 'package.json' ? obj.langium : obj;
+        if (!config) {
+            throw new Error('Langium config is missing.');
+        }
         config[RelativePath] = relativePath;
         config.importExtension ??= '.js';
         return config;
     } catch (err) {
-        log('error', options, chalk.red('Failed to read config file.'), err);
+        const suffix = options.file
+            ? path.basename(filePath) === 'package.json' ? `an object named 'langium' in ${filePath}` : filePath
+            : `${path.resolve(path.dirname(filePath), 'langium-config.json')} or an object named 'langium' in ${path.resolve(path.dirname(filePath), 'package.json')}`;
+        log('error', options, chalk.red(`Failed to read Langium config: Could not find ${suffix}.${EOL}`), err);
         process.exit(1);
     }
 }
