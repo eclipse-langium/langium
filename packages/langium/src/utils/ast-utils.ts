@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { Range } from 'vscode-languageserver';
+import type { Range } from 'vscode-languageserver-types';
 import type { AstNode, AstReflection, CstNode, GenericAstNode, Mutable, PropertyType, Reference, ReferenceInfo } from '../syntax-tree.js';
 import type { Stream, TreeStream } from './stream.js';
 import type { LangiumDocument } from '../workspace/documents.js';
