@@ -4,8 +4,8 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import { Position, Range } from 'vscode-languageserver-types';
 import type { CstNode } from '../syntax-tree.js';
-import { Position, Range } from 'vscode-languageserver';
 import { NEWLINE_REGEXP, escapeRegExp } from '../utils/regexp-utils.js';
 import { URI } from '../utils/uri-utils.js';
 

@@ -5,14 +5,13 @@
  ******************************************************************************/
 
 import type { MismatchedTokenException } from 'chevrotain';
-import type { Diagnostic } from 'vscode-languageserver';
+import type { DiagnosticSeverity, Position, Range, Diagnostic } from 'vscode-languageserver-types';
 import type { LanguageMetaData } from '../languages/language-meta-data.js';
 import type { ParseResult } from '../parser/langium-parser.js';
 import type { LangiumCoreServices } from '../services.js';
 import type { AstNode, CstNode } from '../syntax-tree.js';
 import type { LangiumDocument } from '../workspace/documents.js';
 import type { DiagnosticData, DiagnosticInfo, ValidationAcceptor, ValidationCategory, ValidationRegistry } from './validation-registry.js';
-import { DiagnosticSeverity, Position, Range } from 'vscode-languageserver';
 import { CancellationToken } from '../utils/cancellation.js';
 import { findNodeForKeyword, findNodeForProperty } from '../utils/grammar-utils.js';
 import { streamAst } from '../utils/ast-utils.js';
@@ -100,7 +99,7 @@ export class DefaultDocumentValidator implements DocumentValidator {
     protected processLexingErrors(parseResult: ParseResult, diagnostics: Diagnostic[], _options: ValidationOptions): void {
         for (const lexerError of parseResult.lexerErrors) {
             const diagnostic: Diagnostic = {
-                severity: DiagnosticSeverity.Error,
+                severity: toDiagnosticSeverity('error'),
                 range: {
                     start: {
                         line: lexerError.line! - 1,
@@ -131,12 +130,13 @@ export class DefaultDocumentValidator implements DocumentValidator {
                 if ('previousToken' in parserError) {
                     const token = (parserError as MismatchedTokenException).previousToken;
                     if (!isNaN(token.startOffset)) {
-                        const position = Position.create(token.endLine! - 1, token.endColumn!);
-                        range = Range.create(position, position);
+                        const position: Position = { line: token.endLine! - 1, character: token.endColumn! };
+                        range = { start: position, end: position};
                     } else {
                         // No valid prev token. Might be empty document or containing only hidden tokens.
                         // Point to document start
-                        range = Range.create(0, 0, 0, 0);
+                        const position: Position = { line: 0, character: 0 };
+                        range = { start: position, end: position};
                     }
                 }
             } else {
@@ -144,7 +144,7 @@ export class DefaultDocumentValidator implements DocumentValidator {
             }
             if (range) {
                 const diagnostic: Diagnostic = {
-                    severity: DiagnosticSeverity.Error,
+                    severity: toDiagnosticSeverity('error'),
                     range,
                     message: parserError.message,
                     data: diagnosticData(DocumentValidator.ParsingError),
@@ -211,7 +211,7 @@ export class DefaultDocumentValidator implements DocumentValidator {
 }
 
 export function getDiagnosticRange<N extends AstNode>(info: DiagnosticInfo<N, string>): Range {
-    if (Range.is(info.range)) {
+    if (info.range) {
         return info.range;
     }
     let cstNode: CstNode | undefined;
@@ -233,13 +233,13 @@ export function getDiagnosticRange<N extends AstNode>(info: DiagnosticInfo<N, st
 export function toDiagnosticSeverity(severity: 'error' | 'warning' | 'info' | 'hint'): DiagnosticSeverity {
     switch (severity) {
         case 'error':
-            return DiagnosticSeverity.Error;
+            return 1; // according to vscode-languageserver-types/lib/esm/main.js#DiagnosticSeverity.Error
         case 'warning':
-            return DiagnosticSeverity.Warning;
+            return 2; // according to vscode-languageserver-types/lib/esm/main.js#DiagnosticSeverity.Warning
         case 'info':
-            return DiagnosticSeverity.Information;
+            return 3; // according to vscode-languageserver-types/lib/esm/main.js#DiagnosticSeverity.Information
         case 'hint':
-            return DiagnosticSeverity.Hint;
+            return 4; // according to vscode-languageserver-types/lib/esm/main.js#DiagnosticSeverity.Hint
         default:
             throw new Error('Invalid diagnostic severity: ' + severity);
     }

@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 import type { IToken } from '@chevrotain/types';
-import type { Range } from 'vscode-languageserver';
+import type { Range } from 'vscode-languageserver-types';
 import type { CstNode, CompositeCstNode, LeafCstNode } from '../syntax-tree.js';
 import type { DocumentSegment } from '../workspace/documents.js';
 import type { Stream, TreeStream } from './stream.js';

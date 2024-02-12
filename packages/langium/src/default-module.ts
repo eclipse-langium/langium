@@ -23,6 +23,7 @@ import { DefaultDocumentValidator } from './validation/document-validator.js';
 import { ValidationRegistry } from './validation/validation-registry.js';
 import { DefaultAstNodeDescriptionProvider, DefaultReferenceDescriptionProvider } from './workspace/ast-descriptions.js';
 import { DefaultAstNodeLocator } from './workspace/ast-node-locator.js';
+import { DefaultConfigurationProvider } from './workspace/configuration.js';
 import { DefaultDocumentBuilder } from './workspace/document-builder.js';
 import { DefaultLangiumDocumentFactory, DefaultLangiumDocuments } from './workspace/documents.js';
 import { DefaultIndexManager } from './workspace/index-manager.js';
@@ -33,7 +34,6 @@ import { DefaultCommentProvider } from './documentation/comment-provider.js';
 import { LangiumParserErrorMessageProvider } from './parser/langium-parser.js';
 import { DefaultAsyncParser } from './parser/async-parser.js';
 import { DefaultWorkspaceLock } from './workspace/workspace-lock.js';
-import { DefaultConfigurationProvider } from './index.js';
 
 /**
  * Context required for creating the default language-specific dependency injection module.
