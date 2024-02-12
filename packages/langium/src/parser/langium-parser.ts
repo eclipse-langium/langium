@@ -233,13 +233,15 @@ export class LangiumParser extends AbstractLangiumParser {
         if (assignment) {
             this.assign(assignment.operator, assignment.feature, result, cstNode, isCrossRef);
         } else if (!assignment) {
-            // If we call a subrule without an assignment
-            // We either append the result of the subrule (data type rule)
-            // Or override the current object with the newly parsed object
+            // If we call a subrule without an assignment we either:
+            // 1. append the result of the subrule (data type rule)
+            // 2. override the current object with the newly parsed object
+            // If the current element is an AST node and the result of the subrule
+            // is a data type rule, we can safely discard the results.
             const current = this.current;
             if (isDataTypeNode(current)) {
                 current.value += result.toString();
-            } else {
+            } else if (typeof result === 'object' && result) {
                 const resultKind = result.$type;
                 const object = this.assignWithoutOverride(result, current);
                 if (resultKind) {
