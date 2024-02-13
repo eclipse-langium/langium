@@ -3430,6 +3430,14 @@ export const LangiumGrammarGrammar = (): Grammar => loadedLangiumGrammarGrammar 
                 {
                   "$type": "Keyword",
                   "value": "?!"
+                },
+                {
+                  "$type": "Keyword",
+                  "value": "?<="
+                },
+                {
+                  "$type": "Keyword",
+                  "value": "?<!"
                 }
               ]
             },

@@ -49,7 +49,7 @@ export class DefaultTokenBuilder implements TokenBuilder {
 
     protected buildTerminalToken(terminal: TerminalRule): TokenType {
         const regex = terminalRegex(terminal);
-        const pattern = regex.flags.includes('u') ? this.regexPatternFunction(regex) : regex;
+        const pattern = this.requiresCustomPattern(regex) ? this.regexPatternFunction(regex) : regex;
         const tokenType: TokenType = {
             name: terminal.name,
             PATTERN: pattern,
@@ -60,6 +60,18 @@ export class DefaultTokenBuilder implements TokenBuilder {
             tokenType.GROUP = isWhitespace(regex) ? Lexer.SKIPPED : 'hidden';
         }
         return tokenType;
+    }
+
+    protected requiresCustomPattern(regex: RegExp): boolean {
+        if (regex.flags.includes('u')) {
+            // Unicode regexes are not supported by Chevrotain.
+            return true;
+        } else if (regex.source.includes('?<=') || regex.source.includes('?<!')) {
+            // Negative and positive lookbehind are not supported by Chevrotain yet.
+            return true;
+        } else {
+            return false;
+        }
     }
 
     protected regexPatternFunction(regex: RegExp): CustomPatternMatcherFunc {

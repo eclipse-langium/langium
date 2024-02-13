@@ -72,7 +72,7 @@ export function isValueLiteral(item: unknown): item is ValueLiteral {
 export interface AbstractElement extends AstNode {
     readonly $type: 'AbstractElement' | 'Action' | 'Alternatives' | 'Assignment' | 'CharacterRange' | 'CrossReference' | 'EndOfFile' | 'Group' | 'Keyword' | 'NegatedToken' | 'RegexToken' | 'RuleCall' | 'TerminalAlternatives' | 'TerminalGroup' | 'TerminalRuleCall' | 'UnorderedGroup' | 'UntilToken' | 'Wildcard';
     cardinality?: '*' | '+' | '?';
-    lookahead?: '?!' | '?=';
+    lookahead?: '?!' | '?<!' | '?<=' | '?=';
 }
 
 export const AbstractElement = 'AbstractElement';
