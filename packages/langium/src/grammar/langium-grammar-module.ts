@@ -67,10 +67,12 @@ export const LangiumGrammarModule: Module<LangiumGrammarServices, PartialLangium
  *
  * @param context Shared module context, used to create additional shared modules
  * @param sharedModule Existing shared module to inject together with new shared services
+ * @param module Additional/modified service implementations for the language services
  * @returns Shared services enriched with LSP services + Grammar services, per usual
  */
 export function createLangiumGrammarServices(context: DefaultSharedModuleContext,
-    sharedModule?: Module<LangiumSharedServices, PartialLangiumSharedServices>): {
+    sharedModule?: Module<LangiumSharedServices, PartialLangiumSharedServices>,
+    module?: Module<LangiumServices, PartialLangiumServices>): {
         shared: LangiumSharedServices,
         grammar: LangiumGrammarServices
     } {
@@ -82,7 +84,8 @@ export function createLangiumGrammarServices(context: DefaultSharedModuleContext
     const grammar = inject(
         createDefaultModule({ shared }),
         LangiumGrammarGeneratedModule,
-        LangiumGrammarModule
+        LangiumGrammarModule,
+        module
     );
     addTypeCollectionPhase(shared, grammar);
     shared.ServiceRegistry.register(grammar);

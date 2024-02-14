@@ -37,6 +37,7 @@ import type { LangiumDocumentFactory, LangiumDocuments, TextDocumentProvider } f
 import type { FileSystemProvider } from './workspace/file-system-provider.js';
 import type { IndexManager } from './workspace/index-manager.js';
 import type { WorkspaceLock } from './workspace/workspace-lock.js';
+import type { Hydrator } from './serializer/hydrator.js';
 import type { WorkspaceManager } from './workspace/workspace-manager.js';
 
 export type {
@@ -86,6 +87,7 @@ export type LangiumDefaultCoreServices = {
         ScopeComputation: ScopeComputation
     }
     serializer: {
+        Hydrator: Hydrator
         JsonSerializer: JsonSerializer
     }
     validation: {

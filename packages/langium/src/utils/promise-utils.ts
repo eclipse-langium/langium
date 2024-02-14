@@ -93,7 +93,13 @@ export class Deferred<T = void> {
     reject: (err?: unknown) => this;
 
     promise = new Promise<T>((resolve, reject) => {
-        this.resolve = (arg) => (resolve(arg), this);
-        this.reject = (err) => (reject(err), this);
+        this.resolve = (arg) => {
+            resolve(arg);
+            return this;
+        };
+        this.reject = (err) => {
+            reject(err);
+            return this;
+        };
     });
 }
