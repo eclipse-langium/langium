@@ -9,15 +9,16 @@ import { Disposable } from '../utils/disposable.js';
 import type { ServiceRegistry } from '../service-registry.js';
 import type { LangiumSharedCoreServices } from '../services.js';
 import type { AstNode } from '../syntax-tree.js';
-import { MultiMap } from '../utils/collections.js';
 import type { MaybePromise } from '../utils/promise-utils.js';
-import { interruptAndCheck } from '../utils/promise-utils.js';
+import type { Deferred } from '../utils/promise-utils.js';
+import type { ValidationOptions } from '../validation/document-validator.js';
+import type { IndexManager } from '../workspace/index-manager.js';
+import type { LangiumDocument, LangiumDocuments, LangiumDocumentFactory } from './documents.js';
+import { MultiMap } from '../utils/collections.js';
+import { OperationCancelled, interruptAndCheck } from '../utils/promise-utils.js';
 import { stream } from '../utils/stream.js';
 import type { URI } from '../utils/uri-utils.js';
-import type { ValidationOptions } from '../validation/document-validator.js';
 import { ValidationCategory } from '../validation/validation-registry.js';
-import type { IndexManager } from '../workspace/index-manager.js';
-import type { LangiumDocument, LangiumDocumentFactory, LangiumDocuments } from './documents.js';
 import { DocumentState } from './documents.js';
 
 export interface BuildOptions {
@@ -80,6 +81,26 @@ export interface DocumentBuilder {
      * Notify the given callback when a set of documents has been built reaching a desired target state.
      */
     onBuildPhase(targetState: DocumentState, callback: DocumentBuildListener): Disposable;
+
+    /**
+     * Wait until the workspace has reached the specified state for all documents.
+     *
+     * @param state The desired state. The promise won't resolve until all documents have reached this state
+     * @param cancelToken Optionally allows to cancel the wait operation, disposing any listeners in the process
+     * @throws `OperationCancelled` if cancellation has been requested before the state has been reached
+     */
+    waitUntil(state: DocumentState, cancelToken?: CancellationToken): Promise<void>;
+
+    /**
+     * Wait until the document specified by the {@link uri} has reached the specified state.
+     *
+     * @param state The desired state. The promise won't resolve until the document has reached this state.
+     * @param uri The specified URI that points to the document. If the URI does not exist, the promise will resolve once the workspace has reached the specified state.
+     * @param cancelToken Optionally allows to cancel the wait operation, disposing any listeners in the process.
+     * @return The URI of the document that has reached the desired state, or `undefined` if the document does not exist.
+     * @throws `OperationCancelled` if cancellation has been requested before the state has been reached
+     */
+    waitUntil(state: DocumentState, uri?: URI, cancelToken?: CancellationToken): Promise<URI | undefined>;
 }
 
 export type DocumentUpdateListener = (changed: URI[], deleted: URI[]) => void | Promise<void>
@@ -98,8 +119,10 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
     protected readonly indexManager: IndexManager;
     protected readonly serviceRegistry: ServiceRegistry;
     protected readonly updateListeners: DocumentUpdateListener[] = [];
-    protected readonly buildPhaseListeners: MultiMap<DocumentState, DocumentBuildListener> = new MultiMap();
-    protected readonly buildState: Map<string, DocumentBuildState> = new Map();
+    protected readonly buildPhaseListeners = new MultiMap<DocumentState, DocumentBuildListener>();
+    protected readonly buildState = new Map<string, DocumentBuildState>();
+    protected readonly documentBuildWaiters = new Map<string, Deferred<void>>();
+    protected currentState = DocumentState.Changed;
 
     constructor(services: LangiumSharedCoreServices) {
         this.langiumDocuments = services.workspace.LangiumDocuments;
@@ -145,11 +168,13 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
                 this.buildState.delete(key);
             }
         }
+        this.currentState = DocumentState.Changed;
         await this.emitUpdate(documents.map(e => e.uri), []);
         await this.buildDocuments(documents, options, cancelToken);
     }
 
     async update(changed: URI[], deleted: URI[], cancelToken = CancellationToken.None): Promise<void> {
+        this.currentState = DocumentState.Changed;
         // Remove all metadata of documents that are reported as deleted
         for (const deletedUri of deleted) {
             this.langiumDocuments.deleteDocument(deletedUri);
@@ -291,12 +316,53 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
             document.state = targetState;
         }
         await this.notifyBuildPhase(filtered, targetState, cancelToken);
+        this.currentState = targetState;
     }
 
     onBuildPhase(targetState: DocumentState, callback: DocumentBuildListener): Disposable {
         this.buildPhaseListeners.add(targetState, callback);
         return Disposable.create(() => {
             this.buildPhaseListeners.delete(targetState, callback);
+        });
+    }
+
+    waitUntil(state: DocumentState, cancelToken?: CancellationToken): Promise<void>;
+    waitUntil(state: DocumentState, uri?: URI, cancelToken?: CancellationToken): Promise<URI | undefined>;
+    waitUntil(state: DocumentState, uriOrToken?: URI | CancellationToken, cancelToken?: CancellationToken): Promise<URI | undefined | void> {
+        let uri: URI | undefined = undefined;
+        if (uriOrToken && 'path' in uriOrToken) {
+            uri = uriOrToken;
+        } else {
+            cancelToken = uriOrToken;
+        }
+        cancelToken ??= CancellationToken.None;
+        if (uri) {
+            const document = this.langiumDocuments.getDocument(uri);
+            if (document && document.state > state) {
+                return Promise.resolve(uri);
+            }
+        }
+        if (this.currentState >= state) {
+            return Promise.resolve(undefined);
+        } else if (cancelToken.isCancellationRequested) {
+            return Promise.reject(OperationCancelled);
+        }
+        return new Promise((resolve, reject) => {
+            const buildDisposable = this.onBuildPhase(state, () => {
+                buildDisposable.dispose();
+                cancelDisposable.dispose();
+                if (uri) {
+                    const document = this.langiumDocuments.getDocument(uri);
+                    resolve(document?.uri);
+                } else {
+                    resolve(undefined);
+                }
+            });
+            const cancelDisposable = cancelToken!.onCancellationRequested(() => {
+                buildDisposable.dispose();
+                cancelDisposable.dispose();
+                reject(OperationCancelled);
+            });
         });
     }
 

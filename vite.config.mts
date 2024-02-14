@@ -18,7 +18,7 @@ export default defineConfig({
             interopDefault: true
         },
         include: ['**/test/**/*.test.ts'],
-        exclude: ['**/node_modules/**', '**/dist/**', '**/generated/**', '**/templates/**'],
+        exclude: ['**/node_modules/**', '**/dist/**', '**/generated/**', '**/templates/**', '**/examples/hello*/**'],
         watchExclude: [ '**/examples/hello*/**' /* populated by the yeoman generator test */],
     }
 });
