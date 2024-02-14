@@ -1,20 +1,21 @@
 /******************************************************************************
- * Copyright 2023 TypeFox GmbH
+ * Copyright 2024 TypeFox GmbH
  * This program and the accompanying materials are made available under the
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
 import { describe, expect, test } from 'vitest';
-import { AbstractWorkerThreadAsyncParser } from 'langium/node';
+import { WorkerThreadAsyncParser } from 'langium/node';
 import { createLangiumGrammarServices } from 'langium/grammar';
-import type { Grammar, ParseResult } from 'langium';
+import type { Grammar, LangiumCoreServices, ParseResult } from 'langium';
 import { EmptyFileSystem, GrammarUtils, isOperationCancelled } from 'langium';
 import { CancellationToken, CancellationTokenSource } from 'vscode-languageserver';
 import { fail } from 'node:assert';
+import { fileURLToPath } from 'node:url';
 
-class TestAsyncParser extends AbstractWorkerThreadAsyncParser {
-    protected getWorkerPath(): string {
-        return __dirname + '/worker-thread.js';
+class TestAsyncParser extends WorkerThreadAsyncParser {
+    constructor(services: LangiumCoreServices) {
+        super(services, () => fileURLToPath(new URL('.', import.meta.url)) + '/worker-thread.js');
     }
 }
 

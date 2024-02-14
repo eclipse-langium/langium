@@ -7,7 +7,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import type { TokenType } from 'chevrotain';
-import { CompositeCstNodeImpl, LeafCstNodeImpl, RootCstNodeImpl } from '../index.js';
+import { CompositeCstNodeImpl, LeafCstNodeImpl, RootCstNodeImpl } from '../parser/cst-node-builder.js';
 import { isAbstractElement, type AbstractElement, type Grammar } from '../languages/generated/ast.js';
 import type { Linker } from '../references/linker.js';
 import type { Lexer } from '../parser/lexer.js';
@@ -47,7 +47,7 @@ export class DefaultHydrator implements Hydrator {
 
     protected readonly grammar: Grammar;
     protected readonly lexer: Lexer;
-    protected readonly linker: () => Linker;
+    protected readonly linker: Linker;
 
     protected readonly grammarElementIdMap = new BiMap<AbstractElement, number>();
     protected readonly tokenTypeIdMap = new BiMap<number, TokenType>();
@@ -55,11 +55,28 @@ export class DefaultHydrator implements Hydrator {
     constructor(services: LangiumCoreServices) {
         this.grammar = services.Grammar;
         this.lexer = services.parser.Lexer;
-        this.linker = () => services.references.Linker;
+        this.linker = services.references.Linker;
     }
 
     dehydrate(node: AstNode): object {
         return this.dehydrateAstNode(node, this.createDehyrationContext(node));
+    }
+
+    protected createDehyrationContext(node: AstNode): DehydrateContext {
+        const astNodes = new Map<AstNode, any>();
+        const cstNodes = new Map<CstNode, any>();
+        for (const astNode of streamAst(node)) {
+            astNodes.set(astNode, {});
+        }
+        if (node.$cstNode) {
+            for (const cstNode of streamCst(node.$cstNode)) {
+                cstNodes.set(cstNode, {});
+            }
+        }
+        return {
+            astNodes,
+            cstNodes
+        };
     }
 
     protected dehydrateAstNode(node: AstNode, context: DehydrateContext): object {
@@ -106,23 +123,6 @@ export class DefaultHydrator implements Hydrator {
         return obj;
     }
 
-    protected createDehyrationContext(node: AstNode): DehydrateContext {
-        const astNodes = new Map<AstNode, any>();
-        const cstNodes = new Map<CstNode, any>();
-        for (const astNode of streamAst(node)) {
-            astNodes.set(astNode, {});
-        }
-        if (node.$cstNode) {
-            for (const cstNode of streamCst(node.$cstNode)) {
-                cstNodes.set(cstNode, {});
-            }
-        }
-        return {
-            astNodes,
-            cstNodes
-        };
-    }
-
     protected dehydrateCstNode(node: CstNode, context: DehydrateContext): any {
         const cstNode = context.cstNodes.get(node) as Record<string, any>;
         if (isRootCstNode(node)) {
@@ -152,6 +152,33 @@ export class DefaultHydrator implements Hydrator {
             this.hydrateCstNode(node.$cstNode, context);
         }
         return this.hydrateAstNode(node, context);
+    }
+
+    protected createHydrationContext(node: any): HydrateContext {
+        const astNodes = new Map<any, AstNode>();
+        const cstNodes = new Map<any, CstNode>();
+        for (const astNode of streamAst(node)) {
+            astNodes.set(astNode, {} as AstNode);
+        }
+        if (node.$cstNode) {
+            for (const cstNode of streamCst(node.$cstNode)) {
+                let cst: CstNode | undefined;
+                if ('fullText' in cstNode) {
+                    cst = new RootCstNodeImpl(cstNode.fullText as string);
+                } else if ('content' in cstNode) {
+                    cst = new CompositeCstNodeImpl();
+                } else if ('tokenType' in cstNode) {
+                    cst = this.hydrateCstLeafNode(cstNode);
+                }
+                if (cst) {
+                    cstNodes.set(cstNode, cst);
+                }
+            }
+        }
+        return {
+            astNodes,
+            cstNodes
+        };
     }
 
     protected hydrateAstNode(node: any, context: HydrateContext): AstNode {
@@ -189,40 +216,13 @@ export class DefaultHydrator implements Hydrator {
         return astNode;
     }
 
-    protected createHydrationContext(node: any): HydrateContext {
-        const astNodes = new Map<any, AstNode>();
-        const cstNodes = new Map<any, CstNode>();
-        for (const astNode of streamAst(node)) {
-            astNodes.set(astNode, {} as AstNode);
-        }
-        if (node.$cstNode) {
-            for (const cstNode of streamCst(node.$cstNode)) {
-                let cst: CstNode | undefined;
-                if ('fullText' in cstNode) {
-                    cst = new RootCstNodeImpl(cstNode.fullText as string);
-                } else if ('content' in cstNode) {
-                    cst = new CompositeCstNodeImpl();
-                } else if ('tokenType' in cstNode) {
-                    cst = this.hydrateCstLeafNode(cstNode);
-                }
-                if (cst) {
-                    cstNodes.set(cstNode, cst);
-                }
-            }
-        }
-        return {
-            astNodes,
-            cstNodes
-        };
-    }
-
-    protected hydrateReference(reference: any, node: AstNode, name: string, context: HydrateContext): Reference {
-        return this.linker().buildReference(node, name, context.cstNodes.get(reference.$refNode)!, reference.$refText);
-    }
-
     protected setParent(node: any, parent: any): any {
         node.$container = parent as AstNode;
         return node;
+    }
+
+    protected hydrateReference(reference: any, node: AstNode, name: string, context: HydrateContext): Reference {
+        return this.linker.buildReference(node, name, context.cstNodes.get(reference.$refNode)!, reference.$refText);
     }
 
     protected hydrateCstNode(cstNode: any, context: HydrateContext, num = 0): CstNode {

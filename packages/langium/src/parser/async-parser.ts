@@ -11,7 +11,6 @@ import type { LangiumParser, ParseResult } from './langium-parser.js';
 import type { Hydrator } from '../serializer/hydrator.js';
 import type { Event } from '../utils/event.js';
 import { Deferred, OperationCancelled } from '../utils/promise-utils.js';
-import { Disposable } from '../utils/disposable.js';
 import { Emitter } from '../utils/event.js';
 
 /**
@@ -83,13 +82,19 @@ export abstract class AbstractThreadedAsyncParser implements AsyncParser {
     async parse<T extends AstNode>(text: string, cancelToken: CancellationToken): Promise<ParseResult<T>> {
         const worker = await this.acquireParserWorker(cancelToken);
         const deferred = new Deferred<ParseResult<T>>();
-        deferred.disposables.push(cancelToken.onCancellationRequested(() => {
+        const cancellation = cancelToken.onCancellationRequested(() => {
             const timeout = setTimeout(() => {
                 this.killWorker(worker);
-                deferred.reject(OperationCancelled);
             }, this.terminationDelay);
-            deferred.disposables.push(Disposable.create(() => clearTimeout(timeout)));
-        }));
+            deferred.finally(() => clearTimeout(timeout));
+        });
+        deferred.finally(() => {
+            try {
+                cancellation.dispose();
+            } catch (error) {
+                console.error(error);
+            }
+        });
         worker.parse(text).then(result => {
             result.value = this.hydrator.hydrate(result.value);
             deferred.resolve(result as ParseResult<T>);
@@ -116,18 +121,20 @@ export abstract class AbstractThreadedAsyncParser implements AsyncParser {
             }
         }
         const deferred = new Deferred<ParserWorker>();
-        deferred.disposables.push(cancelToken.onCancellationRequested(() => {
+        const cancellation = cancelToken.onCancellationRequested(() => {
             const index = this.queue.indexOf(deferred);
             if (index >= 0) {
                 this.queue.splice(index, 1);
             }
             deferred.reject(OperationCancelled);
-        }));
+        });
+        deferred.finally(() => {
+            cancellation.dispose();
+        });
         this.queue.push(deferred);
         return deferred.promise;
     }
 
-    protected abstract getWorkerPath(): string;
     protected abstract createWorker(): ParserWorker;
 }
 

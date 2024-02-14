@@ -5,7 +5,6 @@
  ******************************************************************************/
 
 import { CancellationToken, CancellationTokenSource, type AbstractCancellationTokenSource } from '../utils/cancellation.js';
-import type { Disposable } from './disposable.js';
 
 export type MaybePromise<T> = T | Promise<T>
 
@@ -89,28 +88,29 @@ export async function interruptAndCheck(token: CancellationToken): Promise<void>
  * Simple implementation of the deferred pattern.
  * An object that exposes a promise and functions to resolve and reject it.
  */
-export class Deferred<T = void> implements Disposable {
+export class Deferred<T = void> {
     resolve: (value: T) => this;
     reject: (err?: unknown) => this;
 
-    disposables: Disposable[] = [];
+    private callbacks: Array<() => void> = [];
+
+    finally(callback: () => void): this {
+        this.callbacks.push(callback);
+        return this;
+    }
 
     promise = new Promise<T>((resolve, reject) => {
         this.resolve = (arg) => {
-            this.dispose();
             resolve(arg);
+            this.callbacks.forEach(cb => cb());
+            this.callbacks = [];
             return this;
         };
         this.reject = (err) => {
-            this.dispose();
             reject(err);
+            this.callbacks.forEach(cb => cb());
+            this.callbacks = [];
             return this;
         };
     });
-
-    dispose(): void {
-        for (const disposable of this.disposables) {
-            disposable.dispose();
-        }
-    }
 }
