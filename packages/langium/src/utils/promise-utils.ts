@@ -92,24 +92,13 @@ export class Deferred<T = void> {
     resolve: (value: T) => this;
     reject: (err?: unknown) => this;
 
-    private callbacks: Array<() => void> = [];
-
-    finally(callback: () => void): this {
-        this.callbacks.push(callback);
-        return this;
-    }
-
     promise = new Promise<T>((resolve, reject) => {
         this.resolve = (arg) => {
             resolve(arg);
-            this.callbacks.forEach(cb => cb());
-            this.callbacks = [];
             return this;
         };
         this.reject = (err) => {
             reject(err);
-            this.callbacks.forEach(cb => cb());
-            this.callbacks = [];
             return this;
         };
     });

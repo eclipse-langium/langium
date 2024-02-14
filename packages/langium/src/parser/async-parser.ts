@@ -82,29 +82,28 @@ export abstract class AbstractThreadedAsyncParser implements AsyncParser {
     async parse<T extends AstNode>(text: string, cancelToken: CancellationToken): Promise<ParseResult<T>> {
         const worker = await this.acquireParserWorker(cancelToken);
         const deferred = new Deferred<ParseResult<T>>();
+        let timeout: NodeJS.Timeout | undefined;
+        // If the cancellation token is requested, we wait for a certain time before terminating the worker.
+        // Since the cancellation token lives longer than the parsing process, we need to dispose the event listener.
+        // Otherwise, we might accidentally terminate the worker after the parsing process has finished.
         const cancellation = cancelToken.onCancellationRequested(() => {
-            const timeout = setTimeout(() => {
-                this.killWorker(worker);
+            timeout = setTimeout(() => {
+                this.terminateWorker(worker);
             }, this.terminationDelay);
-            deferred.finally(() => clearTimeout(timeout));
-        });
-        deferred.finally(() => {
-            try {
-                cancellation.dispose();
-            } catch (error) {
-                console.error(error);
-            }
         });
         worker.parse(text).then(result => {
             result.value = this.hydrator.hydrate(result.value);
             deferred.resolve(result as ParseResult<T>);
         }).catch(err => {
             deferred.reject(err);
+        }).finally(() => {
+            cancellation.dispose();
+            clearTimeout(timeout);
         });
         return deferred.promise;
     }
 
-    protected killWorker(worker: ParserWorker): void {
+    protected terminateWorker(worker: ParserWorker): void {
         worker.terminate();
         const index = this.workerPool.indexOf(worker);
         if (index >= 0) {
@@ -121,15 +120,12 @@ export abstract class AbstractThreadedAsyncParser implements AsyncParser {
             }
         }
         const deferred = new Deferred<ParserWorker>();
-        const cancellation = cancelToken.onCancellationRequested(() => {
+        cancelToken.onCancellationRequested(() => {
             const index = this.queue.indexOf(deferred);
             if (index >= 0) {
                 this.queue.splice(index, 1);
             }
-            deferred.reject(OperationCancelled);
-        });
-        deferred.finally(() => {
-            cancellation.dispose();
+            deferred.reject('OperationCancelled');
         });
         this.queue.push(deferred);
         return deferred.promise;
