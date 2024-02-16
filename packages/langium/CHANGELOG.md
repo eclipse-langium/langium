@@ -1,5 +1,37 @@
 # Change Log of `langium`
 
+## v3.0.0 (Feb. 2023)
+
+### Smaller Bundles with Exports
+
+Langium now offers dedicated exports to decrease bundle size.
+This is especially relevant for adopters using Langium in browser apps or as webworker based language servers
+where smaller bundle size is still pretty relevant.
+
+All string generator related code has been moved to `langium/generate` ([#1287](https://github.com/eclipse-langium/langium/pull/1287)).
+
+Everything related to the internals of the Langium grammar language has been moved to `langium/grammar` ([#1171](https://github.com/eclipse-langium/langium/pull/1171)).
+Note that adopters generally shouldn't need to use this import at all.
+
+All language server related functionality has been moved to `langium/lsp` ([#1258](https://github.com/eclipse-langium/langium/pull/1258)):
+* This includes all services in the `lsp` object of the langium service instance and the `startLanguageServer` function.
+* The `langium` import now only exposes the `LangiumCoreServices` service. 
+Adopters using Langium to build a language server should continue using the known `LangiumServices`, which is now imported from `langium/lsp`.
+
+### Asynchronous Parsing
+
+The document lifecycle now supports async parsing ([#1352](https://github.com/eclipse-langium/langium/pull/1352)). This feature is disabled by default.
+To enable it, adopters need to create a dedicated parser worker and pass the path of the worker to the new `WorkerThreadAsyncParser` class. Take a look [at our test implementation](https://github.com/eclipse-langium/langium/blob/main/packages/langium/test/parser/worker-thread.js) to see to use this yourself.
+
+
+### General Improvements
+
+* Various improvements to the document lifecycle.
+* Support for regex lookbehind in terminal tokens ([#1356](https://github.com/eclipse-langium/langium/pull/1356)).
+* The workspace mutex now also supports read operations.
+* Utility functions are now wrapped in namespaces.
+* The language server now waits for the appropriate document builder phase before responding to requests ([#1334](https://github.com/eclipse-langium/langium/pull/1334)).
+
 ## v2.1.0 (Nov. 2023)
 
 ### End-Of-File Parser Tokens
