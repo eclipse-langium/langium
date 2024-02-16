@@ -69,15 +69,15 @@ function ruleDfs(rule: ast.AbstractRule, visitedSet: Set<string>, allTerminals: 
 }
 
 /**
- * Returns all parser rules which are used in the grammar as type in cross-references.
+ * Returns all parser rules which provide types which are used in the grammar as type in cross-references.
  * @param grammar the grammar to investigate
- * @returns the set of parser rules used as type in cross-references
+ * @returns the set of parser rules whose contributed types are used as type in cross-references
  */
 export function getAllRulesUsedForCrossReferences(grammar: ast.Grammar): Set<ast.ParserRule> {
     const result = new Set<ast.ParserRule>();
     streamAllContents(grammar).forEach(node => {
         if (ast.isCrossReference(node)) {
-            // the cross-reference refers directly to a parser rule
+            // the cross-reference refers directly to a parser rule (without "returns", without "infers")
             if (ast.isParserRule(node.type.ref)) {
                 result.add(node.type.ref);
             }
