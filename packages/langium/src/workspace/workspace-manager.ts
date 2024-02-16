@@ -4,9 +4,10 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import type { InitializeParams, InitializedParams } from 'vscode-languageserver-protocol';
 import type { WorkspaceFolder } from 'vscode-languageserver-types';
 import type { ServiceRegistry } from '../service-registry.js';
-import type { InitializableService, InitializeParams, InitializedParams, LangiumSharedCoreServices } from '../services.js';
+import type { LangiumSharedCoreServices } from '../services.js';
 import { CancellationToken } from '../utils/cancellation.js';
 import { interruptAndCheck } from '../utils/promise-utils.js';
 import { URI, UriUtils } from '../utils/uri-utils.js';
@@ -23,10 +24,22 @@ export type { WorkspaceFolder };
  * The workspace manager is responsible for finding source files in the workspace.
  * This service is shared between all languages of a language server.
  */
-export interface WorkspaceManager extends InitializableService {
+export interface WorkspaceManager {
 
     /** The options used for the initial workspace build. */
     initialBuildOptions: BuildOptions | undefined;
+
+    /**
+     * When used in a language server context, this method is called when the server receives
+     * the `initialize` request.
+     */
+    initialize(params: InitializeParams): void;
+
+    /**
+     * When used in a language server context, this method is called when the server receives
+     * the `initialized` notification.
+     */
+    initialized(params: InitializedParams): Promise<void>;
 
     /**
      * Does the initial indexing of workspace folders.

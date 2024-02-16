@@ -4,13 +4,29 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { ConfigurationItem, DidChangeConfigurationParams, DidChangeConfigurationRegistrationOptions } from 'vscode-languageserver-protocol';
+import type {
+    ConfigurationItem, DidChangeConfigurationParams, DidChangeConfigurationRegistrationOptions, InitializeParams,
+    InitializedParams
+} from 'vscode-languageserver-protocol';
 import type { ServiceRegistry } from '../service-registry.js';
-import type { InitializableService, InitializeParams, InitializedParams, LangiumSharedCoreServices } from '../services.js';
+import type { LangiumSharedCoreServices } from '../services.js';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-export interface ConfigurationProvider extends InitializableService {
+export interface ConfigurationProvider {
+
+    /**
+     * When used in a language server context, this method is called when the server receives
+     * the `initialize` request.
+     */
+    initialize(params: InitializeParams): void;
+
+    /**
+     * When used in a language server context, this method is called when the server receives
+     * the `initialized` notification.
+     */
+    initialized(params: ConfigurationInitializedParams): Promise<void>;
+
     /**
      * Returns a configuration value stored for the given language.
      *
