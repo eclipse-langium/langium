@@ -81,7 +81,7 @@ function buildTypeMetaDataMethod(astTypes: AstTypes): Generated {
                 joinToNode(
                     astTypes.interfaces,
                     interfaceType => {
-                        const props = interfaceType.properties;
+                        const props = interfaceType.superProperties;
                         return (props.length > 0)
                             ? expandToNode`
                                 case '${interfaceType.name}': {
