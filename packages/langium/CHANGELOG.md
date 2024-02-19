@@ -21,16 +21,28 @@ Adopters using Langium to build a language server should continue using the know
 ### Asynchronous Parsing
 
 The document lifecycle now supports async parsing ([#1352](https://github.com/eclipse-langium/langium/pull/1352)). This feature is disabled by default.
-To enable it, adopters need to create a dedicated parser worker and pass the path of the worker to the new `WorkerThreadAsyncParser` class. Take a look [at our test implementation](https://github.com/eclipse-langium/langium/blob/main/packages/langium/test/parser/worker-thread.js) to see to use this yourself.
-
+To enable it, adopters need to create a dedicated parser worker and pass the path of the worker to the new `WorkerThreadAsyncParser` class.
+Take a look [at our test implementation](https://github.com/eclipse-langium/langium/blob/main/packages/langium/test/parser/worker-thread.js) to see to use this yourself.
 
 ### General Improvements
 
-* Various improvements to the document lifecycle.
+* Various improvements to the document lifecycle ([#1286](https://github.com/eclipse-langium/langium/pull/1286), [#1304](https://github.com/eclipse-langium/langium/pull/1304), [#1330](https://github.com/eclipse-langium/langium/pull/1330)).
 * Support for regex lookbehind in terminal tokens ([#1356](https://github.com/eclipse-langium/langium/pull/1356)).
-* The workspace mutex now also supports read operations.
-* Utility functions are now wrapped in namespaces.
+* The workspace mutex now also supports read operations ([#1310](https://github.com/eclipse-langium/langium/pull/1310)).
+* Default values on interface properties ([#1165](https://github.com/eclipse-langium/langium/pull/1165)).
+* Utility functions are now wrapped in namespaces ([#1320](https://github.com/eclipse-langium/langium/pull/1320)).
 * The language server now waits for the appropriate document builder phase before responding to requests ([#1334](https://github.com/eclipse-langium/langium/pull/1334)).
+
+### Breaking Changes
+
+If you're upgrading from v2 of Langium, there are a few breaking changes you should be aware of:
+
+* All exports related to the code generator have been moved from `langium` to `langium/generate`
+* All LSP related services/functions have been moved to `langium/lsp`. This includes also the `LangiumServices`.
+* All code related to the internal workings of the grammar language have been moved to `langium/grammar`. 
+* Utility functions related to AST/CST nodes, RegExp and some of the grammar are now exposed via namespaces to improve API surface area. They are now available under `AstUtils`, `CstUtils`, `GrammarUtils` and `RegExpUtils`. The names of the functions haven't changed.
+* The `FileSystemProvider#readFileSync` method has been removed.
+* The `LangiumDocuments#getOrCreateDocument` method now returns a `Promise<LangiumDocument>`. To use the `LangiumDocuments` in a sync context, use the `getDocument` method - optionally with the `createDocument` method - to get/create documents.
 
 ## v2.1.0 (Nov. 2023)
 
