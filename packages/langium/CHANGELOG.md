@@ -22,7 +22,7 @@ Adopters using Langium to build a language server should continue using the know
 
 The document lifecycle now supports async parsing ([#1352](https://github.com/eclipse-langium/langium/pull/1352)). This feature is disabled by default.
 To enable it, adopters need to create a dedicated parser worker and pass the path of the worker to the new `WorkerThreadAsyncParser` class.
-Take a look [at our test implementation](https://github.com/eclipse-langium/langium/blob/main/packages/langium/test/parser/worker-thread.js) to see to use this yourself.
+Take a look [at our test implementation](https://github.com/eclipse-langium/langium/blob/main/packages/langium/test/parser/worker-thread.js) to see how to use this yourself.
 
 ### General Improvements
 
