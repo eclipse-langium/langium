@@ -35,7 +35,7 @@
   },
   "dependencies": {
     "langium": "~2.1.0",
-    "sprotty-protocol": "~1.0.0"
+    "sprotty-protocol": "^1.0.0"
   },
   "volta": {
     "node": "18.17.1",
