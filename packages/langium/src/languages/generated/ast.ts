@@ -963,8 +963,10 @@ export class LangiumGrammarAstReflection extends AbstractAstReflection {
                 return {
                     name: 'Action',
                     properties: [
+                        { name: 'cardinality' },
                         { name: 'feature' },
                         { name: 'inferredType' },
+                        { name: 'lookahead' },
                         { name: 'operator' },
                         { name: 'type' }
                     ]
@@ -974,7 +976,9 @@ export class LangiumGrammarAstReflection extends AbstractAstReflection {
                 return {
                     name: 'Alternatives',
                     properties: [
-                        { name: 'elements', defaultValue: [] }
+                        { name: 'cardinality' },
+                        { name: 'elements', defaultValue: [] },
+                        { name: 'lookahead' }
                     ]
                 };
             }
@@ -982,7 +986,9 @@ export class LangiumGrammarAstReflection extends AbstractAstReflection {
                 return {
                     name: 'Assignment',
                     properties: [
+                        { name: 'cardinality' },
                         { name: 'feature' },
+                        { name: 'lookahead' },
                         { name: 'operator' },
                         { name: 'terminal' }
                     ]
@@ -992,7 +998,9 @@ export class LangiumGrammarAstReflection extends AbstractAstReflection {
                 return {
                     name: 'CharacterRange',
                     properties: [
+                        { name: 'cardinality' },
                         { name: 'left' },
+                        { name: 'lookahead' },
                         { name: 'right' }
                     ]
                 };
@@ -1001,9 +1009,20 @@ export class LangiumGrammarAstReflection extends AbstractAstReflection {
                 return {
                     name: 'CrossReference',
                     properties: [
+                        { name: 'cardinality' },
                         { name: 'deprecatedSyntax', defaultValue: false },
+                        { name: 'lookahead' },
                         { name: 'terminal' },
                         { name: 'type' }
+                    ]
+                };
+            }
+            case 'EndOfFile': {
+                return {
+                    name: 'EndOfFile',
+                    properties: [
+                        { name: 'cardinality' },
+                        { name: 'lookahead' }
                     ]
                 };
             }
@@ -1011,8 +1030,10 @@ export class LangiumGrammarAstReflection extends AbstractAstReflection {
                 return {
                     name: 'Group',
                     properties: [
+                        { name: 'cardinality' },
                         { name: 'elements', defaultValue: [] },
-                        { name: 'guardCondition' }
+                        { name: 'guardCondition' },
+                        { name: 'lookahead' }
                     ]
                 };
             }
@@ -1020,6 +1041,8 @@ export class LangiumGrammarAstReflection extends AbstractAstReflection {
                 return {
                     name: 'Keyword',
                     properties: [
+                        { name: 'cardinality' },
+                        { name: 'lookahead' },
                         { name: 'value' }
                     ]
                 };
@@ -1028,6 +1051,8 @@ export class LangiumGrammarAstReflection extends AbstractAstReflection {
                 return {
                     name: 'NegatedToken',
                     properties: [
+                        { name: 'cardinality' },
+                        { name: 'lookahead' },
                         { name: 'terminal' }
                     ]
                 };
@@ -1036,6 +1061,8 @@ export class LangiumGrammarAstReflection extends AbstractAstReflection {
                 return {
                     name: 'RegexToken',
                     properties: [
+                        { name: 'cardinality' },
+                        { name: 'lookahead' },
                         { name: 'regex' }
                     ]
                 };
@@ -1045,6 +1072,8 @@ export class LangiumGrammarAstReflection extends AbstractAstReflection {
                     name: 'RuleCall',
                     properties: [
                         { name: 'arguments', defaultValue: [] },
+                        { name: 'cardinality' },
+                        { name: 'lookahead' },
                         { name: 'rule' }
                     ]
                 };
@@ -1053,7 +1082,9 @@ export class LangiumGrammarAstReflection extends AbstractAstReflection {
                 return {
                     name: 'TerminalAlternatives',
                     properties: [
-                        { name: 'elements', defaultValue: [] }
+                        { name: 'cardinality' },
+                        { name: 'elements', defaultValue: [] },
+                        { name: 'lookahead' }
                     ]
                 };
             }
@@ -1061,7 +1092,9 @@ export class LangiumGrammarAstReflection extends AbstractAstReflection {
                 return {
                     name: 'TerminalGroup',
                     properties: [
-                        { name: 'elements', defaultValue: [] }
+                        { name: 'cardinality' },
+                        { name: 'elements', defaultValue: [] },
+                        { name: 'lookahead' }
                     ]
                 };
             }
@@ -1069,6 +1102,8 @@ export class LangiumGrammarAstReflection extends AbstractAstReflection {
                 return {
                     name: 'TerminalRuleCall',
                     properties: [
+                        { name: 'cardinality' },
+                        { name: 'lookahead' },
                         { name: 'rule' }
                     ]
                 };
@@ -1077,7 +1112,9 @@ export class LangiumGrammarAstReflection extends AbstractAstReflection {
                 return {
                     name: 'UnorderedGroup',
                     properties: [
-                        { name: 'elements', defaultValue: [] }
+                        { name: 'cardinality' },
+                        { name: 'elements', defaultValue: [] },
+                        { name: 'lookahead' }
                     ]
                 };
             }
@@ -1085,7 +1122,18 @@ export class LangiumGrammarAstReflection extends AbstractAstReflection {
                 return {
                     name: 'UntilToken',
                     properties: [
+                        { name: 'cardinality' },
+                        { name: 'lookahead' },
                         { name: 'terminal' }
+                    ]
+                };
+            }
+            case 'Wildcard': {
+                return {
+                    name: 'Wildcard',
+                    properties: [
+                        { name: 'cardinality' },
+                        { name: 'lookahead' }
                     ]
                 };
             }

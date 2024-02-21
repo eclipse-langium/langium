@@ -288,6 +288,49 @@ describe('Ast generator', () => {
             COMMENT: /\\/\\//,
         };
     `));
+
+    testTypeMetaData('should generate property metadata for super types', `
+        grammar TestGrammar
+             
+        interface IAmArray {
+            elements: ArrayContent[];
+        }
+        interface DeclaredArray extends IAmArray{ }
+          
+        DeclaredArray returns DeclaredArray:
+            'declared' (elements+=ArrayContent)* ';';
+
+        hidden terminal WS: /\\s+/;
+        terminal ID: /[_a-zA-Z][\\w_]*/;
+    `, expandToString`
+        getTypeMetaData(type: string): TypeMetaData {
+                switch (type) {
+                    case 'IAmArray': {
+                        return {
+                            name: 'IAmArray',
+                            properties: [
+                                { name: 'elements', defaultValue: [] }
+                            ]
+                        };
+                    }
+                    case 'DeclaredArray': {
+                        return {
+                            name: 'DeclaredArray',
+                            properties: [
+                                { name: 'elements', defaultValue: [] }
+                            ]
+                        };
+                    }
+                    default: {
+                        return {
+                            name: type,
+                            properties: []
+                        };
+                    }
+                }
+            }
+        }`
+    );
 });
 
 async function testTerminalConstants(grammar: string, expected: string) {
@@ -307,6 +350,14 @@ async function testTerminalConstants(grammar: string, expected: string) {
 }
 
 function testGeneratedAst(name: string, grammar: string, expected: string): void {
+    testGenerated(name, grammar, expected, 'export type', 'export type testAstType');
+}
+
+function testTypeMetaData(name: string, grammar: string, expected: string): void {
+    testGenerated(name, grammar, expected, 'getTypeMetaData', 'export const reflection');
+}
+
+function testGenerated(name: string, grammar: string, expected: string, start: string, end: string): void {
     test(name, async () => {
         const result = (await parse(grammar)).parseResult;
         const config: LangiumConfig = {
@@ -316,7 +367,7 @@ function testGeneratedAst(name: string, grammar: string, expected: string): void
         };
         const expectedPart = normalizeEOL(expected).trim();
         const typesFileContent = generateAst(services.grammar, [result.value], config);
-        const relevantPart = typesFileContent.substring(typesFileContent.indexOf('export type'), typesFileContent.indexOf('export type testAstType')).trim();
+        const relevantPart = typesFileContent.substring(typesFileContent.indexOf(start), typesFileContent.indexOf(end)).trim();
         expect(relevantPart).toEqual(expectedPart);
     });
 }
