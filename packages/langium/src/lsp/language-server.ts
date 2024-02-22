@@ -42,7 +42,7 @@ import { mergeSignatureHelpOptions } from './signature-help-provider.js';
 
 export interface LanguageServer {
     initialize(params: InitializeParams): Promise<InitializeResult>
-    initialized(params: InitializedParams): Promise<void>
+    initialized(params: InitializedParams): void
     onInitialize(callback: (params: InitializeParams) => void): Disposable
     onInitialized(callback: (params: InitializedParams) => void): Disposable
 }
@@ -182,8 +182,8 @@ export class DefaultLanguageServer implements LanguageServer {
         return result;
     }
 
-    async initialized(params: InitializedParams): Promise<void> {
-        await this.fireInitializedOnDefaultServices(params);
+    initialized(params: InitializedParams): void {
+        this.fireInitializedOnDefaultServices(params);
 
         this.onInitializedEmitter.fire(params);
         this.onInitializedEmitter.dispose();
@@ -194,7 +194,7 @@ export class DefaultLanguageServer implements LanguageServer {
         this.services.workspace.WorkspaceManager.initialize(params);
     }
 
-    protected async fireInitializedOnDefaultServices(params: InitializedParams): Promise<void> {
+    protected fireInitializedOnDefaultServices(params: InitializedParams): void {
         const connection = this.services.lsp.Connection;
         const configurationParams = connection ? <ConfigurationInitializedParams>{
             ...params,
@@ -202,8 +202,10 @@ export class DefaultLanguageServer implements LanguageServer {
             getConfiguration: params => connection.workspace.getConfiguration(params)
         } : params;
 
-        await this.services.workspace.ConfigurationProvider.initialized(configurationParams);
-        await this.services.workspace.WorkspaceManager.initialized(params);
+        this.services.workspace.WorkspaceManager.initialized(params)
+            .catch(err => console.error('Error in WorkspaceManager initialization:', err));
+        this.services.workspace.ConfigurationProvider.initialized(configurationParams)
+            .catch(err => console.error('Error in ConfigurationProvider initialization:', err));
     }
 }
 
@@ -244,7 +246,7 @@ export function startLanguageServer(services: LangiumSharedServices): void {
         return services.lsp.LanguageServer.initialize(params);
     });
     connection.onInitialized(params => {
-        return services.lsp.LanguageServer.initialized(params);
+        services.lsp.LanguageServer.initialized(params);
     });
 
     // Make the text document manager listen on the connection for open, change and close text document events.
