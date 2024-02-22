@@ -199,13 +199,16 @@ export class DefaultLanguageServer implements LanguageServer {
         const configurationParams = connection ? <ConfigurationInitializedParams>{
             ...params,
             register: params => connection.client.register(DidChangeConfigurationNotification.type, params),
-            getConfiguration: params => connection.workspace.getConfiguration(params)
+            fetchConfiguration: params => connection.workspace.getConfiguration(params)
         } : params;
 
-        this.services.workspace.WorkspaceManager.initialized(params)
-            .catch(err => console.error('Error in WorkspaceManager initialization:', err));
+        // do not await the promises of the following calls, as they must not block the initialization process!
+        //  otherwise, there is the danger of out-of-order processing of subsequent incoming messages from the language client
+        // however, awaiting should be possible in general, e.g. in unit test scenarios
         this.services.workspace.ConfigurationProvider.initialized(configurationParams)
             .catch(err => console.error('Error in ConfigurationProvider initialization:', err));
+        this.services.workspace.WorkspaceManager.initialized(params)
+            .catch(err => console.error('Error in WorkspaceManager initialization:', err));
     }
 }
 
