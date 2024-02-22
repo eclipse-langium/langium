@@ -32,17 +32,19 @@ Take a look [at our test implementation](https://github.com/eclipse-langium/lang
 * Default values on interface properties ([#1165](https://github.com/eclipse-langium/langium/pull/1165)).
 * Utility functions are now wrapped in namespaces ([#1320](https://github.com/eclipse-langium/langium/pull/1320)).
 * The language server now waits for the appropriate document builder phase before responding to requests ([#1334](https://github.com/eclipse-langium/langium/pull/1334)).
+* The completion provider's cross-reference scope computation can be customized ([#1385](https://github.com/eclipse-langium/langium/pull/1385/)).
 
 ### Breaking Changes
 
 If you're upgrading from v2 of Langium, there are a few breaking changes you should be aware of:
 
 * All exports related to the code generator have been moved from `langium` to `langium/generate`
-* All LSP related services/functions have been moved to `langium/lsp`. This includes also the `LangiumServices`.
+* All LSP related services/functions have been moved to `langium/lsp`. This includes also the `LangiumServices` and `LangiumSharedServices`.
 * All code related to the internal workings of the grammar language have been moved to `langium/grammar`. 
 * Utility functions related to AST/CST nodes, RegExp and some of the grammar are now exposed via namespaces to improve API surface area. They are now available under `AstUtils`, `CstUtils`, `GrammarUtils` and `RegExpUtils`. The names of the functions haven't changed.
 * The `FileSystemProvider#readFileSync` method has been removed.
 * The `LangiumDocuments#getOrCreateDocument` method now returns a `Promise<LangiumDocument>`. To use the `LangiumDocuments` in a sync context, use the `getDocument` method - optionally with the `createDocument` method - to get/create documents.
+* The `DefaultCompletionProvider#filterCrossReference` method has been replaced by `getReferenceCandidates` allowing more general adjustments of the proposal identification.
 
 ## v2.1.0 (Nov. 2023)
 
