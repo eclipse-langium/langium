@@ -715,8 +715,7 @@ describe('Assignments with = instead of +=', () => {
         const validation = await validate(getGrammar(`
             entry Model:
                 persons = Person* ;
-            Person:
-                'person' name=ID ;
+            Person: 'person' name=ID ;
         `));
         expect(validation.diagnostics.length).toBe(1);
         expect(validation.diagnostics[0].message).toBe(getMessage('persons'));
@@ -725,21 +724,29 @@ describe('Assignments with = instead of +=', () => {
         const validation = await validate(getGrammar(`
             entry Model:
                 persons = Person+ ;
-            Person:
-                'person' name=ID ;
+            Person: 'person' name=ID ;
         `));
         expect(validation.diagnostics.length).toBe(1);
         expect(validation.diagnostics[0].message).toBe(getMessage('persons'));
     });
 
-    test.only('two assignments with single cardinality', async () => {
+    test('two assignments with single cardinality', async () => {
         const validation = await validate(getGrammar(`
             entry Model:
                 persons = Person ',' persons = Person;
-            Person:
-                'person' name=ID ;
+            Person: 'person' name=ID ;
         `));
         expect(validation.diagnostics.length).toBe(2);
+        expect(validation.diagnostics[0].message).toBe(getMessage('persons'));
+    });
+
+    test('single assignment with outer * cardinality', async () => {
+        const validation = await validate(getGrammar(`
+            entry Model:
+                (',' persons = Person)* ;
+            Person: 'person' name=ID ;
+        `));
+        expect(validation.diagnostics.length).toBe(1);
         expect(validation.diagnostics[0].message).toBe(getMessage('persons'));
     });
 
