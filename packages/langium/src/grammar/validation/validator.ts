@@ -36,6 +36,7 @@ export function registerValidationChecks(services: LangiumGrammarServices): void
             validator.checkAssignmentWithFeatureName,
             validator.checkAssignmentToFragmentRule,
             validator.checkAssignmentTypes,
+            validator.checkAssignmentOperator,
             validator.checkAssignmentReservedName
         ],
         ParserRule: [
@@ -806,6 +807,20 @@ export class LangiumGrammarValidator {
                     property: 'terminal'
                 }
             );
+        }
+    }
+
+    checkAssignmentOperator(assignment: ast.Assignment, accept: ValidationAcceptor): void {
+        if (assignment.operator === '=') {
+            // the assignment has a multi-value cardinality
+            if (assignment.cardinality === '*' || assignment.cardinality === '+') {
+                accept(
+                    'warning',
+                    `It seems, that you assign multiple values to the feature '${assignment.feature}', while you are using '=' as assignment operator. Consider to use '+=' instead in order not to loose some of the assigned value.`,
+                    { node: assignment, property: 'operator' }
+                );
+            }
+            // TODO more cases
         }
     }
 

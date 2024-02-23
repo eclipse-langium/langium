@@ -728,6 +728,71 @@ describe('Property type is not a mix of cross-ref and non-cross-ref types.', () 
 
 });
 
+describe('Assignments with = instead of +=', () => {
+    function getMessage(featureName: string): string {
+        return `It seems, that you assign multiple values to the feature '${featureName}', while you are using '=' as assignment operator. Consider to use '+=' instead in order not to loose some of the assigned value.`;
+    }
+    function getGrammar(content: string): string {
+        return `
+            grammar HelloWorld
+            ${content}
+            hidden terminal WS: /\\s+/;
+            terminal ID: /[_a-zA-Z][\\w_]*/;
+        `;
+    }
+
+    test('assignment with * cardinality', async () => {
+        const validation = await validate(getGrammar(`
+            entry Model:
+                persons = Person* ;
+            Person:
+                'person' name=ID ;
+        `));
+        expect(validation.diagnostics.length).toBe(1);
+        expect(validation.diagnostics[0].message).toBe(getMessage('persons'));
+    });
+    test('assignment with + cardinality', async () => {
+        const validation = await validate(getGrammar(`
+            entry Model:
+                persons = Person+ ;
+            Person:
+                'person' name=ID ;
+        `));
+        expect(validation.diagnostics.length).toBe(1);
+        expect(validation.diagnostics[0].message).toBe(getMessage('persons'));
+    });
+
+    test.only('two assignments with single cardinality', async () => {
+        const validation = await validate(getGrammar(`
+            entry Model:
+                persons = Person ',' persons = Person;
+            Person:
+                'person' name=ID ;
+        `));
+        expect(validation.diagnostics.length).toBe(2);
+        expect(validation.diagnostics[0].message).toBe(getMessage('persons'));
+    });
+
+    test('Simple case', async () => {
+        const validation = await validate(getGrammar(`
+            entry Model:
+                persons += Person*
+                greetings = Greeting*;
+
+            Person:
+                'person' name=ID;
+
+            Greeting:
+                'Hello' person=[Person:ID] '!';
+        `));
+
+        expect(validation.diagnostics.length).toBe(1);
+        expect(validation.diagnostics[0].message).toBe(getMessage('greetings'));
+        // expectError(validation, /Mixing a cross-reference with other types is not supported. Consider splitting property /);
+    });
+
+});
+
 describe('Missing required properties are not arrays or booleans', () => {
 
     test('No missing properties', async () => {
