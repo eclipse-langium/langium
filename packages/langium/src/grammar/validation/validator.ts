@@ -811,17 +811,39 @@ export class LangiumGrammarValidator {
     }
 
     checkAssignmentOperator(assignment: ast.Assignment, accept: ValidationAcceptor): void {
-        if (assignment.operator === '=') {
-            // the assignment has a multi-value cardinality
-            if (assignment.cardinality === '*' || assignment.cardinality === '+') {
-                accept(
-                    'warning',
-                    `It seems, that you assign multiple values to the feature '${assignment.feature}', while you are using '=' as assignment operator. Consider to use '+=' instead in order not to loose some of the assigned value.`,
-                    { node: assignment, property: 'operator' }
-                );
-            }
-            // TODO more cases
+        // this validation is specific for assignments with '=' as assignment operator
+        if (assignment.operator !== '=') {
+            return;
         }
+        // the assignment has a multi-value cardinality itself
+        if (this.isMany(assignment)) {
+            this.markAssignment(assignment, accept);
+            return;
+        }
+        // check the container group of the assignment
+        if (ast.isGroup(assignment.$container) || ast.isUnorderedGroup(assignment.$container)) {
+            // the group can occur multiple times
+            if (this.isMany(assignment.$container)) {
+                this.markAssignment(assignment, accept);
+                return;
+            }
+            // look for at least a second assignments to the same feature within the container group, the cardinality does not matter
+            if (assignment.$container.elements.filter(child => ast.isAssignment(child) && child.feature === assignment.feature).length >= 2) {
+                this.markAssignment(assignment, accept);
+                return;
+            }
+        }
+        // TODO more cases
+    }
+    private isMany(node: AstNode): boolean {
+        return ast.isAbstractElement(node) && (node.cardinality === '*' || node.cardinality === '+');
+    }
+    private markAssignment(assignment: ast.Assignment, accept: ValidationAcceptor): void {
+        accept(
+            'warning',
+            `It seems, that you assign multiple values to the feature '${assignment.feature}', while you are using '=' as assignment operator. Consider to use '+=' instead in order not to loose some of the assigned value.`,
+            { node: assignment, property: 'operator' }
+        );
     }
 
     checkInterfacePropertyTypes(interfaceDecl: ast.Interface, accept: ValidationAcceptor): void {
