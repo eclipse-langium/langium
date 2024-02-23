@@ -33,6 +33,14 @@ Take a look [at our test implementation](https://github.com/eclipse-langium/lang
 * Utility functions are now wrapped in namespaces ([#1320](https://github.com/eclipse-langium/langium/pull/1320)).
 * The language server now waits for the appropriate document builder phase before responding to requests ([#1334](https://github.com/eclipse-langium/langium/pull/1334)).
 * The completion provider's cross-reference scope computation can be customized ([#1385](https://github.com/eclipse-langium/langium/pull/1385/)).
+* Support for type hierarchy LSP requests added via a new TypeHierarchyProvider service ([#1278](https://github.com/eclipse-langium/langium/pull/1278))
+* Removed explicit EOF token from the TokenProvider (could sometimes lead to issues) ([#1276](https://github.com/eclipse-langium/langium/pull/1276))
+* Improved accuracy of the completion provider in some cases ([#1267](https://github.com/eclipse-langium/langium/pull/1267))
+* Support references to other documents in the JsonSerializer ([#1254](https://github.com/eclipse-langium/langium/pull/1254))
+* Fixed an issue that could lead to excessive time complexity when using Langium's built-in generation ([#1294](https://github.com/eclipse-langium/langium/pull/1294))
+* Extended the yeoman generator for Langium to offer parsing, linking & validation test stubs with vitest ([#1298](https://github.com/eclipse-langium/langium/pull/1298))
+* Allow referencing hidden terminals in terminal lookahead ([#1343](https://github.com/eclipse-langium/langium/pull/1343))
+* Fixed an issue that could come up regarding cross-references that pointed to an instance of an inferred types [#1328](https://github.com/eclipse-langium/langium/pull/1328)
 
 ### Breaking Changes
 
