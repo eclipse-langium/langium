@@ -125,7 +125,7 @@ export abstract class AbstractThreadedAsyncParser implements AsyncParser {
             if (index >= 0) {
                 this.queue.splice(index, 1);
             }
-            deferred.reject('OperationCancelled');
+            deferred.reject(OperationCancelled);
         });
         this.queue.push(deferred);
         return deferred.promise;

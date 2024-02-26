@@ -9,7 +9,7 @@ import type { WorkspaceFolder } from 'vscode-languageserver-types';
 import type { ServiceRegistry } from '../service-registry.js';
 import type { LangiumSharedCoreServices } from '../services.js';
 import { CancellationToken } from '../utils/cancellation.js';
-import { interruptAndCheck } from '../utils/promise-utils.js';
+import { Deferred, interruptAndCheck } from '../utils/promise-utils.js';
 import { URI, UriUtils } from '../utils/uri-utils.js';
 import type { BuildOptions, DocumentBuilder } from './document-builder.js';
 import type { LangiumDocument, LangiumDocuments } from './documents.js';
@@ -28,6 +28,12 @@ export interface WorkspaceManager {
 
     /** The options used for the initial workspace build. */
     initialBuildOptions: BuildOptions | undefined;
+
+    /**
+     * A promise that resolves when the workspace manager is ready to be used.
+     * Use this to ensure that the workspace manager has finished its initialization.
+     */
+    readonly ready: Promise<void>;
 
     /**
      * When used in a language server context, this method is called when the server receives
@@ -61,6 +67,7 @@ export class DefaultWorkspaceManager implements WorkspaceManager {
     protected readonly documentBuilder: DocumentBuilder;
     protected readonly fileSystemProvider: FileSystemProvider;
     protected readonly mutex: WorkspaceLock;
+    protected readonly _ready = new Deferred<void>();
     protected folders?: WorkspaceFolder[];
 
     constructor(services: LangiumSharedCoreServices) {
@@ -69,6 +76,10 @@ export class DefaultWorkspaceManager implements WorkspaceManager {
         this.documentBuilder = services.workspace.DocumentBuilder;
         this.fileSystemProvider = services.workspace.FileSystemProvider;
         this.mutex = services.workspace.WorkspaceLock;
+    }
+
+    get ready(): Promise<void> {
+        return this._ready.promise;
     }
 
     initialize(params: InitializeParams): void {
@@ -82,6 +93,18 @@ export class DefaultWorkspaceManager implements WorkspaceManager {
     }
 
     async initializeWorkspace(folders: WorkspaceFolder[], cancelToken = CancellationToken.None): Promise<void> {
+        const documents = await this.performStartup(folders);
+        // Only after creating all documents do we check whether we need to cancel the initialization
+        // The document builder will later pick up on all unprocessed documents
+        await interruptAndCheck(cancelToken);
+        await this.documentBuilder.build(documents, this.initialBuildOptions, cancelToken);
+    }
+
+    /**
+     * Performs the uninterruptable startup sequence of the workspace manager.
+     * This methods loads all documents in the workspace and other documents and returns them.
+     */
+    protected async performStartup(folders: WorkspaceFolder[]): Promise<LangiumDocument[]> {
         const fileExtensions = this.serviceRegistry.all.flatMap(e => e.LanguageMetaData.fileExtensions);
         const documents: LangiumDocument[] = [];
         const collector = (document: LangiumDocument) => {
@@ -98,10 +121,8 @@ export class DefaultWorkspaceManager implements WorkspaceManager {
             folders.map(wf => [wf, this.getRootFolder(wf)] as [WorkspaceFolder, URI])
                 .map(async entry => this.traverseFolder(...entry, fileExtensions, collector))
         );
-        // Only after creating all documents do we check whether we need to cancel the initialization
-        // The document builder will later pick up on all unprocessed documents
-        await interruptAndCheck(cancelToken);
-        await this.documentBuilder.build(documents, this.initialBuildOptions, cancelToken);
+        this._ready.resolve();
+        return documents;
     }
 
     /**

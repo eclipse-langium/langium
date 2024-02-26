@@ -7,10 +7,16 @@
 import type { ConfigurationItem, DidChangeConfigurationParams, DidChangeConfigurationRegistrationOptions, InitializeParams, InitializedParams } from 'vscode-languageserver-protocol';
 import type { ServiceRegistry } from '../service-registry.js';
 import type { LangiumSharedCoreServices } from '../services.js';
+import { Deferred } from '../utils/promise-utils.js';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 export interface ConfigurationProvider {
+
+    /**
+     * A promise that resolves when the configuration provider is ready to be used.
+     */
+    readonly ready: Promise<void>;
 
     /**
      * When used in a language server context, this method is called when the server receives
@@ -52,12 +58,16 @@ export interface ConfigurationInitializedParams extends InitializedParams {
 export class DefaultConfigurationProvider implements ConfigurationProvider {
 
     protected readonly serviceRegistry: ServiceRegistry;
+    protected readonly _ready = new Deferred<void>();
     protected settings: Record<string, Record<string, any>> = {};
     protected workspaceConfig = false;
-    protected fetchConfiguration: ((configurations: ConfigurationItem[]) => Promise<any>) | undefined;
 
     constructor(services: LangiumSharedCoreServices) {
         this.serviceRegistry = services.ServiceRegistry;
+    }
+
+    get ready(): Promise<void> {
+        return this._ready.promise;
     }
 
     initialize(params: InitializeParams): void {
@@ -77,34 +87,23 @@ export class DefaultConfigurationProvider implements ConfigurationProvider {
                 });
             }
 
-            // params.fetchConfiguration(...) is a function to be provided by the calling language server for the sake of
-            //  decoupling this implementation from the concrete LSP implementations, specifically the LSP Connection
-            this.fetchConfiguration = params.fetchConfiguration;
-
-            // awaiting the fetch of the initial configuration data must not happen here, because it would block the
-            //  initialization of the language server, and may lead to out-of-order processing of subsequent messages from the language client;
-            // fetching the initial configuration in a non-blocking manner might cause a read-before-write problem
-            //  in case the workspace initialization relies on that configuration data (which is the case for the grammar language server);
-            // consequently, we fetch the initial configuration data on blocking manner on-demand, when the first configuration value is read,
-            //  see below in #getConfiguration(...);
+            await this.initializeConfiguration(params);
         }
+        this._ready.resolve();
     }
 
-    protected async initializeConfiguration(): Promise<void> {
-        if (this.fetchConfiguration) {
+    protected async initializeConfiguration(params: ConfigurationInitializedParams): Promise<void> {
+        if (params.fetchConfiguration) {
             const configToUpdate = this.serviceRegistry.all.map(lang => <ConfigurationItem>{
                 // Fetch the configuration changes for all languages
                 section: this.toSectionName(lang.LanguageMetaData.languageId)
             });
 
             // get workspace configurations (default scope URI)
-            const configs = await this.fetchConfiguration(configToUpdate);
+            const configs = await params.fetchConfiguration(configToUpdate);
             configToUpdate.forEach((conf, idx) => {
                 this.updateSectionConfiguration(conf.section!, configs[idx]);
             });
-
-            // reset the 'fetchConfiguration' to 'undefined' again in order to prevent further 'fetch' attempts
-            this.fetchConfiguration = undefined;
         }
     }
 
@@ -134,7 +133,7 @@ export class DefaultConfigurationProvider implements ConfigurationProvider {
     * @param configuration Configuration name
     */
     async getConfiguration(language: string, configuration: string): Promise<any> {
-        await this.initializeConfiguration();
+        await this.ready;
 
         const sectionName = this.toSectionName(language);
         if (this.settings[sectionName]) {

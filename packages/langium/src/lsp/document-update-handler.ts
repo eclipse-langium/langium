@@ -11,6 +11,7 @@ import type { DocumentBuilder } from '../workspace/document-builder.js';
 import type { TextDocument } from '../workspace/documents.js';
 import type { WorkspaceLock } from '../workspace/workspace-lock.js';
 import type { LangiumSharedServices } from './lsp-services.js';
+import type { WorkspaceManager } from '../workspace/workspace-manager.js';
 
 /**
  * Shared service for handling text document changes and watching relevant files.
@@ -31,10 +32,12 @@ export interface DocumentUpdateHandler {
 
 export class DefaultDocumentUpdateHandler implements DocumentUpdateHandler {
 
+    protected readonly workspaceManager: WorkspaceManager;
     protected readonly documentBuilder: DocumentBuilder;
     protected readonly workspaceLock: WorkspaceLock;
 
     constructor(services: LangiumSharedServices) {
+        this.workspaceManager = services.workspace.WorkspaceManager;
         this.documentBuilder = services.workspace.DocumentBuilder;
         this.workspaceLock = services.workspace.WorkspaceLock;
 
@@ -69,7 +72,10 @@ export class DefaultDocumentUpdateHandler implements DocumentUpdateHandler {
         }
     }
 
-    protected fireDocumentUpdate(changed: URI[], deleted: URI[]): void {
+    protected async fireDocumentUpdate(changed: URI[], deleted: URI[]): Promise<void> {
+        // Only fire the document update when the workspace manager is ready
+        // Otherwise, we might miss the initial indexing of the workspace
+        await this.workspaceManager.ready;
         this.workspaceLock.write(token => this.documentBuilder.update(changed, deleted, token));
     }
 
