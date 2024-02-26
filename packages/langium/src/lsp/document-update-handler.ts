@@ -72,11 +72,15 @@ export class DefaultDocumentUpdateHandler implements DocumentUpdateHandler {
         }
     }
 
-    protected async fireDocumentUpdate(changed: URI[], deleted: URI[]): Promise<void> {
+    protected fireDocumentUpdate(changed: URI[], deleted: URI[]): void {
         // Only fire the document update when the workspace manager is ready
         // Otherwise, we might miss the initial indexing of the workspace
-        await this.workspaceManager.ready;
-        this.workspaceLock.write(token => this.documentBuilder.update(changed, deleted, token));
+        this.workspaceManager.ready.then(() => {
+            this.workspaceLock.write(token => this.documentBuilder.update(changed, deleted, token));
+        }).catch(err => {
+            // This should never happen, but if it does, we want to know about it
+            console.error('Workspace initialization failed. Could not perform document update.', err);
+        });
     }
 
     didChangeContent(change: TextDocumentChangeEvent<TextDocument>): void {

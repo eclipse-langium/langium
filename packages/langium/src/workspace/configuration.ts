@@ -94,6 +94,8 @@ export class DefaultConfigurationProvider implements ConfigurationProvider {
 
     protected async initializeConfiguration(params: ConfigurationInitializedParams): Promise<void> {
         if (params.fetchConfiguration) {
+            // params.fetchConfiguration(...) is a function to be provided by the calling language server for the sake of
+            //  decoupling this implementation from the concrete LSP implementations, specifically the LSP Connection
             const configToUpdate = this.serviceRegistry.all.map(lang => <ConfigurationItem>{
                 // Fetch the configuration changes for all languages
                 section: this.toSectionName(lang.LanguageMetaData.languageId)

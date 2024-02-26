@@ -254,8 +254,8 @@ export class DefaultDocumentBuilder implements DocumentBuilder {
     protected async buildDocuments(documents: LangiumDocument[], options: BuildOptions, cancelToken: CancellationToken): Promise<void> {
         this.prepareBuild(documents, options);
         // 0. Parse content
-        await this.runCancelable(documents, DocumentState.Parsed, cancelToken, doc => {
-            this.langiumDocumentFactory.update(doc, cancelToken);
+        await this.runCancelable(documents, DocumentState.Parsed, cancelToken, async doc => {
+            await this.langiumDocumentFactory.update(doc, cancelToken);
         });
         // 1. Index content
         await this.runCancelable(documents, DocumentState.IndexedContent, cancelToken, doc =>
