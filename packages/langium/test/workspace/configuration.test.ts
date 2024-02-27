@@ -14,6 +14,7 @@ describe('ConfigurationProvider', () => {
     const grammarServices = createLangiumGrammarServices(EmptyFileSystem).grammar;
     const langId = grammarServices.LanguageMetaData.languageId;
     const configs = grammarServices.shared.workspace.ConfigurationProvider;
+    configs.initialized({});
     beforeEach(() => {
         (configs as any).settings = {};
     });
