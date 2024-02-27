@@ -92,8 +92,8 @@ export abstract class AbstractThreadedAsyncParser implements AsyncParser {
             }, this.terminationDelay);
         });
         worker.parse(text).then(result => {
-            result.value = this.hydrator.hydrate(result.value);
-            deferred.resolve(result as ParseResult<T>);
+            const hydrated = this.hydrator.hydrate<T>(result);
+            deferred.resolve(hydrated);
         }).catch(err => {
             deferred.reject(err);
         }).finally(() => {
