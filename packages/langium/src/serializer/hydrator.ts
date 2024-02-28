@@ -12,25 +12,26 @@ import { isAbstractElement, type AbstractElement, type Grammar } from '../langua
 import type { Linker } from '../references/linker.js';
 import type { Lexer } from '../parser/lexer.js';
 import type { LangiumCoreServices } from '../services.js';
-import type { Reference, AstNode, CstNode, LeafCstNode, GenericAstNode, Mutable } from '../syntax-tree.js';
+import type { ParseResult } from '../parser/langium-parser.js';
+import type { Reference, AstNode, CstNode, LeafCstNode, GenericAstNode, Mutable, RootCstNode } from '../syntax-tree.js';
 import { isRootCstNode, isCompositeCstNode, isLeafCstNode, isAstNode, isReference } from '../syntax-tree.js';
 import { streamAst } from '../utils/ast-utils.js';
 import { BiMap } from '../utils/collections.js';
 import { streamCst } from '../utils/cst-utils.js';
 
 /**
- * The hydrator service is responsible for allowing AST nodes to be sent across worker threads.
+ * The hydrator service is responsible for allowing AST parse results to be sent across worker threads.
  */
 export interface Hydrator {
     /**
-     * Converts an AST node to a plain object. The resulting object can be sent across worker threads.
+     * Converts a parse result to a plain object. The resulting object can be sent across worker threads.
      */
-    dehydrate(node: AstNode): object;
+    dehydrate(result: ParseResult<AstNode>): ParseResult<object>;
     /**
-     * Converts a plain object to an AST node. The resulting AST node can be used in the main thread.
-     * Calling this method on non-plain objects will result in undefined behavior.
+     * Converts a plain object to a parse result. The included AST node can then be used in the main thread.
+     * Calling this method on objects that have not been dehydrated first will result in undefined behavior.
      */
-    hydrate(node: object): AstNode;
+    hydrate<T extends AstNode = AstNode>(result: ParseResult<object>): ParseResult<T>;
 }
 
 export interface DehydrateContext {
@@ -58,8 +59,14 @@ export class DefaultHydrator implements Hydrator {
         this.linker = services.references.Linker;
     }
 
-    dehydrate(node: AstNode): object {
-        return this.dehydrateAstNode(node, this.createDehyrationContext(node));
+    dehydrate(result: ParseResult<AstNode>): ParseResult<object> {
+        return {
+            // We need to create shallow copies of the errors
+            // The original errors inherit from the `Error` class, which is not transferable across worker threads
+            lexerErrors: result.lexerErrors.map(e => ({ ...e })),
+            parserErrors: result.parserErrors.map(e => ({ ...e })),
+            value: this.dehydrateAstNode(result.value, this.createDehyrationContext(result.value))
+        };
     }
 
     protected createDehyrationContext(node: AstNode): DehydrateContext {
@@ -128,6 +135,7 @@ export class DefaultHydrator implements Hydrator {
         if (isRootCstNode(node)) {
             cstNode.fullText = node.fullText;
         } else {
+            // Note: This returns undefined for hidden nodes (i.e. comments)
             cstNode.grammarSource = this.getGrammarElementId(node.grammarSource);
         }
         cstNode.hidden = node.hidden;
@@ -146,12 +154,17 @@ export class DefaultHydrator implements Hydrator {
         return cstNode;
     }
 
-    hydrate(node: object): AstNode {
+    hydrate<T extends AstNode = AstNode>(result: ParseResult<object>): ParseResult<T> {
+        const node = result.value;
         const context = this.createHydrationContext(node);
         if ('$cstNode' in node) {
             this.hydrateCstNode(node.$cstNode, context);
         }
-        return this.hydrateAstNode(node, context);
+        return {
+            lexerErrors: result.lexerErrors,
+            parserErrors: result.parserErrors,
+            value: this.hydrateAstNode(node, context) as T
+        };
     }
 
     protected createHydrationContext(node: any): HydrateContext {
@@ -160,11 +173,13 @@ export class DefaultHydrator implements Hydrator {
         for (const astNode of streamAst(node)) {
             astNodes.set(astNode, {} as AstNode);
         }
+        let root: RootCstNode;
         if (node.$cstNode) {
             for (const cstNode of streamCst(node.$cstNode)) {
-                let cst: CstNode | undefined;
+                let cst: Mutable<CstNode> | undefined;
                 if ('fullText' in cstNode) {
                     cst = new RootCstNodeImpl(cstNode.fullText as string);
+                    root = cst as RootCstNode;
                 } else if ('content' in cstNode) {
                     cst = new CompositeCstNodeImpl();
                 } else if ('tokenType' in cstNode) {
@@ -172,6 +187,7 @@ export class DefaultHydrator implements Hydrator {
                 }
                 if (cst) {
                     cstNodes.set(cstNode, cst);
+                    cst.root = root!;
                 }
             }
         }
@@ -198,7 +214,7 @@ export class DefaultHydrator implements Hydrator {
                 astNode[name] = arr;
                 for (const item of value) {
                     if (isAstNode(item)) {
-                        arr.push(this.setParent(this.hydrate(item), astNode));
+                        arr.push(this.setParent(this.hydrateAstNode(item, context), astNode));
                     } else if (isReference(item)) {
                         arr.push(this.hydrateReference(item, astNode, name, context));
                     } else {
@@ -206,7 +222,7 @@ export class DefaultHydrator implements Hydrator {
                     }
                 }
             } else if (isAstNode(value)) {
-                astNode[name] = this.setParent(this.hydrate(value), astNode);
+                astNode[name] = this.setParent(this.hydrateAstNode(value, context), astNode);
             } else if (isReference(value)) {
                 astNode[name] = this.hydrateReference(value, astNode, name, context);
             } else if (value !== undefined) {
@@ -272,11 +288,11 @@ export class DefaultHydrator implements Hydrator {
         return this.lexer.definition[name];
     }
 
-    protected getGrammarElementId(node: AbstractElement): number {
+    protected getGrammarElementId(node: AbstractElement): number | undefined {
         if (this.grammarElementIdMap.size === 0) {
             this.createGrammarElementIdMap();
         }
-        return this.grammarElementIdMap.get(node) ?? -1;
+        return this.grammarElementIdMap.get(node);
     }
 
     protected getGrammarElement(id: number): AbstractElement {
