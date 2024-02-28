@@ -46,8 +46,8 @@ Take a look [at our test implementation](https://github.com/eclipse-langium/lang
 
 If you're upgrading from v2 of Langium, there are a few breaking changes you should be aware of:
 
-* All exports related to the code generator have been moved from `langium` to `langium/generate`
-* All LSP related services/functions have been moved to `langium/lsp`. This includes also the `LangiumServices` and `LangiumSharedServices`.
+* All exports related to code generation have been moved from `langium` to `langium/generate`
+* All LSP related services/functions have been moved to `langium/lsp`. This includes the types `LangiumServices` and `LangiumSharedServices`, as well as the function `startLanguageServer`.
 * All code related to the internal workings of the grammar language have been moved to `langium/grammar`. 
 * Utility functions related to AST/CST nodes, RegExp and some of the grammar are now exposed via namespaces to improve API surface area. They are now available under `AstUtils`, `CstUtils`, `GrammarUtils` and `RegExpUtils`. The names of the functions haven't changed.
 * The `FileSystemProvider#readFileSync` method has been removed.
