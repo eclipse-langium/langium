@@ -2,7 +2,7 @@
 
 ## v3.0.0 (Feb. 2024)
 
-* Added templates of unit test stubs based on [Vitest](https://vitest.dev/) covering lexing, parsing, and linking ([#1298](https://github.com/eclipse-langium/langium/pull/1298))
+* Added templates of unit test stubs based on [Vitest](https://vitest.dev/) covering parsing, linking, and validation ([#1298](https://github.com/eclipse-langium/langium/pull/1298))
 
 ## v2.1.0 (Nov. 2023)
 
