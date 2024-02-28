@@ -24,14 +24,14 @@ import { streamCst } from '../utils/cst-utils.js';
  */
 export interface Hydrator {
     /**
-     * Converts parse result to a plain object. The resulting object can be sent across worker threads.
+     * Converts a parse result to a plain object. The resulting object can be sent across worker threads.
      */
-    dehydrate(result: ParseResult<AstNode>): object;
+    dehydrate(result: ParseResult<AstNode>): ParseResult<object>;
     /**
-     * Converts a plain object to a parse result. The resulting AST node can be used in the main thread.
+     * Converts a plain object to a parse result. The included AST node can then be used in the main thread.
      * Calling this method on objects that have not been dehydrated first will result in undefined behavior.
      */
-    hydrate<T extends AstNode = AstNode>(result: object): ParseResult<T>;
+    hydrate<T extends AstNode = AstNode>(result: ParseResult<object>): ParseResult<T>;
 }
 
 export interface DehydrateContext {
@@ -59,7 +59,7 @@ export class DefaultHydrator implements Hydrator {
         this.linker = services.references.Linker;
     }
 
-    dehydrate(result: ParseResult<AstNode>): object {
+    dehydrate(result: ParseResult<AstNode>): ParseResult<object> {
         return {
             // We need to create shallow copies of the errors
             // The original errors inherit from the `Error` class, which is not transferable across worker threads
@@ -154,7 +154,7 @@ export class DefaultHydrator implements Hydrator {
         return cstNode;
     }
 
-    hydrate<T extends AstNode = AstNode>(result: any): ParseResult<T> {
+    hydrate<T extends AstNode = AstNode>(result: ParseResult<object>): ParseResult<T> {
         const node = result.value;
         const context = this.createHydrationContext(node);
         if ('$cstNode' in node) {
