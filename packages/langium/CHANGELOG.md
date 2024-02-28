@@ -1,6 +1,6 @@
 # Change Log of `langium`
 
-## v3.0.0 (Feb. 2023)
+## v3.0.0 (Feb. 2024)
 
 ### Smaller Bundles with Exports
 
