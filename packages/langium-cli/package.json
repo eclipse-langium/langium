@@ -1,6 +1,6 @@
 {
   "name": "langium-cli",
-  "version": "2.1.0",
+  "version": "3.0.0",
   "description": "CLI for Langium - the language engineering tool",
   "homepage": "https://langium.org",
   "engines": {
@@ -43,8 +43,8 @@
     "commander": "~11.0.0",
     "fs-extra": "~11.1.1",
     "jsonschema": "~1.4.1",
-    "langium": "~2.1.0",
-    "langium-railroad": "~2.1.0",
+    "langium": "~3.0.0",
+    "langium-railroad": "~3.0.0",
     "lodash": "~4.17.21"
   },
   "devDependencies": {
