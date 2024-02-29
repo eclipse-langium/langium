@@ -3,8 +3,7 @@
  * DO NOT EDIT MANUALLY!
  ******************************************************************************/
 
-import type { LangiumGeneratedCoreServices, LangiumGeneratedSharedCoreServices, LanguageMetaData, Module } from 'langium';
-import type { LangiumSharedServices, LangiumServices } from 'langium/lsp';
+import type { LangiumSharedCoreServices, LangiumCoreServices, LangiumGeneratedCoreServices, LangiumGeneratedSharedCoreServices, LanguageMetaData, Module } from 'langium';
 import { RequirementsAndTestsAstReflection } from './ast.js';
 import { RequirementsGrammar, TestsGrammar } from './grammar.js';
 
@@ -20,17 +19,17 @@ export const TestsLanguageMetaData = {
     caseInsensitive: false
 } as const satisfies LanguageMetaData;
 
-export const RequirementsAndTestsGeneratedSharedModule: Module<LangiumSharedServices, LangiumGeneratedSharedCoreServices> = {
+export const RequirementsAndTestsGeneratedSharedModule: Module<LangiumSharedCoreServices, LangiumGeneratedSharedCoreServices> = {
     AstReflection: () => new RequirementsAndTestsAstReflection()
 };
 
-export const RequirementsGeneratedModule: Module<LangiumServices, LangiumGeneratedCoreServices> = {
+export const RequirementsGeneratedModule: Module<LangiumCoreServices, LangiumGeneratedCoreServices> = {
     Grammar: () => RequirementsGrammar(),
     LanguageMetaData: () => RequirementsLanguageMetaData,
     parser: {}
 };
 
-export const TestsGeneratedModule: Module<LangiumServices, LangiumGeneratedCoreServices> = {
+export const TestsGeneratedModule: Module<LangiumCoreServices, LangiumGeneratedCoreServices> = {
     Grammar: () => TestsGrammar(),
     LanguageMetaData: () => TestsLanguageMetaData,
     parser: {}
