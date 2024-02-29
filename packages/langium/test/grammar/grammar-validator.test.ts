@@ -11,7 +11,7 @@ import type { ValidationResult } from 'langium/test';
 import { clearDocuments, expectError, expectIssue, expectNoIssues, expectWarning, parseHelper, validationHelper } from 'langium/test';
 import { afterEach, beforeAll, describe, expect, test } from 'vitest';
 import { DiagnosticSeverity } from 'vscode-languageserver';
-import { textBeforeParserRuleCrossReferences, textBeforeParserRuleCrossReferencesWithInfers } from './lsp/grammar-code-actions.test.js';
+import { beforeTwoAlternatives, beforeWithInfers } from './lsp/grammar-code-actions.test.js';
 
 const services = createLangiumGrammarServices(EmptyFileSystem);
 const parse = parseHelper(services.grammar);
@@ -519,7 +519,7 @@ describe('Parser rules used only as type in cross-references are not marked as u
     // these test cases target https://github.com/eclipse-langium/langium/issues/1309
 
     test('union of two types', async () => {
-        const validation = await validate(textBeforeParserRuleCrossReferences);
+        const validation = await validate(beforeTwoAlternatives);
         expect(validation.diagnostics).toHaveLength(1);
         const ruleWithHint = validation.document.parseResult.value.rules.find(e => e.name === 'Person')!;
         expectIssue(validation, {
@@ -529,7 +529,7 @@ describe('Parser rules used only as type in cross-references are not marked as u
     });
 
     test('union of two types, with infers', async () => {
-        const validation = await validate(textBeforeParserRuleCrossReferencesWithInfers);
+        const validation = await validate(beforeWithInfers);
         expect(validation.diagnostics).toHaveLength(1);
         const ruleWithHint = validation.document.parseResult.value.rules.find(e => e.name === 'Person')!;
         expectIssue(validation, {
