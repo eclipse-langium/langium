@@ -15,83 +15,47 @@ const testQuickFixes = testQuickFix(services.grammar);
 
 // Some of these test data are exported, since they are reused for corresponding test cases for the grammar validation itself
 
-export const beforeTwoAlternatives = `
-    grammar ParserRulesOnlyForCrossReferences
-    entry Model: (persons+=Neighbor | friends+=Friend | greetings+=Greeting)*;
-    Neighbor:   'neighbor'  name=ID;
-    Friend:     'friend'    name=ID;
-
-    Person: (Neighbor | Friend); // 'Person' is used only for cross-references, not as parser rule
+export const beforeTwoAlternatives = grammarRuleVsType(`
+    Person: Neighbor | Friend;
     Greeting: 'Hello' person=[Person:ID] '!';
+`);
 
-    hidden terminal WS: /\\s+/;
-    terminal ID: /[_a-zA-Z][\\w_]*/;
-`;
-
-export const expectedTwoAlternatives = `
-    grammar ParserRulesOnlyForCrossReferences
-    entry Model: (persons+=Neighbor | friends+=Friend | greetings+=Greeting)*;
-    Neighbor:   'neighbor'  name=ID;
-    Friend:     'friend'    name=ID;
-
-    type Person = Neighbor | Friend; // 'Person' is used only for cross-references, not as parser rule
+export const expectedTwoAlternatives = grammarRuleVsType(`
+    type Person = Neighbor | Friend;
     Greeting: 'Hello' person=[Person:ID] '!';
+`);
 
-    hidden terminal WS: /\\s+/;
-    terminal ID: /[_a-zA-Z][\\w_]*/;
-`;
-
-export const beforeSinglelternative = `
-    grammar ParserRulesOnlyForCrossReferences
-    entry Model: (persons+=Neighbor | friends+=Friend | greetings+=Greeting)*;
-    Neighbor:   'neighbor'  name=ID;
-    Friend:     'friend'    name=ID;
-
-    Person: Neighbor; // 'Person' is used only for cross-references, not as parser rule
+export const beforeSinglelternative = grammarRuleVsType(`
+    Person: Neighbor;
     Greeting: 'Hello' person=[Person:ID] '!';
+`);
 
-    hidden terminal WS: /\\s+/;
-    terminal ID: /[_a-zA-Z][\\w_]*/;
-`;
-
-export const expectedSingleAlternative = `
-    grammar ParserRulesOnlyForCrossReferences
-    entry Model: (persons+=Neighbor | friends+=Friend | greetings+=Greeting)*;
-    Neighbor:   'neighbor'  name=ID;
-    Friend:     'friend'    name=ID;
-
-    type Person = Neighbor; // 'Person' is used only for cross-references, not as parser rule
+export const expectedSingleAlternative = grammarRuleVsType(`
+    type Person = Neighbor;
     Greeting: 'Hello' person=[Person:ID] '!';
+`);
 
-    hidden terminal WS: /\\s+/;
-    terminal ID: /[_a-zA-Z][\\w_]*/;
-`;
-
-export const beforeWithInfers = `
-    grammar ParserRulesOnlyForCrossReferences
-    entry Model: (persons+=Neighbor | friends+=Friend | greetings+=Greeting)*;
-    Neighbor:   'neighbor'  name=ID;
-    Friend:     'friend'    name=ID;
-
-    Person infers PersonType: Neighbor | Friend; // 'Person' is used only for cross-references, not as parser rule
+export const beforeWithInfers = grammarRuleVsType(`
+    Person infers PersonType: Neighbor | Friend;
     Greeting: 'Hello' person=[PersonType:ID] '!';
+`);
 
-    hidden terminal WS: /\\s+/;
-    terminal ID: /[_a-zA-Z][\\w_]*/;
-`;
-
-export const expectedWithInfers = `
-    grammar ParserRulesOnlyForCrossReferences
-    entry Model: (persons+=Neighbor | friends+=Friend | greetings+=Greeting)*;
-    Neighbor:   'neighbor'  name=ID;
-    Friend:     'friend'    name=ID;
-
-    type PersonType = Neighbor | Friend; // 'Person' is used only for cross-references, not as parser rule
+export const expectedWithInfers = grammarRuleVsType(`
+    type PersonType = Neighbor | Friend;
     Greeting: 'Hello' person=[PersonType:ID] '!';
+`);
 
-    hidden terminal WS: /\\s+/;
-    terminal ID: /[_a-zA-Z][\\w_]*/;
-`;
+function grammarRuleVsType(body: string): string {
+    return `
+        grammar ParserRuleUsedOnlyForCrossReference
+        entry Model: (persons+=Neighbor | friends+=Friend | greetings+=Greeting)*;
+        Neighbor:   'neighbor'  name=ID;
+        Friend:     'friend'    name=ID;
+        ${body}
+        hidden terminal WS: /\\s+/;
+        terminal ID: /[_a-zA-Z][\\w_]*/;
+    `;
+}
 
 describe('Langium grammar quick-fixes for validations: Parser rules used only as type in cross-references are not marked as unused, but with a hint suggesting a type declaration', () => {
     // these test cases target https://github.com/eclipse-langium/langium/issues/1309
