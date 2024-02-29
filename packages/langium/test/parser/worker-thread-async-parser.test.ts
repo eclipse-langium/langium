@@ -108,6 +108,7 @@ describe('WorkerThreadAsyncParser', () => {
         expect(result.parserErrors).toHaveLength(1);
         expect(result.parserErrors[0].name).toBe('MismatchedTokenException');
         expect(result.parserErrors[0]).toHaveProperty('previousToken');
+        expect(result.parserErrors[0]).toHaveProperty('message', "Expecting token of type ';' but found ``.");
     });
 
     function createLargeFile(size: number): string {
