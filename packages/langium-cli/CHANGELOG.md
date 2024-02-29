@@ -1,5 +1,13 @@
 # Change Log of `langium-cli`
 
+## v3.0.1 (Feb. 2024)
+
+Fixed a minor issue related to generated code for projects that don't use the `langium/lsp` import ([#1393](https://github.com/eclipse-langium/langium/pull/1393)).
+
+## v3.0.0 (Feb. 2024)
+
+Some adjustments of the generated code due to the LSP bundling changes in Langium. For further information, see [here](https://github.com/eclipse-langium/langium/blob/main/packages/langium/CHANGELOG.md#smaller-bundles-with-exports).
+
 ## v2.0.1 (Aug. 2023)
 
 Fix a bug that prevented usage of the JS API of the CLI package ([#1160](https://github.com/eclipse-langium/langium/pull/1160)).
