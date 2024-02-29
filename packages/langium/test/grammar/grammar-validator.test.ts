@@ -11,7 +11,7 @@ import type { ValidationResult } from 'langium/test';
 import { clearDocuments, expectError, expectIssue, expectNoIssues, expectWarning, parseHelper, validationHelper } from 'langium/test';
 import { afterEach, beforeAll, describe, expect, test } from 'vitest';
 import { DiagnosticSeverity } from 'vscode-languageserver';
-import { beforeTwoAlternatives, beforeWithInfers } from './lsp/grammar-code-actions.test.js';
+import { beforeAnotherRule, beforeSinglelternative, beforeTwoAlternatives, beforeWithInfers } from './lsp/grammar-code-actions.test.js';
 
 const services = createLangiumGrammarServices(EmptyFileSystem);
 const parse = parseHelper(services.grammar);
@@ -519,24 +519,31 @@ describe('Parser rules used only as type in cross-references are not marked as u
     // these test cases target https://github.com/eclipse-langium/langium/issues/1309
 
     test('union of two types', async () => {
-        const validation = await validate(beforeTwoAlternatives);
-        expect(validation.diagnostics).toHaveLength(1);
-        const ruleWithHint = validation.document.parseResult.value.rules.find(e => e.name === 'Person')!;
-        expectIssue(validation, {
-            node: ruleWithHint,
-            severity: DiagnosticSeverity.Hint
-        });
+        await validateRule(beforeTwoAlternatives);
     });
 
-    test('union of two types, with infers', async () => {
-        const validation = await validate(beforeWithInfers);
-        expect(validation.diagnostics).toHaveLength(1);
+    test('only a single type', async () => {
+        await validateRule(beforeSinglelternative);
+    });
+
+    test('rule using a nested rule', async () => {
+        await validateRule(beforeAnotherRule, 2); // 2 hints, since there is another "unused" rule (which is out-of-scope here)
+    });
+
+    test('union of two types, with "infers" keyword', async () => {
+        await validateRule(beforeWithInfers);
+    });
+
+    async function validateRule(grammar: string, foundDiagnostics: number = 1) {
+        const validation = await validate(grammar);
+        expect(validation.diagnostics).toHaveLength(foundDiagnostics);
         const ruleWithHint = validation.document.parseResult.value.rules.find(e => e.name === 'Person')!;
         expectIssue(validation, {
             node: ruleWithHint,
             severity: DiagnosticSeverity.Hint
         });
-    });
+        return ruleWithHint;
+    }
 });
 
 describe('Reserved names', () => {
