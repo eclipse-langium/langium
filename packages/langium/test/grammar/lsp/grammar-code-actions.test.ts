@@ -15,20 +15,20 @@ const testQuickFixes = testQuickFix(services.grammar);
 
 // Some of these test data are exported, since they are reused for corresponding test cases for the grammar validation itself
 
-export const textBeforeParserRuleCrossReferences = `
+export const beforeTwoAlternatives = `
     grammar ParserRulesOnlyForCrossReferences
     entry Model: (persons+=Neighbor | friends+=Friend | greetings+=Greeting)*;
     Neighbor:   'neighbor'  name=ID;
     Friend:     'friend'    name=ID;
 
-    Person: Neighbor | Friend; // 'Person' is used only for cross-references, not as parser rule
+    Person: (Neighbor | Friend); // 'Person' is used only for cross-references, not as parser rule
     Greeting: 'Hello' person=[Person:ID] '!';
 
     hidden terminal WS: /\\s+/;
     terminal ID: /[_a-zA-Z][\\w_]*/;
 `;
 
-export const textExpectedParserRuleCrossReferences = `
+export const expectedTwoAlternatives = `
     grammar ParserRulesOnlyForCrossReferences
     entry Model: (persons+=Neighbor | friends+=Friend | greetings+=Greeting)*;
     Neighbor:   'neighbor'  name=ID;
@@ -41,7 +41,33 @@ export const textExpectedParserRuleCrossReferences = `
     terminal ID: /[_a-zA-Z][\\w_]*/;
 `;
 
-export const textBeforeParserRuleCrossReferencesWithInfers = `
+export const beforeSinglelternative = `
+    grammar ParserRulesOnlyForCrossReferences
+    entry Model: (persons+=Neighbor | friends+=Friend | greetings+=Greeting)*;
+    Neighbor:   'neighbor'  name=ID;
+    Friend:     'friend'    name=ID;
+
+    Person: Neighbor; // 'Person' is used only for cross-references, not as parser rule
+    Greeting: 'Hello' person=[Person:ID] '!';
+
+    hidden terminal WS: /\\s+/;
+    terminal ID: /[_a-zA-Z][\\w_]*/;
+`;
+
+export const expectedSingleAlternative = `
+    grammar ParserRulesOnlyForCrossReferences
+    entry Model: (persons+=Neighbor | friends+=Friend | greetings+=Greeting)*;
+    Neighbor:   'neighbor'  name=ID;
+    Friend:     'friend'    name=ID;
+
+    type Person = Neighbor; // 'Person' is used only for cross-references, not as parser rule
+    Greeting: 'Hello' person=[Person:ID] '!';
+
+    hidden terminal WS: /\\s+/;
+    terminal ID: /[_a-zA-Z][\\w_]*/;
+`;
+
+export const beforeWithInfers = `
     grammar ParserRulesOnlyForCrossReferences
     entry Model: (persons+=Neighbor | friends+=Friend | greetings+=Greeting)*;
     Neighbor:   'neighbor'  name=ID;
@@ -54,7 +80,7 @@ export const textBeforeParserRuleCrossReferencesWithInfers = `
     terminal ID: /[_a-zA-Z][\\w_]*/;
 `;
 
-export const textExpectedParserRuleCrossReferencesWithInfers = `
+export const expectedWithInfers = `
     grammar ParserRulesOnlyForCrossReferences
     entry Model: (persons+=Neighbor | friends+=Friend | greetings+=Greeting)*;
     Neighbor:   'neighbor'  name=ID;
@@ -71,15 +97,23 @@ describe('Langium grammar quick-fixes for validations: Parser rules used only as
     // these test cases target https://github.com/eclipse-langium/langium/issues/1309
 
     test('The parser rule has an implicitly inferred type', async () => {
-        const result = await testQuickFixes(textBeforeParserRuleCrossReferences, IssueCodes.ParserRuleToTypeDecl, textExpectedParserRuleCrossReferences);
-        const action = result.action;
-        expect(action).toBeTruthy();
-        expect(action!.title).toBe('Replace parser rule by type declaration');
+        await testLogic(beforeTwoAlternatives, expectedTwoAlternatives);
+    });
+
+    test('The parser rule has an implicitly inferred type', async () => {
+        await testLogic(beforeSinglelternative, expectedSingleAlternative);
     });
 
     test('The parser rule has an explicitly inferred type', async () => {
-        await testQuickFixes(textBeforeParserRuleCrossReferencesWithInfers, IssueCodes.ParserRuleToTypeDecl, textExpectedParserRuleCrossReferencesWithInfers);
+        await testLogic(beforeWithInfers, expectedWithInfers);
     });
+
+    async function testLogic(textBefore: string, textAfter: string) {
+        const result = await testQuickFixes(textBefore, IssueCodes.ParserRuleToTypeDecl, textAfter);
+        const action = result.action;
+        expect(action).toBeTruthy();
+        expect(action!.title).toBe('Replace parser rule by type declaration');
+    }
 
     // TODO test cases, where no quick-fix action is provided
 });
