@@ -183,7 +183,7 @@ export class LangiumGrammarCodeActionProvider implements CodeActionProvider {
         return undefined;
     }
 
-    private isReplaceableRule(rule: ast.ParserRule): boolean {
+    private isRuleReplaceable(rule: ast.ParserRule): boolean {
         // OK are: definition use only Alternatives! infers!
         // "returns" is not relevant, since cross-references would not refer to the parser rule, but to its "return type" instead
         return !rule.fragment && !rule.entry && rule.parameters.length === 0 && !rule.definesHiddenTokens && !rule.wildcard && !rule.returnType && !rule.dataType;
@@ -192,28 +192,28 @@ export class LangiumGrammarCodeActionProvider implements CodeActionProvider {
         const type = rule.inferredType ?? rule;
         return type.name;
     }
-    private isReplaceable(node: ast.AbstractElement): boolean {
+    private isDefinitionReplaceable(node: ast.AbstractElement): boolean {
         if (ast.isRuleCall(node)) {
-            return node.arguments.length === 0 && ast.isParserRule(node.rule.ref) && this.isReplaceableRule(node.rule.ref);
+            return node.arguments.length === 0 && ast.isParserRule(node.rule.ref) && this.isRuleReplaceable(node.rule.ref);
         }
         if (ast.isAlternatives(node)) {
-            return node.elements.every(child => this.isReplaceable(child));
+            return node.elements.every(child => this.isDefinitionReplaceable(child));
         }
         if (ast.isUnorderedGroup(node)) {
-            return node.elements.every(child => this.isReplaceable(child));
+            return node.elements.every(child => this.isDefinitionReplaceable(child));
         }
         return false;
     }
-    private replace(node: ast.AbstractElement, requiresBraces: boolean): string {
+    private replaceDefinition(node: ast.AbstractElement, requiresBraces: boolean): string {
         if (ast.isRuleCall(node) && node.rule.ref) {
             return node.rule.ref.name;
         }
         if (ast.isAlternatives(node)) {
-            const result = node.elements.map(child => this.replace(child, true)).join(' | ');
+            const result = node.elements.map(child => this.replaceDefinition(child, true)).join(' | ');
             return requiresBraces && node.elements.length >= 2 ? `(${result})` : result;
         }
         if (ast.isUnorderedGroup(node)) {
-            const result = node.elements.map(child => this.replace(child, true)).join(' & '); // TODO
+            const result = node.elements.map(child => this.replaceDefinition(child, true)).join(' & '); // TODO
             return requiresBraces && node.elements.length >= 2 ? `(${result})` : result;
         }
         throw new Error('missing code for ' + node);
@@ -226,9 +226,9 @@ export class LangiumGrammarCodeActionProvider implements CodeActionProvider {
             const cstNode = findLeafNodeAtOffset(rootCst, offset);
             const rule = getContainerOfType(cstNode?.astNode, ast.isParserRule);
             if (rule && rule.$cstNode) {
-                const isRuleReplaceable = this.isReplaceableRule(rule) && this.isReplaceable(rule.definition);
+                const isRuleReplaceable = this.isRuleReplaceable(rule) && this.isDefinitionReplaceable(rule.definition);
                 if (isRuleReplaceable) {
-                    const newText = `type ${this.replaceRule(rule)} = ${this.replace(rule.definition, false)};`;
+                    const newText = `type ${this.replaceRule(rule)} = ${this.replaceDefinition(rule.definition, false)};`;
                     return {
                         title: 'Replace parser rule by type declaration',
                         kind: CodeActionKind.QuickFix,
