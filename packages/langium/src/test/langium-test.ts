@@ -769,7 +769,7 @@ export interface QuickFixResult<T extends AstNode = AstNode> extends AsyncDispos
  * After applying this quick-fix, 'input' is transformed to 'outputAfterFix'.
  */
 export function testQuickFix<T extends AstNode = AstNode>(services: LangiumServices):
-        (input: string, diagnosticCode: string, outputAfterFix: string | undefined, options?: ParseHelperOptions) => Promise<QuickFixResult<T>> {
+(input: string, diagnosticCode: string, outputAfterFix: string | undefined, options?: ParseHelperOptions) => Promise<QuickFixResult<T>> {
     const validateHelper = validationHelper<T>(services);
     return async (input, diagnosticCode, outputAfterFix, options) => {
         // parse + validate

@@ -35,6 +35,18 @@ export const expectedSingleAlternative = grammarRuleVsType(`
     Greeting: 'Hello' person=[Person:ID] '!';
 `);
 
+export const beforeAnotherRule = grammarRuleVsType(`
+    Person: Neighbor | AnotherPerson;
+    AnotherPerson: Friend;
+    Greeting: 'Hello' person=[Person:ID] '!';
+`);
+
+export const expectedAnotherRule = grammarRuleVsType(`
+    type Person = Neighbor | AnotherPerson;
+    AnotherPerson: Friend;
+    Greeting: 'Hello' person=[Person:ID] '!';
+`);
+
 export const beforeWithInfers = grammarRuleVsType(`
     Person infers PersonType: Neighbor | Friend;
     Greeting: 'Hello' person=[PersonType:ID] '!';
@@ -60,24 +72,26 @@ function grammarRuleVsType(body: string): string {
 describe('Langium grammar quick-fixes for validations: Parser rules used only as type in cross-references are not marked as unused, but with a hint suggesting a type declaration', () => {
     // these test cases target https://github.com/eclipse-langium/langium/issues/1309
 
-    test('The parser rule has an implicitly inferred type', async () => {
-        await testLogic(beforeTwoAlternatives, expectedTwoAlternatives);
+    test('The parser rule has an implicitly inferred type: two alternatives', async () => {
+        await testReplaceAction(beforeTwoAlternatives, expectedTwoAlternatives);
     });
 
-    test('The parser rule has an implicitly inferred type', async () => {
-        await testLogic(beforeSinglelternative, expectedSingleAlternative);
+    test('The parser rule has an implicitly inferred type: single alternative', async () => {
+        await testReplaceAction(beforeSinglelternative, expectedSingleAlternative);
     });
 
-    test('The parser rule has an explicitly inferred type', async () => {
-        await testLogic(beforeWithInfers, expectedWithInfers);
+    test('The parser rule used a nested rule', async () => {
+        await testReplaceAction(beforeAnotherRule, expectedAnotherRule);
     });
 
-    async function testLogic(textBefore: string, textAfter: string) {
+    test('The parser rule has an explicitly inferred type (with two alternatives)', async () => {
+        await testReplaceAction(beforeWithInfers, expectedWithInfers);
+    });
+
+    async function testReplaceAction(textBefore: string, textAfter: string) {
         const result = await testQuickFixes(textBefore, IssueCodes.ParserRuleToTypeDecl, textAfter);
         const action = result.action;
         expect(action).toBeTruthy();
         expect(action!.title).toBe('Replace parser rule by type declaration');
     }
-
-    // TODO test cases, where no quick-fix action is provided
 });
