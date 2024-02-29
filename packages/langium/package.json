@@ -1,6 +1,6 @@
 {
   "name": "langium",
-  "version": "2.1.0",
+  "version": "3.0.0",
   "description": "A language engineering tool for the Language Server Protocol",
   "homepage": "https://langium.org",
   "engines": {
@@ -47,8 +47,8 @@
       "import": "./lib/grammar/index.js"
     },
     "./lsp": {
-        "types": "./lib/lsp/index.d.ts",
-        "import": "./lib/lsp/index.js"
+      "types": "./lib/lsp/index.d.ts",
+      "import": "./lib/lsp/index.js"
     }
   },
   "scripts": {
@@ -70,7 +70,7 @@
     "vscode-uri": "~3.0.8"
   },
   "devDependencies": {
-    "langium-cli": "~2.1.0"
+    "langium-cli": "~3.0.0"
   },
   "volta": {
     "node": "18.17.1",
