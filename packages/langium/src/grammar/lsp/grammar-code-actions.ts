@@ -184,8 +184,10 @@ export class LangiumGrammarCodeActionProvider implements CodeActionProvider {
     }
 
     private isRuleReplaceable(rule: ast.ParserRule): boolean {
-        // OK are: definition use only Alternatives! infers!
-        // "returns" is not relevant, since cross-references would not refer to the parser rule, but to its "return type" instead
+        /** at the moment, only "pure" parser rules are supported:
+         * - supported are only Alternatives (recursively) and "infers"
+         * - "returns" is not relevant, since cross-references would not refer to the parser rule, but to its "return type" instead
+         */
         return !rule.fragment && !rule.entry && rule.parameters.length === 0 && !rule.definesHiddenTokens && !rule.wildcard && !rule.returnType && !rule.dataType;
     }
     private replaceRule(rule: ast.ParserRule): string {
@@ -199,9 +201,6 @@ export class LangiumGrammarCodeActionProvider implements CodeActionProvider {
         if (ast.isAlternatives(node)) {
             return node.elements.every(child => this.isDefinitionReplaceable(child));
         }
-        if (ast.isUnorderedGroup(node)) {
-            return node.elements.every(child => this.isDefinitionReplaceable(child));
-        }
         return false;
     }
     private replaceDefinition(node: ast.AbstractElement, requiresBraces: boolean): string {
@@ -210,10 +209,6 @@ export class LangiumGrammarCodeActionProvider implements CodeActionProvider {
         }
         if (ast.isAlternatives(node)) {
             const result = node.elements.map(child => this.replaceDefinition(child, true)).join(' | ');
-            return requiresBraces && node.elements.length >= 2 ? `(${result})` : result;
-        }
-        if (ast.isUnorderedGroup(node)) {
-            const result = node.elements.map(child => this.replaceDefinition(child, true)).join(' & '); // TODO
             return requiresBraces && node.elements.length >= 2 ? `(${result})` : result;
         }
         throw new Error('missing code for ' + node);
