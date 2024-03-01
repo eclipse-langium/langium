@@ -93,6 +93,12 @@ export function createLangiumGrammarServices(context: DefaultSharedModuleContext
     registerValidationChecks(grammar);
     registerTypeValidationChecks(grammar);
 
+    if (!context.connection) {
+        // We don't run inside a language server
+        // Therefore, initialize the configuration provider instantly
+        shared.workspace.ConfigurationProvider.initialized({});
+    }
+
     return { shared, grammar };
 }
 
