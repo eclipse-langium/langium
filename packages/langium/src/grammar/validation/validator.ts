@@ -77,6 +77,7 @@ export function registerValidationChecks(services: LangiumGrammarServices): void
             validator.checkUsedHiddenTerminalRule,
             validator.checkUsedFragmentTerminalRule,
             validator.checkRuleCallParameters,
+            validator.checkRuleCallMultiplicity
         ],
         TerminalRuleCall: validator.checkUsedHiddenTerminalRule,
         CrossReference: [
@@ -672,6 +673,28 @@ export class LangiumGrammarValidator {
                     data: diagnosticData(IssueCodes.RuleNameUppercase)
                 });
             }
+        }
+    }
+
+    checkRuleCallMultiplicity(call: ast.RuleCall, accept: ValidationAcceptor): void {
+        const findContainerWithCardinality = (node: AstNode) => {
+            let result: AstNode | undefined = node;
+            while (result !== undefined) {
+                if (ast.isAbstractElement(result) && (result.cardinality === '+' || result.cardinality === '*')) {
+                    break;
+                }
+                result = result.$container;
+            }
+            return result;
+        };
+        const appearsMultipleTimes = findContainerWithCardinality(call) !== undefined;
+        const hasAssignment = call.$container && call.$container.$type === ast.Assignment;
+
+        if (appearsMultipleTimes && !hasAssignment) {
+            accept('error', `Rule call ${call.rule.$refText} requires assignment when used with multiplicity.`, {
+                node: call,
+                property: 'cardinality'
+            });
         }
     }
 

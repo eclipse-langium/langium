@@ -145,6 +145,29 @@ describe('Langium grammar validation', () => {
         expect(validationResult.diagnostics).toHaveLength(1);
         expect(validationResult.diagnostics[0].data?.code).toBe(IssueCodes.InvalidInfers);
     });
+
+    test('Rule calls with multiplicity have assignment', async () => {
+        const grammar = `
+            grammar RuleCallMult
+
+            entry List1:
+                '(' Mult (',' Mult)* ')';
+            List2:
+                Plus+;
+    
+            Mult: content=ID;
+            Plus: content=ID;
+            terminal ID: /[_a-zA-Z][\\w_]*/;
+        `.trim();
+
+        const validationResult = await validate(grammar);
+        expectError(validationResult, 'Rule call Mult requires assignment when used with multiplicity.', {
+            property: 'cardinality'
+        });
+        expectError(validationResult, 'Rule call Plus requires assignment when used with multiplicity.', {
+            property: 'cardinality'
+        });
+    });
 });
 
 describe('Data type rule return type', () => {
@@ -315,7 +338,9 @@ describe('Check grammar with primitives', () => {
     const grammar = `
     grammar PrimGrammar
     entry Expr:
-        (Word | Bool | Num | LargeInt | DateObj)*;
+        primitives=Primitive*;
+    Primitive:
+        (Word | Bool | Num | LargeInt | DateObj);
     Word:
         'Word' val=STR;
     Bool:
