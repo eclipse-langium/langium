@@ -59,5 +59,10 @@ export function create<%= LanguageName %>Services(context: DefaultSharedModuleCo
     );
     shared.ServiceRegistry.register(<%= LanguageName %>);
     registerValidationChecks(<%= LanguageName %>);
+    if (!context.connection) {
+        // We don't run inside a language server
+        // Therefore, initialize the configuration provider instantly
+        shared.workspace.ConfigurationProvider.initialized({});
+    }
     return { shared, <%= LanguageName %> };
 }

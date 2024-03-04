@@ -52,5 +52,10 @@ export function createRequirementsAndTestsLangServices(context: DefaultSharedMod
     shared.ServiceRegistry.register(tests);
     registerRequirementsValidationChecks(requirements);
     registerTestsValidationChecks(tests);
+    if (!context.connection) {
+        // We don't run inside a language server
+        // Therefore, initialize the configuration provider instantly
+        shared.workspace.ConfigurationProvider.initialized({});
+    }
     return { shared, requirements, tests };
 }
