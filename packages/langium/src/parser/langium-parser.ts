@@ -131,6 +131,10 @@ export abstract class AbstractLangiumParser implements BaseParser {
     }
 }
 
+export interface ParserOptions {
+    rule?: string
+}
+
 export class LangiumParser extends AbstractLangiumParser {
     private readonly linker: Linker;
     private readonly converter: ValueConverter;
@@ -160,7 +164,7 @@ export class LangiumParser extends AbstractLangiumParser {
         return ruleMethod;
     }
 
-    parse<T extends AstNode = AstNode>(input: string, options: { rule?: string } = {}): ParseResult<T> {
+    parse<T extends AstNode = AstNode>(input: string, options: ParserOptions = {}): ParseResult<T> {
         this.nodeBuilder.buildRootNode(input);
         const lexerResult = this.lexer.tokenize(input);
         this.wrapper.input = lexerResult.tokens;
