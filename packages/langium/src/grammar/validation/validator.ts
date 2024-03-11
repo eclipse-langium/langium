@@ -687,10 +687,11 @@ export class LangiumGrammarValidator {
             }
             return result;
         };
+        const isNotAFragment = call.rule.ref !== undefined && !call.rule.ref.fragment;
         const appearsMultipleTimes = findContainerWithCardinality(call) !== undefined;
         const hasAssignment = call.$container && call.$container.$type === ast.Assignment;
 
-        if (appearsMultipleTimes && !hasAssignment) {
+        if (appearsMultipleTimes && !hasAssignment && isNotAFragment) {
             accept('error', `Rule call ${call.rule.$refText} requires assignment when used with multiplicity.`, {
                 node: call,
                 property: 'cardinality'
