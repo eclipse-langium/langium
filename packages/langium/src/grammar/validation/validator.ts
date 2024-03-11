@@ -23,6 +23,7 @@ import { getTypeNameWithoutError, hasDataTypeReturn, isPrimitiveGrammarType, isS
 import type { LangiumGrammarServices } from '../langium-grammar-module.js';
 import { typeDefinitionToPropertyType } from '../type-system/type-collector/declared-types.js';
 import { flattenPlainType, isPlainReferenceType } from '../type-system/type-collector/plain-types.js';
+import type { AstNodeLocator } from '../../workspace/ast-node-locator.js';
 
 export function registerValidationChecks(services: LangiumGrammarServices): void {
     const registry = services.validation.ValidationRegistry;
@@ -117,10 +118,12 @@ export namespace IssueCodes {
 export class LangiumGrammarValidator {
 
     protected readonly references: References;
+    protected readonly nodeLocator: AstNodeLocator;
     protected readonly documents: LangiumDocuments;
 
     constructor(services: LangiumGrammarServices) {
         this.references = services.references.References;
+        this.nodeLocator = services.workspace.AstNodeLocator;
         this.documents = services.shared.workspace.LangiumDocuments;
     }
 
@@ -814,24 +817,49 @@ export class LangiumGrammarValidator {
         // this validation is specific for assignments with '=' as assignment operator
         if (assignment.operator === '=') {
             // check the initial assignment and all of its containers
-            let currentElement: AstNode | undefined = assignment;
-            while (currentElement) {
-                const countAssignments = this.searchAssignmentsRecursively(currentElement, assignment.feature);
-                if (countAssignments >= 2) {
-                    accept(
-                        'warning',
-                        `It seems, that you assign multiple values to the feature '${assignment.feature}', while you are using '=' as assignment operator. Consider to use '+=' instead in order not to loose some of the assigned value.`,
-                        { node: assignment, property: 'operator' }
-                    );
-                    return;
+            const reportedProblem = this.searchAssignmentsRecursivelyUp(assignment, assignment, accept);
+
+            // check a special case: the current assignment is located within a fragment => check, whether the fragment is called multiple times
+            if (!reportedProblem) {
+                const containerFragment = getContainerOfType(assignment, ast.isParserRule);
+                if (containerFragment && containerFragment.fragment) {
+                    // for all calls of the fragment ...
+                    for (const ref of this.references.findReferences(containerFragment, {})) {
+                        const doc = this.documents.getDocument(ref.sourceUri);
+                        const call = doc ? this.nodeLocator.getAstNode(doc.parseResult.value, ref.sourcePath) : undefined;
+                        if (call) {
+                            // ... check whether there are multiple assignments to the same feature
+                            if (this.searchAssignmentsRecursivelyUp(call, assignment, accept)) {
+                                return;
+                            }
+                        }
+                    }
                 }
-                // check the next container
-                currentElement = currentElement.$container;
             }
         }
     }
 
-    private searchAssignmentsRecursively(node: AstNode, featureName: string): number {
+    private searchAssignmentsRecursivelyUp(node: AstNode, assignment: ast.Assignment, accept: ValidationAcceptor): boolean {
+        let currentElement: AstNode | undefined = node;
+        while (currentElement) {
+            // check neighbored and nested assignments
+            const countAssignments = this.searchAssignmentsRecursivelyDown(currentElement, assignment.feature);
+            if (countAssignments >= 2) {
+                accept(
+                    'warning',
+                    `It seems, that you are assigning multiple values to the feature '${assignment.feature}', while you are using '=' as assignment operator. Consider to use '+=' instead in order not to loose some of the assigned value.`,
+                    { node: assignment, property: 'operator' }
+                );
+                return true;
+            }
+
+            // check the next container
+            currentElement = currentElement.$container;
+        }
+        return false;
+    }
+
+    private searchAssignmentsRecursivelyDown(node: AstNode, featureName: string): number {
         let countResult = 0;
         // assignment
         if (ast.isAssignment(node) && node.feature === featureName) {
@@ -840,19 +868,19 @@ export class LangiumGrammarValidator {
         // search for assignments in used fragments as well, since their property values are stored in the current object,
         // but not in calls of regular parser rules, since they create new objects
         if (ast.isRuleCall(node) && ast.isParserRule(node.rule.ref) && node.rule.ref.fragment) {
-            countResult += this.searchAssignmentsRecursively(node.rule.ref.definition, featureName);
+            countResult += this.searchAssignmentsRecursivelyDown(node.rule.ref.definition, featureName);
         }
         // look for assignments to the same feature within groups
         if (ast.isGroup(node) || ast.isUnorderedGroup(node)) {
             for (const child of node.elements) {
-                countResult += this.searchAssignmentsRecursively(child, featureName);
+                countResult += this.searchAssignmentsRecursivelyDown(child, featureName);
             }
         }
         // look for assignments to the same feature within alternatives
         if (ast.isAlternatives(node)) {
             let alternativeCount = 0;
             for (const child of node.elements) {
-                alternativeCount = Math.max(alternativeCount, this.searchAssignmentsRecursively(child, featureName));
+                alternativeCount = Math.max(alternativeCount, this.searchAssignmentsRecursivelyDown(child, featureName));
             }
             countResult += alternativeCount;
         }
