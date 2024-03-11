@@ -4,23 +4,23 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
+import type { Range } from 'vscode-languageserver-types';
+import { DiagnosticTag } from 'vscode-languageserver-types';
+import * as ast from '../../languages/generated/ast.js';
 import type { NamedAstNode } from '../../references/name-provider.js';
 import type { References } from '../../references/references.js';
 import type { AstNode, Properties, Reference } from '../../syntax-tree.js';
-import type { Stream } from '../../utils/stream.js';
-import type { DiagnosticData, ValidationAcceptor, ValidationChecks } from '../../validation/validation-registry.js';
-import type { LangiumDocuments } from '../../workspace/documents.js';
-import type { LangiumGrammarServices } from '../langium-grammar-module.js';
-import type { Range } from 'vscode-languageserver-types';
-import { DiagnosticTag } from 'vscode-languageserver-types';
 import { getContainerOfType, streamAllContents } from '../../utils/ast-utils.js';
 import { MultiMap } from '../../utils/collections.js';
 import { toDocumentSegment } from '../../utils/cst-utils.js';
-import { findNameAssignment, findNodeForKeyword, findNodeForProperty, getAllReachableRules, isDataTypeRule, isOptionalCardinality, terminalRegex } from '../../utils/grammar-utils.js';
+import { findNameAssignment, findNodeForKeyword, findNodeForProperty, getAllReachableRules, isArrayCardinality, isDataTypeRule, isOptionalCardinality, terminalRegex } from '../../utils/grammar-utils.js';
+import type { Stream } from '../../utils/stream.js';
 import { stream } from '../../utils/stream.js';
+import type { DiagnosticData, ValidationAcceptor, ValidationChecks } from '../../validation/validation-registry.js';
 import { diagnosticData } from '../../validation/validation-registry.js';
-import * as ast from '../../languages/generated/ast.js';
+import type { LangiumDocuments } from '../../workspace/documents.js';
 import { getTypeNameWithoutError, hasDataTypeReturn, isPrimitiveGrammarType, isStringGrammarType, resolveImport, resolveTransitiveImports } from '../internal-grammar-util.js';
+import type { LangiumGrammarServices } from '../langium-grammar-module.js';
 import { typeDefinitionToPropertyType } from '../type-system/type-collector/declared-types.js';
 import { flattenPlainType, isPlainReferenceType } from '../type-system/type-collector/plain-types.js';
 
@@ -812,38 +812,55 @@ export class LangiumGrammarValidator {
 
     checkAssignmentOperator(assignment: ast.Assignment, accept: ValidationAcceptor): void {
         // this validation is specific for assignments with '=' as assignment operator
-        if (assignment.operator !== '=') {
-            return;
-        }
-        // the assignment has a multi-value cardinality itself
-        if (this.isMany(assignment)) {
-            this.markAssignment(assignment, accept);
-            return;
-        }
-        // check the container group of the assignment
-        if (ast.isGroup(assignment.$container) || ast.isUnorderedGroup(assignment.$container)) {
-            // the group can occur multiple times
-            if (this.isMany(assignment.$container)) {
-                this.markAssignment(assignment, accept);
-                return;
-            }
-            // look for at least a second assignments to the same feature within the container group, the cardinality does not matter
-            if (assignment.$container.elements.filter(child => ast.isAssignment(child) && child.feature === assignment.feature).length >= 2) {
-                this.markAssignment(assignment, accept);
-                return;
+        if (assignment.operator === '=') {
+            // check the initial assignment and all of its containers
+            let currentElement: AstNode | undefined = assignment;
+            while (currentElement) {
+                const countAssignments = this.searchAssignmentsRecursively(currentElement, assignment.feature);
+                if (countAssignments >= 2) {
+                    accept(
+                        'warning',
+                        `It seems, that you assign multiple values to the feature '${assignment.feature}', while you are using '=' as assignment operator. Consider to use '+=' instead in order not to loose some of the assigned value.`,
+                        { node: assignment, property: 'operator' }
+                    );
+                    return;
+                }
+                // check the next container
+                currentElement = currentElement.$container;
             }
         }
-        // TODO more cases
     }
-    private isMany(node: AstNode): boolean {
-        return ast.isAbstractElement(node) && (node.cardinality === '*' || node.cardinality === '+');
-    }
-    private markAssignment(assignment: ast.Assignment, accept: ValidationAcceptor): void {
-        accept(
-            'warning',
-            `It seems, that you assign multiple values to the feature '${assignment.feature}', while you are using '=' as assignment operator. Consider to use '+=' instead in order not to loose some of the assigned value.`,
-            { node: assignment, property: 'operator' }
-        );
+
+    private searchAssignmentsRecursively(node: AstNode, featureName: string): number {
+        let countResult = 0;
+        // assignment
+        if (ast.isAssignment(node) && node.feature === featureName) {
+            countResult += 1;
+        }
+        // search for assignments in used fragments as well, since their property values are stored in the current object,
+        // but not in calls of regular parser rules, since they create new objects
+        if (ast.isRuleCall(node) && ast.isParserRule(node.rule.ref) && node.rule.ref.fragment) {
+            countResult += this.searchAssignmentsRecursively(node.rule.ref.definition, featureName);
+        }
+        // look for assignments to the same feature within groups
+        if (ast.isGroup(node) || ast.isUnorderedGroup(node)) {
+            for (const child of node.elements) {
+                countResult += this.searchAssignmentsRecursively(child, featureName);
+            }
+        }
+        // look for assignments to the same feature within alternatives
+        if (ast.isAlternatives(node)) {
+            let alternativeCount = 0;
+            for (const child of node.elements) {
+                alternativeCount = Math.max(alternativeCount, this.searchAssignmentsRecursively(child, featureName));
+            }
+            countResult += alternativeCount;
+        }
+        // the current element can occur multiple times => its assignments occur multiple times as well
+        if (ast.isAbstractElement(node) && isArrayCardinality(node.cardinality)) {
+            countResult *= 2; // note, that the result is not exact (but it is sufficient for the current case)!
+        }
+        return countResult;
     }
 
     checkInterfacePropertyTypes(interfaceDecl: ast.Interface, accept: ValidationAcceptor): void {
