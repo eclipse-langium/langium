@@ -880,10 +880,11 @@ export class LangiumGrammarValidator {
         }
 
         // look for assignments to the same feature within groups
-        if (ast.isGroup(currentContainer) || ast.isUnorderedGroup(currentContainer)) {
+        if (ast.isGroup(currentContainer) || ast.isUnorderedGroup(currentContainer) || ast.isAlternatives(currentContainer)) {
             let countGroup = 0;
             let foundRelevantChild = false;
             for (const child of currentContainer.elements) {
+                // special case: Actions
                 if (child === relevantChild) {
                     foundRelevantChild = true;
                 }
@@ -902,37 +903,18 @@ export class LangiumGrammarValidator {
                         break;
                     }
                 }
-                countGroup += this.searchAssignmentsRecursivelyDown(child, undefined, featureName);
+
+                // count the relevant child assignments
+                const countCurrent = this.searchAssignmentsRecursivelyDown(child, undefined, featureName);
+                if (ast.isAlternatives(currentContainer)) {
+                    // for alternatives, only a single alternative is used => assume the worst case and take the maximum number of assignments
+                    countGroup = Math.max(countGroup, countCurrent);
+                } else {
+                    // all members of the group are relavant => count them all
+                    countGroup += countCurrent;
+                }
             }
             countResult += countGroup;
-        }
-        // look for assignments to the same feature within alternatives
-        if (ast.isAlternatives(currentContainer)) {
-            // TODO 2x if vereinheitlichen!
-            let countAlternatives = 0;
-            let foundRelevantChild = false;
-            for (const child of currentContainer.elements) {
-                if (child === relevantChild) {
-                    foundRelevantChild = true;
-                }
-                if (ast.isAction(child)) {
-                    // a new object is created => following assignments are put into the new object
-                    if (relevantChild) {
-                        if (foundRelevantChild) {
-                            // the assignment to check
-                            break; //  => break the for-loop here, since all following assignments are put into the new object
-                        } else {
-                            containerMultiplicityMatters = false;
-                            countAlternatives = 0;
-                        }
-                    } else {
-                        // 
-                        break;
-                    }
-                }
-                countAlternatives = Math.max(countAlternatives, this.searchAssignmentsRecursivelyDown(child, undefined, featureName));
-            }
-            countResult += countAlternatives;
         }
 
         // the current element can occur multiple times => its assignments occur multiple times as well
