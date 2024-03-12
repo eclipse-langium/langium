@@ -31,6 +31,7 @@ export function registerValidationChecks(services: LangiumGrammarServices): void
     const checks: ValidationChecks<ast.LangiumGrammarAstType> = {
         Action: [
             validator.checkAssignmentReservedName,
+            validator.checkActionOperator,
         ],
         AbstractRule: validator.checkRuleName,
         Assignment: [
@@ -813,25 +814,39 @@ export class LangiumGrammarValidator {
         }
     }
 
+    /** This validation is specific for assignments with '=' as assignment operator and checks,
+     * whether the operator should be '+=' instead. */
     checkAssignmentOperator(assignment: ast.Assignment, accept: ValidationAcceptor): void {
-        // this validation is specific for assignments with '=' as assignment operator
         if (assignment.operator === '=') {
-            // check the initial assignment and all of its containers
-            const reportedProblem = this.searchAssignmentsRecursivelyUp(assignment, assignment, accept);
+            this.checkAssignable(assignment, accept);
+        }
+    }
 
-            // check a special case: the current assignment is located within a fragment => check, whether the fragment is called multiple times
-            if (!reportedProblem) {
-                const containerFragment = getContainerOfType(assignment, ast.isParserRule);
-                if (containerFragment && containerFragment.fragment) {
-                    // for all calls of the fragment ...
-                    for (const ref of this.references.findReferences(containerFragment, {})) {
-                        const doc = this.documents.getDocument(ref.sourceUri);
-                        const call = doc ? this.nodeLocator.getAstNode(doc.parseResult.value, ref.sourcePath) : undefined;
-                        if (call) {
-                            // ... check whether there are multiple assignments to the same feature
-                            if (this.searchAssignmentsRecursivelyUp(call, assignment, accept)) {
-                                return;
-                            }
+    /** This validation is specific for rewriting actions with '=' as assignment operator and checks,
+     * whether the operator of the (rewriting) assignment should be '+=' instead. */
+    checkActionOperator(action: ast.Action, accept: ValidationAcceptor): void {
+        if (action.operator === '=' && action.feature) {
+            this.checkAssignable(action, accept);
+        }
+    }
+
+    private checkAssignable(assignment: ast.Assignment | ast.Action, accept: ValidationAcceptor): void {
+        // check the initial assignment and all of its containers
+        const reportedProblem = this.searchRecursivelyUpForAssignments(assignment, assignment, accept);
+
+        // check a special case: the current assignment is located within a fragment
+        // => check, whether the fragment is called multiple times by parser rules
+        if (!reportedProblem) {
+            const containerFragment = getContainerOfType(assignment, ast.isParserRule);
+            if (containerFragment && containerFragment.fragment) {
+                // for all callers of the fragment ...
+                for (const callerReference of this.references.findReferences(containerFragment, {})) {
+                    const document = this.documents.getDocument(callerReference.sourceUri);
+                    const callingNode = document ? this.nodeLocator.getAstNode(document.parseResult.value, callerReference.sourcePath) : undefined;
+                    if (callingNode) {
+                        // ... check whether there are multiple assignments to the same feature
+                        if (this.searchRecursivelyUpForAssignments(callingNode, assignment, accept)) {
+                            return;
                         }
                     }
                 }
@@ -839,12 +854,19 @@ export class LangiumGrammarValidator {
         }
     }
 
-    private searchAssignmentsRecursivelyUp(node: AstNode, assignment: ast.Assignment, accept: ValidationAcceptor): boolean {
-        let currentContainer: AstNode | undefined = node;
-        let previousChild: AstNode | undefined = undefined;
+    /**
+     * Searches in the given start node and its containers for assignments to the same feature as the given assignment xor action.
+     * @param startNode the node to start the search
+     * @param assignment the assignment for which "conflicting" assigments shall be searched
+     * @param accept acceptor for warnings
+     * @returns true, if the given assignment got a warning, false otherwise
+     */
+    private searchRecursivelyUpForAssignments(startNode: AstNode, assignment: ast.Assignment | ast.Action, accept: ValidationAcceptor): boolean {
+        let currentContainer: AstNode | undefined = startNode; // the current node to search in
+        let previousChild: AstNode | undefined = undefined; // remember the previous node, which is now a direct child of the current container
         while (currentContainer) {
             // check neighbored and nested assignments
-            const countAssignments = this.searchAssignmentsRecursivelyDown(currentContainer, previousChild, assignment.feature);
+            const countAssignments = this.searchRecursivelyDownForAssignments(currentContainer, previousChild, assignment.feature!);
             if (countAssignments >= 2) {
                 accept(
                     'warning',
@@ -861,52 +883,73 @@ export class LangiumGrammarValidator {
         return false;
     }
 
-    private searchAssignmentsRecursivelyDown(currentContainer: AstNode, relevantChild: AstNode | undefined, featureName: string): number {
+    /**
+     * Searches in the given current node and its contained nodes for assignments with the given feature name.
+     * @param currentNode the element whose assignments should be (recursively) counted
+     * @param relevantChild if given, this node is a direct child of the given 'currentNode'
+     * and is required in case of Actions contained in the 'currentNode' to identify which assignments are relevant and which not,
+     * depending on the positions of the Action and the 'relevantChild',
+     * i.e. only assignments to the same object which contains the given 'relevantChild' matter.
+     * @param featureName the feature name of assignments to search for
+     * @returns the number of found assignments with the given name,
+     * note, that the returned number is not exact and "estimates the potential number",
+     * i.e. multiplicities like + and * are counted as 2x/twice,
+     * and for alternatives, the worst case is assumed.
+     * In other words, here it is enough to know, whether there are two or more assignments possible to the same feature.
+     */
+    private searchRecursivelyDownForAssignments(currentNode: AstNode, relevantChild: AstNode | undefined, featureName: string): number {
         let countResult = 0;
         let containerMultiplicityMatters = true;
 
         // assignment
-        if (ast.isAssignment(currentContainer) && currentContainer.feature === featureName) {
+        if (ast.isAssignment(currentNode) && currentNode.feature === featureName) {
             countResult += 1;
         }
-        // search for assignments in used fragments as well, since their property values are stored in the current object,
-        // but not in calls of regular parser rules, since they create new objects
-        if (ast.isRuleCall(currentContainer) && ast.isParserRule(currentContainer.rule.ref) && currentContainer.rule.ref.fragment) {
-            countResult += this.searchAssignmentsRecursivelyDown(currentContainer.rule.ref.definition, undefined, featureName);
-        }
-        // TODO test this special assignment!
-        if (ast.isAction(currentContainer) && currentContainer.feature === featureName) {
-            countResult++;
+
+        // Search for assignments in used fragments as well, since their property values are stored in the current object.
+        // But do not search in calls of regular parser rules, since parser rules create new objects.
+        if (ast.isRuleCall(currentNode) && ast.isParserRule(currentNode.rule.ref) && currentNode.rule.ref.fragment) {
+            countResult += this.searchRecursivelyDownForAssignments(currentNode.rule.ref.definition, undefined, featureName);
         }
 
-        // look for assignments to the same feature within groups
-        if (ast.isGroup(currentContainer) || ast.isUnorderedGroup(currentContainer) || ast.isAlternatives(currentContainer)) {
+        // rewriting actions are a special case for assignments
+        if (ast.isAction(currentNode) && currentNode.feature === featureName) {
+            countResult += 1;
+        }
+
+        // look for assignments to the same feature nested within groups
+        if (ast.isGroup(currentNode) || ast.isUnorderedGroup(currentNode) || ast.isAlternatives(currentNode)) {
             let countGroup = 0;
             let foundRelevantChild = false;
-            for (const child of currentContainer.elements) {
-                // special case: Actions
-                if (child === relevantChild) {
-                    foundRelevantChild = true;
-                }
+            for (const child of currentNode.elements) {
+                // Actions are a special case: a new object is created => following assignments are put into the new object
+                // (This counts for rewriting actions as well as for unassigned actions, i.e. actions without feature name)
                 if (ast.isAction(child)) {
-                    // a new object is created => following assignments are put into the new object
                     if (relevantChild) {
+                        // there is a child given => ensure, that only assignments to the same object which contains this child are counted
                         if (foundRelevantChild) {
                             // the previous assignments are put into the same object as the given relevant child => ignore the following assignments to the new object
                             break;
                         } else {
-                            // 
-                            containerMultiplicityMatters = false; // since an additional object is created for each time, */+ around the current group don't matter!
+                            // the previous assignments are stored in a different object than the given relevant child => ignore those assignments
                             countGroup = 0;
+                            // since an additional object is created for each time, */+ around the current group don't matter!
+                            containerMultiplicityMatters = false;
                         }
                     } else {
+                        // all following assignments are put into the new object => ignore following assignments, but count previous assignments
                         break;
                     }
                 }
 
+                // remember, whether the given child is already found in the current group
+                if (child === relevantChild) {
+                    foundRelevantChild = true;
+                }
+
                 // count the relevant child assignments
-                const countCurrent = this.searchAssignmentsRecursivelyDown(child, undefined, featureName);
-                if (ast.isAlternatives(currentContainer)) {
+                const countCurrent = this.searchRecursivelyDownForAssignments(child, undefined, featureName);
+                if (ast.isAlternatives(currentNode)) {
                     // for alternatives, only a single alternative is used => assume the worst case and take the maximum number of assignments
                     countGroup = Math.max(countGroup, countCurrent);
                 } else {
@@ -917,10 +960,11 @@ export class LangiumGrammarValidator {
             countResult += countGroup;
         }
 
-        // the current element can occur multiple times => its assignments occur multiple times as well
-        if (containerMultiplicityMatters && ast.isAbstractElement(currentContainer) && isArrayCardinality(currentContainer.cardinality)) {
+        // the current element can occur multiple times => its assignments can occur multiple times as well
+        if (containerMultiplicityMatters && ast.isAbstractElement(currentNode) && isArrayCardinality(currentNode.cardinality)) {
             countResult *= 2; // note, that the result is not exact (but it is sufficient for the current case)!
         }
+
         return countResult;
     }
 

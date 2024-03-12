@@ -922,10 +922,20 @@ describe('Assignments with = instead of +=', () => {
         expect(validation.diagnostics.length).toBe(0);
     });
 
-    test('no problem with action: assignment is looped, but stored in a new object each time', async () => {
+    test('no problem with actions: assignment is looped, but stored in a new object each time', async () => {
         const validation = await validate(getGrammar(`
             entry Model infers Expression:
                 Person ({infer Model.left=current} operator=('+' | '-') right=Person)*;
+            Person infers Expression:
+                {infer Person} 'person' name=ID ;
+        `));
+        expect(validation.diagnostics.length).toBe(0);
+    });
+
+    test('no problem with actions: second assignment is stored in a new object', async () => {
+        const validation = await validate(getGrammar(`
+            entry Model infers Expression:
+                Person (operator=('+' | '-') right=Person {infer Model.left=current} right=Person)?;
             Person infers Expression:
                 {infer Person} 'person' name=ID ;
         `));
