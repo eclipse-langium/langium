@@ -921,6 +921,28 @@ describe('Assignments with = instead of +=', () => {
         `));
         expect(validation.diagnostics.length).toBe(0);
     });
+
+    test('no problem with action: assignment is looped, but stored in a new object each time', async () => {
+        const validation = await validate(getGrammar(`
+            entry Model infers Expression:
+                Person ({infer Model.left=current} operator=('+' | '-') right=Person)*;
+            Person infers Expression:
+                {infer Person} 'person' name=ID ;
+        `));
+        expect(validation.diagnostics.length).toBe(0);
+    });
+
+    test('actions: the rewrite part is a special assignment, which needs to be checked as well!', async () => {
+        const validation = await validate(getGrammar(`
+            entry Model infers Expression:
+                Person ({infer Model.left=current} operator=('+' | '-') right=Person left=Model)*;
+            Person infers Expression:
+                {infer Person} 'person' name=ID ;
+        `));
+        expect(validation.diagnostics.length).toBe(2);
+        expect(validation.diagnostics[0].message).toBe(getMessage('left'));
+        expect(validation.diagnostics[1].message).toBe(getMessage('left'));
+    });
 });
 
 describe('Missing required properties are not arrays or booleans', () => {

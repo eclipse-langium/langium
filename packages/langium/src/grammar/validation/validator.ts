@@ -840,10 +840,11 @@ export class LangiumGrammarValidator {
     }
 
     private searchAssignmentsRecursivelyUp(node: AstNode, assignment: ast.Assignment, accept: ValidationAcceptor): boolean {
-        let currentElement: AstNode | undefined = node;
-        while (currentElement) {
+        let currentContainer: AstNode | undefined = node;
+        let previousChild: AstNode | undefined = undefined;
+        while (currentContainer) {
             // check neighbored and nested assignments
-            const countAssignments = this.searchAssignmentsRecursivelyDown(currentElement, assignment.feature);
+            const countAssignments = this.searchAssignmentsRecursivelyDown(currentContainer, previousChild, assignment.feature);
             if (countAssignments >= 2) {
                 accept(
                     'warning',
@@ -854,38 +855,88 @@ export class LangiumGrammarValidator {
             }
 
             // check the next container
-            currentElement = currentElement.$container;
+            previousChild = currentContainer;
+            currentContainer = currentContainer.$container;
         }
         return false;
     }
 
-    private searchAssignmentsRecursivelyDown(node: AstNode, featureName: string): number {
+    private searchAssignmentsRecursivelyDown(currentContainer: AstNode, relevantChild: AstNode | undefined, featureName: string): number {
         let countResult = 0;
+        let containerMultiplicityMatters = true;
+
         // assignment
-        if (ast.isAssignment(node) && node.feature === featureName) {
+        if (ast.isAssignment(currentContainer) && currentContainer.feature === featureName) {
             countResult += 1;
         }
         // search for assignments in used fragments as well, since their property values are stored in the current object,
         // but not in calls of regular parser rules, since they create new objects
-        if (ast.isRuleCall(node) && ast.isParserRule(node.rule.ref) && node.rule.ref.fragment) {
-            countResult += this.searchAssignmentsRecursivelyDown(node.rule.ref.definition, featureName);
+        if (ast.isRuleCall(currentContainer) && ast.isParserRule(currentContainer.rule.ref) && currentContainer.rule.ref.fragment) {
+            countResult += this.searchAssignmentsRecursivelyDown(currentContainer.rule.ref.definition, undefined, featureName);
         }
+        // TODO test this special assignment!
+        if (ast.isAction(currentContainer) && currentContainer.feature === featureName) {
+            countResult++;
+        }
+
         // look for assignments to the same feature within groups
-        if (ast.isGroup(node) || ast.isUnorderedGroup(node)) {
-            for (const child of node.elements) {
-                countResult += this.searchAssignmentsRecursivelyDown(child, featureName);
+        if (ast.isGroup(currentContainer) || ast.isUnorderedGroup(currentContainer)) {
+            let countGroup = 0;
+            let foundRelevantChild = false;
+            for (const child of currentContainer.elements) {
+                if (child === relevantChild) {
+                    foundRelevantChild = true;
+                }
+                if (ast.isAction(child)) {
+                    // a new object is created => following assignments are put into the new object
+                    if (relevantChild) {
+                        if (foundRelevantChild) {
+                            // the previous assignments are put into the same object as the given relevant child => ignore the following assignments to the new object
+                            break;
+                        } else {
+                            // 
+                            containerMultiplicityMatters = false; // since an additional object is created for each time, */+ around the current group don't matter!
+                            countGroup = 0;
+                        }
+                    } else {
+                        break;
+                    }
+                }
+                countGroup += this.searchAssignmentsRecursivelyDown(child, undefined, featureName);
             }
+            countResult += countGroup;
         }
         // look for assignments to the same feature within alternatives
-        if (ast.isAlternatives(node)) {
-            let alternativeCount = 0;
-            for (const child of node.elements) {
-                alternativeCount = Math.max(alternativeCount, this.searchAssignmentsRecursivelyDown(child, featureName));
+        if (ast.isAlternatives(currentContainer)) {
+            // TODO 2x if vereinheitlichen!
+            let countAlternatives = 0;
+            let foundRelevantChild = false;
+            for (const child of currentContainer.elements) {
+                if (child === relevantChild) {
+                    foundRelevantChild = true;
+                }
+                if (ast.isAction(child)) {
+                    // a new object is created => following assignments are put into the new object
+                    if (relevantChild) {
+                        if (foundRelevantChild) {
+                            // the assignment to check
+                            break; //  => break the for-loop here, since all following assignments are put into the new object
+                        } else {
+                            containerMultiplicityMatters = false;
+                            countAlternatives = 0;
+                        }
+                    } else {
+                        // 
+                        break;
+                    }
+                }
+                countAlternatives = Math.max(countAlternatives, this.searchAssignmentsRecursivelyDown(child, undefined, featureName));
             }
-            countResult += alternativeCount;
+            countResult += countAlternatives;
         }
+
         // the current element can occur multiple times => its assignments occur multiple times as well
-        if (ast.isAbstractElement(node) && isArrayCardinality(node.cardinality)) {
+        if (containerMultiplicityMatters && ast.isAbstractElement(currentContainer) && isArrayCardinality(currentContainer.cardinality)) {
             countResult *= 2; // note, that the result is not exact (but it is sufficient for the current case)!
         }
         return countResult;
