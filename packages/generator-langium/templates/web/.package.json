@@ -1,6 +1,8 @@
 {
     "scripts": {
         "build:web": "npm run build",
+        "bundle": "vite build",
+        "bundle:serve": "http-server ./dist --port 5175",
         "dev": "vite",
         "dev:debug": "vite --debug --force",
         "serve": "npm run dev"
@@ -15,6 +17,7 @@
     },
     "devDependencies": {
         "@codingame/esbuild-import-meta-url-plugin": "~1.0.2",
-        "vite": "~5.1.6"        
+        "vite": "~5.1.6",
+        "http-server": "~14.1.1"    
     }
 }

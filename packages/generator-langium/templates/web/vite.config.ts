@@ -9,8 +9,9 @@ export default defineConfig(() => {
             target: 'esnext',
             rollupOptions: {
                 input: {
-                    monacoClassic: path.resolve(__dirname, '/static/monacoClassic.html'),
-                    monacoExtended: path.resolve(__dirname, '/static/monacoExtended.html'),
+                    index: path.resolve(__dirname, 'index.html'),
+                    monacoClassic: path.resolve(__dirname, 'static/monacoClassic.html'),
+                    monacoExtended: path.resolve(__dirname, 'static/monacoExtended.html'),
                 }
             }
         },
@@ -23,6 +24,9 @@ export default defineConfig(() => {
                     importMetaUrlPlugin
                 ]
             }
+        },
+        server: {
+            port: 5173
         }
     };
     return config;

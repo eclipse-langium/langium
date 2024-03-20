@@ -3,10 +3,8 @@ import { configureWorker, defineUserServices } from './setupCommon.js';
 
 export const setupConfigExtended = (): UserConfig => {
     const extensionFilesOrContents = new Map();
-    const languageConfigUrl = new URL('../language-configuration.json', window.location.href);
-    const textmateConfigUrl = new URL('../syntaxes/<%= language-id %>.tmLanguage.json', window.location.href);
-    extensionFilesOrContents.set('/language-configuration.json', languageConfigUrl);
-    extensionFilesOrContents.set('/<%= language-id %>-grammar.json', textmateConfigUrl);
+    extensionFilesOrContents.set('/language-configuration.json', new URL('../language-configuration.json', import.meta.url));
+    extensionFilesOrContents.set('/<%= language-id %>-grammar.json', new URL('../syntaxes/<%= language-id %>.tmLanguage.json', import.meta.url));
 
     return {
         wrapperConfig: {

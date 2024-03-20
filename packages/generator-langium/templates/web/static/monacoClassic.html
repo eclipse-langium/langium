@@ -20,8 +20,8 @@
         <!-- Monaco Configuration -->
         <script type="module">
             // vite is used to resolve the included TypeScript files
-            import { configureMonacoWorkers } from '../src/setupCommon.ts';
-            import { executeClassic } from '../src/setupClassic.ts';
+            import { configureMonacoWorkers } from '../src/setupCommon';
+            import { executeClassic } from '../src/setupClassic';
 
             configureMonacoWorkers();
             // keep a reference to a promise for when the editor is finished starting, we'll use this to setup the canvas on load
