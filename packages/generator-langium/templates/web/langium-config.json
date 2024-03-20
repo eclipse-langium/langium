@@ -8,7 +8,7 @@
             "out": "syntaxes/<%= language-id %>.tmLanguage.json"
         },
         "monarch": {
-            "out": "syntaxes/<%= language-id %>.monarch.ts"
+            "out": "src/syntaxes/<%= language-id %>.monarch.ts"
         }
     }],
     "out": "src/language/generated"

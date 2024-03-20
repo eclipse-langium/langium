@@ -159,9 +159,9 @@ const PACKAGE_JSON_EXPECTATION: Record<string, any> = {
     },
     'devDependencies': {
         '@types/node': '^18.0.0',
-        '@typescript-eslint/eslint-plugin': '~6.4.1',
-        '@typescript-eslint/parser': '~6.4.1',
-        'eslint': '~8.47.0',
+        '@typescript-eslint/eslint-plugin': '~7.3.1',
+        '@typescript-eslint/parser': '~7.3.1',
+        'eslint': '~8.57.0',
         'langium-cli': langiumCliVersion,
         'typescript': '~5.1.6'
     }

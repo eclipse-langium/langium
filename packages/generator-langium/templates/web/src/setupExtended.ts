@@ -1,9 +1,7 @@
-import { addMonacoStyles, defineUserServices, MonacoEditorLanguageClientWrapper } from './bundle/index.js';
-import { configureWorker } from './setup.js';
+import { MonacoEditorLanguageClientWrapper, UserConfig } from 'monaco-editor-wrapper';
+import { configureWorker, defineUserServices } from './setupCommon.js';
 
-addMonacoStyles('monaco-editor-styles');
-
-export const setupConfigExtended = () => {
+export const setupConfigExtended = (): UserConfig => {
     const extensionFilesOrContents = new Map();
     const languageConfigUrl = new URL('../language-configuration.json', window.location.href);
     const textmateConfigUrl = new URL('../syntaxes/<%= language-id %>.tmLanguage.json', window.location.href);
@@ -55,7 +53,7 @@ export const setupConfigExtended = () => {
     };
 };
 
-export const executeExtended = async (htmlElement) => {
+export const executeExtended = async (htmlElement: HTMLElement) => {
     const userConfig = setupConfigExtended();
     const wrapper = new MonacoEditorLanguageClientWrapper();
     await wrapper.initAndStart(userConfig, htmlElement);
