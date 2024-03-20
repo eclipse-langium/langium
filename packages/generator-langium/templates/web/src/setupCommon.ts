@@ -25,9 +25,11 @@ export const configureMonacoWorkers = () => {
 };
 
 export const configureWorker = (): LanguageClientConfig => {
-    const workerURL = new URL('./language/main-browser.ts', import.meta.url);
+    const workerURL = new URL('./language/main-browser', import.meta.url);
     console.log(`Using the following  worker URL: ${workerURL.href}`);
-    const lsWorker = new Worker(workerURL.href, {
+
+    // vite does not extract the worker properly if it is in the workerURL variable
+    const lsWorker = new Worker(new URL('./language/main-browser', import.meta.url), {
         type: 'module',
         name: '<%= LanguageName %> Language Server'
     });
