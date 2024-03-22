@@ -8,12 +8,12 @@
         "serve": "npm run dev"
     },
     "dependencies": {
-        "@codingame/monaco-vscode-editor-service-override": "~3.1.2",
-        "@codingame/monaco-vscode-keybindings-service-override": "~3.1.2",
-        "monaco-editor": "npm:@codingame/monaco-vscode-editor-api@~3.1.2",
-        "monaco-editor-wrapper": "~4.0.0",
-        "monaco-languageclient": "~8.0.0",
-        "vscode": "npm:@codingame/monaco-vscode-api@~3.1.2"
+        "@codingame/monaco-vscode-editor-service-override": "~3.2.2",
+        "@codingame/monaco-vscode-keybindings-service-override": "~3.2.2",
+        "monaco-editor": "npm:@codingame/monaco-vscode-editor-api@~3.2.2",
+        "monaco-editor-wrapper": "~4.0.1",
+        "monaco-languageclient": "~8.1.0",
+        "vscode": "npm:@codingame/monaco-vscode-api@~3.2.2"
     },
     "devDependencies": {
         "@codingame/esbuild-import-meta-url-plugin": "~1.0.2",
