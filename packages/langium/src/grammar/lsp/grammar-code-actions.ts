@@ -5,25 +5,25 @@
  ******************************************************************************/
 
 import type { Diagnostic } from 'vscode-languageserver';
+import { CodeActionKind } from 'vscode-languageserver';
 import type { CodeActionParams } from 'vscode-languageserver-protocol';
 import type { CodeAction, Command, Position, TextEdit } from 'vscode-languageserver-types';
-import type { URI } from '../../utils/uri-utils.js';
+import * as ast from '../../languages/generated/ast.js';
 import type { CodeActionProvider } from '../../lsp/code-action.js';
 import type { LangiumServices } from '../../lsp/lsp-services.js';
 import type { AstReflection, Reference, ReferenceInfo } from '../../syntax-tree.js';
-import type { MaybePromise } from '../../utils/promise-utils.js';
-import type { LinkingErrorData } from '../../validation/document-validator.js';
-import type { DiagnosticData } from '../../validation/validation-registry.js';
-import type { LangiumDocument } from '../../workspace/documents.js';
-import type { IndexManager } from '../../workspace/index-manager.js';
-import { CodeActionKind } from 'vscode-languageserver';
 import { getContainerOfType } from '../../utils/ast-utils.js';
 import { findLeafNodeAtOffset } from '../../utils/cst-utils.js';
 import { findNodeForProperty } from '../../utils/grammar-utils.js';
+import type { MaybePromise } from '../../utils/promise-utils.js';
 import { escapeRegExp } from '../../utils/regexp-utils.js';
+import type { URI } from '../../utils/uri-utils.js';
 import { UriUtils } from '../../utils/uri-utils.js';
+import type { LinkingErrorData } from '../../validation/document-validator.js';
 import { DocumentValidator } from '../../validation/document-validator.js';
-import * as ast from '../../languages/generated/ast.js';
+import type { DiagnosticData } from '../../validation/validation-registry.js';
+import type { LangiumDocument } from '../../workspace/documents.js';
+import type { IndexManager } from '../../workspace/index-manager.js';
 import { IssueCodes } from '../validation/validator.js';
 
 export class LangiumGrammarCodeActionProvider implements CodeActionProvider {
@@ -62,6 +62,9 @@ export class LangiumGrammarCodeActionProvider implements CodeActionProvider {
                 break;
             case IssueCodes.CrossRefTokenSyntax:
                 accept(this.fixCrossRefSyntax(diagnostic, document));
+                break;
+            case IssueCodes.ParserRuleToTypeDecl:
+                accept(this.replaceParserRuleByTypeDeclaration(diagnostic, document));
                 break;
             case IssueCodes.UnnecessaryFileExtension:
                 accept(this.fixUnnecessaryFileExtension(diagnostic, document));
@@ -176,6 +179,67 @@ export class LangiumGrammarCodeActionProvider implements CodeActionProvider {
                     }
                 }
             };
+        }
+        return undefined;
+    }
+
+    private isRuleReplaceable(rule: ast.ParserRule): boolean {
+        /** at the moment, only "pure" parser rules are supported:
+         * - supported are only Alternatives (recursively) and "infers"
+         * - "returns" is not relevant, since cross-references would not refer to the parser rule, but to its "return type" instead
+         */
+        return !rule.fragment && !rule.entry && rule.parameters.length === 0 && !rule.definesHiddenTokens && !rule.wildcard && !rule.returnType && !rule.dataType;
+    }
+    private replaceRule(rule: ast.ParserRule): string {
+        const type = rule.inferredType ?? rule;
+        return type.name;
+    }
+    private isDefinitionReplaceable(node: ast.AbstractElement): boolean {
+        if (ast.isRuleCall(node)) {
+            return node.arguments.length === 0 && ast.isParserRule(node.rule.ref) && this.isRuleReplaceable(node.rule.ref);
+        }
+        if (ast.isAlternatives(node)) {
+            return node.elements.every(child => this.isDefinitionReplaceable(child));
+        }
+        return false;
+    }
+    private replaceDefinition(node: ast.AbstractElement, requiresBraces: boolean): string {
+        if (ast.isRuleCall(node) && node.rule.ref) {
+            return node.rule.ref.name;
+        }
+        if (ast.isAlternatives(node)) {
+            const result = node.elements.map(child => this.replaceDefinition(child, true)).join(' | ');
+            return requiresBraces && node.elements.length >= 2 ? `(${result})` : result;
+        }
+        throw new Error('missing code for ' + node);
+    }
+
+    private replaceParserRuleByTypeDeclaration(diagnostic: Diagnostic, document: LangiumDocument): CodeAction | undefined {
+        const rootCst = document.parseResult.value.$cstNode;
+        if (rootCst) {
+            const offset = document.textDocument.offsetAt(diagnostic.range.start);
+            const cstNode = findLeafNodeAtOffset(rootCst, offset);
+            const rule = getContainerOfType(cstNode?.astNode, ast.isParserRule);
+            if (rule && rule.$cstNode) {
+                const isRuleReplaceable = this.isRuleReplaceable(rule) && this.isDefinitionReplaceable(rule.definition);
+                if (isRuleReplaceable) {
+                    const newText = `type ${this.replaceRule(rule)} = ${this.replaceDefinition(rule.definition, false)};`;
+                    return {
+                        title: 'Replace parser rule by type declaration',
+                        kind: CodeActionKind.QuickFix,
+                        diagnostics: [diagnostic],
+                        isPreferred: true,
+                        edit: {
+                            changes: {
+                                [document.textDocument.uri]: [{
+                                    range: diagnostic.range,
+                                    newText
+                                }]
+                            }
+                        }
+                    };
+                }
+            }
         }
         return undefined;
     }
