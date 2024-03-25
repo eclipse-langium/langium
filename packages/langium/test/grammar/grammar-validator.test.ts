@@ -728,6 +728,233 @@ describe('Property type is not a mix of cross-ref and non-cross-ref types.', () 
 
 });
 
+describe('Assignments with = instead of +=', () => {
+    function getMessage(featureName: string): string {
+        return `It seems, that you are assigning multiple values to the feature '${featureName}', while you are using '=' as assignment operator. Consider to use '+=' instead in order not to loose some of the assigned value.`;
+    }
+    function getGrammar(content: string): string {
+        return `
+            grammar HelloWorld
+            ${content}
+            hidden terminal WS: /\\s+/;
+            terminal ID: /[_a-zA-Z][\\w_]*/;
+        `;
+    }
+
+    test('assignment with * cardinality', async () => {
+        const validation = await validate(getGrammar(`
+            entry Model:
+                persons=Person* ;
+            Person: 'person' name=ID ;
+        `));
+        expect(validation.diagnostics.length).toBe(1);
+        expect(validation.diagnostics[0].message).toBe(getMessage('persons'));
+    });
+    test('assignment with + cardinality', async () => {
+        const validation = await validate(getGrammar(`
+            entry Model:
+                persons=Person+ ;
+            Person: 'person' name=ID ;
+        `));
+        expect(validation.diagnostics.length).toBe(1);
+        expect(validation.diagnostics[0].message).toBe(getMessage('persons'));
+    });
+
+    test('two assignments with single cardinality', async () => {
+        const validation = await validate(getGrammar(`
+            entry Model:
+                persons=Person ',' persons=Person;
+            Person: 'person' name=ID ;
+        `));
+        expect(validation.diagnostics.length).toBe(2);
+        expect(validation.diagnostics[0].message).toBe(getMessage('persons'));
+    });
+
+    test('single assignment with outer * cardinality', async () => {
+        const validation = await validate(getGrammar(`
+            entry Model:
+                (',' persons=Person)* ;
+            Person: 'person' name=ID ;
+        `));
+        expect(validation.diagnostics.length).toBe(1);
+        expect(validation.diagnostics[0].message).toBe(getMessage('persons'));
+    });
+
+    test('correct and wrong assignments next to each other', async () => {
+        const validation = await validate(getGrammar(`
+            entry Model:
+                persons += Person*
+                greetings = Greeting*;
+
+            Person:
+                'person' name=ID;
+
+            Greeting:
+                'Hello' person=[Person:ID] '!';
+        `));
+
+        expect(validation.diagnostics.length).toBe(1);
+        expect(validation.diagnostics[0].message).toBe(getMessage('greetings'));
+    });
+
+    test('no problem: assignments in different alternatives', async () => {
+        const validation = await validate(getGrammar(`
+            entry Model:
+                (persons=Person) | (persons=Person);
+            Person: 'person' name=ID ;
+        `));
+        expect(validation.diagnostics.length).toBe(0);
+    });
+
+    test('assignments in different alternatives, but looped', async () => {
+        const validation = await validate(getGrammar(`
+            entry Model:
+                ((persons=Person) | (persons=Person))*;
+            Person: 'person' name=ID ;
+        `));
+        expect(validation.diagnostics.length).toBe(2);
+        expect(validation.diagnostics[0].message).toBe(getMessage('persons'));
+        expect(validation.diagnostics[1].message).toBe(getMessage('persons'));
+    });
+
+    test('assignments in different alternatives, written twice', async () => {
+        const validation = await validate(getGrammar(`
+            entry Model:
+                ((persons=Person) | (persons=Person)) ',' ((persons=Person) | (persons=Person));
+            Person: 'person' name=ID ;
+        `));
+        expect(validation.diagnostics.length).toBe(4);
+        expect(validation.diagnostics[0].message).toBe(getMessage('persons'));
+        expect(validation.diagnostics[1].message).toBe(getMessage('persons'));
+        expect(validation.diagnostics[2].message).toBe(getMessage('persons'));
+        expect(validation.diagnostics[3].message).toBe(getMessage('persons'));
+    });
+
+    test('assignments only in some alternatives, assume the worst case', async () => {
+        const validation = await validate(getGrammar(`
+            entry Model:
+                ((persons=Person) | (';')) ',' ((persons=Person) | (';'));
+            Person: 'person' name=ID ;
+        `));
+        expect(validation.diagnostics.length).toBe(2);
+        expect(validation.diagnostics[0].message).toBe(getMessage('persons'));
+        expect(validation.diagnostics[1].message).toBe(getMessage('persons'));
+    });
+
+    test('multiple, nested optional assignments', async () => {
+        const validation = await validate(getGrammar(`
+            entry Model:
+                persons=Person (',' persons=Person (',' persons=Person )?)?;
+            Person: 'person' name=ID ;
+        `));
+        expect(validation.diagnostics.length).toBe(3);
+        expect(validation.diagnostics[0].message).toBe(getMessage('persons'));
+        expect(validation.diagnostics[1].message).toBe(getMessage('persons'));
+        expect(validation.diagnostics[2].message).toBe(getMessage('persons'));
+    });
+
+    test('multiple, nested mandatory assignments', async () => {
+        const validation = await validate(getGrammar(`
+            entry Model:
+                persons=Person (',' persons=Person (',' persons=Person ));
+            Person: 'person' name=ID ;
+        `));
+        expect(validation.diagnostics.length).toBe(3);
+        expect(validation.diagnostics[0].message).toBe(getMessage('persons'));
+        expect(validation.diagnostics[1].message).toBe(getMessage('persons'));
+        expect(validation.diagnostics[2].message).toBe(getMessage('persons'));
+    });
+
+    test('fragments: 2nd critical assignment is located in a fragment', async () => {
+        const validation = await validate(getGrammar(`
+            entry Model:
+                persons=Person ';' Assign;
+            fragment Assign:
+                ',' persons=Person;
+            Person: 'person' name=ID ;
+        `));
+        expect(validation.diagnostics.length).toBe(2);
+        expect(validation.diagnostics[0].message).toBe(getMessage('persons'));
+        expect(validation.diagnostics[1].message).toBe(getMessage('persons'));
+    });
+
+    test('fragments: all assignments are located in a fragment', async () => {
+        const validation = await validate(getGrammar(`
+            entry Model:
+                Assign ';' Assign;
+            fragment Assign:
+                ',' persons=Person;
+            Person: 'person' name=ID ;
+        `));
+        expect(validation.diagnostics.length).toBe(1);
+        expect(validation.diagnostics[0].message).toBe(getMessage('persons'));
+    });
+
+    test('fragments: assignment in looped fragment', async () => {
+        const validation = await validate(getGrammar(`
+            entry Model:
+                Assign*;
+            fragment Assign:
+                ',' persons=Person;
+            Person: 'person' name=ID ;
+        `));
+        expect(validation.diagnostics.length).toBe(1);
+        expect(validation.diagnostics[0].message).toBe(getMessage('persons'));
+    });
+
+    test('no problem: fragments in alternatives', async () => {
+        const validation = await validate(getGrammar(`
+            entry Model:
+                Assign | (';' Assign);
+            fragment Assign:
+                ',' persons=Person;
+            Person: 'person' name=ID ;
+        `));
+        expect(validation.diagnostics.length).toBe(0);
+    });
+
+    test('no problem: assignments in different parser rules', async () => {
+        const validation = await validate(getGrammar(`
+            entry Model:
+                persons=Person;
+            Person: 'person' name=ID persons=Person;
+        `));
+        expect(validation.diagnostics.length).toBe(0);
+    });
+
+    test('no problem with actions: assignment is looped, but stored in a new object each time', async () => {
+        const validation = await validate(getGrammar(`
+            entry Model infers Expression:
+                Person ({infer Model.left=current} operator=('+' | '-') right=Person)*;
+            Person infers Expression:
+                {infer Person} 'person' name=ID ;
+        `));
+        expect(validation.diagnostics.length).toBe(0);
+    });
+
+    test('no problem with actions: second assignment is stored in a new object', async () => {
+        const validation = await validate(getGrammar(`
+            entry Model infers Expression:
+                Person (operator=('+' | '-') right=Person {infer Model.left=current} right=Person)?;
+            Person infers Expression:
+                {infer Person} 'person' name=ID ;
+        `));
+        expect(validation.diagnostics.length).toBe(0);
+    });
+
+    test('actions: the rewrite part is a special assignment, which needs to be checked as well!', async () => {
+        const validation = await validate(getGrammar(`
+            entry Model infers Expression:
+                Person ({infer Model.left=current} operator=('+' | '-') right=Person left=Model)*;
+            Person infers Expression:
+                {infer Person} 'person' name=ID ;
+        `));
+        expect(validation.diagnostics.length).toBe(2);
+        expect(validation.diagnostics[0].message).toBe(getMessage('left'));
+        expect(validation.diagnostics[1].message).toBe(getMessage('left'));
+    });
+});
+
 describe('Missing required properties are not arrays or booleans', () => {
 
     test('No missing properties', async () => {
