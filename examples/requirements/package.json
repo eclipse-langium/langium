@@ -76,7 +76,7 @@
         "vscode-languageserver": "~9.0.1"
     },
     "devDependencies": {
-        "langium-cli": "~3.0.0"
+        "langium-cli": "~3.0.1"
     },
     "volta": {
         "node": "18.17.1",
