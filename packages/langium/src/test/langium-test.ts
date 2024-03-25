@@ -9,6 +9,9 @@ import type { LangiumCoreServices, LangiumSharedCoreServices } from '../services
 import type { AstNode, CstNode, Properties } from '../syntax-tree.js';
 import { type LangiumDocument, TextDocument } from '../workspace/documents.js';
 import type { BuildOptions } from '../workspace/document-builder.js';
+import type { AsyncDisposable } from '../utils/disposable.js';
+import type { LangiumServices, LangiumSharedLSPServices } from '../lsp/lsp-services.js';
+import type { ParserOptions } from '../parser/langium-parser.js';
 import { DiagnosticSeverity, MarkupContent } from 'vscode-languageserver-types';
 import { escapeRegExp } from '../utils/regexp-utils.js';
 import { URI } from '../utils/uri-utils.js';
@@ -16,16 +19,18 @@ import { findNodeForProperty } from '../utils/grammar-utils.js';
 import { SemanticTokensDecoder } from '../lsp/semantic-token-provider.js';
 import * as assert from 'node:assert';
 import { stream } from '../utils/stream.js';
-import type { AsyncDisposable } from '../utils/disposable.js';
 import { Disposable } from '../utils/disposable.js';
 import { normalizeEOL } from '../generate/template-string.js';
-import type { LangiumServices, LangiumSharedLSPServices } from '../lsp/lsp-services.js';
 
 export interface ParseHelperOptions extends BuildOptions {
     /**
      * Specifies the URI of the generated document. Will use a counter variable if not specified.
      */
     documentUri?: string;
+    /**
+     * Options passed to the LangiumParser.
+     */
+    parserOptions?: ParserOptions
 }
 
 let nextDocumentId = 1;
@@ -35,7 +40,7 @@ export function parseHelper<T extends AstNode = AstNode>(services: LangiumCoreSe
     const documentBuilder = services.shared.workspace.DocumentBuilder;
     return async (input, options) => {
         const uri = URI.parse(options?.documentUri ?? `file:///${nextDocumentId++}${metaData.fileExtensions[0] ?? ''}`);
-        const document = services.shared.workspace.LangiumDocumentFactory.fromString<T>(input, uri);
+        const document = services.shared.workspace.LangiumDocumentFactory.fromString<T>(input, uri, options?.parserOptions);
         services.shared.workspace.LangiumDocuments.addDocument(document);
         await documentBuilder.build([document], options);
         return document;

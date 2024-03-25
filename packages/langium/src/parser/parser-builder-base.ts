@@ -26,7 +26,6 @@ type RuleContext = {
 type ParserContext = {
     parser: BaseParser
     tokens: TokenTypeDictionary
-    rules: Map<string, Rule>
     ruleNames: Map<AstNode, string>
 }
 
@@ -39,11 +38,9 @@ type Predicate = (args: Args) => boolean;
 type Method = (args: Args) => void;
 
 export function createParser<T extends BaseParser>(grammar: Grammar, parser: T, tokens: TokenTypeDictionary): T {
-    const rules = new Map<string, Rule>();
     const parserContext: ParserContext = {
         parser,
         tokens,
-        rules,
         ruleNames: new Map()
     };
     buildRules(parserContext, grammar);
@@ -62,10 +59,7 @@ function buildRules(parserContext: ParserContext, grammar: Grammar): void {
             many: 1,
             or: 1
         };
-        ctx.rules.set(
-            rule.name,
-            parserContext.parser.rule(rule, buildElement(ctx, rule.definition))
-        );
+        parserContext.parser.rule(rule, buildElement(ctx, rule.definition));
     }
 }
 
@@ -369,7 +363,7 @@ function wrap(ctx: RuleContext, guard: Condition | undefined, method: Method, ca
 
 function getRule(ctx: ParserContext, element: ParserRule | AbstractElement): Rule {
     const name = getRuleName(ctx, element);
-    const rule = ctx.rules.get(name);
+    const rule = ctx.parser.getRule(name);
     if (!rule) throw new Error(`Rule "${name}" not found."`);
     return rule;
 }
