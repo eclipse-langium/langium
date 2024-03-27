@@ -1004,9 +1004,32 @@ describe('Prohibit empty parser rules', async () => {
         detectEmptyRule(validationResult, 14, 12, 14, 55);
     });
 
-    test('Actions, Guard conditions', async () => {
-    });
+    test('Actions, guard conditions, fragments, data types', async () => {
+        const specialGrammar = `
+        grammar SpecialGrammar
 
-    test('Treatment of fragments, entry rules', async () => {
+        interface Empty {}
+        entry Main: E | F<true> | H | I | J;
+
+        E: {Empty};
+        F<bool>: <bool> (res='true')? | <!bool> res=G<true>;
+        G<bool>: <bool> truth='maybe' | <!bool> truth='never'; 
+
+        H returns string: (ID '.')*;
+        I returns string: '/' ID ('.' ID)*;
+        
+        J: Student | Teacher;
+        Teacher: 'Teacher' Name;
+        Student: 'Student' Name;
+        fragment Name: name=ID?;
+
+        terminal ID: /[a-zA-Z]+/;
+        hidden terminal WS: /\\s+/;
+        `;
+        const validationResult = await validate(specialGrammar);
+        expect(validationResult.diagnostics).toHaveLength(3);
+        detectEmptyRule(validationResult, 6, 11, 6, 18);
+        detectEmptyRule(validationResult, 7, 17, 7, 59);
+        detectEmptyRule(validationResult, 10, 26, 10, 35);
     });
 });

@@ -413,7 +413,8 @@ export class LangiumGrammarValidator {
     }
 
     checkEmptyParserRule(parserRule: ast.ParserRule, accept: ValidationAcceptor): void {
-        // Rule body needs to be set, entry rules may consume no input
+        // Rule body needs to be set.
+        // Entry rules may consume no input.
         if (!parserRule.definition || parserRule.entry) {
             return;
         }
@@ -421,7 +422,11 @@ export class LangiumGrammarValidator {
         // Process definition; report problem for the rule itself.
         const mayConsumeEmpty = (element: ast.AbstractElement): boolean => {
             // First, check cardinality of the element.
-            if( element.cardinality === '?' || element.cardinality === '*') {
+            if (element.cardinality === '?' || element.cardinality === '*') {
+                return true;
+            }
+            // Actions themselves consume nothing.
+            if (ast.isAction(element)) {
                 return true;
             }
             // Assignments with ?= consume nothing, groups without + too.
@@ -731,7 +736,8 @@ export class LangiumGrammarValidator {
         const hasAssignment = call.$container && call.$container.$type === ast.Assignment;
 
         if (appearsMultipleTimes && !hasAssignment && isNotAFragment) {
-            accept('error', `Rule call ${call.rule.$refText} requires assignment when used with multiplicity.`, {
+            console.log(`${findContainerWithCardinality(call)}`);
+            accept('error', `Rule call ${call.rule.$refText} requires assignment when used with multiplicity - ${findContainerWithCardinality(call)?.$type}`, {
                 node: call,
                 property: 'cardinality'
             });
