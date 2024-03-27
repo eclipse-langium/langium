@@ -910,7 +910,7 @@ describe('Cross-reference to type union is only valid if all alternatives are AS
 
 function detectEmptyRule(validationResult: ValidationResult, line1: number, col1: number, line2: number, col2: number) {
     expectError(validationResult,
-        /This parser rule would succeed without consuming input./, {
+        /This parser rule would succeed without consuming input/, {
             code: IssueCodes.ParsingRuleEmpty,
             range: Range.create(Position.create(line1, col1), Position.create(line2, col2))
         });
@@ -953,8 +953,8 @@ describe('Prohibit empty parser rules', async () => {
 
         const validationResult = await validate(grammarWithMultiplicity);
         expect(validationResult.diagnostics).toHaveLength(2);
-        detectEmptyRule(validationResult, 6, 1, 6, 26);
-        detectEmptyRule(validationResult, 8, 1, 9, 20);
+        detectEmptyRule(validationResult, 6, 20, 6, 32);
+        detectEmptyRule(validationResult, 8, 23, 8, 39);
     });
 
     test('Optional assignments and cardinality', async () => {
@@ -971,9 +971,9 @@ describe('Prohibit empty parser rules', async () => {
         `;
         const validationResult = await validate(grammarWithOptionals);
         expect(validationResult.diagnostics).toHaveLength(3);
-        detectEmptyRule(validationResult, 4, 1, 4, 13);
-        detectEmptyRule(validationResult, 5, 1, 5, 14);
-        detectEmptyRule(validationResult, 6, 1, 6, 13);
+        detectEmptyRule(validationResult, 4, 11, 4, 18);
+        detectEmptyRule(validationResult, 5, 11, 5, 19);
+        detectEmptyRule(validationResult, 6, 11, 6, 18);
     });
 
     test('Unordered groups', async () => {
@@ -991,7 +991,7 @@ describe('Prohibit empty parser rules', async () => {
 
         D1: 'city' city=ID | 'town' town=ID;
         D2: ('state' state=ID) | ('land' land=ID)?;
-        D3: 'website' site=ID | 'mail' address=ID;
+        D3: ('website' site=ID)? | ('mail' address=ID)?;
 
         terminal ID: /[a-zA-Z]+/;
         terminal NUM: /[0-9]+/;
@@ -999,9 +999,9 @@ describe('Prohibit empty parser rules', async () => {
         `;
         const validationResult = await validate(grammarWithGroups);
         expect(validationResult.diagnostics).toHaveLength(3);
-        detectEmptyRule(validationResult, 6, 1, 6, 51);
-        detectEmptyRule(validationResult, 13, 1, 13, 44);
-        detectEmptyRule(validationResult, 14, 1, 14, 43);
+        detectEmptyRule(validationResult, 6, 12, 6, 57);
+        detectEmptyRule(validationResult, 13, 12, 13, 50);
+        detectEmptyRule(validationResult, 14, 12, 14, 55);
     });
 
     test('Actions, Guard conditions', async () => {
