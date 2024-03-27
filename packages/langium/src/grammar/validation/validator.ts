@@ -111,6 +111,7 @@ export namespace IssueCodes {
     export const MissingReturns = 'missing-returns';
     export const SuperfluousInfer = 'superfluous-infer';
     export const OptionalUnorderedGroup = 'optional-unordered-group';
+    export const ParsingRuleEmpty = 'parsing-rule-empty';
 }
 
 export class LangiumGrammarValidator {

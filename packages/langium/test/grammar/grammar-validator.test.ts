@@ -8,7 +8,7 @@ import type { AstNode, Properties } from 'langium';
 import type { GrammarAST as GrammarTypes } from 'langium';
 import type { ValidationResult } from 'langium/test';
 import { afterEach, beforeAll, describe, expect, test } from 'vitest';
-import { DiagnosticSeverity } from 'vscode-languageserver';
+import { DiagnosticSeverity, Position, Range } from 'vscode-languageserver';
 import { AstUtils, EmptyFileSystem, GrammarAST } from 'langium';
 import { IssueCodes, createLangiumGrammarServices } from 'langium/grammar';
 import { clearDocuments, expectError, expectIssue, expectNoIssues, expectWarning, parseHelper, validationHelper } from 'langium/test';
@@ -905,5 +905,108 @@ describe('Cross-reference to type union is only valid if all alternatives are AS
         terminal TEST: ID (?=WS (WS (WS | WS)));`);
 
         expectNoIssues(validationResult);
+    });
+});
+
+function detectEmptyRule(validationResult: ValidationResult, line1: number, col1: number, line2: number, col2: number) {
+    expectError(validationResult,
+        /This parser rule would succeed without consuming input./, {
+            code: IssueCodes.ParsingRuleEmpty,
+            range: Range.create(Position.create(line1, col1), Position.create(line2, col2))
+        });
+}
+
+describe('Prohibit empty parser rules', async () => {
+    test('Keywords, Rule calls, cross references', async () => {
+        const grammarWithoutOptionals = `
+        grammar KWRefGrammar
+
+        entry Key: (Name Ref Call) | Word;
+        Name: name=ID;
+        Ref: 'Hello' 'to' who=[Name:ID];
+        Call: Name;
+        Word returns string: 'word';
+
+        terminal ID: /[a-zA-Z]/+;
+        hidden terminal WS: /\\s+/;`;
+        const validationResult = await validate(grammarWithoutOptionals);
+        expectNoIssues(validationResult);
+    });
+
+    test('Multiple assignments and cardinality', async () => {
+        const grammarWithMultiplicity = `
+        grammar MultiplicityGrammar
+
+        entry Key: (MultAssign | PlusAssign | MultOneAssign | PlusOneAssign);
+
+        PlusAssign: (ids+=ID)+;
+        MultAssign: (nums+=NUM)*;
+
+        MultOneAssign: (what='number')*;
+        PlusOneAssign: 
+            (who='names')+;
+
+        hidden terminal WS: /\\s/+;
+        terminal ID: /[a-zA-z]+/;
+        terminal NUM: /[0-9]+/;
+        `;
+
+        const validationResult = await validate(grammarWithMultiplicity);
+        expect(validationResult.diagnostics).toHaveLength(2);
+        detectEmptyRule(validationResult, 6, 1, 6, 26);
+        detectEmptyRule(validationResult, 8, 1, 9, 20);
+    });
+
+    test('Optional assignments and cardinality', async () => {
+        const grammarWithOptionals = `
+        grammar OptionalsGrammar
+
+        entry A: 'optionals' y=(D | B | C);
+        B: (x?=ID) ;
+        C: (x?=ID)? ;
+        D: (x=ID)? ;
+
+        terminal ID: /[a-zA-Z]+/;
+        hidden terminal WS: /\\s+/;
+        `;
+        const validationResult = await validate(grammarWithOptionals);
+        expect(validationResult.diagnostics).toHaveLength(3);
+        detectEmptyRule(validationResult, 4, 1, 4, 13);
+        detectEmptyRule(validationResult, 5, 1, 5, 14);
+        detectEmptyRule(validationResult, 6, 1, 6, 13);
+    });
+
+    test('Unordered groups', async () => {
+        const grammarWithGroups = `
+        grammar GroupGrammars
+
+        entry A: 'groups' (B | B2 | C | D);
+
+        B: 'from' source=ID 'to' target=ID;
+        B2: ('path' 'from' source=ID)? ('to' target+=ID)*;
+
+        C: ('name' name = ID) & (number=NUM);
+
+        D: D1 | D2 | D3;
+
+        D1: 'city' city=ID | 'town' town=ID;
+        D2: ('state' state=ID) | ('land' land=ID)?;
+        D3: 'website' site=ID | 'mail' address=ID;
+
+        terminal ID: /[a-zA-Z]+/;
+        terminal NUM: /[0-9]+/;
+        hidden terminal WS: /\\s+/;
+        `;
+        const validationResult = await validate(grammarWithGroups);
+        expect(validationResult.diagnostics).toHaveLength(3);
+        detectEmptyRule(validationResult, 6, 1, 6, 51);
+        detectEmptyRule(validationResult, 13, 1, 13, 44);
+        detectEmptyRule(validationResult, 14, 1, 14, 43);
+    });
+
+    test('Actions, Guard conditions', async () => {
+    });
+
+    test('Treatment of fragments, entry rules', async () => {
     });
 });
