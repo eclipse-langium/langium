@@ -27,6 +27,34 @@
     ".": {
       "import": "./lib/index.js",
       "types": "./lib/index.d.ts"
+    },
+    "./monarch": {
+      "import": "./lib/generator/highlighting/monarch-generator.js",
+      "types": "./lib/generator/highlighting/monarch-generator.d.ts"
+    },
+    "./prism": {
+      "import": "./lib/generator/highlighting/prism-generator.js",
+      "types": "./lib/generator/highlighting/prism-generator.d.ts"
+    },
+    "./textmate": {
+      "import": "./lib/generator/highlighting/textmate-generator.js",
+      "types": "./lib/generator/highlighting/textmate-generator.d.ts"
+    },
+    "./ast": {
+      "import": "./lib/generator/ast-generator.js",
+      "types": "./lib/generator/ast-generator.d.ts"
+    },
+    "./grammar": {
+        "import": "./lib/generator/grammar-serializer.js",
+        "types": "./lib/generator/grammar-serializer.d.ts"
+      },
+    "./module": {
+      "import": "./lib/generator/module-generator.js",
+      "types": "./lib/generator/module-generator.d.ts"
+    },
+    "./types": {
+      "import": "./lib/generator/types-generator.js",
+      "types": "./lib/generator/types-generator.d.ts"
     }
   },
   "type": "module",
