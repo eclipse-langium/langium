@@ -6,8 +6,8 @@
 import { GrammarAST, type Grammar, GrammarUtils, RegExpUtils } from 'langium';
 import { expandToNode, joinToNode, toString, type Generated } from 'langium/generate';
 import _ from 'lodash';
-import type { LangiumLanguageConfig } from '../../package.js';
-import { collectKeywords } from '../util.js';
+import type { LangiumLanguageConfig } from '../../package-types.js';
+import { collectKeywords } from '../langium-util.js';
 
 interface HighlightElement {
     pattern: string;

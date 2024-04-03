@@ -7,7 +7,7 @@
 import { Command, Option } from 'commander';
 import type { ExtractTypesOptions, GenerateOptions} from './generate.js';
 import { generate, generateTypes } from './generate.js';
-import { cliVersion } from './generator/util.js';
+import { cliVersion } from './generator/node-util.js';
 
 const program = new Command();
 

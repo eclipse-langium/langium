@@ -7,8 +7,8 @@
 import type { Grammar, LangiumCoreServices, Reference } from 'langium';
 import { expandToNode, joinToNode, normalizeEOL, toString } from 'langium/generate';
 import type { URI } from 'vscode-uri';
-import type { LangiumConfig } from '../package.js';
-import { generatedHeader } from './util.js';
+import type { LangiumConfig } from '../package-types.js';
+import { generatedHeader } from './node-util.js';
 
 export function serializeGrammar(services: LangiumCoreServices, grammars: Grammar[], config: LangiumConfig): string {
     const node = expandToNode`

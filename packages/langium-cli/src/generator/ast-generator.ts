@@ -6,10 +6,11 @@
 import type { Grammar, LangiumCoreServices } from 'langium';
 import { type Generated, expandToNode, joinToNode, toString } from 'langium/generate';
 import type { AstTypes, Property, PropertyDefaultValue } from 'langium/grammar';
-import type { LangiumConfig } from '../package.js';
+import type { LangiumConfig } from '../package-types.js';
 import { AstUtils, MultiMap, GrammarAST } from 'langium';
 import { collectAst, collectTypeHierarchy, findReferenceTypes, isAstType, mergeTypesAndInterfaces } from 'langium/grammar';
-import { collectTerminalRegexps, generatedHeader } from './util.js';
+import { generatedHeader } from './node-util.js';
+import { collectTerminalRegexps } from './langium-util.js';
 
 export function generateAst(services: LangiumCoreServices, grammars: Grammar[], config: LangiumConfig): string {
     const astTypes = collectAst(grammars, services.shared.workspace.LangiumDocuments);

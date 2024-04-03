@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 import type { Grammar, IParserConfig, LangiumDocuments, LangiumParser, LanguageMetaData } from 'langium';
-import type { LangiumConfig, LangiumLanguageConfig } from './package.js';
+import type { LangiumConfig, LangiumLanguageConfig } from './package-types.js';
 import { AstUtils, GrammarAST, prepareLangiumParser } from 'langium';
 import type { LangiumGrammarServices} from 'langium/grammar';
 import { createServicesForGrammar } from 'langium/grammar';

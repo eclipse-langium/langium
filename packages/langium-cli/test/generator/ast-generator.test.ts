@@ -10,8 +10,8 @@ import { parseHelper } from 'langium/test';
 import { createLangiumGrammarServices } from 'langium/grammar';
 import { describe, expect, test } from 'vitest';
 import { generateAst } from '../../src/generator/ast-generator.js';
-import type { LangiumConfig } from '../../src/package.js';
-import { RelativePath } from '../../src/package.js';
+import type { LangiumConfig } from '../../src/package-types.js';
+import { RelativePath } from '../../src/package-types.js';
 
 const services = createLangiumGrammarServices(EmptyFileSystem);
 const parse = parseHelper<Grammar>(services.grammar);

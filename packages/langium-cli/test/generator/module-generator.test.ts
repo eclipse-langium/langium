@@ -4,11 +4,11 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { LangiumConfig, LangiumLanguageConfig } from '../../src/package.js';
+import type { LangiumConfig, LangiumLanguageConfig } from '../../src/package-types.js';
 import type { Grammar } from 'langium';
 import { describe, expect, test } from 'vitest';
 import { generateModule } from '../../src/generator/module-generator.js';
-import { RelativePath } from '../../src/package.js';
+import { RelativePath } from '../../src/package-types.js';
 
 describe('Module generator', () => {
     describe('IParserConfig inclusion', () => {

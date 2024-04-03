@@ -3,43 +3,15 @@
  * This program and the accompanying materials are made available under the
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
-import { AstUtils, type Grammar, GrammarAST, GrammarUtils, stream } from 'langium';
-import { type Generated, expandToNode } from 'langium/generate';
 import fs from 'fs-extra';
 import * as path from 'node:path';
 import * as url from 'node:url';
 import * as readline from 'node:readline';
-import chalk from 'chalk';
+import { type Generated, expandToNode } from 'langium/generate';
 
 // This is a replacement for `__dirname`
 function getDirname(): string {
     return url.fileURLToPath(new URL('.', import.meta.url));
-}
-
-//eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function log(level: 'log' | 'warn' | 'error', options: { watch?: boolean }, message: string, ...args: any[]): void {
-    if (options.watch) {
-        console[level](getTime() + message, ...args);
-    } else {
-        console[level](message, ...args);
-    }
-}
-
-let start = process.hrtime();
-
-export function elapsedTime(): string {
-    const elapsed = process.hrtime(start)[1] / 1000000; // divide by a million to get nano to milli
-    start = process.hrtime(); // reset the timer
-    return elapsed.toFixed();
-}
-
-export function getTime(): string {
-    const date = new Date();
-    return `[${chalk.gray(`${padZeroes(date.getHours())}:${padZeroes(date.getMinutes())}:${padZeroes(date.getSeconds())}`)}] `;
-}
-
-function padZeroes(i: number): string {
-    return i.toString().padStart(2, '0');
 }
 
 function getLangiumCliVersion(): string {
@@ -55,19 +27,6 @@ function getGeneratedHeader(): Generated {
          * DO NOT EDIT MANUALLY!
          ******************************************************************************/
     `;
-}
-
-export function collectKeywords(grammar: Grammar): string[] {
-    const keywords = new Set<string>();
-    const reachableRules = GrammarUtils.getAllReachableRules(grammar, false);
-
-    for (const keyword of stream(reachableRules)
-        .filter(GrammarAST.isParserRule)
-        .flatMap(rule => AstUtils.streamAllContents(rule).filter(GrammarAST.isKeyword))) {
-        keywords.add(keyword.value);
-    }
-
-    return Array.from(keywords).sort();
 }
 
 export function getUserInput(text: string): Promise<string> {
@@ -93,17 +52,6 @@ export async function getUserChoice<R extends string>(text: string, values: R[],
         }
     }
     return defaultValue;
-}
-
-export function collectTerminalRegexps(grammar: Grammar): Record<string, RegExp> {
-    const result: Record<string, RegExp> = {};
-    const reachableRules = GrammarUtils.getAllReachableRules(grammar, false);
-    for (const terminalRule of stream(reachableRules).filter(GrammarAST.isTerminalRule)) {
-        const name = terminalRule.name;
-        const regexp = GrammarUtils.terminalRegex(terminalRule);
-        result[name] = regexp;
-    }
-    return result;
 }
 
 export const cliVersion = getLangiumCliVersion();
