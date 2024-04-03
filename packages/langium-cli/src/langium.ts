@@ -19,10 +19,18 @@ program
     .option('-w, --watch', 'enables watch mode', false)
     .addOption(new Option('-m, --mode <mode>', 'used mode for optimized builds for your current environment').choices(['development', 'production']))
     .action((options: GenerateOptions) => {
-        generate(options).catch(err => {
-            console.error(err);
-            process.exit(1);
-        });
+        generate(options)
+            .then(success => {
+                if(!success) {
+                    process.exit(2);
+                }
+                else {
+                    process.exit(0);
+                }
+            }).catch(err => {
+                console.error(err);
+                process.exit(1);
+            });
     });
 
 program.command('extract-types')
