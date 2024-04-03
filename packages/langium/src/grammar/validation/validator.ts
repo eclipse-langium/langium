@@ -23,6 +23,7 @@ import * as ast from '../../languages/generated/ast.js';
 import { getTypeNameWithoutError, hasDataTypeReturn, isPrimitiveGrammarType, isStringGrammarType, resolveImport, resolveTransitiveImports } from '../internal-grammar-util.js';
 import { typeDefinitionToPropertyType } from '../type-system/type-collector/declared-types.js';
 import { flattenPlainType, isPlainReferenceType } from '../type-system/type-collector/plain-types.js';
+import { AstUtils } from '../../index.js';
 
 export function registerValidationChecks(services: LangiumGrammarServices): void {
     const registry = services.validation.ValidationRegistry;
@@ -687,11 +688,18 @@ export class LangiumGrammarValidator {
             }
             return result;
         };
-        const isNotAFragment = call.rule.ref !== undefined && !call.rule.ref.fragment;
+        // Locate called rule, ensure it is not a fragment.
+        const refersToFragment = call.rule.ref !== undefined && call.rule.ref.fragment;
+        // Ensure that we are not in a data type rule, or a cross-reference.
+        const callInDataTypeRule = (AstUtils.getContainerOfType(call, ast.isParserRule))?.dataType !== undefined;
+        const callInCrossReference = AstUtils.getContainerOfType(call, ast.isCrossReference) !== undefined;
+        if (refersToFragment || callInDataTypeRule || callInCrossReference) {
+            return;
+        }
+
         const appearsMultipleTimes = findContainerWithCardinality(call) !== undefined;
         const hasAssignment = call.$container && call.$container.$type === ast.Assignment;
-
-        if (appearsMultipleTimes && !hasAssignment && isNotAFragment) {
+        if (appearsMultipleTimes && !hasAssignment) {
             accept('error', `Rule call ${call.rule.$refText} requires assignment when used with multiplicity.`, {
                 node: call,
                 property: 'cardinality'
