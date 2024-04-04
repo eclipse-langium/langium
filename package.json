@@ -42,8 +42,8 @@
    "@types/node": "~16.18.41"
   },
   "volta": {
-    "node": "18.17.1",
-    "npm": "9.6.7"
+    "node": "18.19.1",
+    "npm": "10.2.4"
   },
   "workspaces": [
     "packages/langium",

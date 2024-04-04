@@ -70,11 +70,11 @@
     "vscode-uri": "~3.0.8"
   },
   "devDependencies": {
-    "langium-cli": "~3.0.0"
+    "langium-cli": "~3.0.1"
   },
   "volta": {
-    "node": "18.17.1",
-    "npm": "9.6.7"
+    "node": "18.19.1",
+    "npm": "10.2.4"
   },
   "repository": {
     "type": "git",

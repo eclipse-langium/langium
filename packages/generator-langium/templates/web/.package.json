@@ -1,32 +1,23 @@
 {
     "scripts": {
-        "prepare:static": "node ./scripts/prepare.js",
-        "build:web": "npm run build && npm run prepare:static && npm run build:monarch && npm run build:worker && npm run build:bundle",
-        "build:monarch": "tsc -b tsconfig.monarch.json",
-        "build:bundle": "vite --config ./vite.bundle.config.ts build",
-        "build:worker": "esbuild --minify ./out/language/main-browser.js --bundle --format=iife --outfile=./static/worker/<%= language-id %>-server-worker.js",
+        "build:web": "npm run build",
+        "bundle": "vite build",
+        "bundle:serve": "http-server ./dist --port 5175",
         "dev": "vite",
         "dev:debug": "vite --debug --force",
         "serve": "npm run dev"
     },
     "dependencies": {
-        "@codingame/monaco-vscode-editor-service-override": "1.83.16",
-        "@codingame/monaco-vscode-keybindings-service-override": "1.83.16",
-        "monaco-editor": "npm:@codingame/monaco-editor-treemended@1.83.16",
-        "monaco-editor-workers": "~0.44.0",
-        "monaco-editor-wrapper": "~3.5.0",
-        "monaco-languageclient": "~7.2.0",
-        "vscode": "npm:@codingame/monaco-vscode-api@1.83.16"
+        "@codingame/monaco-vscode-editor-service-override": "~3.2.3",
+        "@codingame/monaco-vscode-keybindings-service-override": "~3.2.3",
+        "monaco-editor": "npm:@codingame/monaco-vscode-editor-api@~3.2.3",
+        "monaco-editor-wrapper": "~4.0.2",
+        "monaco-languageclient": "~8.1.1",
+        "vscode": "npm:@codingame/monaco-vscode-api@~3.2.3"
     },
     "devDependencies": {
-        "vite": "~4.4.11"
-    },
-    "overrides": {
-        "monaco-editor": "$monaco-editor",
-        "vscode": "$vscode"
-    },
-    "resolutions": {
-        "monaco-editor": "npm:@codingame/monaco-editor-treemended@1.83.16",
-        "vscode": "npm:@codingame/monaco-vscode-api@1.83.16"
+        "@codingame/esbuild-import-meta-url-plugin": "~1.0.2",
+        "vite": "~5.2.7",
+        "http-server": "~14.1.1"    
     }
 }
