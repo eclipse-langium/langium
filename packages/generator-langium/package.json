@@ -35,18 +35,19 @@
   "dependencies": {
     "chalk": "~5.3.0",
     "lodash": "~4.17.21",
-    "which": "~3.0.1",
-    "yeoman-generator": "^7.1.0"
+    "which": "~4.0.0",
+    "yeoman-generator": "~7.1.1"
   },
   "devDependencies": {
-    "@types/lodash": "~4.14.197",
-    "@types/which": "~3.0.0",
-    "@yeoman/types": "^1.1.2",
-    "yeoman-test": "^8.2.0"
+    "@types/lodash": "~4.17.0",
+    "@types/which": "~3.0.3",
+    "@yeoman/types": "~1.2.0",
+    "yeoman-test": "~8.2.0",
+    "yo": "~5.0.0"
   },
   "volta": {
-    "node": "18.17.1",
-    "npm": "9.6.7"
+    "node": "18.19.1",
+    "npm": "10.2.4"
   },
   "repository": {
     "type": "git",

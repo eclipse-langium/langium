@@ -19,8 +19,11 @@
         </footer>
         <!-- Monaco Configuration -->
         <script type="module">
-             import { executeExtended } from './setupExtended.js';
+            // vite is used to resolve the included TypeScript files
+            import { configureMonacoWorkers } from '../src/setupCommon';
+            import { executeExtended } from '../src/setupExtended';
 
+            configureMonacoWorkers();
             // keep a reference to a promise for when the editor is finished starting, we'll use this to setup the canvas on load
             const startingPromise = executeExtended(document.getElementById('monaco-editor-root'));
         </script>
