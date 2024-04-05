@@ -298,6 +298,14 @@ export function addFileOperationHandler(connection: Connection, services: Langiu
 
 export function addDiagnosticsHandler(connection: Connection, services: LangiumSharedServices): void {
     const documentBuilder = services.workspace.DocumentBuilder;
+    documentBuilder.onUpdate(async (_, deleted) => {
+        for (const uri of deleted) {
+            connection.sendDiagnostics({
+                uri: uri.toString(),
+                diagnostics: []
+            });
+        }
+    });
     documentBuilder.onBuildPhase(DocumentState.Validated, async (documents, cancelToken) => {
         for (const document of documents) {
             if (document.diagnostics) {
