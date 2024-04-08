@@ -36,4 +36,14 @@ describe('ConfigurationProvider', () => {
         configs.updateConfiguration({ settings: { 'someLang': { 'prop': 'bar2' } } });
         expect(await configs.getConfiguration('someLang', 'prop')).toBe('bar2');
     });
+
+    test('emits `onConfigurationSectionUpdate` on `updateConfiguration` call', async () => {
+        let called = false;
+        configs.onConfigurationSectionUpdate(() => {
+            called = true;
+        });
+
+        configs.updateConfiguration({ settings: { 'someLang': { 'prop': 'bar' } } });
+        expect(called).toBe(true);
+    });
 });
