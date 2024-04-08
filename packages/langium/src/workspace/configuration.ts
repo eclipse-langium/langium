@@ -4,7 +4,7 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import { Emitter } from 'vscode-languageserver-protocol';
+import { Emitter } from '../utils/event.js';
 import type {
     ConfigurationItem,
     DidChangeConfigurationParams,
