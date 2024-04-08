@@ -768,6 +768,7 @@ describe('Assignments with = instead of +=', () => {
         `));
         expect(validation.diagnostics.length).toBe(2);
         expect(validation.diagnostics[0].message).toBe(getMessage('persons'));
+        expect(validation.diagnostics[1].message).toBe(getMessage('persons'));
     });
 
     test('single assignment with outer * cardinality', async () => {
@@ -894,6 +895,20 @@ describe('Assignments with = instead of +=', () => {
         const validation = await validate(getGrammar(`
             entry Model:
                 Assign*;
+            fragment Assign:
+                ',' persons=Person;
+            Person: 'person' name=ID ;
+        `));
+        expect(validation.diagnostics.length).toBe(1);
+        expect(validation.diagnostics[0].message).toBe(getMessage('persons'));
+    });
+
+    test('fragments in alternatives: once in 1st, twice in 2nd alternative', async () => {
+        // This suggests the user of Langium to use a list in both cases, which might not be necessary for the 1st alternative.
+        // But that is better than loosing a value in the 2nd alternative.
+        const validation = await validate(getGrammar(`
+            entry Model:
+                Assign | (';' Assign Assign);
             fragment Assign:
                 ',' persons=Person;
             Person: 'person' name=ID ;
