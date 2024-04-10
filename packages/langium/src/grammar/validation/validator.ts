@@ -18,12 +18,12 @@ import type { Stream } from '../../utils/stream.js';
 import { stream } from '../../utils/stream.js';
 import type { DiagnosticData, ValidationAcceptor, ValidationChecks } from '../../validation/validation-registry.js';
 import { diagnosticData } from '../../validation/validation-registry.js';
+import type { AstNodeLocator } from '../../workspace/ast-node-locator.js';
 import type { LangiumDocuments } from '../../workspace/documents.js';
 import { getTypeNameWithoutError, hasDataTypeReturn, isPrimitiveGrammarType, isStringGrammarType, resolveImport, resolveTransitiveImports } from '../internal-grammar-util.js';
 import type { LangiumGrammarServices } from '../langium-grammar-module.js';
 import { typeDefinitionToPropertyType } from '../type-system/type-collector/declared-types.js';
 import { flattenPlainType, isPlainReferenceType } from '../type-system/type-collector/plain-types.js';
-import type { AstNodeLocator } from '../../workspace/ast-node-locator.js';
 
 export function registerValidationChecks(services: LangiumGrammarServices): void {
     const registry = services.validation.ValidationRegistry;
@@ -31,20 +31,19 @@ export function registerValidationChecks(services: LangiumGrammarServices): void
     const checks: ValidationChecks<ast.LangiumGrammarAstType> = {
         Action: [
             validator.checkAssignmentReservedName,
-            validator.checkActionOperator,
         ],
         AbstractRule: validator.checkRuleName,
         Assignment: [
             validator.checkAssignmentWithFeatureName,
             validator.checkAssignmentToFragmentRule,
             validator.checkAssignmentTypes,
-            validator.checkAssignmentOperator,
             validator.checkAssignmentReservedName
         ],
         ParserRule: [
             validator.checkParserRuleDataType,
             validator.checkRuleParametersUsed,
             validator.checkParserRuleReservedName,
+            validator.checkAssignmentOperatorMultiplicities,
         ],
         TerminalRule: [
             validator.checkTerminalRuleReturnType,
@@ -814,158 +813,106 @@ export class LangiumGrammarValidator {
         }
     }
 
-    /** This validation is specific for assignments with '=' as assignment operator and checks,
+    /** This validation recursively looks at all assignments (and rewriting actions) with '=' as assignment operator and checks,
      * whether the operator should be '+=' instead. */
-    checkAssignmentOperator(assignment: ast.Assignment, accept: ValidationAcceptor): void {
-        if (assignment.operator === '=') {
-            this.checkAssignable(assignment, accept);
+    checkAssignmentOperatorMultiplicities(rule: ast.ParserRule, accept: ValidationAcceptor): void {
+        // for usual parser rules AND for fragments, but not for data type rules!
+        if (!rule.dataType) {
+            this.checkAssignmentOperatorMultiplicitiesLogic([rule.definition], accept);
         }
     }
 
-    /** This validation is specific for rewriting actions with '=' as assignment operator and checks,
-     * whether the operator of the (rewriting) assignment should be '+=' instead. */
-    checkActionOperator(action: ast.Action, accept: ValidationAcceptor): void {
-        if (action.operator === '=' && action.feature) {
-            this.checkAssignable(action, accept);
+    private checkAssignmentOperatorMultiplicitiesLogic(startNodes: AstNode[], accept: ValidationAcceptor): void {
+        // new map to store usage information of the assignments
+        const map: Map<string, AssignmentUse> = new Map();
+
+        // top-down traversal
+        for (const node of startNodes) {
+            // TODO dürfen mehr als 1 Action auftauchen? ansonsten funktioniert das hier nicht so ganz wie gedacht!
+            this.checkNodeRegardingAssignmentNumbers(node, 1, map, accept);
         }
-    }
 
-    private checkAssignable(assignment: ast.Assignment | ast.Action, accept: ValidationAcceptor): void {
-        // check the initial assignment and all of its containers
-        const reportedProblem = this.searchRecursivelyUpForAssignments(assignment, assignment, accept);
-
-        // check a special case: the current assignment is located within a fragment
-        // => check, whether the fragment is called multiple times by parser rules
-        if (!reportedProblem) {
-            const containerFragment = getContainerOfType(assignment, ast.isParserRule);
-            if (containerFragment && containerFragment.fragment) {
-                // for all callers of the fragment ...
-                for (const callerReference of this.references.findReferences(containerFragment, {})) {
-                    const document = this.documents.getDocument(callerReference.sourceUri);
-                    const callingNode = document ? this.nodeLocator.getAstNode(document.parseResult.value, callerReference.sourcePath) : undefined;
-                    if (callingNode) {
-                        // ... check whether there are multiple assignments to the same feature
-                        if (this.searchRecursivelyUpForAssignments(callingNode, assignment, accept)) {
-                            return;
-                        }
+        // create the warnings
+        for (const entry of map.entries()) {
+            if (entry[1].counter >= 2) {
+                for (const assignment of entry[1].assignments) {
+                    if (assignment.operator !== '+=') {
+                        accept(
+                            'warning',
+                            `It seems, that you are assigning multiple values to the feature '${assignment.feature}', while you are using '${assignment.operator}' as assignment operator. Consider to use '+=' instead in order not to loose some of the assigned values.`,
+                            { node: assignment, property: 'operator' }
+                        );
                     }
                 }
             }
         }
     }
 
-    /**
-     * Searches in the given start node and its containers for assignments to the same feature as the given assignment xor action.
-     * @param startNode the node to start the search
-     * @param assignment the assignment for which "conflicting" assigments shall be searched
-     * @param accept acceptor for warnings
-     * @returns true, if the given assignment got a warning, false otherwise
-     */
-    private searchRecursivelyUpForAssignments(startNode: AstNode, assignment: ast.Assignment | ast.Action, accept: ValidationAcceptor): boolean {
-        let currentContainer: AstNode | undefined = startNode; // the current node to search in
-        let previousChild: AstNode | undefined = undefined; // remember the previous node, which is now a direct child of the current container
-        while (currentContainer) {
-            // check neighbored and nested assignments
-            const countAssignments = this.searchRecursivelyDownForAssignments(currentContainer, previousChild, assignment.feature!);
-            if (countAssignments >= 2) {
-                accept(
-                    'warning',
-                    `It seems, that you are assigning multiple values to the feature '${assignment.feature}', while you are using '=' as assignment operator. Consider to use '+=' instead in order not to loose some of the assigned value.`,
-                    { node: assignment, property: 'operator' }
-                );
-                return true;
-            }
-
-            // check the next container
-            previousChild = currentContainer;
-            currentContainer = currentContainer.$container;
+    private checkNodeRegardingAssignmentNumbers(currentNode: AstNode, parentMultiplicity: number, map: Map<string, AssignmentUse>, accept: ValidationAcceptor) {
+        // the current element can occur multiple times => its assignments can occur multiple times as well
+        let currentMultiplicity = parentMultiplicity;
+        if (ast.isAbstractElement(currentNode) && isArrayCardinality(currentNode.cardinality)) {
+            currentMultiplicity *= 2; // note, that the result is not exact (but it is sufficient for the current case)!
         }
-        return false;
-    }
-
-    /**
-     * Searches in the given current node and its contained nodes for assignments with the given feature name.
-     * @param currentNode the element whose assignments should be (recursively) counted
-     * @param relevantChild if given, this node is a direct child of the given 'currentNode'
-     * and is required in case of Actions contained in the 'currentNode' to identify which assignments are relevant and which not,
-     * depending on the positions of the Action and the 'relevantChild',
-     * i.e. only assignments to the same object which contains the given 'relevantChild' matter.
-     * @param featureName the feature name of assignments to search for
-     * @returns the number of found assignments with the given name,
-     * note, that the returned number is not exact and "estimates the potential number",
-     * i.e. multiplicities like + and * are counted as 2x/twice,
-     * and for alternatives, the worst case is assumed.
-     * In other words, here it is enough to know, whether there are two or more assignments possible to the same feature.
-     */
-    private searchRecursivelyDownForAssignments(currentNode: AstNode, relevantChild: AstNode | undefined, featureName: string): number {
-        let countResult = 0;
-        let containerMultiplicityMatters = true;
 
         // assignment
-        if (ast.isAssignment(currentNode) && currentNode.feature === featureName) {
-            countResult += 1;
+        if (ast.isAssignment(currentNode)) {
+            storeAssignmentUse(map, currentNode.feature, 1 * currentMultiplicity, currentNode);
         }
 
         // Search for assignments in used fragments as well, since their property values are stored in the current object.
         // But do not search in calls of regular parser rules, since parser rules create new objects.
         if (ast.isRuleCall(currentNode) && ast.isParserRule(currentNode.rule.ref) && currentNode.rule.ref.fragment) {
-            countResult += this.searchRecursivelyDownForAssignments(currentNode.rule.ref.definition, undefined, featureName);
+            this.checkNodeRegardingAssignmentNumbers(currentNode.rule.ref.definition, currentMultiplicity, map, accept); // TODO fragment rules are evaluated multiple times!
         }
 
         // rewriting actions are a special case for assignments
-        if (ast.isAction(currentNode) && currentNode.feature === featureName) {
-            countResult += 1;
+        if (ast.isAction(currentNode) && currentNode.feature) {
+            storeAssignmentUse(map, currentNode.feature, 1 * currentMultiplicity, currentNode);
         }
 
         // look for assignments to the same feature nested within groups
         if (ast.isGroup(currentNode) || ast.isUnorderedGroup(currentNode) || ast.isAlternatives(currentNode)) {
-            let countGroup = 0;
-            let foundRelevantChild = false;
+            const mapAllAlternatives: Map<string, AssignmentUse> = new Map(); // store assignments for Alternatives separately
+            let nodesForNewObject: AstNode[] = [];
             for (const child of currentNode.elements) {
-                // Actions are a special case: a new object is created => following assignments are put into the new object
-                // (This counts for rewriting actions as well as for unassigned actions, i.e. actions without feature name)
                 if (ast.isAction(child)) {
-                    if (relevantChild) {
-                        // there is a child given => ensure, that only assignments to the same object which contains this child are counted
-                        if (foundRelevantChild) {
-                            // the previous assignments are put into the same object as the given relevant child => ignore the following assignments to the new object
-                            break;
-                        } else {
-                            // the previous assignments are stored in a different object than the given relevant child => ignore those assignments
-                            countGroup = 0;
-                            // since an additional object is created for each time, */+ around the current group don't matter!
-                            containerMultiplicityMatters = false;
-                        }
+                    // Actions are a special case: a new object is created => following assignments are put into the new object
+                    // (This counts for rewriting actions as well as for unassigned actions, i.e. actions without feature name)
+                    if (nodesForNewObject.length >= 1) {
+                        // all collected nodes are put into the new object => check their assignments independently
+                        this.checkAssignmentOperatorMultiplicitiesLogic(nodesForNewObject, accept);
+                        // is it possible to have two or more Actions within the same parser rule? the grammar allows that ...
+                        nodesForNewObject = [];
+                    }
+                    // push the current node into a new object
+                    nodesForNewObject.push(child);
+                } else {
+                    // for non-Actions
+                    if (nodesForNewObject.length >= 1) {
+                        // nodes go into a new object
+                        nodesForNewObject.push(child);
                     } else {
-                        // all following assignments are put into the new object => ignore following assignments, but count previous assignments
-                        break;
+                        // count the relevant child assignments
+                        if (ast.isAlternatives(currentNode)) {
+                            // for alternatives, only a single alternative is used => assume the worst case and take the maximum number of assignments
+                            const mapCurrentAlternative: Map<string, AssignmentUse> = new Map();
+                            this.checkNodeRegardingAssignmentNumbers(child, currentMultiplicity, mapCurrentAlternative, accept);
+                            mergeAssignmentUse(mapCurrentAlternative, mapAllAlternatives, (s, t) => Math.max(s, t));
+                        } else {
+                            // all members of the group are relavant => collect them all
+                            this.checkNodeRegardingAssignmentNumbers(child, currentMultiplicity, map, accept);
+                        }
                     }
                 }
-
-                // remember, whether the given child is already found in the current group
-                if (child === relevantChild) {
-                    foundRelevantChild = true;
-                }
-
-                // count the relevant child assignments
-                const countCurrent = this.searchRecursivelyDownForAssignments(child, undefined, featureName);
-                if (ast.isAlternatives(currentNode)) {
-                    // for alternatives, only a single alternative is used => assume the worst case and take the maximum number of assignments
-                    countGroup = Math.max(countGroup, countCurrent);
-                } else {
-                    // all members of the group are relavant => count them all
-                    countGroup += countCurrent;
-                }
             }
-            countResult += countGroup;
+            // merge alternatives
+            mergeAssignmentUse(mapAllAlternatives, map);
+            if (nodesForNewObject.length >= 1) {
+                // these nodes are put into a new object => check their assignments independently
+                this.checkAssignmentOperatorMultiplicitiesLogic(nodesForNewObject, accept);
+            }
         }
-
-        // the current element can occur multiple times => its assignments can occur multiple times as well
-        if (containerMultiplicityMatters && ast.isAbstractElement(currentNode) && isArrayCardinality(currentNode.cardinality)) {
-            countResult *= 2; // note, that the result is not exact (but it is sufficient for the current case)!
-        }
-
-        return countResult;
     }
 
     checkInterfacePropertyTypes(interfaceDecl: ast.Interface, accept: ValidationAcceptor): void {
@@ -1195,4 +1142,43 @@ function findLookAheadGroup(rule: AstNode | undefined): ast.TerminalGroup | unde
     } else {
         return findLookAheadGroup(terminalGroup.$container);
     }
+}
+
+interface AssignmentUse {
+    assignments: Set<ast.Assignment | ast.Action>;
+    /**
+     * Note, that this number is not exact and "estimates the potential number",
+     * i.e. multiplicities like + and * are counted as 2x/twice,
+     * and for alternatives, the worst case is assumed.
+     * In other words, here it is enough to know, whether there are two or more assignments possible to the same feature.
+     */
+    counter: number;
+}
+
+function storeAssignmentUse(map: Map<string, AssignmentUse>, feature: string, increment: number, ...assignments: Array<ast.Assignment | ast.Action>) {
+    let entry = map.get(feature);
+    if (!entry) {
+        entry = {
+            assignments: new Set(),
+            counter: 0,
+        };
+        map.set(feature, entry);
+    }
+    assignments.forEach(a => entry!.assignments.add(a)); // a Set is necessary, since assignments in Fragements might be used multiple times by different parser rules, but they should be marked only once!
+    entry.counter += increment;
+}
+
+function mergeAssignmentUse(mapSoure: Map<string, AssignmentUse>, mapTarget: Map<string, AssignmentUse>, counterOperation: (s: number, t: number) => number = (s, t) => s + t): void {
+    for (const sourceEntry of mapSoure.entries()) {
+        const key = sourceEntry[0];
+        const source = sourceEntry[1];
+        const target = mapTarget.get(key);
+        if (target) {
+            source.assignments.forEach(a => target.assignments.add(a));
+            target.counter = counterOperation(source.counter, target.counter);
+        } else {
+            mapTarget.set(key, source);
+        }
+    }
+    mapSoure.clear();
 }

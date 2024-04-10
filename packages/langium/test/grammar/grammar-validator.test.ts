@@ -730,7 +730,7 @@ describe('Property type is not a mix of cross-ref and non-cross-ref types.', () 
 
 describe('Assignments with = instead of +=', () => {
     function getMessage(featureName: string): string {
-        return `It seems, that you are assigning multiple values to the feature '${featureName}', while you are using '=' as assignment operator. Consider to use '+=' instead in order not to loose some of the assigned value.`;
+        return `It seems, that you are assigning multiple values to the feature '${featureName}', while you are using '=' as assignment operator. Consider to use '+=' instead in order not to loose some of the assigned values.`;
     }
     function getGrammar(content: string): string {
         return `
