@@ -1,5 +1,9 @@
 # Change Log of `langium-cli`
 
+## v3.0.2 (Apr. 2024)
+
+Exported the textmate syntax highlighting under `langium-cli/textmate`. This allows us to import the highlightiing for the Langium playground.
+
 ## v3.0.1 (Feb. 2024)
 
 Fixed a minor issue related to generated code for projects that don't use the `langium/lsp` import ([#1393](https://github.com/eclipse-langium/langium/pull/1393)).
