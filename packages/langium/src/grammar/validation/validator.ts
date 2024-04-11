@@ -690,15 +690,14 @@ export class LangiumGrammarValidator {
         };
         // Locate called rule, ensure it is not a fragment.
         const refersToFragment = call.rule.ref !== undefined && call.rule.ref.fragment;
-        // Ensure that we are not in a data type rule, or a cross-reference.
+        // Data type rules do not cause problems, too.
         const callInDataTypeRule = (AstUtils.getContainerOfType(call, ast.isParserRule))?.dataType !== undefined;
-        const callInCrossReference = AstUtils.getContainerOfType(call, ast.isCrossReference) !== undefined;
-        if (refersToFragment || callInDataTypeRule || callInCrossReference) {
+        if (refersToFragment || callInDataTypeRule) {
             return;
         }
 
         const appearsMultipleTimes = findContainerWithCardinality(call) !== undefined;
-        const hasAssignment = call.$container && call.$container.$type === ast.Assignment;
+        const hasAssignment = AstUtils.getContainerOfType(call, ast.isAssignment) !== undefined;
         if (appearsMultipleTimes && !hasAssignment) {
             accept('error', `Rule call ${call.rule.$refText} requires assignment when used with multiplicity.`, {
                 node: call,
