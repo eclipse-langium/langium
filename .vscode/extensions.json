@@ -3,6 +3,6 @@
         "langium.langium-vscode",
         "dbaeumer.vscode-eslint",
         "editorconfig.editorconfig",
-        "zixuanchen.vitest-explorer"
+        "vitest.explorer"
     ]
 }

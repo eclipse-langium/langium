@@ -19,6 +19,14 @@ describe('Fuzzy Matcher', () => {
         expect(matcher.match('He', 'Hello')).toBeTruthy();
     });
 
+    test('Matches first few characters (word transition, camel case)', () => {
+        expect(matcher.match('la', 'helloLangium')).toBeTruthy();
+    });
+
+    test('Matches first few characters (word transition, snake case)', () => {
+        expect(matcher.match('la', 'hello_langium')).toBeTruthy();
+    });
+
     test('Matches first few characters - negative', () => {
         expect(matcher.match('ell', 'Hello')).toBeFalsy();
     });
@@ -27,8 +35,15 @@ describe('Fuzzy Matcher', () => {
         expect(matcher.match('Ho', 'Hello')).toBeTruthy();
     });
 
+    test('Matches omitted characters (word transition, camel case)', () => {
+        expect(matcher.match('lm', 'helloLangium')).toBeTruthy();
+    });
+
+    test('Matches omitted characters (word transition, snake case)', () => {
+        expect(matcher.match('lm', 'hello_langium')).toBeTruthy();
+    });
+
     test('Matches omitted characters - negative', () => {
         expect(matcher.match('Hi', 'Hello')).toBeFalsy();
     });
-
 });
