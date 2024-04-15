@@ -343,7 +343,7 @@ describe('Check grammar with primitives', () => {
     const grammar = `
     grammar PrimGrammar
     entry Expr:
-        primitives=Primitive*;
+        primitives+=Primitive*;
     Primitive:
         (Word | Bool | Num | LargeInt | DateObj);
     Word:
