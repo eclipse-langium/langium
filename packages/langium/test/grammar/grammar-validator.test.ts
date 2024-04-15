@@ -957,6 +957,16 @@ describe('Assignments with = instead of +=', () => {
         expect(validation.diagnostics.length).toBe(0);
     });
 
+    test('no problem with actions: three assignments into three different objects', async () => {
+        const validation = await validate(getGrammar(`
+            entry Model infers Expression:
+                Person (operator=('+' | '-') right=Person {infer Model.left=current} right=Person {infer Model.left=current} right=Person)?;
+            Person infers Expression:
+                {infer Person} 'person' name=ID ;
+        `));
+        expect(validation.diagnostics.length).toBe(0);
+    });
+
     test('actions: the rewrite part is a special assignment, which needs to be checked as well!', async () => {
         const validation = await validate(getGrammar(`
             entry Model infers Expression:

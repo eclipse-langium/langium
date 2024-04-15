@@ -826,9 +826,8 @@ export class LangiumGrammarValidator {
         // new map to store usage information of the assignments
         const map: Map<string, AssignmentUse> = new Map();
 
-        // top-down traversal
+        // top-down traversal for all starting nodes
         for (const node of startNodes) {
-            // TODO dürfen mehr als 1 Action auftauchen? ansonsten funktioniert das hier nicht so ganz wie gedacht!
             this.checkNodeRegardingAssignmentNumbers(node, 1, map, accept);
         }
 
@@ -863,7 +862,7 @@ export class LangiumGrammarValidator {
         // Search for assignments in used fragments as well, since their property values are stored in the current object.
         // But do not search in calls of regular parser rules, since parser rules create new objects.
         if (ast.isRuleCall(currentNode) && ast.isParserRule(currentNode.rule.ref) && currentNode.rule.ref.fragment) {
-            this.checkNodeRegardingAssignmentNumbers(currentNode.rule.ref.definition, currentMultiplicity, map, accept); // TODO fragment rules are evaluated multiple times!
+            this.checkNodeRegardingAssignmentNumbers(currentNode.rule.ref.definition, currentMultiplicity, map, accept);
         }
 
         // rewriting actions are a special case for assignments
@@ -875,6 +874,7 @@ export class LangiumGrammarValidator {
         if (ast.isGroup(currentNode) || ast.isUnorderedGroup(currentNode) || ast.isAlternatives(currentNode)) {
             const mapAllAlternatives: Map<string, AssignmentUse> = new Map(); // store assignments for Alternatives separately
             let nodesForNewObject: AstNode[] = [];
+            // check all elements inside the current group
             for (const child of currentNode.elements) {
                 if (ast.isAction(child)) {
                     // Actions are a special case: a new object is created => following assignments are put into the new object
@@ -1144,7 +1144,15 @@ function findLookAheadGroup(rule: AstNode | undefined): ast.TerminalGroup | unde
     }
 }
 
+/*
+ * Internal helper stuff for collecting information about assignments to features and their cardinalities
+ */
+
 interface AssignmentUse {
+    /**
+     * Collects assignments for the same feature, while an Action represents a "special assignment", when it is a rewrite action.
+     * The Set is used in order not to store the same assignment multiple times.
+     */
     assignments: Set<ast.Assignment | ast.Action>;
     /**
      * Note, that this number is not exact and "estimates the potential number",
@@ -1169,9 +1177,7 @@ function storeAssignmentUse(map: Map<string, AssignmentUse>, feature: string, in
 }
 
 function mergeAssignmentUse(mapSoure: Map<string, AssignmentUse>, mapTarget: Map<string, AssignmentUse>, counterOperation: (s: number, t: number) => number = (s, t) => s + t): void {
-    for (const sourceEntry of mapSoure.entries()) {
-        const key = sourceEntry[0];
-        const source = sourceEntry[1];
+    for (const [key, source] of mapSoure.entries()) {
         const target = mapTarget.get(key);
         if (target) {
             source.assignments.forEach(a => target.assignments.add(a));
