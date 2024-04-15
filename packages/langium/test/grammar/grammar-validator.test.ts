@@ -151,14 +151,19 @@ describe('Langium grammar validation', () => {
         grammar RuleCallMult
 
         entry List1:
-            '(' Mult (',' Mult)* ')' '/' List2 '/' List3;
+            '(' Mult (',' Mult)* ')' '/' List2 '/' List3 '/' List4;
         List2:
             Plus+;
         List3:
             Exp+;
+        // addresses https://github.com/eclipse-langium/langium/pull/1437#pullrequestreview-1994232830
+        List4:
+            elems += (Minus | Div);
         
         Mult: content=ID;
         Plus: content=ID;
+        Minus: '-' variable=ID;
+        Div: 'div' variable=ID;
         fragment Exp: content+=ID;
         
         terminal ID: /[_a-zA-Z][\\w_]*/;
