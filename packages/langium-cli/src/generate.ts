@@ -45,9 +45,9 @@ export async function generate(options: GenerateOptions): Promise<boolean> {
         printSuccess(result);
         console.log(getTime() + 'Langium generator will continue running in watch mode.');
         await runWatcher(config, options, await allGeneratorFiles(result));
-    } else {
-        console.log(`Langium generator finished ${chalk.green.bold('successfully')} in ${elapsedTime()}ms`);
     }
+    // Outside of watch mode, report elapsed time for successful generation.
+    printSuccess(result);
     return result.success;
 }
 

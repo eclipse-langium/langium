@@ -28,7 +28,6 @@ export class DefaultFuzzyMatcher implements FuzzyMatcher {
             return true;
         }
 
-        text = text.toLowerCase();
         let matchedFirstCharacter = false;
         let previous: number | undefined;
         let character = 0;

@@ -4,7 +4,16 @@
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
 
-import type { ConfigurationItem, DidChangeConfigurationParams, DidChangeConfigurationRegistrationOptions, InitializeParams, InitializedParams } from 'vscode-languageserver-protocol';
+import { Emitter } from '../utils/event.js';
+import type {
+    ConfigurationItem,
+    DidChangeConfigurationParams,
+    DidChangeConfigurationRegistrationOptions,
+    Disposable,
+    Event,
+    InitializeParams,
+    InitializedParams
+} from 'vscode-languageserver-protocol';
 import type { ServiceRegistry } from '../service-registry.js';
 import type { LangiumSharedCoreServices } from '../services.js';
 import { Deferred } from '../utils/promise-utils.js';
@@ -45,12 +54,31 @@ export interface ConfigurationProvider {
      * `settings` property of the change object could be expressed as `Record<string, Record<string, any>>`
      */
     updateConfiguration(change: DidChangeConfigurationParams): void;
+
+    /**
+     * Get notified after a configuration section has been updated.
+     */
+    onConfigurationSectionUpdate(callback: ConfigurationSectionUpdateListener): Disposable
 }
 
 export interface ConfigurationInitializedParams extends InitializedParams {
     register?: (params: DidChangeConfigurationRegistrationOptions) => void,
     fetchConfiguration?: (configuration: ConfigurationItem[]) => Promise<any>
 }
+
+export interface ConfigurationSectionUpdate {
+    /**
+     * The name of the configuration section that has been updated.
+     */
+    section: string;
+
+    /**
+     * The updated configuration section.
+     */
+    configuration: any;
+}
+
+export type ConfigurationSectionUpdateListener = (update: ConfigurationSectionUpdate) => void;
 
 /**
  * Base configuration provider for building up other configuration providers
@@ -61,6 +89,7 @@ export class DefaultConfigurationProvider implements ConfigurationProvider {
     protected readonly _ready = new Deferred<void>();
     protected settings: Record<string, Record<string, any>> = {};
     protected workspaceConfig = false;
+    protected onConfigurationSectionUpdateEmitter = new Emitter<ConfigurationSectionUpdate>();
 
     constructor(services: LangiumSharedCoreServices) {
         this.serviceRegistry = services.ServiceRegistry;
@@ -116,7 +145,9 @@ export class DefaultConfigurationProvider implements ConfigurationProvider {
             return;
         }
         Object.keys(change.settings).forEach(section => {
-            this.updateSectionConfiguration(section, change.settings[section]);
+            const configuration = change.settings[section];
+            this.updateSectionConfiguration(section, configuration);
+            this.onConfigurationSectionUpdateEmitter.fire({ section, configuration });
         });
     }
 
@@ -141,5 +172,9 @@ export class DefaultConfigurationProvider implements ConfigurationProvider {
 
     protected toSectionName(languageId: string): string {
         return `${languageId}`;
+    }
+
+    get onConfigurationSectionUpdate(): Event<ConfigurationSectionUpdate> {
+        return this.onConfigurationSectionUpdateEmitter.event;
     }
 }

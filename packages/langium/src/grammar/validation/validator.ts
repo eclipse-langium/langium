@@ -23,6 +23,7 @@ import * as ast from '../../languages/generated/ast.js';
 import { getTypeNameWithoutError, hasDataTypeReturn, isPrimitiveGrammarType, isStringGrammarType, resolveImport, resolveTransitiveImports } from '../internal-grammar-util.js';
 import { typeDefinitionToPropertyType } from '../type-system/type-collector/declared-types.js';
 import { flattenPlainType, isPlainReferenceType } from '../type-system/type-collector/plain-types.js';
+import { AstUtils } from '../../index.js';
 
 export function registerValidationChecks(services: LangiumGrammarServices): void {
     const registry = services.validation.ValidationRegistry;
@@ -731,13 +732,18 @@ export class LangiumGrammarValidator {
             }
             return result;
         };
-        const isNotAFragment = call.rule.ref !== undefined && !call.rule.ref.fragment;
-        const appearsMultipleTimes = findContainerWithCardinality(call) !== undefined;
-        const hasAssignment = call.$container && call.$container.$type === ast.Assignment;
+        // Locate called rule, ensure it is not a fragment.
+        const refersToFragment = call.rule.ref !== undefined && call.rule.ref.fragment;
+        // Data type rules do not cause problems, too.
+        const callInDataTypeRule = (AstUtils.getContainerOfType(call, ast.isParserRule))?.dataType !== undefined;
+        if (refersToFragment || callInDataTypeRule) {
+            return;
+        }
 
-        if (appearsMultipleTimes && !hasAssignment && isNotAFragment) {
-            console.log(`${findContainerWithCardinality(call)}`);
-            accept('error', `Rule call ${call.rule.$refText} requires assignment when used with multiplicity - ${findContainerWithCardinality(call)?.$type}`, {
+        const appearsMultipleTimes = findContainerWithCardinality(call) !== undefined;
+        const hasAssignment = AstUtils.getContainerOfType(call, ast.isAssignment) !== undefined;
+        if (appearsMultipleTimes && !hasAssignment) {
+            accept('error', `Rule call ${call.rule.$refText} requires assignment when used with multiplicity.`, {
                 node: call,
                 property: 'cardinality'
             });
