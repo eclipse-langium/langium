@@ -643,8 +643,8 @@ export function createHierarchyRequestHandler<P extends TypeHierarchySupertypesP
         const language = serviceRegistry.getServices(uri);
         if (!language) {
             const message = `Could not find service instance for uri: '${uri.toString()}'`;
-            console.error(message);
-            throw new Error(message);
+            console.debug(message);
+            return responseError<E>(new Error(message));
         }
         try {
             return await serviceCall(language, params, cancelToken);
@@ -667,11 +667,16 @@ export function createServerRequestHandler<P extends { textDocument: TextDocumen
         if (cancellationError) {
             return cancellationError;
         }
-        const language = serviceRegistry.getServices(uri);
+        let language: LangiumCoreAndPartialLSPServices | undefined;
+        try {
+            language = serviceRegistry.getServices(uri);
+        } catch {
+            // NOOP
+        }
         if (!language) {
             const errorText = `Could not find service instance for uri: '${uri}'`;
-            console.error(errorText);
-            throw new Error(errorText);
+            console.debug(errorText);
+            return responseError<E>(new Error(errorText));
         }
         const document = await documents.getOrCreateDocument(uri);
         try {
@@ -695,9 +700,14 @@ export function createRequestHandler<P extends { textDocument: TextDocumentIdent
         if (cancellationError) {
             return cancellationError;
         }
-        const language = serviceRegistry.getServices(uri);
+        let language: LangiumCoreAndPartialLSPServices | undefined;
+        try {
+            language = serviceRegistry.getServices(uri);
+        } catch {
+            // NOOP
+        }
         if (!language) {
-            console.error(`Could not find service instance for uri: '${uri.toString()}'`);
+            console.debug(`Could not find service instance for uri: '${uri.toString()}'`);
             return null;
         }
         const document = documents.getDocument(uri);
