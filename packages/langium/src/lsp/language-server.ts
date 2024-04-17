@@ -640,12 +640,12 @@ export function createHierarchyRequestHandler<P extends TypeHierarchySupertypesP
         if (cancellationError) {
             return cancellationError;
         }
-        const language = serviceRegistry.getServices(uri);
-        if (!language) {
-            const message = `Could not find service instance for uri: '${uri.toString()}'`;
-            console.debug(message);
-            return responseError<E>(new Error(message));
+        if (!serviceRegistry.hasServices(uri)) {
+            const errorText = `Could not find service instance for uri: '${uri}'`;
+            console.debug(errorText);
+            return responseError<E>(new Error(errorText));
         }
+        const language = serviceRegistry.getServices(uri);
         try {
             return await serviceCall(language, params, cancelToken);
         } catch (err) {
@@ -667,19 +667,14 @@ export function createServerRequestHandler<P extends { textDocument: TextDocumen
         if (cancellationError) {
             return cancellationError;
         }
-        let language: LangiumCoreAndPartialLSPServices | undefined;
-        try {
-            language = serviceRegistry.getServices(uri);
-        } catch {
-            // NOOP
-        }
-        if (!language) {
+        if (!serviceRegistry.hasServices(uri)) {
             const errorText = `Could not find service instance for uri: '${uri}'`;
             console.debug(errorText);
             return responseError<E>(new Error(errorText));
         }
-        const document = await documents.getOrCreateDocument(uri);
+        const language = serviceRegistry.getServices(uri);
         try {
+            const document = await documents.getOrCreateDocument(uri);
             return await serviceCall(language, document, params, cancelToken);
         } catch (err) {
             return responseError<E>(err);
@@ -700,21 +695,13 @@ export function createRequestHandler<P extends { textDocument: TextDocumentIdent
         if (cancellationError) {
             return cancellationError;
         }
-        let language: LangiumCoreAndPartialLSPServices | undefined;
-        try {
-            language = serviceRegistry.getServices(uri);
-        } catch {
-            // NOOP
-        }
-        if (!language) {
+        if (!serviceRegistry.hasServices(uri)) {
             console.debug(`Could not find service instance for uri: '${uri.toString()}'`);
             return null;
         }
-        const document = documents.getDocument(uri);
-        if (!document) {
-            return null;
-        }
+        const language = serviceRegistry.getServices(uri);
         try {
+            const document = await documents.getOrCreateDocument(uri);
             return await serviceCall(language, document, params, cancelToken);
         } catch (err) {
             return responseError<E>(err);

@@ -25,6 +25,11 @@ export interface ServiceRegistry {
     getServices(uri: URI): LangiumCoreServices;
 
     /**
+     * Check whether services are available for the given URI.
+     */
+    hasServices(uri: URI): boolean;
+
+    /**
      * The full set of registered language services.
      */
     readonly all: readonly LangiumCoreServices[];
@@ -76,6 +81,15 @@ export class DefaultServiceRegistry implements ServiceRegistry {
             throw new Error(`The service registry contains no services for the extension '${ext}'.`);
         }
         return services;
+    }
+
+    hasServices(uri: URI): boolean {
+        try {
+            this.getServices(uri);
+            return true;
+        } catch {
+            return false;
+        }
     }
 
     get all(): readonly LangiumCoreServices[] {
