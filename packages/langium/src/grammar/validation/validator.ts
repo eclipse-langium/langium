@@ -43,7 +43,7 @@ export function registerValidationChecks(services: LangiumGrammarServices): void
             validator.checkParserRuleDataType,
             validator.checkRuleParametersUsed,
             validator.checkParserRuleReservedName,
-            validator.checkAssignmentOperatorMultiplicities,
+            validator.checkOperatorMultiplicitiesForMultiAssignments,
         ],
         TerminalRule: [
             validator.checkTerminalRuleReturnType,
@@ -79,7 +79,7 @@ export function registerValidationChecks(services: LangiumGrammarServices): void
             validator.checkUsedHiddenTerminalRule,
             validator.checkUsedFragmentTerminalRule,
             validator.checkRuleCallParameters,
-            validator.checkRuleCallMultiplicity
+            validator.checkMultiRuleCallsAreAssigned
         ],
         TerminalRuleCall: validator.checkUsedHiddenTerminalRule,
         CrossReference: [
@@ -680,7 +680,8 @@ export class LangiumGrammarValidator {
         }
     }
 
-    checkRuleCallMultiplicity(call: ast.RuleCall, accept: ValidationAcceptor): void {
+    /** This validation checks, that parser rules which are called multiple times are assigned (except for fragments). */
+    checkMultiRuleCallsAreAssigned(call: ast.RuleCall, accept: ValidationAcceptor): void {
         const findContainerWithCardinality = (node: AstNode) => {
             let result: AstNode | undefined = node;
             while (result !== undefined) {
@@ -815,20 +816,20 @@ export class LangiumGrammarValidator {
 
     /** This validation recursively looks at all assignments (and rewriting actions) with '=' as assignment operator and checks,
      * whether the operator should be '+=' instead. */
-    checkAssignmentOperatorMultiplicities(rule: ast.ParserRule, accept: ValidationAcceptor): void {
+    checkOperatorMultiplicitiesForMultiAssignments(rule: ast.ParserRule, accept: ValidationAcceptor): void {
         // for usual parser rules AND for fragments, but not for data type rules!
         if (!rule.dataType) {
-            this.checkAssignmentOperatorMultiplicitiesLogic([rule.definition], accept);
+            this.checkOperatorMultiplicitiesForMultiAssignmentsLogic([rule.definition], accept);
         }
     }
 
-    private checkAssignmentOperatorMultiplicitiesLogic(startNodes: AstNode[], accept: ValidationAcceptor): void {
+    private checkOperatorMultiplicitiesForMultiAssignmentsLogic(startNodes: AstNode[], accept: ValidationAcceptor): void {
         // new map to store usage information of the assignments
         const map: Map<string, AssignmentUse> = new Map();
 
         // top-down traversal for all starting nodes
         for (const node of startNodes) {
-            this.checkNodeRegardingAssignmentNumbers(node, 1, map, accept);
+            this.checkAssignmentNumbersForNode(node, 1, map, accept);
         }
 
         // create the warnings
@@ -847,7 +848,7 @@ export class LangiumGrammarValidator {
         }
     }
 
-    private checkNodeRegardingAssignmentNumbers(currentNode: AstNode, parentMultiplicity: number, map: Map<string, AssignmentUse>, accept: ValidationAcceptor) {
+    private checkAssignmentNumbersForNode(currentNode: AstNode, parentMultiplicity: number, map: Map<string, AssignmentUse>, accept: ValidationAcceptor) {
         // the current element can occur multiple times => its assignments can occur multiple times as well
         let currentMultiplicity = parentMultiplicity;
         if (ast.isAbstractElement(currentNode) && isArrayCardinality(currentNode.cardinality)) {
@@ -862,7 +863,7 @@ export class LangiumGrammarValidator {
         // Search for assignments in used fragments as well, since their property values are stored in the current object.
         // But do not search in calls of regular parser rules, since parser rules create new objects.
         if (ast.isRuleCall(currentNode) && ast.isParserRule(currentNode.rule.ref) && currentNode.rule.ref.fragment) {
-            this.checkNodeRegardingAssignmentNumbers(currentNode.rule.ref.definition, currentMultiplicity, map, accept);
+            this.checkAssignmentNumbersForNode(currentNode.rule.ref.definition, currentMultiplicity, map, accept);
         }
 
         // rewriting actions are a special case for assignments
@@ -881,7 +882,7 @@ export class LangiumGrammarValidator {
                     // (This counts for rewriting actions as well as for unassigned actions, i.e. actions without feature name)
                     if (nodesForNewObject.length >= 1) {
                         // all collected nodes are put into the new object => check their assignments independently
-                        this.checkAssignmentOperatorMultiplicitiesLogic(nodesForNewObject, accept);
+                        this.checkOperatorMultiplicitiesForMultiAssignmentsLogic(nodesForNewObject, accept);
                         // is it possible to have two or more Actions within the same parser rule? the grammar allows that ...
                         nodesForNewObject = [];
                     }
@@ -897,11 +898,11 @@ export class LangiumGrammarValidator {
                         if (ast.isAlternatives(currentNode)) {
                             // for alternatives, only a single alternative is used => assume the worst case and take the maximum number of assignments
                             const mapCurrentAlternative: Map<string, AssignmentUse> = new Map();
-                            this.checkNodeRegardingAssignmentNumbers(child, currentMultiplicity, mapCurrentAlternative, accept);
+                            this.checkAssignmentNumbersForNode(child, currentMultiplicity, mapCurrentAlternative, accept);
                             mergeAssignmentUse(mapCurrentAlternative, mapAllAlternatives, (s, t) => Math.max(s, t));
                         } else {
                             // all members of the group are relavant => collect them all
-                            this.checkNodeRegardingAssignmentNumbers(child, currentMultiplicity, map, accept);
+                            this.checkAssignmentNumbersForNode(child, currentMultiplicity, map, accept);
                         }
                     }
                 }
@@ -910,7 +911,7 @@ export class LangiumGrammarValidator {
             mergeAssignmentUse(mapAllAlternatives, map);
             if (nodesForNewObject.length >= 1) {
                 // these nodes are put into a new object => check their assignments independently
-                this.checkAssignmentOperatorMultiplicitiesLogic(nodesForNewObject, accept);
+                this.checkOperatorMultiplicitiesForMultiAssignmentsLogic(nodesForNewObject, accept);
             }
         }
     }
