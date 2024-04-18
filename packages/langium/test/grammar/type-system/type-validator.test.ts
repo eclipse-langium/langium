@@ -724,7 +724,7 @@ describe('Property types validation takes in account types hierarchy', () => {
             value: A;
         }
 
-        B returns B: {B};
+        B returns B: 'BRuleForBInterface' {B};
 
         Test returns Test:
             value=B

@@ -1032,9 +1032,10 @@ describe('Prohibit empty parser rules', async () => {
         hidden terminal WS: /\\s+/;
         `;
         const validationResult = await validate(specialGrammar);
-        expect(validationResult.diagnostics).toHaveLength(3);
+        expect(validationResult.diagnostics).toHaveLength(4);
         detectEmptyRule(validationResult, 6, 11, 6, 18);
         detectEmptyRule(validationResult, 7, 17, 7, 59);
         detectEmptyRule(validationResult, 10, 26, 10, 35);
+        detectEmptyRule(validationResult, 16, 23, 16, 31);
     });
 });
